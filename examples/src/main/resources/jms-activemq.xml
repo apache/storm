@@ -16,16 +16,18 @@
 	</amq:broker> -->
 
 	<amq:queue id="notificationQueue" physicalName="backtype.storm.contrib.example.queue" />
+	
+	<amq:topic id="notificationTopic" physicalName="backtype.storm.contrib.example.topic" />
 
 	<amq:connectionFactory id="jmsConnectionFactory"
 		brokerURL="tcp://localhost:61616" />
 
-	<bean id="queueTemplate" class="org.springframework.jms.core.JmsTemplate">
+	<!-- <bean id="queueTemplate" class="org.springframework.jms.core.JmsTemplate">
 		<property name="connectionFactory">
 			<ref bean="jmsConnectionFactory" />
 		</property>
 		<property name="pubSubDomain" value="false" />
-	</bean>
+	</bean> -->
 	
 </beans>
 

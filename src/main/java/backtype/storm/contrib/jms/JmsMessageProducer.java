@@ -1,7 +1,12 @@
 package backtype.storm.contrib.jms;
 
-import javax.jms.Message;
+import java.io.Serializable;
 
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.Session;
+
+import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
 /**
  * JmsMessageProducer implementations are responsible for translating
@@ -13,13 +18,16 @@ import backtype.storm.tuple.Values;
  * @author tgoetz
  *
  */
-public interface JmsMessageProducer {
-
+public interface JmsMessageProducer extends Serializable{
+	
 	/**
-	 * Translate a <code>backtype.storm.tuple.Values</code> object
+	 * Translate a <code>backtype.storm.tuple.Tuple</code> object
 	 * to a <code>javax.jms.Message</code object.
+	 * 
+	 * @param session
 	 * @param input
 	 * @return
+	 * @throws JMSException
 	 */
-	public Message toMessage(Values input);
+	public Message toMessage(Session session, Tuple input) throws JMSException;
 }
