@@ -26,12 +26,12 @@
 			<artifactId>spring-context</artifactId>
 			<version>${spring.version}</version>
 		</dependency>
-				<dependency>
+		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-jms</artifactId>
 			<version>${spring.version}</version>
 		</dependency>
-				<dependency>
+		<dependency>
 			<groupId>org.apache.xbean</groupId>
 			<artifactId>xbean-spring</artifactId>
 			<version>3.7</version>
@@ -55,8 +55,32 @@
 		</dependency>
 	</dependencies>
 	<build>
+		<plugins>
+			<!-- bind the maven-assembly-plugin to the package phase this will create 
+				a jar file without the storm dependencies suitable for deployment to a cluster. -->
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<configuration>
+					<descriptorRefs>
+						<descriptorRef>jar-with-dependencies</descriptorRef>
+					</descriptorRefs>
+					<archive>
+						<manifest>
+							<mainClass></mainClass>
+						</manifest>
+					</archive>
+				</configuration>
+				<executions>
+					<execution>
+						<id>make-assembly</id>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+					</execution>
+				</executions>
 
-<plugins>
+			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -66,7 +90,7 @@
 				</configuration>
 			</plugin>
 
-</plugins>
+		</plugins>
 
 	</build>
 </project>
