@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>backtype.storm.contrib</groupId>
 	<artifactId>storm-jms</artifactId>
-	<version>0.5.4-SNAPSHOT</version>
+	<version>0.5.4</version>
 	<name>Storm JMS</name>
 	<description>Storm JMS Components</description>
 
