@@ -15,7 +15,7 @@ import backtype.storm.tuple.Values;
  * <p/>
  * 
  * 
- * @author tgoetz
+ * @author P. Taylor Goetz
  *
  */
 public interface JmsMessageProducer extends Serializable{

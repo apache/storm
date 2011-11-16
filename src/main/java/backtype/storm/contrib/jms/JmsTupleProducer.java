@@ -10,7 +10,7 @@ import backtype.storm.tuple.Values;
 
 /**
  * Interface to define classes that can produce a Storm <code>Values</code> objects
- * from a <code>javax.jms.Message</object>.
+ * from a <code>javax.jms.Message</code> object>.
  * <p/>
  * Implementations are also responsible for declaring the output
  * fields they produce.
@@ -21,7 +21,7 @@ import backtype.storm.tuple.Values;
  * return <code>null</code> to indicate to the <code>JmsSpout</code> that
  * the message could not be processed.
  * 
- * @author tgoetz
+ * @author P. Taylor Goetz
  *
  */
 public interface JmsTupleProducer extends Serializable{

@@ -26,21 +26,21 @@ import backtype.storm.tuple.Values;
 import backtype.storm.utils.Utils;
 
 /**
- * A Storm <code>Spout</code implementation that listens to a JMS topic or queue
+ * A Storm <code>Spout</code> implementation that listens to a JMS topic or queue
  * and outputs tuples based on the messages it receives.
  * <p/>
  * <code>JmsSpout</code> instances rely on <code>JmsProducer</code> implementations 
  * to obtain the JMS <code>ConnectionFactory</code> and <code>Destination</code> objects
- * necessary to connect to a topic/queue.
+ * necessary to connect to a JMS topic/queue.
  * <p/>
- * When the <code>JmsSpout</code> receives a JMS message, it delegates to an 
- * internal <code>JmsTupleProducer</code> instance to create a tuple from the 
+ * When a <code>JmsSpout</code> receives a JMS message, it delegates to an 
+ * internal <code>JmsTupleProducer</code> instance to create a Storm tuple from the 
  * incoming message.
  * <p/>
  * Typically, developers will supply a custom <code>JmsTupleProducer</code> implementation
  * appropriate for the expected message content.
  * 
- * @author tgoetz
+ * @author P. Taylor Goetz
  *
  */
 @SuppressWarnings("serial")
@@ -110,7 +110,7 @@ public class JmsSpout implements IRichSpout, MessageListener {
 	 * <p/>
 	 * If the spout determines that a JMS message should be handled transactionally
 	 * (i.e. acknowledged in JMS terms), it will be JMS-acknowledged in the spout's
-	 * <code>ack()</method>.
+	 * <code>ack()</code> method.
 	 * <p/>
 	 * Otherwise, if a downstream spout that has anchored on one of this spouts tuples
 	 * fails to acknowledge an emitted tuple, the JMS message will not be not be acknowledged,

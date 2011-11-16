@@ -9,7 +9,7 @@ import javax.jms.Destination;
  * and <code>Destination</code> JMS objects the <code>JmsSpout</code> needs to manage
  * a topic/queue connection over the course of it's lifecycle.
  * 
- * @author tgoetz
+ * @author P. Taylor Goetz
  *
  */
 public interface JmsProvider extends Serializable{

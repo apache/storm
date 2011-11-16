@@ -27,15 +27,15 @@ import backtype.storm.tuple.Tuple;
  * <p/>
  * To use a JmsBolt in a topology, the following must be supplied:
  * <ol>
- * <li>A <code>JmsProvider</code> implementation.
- * <li>A <code>JmsMessageProducer</code> implementation.
+ * <li>A <code>JmsProvider</code> implementation.</li>
+ * <li>A <code>JmsMessageProducer</code> implementation.</li>
  * </ol>
  * The <code>JmsProvider</code> provides the JMS <code>javax.jms.ConnectionFactory</code>
  * and <code>javax.jms.Destination</code> objects requied to publish JMS messages.
  * <p/>
  * The JmsBolt uses a <code>JmsMessageProducer</code> to translate 
  * <code>backtype.storm.tuple.Tuple</code> objects into
- * <code>javax.jms.Message<objects> for publishing.
+ * <code>javax.jms.Message</code> objects for publishing.
  * <p/>
  * Both JmsProvider and JmsMessageProducer must be set, or the bolt will
  * fail upon deployment to a cluster.
@@ -44,7 +44,7 @@ import backtype.storm.tuple.Tuple;
  * it does not emit any tuples.
  * 
  * 
- * @author tgoetz
+ * @author P. Taylor Goetz
  *
  */
 public class JmsBolt implements IRichBolt {
