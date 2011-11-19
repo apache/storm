@@ -24,6 +24,7 @@ public class ExampleJmsTopology {
 	public static final int FINAL_BOLT = 3;
 	public static final int JMS_TOPIC_BOLT = 4;
 	public static final int JMS_TOPIC_SPOUT = 5;
+	public static final int ANOTHER_BOLT = 6;
 
 	@SuppressWarnings("serial")
 	public static void main(String[] args) throws Exception {
@@ -84,8 +85,12 @@ public class ExampleJmsTopology {
 		topicSpout.setJmsProvider(jmsTopicProvider);
 		topicSpout.setJmsTupleProducer(producer);
 		topicSpout.setJmsAcknowledgeMode(Session.CLIENT_ACKNOWLEDGE);
+		topicSpout.setDistributed(false);
 		
 		builder.setSpout(JMS_TOPIC_SPOUT, topicSpout);
+		
+		builder.setBolt(ANOTHER_BOLT, new GenericBolt("ANOTHER_BOLT", true, true), 1).shuffleGrouping(
+				JMS_TOPIC_SPOUT);
 
 		Config conf = new Config();
 
