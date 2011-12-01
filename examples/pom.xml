@@ -6,9 +6,15 @@
 	<version>0.1-SNAPSHOT</version>
 	<name>Storm JMS Examples</name>
 	<description>Storm JMS Examples</description>
+	<repositories>
+		<repository>
+			<id>clojars.org</id>
+			<url>http://clojars.org/repo</url>
+		</repository>
+	</repositories>
 	<properties>
 		<spring.version>2.5.6</spring.version>
-		<storm.version>0.5.4</storm.version>
+		<storm.version>0.6.0</storm.version>
 	</properties>
 	<dependencies>
 		<dependency>

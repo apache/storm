@@ -19,12 +19,12 @@ import backtype.storm.tuple.Tuple;
 import backtype.storm.utils.Utils;
 
 public class ExampleJmsTopology {
-	public static final int JMS_QUEUE_SPOUT = 1;
-	public static final int INTERMEDIATE_BOLT = 2;
-	public static final int FINAL_BOLT = 3;
-	public static final int JMS_TOPIC_BOLT = 4;
-	public static final int JMS_TOPIC_SPOUT = 5;
-	public static final int ANOTHER_BOLT = 6;
+	public static final String JMS_QUEUE_SPOUT = "JMS_QUEUE_SPOUT";
+	public static final String INTERMEDIATE_BOLT = "INTERMEDIATE_BOLT";
+	public static final String FINAL_BOLT = "FINAL_BOLT";
+	public static final String JMS_TOPIC_BOLT = "JMS_TOPIC_BOLT";
+	public static final String JMS_TOPIC_SPOUT = "JMS_TOPIC_SPOUT";
+	public static final String ANOTHER_BOLT = "ANOTHER_BOLT";
 
 	@SuppressWarnings("serial")
 	public static void main(String[] args) throws Exception {

@@ -3,12 +3,17 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>backtype.storm.contrib</groupId>
 	<artifactId>storm-jms</artifactId>
-	<version>0.5.4</version>
+	<version>0.6.0</version>
 	<name>Storm JMS</name>
 	<description>Storm JMS Components</description>
-
+	<repositories>
+		<repository>
+			<id>clojars.org</id>
+			<url>http://clojars.org/repo</url>
+		</repository>
+	</repositories>
 	<properties>
-		<storm.version>0.5.4</storm.version>
+		<storm.version>0.6.0</storm.version>
 	</properties>
 	<dependencies>
 		<dependency>
