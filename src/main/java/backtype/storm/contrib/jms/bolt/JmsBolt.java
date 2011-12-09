@@ -107,9 +107,9 @@ public class JmsBolt implements IRichBolt {
 	 * 
 	 * @param transactional
 	 */
-	public void setJmsTransactional(boolean transactional){
-		this.jmsTransactional = transactional;
-	}
+//	public void setJmsTransactional(boolean transactional){
+//		this.jmsTransactional = transactional;
+//	}
 	
 	/**
 	 * Sets whether or not tuples should be acknowledged by this
