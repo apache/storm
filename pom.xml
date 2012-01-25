@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>backtype.storm.contrib</groupId>
 	<artifactId>storm-jms</artifactId>
-	<version>0.6.0</version>
+	<version>0.6.2</version>
 	<name>Storm JMS</name>
 	<description>Storm JMS Components</description>
 	<repositories>
@@ -13,7 +13,7 @@
 		</repository>
 	</repositories>
 	<properties>
-		<storm.version>0.6.0</storm.version>
+		<storm.version>0.6.2</storm.version>
 	</properties>
 	<dependencies>
 		<dependency>
