@@ -64,7 +64,7 @@ public class ExampleJmsTopology {
 		builder.setBolt(FINAL_BOLT, new GenericBolt("FINAL_BOLT", true, true), 3).shuffleGrouping(
 				INTERMEDIATE_BOLT);
 		
-		// bolt that subscribes to the intermeidate bold, and publishes to a JMS Topic		
+		// bolt that subscribes to the intermediate bolt, and publishes to a JMS Topic		
 		JmsBolt jmsBolt = new JmsBolt();
 		jmsBolt.setJmsProvider(jmsTopicProvider);
 		
