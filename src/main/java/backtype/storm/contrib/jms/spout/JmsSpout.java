@@ -49,7 +49,6 @@ public class JmsSpout implements IRichSpout, MessageListener {
 	private static final Logger LOG = LoggerFactory.getLogger(JmsSpout.class);
 
 	// JMS options
-	private boolean jmsTransactional = false;
 	private int jmsAcknowledgeMode = Session.AUTO_ACKNOWLEDGE;
 	
 	private boolean distributed = true;
@@ -104,33 +103,6 @@ public class JmsSpout implements IRichSpout, MessageListener {
 		return this.jmsAcknowledgeMode;
 	}
 	
-	/**
-	 * Set whether this Spout uses the JMS transactional model by defualt.
-	 * <p/>
-	 * If <code>true</code> the spout will always request acks from downstream
-	 * bolts, using the incoming JMS message ID as the Storm message ID.
-	 * <p/>
-	 * If <code>false</code> the spout will request acks from downstream bolts
-	 * only if the spout's JmsAcknowledgeMode is <b><i>not</i></b> AUTO_ACKNOWLEDGE
-	 * and the JMS message DeliveryMode is <b><i>not</i></b> AUTO_ACKNOWLEDGE.
-	 * <p/>
-	 * If the spout determines that a JMS message should be handled transactionally
-	 * (i.e. acknowledged in JMS terms), it will be JMS-acknowledged in the spout's
-	 * <code>ack()</code> method.
-	 * <p/>
-	 * Otherwise, if a downstream spout that has anchored on one of this spouts tuples
-	 * fails to acknowledge an emitted tuple, the JMS message will not be not be acknowledged,
-	 * and potentially be set for retransmission, depending on the underlying JMS implementation
-	 * and configuration.
-	 * 
-	 * @param transactional
-	 */
-	public void setJmsTransactional(boolean transactional){
-		this.jmsTransactional = transactional;
-	}
-	public boolean isJmsTransaction(){
-		return this.jmsTransactional;
-	}
 	/**
 	 * Set the <code>backtype.storm.contrib.jms.JmsProvider</code>
 	 * implementation that this Spout will use to connect to 
@@ -190,7 +162,7 @@ public class JmsSpout implements IRichSpout, MessageListener {
 			ConnectionFactory cf = this.jmsProvider.connectionFactory();
 			Destination dest = this.jmsProvider.destination();
 			this.connection = cf.createConnection();
-			this.session = connection.createSession(this.jmsTransactional,
+			this.session = connection.createSession(false,
 					this.jmsAcknowledgeMode);
 			MessageConsumer consumer = session.createConsumer(dest);
 			consumer.setMessageListener(this);
@@ -350,7 +322,6 @@ public class JmsSpout implements IRichSpout, MessageListener {
 	}
 	
 	private boolean isDurableSubscription(){
-	    return (this.jmsTransactional
-                    || (this.jmsAcknowledgeMode != Session.AUTO_ACKNOWLEDGE));
+	    return (this.jmsAcknowledgeMode != Session.AUTO_ACKNOWLEDGE);
 	}
 }
