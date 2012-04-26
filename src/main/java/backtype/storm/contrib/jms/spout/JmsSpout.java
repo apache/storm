@@ -69,7 +69,7 @@ public class JmsSpout implements IRichSpout, MessageListener {
 	private boolean hasFailures = false;
 	public Object recoveryMutex = new Object();
 	private Timer recoveryTimer = null;
-	private long recoveryDelay = 30*1000;  // Default to 30 seconds
+	private long recoveryPeriod = 30*1000;  // Default to 30 seconds
 	
 	/**
 	 * Sets the JMS Session acknowledgement mode for the JMS seesion associated with this spout.
@@ -197,7 +197,7 @@ public class JmsSpout implements IRichSpout, MessageListener {
 			connection.start();
 			if (this.isDurableSubscription()){
 			    this.recoveryTimer = new Timer();
-			    this.recoveryTimer.schedule(new RecoveryTask(this), this.recoveryDelay);
+			    this.recoveryTimer.scheduleAtFixedRate(new RecoveryTask(this), 10, this.recoveryPeriod);
 			}
 			
 		} catch (Exception e) {
@@ -302,10 +302,10 @@ public class JmsSpout implements IRichSpout, MessageListener {
 	 * Sets the periodicity of the timer task that 
 	 * checks for failures and recovers the JMS session.
 	 * 
-	 * @param the delay
+	 * @param the period
 	 */
-	public void setRecoveryDelay(long delay){
-	    this.recoveryDelay = delay;
+	public void setRecoveryPeriod(long period){
+	    this.recoveryPeriod = period;
 	}
 	
 	public boolean isDistributed() {
