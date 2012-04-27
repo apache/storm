@@ -2,6 +2,7 @@ package backtype.storm.contrib.jms.spout;
 
 import java.util.Map;
 import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -66,9 +67,9 @@ public class JmsSpout implements IRichSpout, MessageListener {
 	private transient Session session;
 	
 	private boolean hasFailures = false;
-	public Object recoveryMutex = new Object();
+	private Object recoveryMutex = new Object();
 	private Timer recoveryTimer = null;
-	private long recoveryPeriod = 30*1000;  // Default to 30 seconds
+	private long recoveryPeriod = -1; // default to disabled
 	
 	/**
 	 * Sets the JMS Session acknowledgement mode for the JMS seesion associated with this spout.
@@ -155,7 +156,16 @@ public class JmsSpout implements IRichSpout, MessageListener {
 		if(this.tupleProducer == null){
 			throw new IllegalStateException("JMS Tuple Producer has not been set.");
 		}
-		queue = new LinkedBlockingQueue<Message>();
+		Integer topologyTimeout = (Integer)conf.get("topology.message.timeout.secs");
+		// TODO fine a way to get the default timeout from storm, so we're not hard-coding to 30 seconds (it could change)
+		topologyTimeout = topologyTimeout == null ? 30 : topologyTimeout;
+		if( (topologyTimeout.intValue() * 1000 )> this.recoveryPeriod){
+		    LOG.warn("*** WARNING *** : " +
+		    		"Recovery period ("+ this.recoveryPeriod + " ms.) is less then the configured " +
+		    		"'topology.message.timeout.secs' of " + topologyTimeout + 
+		    		" secs. This could lead to a message replay flood!");
+		}
+		this.queue = new LinkedBlockingQueue<Message>();
 		this.pendingMessages = new ConcurrentHashMap<String, Message>();
 		this.collector = collector;
 		try {
@@ -166,10 +176,10 @@ public class JmsSpout implements IRichSpout, MessageListener {
 					this.jmsAcknowledgeMode);
 			MessageConsumer consumer = session.createConsumer(dest);
 			consumer.setMessageListener(this);
-			connection.start();
-			if (this.isDurableSubscription()){
+			this.connection.start();
+			if (this.isDurableSubscription() && this.recoveryPeriod > 0){
 			    this.recoveryTimer = new Timer();
-			    this.recoveryTimer.scheduleAtFixedRate(new RecoveryTask(this), 10, this.recoveryPeriod);
+			    this.recoveryTimer.scheduleAtFixedRate(new RecoveryTask(), 10, this.recoveryPeriod);
 			}
 			
 		} catch (Exception e) {
@@ -199,7 +209,6 @@ public class JmsSpout implements IRichSpout, MessageListener {
 			// get the tuple from the handler
 			try {
 				Values vals = this.tupleProducer.toTuple(msg);
-				// if we're transactional, always ack, otherwise
 				// ack if we're not in AUTO_ACKNOWLEDGE mode, or the message requests ACKNOWLEDGE
 				LOG.debug("Requested deliveryMode: " + toDeliveryModeString(msg.getJMSDeliveryMode()));
 				LOG.debug("Our deliveryMode: " + toDeliveryModeString(this.jmsAcknowledgeMode));
@@ -323,5 +332,25 @@ public class JmsSpout implements IRichSpout, MessageListener {
 	
 	private boolean isDurableSubscription(){
 	    return (this.jmsAcknowledgeMode != Session.AUTO_ACKNOWLEDGE);
+	}
+	
+	
+	private class RecoveryTask extends TimerTask {
+	    private final Logger LOG = LoggerFactory.getLogger(RecoveryTask.class);
+
+	    public void run() {
+	        synchronized (JmsSpout.this.recoveryMutex) {
+	            if (JmsSpout.this.hasFailures()) {
+	                try {
+	                    LOG.info("Recovering from a message failure.");
+	                    JmsSpout.this.getSession().recover();
+	                    JmsSpout.this.recovered();
+	                } catch (JMSException e) {
+	                    LOG.warn("Could not recover jms session.", e);
+	                }
+	            }
+	        }
+	    }
+
 	}
 }
