@@ -1,5 +1,6 @@
 package backtype.storm.contrib.jms.spout;
 
+import java.io.Serializable;
 import java.util.Map;
 import java.util.Timer;
 import java.util.concurrent.ConcurrentHashMap;
@@ -66,7 +67,7 @@ public class JmsSpout implements IRichSpout, MessageListener {
 	private transient Session session;
 	
 	private boolean hasFailures = false;
-	public Object recoveryMutex = new Object();
+	public Serializable recoveryMutex = "RECOVERY_MUTEX";
 	private Timer recoveryTimer = null;
 	private long recoveryPeriod = 30*1000;  // Default to 30 seconds
 	

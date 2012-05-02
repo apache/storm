@@ -1,5 +1,8 @@
 package backtype.storm.contrib.jms.spout;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.util.HashMap;
 
 import javax.jms.ConnectionFactory;
@@ -42,6 +45,16 @@ public class JmsSpoutTest {
         Assert.assertTrue(mockCollector.emitted); // Should have been re-emitted
     }
 
+    @Test
+    public void testSerializability() throws IOException{
+        JmsSpout spout = new JmsSpout();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(out);
+        oos.writeObject(spout);
+        oos.close();
+        Assert.assertTrue(out.toByteArray().length > 0);
+    }
+    
     public Message sendMessage(ConnectionFactory connectionFactory, Destination destination) throws JMSException {        
         Session mySess = connectionFactory.createConnection().createSession(false, Session.CLIENT_ACKNOWLEDGE);
         MessageProducer producer = mySess.createProducer(destination);
