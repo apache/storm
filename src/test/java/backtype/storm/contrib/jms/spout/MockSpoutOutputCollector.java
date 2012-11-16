@@ -19,10 +19,14 @@ public class MockSpoutOutputCollector implements ISpoutOutputCollector {
         emitted = true;
     }
 
+    @Override
+    public void reportError(Throwable error) {
+    }
+
     public boolean emitted(){
         return this.emitted;
     }
-    
+
     public void reset(){
         this.emitted = false;
     }

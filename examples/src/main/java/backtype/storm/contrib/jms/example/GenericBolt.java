@@ -2,12 +2,12 @@ package backtype.storm.contrib.jms.example;
 
 import java.util.Map;
 
+import backtype.storm.topology.base.BaseRichBolt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
-import backtype.storm.topology.IRichBolt;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
@@ -22,7 +22,7 @@ import backtype.storm.tuple.Tuple;
  *
  */
 @SuppressWarnings("serial")
-public class GenericBolt implements IRichBolt {
+public class GenericBolt extends BaseRichBolt {
 	private static final Logger LOG = LoggerFactory.getLogger(GenericBolt.class);
 	private OutputCollector collector;
 	private boolean autoAck = false;
