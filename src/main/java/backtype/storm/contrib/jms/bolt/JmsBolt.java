@@ -138,7 +138,11 @@ public class JmsBolt extends BaseRichBolt {
 		try {
 			Message msg = this.producer.toMessage(this.session, input);
 			if(msg != null){
-				this.messageProducer.send(msg);
+				if (msg.getJMSDestination() != null) {
+					this.messageProducer.send(msg.getJMSDestination(), msg);
+				} else {
+					this.messageProducer.send(msg);
+				}
 			}
 			if(this.autoAck){
 				LOG.debug("ACKing tuple: " + input);
