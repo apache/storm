@@ -10,6 +10,7 @@ import javax.jms.Message;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 
+import backtype.storm.topology.base.BaseRichBolt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,7 +18,6 @@ import backtype.storm.contrib.jms.JmsMessageProducer;
 import backtype.storm.contrib.jms.JmsProvider;
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
-import backtype.storm.topology.IRichBolt;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.tuple.Tuple;
 
@@ -47,7 +47,7 @@ import backtype.storm.tuple.Tuple;
  * @author P. Taylor Goetz
  *
  */
-public class JmsBolt implements IRichBolt {
+public class JmsBolt extends BaseRichBolt {
 	private static Logger LOG = LoggerFactory.getLogger(JmsBolt.class);
 	
 	private boolean autoAck = true;
@@ -170,7 +170,7 @@ public class JmsBolt implements IRichBolt {
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
 	}
 
-	/**
+    /**
 	 * Initializes JMS resources.
 	 */
 	@Override

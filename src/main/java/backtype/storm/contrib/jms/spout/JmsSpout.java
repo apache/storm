@@ -16,6 +16,7 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
 import javax.jms.Session;
 
+import backtype.storm.topology.base.BaseRichSpout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,7 +24,6 @@ import backtype.storm.contrib.jms.JmsProvider;
 import backtype.storm.contrib.jms.JmsTupleProducer;
 import backtype.storm.spout.SpoutOutputCollector;
 import backtype.storm.task.TopologyContext;
-import backtype.storm.topology.IRichSpout;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.tuple.Values;
 import backtype.storm.utils.Utils;
@@ -47,7 +47,7 @@ import backtype.storm.utils.Utils;
  *
  */
 @SuppressWarnings("serial")
-public class JmsSpout implements IRichSpout, MessageListener {
+public class JmsSpout extends BaseRichSpout implements MessageListener {
 	private static final Logger LOG = LoggerFactory.getLogger(JmsSpout.class);
 
 	// JMS options
@@ -284,7 +284,7 @@ public class JmsSpout implements IRichSpout, MessageListener {
 	 * Sets the periodicity of the timer task that 
 	 * checks for failures and recovers the JMS session.
 	 * 
-	 * @param the period
+	 * @param period
 	 */
 	public void setRecoveryPeriod(long period){
 	    this.recoveryPeriod = period;
