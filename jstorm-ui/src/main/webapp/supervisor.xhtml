@@ -1,0 +1,93 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:p="http://primefaces.org/ui">
+<h:head>
+	<title>Jstorm UI</title>
+</h:head>
+
+<h:body>
+	<h:outputLink value="cluster.jsf">
+		<h1>
+			<h:outputText value="JStorm UI" />
+		</h1>
+	</h:outputLink>
+	
+	<h2>Supervisor Summary</h2>
+	<h:form>
+		<p:dataTable id="supervisorsummary" var="ssumm"
+			value="#{supervisorpage.ssumm}" >
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Host" />
+				</f:facet>
+				<h:outputText value="#{ssumm.host}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Uptime" />
+				</f:facet>
+				<h:outputText value="#{ssumm.uptime}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Slots" />
+				</f:facet>
+				<h:outputText value="#{ssumm.slots}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Used slots" />
+				</f:facet>
+				<h:outputText value="#{ssumm.usedSlots}" />
+			</p:column>
+		</p:dataTable>
+	</h:form>
+	
+	<h2>Used Worker Summary</h2>
+    <h:form>
+        <p:dataTable id="workersummary" var="wsumm"
+            value="#{supervisorpage.wsumm}">
+            <p:column>
+                <f:facet name="header">
+                    <h:outputText value="port" />
+                </f:facet>
+                <h:outputText value="#{wsumm.port}" />
+            </p:column>
+
+            <p:column>
+                <f:facet name="header">
+                    <h:outputText value="Uptime" />
+                </f:facet>
+                <h:outputText value="#{wsumm.uptime}" />
+            </p:column>
+
+            <p:column>
+                <f:facet name="header">
+                    <h:outputText value="Topology" />
+                </f:facet>
+                <h:outputText value="#{wsumm.topology}" />
+            </p:column>
+
+            <p:column>
+                <f:facet name="header">
+                    <h:outputText value="tasks" />
+                </f:facet>
+                <h:outputText value="#{wsumm.tasks}" />
+            </p:column>
+            
+            <p:column>
+                <f:facet name="header">
+                    <h:outputText value="components" />
+                </f:facet>
+                <h:outputText value="#{wsumm.components}" />
+            </p:column>
+        </p:dataTable>
+    </h:form>
+</h:body>
+</html>

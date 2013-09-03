@@ -1,0 +1,160 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:p="http://primefaces.org/ui">
+<h:head>
+	<title>Jstorm UI</title>
+</h:head>
+
+<h:body>
+	<h:outputLink value="cluster.jsf">
+		<h1>
+			<h:outputText value="JStorm UI" />
+		</h1>
+	</h:outputLink>
+	<h2>Cluster Summary</h2>
+
+	<h:form>
+		<p:dataTable id="clustesummary" var="cls" value="#{mainpage.csumm}">
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Nimbus uptime" />
+				</f:facet>
+				<h:outputText value="#{cls.nimbusuptime}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Supervisors" />
+				</f:facet>
+				<h:outputText value="#{cls.supervisors}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Used slots" />
+				</f:facet>
+				<h:outputText value="#{cls.usedSlots}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Free slots" />
+				</f:facet>
+				<h:outputText value="#{cls.freeSlots}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Total slots" />
+				</f:facet>
+				<h:outputText value="#{cls.totalSlots}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Running tasks" />
+				</f:facet>
+				<h:outputText value="#{cls.runningTasks}" />
+			</p:column>
+		</p:dataTable>
+	</h:form>
+
+	<h2>Topology Summary</h2>
+	<h:form>
+		<p:dataTable id="topologysummary" var="topo" value="#{mainpage.tsumm}"
+			sortBy="#{topo.luptime}" sortOrder="ASCENDING">
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Topology Name" />
+				</f:facet>
+
+				<h:outputLink value="topology.jsf">
+					<h:outputText value="#{topo.topologyname}" />
+					<f:param name="topologyid" value="#{topo.topologyid}" />
+				</h:outputLink>
+
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Topology Id" />
+				</f:facet>
+				<h:outputText value="#{topo.topologyid}" />
+
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Status" />
+				</f:facet>
+				<h:outputText value="#{topo.status}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Uptime" />
+				</f:facet>
+				<h:outputText value="#{topo.uptime}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Num workers" />
+				</f:facet>
+				<h:outputText value="#{topo.numworkers}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Num tasks" />
+				</f:facet>
+				<h:outputText value="#{topo.numtasks}" />
+			</p:column>
+		</p:dataTable>
+	</h:form>
+	<h2>Topology Summary</h2>
+	<h:form>
+		<p:dataTable id="supervisorsummary" var="ssumm"
+			value="#{mainpage.ssumm}" sortBy="#{ssumm.host}"
+			sortOrder="ASCENDING">
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Host" />
+				</f:facet>
+				
+				<h:outputLink value="supervisor.jsf">
+                    <h:outputText value="#{ssumm.host}" />
+                    <f:param name="host" value="#{ssumm.host}" />
+                </h:outputLink>
+			</p:column>
+			
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Uptime" />
+				</f:facet>
+				<h:outputText value="#{ssumm.uptime}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Slots" />
+				</f:facet>
+				<h:outputText value="#{ssumm.slots}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Used slots" />
+				</f:facet>
+				<h:outputText value="#{ssumm.usedSlots}" />
+			</p:column>
+		</p:dataTable>
+	</h:form>
+</h:body>
+</html>

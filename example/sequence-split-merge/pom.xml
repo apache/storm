@@ -1,0 +1,122 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>storm</groupId>
+	<artifactId>sequence-split-merge</artifactId>
+	<version>1.0.5</version>
+	<packaging>jar</packaging>
+
+	<name>sequence-split-merge</name>
+	<url>http://maven.apache.org</url>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
+	<repositories>
+		<repository>
+			<id>twitter4j</id>
+			<url>http://twitter4j.org/maven2</url>
+		</repository>
+		<repository>
+			<id>central</id>
+			<url>http://repo1.maven.org/maven2</url>
+		</repository>
+		<repository>
+			<id>clojars</id>
+			<url>http://clojars.org/repo/</url>
+		</repository>
+	</repositories>
+	<dependencies>
+		<!--  
+		<dependency>
+			<groupId>storm</groupId>
+			<artifactId>storm</artifactId>
+			<version>0.7.1</version>
+			<scope>provided</scope>
+		</dependency>
+		-->
+		
+		<dependency>
+            <groupId>com.alipay.dw</groupId>
+            <artifactId>jstorm-client</artifactId>
+            <version>0.7.1</version>
+            <scope>provided</scope>
+        </dependency>
+		
+		<dependency>
+            <groupId>com.alipay.dw</groupId>
+            <artifactId>jstorm-client-extension</artifactId>
+            <version>0.7.1</version>
+        </dependency>
+
+		<!-- 
+		<dependency>
+			<groupId>org.clojure</groupId>
+			<artifactId>clojure</artifactId>
+			<version>1.2.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.clojure</groupId>
+			<artifactId>clojure-contrib</artifactId>
+			<version>1.2.0</version>
+		</dependency>
+		<dependency>
+			<groupId>backtype</groupId>
+			<artifactId>twitter4j-core</artifactId>
+			<version>2.2.4-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>org.twitter4j</groupId>
+			<artifactId>twitter4j-stream</artifactId>
+			<version>2.2.4-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>com.googlecode.json-simple</groupId>
+			<artifactId>json-simple</artifactId>
+			<version>1.1</version>
+		</dependency>
+		 -->
+		
+		
+	</dependencies>
+
+	<!-- <dependency> <groupId>log4j</groupId> <artifactId>log4j</artifactId> 
+		<version>1.2.16</version> </dependency> -->
+		
+    <build>
+        <plugins>
+            <!-- bind the maven-assembly-plugin to the package phase this will create 
+                a jar file without the storm dependencies suitable for deployment to a cluster. -->
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                    <archive>
+                        <manifest>
+                            <mainClass>storm.starter.SequenceTopology</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>1.6</source>
+                    <target>1.6</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

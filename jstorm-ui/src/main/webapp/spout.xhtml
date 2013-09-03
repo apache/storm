@@ -1,0 +1,294 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:p="http://primefaces.org/ui">
+<h:head>
+	<title>Spout</title>
+</h:head>
+<h:body>
+	<h:outputLink value="cluster.jsf">
+		<h1>
+			<h:outputText value="JStorm UI" />
+		</h1>
+	</h:outputLink>
+	<h2>Summary
+	
+	</h2>
+	<h:form>
+		<p:dataTable id="componenttable" var="com"
+			value="#{spoutpage.coms}">
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Component Id" />
+				</f:facet>
+				<h:outputText value="#{com.componentId}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Topology Name" />
+				</f:facet>
+				<h:outputLink value="topology.jsf">
+                    <h:outputText value="#{com.topologyname}" />
+                    <f:param name="topologyid" value="#{param.topologyid}" />
+                </h:outputLink>
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Parallelism" />
+				</f:facet>
+				<h:outputText value="#{com.parallelism}" />
+			</p:column>
+		</p:dataTable>
+	</h:form>
+	<h2>
+        <h:outputText value="Component stats" />
+        <span style="display:inline-block;">
+        <form name = "aaa" action="spout.jsf" method="post">
+            <input id="topologyid" name="topologyid" type="hidden" value="#{param.topologyid}" />
+            <input id="componentid" name="componentid" type="hidden" value="#{param.componentid}" />
+            <input id="windowpara" name="windowparaname" type="hidden" value="#{param.window}" />
+            <select id ="window" name="window" onchange= "submit();">
+                <option value="0d0h10m0s">0d0h10m0s</option>
+                <option value="0d3h0m0s">0d3h0m0s</option>
+                <option value="1d0h0m0s">1d0h0m0s</option>
+                <option value="All-time">All-time</option>
+            </select>
+        </form>
+        </span>
+        
+    </h2>
+	
+	<h:form>
+		<p:dataTable id="statstable" var="stats"
+			value="#{spoutpage.comstats}" sortBy="#{stats.window}"
+			sortOrder="ASCENDING">
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Window" />
+				</f:facet>
+				<h:outputText value="#{stats.window}"/>
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Emitted" />
+				</f:facet>
+				<h:outputText value="#{stats.emitted}" />
+			</p:column>
+
+			<p:column>
+                <f:facet name="header">
+                    <h:outputText value="Send TPS" />
+                </f:facet>
+                <h:outputText value="#{stats.sendTps}" />
+            </p:column>
+            
+            <p:column>
+                <f:facet name="header">
+                    <h:outputText value="Recv TPS" />
+                </f:facet>
+                <h:outputText value="#{stats.recvTps}" />
+            </p:column>
+
+            <p:column>
+                <f:facet name="header">
+                    <h:outputText value="Process latency (ms)" />
+                </f:facet>
+                <h:outputText value="#{stats.process}" />
+            </p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Acked" />
+				</f:facet>
+				<h:outputText value="#{stats.acked}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Failed" />
+				</f:facet>
+				<h:outputText value="#{stats.failed}" />
+			</p:column>
+		</p:dataTable>
+	</h:form>
+
+	<h2>
+		<h:outputText value="Output stats(#{pm.window})" />
+	</h2>
+	<h:form>
+		<p:dataTable id="outputstable" var="coo" value="#{spoutpage.coos}"
+			sortBy="#{coo.stream}" sortOrder="ASCENDING">
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Stream" />
+				</f:facet>
+				<h:outputText value="#{coo.stream}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Emitted" />
+				</f:facet>
+				<h:outputText value="#{coo.emitted}" />
+			</p:column>
+
+			<p:column>
+                <f:facet name="header">
+                    <h:outputText value="Send TPS" />
+                </f:facet>
+                <h:outputText value="#{coo.sendTps}" />
+            </p:column>
+            
+            <p:column>
+                <f:facet name="header">
+                    <h:outputText value="Process latency (ms)" />
+                </f:facet>
+                <h:outputText value="#{coo.process}" />
+            </p:column>
+
+            <p:column>
+                <f:facet name="header">
+                    <h:outputText value="Acked" />
+                </f:facet>
+                <h:outputText value="#{coo.acked}" />
+            </p:column>
+
+            <p:column>
+                <f:facet name="header">
+                    <h:outputText value="Failed" />
+                </f:facet>
+                <h:outputText value="#{coo.failed}" />
+            </p:column>
+		</p:dataTable>
+	</h:form>
+
+	<h2>
+		<h:outputText value="Tasks(#{pm.window})" />
+	</h2>
+	<h:form>
+		<p:dataTable id="taskstable" var="ct" value="#{spoutpage.cts}"
+			sortBy="#{ct.taskid}" sortOrder="ASCENDING">
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Taskid" />
+				</f:facet>
+				<h:outputText value="#{ct.taskid}" /> 
+				<!-- 
+				<h:outputLink value="task.jsf">
+					<h:outputText value="#{ct.taskid}" />
+					<f:param name="topologyid" value="#{param.topologyid}" />
+					<f:param name="componentid" value="#{param.componentid}" />
+					<f:param name="taskid" value="#{ct.taskid}" />
+					<f:param name="window" value="#{param.window}" />
+				</h:outputLink>
+				-->
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Uptime" />
+				</f:facet>
+				<h:outputText value="#{ct.uptime}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Host" />
+				</f:facet>
+				<h:outputText value="#{ct.host}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Port" />
+				</f:facet>
+				<h:outputText value="#{ct.port}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Emitted" />
+				</f:facet>
+				<h:outputText value="#{ct.emitted}" />
+			</p:column>
+
+			<p:column>
+                <f:facet name="header">
+                    <h:outputText value="Send TPS" />
+                </f:facet>
+                <h:outputText value="#{ct.sendTps}" />
+            </p:column>
+            
+            <p:column>
+                <f:facet name="header">
+                    <h:outputText value="Recv TPS" />
+                </f:facet>
+                <h:outputText value="#{ct.recvTps}" />
+            </p:column>
+
+            <p:column>
+                <f:facet name="header">
+                    <h:outputText value="Process latency (ms)" />
+                </f:facet>
+                <h:outputText value="#{ct.process}" />
+            </p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Acked" />
+				</f:facet>
+				<h:outputText value="#{ct.acked}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Failed" />
+				</f:facet>
+				<h:outputText value="#{ct.failed}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Last Error" />
+				</f:facet>
+				<h:outputText value="#{ct.lastErr}" />
+			</p:column>
+		</p:dataTable>
+	</h:form>
+</h:body>
+<script>
+   var windowpara=document.getElementById("windowpara");
+   var windowselect=document.getElementById("window");
+   
+   if(windowselect.options[0].text == windowpara.value){
+       windowselect.options[0].selected=true;
+       return;
+   }
+   
+   if(windowselect.options[1].text == windowpara.value){
+       windowselect.options[1].selected=true;
+       return;
+   }
+   
+   if(windowselect.options[2].text == windowpara.value){
+       windowselect.options[2].selected=true;
+       return;
+   }
+   
+   if(windowselect.options[3].text == windowpara.value){
+       windowselect.options[3].selected=true;
+       return;
+   }
+
+</script>
+</html>
+
+

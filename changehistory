@@ -1,0 +1,68 @@
+# Release 0.7.1
+In this version, it will follow storm 0.7.1 interface, so the topology running
+in storm 0.7.1 can run in jstorm without any change.
+
+Stability
+1. add setting "zmq.max.queue.msg" for zeromq
+2. communication between worker and tasks without zeromq
+3. Add catch exception operation
+3.1. in supervisor SyncProcess/SyncSupervisor
+3.2. add catch exception and report_error in spout's open and bolt's prepare
+3.3. in all IO operation
+3.4. in all serialize/deserialize
+3.5. in all ZK operation
+3.6  in topology upload/download function
+3.7  during initialization zeromq
+4. do assignmen/reassignment operation in one thread to avoid competition
+5. redesign nimbus 's topology assign algorithm, make the logic simple much.
+6. redesign supervisor's sync assignment algorithm, make the logic simple much
+7. reduce zookeeper load
+7.1 redesign nimbus monitor logic, it will just scan tasks' hearbeat, frequency is 10s
+7.2 nimbus cancel watch on supervisor
+7.3 supervisor heartbeat frequence change to 10s
+7.4 supervisor syncSupervisor/syncProcess frequence change to 10s
+7.5 supervisor scan /$(ZKROOT)/assignment only once in one monitor loop
+7.6 task hearbeat change to 10s
+8 create task pid file before connection zk, this is very import when zk is unstable.
+
+
+Performance tuning
+1. reduce once memory copy when deserialize tuple, improve performance huge.
+2. split executor thread as two thread, one handing receive tuples, one sending tuples, improve performance much
+3. redeisign sample code, it will sampling every 5 seconds, not every 20 tuple once, improve performance much
+3. simplify the ack's logic, make acker more effeciency
+4. Communication between worker and tasks won't use zeromq, just memory share in process
+5. in worker's Drainer/virtualportdispatch thread, spout/bolt recv/send thread, 
+   the thread will sleep 1 ms when there is not tuple in one loop
+6. communication between worker and tasks without zeromq
+7. sampling frequence change to 5s, not every 20 tuple once.
+
+Enhancement:
+1. add IFailValueSpout interface
+2. Redesign sampling code, collection statics model become more common.
+   Add sending/recving tps statics, statics is more precise.
+3. Atomatically do deactivate action when kill/rebalance topology, 
+   and the wait time is 2 * MSG_TIMEOUT
+4. fix nongrouping bug, random.nextInt will generate value less than 0.
+5. Sleep one setting time(default is 1 minute) after finish spout open, 
+   which is used to wait other task finish initialization.
+6. Add check component name when submit topology, forbidding the component 
+   which name start with "__"
+7. change the zk's node /$(ZKROOT)/storm to /$(ZKROOT)/topology
+8. abstract topology check logic from generating real topology function
+9. when supervisor is down and topology do rebalance, the alive task under down 
+   supervisor is unavailable.
+10. add close connection operation after finish download topology binary
+11. automatically create all local dirtorie, such as 
+   /$(LOCALDIR)/supervisor/localstate
+12. when killing worker, add "kill and sleep " operation before "kill -9" operation
+13. when generate real topology binary,
+13.1. configuration priority different.   
+      component configuration > topology configuration > system configuration
+13.2. skip the output stream which target component doesn't exist.
+13.3. skip the component whose parallism is 0.
+13.4. component's parallism is less than 0, throw exception.
+14. skip ack/fail when inputstream setting is empty
+15. add topology name to the log
+16. fix ui select option error, default is 10 minutes
+17. supervisor can display all worker's status

@@ -1,0 +1,27 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.alipay.dw</groupId>
+    <artifactId>jstorm-all</artifactId>
+    <version>0.7.1</version>
+    <relativePath>..</relativePath>
+  </parent>
+  <artifactId>jstorm-server</artifactId>
+  <name>jstorm server modules</name>
+  <description>jstorm server modules</description>
+
+  
+  <dependencies>
+        <dependency>
+            <groupId>com.alipay.dw</groupId>
+            <artifactId>jstorm-client</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        
+        <dependency>
+            <groupId>com.alipay.dw</groupId>
+            <artifactId>jstorm-client-extension</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+  </dependencies>
+</project>

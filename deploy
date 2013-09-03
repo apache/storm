@@ -1,0 +1,28 @@
+
+
+Build
+
+mvn clean
+mvn package assembly:assembly
+
+
+this will build one tar
+
+
+
+
+Deploy
+
+1. Deployment for nimbus or supervisor is same as storm. so please install jzmq and zmq.
+2. Deployment for client, please copy configuration to ~/.jstorm/storm.yaml
+3. Deployment for web ui.
+3.1 copy configuration to ~/.jstorm/storm.yaml
+3.2 downlaod tomcat 7.x
+3.3 Extrade tar of tomcat 7.x
+3.4 put jstorm-ui-0.7.1.war to Tomcat's webapps directory
+
+open one webbrowser and go to $jstorm-ui-ip:8080/jstorm-ui-0.7.1 
+
+3.5 you also can change the default page as jstorm-ui, please google how to do it.
+
+

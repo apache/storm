@@ -1,0 +1,327 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:p="http://primefaces.org/ui">
+<h:head>
+	<title>Topology</title>
+</h:head>
+<h:body>
+	<h:outputLink value="cluster.jsf">
+		<h1>
+			<h:outputText value="JStorm UI" />
+		</h1>
+	</h:outputLink>
+	<h2>Topology summary</h2>
+	<h:form>
+		<p:dataTable id="topologytable" var="topology"
+			value="#{topologypage.tsumm}" sortBy="#{topology.uptime}"
+			sortOrder="ASCENDING">
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="TopologyName" />
+				</f:facet>
+				<h:outputText value="#{topology.topologyname}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="TopologyId" />
+				</f:facet>
+				<h:outputText value="#{topology.topologyid}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Status" />
+				</f:facet>
+				<h:outputText value="#{topology.status}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Uptime" />
+				</f:facet>
+				<h:outputText value="#{topology.uptime}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Num workers" />
+				</f:facet>
+				<h:outputText value="#{topology.numworkers}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Num tasks" />
+				</f:facet>
+				<h:outputText value="#{topology.numtasks}" />
+			</p:column>
+		</p:dataTable>
+	</h:form>
+	<h2 >
+        <h:outputText value="Topology stats" > </h:outputText>
+        <span style="display:inline-block;">
+        <form name = "aaa" action="topology.jsf" method="post">
+            <input id="topologyid" name="topologyid" type="hidden" value="#{param.topologyid}" />
+            <input id="windowpara" name="windowparaname" type="hidden" value="#{param.window}" />
+            <select id ="window" name="window" onchange= "submit();" >
+                <option value="0d0h10m0s">0d0h10m0s</option>
+                <option value="0d3h0m0s">0d3h0m0s</option>
+                <option value="1d0h0m0s">1d0h0m0s</option>
+                <option value="All-time">All-time</option>
+            </select>
+        </form>
+        </span>
+	</h2>
+	<h:form>
+		<p:dataTable id="statstable" var="stats"
+			value="#{topologypage.tstats}" sortBy="#{stats.window}"
+			sortOrder="ASCENDING">
+			<p:column >
+				<f:facet name="header" >
+					<h:outputText value="Window" />
+					
+					
+					
+				</f:facet>
+				<h:outputText value="#{stats.window}" />
+			
+                
+	                
+                
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Emitted" />
+				</f:facet>
+				<h:outputText value="#{stats.emitted}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Send TPS" />
+				</f:facet>
+				<h:outputText value="#{stats.sendTps}" />
+			</p:column>
+			
+			<p:column>
+                <f:facet name="header">
+                    <h:outputText value="Recv TPS" />
+                </f:facet>
+                <h:outputText value="#{stats.recvTps}" />
+            </p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Process latency (ms)" />
+				</f:facet>
+				<h:outputText value="#{stats.process}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Acked" />
+				</f:facet>
+				<h:outputText value="#{stats.acked}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Failed" />
+				</f:facet>
+				<h:outputText value="#{stats.failed}" />
+			</p:column>
+		</p:dataTable>
+	</h:form>
+
+
+	<h2>
+		<h:outputText value="Spout(#{pm.window})" />
+	</h2>
+	<h:form>
+		<p:dataTable id="spouttable" var="spout" value="#{topologypage.scom}"
+			sortBy="#{spout.componetId}" sortOrder="ASCENDING">
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="SpoutId" />
+				</f:facet>
+				<!-- <h:outputText value="#{spout.componetId}" />  -->
+				<h:outputLink value="spout.jsf">
+					<h:outputText value="#{spout.componetId}" />
+					<f:param name="topologyid" value="#{topologypage.topologyid}" />
+					<f:param name="window" value="#{topologypage.window}" />
+					<f:param name="componentid" value="#{spout.componetId}" />
+				</h:outputLink>
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Parallelism" />
+				</f:facet>
+				<h:outputText value="#{spout.parallelism}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Emitted" />
+				</f:facet>
+				<h:outputText value="#{spout.emitted}" />
+			</p:column>
+
+			<p:column>
+                <f:facet name="header">
+                    <h:outputText value="Send TPS" />
+                </f:facet>
+                <h:outputText value="#{spout.sendTps}" />
+            </p:column>
+            
+            <p:column>
+                <f:facet name="header">
+                    <h:outputText value="Recv TPS" />
+                </f:facet>
+                <h:outputText value="#{spout.recvTps}" />
+            </p:column>
+
+            <p:column>
+                <f:facet name="header">
+                    <h:outputText value="Process latency (ms)" />
+                </f:facet>
+                <h:outputText value="#{spout.process}" />
+            </p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Acked" />
+				</f:facet>
+				<h:outputText value="#{spout.acked}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Failed" />
+				</f:facet>
+				<h:outputText value="#{spout.failed}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Last Error" />
+				</f:facet>
+				<h:outputText value="#{spout.lastError}" />
+			</p:column>
+		</p:dataTable>
+
+	</h:form>
+
+	<h2>
+		<h:outputText value="Bolt(#{pm.window})" />
+	</h2>
+	<h:form>
+		<p:dataTable id="bolttable" var="bolt" value="#{topologypage.bcom}"
+			sortBy="#{bolt.componetId}" sortOrder="ASCENDING">
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="BoltId" />
+				</f:facet>
+				<!-- <h:outputText value="#{bolt.componetId}" />  -->
+				<h:outputLink value="bolt.jsf">
+					<h:outputText value="#{bolt.componetId}" />
+					<f:param name="topologyid" value="#{topologypage.topologyid}" />
+					<f:param name="window" value="#{topologypage.window}" />
+					<f:param name="componentid" value="#{bolt.componetId}" />
+				</h:outputLink>
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Parallelism" />
+				</f:facet>
+				<h:outputText value="#{bolt.parallelism}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Emitted" />
+				</f:facet>
+				<h:outputText value="#{bolt.emitted}" />
+			</p:column>
+
+			<p:column>
+                <f:facet name="header">
+                    <h:outputText value="Send TPS" />
+                </f:facet>
+                <h:outputText value="#{bolt.sendTps}" />
+            </p:column>
+            
+            <p:column>
+                <f:facet name="header">
+                    <h:outputText value="Recv TPS" />
+                </f:facet>
+                <h:outputText value="#{bolt.recvTps}" />
+            </p:column>
+
+            <p:column>
+                <f:facet name="header">
+                    <h:outputText value="Process latency (ms)" />
+                </f:facet>
+                <h:outputText value="#{bolt.process}" />
+            </p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Acked" />
+				</f:facet>
+				<h:outputText value="#{bolt.acked}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Failed" />
+				</f:facet>
+				<h:outputText value="#{bolt.failed}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Last Error" />
+				</f:facet>
+				<h:outputText value="#{bolt.lastError}" />
+			</p:column>
+		</p:dataTable>
+
+	</h:form>
+</h:body>
+<script>
+   var windowpara=document.getElementById("windowpara");
+   var windowselect=document.getElementById("window");
+   
+   if(windowselect.options[0].text == windowpara.value){
+       windowselect.options[0].selected=true;
+       return;
+   }
+   
+   if(windowselect.options[1].text == windowpara.value){
+       windowselect.options[1].selected=true;
+       return;
+   }
+   
+   if(windowselect.options[2].text == windowpara.value){
+       windowselect.options[2].selected=true;
+       return;
+   }
+   
+   if(windowselect.options[3].text == windowpara.value){
+       windowselect.options[3].selected=true;
+       return;
+   }
+
+</script>
+</html>
+
+

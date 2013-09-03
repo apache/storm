@@ -1,0 +1,90 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:p="http://primefaces.org/ui">
+    <h:head>
+        <title>Task</title>
+    </h:head>
+    <h:body>
+        <h:outputLink  value="cluster.jsf">
+               <h1><h:outputText value="JStorm UI"/></h1> 
+                    </h:outputLink >
+        <h2>Task summary</h2>
+        <h:form>
+        <p:dataTable id="tasktable" var="tsumm" value="#{taskpage.tsumms}">  
+                <p:column>  
+                    <f:facet name="header">  
+                        <h:outputText value="TaskId" />  
+                    </f:facet>  
+                    <h:outputText value="#{tsumm.taskid}" />  
+                </p:column>  
+
+                <p:column >  
+                    <f:facet name="header">  
+                        <h:outputText value="Topology Name" />  
+                    </f:facet>  
+                   <!-- <h:outputText value="#{tsumm.topologyname}" />  -->
+                     <h:outputLink  value="topology.jsf" >
+                        <h:outputText value="#{tsumm.topologyname}"/>
+                        <f:param name="topologyid" value="#{param.topologyid}"/>
+                    </h:outputLink > 
+                </p:column>  
+
+                <p:column>  
+                    <f:facet name="header">  
+                        <h:outputText value="Component Id" />  
+                    </f:facet>  
+                      
+                    <h:outputLink value="component.jsf">
+                        <h:outputText value="#{tsumm.componentId}" />
+	                    <f:param name="topologyid" value="#{param.topologyid}" />
+	                    <f:param name="componentid" value="#{param.componentid}" />
+	                </h:outputLink>
+                </p:column>  
+
+                <p:column>  
+                    <f:facet name="header">  
+                        <h:outputText value="Uptime" />  
+                    </f:facet>  
+                    <h:outputText value="#{tsumm.uptime}" />  
+                </p:column>  
+            
+            <p:column>  
+                    <f:facet name="header">  
+                        <h:outputText value="Host" />  
+                    </f:facet>  
+                    <h:outputText value="#{tsumm.host}" />  
+                </p:column>  
+            
+            <p:column>  
+                    <f:facet name="header">  
+                        <h:outputText value="Port" />  
+                    </f:facet>  
+                    <h:outputText value="#{tsumm.port}" />  
+                </p:column>  
+            </p:dataTable> 
+            </h:form>
+          <h2>Errors</h2>
+        <h:form>
+        <p:dataTable id="etable" var="esumm" value="#{taskpage.esumms}" sortBy="#{esumm.time}" sortOrder="DESCENDING">   
+                <p:column>  
+                    <f:facet name="header">  
+                        <h:outputText value="Time" />  
+                    </f:facet>
+                        <h:outputText value="#{esumm.time}"/>
+                </p:column>  
+
+                <p:column>  
+                    <f:facet name="header">  
+                        <h:outputText value="Error" />  
+                    </f:facet>  
+                    <h:outputText value="#{esumm.error}" />  
+                </p:column>  
+            </p:dataTable> 
+            </h:form>
+    </h:body>
+</html>
+
+
