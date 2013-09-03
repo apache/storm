@@ -1,23 +1,22 @@
-Implement Storm with Java.
+JStorm is java storm.
 
 if you have any question, please contact to hustjackie@gmail.com
 
-# Why we wan't implement JStorm?
-Storm is wonderful product, but it is implemented with Clojure. We don't like clojure.
-it isn't a populate language, so in Alibaba, few people can fix the bug of storm.<br />
-We are the first users of Storm since it has been open source. During using, we found 
-several problem such as zeromq, zookeeper, performance. 
-So we decide to implement JStorm.
+# Why we want to implement JStorm?
+Storm is a wonderful product, but it is being implemented with Clojure. We don't like clojure,
+which isn't a populate language. So in Alibaba, few guys can fix the bug of storm.<br />
+At the same time, we found several problem such as zeromq, zookeeper, performance. 
+So we decide to implement JStorm, implementing storm with java.
 # What's the status of JStorm?
-From 20130430, Alipay begin to use JStorm. Today 20130901, JStorm of Alipay will handle 
-40TB/3billion message from outside . In some topology, it won't allow lose one message.
+From 2013-05-01, Alipay begin to use JStorm. Till now 2013-09-01, JStorm of Alipay will handle 
+40TB/3billion messages from other cluster . In some topologies, it won't allow lose one message.
 # What is difference between JStorm and Storm?
 In general, JStorm is Java Storm, most of all client interfaces are from Storm. so the 
-old topology can directly run on JStorm without any change.<br />
-But there are 3 point different from Storm.<br />
+old topology can directly run on JStorm without any change, even building.<br />
+But there are 3 points different from Storm.<br />
 <br />JStorm is more stable than Storm
 <br />JStorm is more fast than Storm
-<br />Jstorm provide more useful feature.
-<br />Please refer to the file "changehistory"
+<br />Jstorm provide more useful features.
+<br />Please refer to the file "changehistory" for details
 # How to build/deploy?
-Please refer to the file "deploy"
+Please refer to the file "deploy" for details
