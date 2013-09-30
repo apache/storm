@@ -14,7 +14,9 @@ this will build one tar
 Deploy
 
 1. Deployment for nimbus or supervisor is same as storm. so please install jzmq and zmq.
-2. Deployment for client, please copy configuration to ~/.jstorm/storm.yaml
+2. Deployment for client, 
+2.1 please copy configuration to ~/.jstorm/storm.yaml 
+2.2 touch $JSTORM_HOME/RELEASE
 3. Deployment for web ui.
 3.1 copy configuration to ~/.jstorm/storm.yaml
 3.2 downlaod tomcat 7.x

@@ -27,6 +27,11 @@
 			<id>clojars</id>
 			<url>http://clojars.org/repo/</url>
 		</repository>
+		<repository>
+          <id>central2</id>
+          <name>libs-release</name>
+          <url>https://repository.cloudera.com/artifactory/libs-release</url>
+        </repository>
 	</repositories>
 	<build>
 		<plugins>
