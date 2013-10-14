@@ -27,7 +27,14 @@
 		<developerConnection>scm:git:git@github.com:ptgoetz/storm-jms.git</developerConnection>
 		<url>:git@github.com:ptgoetz/storm-jms.git</url>
 	</scm>
-
+	
+	<repositories>
+                <repository>
+                  <id>clojars.org</id>
+                  <url>http://clojars.org/repo</url>
+                </repository>
+        </repositories>
+	
 	<developers>
 		<developer>
 			<id>ptgoetz</id>
