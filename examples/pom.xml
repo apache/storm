@@ -52,7 +52,7 @@
 		<dependency>
 			<groupId>com.github.ptgoetz</groupId>
 			<artifactId>storm-jms</artifactId>
-			<version>0.8.1-SNAPSHOT</version>
+			<version>0.8.2-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.activemq</groupId>
