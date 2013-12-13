@@ -29,3 +29,5 @@ target
 *.ipr
 *.iws
 .idea
+.classpath
+.project
