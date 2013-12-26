@@ -26,9 +26,8 @@ import java.util.List;
 import java.util.Map;
 
 
-// need a "final bolt" method, that does fields groupings based on the first field of previous streams.
-// preparerequest needs to emit to a special stream to indicate which task in the last bolt is responsible for that id?
-// -- what if it's shuffle grouping all the way through? need to enforce that last bolt do fields grouping on id...
+// Trident subsumes the functionality provided by this class, so it's deprecated
+@Deprecated
 public class LinearDRPCTopologyBuilder {    
     String _function;
     List<Component> _components = new ArrayList<Component>();
@@ -38,7 +37,7 @@ public class LinearDRPCTopologyBuilder {
         _function = function;
     }
         
-    public LinearDRPCInputDeclarer addBolt(IBatchBolt bolt, int parallelism) {
+    public LinearDRPCInputDeclarer addBolt(IBatchBolt bolt, Number parallelism) {
         return addBolt(new BatchBoltExecutor(bolt), parallelism);
     }
     
@@ -47,23 +46,24 @@ public class LinearDRPCTopologyBuilder {
     }
     
     @Deprecated
-    public LinearDRPCInputDeclarer addBolt(IRichBolt bolt, int parallelism) {
-        Component component = new Component(bolt, parallelism);
+    public LinearDRPCInputDeclarer addBolt(IRichBolt bolt, Number parallelism) {
+        if(parallelism==null) parallelism = 1; 
+        Component component = new Component(bolt, parallelism.intValue());
         _components.add(component);
         return new InputDeclarerImpl(component);
     }
     
     @Deprecated
     public LinearDRPCInputDeclarer addBolt(IRichBolt bolt) {
-        return addBolt(bolt, 1);
+        return addBolt(bolt, null);
     }
     
-    public LinearDRPCInputDeclarer addBolt(IBasicBolt bolt, int parallelism) {
+    public LinearDRPCInputDeclarer addBolt(IBasicBolt bolt, Number parallelism) {
         return addBolt(new BasicBoltExecutor(bolt), parallelism);
     }
 
     public LinearDRPCInputDeclarer addBolt(IBasicBolt bolt) {
-        return addBolt(bolt, 1);
+        return addBolt(bolt, null);
     }
         
     public StormTopology createLocalTopology(ILocalDRPC drpc) {

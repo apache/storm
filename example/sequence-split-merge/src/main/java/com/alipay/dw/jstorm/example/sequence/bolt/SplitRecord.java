@@ -2,7 +2,8 @@ package com.alipay.dw.jstorm.example.sequence.bolt;
 
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.BasicOutputCollector;
@@ -20,7 +21,7 @@ import com.alipay.dw.jstorm.example.sequence.bean.TradeCustomer;
 
 public class SplitRecord implements IBasicBolt {
 	
-	public static Logger LOG = Logger.getLogger(SplitRecord.class);
+	public static Logger LOG = LoggerFactory.getLogger(SplitRecord.class);
 	
 	private TpsCounter          tpsCounter;
 

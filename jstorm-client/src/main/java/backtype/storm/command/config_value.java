@@ -19,7 +19,7 @@ public class config_value {
     public static void main(String[] args) {
         // TODO Auto-generated method stub
         if (args == null || args.length == 0) {
-            throw new InvalidParameterException("Should input topology name");
+            throw new InvalidParameterException("Should input key name");
         }
         
         String key = args[0];

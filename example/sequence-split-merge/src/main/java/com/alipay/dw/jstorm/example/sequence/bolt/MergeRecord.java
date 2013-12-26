@@ -4,7 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
@@ -22,7 +23,7 @@ public class MergeRecord implements IRichBolt {
      */
     private static final long serialVersionUID = -5984311734042330577L;
 
-    public static Logger     LOG         = Logger.getLogger(MergeRecord.class);
+    public static Logger     LOG         = LoggerFactory.getLogger(MergeRecord.class);
     
     private Map<Long, Tuple> tradeMap    = new HashMap<Long, Tuple>();
     private Map<Long, Tuple> customerMap = new HashMap<Long, Tuple>();

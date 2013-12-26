@@ -3,7 +3,8 @@ package com.alipay.dw.jstorm.example.sequence.spout;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import backtype.storm.spout.SpoutOutputCollector;
 import backtype.storm.task.TopologyContext;
@@ -27,7 +28,7 @@ public class SequenceSpout implements IRichSpout {
      */
     private static final long serialVersionUID = 1L;
 
-    public static final Logger LOG = Logger.getLogger(SequenceSpout.class);
+    public static final Logger LOG = LoggerFactory.getLogger(SequenceSpout.class);
 
 	SpoutOutputCollector collector;
 
@@ -70,7 +71,7 @@ public class SequenceSpout implements IRichSpout {
 	
 	private AtomicLong tradeSum = new AtomicLong(0);
     private AtomicLong customerSum = new AtomicLong(0);
-	
+    
     public void emit() {
         
         Pair trade = PairMaker.makeTradeInstance();
@@ -82,13 +83,24 @@ public class SequenceSpout implements IRichSpout {
         
         tradeSum.addAndGet(trade.getValue());
         customerSum.addAndGet(customer.getValue());
-
         
-        collector.emit(new Values(tupleId, tradeCustomer), Long.valueOf(tupleId));
+    	collector.emit(new Values(tupleId, tradeCustomer), Long.valueOf(tupleId));
         
-        tupleId++;
+    	tupleId++;
+      
+    	tpsCounter.count();
+    	
+//    	try {
+//			Thread.sleep(1);
+//		} catch (InterruptedException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
         
-        tpsCounter.count();
+//    	collector.emit(new Values(System.currentTimeMillis()));
+//    	
+//    	tpsCounter.count();
+        
     }
 
 	public void nextTuple() {
@@ -144,6 +156,7 @@ public class SequenceSpout implements IRichSpout {
 
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
 		declarer.declare(new Fields("ID", "RECORD"));
+//		declarer.declare(new Fields("ID"));
 	}
 
 	public Map<String, Object> getComponentConfiguration() {

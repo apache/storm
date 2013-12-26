@@ -27,14 +27,20 @@ public class TaskSummary implements org.apache.thrift.TBase<TaskSummary, TaskSum
   private static final org.apache.thrift.protocol.TField TASK_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("task_id", org.apache.thrift.protocol.TType.I32, (short)1);
   private static final org.apache.thrift.protocol.TField COMPONENT_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("component_id", org.apache.thrift.protocol.TType.STRING, (short)2);
   private static final org.apache.thrift.protocol.TField HOST_FIELD_DESC = new org.apache.thrift.protocol.TField("host", org.apache.thrift.protocol.TType.STRING, (short)3);
-  private static final org.apache.thrift.protocol.TField PORT_FIELD_DESC = new org.apache.thrift.protocol.TField("port", org.apache.thrift.protocol.TType.I32, (short)4);
-  private static final org.apache.thrift.protocol.TField UPTIME_SECS_FIELD_DESC = new org.apache.thrift.protocol.TField("uptime_secs", org.apache.thrift.protocol.TType.I32, (short)5);
-  private static final org.apache.thrift.protocol.TField ERRORS_FIELD_DESC = new org.apache.thrift.protocol.TField("errors", org.apache.thrift.protocol.TType.LIST, (short)6);
-  private static final org.apache.thrift.protocol.TField STATS_FIELD_DESC = new org.apache.thrift.protocol.TField("stats", org.apache.thrift.protocol.TType.STRUCT, (short)7);
+  private static final org.apache.thrift.protocol.TField CPU_FIELD_DESC = new org.apache.thrift.protocol.TField("cpu", org.apache.thrift.protocol.TType.I32, (short)4);
+  private static final org.apache.thrift.protocol.TField MEM_FIELD_DESC = new org.apache.thrift.protocol.TField("mem", org.apache.thrift.protocol.TType.I32, (short)5);
+  private static final org.apache.thrift.protocol.TField DISK_FIELD_DESC = new org.apache.thrift.protocol.TField("disk", org.apache.thrift.protocol.TType.STRING, (short)6);
+  private static final org.apache.thrift.protocol.TField PORT_FIELD_DESC = new org.apache.thrift.protocol.TField("port", org.apache.thrift.protocol.TType.I32, (short)7);
+  private static final org.apache.thrift.protocol.TField UPTIME_SECS_FIELD_DESC = new org.apache.thrift.protocol.TField("uptime_secs", org.apache.thrift.protocol.TType.I32, (short)8);
+  private static final org.apache.thrift.protocol.TField ERRORS_FIELD_DESC = new org.apache.thrift.protocol.TField("errors", org.apache.thrift.protocol.TType.LIST, (short)9);
+  private static final org.apache.thrift.protocol.TField STATS_FIELD_DESC = new org.apache.thrift.protocol.TField("stats", org.apache.thrift.protocol.TType.STRUCT, (short)10);
 
   private int task_id; // required
   private String component_id; // required
   private String host; // required
+  private int cpu; // required
+  private int mem; // required
+  private String disk; // required
   private int port; // required
   private int uptime_secs; // required
   private List<ErrorInfo> errors; // required
@@ -45,10 +51,13 @@ public class TaskSummary implements org.apache.thrift.TBase<TaskSummary, TaskSum
     TASK_ID((short)1, "task_id"),
     COMPONENT_ID((short)2, "component_id"),
     HOST((short)3, "host"),
-    PORT((short)4, "port"),
-    UPTIME_SECS((short)5, "uptime_secs"),
-    ERRORS((short)6, "errors"),
-    STATS((short)7, "stats");
+    CPU((short)4, "cpu"),
+    MEM((short)5, "mem"),
+    DISK((short)6, "disk"),
+    PORT((short)7, "port"),
+    UPTIME_SECS((short)8, "uptime_secs"),
+    ERRORS((short)9, "errors"),
+    STATS((short)10, "stats");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -69,13 +78,19 @@ public class TaskSummary implements org.apache.thrift.TBase<TaskSummary, TaskSum
           return COMPONENT_ID;
         case 3: // HOST
           return HOST;
-        case 4: // PORT
+        case 4: // CPU
+          return CPU;
+        case 5: // MEM
+          return MEM;
+        case 6: // DISK
+          return DISK;
+        case 7: // PORT
           return PORT;
-        case 5: // UPTIME_SECS
+        case 8: // UPTIME_SECS
           return UPTIME_SECS;
-        case 6: // ERRORS
+        case 9: // ERRORS
           return ERRORS;
-        case 7: // STATS
+        case 10: // STATS
           return STATS;
         default:
           return null;
@@ -118,9 +133,11 @@ public class TaskSummary implements org.apache.thrift.TBase<TaskSummary, TaskSum
 
   // isset id assignments
   private static final int __TASK_ID_ISSET_ID = 0;
-  private static final int __PORT_ISSET_ID = 1;
-  private static final int __UPTIME_SECS_ISSET_ID = 2;
-  private BitSet __isset_bit_vector = new BitSet(3);
+  private static final int __CPU_ISSET_ID = 1;
+  private static final int __MEM_ISSET_ID = 2;
+  private static final int __PORT_ISSET_ID = 3;
+  private static final int __UPTIME_SECS_ISSET_ID = 4;
+  private BitSet __isset_bit_vector = new BitSet(5);
 
   public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
   static {
@@ -130,6 +147,12 @@ public class TaskSummary implements org.apache.thrift.TBase<TaskSummary, TaskSum
     tmpMap.put(_Fields.COMPONENT_ID, new org.apache.thrift.meta_data.FieldMetaData("component_id", org.apache.thrift.TFieldRequirementType.REQUIRED, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
     tmpMap.put(_Fields.HOST, new org.apache.thrift.meta_data.FieldMetaData("host", org.apache.thrift.TFieldRequirementType.REQUIRED, 
+        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
+    tmpMap.put(_Fields.CPU, new org.apache.thrift.meta_data.FieldMetaData("cpu", org.apache.thrift.TFieldRequirementType.REQUIRED, 
+        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
+    tmpMap.put(_Fields.MEM, new org.apache.thrift.meta_data.FieldMetaData("mem", org.apache.thrift.TFieldRequirementType.REQUIRED, 
+        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
+    tmpMap.put(_Fields.DISK, new org.apache.thrift.meta_data.FieldMetaData("disk", org.apache.thrift.TFieldRequirementType.REQUIRED, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
     tmpMap.put(_Fields.PORT, new org.apache.thrift.meta_data.FieldMetaData("port", org.apache.thrift.TFieldRequirementType.REQUIRED, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
@@ -151,6 +174,9 @@ public class TaskSummary implements org.apache.thrift.TBase<TaskSummary, TaskSum
     int task_id,
     String component_id,
     String host,
+    int cpu,
+    int mem,
+    String disk,
     int port,
     int uptime_secs,
     List<ErrorInfo> errors)
@@ -160,6 +186,11 @@ public class TaskSummary implements org.apache.thrift.TBase<TaskSummary, TaskSum
     set_task_id_isSet(true);
     this.component_id = component_id;
     this.host = host;
+    this.cpu = cpu;
+    set_cpu_isSet(true);
+    this.mem = mem;
+    set_mem_isSet(true);
+    this.disk = disk;
     this.port = port;
     set_port_isSet(true);
     this.uptime_secs = uptime_secs;
@@ -179,6 +210,11 @@ public class TaskSummary implements org.apache.thrift.TBase<TaskSummary, TaskSum
     }
     if (other.is_set_host()) {
       this.host = other.host;
+    }
+    this.cpu = other.cpu;
+    this.mem = other.mem;
+    if (other.is_set_disk()) {
+      this.disk = other.disk;
     }
     this.port = other.port;
     this.uptime_secs = other.uptime_secs;
@@ -204,6 +240,11 @@ public class TaskSummary implements org.apache.thrift.TBase<TaskSummary, TaskSum
     this.task_id = 0;
     this.component_id = null;
     this.host = null;
+    set_cpu_isSet(false);
+    this.cpu = 0;
+    set_mem_isSet(false);
+    this.mem = 0;
+    this.disk = null;
     set_port_isSet(false);
     this.port = 0;
     set_uptime_secs_isSet(false);
@@ -277,6 +318,73 @@ public class TaskSummary implements org.apache.thrift.TBase<TaskSummary, TaskSum
   public void set_host_isSet(boolean value) {
     if (!value) {
       this.host = null;
+    }
+  }
+
+  public int get_cpu() {
+    return this.cpu;
+  }
+
+  public void set_cpu(int cpu) {
+    this.cpu = cpu;
+    set_cpu_isSet(true);
+  }
+
+  public void unset_cpu() {
+    __isset_bit_vector.clear(__CPU_ISSET_ID);
+  }
+
+  /** Returns true if field cpu is set (has been assigned a value) and false otherwise */
+  public boolean is_set_cpu() {
+    return __isset_bit_vector.get(__CPU_ISSET_ID);
+  }
+
+  public void set_cpu_isSet(boolean value) {
+    __isset_bit_vector.set(__CPU_ISSET_ID, value);
+  }
+
+  public int get_mem() {
+    return this.mem;
+  }
+
+  public void set_mem(int mem) {
+    this.mem = mem;
+    set_mem_isSet(true);
+  }
+
+  public void unset_mem() {
+    __isset_bit_vector.clear(__MEM_ISSET_ID);
+  }
+
+  /** Returns true if field mem is set (has been assigned a value) and false otherwise */
+  public boolean is_set_mem() {
+    return __isset_bit_vector.get(__MEM_ISSET_ID);
+  }
+
+  public void set_mem_isSet(boolean value) {
+    __isset_bit_vector.set(__MEM_ISSET_ID, value);
+  }
+
+  public String get_disk() {
+    return this.disk;
+  }
+
+  public void set_disk(String disk) {
+    this.disk = disk;
+  }
+
+  public void unset_disk() {
+    this.disk = null;
+  }
+
+  /** Returns true if field disk is set (has been assigned a value) and false otherwise */
+  public boolean is_set_disk() {
+    return this.disk != null;
+  }
+
+  public void set_disk_isSet(boolean value) {
+    if (!value) {
+      this.disk = null;
     }
   }
 
@@ -411,6 +519,30 @@ public class TaskSummary implements org.apache.thrift.TBase<TaskSummary, TaskSum
       }
       break;
 
+    case CPU:
+      if (value == null) {
+        unset_cpu();
+      } else {
+        set_cpu((Integer)value);
+      }
+      break;
+
+    case MEM:
+      if (value == null) {
+        unset_mem();
+      } else {
+        set_mem((Integer)value);
+      }
+      break;
+
+    case DISK:
+      if (value == null) {
+        unset_disk();
+      } else {
+        set_disk((String)value);
+      }
+      break;
+
     case PORT:
       if (value == null) {
         unset_port();
@@ -457,6 +589,15 @@ public class TaskSummary implements org.apache.thrift.TBase<TaskSummary, TaskSum
     case HOST:
       return get_host();
 
+    case CPU:
+      return Integer.valueOf(get_cpu());
+
+    case MEM:
+      return Integer.valueOf(get_mem());
+
+    case DISK:
+      return get_disk();
+
     case PORT:
       return Integer.valueOf(get_port());
 
@@ -486,6 +627,12 @@ public class TaskSummary implements org.apache.thrift.TBase<TaskSummary, TaskSum
       return is_set_component_id();
     case HOST:
       return is_set_host();
+    case CPU:
+      return is_set_cpu();
+    case MEM:
+      return is_set_mem();
+    case DISK:
+      return is_set_disk();
     case PORT:
       return is_set_port();
     case UPTIME_SECS:
@@ -535,6 +682,33 @@ public class TaskSummary implements org.apache.thrift.TBase<TaskSummary, TaskSum
       if (!(this_present_host && that_present_host))
         return false;
       if (!this.host.equals(that.host))
+        return false;
+    }
+
+    boolean this_present_cpu = true;
+    boolean that_present_cpu = true;
+    if (this_present_cpu || that_present_cpu) {
+      if (!(this_present_cpu && that_present_cpu))
+        return false;
+      if (this.cpu != that.cpu)
+        return false;
+    }
+
+    boolean this_present_mem = true;
+    boolean that_present_mem = true;
+    if (this_present_mem || that_present_mem) {
+      if (!(this_present_mem && that_present_mem))
+        return false;
+      if (this.mem != that.mem)
+        return false;
+    }
+
+    boolean this_present_disk = true && this.is_set_disk();
+    boolean that_present_disk = true && that.is_set_disk();
+    if (this_present_disk || that_present_disk) {
+      if (!(this_present_disk && that_present_disk))
+        return false;
+      if (!this.disk.equals(that.disk))
         return false;
     }
 
@@ -596,6 +770,21 @@ public class TaskSummary implements org.apache.thrift.TBase<TaskSummary, TaskSum
     if (present_host)
       builder.append(host);
 
+    boolean present_cpu = true;
+    builder.append(present_cpu);
+    if (present_cpu)
+      builder.append(cpu);
+
+    boolean present_mem = true;
+    builder.append(present_mem);
+    if (present_mem)
+      builder.append(mem);
+
+    boolean present_disk = true && (is_set_disk());
+    builder.append(present_disk);
+    if (present_disk)
+      builder.append(disk);
+
     boolean present_port = true;
     builder.append(present_port);
     if (present_port)
@@ -653,6 +842,36 @@ public class TaskSummary implements org.apache.thrift.TBase<TaskSummary, TaskSum
     }
     if (is_set_host()) {
       lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.host, typedOther.host);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_cpu()).compareTo(typedOther.is_set_cpu());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_cpu()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.cpu, typedOther.cpu);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_mem()).compareTo(typedOther.is_set_mem());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_mem()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.mem, typedOther.mem);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_disk()).compareTo(typedOther.is_set_disk());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_disk()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.disk, typedOther.disk);
       if (lastComparison != 0) {
         return lastComparison;
       }
@@ -736,7 +955,30 @@ public class TaskSummary implements org.apache.thrift.TBase<TaskSummary, TaskSum
             org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
           }
           break;
-        case 4: // PORT
+        case 4: // CPU
+          if (field.type == org.apache.thrift.protocol.TType.I32) {
+            this.cpu = iprot.readI32();
+            set_cpu_isSet(true);
+          } else { 
+            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
+        case 5: // MEM
+          if (field.type == org.apache.thrift.protocol.TType.I32) {
+            this.mem = iprot.readI32();
+            set_mem_isSet(true);
+          } else { 
+            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
+        case 6: // DISK
+          if (field.type == org.apache.thrift.protocol.TType.STRING) {
+            this.disk = iprot.readString();
+          } else { 
+            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
+        case 7: // PORT
           if (field.type == org.apache.thrift.protocol.TType.I32) {
             this.port = iprot.readI32();
             set_port_isSet(true);
@@ -744,7 +986,7 @@ public class TaskSummary implements org.apache.thrift.TBase<TaskSummary, TaskSum
             org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
           }
           break;
-        case 5: // UPTIME_SECS
+        case 8: // UPTIME_SECS
           if (field.type == org.apache.thrift.protocol.TType.I32) {
             this.uptime_secs = iprot.readI32();
             set_uptime_secs_isSet(true);
@@ -752,17 +994,17 @@ public class TaskSummary implements org.apache.thrift.TBase<TaskSummary, TaskSum
             org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
           }
           break;
-        case 6: // ERRORS
+        case 9: // ERRORS
           if (field.type == org.apache.thrift.protocol.TType.LIST) {
             {
-              org.apache.thrift.protocol.TList _list105 = iprot.readListBegin();
-              this.errors = new ArrayList<ErrorInfo>(_list105.size);
-              for (int _i106 = 0; _i106 < _list105.size; ++_i106)
+              org.apache.thrift.protocol.TList _list185 = iprot.readListBegin();
+              this.errors = new ArrayList<ErrorInfo>(_list185.size);
+              for (int _i186 = 0; _i186 < _list185.size; ++_i186)
               {
-                ErrorInfo _elem107; // required
-                _elem107 = new ErrorInfo();
-                _elem107.read(iprot);
-                this.errors.add(_elem107);
+                ErrorInfo _elem187; // required
+                _elem187 = new ErrorInfo();
+                _elem187.read(iprot);
+                this.errors.add(_elem187);
               }
               iprot.readListEnd();
             }
@@ -770,7 +1012,7 @@ public class TaskSummary implements org.apache.thrift.TBase<TaskSummary, TaskSum
             org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
           }
           break;
-        case 7: // STATS
+        case 10: // STATS
           if (field.type == org.apache.thrift.protocol.TType.STRUCT) {
             this.stats = new TaskStats();
             this.stats.read(iprot);
@@ -804,6 +1046,17 @@ public class TaskSummary implements org.apache.thrift.TBase<TaskSummary, TaskSum
       oprot.writeString(this.host);
       oprot.writeFieldEnd();
     }
+    oprot.writeFieldBegin(CPU_FIELD_DESC);
+    oprot.writeI32(this.cpu);
+    oprot.writeFieldEnd();
+    oprot.writeFieldBegin(MEM_FIELD_DESC);
+    oprot.writeI32(this.mem);
+    oprot.writeFieldEnd();
+    if (this.disk != null) {
+      oprot.writeFieldBegin(DISK_FIELD_DESC);
+      oprot.writeString(this.disk);
+      oprot.writeFieldEnd();
+    }
     oprot.writeFieldBegin(PORT_FIELD_DESC);
     oprot.writeI32(this.port);
     oprot.writeFieldEnd();
@@ -814,9 +1067,9 @@ public class TaskSummary implements org.apache.thrift.TBase<TaskSummary, TaskSum
       oprot.writeFieldBegin(ERRORS_FIELD_DESC);
       {
         oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, this.errors.size()));
-        for (ErrorInfo _iter108 : this.errors)
+        for (ErrorInfo _iter188 : this.errors)
         {
-          _iter108.write(oprot);
+          _iter188.write(oprot);
         }
         oprot.writeListEnd();
       }
@@ -855,6 +1108,22 @@ public class TaskSummary implements org.apache.thrift.TBase<TaskSummary, TaskSum
       sb.append("null");
     } else {
       sb.append(this.host);
+    }
+    first = false;
+    if (!first) sb.append(", ");
+    sb.append("cpu:");
+    sb.append(this.cpu);
+    first = false;
+    if (!first) sb.append(", ");
+    sb.append("mem:");
+    sb.append(this.mem);
+    first = false;
+    if (!first) sb.append(", ");
+    sb.append("disk:");
+    if (this.disk == null) {
+      sb.append("null");
+    } else {
+      sb.append(this.disk);
     }
     first = false;
     if (!first) sb.append(", ");
@@ -899,6 +1168,18 @@ public class TaskSummary implements org.apache.thrift.TBase<TaskSummary, TaskSum
 
     if (!is_set_host()) {
       throw new org.apache.thrift.protocol.TProtocolException("Required field 'host' is unset! Struct:" + toString());
+    }
+
+    if (!is_set_cpu()) {
+      throw new org.apache.thrift.protocol.TProtocolException("Required field 'cpu' is unset! Struct:" + toString());
+    }
+
+    if (!is_set_mem()) {
+      throw new org.apache.thrift.protocol.TProtocolException("Required field 'mem' is unset! Struct:" + toString());
+    }
+
+    if (!is_set_disk()) {
+      throw new org.apache.thrift.protocol.TProtocolException("Required field 'disk' is unset! Struct:" + toString());
     }
 
     if (!is_set_port()) {

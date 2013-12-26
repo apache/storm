@@ -1,29 +1,34 @@
 package backtype.storm.serialization;
 
-import com.esotericsoftware.kryo.ObjectBuffer;
-import java.io.ByteArrayInputStream;
+import backtype.storm.utils.ListDelegate;
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 public class KryoValuesDeserializer {
-    ObjectBuffer _kryo;
+    Kryo _kryo;
+    Input _kryoInput;
     
     public KryoValuesDeserializer(Map conf) {
         _kryo = SerializationFactory.getKryo(conf);
+        _kryoInput = new Input(1);
     }
     
-    public List<Object> deserializeFrom(InputStream in) throws IOException { 
-        return (List<Object>) _kryo.readObject(in, ArrayList.class);
+    public List<Object> deserializeFrom(Input input) {
+    	ListDelegate delegate = (ListDelegate) _kryo.readObject(input, ListDelegate.class);
+    	return delegate.getDelegate();
     }
     
     public List<Object> deserialize(byte[] ser) throws IOException {
-        return deserializeFrom(new ByteArrayInputStream(ser));
+        _kryoInput.setBuffer(ser);
+        return deserializeFrom(_kryoInput);
     }
     
     public Object deserializeObject(byte[] ser) throws IOException {
-        return _kryo.readClassAndObject(new ByteArrayInputStream(ser));
+        _kryoInput.setBuffer(ser);
+        return _kryo.readClassAndObject(_kryoInput);
     }
 }

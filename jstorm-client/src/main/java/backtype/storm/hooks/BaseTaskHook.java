@@ -1,6 +1,7 @@
 package backtype.storm.hooks;
 
 import backtype.storm.hooks.info.BoltAckInfo;
+import backtype.storm.hooks.info.BoltExecuteInfo;
 import backtype.storm.hooks.info.BoltFailInfo;
 import backtype.storm.hooks.info.EmitInfo;
 import backtype.storm.hooks.info.SpoutAckInfo;
@@ -38,6 +39,6 @@ public class BaseTaskHook implements ITaskHook {
     }
 
     @Override
-    public void error(Throwable error) {
+    public void boltExecute(BoltExecuteInfo info) {
     }
 }

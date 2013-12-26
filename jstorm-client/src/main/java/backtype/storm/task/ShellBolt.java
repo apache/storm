@@ -13,7 +13,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import java.util.List;
 import java.util.Map;
-import org.apache.log4j.Logger;
+import java.util.Random;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.json.simple.JSONObject;
 
 /**
@@ -44,7 +46,7 @@ import org.json.simple.JSONObject;
  * </pre>
  */
 public class ShellBolt implements IBolt {
-    public static Logger LOG = Logger.getLogger(ShellBolt.class);
+    public static Logger LOG = LoggerFactory.getLogger(ShellBolt.class);
     Process _subprocess;
     OutputCollector _collector;
     Map<String, Tuple> _inputs = new ConcurrentHashMap<String, Tuple>();
@@ -52,7 +54,9 @@ public class ShellBolt implements IBolt {
     private String[] _command;
     private ShellProcess _process;
     private volatile boolean _running = true;
+    private volatile Throwable _exception;
     private LinkedBlockingQueue _pendingWrites = new LinkedBlockingQueue();
+    private Random _rand;
     
     private Thread _readerThread;
     private Thread _writerThread;
@@ -67,6 +71,7 @@ public class ShellBolt implements IBolt {
 
     public void prepare(Map stormConf, TopologyContext context,
                         final OutputCollector collector) {
+        _rand = new Random();
         _process = new ShellProcess(_command);
         _collector = collector;
 
@@ -75,7 +80,7 @@ public class ShellBolt implements IBolt {
             Number subpid = _process.launch(stormConf, context);
             LOG.info("Launched subprocess with pid " + subpid);
         } catch (IOException e) {
-            throw new RuntimeException("Error when launching multilang subprocess", e);
+            throw new RuntimeException("Error when launching multilang subprocess\n" + _process.getErrorsString(), e);
         }
 
         // reader
@@ -93,15 +98,17 @@ public class ShellBolt implements IBolt {
                             handleAck(action);
                         } else if (command.equals("fail")) {
                             handleFail(action);
+                        } else if (command.equals("error")) {
+                            handleError(action);
                         } else if (command.equals("log")) {
                             String msg = (String) action.get("msg");
                             LOG.info("Shell msg: " + msg);
                         } else if (command.equals("emit")) {
                             handleEmit(action);
                         }
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
                     } catch (InterruptedException e) {
+                    } catch (Throwable t) {
+                        die(t);
                     }
                 }
             }
@@ -117,9 +124,11 @@ public class ShellBolt implements IBolt {
                         if (write != null) {
                             _process.writeMessage(write);
                         }
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
+                        // drain the error stream to avoid dead lock because of full error stream buffer
+                        _process.drainErrorStream();
                     } catch (InterruptedException e) {
+                    } catch (Throwable t) {
+                        die(t);
                     }
                 }
             }
@@ -129,8 +138,12 @@ public class ShellBolt implements IBolt {
     }
 
     public void execute(Tuple input) {
+        if (_exception != null) {
+            throw new RuntimeException(_exception);
+        }
+
         //just need an id
-        String genId = Long.toString(MessageId.generateId());
+        String genId = Long.toString(_rand.nextLong());
         _inputs.put(genId, input);
         try {
             JSONObject obj = new JSONObject();
@@ -169,6 +182,11 @@ public class ShellBolt implements IBolt {
         _collector.fail(failed);
     }
 
+    private void handleError(Map action) {
+        String msg = (String) action.get("msg");
+        _collector.reportError(new Exception("Shell Process Exception: " + msg));
+    }
+
     private void handleEmit(Map action) throws InterruptedException {
         String stream = (String) action.get("stream");
         if(stream==null) stream = Utils.DEFAULT_STREAM_ID;
@@ -190,9 +208,16 @@ public class ShellBolt implements IBolt {
         }
         if(task==null) {
             List<Integer> outtasks = _collector.emit(stream, anchors, tuple);
-            _pendingWrites.put(outtasks);
+            Object need_task_ids = action.get("need_task_ids");
+            if (need_task_ids == null || ((Boolean) need_task_ids).booleanValue()) {
+                _pendingWrites.put(outtasks);
+            }
         } else {
             _collector.emitDirect((int)task.longValue(), stream, anchors, tuple);
         }
+    }
+
+    private void die(Throwable exception) {
+        _exception = exception;
     }
 }

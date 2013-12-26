@@ -6,7 +6,9 @@
 
  storm.zookeeper.root: "/jstorm"
  
- storm.local.dir: "/mnt/jstorm"
+ storm.local.dir: "jstorm"
+ 
+ java.library.path: "/usr/local/lib:/opt/local/lib:/usr/lib"
 # 
 # 
 # ##### These may optionally be filled in:
@@ -21,5 +23,28 @@
      - "localhost"
 
 
+# storm.messaging.transport: "com.alibaba.jstorm.message.netty.NettyContext"
+ storm.messaging.transport: "com.alibaba.jstorm.message.zeroMq.MQContext"
+ 
+ #if it is null, then it will be detect by system
+ supervisor.cpu.slot.num: null
 
+ #if it is null, then it will be detect by system
+ supervisor.mem.slot.num: null
 
+# support disk slot
+# if it is null, it will use $(storm.local.dir)/worker_shared_data
+ supervisor.disk.slot: null
+
+# if use multiple disks, it can be set as the following
+#supervisor.disk.slot:
+#	- /disk0/jstorm/data
+#	- /disk1/jstorm/data
+#	- /disk2/jstorm/data
+#	- /disk3/jstorm/data
+
+ supervisor.slots.ports:
+    - 6800
+    - 6801
+    - 6802
+    - 6803

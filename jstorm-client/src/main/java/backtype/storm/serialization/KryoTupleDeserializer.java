@@ -1,68 +1,70 @@
 package backtype.storm.serialization;
 
-import backtype.storm.task.TopologyContext;
+import backtype.storm.task.GeneralTopologyContext;
 import backtype.storm.tuple.MessageId;
 import backtype.storm.tuple.Tuple;
-import backtype.storm.utils.ThreadResourceManager;
+import backtype.storm.tuple.TupleImpl;
+import backtype.storm.tuple.TupleImplExt;
 import backtype.storm.utils.WritableUtils;
+
+import com.esotericsoftware.kryo.io.Input;
+
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 
 public class KryoTupleDeserializer implements ITupleDeserializer {
     public static final boolean USE_RAW_PACKET = true;
     
-    ThreadResourceManager<Worker> _manager;
+    GeneralTopologyContext _context;
+    KryoValuesDeserializer _kryo;
+    SerializationFactory.IdDictionary _ids;
+    Input _kryoInput;
     
-    public KryoTupleDeserializer(final Map conf, final TopologyContext context) {
-        _manager = new ThreadResourceManager<Worker>(new ThreadResourceManager.ResourceFactory<Worker>() {
-            @Override
-            public Worker makeResource() {
-                return new Worker(conf, context);
-            }           
-        });
-    }
-    
-    @Override
-    public Tuple deserialize(byte[] ser) {
-        Worker worker = _manager.acquire();        
-        try {
-            return worker.deserialize(ser);
-        } finally {
-            _manager.release(worker);
-        }
-    }
-    
-    public static class Worker implements ITupleDeserializer {
-        TopologyContext _context;
-        KryoValuesDeserializer _kryo;
-        SerializationFactory.IdDictionary _ids;
-    
-        public Worker(Map conf, TopologyContext context) {
-            _kryo = new KryoValuesDeserializer(conf);
-            _context = context;
-            _ids = new SerializationFactory.IdDictionary(context.getRawTopology());
-        }
+    public KryoTupleDeserializer(final Map conf, final GeneralTopologyContext context) {
+        _kryo = new KryoValuesDeserializer(conf);
+        _context = context;
+        _ids = new SerializationFactory.IdDictionary(context.getRawTopology());
+        _kryoInput = new Input(1);
+    }        
 
-        public Tuple deserialize(byte[] ser) {
-            try {
-                ByteArrayInputStream bin = new ByteArrayInputStream(ser);
-                DataInputStream in = new DataInputStream(bin);
-                if (USE_RAW_PACKET == true) {
-                    int targetTaskId = in.readInt();
-                }
-                int taskId = WritableUtils.readVInt(in);
-                int streamId = WritableUtils.readVInt(in);
-                String componentName = _context.getComponentId(taskId);
-                String streamName = _ids.getStreamName(componentName, streamId);
-                MessageId id = MessageId.deserialize(in);
-                List<Object> values = _kryo.deserializeFrom(bin);
-                return new Tuple(_context, values, taskId, streamName, id);
-            } catch(IOException e) {
-                throw new RuntimeException(e);
-            }
+    public Tuple deserialize(byte[] ser) {
+        try {
+            
+            
+            _kryoInput.setBuffer(ser);
+
+            int targetTaskId = _kryoInput.readInt();
+            int taskId = _kryoInput.readInt(true);
+            int streamId = _kryoInput.readInt(true);
+            String componentName = _context.getComponentId(taskId);
+            String streamName = _ids.getStreamName(componentName, streamId);
+            MessageId id = MessageId.deserialize(_kryoInput);
+            List<Object> values = _kryo.deserializeFrom(_kryoInput);
+            TupleImplExt tuple = new TupleImplExt(_context, values, taskId, streamName, id);
+            tuple.setTargetTaskId(targetTaskId);
+            return tuple;
+        } catch(IOException e) {
+            throw new RuntimeException(e);
         }
+    }
+    
+    /**
+     * just get target taskId
+     * 
+     * @param ser
+     * @return
+     */
+    public static int deserializeTaskId(byte[] ser) {
+        Input _kryoInput = new Input(1);
+        
+        _kryoInput.setBuffer(ser);
+
+        int targetTaskId = _kryoInput.readInt();
+        
+        return targetTaskId;
     }
 }

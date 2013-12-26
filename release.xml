@@ -9,7 +9,7 @@
 		<file>
 			<source>jstorm-server/bin/jstorm.py</source>
 			<outputDirectory>/bin</outputDirectory>
-			<fileMode>0755</fileMode>
+			<fileMode>0755</fileMode> 
 			<destName>jstorm</destName>
 		</file>
 	</files>
@@ -29,6 +29,7 @@
 	</fileSets>
 	<moduleSets>
 		<moduleSet>
+			
 		<!-- 
 			<includes>
 				<include>com.alipay.dw:jstorm-client</include>
@@ -42,8 +43,8 @@
 				<dependencySets>
 					<dependencySet>
 					   <excludes>
-					       <exclude>com.alipay.dw:jstorm-client</exclude>
-			                <exclude>com.alipay.dw:jstorm-client-extension</exclude>
+					       <exclude>com.alibaba.jstorm:jstorm-client</exclude>
+			                <exclude>com.alibaba.jstorm:jstorm-client-extension</exclude>
 					   </excludes>
 						<outputDirectory>lib</outputDirectory>
 					</dependencySet>
@@ -51,5 +52,5 @@
 			</binaries>
 		</moduleSet>
 	</moduleSets>
-
+	
 </assembly>

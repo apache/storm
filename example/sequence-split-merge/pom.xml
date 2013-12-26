@@ -37,16 +37,16 @@
 		-->
 		
 		<dependency>
-            <groupId>com.alipay.dw</groupId>
+            <groupId>com.alibaba.jstorm</groupId>
             <artifactId>jstorm-client</artifactId>
-            <version>0.7.1</version>
+            <version>0.9.0-snapshot</version>
             <scope>provided</scope>
         </dependency>
 		
 		<dependency>
-            <groupId>com.alipay.dw</groupId>
+            <groupId>com.alibaba.jstorm</groupId>
             <artifactId>jstorm-client-extension</artifactId>
-            <version>0.7.1</version>
+            <version>0.9.0-snapshot</version>
         </dependency>
 
 		<!-- 

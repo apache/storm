@@ -3,7 +3,8 @@ package com.alipay.dw.jstorm.example.sequence.bolt;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
@@ -15,7 +16,7 @@ import com.alipay.dw.jstorm.example.TpsCounter;
 import com.alipay.dw.jstorm.example.sequence.bean.TradeCustomer;
 
 public class TotalCount implements IRichBolt {
-    public static Logger     LOG         = Logger.getLogger(TotalCount.class);
+    public static Logger     LOG         = LoggerFactory.getLogger(TotalCount.class);
     
     private OutputCollector  collector;
     private TpsCounter          tpsCounter;
@@ -38,8 +39,6 @@ public class TotalCount implements IRichBolt {
     @Override
     public void execute(Tuple input) {
         
-        
-        
         Long tupleId = input.getLong(0);
         TradeCustomer tradeCustomer = (TradeCustomer) input.getValue(1);
         
@@ -53,6 +52,8 @@ public class TotalCount implements IRichBolt {
         
         tpsCounter.count(spend);
         
+//    	  long spend = System.currentTimeMillis() - input.getLong(0);
+//    	  tpsCounter.count(spend);
     }
     
     public void cleanup() {

@@ -1,47 +1,46 @@
 package backtype.storm.utils;
 
-import backtype.storm.Config;
-import backtype.storm.generated.Nimbus;
 import java.util.Map;
-import org.apache.thrift.TException;
-import org.apache.thrift.protocol.TBinaryProtocol;
-import org.apache.thrift.transport.TFramedTransport;
-import org.apache.thrift.transport.TSocket;
-import org.apache.thrift.transport.TTransport;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class NimbusClient {
-    public static NimbusClient getConfiguredClient(Map conf) {
-        String nimbusHost = (String) conf.get(Config.NIMBUS_HOST);
-        int nimbusPort = Utils.getInt(conf.get(Config.NIMBUS_THRIFT_PORT));
-        return new NimbusClient(nimbusHost, nimbusPort);
-    }
+import backtype.storm.generated.Nimbus;
+import backtype.storm.security.auth.ThriftClient;
 
-    private TTransport conn;
-    private Nimbus.Client client;
-
-    public NimbusClient(String host) {
-        this(host, 6627);
-    }
-
-    public NimbusClient(String host, int port) {
+public class NimbusClient extends ThriftClient {
+    private Nimbus.Client _client;
+    private static final Logger LOG = LoggerFactory.getLogger(NimbusClient.class);
+    
+    @SuppressWarnings("unchecked")
+	public static NimbusClient getConfiguredClient(Map conf) {
         try {
-            if(host==null) {
-                throw new IllegalArgumentException("Nimbus host is not set");
-            }
-            conn = new TFramedTransport(new TSocket(host, port));
-            client = new Nimbus.Client(new TBinaryProtocol(conn));
-            conn.open();
-        } catch(TException e) {
-            throw new RuntimeException(e);
+        	//String nimbusHost = (String) conf.get(Config.NIMBUS_HOST);
+            //int nimbusPort = Utils.getInt(conf.get(Config.NIMBUS_THRIFT_PORT));
+            //return new NimbusClient(conf, nimbusHost, nimbusPort);
+        	return new NimbusClient(conf);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
         }
     }
 
-    public Nimbus.Client getClient() {
-        return client;
+    private NimbusClient(Map conf) throws Exception {
+        this(conf, null);
     }
 
-    public void close() {
-        conn.close();
+    @SuppressWarnings("unchecked")
+	private NimbusClient(Map conf, Integer timeout) throws Exception {
+        super(conf, timeout);
+        flush();
     }
+
+    public Nimbus.Client getClient() {
+        return _client;
+    }
+
+	@Override
+	protected void flush() {
+		// TODO Auto-generated method stub
+		_client = new Nimbus.Client(_protocol);
+	}
 }

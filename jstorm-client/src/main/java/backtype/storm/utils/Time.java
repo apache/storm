@@ -4,15 +4,16 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class Time {
-    public static Logger LOG = Logger.getLogger(Time.class);    
+    public static Logger LOG = LoggerFactory.getLogger(Time.class);    
     
     private static AtomicBoolean simulating = new AtomicBoolean(false);
     //TODO: should probably use weak references here or something
-    private static Map<Thread, AtomicLong> threadSleepTimes;
+    private static volatile Map<Thread, AtomicLong> threadSleepTimes;
     private static final Object sleepTimesLock = new Object();
     
     private static AtomicLong simulatedCurrTimeMs; //should this be a thread local that's allowed to keep advancing?
@@ -63,6 +64,10 @@ public class Time {
         } else {
             return System.currentTimeMillis();
         }
+    }
+    
+    public static int currentTimeSecs() {
+        return (int) (currentTimeMillis() / 1000);
     }
     
     public static void advanceTime(long ms) {

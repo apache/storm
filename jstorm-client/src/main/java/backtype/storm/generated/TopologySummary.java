@@ -26,26 +26,35 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
 
   private static final org.apache.thrift.protocol.TField ID_FIELD_DESC = new org.apache.thrift.protocol.TField("id", org.apache.thrift.protocol.TType.STRING, (short)1);
   private static final org.apache.thrift.protocol.TField NAME_FIELD_DESC = new org.apache.thrift.protocol.TField("name", org.apache.thrift.protocol.TType.STRING, (short)2);
-  private static final org.apache.thrift.protocol.TField NUM_TASKS_FIELD_DESC = new org.apache.thrift.protocol.TField("num_tasks", org.apache.thrift.protocol.TType.I32, (short)3);
-  private static final org.apache.thrift.protocol.TField NUM_WORKERS_FIELD_DESC = new org.apache.thrift.protocol.TField("num_workers", org.apache.thrift.protocol.TType.I32, (short)4);
-  private static final org.apache.thrift.protocol.TField UPTIME_SECS_FIELD_DESC = new org.apache.thrift.protocol.TField("uptime_secs", org.apache.thrift.protocol.TType.I32, (short)5);
-  private static final org.apache.thrift.protocol.TField STATUS_FIELD_DESC = new org.apache.thrift.protocol.TField("status", org.apache.thrift.protocol.TType.STRING, (short)6);
+  private static final org.apache.thrift.protocol.TField STATUS_FIELD_DESC = new org.apache.thrift.protocol.TField("status", org.apache.thrift.protocol.TType.STRING, (short)3);
+  private static final org.apache.thrift.protocol.TField UPTIME_SECS_FIELD_DESC = new org.apache.thrift.protocol.TField("uptime_secs", org.apache.thrift.protocol.TType.I32, (short)4);
+  private static final org.apache.thrift.protocol.TField NUM_TASKS_FIELD_DESC = new org.apache.thrift.protocol.TField("num_tasks", org.apache.thrift.protocol.TType.I32, (short)5);
+  private static final org.apache.thrift.protocol.TField NUM_WORKERS_FIELD_DESC = new org.apache.thrift.protocol.TField("num_workers", org.apache.thrift.protocol.TType.I32, (short)6);
+  private static final org.apache.thrift.protocol.TField NUM_CPU_FIELD_DESC = new org.apache.thrift.protocol.TField("num_cpu", org.apache.thrift.protocol.TType.I32, (short)7);
+  private static final org.apache.thrift.protocol.TField NUM_MEM_FIELD_DESC = new org.apache.thrift.protocol.TField("num_mem", org.apache.thrift.protocol.TType.I32, (short)8);
+  private static final org.apache.thrift.protocol.TField NUM_DISK_FIELD_DESC = new org.apache.thrift.protocol.TField("num_disk", org.apache.thrift.protocol.TType.I32, (short)9);
 
   private String id; // required
   private String name; // required
+  private String status; // required
+  private int uptime_secs; // required
   private int num_tasks; // required
   private int num_workers; // required
-  private int uptime_secs; // required
-  private String status; // required
+  private int num_cpu; // required
+  private int num_mem; // required
+  private int num_disk; // required
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift.TFieldIdEnum {
     ID((short)1, "id"),
     NAME((short)2, "name"),
-    NUM_TASKS((short)3, "num_tasks"),
-    NUM_WORKERS((short)4, "num_workers"),
-    UPTIME_SECS((short)5, "uptime_secs"),
-    STATUS((short)6, "status");
+    STATUS((short)3, "status"),
+    UPTIME_SECS((short)4, "uptime_secs"),
+    NUM_TASKS((short)5, "num_tasks"),
+    NUM_WORKERS((short)6, "num_workers"),
+    NUM_CPU((short)7, "num_cpu"),
+    NUM_MEM((short)8, "num_mem"),
+    NUM_DISK((short)9, "num_disk");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -64,14 +73,20 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
           return ID;
         case 2: // NAME
           return NAME;
-        case 3: // NUM_TASKS
-          return NUM_TASKS;
-        case 4: // NUM_WORKERS
-          return NUM_WORKERS;
-        case 5: // UPTIME_SECS
-          return UPTIME_SECS;
-        case 6: // STATUS
+        case 3: // STATUS
           return STATUS;
+        case 4: // UPTIME_SECS
+          return UPTIME_SECS;
+        case 5: // NUM_TASKS
+          return NUM_TASKS;
+        case 6: // NUM_WORKERS
+          return NUM_WORKERS;
+        case 7: // NUM_CPU
+          return NUM_CPU;
+        case 8: // NUM_MEM
+          return NUM_MEM;
+        case 9: // NUM_DISK
+          return NUM_DISK;
         default:
           return null;
       }
@@ -112,10 +127,13 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
   }
 
   // isset id assignments
-  private static final int __NUM_TASKS_ISSET_ID = 0;
-  private static final int __NUM_WORKERS_ISSET_ID = 1;
-  private static final int __UPTIME_SECS_ISSET_ID = 2;
-  private BitSet __isset_bit_vector = new BitSet(3);
+  private static final int __UPTIME_SECS_ISSET_ID = 0;
+  private static final int __NUM_TASKS_ISSET_ID = 1;
+  private static final int __NUM_WORKERS_ISSET_ID = 2;
+  private static final int __NUM_CPU_ISSET_ID = 3;
+  private static final int __NUM_MEM_ISSET_ID = 4;
+  private static final int __NUM_DISK_ISSET_ID = 5;
+  private BitSet __isset_bit_vector = new BitSet(6);
 
   public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
   static {
@@ -124,14 +142,20 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
     tmpMap.put(_Fields.NAME, new org.apache.thrift.meta_data.FieldMetaData("name", org.apache.thrift.TFieldRequirementType.REQUIRED, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
+    tmpMap.put(_Fields.STATUS, new org.apache.thrift.meta_data.FieldMetaData("status", org.apache.thrift.TFieldRequirementType.REQUIRED, 
+        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
+    tmpMap.put(_Fields.UPTIME_SECS, new org.apache.thrift.meta_data.FieldMetaData("uptime_secs", org.apache.thrift.TFieldRequirementType.REQUIRED, 
+        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
     tmpMap.put(_Fields.NUM_TASKS, new org.apache.thrift.meta_data.FieldMetaData("num_tasks", org.apache.thrift.TFieldRequirementType.REQUIRED, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
     tmpMap.put(_Fields.NUM_WORKERS, new org.apache.thrift.meta_data.FieldMetaData("num_workers", org.apache.thrift.TFieldRequirementType.REQUIRED, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
-    tmpMap.put(_Fields.UPTIME_SECS, new org.apache.thrift.meta_data.FieldMetaData("uptime_secs", org.apache.thrift.TFieldRequirementType.REQUIRED, 
+    tmpMap.put(_Fields.NUM_CPU, new org.apache.thrift.meta_data.FieldMetaData("num_cpu", org.apache.thrift.TFieldRequirementType.REQUIRED, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
-    tmpMap.put(_Fields.STATUS, new org.apache.thrift.meta_data.FieldMetaData("status", org.apache.thrift.TFieldRequirementType.REQUIRED, 
-        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
+    tmpMap.put(_Fields.NUM_MEM, new org.apache.thrift.meta_data.FieldMetaData("num_mem", org.apache.thrift.TFieldRequirementType.REQUIRED, 
+        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
+    tmpMap.put(_Fields.NUM_DISK, new org.apache.thrift.meta_data.FieldMetaData("num_disk", org.apache.thrift.TFieldRequirementType.REQUIRED, 
+        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
     metaDataMap = Collections.unmodifiableMap(tmpMap);
     org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(TopologySummary.class, metaDataMap);
   }
@@ -142,21 +166,30 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
   public TopologySummary(
     String id,
     String name,
+    String status,
+    int uptime_secs,
     int num_tasks,
     int num_workers,
-    int uptime_secs,
-    String status)
+    int num_cpu,
+    int num_mem,
+    int num_disk)
   {
     this();
     this.id = id;
     this.name = name;
+    this.status = status;
+    this.uptime_secs = uptime_secs;
+    set_uptime_secs_isSet(true);
     this.num_tasks = num_tasks;
     set_num_tasks_isSet(true);
     this.num_workers = num_workers;
     set_num_workers_isSet(true);
-    this.uptime_secs = uptime_secs;
-    set_uptime_secs_isSet(true);
-    this.status = status;
+    this.num_cpu = num_cpu;
+    set_num_cpu_isSet(true);
+    this.num_mem = num_mem;
+    set_num_mem_isSet(true);
+    this.num_disk = num_disk;
+    set_num_disk_isSet(true);
   }
 
   /**
@@ -171,12 +204,15 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
     if (other.is_set_name()) {
       this.name = other.name;
     }
-    this.num_tasks = other.num_tasks;
-    this.num_workers = other.num_workers;
-    this.uptime_secs = other.uptime_secs;
     if (other.is_set_status()) {
       this.status = other.status;
     }
+    this.uptime_secs = other.uptime_secs;
+    this.num_tasks = other.num_tasks;
+    this.num_workers = other.num_workers;
+    this.num_cpu = other.num_cpu;
+    this.num_mem = other.num_mem;
+    this.num_disk = other.num_disk;
   }
 
   public TopologySummary deepCopy() {
@@ -187,13 +223,19 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
   public void clear() {
     this.id = null;
     this.name = null;
+    this.status = null;
+    set_uptime_secs_isSet(false);
+    this.uptime_secs = 0;
     set_num_tasks_isSet(false);
     this.num_tasks = 0;
     set_num_workers_isSet(false);
     this.num_workers = 0;
-    set_uptime_secs_isSet(false);
-    this.uptime_secs = 0;
-    this.status = null;
+    set_num_cpu_isSet(false);
+    this.num_cpu = 0;
+    set_num_mem_isSet(false);
+    this.num_mem = 0;
+    set_num_disk_isSet(false);
+    this.num_disk = 0;
   }
 
   public String get_id() {
@@ -242,6 +284,51 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
     }
   }
 
+  public String get_status() {
+    return this.status;
+  }
+
+  public void set_status(String status) {
+    this.status = status;
+  }
+
+  public void unset_status() {
+    this.status = null;
+  }
+
+  /** Returns true if field status is set (has been assigned a value) and false otherwise */
+  public boolean is_set_status() {
+    return this.status != null;
+  }
+
+  public void set_status_isSet(boolean value) {
+    if (!value) {
+      this.status = null;
+    }
+  }
+
+  public int get_uptime_secs() {
+    return this.uptime_secs;
+  }
+
+  public void set_uptime_secs(int uptime_secs) {
+    this.uptime_secs = uptime_secs;
+    set_uptime_secs_isSet(true);
+  }
+
+  public void unset_uptime_secs() {
+    __isset_bit_vector.clear(__UPTIME_SECS_ISSET_ID);
+  }
+
+  /** Returns true if field uptime_secs is set (has been assigned a value) and false otherwise */
+  public boolean is_set_uptime_secs() {
+    return __isset_bit_vector.get(__UPTIME_SECS_ISSET_ID);
+  }
+
+  public void set_uptime_secs_isSet(boolean value) {
+    __isset_bit_vector.set(__UPTIME_SECS_ISSET_ID, value);
+  }
+
   public int get_num_tasks() {
     return this.num_tasks;
   }
@@ -286,49 +373,70 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
     __isset_bit_vector.set(__NUM_WORKERS_ISSET_ID, value);
   }
 
-  public int get_uptime_secs() {
-    return this.uptime_secs;
+  public int get_num_cpu() {
+    return this.num_cpu;
   }
 
-  public void set_uptime_secs(int uptime_secs) {
-    this.uptime_secs = uptime_secs;
-    set_uptime_secs_isSet(true);
+  public void set_num_cpu(int num_cpu) {
+    this.num_cpu = num_cpu;
+    set_num_cpu_isSet(true);
   }
 
-  public void unset_uptime_secs() {
-    __isset_bit_vector.clear(__UPTIME_SECS_ISSET_ID);
+  public void unset_num_cpu() {
+    __isset_bit_vector.clear(__NUM_CPU_ISSET_ID);
   }
 
-  /** Returns true if field uptime_secs is set (has been assigned a value) and false otherwise */
-  public boolean is_set_uptime_secs() {
-    return __isset_bit_vector.get(__UPTIME_SECS_ISSET_ID);
+  /** Returns true if field num_cpu is set (has been assigned a value) and false otherwise */
+  public boolean is_set_num_cpu() {
+    return __isset_bit_vector.get(__NUM_CPU_ISSET_ID);
   }
 
-  public void set_uptime_secs_isSet(boolean value) {
-    __isset_bit_vector.set(__UPTIME_SECS_ISSET_ID, value);
+  public void set_num_cpu_isSet(boolean value) {
+    __isset_bit_vector.set(__NUM_CPU_ISSET_ID, value);
   }
 
-  public String get_status() {
-    return this.status;
+  public int get_num_mem() {
+    return this.num_mem;
   }
 
-  public void set_status(String status) {
-    this.status = status;
+  public void set_num_mem(int num_mem) {
+    this.num_mem = num_mem;
+    set_num_mem_isSet(true);
   }
 
-  public void unset_status() {
-    this.status = null;
+  public void unset_num_mem() {
+    __isset_bit_vector.clear(__NUM_MEM_ISSET_ID);
   }
 
-  /** Returns true if field status is set (has been assigned a value) and false otherwise */
-  public boolean is_set_status() {
-    return this.status != null;
+  /** Returns true if field num_mem is set (has been assigned a value) and false otherwise */
+  public boolean is_set_num_mem() {
+    return __isset_bit_vector.get(__NUM_MEM_ISSET_ID);
   }
 
-  public void set_status_isSet(boolean value) {
-    if (!value) {
-      this.status = null;
-    }
+  public void set_num_mem_isSet(boolean value) {
+    __isset_bit_vector.set(__NUM_MEM_ISSET_ID, value);
+  }
+
+  public int get_num_disk() {
+    return this.num_disk;
+  }
+
+  public void set_num_disk(int num_disk) {
+    this.num_disk = num_disk;
+    set_num_disk_isSet(true);
+  }
+
+  public void unset_num_disk() {
+    __isset_bit_vector.clear(__NUM_DISK_ISSET_ID);
+  }
+
+  /** Returns true if field num_disk is set (has been assigned a value) and false otherwise */
+  public boolean is_set_num_disk() {
+    return __isset_bit_vector.get(__NUM_DISK_ISSET_ID);
+  }
+
+  public void set_num_disk_isSet(boolean value) {
+    __isset_bit_vector.set(__NUM_DISK_ISSET_ID, value);
   }
 
   public void setFieldValue(_Fields field, Object value) {
@@ -349,6 +457,22 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
       }
       break;
 
+    case STATUS:
+      if (value == null) {
+        unset_status();
+      } else {
+        set_status((String)value);
+      }
+      break;
+
+    case UPTIME_SECS:
+      if (value == null) {
+        unset_uptime_secs();
+      } else {
+        set_uptime_secs((Integer)value);
+      }
+      break;
+
     case NUM_TASKS:
       if (value == null) {
         unset_num_tasks();
@@ -365,19 +489,27 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
       }
       break;
 
-    case UPTIME_SECS:
+    case NUM_CPU:
       if (value == null) {
-        unset_uptime_secs();
+        unset_num_cpu();
       } else {
-        set_uptime_secs((Integer)value);
+        set_num_cpu((Integer)value);
       }
       break;
 
-    case STATUS:
+    case NUM_MEM:
       if (value == null) {
-        unset_status();
+        unset_num_mem();
       } else {
-        set_status((String)value);
+        set_num_mem((Integer)value);
+      }
+      break;
+
+    case NUM_DISK:
+      if (value == null) {
+        unset_num_disk();
+      } else {
+        set_num_disk((Integer)value);
       }
       break;
 
@@ -392,17 +524,26 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
     case NAME:
       return get_name();
 
+    case STATUS:
+      return get_status();
+
+    case UPTIME_SECS:
+      return Integer.valueOf(get_uptime_secs());
+
     case NUM_TASKS:
       return Integer.valueOf(get_num_tasks());
 
     case NUM_WORKERS:
       return Integer.valueOf(get_num_workers());
 
-    case UPTIME_SECS:
-      return Integer.valueOf(get_uptime_secs());
+    case NUM_CPU:
+      return Integer.valueOf(get_num_cpu());
 
-    case STATUS:
-      return get_status();
+    case NUM_MEM:
+      return Integer.valueOf(get_num_mem());
+
+    case NUM_DISK:
+      return Integer.valueOf(get_num_disk());
 
     }
     throw new IllegalStateException();
@@ -419,14 +560,20 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
       return is_set_id();
     case NAME:
       return is_set_name();
+    case STATUS:
+      return is_set_status();
+    case UPTIME_SECS:
+      return is_set_uptime_secs();
     case NUM_TASKS:
       return is_set_num_tasks();
     case NUM_WORKERS:
       return is_set_num_workers();
-    case UPTIME_SECS:
-      return is_set_uptime_secs();
-    case STATUS:
-      return is_set_status();
+    case NUM_CPU:
+      return is_set_num_cpu();
+    case NUM_MEM:
+      return is_set_num_mem();
+    case NUM_DISK:
+      return is_set_num_disk();
     }
     throw new IllegalStateException();
   }
@@ -462,6 +609,24 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
         return false;
     }
 
+    boolean this_present_status = true && this.is_set_status();
+    boolean that_present_status = true && that.is_set_status();
+    if (this_present_status || that_present_status) {
+      if (!(this_present_status && that_present_status))
+        return false;
+      if (!this.status.equals(that.status))
+        return false;
+    }
+
+    boolean this_present_uptime_secs = true;
+    boolean that_present_uptime_secs = true;
+    if (this_present_uptime_secs || that_present_uptime_secs) {
+      if (!(this_present_uptime_secs && that_present_uptime_secs))
+        return false;
+      if (this.uptime_secs != that.uptime_secs)
+        return false;
+    }
+
     boolean this_present_num_tasks = true;
     boolean that_present_num_tasks = true;
     if (this_present_num_tasks || that_present_num_tasks) {
@@ -480,21 +645,30 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
         return false;
     }
 
-    boolean this_present_uptime_secs = true;
-    boolean that_present_uptime_secs = true;
-    if (this_present_uptime_secs || that_present_uptime_secs) {
-      if (!(this_present_uptime_secs && that_present_uptime_secs))
+    boolean this_present_num_cpu = true;
+    boolean that_present_num_cpu = true;
+    if (this_present_num_cpu || that_present_num_cpu) {
+      if (!(this_present_num_cpu && that_present_num_cpu))
         return false;
-      if (this.uptime_secs != that.uptime_secs)
+      if (this.num_cpu != that.num_cpu)
         return false;
     }
 
-    boolean this_present_status = true && this.is_set_status();
-    boolean that_present_status = true && that.is_set_status();
-    if (this_present_status || that_present_status) {
-      if (!(this_present_status && that_present_status))
+    boolean this_present_num_mem = true;
+    boolean that_present_num_mem = true;
+    if (this_present_num_mem || that_present_num_mem) {
+      if (!(this_present_num_mem && that_present_num_mem))
         return false;
-      if (!this.status.equals(that.status))
+      if (this.num_mem != that.num_mem)
+        return false;
+    }
+
+    boolean this_present_num_disk = true;
+    boolean that_present_num_disk = true;
+    if (this_present_num_disk || that_present_num_disk) {
+      if (!(this_present_num_disk && that_present_num_disk))
+        return false;
+      if (this.num_disk != that.num_disk)
         return false;
     }
 
@@ -515,6 +689,16 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
     if (present_name)
       builder.append(name);
 
+    boolean present_status = true && (is_set_status());
+    builder.append(present_status);
+    if (present_status)
+      builder.append(status);
+
+    boolean present_uptime_secs = true;
+    builder.append(present_uptime_secs);
+    if (present_uptime_secs)
+      builder.append(uptime_secs);
+
     boolean present_num_tasks = true;
     builder.append(present_num_tasks);
     if (present_num_tasks)
@@ -525,15 +709,20 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
     if (present_num_workers)
       builder.append(num_workers);
 
-    boolean present_uptime_secs = true;
-    builder.append(present_uptime_secs);
-    if (present_uptime_secs)
-      builder.append(uptime_secs);
+    boolean present_num_cpu = true;
+    builder.append(present_num_cpu);
+    if (present_num_cpu)
+      builder.append(num_cpu);
 
-    boolean present_status = true && (is_set_status());
-    builder.append(present_status);
-    if (present_status)
-      builder.append(status);
+    boolean present_num_mem = true;
+    builder.append(present_num_mem);
+    if (present_num_mem)
+      builder.append(num_mem);
+
+    boolean present_num_disk = true;
+    builder.append(present_num_disk);
+    if (present_num_disk)
+      builder.append(num_disk);
 
     return builder.toHashCode();
   }
@@ -566,6 +755,26 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
         return lastComparison;
       }
     }
+    lastComparison = Boolean.valueOf(is_set_status()).compareTo(typedOther.is_set_status());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_status()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.status, typedOther.status);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_uptime_secs()).compareTo(typedOther.is_set_uptime_secs());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_uptime_secs()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.uptime_secs, typedOther.uptime_secs);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
     lastComparison = Boolean.valueOf(is_set_num_tasks()).compareTo(typedOther.is_set_num_tasks());
     if (lastComparison != 0) {
       return lastComparison;
@@ -586,22 +795,32 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
         return lastComparison;
       }
     }
-    lastComparison = Boolean.valueOf(is_set_uptime_secs()).compareTo(typedOther.is_set_uptime_secs());
+    lastComparison = Boolean.valueOf(is_set_num_cpu()).compareTo(typedOther.is_set_num_cpu());
     if (lastComparison != 0) {
       return lastComparison;
     }
-    if (is_set_uptime_secs()) {
-      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.uptime_secs, typedOther.uptime_secs);
+    if (is_set_num_cpu()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.num_cpu, typedOther.num_cpu);
       if (lastComparison != 0) {
         return lastComparison;
       }
     }
-    lastComparison = Boolean.valueOf(is_set_status()).compareTo(typedOther.is_set_status());
+    lastComparison = Boolean.valueOf(is_set_num_mem()).compareTo(typedOther.is_set_num_mem());
     if (lastComparison != 0) {
       return lastComparison;
     }
-    if (is_set_status()) {
-      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.status, typedOther.status);
+    if (is_set_num_mem()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.num_mem, typedOther.num_mem);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_num_disk()).compareTo(typedOther.is_set_num_disk());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_num_disk()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.num_disk, typedOther.num_disk);
       if (lastComparison != 0) {
         return lastComparison;
       }
@@ -637,23 +856,14 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
             org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
           }
           break;
-        case 3: // NUM_TASKS
-          if (field.type == org.apache.thrift.protocol.TType.I32) {
-            this.num_tasks = iprot.readI32();
-            set_num_tasks_isSet(true);
+        case 3: // STATUS
+          if (field.type == org.apache.thrift.protocol.TType.STRING) {
+            this.status = iprot.readString();
           } else { 
             org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
           }
           break;
-        case 4: // NUM_WORKERS
-          if (field.type == org.apache.thrift.protocol.TType.I32) {
-            this.num_workers = iprot.readI32();
-            set_num_workers_isSet(true);
-          } else { 
-            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
-          }
-          break;
-        case 5: // UPTIME_SECS
+        case 4: // UPTIME_SECS
           if (field.type == org.apache.thrift.protocol.TType.I32) {
             this.uptime_secs = iprot.readI32();
             set_uptime_secs_isSet(true);
@@ -661,9 +871,42 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
             org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
           }
           break;
-        case 6: // STATUS
-          if (field.type == org.apache.thrift.protocol.TType.STRING) {
-            this.status = iprot.readString();
+        case 5: // NUM_TASKS
+          if (field.type == org.apache.thrift.protocol.TType.I32) {
+            this.num_tasks = iprot.readI32();
+            set_num_tasks_isSet(true);
+          } else { 
+            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
+        case 6: // NUM_WORKERS
+          if (field.type == org.apache.thrift.protocol.TType.I32) {
+            this.num_workers = iprot.readI32();
+            set_num_workers_isSet(true);
+          } else { 
+            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
+        case 7: // NUM_CPU
+          if (field.type == org.apache.thrift.protocol.TType.I32) {
+            this.num_cpu = iprot.readI32();
+            set_num_cpu_isSet(true);
+          } else { 
+            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
+        case 8: // NUM_MEM
+          if (field.type == org.apache.thrift.protocol.TType.I32) {
+            this.num_mem = iprot.readI32();
+            set_num_mem_isSet(true);
+          } else { 
+            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
+        case 9: // NUM_DISK
+          if (field.type == org.apache.thrift.protocol.TType.I32) {
+            this.num_disk = iprot.readI32();
+            set_num_disk_isSet(true);
           } else { 
             org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
           }
@@ -691,20 +934,29 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
       oprot.writeString(this.name);
       oprot.writeFieldEnd();
     }
+    if (this.status != null) {
+      oprot.writeFieldBegin(STATUS_FIELD_DESC);
+      oprot.writeString(this.status);
+      oprot.writeFieldEnd();
+    }
+    oprot.writeFieldBegin(UPTIME_SECS_FIELD_DESC);
+    oprot.writeI32(this.uptime_secs);
+    oprot.writeFieldEnd();
     oprot.writeFieldBegin(NUM_TASKS_FIELD_DESC);
     oprot.writeI32(this.num_tasks);
     oprot.writeFieldEnd();
     oprot.writeFieldBegin(NUM_WORKERS_FIELD_DESC);
     oprot.writeI32(this.num_workers);
     oprot.writeFieldEnd();
-    oprot.writeFieldBegin(UPTIME_SECS_FIELD_DESC);
-    oprot.writeI32(this.uptime_secs);
+    oprot.writeFieldBegin(NUM_CPU_FIELD_DESC);
+    oprot.writeI32(this.num_cpu);
     oprot.writeFieldEnd();
-    if (this.status != null) {
-      oprot.writeFieldBegin(STATUS_FIELD_DESC);
-      oprot.writeString(this.status);
-      oprot.writeFieldEnd();
-    }
+    oprot.writeFieldBegin(NUM_MEM_FIELD_DESC);
+    oprot.writeI32(this.num_mem);
+    oprot.writeFieldEnd();
+    oprot.writeFieldBegin(NUM_DISK_FIELD_DESC);
+    oprot.writeI32(this.num_disk);
+    oprot.writeFieldEnd();
     oprot.writeFieldStop();
     oprot.writeStructEnd();
   }
@@ -730,6 +982,18 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
     }
     first = false;
     if (!first) sb.append(", ");
+    sb.append("status:");
+    if (this.status == null) {
+      sb.append("null");
+    } else {
+      sb.append(this.status);
+    }
+    first = false;
+    if (!first) sb.append(", ");
+    sb.append("uptime_secs:");
+    sb.append(this.uptime_secs);
+    first = false;
+    if (!first) sb.append(", ");
     sb.append("num_tasks:");
     sb.append(this.num_tasks);
     first = false;
@@ -738,16 +1002,16 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
     sb.append(this.num_workers);
     first = false;
     if (!first) sb.append(", ");
-    sb.append("uptime_secs:");
-    sb.append(this.uptime_secs);
+    sb.append("num_cpu:");
+    sb.append(this.num_cpu);
     first = false;
     if (!first) sb.append(", ");
-    sb.append("status:");
-    if (this.status == null) {
-      sb.append("null");
-    } else {
-      sb.append(this.status);
-    }
+    sb.append("num_mem:");
+    sb.append(this.num_mem);
+    first = false;
+    if (!first) sb.append(", ");
+    sb.append("num_disk:");
+    sb.append(this.num_disk);
     first = false;
     sb.append(")");
     return sb.toString();
@@ -763,6 +1027,14 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
       throw new org.apache.thrift.protocol.TProtocolException("Required field 'name' is unset! Struct:" + toString());
     }
 
+    if (!is_set_status()) {
+      throw new org.apache.thrift.protocol.TProtocolException("Required field 'status' is unset! Struct:" + toString());
+    }
+
+    if (!is_set_uptime_secs()) {
+      throw new org.apache.thrift.protocol.TProtocolException("Required field 'uptime_secs' is unset! Struct:" + toString());
+    }
+
     if (!is_set_num_tasks()) {
       throw new org.apache.thrift.protocol.TProtocolException("Required field 'num_tasks' is unset! Struct:" + toString());
     }
@@ -771,12 +1043,16 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
       throw new org.apache.thrift.protocol.TProtocolException("Required field 'num_workers' is unset! Struct:" + toString());
     }
 
-    if (!is_set_uptime_secs()) {
-      throw new org.apache.thrift.protocol.TProtocolException("Required field 'uptime_secs' is unset! Struct:" + toString());
+    if (!is_set_num_cpu()) {
+      throw new org.apache.thrift.protocol.TProtocolException("Required field 'num_cpu' is unset! Struct:" + toString());
     }
 
-    if (!is_set_status()) {
-      throw new org.apache.thrift.protocol.TProtocolException("Required field 'status' is unset! Struct:" + toString());
+    if (!is_set_num_mem()) {
+      throw new org.apache.thrift.protocol.TProtocolException("Required field 'num_mem' is unset! Struct:" + toString());
+    }
+
+    if (!is_set_num_disk()) {
+      throw new org.apache.thrift.protocol.TProtocolException("Required field 'num_disk' is unset! Struct:" + toString());
     }
 
   }

@@ -18,12 +18,20 @@ public abstract class BaseConfigurationDeclarer<T extends ComponentConfiguration
     }
 
     @Override
-    public T setMaxTaskParallelism(Integer val) {
+    public T setMaxTaskParallelism(Number val) {
+        if(val!=null) val = val.intValue();
         return addConfiguration(Config.TOPOLOGY_MAX_TASK_PARALLELISM, val);
     }
 
     @Override
-    public T setMaxSpoutPending(Integer val) {
+    public T setMaxSpoutPending(Number val) {
+        if(val!=null) val = val.intValue();
         return addConfiguration(Config.TOPOLOGY_MAX_SPOUT_PENDING, val);
-    }    
+    }
+    
+    @Override
+    public T setNumTasks(Number val) {
+        if(val!=null) val = val.intValue();
+        return addConfiguration(Config.TOPOLOGY_TASKS, val);
+    }
 }

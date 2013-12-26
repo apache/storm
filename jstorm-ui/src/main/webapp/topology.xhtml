@@ -22,14 +22,14 @@
 				<f:facet name="header">
 					<h:outputText value="TopologyName" />
 				</f:facet>
-				<h:outputText value="#{topology.topologyname}" />
+				<h:outputText value="#{topology.topologyName}" />
 			</p:column>
 
 			<p:column>
 				<f:facet name="header">
 					<h:outputText value="TopologyId" />
 				</f:facet>
-				<h:outputText value="#{topology.topologyid}" />
+				<h:outputText value="#{topology.topologyId}" />
 			</p:column>
 
 			<p:column>
@@ -50,14 +50,35 @@
 				<f:facet name="header">
 					<h:outputText value="Num workers" />
 				</f:facet>
-				<h:outputText value="#{topology.numworkers}" />
+				<h:outputText value="#{topology.numWorkers}" />
 			</p:column>
 
 			<p:column>
 				<f:facet name="header">
 					<h:outputText value="Num tasks" />
 				</f:facet>
-				<h:outputText value="#{topology.numtasks}" />
+				<h:outputText value="#{topology.numTasks}" />
+			</p:column>
+			
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Num Cpu" />
+				</f:facet>
+				<h:outputText value="#{topology.numCpu}" />
+			</p:column>
+			
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Num Memory" />
+				</f:facet>
+				<h:outputText value="#{topology.numMem}" />
+			</p:column>
+			
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Num Disk" />
+				</f:facet>
+				<h:outputText value="#{topology.numDisk}" />
 			</p:column>
 		</p:dataTable>
 	</h:form>

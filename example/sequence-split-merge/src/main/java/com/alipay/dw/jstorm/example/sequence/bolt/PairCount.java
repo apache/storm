@@ -3,7 +3,8 @@ package com.alipay.dw.jstorm.example.sequence.bolt;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.BasicOutputCollector;
@@ -23,7 +24,7 @@ public class PairCount implements IBasicBolt {
      */
     private static final long serialVersionUID = 7346295981904929419L;
 
-    public static final Logger LOG = Logger.getLogger(PairCount.class);
+    public static final Logger LOG = LoggerFactory.getLogger(PairCount.class);
 
 	private AtomicLong  sum = new AtomicLong(0);
 	

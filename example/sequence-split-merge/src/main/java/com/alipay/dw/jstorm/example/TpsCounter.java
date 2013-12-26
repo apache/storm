@@ -2,12 +2,13 @@ package com.alipay.dw.jstorm.example;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import com.alipay.dw.jstorm.utils.IntervalCheck;
+import com.alibaba.jstorm.utils.IntervalCheck;
 
 public class TpsCounter {
-    public static Logger  LOG           = Logger.getLogger(TpsCounter.class);
+    public static Logger  LOG           = LoggerFactory.getLogger(TpsCounter.class);
     
     private AtomicLong    total         = new AtomicLong(0);
     private AtomicLong    tps           = new AtomicLong(0);

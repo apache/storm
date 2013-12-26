@@ -96,6 +96,10 @@ struct StormTopology {
   3: required map<string, StateSpoutSpec> state_spouts;
 }
 
+exception TopologyAssignException {
+  1: required string msg;
+}
+
 exception AlreadyAliveException {
   1: required string msg;
 }
@@ -111,17 +115,27 @@ exception InvalidTopologyException {
 struct TopologySummary {
   1: required string id;
   2: required string name;
-  3: required i32 num_tasks;
-  4: required i32 num_workers;
-  5: required i32 uptime_secs;
-  6: required string status;
+  3: required string status;
+  4: required i32 uptime_secs;
+  5: required i32 num_tasks;
+  6: required i32 num_workers;
+  7: required i32 num_cpu;
+  8: required i32 num_mem;
+  9: required i32 num_disk;
 }
 
 struct SupervisorSummary {
   1: required string host;
-  2: required i32 uptime_secs;
-  3: required i32 num_workers;
-  4: required i32 num_used_workers;  
+  2: required string supervisor_id;
+  3: required i32 uptime_secs;
+  4: required i32 num_workers;
+  5: required i32 num_used_workers;
+  6: required i32 num_cpu;
+  7: required i32 num_used_cpu;
+  8: required i32 num_mem;
+  9: required i32 num_used_mem;
+  10: required i32 num_disk;
+  11: required i32 num_used_disk;
 }
 
 struct ClusterSummary {
@@ -135,6 +149,24 @@ struct ErrorInfo {
   2: required i32 error_time_secs;
 }
 
+struct BoltStats {
+  1: required map<string, map<GlobalStreamId, i64>> acked;  
+  2: required map<string, map<GlobalStreamId, i64>> failed;  
+  3: required map<string, map<GlobalStreamId, double>> process_ms_avg;
+  4: required map<string, map<GlobalStreamId, i64>> executed;  
+  5: required map<string, map<GlobalStreamId, double>> execute_ms_avg;
+}
+
+struct SpoutStats {
+  1: required map<string, map<string, i64>> acked;
+  2: required map<string, map<string, i64>> failed;
+  3: required map<string, map<string, double>> complete_ms_avg;
+}
+
+union ExecutorSpecificStats {
+  1: BoltStats bolt;
+  2: SpoutStats spout;
+}
 // Stats are a map from the time window (all time or a number indicating number of seconds in the window)
 //    to the stats. Usually stats are a stream id to a count or average.
 struct TaskStats {
@@ -146,14 +178,23 @@ struct TaskStats {
   6: required map<string, map<GlobalStreamId, double>> process_ms_avg;
 }
 
+struct ExecutorInfo {
+  1: required i32 task_start;
+  2: required i32 task_end;
+}
+
 struct TaskSummary {
   1: required i32 task_id;
   2: required string component_id;
   3: required string host;
-  4: required i32 port;
-  5: required i32 uptime_secs;
-  6: required list<ErrorInfo> errors;
-  7: optional TaskStats stats;
+  4: required i32 cpu;
+  5: required i32 mem;
+  6: required string disk;
+  7: required i32 port;
+  8: required i32 uptime_secs;
+  9: required list<ErrorInfo> errors;
+  10: optional TaskStats stats;
+
 }
 
 struct TopologyInfo {
@@ -182,16 +223,25 @@ struct KillOptions {
 
 struct RebalanceOptions {
   1: optional i32 wait_secs;
+  2: optional i32 num_workers;
 }
 
+enum TopologyInitialStatus {
+    ACTIVE = 1,
+    INACTIVE = 2
+}
+struct SubmitOptions {
+  1: required TopologyInitialStatus initial_status;
+}
 
 service Nimbus {
-  void submitTopology(1: string name, 2: string uploadedJarLocation, 3: string jsonConf, 4: StormTopology topology) throws (1: AlreadyAliveException e, 2: InvalidTopologyException ite);
+  void submitTopology(1: string name, 2: string uploadedJarLocation, 3: string jsonConf, 4: StormTopology topology) throws (1: AlreadyAliveException e, 2: InvalidTopologyException ite, 3: TopologyAssignException tae);
+  void submitTopologyWithOpts(1: string name, 2: string uploadedJarLocation, 3: string jsonConf, 4: StormTopology topology, 5: SubmitOptions options) throws (1: AlreadyAliveException e, 2: InvalidTopologyException ite, 3:TopologyAssignException tae);
   void killTopology(1: string name) throws (1: NotAliveException e);
   void killTopologyWithOpts(1: string name, 2: KillOptions options) throws (1: NotAliveException e);
   void activate(1: string name) throws (1: NotAliveException e);
   void deactivate(1: string name) throws (1: NotAliveException e);
-  void rebalance(1: string name, 2: RebalanceOptions options) throws (1: NotAliveException e);
+  void rebalance(1: string name, 2: RebalanceOptions options) throws (1: NotAliveException e, 2: InvalidTopologyException ite);
 
   // need to add functions for asking about status of storms, what nodes they're running on, looking at task logs
 
@@ -202,7 +252,9 @@ service Nimbus {
   string beginFileDownload(1: string file);
   //can stop downloading chunks when receive 0-length byte array back
   binary downloadChunk(1: string id);
-  
+
+  // returns json
+  string getNimbusConf();
   // stats functions
   ClusterSummary getClusterInfo();
   TopologyInfo getTopologyInfo(1: string id) throws (1: NotAliveException e);
@@ -210,6 +262,7 @@ service Nimbus {
   //returns json
   string getTopologyConf(1: string id) throws (1: NotAliveException e);
   StormTopology getTopology(1: string id) throws (1: NotAliveException e);
+  StormTopology getUserTopology(1: string id) throws (1: NotAliveException e);
 }
 
 struct DRPCRequest {

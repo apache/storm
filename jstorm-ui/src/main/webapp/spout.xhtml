@@ -42,6 +42,27 @@
 				</f:facet>
 				<h:outputText value="#{com.parallelism}" />
 			</p:column>
+			
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Cpu Slot Num" />
+				</f:facet>
+				<h:outputText value="#{com.cpuNum}" />
+			</p:column>
+			
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Memory Slot Num" />
+				</f:facet>
+				<h:outputText value="#{com.memNum}" />
+			</p:column>
+			
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Disk Slot Num" />
+				</f:facet>
+				<h:outputText value="#{com.diskNum}" />
+			</p:column>
 		</p:dataTable>
 	</h:form>
 	<h2>
@@ -253,6 +274,13 @@
 					<h:outputText value="Failed" />
 				</f:facet>
 				<h:outputText value="#{ct.failed}" />
+			</p:column>
+			
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Disk Slot" />
+				</f:facet>
+				<h:outputText value="#{ct.diskSlot}" />
 			</p:column>
 
 			<p:column>

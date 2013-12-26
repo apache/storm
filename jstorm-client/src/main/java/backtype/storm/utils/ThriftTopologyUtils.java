@@ -1,13 +1,15 @@
 package backtype.storm.utils;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 import backtype.storm.generated.Bolt;
 import backtype.storm.generated.ComponentCommon;
 import backtype.storm.generated.SpoutSpec;
 import backtype.storm.generated.StateSpoutSpec;
 import backtype.storm.generated.StormTopology;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
 
 public class ThriftTopologyUtils {
     public static Set<String> getComponentIds(StormTopology topology) {
@@ -15,6 +17,15 @@ public class ThriftTopologyUtils {
         for(StormTopology._Fields f: StormTopology.metaDataMap.keySet()) {
             Map<String, Object> componentMap = (Map<String, Object>) topology.getFieldValue(f);
             ret.addAll(componentMap.keySet());
+        }
+        return ret;
+    }
+    
+    public static Map<String, Object> getComponents(StormTopology topology) {
+        Map<String, Object> ret = new HashMap<String, Object>();
+        for(StormTopology._Fields f: StormTopology.metaDataMap.keySet()) {
+            Map<String, Object> componentMap = (Map<String, Object>) topology.getFieldValue(f);
+            ret.putAll(componentMap);            
         }
         return ret;
     }
