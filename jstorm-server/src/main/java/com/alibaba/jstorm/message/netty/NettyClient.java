@@ -401,6 +401,10 @@ class NettyClient implements IConnection, EventHandler {
     public boolean isClosed() {
         return being_closed.get();
     }
+    
+    public AtomicBoolean getBeing_closed() {
+        return being_closed;
+    }
 
     public int getBuffer_size() {
         return buffer_size;
@@ -409,5 +413,7 @@ class NettyClient implements IConnection, EventHandler {
     public String getTarget_Server() {
         return target_Server;
     }
+    
+    
 
 }

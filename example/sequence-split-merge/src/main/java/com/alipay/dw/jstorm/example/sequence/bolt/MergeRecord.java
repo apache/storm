@@ -11,11 +11,14 @@ import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.IRichBolt;
 import backtype.storm.topology.OutputFieldsDeclarer;
+import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
+import backtype.storm.tuple.Values;
 
 import com.alipay.dw.jstorm.example.TpsCounter;
 import com.alipay.dw.jstorm.example.sequence.SequenceTopologyDef;
 import com.alipay.dw.jstorm.example.sequence.bean.Pair;
+import com.alipay.dw.jstorm.example.sequence.bean.TradeCustomer;
 
 public class MergeRecord implements IRichBolt {
     /**
@@ -65,7 +68,7 @@ public class MergeRecord implements IRichBolt {
             customer = pair;
             customerTuple = input;
             
-            tradeTuple = tradeMap.get(tupleId);
+            tradeTuple = tradeMap.remove(tupleId);
             if (tradeTuple == null) {
                 customerMap.put(tupleId, input);
                 return;
@@ -77,7 +80,7 @@ public class MergeRecord implements IRichBolt {
             trade = pair;
             tradeTuple = input;
             
-            customerTuple = customerMap.get(tupleId);
+            customerTuple = customerMap.remove(tupleId);
             if (customerTuple == null) {
                 tradeMap.put(tupleId, input);
                 return;
@@ -85,7 +88,7 @@ public class MergeRecord implements IRichBolt {
             
             customer = (Pair) customerTuple.getValue(1);
         } else {
-            LOG.info("Unknow source component");
+            LOG.info("Unknow source component: " + input.getSourceComponent());
             collector.fail(input);
             return;
         }
@@ -95,6 +98,11 @@ public class MergeRecord implements IRichBolt {
         
         collector.ack(tradeTuple);
         collector.ack(customerTuple);
+        
+        TradeCustomer tradeCustomer = new TradeCustomer();
+        tradeCustomer.setTrade(trade);
+        tradeCustomer.setCustomer(customer);
+        collector.emit(new Values(tupleId, tradeCustomer));
     }
     
     public void cleanup() {
@@ -104,7 +112,7 @@ public class MergeRecord implements IRichBolt {
     }
     
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        
+    	declarer.declare(new Fields("ID", "RECORD"));
     }
     
     public Map<String, Object> getComponentConfiguration() {
