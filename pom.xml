@@ -13,26 +13,7 @@
 		<module>jstorm-server</module>
 		<module>jstorm-ui</module>
 	</modules>
-
-	<repositories>
-		<repository>
-			<id>sonatype</id>
-			<url>http://oss.sonatype.org/content/groups/public/</url>
-		</repository>
-		<repository>
-			<id>central</id>
-			<url>http://repo1.maven.org/maven2</url>
-		</repository>
-		<repository>
-			<id>clojars</id>
-			<url>http://clojars.org/repo/</url>
-		</repository>
-		<repository>
-			<id>central2</id>
-			<name>libs-release</name>
-			<url>https://repository.cloudera.com/artifactory/libs-release</url>
-		</repository>
-	</repositories>
+	
 	<build>
 		<plugins>
 			<plugin>
@@ -42,6 +23,18 @@
 					<source>1.6</source>
 					<target>1.6</target>
 				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 
 			<plugin>
@@ -113,17 +106,11 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-    <dependency>
-			<groupId>org.apache.zookeeper</groupId>
-			<artifactId>zookeeper</artifactId>
-			<version>3.3.3-cdh3u0</version>
-			<exclusions>
-				<exclusion>
-					<groupId>log4j</groupId>
-					<artifactId>log4j</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
+    	<dependency>
+        <groupId>org.apache.zookeeper</groupId>
+        <artifactId>zookeeper</artifactId>
+        <version>3.3.4</version>
+      </dependency>
 		<dependency>
 			<groupId>backtype</groupId>
 			<artifactId>jzmq</artifactId>
@@ -150,11 +137,11 @@
 			<artifactId>hiccup</artifactId>
 			<version>0.3.6</version>
 		</dependency>
-		<dependency>
-			<groupId>ring</groupId>
-			<artifactId>ring-devel</artifactId>
-			<version>0.3.11</version>
-		</dependency>
+<!-- 		<dependency> -->
+<!-- 			<groupId>ring</groupId> -->
+<!-- 			<artifactId>ring-devel</artifactId> -->
+<!-- 			<version>0.3.11</version> -->
+<!-- 		</dependency> -->
 		<dependency>
 			<groupId>ring</groupId>
 			<artifactId>ring-jetty-adapter</artifactId>
@@ -218,6 +205,7 @@
 			<artifactId>guava</artifactId>
 			<version>13.0</version>
 		</dependency>
+		<!--
 		<dependency>
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-classic</artifactId>
@@ -233,18 +221,19 @@
 			<artifactId>jcl-over-slf4j</artifactId>
 			<version>1.6.6</version>
 		</dependency>
+		-->
 		<dependency>
 			<groupId>org.clojure</groupId>
 			<artifactId>tools.nrepl</artifactId>
 			<version>0.2.3</version>
 			<scope>test</scope>
 		</dependency>
-		<dependency>
-			<groupId>clojure-complete</groupId>
-			<artifactId>clojure-complete</artifactId>
-			<version>0.2.3</version>
-			<scope>test</scope>
-		</dependency>
+<!-- 		<dependency> -->
+<!-- 			<groupId>clojure-complete</groupId> -->
+<!-- 			<artifactId>clojure-complete</artifactId> -->
+<!-- 			<version>0.2.3</version> -->
+<!-- 			<scope>test</scope> -->
+<!-- 		</dependency> -->
 		<dependency>
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-all</artifactId>
@@ -279,6 +268,11 @@
 			<version>3.0</version>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
+			<version>1.2.16</version>
+		</dependency>
 		<!-- 
 		<dependency>
 			<groupId>cglib</groupId>
@@ -308,13 +302,19 @@
 			<artifactId>kryo</artifactId>
 			<version>1.04</version>
 		</dependency>
-
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-log4j12</artifactId>
-			<version>1.5.6</version>
-		</dependency>
-		
 		 -->
+		 
+<!-- 		 <dependency> -->
+<!-- 		  <groupId>org.clojure</groupId> -->
+<!-- 		  <artifactId>clojure</artifactId> -->
+<!-- 		  <version>1.4.0</version> -->
+<!-- 		</dependency> -->
+ 		<dependency>
+ 			<groupId>org.slf4j</groupId> 
+ 			<artifactId>slf4j-log4j12</artifactId> 
+ 			<version>1.5.6</version>
+ 		</dependency> 
+		
+		
 	</dependencies>
 </project>

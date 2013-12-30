@@ -12,7 +12,7 @@ import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.data.Stat;
 import org.apache.zookeeper.server.NIOServerCnxn;
-import org.apache.zookeeper.server.NIOServerCnxn.Factory;
+//import org.apache.zookeeper.server.NIOServerCnxn.Factory;
 import org.apache.zookeeper.server.ZooKeeperServer;
 
 import backtype.storm.utils.Utils;
@@ -204,21 +204,21 @@ public class Zookeeper {
         }
     }
     
-    public Factory mkInprocessZookeeper(String localdir, int port)
-            throws IOException, InterruptedException {
-        LOG.info("Starting inprocess zookeeper at port " + port + " and dir "
-                + localdir);
-        File localfile = new File(localdir);
-        ZooKeeperServer zk = new ZooKeeperServer(localfile, localfile, 2000);
-        NIOServerCnxn.Factory factory = new NIOServerCnxn.Factory(
-                new InetSocketAddress(port));
-        factory.startup(zk);
-        return factory;
-    }
-    
-    public void shutdownInprocessZookeeper(Factory handle) {
-        handle.shutdown();
-    }
+//    public Factory mkInprocessZookeeper(String localdir, int port)
+//            throws IOException, InterruptedException {
+//        LOG.info("Starting inprocess zookeeper at port " + port + " and dir "
+//                + localdir);
+//        File localfile = new File(localdir);
+//        ZooKeeperServer zk = new ZooKeeperServer(localfile, localfile, 2000);
+//        NIOServerCnxn.Factory factory = new NIOServerCnxn.Factory(
+//                new InetSocketAddress(port));
+//        factory.startup(zk);
+//        return factory;
+//    }
+//    
+//    public void shutdownInprocessZookeeper(Factory handle) {
+//        handle.shutdown();
+//    }
     
     public LeaderSelector mkLeaderSelector(CuratorFramework client, String leaderPath, LeaderSelectorListener listener) {
     	return new LeaderSelector(client, leaderPath, listener);
