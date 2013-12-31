@@ -31,7 +31,7 @@ public class StormClientHandler extends SimpleChannelUpstreamHandler {
 
     StormClientHandler(NettyClient client) {
         this.client = client;
-        being_closed = new AtomicBoolean(false);
+        being_closed = client.getBeing_closed();
         start_time = System.currentTimeMillis();
     }
 
@@ -46,11 +46,13 @@ public class StormClientHandler extends SimpleChannelUpstreamHandler {
             //send next request
             sendRequests(channel, client.takeMessages());
         } catch (Exception e) {
-            LOG.warn("Occur channel error\n", e);
-            channel.close();
-            
-            // @@@ right now, throw the exception
-            throw new RuntimeException(e);
+            if (being_closed.get() == false) {
+                LOG.warn("Occur channel error\n", e);
+                channel.close();
+                
+                // @@@ right now, throw the exception
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -72,11 +74,13 @@ public class StormClientHandler extends SimpleChannelUpstreamHandler {
             //send next request
             sendRequests(channel, client.takeMessages());
         } catch (Exception e) {
-            LOG.warn("Occur channel error\n", e);
-            channel.close();
-            
-            // @@@ right now, throw the exception
-            throw new RuntimeException(e);
+            if (being_closed.get() == false) {
+                LOG.warn("Occur channel error\n", e);
+                channel.close();
+                
+                // @@@ right now, throw the exception
+                throw new RuntimeException(e);
+            }
         }
 
     }
@@ -98,9 +102,9 @@ public class StormClientHandler extends SimpleChannelUpstreamHandler {
 
         //we may don't need do anything if no requests found
         if (requests.isEmpty()) {
-            if (being_closed.get()) {
-                client.close_n_release();
-            }
+//            if (being_closed.get()) {
+//                client.close_n_release();
+//            }
             return;
         }
 
@@ -119,9 +123,12 @@ public class StormClientHandler extends SimpleChannelUpstreamHandler {
 //                        batchCounter.incrementAndGet(), msgCounter.addAndGet(requests.size()));
                 }
 
-                if (being_closed.get()) {
-                    client.close_n_release();
-                }
+                /**
+                 * client.close_n_release() only do in client.close 
+                 */
+//                if (being_closed.get()) {
+//                    client.close_n_release();
+//                }
             }
         });
     }

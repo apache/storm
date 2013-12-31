@@ -509,11 +509,12 @@ class SyncProcessEvent extends ShutdownWork {
         
         
         if (stormhome != null) {
-            commandSB.append(" -Dlogback.configurationFile=" + stormhome + "/conf/cluster.xml");
+//            commandSB.append(" -Dlogback.configurationFile=" + stormhome + "/conf/cluster.xml");
+        	commandSB.append(" -Dlog4j.configuration=File:" + stormhome + "/conf/jstorm.log4j.properties");
             commandSB.append(" -Djstorm.home=");
             commandSB.append(stormhome);
         }else {
-            commandSB.append(" -Dlogback.configurationFile=cluster.xml");
+            commandSB.append(" -Dlog4j.configuration=File:jstorm.log4j.properties");
         }
         
         String classpath = getClassPath(stormjar, stormhome);
