@@ -51,20 +51,6 @@ public class SequenceTopology {
 //        builder.setBolt(SequenceTopologyDef.TOTAL_BOLT_NAME, new TotalCount(),
 //        		bolt_Parallelism_hint).noneGrouping(SequenceTopologyDef.SEQUENCE_SPOUT_NAME);
         
-<<<<<<< HEAD
-        builder.setBolt(SequenceTopologyDef.SPLIT_BOLT_NAME, new SplitRecord(),
-        		2).shuffleGrouping(SequenceTopologyDef.SEQUENCE_SPOUT_NAME);
-        
-        builder.setBolt(SequenceTopologyDef.TRADE_BOLT_NAME, new PairCount(),
-        		1).shuffleGrouping(SequenceTopologyDef.SPLIT_BOLT_NAME, SequenceTopologyDef.TRADE_STREAM_ID);
-        builder.setBolt(SequenceTopologyDef.CUSTOMER_BOLT_NAME, new PairCount(),
-        		1).shuffleGrouping(SequenceTopologyDef.SPLIT_BOLT_NAME, SequenceTopologyDef.CUSTOMER_STREAM_ID);
-        
-        builder.setBolt(SequenceTopologyDef.MERGE_BOLT_NAME, new MergeRecord(), 
-        		2).fieldsGrouping(SequenceTopologyDef.TRADE_BOLT_NAME, new Fields("ID"))
-        		.fieldsGrouping(SequenceTopologyDef.CUSTOMER_BOLT_NAME, new Fields("ID"));
-        
-=======
 //        builder.setBolt(SequenceTopologyDef.SPLIT_BOLT_NAME, new SplitRecord(),
 //        		2).shuffleGrouping(SequenceTopologyDef.SEQUENCE_SPOUT_NAME);
 //        
@@ -77,7 +63,6 @@ public class SequenceTopology {
 //        		2).fieldsGrouping(SequenceTopologyDef.TRADE_BOLT_NAME, new Fields("ID"))
 //        		.fieldsGrouping(SequenceTopologyDef.CUSTOMER_BOLT_NAME, new Fields("ID"));
 //        
->>>>>>> 0.9.0
         builder.setBolt(SequenceTopologyDef.TOTAL_BOLT_NAME, new TotalCount(), 
         		2).noneGrouping(SequenceTopologyDef.MERGE_BOLT_NAME);
         
