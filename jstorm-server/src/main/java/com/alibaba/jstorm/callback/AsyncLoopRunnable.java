@@ -1,7 +1,6 @@
 package com.alibaba.jstorm.callback;
 
 import org.apache.log4j.Logger;
-import org.mortbay.log.Log;
 
 import com.alibaba.jstorm.utils.JStormServerUtils;
 

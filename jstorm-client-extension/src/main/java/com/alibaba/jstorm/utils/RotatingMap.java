@@ -1,12 +1,10 @@
 package com.alibaba.jstorm.utils;
 
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
-
-import org.apache.log4j.Logger;
+import java.util.concurrent.LinkedBlockingDeque;
 
 /**
  * Expires keys that have not been updated in the configured number of seconds.
@@ -26,15 +24,17 @@ public class RotatingMap<K, V> {
         public void expire(K key, V val);
     }
 
-    private LinkedList<Map<K, V>> _buckets;
+    private LinkedBlockingDeque<Map<K, V>> _buckets;
 
     private ExpiredCallback _callback;
+    
+    private final Object lock = new Object();
     
     public RotatingMap(int numBuckets, ExpiredCallback<K, V> callback) {
         if(numBuckets<2) {
             throw new IllegalArgumentException("numBuckets must be >= 2");
         }
-        _buckets = new LinkedList<Map<K, V>>();
+        _buckets = new LinkedBlockingDeque<Map<K, V>>();
         for(int i=0; i<numBuckets; i++) {
             _buckets.add(new ConcurrentHashMap<K, V>());
         }
