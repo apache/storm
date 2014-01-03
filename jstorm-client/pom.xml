@@ -1,16 +1,18 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   
-<!--   <parent> -->
-<!--     <groupId>com.alibaba.jstorm</groupId> -->
-<!--     <artifactId>jstorm-all</artifactId> -->
-<!--     <version>0.9.0</version> -->
-<!--     <relativePath>..</relativePath> -->
-<!--   </parent> -->
+  <parent> 
+     <groupId>com.alibaba.jstorm</groupId> 
+     <artifactId>jstorm-all</artifactId> 
+     <version>0.9.0</version> 
+     <relativePath>..</relativePath> 
+  </parent>
+  <!-- 
   <parent>
       <groupId>com.taobao</groupId>
       <artifactId>parent</artifactId>
       <version>1.0.2</version>
-   </parent>
+  </parent>
+  -->
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.alibaba.jstorm</groupId>
   <artifactId>jstorm-client</artifactId>
@@ -141,11 +143,6 @@
 			<artifactId>hiccup</artifactId>
 			<version>0.3.6</version>
 		</dependency>
-<!-- 		<dependency> -->
-<!-- 			<groupId>ring</groupId> -->
-<!-- 			<artifactId>ring-devel</artifactId> -->
-<!-- 			<version>0.3.11</version> -->
-<!-- 		</dependency> -->
 		<dependency>
 			<groupId>ring</groupId>
 			<artifactId>ring-jetty-adapter</artifactId>
@@ -209,35 +206,12 @@
 			<artifactId>guava</artifactId>
 			<version>13.0</version>
 		</dependency>
-		<!--
-		<dependency>
-			<groupId>ch.qos.logback</groupId>
-			<artifactId>logback-classic</artifactId>
-			<version>1.0.6</version>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>log4j-over-slf4j</artifactId>
-			<version>1.6.6</version>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>jcl-over-slf4j</artifactId>
-			<version>1.6.6</version>
-		</dependency>
-		-->
 		<dependency>
 			<groupId>org.clojure</groupId>
 			<artifactId>tools.nrepl</artifactId>
 			<version>0.2.3</version>
 			<scope>test</scope>
 		</dependency>
-<!-- 		<dependency> -->
-<!-- 			<groupId>clojure-complete</groupId> -->
-<!-- 			<artifactId>clojure-complete</artifactId> -->
-<!-- 			<version>0.2.3</version> -->
-<!-- 			<scope>test</scope> -->
-<!-- 		</dependency> -->
 		<dependency>
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-all</artifactId>
@@ -272,47 +246,6 @@
 			<version>3.0</version>
 			<scope>test</scope>
 		</dependency>
-		<!-- 
-		<dependency>
-			<groupId>cglib</groupId>
-			<artifactId>cglib-nodep</artifactId>
-			<version>2.1_3</version>
-		</dependency>
-		<dependency>
-			<groupId>swank-clojure</groupId>
-			<artifactId>swank-clojure</artifactId>
-			<version>1.2.1</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>lein-ring</groupId>
-			<artifactId>lein-ring</artifactId>
-			<version>0.4.5</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.clojure</groupId>
-			<artifactId>clojure-contrib</artifactId>
-			<version>1.2.0</version>
-		</dependency>
-		
-		<dependency>
-			<groupId>com.googlecode</groupId>
-			<artifactId>kryo</artifactId>
-			<version>1.04</version>
-		</dependency>
-		 -->
-		 
-<!-- 		 <dependency> -->
-<!-- 		  <groupId>org.clojure</groupId> -->
-<!-- 		  <artifactId>clojure</artifactId> -->
-<!-- 		  <version>1.4.0</version> -->
-<!-- 		</dependency> -->
-<!-- 		<dependency> -->
-<!-- 			<groupId>org.slf4j</groupId> -->
-<!-- 			<artifactId>slf4j-log4j12</artifactId> -->
-<!-- 			<version>1.5.6</version> -->
-<!-- 		</dependency> -->
 		
 		
 	</dependencies>

@@ -2,8 +2,6 @@
  storm.zookeeper.servers:
      - "localhost"
 
- nimbus.host: "localhost"
-
  storm.zookeeper.root: "/jstorm"
  
  storm.local.dir: "jstorm"
