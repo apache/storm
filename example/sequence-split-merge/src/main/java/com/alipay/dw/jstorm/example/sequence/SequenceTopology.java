@@ -33,38 +33,32 @@ public class SequenceTopology {
         builder.setSpout(SequenceTopologyDef.SEQUENCE_SPOUT_NAME,
                 new SequenceSpout(), 1);
         
-        //        builder.setBolt(SequenceTopologyDef.SPLIT_BOLT_NAME, new SplitRecord(), 2).fieldsGrouping(
-        //                SequenceTopologyDef.SEQUENCE_SPOUT_NAME, new Fields("ID"));
-        //        
-        //        builder.setBolt(SequenceTopologyDef.TRADE_BOLT_NAME, new PairCount(), 1).shuffleGrouping(
-        //                SequenceTopologyDef.SPLIT_BOLT_NAME, 
-        //                SequenceTopologyDef.TRADE_STREAM_ID);
-        //        
-        //        builder.setBolt(SequenceTopologyDef.CUSTOMER_BOLT_NAME, new PairCount(), 1)
-        //                .shuffleGrouping(SequenceTopologyDef.SPLIT_BOLT_NAME,
-        //                        SequenceTopologyDef.CUSTOMER_STREAM_ID);
-        //        
-        //        builder.setBolt(SequenceTopologyDef.MERGE_BOLT_NAME, new MergeRecord(), 1)
-        //                .shuffleGrouping(SequenceTopologyDef.TRADE_BOLT_NAME)
-        //                .shuffleGrouping(SequenceTopologyDef.CUSTOMER_BOLT_NAME);
+        boolean isEnableSplit = false;
         
-//        builder.setBolt(SequenceTopologyDef.TOTAL_BOLT_NAME, new TotalCount(),
-//        		bolt_Parallelism_hint).noneGrouping(SequenceTopologyDef.SEQUENCE_SPOUT_NAME);
-        
-//        builder.setBolt(SequenceTopologyDef.SPLIT_BOLT_NAME, new SplitRecord(),
-//        		2).shuffleGrouping(SequenceTopologyDef.SEQUENCE_SPOUT_NAME);
-//        
-//        builder.setBolt(SequenceTopologyDef.TRADE_BOLT_NAME, new PairCount(),
-//        		1).shuffleGrouping(SequenceTopologyDef.SPLIT_BOLT_NAME, SequenceTopologyDef.TRADE_STREAM_ID);
-//        builder.setBolt(SequenceTopologyDef.CUSTOMER_BOLT_NAME, new PairCount(),
-//        		1).shuffleGrouping(SequenceTopologyDef.SPLIT_BOLT_NAME, SequenceTopologyDef.CUSTOMER_STREAM_ID);
-//        
-//        builder.setBolt(SequenceTopologyDef.MERGE_BOLT_NAME, new MergeRecord(), 
-//        		2).fieldsGrouping(SequenceTopologyDef.TRADE_BOLT_NAME, new Fields("ID"))
-//        		.fieldsGrouping(SequenceTopologyDef.CUSTOMER_BOLT_NAME, new Fields("ID"));
-//        
-        builder.setBolt(SequenceTopologyDef.TOTAL_BOLT_NAME, new TotalCount(), 
-        		2).noneGrouping(SequenceTopologyDef.MERGE_BOLT_NAME);
+        if (isEnableSplit == false) {
+            builder.setBolt(SequenceTopologyDef.TOTAL_BOLT_NAME, new TotalCount(), 2)
+                .shuffleGrouping(SequenceTopologyDef.SEQUENCE_SPOUT_NAME);
+        } else {
+            builder.setBolt(SequenceTopologyDef.TOTAL_BOLT_NAME, new TotalCount(),
+                bolt_Parallelism_hint).noneGrouping(SequenceTopologyDef.SEQUENCE_SPOUT_NAME);
+
+            builder.setBolt(SequenceTopologyDef.SPLIT_BOLT_NAME, new SplitRecord(), 2)
+                .shuffleGrouping(SequenceTopologyDef.SEQUENCE_SPOUT_NAME);
+
+            builder.setBolt(SequenceTopologyDef.TRADE_BOLT_NAME, new PairCount(), 1)
+                .shuffleGrouping(SequenceTopologyDef.SPLIT_BOLT_NAME,
+                    SequenceTopologyDef.TRADE_STREAM_ID);
+            builder.setBolt(SequenceTopologyDef.CUSTOMER_BOLT_NAME, new PairCount(), 1)
+                .shuffleGrouping(SequenceTopologyDef.SPLIT_BOLT_NAME,
+                    SequenceTopologyDef.CUSTOMER_STREAM_ID);
+
+            builder.setBolt(SequenceTopologyDef.MERGE_BOLT_NAME, new MergeRecord(), 2)
+                .fieldsGrouping(SequenceTopologyDef.TRADE_BOLT_NAME, new Fields("ID"))
+                .fieldsGrouping(SequenceTopologyDef.CUSTOMER_BOLT_NAME, new Fields("ID"));
+
+            builder.setBolt(SequenceTopologyDef.TOTAL_BOLT_NAME, new TotalCount(), 2).noneGrouping(
+                SequenceTopologyDef.MERGE_BOLT_NAME);
+        }
         
         conf.put(Config.TOPOLOGY_DEBUG, false);
         //        conf.put(ConfigExtension.TOPOLOGY_DEBUG_RECV_TUPLE, false);
