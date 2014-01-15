@@ -145,6 +145,11 @@
             <artifactId>mockito-all</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.clojars.runa</groupId>
+            <artifactId>conjure</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
     <build>
         <sourceDirectory>src/jvm</sourceDirectory>
@@ -174,6 +179,12 @@
                         <testSourceDirectory>test/clj</testSourceDirectory>
                     </testSourceDirectories>
                     <warnOnReflection>false</warnOnReflection>
+                    <testNamespaces>
+                      <!--<namespace>!*</namespace>-->
+                      <namespace>backtype.storm.supervisor-test</namespace>
+                    </testNamespaces>
+                    <compileDeclaredNamespaceOnly>true</compileDeclaredNamespaceOnly>
+                    <testDeclaredNamespaceOnly>true</testDeclaredNamespaceOnly>
                 </configuration>
                 <executions>
                     <execution>
