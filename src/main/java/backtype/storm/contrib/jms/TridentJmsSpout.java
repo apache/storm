@@ -366,7 +366,7 @@ public class TridentJmsSpout implements ITridentSpout<JmsBatch> {
         }
         
         @Override
-        public JmsBatch initializeTransaction(long txid, JmsBatch prevMetadata) {
+        public JmsBatch initializeTransaction(long txid, JmsBatch prevMetadata, JmsBatch curMetadata) {
             LOG.debug("Initialise transaction "+txid+" for "+name);
             return null;
         }
