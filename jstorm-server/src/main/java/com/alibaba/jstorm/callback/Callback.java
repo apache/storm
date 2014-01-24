@@ -7,7 +7,7 @@ package com.alibaba.jstorm.callback;
  * 
  */
 public interface Callback {
-    
-    public <T> Object execute(T... args);
-    
+
+	public <T> Object execute(T... args);
+
 }

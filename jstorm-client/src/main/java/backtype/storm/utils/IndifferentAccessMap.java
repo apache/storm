@@ -1,6 +1,5 @@
 package backtype.storm.utils;
 
-
 import clojure.lang.ILookup;
 import clojure.lang.ISeq;
 import clojure.lang.AFn;
@@ -14,147 +13,157 @@ import java.util.Map;
 import java.util.Collection;
 import java.util.Set;
 
-public class IndifferentAccessMap extends AFn implements ILookup, IPersistentMap, Map {
+public class IndifferentAccessMap extends AFn implements ILookup,
+		IPersistentMap, Map {
 
-    protected IPersistentMap _map;
+	protected IPersistentMap _map;
 
-    protected IndifferentAccessMap() {
-    }
+	protected IndifferentAccessMap() {
+	}
 
-    public IndifferentAccessMap(IPersistentMap map) {
-        setMap(map);
-    }
+	public IndifferentAccessMap(IPersistentMap map) {
+		setMap(map);
+	}
 
-    public IPersistentMap getMap() {
-        return _map;
-    }
+	public IPersistentMap getMap() {
+		return _map;
+	}
 
-    public IPersistentMap setMap(IPersistentMap map) {
-        _map = map;
-        return _map;
-    }
+	public IPersistentMap setMap(IPersistentMap map) {
+		_map = map;
+		return _map;
+	}
 
-    public int size() {
-        return ((Map) getMap()).size();
-    }
+	public int size() {
+		return ((Map) getMap()).size();
+	}
 
-    public int count() {
-        return size();
-    }
+	public int count() {
+		return size();
+	}
 
-    public ISeq seq() {
-        return getMap().seq();
-    }
+	public ISeq seq() {
+		return getMap().seq();
+	}
 
-    @Override
-    public Object valAt(Object o) {
-        if(o instanceof Keyword) {
-            return valAt(((Keyword) o).getName());
-        }
-        return getMap().valAt(o);
-    }
-    
-    @Override
-    public Object valAt(Object o, Object def) {
-        Object ret = valAt(o);
-        if(ret==null) ret = def;
-        return ret;
-    }
+	@Override
+	public Object valAt(Object o) {
+		if (o instanceof Keyword) {
+			return valAt(((Keyword) o).getName());
+		}
+		return getMap().valAt(o);
+	}
 
-    /* IFn */
-    @Override
-    public Object invoke(Object o) {
-        return valAt(o);
-    }
+	@Override
+	public Object valAt(Object o, Object def) {
+		Object ret = valAt(o);
+		if (ret == null)
+			ret = def;
+		return ret;
+	}
 
-    @Override
-    public Object invoke(Object o, Object notfound) {
-        return valAt(o, notfound);
-    }
+	/* IFn */
+	@Override
+	public Object invoke(Object o) {
+		return valAt(o);
+	}
 
-    /* IPersistentMap */
-    /* Naive implementation, but it might be good enough */
-    public IPersistentMap assoc(Object k, Object v) {
-        if(k instanceof Keyword) return assoc(((Keyword) k).getName(), v);
-        
-        return new IndifferentAccessMap(getMap().assoc(k, v));
-    }
+	@Override
+	public Object invoke(Object o, Object notfound) {
+		return valAt(o, notfound);
+	}
 
-    public IPersistentMap assocEx(Object k, Object v) {
-        if(k instanceof Keyword) return assocEx(((Keyword) k).getName(), v);
+	/* IPersistentMap */
+	/* Naive implementation, but it might be good enough */
+	public IPersistentMap assoc(Object k, Object v) {
+		if (k instanceof Keyword)
+			return assoc(((Keyword) k).getName(), v);
 
-        return new IndifferentAccessMap(getMap().assocEx(k, v));
-    }
+		return new IndifferentAccessMap(getMap().assoc(k, v));
+	}
 
-    public IPersistentMap without(Object k) {
-        if(k instanceof Keyword) return without(((Keyword) k).getName());
+	public IPersistentMap assocEx(Object k, Object v) {
+		if (k instanceof Keyword)
+			return assocEx(((Keyword) k).getName(), v);
 
-        return new IndifferentAccessMap(getMap().without(k));
-    }
+		return new IndifferentAccessMap(getMap().assocEx(k, v));
+	}
 
-    public boolean containsKey(Object k) {
-        if(k instanceof Keyword) return containsKey(((Keyword) k).getName());
-        return getMap().containsKey(k);
-    }
+	public IPersistentMap without(Object k) {
+		if (k instanceof Keyword)
+			return without(((Keyword) k).getName());
 
-    public IMapEntry entryAt(Object k) {
-        if(k instanceof Keyword) return entryAt(((Keyword) k).getName());
+		return new IndifferentAccessMap(getMap().without(k));
+	}
 
-        return getMap().entryAt(k);
-    }
+	public boolean containsKey(Object k) {
+		if (k instanceof Keyword)
+			return containsKey(((Keyword) k).getName());
+		return getMap().containsKey(k);
+	}
 
-    public IPersistentCollection cons(Object o) {
-        return getMap().cons(o);
-    }
+	public IMapEntry entryAt(Object k) {
+		if (k instanceof Keyword)
+			return entryAt(((Keyword) k).getName());
 
-    public IPersistentCollection empty() {
-        return new IndifferentAccessMap(PersistentArrayMap.EMPTY);
-    }
+		return getMap().entryAt(k);
+	}
 
-    public boolean equiv(Object o) {
-        return getMap().equiv(o);
-    }
+	public IPersistentCollection cons(Object o) {
+		return getMap().cons(o);
+	}
 
-    public Iterator iterator() {
-        return getMap().iterator();
-    }
+	public IPersistentCollection empty() {
+		return new IndifferentAccessMap(PersistentArrayMap.EMPTY);
+	}
 
-    /* Map */
-    public boolean containsValue(Object v) {
-        return ((Map) getMap()).containsValue(v);
-    }
+	public boolean equiv(Object o) {
+		return getMap().equiv(o);
+	}
 
-    public Set entrySet() {
-        return ((Map) getMap()).entrySet();
-    }
+	public Iterator iterator() {
+		return getMap().iterator();
+	}
 
-    public Object get(Object k) {
-        return valAt(k);
-    }
+	/* Map */
+	public boolean containsValue(Object v) {
+		return ((Map) getMap()).containsValue(v);
+	}
 
-    public boolean isEmpty() {
-        return ((Map) getMap()).isEmpty();
-    }
+	public Set entrySet() {
+		return ((Map) getMap()).entrySet();
+	}
 
-    public Set keySet() {
-        return ((Map) getMap()).keySet();
-    }
+	public Object get(Object k) {
+		return valAt(k);
+	}
 
-    public Collection values() {
-        return ((Map) getMap()).values();
-    }
-    
-    /* Not implemented */
-    public void clear() {
-        throw new UnsupportedOperationException();
-    }
-    public Object put(Object k, Object v) {
-        throw new UnsupportedOperationException();
-    }
-    public void putAll(Map m) {
-        throw new UnsupportedOperationException();
-    }
-    public Object remove(Object k) {
-        throw new UnsupportedOperationException();
-    }
+	public boolean isEmpty() {
+		return ((Map) getMap()).isEmpty();
+	}
+
+	public Set keySet() {
+		return ((Map) getMap()).keySet();
+	}
+
+	public Collection values() {
+		return ((Map) getMap()).values();
+	}
+
+	/* Not implemented */
+	public void clear() {
+		throw new UnsupportedOperationException();
+	}
+
+	public Object put(Object k, Object v) {
+		throw new UnsupportedOperationException();
+	}
+
+	public void putAll(Map m) {
+		throw new UnsupportedOperationException();
+	}
+
+	public Object remove(Object k) {
+		throw new UnsupportedOperationException();
+	}
 }

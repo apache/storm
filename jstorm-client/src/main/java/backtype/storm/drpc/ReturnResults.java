@@ -18,61 +18,65 @@ import org.slf4j.LoggerFactory;
 import org.apache.thrift.TException;
 import org.json.simple.JSONValue;
 
-
 public class ReturnResults extends BaseRichBolt {
-    public static final Logger LOG = LoggerFactory.getLogger(ReturnResults.class);
-    OutputCollector _collector;
-    boolean local;
+	public static final Logger LOG = LoggerFactory
+			.getLogger(ReturnResults.class);
+	OutputCollector _collector;
+	boolean local;
 
-    Map<List, DRPCInvocationsClient> _clients = new HashMap<List, DRPCInvocationsClient>();
+	Map<List, DRPCInvocationsClient> _clients = new HashMap<List, DRPCInvocationsClient>();
 
-    @Override
-    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
-        _collector = collector;
-        local = stormConf.get(Config.STORM_CLUSTER_MODE).equals("local");
-    }
+	@Override
+	public void prepare(Map stormConf, TopologyContext context,
+			OutputCollector collector) {
+		_collector = collector;
+		local = stormConf.get(Config.STORM_CLUSTER_MODE).equals("local");
+	}
 
-    @Override
-    public void execute(Tuple input) {
-        String result = (String) input.getValue(0);
-        String returnInfo = (String) input.getValue(1);
-        if(returnInfo!=null) {
-            Map retMap = (Map) JSONValue.parse(returnInfo);
-            final String host = (String) retMap.get("host");
-            final int port = Utils.getInt(retMap.get("port"));
-            String id = (String) retMap.get("id");
-            DistributedRPCInvocations.Iface client;
-            if(local) {
-                client = (DistributedRPCInvocations.Iface) ServiceRegistry.getService(host);
-            } else {
-                List server = new ArrayList() {{
-                    add(host);
-                    add(port);
-                }};
-            
-                if(!_clients.containsKey(server)) {
-                    _clients.put(server, new DRPCInvocationsClient(host, port));
-                }
-                client = _clients.get(server);
-            }
-                
-            try {
-                client.result(id, result);
-                _collector.ack(input);
-            } catch(TException e) {
-                LOG.error("Failed to return results to DRPC server", e);
-                _collector.fail(input);
-            }
-        }
-    }    
+	@Override
+	public void execute(Tuple input) {
+		String result = (String) input.getValue(0);
+		String returnInfo = (String) input.getValue(1);
+		if (returnInfo != null) {
+			Map retMap = (Map) JSONValue.parse(returnInfo);
+			final String host = (String) retMap.get("host");
+			final int port = Utils.getInt(retMap.get("port"));
+			String id = (String) retMap.get("id");
+			DistributedRPCInvocations.Iface client;
+			if (local) {
+				client = (DistributedRPCInvocations.Iface) ServiceRegistry
+						.getService(host);
+			} else {
+				List server = new ArrayList() {
+					{
+						add(host);
+						add(port);
+					}
+				};
 
-    @Override
-    public void cleanup() {
-        for(DRPCInvocationsClient c: _clients.values()) {
-            c.close();
-        }
-    }
+				if (!_clients.containsKey(server)) {
+					_clients.put(server, new DRPCInvocationsClient(host, port));
+				}
+				client = _clients.get(server);
+			}
 
-    public void declareOutputFields(OutputFieldsDeclarer declarer) {
-    }
+			try {
+				client.result(id, result);
+				_collector.ack(input);
+			} catch (TException e) {
+				LOG.error("Failed to return results to DRPC server", e);
+				_collector.fail(input);
+			}
+		}
+	}
+
+	@Override
+	public void cleanup() {
+		for (DRPCInvocationsClient c : _clients.values()) {
+			c.close();
+		}
+	}
+
+	public void declareOutputFields(OutputFieldsDeclarer declarer) {
+	}
 }

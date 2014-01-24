@@ -5,5 +5,5 @@ import java.util.List;
 
 /* Container of a collection of tuples */
 public interface ITupleCollection {
-    public Iterator<List<Object>> getTuples();
+	public Iterator<List<Object>> getTuples();
 }

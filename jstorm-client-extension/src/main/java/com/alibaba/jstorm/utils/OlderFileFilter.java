@@ -10,20 +10,20 @@ import java.io.FileFilter;
  * 
  */
 public class OlderFileFilter implements FileFilter {
-    
-    private int seconds;
-    
-    public OlderFileFilter(int seconds) {
-        this.seconds = seconds;
-    }
-    
-    @Override
-    public boolean accept(File pathname) {
-        
-        long current_time = System.currentTimeMillis();
-        
-        return pathname.isFile()
-                && (pathname.lastModified() + seconds * 1000 <= current_time);
-    }
-    
+
+	private int seconds;
+
+	public OlderFileFilter(int seconds) {
+		this.seconds = seconds;
+	}
+
+	@Override
+	public boolean accept(File pathname) {
+
+		long current_time = System.currentTimeMillis();
+
+		return pathname.isFile()
+				&& (pathname.lastModified() + seconds * 1000 <= current_time);
+	}
+
 }

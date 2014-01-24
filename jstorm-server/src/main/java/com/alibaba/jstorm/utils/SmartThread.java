@@ -6,11 +6,11 @@ package com.alibaba.jstorm.utils;
  * 
  */
 public interface SmartThread {
-    public void start();
-    
-    public void join() throws InterruptedException;;
-    
-    public void interrupt();
-    
-    public Boolean isSleeping();
+	public void start();
+
+	public void join() throws InterruptedException;;
+
+	public void interrupt();
+
+	public Boolean isSleeping();
 }

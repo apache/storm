@@ -9,20 +9,20 @@ import com.alibaba.jstorm.daemon.worker.WorkerHeartbeat;
  * @author Xin.Zhou
  */
 public class StateHeartbeat {
-    private State           state;
-    private WorkerHeartbeat hb;
-    
-    public StateHeartbeat(State state, WorkerHeartbeat hb) {
-        this.state = state;
-        this.hb = hb;
-    }
-    
-    public State getState() {
-        return this.state;
-    }
-    
-    public WorkerHeartbeat getHeartbeat() {
-        return this.hb;
-    }
-    
+	private State state;
+	private WorkerHeartbeat hb;
+
+	public StateHeartbeat(State state, WorkerHeartbeat hb) {
+		this.state = state;
+		this.hb = hb;
+	}
+
+	public State getState() {
+		return this.state;
+	}
+
+	public WorkerHeartbeat getHeartbeat() {
+		return this.hb;
+	}
+
 }

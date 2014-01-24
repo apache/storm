@@ -25,31 +25,35 @@ import backtype.storm.utils.Utils;
  *
  */
 public class LoggingMetricsConsumer implements IMetricsConsumer {
-    public static final Logger LOG = LoggerFactory.getLogger(LoggingMetricsConsumer.class);
+	public static final Logger LOG = LoggerFactory
+			.getLogger(LoggingMetricsConsumer.class);
 
-    @Override
-    public void prepare(Map stormConf, Object registrationArgument, TopologyContext context, IErrorReporter errorReporter) { }
+	@Override
+	public void prepare(Map stormConf, Object registrationArgument,
+			TopologyContext context, IErrorReporter errorReporter) {
+	}
 
-    static private String padding = "                       ";
+	static private String padding = "                       ";
 
-    @Override
-    public void handleDataPoints(TaskInfo taskInfo, Collection<DataPoint> dataPoints) {
-        StringBuilder sb = new StringBuilder();
-        String header = String.format("%d\t%15s:%-4d\t%3d:%-11s\t",
-            taskInfo.timestamp,
-            taskInfo.srcWorkerHost, taskInfo.srcWorkerPort,
-            taskInfo.srcTaskId,
-            taskInfo.srcComponentId);
-        sb.append(header);
-        for (DataPoint p : dataPoints) {
-            sb.delete(header.length(), sb.length());
-            sb.append(p.name)
-                .append(padding).delete(header.length()+23,sb.length()).append("\t")
-                .append(p.value);
-            LOG.info(sb.toString());
-        }
-    }
+	@Override
+	public void handleDataPoints(TaskInfo taskInfo,
+			Collection<DataPoint> dataPoints) {
+		StringBuilder sb = new StringBuilder();
+		String header = String.format("%d\t%15s:%-4d\t%3d:%-11s\t",
+				taskInfo.timestamp, taskInfo.srcWorkerHost,
+				taskInfo.srcWorkerPort, taskInfo.srcTaskId,
+				taskInfo.srcComponentId);
+		sb.append(header);
+		for (DataPoint p : dataPoints) {
+			sb.delete(header.length(), sb.length());
+			sb.append(p.name).append(padding)
+					.delete(header.length() + 23, sb.length()).append("\t")
+					.append(p.value);
+			LOG.info(sb.toString());
+		}
+	}
 
-    @Override
-    public void cleanup() { }
+	@Override
+	public void cleanup() {
+	}
 }

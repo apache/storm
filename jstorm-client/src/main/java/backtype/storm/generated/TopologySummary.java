@@ -33,6 +33,7 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
   private static final org.apache.thrift.protocol.TField NUM_CPU_FIELD_DESC = new org.apache.thrift.protocol.TField("num_cpu", org.apache.thrift.protocol.TType.I32, (short)7);
   private static final org.apache.thrift.protocol.TField NUM_MEM_FIELD_DESC = new org.apache.thrift.protocol.TField("num_mem", org.apache.thrift.protocol.TType.I32, (short)8);
   private static final org.apache.thrift.protocol.TField NUM_DISK_FIELD_DESC = new org.apache.thrift.protocol.TField("num_disk", org.apache.thrift.protocol.TType.I32, (short)9);
+  private static final org.apache.thrift.protocol.TField GROUP_FIELD_DESC = new org.apache.thrift.protocol.TField("group", org.apache.thrift.protocol.TType.STRING, (short)10);
 
   private String id; // required
   private String name; // required
@@ -43,6 +44,7 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
   private int num_cpu; // required
   private int num_mem; // required
   private int num_disk; // required
+  private String group; // required
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift.TFieldIdEnum {
@@ -54,7 +56,8 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
     NUM_WORKERS((short)6, "num_workers"),
     NUM_CPU((short)7, "num_cpu"),
     NUM_MEM((short)8, "num_mem"),
-    NUM_DISK((short)9, "num_disk");
+    NUM_DISK((short)9, "num_disk"),
+    GROUP((short)10, "group");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -87,6 +90,8 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
           return NUM_MEM;
         case 9: // NUM_DISK
           return NUM_DISK;
+        case 10: // GROUP
+          return GROUP;
         default:
           return null;
       }
@@ -156,6 +161,8 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
     tmpMap.put(_Fields.NUM_DISK, new org.apache.thrift.meta_data.FieldMetaData("num_disk", org.apache.thrift.TFieldRequirementType.REQUIRED, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
+    tmpMap.put(_Fields.GROUP, new org.apache.thrift.meta_data.FieldMetaData("group", org.apache.thrift.TFieldRequirementType.REQUIRED, 
+        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
     metaDataMap = Collections.unmodifiableMap(tmpMap);
     org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(TopologySummary.class, metaDataMap);
   }
@@ -172,7 +179,8 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
     int num_workers,
     int num_cpu,
     int num_mem,
-    int num_disk)
+    int num_disk,
+    String group)
   {
     this();
     this.id = id;
@@ -190,6 +198,7 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
     set_num_mem_isSet(true);
     this.num_disk = num_disk;
     set_num_disk_isSet(true);
+    this.group = group;
   }
 
   /**
@@ -213,6 +222,9 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
     this.num_cpu = other.num_cpu;
     this.num_mem = other.num_mem;
     this.num_disk = other.num_disk;
+    if (other.is_set_group()) {
+      this.group = other.group;
+    }
   }
 
   public TopologySummary deepCopy() {
@@ -236,6 +248,7 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
     this.num_mem = 0;
     set_num_disk_isSet(false);
     this.num_disk = 0;
+    this.group = null;
   }
 
   public String get_id() {
@@ -439,6 +452,29 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
     __isset_bit_vector.set(__NUM_DISK_ISSET_ID, value);
   }
 
+  public String get_group() {
+    return this.group;
+  }
+
+  public void set_group(String group) {
+    this.group = group;
+  }
+
+  public void unset_group() {
+    this.group = null;
+  }
+
+  /** Returns true if field group is set (has been assigned a value) and false otherwise */
+  public boolean is_set_group() {
+    return this.group != null;
+  }
+
+  public void set_group_isSet(boolean value) {
+    if (!value) {
+      this.group = null;
+    }
+  }
+
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case ID:
@@ -513,6 +549,14 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
       }
       break;
 
+    case GROUP:
+      if (value == null) {
+        unset_group();
+      } else {
+        set_group((String)value);
+      }
+      break;
+
     }
   }
 
@@ -545,6 +589,9 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
     case NUM_DISK:
       return Integer.valueOf(get_num_disk());
 
+    case GROUP:
+      return get_group();
+
     }
     throw new IllegalStateException();
   }
@@ -574,6 +621,8 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
       return is_set_num_mem();
     case NUM_DISK:
       return is_set_num_disk();
+    case GROUP:
+      return is_set_group();
     }
     throw new IllegalStateException();
   }
@@ -672,6 +721,15 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
         return false;
     }
 
+    boolean this_present_group = true && this.is_set_group();
+    boolean that_present_group = true && that.is_set_group();
+    if (this_present_group || that_present_group) {
+      if (!(this_present_group && that_present_group))
+        return false;
+      if (!this.group.equals(that.group))
+        return false;
+    }
+
     return true;
   }
 
@@ -723,6 +781,11 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
     builder.append(present_num_disk);
     if (present_num_disk)
       builder.append(num_disk);
+
+    boolean present_group = true && (is_set_group());
+    builder.append(present_group);
+    if (present_group)
+      builder.append(group);
 
     return builder.toHashCode();
   }
@@ -825,6 +888,16 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
         return lastComparison;
       }
     }
+    lastComparison = Boolean.valueOf(is_set_group()).compareTo(typedOther.is_set_group());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_group()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.group, typedOther.group);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
     return 0;
   }
 
@@ -911,6 +984,13 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
             org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
           }
           break;
+        case 10: // GROUP
+          if (field.type == org.apache.thrift.protocol.TType.STRING) {
+            this.group = iprot.readString();
+          } else { 
+            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
         default:
           org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
       }
@@ -957,6 +1037,11 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
     oprot.writeFieldBegin(NUM_DISK_FIELD_DESC);
     oprot.writeI32(this.num_disk);
     oprot.writeFieldEnd();
+    if (this.group != null) {
+      oprot.writeFieldBegin(GROUP_FIELD_DESC);
+      oprot.writeString(this.group);
+      oprot.writeFieldEnd();
+    }
     oprot.writeFieldStop();
     oprot.writeStructEnd();
   }
@@ -1013,6 +1098,14 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
     sb.append("num_disk:");
     sb.append(this.num_disk);
     first = false;
+    if (!first) sb.append(", ");
+    sb.append("group:");
+    if (this.group == null) {
+      sb.append("null");
+    } else {
+      sb.append(this.group);
+    }
+    first = false;
     sb.append(")");
     return sb.toString();
   }
@@ -1053,6 +1146,10 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
 
     if (!is_set_num_disk()) {
       throw new org.apache.thrift.protocol.TProtocolException("Required field 'num_disk' is unset! Struct:" + toString());
+    }
+
+    if (!is_set_group()) {
+      throw new org.apache.thrift.protocol.TProtocolException("Required field 'group' is unset! Struct:" + toString());
     }
 
   }

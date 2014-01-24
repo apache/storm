@@ -5,9 +5,9 @@ import storm.trident.tuple.TridentTuple;
 
 public class TrueFilter extends BaseFilter {
 
-    @Override
-    public boolean isKeep(TridentTuple tuple) {
-        return true;
-    }
-    
+	@Override
+	public boolean isKeep(TridentTuple tuple) {
+		return true;
+	}
+
 }

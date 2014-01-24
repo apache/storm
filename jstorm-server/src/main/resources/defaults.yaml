@@ -67,6 +67,9 @@ supervisor.monitor.frequency.secs: 10
 #how frequently the supervisor heartbeats to the cluster state (for nimbus)
 supervisor.heartbeat.frequency.secs: 60
 supervisor.enable: true
+#if set null, it will be get by system
+supervisor.hostname: null
+
 
 #How many cpu slot one supervisor can support , if it is null, it will be set by JStorm
 supervisor.cpu.slot.num: null
@@ -88,7 +91,7 @@ supervisor.disk.slot: null
 
 ### worker.* configs are for task workers
 # worker gc configuration
-worker.gc.childopts: " -XX:+UseConcMarkSweepGC  -XX:+UseCMSInitiatingOccupancyOnly -XX:CMSInitiatingOccupancyFraction=70 "
+worker.gc.childopts: " -XX:+HeapDumpOnOutOfMemoryError  -XX:+UseConcMarkSweepGC  -XX:+UseCMSInitiatingOccupancyOnly -XX:CMSInitiatingOccupancyFraction=70 "
 worker.heartbeat.frequency.secs: 2
 worker.classpath: ""
 
@@ -142,15 +145,28 @@ topology.trident.batch.emit.interval.millis: 500
 # set topology resource assign priority weight
 # the new topology resource assign resource will according to CPU/memory/disk/port 4 part
 # so different weight, different priority
-topology.disk.weight: 3
-topology.cpu.weight: 1
+topology.disk.weight: 5
+topology.cpu.weight: 3
 topology.memory.weight: 1
-topology.port.weight: 1
+topology.port.weight: 2
+
+# if this is false, select supervisor whose weight is highest(left_disk_slot_num * disk.weight 
+# + left_cpu_slot_num * cpu.weight + left_memory_slot_num * memory.weight + 
+# left_port_slot_num * port.weight)
+# it this is true, select which supervisor is best one according to slot level by level, 
+# select the supervisor whose disk slot is the most
+# if the last select result isn't 1, then select supervisor according to cpu
+# then according to port, last  according to memory
+topology.assign.supervisor.bylevel: true
 
 #the following weight will decide which task will be assign firstly
 topology.task.on.different.node.weight: 2
 topology.use.old.assign.ratio.weight: 2
 topology.user.define.assign.ratio.weight: 2
+
+
+# enable topology use user-define classloader to avoid class conflict
+topology.enable.classloader: false
 
 dev.zookeeper.path: "/tmp/dev-storm-zookeeper"
 
