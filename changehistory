@@ -1,30 +1,44 @@
+# Release 0.9.1
+1. Application classloader. when Application jar is conflict with jstorm jar, 
+   please enable application classloader.
+2. Group Quato, Different group with different resource quato.
+
+Bug fix
+1. Fix Rotation Map competition issue.
+2. Set default acker number as 0
+3. Set default spout/bolt number as 1
+4. Add log directory in log4j configuration file
+5. Add transaction example
+6. Fix UI showing wrong worker numbe in topology page
+7. Fix UI showing wrong latency in topology page
+8. Replace hardcode Integer convert with JStormUtils.parseInt
+9. Support string parse in Utils.getInt
+10. Remove useless dependency in pom.xml
+11. Support supervisor using IP or special hostname
+12. Add more details when no resource has been assigned to one new topology
+13. Replace normal thread with Smart thread
+14. Add gc details 
+15. Code format
+16. Unify stormId and topologyId as topologyId
+17. Every nimbus will regist ip to ZK
+
 # Release 0.9.0
-In this version, it will follow storm 0.9.1 interface, so the topology running
-in storm 0.9.0 can run in jstorm without any change.
+In this version, it will follow storm 0.9.0 interface, so the application running
+on storm 0.9.0 can run in jstorm 0.9.0 without any change.
 
 Stability
-1. provide nimbus HA
-1.1. when the master nimbus shuts down, it will select another online nimbus to 
-     the master. of couse, there is only one master nimbus online at one time and
-     other nimbuses just are synchronousing the master's data.
-2. solve the storm's problem of zeromq's avalanche
-2.1. the RPC is based on netty and disruptor so that the tuples' sending speed will
-	 alway equal to tuples' receiving speed
-3. the data stream is more stable
-3.1. JStrom will not do rebalance when:
-3.1.1. add supervisor
-3.1.2  supervisor shut down
-3.1.3  avaliable workers' num is not enough when you are submiting a new topology
-4. new topology will not affect old topologys
-4.1 new schedule regulation will manage topologys on four dimensions:cpu, mem, disk, net
-4.2 the new topology will not seize old topologys' resource
-5. many bugs fixed
+1. provide nimbus HA. when the master nimbus shuts down, it will select another
+ online nimbus to be the master. There is only one master nimbus online 
+ any time and the slave nimbuses just synchronouse the master's data.
+2. RPC through netty is stable, the sending speed is match with receiving speed. 
 
-Powerful schedule
-1. based on four dimensions:cpu, mem, disk, net
-2. provide regulation that topology uses historical schedule
-3. provide regulation of user define schedule
-4. provide regulation that topology's tasks run on different supervisor or same supervisor
+
+Powerful scheduler
+1. Assigning resource on four dimensions:cpu, mem, disk, net
+2. Application can use old assignment.
+3. Application can use user-define resource.
+4. Task can application extra cpu slot or memory slot.
+4. Application can force tasks run on different supervisor or the same supervisor
 
 
 # Release 0.7.1
