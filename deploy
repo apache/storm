@@ -21,9 +21,9 @@ Deploy
 3.1 copy configuration to ~/.jstorm/storm.yaml
 3.2 downlaod tomcat 7.x
 3.3 Extrade tar of tomcat 7.x
-3.4 put jstorm-ui-0.7.1.war to Tomcat's webapps directory
+3.4 put jstorm-ui-0.9.0.war to Tomcat's webapps directory
 
-open one webbrowser and go to $jstorm-ui-ip:8080/jstorm-ui-0.7.1 
+open one webbrowser and go to $jstorm-ui-ip:8080/jstorm-ui-0.9.0 
 
 3.5 you also can change the default page as jstorm-ui, please google how to do it.
 
