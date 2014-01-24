@@ -430,11 +430,11 @@ class SyncProcessEvent extends ShutdownWork {
 	public String getChildOpts(Map stormConf) {
 		String childopts = " ";
 
-		if (ConfigExtension.getWorkerGc(stormConf) != null) {
-			childopts += ConfigExtension.getWorkerGc(stormConf);
-		} else if (stormConf.get(Config.TOPOLOGY_WORKER_CHILDOPTS) != null) {
+		if (stormConf.get(Config.TOPOLOGY_WORKER_CHILDOPTS) != null) {
 			childopts += (String) stormConf
 					.get(Config.TOPOLOGY_WORKER_CHILDOPTS);
+		} else if (ConfigExtension.getWorkerGc(stormConf) != null) {
+			childopts += ConfigExtension.getWorkerGc(stormConf);
 		}
 
 		return childopts;
@@ -478,6 +478,8 @@ class SyncProcessEvent extends ShutdownWork {
 		// JStormUtils.current_classpath(), param);
 
 		// get child process parameter
+		
+		String stormhome = System.getProperty("jstorm.home");
 
 		long memSlotSize = ConfigExtension.getMemSlotSize(conf);
 		long memSize = memSlotSize * assignment.getMemSlotNum();
@@ -486,6 +488,8 @@ class SyncProcessEvent extends ShutdownWork {
 
 		// @@@ some hack logic in the old storm, reserve it here
 		childopts = childopts.replace("%ID%", port.toString());
+		childopts = childopts.replace("%TOPOLOGYID%", topologyId);
+		childopts = childopts.replace("%JSTORM_HOME%", stormhome);
 
 		String logFileName = topologyId + "-worker-" + port + ".log";
 		// String logFileName = "worker-" + port + ".log";
@@ -509,8 +513,6 @@ class SyncProcessEvent extends ShutdownWork {
 		commandSB.append(logFileName);
 
 		// commandSB.append(" -Dlog4j.ignoreTCL=true");
-
-		String stormhome = System.getProperty("jstorm.home");
 
 		if (stormhome != null) {
 			// commandSB.append(" -Dlogback.configurationFile=" + stormhome +

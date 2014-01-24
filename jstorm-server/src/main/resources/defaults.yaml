@@ -91,7 +91,7 @@ supervisor.disk.slot: null
 
 ### worker.* configs are for task workers
 # worker gc configuration
-worker.gc.childopts: " -XX:+HeapDumpOnOutOfMemoryError  -XX:+UseConcMarkSweepGC  -XX:+UseCMSInitiatingOccupancyOnly -XX:CMSInitiatingOccupancyFraction=70 "
+worker.gc.childopts: " -XX:+UseConcMarkSweepGC  -XX:+UseCMSInitiatingOccupancyOnly -XX:CMSInitiatingOccupancyFraction=70 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+HeapDumpOnOutOfMemoryError -Xloggc:%JSTORM_HOME%/logs/%TOPOLOGYID%-worker-%ID%-gc.log -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=1 -XX:GCLogFileSize=100M "
 worker.heartbeat.frequency.secs: 2
 worker.classpath: ""
 
