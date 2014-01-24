@@ -9,112 +9,115 @@ import org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.log4j.Logger;
 
 public class SharedResourcePool implements ResourcePool<Integer>, Serializable {
-    private static final Logger LOG = Logger.getLogger(SharedResourcePool.class);
-    
-    /**  */
-    private static final long serialVersionUID = 618811509112791661L;
+	private static final Logger LOG = Logger
+			.getLogger(SharedResourcePool.class);
 
-    private final ResourceType  type;
-    private final int           totalSlotNum;
-    private AtomicInteger       freeSlotNum;
+	/**  */
+	private static final long serialVersionUID = 618811509112791661L;
 
-    public SharedResourcePool(final ResourceType type, final int totalSlotNum) {
-        this.type = type;
-        this.totalSlotNum = totalSlotNum;
-        this.freeSlotNum = new AtomicInteger(totalSlotNum);
+	private final ResourceType type;
+	private final int totalSlotNum;
+	private AtomicInteger freeSlotNum;
 
-        LOG.info("Successfully init " + this.getClass().getSimpleName() + ":" + this.toString());
-    }
+	public SharedResourcePool(final ResourceType type, final int totalSlotNum) {
+		this.type = type;
+		this.totalSlotNum = totalSlotNum;
+		this.freeSlotNum = new AtomicInteger(totalSlotNum);
 
-    @Override
-    public ResourceType getType() {
-        return type;
-    }
+		LOG.info("Successfully init " + this.getClass().getSimpleName() + ":"
+				+ this.toString());
+	}
 
-    @Override
-    public int getTotalNum() {
-        return totalSlotNum;
-    }
+	@Override
+	public ResourceType getType() {
+		return type;
+	}
 
-    @Override
-    public int getLeftNum() {
-        return freeSlotNum.get();
-    }
+	@Override
+	public int getTotalNum() {
+		return totalSlotNum;
+	}
 
-    @Override
-    public int getUsedNum() {
-        return totalSlotNum - freeSlotNum.get();
-    }
+	@Override
+	public int getLeftNum() {
+		return freeSlotNum.get();
+	}
 
-    public Integer alloc(Integer slotNum, Object context) {
+	@Override
+	public int getUsedNum() {
+		return totalSlotNum - freeSlotNum.get();
+	}
 
-        LOG.debug(context + " alloc " + type + ":" + slotNum);
+	public Integer alloc(Integer slotNum, Object context) {
 
-        if (slotNum == null) {
-            LOG.info(context + " alloc " + type + ":" + slotNum);
-            return null;
-        }
+		LOG.debug(context + " alloc " + type + ":" + slotNum);
 
-        if (freeSlotNum.get() >= slotNum) {
-            freeSlotNum.addAndGet(-slotNum);
-            return slotNum;
-        }
-        else
-            return null;
-    }
+		if (slotNum == null) {
+			LOG.info(context + " alloc " + type + ":" + slotNum);
+			return null;
+		}
 
-    @Override
-    public Integer alloc(Object context) {
+		if (freeSlotNum.get() >= slotNum) {
+			freeSlotNum.addAndGet(-slotNum);
+			return slotNum;
+		} else
+			return null;
+	}
 
-        return alloc(Integer.valueOf(1), context);
-    }
+	@Override
+	public Integer alloc(Object context) {
 
-    /**
-     * @@@
-     * Here skip double free check  
-     * @see com.alibaba.jstorm.resource.ResourcePool#free(java.lang.Object, java.lang.Object)
-     */
-    @Override
-    public void free(Integer slotNum, Object context) {
+		return alloc(Integer.valueOf(1), context);
+	}
 
-        LOG.debug(context + " free " + type + ":" + slotNum);
+	/**
+	 * @@@ Here skip double free check
+	 * @see com.alibaba.jstorm.resource.ResourcePool#free(java.lang.Object,
+	 *      java.lang.Object)
+	 */
+	@Override
+	public void free(Integer slotNum, Object context) {
 
-        if (slotNum != null) {
-            freeSlotNum.addAndGet(slotNum);
-        }
-    }
+		LOG.debug(context + " free " + type + ":" + slotNum);
 
-    @Override
-    public boolean isAvailable(Integer slotNum, Object context) {
-        if (slotNum == null) {
-            LOG.info(context + " check available " + type + ":" + slotNum);
-            return true;
-        }
-        if (freeSlotNum.get() >= slotNum)
-            return true;
-        else
-            return false;
-    }
+		if (slotNum != null) {
+			freeSlotNum.addAndGet(slotNum);
+		}
+	}
 
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof SharedResourcePool == false) {
-            return false;
-        }
+	@Override
+	public boolean isAvailable(Integer slotNum, Object context) {
+		if (slotNum == null) {
+			LOG.info(context + " check available " + type + ":" + slotNum);
+			return true;
+		}
+		if (freeSlotNum.get() >= slotNum)
+			return true;
+		else
+			return false;
+	}
 
-        SharedResourcePool otherPool = (SharedResourcePool) obj;
-        return otherPool.getType().equals(type) && otherPool.totalSlotNum == totalSlotNum
-               && otherPool.freeSlotNum.equals(freeSlotNum);
-    }
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof SharedResourcePool == false) {
+			return false;
+		}
 
-    @Override
-    public int hashCode() {
-        return type.hashCode() + totalSlotNum + freeSlotNum.hashCode();
-    }
+		SharedResourcePool otherPool = (SharedResourcePool) obj;
+		return otherPool.getType().equals(type)
+				&& otherPool.totalSlotNum == totalSlotNum
+				&& otherPool.freeSlotNum.equals(freeSlotNum);
+	}
 
-    @Override
-    public String toString() {
-        return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
-    }
+	@Override
+	public int hashCode() {
+		return type.hashCode() + totalSlotNum + freeSlotNum.hashCode();
+	}
+
+	@Override
+	public String toString() {
+		return ToStringBuilder.reflectionToString(this,
+				ToStringStyle.SHORT_PREFIX_STYLE);
+	}
 
 }

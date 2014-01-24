@@ -7,5 +7,5 @@ package com.alibaba.jstorm.task.error;
  * 
  */
 public interface ITaskReportErr {
-    public void report(Throwable error);
+	public void report(Throwable error);
 }

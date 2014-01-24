@@ -19,6 +19,7 @@ import backtype.storm.utils.Utils;
 
 import com.alibaba.jstorm.ui.UIUtils;
 import com.alibaba.jstorm.ui.model.ClusterSumm;
+import com.alibaba.jstorm.ui.model.GroupSumm;
 import com.alibaba.jstorm.ui.model.SupervisorSumm;
 import com.alibaba.jstorm.ui.model.TopologySumm;
 
@@ -32,73 +33,84 @@ public class MainPage implements Serializable {
 
 	private static final long serialVersionUID = -6103468103521877721L;
 
-	private static final Logger  LOG   = Logger.getLogger(MainPage.class);
-    
-    private String               host  = "localhost";
-    
-    private ClusterSummary       summ  = null;
-    private List<ClusterSumm>    csumm = null;
-    private List<TopologySumm>   tsumm = null;
-    private List<SupervisorSumm> ssumm = null;
-    
-    public MainPage() throws Exception {
-        init();
-    }
-    
-    @SuppressWarnings("rawtypes")
-    private void init() throws Exception {
-        
-        NimbusClient client = null;
-        try {
+	private static final Logger LOG = Logger.getLogger(MainPage.class);
 
-            Map conf = UIUtils.readUiConfig();
-            client = NimbusClient.getConfiguredClient(conf);
-            summ = client.getClient().getClusterInfo();
-            
-            tsumm = UIUtils.topologySummary(summ.get_topologies());
-            csumm = UIUtils.clusterSummary(summ, client.getMasterHost());
-            ssumm = UIUtils.supervisorSummary(summ.get_supervisors());
-        } catch (Exception e) {
-            LOG.error("Failed to get cluster information:", e);
-            throw e;
-        } finally {
-            if (client != null) {
-                client.close();
-            }
-        }
-    }
-    
-    public List<ClusterSumm> getCsumm() {
-        return csumm;
-    }
-    
-    public List<TopologySumm> getTsumm() {
-        
-        return tsumm;
-    }
-    
-    public List<SupervisorSumm> getSsumm() {
-        
-        return ssumm;
-    }
-    
-    public String getHost() {
-        return host;
-    }
-    
-    public void setHost(String host) {
-        this.host = host;
-    }
+	private String host = "localhost";
 
-    public static void main(String[] args) {
-        try {
-            MainPage m = new MainPage();
-            System.out.println(m.getCsumm());
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        
-    }
+	private ClusterSummary summ = null;
+	private List<ClusterSumm> csumm = null;
+	private List<TopologySumm> tsumm = null;
+	private List<SupervisorSumm> ssumm = null;
+	private List<GroupSumm> gsumm = null;
+
+	public MainPage() throws Exception {
+		init();
+	}
+
+	@SuppressWarnings("rawtypes")
+	private void init() throws Exception {
+
+		NimbusClient client = null;
+		try {
+
+			Map conf = UIUtils.readUiConfig();
+			client = NimbusClient.getConfiguredClient(conf);
+			summ = client.getClient().getClusterInfo();
+
+			tsumm = UIUtils.topologySummary(summ.get_topologies(), summ
+					.get_groupToResource().keySet());
+			csumm = UIUtils.clusterSummary(summ, client.getMasterHost());
+			ssumm = UIUtils.supervisorSummary(summ.get_supervisors());
+			gsumm = UIUtils.groupSummary(summ.get_groupToResource(),
+					summ.get_groupToUsedResource());
+			if (!summ.is_isGroupModel())
+				gsumm = new ArrayList<GroupSumm>();
+		} catch (Exception e) {
+			LOG.error("Failed to get cluster information:", e);
+			throw e;
+		} finally {
+			if (client != null) {
+				client.close();
+			}
+		}
+	}
+
+	public List<ClusterSumm> getCsumm() {
+		return csumm;
+	}
+
+	public List<TopologySumm> getTsumm() {
+
+		return tsumm;
+	}
+
+	public List<SupervisorSumm> getSsumm() {
+
+		return ssumm;
+	}
+
+	public List<GroupSumm> getGsumm() {
+
+		return gsumm;
+	}
+
+	public String getHost() {
+		return host;
+	}
+
+	public void setHost(String host) {
+		this.host = host;
+	}
+
+	public static void main(String[] args) {
+		try {
+			MainPage m = new MainPage();
+			System.out.println(m.getCsumm());
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+	}
 
 }

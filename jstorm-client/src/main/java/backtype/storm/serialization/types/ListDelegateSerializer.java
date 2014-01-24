@@ -6,10 +6,9 @@ import com.esotericsoftware.kryo.serializers.CollectionSerializer;
 import backtype.storm.utils.ListDelegate;
 import java.util.Collection;
 
-
 public class ListDelegateSerializer extends CollectionSerializer {
-    @Override
-    public Collection create(Kryo kryo, Input input, Class<Collection> type) {
-        return new ListDelegate();
-    }    
+	@Override
+	public Collection create(Kryo kryo, Input input, Class<Collection> type) {
+		return new ListDelegate();
+	}
 }

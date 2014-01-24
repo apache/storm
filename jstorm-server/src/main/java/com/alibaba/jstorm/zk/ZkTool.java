@@ -12,133 +12,137 @@ import com.alibaba.jstorm.cluster.Cluster;
 import com.alibaba.jstorm.cluster.DistributedClusterState;
 
 public class ZkTool {
-    private static Logger      LOG      = Logger.getLogger(ZkTool.class);
+	private static Logger LOG = Logger.getLogger(ZkTool.class);
 
-    public static final String READ_CMD = "read";
+	public static final String READ_CMD = "read";
 
-    public static final String RM_CMD   = "rm";
+	public static final String RM_CMD = "rm";
 
-    public static void usage() {
-        LOG.info("Read ZK node's data, please do as following:");
-        LOG.info(ZkTool.class.getName() + " read zkpath");
+	public static void usage() {
+		LOG.info("Read ZK node's data, please do as following:");
+		LOG.info(ZkTool.class.getName() + " read zkpath");
 
-        LOG.info("\nDelete topology backup assignment, please do as following:");
-        LOG.info(ZkTool.class.getName() + " rm topologyname");
-    }
+		LOG.info("\nDelete topology backup assignment, please do as following:");
+		LOG.info(ZkTool.class.getName() + " rm topologyname");
+	}
 
-    public static String getData(DistributedClusterState zkClusterState, String path)
-                                                                                     throws Exception {
-        byte[] data = zkClusterState.get_data(path, false);
-        if (data == null || data.length == 0) {
-            return null;
-        }
+	public static String getData(DistributedClusterState zkClusterState,
+			String path) throws Exception {
+		byte[] data = zkClusterState.get_data(path, false);
+		if (data == null || data.length == 0) {
+			return null;
+		}
 
-        Object obj = Utils.deserialize(data);
+		Object obj = Utils.deserialize(data);
 
-        return obj.toString();
-    }
+		return obj.toString();
+	}
 
-    public static void readData(String path) {
+	public static void readData(String path) {
 
-        DistributedClusterState zkClusterState = null;
+		DistributedClusterState zkClusterState = null;
 
-        try {
-            conf.put(Config.STORM_ZOOKEEPER_ROOT, "/");
+		try {
+			conf.put(Config.STORM_ZOOKEEPER_ROOT, "/");
 
-            zkClusterState = new DistributedClusterState(conf);
+			zkClusterState = new DistributedClusterState(conf);
 
-            String data = getData(zkClusterState, path);
-            if (data == null) {
-                LOG.info("No data of " + path);
-            }
+			String data = getData(zkClusterState, path);
+			if (data == null) {
+				LOG.info("No data of " + path);
+			}
 
-            StringBuilder sb = new StringBuilder();
+			StringBuilder sb = new StringBuilder();
 
-            sb.append("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n");
-            sb.append("Zk node " + path + "\n");
-            sb.append("Readable data:" + data + "\n");
-            sb.append("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n");
+			sb.append("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n");
+			sb.append("Zk node " + path + "\n");
+			sb.append("Readable data:" + data + "\n");
+			sb.append("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n");
 
-            LOG.info(sb.toString());
+			LOG.info(sb.toString());
 
-        } catch (Exception e) {
-            if (zkClusterState == null) {
-                LOG.error("Failed to connect ZK ", e);
-            } else {
-                LOG.error("Failed to read data " + path + "\n", e);
-            }
-        } finally {
-            if (zkClusterState != null) {
-                zkClusterState.close();
-            }
-        }
-    }
+		} catch (Exception e) {
+			if (zkClusterState == null) {
+				LOG.error("Failed to connect ZK ", e);
+			} else {
+				LOG.error("Failed to read data " + path + "\n", e);
+			}
+		} finally {
+			if (zkClusterState != null) {
+				zkClusterState.close();
+			}
+		}
+	}
 
-    public static void rmBakTopology(String topologyName) {
+	public static void rmBakTopology(String topologyName) {
 
-        DistributedClusterState zkClusterState = null;
+		DistributedClusterState zkClusterState = null;
 
-        try {
+		try {
 
-            zkClusterState = new DistributedClusterState(conf);
+			zkClusterState = new DistributedClusterState(conf);
 
-            String path = Cluster.ASSIGNMENTS_BAK_SUBTREE;
-            List<String> bakTopologys = zkClusterState.get_children(path, false);
+			String path = Cluster.ASSIGNMENTS_BAK_SUBTREE;
+			List<String> bakTopologys = zkClusterState
+					.get_children(path, false);
 
-            for (String tid : bakTopologys) {
-                if (tid.equals(topologyName)) {
-                    LOG.info("Find backup " + topologyName);
+			for (String tid : bakTopologys) {
+				if (tid.equals(topologyName)) {
+					LOG.info("Find backup " + topologyName);
 
-                    String topologyPath = Cluster.assignment_bak_path(topologyName);
-                    zkClusterState.delete_node(topologyPath);
+					String topologyPath = Cluster
+							.assignment_bak_path(topologyName);
+					zkClusterState.delete_node(topologyPath);
 
-                    LOG.info("Successfully delete topology " + topologyName + " backup Assignment");
-                    
-                    return ;
-                }
-            }
+					LOG.info("Successfully delete topology " + topologyName
+							+ " backup Assignment");
 
-            LOG.info("No backup topology " + topologyName + " Assignment");
+					return;
+				}
+			}
 
-        } catch (Exception e) {
-            if (zkClusterState == null) {
-                LOG.error("Failed to connect ZK ", e);
-            } else {
-                LOG.error("Failed to delete old topology " + topologyName + "\n", e);
-            }
-        } finally {
-            if (zkClusterState != null) {
-                zkClusterState.close();
-            }
-        }
+			LOG.info("No backup topology " + topologyName + " Assignment");
 
-    }
+		} catch (Exception e) {
+			if (zkClusterState == null) {
+				LOG.error("Failed to connect ZK ", e);
+			} else {
+				LOG.error("Failed to delete old topology " + topologyName
+						+ "\n", e);
+			}
+		} finally {
+			if (zkClusterState != null) {
+				zkClusterState.close();
+			}
+		}
 
-    private static Map conf;
+	}
 
-    /**
-     * @param args
-     * @throws Exception
-     */
-    public static void main(String[] args) throws Exception {
-        // TODO Auto-generated method stub
+	private static Map conf;
 
-        if (args.length < 2) {
-            LOG.info("Invalid parameter");
-            usage();
-            return;
-        }
+	/**
+	 * @param args
+	 * @throws Exception
+	 */
+	public static void main(String[] args) throws Exception {
+		// TODO Auto-generated method stub
 
-        conf = Utils.readStormConfig();
+		if (args.length < 2) {
+			LOG.info("Invalid parameter");
+			usage();
+			return;
+		}
 
-        if (args[0].equalsIgnoreCase(READ_CMD)) {
+		conf = Utils.readStormConfig();
 
-            readData(args[1]);
+		if (args[0].equalsIgnoreCase(READ_CMD)) {
 
-        } else if (args[0].equalsIgnoreCase(RM_CMD)) {
-            rmBakTopology(args[1]);
-        }
+			readData(args[1]);
 
-    }
+		} else if (args[0].equalsIgnoreCase(RM_CMD)) {
+			rmBakTopology(args[1]);
+		}
+
+	}
 
 }

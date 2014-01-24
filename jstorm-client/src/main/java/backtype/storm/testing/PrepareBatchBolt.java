@@ -9,27 +9,25 @@ import backtype.storm.utils.Utils;
 import java.util.ArrayList;
 import java.util.List;
 
-
 public class PrepareBatchBolt extends BaseBasicBolt {
-    Fields _outFields;
-    
-    public PrepareBatchBolt(Fields outFields) {
-        _outFields = outFields;
-    }
+	Fields _outFields;
 
-    @Override
-    public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declare(_outFields);
-    }
+	public PrepareBatchBolt(Fields outFields) {
+		_outFields = outFields;
+	}
 
-    @Override
-    public void execute(Tuple input, BasicOutputCollector collector) {
-        long id = Utils.secureRandomLong();
-        List<Object> toEmit = new ArrayList<Object>();
-        toEmit.add(id);
-        toEmit.addAll(input.getValues());
-        collector.emit(toEmit);
-    }
-    
-    
+	@Override
+	public void declareOutputFields(OutputFieldsDeclarer declarer) {
+		declarer.declare(_outFields);
+	}
+
+	@Override
+	public void execute(Tuple input, BasicOutputCollector collector) {
+		long id = Utils.secureRandomLong();
+		List<Object> toEmit = new ArrayList<Object>();
+		toEmit.add(id);
+		toEmit.addAll(input.getValues());
+		collector.emit(toEmit);
+	}
+
 }

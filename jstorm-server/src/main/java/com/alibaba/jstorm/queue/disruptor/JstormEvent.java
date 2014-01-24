@@ -3,9 +3,9 @@ package com.alibaba.jstorm.queue.disruptor;
 import com.lmax.disruptor.EventFactory;
 
 public class JstormEvent {
-	
+
 	private String msgId;
-	
+
 	public String getMsgId() {
 		return msgId;
 	}
@@ -19,5 +19,5 @@ public class JstormEvent {
 			return new JstormEvent();
 		}
 	};
-	
+
 }

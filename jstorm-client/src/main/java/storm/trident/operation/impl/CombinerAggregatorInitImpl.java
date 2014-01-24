@@ -10,23 +10,23 @@ import storm.trident.tuple.TridentTuple;
 
 public class CombinerAggregatorInitImpl implements Function {
 
-    CombinerAggregator _agg;
-    
-    public CombinerAggregatorInitImpl(CombinerAggregator agg) {
-        _agg = agg;
-    }
-    
-    @Override
-    public void execute(TridentTuple tuple, TridentCollector collector) {
-        collector.emit(new Values(_agg.init(tuple)));
-    }
+	CombinerAggregator _agg;
 
-    @Override
-    public void prepare(Map conf, TridentOperationContext context) {
-    }
+	public CombinerAggregatorInitImpl(CombinerAggregator agg) {
+		_agg = agg;
+	}
 
-    @Override
-    public void cleanup() {
-    }
-    
+	@Override
+	public void execute(TridentTuple tuple, TridentCollector collector) {
+		collector.emit(new Values(_agg.init(tuple)));
+	}
+
+	@Override
+	public void prepare(Map conf, TridentOperationContext context) {
+	}
+
+	@Override
+	public void cleanup() {
+	}
+
 }

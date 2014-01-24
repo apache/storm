@@ -9,11 +9,11 @@ import com.alibaba.jstorm.daemon.nimbus.StatusType;
  * 
  */
 public class ActiveTransitionCallback extends BaseCallback {
-    
-    @Override
-    public <T> Object execute(T... args) {
-        
-        return new StormStatus(StatusType.active);
-    }
-    
+
+	@Override
+	public <T> Object execute(T... args) {
+
+		return new StormStatus(StatusType.active);
+	}
+
 }

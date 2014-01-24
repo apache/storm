@@ -6,11 +6,11 @@ import java.util.Map;
 
 public abstract class BaseBasicBolt extends BaseComponent implements IBasicBolt {
 
-    @Override
-    public void prepare(Map stormConf, TopologyContext context) {
-    }
+	@Override
+	public void prepare(Map stormConf, TopologyContext context) {
+	}
 
-    @Override
-    public void cleanup() {
-    }    
+	@Override
+	public void cleanup() {
+	}
 }

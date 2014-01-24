@@ -11,37 +11,46 @@ import java.util.Collection;
 import java.util.Map;
 
 public class MetricsConsumerBolt implements IBolt {
-    IMetricsConsumer _metricsConsumer;
-    String _consumerClassName;
-    OutputCollector _collector;
-    Object _registrationArgument;
+	IMetricsConsumer _metricsConsumer;
+	String _consumerClassName;
+	OutputCollector _collector;
+	Object _registrationArgument;
 
-    public MetricsConsumerBolt(String consumerClassName, Object registrationArgument) {
-        _consumerClassName = consumerClassName;
-        _registrationArgument = registrationArgument;
-    }
+	public MetricsConsumerBolt(String consumerClassName,
+			Object registrationArgument) {
+		_consumerClassName = consumerClassName;
+		_registrationArgument = registrationArgument;
+	}
 
-    @Override
-    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
-        try {
-            _metricsConsumer = (IMetricsConsumer)Class.forName(_consumerClassName).newInstance();
-        } catch (Exception e) {
-            throw new RuntimeException("Could not instantiate a class listed in config under section " +
-                Config.TOPOLOGY_METRICS_CONSUMER_REGISTER + " with fully qualified name " + _consumerClassName, e);
-        }
-        _metricsConsumer.prepare(stormConf, _registrationArgument, context, (IErrorReporter)collector);
-        _collector = collector;
-    }
-    
-    @Override
-    public void execute(Tuple input) {
-        _metricsConsumer.handleDataPoints((IMetricsConsumer.TaskInfo)input.getValue(0), (Collection)input.getValue(1));
-        _collector.ack(input);
-    }
+	@Override
+	public void prepare(Map stormConf, TopologyContext context,
+			OutputCollector collector) {
+		try {
+			_metricsConsumer = (IMetricsConsumer) Class.forName(
+					_consumerClassName).newInstance();
+		} catch (Exception e) {
+			throw new RuntimeException(
+					"Could not instantiate a class listed in config under section "
+							+ Config.TOPOLOGY_METRICS_CONSUMER_REGISTER
+							+ " with fully qualified name "
+							+ _consumerClassName, e);
+		}
+		_metricsConsumer.prepare(stormConf, _registrationArgument, context,
+				(IErrorReporter) collector);
+		_collector = collector;
+	}
 
-    @Override
-    public void cleanup() {
-        _metricsConsumer.cleanup();
-    }
-    
+	@Override
+	public void execute(Tuple input) {
+		_metricsConsumer.handleDataPoints(
+				(IMetricsConsumer.TaskInfo) input.getValue(0),
+				(Collection) input.getValue(1));
+		_collector.ack(input);
+	}
+
+	@Override
+	public void cleanup() {
+		_metricsConsumer.cleanup();
+	}
+
 }

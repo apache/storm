@@ -11,75 +11,75 @@ import java.util.Random;
 import java.util.Set;
 
 public class MessageId {
-    private Map<Long, Long> _anchorsToIds;
-	
+	private Map<Long, Long> _anchorsToIds;
+
 	public static long generateId() {
-        return Utils.secureRandomLong();
-    }
-    
-    public static long generateId(Random rand) {
-        return rand.nextLong();
-    }
+		return Utils.secureRandomLong();
+	}
 
-    public static MessageId makeUnanchored() {
-        return makeId(new HashMap<Long, Long>());
-    }
-        
-    public static MessageId makeId(Map<Long, Long> anchorsToIds) {
-        return new MessageId(anchorsToIds);
-    }
-        
-    public static MessageId makeRootId(long id, long val) {
-        Map<Long, Long> anchorsToIds = new HashMap<Long, Long>();
-        anchorsToIds.put(id, val);
-        return new MessageId(anchorsToIds);
-    }
-    
-    protected MessageId(Map<Long, Long> anchorsToIds) {
-        _anchorsToIds = anchorsToIds;
-    }
+	public static long generateId(Random rand) {
+		return rand.nextLong();
+	}
 
-    public Map<Long, Long> getAnchorsToIds() {
-        return _anchorsToIds;
-    }
+	public static MessageId makeUnanchored() {
+		return makeId(new HashMap<Long, Long>());
+	}
 
-    public Set<Long> getAnchors() {
-        return _anchorsToIds.keySet();
-    }    
-    
-    @Override
-    public int hashCode() {
-        return _anchorsToIds.hashCode();
-    }
+	public static MessageId makeId(Map<Long, Long> anchorsToIds) {
+		return new MessageId(anchorsToIds);
+	}
 
-    @Override
-    public boolean equals(Object other) {
-        if(other instanceof MessageId) {
-            return _anchorsToIds.equals(((MessageId) other)._anchorsToIds);
-        } else {
-            return false;
-        }
-    }
+	public static MessageId makeRootId(long id, long val) {
+		Map<Long, Long> anchorsToIds = new HashMap<Long, Long>();
+		anchorsToIds.put(id, val);
+		return new MessageId(anchorsToIds);
+	}
 
-    @Override
-    public String toString() {
-        return _anchorsToIds.toString();
-    }
+	protected MessageId(Map<Long, Long> anchorsToIds) {
+		_anchorsToIds = anchorsToIds;
+	}
 
-    public void serialize(Output out) throws IOException {
-        out.writeInt(_anchorsToIds.size(), true);
-        for(Entry<Long, Long> anchorToId: _anchorsToIds.entrySet()) {
-            out.writeLong(anchorToId.getKey());
-            out.writeLong(anchorToId.getValue());
-        }
-    }
+	public Map<Long, Long> getAnchorsToIds() {
+		return _anchorsToIds;
+	}
 
-    public static MessageId deserialize(Input in) throws IOException {
-        int numAnchors = in.readInt(true);
-        Map<Long, Long> anchorsToIds = new HashMap<Long, Long>();
-        for(int i=0; i<numAnchors; i++) {
-            anchorsToIds.put(in.readLong(), in.readLong());
-        }
-        return new MessageId(anchorsToIds);
-    }
+	public Set<Long> getAnchors() {
+		return _anchorsToIds.keySet();
+	}
+
+	@Override
+	public int hashCode() {
+		return _anchorsToIds.hashCode();
+	}
+
+	@Override
+	public boolean equals(Object other) {
+		if (other instanceof MessageId) {
+			return _anchorsToIds.equals(((MessageId) other)._anchorsToIds);
+		} else {
+			return false;
+		}
+	}
+
+	@Override
+	public String toString() {
+		return _anchorsToIds.toString();
+	}
+
+	public void serialize(Output out) throws IOException {
+		out.writeInt(_anchorsToIds.size(), true);
+		for (Entry<Long, Long> anchorToId : _anchorsToIds.entrySet()) {
+			out.writeLong(anchorToId.getKey());
+			out.writeLong(anchorToId.getValue());
+		}
+	}
+
+	public static MessageId deserialize(Input in) throws IOException {
+		int numAnchors = in.readInt(true);
+		Map<Long, Long> anchorsToIds = new HashMap<Long, Long>();
+		for (int i = 0; i < numAnchors; i++) {
+			anchorsToIds.put(in.readLong(), in.readLong());
+		}
+		return new MessageId(anchorsToIds);
+	}
 }

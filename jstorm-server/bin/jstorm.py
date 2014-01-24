@@ -25,6 +25,7 @@ CONF_DIR = os.path.expanduser("~/.jstorm")
 JSTORM_DIR = "/".join(os.path.realpath( __file__ ).split("/")[:-2])
 JSTORM_CONF_DIR = os.getenv("JSTORM_CONF_DIR", JSTORM_DIR + "/conf" )
 LOG4J_CONF = JSTORM_CONF_DIR + "/jstorm.log4j.properties"
+#LOG4J_CONF = JSTORM_CONF_DIR + "/cluster.xml"
 CONFIG_OPTS = []
 
 def get_config_opts():
@@ -102,6 +103,7 @@ def jar(jarfile, klass, *args):
     will upload the jar at topology-jar-path when the topology is submitted.
     """
     childopts = "-Dstorm.jar=" + jarfile + (" -Dstorm.root.logger=INFO,stdout -Dlog4j.configuration=File:%s/conf/aloha_log4j.properties"  %JSTORM_DIR)
+    #childopts = "-Dstorm.jar=" + jarfile + (" -Dstorm.root.logger=INFO,stdout -Dlogback.configurationFile=%s/conf/aloha_logback.xml"  %JSTORM_DIR)
     #childopts = "-Dstorm.jar=" + jarfile
     exec_storm_class(
         klass,
@@ -120,6 +122,7 @@ def zktool(*args):
     will upload the jar at topology-jar-path when the topology is submitted.
     """
     childopts = (" -Dstorm.root.logger=INFO,stdout -Dlog4j.configuration=File:%s/conf/aloha_log4j.properties"  %JSTORM_DIR)
+    #childopts = (" -Dstorm.root.logger=INFO,stdout -Dlogback.configurationFile=%s/conf/aloha_logback.xml"  %JSTORM_DIR)
     #childopts = " "
     exec_storm_class(
         "com.alibaba.jstorm.zk.ZkTool",
@@ -139,6 +142,7 @@ def kill(*args):
     of time Storm waits between deactivation and shutdown with the -w flag.
     """
     childopts = (" -Dstorm.root.logger=INFO,stdout -Dlog4j.configuration=File:%s/conf/aloha_log4j.properties"  %JSTORM_DIR)
+    #childopts = (" -Dstorm.root.logger=INFO,stdout -Dlogback.configurationFile=%s/conf/aloha_logback.xml"  %JSTORM_DIR)
     #childopts = " "
     exec_storm_class(
         "backtype.storm.command.kill_topology", 
@@ -153,6 +157,7 @@ def activate(*args):
     Activates the specified topology's spouts.
     """
     childopts = (" -Dstorm.root.logger=INFO,stdout -Dlog4j.configuration=File:%s/conf/aloha_log4j.properties"  %JSTORM_DIR)
+    #childopts = (" -Dstorm.root.logger=INFO,stdout -Dlogback.configurationFile=%s/conf/aloha_logback.xml"  %JSTORM_DIR)
     #childopts = " "
     exec_storm_class(
         "backtype.storm.command.activate", 
@@ -167,6 +172,7 @@ def deactivate(*args):
     Deactivates the specified topology's spouts.
     """
     childopts = (" -Dstorm.root.logger=INFO,stdout -Dlog4j.configuration=File:%s/conf/aloha_log4j.properties"  %JSTORM_DIR)
+    #childopts = (" -Dstorm.root.logger=INFO,stdout -Dlogback.configurationFile=%s/conf/aloha_logback.xml"  %JSTORM_DIR)
     #childopts = " "
     exec_storm_class(
         "backtype.storm.command.deactivate", 
@@ -193,6 +199,7 @@ def rebalance(*args):
     be deactivated and an activated topology will go back to being activated).
     """
     childopts = (" -Dstorm.root.logger=INFO,stdout -Dlog4j.configuration=File:%s/conf/aloha_log4j.properties"  %JSTORM_DIR)
+    #childopts = (" -Dstorm.root.logger=INFO,stdout -Dlogback.configurationFile=%s/conf/aloha_logback.xml"  %JSTORM_DIR)
     #childopts = " "
     exec_storm_class(
         "backtype.storm.command.rebalance", 
@@ -214,6 +221,7 @@ def nimbus():
     cppaths = [JSTORM_CONF_DIR]
     nimbus_classpath = confvalue("nimbus.classpath", cppaths)
     childopts = confvalue("nimbus.childopts", cppaths) + (" -Dlogfile.name=nimbus.log -Dlog4j.configuration=File:%s/conf/jstorm.log4j.properties "  %JSTORM_DIR)
+    #childopts = confvalue("nimbus.childopts", cppaths) + (" -Dlogfile.name=nimbus.log -Dlogback.configurationFile=%s/conf/cluster.xml "  %JSTORM_DIR)
     exec_storm_class(
         "com.alibaba.jstorm.daemon.nimbus.NimbusServer", 
         jvmtype="-server", 
@@ -231,6 +239,7 @@ def supervisor():
     """
     cppaths = [JSTORM_CONF_DIR]
     childopts = confvalue("supervisor.childopts", cppaths) + (" -Dlogfile.name=supervisor.log -Dlog4j.configuration=File:%s/conf/jstorm.log4j.properties "  %JSTORM_DIR)
+    #childopts = confvalue("supervisor.childopts", cppaths) + (" -Dlogfile.name=supervisor.log -Dlogback.configurationFile=%s/conf/cluster.xml "  %JSTORM_DIR)
     exec_storm_class(
         "com.alibaba.jstorm.daemon.supervisor.Supervisor", 
         jvmtype="-server", 
@@ -248,6 +257,7 @@ def drpc():
     (https://github.com/nathanmarz/storm/wiki/Distributed-RPC)
     """
     childopts = confvalue("supervisor.childopts", cppaths) + (" -Dlogfile.name=drpc.log -Dlog4j.configuration=File:%s/conf/jstorm.log4j.properties "  %JSTORM_DIR)
+    #childopts = confvalue("supervisor.childopts", cppaths) + (" -Dlogfile.name=drpc.log -Dlogback.configurationFile=%s/conf/cluster.xml "  %JSTORM_DIR)
     exec_storm_class(
         "com.alibaba.jstorm.drpc.Drpc", 
         jvmtype="-server", 

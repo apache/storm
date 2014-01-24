@@ -6,10 +6,9 @@ import com.esotericsoftware.kryo.serializers.MapSerializer;
 import java.util.HashMap;
 import java.util.Map;
 
-
 public class HashMapSerializer extends MapSerializer {
-    @Override
-    public Map create(Kryo kryo, Input input, Class<Map> type) {
-        return new HashMap();
-    }
+	@Override
+	public Map create(Kryo kryo, Input input, Class<Map> type) {
+		return new HashMap();
+	}
 }

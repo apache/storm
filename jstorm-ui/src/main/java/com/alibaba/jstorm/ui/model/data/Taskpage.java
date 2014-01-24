@@ -26,115 +26,116 @@ import com.alibaba.jstorm.ui.model.TaskSumm;
 @ManagedBean(name = "taskpage")
 @ViewScoped
 public class Taskpage {
-    
-    private static final Logger LOG        = Logger.getLogger(Taskpage.class);
 
-    private String topologyid = null;
-    private String componentId = null;
-    private String taskid = null;
-    private String window = null;
-    private List<TaskSumm> tsumms = null;
-    private List<ErrorSummary> esumms = null;
+	private static final Logger LOG = Logger.getLogger(Taskpage.class);
 
-    public Taskpage() throws TException, NotAliveException {
-        FacesContext ctx = FacesContext.getCurrentInstance();
-        if (ctx.getExternalContext().getRequestParameterMap().get("topologyid") != null) {
-            topologyid = (String) ctx.getExternalContext()
-                    .getRequestParameterMap().get("topologyid");
-        }
-        if (ctx.getExternalContext().getRequestParameterMap().get("taskid") != null) {
-            taskid = (String) ctx.getExternalContext().getRequestParameterMap()
-                    .get("taskid");
-        }
-        
-        if (topologyid == null) {
-            throw new NotAliveException("Input topologyId is null ");
-        }
-        
-        window = UIUtils.getWindow(ctx);
-        init();
-    }
+	private String topologyid = null;
+	private String componentId = null;
+	private String taskid = null;
+	private String window = null;
+	private List<TaskSumm> tsumms = null;
+	private List<ErrorSummary> esumms = null;
 
-    private void init() throws TException, NotAliveException {
-        
-        NimbusClient client = null;
-        
-        try {
-            Map conf = Utils.readStormConfig();
-            client = NimbusClient.getConfiguredClient(conf);
-            
-            TopologyInfo summ = client.getClient().getTopologyInfo(topologyid);
-            
-            List<TaskSummary> ts = summ.get_tasks();
-            if (ts == null) {
-                throw new NotAliveException("No TaskSummary");
-            }
-            TaskSummary t = null;
-            if (ts != null) {
-                int tssize = ts.size();
-                for (int i = 0; i < tssize; i++) {
-                    if (ts.get(i).get_task_id() == Integer.parseInt(taskid)) {
-                        t = ts.get(i);
-                    }
-                }
-            }
-            
-            tsumms = taskSummaryTable(t, summ);
-            esumms = taskErrorTable(t);
-        } catch (TException e) {
-            LOG.error(e.getCause(), e);
-            throw e;
-        } catch (NotAliveException e) {
-            LOG.error(e.getCause(), e);
-            throw e;
-        }finally {
-            if (client != null) {
-                client.close();
-            }
-        }
-        
-    }
+	public Taskpage() throws TException, NotAliveException {
+		FacesContext ctx = FacesContext.getCurrentInstance();
+		if (ctx.getExternalContext().getRequestParameterMap().get("topologyid") != null) {
+			topologyid = (String) ctx.getExternalContext()
+					.getRequestParameterMap().get("topologyid");
+		}
+		if (ctx.getExternalContext().getRequestParameterMap().get("taskid") != null) {
+			taskid = (String) ctx.getExternalContext().getRequestParameterMap()
+					.get("taskid");
+		}
 
-    public List<TaskSumm> taskSummaryTable(TaskSummary task, TopologyInfo summ) {
-        List<TaskSumm> tsums = new ArrayList<TaskSumm>();
-        TaskSumm tsumm = new TaskSumm(String.valueOf(task.get_task_id()),
-                task.get_host(), String.valueOf(task.get_port()),
-                summ.get_name(), task.get_component_id(),
-                StatBuckets.prettyUptimeStr(task.get_uptime_secs()));
+		if (topologyid == null) {
+			throw new NotAliveException("Input topologyId is null ");
+		}
 
-        tsums.add(tsumm);
-        return tsums;
-    }
+		window = UIUtils.getWindow(ctx);
+		init();
+	}
 
-    public List<ErrorSummary> taskErrorTable(TaskSummary task) {
-        List<ErrorSummary> esums = new ArrayList<ErrorSummary>();
-        List<ErrorInfo> errors = task.get_errors();
-        if (errors != null) {
-            int errorsize = errors.size();
+	private void init() throws TException, NotAliveException {
 
-            for (int i = 0; i < errorsize; i++) {
-                ErrorInfo einfo = errors.get(i);
-                ErrorSummary esumm = new ErrorSummary(String.valueOf(einfo.get_error_time_secs()), einfo.get_error());
+		NimbusClient client = null;
 
-                esums.add(esumm);
-            }
-        }
-        return esums;
-    }
+		try {
+			Map conf = Utils.readStormConfig();
+			client = NimbusClient.getConfiguredClient(conf);
 
-    public List<TaskSumm> getTsumms() {
-        return tsumms;
-    }
+			TopologyInfo summ = client.getClient().getTopologyInfo(topologyid);
 
-    public void setTsumms(List<TaskSumm> tsumms) {
-        this.tsumms = tsumms;
-    }
+			List<TaskSummary> ts = summ.get_tasks();
+			if (ts == null) {
+				throw new NotAliveException("No TaskSummary");
+			}
+			TaskSummary t = null;
+			if (ts != null) {
+				int tssize = ts.size();
+				for (int i = 0; i < tssize; i++) {
+					if (ts.get(i).get_task_id() == Integer.parseInt(taskid)) {
+						t = ts.get(i);
+					}
+				}
+			}
 
-    public List<ErrorSummary> getEsumms() {
-        return esumms;
-    }
+			tsumms = taskSummaryTable(t, summ);
+			esumms = taskErrorTable(t);
+		} catch (TException e) {
+			LOG.error(e.getCause(), e);
+			throw e;
+		} catch (NotAliveException e) {
+			LOG.error(e.getCause(), e);
+			throw e;
+		} finally {
+			if (client != null) {
+				client.close();
+			}
+		}
 
-    public void setEsumms(List<ErrorSummary> esumms) {
-        this.esumms = esumms;
-    }
+	}
+
+	public List<TaskSumm> taskSummaryTable(TaskSummary task, TopologyInfo summ) {
+		List<TaskSumm> tsums = new ArrayList<TaskSumm>();
+		TaskSumm tsumm = new TaskSumm(String.valueOf(task.get_task_id()),
+				task.get_host(), String.valueOf(task.get_port()),
+				summ.get_name(), task.get_component_id(),
+				StatBuckets.prettyUptimeStr(task.get_uptime_secs()));
+
+		tsums.add(tsumm);
+		return tsums;
+	}
+
+	public List<ErrorSummary> taskErrorTable(TaskSummary task) {
+		List<ErrorSummary> esums = new ArrayList<ErrorSummary>();
+		List<ErrorInfo> errors = task.get_errors();
+		if (errors != null) {
+			int errorsize = errors.size();
+
+			for (int i = 0; i < errorsize; i++) {
+				ErrorInfo einfo = errors.get(i);
+				ErrorSummary esumm = new ErrorSummary(String.valueOf(einfo
+						.get_error_time_secs()), einfo.get_error());
+
+				esums.add(esumm);
+			}
+		}
+		return esums;
+	}
+
+	public List<TaskSumm> getTsumms() {
+		return tsumms;
+	}
+
+	public void setTsumms(List<TaskSumm> tsumms) {
+		this.tsumms = tsumms;
+	}
+
+	public List<ErrorSummary> getEsumms() {
+		return esumms;
+	}
+
+	public void setEsumms(List<ErrorSummary> esumms) {
+		this.esumms = esumms;
+	}
 }

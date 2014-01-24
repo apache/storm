@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>com.alibaba.jstorm</groupId>
 		<artifactId>jstorm-all</artifactId>
-		<version>0.9.0</version>
+		<version>0.9.1</version>
 		<relativePath>..</relativePath>
 	</parent>
 
@@ -26,10 +26,10 @@
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>
-            <groupId>com.alibaba.jstorm</groupId>
-            <artifactId>jstorm-client-extension</artifactId>
-            <version>${project.version}</version>
-        </dependency>
+			<groupId>com.alibaba.jstorm</groupId>
+			<artifactId>jstorm-client-extension</artifactId>
+			<version>${project.version}</version>
+		</dependency>
 		<dependency>
 			<groupId>com.sun.faces</groupId>
 			<artifactId>jsf-api</artifactId>
@@ -95,28 +95,11 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-dependency-plugin</artifactId>
 				<version>2.4</version>
-				<!-- 
-				<executions>
-					 <execution>
-						<phase>validate</phase>
-						<goals>
-							<goal>copy</goal>
-						</goals>
-						<configuration>
-							<outputDirectory>${endorsed.dir}</outputDirectory>
-							<silent>true</silent>
-							<artifactItems>
-								<artifactItem>
-									<groupId>javax</groupId>
-									<artifactId>javaee-endorsed-api</artifactId>
-									<version>6.0</version>
-									<type>jar</type>
-								</artifactItem>
-							</artifactItems>
-						</configuration>
-					</execution>
-				</executions>
-				-->
+				<!-- <executions> <execution> <phase>validate</phase> <goals> <goal>copy</goal> 
+					</goals> <configuration> <outputDirectory>${endorsed.dir}</outputDirectory> 
+					<silent>true</silent> <artifactItems> <artifactItem> <groupId>javax</groupId> 
+					<artifactId>javaee-endorsed-api</artifactId> <version>6.0</version> <type>jar</type> 
+					</artifactItem> </artifactItems> </configuration> </execution> </executions> -->
 			</plugin>
 		</plugins>
 	</build>
