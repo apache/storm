@@ -5,40 +5,39 @@
  */
 package backtype.storm.generated;
 
-
 import java.util.Map;
 import java.util.HashMap;
 import org.apache.thrift.TEnum;
 
 public enum TopologyInitialStatus implements org.apache.thrift.TEnum {
-  ACTIVE(1),
-  INACTIVE(2);
+	ACTIVE(1), INACTIVE(2);
 
-  private final int value;
+	private final int value;
 
-  private TopologyInitialStatus(int value) {
-    this.value = value;
-  }
+	private TopologyInitialStatus(int value) {
+		this.value = value;
+	}
 
-  /**
-   * Get the integer value of this enum value, as defined in the Thrift IDL.
-   */
-  public int getValue() {
-    return value;
-  }
+	/**
+	 * Get the integer value of this enum value, as defined in the Thrift IDL.
+	 */
+	public int getValue() {
+		return value;
+	}
 
-  /**
-   * Find a the enum type by its integer value, as defined in the Thrift IDL.
-   * @return null if the value is not found.
-   */
-  public static TopologyInitialStatus findByValue(int value) { 
-    switch (value) {
-      case 1:
-        return ACTIVE;
-      case 2:
-        return INACTIVE;
-      default:
-        return null;
-    }
-  }
+	/**
+	 * Find a the enum type by its integer value, as defined in the Thrift IDL.
+	 * 
+	 * @return null if the value is not found.
+	 */
+	public static TopologyInitialStatus findByValue(int value) {
+		switch (value) {
+		case 1:
+			return ACTIVE;
+		case 2:
+			return INACTIVE;
+		default:
+			return null;
+		}
+	}
 }

@@ -9,18 +9,18 @@ import com.alibaba.jstorm.daemon.worker.WorkerHaltRunable;
  * 
  */
 public class TaskReportErrorAndDie implements ITaskReportErr {
-    private ITaskReportErr    reporterror;
-    private WorkerHaltRunable haltfn;
-    
-    public TaskReportErrorAndDie(ITaskReportErr _reporterror,
-            WorkerHaltRunable _haltfn) {
-        this.reporterror = _reporterror;
-        this.haltfn = _haltfn;
-    }
-    
-    @Override
-    public void report(Throwable error) {
-        this.reporterror.report(error);
-        this.haltfn.run();
-    }
+	private ITaskReportErr reporterror;
+	private WorkerHaltRunable haltfn;
+
+	public TaskReportErrorAndDie(ITaskReportErr _reporterror,
+			WorkerHaltRunable _haltfn) {
+		this.reporterror = _reporterror;
+		this.haltfn = _haltfn;
+	}
+
+	@Override
+	public void report(Throwable error) {
+		this.reporterror.report(error);
+		this.haltfn.run();
+	}
 }

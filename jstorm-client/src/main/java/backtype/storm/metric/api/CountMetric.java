@@ -3,22 +3,22 @@ package backtype.storm.metric.api;
 import backtype.storm.metric.api.IMetric;
 
 public class CountMetric implements IMetric {
-    long _value = 0;
+	long _value = 0;
 
-    public CountMetric() {
-    }
-    
-    public void incr() {
-        _value++;
-    }
+	public CountMetric() {
+	}
 
-    public void incrBy(long incrementBy) {
-        _value += incrementBy;
-    }
+	public void incr() {
+		_value++;
+	}
 
-    public Object getValueAndReset() {
-        long ret = _value;
-        _value = 0;
-        return ret;
-    }
+	public void incrBy(long incrementBy) {
+		_value += incrementBy;
+	}
+
+	public Object getValueAndReset() {
+		long ret = _value;
+		_value = 0;
+		return ret;
+	}
 }

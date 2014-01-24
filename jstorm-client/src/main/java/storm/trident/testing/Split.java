@@ -7,13 +7,13 @@ import storm.trident.tuple.TridentTuple;
 
 public class Split extends BaseFunction {
 
-    @Override
-    public void execute(TridentTuple tuple, TridentCollector collector) {
-        for(String word: tuple.getString(0).split(" ")) {
-            if(word.length() > 0) {
-                collector.emit(new Values(word));
-            }
-        }
-    }
-    
+	@Override
+	public void execute(TridentTuple tuple, TridentCollector collector) {
+		for (String word : tuple.getString(0).split(" ")) {
+			if (word.length() > 0) {
+				collector.emit(new Values(word));
+			}
+		}
+	}
+
 }

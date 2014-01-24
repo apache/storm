@@ -8,13 +8,13 @@ import storm.trident.tuple.TridentTuple;
 
 public class TuplifyArgs extends BaseFunction {
 
-    @Override
-    public void execute(TridentTuple input, TridentCollector collector) {
-        String args = input.getString(0);
-        List<List<Object>> tuples = (List) JSONValue.parse(args);
-        for(List<Object> tuple: tuples) {
-            collector.emit(tuple);
-        }
-    }
-    
+	@Override
+	public void execute(TridentTuple input, TridentCollector collector) {
+		String args = input.getString(0);
+		List<List<Object>> tuples = (List) JSONValue.parse(args);
+		for (List<Object> tuple : tuples) {
+			collector.emit(tuple);
+		}
+	}
+
 }

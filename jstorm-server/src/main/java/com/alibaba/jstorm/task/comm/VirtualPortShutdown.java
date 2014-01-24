@@ -19,36 +19,38 @@ import com.esotericsoftware.kryo.KryoSerializable;
  * 
  */
 public class VirtualPortShutdown implements Shutdownable {
-    private static final Logger LOG = Logger.getLogger(VirtualPortShutdown.class);
-    
-    protected String            topologyId;
-    protected IContext          context;
-    protected Socket            kill_socket;
-    protected AsyncLoopThread   vthread;
-    protected int               port;
-    
-    public VirtualPortShutdown(String topologyId, IContext context, 
-    		AsyncLoopThread vthread, int port) {
-    	this.topologyId = topologyId;
-        this.context = context;
-        this.vthread = vthread;
-        this.port = port;
-    }
-    
-    @Override
-    public void shutdown() {
-        
-        IConnection sendConn = context.connect(topologyId, "localhost", port, true);
-        sendConn.send(-1, KryoTupleSerializer.serialize(-1));
-        
-        LOG.info("Waiting for virtual port at url " + port + " to die");
-        
-        try {
-            vthread.join();
-        } catch (InterruptedException e) {
-            
-        }
-        
-        LOG.info("Shutdown virtual port at url: " + port);
-    }
+	private static final Logger LOG = Logger
+			.getLogger(VirtualPortShutdown.class);
+
+	protected String topologyId;
+	protected IContext context;
+	protected Socket kill_socket;
+	protected AsyncLoopThread vthread;
+	protected int port;
+
+	public VirtualPortShutdown(String topologyId, IContext context,
+			AsyncLoopThread vthread, int port) {
+		this.topologyId = topologyId;
+		this.context = context;
+		this.vthread = vthread;
+		this.port = port;
+	}
+
+	@Override
+	public void shutdown() {
+
+		IConnection sendConn = context.connect(topologyId, "localhost", port,
+				true);
+		sendConn.send(-1, KryoTupleSerializer.serialize(-1));
+
+		LOG.info("Waiting for virtual port at url " + port + " to die");
+
+		try {
+			vthread.join();
+		} catch (InterruptedException e) {
+
+		}
+
+		LOG.info("Shutdown virtual port at url: " + port);
+	}
 }

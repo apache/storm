@@ -15,35 +15,35 @@ import com.alibaba.jstorm.utils.OlderFileFilter;
  * 
  */
 public class CleanRunnable implements Runnable {
-    
-    private static Logger log = Logger.getLogger(CleanRunnable.class);
-    
-    private String        dir_location;
-    
-    private int           seconds;
-    
-    public CleanRunnable(String dir_location, int inbox_jar_expiration_secs) {
-        this.dir_location = dir_location;
-        this.seconds = inbox_jar_expiration_secs;
-    }
-    
-    @Override
-    public void run() {
-        File inboxdir = new File(dir_location);
-        
-        // filter
-        OlderFileFilter filter = new OlderFileFilter(seconds);
-        
-        File[] files = inboxdir.listFiles(filter);
-        for (File f : files) {
-            log.info("Cleaning inbox ... deleted: " + f.getName());
-            try {
-                f.delete();
-            } catch (Exception e) {
-                log.error("Cleaning inbox ... error deleting:" + f.getName()
-                        + "," + e);
-            }
-        }
-    }
-    
+
+	private static Logger log = Logger.getLogger(CleanRunnable.class);
+
+	private String dir_location;
+
+	private int seconds;
+
+	public CleanRunnable(String dir_location, int inbox_jar_expiration_secs) {
+		this.dir_location = dir_location;
+		this.seconds = inbox_jar_expiration_secs;
+	}
+
+	@Override
+	public void run() {
+		File inboxdir = new File(dir_location);
+
+		// filter
+		OlderFileFilter filter = new OlderFileFilter(seconds);
+
+		File[] files = inboxdir.listFiles(filter);
+		for (File f : files) {
+			log.info("Cleaning inbox ... deleted: " + f.getName());
+			try {
+				f.delete();
+			} catch (Exception e) {
+				log.error("Cleaning inbox ... error deleting:" + f.getName()
+						+ "," + e);
+			}
+		}
+	}
+
 }

@@ -122,6 +122,7 @@ struct TopologySummary {
   7: required i32 num_cpu;
   8: required i32 num_mem;
   9: required i32 num_disk;
+  10: required string group;
 }
 
 struct SupervisorSummary {
@@ -138,10 +139,22 @@ struct SupervisorSummary {
   11: required i32 num_used_disk;
 }
 
+enum ThriftResourceType {
+    UNKNOWN = 1,
+    CPU = 2, 
+    MEM = 3, 
+    NET = 4,
+    DISK = 5
+}
+
 struct ClusterSummary {
   1: required list<SupervisorSummary> supervisors;
   2: required i32 nimbus_uptime_secs;
   3: required list<TopologySummary> topologies;
+  4: required map<string, map<string, map<ThriftResourceType, i32>>> groupToTopology;
+  5: required map<string, map<ThriftResourceType, i32>> groupToResource;
+  6: required map<string, map<ThriftResourceType, i32>> groupToUsedResource;
+  7: required bool isGroupModel;
 }
 
 struct ErrorInfo {

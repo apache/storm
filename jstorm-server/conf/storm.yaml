@@ -41,8 +41,29 @@
 #	- /disk2/jstorm/data
 #	- /disk3/jstorm/data
 
+
  supervisor.slots.ports:
     - 6800
     - 6801
     - 6802
     - 6803
+
+# Default disable user-define classloader
+# If there are jar conflict between jstorm and application, 
+# please enable it 
+ topology.enable.classloader: false
+
+# if you want to start nimbus with group model, you should 
+# set your group file path like follow:
+# use absolute path
+# nimbus.groupfile.path: /home/admin/jstorm/conf/group_file.ini
+ nimbus.groupfile.path: null
+
+
+# if you want to submit topology on the nimbus with group
+# module, you must set your gourp name (user.group)here or 
+# in your topology;The user.name and the user.password is
+# useless in this version 
+ user.group: null
+ user.name: null
+ user.password: null

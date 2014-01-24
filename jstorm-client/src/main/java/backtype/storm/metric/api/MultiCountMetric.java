@@ -5,24 +5,24 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class MultiCountMetric implements IMetric {
-    Map<String, CountMetric> _value = new HashMap();
+	Map<String, CountMetric> _value = new HashMap();
 
-    public MultiCountMetric() {
-    }
-    
-    public CountMetric scope(String key) {
-        CountMetric val = _value.get(key);
-        if(val == null) {
-            _value.put(key, val = new CountMetric());
-        }
-        return val;
-    }
+	public MultiCountMetric() {
+	}
 
-    public Object getValueAndReset() {
-        Map ret = new HashMap();
-        for(Map.Entry<String, CountMetric> e : _value.entrySet()) {
-            ret.put(e.getKey(), e.getValue().getValueAndReset());
-        }
-        return ret;
-    }
+	public CountMetric scope(String key) {
+		CountMetric val = _value.get(key);
+		if (val == null) {
+			_value.put(key, val = new CountMetric());
+		}
+		return val;
+	}
+
+	public Object getValueAndReset() {
+		Map ret = new HashMap();
+		for (Map.Entry<String, CountMetric> e : _value.entrySet()) {
+			ret.put(e.getKey(), e.getValue().getValueAndReset());
+		}
+		return ret;
+	}
 }

@@ -6,10 +6,9 @@ import com.esotericsoftware.kryo.serializers.CollectionSerializer;
 import java.util.ArrayList;
 import java.util.Collection;
 
-
 public class ArrayListSerializer extends CollectionSerializer {
-    @Override
-    public Collection create(Kryo kryo, Input input, Class<Collection> type) {
-        return new ArrayList();
-    }    
+	@Override
+	public Collection create(Kryo kryo, Input input, Class<Collection> type) {
+		return new ArrayList();
+	}
 }

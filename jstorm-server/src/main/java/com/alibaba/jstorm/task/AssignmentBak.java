@@ -9,28 +9,30 @@ import org.apache.commons.lang.builder.ToStringStyle;
 
 public class AssignmentBak implements Serializable {
 
-    /**  */
-    private static final long                serialVersionUID = 7633746649144483965L;
+	/**  */
+	private static final long serialVersionUID = 7633746649144483965L;
 
-    private final Map<String, List<Integer>> componentTasks;
-    private final Assignment                 assignment;
+	private final Map<String, List<Integer>> componentTasks;
+	private final Assignment assignment;
 
-    public AssignmentBak(Map<String, List<Integer>> componentTasks, Assignment assignment) {
-        super();
-        this.componentTasks = componentTasks;
-        this.assignment = assignment;
-    }
+	public AssignmentBak(Map<String, List<Integer>> componentTasks,
+			Assignment assignment) {
+		super();
+		this.componentTasks = componentTasks;
+		this.assignment = assignment;
+	}
 
-    public Map<String, List<Integer>> getComponentTasks() {
-        return componentTasks;
-    }
+	public Map<String, List<Integer>> getComponentTasks() {
+		return componentTasks;
+	}
 
-    public Assignment getAssignment() {
-        return assignment;
-    }
+	public Assignment getAssignment() {
+		return assignment;
+	}
 
-    @Override
-    public String toString() {
-        return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
-    }
+	@Override
+	public String toString() {
+		return ToStringBuilder.reflectionToString(this,
+				ToStringStyle.SHORT_PREFIX_STYLE);
+	}
 }

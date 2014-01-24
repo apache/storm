@@ -7,5 +7,5 @@ package com.alibaba.jstorm.daemon.worker;
  * 
  */
 public enum State {
-    valid, disallowed, notStarted, timedOut;
+	valid, disallowed, notStarted, timedOut;
 }

@@ -8,20 +8,23 @@ import storm.trident.state.BaseQueryFunction;
 import storm.trident.state.snapshot.ReadOnlySnapshottable;
 import storm.trident.tuple.TridentTuple;
 
-public class SnapshotGet extends BaseQueryFunction<ReadOnlySnapshottable, Object> {
+public class SnapshotGet extends
+		BaseQueryFunction<ReadOnlySnapshottable, Object> {
 
-    @Override
-    public List<Object> batchRetrieve(ReadOnlySnapshottable state, List<TridentTuple> args) {
-        List<Object> ret = new ArrayList<Object>(args.size());
-        Object snapshot = state.get();
-        for(int i=0; i<args.size(); i++) {
-            ret.add(snapshot);
-        }
-        return ret;
-    }
+	@Override
+	public List<Object> batchRetrieve(ReadOnlySnapshottable state,
+			List<TridentTuple> args) {
+		List<Object> ret = new ArrayList<Object>(args.size());
+		Object snapshot = state.get();
+		for (int i = 0; i < args.size(); i++) {
+			ret.add(snapshot);
+		}
+		return ret;
+	}
 
-    @Override
-    public void execute(TridentTuple tuple, Object result, TridentCollector collector) {
-        collector.emit(new Values(result));
-    }
+	@Override
+	public void execute(TridentTuple tuple, Object result,
+			TridentCollector collector) {
+		collector.emit(new Values(result));
+	}
 }

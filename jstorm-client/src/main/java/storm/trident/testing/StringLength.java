@@ -7,9 +7,9 @@ import storm.trident.tuple.TridentTuple;
 
 public class StringLength extends BaseFunction {
 
-    @Override
-    public void execute(TridentTuple tuple, TridentCollector collector) {
-        collector.emit(new Values(tuple.getString(0).length()));
-    }
-    
+	@Override
+	public void execute(TridentTuple tuple, TridentCollector collector) {
+		collector.emit(new Values(tuple.getString(0).length()));
+	}
+
 }

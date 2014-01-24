@@ -11,13 +11,13 @@ import org.apache.zookeeper.Watcher.Event.KeeperState;
  * 
  */
 public class DefaultWatcherCallBack implements WatcherCallBack {
-    
-    private static Logger LOG = Logger.getLogger(DefaultWatcherCallBack.class);
-    
-    @Override
-    public void execute(KeeperState state, EventType type, String path) {
-        LOG.info("Zookeeper state update:" + ZkKeeperStates.getStateName(state)
-                + "," + ZkEventTypes.getStateName(type) + "," + path);
-    }
-    
+
+	private static Logger LOG = Logger.getLogger(DefaultWatcherCallBack.class);
+
+	@Override
+	public void execute(KeeperState state, EventType type, String path) {
+		LOG.info("Zookeeper state update:" + ZkKeeperStates.getStateName(state)
+				+ "," + ZkEventTypes.getStateName(type) + "," + path);
+	}
+
 }

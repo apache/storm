@@ -29,82 +29,79 @@ public class SupervisorPage implements Serializable {
 
 	private static final long serialVersionUID = -6103468103521877721L;
 
-	private static final Logger  LOG   = Logger.getLogger(SupervisorPage.class);
-    
-    private String               host  = "localhost";
-    
-    private List<SupervisorSumm> ssumm  = null;
-    private List<WorkerSumm>     wsumm = null;
+	private static final Logger LOG = Logger.getLogger(SupervisorPage.class);
 
-    
-    public SupervisorPage() throws Exception {
-        FacesContext ctx = FacesContext.getCurrentInstance();
-        if (ctx.getExternalContext().getRequestParameterMap().get("host") != null) {
-            host = (String) ctx.getExternalContext()
-                    .getRequestParameterMap().get("host");
-        }
-        
-        init(host);
-    }
-    
-    @SuppressWarnings("rawtypes")
-    public void init(String host) throws Exception {
-        
-        NimbusClient client = null;
-        try {
+	private String host = "localhost";
 
-            Map conf = UIUtils.readUiConfig();
-            client = NimbusClient.getConfiguredClient(conf);
-            SupervisorWorkers supervisorWorkers = client.getClient().getSupervisorWorkers(host);
-            ssumm = new ArrayList<SupervisorSumm> ();
-            ssumm.add(new SupervisorSumm(supervisorWorkers.get_supervisor()));
-            generateWorkerSum(supervisorWorkers.get_workers());
-            
-        } catch (Exception e) {
-            LOG.error("Failed to get cluster information:", e);
-            throw e;
-        } finally {
-            if (client != null) {
-                client.close();
-            }
-        }
-    }
-    
-    private void generateWorkerSum(List<WorkerSummary> workerSummaries) {
-        wsumm = new ArrayList<WorkerSumm>();
-        
-        for (WorkerSummary workerSummary : workerSummaries) {
-            wsumm.add(new WorkerSumm(workerSummary));
-        }
-    }
-    
-    
+	private List<SupervisorSumm> ssumm = null;
+	private List<WorkerSumm> wsumm = null;
 
+	public SupervisorPage() throws Exception {
+		FacesContext ctx = FacesContext.getCurrentInstance();
+		if (ctx.getExternalContext().getRequestParameterMap().get("host") != null) {
+			host = (String) ctx.getExternalContext().getRequestParameterMap()
+					.get("host");
+		}
 
-    public List<SupervisorSumm> getSsumm() {
-        return ssumm;
-    }
+		init(host);
+	}
 
-    public void setSsumm(List<SupervisorSumm> ssumm) {
-        this.ssumm = ssumm;
-    }
+	@SuppressWarnings("rawtypes")
+	public void init(String host) throws Exception {
 
-    public List<WorkerSumm> getWsumm() {
-        return wsumm;
-    }
+		NimbusClient client = null;
+		try {
 
-    public void setWsumm(List<WorkerSumm> wsumm) {
-        this.wsumm = wsumm;
-    }
+			Map conf = UIUtils.readUiConfig();
+			client = NimbusClient.getConfiguredClient(conf);
+			SupervisorWorkers supervisorWorkers = client.getClient()
+					.getSupervisorWorkers(host);
+			ssumm = new ArrayList<SupervisorSumm>();
+			ssumm.add(new SupervisorSumm(supervisorWorkers.get_supervisor()));
+			generateWorkerSum(supervisorWorkers.get_workers());
 
-    public static void main(String[] args) {
-        try {
-            SupervisorPage m = new SupervisorPage();
-            //m.init("free-56-151.shucang.alipay.net");
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        
-    }
+		} catch (Exception e) {
+			LOG.error("Failed to get cluster information:", e);
+			throw e;
+		} finally {
+			if (client != null) {
+				client.close();
+			}
+		}
+	}
+
+	private void generateWorkerSum(List<WorkerSummary> workerSummaries) {
+		wsumm = new ArrayList<WorkerSumm>();
+
+		for (WorkerSummary workerSummary : workerSummaries) {
+			wsumm.add(new WorkerSumm(workerSummary));
+		}
+	}
+
+	public List<SupervisorSumm> getSsumm() {
+		return ssumm;
+	}
+
+	public void setSsumm(List<SupervisorSumm> ssumm) {
+		this.ssumm = ssumm;
+	}
+
+	public List<WorkerSumm> getWsumm() {
+		return wsumm;
+	}
+
+	public void setWsumm(List<WorkerSumm> wsumm) {
+		this.wsumm = wsumm;
+	}
+
+	public static void main(String[] args) {
+		try {
+			SupervisorPage m = new SupervisorPage();
+			// m.init("free-56-151.shucang.alipay.net");
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+	}
 }

@@ -8,7 +8,7 @@ import com.esotericsoftware.kryo.io.Output;
 
 public class TestKryoDecorator implements IKryoDecorator {
 
-    public void decorate(Kryo k) {
-        k.register(TestSerObject.class);
-    }
+	public void decorate(Kryo k) {
+		k.register(TestSerObject.class);
+	}
 }

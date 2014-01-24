@@ -13,128 +13,129 @@ import backtype.storm.generated.StormTopology;
 
 public class TopologyAssignContext {
 
-    public static final int             ASSIGN_TYPE_NEW       = 0; // assign a new topology
+	public static final int ASSIGN_TYPE_NEW = 0; // assign a new topology
 
-    public static final int             ASSIGN_TYPE_REBALANCE = 1; // rebalance a topology
+	public static final int ASSIGN_TYPE_REBALANCE = 1; // rebalance a topology
 
-    public static final int             ASSIGN_TYPE_MONITOR   = 2; // monitor a topology, some tasks are dead
-    
-    protected int                         assignType;
+	public static final int ASSIGN_TYPE_MONITOR = 2; // monitor a topology, some
+														// tasks are dead
 
-    protected StormTopology               rawTopology;
+	protected int assignType;
 
-    protected Map                         stormConf;
+	protected StormTopology rawTopology;
 
-    // if assignType is ASSIGN_TYPE_NEW, oldAssignment is the Assignment last time
-    // otherwise it is the old assignment before assignment.
-    protected Assignment                  oldAssignment;
+	protected Map stormConf;
 
-    protected Map<String, SupervisorInfo> cluster;
-    
-    protected Map<Integer, String>        taskToComponent;
-    
+	// if assignType is ASSIGN_TYPE_NEW, oldAssignment is the Assignment last
+	// time
+	// otherwise it is the old assignment before assignment.
+	protected Assignment oldAssignment;
 
-    protected Set<Integer>                allTaskIds;               // all tasks
-    protected Set<Integer>                deadTaskIds;              // dead tasks
-    protected Set<Integer>                unstoppedTaskIds;         // the task is alive, but his supervisor is dead
-    
-    public TopologyAssignContext() {
-        
-    }
+	protected Map<String, SupervisorInfo> cluster;
 
-    public TopologyAssignContext(TopologyAssignContext copy) {
-        this.assignType = copy.getAssignType();
-        this.rawTopology = copy.getRawTopology();
-        this.stormConf = copy.getStormConf();
-        this.oldAssignment = copy.getOldAssignment();
-        this.cluster = copy.getCluster();
-        this.taskToComponent = copy.getTaskToComponent();
-        this.allTaskIds = copy.getAllTaskIds();
-        this.deadTaskIds = copy.getDeadTaskIds();
-        this.unstoppedTaskIds = copy.getUnstoppedTaskIds();
-    }
+	protected Map<Integer, String> taskToComponent;
 
-    public int getAssignType() {
-        return assignType;
-    }
+	protected Set<Integer> allTaskIds; // all tasks
+	protected Set<Integer> deadTaskIds; // dead tasks
+	protected Set<Integer> unstoppedTaskIds; // the task is alive, but his
+												// supervisor is dead
 
-    public void setAssignType(int assignType) {
-        this.assignType = assignType;
-    }
+	public TopologyAssignContext() {
 
-    public StormTopology getRawTopology() {
-        return rawTopology;
-    }
+	}
 
-    public void setRawTopology(StormTopology rawTopology) {
-        this.rawTopology = rawTopology;
-    }
+	public TopologyAssignContext(TopologyAssignContext copy) {
+		this.assignType = copy.getAssignType();
+		this.rawTopology = copy.getRawTopology();
+		this.stormConf = copy.getStormConf();
+		this.oldAssignment = copy.getOldAssignment();
+		this.cluster = copy.getCluster();
+		this.taskToComponent = copy.getTaskToComponent();
+		this.allTaskIds = copy.getAllTaskIds();
+		this.deadTaskIds = copy.getDeadTaskIds();
+		this.unstoppedTaskIds = copy.getUnstoppedTaskIds();
+	}
 
-    public Map getStormConf() {
-        return stormConf;
-    }
+	public int getAssignType() {
+		return assignType;
+	}
 
-    public void setStormConf(Map stormConf) {
-        this.stormConf = stormConf;
-    }
+	public void setAssignType(int assignType) {
+		this.assignType = assignType;
+	}
 
-    public Assignment getOldAssignment() {
-        return oldAssignment;
-    }
+	public StormTopology getRawTopology() {
+		return rawTopology;
+	}
 
-    public void setOldAssignment(Assignment oldAssignment) {
-        this.oldAssignment = oldAssignment;
-    }
+	public void setRawTopology(StormTopology rawTopology) {
+		this.rawTopology = rawTopology;
+	}
 
-    public Map<String, SupervisorInfo> getCluster() {
-        return cluster;
-    }
+	public Map getStormConf() {
+		return stormConf;
+	}
 
-    public void setCluster(Map<String, SupervisorInfo> cluster) {
-        this.cluster = cluster;
-    }
+	public void setStormConf(Map stormConf) {
+		this.stormConf = stormConf;
+	}
 
-    public Set<Integer> getAllTaskIds() {
-        return allTaskIds;
-    }
+	public Assignment getOldAssignment() {
+		return oldAssignment;
+	}
 
-    public void setAllTaskIds(Set<Integer> allTaskIds) {
-        this.allTaskIds = allTaskIds;
-    }
+	public void setOldAssignment(Assignment oldAssignment) {
+		this.oldAssignment = oldAssignment;
+	}
 
-    public Set<Integer> getDeadTaskIds() {
-        return deadTaskIds;
-    }
+	public Map<String, SupervisorInfo> getCluster() {
+		return cluster;
+	}
 
-    public void setDeadTaskIds(Set<Integer> deadTaskIds) {
-        this.deadTaskIds = deadTaskIds;
-    }
+	public void setCluster(Map<String, SupervisorInfo> cluster) {
+		this.cluster = cluster;
+	}
 
-    public Set<Integer> getUnstoppedTaskIds() {
-        return unstoppedTaskIds;
-    }
+	public Set<Integer> getAllTaskIds() {
+		return allTaskIds;
+	}
 
-    public void setUnstoppedTaskIds(Set<Integer> unstoppedTaskIds) {
-        this.unstoppedTaskIds = unstoppedTaskIds;
-    }
-    
-    public Map<Integer, String> getTaskToComponent() {
-        return taskToComponent;
-    }
+	public void setAllTaskIds(Set<Integer> allTaskIds) {
+		this.allTaskIds = allTaskIds;
+	}
 
-    public void setTaskToComponent(Map<Integer, String> taskToComponent) {
-        this.taskToComponent = taskToComponent;
-    }
+	public Set<Integer> getDeadTaskIds() {
+		return deadTaskIds;
+	}
 
-    public static boolean isAssignTypeValid(int type) {
-        return (type == ASSIGN_TYPE_NEW) || 
-                (type == ASSIGN_TYPE_REBALANCE) ||
-                (type == ASSIGN_TYPE_MONITOR);
-    }
+	public void setDeadTaskIds(Set<Integer> deadTaskIds) {
+		this.deadTaskIds = deadTaskIds;
+	}
 
-    @Override
-    public String toString() {
-        return ToStringBuilder.reflectionToString(this,
-                ToStringStyle.SHORT_PREFIX_STYLE);
-    }
+	public Set<Integer> getUnstoppedTaskIds() {
+		return unstoppedTaskIds;
+	}
+
+	public void setUnstoppedTaskIds(Set<Integer> unstoppedTaskIds) {
+		this.unstoppedTaskIds = unstoppedTaskIds;
+	}
+
+	public Map<Integer, String> getTaskToComponent() {
+		return taskToComponent;
+	}
+
+	public void setTaskToComponent(Map<Integer, String> taskToComponent) {
+		this.taskToComponent = taskToComponent;
+	}
+
+	public static boolean isAssignTypeValid(int type) {
+		return (type == ASSIGN_TYPE_NEW) || (type == ASSIGN_TYPE_REBALANCE)
+				|| (type == ASSIGN_TYPE_MONITOR);
+	}
+
+	@Override
+	public String toString() {
+		return ToStringBuilder.reflectionToString(this,
+				ToStringStyle.SHORT_PREFIX_STYLE);
+	}
 }

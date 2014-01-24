@@ -27,16 +27,28 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
   private static final org.apache.thrift.protocol.TField SUPERVISORS_FIELD_DESC = new org.apache.thrift.protocol.TField("supervisors", org.apache.thrift.protocol.TType.LIST, (short)1);
   private static final org.apache.thrift.protocol.TField NIMBUS_UPTIME_SECS_FIELD_DESC = new org.apache.thrift.protocol.TField("nimbus_uptime_secs", org.apache.thrift.protocol.TType.I32, (short)2);
   private static final org.apache.thrift.protocol.TField TOPOLOGIES_FIELD_DESC = new org.apache.thrift.protocol.TField("topologies", org.apache.thrift.protocol.TType.LIST, (short)3);
+  private static final org.apache.thrift.protocol.TField GROUP_TO_TOPOLOGY_FIELD_DESC = new org.apache.thrift.protocol.TField("groupToTopology", org.apache.thrift.protocol.TType.MAP, (short)4);
+  private static final org.apache.thrift.protocol.TField GROUP_TO_RESOURCE_FIELD_DESC = new org.apache.thrift.protocol.TField("groupToResource", org.apache.thrift.protocol.TType.MAP, (short)5);
+  private static final org.apache.thrift.protocol.TField GROUP_TO_USED_RESOURCE_FIELD_DESC = new org.apache.thrift.protocol.TField("groupToUsedResource", org.apache.thrift.protocol.TType.MAP, (short)6);
+  private static final org.apache.thrift.protocol.TField IS_GROUP_MODEL_FIELD_DESC = new org.apache.thrift.protocol.TField("isGroupModel", org.apache.thrift.protocol.TType.BOOL, (short)7);
 
   private List<SupervisorSummary> supervisors; // required
   private int nimbus_uptime_secs; // required
   private List<TopologySummary> topologies; // required
+  private Map<String,Map<String,Map<ThriftResourceType,Integer>>> groupToTopology; // required
+  private Map<String,Map<ThriftResourceType,Integer>> groupToResource; // required
+  private Map<String,Map<ThriftResourceType,Integer>> groupToUsedResource; // required
+  private boolean isGroupModel; // required
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift.TFieldIdEnum {
     SUPERVISORS((short)1, "supervisors"),
     NIMBUS_UPTIME_SECS((short)2, "nimbus_uptime_secs"),
-    TOPOLOGIES((short)3, "topologies");
+    TOPOLOGIES((short)3, "topologies"),
+    GROUP_TO_TOPOLOGY((short)4, "groupToTopology"),
+    GROUP_TO_RESOURCE((short)5, "groupToResource"),
+    GROUP_TO_USED_RESOURCE((short)6, "groupToUsedResource"),
+    IS_GROUP_MODEL((short)7, "isGroupModel");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -57,6 +69,14 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
           return NIMBUS_UPTIME_SECS;
         case 3: // TOPOLOGIES
           return TOPOLOGIES;
+        case 4: // GROUP_TO_TOPOLOGY
+          return GROUP_TO_TOPOLOGY;
+        case 5: // GROUP_TO_RESOURCE
+          return GROUP_TO_RESOURCE;
+        case 6: // GROUP_TO_USED_RESOURCE
+          return GROUP_TO_USED_RESOURCE;
+        case 7: // IS_GROUP_MODEL
+          return IS_GROUP_MODEL;
         default:
           return null;
       }
@@ -98,7 +118,8 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
 
   // isset id assignments
   private static final int __NIMBUS_UPTIME_SECS_ISSET_ID = 0;
-  private BitSet __isset_bit_vector = new BitSet(1);
+  private static final int __ISGROUPMODEL_ISSET_ID = 1;
+  private BitSet __isset_bit_vector = new BitSet(2);
 
   public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
   static {
@@ -111,6 +132,28 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
     tmpMap.put(_Fields.TOPOLOGIES, new org.apache.thrift.meta_data.FieldMetaData("topologies", org.apache.thrift.TFieldRequirementType.REQUIRED, 
         new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST, 
             new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, TopologySummary.class))));
+    tmpMap.put(_Fields.GROUP_TO_TOPOLOGY, new org.apache.thrift.meta_data.FieldMetaData("groupToTopology", org.apache.thrift.TFieldRequirementType.REQUIRED, 
+        new org.apache.thrift.meta_data.MapMetaData(org.apache.thrift.protocol.TType.MAP, 
+            new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING), 
+            new org.apache.thrift.meta_data.MapMetaData(org.apache.thrift.protocol.TType.MAP, 
+                new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING), 
+                new org.apache.thrift.meta_data.MapMetaData(org.apache.thrift.protocol.TType.MAP, 
+                    new org.apache.thrift.meta_data.EnumMetaData(org.apache.thrift.protocol.TType.ENUM, ThriftResourceType.class), 
+                    new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32))))));
+    tmpMap.put(_Fields.GROUP_TO_RESOURCE, new org.apache.thrift.meta_data.FieldMetaData("groupToResource", org.apache.thrift.TFieldRequirementType.REQUIRED, 
+        new org.apache.thrift.meta_data.MapMetaData(org.apache.thrift.protocol.TType.MAP, 
+            new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING), 
+            new org.apache.thrift.meta_data.MapMetaData(org.apache.thrift.protocol.TType.MAP, 
+                new org.apache.thrift.meta_data.EnumMetaData(org.apache.thrift.protocol.TType.ENUM, ThriftResourceType.class), 
+                new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)))));
+    tmpMap.put(_Fields.GROUP_TO_USED_RESOURCE, new org.apache.thrift.meta_data.FieldMetaData("groupToUsedResource", org.apache.thrift.TFieldRequirementType.REQUIRED, 
+        new org.apache.thrift.meta_data.MapMetaData(org.apache.thrift.protocol.TType.MAP, 
+            new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING), 
+            new org.apache.thrift.meta_data.MapMetaData(org.apache.thrift.protocol.TType.MAP, 
+                new org.apache.thrift.meta_data.EnumMetaData(org.apache.thrift.protocol.TType.ENUM, ThriftResourceType.class), 
+                new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)))));
+    tmpMap.put(_Fields.IS_GROUP_MODEL, new org.apache.thrift.meta_data.FieldMetaData("isGroupModel", org.apache.thrift.TFieldRequirementType.REQUIRED, 
+        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.BOOL)));
     metaDataMap = Collections.unmodifiableMap(tmpMap);
     org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(ClusterSummary.class, metaDataMap);
   }
@@ -121,13 +164,22 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
   public ClusterSummary(
     List<SupervisorSummary> supervisors,
     int nimbus_uptime_secs,
-    List<TopologySummary> topologies)
+    List<TopologySummary> topologies,
+    Map<String,Map<String,Map<ThriftResourceType,Integer>>> groupToTopology,
+    Map<String,Map<ThriftResourceType,Integer>> groupToResource,
+    Map<String,Map<ThriftResourceType,Integer>> groupToUsedResource,
+    boolean isGroupModel)
   {
     this();
     this.supervisors = supervisors;
     this.nimbus_uptime_secs = nimbus_uptime_secs;
     set_nimbus_uptime_secs_isSet(true);
     this.topologies = topologies;
+    this.groupToTopology = groupToTopology;
+    this.groupToResource = groupToResource;
+    this.groupToUsedResource = groupToUsedResource;
+    this.isGroupModel = isGroupModel;
+    set_isGroupModel_isSet(true);
   }
 
   /**
@@ -151,6 +203,96 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
       }
       this.topologies = __this__topologies;
     }
+    if (other.is_set_groupToTopology()) {
+      Map<String,Map<String,Map<ThriftResourceType,Integer>>> __this__groupToTopology = new HashMap<String,Map<String,Map<ThriftResourceType,Integer>>>();
+      for (Map.Entry<String, Map<String,Map<ThriftResourceType,Integer>>> other_element : other.groupToTopology.entrySet()) {
+
+        String other_element_key = other_element.getKey();
+        Map<String,Map<ThriftResourceType,Integer>> other_element_value = other_element.getValue();
+
+        String __this__groupToTopology_copy_key = other_element_key;
+
+        Map<String,Map<ThriftResourceType,Integer>> __this__groupToTopology_copy_value = new HashMap<String,Map<ThriftResourceType,Integer>>();
+        for (Map.Entry<String, Map<ThriftResourceType,Integer>> other_element_value_element : other_element_value.entrySet()) {
+
+          String other_element_value_element_key = other_element_value_element.getKey();
+          Map<ThriftResourceType,Integer> other_element_value_element_value = other_element_value_element.getValue();
+
+          String __this__groupToTopology_copy_value_copy_key = other_element_value_element_key;
+
+          Map<ThriftResourceType,Integer> __this__groupToTopology_copy_value_copy_value = new HashMap<ThriftResourceType,Integer>();
+          for (Map.Entry<ThriftResourceType, Integer> other_element_value_element_value_element : other_element_value_element_value.entrySet()) {
+
+            ThriftResourceType other_element_value_element_value_element_key = other_element_value_element_value_element.getKey();
+            Integer other_element_value_element_value_element_value = other_element_value_element_value_element.getValue();
+
+            ThriftResourceType __this__groupToTopology_copy_value_copy_value_copy_key = other_element_value_element_value_element_key;
+
+            Integer __this__groupToTopology_copy_value_copy_value_copy_value = other_element_value_element_value_element_value;
+
+            __this__groupToTopology_copy_value_copy_value.put(__this__groupToTopology_copy_value_copy_value_copy_key, __this__groupToTopology_copy_value_copy_value_copy_value);
+          }
+
+          __this__groupToTopology_copy_value.put(__this__groupToTopology_copy_value_copy_key, __this__groupToTopology_copy_value_copy_value);
+        }
+
+        __this__groupToTopology.put(__this__groupToTopology_copy_key, __this__groupToTopology_copy_value);
+      }
+      this.groupToTopology = __this__groupToTopology;
+    }
+    if (other.is_set_groupToResource()) {
+      Map<String,Map<ThriftResourceType,Integer>> __this__groupToResource = new HashMap<String,Map<ThriftResourceType,Integer>>();
+      for (Map.Entry<String, Map<ThriftResourceType,Integer>> other_element : other.groupToResource.entrySet()) {
+
+        String other_element_key = other_element.getKey();
+        Map<ThriftResourceType,Integer> other_element_value = other_element.getValue();
+
+        String __this__groupToResource_copy_key = other_element_key;
+
+        Map<ThriftResourceType,Integer> __this__groupToResource_copy_value = new HashMap<ThriftResourceType,Integer>();
+        for (Map.Entry<ThriftResourceType, Integer> other_element_value_element : other_element_value.entrySet()) {
+
+          ThriftResourceType other_element_value_element_key = other_element_value_element.getKey();
+          Integer other_element_value_element_value = other_element_value_element.getValue();
+
+          ThriftResourceType __this__groupToResource_copy_value_copy_key = other_element_value_element_key;
+
+          Integer __this__groupToResource_copy_value_copy_value = other_element_value_element_value;
+
+          __this__groupToResource_copy_value.put(__this__groupToResource_copy_value_copy_key, __this__groupToResource_copy_value_copy_value);
+        }
+
+        __this__groupToResource.put(__this__groupToResource_copy_key, __this__groupToResource_copy_value);
+      }
+      this.groupToResource = __this__groupToResource;
+    }
+    if (other.is_set_groupToUsedResource()) {
+      Map<String,Map<ThriftResourceType,Integer>> __this__groupToUsedResource = new HashMap<String,Map<ThriftResourceType,Integer>>();
+      for (Map.Entry<String, Map<ThriftResourceType,Integer>> other_element : other.groupToUsedResource.entrySet()) {
+
+        String other_element_key = other_element.getKey();
+        Map<ThriftResourceType,Integer> other_element_value = other_element.getValue();
+
+        String __this__groupToUsedResource_copy_key = other_element_key;
+
+        Map<ThriftResourceType,Integer> __this__groupToUsedResource_copy_value = new HashMap<ThriftResourceType,Integer>();
+        for (Map.Entry<ThriftResourceType, Integer> other_element_value_element : other_element_value.entrySet()) {
+
+          ThriftResourceType other_element_value_element_key = other_element_value_element.getKey();
+          Integer other_element_value_element_value = other_element_value_element.getValue();
+
+          ThriftResourceType __this__groupToUsedResource_copy_value_copy_key = other_element_value_element_key;
+
+          Integer __this__groupToUsedResource_copy_value_copy_value = other_element_value_element_value;
+
+          __this__groupToUsedResource_copy_value.put(__this__groupToUsedResource_copy_value_copy_key, __this__groupToUsedResource_copy_value_copy_value);
+        }
+
+        __this__groupToUsedResource.put(__this__groupToUsedResource_copy_key, __this__groupToUsedResource_copy_value);
+      }
+      this.groupToUsedResource = __this__groupToUsedResource;
+    }
+    this.isGroupModel = other.isGroupModel;
   }
 
   public ClusterSummary deepCopy() {
@@ -163,6 +305,11 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
     set_nimbus_uptime_secs_isSet(false);
     this.nimbus_uptime_secs = 0;
     this.topologies = null;
+    this.groupToTopology = null;
+    this.groupToResource = null;
+    this.groupToUsedResource = null;
+    set_isGroupModel_isSet(false);
+    this.isGroupModel = false;
   }
 
   public int get_supervisors_size() {
@@ -263,6 +410,130 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
     }
   }
 
+  public int get_groupToTopology_size() {
+    return (this.groupToTopology == null) ? 0 : this.groupToTopology.size();
+  }
+
+  public void put_to_groupToTopology(String key, Map<String,Map<ThriftResourceType,Integer>> val) {
+    if (this.groupToTopology == null) {
+      this.groupToTopology = new HashMap<String,Map<String,Map<ThriftResourceType,Integer>>>();
+    }
+    this.groupToTopology.put(key, val);
+  }
+
+  public Map<String,Map<String,Map<ThriftResourceType,Integer>>> get_groupToTopology() {
+    return this.groupToTopology;
+  }
+
+  public void set_groupToTopology(Map<String,Map<String,Map<ThriftResourceType,Integer>>> groupToTopology) {
+    this.groupToTopology = groupToTopology;
+  }
+
+  public void unset_groupToTopology() {
+    this.groupToTopology = null;
+  }
+
+  /** Returns true if field groupToTopology is set (has been assigned a value) and false otherwise */
+  public boolean is_set_groupToTopology() {
+    return this.groupToTopology != null;
+  }
+
+  public void set_groupToTopology_isSet(boolean value) {
+    if (!value) {
+      this.groupToTopology = null;
+    }
+  }
+
+  public int get_groupToResource_size() {
+    return (this.groupToResource == null) ? 0 : this.groupToResource.size();
+  }
+
+  public void put_to_groupToResource(String key, Map<ThriftResourceType,Integer> val) {
+    if (this.groupToResource == null) {
+      this.groupToResource = new HashMap<String,Map<ThriftResourceType,Integer>>();
+    }
+    this.groupToResource.put(key, val);
+  }
+
+  public Map<String,Map<ThriftResourceType,Integer>> get_groupToResource() {
+    return this.groupToResource;
+  }
+
+  public void set_groupToResource(Map<String,Map<ThriftResourceType,Integer>> groupToResource) {
+    this.groupToResource = groupToResource;
+  }
+
+  public void unset_groupToResource() {
+    this.groupToResource = null;
+  }
+
+  /** Returns true if field groupToResource is set (has been assigned a value) and false otherwise */
+  public boolean is_set_groupToResource() {
+    return this.groupToResource != null;
+  }
+
+  public void set_groupToResource_isSet(boolean value) {
+    if (!value) {
+      this.groupToResource = null;
+    }
+  }
+
+  public int get_groupToUsedResource_size() {
+    return (this.groupToUsedResource == null) ? 0 : this.groupToUsedResource.size();
+  }
+
+  public void put_to_groupToUsedResource(String key, Map<ThriftResourceType,Integer> val) {
+    if (this.groupToUsedResource == null) {
+      this.groupToUsedResource = new HashMap<String,Map<ThriftResourceType,Integer>>();
+    }
+    this.groupToUsedResource.put(key, val);
+  }
+
+  public Map<String,Map<ThriftResourceType,Integer>> get_groupToUsedResource() {
+    return this.groupToUsedResource;
+  }
+
+  public void set_groupToUsedResource(Map<String,Map<ThriftResourceType,Integer>> groupToUsedResource) {
+    this.groupToUsedResource = groupToUsedResource;
+  }
+
+  public void unset_groupToUsedResource() {
+    this.groupToUsedResource = null;
+  }
+
+  /** Returns true if field groupToUsedResource is set (has been assigned a value) and false otherwise */
+  public boolean is_set_groupToUsedResource() {
+    return this.groupToUsedResource != null;
+  }
+
+  public void set_groupToUsedResource_isSet(boolean value) {
+    if (!value) {
+      this.groupToUsedResource = null;
+    }
+  }
+
+  public boolean is_isGroupModel() {
+    return this.isGroupModel;
+  }
+
+  public void set_isGroupModel(boolean isGroupModel) {
+    this.isGroupModel = isGroupModel;
+    set_isGroupModel_isSet(true);
+  }
+
+  public void unset_isGroupModel() {
+    __isset_bit_vector.clear(__ISGROUPMODEL_ISSET_ID);
+  }
+
+  /** Returns true if field isGroupModel is set (has been assigned a value) and false otherwise */
+  public boolean is_set_isGroupModel() {
+    return __isset_bit_vector.get(__ISGROUPMODEL_ISSET_ID);
+  }
+
+  public void set_isGroupModel_isSet(boolean value) {
+    __isset_bit_vector.set(__ISGROUPMODEL_ISSET_ID, value);
+  }
+
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case SUPERVISORS:
@@ -289,6 +560,38 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
       }
       break;
 
+    case GROUP_TO_TOPOLOGY:
+      if (value == null) {
+        unset_groupToTopology();
+      } else {
+        set_groupToTopology((Map<String,Map<String,Map<ThriftResourceType,Integer>>>)value);
+      }
+      break;
+
+    case GROUP_TO_RESOURCE:
+      if (value == null) {
+        unset_groupToResource();
+      } else {
+        set_groupToResource((Map<String,Map<ThriftResourceType,Integer>>)value);
+      }
+      break;
+
+    case GROUP_TO_USED_RESOURCE:
+      if (value == null) {
+        unset_groupToUsedResource();
+      } else {
+        set_groupToUsedResource((Map<String,Map<ThriftResourceType,Integer>>)value);
+      }
+      break;
+
+    case IS_GROUP_MODEL:
+      if (value == null) {
+        unset_isGroupModel();
+      } else {
+        set_isGroupModel((Boolean)value);
+      }
+      break;
+
     }
   }
 
@@ -302,6 +605,18 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
 
     case TOPOLOGIES:
       return get_topologies();
+
+    case GROUP_TO_TOPOLOGY:
+      return get_groupToTopology();
+
+    case GROUP_TO_RESOURCE:
+      return get_groupToResource();
+
+    case GROUP_TO_USED_RESOURCE:
+      return get_groupToUsedResource();
+
+    case IS_GROUP_MODEL:
+      return Boolean.valueOf(is_isGroupModel());
 
     }
     throw new IllegalStateException();
@@ -320,6 +635,14 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
       return is_set_nimbus_uptime_secs();
     case TOPOLOGIES:
       return is_set_topologies();
+    case GROUP_TO_TOPOLOGY:
+      return is_set_groupToTopology();
+    case GROUP_TO_RESOURCE:
+      return is_set_groupToResource();
+    case GROUP_TO_USED_RESOURCE:
+      return is_set_groupToUsedResource();
+    case IS_GROUP_MODEL:
+      return is_set_isGroupModel();
     }
     throw new IllegalStateException();
   }
@@ -364,6 +687,42 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
         return false;
     }
 
+    boolean this_present_groupToTopology = true && this.is_set_groupToTopology();
+    boolean that_present_groupToTopology = true && that.is_set_groupToTopology();
+    if (this_present_groupToTopology || that_present_groupToTopology) {
+      if (!(this_present_groupToTopology && that_present_groupToTopology))
+        return false;
+      if (!this.groupToTopology.equals(that.groupToTopology))
+        return false;
+    }
+
+    boolean this_present_groupToResource = true && this.is_set_groupToResource();
+    boolean that_present_groupToResource = true && that.is_set_groupToResource();
+    if (this_present_groupToResource || that_present_groupToResource) {
+      if (!(this_present_groupToResource && that_present_groupToResource))
+        return false;
+      if (!this.groupToResource.equals(that.groupToResource))
+        return false;
+    }
+
+    boolean this_present_groupToUsedResource = true && this.is_set_groupToUsedResource();
+    boolean that_present_groupToUsedResource = true && that.is_set_groupToUsedResource();
+    if (this_present_groupToUsedResource || that_present_groupToUsedResource) {
+      if (!(this_present_groupToUsedResource && that_present_groupToUsedResource))
+        return false;
+      if (!this.groupToUsedResource.equals(that.groupToUsedResource))
+        return false;
+    }
+
+    boolean this_present_isGroupModel = true;
+    boolean that_present_isGroupModel = true;
+    if (this_present_isGroupModel || that_present_isGroupModel) {
+      if (!(this_present_isGroupModel && that_present_isGroupModel))
+        return false;
+      if (this.isGroupModel != that.isGroupModel)
+        return false;
+    }
+
     return true;
   }
 
@@ -385,6 +744,26 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
     builder.append(present_topologies);
     if (present_topologies)
       builder.append(topologies);
+
+    boolean present_groupToTopology = true && (is_set_groupToTopology());
+    builder.append(present_groupToTopology);
+    if (present_groupToTopology)
+      builder.append(groupToTopology);
+
+    boolean present_groupToResource = true && (is_set_groupToResource());
+    builder.append(present_groupToResource);
+    if (present_groupToResource)
+      builder.append(groupToResource);
+
+    boolean present_groupToUsedResource = true && (is_set_groupToUsedResource());
+    builder.append(present_groupToUsedResource);
+    if (present_groupToUsedResource)
+      builder.append(groupToUsedResource);
+
+    boolean present_isGroupModel = true;
+    builder.append(present_isGroupModel);
+    if (present_isGroupModel)
+      builder.append(isGroupModel);
 
     return builder.toHashCode();
   }
@@ -423,6 +802,46 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
     }
     if (is_set_topologies()) {
       lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.topologies, typedOther.topologies);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_groupToTopology()).compareTo(typedOther.is_set_groupToTopology());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_groupToTopology()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.groupToTopology, typedOther.groupToTopology);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_groupToResource()).compareTo(typedOther.is_set_groupToResource());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_groupToResource()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.groupToResource, typedOther.groupToResource);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_groupToUsedResource()).compareTo(typedOther.is_set_groupToUsedResource());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_groupToUsedResource()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.groupToUsedResource, typedOther.groupToUsedResource);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_isGroupModel()).compareTo(typedOther.is_set_isGroupModel());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_isGroupModel()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.isGroupModel, typedOther.isGroupModel);
       if (lastComparison != 0) {
         return lastComparison;
       }
@@ -488,6 +907,119 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
             org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
           }
           break;
+        case 4: // GROUP_TO_TOPOLOGY
+          if (field.type == org.apache.thrift.protocol.TType.MAP) {
+            {
+              org.apache.thrift.protocol.TMap _map43 = iprot.readMapBegin();
+              this.groupToTopology = new HashMap<String,Map<String,Map<ThriftResourceType,Integer>>>(2*_map43.size);
+              for (int _i44 = 0; _i44 < _map43.size; ++_i44)
+              {
+                String _key45; // required
+                Map<String,Map<ThriftResourceType,Integer>> _val46; // required
+                _key45 = iprot.readString();
+                {
+                  org.apache.thrift.protocol.TMap _map47 = iprot.readMapBegin();
+                  _val46 = new HashMap<String,Map<ThriftResourceType,Integer>>(2*_map47.size);
+                  for (int _i48 = 0; _i48 < _map47.size; ++_i48)
+                  {
+                    String _key49; // required
+                    Map<ThriftResourceType,Integer> _val50; // required
+                    _key49 = iprot.readString();
+                    {
+                      org.apache.thrift.protocol.TMap _map51 = iprot.readMapBegin();
+                      _val50 = new HashMap<ThriftResourceType,Integer>(2*_map51.size);
+                      for (int _i52 = 0; _i52 < _map51.size; ++_i52)
+                      {
+                        ThriftResourceType _key53; // required
+                        int _val54; // required
+                        _key53 = ThriftResourceType.findByValue(iprot.readI32());
+                        _val54 = iprot.readI32();
+                        _val50.put(_key53, _val54);
+                      }
+                      iprot.readMapEnd();
+                    }
+                    _val46.put(_key49, _val50);
+                  }
+                  iprot.readMapEnd();
+                }
+                this.groupToTopology.put(_key45, _val46);
+              }
+              iprot.readMapEnd();
+            }
+          } else { 
+            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
+        case 5: // GROUP_TO_RESOURCE
+          if (field.type == org.apache.thrift.protocol.TType.MAP) {
+            {
+              org.apache.thrift.protocol.TMap _map55 = iprot.readMapBegin();
+              this.groupToResource = new HashMap<String,Map<ThriftResourceType,Integer>>(2*_map55.size);
+              for (int _i56 = 0; _i56 < _map55.size; ++_i56)
+              {
+                String _key57; // required
+                Map<ThriftResourceType,Integer> _val58; // required
+                _key57 = iprot.readString();
+                {
+                  org.apache.thrift.protocol.TMap _map59 = iprot.readMapBegin();
+                  _val58 = new HashMap<ThriftResourceType,Integer>(2*_map59.size);
+                  for (int _i60 = 0; _i60 < _map59.size; ++_i60)
+                  {
+                    ThriftResourceType _key61; // required
+                    int _val62; // required
+                    _key61 = ThriftResourceType.findByValue(iprot.readI32());
+                    _val62 = iprot.readI32();
+                    _val58.put(_key61, _val62);
+                  }
+                  iprot.readMapEnd();
+                }
+                this.groupToResource.put(_key57, _val58);
+              }
+              iprot.readMapEnd();
+            }
+          } else { 
+            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
+        case 6: // GROUP_TO_USED_RESOURCE
+          if (field.type == org.apache.thrift.protocol.TType.MAP) {
+            {
+              org.apache.thrift.protocol.TMap _map63 = iprot.readMapBegin();
+              this.groupToUsedResource = new HashMap<String,Map<ThriftResourceType,Integer>>(2*_map63.size);
+              for (int _i64 = 0; _i64 < _map63.size; ++_i64)
+              {
+                String _key65; // required
+                Map<ThriftResourceType,Integer> _val66; // required
+                _key65 = iprot.readString();
+                {
+                  org.apache.thrift.protocol.TMap _map67 = iprot.readMapBegin();
+                  _val66 = new HashMap<ThriftResourceType,Integer>(2*_map67.size);
+                  for (int _i68 = 0; _i68 < _map67.size; ++_i68)
+                  {
+                    ThriftResourceType _key69; // required
+                    int _val70; // required
+                    _key69 = ThriftResourceType.findByValue(iprot.readI32());
+                    _val70 = iprot.readI32();
+                    _val66.put(_key69, _val70);
+                  }
+                  iprot.readMapEnd();
+                }
+                this.groupToUsedResource.put(_key65, _val66);
+              }
+              iprot.readMapEnd();
+            }
+          } else { 
+            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
+        case 7: // IS_GROUP_MODEL
+          if (field.type == org.apache.thrift.protocol.TType.BOOL) {
+            this.isGroupModel = iprot.readBool();
+            set_isGroupModel_isSet(true);
+          } else { 
+            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
         default:
           org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
       }
@@ -505,9 +1037,9 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
       oprot.writeFieldBegin(SUPERVISORS_FIELD_DESC);
       {
         oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, this.supervisors.size()));
-        for (SupervisorSummary _iter43 : this.supervisors)
+        for (SupervisorSummary _iter71 : this.supervisors)
         {
-          _iter43.write(oprot);
+          _iter71.write(oprot);
         }
         oprot.writeListEnd();
       }
@@ -520,14 +1052,88 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
       oprot.writeFieldBegin(TOPOLOGIES_FIELD_DESC);
       {
         oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, this.topologies.size()));
-        for (TopologySummary _iter44 : this.topologies)
+        for (TopologySummary _iter72 : this.topologies)
         {
-          _iter44.write(oprot);
+          _iter72.write(oprot);
         }
         oprot.writeListEnd();
       }
       oprot.writeFieldEnd();
     }
+    if (this.groupToTopology != null) {
+      oprot.writeFieldBegin(GROUP_TO_TOPOLOGY_FIELD_DESC);
+      {
+        oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.MAP, this.groupToTopology.size()));
+        for (Map.Entry<String, Map<String,Map<ThriftResourceType,Integer>>> _iter73 : this.groupToTopology.entrySet())
+        {
+          oprot.writeString(_iter73.getKey());
+          {
+            oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.MAP, _iter73.getValue().size()));
+            for (Map.Entry<String, Map<ThriftResourceType,Integer>> _iter74 : _iter73.getValue().entrySet())
+            {
+              oprot.writeString(_iter74.getKey());
+              {
+                oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.I32, org.apache.thrift.protocol.TType.I32, _iter74.getValue().size()));
+                for (Map.Entry<ThriftResourceType, Integer> _iter75 : _iter74.getValue().entrySet())
+                {
+                  oprot.writeI32(_iter75.getKey().getValue());
+                  oprot.writeI32(_iter75.getValue());
+                }
+                oprot.writeMapEnd();
+              }
+            }
+            oprot.writeMapEnd();
+          }
+        }
+        oprot.writeMapEnd();
+      }
+      oprot.writeFieldEnd();
+    }
+    if (this.groupToResource != null) {
+      oprot.writeFieldBegin(GROUP_TO_RESOURCE_FIELD_DESC);
+      {
+        oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.MAP, this.groupToResource.size()));
+        for (Map.Entry<String, Map<ThriftResourceType,Integer>> _iter76 : this.groupToResource.entrySet())
+        {
+          oprot.writeString(_iter76.getKey());
+          {
+            oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.I32, org.apache.thrift.protocol.TType.I32, _iter76.getValue().size()));
+            for (Map.Entry<ThriftResourceType, Integer> _iter77 : _iter76.getValue().entrySet())
+            {
+              oprot.writeI32(_iter77.getKey().getValue());
+              oprot.writeI32(_iter77.getValue());
+            }
+            oprot.writeMapEnd();
+          }
+        }
+        oprot.writeMapEnd();
+      }
+      oprot.writeFieldEnd();
+    }
+    if (this.groupToUsedResource != null) {
+      oprot.writeFieldBegin(GROUP_TO_USED_RESOURCE_FIELD_DESC);
+      {
+        oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.MAP, this.groupToUsedResource.size()));
+        for (Map.Entry<String, Map<ThriftResourceType,Integer>> _iter78 : this.groupToUsedResource.entrySet())
+        {
+          oprot.writeString(_iter78.getKey());
+          {
+            oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.I32, org.apache.thrift.protocol.TType.I32, _iter78.getValue().size()));
+            for (Map.Entry<ThriftResourceType, Integer> _iter79 : _iter78.getValue().entrySet())
+            {
+              oprot.writeI32(_iter79.getKey().getValue());
+              oprot.writeI32(_iter79.getValue());
+            }
+            oprot.writeMapEnd();
+          }
+        }
+        oprot.writeMapEnd();
+      }
+      oprot.writeFieldEnd();
+    }
+    oprot.writeFieldBegin(IS_GROUP_MODEL_FIELD_DESC);
+    oprot.writeBool(this.isGroupModel);
+    oprot.writeFieldEnd();
     oprot.writeFieldStop();
     oprot.writeStructEnd();
   }
@@ -556,6 +1162,34 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
       sb.append(this.topologies);
     }
     first = false;
+    if (!first) sb.append(", ");
+    sb.append("groupToTopology:");
+    if (this.groupToTopology == null) {
+      sb.append("null");
+    } else {
+      sb.append(this.groupToTopology);
+    }
+    first = false;
+    if (!first) sb.append(", ");
+    sb.append("groupToResource:");
+    if (this.groupToResource == null) {
+      sb.append("null");
+    } else {
+      sb.append(this.groupToResource);
+    }
+    first = false;
+    if (!first) sb.append(", ");
+    sb.append("groupToUsedResource:");
+    if (this.groupToUsedResource == null) {
+      sb.append("null");
+    } else {
+      sb.append(this.groupToUsedResource);
+    }
+    first = false;
+    if (!first) sb.append(", ");
+    sb.append("isGroupModel:");
+    sb.append(this.isGroupModel);
+    first = false;
     sb.append(")");
     return sb.toString();
   }
@@ -572,6 +1206,22 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
 
     if (!is_set_topologies()) {
       throw new org.apache.thrift.protocol.TProtocolException("Required field 'topologies' is unset! Struct:" + toString());
+    }
+
+    if (!is_set_groupToTopology()) {
+      throw new org.apache.thrift.protocol.TProtocolException("Required field 'groupToTopology' is unset! Struct:" + toString());
+    }
+
+    if (!is_set_groupToResource()) {
+      throw new org.apache.thrift.protocol.TProtocolException("Required field 'groupToResource' is unset! Struct:" + toString());
+    }
+
+    if (!is_set_groupToUsedResource()) {
+      throw new org.apache.thrift.protocol.TProtocolException("Required field 'groupToUsedResource' is unset! Struct:" + toString());
+    }
+
+    if (!is_set_isGroupModel()) {
+      throw new org.apache.thrift.protocol.TProtocolException("Required field 'isGroupModel' is unset! Struct:" + toString());
     }
 
   }
