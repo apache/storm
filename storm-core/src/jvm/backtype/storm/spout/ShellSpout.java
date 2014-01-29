@@ -7,7 +7,6 @@ import backtype.storm.utils.Utils;
 import java.util.Map;
 import java.util.List;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.json.simple.JSONObject;
