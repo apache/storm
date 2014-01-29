@@ -11,6 +11,7 @@ except ImportError:
 json_encode = lambda x: json.dumps(x)
 json_decode = lambda x: json.loads(x)
 
+
 #reads lines and reconstructs newlines appropriately
 def readMsg():
     msg = ""
@@ -27,6 +28,7 @@ ANCHOR_TUPLE = None
 #queue up commands we read while trying to read taskids
 pending_commands = deque()
 
+
 def readTaskIds():
     if pending_taskids:
         return pending_taskids.popleft()
@@ -40,6 +42,7 @@ def readTaskIds():
 #queue up taskids we read while trying to read commands/tuples
 pending_taskids = deque()
 
+
 def readCommand():
     if pending_commands:
         return pending_commands.popleft()
@@ -50,30 +53,37 @@ def readCommand():
             msg = readMsg()
         return msg
 
+
 def readTuple():
     cmd = readCommand()
     return Tuple(cmd["id"], cmd["comp"], cmd["stream"], cmd["task"], cmd["tuple"])
+
 
 def sendMsgToParent(msg):
     print json_encode(msg)
     print "end"
     sys.stdout.flush()
 
+
 def sync():
-    sendMsgToParent({'command':'sync'})
+    sendMsgToParent({'command': 'sync'})
+
 
 def sendpid(heartbeatdir):
     pid = os.getpid()
-    sendMsgToParent({'pid':pid})
+    sendMsgToParent({'pid': pid})
     open(heartbeatdir + "/" + str(pid), "w").close()
+
 
 def emit(*args, **kwargs):
     __emit(*args, **kwargs)
     return readTaskIds()
 
+
 def emitDirect(task, *args, **kwargs):
     kwargs["directTask"] = task
     __emit(*args, **kwargs)
+
 
 def __emit(*args, **kwargs):
     global MODE
@@ -82,7 +92,8 @@ def __emit(*args, **kwargs):
     elif MODE == Spout:
         emitSpout(*args, **kwargs)
 
-def emitBolt(tup, stream=None, anchors = [], directTask=None):
+
+def emitBolt(tup, stream=None, anchors=[], directTask=None):
     global ANCHOR_TUPLE
     if ANCHOR_TUPLE is not None:
         anchors = [ANCHOR_TUPLE]
@@ -95,6 +106,7 @@ def emitBolt(tup, stream=None, anchors = [], directTask=None):
     m["tuple"] = tup
     sendMsgToParent(m)
 
+
 def emitSpout(tup, stream=None, id=None, directTask=None):
     m = {"command": "emit"}
     if id is not None:
@@ -106,22 +118,28 @@ def emitSpout(tup, stream=None, id=None, directTask=None):
     m["tuple"] = tup
     sendMsgToParent(m)
 
+
 def ack(tup):
     sendMsgToParent({"command": "ack", "id": tup.id})
+
 
 def fail(tup):
     sendMsgToParent({"command": "fail", "id": tup.id})
 
+
 def reportError(msg):
     sendMsgToParent({"command": "error", "msg": msg})
 
+
 def log(msg, level="info"):
     sendMsgToParent({"command": "log", "msg": msg, "level": level})
+
 
 def initComponent():
     setupInfo = readMsg()
     sendpid(setupInfo['pidDir'])
     return [setupInfo['conf'], setupInfo['context']]
+
 
 class Tuple(object):
     def __init__(self, id, component, stream, task, values):
@@ -133,8 +151,9 @@ class Tuple(object):
 
     def __repr__(self):
         return '<%s%s>' % (
-                self.__class__.__name__,
-                ''.join(' %s=%r' % (k, self.__dict__[k]) for k in sorted(self.__dict__.keys())))
+            self.__class__.__name__,
+            ''.join(' %s=%r' % (k, self.__dict__[k]) for k in sorted(self.__dict__.keys())))
+
 
 class Bolt(object):
     def initialize(self, stormconf, context):
@@ -154,6 +173,7 @@ class Bolt(object):
                 self.process(tup)
         except Exception, e:
             reportError(traceback.format_exc(e))
+
 
 class BasicBolt(object):
     def initialize(self, stormconf, context):
@@ -176,6 +196,7 @@ class BasicBolt(object):
                 ack(tup)
         except Exception, e:
             reportError(traceback.format_exc(e))
+
 
 class Spout(object):
     def initialize(self, conf, context):

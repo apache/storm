@@ -107,18 +107,7 @@ public class ShellBolt implements IBolt {
                         } else if (command.equals("error")) {
                             handleError(action);
                         } else if (command.equals("log")) {
-                            String msg = (String) action.get("msg");
-                            String level = "info";
-                            if (action.has("level")) {
-                                level = (String) action.get("level");
-                            }
-                            try {
-                                Method logWithLevel = LOG.getClass().getMethod(level, String.class);
-                                logWithLevel.invoke(LOG, "Shell msg: " + msg);
-                            } catch (java.lang.NoSuchMethodException e) {
-                                LOG.warn("Unknown log level {} called for. Logging as 'info'.", level);
-                                LOG.info("Shell msg: " + msg);
-                            }
+                            handleLog(action);
                         } else if (command.equals("emit")) {
                             handleEmit(action);
                         }
@@ -201,6 +190,23 @@ public class ShellBolt implements IBolt {
     private void handleError(Map action) {
         String msg = (String) action.get("msg");
         _collector.reportError(new Exception("Shell Process Exception: " + msg));
+    }
+
+    private void handleLog(Map action) {
+        String msg = (String) action.get("msg");
+        String level = "info";
+        if (action.containsKey("level")) {
+            level = (String) action.get("level");
+        }
+        if (level.equals("debug")) {
+            LOG.debug("Shell msg: " + msg);
+        } else if (level.equals("warn")) {
+            LOG.warn("Shell msg: " + msg);
+        } else if (level.equals("error")) {
+            LOG.error("Shell msg: " + msg);
+        } else {
+            LOG.info("Shell msg: " + msg);
+        }
     }
 
     private void handleEmit(Map action) throws InterruptedException {
