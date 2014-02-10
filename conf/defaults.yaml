@@ -41,7 +41,7 @@ storm.messaging.transport: "backtype.storm.messaging.netty.Context"
 nimbus.host: "localhost"
 nimbus.thrift.port: 6627
 nimbus.thrift.max_buffer_size: 1048576
-nimbus.childopts: "-Xmx1024m"
+nimbus.childopts: "-Xmx1024m -Dcom.sun.management.jxmremote -Dcom.sun.management.jmxremote.local.only=false -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.port=9010"
 nimbus.task.timeout.secs: 30
 nimbus.supervisor.timeout.secs: 60
 nimbus.monitor.freq.secs: 10
