@@ -15,6 +15,7 @@
 ;; limitations under the License.
 (ns backtype.storm.daemon.supervisor
   (:import [backtype.storm.scheduler ISupervisor])
+  (:import [backtype.storm.utils ServerSocketFactory])
   (:use [backtype.storm bootstrap])
   (:use [backtype.storm.daemon common])
   (:require [backtype.storm.daemon [worker :as worker]])
@@ -180,10 +181,11 @@
     (try-cleanup-worker conf id))
   (log-message "Shut down " (:supervisor-id supervisor) ":" id))
 
-(defn supervisor-data [conf shared-context ^ISupervisor isupervisor]
+(defn supervisor-data [conf shared-context ^ISupervisor isupervisor ^ServerSocketFactory socket-factory]
   {:conf conf
    :shared-context shared-context
    :isupervisor isupervisor
+   :socket-factory socket-factory
    :active (atom true)
    :uptime (uptime-computer)
    :worker-thread-pids-atom (atom {})
@@ -204,6 +206,7 @@
 (defn sync-processes [supervisor]
   (let [conf (:conf supervisor)
         ^LocalState local-state (:local-state supervisor)
+        ^ServerSocketFactory socket-factory (:socket-factory supervisor)
         assigned-executors (defaulted (.get local-state LS-LOCAL-ASSIGNMENTS) {})
         now (current-time-secs)
         allocated (read-allocated-workers supervisor assigned-executors now)
@@ -251,6 +254,10 @@
      conf
      (dofor [[port assignment] reassign-executors]
        (let [id (new-worker-ids port)]
+
+         (.free socket-factory port)
+         (log-message "Successfully claimed port " port)
+         
          (log-message "Launching worker with assignment "
                       (pr-str assignment)
                       " for this supervisor "
@@ -355,68 +362,77 @@
       (.add processes-event-manager sync-processes)
       )))
 
+
+(defn assign-worker-ports [conf socket-factory]
+  (let [port-num (get conf SUPERVISOR-SLOTS)
+        new-ports (vec (for [id (range 0 port-num)] (.getLocalPort (.create socket-factory))))]
+    (assoc conf SUPERVISOR-SLOTS-PORTS new-ports) 
+  ))
+
 ;; in local state, supervisor stores who its current assignments are
 ;; another thread launches events to restart any dead processes if necessary
 (defserverfn mk-supervisor [conf shared-context ^ISupervisor isupervisor]
-  (log-message "Starting Supervisor with conf " conf)
-  (.prepare isupervisor conf (supervisor-isupervisor-dir conf))
-  (FileUtils/cleanDirectory (File. (supervisor-tmp-dir conf)))
-  (let [supervisor (supervisor-data conf shared-context isupervisor)
-        [event-manager processes-event-manager :as managers] [(event/event-manager false) (event/event-manager false)]                         
-        sync-processes (partial sync-processes supervisor)
-        synchronize-supervisor (mk-synchronize-supervisor supervisor sync-processes event-manager processes-event-manager)
-        heartbeat-fn (fn [] (.supervisor-heartbeat!
-                               (:storm-cluster-state supervisor)
-                               (:supervisor-id supervisor)
-                               (SupervisorInfo. (current-time-secs)
-                                                (:my-hostname supervisor)
-                                                (:assignment-id supervisor)
-                                                (keys @(:curr-assignment supervisor))
-                                                ;; used ports
-                                                (.getMetadata isupervisor)
-                                                (conf SUPERVISOR-SCHEDULER-META)
-                                                ((:uptime supervisor)))))]
-    (heartbeat-fn)
-    ;; should synchronize supervisor so it doesn't launch anything after being down (optimization)
-    (schedule-recurring (:timer supervisor)
-                        0
-                        (conf SUPERVISOR-HEARTBEAT-FREQUENCY-SECS)
-                        heartbeat-fn)
-    (when (conf SUPERVISOR-ENABLE)
-      ;; This isn't strictly necessary, but it doesn't hurt and ensures that the machine stays up
-      ;; to date even if callbacks don't all work exactly right
-      (schedule-recurring (:timer supervisor) 0 10 (fn [] (.add event-manager synchronize-supervisor)))
+  (let [socket-factory (ServerSocketFactory. true)
+        conf (assign-worker-ports conf socket-factory)]
+    (log-message "Starting Supervisor with conf " conf)
+    (.prepare isupervisor conf (supervisor-isupervisor-dir conf))
+    (FileUtils/cleanDirectory (File. (supervisor-tmp-dir conf)))
+    (let [supervisor (supervisor-data conf shared-context isupervisor socket-factory)
+          [event-manager processes-event-manager :as managers] [(event/event-manager false) (event/event-manager false)]                         
+          sync-processes (partial sync-processes supervisor)
+          synchronize-supervisor (mk-synchronize-supervisor supervisor sync-processes event-manager processes-event-manager)
+          heartbeat-fn (fn [] (.supervisor-heartbeat!
+                                 (:storm-cluster-state supervisor)
+                                 (:supervisor-id supervisor)
+                                 (SupervisorInfo. (current-time-secs)
+                                                  (:my-hostname supervisor)
+                                                  (:assignment-id supervisor)
+                                                  (keys @(:curr-assignment supervisor))
+                                                  ;; used ports
+                                                  (.getMetadata isupervisor)
+                                                  (conf SUPERVISOR-SCHEDULER-META)
+                                                  ((:uptime supervisor)))))]
+      (heartbeat-fn)
+      ;; should synchronize supervisor so it doesn't launch anything after being down (optimization)
       (schedule-recurring (:timer supervisor)
                           0
-                          (conf SUPERVISOR-MONITOR-FREQUENCY-SECS)
-                          (fn [] (.add processes-event-manager sync-processes))))
-    (log-message "Starting supervisor with id " (:supervisor-id supervisor) " at host " (:my-hostname supervisor))
-    (reify
-     Shutdownable
-     (shutdown [this]
-               (log-message "Shutting down supervisor " (:supervisor-id supervisor))
-               (reset! (:active supervisor) false)
-               (cancel-timer (:timer supervisor))
-               (.shutdown event-manager)
-               (.shutdown processes-event-manager)
-               (.disconnect (:storm-cluster-state supervisor)))
-     SupervisorDaemon
-     (get-conf [this]
-       conf)
-     (get-id [this]
-       (:supervisor-id supervisor))
-     (shutdown-all-workers [this]
-       (let [ids (my-worker-ids conf)]
-         (doseq [id ids]
-           (shutdown-worker supervisor id)
-           )))
-     DaemonCommon
-     (waiting? [this]
-       (or (not @(:active supervisor))
-           (and
-            (timer-waiting? (:timer supervisor))
-            (every? (memfn waiting?) managers)))
-           ))))
+                          (conf SUPERVISOR-HEARTBEAT-FREQUENCY-SECS)
+                          heartbeat-fn)
+      (when (conf SUPERVISOR-ENABLE)
+        ;; This isn't strictly necessary, but it doesn't hurt and ensures that the machine stays up
+        ;; to date even if callbacks don't all work exactly right
+        (schedule-recurring (:timer supervisor) 0 10 (fn [] (.add event-manager synchronize-supervisor)))
+        (schedule-recurring (:timer supervisor)
+                            0
+                            (conf SUPERVISOR-MONITOR-FREQUENCY-SECS)
+                            (fn [] (.add processes-event-manager sync-processes))))
+      (log-message "Starting supervisor with id " (:supervisor-id supervisor) " at host " (:my-hostname supervisor))
+      (reify
+       Shutdownable
+       (shutdown [this]
+                 (log-message "Shutting down supervisor " (:supervisor-id supervisor))
+                 (reset! (:active supervisor) false)
+                 (cancel-timer (:timer supervisor))
+                 (.shutdown event-manager)
+                 (.shutdown processes-event-manager)
+                 (.disconnect (:storm-cluster-state supervisor)))
+       SupervisorDaemon
+       (get-conf [this]
+         conf)
+       (get-id [this]
+         (:supervisor-id supervisor))
+       (shutdown-all-workers [this]
+         (let [ids (my-worker-ids conf)]
+           (doseq [id ids]
+             (shutdown-worker supervisor id)
+             )))
+       DaemonCommon
+       (waiting? [this]
+         (or (not @(:active supervisor))
+             (and
+              (timer-waiting? (:timer supervisor))
+              (every? (memfn waiting?) managers)))
+             )))))
 
 (defn kill-supervisor [supervisor]
   (.shutdown supervisor)
