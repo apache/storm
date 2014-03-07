@@ -37,9 +37,13 @@
             <version>${project.version}</version>
         </dependency>
     </dependencies>
+    
+    <properties>
+        <final.Name>apache-storm</final.Name>
+    </properties>
 
     <build>
-        <finalName>apache-storm-${project.version}</finalName>
+        <finalName>${final.Name}-${project.version}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
