@@ -79,6 +79,10 @@
 
         <!--java-->
         <dependency>
+            <groupId>com.turn</groupId>
+            <artifactId>ttorrent</artifactId>
+        </dependency>
+        <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
         </dependency>
