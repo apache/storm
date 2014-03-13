@@ -10,28 +10,67 @@ Documentation and tutorials can be found on the [Storm wiki](http://github.com/n
 
 ## Getting help
 
-Feel free to ask questions on Storm's mailing list: http://groups.google.com/group/storm-user
+__NOTE:__ The google groups account storm-user@googlegroups.com is now officially deprecated in favor of the Apache-hosted user/dev mailing lists.
 
+### Storm Users
+Storm users should send messages and subscribe to [user@storm.incubator.apache.org](mailto:user@storm.incubator.apache.org).
+
+You can subscribe to this list by sending an email to [user-subscribe@storm.incubator.apache.org](mailto:user-subscribe@storm.incubator.apache.org). Likewise, you can cancel a subscription by sending an email to [user-unsubscribe@storm.incubator.apache.org](mailto:user-unsubscribe@storm.incubator.apache.org).
+
+You can view the archives of the mailing list [here](http://mail-archives.apache.org/mod_mbox/incubator-storm-user/).
+
+### Storm Developers
+Storm developers should send messages and subscribe to [dev@storm.incubator.apache.org](mailto:dev@storm.incubator.apache.org).
+
+You can subscribe to this list by sending an email to [dev-subscribe@storm.incubator.apache.org](mailto:dev-subscribe@storm.incubator.apache.org). Likewise, you can cancel a subscription by sending an email to [dev-unsubscribe@storm.incubator.apache.org](mailto:dev-unsubscribe@storm.incubator.apache.org).
+
+You can view the archives of the mailing list [here](http://mail-archives.apache.org/mod_mbox/incubator-storm-dev/).
+
+### Which list should I send/subscribe to?
+If you are using a pre-built binary distribution of Storm, then chances are you should send questions, comments, storm-related announcements, etc. to [user@storm.apache.incubator.org](user@storm.apache.incubator.org). 
+
+If you are building storm from source, developing new features, or otherwise hacking storm source code, then [dev@storm.incubator.apache.org](dev@storm.incubator.apache.org) is more appropriate. 
+
+### What will happen with storm-user@googlegroups.com?
+All existing messages will remain archived there, and can be accessed/searched [here](https://groups.google.com/forum/#!forum/storm-user).
+
+New messages sent to storm-user@googlegroups.com will either be rejected/bounced or replied to with a message to direct the email to the appropriate Apache-hosted group.
+
+### IRC
 You can also come to the #storm-user room on [freenode](http://freenode.net/). You can usually find a Storm developer there to help you out.
 
 ## License
 
-The use and distribution terms for this software are covered by the
-Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
-which can be found in the file LICENSE.html at the root of this distribution.
-By using this software in any fashion, you are agreeing to be bound by
-the terms of this license.
-You must not remove this notice, or any other, from this software.
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+
 
 ## Project lead
 
 * Nathan Marz ([@nathanmarz](http://twitter.com/nathanmarz))
 
-## Core contributors
+## Committers
 
 * James Xu ([@xumingming](https://github.com/xumingming))
 * Jason Jackson ([@jason_j](http://twitter.com/jason_j))
 * Andy Feng ([@anfeng](https://github.com/anfeng))
+* Flip Kromer ([@mrflip](https://github.com/mrflip))
+* David Lao ([@davidlao2k](https://github.com/davidlao2k))
+* P. Taylor Goetz ([@ptgoetz](https://github.com/ptgoetz))
 
 ## Contributors
 
@@ -73,6 +112,9 @@ You must not remove this notice, or any other, from this software.
 * Gavin Li ([@lyogavin](https://github.com/lyogavin))
 * Tudor Scurtu ([@tscurtu](https://github.com/tscurtu))
 * Homer Strong ([@strongh](https://github.com/strongh))
+* Sean Melody ([@srmelody](https://github.com/srmelody))
+* Jake Donham ([@jaked](https://github.com/jaked))
+* Ankit Toshniwal ([@ankitoshniwal](https://github.com/ankitoshniwal))
 
 ## Acknowledgements
 

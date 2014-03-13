@@ -1,3 +1,20 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package backtype.storm.utils;
 
 import com.lmax.disruptor.AlertException;
@@ -12,6 +29,9 @@ import com.lmax.disruptor.SingleThreadedClaimStrategy;
 import com.lmax.disruptor.WaitStrategy;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.HashMap;
+import java.util.Map;
+import backtype.storm.metric.api.IStatefulObject;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -20,7 +40,7 @@ import java.util.logging.Logger;
  * A single consumer queue that uses the LMAX Disruptor. They key to the performance is
  * the ability to catch up to the producer by processing tuples in batches.
  */
-public class DisruptorQueue {
+public class DisruptorQueue implements IStatefulObject {
     static final Object FLUSH_CACHE = new Object();
     static final Object INTERRUPT = new Object();
     
@@ -132,6 +152,25 @@ public class DisruptorQueue {
     
     private void flushCache() {
         publish(FLUSH_CACHE);
+    }
+
+    public long  population() { return (writePos() - readPos()); }
+    public long  capacity()   { return _buffer.getBufferSize(); }
+    public long  writePos()   { return _buffer.getCursor(); }
+    public long  readPos()    { return _consumer.get(); }
+    public float pctFull()    { return (1.0F * population() / capacity()); }
+
+    @Override
+    public Object getState() {
+        Map state = new HashMap<String, Object>();
+        // get readPos then writePos so it's never an under-estimate
+        long rp = readPos();
+        long wp = writePos();
+        state.put("capacity",   capacity());
+        state.put("population", wp - rp);
+        state.put("write_pos",  wp);
+        state.put("read_pos",   rp);
+        return state;
     }
 
     public static class ObjectEventFactory implements EventFactory<MutableObject> {

@@ -1,3 +1,18 @@
+;; Licensed to the Apache Software Foundation (ASF) under one
+;; or more contributor license agreements.  See the NOTICE file
+;; distributed with this work for additional information
+;; regarding copyright ownership.  The ASF licenses this file
+;; to you under the Apache License, Version 2.0 (the
+;; "License"); you may not use this file except in compliance
+;; with the License.  You may obtain a copy of the License at
+;;
+;; http://www.apache.org/licenses/LICENSE-2.0
+;;
+;; Unless required by applicable law or agreed to in writing, software
+;; distributed under the License is distributed on an "AS IS" BASIS,
+;; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+;; See the License for the specific language governing permissions and
+;; limitations under the License.
 (ns backtype.storm.testing
   (:require [backtype.storm.daemon
              [nimbus :as nimbus]
@@ -32,7 +47,7 @@
   (FeederSpout. (Fields. fields)))
 
 (defn local-temp-path []
-  (str (System/getProperty "java.io.tmpdir") "/" (uuid)))
+  (str (System/getProperty "java.io.tmpdir") (if-not on-windows? "/") (uuid)))
 
 (defn delete-all [paths]
   (dorun
@@ -96,7 +111,7 @@
 ;; local dir is always overridden in maps
 ;; can customize the supervisors (except for ports) by passing in map for :supervisors parameter
 ;; if need to customize amt of ports more, can use add-supervisor calls afterwards
-(defnk mk-local-storm-cluster [:supervisors 2 :ports-per-supervisor 3 :daemon-conf {} :inimbus nil :supervisor-slot-port-min 1]
+(defnk mk-local-storm-cluster [:supervisors 2 :ports-per-supervisor 3 :daemon-conf {} :inimbus nil :supervisor-slot-port-min 1024]
   (let [zk-tmp (local-temp-path)
         [zk-port zk-handle] (zk/mk-inprocess-zookeeper zk-tmp)
         daemon-conf (merge (read-storm-config)
@@ -161,9 +176,19 @@
   (log-message "Done shutting down in process zookeeper")
   (doseq [t @(:tmp-dirs cluster-map)]
     (log-message "Deleting temporary path " t)
-    (rmr t)
+    (try
+      (rmr t)
+      (catch Exception e (log-message (.getMessage e)))) ;; on windows, the host process still holds lock on the logfile
     ))
 
+(def TEST-TIMEOUT-MS 5000)
+
+(defmacro while-timeout [timeout-ms condition & body]
+  `(let [end-time# (+ (System/currentTimeMillis) ~timeout-ms)]
+    (while ~condition
+      (when (> (System/currentTimeMillis) end-time#)
+        (throw (AssertionError. (str "Test timed out (" ~timeout-ms "ms)"))))
+      ~@body)))
 
 (defn wait-until-cluster-waiting
   "Wait until the cluster is idle. Should be used with time simulation."
@@ -176,7 +201,7 @@
                   supervisors
                   workers) ; because a worker may already be dead
         ]
-    (while (not (every? (memfn waiting?) daemons))      
+    (while-timeout TEST-TIMEOUT-MS (not (every? (memfn waiting?) daemons))
       (Thread/sleep 10)
 ;;      (doseq [d daemons]
 ;;        (if-not ((memfn waiting?) d)
@@ -443,11 +468,11 @@
     
     
     (let [storm-id (common/get-storm-id state storm-name)]
-      (while (not (every? exhausted? (spout-objects spouts)))
+      (while-timeout TEST-TIMEOUT-MS (not (every? exhausted? (spout-objects spouts)))
         (simulate-wait cluster-map))
 
       (.killTopologyWithOpts (:nimbus cluster-map) storm-name (doto (KillOptions.) (.set_wait_secs 0)))
-      (while (.assignment-info state storm-id nil)
+      (while-timeout TEST-TIMEOUT-MS (.assignment-info state storm-id nil)
         (simulate-wait cluster-map))
       (when cleanup-state
         (doseq [spout (spout-objects spouts)]
@@ -554,7 +579,7 @@
                            (not= (global-amt track-id "transferred")                                 
                                  (global-amt track-id "processed"))
                            ))]
-        (while (waiting?)
+        (while-timeout TEST-TIMEOUT-MS (waiting?)
           ;; (println "Spout emitted: " (global-amt track-id "spout-emitted"))
           ;; (println "Processed: " (global-amt track-id "processed"))
           ;; (println "Transferred: " (global-amt track-id "transferred"))

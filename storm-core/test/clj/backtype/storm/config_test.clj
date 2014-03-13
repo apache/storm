@@ -1,3 +1,18 @@
+;; Licensed to the Apache Software Foundation (ASF) under one
+;; or more contributor license agreements.  See the NOTICE file
+;; distributed with this work for additional information
+;; regarding copyright ownership.  The ASF licenses this file
+;; to you under the Apache License, Version 2.0 (the
+;; "License"); you may not use this file except in compliance
+;; with the License.  You may obtain a copy of the License at
+;;
+;; http://www.apache.org/licenses/LICENSE-2.0
+;;
+;; Unless required by applicable law or agreed to in writing, software
+;; distributed under the License is distributed on an "AS IS" BASIS,
+;; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+;; See the License for the specific language governing permissions and
+;; limitations under the License.
 (ns backtype.storm.config-test
   (:import [backtype.storm Config ConfigValidation])
   (:import [backtype.storm.scheduler TopologyDetails])
@@ -15,10 +30,12 @@
   (let [validator ConfigValidation/PowerOf2Validator]
     (doseq [x [42.42 42 23423423423 -33 -32 -1 -0.00001 0 -0 "Forty-two"]]
       (is (thrown-cause? java.lang.IllegalArgumentException
-        (.validateField validator x))))
+        (.validateField validator "test" x))))
 
     (doseq [x [64 4294967296 1 nil]]
-      (.validateField validator x))))
+      (is (nil? (try 
+                  (.validateField validator "test" x)
+                  (catch Exception e e)))))))
 
 (deftest test-list-validator
   (let [validator ConfigValidation/StringsValidator]
@@ -31,12 +48,12 @@
               ]]
       (is (thrown-cause-with-msg?
             java.lang.IllegalArgumentException #"(?i).*each element.*"
-        (.validateField validator x))))
+        (.validateField validator "test" x))))
 
     (doseq [x ["not a list at all"]]
       (is (thrown-cause-with-msg?
             java.lang.IllegalArgumentException #"(?i).*must be an iterable.*"
-        (.validateField validator x))))
+        (.validateField validator "test" x))))
 
     (doseq [x [
                ["one" "two" "three"]
@@ -44,12 +61,25 @@
                ["42" "64"]
                nil
               ]]
-      (.validateField validator x))))
+    (is (nil? (try 
+                (.validateField validator "test" x)
+                (catch Exception e e)))))))
 
 (deftest test-topology-workers-is-number
   (let [validator (CONFIG-SCHEMA-MAP TOPOLOGY-WORKERS)]
-    (.validateField validator 42)
+    (.validateField validator "test" 42)
     ;; The float can be rounded down to an int.
-    (.validateField validator 3.14159)
+    (.validateField validator "test" 3.14159)
     (is (thrown-cause? java.lang.IllegalArgumentException
-      (.validateField validator "42")))))
+      (.validateField validator "test" "42")))))
+
+(deftest test-isolation-scheduler-machines-is-map
+  (let [validator (CONFIG-SCHEMA-MAP ISOLATION-SCHEDULER-MACHINES)]
+    (is (nil? (try 
+                (.validateField validator "test" {}) 
+                (catch Exception e e))))
+    (is (nil? (try 
+                (.validateField validator "test" {"host0" 1 "host1" 2}) 
+                (catch Exception e e))))
+    (is (thrown-cause? java.lang.IllegalArgumentException
+      (.validateField validator "test" 42)))))

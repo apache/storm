@@ -1,4 +1,22 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package backtype.storm;
+import java.util.Map;
 
 /**
  * Provides functionality for validating configuration fields.
@@ -11,10 +29,11 @@ public class ConfigValidation {
     public static interface FieldValidator {
         /**
          * Validates the given field.
+         * @param name the name of the field.
          * @param field The field to be validated.
          * @throws IllegalArgumentException if the field fails validation.
          */
-        public void validateField(Object field) throws IllegalArgumentException;
+        public void validateField(String name, Object field) throws IllegalArgumentException;
     }
 
     /**
@@ -25,7 +44,7 @@ public class ConfigValidation {
     static FieldValidator FieldListValidatorFactory(final Class cls) {
         return new FieldValidator() {
             @Override
-            public void validateField(Object field)
+            public void validateField(String name, Object field)
                     throws IllegalArgumentException {
                 if (field == null) {
                     // A null value is acceptable.
@@ -35,14 +54,14 @@ public class ConfigValidation {
                     for (Object e : (Iterable)field) {
                         if (! cls.isInstance(e)) {
                             throw new IllegalArgumentException(
-                                    "Each element of this list must be a " +
+                                    "Each element of the list " + name + " must be a " +
                                     cls.getName() + ".");
                         }
                     }
                     return;
                 }
                 throw new IllegalArgumentException(
-                        "Field must be an Iterable of " + cls.getName());
+                        "Field " + name + " must be an Iterable of " + cls.getName());
             }
         };
     }
@@ -58,11 +77,16 @@ public class ConfigValidation {
     public static Object StringsValidator = FieldListValidatorFactory(String.class);
 
     /**
+     * Validates is a list of Maps.
+     */
+    public static Object MapsValidator = FieldListValidatorFactory(Map.class);
+
+    /**
      * Validates a power of 2.
      */
     public static Object PowerOf2Validator = new FieldValidator() {
         @Override
-        public void validateField(Object o) throws IllegalArgumentException {
+        public void validateField(String name, Object o) throws IllegalArgumentException {
             if (o == null) {
                 // A null value is acceptable.
                 return;
@@ -76,7 +100,39 @@ public class ConfigValidation {
                     return;
                 }
             }
-            throw new IllegalArgumentException("Field must be a power of 2.");
+            throw new IllegalArgumentException("Field " + name + " must be a power of 2.");
+        }
+    };
+
+    /**
+     * Validates Kryo Registration
+     */
+    public static Object KryoRegValidator = new FieldValidator() {
+        @Override
+        public void validateField(String name, Object o) throws IllegalArgumentException {
+            if (o == null) {
+                // A null value is acceptable.
+                return;
+            }
+            if (o instanceof Iterable) {
+                for (Object e : (Iterable)o) {
+                    if (e instanceof Map) {
+                        for (Map.Entry<Object,Object> entry: ((Map<Object,Object>)e).entrySet()) {
+                            if (!(entry.getKey() instanceof String) ||
+                                !(entry.getValue() instanceof String)) {
+                                throw new IllegalArgumentException(
+                                    "Each element of the list " + name + " must be a String or a Map of Strings");
+                            }
+                        }
+                    } else if (!(e instanceof String)) {
+                        throw new IllegalArgumentException(
+                                "Each element of the list " + name + " must be a String or a Map of Strings");
+                    }
+                }
+                return;
+            }
+            throw new IllegalArgumentException(
+                    "Field " + name + " must be an Iterable containing only Strings or Maps of Strings");
         }
     };
 }

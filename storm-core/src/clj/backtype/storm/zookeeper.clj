@@ -1,3 +1,18 @@
+;; Licensed to the Apache Software Foundation (ASF) under one
+;; or more contributor license agreements.  See the NOTICE file
+;; distributed with this work for additional information
+;; regarding copyright ownership.  The ASF licenses this file
+;; to you under the Apache License, Version 2.0 (the
+;; "License"); you may not use this file except in compliance
+;; with the License.  You may obtain a copy of the License at
+;;
+;; http://www.apache.org/licenses/LICENSE-2.0
+;;
+;; Unless required by applicable law or agreed to in writing, software
+;; distributed under the License is distributed on an "AS IS" BASIS,
+;; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+;; See the License for the specific language governing permissions and
+;; limitations under the License.
 (ns backtype.storm.zookeeper
   (:import [com.netflix.curator.retry RetryNTimes])
   (:import [com.netflix.curator.framework.api CuratorEvent CuratorEventType CuratorListener UnhandledErrorListener])
@@ -6,7 +21,7 @@
             ZooDefs ZooDefs$Ids CreateMode WatchedEvent Watcher$Event Watcher$Event$KeeperState
             Watcher$Event$EventType KeeperException$NodeExistsException])
   (:import [org.apache.zookeeper.data Stat])
-  (:import [org.apache.zookeeper.server ZooKeeperServer NIOServerCnxn$Factory])
+  (:import [org.apache.zookeeper.server ZooKeeperServer NIOServerCnxnFactory])
   (:import [java.net InetSocketAddress BindException])
   (:import [java.io File])
   (:import [backtype.storm.utils Utils ZookeeperAuthInfo])
@@ -67,21 +82,25 @@
 
 (defn create-node
   ([^CuratorFramework zk ^String path ^bytes data mode]
-    (.. zk (create) (withMode (zk-create-modes mode)) (withACL ZooDefs$Ids/OPEN_ACL_UNSAFE) (forPath (normalize-path path) data)))
+    (try
+      (.. zk (create) (withMode (zk-create-modes mode)) (withACL ZooDefs$Ids/OPEN_ACL_UNSAFE) (forPath (normalize-path path) data))
+      (catch Exception e (throw (wrap-in-runtime e)))))
   ([^CuratorFramework zk ^String path ^bytes data]
     (create-node zk path data :persistent)))
 
 (defn exists-node? [^CuratorFramework zk ^String path watch?]
   ((complement nil?)
-    (if watch?
-       (.. zk (checkExists) (watched) (forPath (normalize-path path))) 
-       (.. zk (checkExists) (forPath (normalize-path path))))))
+    (try
+      (if watch?
+         (.. zk (checkExists) (watched) (forPath (normalize-path path))) 
+         (.. zk (checkExists) (forPath (normalize-path path))))
+      (catch Exception e (throw (wrap-in-runtime e))))))
 
 (defnk delete-node [^CuratorFramework zk ^String path :force false]
   (try-cause  (.. zk (delete) (forPath (normalize-path path)))
     (catch KeeperException$NoNodeException e
-      (when-not force (throw e))
-      )))
+      (when-not force (throw e)))
+    (catch Exception e (throw (wrap-in-runtime e)))))
 
 (defn mkdirs [^CuratorFramework zk ^String path]
   (let [path (normalize-path path)]
@@ -103,15 +122,20 @@
           (.. zk (getData) (forPath path))))
     (catch KeeperException$NoNodeException e
       ;; this is fine b/c we still have a watch from the successful exists call
-      nil ))))
+      nil )
+    (catch Exception e (throw (wrap-in-runtime e))))))
 
 (defn get-children [^CuratorFramework zk ^String path watch?]
-  (if watch?
-    (.. zk (getChildren) (watched) (forPath (normalize-path path)))
-    (.. zk (getChildren) (forPath (normalize-path path)))))
+  (try
+    (if watch?
+      (.. zk (getChildren) (watched) (forPath (normalize-path path)))
+      (.. zk (getChildren) (forPath (normalize-path path))))
+    (catch Exception e (throw (wrap-in-runtime e)))))
 
 (defn set-data [^CuratorFramework zk ^String path ^bytes data]
-  (.. zk (setData) (forPath (normalize-path path) data)))
+  (try
+    (.. zk (setData) (forPath (normalize-path path) data))
+    (catch Exception e (throw (wrap-in-runtime e)))))
 
 (defn exists [^CuratorFramework zk ^String path watch?]
   (exists-node? zk path watch?))
@@ -132,7 +156,7 @@
   (let [localfile (File. localdir)
         zk (ZooKeeperServer. localfile localfile 2000)
         [retport factory] (loop [retport (if port port 2000)]
-                            (if-let [factory-tmp (try-cause (NIOServerCnxn$Factory. (InetSocketAddress. retport))
+                            (if-let [factory-tmp (try-cause (doto (NIOServerCnxnFactory.) (.configure (InetSocketAddress. retport) 0))
                                               (catch BindException e
                                                 (when (> (inc retport) (if port port 65535))
                                                   (throw (RuntimeException. "No port is available to launch an inprocess zookeeper.")))))]

@@ -1,3 +1,20 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package backtype.storm.utils;
 
 import backtype.storm.Config;
@@ -23,13 +40,14 @@ import java.nio.channels.WritableByteChannel;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
 import org.apache.commons.lang.StringUtils;
-import org.apache.thrift7.TException;
+import org.apache.thrift.TException;
 import org.json.simple.JSONValue;
 import org.yaml.snakeyaml.Yaml;
 
@@ -106,7 +124,7 @@ public class Utils {
 
     public static Map findAndReadConfigFile(String name, boolean mustExist) {
         try {
-            List<URL> resources = findResources(name);
+            HashSet<URL> resources = new HashSet<URL>(findResources(name));
             if(resources.isEmpty()) {
                 if(mustExist) throw new RuntimeException("Could not find config file on classpath " + name);
                 else return new HashMap();
@@ -115,7 +133,7 @@ public class Utils {
                 throw new RuntimeException("Found multiple " + name + " resources. You're probably bundling the Storm jars with your topology jar. "
                   + resources);
             }
-            URL resource = resources.get(0);
+            URL resource = resources.iterator().next();
             Yaml yaml = new Yaml();
             Map ret = (Map) yaml.load(new InputStreamReader(resource.openStream()));
             if(ret==null) ret = new HashMap();
@@ -317,22 +335,18 @@ public class Utils {
             serverPorts.add(zkServer + ":" + Utils.getInt(port));
         }
         String zkStr = StringUtils.join(serverPorts, ",") + root;
-        try {
-            CuratorFrameworkFactory.Builder builder = CuratorFrameworkFactory.builder()
-                    .connectString(zkStr)
-                    .connectionTimeoutMs(Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_CONNECTION_TIMEOUT)))
-                    .sessionTimeoutMs(Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_SESSION_TIMEOUT)))
-                    .retryPolicy(new BoundedExponentialBackoffRetry(
-                                Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_RETRY_INTERVAL)),
-                                Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_RETRY_TIMES)),
-                                Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_RETRY_INTERVAL_CEILING))));
-            if(auth!=null && auth.scheme!=null) {
-                builder = builder.authorization(auth.scheme, auth.payload);
-            }
-            return builder.build();
-        } catch (IOException e) {
-           throw new RuntimeException(e);
+        CuratorFrameworkFactory.Builder builder = CuratorFrameworkFactory.builder()
+                .connectString(zkStr)
+                .connectionTimeoutMs(Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_CONNECTION_TIMEOUT)))
+                .sessionTimeoutMs(Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_SESSION_TIMEOUT)))
+                .retryPolicy(new BoundedExponentialBackoffRetry(
+                            Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_RETRY_INTERVAL)),
+                            Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_RETRY_TIMES)),
+                            Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_RETRY_INTERVAL_CEILING))));
+        if(auth!=null && auth.scheme!=null) {
+            builder = builder.authorization(auth.scheme, auth.payload);
         }
+        return builder.build();
     }
 
     public static CuratorFramework newCurator(Map conf, List<String> servers, Object port) {

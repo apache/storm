@@ -1,3 +1,20 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package backtype.storm;
 
 import backtype.storm.ConfigValidation;
@@ -55,6 +72,18 @@ public class Config extends HashMap<String, Object> {
      */
     public static final String STORM_MESSAGING_NETTY_MAX_SLEEP_MS = "storm.messaging.netty.max_wait_ms"; 
     public static final Object STORM_MESSAGING_NETTY_MAX_SLEEP_MS_SCHEMA = Number.class;
+
+    /**
+     * Netty based messaging: The # of worker threads for the server.
+     */
+    public static final String STORM_MESSAGING_NETTY_SERVER_WORKER_THREADS = "storm.messaging.netty.server_worker_threads"; 
+    public static final Object STORM_MESSAGING_NETTY_SERVER_WORKER_THREADS_SCHEMA = Number.class;
+
+    /**
+     * Netty based messaging: The # of worker threads for the client.
+     */
+    public static final String STORM_MESSAGING_NETTY_CLIENT_WORKER_THREADS = "storm.messaging.netty.client_worker_threads"; 
+    public static final Object STORM_MESSAGING_NETTY_CLIENT_WORKER_THREADS_SCHEMA = Number.class;
 
     /**
      * A list of hosts of ZooKeeper servers used to manage the cluster.
@@ -217,8 +246,13 @@ public class Config extends HashMap<String, Object> {
      */
     public static final String NIMBUS_BITTORRENT_MAX_DOWNLOAD_RATE = "nimbus.bittorrent.max.download.rate";
     public static final Object NIMBUS_BITTORRENT_MAX_DOWNLOAD_RATE_SCHEMA = Number.class;
+    /**
+     * The maximum buffer size thrift should use when reading messages.
+     */
+    public static final String NIMBUS_THRIFT_MAX_BUFFER_SIZE = "nimbus.thrift.max_buffer_size";
+    public static final Object NIMBUS_THRIFT_MAX_BUFFER_SIZE_SCHEMA = Number.class;
 
-    
+
     /**
      * This parameter is used by the storm-deploy project to configure the
      * jvm options for the nimbus daemon.
@@ -325,6 +359,12 @@ public class Config extends HashMap<String, Object> {
      */
     public static final String LOGVIEWER_CHILDOPTS = "logviewer.childopts";
     public static final Object LOGVIEWER_CHILDOPTS_SCHEMA = String.class;
+
+    /**
+     * Appender name used by log viewer to determine log directory.
+     */
+    public static final String LOGVIEWER_APPENDER_NAME = "logviewer.appender.name";
+    public static final Object LOGVIEWER_APPENDER_NAME_SCHEMA = String.class;
 
     /**
      * Childopts for Storm UI Java process.
@@ -562,7 +602,7 @@ public class Config extends HashMap<String, Object> {
      * See Kryo's documentation for more information about writing custom serializers.
      */
     public static final String TOPOLOGY_KRYO_REGISTER = "topology.kryo.register";
-    public static final Object TOPOLOGY_KRYO_REGISTER_SCHEMA = ConfigValidation.StringsValidator;
+    public static final Object TOPOLOGY_KRYO_REGISTER_SCHEMA = ConfigValidation.KryoRegValidator;
 
     /**
      * A list of classes that customize storm's kryo instance during start-up.
@@ -601,7 +641,7 @@ public class Config extends HashMap<String, Object> {
      * Each listed class maps 1:1 to a system bolt named __metrics_ClassName#N, and it's parallelism is configurable.
      */
     public static final String TOPOLOGY_METRICS_CONSUMER_REGISTER = "topology.metrics.consumer.register";
-    public static final Object TOPOLOGY_METRICS_CONSUMER_REGISTER_SCHEMA = ConfigValidation.StringsValidator;
+    public static final Object TOPOLOGY_METRICS_CONSUMER_REGISTER_SCHEMA = ConfigValidation.MapsValidator;
 
 
     /**
@@ -762,6 +802,12 @@ public class Config extends HashMap<String, Object> {
     public static final Object TOPOLOGY_NAME_SCHEMA = String.class;
 
     /**
+     * Max pending tuples in one ShellBolt
+     */
+    public static final String TOPOLOGY_SHELLBOLT_MAX_PENDING="topology.shellbolt.max.pending";
+    public static final Object TOPOLOGY_SHELLBOLT_MAX_PENDING_SCHEMA = Number.class;
+
+    /**
      * The root directory in ZooKeeper for metadata about TransactionalSpouts.
      */
     public static final String TRANSACTIONAL_ZOOKEEPER_ROOT="transactional.zookeeper.root";
@@ -824,7 +870,7 @@ public class Config extends HashMap<String, Object> {
      * to backtype.storm.scheduler.IsolationScheduler to make use of the isolation scheduler.
      */
     public static final String ISOLATION_SCHEDULER_MACHINES = "isolation.scheduler.machines";
-    public static final Object ISOLATION_SCHEDULER_MACHINES_SCHEMA = Number.class;
+    public static final Object ISOLATION_SCHEDULER_MACHINES_SCHEMA = Map.class;
 
     public static void setDebug(Map conf, boolean isOn) {
         conf.put(Config.TOPOLOGY_DEBUG, isOn);
