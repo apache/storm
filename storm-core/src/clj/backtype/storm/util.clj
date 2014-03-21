@@ -638,10 +638,11 @@
     [(MutableInt. -1) choices rand]))
 
 (defn acquire-random-range-id [[^MutableInt curr ^List state ^Random rand]]
-  (when (>= (.increment curr) (.size state))
-    (.set curr 0)
-    (Collections/shuffle state rand))
-  (.get state (.get curr)))
+  (locking curr
+    (when (>= (.increment curr) (.size state))
+      (.set curr 0)
+      (Collections/shuffle state rand))
+    (.get state (.get curr))))
 
 ; this can be rewritten to be tail recursive
 (defn interleave-all [& colls]
