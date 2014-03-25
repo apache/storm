@@ -103,8 +103,7 @@ public class ShellSpout implements ISpout {
                 if (command.equals("sync")) {
                     return;
                 } else if (command.equals("log")) {
-                    String msg = (String) action.get("msg");
-                    LOG.info("Shell msg: " + msg);
+                    handleLog(action);
                 } else if (command.equals("emit")) {
                     String stream = (String) action.get("stream");
                     if (stream == null) stream = Utils.DEFAULT_STREAM_ID;
@@ -134,4 +133,22 @@ public class ShellSpout implements ISpout {
     @Override
     public void deactivate() {
     }
+
+    private void handleLog(Map action) {
+        String msg = (String) action.get("msg");
+        String level = "info";
+        if (action.containsKey("level")) {
+            level = (String) action.get("level");
+        }
+        if (level.equals("debug")) {
+            LOG.debug("Shell msg: " + msg);
+        } else if (level.equals("warn")) {
+            LOG.warn("Shell msg: " + msg);
+        } else if (level.equals("error")) {
+            LOG.error("Shell msg: " + msg);
+        } else {
+            LOG.info("Shell msg: " + msg);
+        }
+    }
+
 }
