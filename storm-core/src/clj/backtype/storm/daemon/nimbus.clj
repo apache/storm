@@ -27,6 +27,7 @@
   (:use [backtype.storm bootstrap util])
   (:use [backtype.storm.config :only [validate-configs-with-schemas]])
   (:use [backtype.storm.daemon common])
+  (:use [backtype.storm.nimbus leadership])
   (:gen-class
     :methods [^{:static true} [launch [backtype.storm.scheduler.INimbus] void]]))
 
@@ -894,10 +895,47 @@
   )
 )
 
+(defn- sync-storm-code-from-leader [nimbus]
+  (let [conf (:conf nimbus)
+        storm-cluster-state (:storm-cluster-state nimbus)
+        storm-ids (.assignments storm-cluster-state nil)
+        storm-code-map (->> (dofor [sid storm-ids] {sid (.assignment-info storm-cluster-state sid nil)})
+                            (apply merge)
+                            (filter-val not-nil?)
+                            (map-val :master-code-dir)
+                            )
+        downloaded-storm-ids (set (map #(java.net.URLDecoder/decode %) (read-dir-contents (master-stormdist-root conf))))
+        tmproot (str (master-tmp-dir conf) file-path-separator (uuid))]
+    (doseq [[storm-id master-code-dir] storm-code-map]
+        (when (not (downloaded-storm-ids storm-id))
+          (log-message "Downloading code for storm id " storm-id " from " master-code-dir)
+          
+          (FileUtils/forceMkdir (File. tmproot))
+          (Utils/downloadFromMaster conf (master-stormjar-path master-code-dir) (master-stormjar-path tmproot))
+          (Utils/downloadFromMaster conf (master-stormcode-path master-code-dir) (master-stormcode-path tmproot))
+          (Utils/downloadFromMaster conf (master-stormconf-path master-code-dir) (master-stormconf-path tmproot))
+          (FileUtils/moveDirectory (File. tmproot) (File. (master-stormdist-root conf storm-id)))
+          
+          (log-message "Finished downloading code for storm id " storm-id " from " master-code-dir)
+         )
+     )
+  )
+)
+
 (defserverfn service-handler [conf inimbus]
   (.prepare inimbus conf (master-inimbus-dir conf))
   (log-message "Starting Nimbus with conf " conf)
-  (let [nimbus (nimbus-data conf inimbus)]
+  (let [nimbus (nimbus-data conf inimbus)
+        nimbus-leadership (nimbus-leadership conf)]
+    ;; Schedule synchronize storm code from leader
+    (schedule-recurring (:timer nimbus)
+                        10
+                        10
+                        (fn []
+                          (sync-storm-code-from-leader nimbus)
+                          ))
+    ;; Compete to be nimbus leader
+    (acquire-leadership nimbus-leadership)
     (.prepare ^backtype.storm.nimbus.ITopologyValidator (:validator nimbus) conf)
     (cleanup-corrupt-topologies! nimbus)
     (doseq [storm-id (.active-storms (:storm-cluster-state nimbus))]
@@ -1146,6 +1184,7 @@
         (.disconnect (:storm-cluster-state nimbus))
         (.cleanup (:downloaders nimbus))
         (.cleanup (:uploaders nimbus))
+        (.close nimbus-leadership)
         (log-message "Shut down master")
         )
       DaemonCommon

@@ -20,6 +20,7 @@
   (:use [backtype.storm config util log])
   (:use [backtype.storm.ui helpers])
   (:use [backtype.storm.daemon [common :only [ACKER-COMPONENT-ID system-id?]]])
+  (:use [backtype.storm.nimbus leadership])
   (:use [ring.adapter.jetty :only [run-jetty]])
   (:use [clojure.string :only [trim]])
   (:import [backtype.storm.utils Utils])
@@ -39,7 +40,7 @@
 (def ^:dynamic *STORM-CONF* (read-storm-config))
 
 (defmacro with-nimbus [nimbus-sym & body]
-  `(thrift/with-nimbus-connection [~nimbus-sym (*STORM-CONF* NIMBUS-HOST) (*STORM-CONF* NIMBUS-THRIFT-PORT)]
+  `(thrift/with-nimbus-connection [~nimbus-sym (.getHostName (get-nimbus-leader-address *STORM-CONF*)) (*STORM-CONF* NIMBUS-THRIFT-PORT)]
      ~@body
      ))
 
@@ -155,8 +156,8 @@
                              (reduce +))]
     (table [{:text "Version" :attr {:class "tip right"
                                     :title (:version tips)}}
-            {:text "Nimbus uptime" :attr {:class "tip right"
-                                          :title (:nimbus-uptime tips)}}
+            {:text "Nimbus leader uptime" :attr {:class "tip right"
+                                          :title (:nimbus-leader-uptime tips)}}
             {:text "Supervisors" :attr {:class "tip above"
                                         :title (:num-supervisors tips)}}
             {:text "Used slots" :attr {:class "tip above"
@@ -178,6 +179,15 @@
              total-executors
              total-tasks]])
     ))
+
+(defn nimbus-summary-table []
+  (let [nimbus-hosts (get-nimbus-hosts *STORM-CONF*)
+        nimbus-leader-host (get-nimbus-leader-address *STORM-CONF*)]
+    (table
+    ["Nimbus address" "isLeader"]
+    (for [nimbus-host nimbus-hosts]
+     [(str (.getHostName nimbus-host) ":" (.getPort nimbus-host)) (if (= nimbus-host nimbus-leader-host) "true" "false")]
+      ))))
 
 (defn topology-link
   ([id] (topology-link id id))
@@ -242,6 +252,7 @@
     (let [summ (.getClusterInfo ^Nimbus$Client nimbus)]
       (concat
        [[:h2 "Cluster Summary"]]
+       [(nimbus-summary-table)]
        [(cluster-summary-table summ)]
        [[:h2 "Topology summary"]]
        (main-topology-summary-table (.get_topologies summ))

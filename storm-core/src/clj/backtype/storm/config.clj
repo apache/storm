@@ -143,6 +143,11 @@
 (defn master-stormconf-path [stormroot]
   (str stormroot file-path-separator "stormconf.ser"))
 
+(defn master-tmp-dir [conf]
+  (let [ret (str (master-local-dir conf) file-path-separator "tmp")]
+    (FileUtils/forceMkdir (File. ret))
+    ret ))
+
 (defn master-inbox [conf]
   (let [ret (str (master-local-dir conf) file-path-separator "inbox")]
     (FileUtils/forceMkdir (File. ret))

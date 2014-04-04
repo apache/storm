@@ -24,6 +24,7 @@ import java.util.Map;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import backtype.storm.nimbus.NimbusLeadership;
 
 public class NimbusClient extends ThriftClient {
     private Nimbus.Client _client;
@@ -31,12 +32,15 @@ public class NimbusClient extends ThriftClient {
 
     public static NimbusClient getConfiguredClient(Map conf) {
         try {
-            String nimbusHost = (String) conf.get(Config.NIMBUS_HOST);
+        	NimbusLeadership nimbusLeadership = new NimbusLeadership(conf);
+            String nimbusHost = nimbusLeadership.getNimbusLeaderAddress().getHostName();
             int nimbusPort = Utils.getInt(conf.get(Config.NIMBUS_THRIFT_PORT));
             return new NimbusClient(conf, nimbusHost, nimbusPort);
         } catch (TTransportException ex) {
             throw new RuntimeException(ex);
-        }
+        } catch (Exception e) {
+        	throw new RuntimeException(e);
+		}
     }
 
     public NimbusClient(Map conf, String host, int port) throws TTransportException {
