@@ -20,23 +20,25 @@ import com.alibaba.jstorm.utils.JStormUtils;
 /**
  * zeroMQ context
  * 
- * @author yannian/Longda
+ * @author yannian/Longda/zhiyuan.ls
  * 
  */
 public class MQContext implements IContext {
-	private final static Logger LOG = LoggerFactory.getLogger(MQContext.class);
-	private Map storm_conf;
-	private org.zeromq.ZMQ.Context context;
-	private int linger_ms;
-	private boolean ipc;
-	private boolean virtportZmq = false;
-	private int maxQueueMsg;
-	private Map<Integer, IConnection> queueConnections = new HashMap<Integer, IConnection>();
-
+	protected final static Logger LOG = LoggerFactory.getLogger(MQContext.class);
+	protected Map storm_conf;
+	protected int zmqThreads;
+	protected int linger_ms;
+	protected boolean ipc;
+	protected boolean virtportZmq = false;
+	protected int maxQueueMsg;
+	protected Map<Integer, IConnection> queueConnections = new HashMap<Integer, IConnection>();
+	
+	private Context context;
+	
 	@Override
 	public void prepare(Map storm_conf) {
 		this.storm_conf = storm_conf;
-		int zmqThreads = JStormUtils.parseInt(storm_conf
+		zmqThreads = JStormUtils.parseInt(storm_conf
 				.get(Config.ZMQ_THREADS));
 		linger_ms = JStormUtils.parseInt(storm_conf
 				.get(Config.ZMQ_LINGER_MILLIS));
@@ -45,9 +47,13 @@ public class MQContext implements IContext {
 				storm_conf.get(Config.STORM_LOCAL_MODE_ZMQ), false);
 		maxQueueMsg = JStormUtils.parseInt(storm_conf.get(Config.ZMQ_HWM),
 				ConfigExtension.DEFAULT_ZMQ_MAX_QUEUE_MSG);
-		context = ZeroMq.context(zmqThreads);
-
+		init();
+		
 		LOG.info("MQContext prepare done...");
+	}
+	
+	protected void init() {
+		context = ZeroMq.context(zmqThreads);
 	}
 
 	// public IContext makeContext(Map storm_conf) {
@@ -81,7 +87,7 @@ public class MQContext implements IContext {
 	// }
 
 	@SuppressWarnings("unused")
-	private MQContext() {
+	protected MQContext() {
 	}
 
 	@Override
@@ -93,7 +99,7 @@ public class MQContext implements IContext {
 		}
 	}
 
-	private IConnection zmq_bind(boolean distributeZmq, int port) {
+	protected IConnection zmq_bind(boolean distributeZmq, int port) {
 		String url = null;
 		if (distributeZmq) {
 			if (ipc) {
@@ -105,6 +111,7 @@ public class MQContext implements IContext {
 			// virtportZmq will be true
 			url = "inproc://" + port;
 		}
+		
 		Socket socket = ZeroMq.socket(context, ZeroMq.pull);
 
 		ZeroMq.bind(socket, url);
@@ -130,7 +137,7 @@ public class MQContext implements IContext {
 		}
 	}
 
-	private IConnection zmq_connect(boolean distributeZmq, String host, int port) {
+	protected IConnection zmq_connect(boolean distributeZmq, String host, int port) {
 		String url = null;
 
 		if (distributeZmq) {
@@ -174,8 +181,8 @@ public class MQContext implements IContext {
 		context.term();
 	}
 
-	public Context getContext() {
-		return context;
-	}
+//	public Context getContext() {
+//		return context;
+//	}
 
 }

@@ -1,11 +1,13 @@
 package com.alibaba.jstorm.utils;
 
+import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
 
-public class RunCounter {
+public class RunCounter implements Serializable{
 
+	private static final long serialVersionUID = 2177944366059817622L;
 	private AtomicLong total = new AtomicLong(0);
 	private AtomicLong times = new AtomicLong(0);
 	private AtomicLong values = new AtomicLong(0);

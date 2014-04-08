@@ -12,8 +12,8 @@ import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.utils.DisruptorQueue;
+import backtype.storm.utils.WorkerClassLoader;
 
-import com.alibaba.jstorm.daemon.worker.WorkerClassLoader;
 import com.alibaba.jstorm.stats.CommonStatsRolling;
 import com.alibaba.jstorm.task.TaskStatus;
 import com.alibaba.jstorm.task.TaskTransfer;
@@ -130,6 +130,9 @@ public class BoltExecutors extends BaseExecutors implements EventHandler {
 
 		Tuple tuple = (Tuple) event;
 
+		task_stats.recv_tuple(tuple.getSourceComponent(),
+				tuple.getSourceStreamId());
+		
 		tuple_start_times.put(tuple, System.currentTimeMillis());
 
 		try {

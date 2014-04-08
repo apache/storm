@@ -12,11 +12,11 @@ import backtype.storm.task.TopologyContext;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.utils.DisruptorQueue;
 import backtype.storm.utils.Utils;
+import backtype.storm.utils.WorkerClassLoader;
 
 import com.alibaba.jstorm.callback.AsyncLoopThread;
 import com.alibaba.jstorm.callback.RunnableCallback;
 import com.alibaba.jstorm.client.ConfigExtension;
-import com.alibaba.jstorm.daemon.worker.WorkerClassLoader;
 //import com.alibaba.jstorm.message.zeroMq.IRecvConnection;
 import com.alibaba.jstorm.stats.CommonStatsRolling;
 import com.alibaba.jstorm.task.TaskStatus;
@@ -53,7 +53,7 @@ public class BaseExecutors extends RunnableCallback {
 
 	protected KryoTupleDeserializer deserializer;
 
-	protected TaskStatus taskStatus;
+	protected volatile TaskStatus taskStatus;
 
 	protected int message_timeout_secs = 30;
 
@@ -62,6 +62,8 @@ public class BaseExecutors extends RunnableCallback {
 	ITaskReportErr report_error;
 
 	protected DisruptorQueue disruptorRecvQueue;
+	
+	protected AsyncLoopThread recvThread;
 
 	// protected IntervalCheck intervalCheck = new IntervalCheck();
 
@@ -106,13 +108,7 @@ public class BaseExecutors extends RunnableCallback {
 
 		this.registerInnerTransfer(disruptorRecvQueue);
 
-		// Thread recvThread = new Thread(new RecvRunnable(disruptorRecvQueue));
-		// recvThread.setName(component_id + "-" + taskId + "-recvThread");
-		// recvThread.setPriority(Thread.MAX_PRIORITY);
-		// recvThread.setDaemon(true);
-		// recvThread.start();
-
-		new AsyncLoopThread(new RecvRunnable(disruptorRecvQueue));
+		recvThread = new AsyncLoopThread(new RecvRunnable(disruptorRecvQueue));
 	}
 
 	protected Tuple recv() {
@@ -146,9 +142,6 @@ public class BaseExecutors extends RunnableCallback {
 			}
 
 			// recv_tuple_queue.offer(tuple);
-
-			task_stats.recv_tuple(tuple.getSourceComponent(),
-					tuple.getSourceStreamId());
 
 			return tuple;
 
@@ -258,6 +251,10 @@ public class BaseExecutors extends RunnableCallback {
 	protected void unregistorInnerTransfer() {
 		LOG.info("Unregistor inner transfer for executor thread of " + idStr);
 		innerTaskTransfer.remove(taskId);
+	}
+
+	public AsyncLoopThread getRecvThread() {
+		return recvThread;
 	}
 
 }

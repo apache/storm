@@ -163,7 +163,7 @@ public class NormalPreAssign implements IPreassignTask {
 				ret = new HashSet<String>();
 				ret.add(sid);
 
-			} else if (left == max) {
+			} else if (left.equals(max)) {
 				ret.add(sid);
 			}
 		}

@@ -1,15 +1,17 @@
 package com.alibaba.jstorm.task;
 
+import java.util.List;
+
 import org.apache.log4j.Logger;
 
 import backtype.storm.messaging.IConnection;
 import backtype.storm.messaging.IContext;
 import backtype.storm.spout.ISpout;
 import backtype.storm.task.IBolt;
+import backtype.storm.utils.WorkerClassLoader;
 
 import com.alibaba.jstorm.callback.AsyncLoopThread;
 import com.alibaba.jstorm.cluster.StormClusterState;
-import com.alibaba.jstorm.daemon.worker.WorkerClassLoader;
 
 /**
  * shutdown one task
@@ -26,16 +28,14 @@ public class TaskShutdownDameon implements ShutdownableDameon {
 	private String topology_id;
 	private Integer task_id;
 	private IContext context;
-	private AsyncLoopThread[] all_threads;
+	private List<AsyncLoopThread> all_threads;
 	private StormClusterState zkCluster;
 	private IConnection puller;
 	private Object task_obj;
-	private AsyncLoopThread heartbeat_thread;
 
 	public TaskShutdownDameon(TaskStatus taskStatus, String topology_id,
-			Integer task_id, IContext context, AsyncLoopThread[] all_threads,
-			StormClusterState zkCluster, IConnection puller, Object task_obj,
-			AsyncLoopThread heartbeat_thread) {
+			Integer task_id, IContext context, List<AsyncLoopThread> all_threads,
+			StormClusterState zkCluster, IConnection puller, Object task_obj) {
 		this.taskStatus = taskStatus;
 		this.topology_id = topology_id;
 		this.task_id = task_id;
@@ -44,7 +44,6 @@ public class TaskShutdownDameon implements ShutdownableDameon {
 		this.zkCluster = zkCluster;
 		this.puller = puller;
 		this.task_obj = task_obj;
-		this.heartbeat_thread = heartbeat_thread;
 
 	}
 
@@ -55,6 +54,8 @@ public class TaskShutdownDameon implements ShutdownableDameon {
 		// all thread will check the taskStatus
 		// once it has been set SHUTDOWN, it will quit
 		taskStatus.setStatus(TaskStatus.SHUTDOWN);
+		
+		closeComponent(task_obj);
 
 		// waiting 100ms for executor thread shutting it's own
 		try {
@@ -63,12 +64,16 @@ public class TaskShutdownDameon implements ShutdownableDameon {
 		}
 
 		for (AsyncLoopThread thr : all_threads) {
+			LOG.info("Begin to shutdown " + thr.getThread().getName());
 			thr.interrupt();
 			try {
-				thr.join();
-			} catch (InterruptedException e) {
+				//thr.join();
+				thr.getThread().stop();
+			} catch (Exception e) {
 			}
+			LOG.info("Successfully shutdown " + thr.getThread().getName());
 		}
+
 		try {
 			zkCluster.remove_task_heartbeat(topology_id, task_id);
 			zkCluster.disconnect();
@@ -76,8 +81,6 @@ public class TaskShutdownDameon implements ShutdownableDameon {
 			// TODO Auto-generated catch block
 			LOG.info(e);
 		}
-
-		closeComponent(task_obj);
 
 		LOG.info("Successfully shut down task " + topology_id + ":" + task_id);
 
@@ -101,7 +104,7 @@ public class TaskShutdownDameon implements ShutdownableDameon {
 
 	@Override
 	public boolean waiting() {
-		return heartbeat_thread.isSleeping();
+		return taskStatus.isRun();
 	}
 
 	public void deactive() {

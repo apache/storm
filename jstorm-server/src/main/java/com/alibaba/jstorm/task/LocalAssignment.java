@@ -13,22 +13,22 @@ import org.apache.commons.lang.builder.ToStringStyle;
  */
 public class LocalAssignment implements Serializable {
 	public static final long serialVersionUID = 4054639727225043554L;
-	private String topologyId;
+	private final String topologyId;
+	private final String topologyName;
 	private Set<Integer> taskIds;
 	private int memSlotNum;
+	private int cpuSlotNum;
 
-	public LocalAssignment(String topologyId, Set<Integer> taskIds) {
+	public LocalAssignment(String topologyId, Set<Integer> taskIds, String topologyName) {
 		this.topologyId = topologyId;
 		this.taskIds = new HashSet<Integer>(taskIds);
+		this.topologyName = topologyName;
 	}
 
 	public String getTopologyId() {
 		return topologyId;
 	}
 
-	public void setTopologyId(String topologyId) {
-		this.topologyId = topologyId;
-	}
 
 	public Set<Integer> getTaskIds() {
 		return taskIds;
@@ -41,9 +41,21 @@ public class LocalAssignment implements Serializable {
 	public void addMemSlotNum(int slotNum) {
 		memSlotNum += slotNum;
 	}
+	
+	public void addCpuSlotNum(int slotCpu) {
+		cpuSlotNum += slotCpu;
+	}
 
 	public int getMemSlotNum() {
 		return memSlotNum;
+	}
+	
+	public int getCpuSlotNum() {
+		return cpuSlotNum;
+	}
+	
+	public String getTopologyName() {
+		return topologyName;
 	}
 
 	@Override

@@ -85,6 +85,7 @@ public class WorkerHeartbeatRunable extends RunnableCallback {
 			doHeartbeat();
 		} catch (IOException e) {
 			LOG.error("work_heart_beat_fn fail", e);
+			throw new RuntimeException(e);
 		}
 
 	}

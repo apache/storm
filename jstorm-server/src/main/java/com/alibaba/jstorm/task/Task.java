@@ -13,6 +13,7 @@ import backtype.storm.spout.ISpout;
 import backtype.storm.task.IBolt;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.utils.DisruptorQueue;
+import backtype.storm.utils.WorkerClassLoader;
 import clojure.lang.Atom;
 
 import com.alibaba.jstorm.callback.AsyncLoopThread;
@@ -21,7 +22,6 @@ import com.alibaba.jstorm.cluster.Common;
 import com.alibaba.jstorm.cluster.StormClusterState;
 import com.alibaba.jstorm.cluster.StormConfig;
 import com.alibaba.jstorm.cluster.StormZkClusterState;
-import com.alibaba.jstorm.daemon.worker.WorkerClassLoader;
 import com.alibaba.jstorm.daemon.worker.WorkerData;
 import com.alibaba.jstorm.daemon.worker.WorkerHaltRunable;
 import com.alibaba.jstorm.resource.ResourceAssignment;
@@ -33,6 +33,7 @@ import com.alibaba.jstorm.task.error.TaskReportError;
 import com.alibaba.jstorm.task.error.TaskReportErrorAndDie;
 import com.alibaba.jstorm.task.execute.BoltExecutors;
 import com.alibaba.jstorm.task.execute.SpoutExecutors;
+import com.alibaba.jstorm.task.execute.BaseExecutors;
 import com.alibaba.jstorm.task.group.MkGrouper;
 import com.alibaba.jstorm.task.heartbeat.TaskHeartbeatRunable;
 import com.alibaba.jstorm.utils.JStormServerConfig;
@@ -61,7 +62,7 @@ public class Task {
 
 	private Integer taskid;
 	private String componentid;
-	private TaskStatus taskStatus;
+	private volatile TaskStatus taskStatus;
 	private Atom openOrPrepareWasCalled;
 	// running time counter
 	private UptimeComputer uptime = new UptimeComputer();
@@ -80,6 +81,7 @@ public class Task {
 		this.userContext = workerData.getContextMaker().makeTopologyContext(
 				workerData.getRawTopology(), taskId, openOrPrepareWasCalled);
 
+		this.taskStatus = new TaskStatus();
 		this.taskTransfer = getSendingTransfer(workerData);
 		this.innerTaskTransfer = workerData.getInnerTaskTransfer();
 		this.topologyid = workerData.getTopologyId();
@@ -94,7 +96,6 @@ public class Task {
 		String diskSlot = getAssignDiskSlot();
 		JStormServerConfig.setTaskAssignDiskSlot(stormConf, diskSlot);
 
-		this.taskStatus = new TaskStatus();
 
 		// get real task object -- spout/bolt/spoutspec
 		this.taskObj = Common.get_task_object(topologyContext.getRawTopology(),
@@ -152,9 +153,7 @@ public class Task {
 				workerData.getStormConf(), topologyContext);
 
 		// Task sending all tuples through this Object
-		return new TaskTransfer(serializer, workerData.getConf(),
-				workerData.getTransferQueue(),
-				workerData.getInnerTaskTransfer(), workerData.getWorkHalt());
+		return new TaskTransfer(serializer, taskStatus, workerData);
 	}
 
 	public TaskSendTargets echoToSystemBolt() {
@@ -227,20 +226,38 @@ public class Task {
 		RunnableCallback baseExecutor = mkExecutor(puller, sendTargets);
 		AsyncLoopThread executor_threads = new AsyncLoopThread(baseExecutor,
 				false, Thread.MAX_PRIORITY, true);
-
-		AsyncLoopThread[] all_threads = { executor_threads, heartbeat_thread };
+		
+		List<AsyncLoopThread> allThreads = new ArrayList<AsyncLoopThread>();
+		allThreads.add(heartbeat_thread);
+		allThreads.add(executor_threads);
 
 		LOG.info("Finished loading task " + componentid + ":" + taskid);
 
-		return getShutdown(all_threads, heartbeat_thread, puller);
+		return getShutdown(allThreads, heartbeat_thread, puller, baseExecutor);
 	}
 
-	public TaskShutdownDameon getShutdown(AsyncLoopThread[] all_threads,
-			AsyncLoopThread heartbeat_thread, IConnection puller) {
+	public TaskShutdownDameon getShutdown(List<AsyncLoopThread> allThreads,
+			AsyncLoopThread heartbeat_thread, IConnection puller,
+			RunnableCallback baseExecutor) {
 
+		AsyncLoopThread ackerThread = null;
+		if (baseExecutor instanceof SpoutExecutors) {
+			ackerThread = ((SpoutExecutors) baseExecutor).getAckerRunnableThread();
+			
+			if (ackerThread != null) {
+				allThreads.add(ackerThread);
+			}
+		}
+		AsyncLoopThread recvThread = ((BaseExecutors) baseExecutor).getRecvThread();
+		allThreads.add(recvThread);
+		
+		
+		AsyncLoopThread serializeThread = taskTransfer.getSerializeThread();
+		allThreads.add(serializeThread);
+		
 		TaskShutdownDameon shutdown = new TaskShutdownDameon(taskStatus,
-				topologyid, taskid, context, all_threads, zkCluster, puller,
-				taskObj, heartbeat_thread);
+				topologyid, taskid, context, allThreads, zkCluster, puller,
+				taskObj);
 
 		return shutdown;
 	}

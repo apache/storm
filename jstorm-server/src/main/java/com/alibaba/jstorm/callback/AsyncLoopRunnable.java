@@ -23,19 +23,18 @@ public class AsyncLoopRunnable implements Runnable {
 		this.killfn = killfn;
 	}
 
-	private boolean needSleep(Object rtn) {
+	private boolean needQuit(Object rtn) {
 		if (rtn != null) {
 			long sleepTime = Long.parseLong(String.valueOf(rtn));
-			if (sleepTime > 0) {
+			if (sleepTime < 0) {
+				return true;
+			}else if (sleepTime > 0) {
 				try {
 					JStormServerUtils.sleep_secs(sleepTime);
 				} catch (InterruptedException e) {
 					//
 				}
-			}
-			if (sleepTime < 0) {
-				return true;
-			}
+			} 
 		}
 		return false;
 	}
@@ -49,8 +48,8 @@ public class AsyncLoopRunnable implements Runnable {
 
 				try {
 					if (fn == null) {
-						LOG.info("fn==null," + fn.getClass());
-						continue;
+						LOG.warn("fn==null");
+						throw new RuntimeException("AsyncLoopRunnable no core function ");
 					}
 
 					fn.run();
@@ -65,7 +64,7 @@ public class AsyncLoopRunnable implements Runnable {
 					throw e;
 				}
 				Object rtn = fn.getResult();
-				if (this.needSleep(rtn)) {
+				if (this.needQuit(rtn)) {
 					return;
 				}
 
@@ -73,9 +72,10 @@ public class AsyncLoopRunnable implements Runnable {
 		} catch (InterruptedException e) {
 			LOG.info("Async loop interrupted!");
 		} catch (Throwable e) {
-			if (e.getCause() instanceof InterruptedException) {
-				LOG.info("Async loop interrupted!");
-			} else {
+			Object rtn = fn.getResult();
+			if (this.needQuit(rtn)) {
+				return;
+			}else {
 				LOG.error("Async loop died!", e);
 				killfn.execute(e);
 			}

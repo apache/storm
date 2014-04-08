@@ -22,6 +22,7 @@ import backtype.storm.utils.Utils;
 import com.alibaba.jstorm.callback.RunnableCallback;
 import com.alibaba.jstorm.cluster.Cluster;
 import com.alibaba.jstorm.cluster.Common;
+import com.alibaba.jstorm.cluster.StormBase;
 import com.alibaba.jstorm.cluster.StormClusterState;
 import com.alibaba.jstorm.cluster.StormConfig;
 import com.alibaba.jstorm.event.EventManager;
@@ -29,6 +30,7 @@ import com.alibaba.jstorm.event.EventManagerZkPusher;
 import com.alibaba.jstorm.resource.ResourceAssignment;
 import com.alibaba.jstorm.task.Assignment;
 import com.alibaba.jstorm.task.LocalAssignment;
+import com.alibaba.jstorm.utils.JStormServerUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.PathUtils;
 
@@ -129,7 +131,7 @@ class SyncSupervisorEvent extends RunnableCallback {
 
 			// Step 5: download code from ZK
 
-			Map<String, String> topologyCodes = getTopologyCodeLocations(assignments);
+			Map<String, String> topologyCodes = getTopologyCodeLocations(assignments, supervisorId);
 
 			downloadTopology(topologyCodes, downloadedTopologyIds);
 
@@ -221,34 +223,17 @@ class SyncSupervisorEvent extends RunnableCallback {
 			String masterCodeDir) throws IOException, TException {
 
 		// STORM_LOCAL_DIR/supervisor/tmp/(UUID)
-		String tmproot = StormConfig.supervisorTmpDir(conf) + "/"
+		String tmproot = StormConfig.supervisorTmpDir(conf) + File.separator
 				+ UUID.randomUUID().toString();
-		FileUtils.forceMkdir(new File(tmproot));
 
 		// STORM_LOCAL_DIR/supervisor/stormdist/topologyId
-		String stormroot = StormConfig.supervisor_stormdist_root(conf, topologyId);
+		String stormroot = StormConfig.supervisor_stormdist_root(conf,
+				topologyId);
 
-		// masterCodeDir/stormjar.jar
-		String masterStormjarPath = StormConfig.stormjar_path(masterCodeDir);
+		JStormServerUtils.downloadCodeFromMaster(conf, tmproot, masterCodeDir);
+
 		// tmproot/stormjar.jar
 		String localFileJarTmp = StormConfig.stormjar_path(tmproot);
-		// load stormjar.jar
-		Utils.downloadFromMaster(conf, masterStormjarPath, localFileJarTmp);// load
-		// storm.jar
-
-		// masterCodeDir/stormcode.ser
-		String masterStormcodePath = StormConfig.stormcode_path(masterCodeDir);
-		// tmproot/stormcode.ser
-		String localFileCodeTmp = StormConfig.stormcode_path(tmproot);
-		// load stormcode.ser
-		Utils.downloadFromMaster(conf, masterStormcodePath, localFileCodeTmp);
-
-		// masterCodeDir/stormconf.ser
-		String masterStormConfPath = StormConfig.sotrmconf_path(masterCodeDir);
-		// tmproot/stormconf.ser
-		String localFileConfTmp = StormConfig.sotrmconf_path(tmproot);
-		// load conf
-		Utils.downloadFromMaster(conf, masterStormConfPath, localFileConfTmp);
 
 		// extract dir from jar
 		JStormUtils.extract_dir_from_jar(localFileJarTmp,
@@ -298,11 +283,12 @@ class SyncSupervisorEvent extends RunnableCallback {
 	 * @param stormClusterState
 	 * @param supervisorId
 	 * @param callback
+	 * @throws Exception 
 	 * @returns map: {port,LocalAssignment}
 	 */
 	private Map<Integer, LocalAssignment> getLocalAssign(
 			StormClusterState stormClusterState, String supervisorId,
-			Map<String, Assignment> assignments) {
+			Map<String, Assignment> assignments) throws Exception {
 
 		Map<Integer, LocalAssignment> portLA = new HashMap<Integer, LocalAssignment>();
 
@@ -343,12 +329,20 @@ class SyncSupervisorEvent extends RunnableCallback {
 	 * @param supervisorId
 	 * @param callback
 	 * @return Map: {port, LocalAssignment}
+	 * @throws Exception 
 	 */
 	private Map<Integer, LocalAssignment> readMyTasks(
 			StormClusterState stormClusterState, String topologyId,
-			String supervisorId, Assignment assignmenInfo) {
-
+			String supervisorId, Assignment assignmenInfo) throws Exception {
+		
 		Map<Integer, LocalAssignment> portTasks = new HashMap<Integer, LocalAssignment>();
+		
+		
+		StormBase stormBase = stormClusterState.storm_base(topologyId, null);
+		if (stormBase == null) {
+			LOG.error("Failed to get StormBase of " + topologyId);
+			return portTasks;
+		}
 
 		Map<Integer, ResourceAssignment> taskToResource = assignmenInfo
 				.getTaskToResource();
@@ -382,6 +376,8 @@ class SyncSupervisorEvent extends RunnableCallback {
 				taskIds.add(taskId);
 
 				la.addMemSlotNum(resource.getMemSlotNum());
+				
+				la.addCpuSlotNum(resource.getCpuSlotNum());
 
 			} else {
 
@@ -389,9 +385,11 @@ class SyncSupervisorEvent extends RunnableCallback {
 
 				taskIds.add(taskId);
 
-				LocalAssignment la = new LocalAssignment(topologyId, taskIds);
+				LocalAssignment la = new LocalAssignment(topologyId, taskIds, stormBase.getStormName());
 
 				la.addMemSlotNum(resource.getMemSlotNum());
+				
+				la.addCpuSlotNum(resource.getCpuSlotNum());
 
 				portTasks.put(port, la);
 			}
@@ -409,15 +407,22 @@ class SyncSupervisorEvent extends RunnableCallback {
 	 * @returns Map: <topologyId, master-code-dir> from zookeeper
 	 */
 	public static Map<String, String> getTopologyCodeLocations(
-			Map<String, Assignment> assignments) throws Exception {
+			Map<String, Assignment> assignments, String supervisorId) throws Exception {
 
 		Map<String, String> rtn = new HashMap<String, String>();
 
 		for (Entry<String, Assignment> entry : assignments.entrySet()) {
 			String topologyid = entry.getKey();
 			Assignment assignmenInfo = entry.getValue();
-
-			rtn.put(topologyid, assignmenInfo.getMasterCodeDir());
+			
+			Map<Integer, ResourceAssignment> taskToNodePort = assignmenInfo.getTaskToResource();
+			for (Entry<Integer, ResourceAssignment> nodePort : taskToNodePort.entrySet()) {
+				String node = nodePort.getValue().getSupervisorId();
+				if (supervisorId.equals(node)) {
+					rtn.put(topologyid, assignmenInfo.getMasterCodeDir());
+					break;
+				}
+			}
 
 		}
 		return rtn;

@@ -27,7 +27,6 @@ import com.alibaba.jstorm.event.EventManagerPusher;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.NetWorkUtils;
 import com.alibaba.jstorm.utils.SmartThread;
-import com.alibaba.jstorm.utils.TimeUtils;
 
 /**
  * 
@@ -145,13 +144,18 @@ public class Supervisor {
 		// AsyncLoopThread(syncProcessPusher);
 		// threads.add(syncProcessThread);
 
+
+		//Step 7 start httpserver
+		Httpserver httpserver = new Httpserver(conf);
+		httpserver.start();
+		
 		LOG.info("Starting supervisor with id " + supervisorId + " at host "
 				+ myHostName);
 
 		// SupervisorManger which can shutdown all supervisor and workers
 		return new SupervisorManger(conf, supervisorId, active, threads,
-				syncSupEventManager, processEventManager, stormClusterState,
-				workerThreadPids);
+				syncSupEventManager, processEventManager, httpserver, 
+				stormClusterState, workerThreadPids);
 	}
 
 	/**

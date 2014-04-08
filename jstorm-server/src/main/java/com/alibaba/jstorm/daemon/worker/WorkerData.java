@@ -1,7 +1,6 @@
 package com.alibaba.jstorm.daemon.worker;
 
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.security.InvalidParameterException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -12,6 +11,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import backtype.storm.Config;
@@ -22,6 +22,7 @@ import backtype.storm.messaging.TransportFactory;
 import backtype.storm.scheduler.WorkerSlot;
 import backtype.storm.utils.DisruptorQueue;
 import backtype.storm.utils.Utils;
+import backtype.storm.utils.WorkerClassLoader;
 
 import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.cluster.Cluster;
@@ -35,6 +36,7 @@ import com.alibaba.jstorm.task.Assignment;
 import com.alibaba.jstorm.task.TaskShutdownDameon;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.PathUtils;
+import com.alibaba.jstorm.zk.ZkTool;
 import com.lmax.disruptor.MultiThreadedClaimStrategy;
 import com.lmax.disruptor.WaitStrategy;
 
@@ -55,8 +57,6 @@ public class WorkerData {
 	private final String supervisorId;
 	private final Integer port;
 	private final String workerId;
-	private final URLClassLoader jarClassLoader;
-
 	// worker status :active/shutdown
 	private AtomicBoolean active;
 
@@ -130,7 +130,7 @@ public class WorkerData {
 		}
 
 		// create zk interface
-		this.zkClusterstate = Cluster.mk_distributed_cluster_state(conf);
+		this.zkClusterstate = ZkTool.mk_distributed_cluster_state(conf);
 		this.zkCluster = Cluster.mk_storm_cluster_state(zkClusterstate);
 
 		Map rawConf = StormConfig.read_supervisor_topology_conf(conf,
@@ -138,19 +138,28 @@ public class WorkerData {
 		this.stormConf = new HashMap<Object, Object>();
 		this.stormConf.putAll(conf);
 		this.stormConf.putAll(rawConf);
+		
+		LOG.info("Worker Configuration " + stormConf);
 
 		try {
-			String[] paths = jar_path.split(":");
-			Set<URL> urls = new HashSet<URL>();
-			for (String path : paths) {
-				if (path.equals(""))
-					continue;
-				URL url = new URL("File:" + path);
-				urls.add(url);
+			if (jar_path != null) {
+				String[] paths = jar_path.split(":");
+				Set<URL> urls = new HashSet<URL>();
+				for (String path : paths) {
+					if (StringUtils.isBlank(path))
+						continue;
+					URL url = new URL("File:" + path);
+					urls.add(url);
+				}
+				WorkerClassLoader.mkInstance(
+						urls.toArray(new URL[0]),
+						ClassLoader.getSystemClassLoader(),
+						ConfigExtension.isEnableTopologyClassLoader(stormConf));
+			} else {
+				WorkerClassLoader.mkInstance(new URL[0],
+						ClassLoader.getSystemClassLoader(),
+						ConfigExtension.isEnableTopologyClassLoader(stormConf));
 			}
-			jarClassLoader = WorkerClassLoader.mkInstance(
-					urls.toArray(new URL[0]), ClassLoader.getSystemClassLoader(),
-					ConfigExtension.isEnableTopologyClassLoader(stormConf));
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			LOG.error("init jarClassLoader error!", e);

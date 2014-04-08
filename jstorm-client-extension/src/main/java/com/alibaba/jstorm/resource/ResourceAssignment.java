@@ -193,11 +193,11 @@ public class ResourceAssignment implements Serializable, JSONAware {
 	}
 
 	public boolean isCpuMemInvalid() {
-		if (cpuSlotNum == null || cpuSlotNum <= 0) {
+		if (cpuSlotNum == null || cpuSlotNum < 0) {
 			return true;
 		}
 
-		if (memSlotNum == null || memSlotNum <= 0) {
+		if (memSlotNum == null || memSlotNum < 0) {
 			return true;
 		}
 

@@ -41,13 +41,17 @@ public class VirtualPortShutdown implements Shutdownable {
 
 		IConnection sendConn = context.connect(topologyId, "localhost", port,
 				true);
-		sendConn.send(-1, KryoTupleSerializer.serialize(-1));
+		sendConn.send(port, KryoTupleSerializer.serialize(-1));
 
 		LOG.info("Waiting for virtual port at url " + port + " to die");
+		
+		vthread.interrupt();
 
 		try {
-			vthread.join();
-		} catch (InterruptedException e) {
+			
+			//vthread.join();
+			vthread.getThread().stop();
+		} catch (Exception e) {
 
 		}
 

@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.alibaba.jstorm</groupId>
 	<artifactId>jstorm-all</artifactId>
-	<version>0.9.1</version>
+	<version>0.9.2</version>
 	<packaging>pom</packaging>
 	<name>java storm</name>
 	<description>java storm</description>
@@ -13,6 +13,25 @@
 		<module>jstorm-server</module>
 		<module>jstorm-ui</module>
 	</modules>
+	
+	<repositories>
+	    <repository>
+			<id>taobao</id>
+			<url>http://mvnrepo.code.taobao.org/nexus/content/repositories/releases/</url>
+		</repository>
+		<repository>
+			<id>twitter4j</id>
+			<url>http://twitter4j.org/maven2</url>
+		</repository>
+		<repository>
+			<id>central</id>
+			<url>http://repo1.maven.org/maven2</url>
+		</repository>
+		<repository>
+			<id>clojars</id>
+			<url>http://clojars.org/repo/</url>
+		</repository>
+	</repositories>
 
 	<build>
 		<plugins>
@@ -40,7 +59,7 @@
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
 				<configuration>
-					<finalName>jstorm</finalName>
+					<finalName>aloha</finalName>
 					<descriptors>
 						<descriptor>release.xml</descriptor>
 					</descriptors>

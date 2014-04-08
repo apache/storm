@@ -25,6 +25,7 @@ public class MkLocalShuffer {
 			this.outTasks = localOutTasks;
 			isLocal = true;
 		} else {
+			this.outTasks = new ArrayList<Integer>() ;
 			this.outTasks.addAll(allOutTasks);
 			isLocal = false;
 		}
@@ -35,7 +36,7 @@ public class MkLocalShuffer {
 	public List<Integer> grouper(List<Object> values) {
 		int index = randomrange.nextInt();
 
-		return JStormUtils.mk_list(index);
+		return JStormUtils.mk_list(outTasks.get(index));
 	}
 
 	/**

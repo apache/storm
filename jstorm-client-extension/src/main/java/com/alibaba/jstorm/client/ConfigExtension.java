@@ -40,6 +40,31 @@ public class ConfigExtension {
 				true);
 	}
 
+	// /**
+	// * Whether or not use joremq
+	// */
+	// protected static final String USE_JAVA_ZMQ = "storm.use.java.zmq";
+	//
+	// public static void setUseJavaZmq(Map conf, boolean enable) {
+	// conf.put(USE_JAVA_ZMQ, Boolean.valueOf(enable));
+	// }
+	//
+	// public static Boolean isUseJavaZmq(Map conf) {
+	// return JStormUtils.parseBoolean(conf.get(USE_JAVA_ZMQ), true);
+	// }
+
+	/**
+	 * port number of supervisor httpserver deamon
+	 */
+	private static final Integer DEFAULT_SUPERVISOR_HTTPSERVER_PORT = 7621;
+
+	protected static final String SUPERVISOR_HTTPSERVER_PORT = "supervisor.logview.port";
+
+	public static Integer getSupervisorHttpserverPort(Map conf) {
+		return JStormUtils.parseInt(conf.get(SUPERVISOR_HTTPSERVER_PORT),
+				DEFAULT_SUPERVISOR_HTTPSERVER_PORT);
+	}
+
 	/**
 	 * Worker gc parameter
 	 * 
@@ -53,6 +78,15 @@ public class ConfigExtension {
 
 	public static String getWorkerGc(Map conf) {
 		return (String) conf.get(WORKER_GC_CHILDOPTS);
+	}
+
+	protected static final String WOREKER_REDIRECT_OUTPUT = "worker.redirect.output";
+
+	public static boolean getWorkerRedirectOutput(Map conf) {
+		Object result = conf.get(WOREKER_REDIRECT_OUTPUT);
+		if (result == null)
+			return true;
+		return (Boolean) result;
 	}
 
 	/**
@@ -102,6 +136,22 @@ public class ConfigExtension {
 	public static long getMemSlotSize(Map conf) {
 		return JStormUtils.parseLong(conf.get(MEM_SLOT_PER_SIZE),
 				JStormUtils.SIZE_1_G);
+	}
+
+	/**
+	 * This weight means the number of logic cpu slots corresponding to per
+	 * hardware cpu core For example , if a supervisor have 4 cpu cores and set
+	 * this weight as 2 , this supervisor will have 8 logic cpu slots. This
+	 * weight also effects the cgroup , if this weight is 1 , one cpu slot
+	 * corresponds to 1024 of cgroup's cpu weight ; when you set this weight as
+	 * 2 , one cpu slot corresponds to 512 of cgroup's cpu weight ; You can get
+	 * more about cgroup cpu weight(cpu.share): http://t.cn/8std8UV
+	 */
+
+	protected static final String CPU_SLOT_PER_WEIGHT = "cpu.slot.per.weight";
+
+	public static int getCpuSlotPerWeight(Map conf) {
+		return JStormUtils.parseInt(conf.get(CPU_SLOT_PER_WEIGHT), 1);
 	}
 
 	/**
@@ -156,6 +206,13 @@ public class ConfigExtension {
 	public static boolean isTaskOnDifferentNode(Map conf) {
 		return JStormUtils
 				.parseBoolean(conf.get(TASK_ON_DIFFERENT_NODE), false);
+	}
+
+	protected static final String SUPERVISOR_ENABLE_CGROUP = "supervisor.enable.cgroup";
+
+	public static boolean isEnableCgroup(Map conf) {
+		return JStormUtils.parseBoolean(conf.get(SUPERVISOR_ENABLE_CGROUP),
+				false);
 	}
 
 	/**
@@ -351,4 +408,13 @@ public class ConfigExtension {
 		return (String) conf.get(NIMBUS_GROUPFILE_PATH);
 	}
 
+	protected static final String WORKER_GC_PATH = "worker.gc.path";
+
+	public static void setWorkerGcPath(Map conf, String path) {
+		conf.put(WORKER_GC_PATH, path);
+	}
+
+	public static String getWorkerGcPath(Map conf) {
+		return (String) conf.get(WORKER_GC_PATH);
+	}
 }

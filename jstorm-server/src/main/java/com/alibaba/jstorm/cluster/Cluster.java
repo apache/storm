@@ -18,10 +18,13 @@ import com.alibaba.jstorm.task.TaskInfo;
 /**
  * storm operation ZK
  * 
- * @author yannian
+ * @author yannian/zhiyuan.ls
  * 
  */
 public class Cluster {
+	
+	//TODO Need Migrate constants to ZkConstant
+	
 	private static Logger LOG = Logger.getLogger(Cluster.class);
 
 	public static final String ZK_SEPERATOR = "/";
@@ -30,37 +33,28 @@ public class Cluster {
 	public static final String ASSIGNMENTS_BAK = "assignments_bak";
 	public static final String TASKS_ROOT = "tasks";
 	public static final String CODE_ROOT = "code";
-	// change STORMS_ROOT from "storms" to "topology"
 	public static final String STORMS_ROOT = "topology";
 	public static final String SUPERVISORS_ROOT = "supervisors";
 	public static final String TASKBEATS_ROOT = "taskbeats";
 	public static final String TASKERRORS_ROOT = "taskerrors";
-	public static final String MASTER_ROOT = "master";
-	public static final String MASTER_LOCK_ROOT = "masterlock";
-	public static final String NIMBUS_HOST_ROOT = "nimbus_host";
+	public static final String MASTER_ROOT = "nimbus_master";
 
 	public static final String ASSIGNMENTS_SUBTREE;
-	public static final String ASSIGNMENTS_BAK_SUBTREE;
 	public static final String TASKS_SUBTREE;
 	public static final String STORMS_SUBTREE;
 	public static final String SUPERVISORS_SUBTREE;
 	public static final String TASKBEATS_SUBTREE;
 	public static final String TASKERRORS_SUBTREE;
 	public static final String MASTER_SUBTREE;
-	public static final String MASTER_LOCK_SUBTREE;
-	public static final String NIMBUS_HOST_SUBTREE;
 
 	static {
 		ASSIGNMENTS_SUBTREE = ZK_SEPERATOR + ASSIGNMENTS_ROOT;
-		ASSIGNMENTS_BAK_SUBTREE = ZK_SEPERATOR + ASSIGNMENTS_BAK;
 		TASKS_SUBTREE = ZK_SEPERATOR + TASKS_ROOT;
 		STORMS_SUBTREE = ZK_SEPERATOR + STORMS_ROOT;
 		SUPERVISORS_SUBTREE = ZK_SEPERATOR + SUPERVISORS_ROOT;
 		TASKBEATS_SUBTREE = ZK_SEPERATOR + TASKBEATS_ROOT;
 		TASKERRORS_SUBTREE = ZK_SEPERATOR + TASKERRORS_ROOT;
 		MASTER_SUBTREE = ZK_SEPERATOR + MASTER_ROOT;
-		MASTER_LOCK_SUBTREE = ZK_SEPERATOR + MASTER_LOCK_ROOT;
-		NIMBUS_HOST_SUBTREE = ZK_SEPERATOR + NIMBUS_HOST_ROOT;
 	}
 
 	public static String supervisor_path(String id) {
@@ -69,10 +63,6 @@ public class Cluster {
 
 	public static String assignment_path(String id) {
 		return ASSIGNMENTS_SUBTREE + ZK_SEPERATOR + id;
-	}
-
-	public static String assignment_bak_path(String id) {
-		return ASSIGNMENTS_BAK_SUBTREE + ZK_SEPERATOR + id;
 	}
 
 	public static String storm_path(String id) {
@@ -119,12 +109,6 @@ public class Cluster {
 	public static StormClusterState mk_storm_cluster_state(
 			ClusterState cluster_state_spec) throws Exception {
 		return new StormZkClusterState(cluster_state_spec);
-	}
-
-	@SuppressWarnings("rawtypes")
-	public static ClusterState mk_distributed_cluster_state(Map _conf)
-			throws Exception {
-		return new DistributedClusterState(_conf);
 	}
 
 	/**

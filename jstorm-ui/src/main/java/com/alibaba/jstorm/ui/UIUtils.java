@@ -3,6 +3,8 @@ package com.alibaba.jstorm.ui;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -35,16 +37,19 @@ import backtype.storm.generated.ThriftResourceType;
 import backtype.storm.generated.TopologyInfo;
 import backtype.storm.generated.TopologySummary;
 import backtype.storm.scheduler.WorkerSlot;
+import backtype.storm.utils.NimbusClient;
 import backtype.storm.utils.Utils;
 
 import com.alibaba.jstorm.common.stats.StatBuckets;
 import com.alibaba.jstorm.common.stats.StaticsType;
 import com.alibaba.jstorm.ui.model.ClusterSumm;
+import com.alibaba.jstorm.ui.model.ComponentTask;
 import com.alibaba.jstorm.ui.model.Components;
 import com.alibaba.jstorm.ui.model.GroupSumm;
 import com.alibaba.jstorm.ui.model.SupervisorSumm;
 import com.alibaba.jstorm.ui.model.TopologySumm;
 import com.alibaba.jstorm.utils.JStormUtils;
+import com.alibaba.jstorm.utils.NetWorkUtils;
 
 public class UIUtils {
 
@@ -93,13 +98,13 @@ public class UIUtils {
 		if (p1 == null || p2 == null) {
 			return null;
 		} else {
-			int p1Szie = p1.size();
+			int p1Size = p1.size();
 			int p2Size = p2.size();
-			if (p1Szie != p1Szie) {
+			if (p1Size != p2Size) {
 				return null;
 			} else {
 				List<Double> rtn = new ArrayList<Double>();
-				for (int i = 0; i < p1Szie; i++) {
+				for (int i = 0; i < p1Size; i++) {
 					rtn.set(i, p1.get(i) + p2.get(i));
 				}
 				return rtn;
@@ -252,7 +257,42 @@ public class UIUtils {
 
 		return component;
 	}
+	
+	/**
+	 * Convert thrift TaskSummary to UI bean ComponentTask
+	 * 
+	 * @param summ
+	 * @return
+	 */
+	public static ComponentTask getComponentTask(TaskSummary task, String topologyid) {
 
+		ComponentTask componentTask = new ComponentTask();
+		
+		componentTask.setComponentid(task.get_component_id());
+		componentTask.setTaskid(String.valueOf(task.get_task_id()));
+		componentTask.setHost(task.get_host());
+		componentTask.setPort(String.valueOf(task.get_port()));
+		componentTask.setUptime(StatBuckets.prettyUptimeStr(task
+				.get_uptime_secs()));
+		componentTask.setLastErr(UIUtils.getTaskError(task.get_errors()));
+		
+		String ip = NetWorkUtils.host2Ip(task.get_host());
+		if (ip == null) {
+			ip = task.get_host();
+		}
+		componentTask.setIp(ip);
+
+		if (task.get_disk() != null) {
+			componentTask.setDiskSlot(task.get_disk());
+		} else {
+			componentTask.setDiskSlot("");
+		}
+		
+		componentTask.setTopologyid(topologyid);
+
+		return componentTask;
+	}
+	
 	public static List<TaskSummary> getTaskList(
 			List<TaskSummary> taskSummaries, String componentId) {
 		List<TaskSummary> ret = new ArrayList<TaskSummary>();
@@ -432,7 +472,7 @@ public class UIUtils {
 	 * @return
 	 */
 	public static List<ClusterSumm> clusterSummary(ClusterSummary summ,
-			String masterHostname) {
+			NimbusClient client) throws Exception {
 		// "Supervisors" "Used slots" "Free slots" "Total slots" "Running task"
 		List<SupervisorSummary> sups = summ.get_supervisors();
 		int supSize = 0;
@@ -485,14 +525,14 @@ public class UIUtils {
 			}
 
 		}
-
+		
 		String nimbustime = StatBuckets.prettyUptimeStr(summ
 				.get_nimbus_uptime_secs());
 
 		List<ClusterSumm> clusumms = new ArrayList<ClusterSumm>();
 
 		ClusterSumm clusterSumm = new ClusterSumm();
-		clusterSumm.setNimbusHostname(masterHostname);
+		clusterSumm.setNimbusHostname(client.getMasterHost());
 		if (summ.is_isGroupModel())
 			clusterSumm.setIsGroupModel("true");
 		else
@@ -580,6 +620,7 @@ public class UIUtils {
 				Yaml yaml = new Yaml();
 
 				Map clientConf = (Map) yaml.load(fileStream);
+				
 				if (clientConf != null) {
 					ret.putAll(clientConf);
 				}

@@ -30,7 +30,7 @@ public class TaskHeartbeatRunable extends RunnableCallback {
 	private String idStr;
 	private UptimeComputer uptime;
 	private CommonStatsRolling task_stats;
-	private TaskStatus taskStatus;
+	private volatile TaskStatus taskStatus;
 	private Map storm_conf;
 	private Integer frequence;
 
@@ -68,7 +68,7 @@ public class TaskHeartbeatRunable extends RunnableCallback {
 			return;
 		}
 
-		LOG.debug("task hearbeat task_id=" + idStr + "=>" + hb.toString());
+		LOG.info("task hearbeat task_id=" + idStr + " ts " + currtime);
 	}
 
 	@Override

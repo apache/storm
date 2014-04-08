@@ -23,7 +23,7 @@ import com.alibaba.jstorm.utils.TimeUtils;
  * @author Longda/yannian
  * 
  */
-public class CommonStatsRolling implements Serializable {
+public class CommonStatsRolling {
 
 	private static final long serialVersionUID = -2145444660360278001L;
 

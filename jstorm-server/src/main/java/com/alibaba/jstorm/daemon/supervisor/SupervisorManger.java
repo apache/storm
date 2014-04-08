@@ -21,7 +21,7 @@ import com.alibaba.jstorm.utils.SmartThread;
 /**
  * supervisor shutdown manager which can shutdown supervisor
  */
-class SupervisorManger extends ShutdownWork implements Shutdownable,
+public class SupervisorManger extends ShutdownWork implements Shutdownable,
 		SupervisorDaemon, DaemonCommon, Runnable {
 
 	private static Logger LOG = Logger.getLogger(SupervisorManger.class);
@@ -39,6 +39,8 @@ class SupervisorManger extends ShutdownWork implements Shutdownable,
 	private EventManager processesEventManager;
 
 	private EventManager eventManager;
+	
+	private Httpserver httpserver;
 
 	private StormClusterState stormClusterState;
 
@@ -49,7 +51,7 @@ class SupervisorManger extends ShutdownWork implements Shutdownable,
 	public SupervisorManger(Map conf, String supervisorId,
 			AtomicBoolean active, Vector<SmartThread> threads,
 			EventManager processesEventManager, EventManager eventManager,
-			StormClusterState stormClusterState,
+			Httpserver httpserver, StormClusterState stormClusterState,
 			ConcurrentHashMap<String, String> workerThreadPidsAtom) {
 		this.conf = conf;
 		this.supervisorId = supervisorId;
@@ -57,6 +59,7 @@ class SupervisorManger extends ShutdownWork implements Shutdownable,
 		this.threads = threads;
 		this.processesEventManager = processesEventManager;
 		this.eventManager = eventManager;
+		this.httpserver = httpserver;
 		this.stormClusterState = stormClusterState;
 		this.workerThreadPidsAtom = workerThreadPidsAtom;
 
@@ -87,7 +90,16 @@ class SupervisorManger extends ShutdownWork implements Shutdownable,
 			// TODO Auto-generated catch block
 			LOG.error("Failed to shutdown ZK client", e);
 		}
-
+		httpserver.shutdown();
+		
+		// if (this.cgroupManager != null)
+		// try {
+		// this.cgroupManager.close();
+		// } catch (IOException e) {
+		// // TODO Auto-generated catch block
+		// LOG.error("Fail to close cgroup", e);
+		// }
+		
 		isFinishShutdown = true;
 	}
 

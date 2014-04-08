@@ -12,6 +12,7 @@ import backtype.storm.generated.TopologyAssignException;
 import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.tuple.Fields;
 
+import com.alibaba.jstorm.local.LocalCluster;
 import com.alipay.dw.jstorm.example.sequence.bolt.MergeRecord;
 import com.alipay.dw.jstorm.example.sequence.bolt.PairCount;
 import com.alipay.dw.jstorm.example.sequence.bolt.SplitRecord;
@@ -38,11 +39,9 @@ public class SequenceTopology {
             builder.setBolt(SequenceTopologyDef.TOTAL_BOLT_NAME, new TotalCount(),
                 bolt_Parallelism_hint).shuffleGrouping(SequenceTopologyDef.SEQUENCE_SPOUT_NAME);
         } else {
-            builder.setBolt(SequenceTopologyDef.TOTAL_BOLT_NAME, new TotalCount(),
-                bolt_Parallelism_hint).noneGrouping(SequenceTopologyDef.SEQUENCE_SPOUT_NAME);
 
             builder.setBolt(SequenceTopologyDef.SPLIT_BOLT_NAME, new SplitRecord(), 2)
-                .shuffleGrouping(SequenceTopologyDef.SEQUENCE_SPOUT_NAME);
+                .localOrShuffleGrouping(SequenceTopologyDef.SEQUENCE_SPOUT_NAME);
 
             builder.setBolt(SequenceTopologyDef.TRADE_BOLT_NAME, new PairCount(), 1)
                 .shuffleGrouping(SequenceTopologyDef.SPLIT_BOLT_NAME,
@@ -55,7 +54,8 @@ public class SequenceTopology {
                 .fieldsGrouping(SequenceTopologyDef.TRADE_BOLT_NAME, new Fields("ID"))
                 .fieldsGrouping(SequenceTopologyDef.CUSTOMER_BOLT_NAME, new Fields("ID"));
 
-            builder.setBolt(SequenceTopologyDef.TOTAL_BOLT_NAME, new TotalCount(), 2).noneGrouping(
+            builder.setBolt(SequenceTopologyDef.TOTAL_BOLT_NAME, new TotalCount(), 
+            		bolt_Parallelism_hint).noneGrouping(
                 SequenceTopologyDef.MERGE_BOLT_NAME);
         }
 
@@ -72,20 +72,21 @@ public class SequenceTopology {
 
     }
 
-    public static void SetLocalTopology() throws InterruptedException {
-        //                TopologyBuilder builder = new TopologyBuilder();
-        //                
-        //                Map conf = new HashMap();
-        //                
-        //                SetBuilder(builder, conf);
-        //                
-        //                LocalCluster cluster = new LocalCluster();
-        //                cluster.submitTopology("SplitMerge", conf, builder.createTopology());
-        //                
-        //                Thread.sleep(1000000);
-        //                
-        //                cluster.shutdown();
-    }
+	public static void SetLocalTopology() throws Exception {
+		TopologyBuilder builder = new TopologyBuilder();
+
+		Map conf = new HashMap();
+		conf.put(TOPOLOGY_BOLT_PARALLELISM_HINT, Integer.valueOf(1));
+
+		SetBuilder(builder, conf);
+
+		LocalCluster cluster = new LocalCluster();
+		cluster.submitTopology("SplitMerge", conf, builder.createTopology());
+
+		Thread.sleep(60000);
+
+		cluster.shutdown();
+	}
 
     public static void SetRemoteTopology(String streamName, Integer spout_parallelism_hint,
                                          Integer bolt_parallelism_hint)
@@ -128,10 +129,10 @@ public class SequenceTopology {
 
     public static void main(String[] args) throws Exception {
         if (args.length == 1) {
-            if (args[0] == "rpc") {
+            if (args[0].equals("rpc")) {
                 SetDPRCTopology();
                 return;
-            } else if (args[0] == "local") {
+            } else if (args[0].equals("local")) {
                 SetLocalTopology();
                 return;
             }

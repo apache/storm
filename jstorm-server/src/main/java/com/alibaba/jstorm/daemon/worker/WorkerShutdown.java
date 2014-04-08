@@ -55,12 +55,10 @@ public class WorkerShutdown implements ShutdownableDameon {
 
 	@Override
 	public void shutdown() {
+
 		active.set(false);
 
-		// shutdown tasks
-		for (ShutdownableDameon task : shutdowntasks) {
-			task.shutdown();
-		}
+		virtualPortShutdown.shutdown();
 
 		// send data to close connection
 		for (WorkerSlot k : nodeportSocket.keySet()) {
@@ -68,8 +66,12 @@ public class WorkerShutdown implements ShutdownableDameon {
 			value.close();
 		}
 
-		virtualPortShutdown.shutdown();
 		context.term();
+
+		// shutdown tasks
+		for (ShutdownableDameon task : shutdowntasks) {
+			task.shutdown();
+		}
 
 		// shutdown worker's demon thread
 		// refreshconn, refreshzk, hb, drainer

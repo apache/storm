@@ -18,8 +18,8 @@ public class TestReachTopology {
             throw new IllegalArgumentException("Invalid parameter");
         }
         //"foo.com/blog/1" "engineering.twitter.com/blog/5"
-        DRPCClient client = new DRPCClient(args[0], 3772);
-        String result = client.execute("reach", "tech.backtype.com/blog/123");
+        DRPCClient client = new DRPCClient(args[0], 4772);
+        String result = client.execute(ReachTopology.TOPOLOGY_NAME, "tech.backtype.com/blog/123");
         
         System.out.println("\n!!! Drpc result:" + result);
     }

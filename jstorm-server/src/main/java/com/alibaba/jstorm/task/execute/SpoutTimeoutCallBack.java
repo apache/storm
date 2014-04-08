@@ -6,14 +6,14 @@ import org.apache.log4j.Logger;
 
 import backtype.storm.Config;
 import backtype.storm.utils.DisruptorQueue;
+import backtype.storm.utils.TimeCacheMap;
 
 import com.alibaba.jstorm.stats.CommonStatsRolling;
 import com.alibaba.jstorm.task.comm.TupleInfo;
 import com.alibaba.jstorm.utils.JStormUtils;
-import com.alibaba.jstorm.utils.RotatingMap;
 
 public class SpoutTimeoutCallBack<K, V> implements
-		RotatingMap.ExpiredCallback<K, V> {
+	TimeCacheMap.ExpiredCallback<K, V> {
 	private static Logger LOG = Logger.getLogger(SpoutTimeoutCallBack.class);
 
 	private DisruptorQueue disruptorEventQueue;

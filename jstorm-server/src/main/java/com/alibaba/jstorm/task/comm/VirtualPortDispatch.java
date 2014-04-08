@@ -3,6 +3,7 @@ package com.alibaba.jstorm.task.comm;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
@@ -34,17 +35,20 @@ public class VirtualPortDispatch extends RunnableCallback {
 	private IConnection recvConn;
 	private Set<Integer> valid_ports = null;
 	private Map<Integer, IConnection> sendConns;
+	private AtomicBoolean active;
 
 	private RunCounter runCounter = new RunCounter("VirtualPortDispatch",
 			VirtualPortDispatch.class);
 
 	public VirtualPortDispatch(String topologyId, IContext context,
-			IConnection recvConn, Set<Integer> valid_ports) {
+			IConnection recvConn, Set<Integer> valid_ports,
+			AtomicBoolean active) {
 		this.topologyId = topologyId;
 		this.context = context;
 		this.recvConn = recvConn;
 		this.valid_ports = valid_ports;
-
+		this.active = active;
+		
 		this.sendConns = new HashMap<Integer, IConnection>();
 	}
 
@@ -67,24 +71,25 @@ public class VirtualPortDispatch extends RunnableCallback {
 	public void run() {
 		boolean hasTuple = false;
 
-		while (true) {
+		while (active.get() == true) {
 			byte[] data = recvConn.recv(0);
 			if (data == null || data.length == 0) {
 				if (hasTuple == false) {
 					JStormUtils.sleepMs(1);
 				}
-				return;
+				continue;
 			}
 			hasTuple = true;
 
 			long before = System.currentTimeMillis();
 
 			int port = KryoTupleDeserializer.deserializeTaskId(data);
+
 			if (port == -1) {
 				// shutdown message
-				cleanup();
+				active.set(false);
 
-				return;
+				break;
 			}
 
 			// LOG.info("Get message to port " + port);
@@ -105,11 +110,25 @@ public class VirtualPortDispatch extends RunnableCallback {
 			long after = System.currentTimeMillis();
 			runCounter.count(after - before);
 		}
+		
+		if (active.get() == false) {
+			cleanup();
+		}
 
 	}
 
 	@Override
 	public Object getResult() {
-		return recvConn == null ? -1 : 0;
+		if (recvConn == null) {
+			return -1;
+		} else if (active.get() == false ) {
+			if (recvConn != null) {
+				cleanup();
+			}
+			
+			return -1;
+		}else {
+			return 0;
+		}
 	}
 }

@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import backtype.storm.messaging.IConnection;
 import backtype.storm.messaging.IContext;
 
+import com.alibaba.jstorm.cluster.StormConfig;
 import com.alibaba.jstorm.message.QueueConnection;
 
 public class NettyContext implements IContext {
@@ -20,7 +21,7 @@ public class NettyContext implements IContext {
 	private Map<Integer, IConnection> queueConnections;
 
 	@SuppressWarnings("unused")
-	private NettyContext() {
+	public NettyContext() {
 	}
 
 	/**
@@ -35,7 +36,7 @@ public class NettyContext implements IContext {
 
 	@Override
 	public IConnection bind(String topology_id, int port, boolean distribute) {
-		if (distribute) {
+		if (distribute && !StormConfig.local_mode(storm_conf)) {
 			return netty_bind(topology_id, port);
 		} else {
 			return queue_bind(port);
@@ -56,7 +57,7 @@ public class NettyContext implements IContext {
 	@Override
 	public IConnection connect(String topology_id, String host, int port,
 			boolean distribute) {
-		if (distribute) {
+		if (distribute && !StormConfig.local_mode(storm_conf)) {
 			return netty_connect(topology_id, host, port);
 		} else {
 			return queue_connect(port);

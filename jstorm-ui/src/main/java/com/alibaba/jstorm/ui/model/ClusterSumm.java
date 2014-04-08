@@ -2,14 +2,14 @@ package com.alibaba.jstorm.ui.model;
 
 /**
  * mainpage:ClusterSummary
- * @author xin.zhou
+ * @author xin.zhou/zhiyuan.ls
  *
  */
 import java.io.Serializable;
 
 public class ClusterSumm implements Serializable {
 	private static final long serialVersionUID = -7936384220562644886L;
-
+	
 	private String nimbusHostname;
 	private String nimbusUptime;
 	private String isGroupModel;

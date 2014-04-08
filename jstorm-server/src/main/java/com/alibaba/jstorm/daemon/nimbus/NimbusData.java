@@ -19,6 +19,7 @@ import backtype.storm.utils.TimeCacheMap;
 import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.cluster.Cluster;
 import com.alibaba.jstorm.cluster.StormClusterState;
+import com.alibaba.jstorm.cluster.StormConfig;
 import com.alibaba.jstorm.task.TkHbCacheTime;
 import com.alibaba.jstorm.utils.TimeUtils;
 
@@ -61,9 +62,13 @@ public class NimbusData {
 
 	private Map<String, Map<ThriftResourceType, Integer>> groupToUsedResource;
 
-	private final boolean groupModel;
+	private final boolean groupMode;
 	
 	private Lock flushGroupFileLock;
+	
+	private final boolean localMode;
+	
+	private volatile boolean isLeader;
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public NimbusData(Map conf, TimeCacheMap<Object, Object> downloaders,
@@ -99,9 +104,11 @@ public class NimbusData {
 
 		String groupCfg = ConfigExtension.getGroupFilePath(conf);
 		if ( StringUtils.isBlank(groupCfg))
-			groupModel = false;
+			groupMode = false;
 		else
-			groupModel = true;
+			groupMode = true;
+		
+		localMode = StormConfig.local_mode(conf);
 	}
 
 	/**
@@ -111,7 +118,9 @@ public class NimbusData {
 		scheduExec = Executors.newScheduledThreadPool(6);
 
 		inimubs = null;
-		groupModel = false;
+		groupMode = false;
+		conf = new HashMap<Object, Object>();
+		localMode = false;
 		scheduler = NimbusUtils.mkScheduler(conf, inimubs);
 	}
 
@@ -218,8 +227,8 @@ public class NimbusData {
 		return groupToUsedResource;
 	}
 
-	public boolean isGroupModel() {
-		return groupModel;
+	public boolean isGroupMode() {
+		return groupMode;
 	}
 
 	public Lock getFlushGroupFileLock() {
@@ -228,6 +237,18 @@ public class NimbusData {
 
 	public void setFlushGroupFileLock(Lock flushGroupFileLock) {
 		this.flushGroupFileLock = flushGroupFileLock;
+	}
+
+	public boolean isLocalMode() {
+		return localMode;
+	}
+
+	public boolean isLeader() {
+		return isLeader;
+	}
+
+	public void setLeader(boolean isLeader) {
+		this.isLeader = isLeader;
 	}
 
 }

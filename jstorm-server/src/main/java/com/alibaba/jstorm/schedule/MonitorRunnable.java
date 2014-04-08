@@ -9,6 +9,8 @@ import com.alibaba.jstorm.cluster.StormClusterState;
 import com.alibaba.jstorm.daemon.nimbus.NimbusData;
 import com.alibaba.jstorm.daemon.nimbus.NimbusUtils;
 import com.alibaba.jstorm.daemon.nimbus.StatusType;
+import com.alibaba.jstorm.resource.ResourceAssignment;
+import com.alibaba.jstorm.task.Assignment;
 
 /**
  * 
@@ -56,14 +58,25 @@ public class MonitorRunnable implements Runnable {
 					LOG.info("Failed to get task ids of " + topologyid);
 					continue;
 				}
+				Assignment assignment = clusterState.assignment_info(
+						topologyid, null);
 
 				boolean needReassign = false;
 				for (Integer task : taskIds) {
 					boolean isTaskDead = NimbusUtils.isTaskDead(data,
 							topologyid, task);
 					if (isTaskDead == true) {
+
 						LOG.info("Found " + topologyid + ",taskid:" + task
 								+ " is dead");
+						
+						ResourceAssignment resource = null;
+						if (assignment != null)
+							resource = assignment.getTaskToResource().get(task);
+						if (resource != null)
+							LOG.info("taskid: " + task + " is on "
+									+ resource.getHostname() + ":"
+									+ resource.getPort());
 						needReassign = true;
 						break;
 					}

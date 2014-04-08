@@ -1,6 +1,7 @@
 package com.alibaba.jstorm.message.netty;
 
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
@@ -44,8 +45,7 @@ class NettyClient implements IConnection, EventHandler {
 	private final boolean useDisruptor;
 	private AtomicReference<Channel> channelRef;
 	private final ClientBootstrap bootstrap;
-	private InetSocketAddress remote_addr;
-	private final String target_Server;
+	private final InetSocketAddress remote_addr;
 	private AtomicInteger retries;
 	// private final Random random = new Random();
 	private final ChannelFactory factory;
@@ -110,9 +110,8 @@ class NettyClient implements IConnection, EventHandler {
 		// Start the connection attempt.
 		remote_addr = new InetSocketAddress(host, port);
 		bootstrap.connect(remote_addr);
-
-		target_Server = host + ":" + port;
-		LOG.info("Begin to connect {}, useDisrutpor: {}", target_Server,
+		
+		LOG.info("Begin to connect {}, useDisrutpor: {}", remote_addr,
 				useDisruptor);
 
 	}
@@ -135,7 +134,7 @@ class NettyClient implements IConnection, EventHandler {
 			if (isClosed() == false) {
 				int tried_count = retries.incrementAndGet();
 				Thread.sleep(getSleepTimeMs());
-				LOG.info("Reconnect ... [{}], {}", tried_count, target_Server);
+				LOG.info("Reconnect ... [{}], {}", tried_count, remote_addr);
 				bootstrap.connect(remote_addr);
 			}
 
@@ -393,7 +392,7 @@ class NettyClient implements IConnection, EventHandler {
 				}
 				factory.releaseExternalResources();
 
-				LOG.info("Successfully close connection to {}", target_Server);
+				LOG.info("Successfully close connection to {}", remote_addr);
 			}
 		}).start();
 	}
@@ -423,8 +422,8 @@ class NettyClient implements IConnection, EventHandler {
 		return buffer_size;
 	}
 
-	public String getTarget_Server() {
-		return target_Server;
+	public SocketAddress getRemoteAddr() {
+		return remote_addr;
 	}
 
 }

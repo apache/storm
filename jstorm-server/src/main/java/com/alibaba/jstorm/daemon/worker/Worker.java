@@ -2,7 +2,6 @@ package com.alibaba.jstorm.daemon.worker;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -173,7 +172,6 @@ public class Worker {
 		sb.append("port:" + port + ", ");
 		sb.append("workerId:" + worker_id + ", ");
 		sb.append("jarPath:" + jar_path + "\n");
-		sb.append("Configuration:" + conf);
 
 		LOG.info("Begin to run worker:" + sb.toString());
 
@@ -182,22 +180,26 @@ public class Worker {
 
 		return w.execute();
 	}
-	
+
 	public static void redirectOutput(String port) throws Exception {
-	    
-	    
-	    String    OUT_TARGET_FILE = "/dev/null";
-	    
-	    System.out.println("Redirect output to " + OUT_TARGET_FILE);
-	    
-        FileOutputStream workerOut = new FileOutputStream(new File(OUT_TARGET_FILE));
-        
-        PrintStream ps = new PrintStream(
-            new BufferedOutputStream(workerOut), true);  
-        System.setOut(ps);  
-        
-        LOG.info("Successfully redirect System.out to " + OUT_TARGET_FILE);
-        
+
+		if (System.getenv("REDIRECT") == null
+				|| !System.getenv("REDIRECT").equals("true"))
+			return;
+
+		String OUT_TARGET_FILE = "/dev/null";
+
+		System.out.println("Redirect output to " + OUT_TARGET_FILE);
+
+		FileOutputStream workerOut = new FileOutputStream(new File(
+				OUT_TARGET_FILE));
+
+		PrintStream ps = new PrintStream(new BufferedOutputStream(workerOut),
+				true);
+		System.setOut(ps);
+
+		LOG.info("Successfully redirect System.out to " + OUT_TARGET_FILE);
+
 	}
 
 	/**
@@ -208,18 +210,15 @@ public class Worker {
 	@SuppressWarnings("rawtypes")
 	public static void main(String[] args) {
 		if (args.length < 5) {
-		    StringBuilder sb = new StringBuilder();
-		    sb.append("The length of args is less than 5 ");
-		    for (String arg : args) {
-		        sb.append(arg + " ");
-		    }
+			StringBuilder sb = new StringBuilder();
+			sb.append("The length of args is less than 5 ");
+			for (String arg : args) {
+				sb.append(arg + " ");
+			}
 			LOG.error(sb.toString());
 			System.exit(-1);
 		}
-		
-		
-		
-		
+
 		String topology_id = args[0];
 		String supervisor_id = args[1];
 		String port_str = args[2];
@@ -236,8 +235,8 @@ public class Worker {
 		sb.append("jar_path:" + jar_path + "\n");
 
 		try {
-		    redirectOutput(port_str);
-		    
+			redirectOutput(port_str);
+
 			WorkerShutdown sd = mk_worker(conf, null, topology_id,
 					supervisor_id, Integer.parseInt(port_str), worker_id,
 					jar_path);

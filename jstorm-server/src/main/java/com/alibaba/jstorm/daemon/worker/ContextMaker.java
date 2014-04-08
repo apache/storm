@@ -17,6 +17,7 @@ import backtype.storm.utils.ThriftTopologyUtils;
 
 import com.alibaba.jstorm.cluster.StormConfig;
 import com.alibaba.jstorm.utils.JStormUtils;
+import com.alibaba.jstorm.utils.PathUtils;
 
 /**
  * ContextMaker This class is used to create TopologyContext
@@ -30,7 +31,7 @@ public class ContextMaker {
 	private WorkerData workerData;
 
 	private String resourcePath;
-	private String workPid;
+	private String pidDir;
 	private String codeDir;
 	private List<Integer> workerTasks;
 
@@ -54,9 +55,11 @@ public class ContextMaker {
 			resourcePath = StormConfig
 					.supervisor_storm_resources_path(distroot);
 
-			workPid = StormConfig.worker_pids_root(stormConf, workerId);
+			pidDir = StormConfig.worker_pids_root(stormConf, workerId);
+			
 
-			codeDir = StormConfig.stormcode_path(distroot);
+			String codePath = StormConfig.stormcode_path(distroot);
+			codeDir = PathUtils.parent_path(codePath);
 
 		} catch (IOException e) {
 			LOG.error("Failed to create ContextMaker", e);
@@ -93,7 +96,7 @@ public class ContextMaker {
 		return new TopologyContext(topology, stormConf,
 				workerData.getTasksToComponent(),
 				workerData.getComponentToSortedTasks(),
-				componentToStreamToFields, topologyId, codeDir, workPid,
+				componentToStreamToFields, topologyId, resourcePath, pidDir,
 				taskId, workerData.getPort(), workerTasks,
 				workerData.getDefaultResources(),
 				workerData.getUserResources(), workerData.getExecutorData(),

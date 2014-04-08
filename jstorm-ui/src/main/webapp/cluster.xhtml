@@ -18,7 +18,6 @@
 
 	<h:form>
 		<p:dataTable id="clustesummary" var="cls" value="#{mainpage.csumm}">
-
 			<p:column>
 				<f:facet name="header">
 					<h:outputText value="Nimbus Master" />
@@ -28,14 +27,14 @@
 
 			<p:column>
 				<f:facet name="header">
-					<h:outputText value="Nimbus uptime" />
+					<h:outputText value="Nimbus Master uptime" />
 				</f:facet>
 				<h:outputText value="#{cls.nimbusUptime}" />
 			</p:column>
 
 			<p:column>
 				<f:facet name="header">
-					<h:outputText value="Group Model" />
+					<h:outputText value="Group Mode" />
 				</f:facet>
 				<h:outputText value="#{cls.isGroupModel}" />
 			</p:column>
@@ -45,6 +44,28 @@
 					<h:outputText value="Supervisors" />
 				</f:facet>
 				<h:outputText value="#{cls.supervisorNum}" />
+			</p:column>
+
+		</p:dataTable>
+	</h:form>
+	
+	<h2></h2>
+	
+	<h:form>
+		<p:dataTable id="slaveSumm" var="sla" value="#{mainpage.slaves}" 
+			sortBy="#{sla.uptime}" sortOrder="ASCENDING">
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Nimbus Slave" />
+				</f:facet>
+				<h:outputText value="#{sla.hostname}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Nimbus Slave uptime" />
+				</f:facet>
+				<h:outputText value="#{sla.uptime}" />
 			</p:column>
 
 		</p:dataTable>

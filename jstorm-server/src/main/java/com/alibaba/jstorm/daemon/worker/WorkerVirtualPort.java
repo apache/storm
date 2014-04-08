@@ -2,6 +2,7 @@ package com.alibaba.jstorm.daemon.worker;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.log4j.Logger;
 
@@ -33,6 +34,7 @@ public class WorkerVirtualPort {
 	private IContext context;
 	private Set<Integer> taskIds;
 	private String topologyId;
+	private AtomicBoolean active;
 
 	public WorkerVirtualPort(WorkerData workerData) {
 		//
@@ -44,6 +46,7 @@ public class WorkerVirtualPort {
 		this.context = workerData.getContext();
 		this.taskIds = workerData.getTaskids();
 		this.topologyId = workerData.getTopologyId();
+		this.active = workerData.getActive();
 	}
 
 	public Shutdownable launch() throws InterruptedException {
@@ -59,7 +62,7 @@ public class WorkerVirtualPort {
 		IConnection recvConnection = context.bind(topologyId, port, true);
 
 		RunnableCallback recvDispather = new VirtualPortDispatch(topologyId,
-				context, recvConnection, taskIds);
+				context, recvConnection, taskIds, active);
 
 		AsyncLoopThread vthread = new AsyncLoopThread(recvDispather, false,
 				killfn, Thread.MAX_PRIORITY, true);

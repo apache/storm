@@ -22,6 +22,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.alibaba.jstorm.local.LocalCluster;
+import com.alibaba.jstorm.local.LocalDRPC;
+import com.alibaba.jstorm.utils.JStormUtils;
+
 /**
  * This is a good example of doing complex Distributed RPC on top of Storm. This 
  * program creates a topology that can compute the reach for any URL on Twitter
@@ -41,6 +45,9 @@ import java.util.Set;
  * See https://github.com/nathanmarz/storm/wiki/Distributed-RPC for more information on Distributed RPC.
  */
 public class ReachTopology {
+	
+	public final static String TOPOLOGY_NAME = "reach";
+	
     public static Map<String, List<String>> TWEETERS_DB = new HashMap<String, List<String>>() {{
        put("foo.com/blog/1", Arrays.asList("sally", "bob", "tim", "george", "nathan")); 
        put("engineering.twitter.com/blog/5", Arrays.asList("adam", "david", "sally", "nathan")); 
@@ -150,7 +157,7 @@ public class ReachTopology {
     }
     
     public static LinearDRPCTopologyBuilder construct() {
-        LinearDRPCTopologyBuilder builder = new LinearDRPCTopologyBuilder("reach");
+        LinearDRPCTopologyBuilder builder = new LinearDRPCTopologyBuilder(TOPOLOGY_NAME);
         builder.addBolt(new GetTweeters(), 1);
         builder.addBolt(new GetFollowers(), 1)
                  .shuffleGrouping();
@@ -162,26 +169,31 @@ public class ReachTopology {
     }
     
     public static void main(String[] args) throws Exception {
+    	
         LinearDRPCTopologyBuilder builder = construct();
         
         
         Config conf = new Config();
         conf.setNumWorkers(6);
-        StormSubmitter.submitTopology(args[0], conf, builder.createRemoteTopology());
+        if (args.length == 0) {
+        	StormSubmitter.submitTopology(TOPOLOGY_NAME, conf, builder.createRemoteTopology());
+        }else {
         
         
-//            conf.setMaxTaskParallelism(3);
-//            LocalDRPC drpc = new LocalDRPC();
-//            LocalCluster cluster = new LocalCluster();
-//            cluster.submitTopology("reach-drpc", conf, builder.createLocalTopology(drpc));
-//            
-//            String[] urlsToTry = new String[] { "foo.com/blog/1", "engineering.twitter.com/blog/5", "notaurl.com"};
-//            for(String url: urlsToTry) {
-//                System.out.println("Reach of " + url + ": " + drpc.execute("reach", url));
-//            }
-//            
-//            cluster.shutdown();
-//            drpc.shutdown();
-
+            conf.setMaxTaskParallelism(3);
+            LocalDRPC drpc = new LocalDRPC();
+            LocalCluster cluster = new LocalCluster();
+            cluster.submitTopology(TOPOLOGY_NAME, conf, builder.createLocalTopology(drpc));
+            
+            JStormUtils.sleepMs(50000);
+            
+            String[] urlsToTry = new String[] { "foo.com/blog/1", "engineering.twitter.com/blog/5", "notaurl.com"};
+            for(String url: urlsToTry) {
+                System.out.println("Reach of " + url + ": " + drpc.execute(TOPOLOGY_NAME, url));
+            }
+            
+            cluster.shutdown();
+            drpc.shutdown();
+        }
     }
 }

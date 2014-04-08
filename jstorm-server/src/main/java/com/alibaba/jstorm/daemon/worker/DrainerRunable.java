@@ -88,6 +88,7 @@ public class DrainerRunable extends RunnableCallback implements EventHandler {
 			} catch (Exception e) {
 				if (workerActive.get() == true) {
 					LOG.error("DrainerRunable send error", e);
+					throw new RuntimeException(e);
 				}
 			}
 		}
@@ -95,7 +96,10 @@ public class DrainerRunable extends RunnableCallback implements EventHandler {
 
 	@Override
 	public Object getResult() {
-		return 0;
+		if (workerActive.get())
+			return 0;
+		else
+			return -1;
 	}
 
 }

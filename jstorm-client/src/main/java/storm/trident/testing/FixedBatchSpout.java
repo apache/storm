@@ -3,78 +3,66 @@ package storm.trident.testing;
 import backtype.storm.Config;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.tuple.Fields;
-
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
-
 import storm.trident.operation.TridentCollector;
 import storm.trident.spout.IBatchSpout;
 
+
 public class FixedBatchSpout implements IBatchSpout {
 
-	Fields fields;
-	List<Object>[] outputs;
-	int maxBatchSize;
-	HashMap<Long, List<List<Object>>> batches = new HashMap<Long, List<List<Object>>>();
+    Fields fields;
+    List<Object>[] outputs;
+    int maxBatchSize;
+    
+    public FixedBatchSpout(Fields fields, int maxBatchSize, List<Object>... outputs) {
+        this.fields = fields;
+        this.outputs = outputs;
+        this.maxBatchSize = maxBatchSize;
+    }
+    
+    int index = 0;
+    boolean cycle = false;
+    
+    public void setCycle(boolean cycle) {
+        this.cycle = cycle;
+    }
+    
+    @Override
+    public void open(Map conf, TopologyContext context) {
+        index = 0;
+    }
 
-	public FixedBatchSpout(Fields fields, int maxBatchSize,
-			List<Object>... outputs) {
-		this.fields = fields;
-		this.outputs = outputs;
-		this.maxBatchSize = maxBatchSize;
-	}
+    @Override
+    public void emitBatch(long batchId, TridentCollector collector) {
+        //Utils.sleep(2000);
+        if(index>=outputs.length && cycle) {
+            index = 0;
+        }
+        for(int i=0; index < outputs.length && i < maxBatchSize; index++, i++) {
+            collector.emit(outputs[index]);
+        }
+    }
 
-	int index = 0;
-	boolean cycle = false;
+    @Override
+    public void ack(long batchId) {
+        
+    }
 
-	public void setCycle(boolean cycle) {
-		this.cycle = cycle;
-	}
+    @Override
+    public void close() {
+    }
 
-	@Override
-	public void open(Map conf, TopologyContext context) {
-		index = 0;
-	}
+    @Override
+    public Map getComponentConfiguration() {
+        Config conf = new Config();
+        conf.setMaxTaskParallelism(1);
+        return conf;
+    }
 
-	@Override
-	public void emitBatch(long batchId, TridentCollector collector) {
-		List<List<Object>> batch = this.batches.get(batchId);
-		if (batch == null) {
-			batch = new ArrayList<List<Object>>();
-			if (index >= outputs.length && cycle) {
-				index = 0;
-			}
-			for (int i = 0; index < outputs.length && i < maxBatchSize; index++, i++) {
-				batch.add(outputs[index]);
-			}
-			this.batches.put(batchId, batch);
-		}
-		for (List<Object> list : batch) {
-			collector.emit(list);
-		}
-	}
-
-	@Override
-	public void ack(long batchId) {
-		this.batches.remove(batchId);
-	}
-
-	@Override
-	public void close() {
-	}
-
-	@Override
-	public Map getComponentConfiguration() {
-		Config conf = new Config();
-		conf.setMaxTaskParallelism(1);
-		return conf;
-	}
-
-	@Override
-	public Fields getOutputFields() {
-		return fields;
-	}
-
+    @Override
+    public Fields getOutputFields() {
+        return fields;
+    }
+    
 }

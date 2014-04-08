@@ -106,6 +106,14 @@ public class StormConfig {
 		}
 
 	}
+	
+	public static void validate_local_mode(Map<?, ?> conf) {
+		if (!StormConfig.local_mode(conf)) {
+			throw new IllegalArgumentException(
+					"Cannot start server in distributed mode!");
+		}
+
+	}
 
 	public static String worker_root(Map conf) throws IOException {
 		String ret = String.valueOf(conf.get(Config.STORM_LOCAL_DIR))

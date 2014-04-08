@@ -99,7 +99,7 @@ def jar(jarfile, klass, *args):
     Runs the main method of class with the specified arguments. 
     The jstorm jars and configs in ~/.jstorm are put on the classpath. 
     The process is configured so that StormSubmitter 
-    (http://nathanmarz.github.com/storm/doc/backtype/storm/StormSubmitter.html)
+    (https://github.com/alibaba/jstorm/wiki/JStorm-Chinese-Documentation)
     will upload the jar at topology-jar-path when the topology is submitted.
     """
     childopts = "-Dstorm.jar=" + jarfile + (" -Dstorm.root.logger=INFO,stdout -Dlog4j.configuration=File:%s/conf/aloha_log4j.properties"  %JSTORM_DIR)
@@ -118,7 +118,7 @@ def zktool(*args):
     Runs the main method of class with the specified arguments. 
     The jstorm jars and configs in ~/.jstorm are put on the classpath. 
     The process is configured so that StormSubmitter 
-    (http://nathanmarz.github.com/storm/doc/backtype/storm/StormSubmitter.html)
+    (https://github.com/alibaba/jstorm/wiki/JStorm-Chinese-Documentation)
     will upload the jar at topology-jar-path when the topology is submitted.
     """
     childopts = (" -Dstorm.root.logger=INFO,stdout -Dlog4j.configuration=File:%s/conf/aloha_log4j.properties"  %JSTORM_DIR)
@@ -216,7 +216,7 @@ def nimbus():
     supervision with a tool like daemontools or monit. 
 
     See Setting up a Storm cluster for more information.
-    (https://github.com/nathanmarz/storm/wiki/Setting-up-a-Storm-cluster)
+    (https://github.com/alibaba/jstorm/wiki/JStorm-Chinese-Documentation)
     """
     cppaths = [JSTORM_CONF_DIR]
     nimbus_classpath = confvalue("nimbus.classpath", cppaths)
@@ -235,7 +235,7 @@ def supervisor():
     under supervision with a tool like daemontools or monit. 
 
     See Setting up a Storm cluster for more information.
-    (https://github.com/nathanmarz/storm/wiki/Setting-up-a-Storm-cluster)
+    (https://github.com/alibaba/jstorm/wiki/JStorm-Chinese-Documentation)
     """
     cppaths = [JSTORM_CONF_DIR]
     childopts = confvalue("supervisor.childopts", cppaths) + (" -Dlogfile.name=supervisor.log -Dlog4j.configuration=File:%s/conf/jstorm.log4j.properties "  %JSTORM_DIR)
@@ -254,15 +254,16 @@ def drpc():
     with a tool like daemontools or monit. 
 
     See Distributed RPC for more information.
-    (https://github.com/nathanmarz/storm/wiki/Distributed-RPC)
+    (https://github.com/alibaba/jstorm/wiki/JStorm-Chinese-Documentation)
     """
-    childopts = confvalue("supervisor.childopts", cppaths) + (" -Dlogfile.name=drpc.log -Dlog4j.configuration=File:%s/conf/jstorm.log4j.properties "  %JSTORM_DIR)
+    cppaths = [JSTORM_CONF_DIR]
+    childopts = confvalue("drpc.childopts", cppaths) + (" -Dlogfile.name=drpc.log -Dlog4j.configuration=File:%s/conf/jstorm.log4j.properties "  %JSTORM_DIR)
     #childopts = confvalue("supervisor.childopts", cppaths) + (" -Dlogfile.name=drpc.log -Dlogback.configurationFile=%s/conf/cluster.xml "  %JSTORM_DIR)
     exec_storm_class(
         "com.alibaba.jstorm.drpc.Drpc", 
         jvmtype="-server", 
-        childopts=childopts, 
-        extrajars=[JSTORM_CONF_DIR])
+        extrajars=cppaths, 
+        childopts=childopts)
 
 def print_classpath():
     """Syntax: [jstorm classpath]
@@ -275,7 +276,7 @@ def print_commands():
     """Print all client commands and link to documentation"""
     print "Commands:\n\t",  "\n\t".join(sorted(COMMANDS.keys()))
     print "\nHelp:", "\n\thelp", "\n\thelp <command>"
-    print "\nDocumentation for the jstorm client can be found at https://github.com/nathanmarz/storm/wiki/Command-line-client\n"
+    print "\nDocumentation for the jstorm client can be found at https://github.com/alibaba/jstorm/wiki/JStorm-Chinese-Documentation\n"
 
 def print_usage(command=None):
     """Print one help message or list of available commands"""

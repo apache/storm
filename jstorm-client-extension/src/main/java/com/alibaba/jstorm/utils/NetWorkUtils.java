@@ -64,4 +64,16 @@ public class NetWorkUtils {
 		}
 		return rtn;
 	}
+	
+	public static String host2Ip(String host) {
+		InetAddress address = null;
+		try {
+			address = InetAddress.getByName(host);
+		} catch (UnknownHostException e) {
+			LOG.warn("NetWorkUtils.host2Ip(" + host + ") error", e);
+			return null;
+		}
+		return address.getHostAddress();
+	}
+	
 }

@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
+import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -39,7 +40,6 @@ import backtype.storm.generated.SubmitOptions;
 import backtype.storm.generated.SupervisorSummary;
 import backtype.storm.generated.SupervisorWorkers;
 import backtype.storm.generated.TaskSummary;
-import backtype.storm.generated.ThriftResourceType;
 import backtype.storm.generated.TopologyAssignException;
 import backtype.storm.generated.TopologyInfo;
 import backtype.storm.generated.TopologyInitialStatus;
@@ -142,31 +142,24 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 		serializedConf.put(Config.TOPOLOGY_ID, topologyId);
 		serializedConf.put(Config.TOPOLOGY_NAME, topologyname);
 
-		Map<Object, Object> stormConf;
+		
+
 		try {
+			Map<Object, Object> stormConf;
+			
 			stormConf = NimbusUtils.normalizeConf(conf, serializedConf,
 					topology);
-		} catch (Exception e1) {
-			String errMsg = JStormUtils
-					.getErrorInfo("Failed to commit topologyId: " + topologyId
-							+ " uploadedJarLocation: " + uploadedJarLocation
-							+ ", due to failed to normalize configuration ", e1);
-			LOG.info(errMsg);
-			throw new FailedAssignTopologyException(errMsg);
-		}
+			
+			Map<Object, Object> totalStormConf = new HashMap<Object, Object>(conf);
+			totalStormConf.putAll(stormConf);
 
-		Map<Object, Object> totalStormConf = new HashMap<Object, Object>(conf);
-		totalStormConf.putAll(stormConf);
+			StormTopology normalizedTopology = NimbusUtils.normalizeTopology(
+					stormConf, topology);
 
-		StormTopology normalizedTopology = NimbusUtils.normalizeTopology(
-				stormConf, topology);
-
-		// this validates the structure of the topology
-		Common.validate_basic(normalizedTopology, totalStormConf, topologyId);
-		// don't need generate real topology, so skip Common.system_topology
-		// Common.system_topology(totalStormConf, topology);
-
-		try {
+			// this validates the structure of the topology
+			Common.validate_basic(normalizedTopology, totalStormConf, topologyId);
+			// don't need generate real topology, so skip Common.system_topology
+			// Common.system_topology(totalStormConf, topology);
 
 			StormClusterState stormClusterState = data.getStormClusterState();
 
@@ -213,7 +206,17 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 			sb.append(", uploadedJarLocation:" + uploadedJarLocation + "\n");
 			LOG.error(sb.toString(), e);
 			throw new TopologyAssignException(sb.toString());
-		} catch (Exception e) {
+		}catch (InvalidParameterException e) {
+			StringBuilder sb = new StringBuilder();
+			sb.append("Fail to sumbit topology ");
+			sb.append(e.getMessage());
+			sb.append(", cause:" + e.getCause());
+			sb.append("\n\n");
+			sb.append("topologyId:" + topologyId);
+			sb.append(", uploadedJarLocation:" + uploadedJarLocation + "\n");
+			LOG.error(sb.toString(), e);
+			throw new InvalidParameterException(sb.toString());
+		} catch (Throwable e) {
 			StringBuilder sb = new StringBuilder();
 			sb.append("Fail to sumbit topology ");
 			sb.append(e.getMessage());
@@ -457,25 +460,25 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 		if (obj == null) {
 			throw new TException("Could not find input stream for that id");
 		}
-		byte[] ret = null;
+		
 		try {
 			if (obj instanceof BufferFileInputStream) {
 				BufferFileInputStream is = (BufferFileInputStream) obj;
-				ret = is.read();
+				byte[] ret = is.read();
 				if (ret != null) {
 					downloaders.put(id, (BufferFileInputStream) is);
+					return ByteBuffer.wrap(ret);
 				}
 			} else {
 				throw new TException("Object isn't BufferFileInputStream for "
 						+ id);
 			}
 		} catch (IOException e) {
-			LOG.error(e
-					+ "BufferFileInputStream read failed when downloadChunk ");
+			LOG.error("BufferFileInputStream read failed when downloadChunk ", e);
 			throw new TException(e);
 		}
-
-		return ByteBuffer.wrap(ret);
+        byte[] empty = {};
+		return ByteBuffer.wrap(empty);
 	}
 
 	/**
@@ -515,7 +518,7 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 				}
 				assignments.put(topologyId, assignment);
 				String group = "default";
-				if (data.isGroupModel())
+				if (data.isGroupMode())
 					group = base.getGroup();
 				if (group == null)
 					group = "default";
@@ -540,7 +543,7 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 			return new ClusterSummary(supervisorSummaries, uptime,
 					topologySummaries, data.getGroupToTopology(),
 					data.getGroupToResource(), data.getGroupToUsedResource(),
-					data.isGroupModel());
+					data.isGroupMode());
 
 		} catch (TException e) {
 			LOG.info("Failed to get ClusterSummary ", e);
@@ -773,10 +776,10 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 	 */
 	@Override
 	public void shutdown() {
-		LOG.info("Shutting down master");
+		LOG.info("Begin to shut down master");
 		// Timer.cancelTimer(nimbus.getTimer());
 
-		LOG.info("Shut down master");
+		LOG.info("Successfully shut down master");
 
 	}
 
@@ -870,14 +873,16 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 	 */
 	private void setupJar(Map<Object, Object> conf, String tmpJarLocation,
 			String stormroot) throws IOException {
-		File srcFile = new File(tmpJarLocation);
-		if (!srcFile.exists()) {
-			throw new IllegalArgumentException(tmpJarLocation + " to copy to "
-					+ stormroot + " does not exist!");
+		if (!StormConfig.local_mode(conf)) {
+			File srcFile = new File(tmpJarLocation);
+			if (!srcFile.exists()) {
+				throw new IllegalArgumentException(tmpJarLocation
+						+ " to copy to " + stormroot + " does not exist!");
+			}
+			String path = StormConfig.stormjar_path(stormroot);
+			File destFile = new File(path);
+			FileUtils.copyFile(srcFile, destFile);
 		}
-		String path = StormConfig.stormjar_path(stormroot);
-		File destFile = new File(path);
-		FileUtils.copyFile(srcFile, destFile);
 	}
 
 	/**
@@ -963,11 +968,15 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 			} else if (obj instanceof SpoutSpec) {
 				common = ((SpoutSpec) obj).get_common();
 
-			} else if (obj instanceof SpoutSpec) {
+			} else if (obj instanceof StateSpoutSpec) {
 				common = ((StateSpoutSpec) obj).get_common();
 
 			}
 
+			if (common == null) {
+				throw new RuntimeException("No ComponentCommon of " + entry.getKey());
+			}
+			
 			int declared = Thrift.parallelismHint(common);
 			Integer parallelism = declared;
 			// Map tmp = (Map) Utils_clj.from_json(common.get_json_conf());

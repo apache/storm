@@ -58,7 +58,6 @@ public class JStormServerUtils {
 		return rtn;
 	}
 
-	// @@@ supervisor don't use this function
 	public static void downloadCodeFromMaster(Map conf, String localRoot,
 			String masterCodeDir) throws IOException, TException {
 		FileUtils.forceMkdir(new File(localRoot));

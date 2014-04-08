@@ -93,4 +93,8 @@ public class AsyncLoopThread implements SmartThread {
 	public Boolean isSleeping() {
 		return Time.isThreadWaiting(thread);
 	}
+	
+	public Thread getThread() {
+		return thread;
+	}
 }

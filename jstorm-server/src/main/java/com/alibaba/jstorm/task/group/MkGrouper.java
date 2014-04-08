@@ -148,7 +148,7 @@ public class MkGrouper {
 			int rnd = randomrange.nextInt();
 			return JStormUtils.mk_list(out_tasks.get(rnd));
 		} else if (GrouperType.none.equals(grouptype)) {
-			int rnd = Math.abs(random.nextInt()) % out_tasks.size();
+			int rnd = Math.abs(random.nextInt() % out_tasks.size());
 			return JStormUtils.mk_list(out_tasks.get(rnd));
 		} else if (GrouperType.custom_obj.equals(grouptype)) {
 			return custom_grouper.grouper(values);

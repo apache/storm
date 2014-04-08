@@ -2,7 +2,6 @@ package com.alibaba.jstorm.daemon.nimbus;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.nio.channels.Channel;
 import java.util.HashMap;
 import java.util.List;
@@ -10,6 +9,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.io.monitor.FileAlterationListenerAdaptor;
 import org.apache.commons.io.monitor.FileAlterationMonitor;
@@ -31,6 +31,7 @@ import backtype.storm.utils.BufferFileInputStream;
 import backtype.storm.utils.TimeCacheMap;
 import backtype.storm.utils.Utils;
 
+import com.alibaba.jstorm.callback.RunnableCallback;
 import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.cluster.Cluster;
 import com.alibaba.jstorm.cluster.StormConfig;
@@ -40,10 +41,6 @@ import com.alibaba.jstorm.schedule.MonitorRunnable;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.NetWorkUtils;
 import com.alibaba.jstorm.utils.PathUtils;
-import com.netflix.curator.framework.CuratorFramework;
-import com.netflix.curator.framework.recipes.leader.LeaderSelector;
-import com.netflix.curator.framework.recipes.leader.LeaderSelectorListener;
-import com.netflix.curator.framework.state.ConnectionState;
 
 /**
  * 
@@ -73,9 +70,9 @@ public class NimbusServer {
 
 	private THsHaServer thriftServer;
 
-	private LeaderSelector leaderSelector;
-
 	private FollowerRunnable follower;
+	
+	private AtomicBoolean    isShutdown = new AtomicBoolean(false);
 
 	public static void main(String[] args) throws Exception {
 		// read configuration files
@@ -90,72 +87,69 @@ public class NimbusServer {
 	}
 
 	@SuppressWarnings("rawtypes")
-	private void launchServer(final Map conf, INimbus inimbus) throws Exception {
+	private void launchServer(final Map conf, INimbus inimbus)  {
 		LOG.info("Begin to start nimbus with conf " + conf);
 
-		// 1. check whether mode is distributed or not
-		StormConfig.validate_distributed_mode(conf);
+		try {
+			// 1. check whether mode is distributed or not
+			StormConfig.validate_distributed_mode(conf);
+	
+			initShutdownHook();
+	
+			inimbus.prepare(conf, StormConfig.masterInimbus(conf));
+	
+			data = createNimbusData(conf, inimbus);
+	
+			initFollowerThread(conf);
+			
+			while (!data.isLeader())
+				Utils.sleep(5000);
+			
+			init(conf);
+		}catch (Throwable e) {
+			LOG.error("Fail to run nimbus ", e);
+		}finally {
+			cleanup();
+		}
+		
+		LOG.info("Quit nimbus");
+	}
 
-		initShutdownHook();
+	public ServiceHandler launcherLocalServer(final Map conf, INimbus inimbus)
+			throws Exception {
+		LOG.info("Begin to start nimbus on local model");
+
+		StormConfig.validate_local_mode(conf);
 
 		inimbus.prepare(conf, StormConfig.masterInimbus(conf));
 
 		data = createNimbusData(conf, inimbus);
 
-		leaderSelector = data.getStormClusterState().get_leader_selector(
-				Cluster.MASTER_LOCK_SUBTREE, new LeaderSelectorListener() {
+		init(conf);
 
-					@Override
-					public void stateChanged(CuratorFramework client,
-							ConnectionState newState) {
-						// TODO Auto-generated method stub
-						LOG.info("state change to " + newState.name());
-					}
+		return serviceHandler;
+	}
 
-					@Override
-					public void takeLeadership(CuratorFramework client)
-							throws Exception {
-						// TODO Auto-generated method stub
-						LOG.info("Get masterlock!");
+	private void init(Map conf) throws Exception {
 
-						String host = NetWorkUtils.hostname();
+		NimbusUtils.cleanupCorruptTopologies(data);
 
-						Integer port = Utils.getInt(conf
-								.get(Config.NIMBUS_THRIFT_PORT));
+		initTopologyAssign();
 
-						data.getStormClusterState().register_leader_host(
-								host + ":" + String.valueOf(port));
+		initTopologyStatus();
 
-						LOG.info(host + " register successfully!");
+		initMonitor(conf);
 
-						NimbusUtils.cleanupCorruptTopologies(data);
-						
-						initGroup(conf);
+		initCleaner(conf);
 
-						initTopologyAssign();
+		serviceHandler = new ServiceHandler(data);
 
-						initTopologyStatus();
+		if (!data.isLocalMode()) {
 
-						initMonitor(conf);
+			initGroup(conf);
 
-						initCleaner(conf);
-
-						serviceHandler = new ServiceHandler(data);
-
-						initThrift(conf);
-					}
-
-				});
-
-		leaderSelector.start();
-
-		while (!data.getStormClusterState().leader_existed())
-			Thread.sleep(10000);
-
-		initFollowerThread(conf);
-
-		while (true)
-			Thread.sleep(3600000);
+			initThrift(conf);
+		}
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -265,14 +259,19 @@ public class NimbusServer {
 
 	@SuppressWarnings("rawtypes")
 	private void initThrift(Map conf) throws TTransportException {
-		Integer thrift_port = (Integer) conf.get(Config.NIMBUS_THRIFT_PORT);
+		Integer thrift_port = JStormUtils.parseInt(conf.get(Config.NIMBUS_THRIFT_PORT));
 		TNonblockingServerSocket socket = new TNonblockingServerSocket(
 				thrift_port);
+		
+		Integer maxReadBufSize = JStormUtils.parseInt(conf.get(Config.NIMBUS_THRIFT_MAX_BUFFER_SIZE));
+		
 		THsHaServer.Args args = new THsHaServer.Args(socket);
 		args.workerThreads(ServiceHandler.THREAD_NUM);
-		args.protocolFactory(new TBinaryProtocol.Factory());
+		args.protocolFactory(new TBinaryProtocol.Factory(false, true, maxReadBufSize));
 
 		args.processor(new Nimbus.Processor<Iface>(serviceHandler));
+		args.maxReadBufferBytes = maxReadBufSize;
+		
 		thriftServer = new THsHaServer(args);
 
 		LOG.info("Successfully started nimbus: started Thrift server...");
@@ -280,14 +279,15 @@ public class NimbusServer {
 	}
 
 	private void initFollowerThread(Map conf) {
-		follower = new FollowerRunnable(data, leaderSelector, 5000);
+		follower = new FollowerRunnable(data, 5000);
 		Thread thread = new Thread(follower);
 		thread.setDaemon(true);
 		thread.start();
 		LOG.info("Successfully init Follower thread");
 	}
 
-	private void flushGroupFile(String filePath, NimbusData data) throws Exception {
+	private void flushGroupFile(String filePath, NimbusData data)
+			throws Exception {
 
 		data.getFlushGroupFileLock().lock();
 		LOG.info("Begin to sync the group file: " + filePath);
@@ -340,7 +340,7 @@ public class NimbusServer {
 			if (groupToResource.get(group) == null) {
 				Map<ThriftResourceType, Integer> usedResource = groupToUsedResource
 						.get(group);
-				
+
 				boolean delete = true;
 				for (Entry<ThriftResourceType, Integer> entry : usedResource
 						.entrySet()) {
@@ -363,18 +363,19 @@ public class NimbusServer {
 	private void initGroupFileWatcher(final String filePath,
 			final NimbusData data) {
 		try {
-			
+
 			String normalizePath = PathUtils.normalize_path(filePath);
-			
+
 			if (PathUtils.exists_file(normalizePath) == false) {
 				LOG.warn("Grouping file doesn't exist " + filePath);
-				throw new RuntimeException("Grouping file doesn't exist " + filePath);
+				throw new RuntimeException("Grouping file doesn't exist "
+						+ filePath);
 			}
-			
+
 			List<String> paths = PathUtils.tokenize_path(normalizePath);
 			String fileName = paths.get(paths.size() - 1);
 			String path = PathUtils.parent_path(normalizePath);
-			
+
 			FileAlterationObserver observer = new FileAlterationObserver(path,
 					null);
 			FileListenerAdaptor listener = new FileListenerAdaptor(fileName,
@@ -416,55 +417,55 @@ public class NimbusServer {
 		});
 	}
 
-	private void cleanup() {
+	public void cleanup() {
+		if (isShutdown.compareAndSet(false, true) == false ) {
+			LOG.info("Notify to quit nimbus");
+			return ;
+		}
+		
+		LOG.info("Begin to shutdown nimbus");
+		
 		if (serviceHandler != null) {
 			serviceHandler.shutdown();
 		}
 
 		if (topologyAssign != null) {
 			topologyAssign.cleanup();
+			LOG.info("Successfully shutdown TopologyAssign thread");
 		}
 
 		if (follower != null) {
 			follower.clean();
+			LOG.info("Successfully shutdown follower thread");
 		}
 
 		if (data != null) {
 			data.cleanup();
+			LOG.info("Successfully shutdown NimbusData");
 		}
 
 		if (thriftServer != null) {
 			thriftServer.stop();
-		}
-
-		if (leaderSelector != null) {
-			try {
-				leaderSelector.close();
-			} catch (Exception e) {
-
-			}
+			LOG.info("Successfully shutdown thrift server");
 		}
 
 		LOG.info("Successfully shutdown nimbus");
+		// make sure shutdown nimbus
+		JStormUtils.halt_process(0, "!!!Shutdown!!!");
 
 	}
-	
+
 	private void initGroup(Map conf) throws Exception {
-		
-		if (data.isGroupModel() == false) {
+
+		if (data.isGroupMode() == false) {
 			LOG.info("Group model has been disabled!");
-			return ;
+			return;
 		}
 
 		LOG.info("Nimbus is on group model!");
-		initGroupFileWatcher(
-				ConfigExtension.getGroupFilePath(conf),
-				data);
-		flushGroupFile(
-				ConfigExtension.getGroupFilePath(conf),
-				data);
-		
-		
+		initGroupFileWatcher(ConfigExtension.getGroupFilePath(conf), data);
+		flushGroupFile(ConfigExtension.getGroupFilePath(conf), data);
+
 		data.getFlushGroupFileLock().lock();
 
 		try {

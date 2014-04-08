@@ -4,17 +4,20 @@
 	<parent>
 		<groupId>com.alibaba.jstorm</groupId>
 		<artifactId>jstorm-all</artifactId>
-		<version>0.9.1</version>
+		<version>0.9.2</version>
 		<relativePath>..</relativePath>
 	</parent>
-	<!-- <parent> <groupId>com.taobao</groupId> <artifactId>parent</artifactId> 
-		<version>1.0.2</version> </parent> -->
+<!-- 	<parent>  -->
+<!-- 		<groupId>com.taobao</groupId> -->
+<!-- 		<artifactId>parent</artifactId>  -->
+<!-- 		<version>1.0.2</version>  -->
+<!-- 	</parent> -->
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.alibaba.jstorm</groupId>
 	<artifactId>jstorm-client</artifactId>
-	<version>0.9.1</version>
+	<version>0.9.2</version>
 	<packaging>jar</packaging>
-	<name>${pom.artifactId}-${pom.version}</name>
+	<name>${project.artifactId}-${project.version}</name>
 
 	<build>
 		<plugins>
@@ -95,7 +98,7 @@
 			<artifactId>clj-time</artifactId>
 			<version>0.4.1</version>
 		</dependency>
-		<dependency>
+		 <dependency>
 			<groupId>com.netflix.curator</groupId>
 			<artifactId>curator-framework</artifactId>
 			<version>1.1.15</version>
@@ -110,17 +113,7 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-		<dependency>
-			<groupId>com.netflix.curator</groupId>
-			<artifactId>curator-recipes</artifactId>
-			<version>1.1.15</version>
-			<exclusions>
-				<exclusion>
-					<groupId>log4j</groupId>
-					<artifactId>log4j</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
+		
 		<dependency>
 			<groupId>org.apache.zookeeper</groupId>
 			<artifactId>zookeeper</artifactId>
@@ -136,6 +129,11 @@
 			<groupId>backtype</groupId>
 			<artifactId>jzmq</artifactId>
 			<version>2.1.0</version>
+		</dependency>
+		<dependency>
+  			<groupId>org.zeromq</groupId>
+  			<artifactId>jeromq</artifactId>
+  			<version>0.3.2</version>
 		</dependency>
 		<dependency>
 			<groupId>com.esotericsoftware.kryo</groupId>
@@ -198,7 +196,7 @@
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-log4j12</artifactId>
-			<version>1.5.6</version>
+			<version>1.7.5</version>
 		</dependency>
 		<!-- <dependency> <groupId>ch.qos.logback</groupId> <artifactId>logback-classic</artifactId> 
 			<version>1.0.13</version> </dependency> <dependency> <groupId>org.slf4j</groupId> 

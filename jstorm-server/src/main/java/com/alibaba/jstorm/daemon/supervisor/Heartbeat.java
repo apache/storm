@@ -1,5 +1,6 @@
 package com.alibaba.jstorm.daemon.supervisor;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -67,6 +68,7 @@ class Heartbeat extends RunnableCallback {
 	}
 
 	private int getCpuSlotNum(Map conf) {
+		int weight = ConfigExtension.getCpuSlotPerWeight(conf);
 		Integer object = JStormServerConfig.getSupervisorCpuSlotNum(conf);
 		if (object != null && JStormUtils.parseInt(object) > 0) {
 			return JStormUtils.parseInt(object);
@@ -74,9 +76,9 @@ class Heartbeat extends RunnableCallback {
 
 		int sysCpuNum = Runtime.getRuntime().availableProcessors();
 		if (sysCpuNum <= CPU_THREADHOLD) {
-			return sysCpuNum;
+			return CPU_THREADHOLD * weight;
 		} else {
-			return sysCpuNum - 1;
+			return (sysCpuNum - 1) * weight;
 		}
 	}
 
@@ -104,7 +106,7 @@ class Heartbeat extends RunnableCallback {
 
 		long availablePhyMemSize = 0;
 		if (physicalMemSize <= MEM_THREADHOLD) {
-			availablePhyMemSize = physicalMemSize;
+			availablePhyMemSize = MEM_THREADHOLD;
 		} else {
 			availablePhyMemSize = Math.min((long) (physicalMemSize * 0.8),
 					physicalMemSize - 4 * JStormUtils.SIZE_1_G);
@@ -155,9 +157,16 @@ class Heartbeat extends RunnableCallback {
 		List<Integer> portList = (List<Integer>) conf
 				.get(Config.SUPERVISOR_SLOTS_PORTS);
 
-		Set<Integer> ports = JStormUtils.listToSet(portList);
-
-		return new SlotResourcePool<Integer>(ResourceType.NET, ports);
+		if (!StormConfig.local_mode(conf)) {
+			Set<Integer> ports = JStormUtils.listToSet(portList);
+			return new SlotResourcePool<Integer>(ResourceType.NET, ports);
+		} else {
+			List<Integer> result = new ArrayList<Integer>();
+			int port = portList.get(0);
+			result.add(port);
+			Set<Integer> ports = JStormUtils.listToSet(result);
+			return new SlotResourcePool<Integer>(ResourceType.NET, ports);
+		}
 	}
 
 	private void initSupervisorInfo(Map conf) {

@@ -204,8 +204,8 @@ public class JStormUtils {
 		try {
 			exec_command(cmd);
 		} catch (Exception e) {
-			LOG.warn("Error when trying to extract " + dir + " from " + jarpath
-					+ " IOException" + "by cmd:" + cmd + "!" + e.getMessage());
+			LOG.warn("No " + dir + " from " + jarpath + 
+					"by cmd:" + cmd + "!" + e.getMessage());
 		}
 
 	}
@@ -220,7 +220,7 @@ public class JStormUtils {
 				sleepMs(100);
 			} catch (ExecuteException e) {
 				LOG.info("Error when trying to kill " + pid
-						+ ". Process is probably already dead. ");
+						+ ". Process has been killed");
 			} catch (Exception e) {
 				LOG.info("Error when trying to kill " + pid + ".Exception ", e);
 			}
@@ -233,7 +233,7 @@ public class JStormUtils {
 			LOG.info("kill process " + pid);
 		} catch (ExecuteException e) {
 			LOG.info("Error when trying to kill " + pid
-					+ ". Process is probably already dead. ");
+					+ ". Process has been killed. ");
 		} catch (Exception e) {
 			LOG.info("Error when trying to kill " + pid + ".Exception ", e);
 		}

@@ -10,11 +10,11 @@ import backtype.storm.serialization.KryoTupleSerializer;
 import backtype.storm.tuple.TupleExt;
 import backtype.storm.utils.DisruptorQueue;
 import backtype.storm.utils.Utils;
+import backtype.storm.utils.WorkerClassLoader;
 
 import com.alibaba.jstorm.callback.AsyncLoopThread;
 import com.alibaba.jstorm.callback.RunnableCallback;
-import com.alibaba.jstorm.daemon.worker.WorkerClassLoader;
-import com.alibaba.jstorm.daemon.worker.WorkerHaltRunable;
+import com.alibaba.jstorm.daemon.worker.WorkerData;
 import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.SingleThreadedClaimStrategy;
 import com.lmax.disruptor.WaitStrategy;
@@ -38,17 +38,17 @@ public class TaskTransfer {
 	private KryoTupleSerializer serializer;
 	private Map<Integer, DisruptorQueue> innerTaskTransfer;
 	private DisruptorQueue serializeQueue;
-	private WorkerHaltRunable halter;
+	private final AsyncLoopThread   serializeThread;
+	private volatile TaskStatus        taskStatus;
 
-	public TaskTransfer(KryoTupleSerializer serializer, Map storm_conf,
-			DisruptorQueue _transfer_queue,
-			Map<Integer, DisruptorQueue> innerTaskTransfer,
-			WorkerHaltRunable halter) {
+	public TaskTransfer(KryoTupleSerializer serializer, TaskStatus taskStatus,
+			WorkerData workerData) {
 
-		this.storm_conf = storm_conf;
-		this.transferQueue = _transfer_queue;
 		this.serializer = serializer;
-		this.innerTaskTransfer = innerTaskTransfer;
+		this.taskStatus = taskStatus;
+		this.storm_conf = workerData.getConf();
+		this.transferQueue = workerData.getTransferQueue();
+		this.innerTaskTransfer = workerData.getInnerTaskTransfer();
 
 		int queue_size = Utils.getInt(storm_conf
 				.get(Config.TOPOLOGY_TRANSFER_BUFFER_SIZE));
@@ -58,7 +58,7 @@ public class TaskTransfer {
 		this.serializeQueue = new DisruptorQueue(
 				new SingleThreadedClaimStrategy(queue_size), waitStrategy);
 
-		new AsyncLoopThread(new TransferRunnable());
+		serializeThread = new AsyncLoopThread(new TransferRunnable());
 		LOG.info("Successfully start TaskTransfer thread");
 
 	}
@@ -75,22 +75,34 @@ public class TaskTransfer {
 		}
 
 	}
+	
+	
+
+	public AsyncLoopThread getSerializeThread() {
+		return serializeThread;
+	}
+
+
 
 	class TransferRunnable extends RunnableCallback implements EventHandler {
 
 		@Override
 		public void run() {
+		
 			WorkerClassLoader.switchThreadContext();
-			while (true) {
+			while (taskStatus.isShutdown() == false) {
 				serializeQueue.consumeBatchWhenAvailable(this);
 
 			}
-
-			// WorkerClassLoader.restoreThreadContext();
+			WorkerClassLoader.restoreThreadContext();
 		}
 
 		public Object getResult() {
-			return -1;
+			if (taskStatus.isShutdown() == false ) {
+				return 0;
+			}else {
+				return -1;
+			}
 		}
 
 		@Override

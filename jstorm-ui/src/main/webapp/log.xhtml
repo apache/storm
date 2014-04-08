@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:p="http://primefaces.org/ui">
+<h:head>
+	<title>Jstorm UI</title>
+</h:head>
+
+<h:body>
+	<h:outputLink value="cluster.jsf">
+		<h1>
+			<h:outputText value="JStorm UI" />
+		</h1>
+	</h:outputLink>
+	<h2>Task Logs: '#{logpage.componentTask.topologyid}_#{logpage.componentTask.componentid}_#{logpage.componentTask.taskid}'
+	</h2>
+
+	<h:form>
+
+		<h:outputText value="#{logpage.log}" />
+		
+	</h:form>
+
+</h:body>
+</html>

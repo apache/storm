@@ -94,7 +94,7 @@ public class ZeroMq {
 	}
 
 	public static Socket send(Socket socket, byte[] message) {
-		return send(socket, message, ZMQ.NOBLOCK);
+		return send(socket, message, org.zeromq.ZMQ.NOBLOCK);
 	}
 
 	public static byte[] recv(Socket socket, int flags) {

@@ -10,50 +10,47 @@ import storm.trident.tuple.TridentTuple;
 import storm.trident.tuple.TridentTuple.Factory;
 import storm.trident.tuple.TridentTupleView.ProjectionFactory;
 
+
 public class ProjectedProcessor implements TridentProcessor {
-	Fields _projectFields;
-	ProjectionFactory _factory;
-	TridentContext _context;
+    Fields _projectFields;
+    ProjectionFactory _factory;
+    TridentContext _context;
+    
+    public ProjectedProcessor(Fields projectFields) {
+        _projectFields = projectFields;
+    }
+    
+    @Override
+    public void prepare(Map conf, TopologyContext context, TridentContext tridentContext) {
+        if(tridentContext.getParentTupleFactories().size()!=1) {
+            throw new RuntimeException("Projection processor can only have one parent");
+        }
+        _context = tridentContext;
+        _factory = new ProjectionFactory(tridentContext.getParentTupleFactories().get(0), _projectFields);
+    }
 
-	public ProjectedProcessor(Fields projectFields) {
-		_projectFields = projectFields;
-	}
+    @Override
+    public void cleanup() {
+    }
 
-	@Override
-	public void prepare(Map conf, TopologyContext context,
-			TridentContext tridentContext) {
-		if (tridentContext.getParentTupleFactories().size() != 1) {
-			throw new RuntimeException(
-					"Projection processor can only have one parent");
-		}
-		_context = tridentContext;
-		_factory = new ProjectionFactory(tridentContext
-				.getParentTupleFactories().get(0), _projectFields);
-	}
+    @Override
+    public void startBatch(ProcessorContext processorContext) {
+    }
 
-	@Override
-	public void cleanup() {
-	}
+    @Override
+    public void execute(ProcessorContext processorContext, String streamId, TridentTuple tuple) {
+        TridentTuple toEmit = _factory.create(tuple);
+        for(TupleReceiver r: _context.getReceivers()) {
+            r.execute(processorContext, _context.getOutStreamId(), toEmit);
+        }
+    }
 
-	@Override
-	public void startBatch(ProcessorContext processorContext) {
-	}
+    @Override
+    public void finishBatch(ProcessorContext processorContext) {
+    }
 
-	@Override
-	public void execute(ProcessorContext processorContext, String streamId,
-			TridentTuple tuple) {
-		TridentTuple toEmit = _factory.create(tuple);
-		for (TupleReceiver r : _context.getReceivers()) {
-			r.execute(processorContext, _context.getOutStreamId(), toEmit);
-		}
-	}
-
-	@Override
-	public void finishBatch(ProcessorContext processorContext) {
-	}
-
-	@Override
-	public Factory getOutputFactory() {
-		return _factory;
-	}
+    @Override
+    public Factory getOutputFactory() {
+        return _factory;
+    }
 }

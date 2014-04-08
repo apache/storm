@@ -320,6 +320,34 @@
 				</f:facet>
 				<h:outputText value="#{ct.lastErr}" />
 			</p:column>
+			
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Task Log" />
+				</f:facet>
+				<h:outputLink value="http://#{ct.ip}:7621/logview?log=#{param.topologyid}-worker-#{ct.port}.log&amp;mode=l4k">
+                    <h:outputText value="Last 4KB" />
+                    <!--
+                    <f:param name="topologyid" value="#{param.topologyid}" />
+                    <f:param name="taskid" value="#{ct.taskid}" /> 
+                    -->
+                </h:outputLink>
+                <h:outputLink value="http://#{ct.ip}:7621/logview?log=#{param.topologyid}-worker-#{ct.port}.log&amp;mode=l8k">
+                    <h:outputText value="Last 8KB" />
+                    <!--
+                    <f:param name="topologyid" value="#{param.topologyid}" />
+                    <f:param name="taskid" value="#{ct.taskid}" /> 
+                    -->
+                </h:outputLink>
+                <h:outputLink value="http://#{ct.ip}:7621/logview?log=#{param.topologyid}-worker-#{ct.port}.log&amp;mode=all">
+                    <h:outputText value="ALL" />
+                    <!--
+                    <f:param name="topologyid" value="#{param.topologyid}" />
+                    <f:param name="taskid" value="#{ct.taskid}" /> 
+                    -->
+                </h:outputLink>
+			</p:column>
+			
 		</p:dataTable>
 	</h:form>
 </h:body>

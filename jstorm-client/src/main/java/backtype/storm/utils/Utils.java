@@ -84,7 +84,7 @@ public class Utils {
 	}
 
 	public static Object deserialize(byte[] serialized) {
-		return deserialize(serialized, null);
+		return deserialize(serialized, WorkerClassLoader.getInstance());
 	}
 
 	public static <T> String join(Iterable<T> coll, String sep) {
@@ -251,17 +251,24 @@ public class Utils {
 
 	public static void downloadFromMaster(Map conf, String file,
 			String localFile) throws IOException, TException {
-		NimbusClient client = NimbusClient.getConfiguredClient(conf);
-		String id = client.getClient().beginFileDownload(file);
-		WritableByteChannel out = Channels.newChannel(new FileOutputStream(
-				localFile));
-		while (true) {
-			ByteBuffer chunk = client.getClient().downloadChunk(id);
-			int written = out.write(chunk);
-			if (written == 0)
-				break;
+		WritableByteChannel out = null;
+		NimbusClient client = null;
+		try {
+			client = NimbusClient.getConfiguredClient(conf);
+			String id = client.getClient().beginFileDownload(file);
+			out = Channels.newChannel(new FileOutputStream(localFile));
+			while (true) {
+				ByteBuffer chunk = client.getClient().downloadChunk(id);
+				int written = out.write(chunk);
+				if (written == 0)
+					break;
+			}
+		} finally {
+			if (out != null)
+				out.close();
+			if (client != null)
+				client.close();
 		}
-		out.close();
 	}
 
 	public static IFn loadClojureFn(String namespace, String name) {

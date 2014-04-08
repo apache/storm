@@ -31,7 +31,7 @@ import com.netflix.curator.framework.api.UnhandledErrorListener;
 public class ThriftClient {
 	private static final Logger LOG = LoggerFactory
 			.getLogger(ThriftClient.class);
-	private static final String MASTER_PATH = "/master";
+	private static final String MASTER_PATH = "/nimbus_master";
 	private TTransport _transport;
 	protected TProtocol _protocol;
 	private CuratorFramework zkobj;
@@ -53,57 +53,13 @@ public class ThriftClient {
 		LOG.info("zkServer:"
 				+ (List<String>) storm_conf.get(Config.STORM_ZOOKEEPER_SERVERS)
 				+ ", zkPort:"
-				+ (Integer) storm_conf.get(Config.STORM_ZOOKEEPER_PORT)); // ++
-		zkobj = Utils.newCurator(storm_conf,
-				(List<String>) storm_conf.get(Config.STORM_ZOOKEEPER_SERVERS),
-				storm_conf.get(Config.STORM_ZOOKEEPER_PORT), root);
-		zkobj.start();
-		if (zkobj.checkExists().forPath(MASTER_PATH) == null)
-			throw new RuntimeException("No alive nimbus ");
-		zkobj.close();
-
+				+ (Integer) storm_conf.get(Config.STORM_ZOOKEEPER_PORT));
 		zkobj = Utils.newCurator(storm_conf,
 				(List<String>) storm_conf.get(Config.STORM_ZOOKEEPER_SERVERS),
 				storm_conf.get(Config.STORM_ZOOKEEPER_PORT), zkMasterDir);
-		zkobj.getCuratorListenable().addListener(new CuratorListener() {
-
-			@Override
-			public void eventReceived(CuratorFramework arg0, CuratorEvent e)
-					throws Exception {
-				// TODO Auto-generated method stub
-				if (e.getType().equals(CuratorEventType.WATCHED)) {
-					WatchedEvent event = e.getWatchedEvent();
-					KeeperState state = event.getState();
-					EventType type = event.getType();
-					String path = event.getPath();
-					if (!(state.equals(KeeperState.SyncConnected))) {
-						LOG.warn("Received event " + state + ":" + type + ":"
-								+ path + " with disconnected Zookeeper.");
-					} else {
-						LOG.info("Received event " + state + ":" + type + ":"
-								+ path);
-					}
-
-					if (!type.equals(EventType.None)) {
-						flushClient(conf, null);
-						flush();
-					}
-				}
-			}
-
-		});
-
-		zkobj.getUnhandledErrorListenable().addListener(
-				new UnhandledErrorListener() {
-					@Override
-					public void unhandledError(String msg, Throwable error) {
-						String errmsg = "Unrecoverable Zookeeper error, halting process: "
-								+ msg;
-						LOG.error(errmsg, error);
-						Runtime.getRuntime().halt(1);
-					}
-				});
 		zkobj.start();
+		if (zkobj.checkExists().forPath("/") == null)
+			throw new RuntimeException("No alive nimbus ");
 		flushClient(storm_conf, timeout);
 	}
 
@@ -138,6 +94,11 @@ public class ThriftClient {
 			if (port <= 0) {
 				throw new IllegalArgumentException("invalid port: " + port);
 			}
+//			/***************only test for daily *************/
+//			if (host.endsWith("bja")) {
+//				host += ".tbsite.net";
+//			}
+//			/***************only test for daily *************/
 			TSocket socket = new TSocket(host, port);
 			if (timeout != null) {
 				socket.setTimeout(timeout);
@@ -167,6 +128,10 @@ public class ThriftClient {
 
 	public String getMasterHost() {
 		return masterHost;
+	}
+	
+	public Map<Object, Object> getConf() {
+		return conf;
 	}
 
 	protected void flush() {

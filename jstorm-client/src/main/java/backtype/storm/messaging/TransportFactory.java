@@ -33,7 +33,7 @@ public class TransportFactory {
 				transport = (IContext) obj;
 				// initialize with storm configuration
 				transport.prepare(storm_conf);
-				LOG.info("TransportFactory makeContext: start prpare... "
+				LOG.info("TransportFactory makeContext: start prepare... "
 						+ storm_conf);
 			} else {
 				// case 2: Non-IContext plugin must have a

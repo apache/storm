@@ -3,6 +3,7 @@ package com.alibaba.jstorm.daemon.nimbus;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -38,7 +39,6 @@ import com.alibaba.jstorm.cluster.StormClusterState;
 import com.alibaba.jstorm.cluster.StormConfig;
 import com.alibaba.jstorm.daemon.supervisor.SupervisorInfo;
 import com.alibaba.jstorm.resource.ResourceAssignment;
-import com.alibaba.jstorm.resource.ResourceType;
 import com.alibaba.jstorm.schedule.DefaultScheduler;
 import com.alibaba.jstorm.task.Assignment;
 import com.alibaba.jstorm.task.TkHbCacheTime;
@@ -447,7 +447,7 @@ public class NimbusUtils {
 	public static void synchronizeGroupToTopology(NimbusData data) {
 
 		try {
-			if (data.isGroupModel()) {
+			if (data.isGroupMode()) {
 				List<String> active_ids = data.getStormClusterState()
 						.active_storms();
 				Map<String, Map<String, Map<ThriftResourceType, Integer>>> groupToTopology = data
@@ -484,7 +484,7 @@ public class NimbusUtils {
 	}
 
 	public static void synchronizeGroupToResource(NimbusData data) {
-		if (data.isGroupModel()) {
+		if (data.isGroupMode()) {
 			Map<String, Map<ThriftResourceType, Integer>> groupToUsedResource = data
 					.getGroupToUsedResource();
 			Map<String, Map<String, Map<ThriftResourceType, Integer>>> groupToTopology = data
@@ -517,7 +517,7 @@ public class NimbusUtils {
 
 	public static String getGroupName(NimbusData data, String topologyId)
 			throws Exception {
-		if (!data.isGroupModel())
+		if (!data.isGroupMode())
 			return null;
 		StormClusterState stormClusterState = data.getStormClusterState();
 		StormBase base = stormClusterState.storm_base(topologyId, null);
@@ -530,7 +530,7 @@ public class NimbusUtils {
 
 	public static void releaseGroupResource(NimbusData data,
 			String topologyName, String group) throws Exception {
-		if (!data.isGroupModel())
+		if (!data.isGroupMode())
 			return;
 		if (group == null)
 			return;
@@ -674,6 +674,9 @@ public class NimbusUtils {
 
 		if (nowSecs - nimbusTime > taskHBTimeout) {
 			// task is dead
+			long ts = nimbusTime * 1000;
+			Date lastTaskHBDate = new Date(ts);
+			LOG.info(idStr + " last tasktime is " + nimbusTime + " " + lastTaskHBDate);
 			return true;
 		}
 

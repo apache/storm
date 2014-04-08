@@ -1,6 +1,5 @@
 package com.alibaba.jstorm.task.execute;
 
-import java.net.URLClassLoader;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -12,11 +11,12 @@ import backtype.storm.spout.SpoutOutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.utils.DisruptorQueue;
+import backtype.storm.utils.TimeCacheMap;
+import backtype.storm.utils.WorkerClassLoader;
 
 import com.alibaba.jstorm.callback.AsyncLoopThread;
 import com.alibaba.jstorm.callback.RunnableCallback;
 import com.alibaba.jstorm.client.ConfigExtension;
-import com.alibaba.jstorm.daemon.worker.WorkerClassLoader;
 import com.alibaba.jstorm.stats.CommonStatsRolling;
 import com.alibaba.jstorm.task.TaskStatus;
 import com.alibaba.jstorm.task.TaskTransfer;
@@ -25,7 +25,6 @@ import com.alibaba.jstorm.task.comm.TaskSendTargets;
 import com.alibaba.jstorm.task.comm.TupleInfo;
 import com.alibaba.jstorm.task.error.ITaskReportErr;
 import com.alibaba.jstorm.utils.JStormUtils;
-import com.alibaba.jstorm.utils.RotatingMap;
 import com.lmax.disruptor.EventHandler;
 
 /**
@@ -43,13 +42,13 @@ public class SpoutExecutors extends BaseExecutors implements EventHandler {
 	protected final boolean supportRecvThread;
 
 	protected backtype.storm.spout.ISpout spout;
-	protected RotatingMap pending;
-	private long lastRotate;
-	private long rotateTime;
+	protected TimeCacheMap<Long, TupleInfo> pending;
 
 	protected ISpoutOutputCollector output_collector;
 
 	private boolean firstTime = true;
+
+	private AsyncLoopThread ackerRunnableThread;
 
 	public SpoutExecutors(backtype.storm.spout.ISpout _spout,
 			TaskTransfer _transfer_fn,
@@ -65,12 +64,13 @@ public class SpoutExecutors extends BaseExecutors implements EventHandler {
 		this.spout = _spout;
 
 		// sending Tuple's TimeCacheMap
-		this.pending = new RotatingMap(Acker.TIMEOUT_BUCKET_NUM,
-				new SpoutTimeoutCallBack<Object, Object>(disruptorRecvQueue,
-						spout, storm_conf, task_stats));
-		this.rotateTime = 1000L * JStormUtils.parseInt(
+		
+		int msgTimeout = JStormUtils.parseInt(
 				storm_conf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS), 30);
-		this.lastRotate = System.currentTimeMillis();
+		this.pending = new TimeCacheMap<Long, TupleInfo>(msgTimeout, 
+				Acker.TIMEOUT_BUCKET_NUM, 
+				new SpoutTimeoutCallBack<Long, TupleInfo>(disruptorRecvQueue,
+						spout, storm_conf, task_stats));
 
 		this.max_spout_pending = JStormUtils.parseInt(storm_conf
 				.get(Config.TOPOLOGY_MAX_SPOUT_PENDING));
@@ -84,7 +84,7 @@ public class SpoutExecutors extends BaseExecutors implements EventHandler {
 
 		if (supportRecvThread == true) {
 
-			AsyncLoopThread thread = new AsyncLoopThread(new AckerRunnable());
+			ackerRunnableThread = new AsyncLoopThread(new AckerRunnable());
 		}
 
 		// collector, in fact it call send_spout_msg
@@ -178,7 +178,7 @@ public class SpoutExecutors extends BaseExecutors implements EventHandler {
 
 				Tuple tuple = (Tuple) event;
 				Object id = tuple.getValue(0);
-				Object obj = pending.remove(id);
+				Object obj = pending.remove((Long)id);
 
 				if (obj == null) {
 					LOG.warn("Pending map no entry:" + id + ", pending size:"
@@ -196,11 +196,15 @@ public class SpoutExecutors extends BaseExecutors implements EventHandler {
 							isDebug, tupleInfo.getStream(),
 							tupleInfo.getTimestamp(), task_stats);
 				} else if (stream_id.equals(Acker.ACKER_FAIL_STREAM_ID)) {
-					Long time_delta = null;
-
 					runnable = new FailSpoutMsg(spout, tupleInfo, task_stats,
 							isDebug);
+				} else {
+					LOG.warn("Receive one unknow source Tuple " + idStr);
+					return;
 				}
+
+				task_stats.recv_tuple(tuple.getSourceComponent(),
+						tuple.getSourceStreamId());
 
 			} else if (event instanceof Runnable) {
 
@@ -239,13 +243,10 @@ public class SpoutExecutors extends BaseExecutors implements EventHandler {
 			}
 		}
 
-		long now = System.currentTimeMillis();
-		if (now - lastRotate > rotateTime) {
-			lastRotate = now;
-			// TODO, should do anything to dead??
-			Map<Long, TupleInfo> dead = pending.rotate();
+	}
 
-		}
+	public AsyncLoopThread getAckerRunnableThread() {
+		return ackerRunnableThread;
 	}
 
 	class AckerRunnable extends RunnableCallback {

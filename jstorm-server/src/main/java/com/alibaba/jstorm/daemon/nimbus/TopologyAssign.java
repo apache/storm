@@ -12,6 +12,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 
@@ -29,6 +30,7 @@ import com.alibaba.jstorm.cluster.StormStatus;
 import com.alibaba.jstorm.daemon.supervisor.SupervisorInfo;
 import com.alibaba.jstorm.resource.ResourceAssignment;
 import com.alibaba.jstorm.resource.ResourceType;
+import com.alibaba.jstorm.resource.SlotResourcePool;
 import com.alibaba.jstorm.schedule.IToplogyScheduler;
 import com.alibaba.jstorm.schedule.TopologyAssignContext;
 import com.alibaba.jstorm.schedule.default_assign.DefaultTopologyScheduler;
@@ -64,6 +66,8 @@ public class TopologyAssign implements Runnable {
 	protected NimbusData nimbusData;
 
 	protected Map<String, IToplogyScheduler> schedulers;
+	
+	private Thread thread;
 
 	public static final String DEFAULT_SCHEDULER_NAME = "default";
 
@@ -76,13 +80,15 @@ public class TopologyAssign implements Runnable {
 
 		schedulers.put(DEFAULT_SCHEDULER_NAME, defaultScheduler);
 
-		Thread thread = new Thread(this);
+		thread = new Thread(this);
 		thread.setName("TopologyAssign");
+		thread.setDaemon(true);
 		thread.start();
 	}
 
 	public void cleanup() {
 		runFlag = false;
+		thread.interrupt();
 	}
 
 	protected static LinkedBlockingQueue<TopologyAssignEvent> queue = new LinkedBlockingQueue<TopologyAssignEvent>();
@@ -107,7 +113,7 @@ public class TopologyAssign implements Runnable {
 			if (event == null) {
 				continue;
 			}
-
+			
 			boolean isSuccess = doTopologyAssignment(event);
 
 			if (isSuccess == false) {
@@ -358,7 +364,7 @@ public class TopologyAssign implements Runnable {
 	private void checkGroupResource(Map conf,
 			Map<Integer, ResourceAssignment> assignment, String topologyName)
 			throws Exception {
-		if (!nimbusData.isGroupModel())
+		if (!nimbusData.isGroupMode())
 			return;
 		String group = ConfigExtension.getUserGroup(conf);
 		if (group == null)
@@ -434,16 +440,15 @@ public class TopologyAssign implements Runnable {
 		NimbusUtils.releaseGroupResource(nimbusData, topologyName, groupName);
 		takeTopologyResource(groupName, topologyResource, used, topologyName);
 	}
-	
-	public void updateGroupResource(TopologyAssignContext context, 
-			TopologyAssignEvent event, 
+
+	public void updateGroupResource(TopologyAssignContext context,
+			TopologyAssignEvent event,
 			Map<Integer, ResourceAssignment> taskAssignments) throws Exception {
-		
-		
-		if (nimbusData.isGroupModel() == false) {
+
+		if (nimbusData.isGroupMode() == false) {
 			return;
 		}
-		
+
 		String topologyId = event.getTopologyId();
 		nimbusData.getFlushGroupFileLock().lock();
 		try {
@@ -451,7 +456,8 @@ public class TopologyAssign implements Runnable {
 				String topologyName = event.getTopologyName();
 				checkGroupResource(context.getStormConf(), taskAssignments,
 						topologyName);
-				event.setGroup(ConfigExtension.getUserGroup(context.getStormConf()));
+				event.setGroup(ConfigExtension.getUserGroup(context
+						.getStormConf()));
 			} else {
 				upadateUsedResrouce(topologyId, taskAssignments);
 			}
@@ -483,12 +489,20 @@ public class TopologyAssign implements Runnable {
 
 		TopologyAssignContext context = prepareTopologyAssign(event);
 
-		IToplogyScheduler scheduler = schedulers.get(DEFAULT_SCHEDULER_NAME);
+		Map<Integer, ResourceAssignment> taskAssignments = null;
 
-		
-		Map<Integer, ResourceAssignment> taskAssignments = scheduler
-				.assignTasks(context);
-		updateGroupResource(context, event, taskAssignments);
+		if (!StormConfig.local_mode(nimbusData.getConf())) {
+
+			IToplogyScheduler scheduler = schedulers
+					.get(DEFAULT_SCHEDULER_NAME);
+
+			taskAssignments = scheduler.assignTasks(context);
+			updateGroupResource(context, event, taskAssignments);
+
+		} else {
+			taskAssignments = mkLocalAssignment(context);
+		}
+		Assignment assignment = null;
 
 		Map<String, String> nodeHost = getTopologyNodeHost(
 				context.getCluster(), context.getOldAssignment(),
@@ -501,7 +515,6 @@ public class TopologyAssign implements Runnable {
 		String codeDir = StormConfig.masterStormdistRoot(nimbusData.getConf(),
 				topologyId);
 
-		Assignment assignment = null;
 		assignment = new Assignment(codeDir, taskAssignments, nodeHost,
 				startTimes);
 
@@ -516,6 +529,32 @@ public class TopologyAssign implements Runnable {
 				+ ": " + assignment);
 
 		return assignment;
+	}
+
+	private static Map<Integer, ResourceAssignment> mkLocalAssignment(
+			TopologyAssignContext context) {
+		Map<Integer, ResourceAssignment> result = new HashMap<Integer, ResourceAssignment>();
+		Map<String, SupervisorInfo> cluster = context.getCluster();
+		if (cluster.size() != 1)
+			throw new RuntimeException();
+		SupervisorInfo localSupervisor = null;
+		String supervisorId = null;
+		for (Entry<String, SupervisorInfo> entry : cluster.entrySet()) {
+			supervisorId = entry.getKey();
+			localSupervisor = entry.getValue();
+		}
+		int port = localSupervisor.getNetPool().alloc(null);
+		for (Integer task : context.getAllTaskIds()) {
+			ResourceAssignment resourceAssignment = new ResourceAssignment();
+			resourceAssignment.setHostname(localSupervisor.getHostName());
+			resourceAssignment.setSupervisorId(supervisorId);
+			resourceAssignment.setPort(port);
+			resourceAssignment.setCpuSlotNum(0);
+			resourceAssignment.setMemSlotNum(0);
+			result.put(task, resourceAssignment);
+		}
+
+		return result;
 	}
 
 	/**

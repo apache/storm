@@ -21,13 +21,11 @@
      - "localhost"
 
 
-# storm.messaging.transport: "com.alibaba.jstorm.message.netty.NettyContext"
- storm.messaging.transport: "com.alibaba.jstorm.message.zeroMq.MQContext"
  
- #if it is null, then it will be detect by system
+ #if it is null, then it will be detected by system
  supervisor.cpu.slot.num: null
 
- #if it is null, then it will be detect by system
+ #if it is null, then it will be detected by system
  supervisor.mem.slot.num: null
 
 # support disk slot
@@ -67,3 +65,12 @@
  user.group: null
  user.name: null
  user.password: null
+
+# enable supervisor use cgroup to make resource isolation
+# Before enable it, you should make sure:
+# 	1. Linux version (>= 2.6.18)
+# 	2. Have installed cgroup (check the file's existence:/proc/cgroups)
+#	3. You should start your supervisor on root
+# You can get more about cgroup:
+#   http://t.cn/8s7nexU
+ supervisor.enable.cgroup: false

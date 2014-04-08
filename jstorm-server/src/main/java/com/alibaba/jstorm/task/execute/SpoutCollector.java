@@ -1,5 +1,6 @@
 package com.alibaba.jstorm.task.execute;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -11,6 +12,7 @@ import backtype.storm.task.TopologyContext;
 import backtype.storm.tuple.MessageId;
 import backtype.storm.tuple.TupleImplExt;
 import backtype.storm.utils.DisruptorQueue;
+import backtype.storm.utils.TimeCacheMap;
 
 import com.alibaba.jstorm.stats.CommonStatsRolling;
 import com.alibaba.jstorm.task.TaskTransfer;
@@ -20,8 +22,6 @@ import com.alibaba.jstorm.task.comm.TupleInfo;
 import com.alibaba.jstorm.task.comm.UnanchoredSend;
 import com.alibaba.jstorm.task.error.ITaskReportErr;
 import com.alibaba.jstorm.utils.JStormUtils;
-import com.alibaba.jstorm.utils.RotatingMap;
-import com.lmax.disruptor.InsufficientCapacityException;
 
 /**
  * spout collector, sending tuple through this Object
@@ -36,7 +36,7 @@ public class SpoutCollector implements ISpoutOutputCollector {
 	private Map storm_conf;
 	private TaskTransfer transfer_fn;
 	// private TimeCacheMap pending;
-	private RotatingMap<Long, TupleInfo> pending;
+	private TimeCacheMap<Long, TupleInfo> pending;
 	// topology_context is system topology context
 	private TopologyContext topology_context;
 
@@ -52,7 +52,7 @@ public class SpoutCollector implements ISpoutOutputCollector {
 	public SpoutCollector(Integer task_id, backtype.storm.spout.ISpout spout,
 			CommonStatsRolling task_stats, TaskSendTargets sendTargets,
 			Map _storm_conf, TaskTransfer _transfer_fn,
-			RotatingMap<Long, TupleInfo> pending,
+			TimeCacheMap<Long, TupleInfo> pending,
 			TopologyContext topology_context,
 			DisruptorQueue disruptorAckerQueue, ITaskReportErr _report_error) {
 		this.sendTargets = sendTargets;
@@ -100,7 +100,8 @@ public class SpoutCollector implements ISpoutOutputCollector {
 			// don't need send tuple to other task
 			return out_tasks;
 		}
-
+		List<Long> ackSeq = new ArrayList<Long>(); 
+		
 		Long root_id = MessageId.generateId();
 
 		Boolean needAck = (message_id != null) && (ackerNum > 0);
@@ -108,7 +109,9 @@ public class SpoutCollector implements ISpoutOutputCollector {
 		for (Integer t : out_tasks) {
 			MessageId msgid;
 			if (needAck) {
-				msgid = MessageId.makeRootId(root_id, t);
+				Long as = MessageId.generateId();
+				msgid = MessageId.makeRootId(root_id, as);
+				ackSeq.add(as);
 			} else {
 				msgid = MessageId.makeUnanchored();
 			}
@@ -127,10 +130,10 @@ public class SpoutCollector implements ISpoutOutputCollector {
 			info.setValues(values);
 			info.setMessageId(message_id);
 			info.setTimestamp(System.currentTimeMillis());
-			pending.putHead(root_id, info);
+			pending.put(root_id, info);
 
 			List<Object> ackerTuple = JStormUtils.mk_list((Object) root_id,
-					JStormUtils.bit_xor_vals(out_tasks), task_id);
+					JStormUtils.bit_xor_vals(ackSeq), task_id);
 
 			UnanchoredSend.send(topology_context, sendTargets, transfer_fn,
 					Acker.ACKER_INIT_STREAM_ID, ackerTuple);

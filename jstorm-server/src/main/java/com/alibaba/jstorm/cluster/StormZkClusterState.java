@@ -10,10 +10,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.log4j.Logger;
+import org.apache.zookeeper.KeeperException.NodeExistsException;
 import org.apache.zookeeper.Watcher.Event.EventType;
 
 import backtype.storm.utils.Utils;
 
+import com.alibaba.jstorm.callback.ClusterStateCallback;
 import com.alibaba.jstorm.callback.RunnableCallback;
 import com.alibaba.jstorm.daemon.supervisor.SupervisorInfo;
 import com.alibaba.jstorm.task.Assignment;
@@ -24,8 +26,8 @@ import com.alibaba.jstorm.task.heartbeat.TaskHeartbeat;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.PathUtils;
 import com.alibaba.jstorm.utils.TimeUtils;
-import com.netflix.curator.framework.recipes.leader.LeaderSelector;
-import com.netflix.curator.framework.recipes.leader.LeaderSelectorListener;
+import com.alibaba.jstorm.zk.ZkConstant;
+import com.alibaba.jstorm.zk.ZkTool;
 
 public class StormZkClusterState implements StormClusterState {
 	private static Logger LOG = Logger.getLogger(StormZkClusterState.class);
@@ -36,6 +38,7 @@ public class StormZkClusterState implements StormClusterState {
 	private AtomicReference<RunnableCallback> supervisors_callback;
 	private AtomicReference<RunnableCallback> assignments_callback;
 	private ConcurrentHashMap<String, RunnableCallback> storm_base_callback;
+	private AtomicReference<RunnableCallback> master_callback;
 
 	private UUID state_id;
 
@@ -57,6 +60,7 @@ public class StormZkClusterState implements StormClusterState {
 		supervisors_callback = new AtomicReference<RunnableCallback>(null);
 		assignments_callback = new AtomicReference<RunnableCallback>(null);
 		storm_base_callback = new ConcurrentHashMap<String, RunnableCallback>();
+		master_callback = new AtomicReference<RunnableCallback>(null);
 
 		state_id = cluster_state.register(new ClusterStateCallback() {
 
@@ -64,7 +68,7 @@ public class StormZkClusterState implements StormClusterState {
 				if (args == null) {
 					LOG.warn("Input args is null");
 					return null;
-				} else if (args.length == 2) {
+				} else if (args.length < 2) {
 					LOG.warn("Input args is invalid, args length:"
 							+ args.length);
 					return null;
@@ -79,7 +83,6 @@ public class StormZkClusterState implements StormClusterState {
 					String params = null;
 					String root = toks.get(0);
 					RunnableCallback fn = null;
-
 					if (root.equals(Cluster.ASSIGNMENTS_ROOT)) {
 						if (size == 1) {
 							// set null and get the old value
@@ -94,9 +97,10 @@ public class StormZkClusterState implements StormClusterState {
 					} else if (root.equals(Cluster.STORMS_ROOT) && size > 1) {
 						params = toks.get(1);
 						fn = storm_base_callback.remove(params);
+					} else if (root.equals(Cluster.MASTER_ROOT)) {
+						fn = master_callback.getAndSet(null);
 					} else {
-						JStormUtils.halt_process(30,
-								"Unknown callback for subtree " + path);
+						LOG.error("Unknown callback for subtree " + path);
 					}
 
 					if (fn != null) {
@@ -159,7 +163,7 @@ public class StormZkClusterState implements StormClusterState {
 
 	@Override
 	public AssignmentBak assignment_bak(String topologyName) throws Exception {
-		String assgnmentBakPath = Cluster.assignment_bak_path(topologyName);
+		String assgnmentBakPath = ZkTool.assignment_bak_path(topologyName);
 
 		byte[] znodeData = cluster_state.get_data(assgnmentBakPath, false);
 
@@ -174,7 +178,7 @@ public class StormZkClusterState implements StormClusterState {
 	@Override
 	public void backup_assignment(String topologyName, AssignmentBak info)
 			throws Exception {
-		cluster_state.set_data(Cluster.assignment_bak_path(topologyName),
+		cluster_state.set_data(ZkTool.assignment_bak_path(topologyName),
 				Utils.serialize(info));
 	}
 
@@ -460,25 +464,6 @@ public class StormZkClusterState implements StormClusterState {
 	}
 
 	@Override
-	public LeaderSelector get_leader_selector(String path,
-			LeaderSelectorListener listener) throws Exception {
-		// TODO Auto-generated method stub
-		return cluster_state.mkLeaderSelector(path, listener);
-	}
-
-	@Override
-	public void register_leader_host(String host) throws Exception {
-		// TODO Auto-generated method stub
-		if (host != null)
-			cluster_state.set_ephemeral_node(Cluster.MASTER_SUBTREE,
-					host.getBytes());
-		else {
-			LOG.error("register host to zk fail!");
-			throw new Exception();
-		}
-	}
-
-	@Override
 	public String get_leader_host() throws Exception {
 		// TODO Auto-generated method stub
 		return new String(cluster_state.get_data(Cluster.MASTER_SUBTREE, false));
@@ -487,7 +472,7 @@ public class StormZkClusterState implements StormClusterState {
 	@Override
 	public boolean leader_existed() throws Exception {
 		// TODO Auto-generated method stub
-		return cluster_state.node_existed(Cluster.MASTER_SUBTREE);
+		return cluster_state.node_existed(Cluster.MASTER_SUBTREE, false);
 	}
 
 	@Override
@@ -501,8 +486,37 @@ public class StormZkClusterState implements StormClusterState {
 	@Override
 	public void register_nimbus_host(String host) throws Exception {
 		// TODO Auto-generated method stub
-		cluster_state.set_ephemeral_node(Cluster.NIMBUS_HOST_SUBTREE
+		cluster_state.set_ephemeral_node(ZkConstant.NIMBUS_SLAVE_SUBTREE
 				+ Cluster.ZK_SEPERATOR + host, null);
+	}
+
+	@Override
+	public void unregister_nimbus_host(String host) throws Exception {
+		cluster_state.delete_node(ZkConstant.NIMBUS_SLAVE_SUBTREE
+				+ Cluster.ZK_SEPERATOR + host);
+	}
+	
+	@Override
+	public void update_follower_hb(String host, int time) throws Exception {
+		cluster_state.set_data(ZkConstant.NIMBUS_SLAVE_SUBTREE
+				+ Cluster.ZK_SEPERATOR + host,
+				String.valueOf(time).getBytes("UTF-8"));
+	}
+
+	@Override
+	public boolean try_to_be_leader(String path, String host,
+			RunnableCallback callback) throws Exception {
+		// TODO Auto-generated method stub
+		if (callback != null)
+			this.master_callback.set(callback);
+		try {
+			cluster_state.tryToBeLeader(path, host.getBytes());
+		} catch (NodeExistsException e) {
+			cluster_state.node_existed(path, true);
+			LOG.info("leader is alive");
+			return false;
+		}
+		return true;
 	}
 
 }

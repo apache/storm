@@ -33,7 +33,7 @@ import com.alibaba.jstorm.ui.UIUtils;
 import com.alibaba.jstorm.ui.model.ComponentInput;
 import com.alibaba.jstorm.ui.model.ComponentOutput;
 import com.alibaba.jstorm.ui.model.ComponentSummary;
-import com.alibaba.jstorm.ui.model.ComponetTask;
+import com.alibaba.jstorm.ui.model.ComponentTask;
 import com.alibaba.jstorm.ui.model.SpoutOutput;
 import com.alibaba.jstorm.ui.model.WinComponentStats;
 import com.alibaba.jstorm.utils.JStormUtils;
@@ -56,7 +56,7 @@ public class SpoutPage implements Serializable {
 	private List<ComponentSummary> coms = null;
 	private List<WinComponentStats> comstats = null;
 	private List<SpoutOutput> coos = null;
-	private List<ComponetTask> cts = null;
+	private List<ComponentTask> cts = null;
 
 	public SpoutPage() throws TException, NotAliveException {
 		FacesContext ctx = FacesContext.getCurrentInstance();
@@ -121,9 +121,9 @@ public class SpoutPage implements Serializable {
 		return ret;
 	}
 
-	private List<ComponetTask> getComponentTasks(List<TaskSummary> taskList,
+	private List<ComponentTask> getComponentTasks(List<TaskSummary> taskList,
 			String window) {
-		List<ComponetTask> ret = new ArrayList<ComponetTask>();
+		List<ComponentTask> ret = new ArrayList<ComponentTask>();
 
 		for (TaskSummary task : taskList) {
 			TaskStats taskStats = task.get_stats();
@@ -141,14 +141,8 @@ public class SpoutPage implements Serializable {
 			Map<String, Double> process = UIUtils.mergeStream(
 					taskStats.get_process_ms_avg(), Double.valueOf(0));
 
-			ComponetTask componentTask = new ComponetTask();
-			componentTask.setTaskid(String.valueOf(task.get_task_id()));
-			componentTask.setHost(task.get_host());
-			componentTask.setPort(String.valueOf(task.get_port()));
-			componentTask.setUptime(StatBuckets.prettyUptimeStr(task
-					.get_uptime_secs()));
-			componentTask.setLastErr(UIUtils.getTaskError(task.get_errors()));
-
+			ComponentTask componentTask = UIUtils.getComponentTask(task, topologyid);
+			
 			componentTask.setEmitted(JStormUtils.formatValue(emitted
 					.get(window)));
 			componentTask.setSendTps(JStormUtils.formatValue(sendTps
@@ -160,12 +154,6 @@ public class SpoutPage implements Serializable {
 					.setFailed(JStormUtils.formatValue(failed.get(window)));
 			componentTask.setProcess(JStormUtils.formatValue(process
 					.get(window)));
-
-			if (task.get_disk() != null) {
-				componentTask.setDiskSlot(task.get_disk());
-			} else {
-				componentTask.setDiskSlot("");
-			}
 
 			ret.add(componentTask);
 		}
@@ -318,11 +306,11 @@ public class SpoutPage implements Serializable {
 		this.comstats = comstats;
 	}
 
-	public List<ComponetTask> getCts() {
+	public List<ComponentTask> getCts() {
 		return cts;
 	}
 
-	public void setCts(List<ComponetTask> cts) {
+	public void setCts(List<ComponentTask> cts) {
 		this.cts = cts;
 	}
 

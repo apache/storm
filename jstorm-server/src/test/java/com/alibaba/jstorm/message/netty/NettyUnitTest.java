@@ -39,6 +39,7 @@ public class NettyUnitTest {
 		storm_conf.put(Config.TOPOLOGY_TRANSFER_BUFFER_SIZE, 1024);
 		storm_conf.put(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY,
 				"com.lmax.disruptor.BlockingWaitStrategy");
+		storm_conf.put(Config.STORM_CLUSTER_MODE, "distributed");
 
 		IContext context = TransportFactory.makeContext(storm_conf);
 		IConnection server = null;
@@ -75,6 +76,7 @@ public class NettyUnitTest {
 		storm_conf.put(Config.TOPOLOGY_TRANSFER_BUFFER_SIZE, 1024);
 		storm_conf.put(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY,
 				"com.lmax.disruptor.BlockingWaitStrategy");
+		storm_conf.put(Config.STORM_CLUSTER_MODE, "distributed");
 
 		IContext context = TransportFactory.makeContext(storm_conf);
 		IConnection server = null;
@@ -104,6 +106,7 @@ public class NettyUnitTest {
 		storm_conf.put(Config.TOPOLOGY_TRANSFER_BUFFER_SIZE, 1024);
 		storm_conf.put(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY,
 				"com.lmax.disruptor.BlockingWaitStrategy");
+		storm_conf.put(Config.STORM_CLUSTER_MODE, "distributed");
 
 		IContext context = TransportFactory.makeContext(storm_conf);
 		IConnection server = null;
@@ -133,6 +136,7 @@ public class NettyUnitTest {
 		storm_conf.put(Config.TOPOLOGY_TRANSFER_BUFFER_SIZE, 1024);
 		storm_conf.put(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY,
 				"com.lmax.disruptor.BlockingWaitStrategy");
+		storm_conf.put(Config.STORM_CLUSTER_MODE, "distributed");
 
 		IContext context = TransportFactory.makeContext(storm_conf);
 		final IConnection server = context.bind(null, port, true);
@@ -143,7 +147,6 @@ public class NettyUnitTest {
 
 		Thread consumer = new Thread(new Runnable() {
 
-			@Override
 			public void run() {
 				for (int i = 1; i < 10000; i++) {
 					byte[] recv_msg = server.recv(0);

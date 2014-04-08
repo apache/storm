@@ -37,8 +37,7 @@ public class MkFieldsGrouper {
 	public List<Integer> grouper(List<Object> values) {
 		int hashcode = this.out_fields.select(this.group_fields, values)
 				.hashCode();
-		hashcode = Math.abs(hashcode);
-		int group = hashcode % this.out_tasks.size();
+		int group = Math.abs(hashcode % this.out_tasks.size());
 		return JStormUtils.mk_list(out_tasks.get(group));
 	}
 }

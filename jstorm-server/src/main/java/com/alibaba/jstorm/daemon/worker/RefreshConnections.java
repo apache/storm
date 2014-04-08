@@ -98,6 +98,11 @@ public class RefreshConnections extends RunnableCallback {
 
 			Map<Integer, ResourceAssignment> taskToResource = assignment
 					.getTaskToResource();
+			if (taskToResource == null) {
+				String errMsg = "Failed to get taskToResource of " + topologyId;
+				LOG.error(errMsg);
+				return;
+			}
 			workerData.getTaskToResource().putAll(taskToResource);
 
 			Map<Integer, WorkerSlot> my_assignment = new HashMap<Integer, WorkerSlot>();
@@ -161,6 +166,7 @@ public class RefreshConnections extends RunnableCallback {
 			}
 		} catch (Exception e) {
 			LOG.error("Failed to refresh worker Connection", e);
+			throw new RuntimeException(e);
 		}
 
 		// finally {

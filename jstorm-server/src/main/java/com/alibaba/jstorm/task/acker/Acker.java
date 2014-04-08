@@ -47,7 +47,7 @@ public class Acker implements IBolt {
 		// TIMEOUT_BUCKET_NUM);
 		this.pending = new RotatingMap<Object, AckObject>(TIMEOUT_BUCKET_NUM);
 		this.rotateTime = 1000L * JStormUtils.parseInt(
-				stormConf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS), 30);
+				stormConf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS), 30)/TIMEOUT_BUCKET_NUM;
 	}
 
 	@Override
