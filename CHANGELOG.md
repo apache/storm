@@ -1,4 +1,6 @@
 ## 0.9.2-incubating (unreleased)
+ * STORM-260: Fix a potential race condition with simulated time in Storm's unit tests
+ * STORM-258: Update commons-io version to 2.4
  * STORM-270: don't package .clj files in release jars.
  * STORM-273: Error while running storm topologies on Windows using "storm jar"
  * STROM-247: Replace links to github resources in storm script
