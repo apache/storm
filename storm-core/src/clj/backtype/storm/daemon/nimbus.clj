@@ -24,6 +24,7 @@
   (:use [backtype.storm.scheduler.DefaultScheduler])
   (:import [backtype.storm.scheduler INimbus SupervisorDetails WorkerSlot TopologyDetails
             Cluster Topologies SchedulerAssignment SchedulerAssignmentImpl DefaultScheduler ExecutorDetails])
+  (:import [backtype.storm.torrent NimbusTracker])
   (:use [backtype.storm bootstrap util])
   (:use [backtype.storm.config :only [validate-configs-with-schemas]])
   (:use [backtype.storm.daemon common])
@@ -59,6 +60,8 @@
     scheduler
     ))
 
+(defmulti mk-bt-tracker cluster-mode)
+
 (defn nimbus-data [conf inimbus]
   (let [forced-scheduler (.getForcedScheduler inimbus)]
     {:conf conf
@@ -76,6 +79,7 @@
                                  (halt-process! 20 "Error when processing an event")
                                  ))
      :scheduler (mk-scheduler conf inimbus)
+     :bt-tracker (mk-bt-tracker conf)
      }))
 
 (defn inbox [nimbus]
@@ -306,13 +310,14 @@
   ;; need to somehow maintain stream/component ids inside tuples
   topology)
 
-(defn- setup-storm-code [conf storm-id tmp-jar-location storm-conf topology]
+(defn- setup-storm-code [nimbus conf storm-id tmp-jar-location storm-conf topology]
   (let [stormroot (master-stormdist-root conf storm-id)]
    (FileUtils/forceMkdir (File. stormroot))
    (FileUtils/cleanDirectory (File. stormroot))
    (setup-jar conf tmp-jar-location stormroot)
    (FileUtils/writeByteArrayToFile (File. (master-stormcode-path stormroot)) (Utils/serialize topology))
    (FileUtils/writeByteArrayToFile (File. (master-stormconf-path stormroot)) (Utils/serialize storm-conf))
+   (if (:bt-tracker nimbus) (.trackAndSeed (:bt-tracker nimbus) stormroot storm-id))
    ))
 
 (defn- read-storm-topology [conf storm-id]
@@ -830,6 +835,7 @@
       (when-not (empty? to-cleanup-ids)
         (doseq [id to-cleanup-ids]
           (log-message "Cleaning up " id)
+          (if (:bt-tracker nimbus) (.stop (:bt-tracker nimbus) id))
           (.teardown-heartbeats! storm-cluster-state id)
           (.teardown-topology-errors! storm-cluster-state id)
           (rmr (master-stormdist-root conf id))
@@ -955,7 +961,7 @@
             ;; lock protects against multiple topologies being submitted at once and
             ;; cleanup thread killing topology in b/w assignment and starting the topology
             (locking (:submit-lock nimbus)
-              (setup-storm-code conf storm-id uploadedJarLocation storm-conf topology)
+              (setup-storm-code nimbus conf storm-id uploadedJarLocation storm-conf topology)
               (.setup-heartbeats! storm-cluster-state storm-id)
               (let [thrift-status->kw-status {TopologyInitialStatus/INACTIVE :inactive
                                               TopologyInitialStatus/ACTIVE :active}]
@@ -1177,9 +1183,18 @@
              (FileUtils/copyFile src-file (File. (master-stormjar-path stormroot)))
              ))
 
+(defmethod mk-bt-tracker :distributed [conf]
+  (NimbusTracker. conf)
+  )
+
+
 ;; local implementation
 
 (defmethod setup-jar :local [conf & args]
+  nil
+  )
+
+(defmethod mk-bt-tracker :local [conf]
   nil
   )
 
