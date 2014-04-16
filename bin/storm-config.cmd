@@ -17,6 +17,8 @@
 @rem limitations under the License.
 
 
+set storm-command=%1
+set jar-file=%2
 set STORM_HOME=%~dp0
 for %%i in (%STORM_HOME%.) do (
   set STORM_HOME=%%~dpi
@@ -77,28 +79,46 @@ set CLASSPATH=%CLASSPATH%;%JAVA_HOME%\lib\tools.jar
 @rem
 
 set CLASSPATH=!CLASSPATH!;%STORM_HOME%\lib\*
+set CLASSPATH=!CLASSPATH!;%STORM_HOME%\sbin\*
+
+for %%j in (%STORM_HOME%\lib\*.jar) do (
+  set CLASSPATH=!CLASSPATH!;%%j)
+
+if %storm-command% == jar (
+   set CLASSPATH=!CLASSPATH!;%jar-file%
+  )
+
+set CLASSPATH=!CLASSPATH!;%STORM_CONF_DIR%
 
 if not defined STORM_LOG_DIR (
   set STORM_LOG_DIR=%STORM_HOME%\logs
 )
 
-if not defined STORM_LOGFILE (
-  set STORM_LOGFILE=storm.log
-)
-
-if not defined STORM_ROOT_LOGGER (
-  set STORM_ROOT_LOGGER=INFO,console,DRFA
+if not defined STORM_LOG_FILE (
+   set STORM_LOG_FILE=storm.log
 )
 
 if not defined STORM_LOGBACK_CONFIGURATION_FILE (
-  set STORM_LOGBACK_CONFIGURATION_FILE=%STORM_CONF_DIR%\logback.xml
+  set STORM_LOGBACK_CONFIGURATION_FILE=%STORM_HOME%\logback\cluster.xml
 )
 
-set STORM_OPTS=-Dstorm.home=%STORM_HOME% -Djava.library.path=sbin
-set STORM_OPTS=%STORM_OPTS% -Dlogback.configurationFile=%STORM_LOGBACK_CONFIGURATION_FILE%
-set STORM_OPTS=%STORM_OPTS% -Dstorm.log.dir=%STORM_LOG_DIR%
-set STORM_OPTS=%STORM_OPTS% -Dstorm.root.logger=%STORM_ROOT_LOGGER%
+set STORM_OPTS=-Dstorm.options= -Dstorm.home=%STORM_HOME% -Djava.library.path=sbin
+set STORM_OPTS=%STORM_OPTS% -Dstorm.conf.file= -cp %CLASSPATH% 
 
+if %storm-command% == nimbus (
+   set STORM_OPTS=%STORM_OPTS% -Dlogback.configurationFile=%STORM_LOGBACK_CONFIGURATION_FILE% )
+
+if %storm-command% == supervisor (
+   set STORM_OPTS=%STORM_OPTS% -Dlogback.configurationFile=%STORM_LOGBACK_CONFIGURATION_FILE% )
+
+if %storm-command% == ui (
+   set STORM_OPTS=%STORM_OPTS% -Dlogback.configurationFile=%STORM_LOGBACK_CONFIGURATION_FILE% )
+
+if %storm-command% == drpc (
+  set STORM_OPTS=%STORM_OPTS% -Dlogback.configurationFile=%STORM_LOGBACK_CONFIGURATION_FILE% )
+
+
+set STORM_OPTS=%STORM_OPTS% -Dstorm.log.dir=%STORM_LOG_DIR%
 
 if not defined STORM_SERVER_OPTS (
   set STORM_SERVER_OPTS=-server
