@@ -17,7 +17,7 @@
 @rem limitations under the License.
 
 
-  set storm-command=%1
+set storm-command=%1
 set jar-file=%2
 set STORM_HOME=%~dp0
 for %%i in (%STORM_HOME%.) do (
