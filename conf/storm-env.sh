@@ -17,43 +17,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
 
-# Resolve links - $0 may be a softlink
-PRG="${0}"
+# Set Storm specific environment variables here.
 
-while [ -h "${PRG}" ]; do
-  ls=`ls -ld "${PRG}"`
-  link=`expr "$ls" : '.*-> \(.*\)$'`
-  if expr "$link" : '/.*' > /dev/null; then
-    PRG="$link"
-  else
-    PRG=`dirname "${PRG}"`/"$link"
-  fi
-done
+# The java implementation to use.
+export JAVA_HOME=${JAVA_HOME}
 
-# find python >= 2.6
-if [ -a /usr/bin/python2.6 ]; then
-  PYTHON=/usr/bin/python2.6
-fi
+# export STORM_CONF_DIR=""
 
-if [ -z "$PYTHON" ]; then
-  PYTHON=/usr/bin/python
-fi
-
-# check for version
-majversion=`$PYTHON -V 2>&1 | awk '{print $2}' | cut -d'.' -f1`
-minversion=`$PYTHON -V 2>&1 | awk '{print $2}' | cut -d'.' -f2`
-numversion=$(( 10 * $majversion + $minversion))
-if (( $numversion < 26 )); then
-  echo "Need python version > 2.6"
-  exit 1
-fi
-
-STORM_BIN_DIR=`dirname ${PRG}`
-STORM_BASE_DIR=`cd ${STORM_BIN_DIR}/..;pwd`
-export STORM_BASE_DIR
-
-. ${STORM_BASE_DIR}/bin/storm-config.sh
-
-$PYTHON ${STORM_BIN_DIR}/storm.py $@
