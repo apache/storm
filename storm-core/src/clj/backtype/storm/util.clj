@@ -761,7 +761,10 @@
     ))
 
 (defn url-encode [s]
-  (java.net.URLEncoder/encode s))
+  (java.net.URLEncoder/encode s "UTF-8"))
+
+(defn url-decode [s]
+  (java.net.URLDecoder/decode s "UTF-8"))
 
 (defn join-maps [& maps]
   (let [all-keys (apply set/union (for [m maps] (-> m keys set)))]
