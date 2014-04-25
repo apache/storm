@@ -15,8 +15,8 @@
 @rem WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 @rem See the License for the specific language governing permissions and
 @rem limitations under the License.
-
-
+set storm-command=%1
+set jar-file=%2
 set STORM_HOME=%~dp0
 for %%i in (%STORM_HOME%.) do (
   set STORM_HOME=%%~dpi
@@ -36,7 +36,7 @@ if not exist %STORM_HOME%\lib\storm*.jar (
 )
 
 set STORM_BIN_DIR=%STORM_HOME%\bin
-
+set STORM_SBIN_DIR=%STORM_HOME%\sbin  
 if not defined STORM_CONF_DIR (
   set STORM_CONF_DIR=%STORM_HOME%\conf
 )
@@ -78,26 +78,46 @@ set CLASSPATH=%CLASSPATH%;%JAVA_HOME%\lib\tools.jar
 
 set CLASSPATH=!CLASSPATH!;%STORM_HOME%\lib\*
 
+@rem
+@rem add sbin to CLASSPATH
+@rem
+
+set CLASSPATH=!CLASSPATH!;%STORM_HOME%\sbin\*
+for %%j in (%STORM_HOME%\lib\*.jar) do (
+set CLASSPATH=!CLASSPATH!;%%j)
+if %storm-command% == jar (
+ set CLASSPATH=!CLASSPATH!;%jar-file%
+)
+set CLASSPATH=!CLASSPATH!;%STORM_CONF_DIR%
 if not defined STORM_LOG_DIR (
   set STORM_LOG_DIR=%STORM_HOME%\logs
 )
-
-if not defined STORM_LOGFILE (
-  set STORM_LOGFILE=storm.log
-)
-
-if not defined STORM_ROOT_LOGGER (
-  set STORM_ROOT_LOGGER=INFO,console,DRFA
-)
-
 if not defined STORM_LOGBACK_CONFIGURATION_FILE (
-  set STORM_LOGBACK_CONFIGURATION_FILE=%STORM_CONF_DIR%\logback.xml
+   set STORM_LOGBACK_CONFIGURATION_FILE=%STORM_HOME%\logback\cluster.xml
 )
 
-set STORM_OPTS=-Dstorm.home=%STORM_HOME% -Djava.library.path=sbin
-set STORM_OPTS=%STORM_OPTS% -Dlogback.configurationFile=%STORM_LOGBACK_CONFIGURATION_FILE%
+%JAVA% -client -Dstorm.options= -Dstorm.conf.file= -cp %CLASSPATH% backtype.storm.command.config_value java.library.path > temp.txt
+
+FOR /F "tokens=1,* delims= " %%i in (temp.txt) do (
+  if %%i == VALUE: (
+  set JAVA_LIBRARY_PATH=%%j )
+)
+set STORM_OPTS=-Dstorm.options= -Dstorm.home=%STORM_HOME% -Djava.library.path=%JAVA_LIBRARY_PATH%
+set STORM_OPTS=%STORM_OPTS% -Dstorm.conf.file= -cp %CLASSPATH% 
+if %storm-command% == nimbus (
+set STORM_OPTS=%STORM_OPTS% -Dlogback.configurationFile=%STORM_LOGBACK_CONFIGURATION_FILE% )
+
+if %storm-command% == supervisor (
+set STORM_OPTS=%STORM_OPTS% -Dlogback.configurationFile=%STORM_LOGBACK_CONFIGURATION_FILE% )
+
+if %storm-command% == ui (
+set STORM_OPTS=%STORM_OPTS% -Dlogback.configurationFile=%STORM_LOGBACK_CONFIGURATION_FILE% )
+
+if %storm-command% == drpc (
+set STORM_OPTS=%STORM_OPTS% -Dlogback.configurationFile=%STORM_LOGBACK_CONFIGURATION_FILE% )
+
 set STORM_OPTS=%STORM_OPTS% -Dstorm.log.dir=%STORM_LOG_DIR%
-set STORM_OPTS=%STORM_OPTS% -Dstorm.root.logger=%STORM_ROOT_LOGGER%
+
 
 
 if not defined STORM_SERVER_OPTS (
