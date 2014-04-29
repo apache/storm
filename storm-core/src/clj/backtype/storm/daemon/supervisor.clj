@@ -447,6 +447,7 @@
 (defmethod launch-worker
     :distributed [supervisor storm-id port worker-id]
     (let [conf (:conf supervisor)
+          java (if-let [cmd (System/getProperty "worker.java.cmd")] cmd "java")
           storm-home (System/getProperty "storm.home")
           stormroot (supervisor-stormdist-root conf storm-id)
           stormjar (supervisor-stormjar-path stormroot)
@@ -458,7 +459,7 @@
                                   (substitute-worker-childopts s port))
           logfilename (str "worker-" port ".log")
           command (concat
-                    ["java" "-server"]
+                    [java "-server"]
                     worker-childopts
                     topo-worker-childopts
                     [(str "-Djava.library.path=" (conf JAVA-LIBRARY-PATH))
