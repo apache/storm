@@ -37,16 +37,11 @@
 :main
   setlocal enabledelayedexpansion
 
+  call %~dp0storm-config.cmd
+
   set storm-command=%1
   if not defined storm-command (
       goto print_usage
-  )
-  set jar-file=%2
-  if %storm-command% == jar (
-  call %~dp0storm-config.cmd %1 %2
-  )
-  if %storm-command% NEQ jar (
-  call %~dp0storm-config.cmd %1
   )
 
   call :make_command_arguments %*
@@ -80,12 +75,11 @@
   if not defined STORM_LOG_FILE (
     set STORM_LOG_FILE=-Dlogfile.name=%storm-command%.log
   )
-set STORM_LOG_FILE=-Dlogfile.name=%storm-command%.log
+
   if defined STORM_DEBUG ( 
     %JAVA% %JAVA_HEAP_MAX% %STORM_OPTS% %STORM_LOG_FILE% %CLASS% %storm-command-arguments%
   )
   set path=%PATH%;%STORM_BIN_DIR%;%STORM_SBIN_DIR%
-  @echo Running....%JAVA% %JAVA_HEAP_MAX% %STORM_OPTS% %STORM_LOG_FILE% %CLASS% %storm-command-arguments%
   call start /b %JAVA% %JAVA_HEAP_MAX% %STORM_OPTS% %STORM_LOG_FILE% %CLASS% %storm-command-arguments%
   goto :eof
 
@@ -154,8 +148,8 @@ set STORM_LOG_FILE=-Dlogfile.name=%storm-command%.log
   goto :eof
 
 :ui
-  set CLASSPATH=%CLASSPATH%;%STORM_HOME%
   set CLASS=backtype.storm.ui.core
+  set CLASSPATH=%CLASSPATH%;%STORM_HOME%
   set STORM_OPTS=%STORM_SERVER_OPTS% %STORM_OPTS%
   goto :eof
 
