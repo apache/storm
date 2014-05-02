@@ -135,7 +135,7 @@
     <scm>
         <connection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-storm.git</connection>
         <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-storm.git</developerConnection>
-        <tag>v0.9.1.0-incubating</tag>
+        <tag>HEAD</tag>
         <url>https://git-wip-us.apache.org/repos/asf/incubator-storm</url>
     </scm>
 
