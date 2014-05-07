@@ -286,10 +286,12 @@ def supervisor(klass="backtype.storm.daemon.supervisor"):
     See Setting up a Storm cluster for more information.
     (http://storm.incubator.apache.org/documentation/Setting-up-a-Storm-cluster)
     """
+    global JAVA_CMD
     cppaths = [CLUSTER_CONF_DIR]
     jvmopts = parse_args(confvalue("supervisor.childopts", cppaths)) + [
         "-Dlogfile.name=supervisor.log",
         "-Dlogback.configurationFile=" + STORM_DIR + "/logback/cluster.xml",
+        "-Dworker.java.cmd=" + JAVA_CMD
     ]
     exec_storm_class(
         klass, 
