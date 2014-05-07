@@ -114,5 +114,21 @@ public final class SlotBasedCounter<T> implements Serializable {
       objToCounts.remove(obj);
     }
   }
-
+    public Map<T, Long> getNonZeroCountsAndWipeZeros() {
+        Map<T, Long> result = new HashMap<T, Long>();
+        Set<T> objToBeRemoved = new HashSet<T>();
+        long cnt = 0;
+        for (T obj : objToCounts.keySet()) {
+            cnt = computeTotalCount(obj);
+            if (cnt == 0) {
+                objToBeRemoved.add(obj);
+                continue;
+            }
+            result.put(obj, computeTotalCount(obj));
+        }
+        for (T obj : objToBeRemoved) {
+            objToCounts.remove(obj);
+        }
+        return result;
+    }
 }

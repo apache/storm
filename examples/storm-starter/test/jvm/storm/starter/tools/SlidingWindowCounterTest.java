@@ -83,7 +83,7 @@ public class SlidingWindowCounterTest {
       long expCounts = expCountsPerIteration[i];
       // Objects are absent if they were zero both this iteration
       // and the last -- if only this one, we need to report zero.
-      boolean expAbsent = ((expCounts == 0) && ((i == 0) || (expCountsPerIteration[i - 1] == 0)));
+      boolean expAbsent = ((expCounts == 0));
 
       // given (for this iteration)
       for (int j = 0; j < numIncrements; j++) {
