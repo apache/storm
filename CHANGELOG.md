@@ -1,4 +1,8 @@
 ## 0.9.2-incubating (unreleased)
+ * STORM-214: Windows: storm.cmd does not properly handle multiple -c arguments
+ * STORM-306: Add security documentation
+ * STORM-302: Fix Indentation for pom.xml in storm-dist
+ * STORM-235: Registering a null metric should blow up early
  * STORM-113: making thrift usage thread safe for local cluster
  * STORM-223: use safe parsing for reading YAML
  * STORM-238: LICENSE and NOTICE files are duplicated in storm-core jar
