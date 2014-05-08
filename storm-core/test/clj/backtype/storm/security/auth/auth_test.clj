@@ -125,7 +125,11 @@
         conf (if login-cfg (merge conf1 {"java.security.auth.login.config" login-cfg}) conf1)
         nimbus (nimbus/standalone-nimbus)
         service-handler (dummy-service-handler conf nimbus)
-        server (ThriftServer. conf (Nimbus$Processor. service-handler) (int (conf NIMBUS-THRIFT-PORT)))]
+        server (ThriftServer. 
+                conf 
+                (Nimbus$Processor. service-handler) 
+                (int (conf NIMBUS-THRIFT-PORT))
+                backtype.storm.Config$ThriftServerPurpose/NIMBUS)]
     (.addShutdownHook (Runtime/getRuntime) (Thread. (fn [] (.stop server))))
     (.start (Thread. #(.serve server)))
     (wait-for-condition #(.isServing server))
@@ -240,4 +244,4 @@
 (deftest test-GetTransportPlugin-throws-RuntimeException
   (let [conf (merge (read-storm-config)
                     {Config/STORM_THRIFT_TRANSPORT_PLUGIN "null.invalid"})]
-    (is (thrown? RuntimeException (AuthUtils/GetTransportPlugin conf nil)))))
+    (is (thrown-cause? RuntimeException (AuthUtils/GetTransportPlugin conf nil nil)))))

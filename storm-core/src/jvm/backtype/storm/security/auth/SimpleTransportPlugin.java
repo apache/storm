@@ -22,6 +22,7 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 
 import javax.security.auth.login.Configuration;
 import org.apache.thrift.TException;
@@ -39,33 +40,45 @@ import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import backtype.storm.Config;
+import backtype.storm.utils.Utils;
+
 /**
  * Simple transport for Thrift plugin.
  * 
  * This plugin is designed to be backward compatible with existing Storm code.
  */
 public class SimpleTransportPlugin implements ITransportPlugin {
+    protected Map storm_conf;
     protected Configuration login_conf;
+    protected ExecutorService executor_service;
     private static final Logger LOG = LoggerFactory.getLogger(SimpleTransportPlugin.class);
 
     /**
      * Invoked once immediately after construction
      * @param conf Storm configuration 
      * @param login_conf login configuration
+     * @param executor_service executor service for server
      */
-    public void prepare(Map storm_conf, Configuration login_conf) {        
+    public void prepare(Map storm_conf, Configuration login_conf, ExecutorService executor_service) {
+        this.storm_conf = storm_conf;
         this.login_conf = login_conf;
+        this.executor_service = executor_service;
     }
 
     /**
      * We will let Thrift to apply default transport factory
      */
-    public TServer getServer(int port, TProcessor processor) throws IOException, TTransportException {
+    public TServer getServer(int port, TProcessor processor,
+            Config.ThriftServerPurpose purpose) 
+            throws IOException, TTransportException {
         TNonblockingServerSocket serverTransport = new TNonblockingServerSocket(port);
+        int numWorkerThreads = purpose.getNumThreads(this.storm_conf);
+        int maxBufferSize = purpose.getMaxBufferSize(this.storm_conf);
         THsHaServer.Args server_args = new THsHaServer.Args(serverTransport).
                 processor(new SimpleWrapProcessor(processor)).
-                workerThreads(64).
-                protocolFactory(new TBinaryProtocol.Factory());            
+                workerThreads(numWorkerThreads).
+                protocolFactory(new TBinaryProtocol.Factory(false, true, maxBufferSize));
 
         //construct THsHaServer
         return new THsHaServer(server_args);

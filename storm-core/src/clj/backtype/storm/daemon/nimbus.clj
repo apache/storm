@@ -21,6 +21,7 @@
   (:import [java.nio ByteBuffer])
   (:import [java.io FileNotFoundException])
   (:import [java.nio.channels Channels WritableByteChannel])
+  (:import [backtype.storm.security.auth ThriftServer])
   (:use [backtype.storm.scheduler.DefaultScheduler])
   (:import [backtype.storm.scheduler INimbus SupervisorDetails WorkerSlot TopologyDetails
             Cluster Topologies SchedulerAssignment SchedulerAssignmentImpl DefaultScheduler ExecutorDetails])
@@ -1155,13 +1156,10 @@
 (defn launch-server! [conf nimbus]
   (validate-distributed-mode! conf)
   (let [service-handler (service-handler conf nimbus)
-        options (-> (TNonblockingServerSocket. (int (conf NIMBUS-THRIFT-PORT)))
-                    (THsHaServer$Args.)
-                    (.workerThreads 64)
-                    (.protocolFactory (TBinaryProtocol$Factory. false true (conf NIMBUS-THRIFT-MAX-BUFFER-SIZE)))
-                    (.processor (Nimbus$Processor. service-handler))
-                    )
-       server (THsHaServer. (do (set! (. options maxReadBufferBytes)(conf NIMBUS-THRIFT-MAX-BUFFER-SIZE)) options))]
+        ;;TODO need to honor NIMBUS-THRIFT-MAX-BUFFER-SIZE for different transports
+        server (ThriftServer. conf (Nimbus$Processor. service-handler) 
+                              (int (conf NIMBUS-THRIFT-PORT)) 
+                              backtype.storm.Config$ThriftServerPurpose/NIMBUS)]
     (.addShutdownHook (Runtime/getRuntime) (Thread. (fn [] (.shutdown service-handler) (.stop server))))
     (log-message "Starting Nimbus server...")
     (.serve server)))
