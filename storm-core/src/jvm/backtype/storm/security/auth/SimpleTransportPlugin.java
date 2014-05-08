@@ -40,8 +40,7 @@ import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import backtype.storm.Config;
-import backtype.storm.utils.Utils;
+import backtype.storm.security.auth.ThriftConnectionType;
 
 /**
  * Simple transport for Thrift plugin.
@@ -70,7 +69,7 @@ public class SimpleTransportPlugin implements ITransportPlugin {
      * We will let Thrift to apply default transport factory
      */
     public TServer getServer(int port, TProcessor processor,
-            Config.ThriftServerPurpose purpose) 
+            ThriftConnectionType purpose) 
             throws IOException, TTransportException {
         TNonblockingServerSocket serverTransport = new TNonblockingServerSocket(port);
         int numWorkerThreads = purpose.getNumThreads(this.storm_conf);

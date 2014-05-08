@@ -24,26 +24,24 @@ import org.apache.thrift.TProcessor;
 import org.apache.thrift.server.TServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import backtype.storm.Config;
-import backtype.storm.utils.Utils;
 
 public class ThriftServer {
     private static final Logger LOG = LoggerFactory.getLogger(ThriftServer.class);
     private Map _storm_conf; //storm configuration
     protected TProcessor _processor = null;
     private int _port = 0;
-    private final Config.ThriftServerPurpose _purpose;
+    private final ThriftConnectionType _purpose;
     private TServer _server = null;
     private Configuration _login_conf;
     private ExecutorService _executor_service;
     
     public ThriftServer(Map storm_conf, TProcessor processor, int port,
-            Config.ThriftServerPurpose purpose) {
+            ThriftConnectionType purpose) {
         this(storm_conf, processor, port, purpose, null);
     }
 
     public ThriftServer(Map storm_conf, TProcessor processor, int port,
-            Config.ThriftServerPurpose purpose, 
+            ThriftConnectionType purpose, 
             ExecutorService executor_service) {
         _storm_conf = storm_conf;
         _processor = processor;

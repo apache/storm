@@ -28,7 +28,7 @@ import org.apache.thrift.server.TServer;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 
-import backtype.storm.Config;
+import backtype.storm.security.auth.ThriftConnectionType;
 
 /**
  * Interface for Thrift Transport plugin
@@ -50,7 +50,7 @@ public interface ITransportPlugin {
      * @return server to be binded
      */
     public TServer getServer(int port, TProcessor processor,
-            Config.ThriftServerPurpose purpose) 
+            ThriftConnectionType purpose) 
             throws IOException, TTransportException;
 
     /**

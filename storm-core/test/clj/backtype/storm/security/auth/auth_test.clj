@@ -22,7 +22,7 @@
   (:import [backtype.storm Config])
   (:import [backtype.storm.utils NimbusClient])
   (:import [backtype.storm.security.auth AuthUtils ThriftServer ThriftClient 
-                                         ReqContext])
+                                         ReqContext ThriftConnectionType])
   (:use [backtype.storm bootstrap util])
   (:use [backtype.storm.daemon common])
   (:use [backtype.storm bootstrap testing])
@@ -129,7 +129,7 @@
                 conf 
                 (Nimbus$Processor. service-handler) 
                 (int (conf NIMBUS-THRIFT-PORT))
-                backtype.storm.Config$ThriftServerPurpose/NIMBUS)]
+                ThriftConnectionType/NIMBUS)]
     (.addShutdownHook (Runtime/getRuntime) (Thread. (fn [] (.stop server))))
     (.start (Thread. #(.serve server)))
     (wait-for-condition #(.isServing server))

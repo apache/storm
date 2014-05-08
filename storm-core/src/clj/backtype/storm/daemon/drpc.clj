@@ -14,7 +14,7 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.daemon.drpc
-  (:import [backtype.storm.security.auth ThriftServer])
+  (:import [backtype.storm.security.auth ThriftServer ThriftConnectionType])
   (:import [backtype.storm.generated DistributedRPC DistributedRPC$Iface DistributedRPC$Processor
             DRPCRequest DRPCExecutionException DistributedRPCInvocations DistributedRPCInvocations$Iface
             DistributedRPCInvocations$Processor])
@@ -123,13 +123,13 @@
           handler-server (ThriftServer. conf
                            (DistributedRPC$Processor. service-handler)
                            drpc-port
-                           backtype.storm.Config$ThriftServerPurpose/DRPC
+                           ThriftConnectionType/DRPC
                            (ThreadPoolExecutor. worker-threads worker-threads
                              60 TimeUnit/SECONDS (ArrayBlockingQueue. queue-size)))
           invoke-server (ThriftServer. conf
                           (DistributedRPCInvocations$Processor. service-handler)
                           (int (conf DRPC-INVOCATIONS-PORT))
-                          backtype.storm.Config$ThriftServerPurpose/DRPC)]
+                          ThriftConnectionType/DRPC)]
       
       (.addShutdownHook (Runtime/getRuntime) (Thread. (fn [] (.stop handler-server) (.stop invoke-server))))
       (log-message "Starting Distributed RPC servers...")

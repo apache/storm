@@ -20,7 +20,6 @@ package backtype.storm;
 import backtype.storm.ConfigValidation;
 import backtype.storm.serialization.IKryoDecorator;
 import backtype.storm.serialization.IKryoFactory;
-import backtype.storm.utils.Utils;
 import com.esotericsoftware.kryo.Serializer;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -227,28 +226,6 @@ public class Config extends HashMap<String, Object> {
      */
     public static final String NIMBUS_THRIFT_THREADS = "nimbus.thrift.threads";
     public static final Object NIMBUS_THRIFT_THREADS_SCHEMA = Number.class;
-
-    /**
-     * The purpose for which the Thrift server is created.
-     */
-    public static enum ThriftServerPurpose {
-        NIMBUS("nimbus.thrift"),
-        DRPC("drpc.worker");
-
-        private final String configPrefix;
-
-        ThriftServerPurpose(String pfx) {
-            this.configPrefix = pfx;
-        }
-
-        public int getNumThreads(Map conf) { 
-            return Utils.getInt(conf.get(this.configPrefix + ".threads"));
-        }
-
-        public int getMaxBufferSize(Map conf) {
-            return Utils.getInt(conf.get(this.configPrefix + ".max_buffer_size"));
-        }
-    }
 
     /**
      * The maximum buffer size thrift should use when reading messages.

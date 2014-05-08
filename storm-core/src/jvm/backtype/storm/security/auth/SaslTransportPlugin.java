@@ -41,8 +41,7 @@ import org.apache.thrift.transport.TTransportFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import backtype.storm.Config;
-import backtype.storm.utils.Utils;
+import backtype.storm.security.auth.ThriftConnectionType;
 
 /**
  * Base class for SASL authentication plugin.
@@ -74,7 +73,7 @@ public abstract class SaslTransportPlugin implements ITransportPlugin {
      * @ purpose the purpose for which this server is created.
      */
     public TServer getServer(int port, TProcessor processor,
-            Config.ThriftServerPurpose purpose) throws IOException,
+            ThriftConnectionType purpose) throws IOException,
             TTransportException {
         TTransportFactory serverTransportFactory = getServerTransportFactory();
 
