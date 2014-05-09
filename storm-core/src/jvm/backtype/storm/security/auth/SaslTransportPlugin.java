@@ -21,7 +21,9 @@ import java.io.IOException;
 import java.net.Socket;
 import java.security.Principal;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.Configuration;
@@ -31,9 +33,9 @@ import org.apache.thrift.TProcessor;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.server.TServer;
-import org.apache.thrift.server.TThreadPoolServer;
+import org.apache.thrift.server.THsHaServer;
 import org.apache.thrift.transport.TSaslServerTransport;
-import org.apache.thrift.transport.TServerSocket;
+import org.apache.thrift.transport.TNonblockingServerSocket;
 import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
@@ -47,49 +49,43 @@ import backtype.storm.security.auth.ThriftConnectionType;
  * Base class for SASL authentication plugin.
  */
 public abstract class SaslTransportPlugin implements ITransportPlugin {
+    protected ThriftConnectionType type;
     protected Map storm_conf;
     protected Configuration login_conf;
-    protected ExecutorService executor_service;
     private static final Logger LOG = LoggerFactory.getLogger(SaslTransportPlugin.class);
 
-    /**
-     * Invoked once immediately after construction
-     * @param conf Storm configuration 
-     * @param login_conf login configuration
-     * @param executor_service executor service for server
-     */
-    public void prepare(Map storm_conf, Configuration login_conf, ExecutorService executor_service) {
+    @Override
+    public void prepare(ThriftConnectionType type, Map storm_conf, Configuration login_conf) {
+        this.type = type;
         this.storm_conf = storm_conf;
         this.login_conf = login_conf;
-        this.executor_service = executor_service;
     }
 
-    /** 
-     * Construct a Thrift server for the given parameters.  The minimum and
-     * maximum worker threads are set to a single value defined by the server's
-     * purpose.
-     * @ port the port number
-     * @ processor the prosessor 
-     * @ purpose the purpose for which this server is created.
-     */
-    public TServer getServer(int port, TProcessor processor,
-            ThriftConnectionType purpose) throws IOException,
-            TTransportException {
+    @Override
+    public TServer getServer(TProcessor processor) throws IOException, TTransportException {
+        int port = type.getPort(storm_conf);
         TTransportFactory serverTransportFactory = getServerTransportFactory();
+        TNonblockingServerSocket serverTransport = new TNonblockingServerSocket(port);
+        int numWorkerThreads = type.getNumThreads(storm_conf);
+        int maxBufferSize = type.getMaxBufferSize(storm_conf);
+        Integer queueSize = type.getQueueSize(storm_conf);
 
-        TServerSocket serverTransport = new TServerSocket(port);
-        int numWorkerThreads = purpose.getNumThreads(this.storm_conf);
-        int maxBufferSize = purpose.getMaxBufferSize(this.storm_conf);
-        TThreadPoolServer.Args server_args = new TThreadPoolServer.Args(serverTransport).
+        THsHaServer.Args server_args = new THsHaServer.Args(serverTransport).
                 processor(new TUGIWrapProcessor(processor)).
-                minWorkerThreads(numWorkerThreads).
-                maxWorkerThreads(numWorkerThreads).
+                workerThreads(numWorkerThreads).
                 protocolFactory(new TBinaryProtocol.Factory(false, true, maxBufferSize));
-        if (serverTransportFactory != null) 
+
+        if (serverTransportFactory != null) {
             server_args.transportFactory(serverTransportFactory);
+        }
+
+        if (queueSize != null) {
+            server_args.executorService(new ThreadPoolExecutor(numWorkerThreads, numWorkerThreads, 
+                                   60, TimeUnit.SECONDS, new ArrayBlockingQueue(queueSize)));
+        }
 
         //construct THsHaServer
-        return new TThreadPoolServer(server_args);
+        return new THsHaServer(server_args);
     }
 
     /**

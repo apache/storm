@@ -34,25 +34,31 @@ public class ThriftClient {
     private TTransport _transport;
     protected TProtocol _protocol;
 
-    public ThriftClient(Map storm_conf, String host, int port) throws TTransportException {
-        this(storm_conf, host, port, null);
+    public ThriftClient(Map storm_conf, ThriftConnectionType type, String host) throws TTransportException {
+        this(storm_conf, type, host, null, null);
     }
 
-    public ThriftClient(Map storm_conf, String host, int port, Integer timeout) throws TTransportException {
+    public ThriftClient(Map storm_conf, ThriftConnectionType type, String host, Integer port, Integer timeout) throws TTransportException {
         try {
+            //create a socket with server
+            if (host==null) {
+                throw new IllegalArgumentException("host is not set");
+            }
+
+            if (port == null) {
+                port = type.getPort(storm_conf);
+            }
+
+            if (port<=0) {
+                throw new IllegalArgumentException("invalid port: "+port);
+            }          
+
             //locate login configuration 
             Configuration login_conf = AuthUtils.GetConfiguration(storm_conf);
 
             //construct a transport plugin
-            ITransportPlugin  transportPlugin = AuthUtils.GetTransportPlugin(storm_conf, login_conf, null);
+            ITransportPlugin  transportPlugin = AuthUtils.GetTransportPlugin(type, storm_conf, login_conf);
 
-            //create a socket with server
-            if(host==null) {
-                throw new IllegalArgumentException("host is not set");
-            }
-            if(port<=0) {
-                throw new IllegalArgumentException("invalid port: "+port);
-            }            
             TSocket socket = new TSocket(host, port);
             if(timeout!=null) {
                 socket.setTimeout(timeout);
@@ -71,6 +77,10 @@ public class ThriftClient {
 
     public TTransport transport() {
         return _transport;
+    }
+
+    public TProtocol protocol() {
+        return _protocol;
     }
 
     public void close() {

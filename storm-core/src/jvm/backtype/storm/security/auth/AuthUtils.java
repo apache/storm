@@ -68,14 +68,13 @@ public class AuthUtils {
      * @param conf storm configuration
      * @return
      */
-    public static ITransportPlugin GetTransportPlugin(Map storm_conf, Configuration login_conf,
-                ExecutorService executor_service) {
+    public static ITransportPlugin GetTransportPlugin(ThriftConnectionType type, Map storm_conf, Configuration login_conf) {
         ITransportPlugin  transportPlugin = null;
         try {
-            String transport_plugin_klassName = (String) storm_conf.get(Config.STORM_THRIFT_TRANSPORT_PLUGIN);
+            String transport_plugin_klassName = type.getTransportPlugin(storm_conf);
             Class klass = Class.forName(transport_plugin_klassName);
             transportPlugin = (ITransportPlugin)klass.newInstance();
-            transportPlugin.prepare(storm_conf, login_conf, executor_service);
+            transportPlugin.prepare(type, storm_conf, login_conf);
         } catch(Exception e) {
             throw new RuntimeException(e);
         } 

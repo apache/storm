@@ -122,14 +122,10 @@
           ;; invocations that will unblock those threads
           handler-server (ThriftServer. conf
                            (DistributedRPC$Processor. service-handler)
-                           drpc-port
-                           ThriftConnectionType/DRPC
-                           (ThreadPoolExecutor. worker-threads worker-threads
-                             60 TimeUnit/SECONDS (ArrayBlockingQueue. queue-size)))
+                           ThriftConnectionType/DRPC)
           invoke-server (ThriftServer. conf
                           (DistributedRPCInvocations$Processor. service-handler)
-                          (int (conf DRPC-INVOCATIONS-PORT))
-                          ThriftConnectionType/DRPC)]
+                          ThriftConnectionType/DRPC_INVOCATIONS)]
       
       (.addShutdownHook (Runtime/getRuntime) (Thread. (fn [] (.stop handler-server) (.stop invoke-server))))
       (log-message "Starting Distributed RPC servers...")

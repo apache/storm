@@ -22,7 +22,9 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import javax.security.auth.login.Configuration;
 import org.apache.thrift.TException;
@@ -48,36 +50,35 @@ import backtype.storm.security.auth.ThriftConnectionType;
  * This plugin is designed to be backward compatible with existing Storm code.
  */
 public class SimpleTransportPlugin implements ITransportPlugin {
+    protected ThriftConnectionType type;
     protected Map storm_conf;
     protected Configuration login_conf;
-    protected ExecutorService executor_service;
     private static final Logger LOG = LoggerFactory.getLogger(SimpleTransportPlugin.class);
 
-    /**
-     * Invoked once immediately after construction
-     * @param conf Storm configuration 
-     * @param login_conf login configuration
-     * @param executor_service executor service for server
-     */
-    public void prepare(Map storm_conf, Configuration login_conf, ExecutorService executor_service) {
+    @Override
+    public void prepare(ThriftConnectionType type, Map storm_conf, Configuration login_conf) {
+        this.type = type;
         this.storm_conf = storm_conf;
         this.login_conf = login_conf;
-        this.executor_service = executor_service;
     }
 
-    /**
-     * We will let Thrift to apply default transport factory
-     */
-    public TServer getServer(int port, TProcessor processor,
-            ThriftConnectionType purpose) 
-            throws IOException, TTransportException {
+    @Override
+    public TServer getServer(TProcessor processor) throws IOException, TTransportException {
+        int port = type.getPort(storm_conf);
         TNonblockingServerSocket serverTransport = new TNonblockingServerSocket(port);
-        int numWorkerThreads = purpose.getNumThreads(this.storm_conf);
-        int maxBufferSize = purpose.getMaxBufferSize(this.storm_conf);
+        int numWorkerThreads = type.getNumThreads(storm_conf);
+        int maxBufferSize = type.getMaxBufferSize(storm_conf);
+        Integer queueSize = type.getQueueSize(storm_conf);
+
         THsHaServer.Args server_args = new THsHaServer.Args(serverTransport).
                 processor(new SimpleWrapProcessor(processor)).
                 workerThreads(numWorkerThreads).
                 protocolFactory(new TBinaryProtocol.Factory(false, true, maxBufferSize));
+
+        if (queueSize != null) {
+            server_args.executorService(new ThreadPoolExecutor(numWorkerThreads, numWorkerThreads, 
+                                   60, TimeUnit.SECONDS, new ArrayBlockingQueue(queueSize)));
+        }
 
         //construct THsHaServer
         return new THsHaServer(server_args);

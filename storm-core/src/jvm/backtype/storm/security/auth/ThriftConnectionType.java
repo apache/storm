@@ -26,20 +26,52 @@ import java.util.Map;
  * The purpose for which the Thrift server is created.
  */
 public enum ThriftConnectionType {
-    NIMBUS("nimbus.thrift"),
-    DRPC("drpc.worker");
+    NIMBUS(Config.NIMBUS_THRIFT_TRANSPORT_PLUGIN, Config.NIMBUS_THRIFT_PORT, null,
+         Config.NIMBUS_THRIFT_THREADS, Config.NIMBUS_THRIFT_MAX_BUFFER_SIZE),
+    DRPC(Config.DRPC_THRIFT_TRANSPORT_PLUGIN, Config.DRPC_PORT, Config.DRPC_QUEUE_SIZE,
+         Config.DRPC_WORKER_THREADS, Config.DRPC_MAX_BUFFER_SIZE),
+    DRPC_INVOCATIONS(Config.DRPC_INVOCATIONS_THRIFT_TRANSPORT_PLUGIN, Config.DRPC_INVOCATIONS_PORT, null,
+         Config.DRPC_INVOCATIONS_THREADS, Config.DRPC_MAX_BUFFER_SIZE);
 
-    private final String configPrefix;
+    private final String _transConf;
+    private final String _portConf;
+    private final String _qConf;
+    private final String _threadsConf;
+    private final String _buffConf;
 
-    ThriftConnectionType(String pfx) {
-        this.configPrefix = pfx;
+    ThriftConnectionType(String transConf, String portConf, String qConf,
+                         String threadsConf, String buffConf) {
+        _transConf = transConf;
+        _portConf = portConf;
+        _qConf = qConf;
+        _threadsConf = threadsConf;
+        _buffConf = buffConf;
+    }
+
+    public String getTransportPlugin(Map conf) {
+        String ret = (String)conf.get(_transConf);
+        if (ret == null) {
+            ret = (String)conf.get(Config.STORM_THRIFT_TRANSPORT_PLUGIN);
+        }
+        return ret;
+    }
+
+    public int getPort(Map conf) {
+        return Utils.getInt(conf.get(_portConf));
+    }
+
+    public Integer getQueueSize(Map conf) {
+        if (_qConf == null) {
+            return null;
+        }
+        return (Integer)conf.get(_qConf);
     }
 
     public int getNumThreads(Map conf) { 
-        return Utils.getInt(conf.get(this.configPrefix + ".threads"));
+        return Utils.getInt(conf.get(_threadsConf));
     }
 
     public int getMaxBufferSize(Map conf) {
-        return Utils.getInt(conf.get(this.configPrefix + ".max_buffer_size"));
+        return Utils.getInt(conf.get(_buffConf));
     }
 }

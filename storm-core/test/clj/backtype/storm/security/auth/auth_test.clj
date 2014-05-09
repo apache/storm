@@ -128,7 +128,6 @@
         server (ThriftServer. 
                 conf 
                 (Nimbus$Processor. service-handler) 
-                (int (conf NIMBUS-THRIFT-PORT))
                 ThriftConnectionType/NIMBUS)]
     (.addShutdownHook (Runtime/getRuntime) (Thread. (fn [] (.stop server))))
     (.start (Thread. #(.serve server)))

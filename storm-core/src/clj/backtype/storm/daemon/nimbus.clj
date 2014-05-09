@@ -1154,7 +1154,6 @@
   (let [service-handler (service-handler conf nimbus)
         ;;TODO need to honor NIMBUS-THRIFT-MAX-BUFFER-SIZE for different transports
         server (ThriftServer. conf (Nimbus$Processor. service-handler) 
-                              (int (conf NIMBUS-THRIFT-PORT)) 
                               ThriftConnectionType/NIMBUS)]
     (.addShutdownHook (Runtime/getRuntime) (Thread. (fn [] (.shutdown service-handler) (.stop server))))
     (log-message "Starting Nimbus server...")

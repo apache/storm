@@ -29,25 +29,14 @@ public class ThriftServer {
     private static final Logger LOG = LoggerFactory.getLogger(ThriftServer.class);
     private Map _storm_conf; //storm configuration
     protected TProcessor _processor = null;
-    private int _port = 0;
-    private final ThriftConnectionType _purpose;
+    private final ThriftConnectionType _type;
     private TServer _server = null;
     private Configuration _login_conf;
-    private ExecutorService _executor_service;
     
-    public ThriftServer(Map storm_conf, TProcessor processor, int port,
-            ThriftConnectionType purpose) {
-        this(storm_conf, processor, port, purpose, null);
-    }
-
-    public ThriftServer(Map storm_conf, TProcessor processor, int port,
-            ThriftConnectionType purpose, 
-            ExecutorService executor_service) {
+    public ThriftServer(Map storm_conf, TProcessor processor, ThriftConnectionType type) {
         _storm_conf = storm_conf;
         _processor = processor;
-        _port = port;
-        _purpose = purpose;
-        _executor_service = executor_service;
+        _type = type;
 
         try {
             //retrieve authentication configuration 
@@ -74,10 +63,10 @@ public class ThriftServer {
     public void serve()  {
         try {
             //locate our thrift transport plugin
-            ITransportPlugin  transportPlugin = AuthUtils.GetTransportPlugin(_storm_conf, _login_conf, _executor_service);
+            ITransportPlugin  transportPlugin = AuthUtils.GetTransportPlugin(_type, _storm_conf, _login_conf);
 
             //server
-            _server = transportPlugin.getServer(_port, _processor, _purpose);
+            _server = transportPlugin.getServer(_processor);
 
             //start accepting requests
             _server.serve();

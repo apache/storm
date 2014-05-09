@@ -36,22 +36,18 @@ import backtype.storm.security.auth.ThriftConnectionType;
 public interface ITransportPlugin {
     /**
      * Invoked once immediately after construction
+     * @param type the type of connection this will process.
      * @param storm_conf Storm configuration 
      * @param login_conf login configuration
-     * @param executor_service executor service for server
      */
-    void prepare(Map storm_conf, Configuration login_conf, ExecutorService executor_service);
+    void prepare(ThriftConnectionType type, Map storm_conf, Configuration login_conf);
     
     /**
      * Create a server associated with a given port, service handler, and purpose
-     * @param port listening port
      * @param processor service handler
-     * @param purpose purpose for the thrift server
-     * @return server to be binded
+     * @return server
      */
-    public TServer getServer(int port, TProcessor processor,
-            ThriftConnectionType purpose) 
-            throws IOException, TTransportException;
+    public TServer getServer(TProcessor processor) throws IOException, TTransportException;
 
     /**
      * Connect to the specified server via framed transport 
