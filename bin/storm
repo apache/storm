@@ -45,6 +45,7 @@ USER_CONF_DIR = os.path.expanduser("~/.storm")
 CLUSTER_CONF_DIR = STORM_DIR + "/conf"
 if (not os.path.isfile(USER_CONF_DIR + "/storm.yaml")):
     USER_CONF_DIR = CLUSTER_CONF_DIR
+
 CONFIG_OPTS = []
 CONFFILE = ""
 JAR_JVM_OPTS = shlex.split(os.getenv('STORM_JAR_JVM_OPTS', ''))
@@ -59,7 +60,7 @@ if not os.path.exists(STORM_DIR + "/RELEASE"):
     print "The storm client can only be run from within a release. You appear to be trying to run the client from a checkout of Storm's source code."
     print "\nYou can download a Storm release at http://storm-project.net/downloads.html"
     print "******************************************"
-    sys.exit(1)  
+    sys.exit(1)
 
 def get_jars_full(adir):
     files = os.listdir(adir)
@@ -92,8 +93,8 @@ def confvalue(name, extrapaths):
 def print_localconfvalue(name):
     """Syntax: [storm localconfvalue conf-name]
 
-    Prints out the value for conf-name in the local Storm configs. 
-    The local Storm configs are the ones in ~/.storm/storm.yaml merged 
+    Prints out the value for conf-name in the local Storm configs.
+    The local Storm configs are the ones in ~/.storm/storm.yaml merged
     in with the configs in defaults.yaml.
     """
     print name + ": " + confvalue(name, [USER_CONF_DIR])
@@ -101,9 +102,9 @@ def print_localconfvalue(name):
 def print_remoteconfvalue(name):
     """Syntax: [storm remoteconfvalue conf-name]
 
-    Prints out the value for conf-name in the cluster's Storm configs. 
-    The cluster's Storm configs are the ones in $STORM-PATH/conf/storm.yaml 
-    merged in with the configs in defaults.yaml. 
+    Prints out the value for conf-name in the cluster's Storm configs.
+    The cluster's Storm configs are the ones in $STORM-PATH/conf/storm.yaml
+    merged in with the configs in defaults.yaml.
 
     This command must be run on a cluster machine.
     """
@@ -130,9 +131,13 @@ def parse_args(string):
 
 def exec_storm_class(klass, jvmtype="-server", jvmopts=[], extrajars=[], args=[], fork=False):
     global CONFFILE
+    storm_log_dir = confvalue("storm.log.dir",[USER_CONF_DIR])
+    if(storm_log_dir == None or storm_log_dir == "nil"):
+        storm_log_dir = STORM_DIR+"/logs"
     all_args = [
         "java", jvmtype, get_config_opts(),
-        "-Dstorm.home=" + STORM_DIR, 
+        "-Dstorm.home=" + STORM_DIR,
+        "-Dstorm.log.dir=" + storm_log_dir,
         "-Djava.library.path=" + confvalue("java.library.path", extrajars),
         "-Dstorm.conf.file=" + CONFFILE,
         "-cp", get_classpath(extrajars),
@@ -146,9 +151,9 @@ def exec_storm_class(klass, jvmtype="-server", jvmopts=[], extrajars=[], args=[]
 def jar(jarfile, klass, *args):
     """Syntax: [storm jar topology-jar-path class ...]
 
-    Runs the main method of class with the specified arguments. 
-    The storm jars and configs in ~/.storm are put on the classpath. 
-    The process is configured so that StormSubmitter 
+    Runs the main method of class with the specified arguments.
+    The storm jars and configs in ~/.storm are put on the classpath.
+    The process is configured so that StormSubmitter
     (http://storm.incubator.apache.org/apidocs/backtype/storm/StormSubmitter.html)
     will upload the jar at topology-jar-path when the topology is submitted.
     """
@@ -162,17 +167,17 @@ def jar(jarfile, klass, *args):
 def kill(*args):
     """Syntax: [storm kill topology-name [-w wait-time-secs]]
 
-    Kills the topology with the name topology-name. Storm will 
-    first deactivate the topology's spouts for the duration of 
-    the topology's message timeout to allow all messages currently 
-    being processed to finish processing. Storm will then shutdown 
-    the workers and clean up their state. You can override the length 
+    Kills the topology with the name topology-name. Storm will
+    first deactivate the topology's spouts for the duration of
+    the topology's message timeout to allow all messages currently
+    being processed to finish processing. Storm will then shutdown
+    the workers and clean up their state. You can override the length
     of time Storm waits between deactivation and shutdown with the -w flag.
     """
     exec_storm_class(
-        "backtype.storm.command.kill_topology", 
-        args=args, 
-        jvmtype="-client", 
+        "backtype.storm.command.kill_topology",
+        args=args,
+        jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_DIR + "/bin"])
 
 def activate(*args):
@@ -181,9 +186,9 @@ def activate(*args):
     Activates the specified topology's spouts.
     """
     exec_storm_class(
-        "backtype.storm.command.activate", 
-        args=args, 
-        jvmtype="-client", 
+        "backtype.storm.command.activate",
+        args=args,
+        jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_DIR + "/bin"])
 
 def listtopos(*args):
@@ -192,9 +197,9 @@ def listtopos(*args):
     List the running topologies and their statuses.
     """
     exec_storm_class(
-        "backtype.storm.command.list", 
-        args=args, 
-        jvmtype="-client", 
+        "backtype.storm.command.list",
+        args=args,
+        jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_DIR + "/bin"])
 
 def deactivate(*args):
@@ -203,36 +208,36 @@ def deactivate(*args):
     Deactivates the specified topology's spouts.
     """
     exec_storm_class(
-        "backtype.storm.command.deactivate", 
-        args=args, 
-        jvmtype="-client", 
+        "backtype.storm.command.deactivate",
+        args=args,
+        jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_DIR + "/bin"])
 
 def rebalance(*args):
     """Syntax: [storm rebalance topology-name [-w wait-time-secs] [-n new-num-workers] [-e component=parallelism]*]
 
-    Sometimes you may wish to spread out where the workers for a topology 
-    are running. For example, let's say you have a 10 node cluster running 
-    4 workers per node, and then let's say you add another 10 nodes to 
-    the cluster. You may wish to have Storm spread out the workers for the 
-    running topology so that each node runs 2 workers. One way to do this 
-    is to kill the topology and resubmit it, but Storm provides a "rebalance" 
+    Sometimes you may wish to spread out where the workers for a topology
+    are running. For example, let's say you have a 10 node cluster running
+    4 workers per node, and then let's say you add another 10 nodes to
+    the cluster. You may wish to have Storm spread out the workers for the
+    running topology so that each node runs 2 workers. One way to do this
+    is to kill the topology and resubmit it, but Storm provides a "rebalance"
     command that provides an easier way to do this.
 
-    Rebalance will first deactivate the topology for the duration of the 
-    message timeout (overridable with the -w flag) and then redistribute 
-    the workers evenly around the cluster. The topology will then return to 
-    its previous state of activation (so a deactivated topology will still 
+    Rebalance will first deactivate the topology for the duration of the
+    message timeout (overridable with the -w flag) and then redistribute
+    the workers evenly around the cluster. The topology will then return to
+    its previous state of activation (so a deactivated topology will still
     be deactivated and an activated topology will go back to being activated).
-    
+
     The rebalance command can also be used to change the parallelism of a running topology.
     Use the -n and -e switches to change the number of workers or number of executors of a component
     respectively.
     """
     exec_storm_class(
-        "backtype.storm.command.rebalance", 
-        args=args, 
-        jvmtype="-client", 
+        "backtype.storm.command.rebalance",
+        args=args,
+        jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_DIR + "/bin"])
 
 def shell(resourcesdir, command, *args):
@@ -241,9 +246,9 @@ def shell(resourcesdir, command, *args):
     runnerargs = [tmpjarpath, command]
     runnerargs.extend(args)
     exec_storm_class(
-        "backtype.storm.command.shell_submission", 
-        args=runnerargs, 
-        jvmtype="-client", 
+        "backtype.storm.command.shell_submission",
+        args=runnerargs,
+        jvmtype="-client",
         extrajars=[USER_CONF_DIR],
         fork=True)
     os.system("rm " + tmpjarpath)
@@ -251,7 +256,7 @@ def shell(resourcesdir, command, *args):
 def repl():
     """Syntax: [storm repl]
 
-    Opens up a Clojure REPL with the storm jars and configuration 
+    Opens up a Clojure REPL with the storm jars and configuration
     on the classpath. Useful for debugging.
     """
     cppaths = [CLUSTER_CONF_DIR]
@@ -260,8 +265,8 @@ def repl():
 def nimbus(klass="backtype.storm.daemon.nimbus"):
     """Syntax: [storm nimbus]
 
-    Launches the nimbus daemon. This command should be run under 
-    supervision with a tool like daemontools or monit. 
+    Launches the nimbus daemon. This command should be run under
+    supervision with a tool like daemontools or monit.
 
     See Setting up a Storm cluster for more information.
     (http://storm.incubator.apache.org/documentation/Setting-up-a-Storm-cluster)
@@ -272,16 +277,16 @@ def nimbus(klass="backtype.storm.daemon.nimbus"):
         "-Dlogback.configurationFile=" + STORM_DIR + "/logback/cluster.xml",
     ]
     exec_storm_class(
-        klass, 
-        jvmtype="-server", 
-        extrajars=cppaths, 
+        klass,
+        jvmtype="-server",
+        extrajars=cppaths,
         jvmopts=jvmopts)
 
 def supervisor(klass="backtype.storm.daemon.supervisor"):
     """Syntax: [storm supervisor]
 
-    Launches the supervisor daemon. This command should be run 
-    under supervision with a tool like daemontools or monit. 
+    Launches the supervisor daemon. This command should be run
+    under supervision with a tool like daemontools or monit.
 
     See Setting up a Storm cluster for more information.
     (http://storm.incubator.apache.org/documentation/Setting-up-a-Storm-cluster)
@@ -292,17 +297,17 @@ def supervisor(klass="backtype.storm.daemon.supervisor"):
         "-Dlogback.configurationFile=" + STORM_DIR + "/logback/cluster.xml",
     ]
     exec_storm_class(
-        klass, 
-        jvmtype="-server", 
-        extrajars=cppaths, 
+        klass,
+        jvmtype="-server",
+        extrajars=cppaths,
         jvmopts=jvmopts)
 
 def ui():
     """Syntax: [storm ui]
 
-    Launches the UI daemon. The UI provides a web interface for a Storm 
-    cluster and shows detailed stats about running topologies. This command 
-    should be run under supervision with a tool like daemontools or monit. 
+    Launches the UI daemon. The UI provides a web interface for a Storm
+    cluster and shows detailed stats about running topologies. This command
+    should be run under supervision with a tool like daemontools or monit.
 
     See Setting up a Storm cluster for more information.
     (http://storm.incubator.apache.org/documentation/Setting-up-a-Storm-cluster)
@@ -313,17 +318,17 @@ def ui():
         "-Dlogback.configurationFile=" + STORM_DIR + "/logback/cluster.xml",
     ]
     exec_storm_class(
-        "backtype.storm.ui.core", 
-        jvmtype="-server", 
-        jvmopts=jvmopts, 
+        "backtype.storm.ui.core",
+        jvmtype="-server",
+        jvmopts=jvmopts,
         extrajars=[STORM_DIR, CLUSTER_CONF_DIR])
 
 def logviewer():
     """Syntax: [storm logviewer]
 
     Launches the log viewer daemon. It provides a web interface for viewing
-    storm log files. This command should be run under supervision with a 
-    tool like daemontools or monit. 
+    storm log files. This command should be run under supervision with a
+    tool like daemontools or monit.
 
     See Setting up a Storm cluster for more information.
     (http://storm.incubator.apache.org/documentation/Setting-up-a-Storm-cluster)
@@ -334,16 +339,16 @@ def logviewer():
         "-Dlogback.configurationFile=" + STORM_DIR + "/logback/cluster.xml",
     ]
     exec_storm_class(
-        "backtype.storm.daemon.logviewer", 
-        jvmtype="-server", 
-        jvmopts=jvmopts, 
+        "backtype.storm.daemon.logviewer",
+        jvmtype="-server",
+        jvmopts=jvmopts,
         extrajars=[STORM_DIR, CLUSTER_CONF_DIR])
 
 def drpc():
     """Syntax: [storm drpc]
 
-    Launches a DRPC daemon. This command should be run under supervision 
-    with a tool like daemontools or monit. 
+    Launches a DRPC daemon. This command should be run under supervision
+    with a tool like daemontools or monit.
 
     See Distributed RPC for more information.
     (http://storm.incubator.apache.org/documentation/Distributed-RPC)
@@ -354,28 +359,28 @@ def drpc():
         "-Dlogback.configurationFile=" + STORM_DIR + "/logback/cluster.xml"
     ]
     exec_storm_class(
-        "backtype.storm.daemon.drpc", 
-        jvmtype="-server", 
-        jvmopts=jvmopts, 
+        "backtype.storm.daemon.drpc",
+        jvmtype="-server",
+        jvmopts=jvmopts,
         extrajars=[CLUSTER_CONF_DIR])
 
 def dev_zookeeper():
     """Syntax: [storm dev-zookeeper]
-  
+
     Launches a fresh Zookeeper server using "dev.zookeeper.path" as its local dir and
     "storm.zookeeper.port" as its port. This is only intended for development/testing, the
     Zookeeper instance launched is not configured to be used in production.
     """
     cppaths = [CLUSTER_CONF_DIR]
     exec_storm_class(
-        "backtype.storm.command.dev_zookeeper", 
-        jvmtype="-server", 
+        "backtype.storm.command.dev_zookeeper",
+        jvmtype="-server",
         extrajars=[CLUSTER_CONF_DIR])
 
 def version():
   """Syntax: [storm version]
-  
-  Prints the version number of this Storm release.  
+
+  Prints the version number of this Storm release.
   """
   releasefile = STORM_DIR + "/RELEASE"
   if os.path.exists(releasefile):
@@ -401,7 +406,7 @@ def print_usage(command=None):
     """Print one help message or list of available commands"""
     if command != None:
         if COMMANDS.has_key(command):
-            print (COMMANDS[command].__doc__ or 
+            print (COMMANDS[command].__doc__ or
                   "No documentation provided for <%s>" % command)
         else:
            print "<%s> is not a valid command" % command
@@ -429,7 +434,7 @@ def parse_config_opts(args):
   curr.reverse()
   config_list = []
   args_list = []
-  
+
   while len(curr) > 0:
     token = curr.pop()
     if token == "-c":
@@ -439,9 +444,9 @@ def parse_config_opts(args):
       CONFFILE = curr.pop()
     else:
       args_list.append(token)
-  
+
   return config_list, args_list
-    
+
 def main():
     if len(sys.argv) <= 1:
         print_usage()
@@ -452,6 +457,6 @@ def main():
     COMMAND = args[0]
     ARGS = args[1:]
     (COMMANDS.get(COMMAND, unknown_command))(*ARGS)
-    
+
 if __name__ == "__main__":
     main()

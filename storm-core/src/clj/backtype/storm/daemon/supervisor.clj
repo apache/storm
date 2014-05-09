@@ -125,7 +125,7 @@
      )))
 
 (defn- wait-for-worker-launch [conf id start-time]
-  (let [state (worker-state conf id)]    
+  (let [state (worker-state conf id)]
     (loop []
       (let [hb (.get state LS-WORKER-HEARTBEAT)]
         (when (and
@@ -226,7 +226,7 @@
     ;; 5. create local dir for worker id
     ;; 5. launch new workers (give worker-id, port, and supervisor-id)
     ;; 6. wait for workers launch
-  
+
     (log-debug "Syncing processes")
     (log-debug "Assigned executors: " assigned-executors)
     (log-debug "Allocated: " allocated)
@@ -310,7 +310,7 @@
       (log-debug "Downloaded storm ids: " downloaded-storm-ids)
       (log-debug "All assignment: " all-assignment)
       (log-debug "New assignment: " new-assignment)
-      
+
       ;; download code first
       ;; This might take awhile
       ;;   - should this be done separately from usual monitoring?
@@ -362,7 +362,7 @@
   (.prepare isupervisor conf (supervisor-isupervisor-dir conf))
   (FileUtils/cleanDirectory (File. (supervisor-tmp-dir conf)))
   (let [supervisor (supervisor-data conf shared-context isupervisor)
-        [event-manager processes-event-manager :as managers] [(event/event-manager false) (event/event-manager false)]                         
+        [event-manager processes-event-manager :as managers] [(event/event-manager false) (event/event-manager false)]
         sync-processes (partial sync-processes supervisor)
         synchronize-supervisor (mk-synchronize-supervisor supervisor sync-processes event-manager processes-event-manager)
         heartbeat-fn (fn [] (.supervisor-heartbeat!
@@ -430,7 +430,7 @@
     (let [tmproot (str (supervisor-tmp-dir conf) file-path-separator (uuid))
           stormroot (supervisor-stormdist-root conf storm-id)]
       (FileUtils/forceMkdir (File. tmproot))
-      
+
       (Utils/downloadFromMaster conf (master-stormjar-path master-code-dir) (supervisor-stormjar-path tmproot))
       (Utils/downloadFromMaster conf (master-stormcode-path master-code-dir) (supervisor-stormcode-path tmproot))
       (Utils/downloadFromMaster conf (master-stormconf-path master-code-dir) (supervisor-stormconf-path tmproot))
@@ -448,6 +448,8 @@
     :distributed [supervisor storm-id port worker-id]
     (let [conf (:conf supervisor)
           storm-home (System/getProperty "storm.home")
+          storm-log-dir (if (System/getProperty "storm.log.dir")
+                          (System/getProperty "storm.log.dir") (str storm-home "/logs"))
           stormroot (supervisor-stormdist-root conf storm-id)
           stormjar (supervisor-stormjar-path stormroot)
           storm-conf (read-supervisor-storm-conf conf storm-id)
@@ -464,6 +466,7 @@
                     [(str "-Djava.library.path=" (conf JAVA-LIBRARY-PATH))
                      (str "-Dlogfile.name=" logfilename)
                      (str "-Dstorm.home=" storm-home)
+                     (str "-Dstorm.log.dir=" storm-log-dir)
                      (str "-Dlogback.configurationFile=" storm-home "/logback/cluster.xml")
                      (str "-Dstorm.id=" storm-id)
                      (str "-Dworker.id=" worker-id)
