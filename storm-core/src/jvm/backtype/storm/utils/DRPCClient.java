@@ -17,6 +17,9 @@
  */
 package backtype.storm.utils;
 
+import backtype.storm.security.auth.ThriftClient;
+import backtype.storm.security.auth.ThriftConnectionType;
+
 import backtype.storm.generated.DRPCExecutionException;
 import backtype.storm.generated.DistributedRPC;
 import org.apache.thrift.TException;
@@ -29,9 +32,20 @@ public class DRPCClient implements DistributedRPC.Iface {
     private TTransport conn;
     private DistributedRPC.Client client;
     private String host;
-    private int port;
+    private Integer port;
     private Integer timeout;
 
+    public DRPCClient(String host) {
+        try {
+            this.host = host;
+            this.port = null;
+            this.timeout = null;
+            connect();
+        } catch(TException e) {
+            throw new RuntimeException(e);
+        }
+    }
+ 
     public DRPCClient(String host, int port, Integer timeout) {
         try {
             this.host = host;

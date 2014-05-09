@@ -14,10 +14,7 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.daemon.drpc
-  (:import [org.apache.thrift.server THsHaServer THsHaServer$Args])
-  (:import [org.apache.thrift.protocol TBinaryProtocol TBinaryProtocol$Factory])
-  (:import [org.apache.thrift.exception])
-  (:import [org.apache.thrift.transport TNonblockingServerTransport TNonblockingServerSocket])
+  (:import [backtype.storm.security.auth ThriftServer ThriftConnectionType])
   (:import [backtype.storm.generated DistributedRPC DistributedRPC$Iface DistributedRPC$Processor
             DRPCRequest DRPCExecutionException DistributedRPCInvocations DistributedRPCInvocations$Iface
             DistributedRPCInvocations$Processor])
@@ -117,25 +114,18 @@
     (let [conf (read-storm-config)
           worker-threads (int (conf DRPC-WORKER-THREADS))
           queue-size (int (conf DRPC-QUEUE-SIZE))
+          drpc-port (int (conf DRPC-PORT))
           service-handler (service-handler)
           ;; requests and returns need to be on separate thread pools, since calls to
           ;; "execute" don't unblock until other thrift methods are called. So if 
           ;; 64 threads are calling execute, the server won't accept the result
           ;; invocations that will unblock those threads
-          handler-server (THsHaServer. (-> (TNonblockingServerSocket. (int (conf DRPC-PORT)))
-                                             (THsHaServer$Args.)
-                                             (.workerThreads 64)
-                                             (.executorService (ThreadPoolExecutor. worker-threads worker-threads 
-                                                                 60 TimeUnit/SECONDS (ArrayBlockingQueue. queue-size)))
-                                             (.protocolFactory (TBinaryProtocol$Factory.))
-                                             (.processor (DistributedRPC$Processor. service-handler))
-                                             ))
-          invoke-server (THsHaServer. (-> (TNonblockingServerSocket. (int (conf DRPC-INVOCATIONS-PORT)))
-                                             (THsHaServer$Args.)
-                                             (.workerThreads 64)
-                                             (.protocolFactory (TBinaryProtocol$Factory.))
-                                             (.processor (DistributedRPCInvocations$Processor. service-handler))
-                                             ))]
+          handler-server (ThriftServer. conf
+                           (DistributedRPC$Processor. service-handler)
+                           ThriftConnectionType/DRPC)
+          invoke-server (ThriftServer. conf
+                          (DistributedRPCInvocations$Processor. service-handler)
+                          ThriftConnectionType/DRPC_INVOCATIONS)]
       
       (.addShutdownHook (Runtime/getRuntime) (Thread. (fn [] (.stop handler-server) (.stop invoke-server))))
       (log-message "Starting Distributed RPC servers...")

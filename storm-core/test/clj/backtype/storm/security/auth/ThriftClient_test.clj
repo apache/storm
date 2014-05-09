@@ -16,7 +16,7 @@
 (ns backtype.storm.security.auth.ThriftClient-test
   (:use [backtype.storm config])
   (:use [clojure test])
-  (:import [backtype.storm.security.auth ThriftClient])
+  (:import [backtype.storm.security.auth ThriftClient ThriftConnectionType])
   (:import [org.apache.thrift.transport TTransportException])
 )
 
@@ -24,9 +24,9 @@
   (let [conf (read-default-config)
         timeout (Integer. 30)]
     (is (thrown? java.lang.IllegalArgumentException
-      (ThriftClient. conf "bogushost" -1 timeout)))
+      (ThriftClient. conf ThriftConnectionType/DRPC "bogushost" (int -1) timeout)))
     (is (thrown? java.lang.IllegalArgumentException
-        (ThriftClient. conf "bogushost" 0 timeout)))
+        (ThriftClient. conf ThriftConnectionType/DRPC "bogushost" (int 0) timeout)))
   )
 )
 
@@ -34,8 +34,8 @@
   (let [conf (read-default-config)
         timeout (Integer. 60)]
     (is (thrown? TTransportException
-         (ThriftClient. conf "" 4242 timeout)))
+         (ThriftClient. conf ThriftConnectionType/DRPC "" (int 4242) timeout)))
     (is (thrown? IllegalArgumentException
-        (ThriftClient. conf nil 4242 timeout)))
+        (ThriftClient. conf ThriftConnectionType/DRPC nil (int 4242) timeout)))
   )
 )
