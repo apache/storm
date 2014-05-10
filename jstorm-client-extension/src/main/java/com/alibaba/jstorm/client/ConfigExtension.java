@@ -4,6 +4,8 @@ import java.security.InvalidParameterException;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang.StringUtils;
+
 import com.alibaba.jstorm.resource.ResourceAssignment;
 import com.alibaba.jstorm.utils.JStormUtils;
 
@@ -54,15 +56,15 @@ public class ConfigExtension {
 	// }
 
 	/**
-	 * port number of supervisor httpserver deamon
+	 * port number of deamon httpserver server
 	 */
-	private static final Integer DEFAULT_SUPERVISOR_HTTPSERVER_PORT = 7621;
+	private static final Integer DEFAULT_DEAMON_HTTPSERVER_PORT = 7621;
 
-	protected static final String SUPERVISOR_HTTPSERVER_PORT = "supervisor.logview.port";
+	protected static final String DEAMON_HTTPSERVER_PORT = "deamon.logview.port";
 
-	public static Integer getSupervisorHttpserverPort(Map conf) {
-		return JStormUtils.parseInt(conf.get(SUPERVISOR_HTTPSERVER_PORT),
-				DEFAULT_SUPERVISOR_HTTPSERVER_PORT);
+	public static Integer getDeamonHttpserverPort(Map conf) {
+		return JStormUtils.parseInt(conf.get(DEAMON_HTTPSERVER_PORT),
+				DEFAULT_DEAMON_HTTPSERVER_PORT);
 	}
 
 	/**
@@ -356,6 +358,12 @@ public class ConfigExtension {
 	public static String getSupervisorHost(Map conf) {
 		return (String) conf.get(SUPERVISOR_HOSTNAME);
 	}
+	
+	protected static final String SUPERVISOR_USE_IP = "supervisor.use.ip";
+	
+	public static boolean isSupervisorUseIp(Map conf) {
+		return JStormUtils.parseBoolean(conf.get(SUPERVISOR_USE_IP), false);
+	}
 
 	protected static final String TOPOLOGY_ENABLE_CLASSLOADER = "topology.enable.classloader";
 
@@ -417,4 +425,86 @@ public class ConfigExtension {
 	public static String getWorkerGcPath(Map conf) {
 		return (String) conf.get(WORKER_GC_PATH);
 	}
+
+	
+	
+	protected static final String CONTAINER_NIMBUS_HEARTBEAT = "container.nimbus.heartbeat";
+	
+	/**
+	 * Get to know whether nimbus is run under Apsara/Yarn container
+	 * 
+	 * @param conf
+	 * @return
+	 */
+	public static boolean isEnableContainerNimbus() {
+	    String path = System.getenv(CONTAINER_NIMBUS_HEARTBEAT);
+	    
+	    if (StringUtils.isBlank(path) ) {
+	        return false;
+	    }else {
+	        return true;
+	    }
+	}
+	
+	/**
+	 * Get Apsara/Yarn nimbus container's hearbeat dir
+	 * 
+	 * @param conf
+	 * @return
+	 */
+	public static String getContainerNimbusHearbeat() {
+		return System.getenv(CONTAINER_NIMBUS_HEARTBEAT);
+	}
+	
+	
+	
+
+	protected static final String CONTAINER_SUPERVISOR_HEARTBEAT = "container.supervisor.heartbeat";
+	
+	/**
+	 * Get to know whether supervisor is run under Apsara/Yarn supervisor container
+	 * 
+	 * @param conf
+	 * @return
+	 */
+	public static boolean isEnableContainerSupervisor() {
+	    String path = System.getenv(CONTAINER_SUPERVISOR_HEARTBEAT);
+        
+        if (StringUtils.isBlank(path)) {
+            return false;
+        }else {
+            return true;
+        }
+	}
+
+	/**
+	 * Get Apsara/Yarn supervisor container's hearbeat dir
+	 * 
+	 * @param conf
+	 * @return
+	 */
+	public static String getContainerSupervisorHearbeat() {
+		return (String) System.getenv(CONTAINER_SUPERVISOR_HEARTBEAT);
+	}
+
+	protected static final String CONTAINER_HEARTBEAT_TIMEOUT_SECONDS = "container.heartbeat.timeout.seconds";
+
+	public static int getContainerHeartbeatTimeoutSeconds(Map conf) {
+		return JStormUtils.parseInt(conf.get(CONTAINER_HEARTBEAT_TIMEOUT_SECONDS),
+				240);
+	}
+	
+	protected static final String CONTAINER_HEARTBEAT_FREQUENCE = "container.heartbeat.frequence";
+
+	public static int getContainerHeartbeatFrequence(Map conf) {
+		return JStormUtils.parseInt(conf.get(CONTAINER_HEARTBEAT_FREQUENCE),
+				10);
+	}
+	
+	protected static final String JAVA_SANDBOX_ENABLE = "java.sandbox.enable";
+	
+	public static boolean isJavaSandBoxEnable(Map conf) {
+		return JStormUtils.parseBoolean(conf.get(JAVA_SANDBOX_ENABLE), false);
+	}
+
 }

@@ -1,6 +1,7 @@
 package com.alibaba.jstorm.daemon.supervisor;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Map;
 import java.util.UUID;
 import java.util.Vector;
@@ -24,9 +25,11 @@ import com.alibaba.jstorm.cluster.StormConfig;
 import com.alibaba.jstorm.event.EventManager;
 import com.alibaba.jstorm.event.EventManagerImp;
 import com.alibaba.jstorm.event.EventManagerPusher;
+import com.alibaba.jstorm.utils.JStormServerUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.NetWorkUtils;
 import com.alibaba.jstorm.utils.SmartThread;
+import com.alibaba.jstorm.utils.SyncContainerHb;
 
 /**
  * 
@@ -99,17 +102,19 @@ public class Supervisor {
 
 		// Step 5 create HeartBeat
 		// every supervisor.heartbeat.frequency.secs, write SupervisorInfo to ZK
-		String myHostName = null;
-		myHostName = ConfigExtension.getSupervisorHost(conf);
-		if (myHostName == null) {
-			myHostName = NetWorkUtils.hostname();
-		}
+		// sync hearbeat to nimbus
 		Heartbeat hb = new Heartbeat(conf, stormClusterState, supervisorId,
-				myHostName, active);
+				active);
 		hb.update();
 		AsyncLoopThread heartbeat = new AsyncLoopThread(hb, false, null,
 				Thread.MIN_PRIORITY, true);
 		threads.add(heartbeat);
+		
+		// Sync heartbeat to Apsara Container
+		AsyncLoopThread syncContainerHbThread = SyncContainerHb.mkSupervisorInstance(conf);
+		if (syncContainerHbThread != null) {
+		    threads.add(syncContainerHbThread);
+		}
 
 		// Step 6 create and start sync Supervisor thread
 		// every supervisor.monitor.frequency.secs second run SyncSupervisor
@@ -149,14 +154,14 @@ public class Supervisor {
 		Httpserver httpserver = new Httpserver(conf);
 		httpserver.start();
 		
-		LOG.info("Starting supervisor with id " + supervisorId + " at host "
-				+ myHostName);
-
+		
+		
 		// SupervisorManger which can shutdown all supervisor and workers
 		return new SupervisorManger(conf, supervisorId, active, threads,
 				syncSupEventManager, processEventManager, httpserver, 
 				stormClusterState, workerThreadPids);
 	}
+	
 
 	/**
 	 * shutdown
@@ -166,6 +171,12 @@ public class Supervisor {
 	public void killSupervisor(SupervisorManger supervisor) {
 		supervisor.shutdown();
 	}
+	
+	private void createPid(Map conf) throws Exception {
+        String pidDir = StormConfig.supervisorPids(conf);
+        
+        JStormServerUtils.createPid(pidDir);
+    }
 
 	/**
 	 * start supervisor
@@ -177,8 +188,12 @@ public class Supervisor {
 			Map<Object, Object> conf = Utils.readStormConfig();
 
 			StormConfig.validate_distributed_mode(conf);
+			
+			createPid(conf);
 
 			supervisorManager = mkSupervisor(conf, null);
+			
+			JStormUtils.redirectOutput("/dev/null");
 
 		} catch (Exception e) {
 			LOG.error("Failed to start supervisor\n", e);
@@ -200,6 +215,8 @@ public class Supervisor {
 	 * @param args
 	 */
 	public static void main(String[] args) {
+		
+		JStormServerUtils.startTaobaoJvmMonitor();
 
 		Supervisor instance = new Supervisor();
 

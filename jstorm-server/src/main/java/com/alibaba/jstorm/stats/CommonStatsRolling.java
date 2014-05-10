@@ -1,20 +1,17 @@
 package com.alibaba.jstorm.stats;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.HashMap;
 
 import backtype.storm.generated.GlobalStreamId;
-import backtype.storm.tuple.Tuple;
 
 import com.alibaba.jstorm.cluster.Common;
-import com.alibaba.jstorm.cluster.StormConfig;
 import com.alibaba.jstorm.common.stats.StatBuckets;
 import com.alibaba.jstorm.common.stats.StaticsType;
 import com.alibaba.jstorm.stats.rolling.RollingWindowSet;
 import com.alibaba.jstorm.utils.EventSampler;
+import com.alibaba.jstorm.utils.Pair;
 import com.alibaba.jstorm.utils.TimeUtils;
 
 /**
@@ -190,14 +187,15 @@ public class CommonStatsRolling {
 			componentSamplers.put(stream, sampler);
 		}
 
-		Integer times = sampler.timesCheck();
-		if (times == null) {
+		Pair<Integer, Double> pair = sampler.avgCheck(latency_ms * 1000);
+		if (pair == null) {
 			return;
 		}
-
+		
+		long avgLatency = (long)((double)pair.getSecond());
 		GlobalStreamId key = new GlobalStreamId(component, stream);
-		update_task_stat(StaticsType.acked, key, times);
-		update_task_stat(StaticsType.process_latencies, key, latency_ms);
+		update_task_stat(StaticsType.acked, key, pair.getFirst());
+		update_task_stat(StaticsType.process_latencies, key, avgLatency);
 	}
 
 	public void bolt_failed_tuple(String component, String stream) {
@@ -243,16 +241,19 @@ public class CommonStatsRolling {
 			spoutAckedSamplers.put(stream, sampler);
 		}
 
-		Integer times = sampler.timesCheck();
-		if (times == null) {
+		
+
+		long latency_ms = TimeUtils.time_delta_ms(st);
+		Pair<Integer, Double> pair = sampler.avgCheck(latency_ms * 1000);
+		if (pair == null) {
 			return;
 		}
-
-		Long latency_ms = TimeUtils.time_delta_ms(st);
+		
+		long avgLatency = (long)((double)pair.getSecond());
 		GlobalStreamId key = new GlobalStreamId(Common.ACKER_COMPONENT_ID,
 				stream);
-		update_task_stat(StaticsType.acked, key, times);
-		update_task_stat(StaticsType.process_latencies, key, latency_ms);
+		update_task_stat(StaticsType.acked, key, pair.getFirst());
+		update_task_stat(StaticsType.process_latencies, key, avgLatency);
 	}
 
 	public void spout_failed_tuple(String stream) {

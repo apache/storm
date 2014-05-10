@@ -18,6 +18,8 @@
 
 	<h:form>
 		<p:dataTable id="clustesummary" var="cls" value="#{mainpage.csumm}">
+
+
 			<p:column>
 				<f:facet name="header">
 					<h:outputText value="Nimbus Master" />
@@ -27,7 +29,7 @@
 
 			<p:column>
 				<f:facet name="header">
-					<h:outputText value="Nimbus Master uptime" />
+					<h:outputText value="Uptime" />
 				</f:facet>
 				<h:outputText value="#{cls.nimbusUptime}" />
 			</p:column>
@@ -46,13 +48,31 @@
 				<h:outputText value="#{cls.supervisorNum}" />
 			</p:column>
 
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="version" />
+				</f:facet>
+				<h:outputText value="0.9.3" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Log" />
+				</f:facet>
+				<h:outputLink value="log.jsf" target="_blank">
+					<h:outputText value="log" />
+					<f:param name="host" value="#{cls.nimbusIp}" />
+					<f:param name="log" value="nimbus.log" />
+				</h:outputLink>
+			</p:column>
+
 		</p:dataTable>
 	</h:form>
-	
+
 	<h2></h2>
-	
+
 	<h:form>
-		<p:dataTable id="slaveSumm" var="sla" value="#{mainpage.slaves}" 
+		<p:dataTable id="slaveSumm" var="sla" value="#{mainpage.slaves}"
 			sortBy="#{sla.uptime}" sortOrder="ASCENDING">
 			<p:column>
 				<f:facet name="header">
@@ -63,9 +83,20 @@
 
 			<p:column>
 				<f:facet name="header">
-					<h:outputText value="Nimbus Slave uptime" />
+					<h:outputText value="Uptime" />
 				</f:facet>
 				<h:outputText value="#{sla.uptime}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Log" />
+				</f:facet>
+				<h:outputLink value="log.jsf" target="_blank">
+					<h:outputText value="log" />
+					<f:param name="host" value="#{sla.ip}" />
+					<f:param name="log" value="nimbus.log" />
+				</h:outputLink>
 			</p:column>
 
 		</p:dataTable>
@@ -81,26 +112,26 @@
 					<h:outputText value="Port Slot" />
 				</f:facet>
 				<h:form>
-				<p:dataTable id="portsummary" var="cls1" value="#{mainpage.csumm}">
-					<p:column>
-						<f:facet name="header">
-							<h:outputText value="Total" />
-						</f:facet>
-						<h:outputText value="#{cls1.totalPortSlotNum}" />
-					</p:column>
-					<p:column>
-						<f:facet name="header">
-							<h:outputText value="Used" />
-						</f:facet>
-						<h:outputText value="#{cls1.usedPortSlotNum}" />
-					</p:column>
-					<p:column>
-						<f:facet name="header">
-							<h:outputText value="Free" />
-						</f:facet>
-						<h:outputText value="#{cls1.freePortSlotNum}" />
-					</p:column>
-				</p:dataTable>
+					<p:dataTable id="portsummary" var="cls1" value="#{mainpage.csumm}">
+						<p:column>
+							<f:facet name="header">
+								<h:outputText value="Total" />
+							</f:facet>
+							<h:outputText value="#{cls1.totalPortSlotNum}" />
+						</p:column>
+						<p:column>
+							<f:facet name="header">
+								<h:outputText value="Used" />
+							</f:facet>
+							<h:outputText value="#{cls1.usedPortSlotNum}" />
+						</p:column>
+						<p:column>
+							<f:facet name="header">
+								<h:outputText value="Free" />
+							</f:facet>
+							<h:outputText value="#{cls1.freePortSlotNum}" />
+						</p:column>
+					</p:dataTable>
 				</h:form>
 			</p:column>
 
@@ -109,28 +140,28 @@
 					<h:outputText value="CPU Slot" />
 				</f:facet>
 				<h:form>
-				<p:dataTable id="cpusummary" var="cls2" value="#{mainpage.csumm}">
-					<p:column>
-						<f:facet name="header">
-							<h:outputText value="Total" />
-						</f:facet>
-						<h:outputText value="#{cls2.totalCpuSlotNum}" />
-					</p:column>
-					<p:column>
-						<f:facet name="header">
-							<h:outputText value="Used" />
-						</f:facet>
-						<h:outputText value="#{cls2.usedCpuSlotNum}" />
-					</p:column>
-					<p:column>
-						<f:facet name="header">
-							<h:outputText value="Free" />
-						</f:facet>
-						<h:outputText value="#{cls2.freeCpuSlotNum}" />
-					</p:column>
-				</p:dataTable>
+					<p:dataTable id="cpusummary" var="cls2" value="#{mainpage.csumm}">
+						<p:column>
+							<f:facet name="header">
+								<h:outputText value="Total" />
+							</f:facet>
+							<h:outputText value="#{cls2.totalCpuSlotNum}" />
+						</p:column>
+						<p:column>
+							<f:facet name="header">
+								<h:outputText value="Used" />
+							</f:facet>
+							<h:outputText value="#{cls2.usedCpuSlotNum}" />
+						</p:column>
+						<p:column>
+							<f:facet name="header">
+								<h:outputText value="Free" />
+							</f:facet>
+							<h:outputText value="#{cls2.freeCpuSlotNum}" />
+						</p:column>
+					</p:dataTable>
 				</h:form>
-				
+
 			</p:column>
 
 			<p:column>
@@ -138,26 +169,26 @@
 					<h:outputText value="Memory Slot" />
 				</f:facet>
 				<h:form>
-				<p:dataTable id="memsummary" var="cls3" value="#{mainpage.csumm}">
-					<p:column>
-						<f:facet name="header">
-							<h:outputText value="Total" />
-						</f:facet>
-						<h:outputText value="#{cls3.totalMemSlotNum}" />
-					</p:column>
-					<p:column>
-						<f:facet name="header">
-							<h:outputText value="Used" />
-						</f:facet>
-						<h:outputText value="#{cls3.usedMemSlotNum}" />
-					</p:column>
-					<p:column>
-						<f:facet name="header">
-							<h:outputText value="Free" />
-						</f:facet>
-						<h:outputText value="#{cls3.freeMemSlotNum}" />
-					</p:column>
-				</p:dataTable>
+					<p:dataTable id="memsummary" var="cls3" value="#{mainpage.csumm}">
+						<p:column>
+							<f:facet name="header">
+								<h:outputText value="Total" />
+							</f:facet>
+							<h:outputText value="#{cls3.totalMemSlotNum}" />
+						</p:column>
+						<p:column>
+							<f:facet name="header">
+								<h:outputText value="Used" />
+							</f:facet>
+							<h:outputText value="#{cls3.usedMemSlotNum}" />
+						</p:column>
+						<p:column>
+							<f:facet name="header">
+								<h:outputText value="Free" />
+							</f:facet>
+							<h:outputText value="#{cls3.freeMemSlotNum}" />
+						</p:column>
+					</p:dataTable>
 				</h:form>
 			</p:column>
 
@@ -166,26 +197,26 @@
 					<h:outputText value="Disk Slot" />
 				</f:facet>
 				<h:form>
-				<p:dataTable id="disksummary" var="cls4" value="#{mainpage.csumm}">
-					<p:column>
-						<f:facet name="header">
-							<h:outputText value="Total" />
-						</f:facet>
-						<h:outputText value="#{cls4.totalDiskSlotNum}" />
-					</p:column>
-					<p:column>
-						<f:facet name="header">
-							<h:outputText value="Used" />
-						</f:facet>
-						<h:outputText value="#{cls4.usedDiskSlotNum}" />
-					</p:column>
-					<p:column>
-						<f:facet name="header">
-							<h:outputText value="Free" />
-						</f:facet>
-						<h:outputText value="#{cls4.freeDiskSlotNum}" />
-					</p:column>
-				</p:dataTable>
+					<p:dataTable id="disksummary" var="cls4" value="#{mainpage.csumm}">
+						<p:column>
+							<f:facet name="header">
+								<h:outputText value="Total" />
+							</f:facet>
+							<h:outputText value="#{cls4.totalDiskSlotNum}" />
+						</p:column>
+						<p:column>
+							<f:facet name="header">
+								<h:outputText value="Used" />
+							</f:facet>
+							<h:outputText value="#{cls4.usedDiskSlotNum}" />
+						</p:column>
+						<p:column>
+							<f:facet name="header">
+								<h:outputText value="Free" />
+							</f:facet>
+							<h:outputText value="#{cls4.freeDiskSlotNum}" />
+						</p:column>
+					</p:dataTable>
 				</h:form>
 			</p:column>
 
@@ -369,9 +400,8 @@
 
 	<h2>Group Summary</h2>
 	<h:form>
-		<p:dataTable id="groupsummary" var="gsumm"
-			value="#{mainpage.gsumm}" sortBy="#{gsumm.name}"
-			sortOrder="ASCENDING">
+		<p:dataTable id="groupsummary" var="gsumm" value="#{mainpage.gsumm}"
+			sortBy="#{gsumm.name}" sortOrder="ASCENDING">
 			<p:column>
 				<f:facet name="header">
 					<h:outputText value="Name" />
@@ -433,6 +463,34 @@
 					<h:outputText value="Used Disk" />
 				</f:facet>
 				<h:outputText value="#{gsumm.usedDisk}" />
+			</p:column>
+
+		</p:dataTable>
+	</h:form>
+
+	<h2>Zookeeper Summary</h2>
+
+	<h:form>
+		<p:dataTable id="zkSumm" var="cls" value="#{mainpage.csumm}">
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Zookeeper Server" />
+				</f:facet>
+				<p:dataTable id="zkServers" var="zkServer"
+					value="#{mainpage.zkServers}" sortBy="#{zkServer}"
+					sortOrder="ASCENDING">
+					<p:column>
+						<h:outputText value="#{zkServer}" />
+					</p:column>
+				</p:dataTable>
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Zookeeper Port" />
+				</f:facet>
+				<h:outputText value="#{mainpage.zkPort}" />
 			</p:column>
 
 		</p:dataTable>

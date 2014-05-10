@@ -16,6 +16,7 @@ import com.alibaba.jstorm.cluster.ClusterState;
 import com.alibaba.jstorm.cluster.StormClusterState;
 import com.alibaba.jstorm.task.ShutdownableDameon;
 import com.alibaba.jstorm.task.TaskShutdownDameon;
+import com.alibaba.jstorm.utils.JStormUtils;
 
 /**
  * Shutdown worker
@@ -31,14 +32,14 @@ public class WorkerShutdown implements ShutdownableDameon {
 	private ConcurrentHashMap<WorkerSlot, IConnection> nodeportSocket;
 	private Shutdownable virtualPortShutdown;
 	private IContext context;
-	private AsyncLoopThread[] threads;
+	private List<AsyncLoopThread> threads;
 	private StormClusterState zkCluster;
 	private ClusterState cluster_state;
 
 	// active nodeportSocket context zkCluster zkClusterstate
 	public WorkerShutdown(WorkerData workerData,
 			List<TaskShutdownDameon> _shutdowntasks,
-			Shutdownable _virtual_port_shutdown, AsyncLoopThread[] _threads) {
+			Shutdownable _virtual_port_shutdown, List<AsyncLoopThread> _threads) {
 
 		this.shutdowntasks = _shutdowntasks;
 		this.virtualPortShutdown = _virtual_port_shutdown;
@@ -76,6 +77,8 @@ public class WorkerShutdown implements ShutdownableDameon {
 		// shutdown worker's demon thread
 		// refreshconn, refreshzk, hb, drainer
 		for (AsyncLoopThread t : threads) {
+			t.cleanup();
+			JStormUtils.sleepMs(10);
 			t.interrupt();
 			try {
 				t.join();

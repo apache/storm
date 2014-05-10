@@ -674,9 +674,18 @@ public class NimbusUtils {
 
 		if (nowSecs - nimbusTime > taskHBTimeout) {
 			// task is dead
-			long ts = nimbusTime * 1000;
+			long ts = ((long)nimbusTime) * 1000;
 			Date lastTaskHBDate = new Date(ts);
-			LOG.info(idStr + " last tasktime is " + nimbusTime + " " + lastTaskHBDate);
+			StringBuilder sb = new StringBuilder();
+			
+			sb.append(idStr);
+			sb.append(" last tasktime is ");
+			sb.append(nimbusTime);
+			sb.append(":").append(lastTaskHBDate);
+			sb.append(",current ");
+			sb.append(nowSecs);
+			sb.append(":").append(new Date(((long)nowSecs) * 1000));
+			LOG.info(sb.toString());
 			return true;
 		}
 

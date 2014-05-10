@@ -1,0 +1,51 @@
+grant codeBase "file:%JSTORM_HOME%/jstorm-*.jar"  {
+ permission java.security.AllPermission;
+};
+
+grant codeBase "file:%JSTORM_HOME%/lib/*.jar"  {
+ permission java.security.AllPermission;
+};
+
+
+grant {
+ permission java.security.AllPermission;
+/*
+ permission java.lang.RuntimePermission "createClassLoader";
+ permission java.lang.RuntimePermission "getClassLoader";
+ permission java.lang.RuntimePermission "setContextClassLoader";
+ permission java.lang.RuntimePermission "enableContextClassLoaderOverride";
+ permission java.lang.RuntimePermission "closeClassLoader";
+ permission java.lang.RuntimePermission "getenv.*";
+ permission java.lang.RuntimePermission "exitVM.*";
+ permission java.lang.RuntimePermission "shutdownHooks";
+ permission java.lang.RuntimePermission "setIO";
+ permission java.lang.RuntimePermission "modifyThread";
+ permission java.lang.RuntimePermission "stopThread";
+ permission java.lang.RuntimePermission "modifyThreadGroup"; 
+ permission java.lang.RuntimePermission "accessClassInPackage.*";
+ permission java.lang.RuntimePermission "defineClassInPackage.*";
+ permission java.lang.RuntimePermission "accessDeclaredMembers";
+ permission java.lang.RuntimePermission "getStackTrace";
+ permission java.lang.RuntimePermission "setDefaultUncaughtExceptionHandler";
+ permission java.lang.RuntimePermission "getProtectionDomain";
+ permission java.lang.RuntimePermission "redirectSystemStream";
+ permission java.lang.reflect.ReflectPermission "suppressAccessChecks";
+ permission java.util.PropertyPermission "*", "read";
+ permission java.io.FilePermission "stdout.out", "write";
+ permission java.io.FilePermission "stderr.out", "write";
+
+
+
+ permission java.io.FilePermission "%JSTORM_HOME%/**", "read";
+ permission java.io.FilePermission "%JSTORM_HOME%/**", "write";
+
+ permission java.io.FilePermission "%CLASS_PATH%", "read";
+ 
+ permission java.io.FilePermission "%JSTORM_LOCAL_DIR%/**", "read";
+ permission java.io.FilePermission "%JSTORM_LOCAL_DIR%/**", "write";
+ permission java.io.FilePermission "/home/admin/**", "read";
+ permission java.io.FilePermission "/home/admin/jstorm/conf/*", "read";
+ permission java.io.FilePermission "/home/admin/jstorm/logs/*", "write";
+ permission java.io.FilePermission "*.jar", "read";
+*/
+};

@@ -38,7 +38,7 @@ public class RunCounter implements Serializable{
 		intervalCheck.setInterval(60);
 	}
 
-	public void count(long value) {
+	public Double count(long value) {
 		long totalValue = total.incrementAndGet();
 		long timesValue = times.incrementAndGet();
 		long v = values.addAndGet(value);
@@ -47,20 +47,31 @@ public class RunCounter implements Serializable{
 		if (pass != null) {
 			times.set(0);
 			values.set(0);
+			
+			Double tps = timesValue / pass;
 
 			StringBuilder sb = new StringBuilder();
 			sb.append(id);
-			sb.append(", tps:" + timesValue / pass);
+			sb.append(", tps:" + tps);
 			sb.append(", avg:" + ((double) v) / timesValue);
 			sb.append(", total:" + totalValue);
 			LOG.info(sb.toString());
 
+			return tps;
 		}
+		
+		return null;
 	}
 
 	public void cleanup() {
 
 		LOG.info(id + ", total:" + total);
+	}
+	
+	
+
+	public IntervalCheck getIntervalCheck() {
+		return intervalCheck;
 	}
 
 	/**

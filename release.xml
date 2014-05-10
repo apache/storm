@@ -3,6 +3,7 @@
 	<id>tgz</id>
 	<baseDirectory>aloha-run</baseDirectory>
 	<formats>
+		<format>dir</format>
 		<format>tar.gz</format>
 	</formats>
 	<files>
@@ -29,6 +30,13 @@
 			<outputDirectory>./</outputDirectory>
 			<destName>RELEASE</destName>
 		</file>
+		
+		<file>
+			<source>jstorm-ui/target/jstorm-ui-${project.version}.war</source>
+			<outputDirectory>./</outputDirectory>
+			<fileMode>0755</fileMode>
+			<destName>jstorm-ui.war</destName>
+		</file>
 	</files>
 	<fileSets>
 		<fileSet>
@@ -42,13 +50,22 @@
 			<directory>jstorm-server/logs</directory>
 			<outputDirectory>/logs</outputDirectory>
 		</fileSet>
-
+		
+		<fileSet>
+			<directory>jstorm-server/data</directory>
+			<outputDirectory>/data</outputDirectory>
+		</fileSet>
+		
 	</fileSets>
 	<moduleSets>
 		<moduleSet>
 
-			<!-- <includes> <include>com.alipay.dw:jstorm-client</include> <include>com.alipay.dw:jstorm-client-extension</include> 
-				<include>com.alipay.dw:jstorm-server</include> </includes> -->
+			
+			<excludes> 
+				<exclude>com.alibaba.jstorm:jstorm-ui</exclude> 
+				<exclude>com.alibaba.jstorm:jstorm-console</exclude> 
+			</excludes> 
+			 
 			<binaries>
 				<outputFileNameMapping>${artifact.artifactId}.${artifact.extension}</outputFileNameMapping>
 				<outputDirectory>./</outputDirectory>

@@ -38,16 +38,12 @@ public class FollowerRunnable implements Runnable {
 
 	private RunnableCallback callback;
 
-	private final String nimbusHost;
-
 	private final String hostPort;
 
 	@SuppressWarnings("unchecked")
 	public FollowerRunnable(final NimbusData data, int sleepTime) {
 		this.data = data;
 		this.sleepTime = sleepTime;
-		this.nimbusHost = NetWorkUtils.hostname() + "_pid_"
-				+ JStormUtils.process_pid();
 		this.hostPort = NetWorkUtils.hostname()
 				+ ":"
 				+ String.valueOf(Utils.getInt(data.getConf().get(
@@ -60,7 +56,7 @@ public class FollowerRunnable implements Runnable {
 			throw new RuntimeException(e1);
 		}
 		try {
-			data.getStormClusterState().register_nimbus_host(nimbusHost);
+			data.getStormClusterState().register_nimbus_host(hostPort);
 		} catch (Exception e) {
 			LOG.error("register nimbus host fail!", e);
 			throw new RuntimeException();
@@ -83,7 +79,7 @@ public class FollowerRunnable implements Runnable {
 				Thread.sleep(sleepTime);
 				if (data.isLeader()) {
 					data.getStormClusterState().unregister_nimbus_host(
-							nimbusHost);
+							hostPort);
 					return;
 				}
 				if (!data.getStormClusterState().leader_existed()) {
@@ -92,7 +88,7 @@ public class FollowerRunnable implements Runnable {
 				}
 				check();
 				data.getStormClusterState().update_follower_hb(
-						nimbusHost, data.uptime());
+						hostPort, data.uptime());
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				continue;

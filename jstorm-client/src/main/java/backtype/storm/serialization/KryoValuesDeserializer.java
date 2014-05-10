@@ -16,16 +16,8 @@ public class KryoValuesDeserializer {
 	Input _kryoInput;
 
 	public KryoValuesDeserializer(Map conf) {
-		this(conf, null);
-	}
-
-	public KryoValuesDeserializer(Map conf, URLClassLoader loader) {
 		this._kryo = SerializationFactory.getKryo(conf);
 		this._kryoInput = new Input(1);
-		if (loader != null) {
-			this._kryo.setClassLoader(loader);
-		}
-
 	}
 
 	public List<Object> deserializeFrom(Input input) {

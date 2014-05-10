@@ -3,6 +3,7 @@ package com.alibaba.jstorm.daemon.nimbus;
 import java.io.File;
 import java.io.IOException;
 import java.nio.channels.Channel;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,16 +32,18 @@ import backtype.storm.utils.BufferFileInputStream;
 import backtype.storm.utils.TimeCacheMap;
 import backtype.storm.utils.Utils;
 
-import com.alibaba.jstorm.callback.RunnableCallback;
+import com.alibaba.jstorm.callback.AsyncLoopThread;
 import com.alibaba.jstorm.client.ConfigExtension;
-import com.alibaba.jstorm.cluster.Cluster;
 import com.alibaba.jstorm.cluster.StormConfig;
+import com.alibaba.jstorm.daemon.supervisor.Httpserver;
 import com.alibaba.jstorm.schedule.CleanRunnable;
 import com.alibaba.jstorm.schedule.FollowerRunnable;
 import com.alibaba.jstorm.schedule.MonitorRunnable;
+import com.alibaba.jstorm.utils.JStormServerUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
-import com.alibaba.jstorm.utils.NetWorkUtils;
 import com.alibaba.jstorm.utils.PathUtils;
+import com.alibaba.jstorm.utils.SmartThread;
+import com.alibaba.jstorm.utils.SyncContainerHb;
 
 /**
  * 
@@ -72,18 +75,31 @@ public class NimbusServer {
 
 	private FollowerRunnable follower;
 	
+	private Httpserver hs;
+	
+	private List<SmartThread> smartThreads = new ArrayList<SmartThread>();
+	
 	private AtomicBoolean    isShutdown = new AtomicBoolean(false);
 
 	public static void main(String[] args) throws Exception {
 		// read configuration files
 		@SuppressWarnings("rawtypes")
 		Map config = Utils.readStormConfig();
+		
+		JStormServerUtils.startTaobaoJvmMonitor();
+		
 		NimbusServer instance = new NimbusServer();
 
 		INimbus iNimbus = new DefaultInimbus();
 
 		instance.launchServer(config, iNimbus);
 
+	}
+	
+	private void createPid(Map conf) throws Exception {
+		String pidDir = StormConfig.masterPids(conf);
+		
+		JStormServerUtils.createPid(pidDir);
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -93,6 +109,8 @@ public class NimbusServer {
 		try {
 			// 1. check whether mode is distributed or not
 			StormConfig.validate_distributed_mode(conf);
+			
+			createPid(conf);
 	
 			initShutdownHook();
 	
@@ -101,6 +119,11 @@ public class NimbusServer {
 			data = createNimbusData(conf, inimbus);
 	
 			initFollowerThread(conf);
+			
+			hs = new Httpserver(conf);
+			hs.start();
+			
+			initContainerHBThread(conf);
 			
 			while (!data.isLeader())
 				Utils.sleep(5000);
@@ -129,6 +152,13 @@ public class NimbusServer {
 
 		return serviceHandler;
 	}
+	
+	private void initContainerHBThread(Map conf) throws IOException {
+		AsyncLoopThread thread = SyncContainerHb.mkNimbusInstance(conf);
+		if (thread != null) {
+			smartThreads.add(thread);
+		}
+	}
 
 	private void init(Map conf) throws Exception {
 
@@ -141,17 +171,17 @@ public class NimbusServer {
 		initMonitor(conf);
 
 		initCleaner(conf);
-
+		
 		serviceHandler = new ServiceHandler(data);
 
 		if (!data.isLocalMode()) {
-
+			
 			initGroup(conf);
 
 			initThrift(conf);
 		}
 	}
-
+	
 	@SuppressWarnings("rawtypes")
 	private NimbusData createNimbusData(Map conf, INimbus inimbus)
 			throws Exception {
@@ -425,6 +455,17 @@ public class NimbusServer {
 		
 		LOG.info("Begin to shutdown nimbus");
 		
+		for (SmartThread t : smartThreads) {
+			t.cleanup();
+			JStormUtils.sleepMs(10);
+			t.interrupt();
+			try {
+				t.join();
+			} catch (InterruptedException e) {
+				LOG.error("join thread", e);
+			}
+		}
+		
 		if (serviceHandler != null) {
 			serviceHandler.shutdown();
 		}
@@ -447,6 +488,11 @@ public class NimbusServer {
 		if (thriftServer != null) {
 			thriftServer.stop();
 			LOG.info("Successfully shutdown thrift server");
+		}
+		
+		if (hs != null) {
+			hs.shutdown();
+			LOG.info("Successfully shutdown httpserver");
 		}
 
 		LOG.info("Successfully shutdown nimbus");

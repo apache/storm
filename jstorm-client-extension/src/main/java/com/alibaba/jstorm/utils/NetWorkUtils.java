@@ -25,6 +25,16 @@ public class NetWorkUtils {
 		}
 		return hostname;
 	}
+	
+	public static String ip() {
+		String hostname = null;
+		try {
+			hostname = InetAddress.getLocalHost().getHostAddress();
+		} catch (UnknownHostException e) {
+			LOG.error("local_hostname", e);
+		}
+		return hostname;
+	}
 
 	/**
 	 * Check whether the port is available to binding
@@ -70,10 +80,21 @@ public class NetWorkUtils {
 		try {
 			address = InetAddress.getByName(host);
 		} catch (UnknownHostException e) {
-			LOG.warn("NetWorkUtils.host2Ip(" + host + ") error", e);
-			return null;
+			LOG.warn("NetWorkUtil can't transfer hostname(" + host + ") to ip, return hostname", e);
+			return host;
 		}
 		return address.getHostAddress();
+	}
+	
+	public static String ip2Host(String ip) {
+		InetAddress address = null;
+		try {
+			address = InetAddress.getByName(ip);
+		} catch (UnknownHostException e) {
+			LOG.warn("NetWorkUtil can't transfer ip(" + ip + ") to hostname, return ip", e);
+			return ip;
+		}
+		return address.getHostName();
 	}
 	
 }

@@ -73,10 +73,17 @@ public class MonitorRunnable implements Runnable {
 						ResourceAssignment resource = null;
 						if (assignment != null)
 							resource = assignment.getTaskToResource().get(task);
-						if (resource != null)
+						if (resource != null) {
+							String host = resource.getHostname();
+							if (host == null) {
+								host = assignment.getNodeHost().
+										get(resource.getSupervisorId());
+							}
 							LOG.info("taskid: " + task + " is on "
-									+ resource.getHostname() + ":"
+									+ host + ":"
 									+ resource.getPort());
+						}
+							
 						needReassign = true;
 						break;
 					}

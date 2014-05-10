@@ -15,7 +15,7 @@ import com.alibaba.jstorm.callback.RunnableCallback;
 import com.alibaba.jstorm.cluster.StormConfig;
 import com.alibaba.jstorm.task.comm.VirtualPortDispatch;
 import com.alibaba.jstorm.task.comm.VirtualPortShutdown;
-import com.alibaba.jstorm.utils.JStormServerUtils;
+import com.alibaba.jstorm.utils.JStormUtils;
 
 /**
  * worker receive tuple dispatcher
@@ -57,7 +57,7 @@ public class WorkerVirtualPort {
 
 		boolean islocal = StormConfig.local_mode(conf);
 
-		RunnableCallback killfn = JStormServerUtils.getDefaultKillfn();
+		RunnableCallback killfn = JStormUtils.getDefaultKillfn();
 
 		IConnection recvConnection = context.bind(topologyId, port, true);
 

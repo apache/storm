@@ -5,6 +5,7 @@ import java.io.Serializable;
 import backtype.storm.generated.SupervisorSummary;
 
 import com.alibaba.jstorm.common.stats.StatBuckets;
+import com.alibaba.jstorm.utils.NetWorkUtils;
 
 /**
  * mainpage:SupervisorSummary
@@ -15,6 +16,8 @@ import com.alibaba.jstorm.common.stats.StatBuckets;
 public class SupervisorSumm implements Serializable {
 
 	private static final long serialVersionUID = -5631649054937247850L;
+	private String ip;
+	
 	private String host;
 	private String uptime;
 	private String totalCpu;
@@ -30,7 +33,8 @@ public class SupervisorSumm implements Serializable {
 	}
 
 	public SupervisorSumm(SupervisorSummary s) {
-		this.host = s.get_host();
+		this.host = NetWorkUtils.ip2Host(s.get_host());
+		this.ip = NetWorkUtils.host2Ip(s.get_host());
 		this.uptime = StatBuckets.prettyUptimeStr(s.get_uptime_secs());
 
 		this.totalCpu = String.valueOf(s.get_num_cpu());
@@ -46,6 +50,14 @@ public class SupervisorSumm implements Serializable {
 		this.usedPort = String.valueOf(s.get_num_used_workers());
 	}
 
+	public String getIp() {
+		return ip;
+	}
+
+	public void setIp(String ip) {
+		this.ip = ip;
+	}
+	
 	public String getHost() {
 		return host;
 	}

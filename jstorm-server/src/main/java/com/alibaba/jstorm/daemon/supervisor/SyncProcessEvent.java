@@ -53,6 +53,8 @@ class SyncProcessEvent extends ShutdownWork {
 	private IContext sharedContext;
 
 	private CgroupManager cgroupManager;
+	
+	private SandBoxMaker sandBoxMaker;
 
 	// private Supervisor supervisor;
 
@@ -80,9 +82,12 @@ class SyncProcessEvent extends ShutdownWork {
 
 		// right now, sharedContext is null
 		this.sharedContext = sharedContext;
+		
+		this.sandBoxMaker = new SandBoxMaker(conf);
 
-		if (ConfigExtension.isEnableCgroup(conf))
-			cgroupManager = new CgroupManager(conf);
+		if (ConfigExtension.isEnableCgroup(conf)) {
+			cgroupManager = new CgroupManager(conf); 
+		}
 	}
 
 	/**
@@ -414,15 +419,16 @@ class SyncProcessEvent extends ShutdownWork {
 
 			for (String file : stormHomeFiles) {
 				if (file.endsWith(".jar")) {
-					classSet.add(stormHome + "/" + file);
+					classSet.add(stormHome + File.separator + file);
 				}
 			}
 
 			List<String> stormLibFiles = PathUtils.read_dir_contents(stormHome
-					+ "/lib");
+					+ File.separator + "lib");
 			for (String file : stormLibFiles) {
 				if (file.endsWith(".jar")) {
-					classSet.add(stormHome + "/lib/" + file);
+					classSet.add(stormHome + File.separator + "lib" +
+							File.separator + file);
 				}
 			}
 
@@ -494,6 +500,8 @@ class SyncProcessEvent extends ShutdownWork {
 		
 		return gc.toString();
 	}
+	
+	
 
 	/**
 	 * launch a worker in distributed mode
@@ -560,7 +568,7 @@ class SyncProcessEvent extends ShutdownWork {
 		}
 
 //		String logFileName = assignment.getTopologyName() + "-worker-" + port + ".log";
-		 String logFileName = topologyId + "-worker-" + port + ".log";
+		String logFileName = topologyId + "-worker-" + port + ".log";
 
 		environment.put("LD_LIBRARY_PATH",
 				(String) totalConf.get(Config.JAVA_LIBRARY_PATH));
@@ -591,7 +599,8 @@ class SyncProcessEvent extends ShutdownWork {
 
 		commandSB.append(" -Dlogfile.name=");
 		commandSB.append(logFileName);
-
+		
+		
 		// commandSB.append(" -Dlog4j.ignoreTCL=true");
 
 		if (stormhome != null) {
@@ -609,6 +618,11 @@ class SyncProcessEvent extends ShutdownWork {
 
 		String classpath = getClassPath(stormjar, stormhome, totalConf);
 		String workerClassPath = (String) totalConf.get(Config.WORKER_CLASSPATH);
+
+		Map<String, String> policyReplaceMap = new HashMap<String, String>();
+		String realClassPath = classpath + ":" + workerClassPath;
+		policyReplaceMap.put(SandBoxMaker.CLASS_PATH_KEY, realClassPath);
+		commandSB.append(sandBoxMaker.sandboxPolicy(workerId, policyReplaceMap));
 
 		// commandSB.append(" -Dlog4j.configuration=storm.log.properties");
 

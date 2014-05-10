@@ -51,4 +51,8 @@ public class IntervalCheck implements Serializable {
 	public void adjust(long addTimeMillis) {
 		lastCheck += addTimeMillis;
 	}
+	
+	public void start() {
+		lastCheck = System.currentTimeMillis();
+	}
 }

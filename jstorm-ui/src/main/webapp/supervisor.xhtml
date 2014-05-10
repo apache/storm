@@ -88,6 +88,17 @@
 				</f:facet>
 				<h:outputText value="#{ssumm.usedDisk}" />
 			</p:column>
+			
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Supervisor Log" />
+				</f:facet>
+            	<h:outputLink value="listlog.jsf" target="_blank">
+                    <h:outputText value="List logs" />
+                    <f:param name="host" value="#{ssumm.ip}" />
+                </h:outputLink>
+			</p:column>
+			
 		</p:dataTable>
 	</h:form>
 	

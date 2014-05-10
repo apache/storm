@@ -2,7 +2,7 @@ package com.alibaba.jstorm.callback;
 
 import org.apache.log4j.Logger;
 
-import com.alibaba.jstorm.utils.JStormServerUtils;
+import com.alibaba.jstorm.utils.JStormUtils;
 
 /**
  * AsyncLoopThread 's runnable
@@ -29,11 +29,7 @@ public class AsyncLoopRunnable implements Runnable {
 			if (sleepTime < 0) {
 				return true;
 			}else if (sleepTime > 0) {
-				try {
-					JStormServerUtils.sleep_secs(sleepTime);
-				} catch (InterruptedException e) {
-					//
-				}
+				JStormUtils.sleepMs(sleepTime * 1000);
 			} 
 		}
 		return false;

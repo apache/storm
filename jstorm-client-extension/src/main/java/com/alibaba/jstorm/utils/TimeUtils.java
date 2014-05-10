@@ -10,10 +10,20 @@ import backtype.storm.utils.Time;
  */
 public class TimeUtils {
 
+	/**
+	 * Take care of int overflow
+	 * 
+	 * @return
+	 */
 	public static int current_time_secs() {
-		return (int) (Time.currentTimeMillis() / 1000);
+		return  (int)(Time.currentTimeMillis() / 1000);
 	}
 
+	/**
+	 * Take care of int overflow
+	 * 
+	 * @return
+	 */
 	public static int time_delta(int time_secs) {
 		return current_time_secs() - time_secs;
 	}

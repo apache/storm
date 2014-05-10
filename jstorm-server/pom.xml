@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>com.alibaba.jstorm</groupId>
 		<artifactId>jstorm-all</artifactId>
-		<version>0.9.2</version>
+		<version>0.9.3</version>
 		<relativePath>..</relativePath>
 	</parent>
 	<artifactId>jstorm-server</artifactId>
@@ -32,6 +32,13 @@
 			<version>4.10</version>
 			<scope>test</scope>
 		</dependency>
+		<!-- 
+		<dependency>
+		  <groupId>com.alibaba.alimonitor</groupId>
+		  <artifactId>alimonitor-jmonitor</artifactId>
+		  <version>0.5.3</version>
+		</dependency>
+		 -->
 	</dependencies>
 
 </project>

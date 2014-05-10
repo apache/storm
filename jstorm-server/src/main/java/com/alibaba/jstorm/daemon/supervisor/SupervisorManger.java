@@ -15,6 +15,7 @@ import com.alibaba.jstorm.cluster.DaemonCommon;
 import com.alibaba.jstorm.cluster.StormClusterState;
 import com.alibaba.jstorm.cluster.StormConfig;
 import com.alibaba.jstorm.event.EventManager;
+import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.PathUtils;
 import com.alibaba.jstorm.utils.SmartThread;
 
@@ -75,6 +76,8 @@ public class SupervisorManger extends ShutdownWork implements Shutdownable,
 		int size = threads.size();
 		for (int i = 0; i < size; i++) {
 			SmartThread thread = threads.elementAt(i);
+			thread.cleanup();
+			JStormUtils.sleepMs(10);
 			thread.interrupt();
 			try {
 				thread.join();

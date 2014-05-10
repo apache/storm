@@ -217,15 +217,19 @@ public class StatusTransition {
 		// current status is under rebalancing
 		Map<StatusType, Callback> rebalancingMap = new HashMap<StatusType, Callback>();
 
-		StatusType rebalanceOdStatus = StatusType.active;
+		StatusType rebalanceOldStatus = StatusType.active;
 		if (currentStatus.getOldStatus() != null) {
-			rebalanceOdStatus = currentStatus.getOldStatus().getStatusType();
+			rebalanceOldStatus = currentStatus.getOldStatus().getStatusType();
+			// fix double rebalance, make the status always as rebalacing
+			if (rebalanceOldStatus == StatusType.rebalance) {
+				rebalanceOldStatus = StatusType.active;
+			}
 		}
 
 		rebalancingMap.put(StatusType.monitor, null);
 		rebalancingMap.put(StatusType.inactivate, null);
 		rebalancingMap.put(StatusType.startup, new RebalanceTransitionCallback(
-				data, topologyid, new StormStatus(rebalanceOdStatus)));
+				data, topologyid, new StormStatus(rebalanceOldStatus)));
 		rebalancingMap.put(StatusType.activate, null);
 		rebalancingMap.put(StatusType.kill, null);
 		rebalancingMap.put(StatusType.remove, null);
@@ -234,7 +238,7 @@ public class StatusTransition {
 						data, topologyid, currentStatus));
 		rebalancingMap.put(StatusType.do_rebalance,
 				new DoRebalanceTransitionCallback(data, topologyid,
-						new StormStatus(rebalanceOdStatus)));
+						new StormStatus(rebalanceOldStatus)));
 		rtn.put(StatusType.rebalancing, rebalancingMap);
 
 		/**

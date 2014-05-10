@@ -1,19 +1,10 @@
 package backtype.storm.utils;
 
-import backtype.storm.Config;
-import backtype.storm.generated.ComponentCommon;
-import backtype.storm.generated.ComponentObject;
-import backtype.storm.generated.StormTopology;
-import clojure.lang.IFn;
-import clojure.lang.RT;
-import com.netflix.curator.framework.CuratorFramework;
-import com.netflix.curator.framework.CuratorFrameworkFactory;
-import com.netflix.curator.retry.ExponentialBackoffRetry;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
-import java.io.InputStreamReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.URL;
@@ -28,6 +19,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -36,6 +28,17 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.thrift.TException;
 import org.json.simple.JSONValue;
 import org.yaml.snakeyaml.Yaml;
+
+import backtype.storm.Config;
+import backtype.storm.generated.ComponentCommon;
+import backtype.storm.generated.ComponentObject;
+import backtype.storm.generated.StormTopology;
+import clojure.lang.IFn;
+import clojure.lang.RT;
+
+import com.netflix.curator.framework.CuratorFramework;
+import com.netflix.curator.framework.CuratorFrameworkFactory;
+import com.netflix.curator.retry.ExponentialBackoffRetry;
 
 public class Utils {
 	public static final String DEFAULT_STREAM_ID = "default";
@@ -175,6 +178,38 @@ public class Utils {
 		}
 		return ret;
 	}
+	
+	public static void replaceLocalDir(Map<Object, Object> conf) {
+		String stormHome = System.getProperty("jstorm.home");
+		boolean isEmpty = StringUtils.isBlank(stormHome);
+		
+		Map<Object, Object> replaceMap = new HashMap<Object, Object>();
+		
+		for (Entry entry : conf.entrySet()) {
+			Object key = entry.getKey();
+			Object value = entry.getValue();
+			
+			if (value instanceof String) {
+				if (StringUtils.isBlank((String)value) == true ) {
+					continue;
+				}
+				
+				String str = (String)value;
+				if (isEmpty == true) {
+				    // replace %JSTORM_HOME% as current directory
+				    str = str.replace("%JSTORM_HOME%", ".");
+				}else {
+				    str = str.replace("%JSTORM_HOME%", stormHome);
+				}
+				
+				
+				replaceMap.put(key, str);
+			}
+		}
+		
+		
+		conf.putAll(replaceMap);
+	}
 
 	public static Map readStormConfig() {
 		Map ret = readDefaultConfig();
@@ -187,6 +222,8 @@ public class Utils {
 		}
 		ret.putAll(storm);
 		ret.putAll(readCommandLineOpts());
+		
+		replaceLocalDir(ret);
 		return ret;
 	}
 
@@ -480,4 +517,5 @@ public class Utils {
 		String rtn = toks_to_path(tokenize_path(path));
 		return rtn;
 	}
+	
 }

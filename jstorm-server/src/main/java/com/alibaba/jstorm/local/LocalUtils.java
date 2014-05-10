@@ -1,5 +1,6 @@
 package com.alibaba.jstorm.local;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -11,13 +12,11 @@ import org.apache.zookeeper.server.NIOServerCnxn.Factory;
 
 import backtype.storm.Config;
 import backtype.storm.messaging.IContext;
-import backtype.storm.testing.MkClusterParam;
 import backtype.storm.utils.Utils;
 
 import com.alibaba.jstorm.daemon.nimbus.DefaultInimbus;
 import com.alibaba.jstorm.daemon.nimbus.NimbusServer;
 import com.alibaba.jstorm.daemon.supervisor.Supervisor;
-import com.alibaba.jstorm.daemon.supervisor.SupervisorManger;
 import com.alibaba.jstorm.message.netty.NettyContext;
 import com.alibaba.jstorm.zk.Zookeeper;
 
@@ -61,7 +60,7 @@ public class LocalUtils {
 		} catch (Exception e) {
 			LOG.error("prepare cluster error!", e);
 			state.clean();
-			
+
 		}
 		return null;
 	}
@@ -79,7 +78,8 @@ public class LocalUtils {
 	}
 
 	private static String getTmpDir() {
-		return System.getProperty("java.io.tmpdir") + UUID.randomUUID();
+		return System.getProperty("java.io.tmpdir") + File.separator
+				+ UUID.randomUUID();
 	}
 
 	private static Map getLocalConf(int port) {

@@ -34,8 +34,8 @@ import com.alibaba.jstorm.daemon.nimbus.StatusType;
 import com.alibaba.jstorm.resource.ResourceAssignment;
 import com.alibaba.jstorm.task.Assignment;
 import com.alibaba.jstorm.task.TaskShutdownDameon;
+import com.alibaba.jstorm.utils.JStormServerUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
-import com.alibaba.jstorm.utils.PathUtils;
 import com.alibaba.jstorm.zk.ZkTool;
 import com.lmax.disruptor.MultiThreadedClaimStrategy;
 import com.lmax.disruptor.WaitStrategy;
@@ -123,10 +123,8 @@ public class WorkerData {
 		this.topologyStatus = StatusType.active;
 
 		if (StormConfig.cluster_mode(conf).equals("distributed")) {
-			String pid = JStormUtils.process_pid();
-			String pidPath = StormConfig.worker_pid_path(conf, worker_id, pid);
-			PathUtils.touch(pidPath);
-			LOG.info("Current worker's pid is " + pidPath);
+			String pidDir = StormConfig.worker_pids_root(conf, worker_id);
+			JStormServerUtils.createPid(pidDir);
 		}
 
 		// create zk interface

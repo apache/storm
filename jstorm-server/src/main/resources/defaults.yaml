@@ -12,7 +12,7 @@ storm.zookeeper.port: 2181
 storm.zookeeper.root: "/jstorm"
 storm.zookeeper.session.timeout: 20000
 storm.zookeeper.connection.timeout: 15000
-storm.zookeeper.retry.times: 5
+storm.zookeeper.retry.times: 30
 storm.zookeeper.retry.interval: 1000
 storm.zookeeper.retry.intervalceiling.millis: 30000
 storm.cluster.mode: "distributed" # can be distributed or local
@@ -25,8 +25,8 @@ storm.messaging.transport: "com.alibaba.jstorm.message.netty.NettyContext"
 nimbus.host: "localhost"
 nimbus.thrift.port: 7627
 nimbus.thrift.max_buffer_size: 1048576
-nimbus.childopts: " -Xms1g -Xmx1g -Xmn256m -XX:PermSize=96m -XX:+UseConcMarkSweepGC  -XX:+UseCMSInitiatingOccupancyOnly -XX:CMSInitiatingOccupancyFraction=80 -XX:CMSFullGCsBeforeCompaction=5 -XX:+HeapDumpOnOutOfMemoryError  -XX:+UseCMSCompactAtFullCollection -XX:CMSMaxAbortablePrecleanTime=5000 "
-nimbus.task.timeout.secs: 60
+nimbus.childopts: " -Xms2g -Xmx2g -Xmn768m -XX:PermSize=128m  -XX:SurvivorRatio=4 -XX:MaxTenuringThreshold=20 -XX:+UseConcMarkSweepGC  -XX:+UseCMSInitiatingOccupancyOnly -XX:CMSInitiatingOccupancyFraction=70 -XX:CMSFullGCsBeforeCompaction=5 -XX:+HeapDumpOnOutOfMemoryError  -XX:+UseCMSCompactAtFullCollection -XX:CMSMaxAbortablePrecleanTime=5000 "
+nimbus.task.timeout.secs: 120
 nimbus.supervisor.timeout.secs: 60
 nimbus.monitor.freq.secs: 10
 nimbus.cleanup.inbox.freq.secs: 600
@@ -39,14 +39,14 @@ nimbus.classpath: ""
 
 ### ui.* configs are for the master
 ui.port: 8080
-ui.childopts: " -Xms1g -Xmx1g -Xmn256m -XX:PermSize=96m -XX:+UseConcMarkSweepGC  -XX:+UseCMSInitiatingOccupancyOnly -XX:CMSInitiatingOccupancyFraction=80 -XX:CMSFullGCsBeforeCompaction=5 -XX:+HeapDumpOnOutOfMemoryError  -XX:+UseCMSCompactAtFullCollection -XX:CMSMaxAbortablePrecleanTime=5000 "
+ui.childopts: " -Xms1g -Xmx1g -Xmn256m -XX:PermSize=96m -XX:+UseConcMarkSweepGC  -XX:+UseCMSInitiatingOccupancyOnly -XX:CMSInitiatingOccupancyFraction=70 -XX:CMSFullGCsBeforeCompaction=5 -XX:+HeapDumpOnOutOfMemoryError  -XX:+UseCMSCompactAtFullCollection -XX:CMSMaxAbortablePrecleanTime=5000 "
 
 drpc.port: 4772
 drpc.worker.threads: 64
 drpc.queue.size: 128
 drpc.invocations.port: 4773
 drpc.request.timeout.secs: 600
-drpc.childopts: " -Xms1g -Xmx1g -Xmn256m -XX:PermSize=96m -Xmn128m -XX:PermSize=64m -XX:+UseConcMarkSweepGC  -XX:+UseCMSInitiatingOccupancyOnly -XX:CMSInitiatingOccupancyFraction=80 -XX:CMSFullGCsBeforeCompaction=5 -XX:+HeapDumpOnOutOfMemoryError  -XX:+UseCMSCompactAtFullCollection -XX:CMSMaxAbortablePrecleanTime=5000 "
+drpc.childopts: " -Xms1g -Xmx1g -Xmn256m -XX:PermSize=96m -Xmn128m -XX:PermSize=64m -XX:+UseConcMarkSweepGC  -XX:+UseCMSInitiatingOccupancyOnly -XX:CMSInitiatingOccupancyFraction=70 -XX:CMSFullGCsBeforeCompaction=5 -XX:+HeapDumpOnOutOfMemoryError  -XX:+UseCMSCompactAtFullCollection -XX:CMSMaxAbortablePrecleanTime=5000 "
 
 transactional.zookeeper.root: "/transactional"
 transactional.zookeeper.servers: null
@@ -59,11 +59,11 @@ supervisor.slots.ports:
     - 6801
     - 6802
     - 6803
-supervisor.childopts: " -Xms512m -Xmx512m -Xmn128m -XX:PermSize=64m -XX:+UseConcMarkSweepGC  -XX:+UseCMSInitiatingOccupancyOnly -XX:CMSInitiatingOccupancyFraction=80 -XX:CMSFullGCsBeforeCompaction=5 -XX:+HeapDumpOnOutOfMemoryError  -XX:+UseCMSCompactAtFullCollection -XX:CMSMaxAbortablePrecleanTime=5000 "
+supervisor.childopts: " -Xms512m -Xmx512m -Xmn128m -XX:PermSize=64m -XX:+UseConcMarkSweepGC  -XX:+UseCMSInitiatingOccupancyOnly -XX:CMSInitiatingOccupancyFraction=70 -XX:CMSFullGCsBeforeCompaction=5 -XX:+HeapDumpOnOutOfMemoryError  -XX:+UseCMSCompactAtFullCollection -XX:CMSMaxAbortablePrecleanTime=5000 "
 #how long supervisor will wait to ensure that a worker process is started
 supervisor.worker.start.timeout.secs: 120
 #how long between heartbeats until supervisor considers that worker dead and tries to restart it
-supervisor.worker.timeout.secs: 60
+supervisor.worker.timeout.secs: 120
 #how frequently the supervisor checks on the status of the processes it's monitoring and restarts if necessary
 supervisor.monitor.frequency.secs: 10
 #how frequently the supervisor heartbeats to the cluster state (for nimbus)
@@ -71,6 +71,8 @@ supervisor.heartbeat.frequency.secs: 60
 supervisor.enable: true
 #if set null, it will be get by system
 supervisor.hostname: null
+# use ip
+supervisor.use.ip: false
 
 
 #How many cpu slot one supervisor can support , if it is null, it will be set by JStorm
@@ -95,7 +97,7 @@ supervisor.disk.slot: null
 # worker gc configuration
 # worker.gc.path will put all gc logs and memory dump file
 worker.gc.path: "%JSTORM_HOME%/logs"
-worker.gc.childopts: " -XX:SurvivorRatio=4 -XX:MaxTenuringThreshold=20 -XX:+UseConcMarkSweepGC  -XX:+UseCMSInitiatingOccupancyOnly -XX:CMSInitiatingOccupancyFraction=80 -XX:CMSFullGCsBeforeCompaction=5 -XX:+HeapDumpOnOutOfMemoryError -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseCMSCompactAtFullCollection -XX:CMSMaxAbortablePrecleanTime=5000 "
+worker.gc.childopts: " -XX:SurvivorRatio=4 -XX:MaxTenuringThreshold=20 -XX:+UseConcMarkSweepGC  -XX:+UseCMSInitiatingOccupancyOnly -XX:CMSInitiatingOccupancyFraction=70 -XX:CMSFullGCsBeforeCompaction=5 -XX:+HeapDumpOnOutOfMemoryError -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseCMSCompactAtFullCollection -XX:CMSMaxAbortablePrecleanTime=5000 "
 worker.heartbeat.frequency.secs: 2
 worker.classpath: ""
 worker.redirect.output: true
@@ -222,3 +224,17 @@ nimbus.groupfile.path: null
 user.group: null
 user.name: null
 user.password: null
+
+
+# container setting means jstorm is running under other system, such as hadoop-yarn/Ali-Apsara
+# For example, in Ali-Apsara, Fuxi start c++ container process, 
+# the C++ container fork process to start nimbus or supervisor 
+container.heartbeat.timeout.seconds: 240
+container.heartbeat.frequence: 10
+
+
+# enable java sandbox or not
+java.sandbox.enable: false.
+
+# logview port
+deamon.logview.port: 7621

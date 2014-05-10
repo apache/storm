@@ -1,10 +1,11 @@
 package com.alibaba.jstorm.task.execute;
 
-import java.net.URLClassLoader;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.log4j.Logger;
 
+import backtype.storm.Config;
 import backtype.storm.messaging.IConnection;
 import backtype.storm.task.IBolt;
 import backtype.storm.task.IOutputCollector;
@@ -20,7 +21,9 @@ import com.alibaba.jstorm.task.TaskTransfer;
 import com.alibaba.jstorm.task.acker.Acker;
 import com.alibaba.jstorm.task.comm.TaskSendTargets;
 import com.alibaba.jstorm.task.error.ITaskReportErr;
+import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.RotatingMap;
+import com.alibaba.jstorm.utils.TimeUtils;
 import com.lmax.disruptor.EventHandler;
 
 /**
@@ -38,6 +41,8 @@ public class BoltExecutors extends BaseExecutors implements EventHandler {
 	protected RotatingMap<Tuple, Long> tuple_start_times;
 	private long lastRotate = System.currentTimeMillis();
 	private long rotateTime;
+	
+	private int ackerNum = 0;
 
 	// internal outputCollector is BoltCollector
 	private OutputCollector outputCollector;
@@ -59,7 +64,10 @@ public class BoltExecutors extends BaseExecutors implements EventHandler {
 
 		this.tuple_start_times = new RotatingMap<Tuple, Long>(
 				Acker.TIMEOUT_BUCKET_NUM);
-		this.rotateTime = 1000L * message_timeout_secs;
+		this.rotateTime = 1000L * message_timeout_secs/Acker.TIMEOUT_BUCKET_NUM;
+		
+		this.ackerNum = JStormUtils.parseInt(storm_conf
+				.get(Config.TOPOLOGY_ACKER_EXECUTORS));
 
 		// don't use TimeoutQueue for recv_tuple_queue,
 		// then other place should check the queue size
@@ -104,8 +112,17 @@ public class BoltExecutors extends BaseExecutors implements EventHandler {
 
 				long now = System.currentTimeMillis();
 				if (now - lastRotate > rotateTime) {
-					tuple_start_times.rotate();
+					Map<Tuple, Long> timeoutMap = tuple_start_times.rotate();
 					lastRotate = now;
+					
+					if (ackerNum > 0) {
+						// only when acker is enable
+						for (Entry<Tuple, Long> entry : timeoutMap.entrySet()) {
+							Tuple input = entry.getKey();
+							task_stats.bolt_failed_tuple(input.getSourceComponent(),
+									input.getSourceStreamId());
+						}
+					}
 				}
 
 				disruptorRecvQueue.consumeBatchWhenAvailable(this);
@@ -141,6 +158,17 @@ public class BoltExecutors extends BaseExecutors implements EventHandler {
 			error = e;
 			LOG.error("bolt execute error ", e);
 			report_error.report(e);
+		}
+		
+		if (ackerNum == 0) {
+			// only when acker is disable 
+			// get tuple process latency
+			Long start_time = (Long) tuple_start_times.remove(tuple);
+			if (start_time != null) {
+				Long delta = TimeUtils.time_delta_ms(start_time);
+				task_stats.bolt_acked_tuple(tuple.getSourceComponent(),
+						tuple.getSourceStreamId(), delta);
+			}
 		}
 	}
 

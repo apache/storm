@@ -26,6 +26,8 @@ public class CommonStatsData implements Serializable {
 
 	protected Map<StaticsType, Map<Integer, Object>> staticsMap;
 	protected int rate = StatFunction.NUM_STAT_BUCKETS;
+	
+	public static final long LATENCY_MS_RATIO = 1000;
 
 	public CommonStatsData() {
 		staticsMap = new HashMap<StaticsType, Map<Integer, Object>>();
@@ -123,6 +125,7 @@ public class CommonStatsData implements Serializable {
 
 		return ret;
 	}
+	
 
 	/**
 	 * Get emmitted statics
@@ -163,11 +166,39 @@ public class CommonStatsData implements Serializable {
 	}
 
 	public Map<String, Map<GlobalStreamId, Double>> get_process_latencie() {
+		Map<String, Map<GlobalStreamId, Double>> ret = 
+				new HashMap<String, Map<GlobalStreamId,Double>>();
+		
 		Map<Integer, Object> statics = staticsMap
 				.get(StaticsType.process_latencies);
 
 		GlobalStreamId streamIdSample = new GlobalStreamId("", "");
-		return convertKey(statics, streamIdSample, Double.valueOf(0));
+		
+		Map<String, Map<GlobalStreamId, Double>> raw = 
+				convertKey(statics, streamIdSample, Double.valueOf(0));
+		
+		for (Entry<String, Map<GlobalStreamId, Double>> windowEntry : raw.entrySet()) {
+			String windowStr = windowEntry.getKey();
+			Map<GlobalStreamId, Double> oldStreamMap = windowEntry.getValue();
+			
+			Map<GlobalStreamId, Double> newStreamMap = new HashMap<GlobalStreamId, Double>();
+			
+			for (Entry<GlobalStreamId, Double> entry: oldStreamMap.entrySet()) {
+				GlobalStreamId key = entry.getKey();
+				Double         value = entry.getValue();
+				
+				if (value == null) {
+					newStreamMap.put(key, Double.valueOf(0));
+				}else {
+					newStreamMap.put(key, value/LATENCY_MS_RATIO);
+				}
+				
+			}
+			
+			ret.put(windowStr, newStreamMap);
+		}
+		
+		return ret;
 	}
 
 	public TaskStats getTaskStats() {

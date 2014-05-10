@@ -1,6 +1,10 @@
 package com.alibaba.jstorm.utils;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.management.ManagementFactory;
@@ -12,6 +16,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.zip.ZipEntry;
@@ -27,8 +32,15 @@ import javax.management.ReflectionException;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteException;
+import org.apache.log4j.Appender;
+import org.apache.log4j.FileAppender;
 import org.apache.log4j.Logger;
 import org.json.simple.JSONValue;
+
+import backtype.storm.utils.Utils;
+
+import com.alibaba.jstorm.callback.AsyncLoopDefaultKill;
+import com.alibaba.jstorm.callback.RunnableCallback;
 
 /**
  * JStorm utility
@@ -237,6 +249,14 @@ public class JStormUtils {
 		} catch (Exception e) {
 			LOG.info("Error when trying to kill " + pid + ".Exception ", e);
 		}
+	}
+	
+	public static void kill(Integer pid) {
+		process_killed(pid);
+		
+		sleepMs(5 * 1000);
+		
+		ensure_process_killed(pid);
 	}
 
 	public static java.lang.Process launch_process(String command,
@@ -707,5 +727,80 @@ public class JStormUtils {
 		Long ret = (Long) object;
 
 		return ret;
+	}
+	
+	public static String getLogFileName() {
+		Enumeration<Appender> enumAppender = Logger.getRootLogger()
+				.getAllAppenders();
+		FileAppender fileAppender = null;
+		while (enumAppender.hasMoreElements()) {
+			Appender appender = enumAppender.nextElement();
+			if (appender instanceof FileAppender) {
+				fileAppender = (FileAppender) appender;
+				break;
+			}
+		}
+		if (fileAppender != null) {
+			return  fileAppender.getFile();
+			
+		}
+		
+		return null;
+	}
+	
+	public static String getLogDir() {
+		String file = JStormUtils.getLogFileName();
+		if (file != null) {
+			return file.substring(0, file.lastIndexOf(File.separator));
+		}
+		
+		String stormHome = System.getProperty("jstorm.home");
+		if (stormHome == null) {
+			return "." + File.separator + "logs";
+		}else {
+			return stormHome + File.separator + "logs";
+		}
+	}
+	
+	public static void redirectOutput(String file) throws Exception {
+		
+
+		System.out.println("Redirect output to " + file);
+
+		FileOutputStream workerOut = new FileOutputStream(new File(
+				file));
+
+		PrintStream ps = new PrintStream(new BufferedOutputStream(workerOut),
+				true);
+		System.setOut(ps);
+		System.setErr(ps);
+
+		LOG.info("Successfully redirect System.out to " + file);
+
+	}
+	
+	public static RunnableCallback getDefaultKillfn() {
+
+		return new AsyncLoopDefaultKill();
+	}
+
+	public static TreeMap<Integer, Integer> integer_divided(int sum,
+			int num_pieces) {
+		return Utils.integerDivided(sum, num_pieces);
+	}
+
+	public static <K, V> HashMap<K, V> filter_val(RunnableCallback fn,
+			Map<K, V> amap) {
+		HashMap<K, V> rtn = new HashMap<K, V>();
+
+		for (Entry<K, V> entry : amap.entrySet()) {
+			V value = entry.getValue();
+			Object result = fn.execute(value);
+
+			if (result == (Boolean) true) {
+				rtn.put(entry.getKey(), value);
+			}
+		}
+		return rtn;
 	}
 }

@@ -2,6 +2,7 @@ package com.alibaba.jstorm.utils;
 
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 
@@ -44,6 +45,7 @@ public class EventSampler {
 	}
 
 	private AtomicInteger counter = new AtomicInteger(0);
+	private AtomicLong sum = new AtomicLong(0);
 	private IntervalCheck intervalCheck = new IntervalCheck();
 
 	public Integer tpsCheck() {
@@ -68,6 +70,28 @@ public class EventSampler {
 			counter.set(0);
 
 			return send;
+
+		}
+
+		return null;
+	}
+	
+	public Pair<Integer, Double> avgCheck(long one) {
+		int send = counter.incrementAndGet();
+		long total = sum.addAndGet(one);
+
+		Double pastSeconds = intervalCheck.checkAndGet();
+		if (pastSeconds != null) {
+			counter.set(0);
+			sum.set(0);
+			
+			Double avg = Double.valueOf(0);
+			if (send != 0) {
+				avg = ((double)total)/send;
+			}
+			 
+			
+			return new Pair<Integer, Double>(send, avg);
 
 		}
 

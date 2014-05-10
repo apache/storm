@@ -50,6 +50,7 @@ import com.alibaba.jstorm.ui.model.SupervisorSumm;
 import com.alibaba.jstorm.ui.model.TopologySumm;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.NetWorkUtils;
+import com.google.common.collect.Lists;
 
 public class UIUtils {
 
@@ -276,11 +277,7 @@ public class UIUtils {
 				.get_uptime_secs()));
 		componentTask.setLastErr(UIUtils.getTaskError(task.get_errors()));
 		
-		String ip = NetWorkUtils.host2Ip(task.get_host());
-		if (ip == null) {
-			ip = task.get_host();
-		}
-		componentTask.setIp(ip);
+		componentTask.setIp(NetWorkUtils.host2Ip(task.get_host()));
 
 		if (task.get_disk() != null) {
 			componentTask.setDiskSlot(task.get_disk());
@@ -532,7 +529,13 @@ public class UIUtils {
 		List<ClusterSumm> clusumms = new ArrayList<ClusterSumm>();
 
 		ClusterSumm clusterSumm = new ClusterSumm();
-		clusterSumm.setNimbusHostname(client.getMasterHost());
+		String master = client.getMasterHost();
+		clusterSumm.setNimbusHostname(master);
+		if (master.contains(":")) {
+			clusterSumm.setNimbusIp(NetWorkUtils.host2Ip(master.substring(0, master.indexOf(":"))));
+		} else {
+			clusterSumm.setNimbusIp(NetWorkUtils.host2Ip(master));
+		}
 		if (summ.is_isGroupModel())
 			clusterSumm.setIsGroupModel("true");
 		else
@@ -635,7 +638,7 @@ public class UIUtils {
 		}
 		return ret;
 	}
-
+	
 	public static void main(String[] args) {
 	}
 }

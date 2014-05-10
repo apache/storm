@@ -70,7 +70,7 @@ public class CgroupManager {
 		CgroupCommon workerGroup = new CgroupCommon(workerId, h,
 				this.rootCgroup);
 		for (Integer pid : workerGroup.getTasks()) {
-			JStormUtils.process_killed(pid);
+			JStormUtils.kill(pid);
 		}
 		JStormUtils.sleepMs(1500);
 		center.delete(workerGroup);

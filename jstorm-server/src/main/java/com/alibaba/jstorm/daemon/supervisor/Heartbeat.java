@@ -20,6 +20,7 @@ import com.alibaba.jstorm.resource.SharedResourcePool;
 import com.alibaba.jstorm.resource.SlotResourcePool;
 import com.alibaba.jstorm.utils.JStormServerConfig;
 import com.alibaba.jstorm.utils.JStormUtils;
+import com.alibaba.jstorm.utils.NetWorkUtils;
 import com.alibaba.jstorm.utils.TimeUtils;
 
 /**
@@ -54,7 +55,17 @@ class Heartbeat extends RunnableCallback {
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public Heartbeat(Map conf, StormClusterState stormClusterState,
-			String supervisorId, String myHostName, AtomicBoolean active) {
+			String supervisorId, AtomicBoolean active) {
+	    
+        String myHostName = ConfigExtension.getSupervisorHost(conf);
+        if (myHostName == null) {
+            myHostName = NetWorkUtils.hostname();
+        }
+        
+        if (ConfigExtension.isSupervisorUseIp(conf)) {
+        	myHostName = NetWorkUtils.ip();
+        }
+	    
 		this.stormClusterState = stormClusterState;
 		this.supervisorId = supervisorId;
 		this.conf = conf;

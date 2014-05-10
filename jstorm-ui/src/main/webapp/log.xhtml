@@ -1,27 +1,89 @@
 <?xml version='1.0' encoding='UTF-8' ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
 <html xmlns="http://www.w3.org/1999/xhtml"
 	xmlns:h="http://java.sun.com/jsf/html"
 	xmlns:f="http://java.sun.com/jsf/core"
-	xmlns:p="http://primefaces.org/ui">
+	xmlns:p="http://primefaces.org/ui"
+	xmlns:c="http://java.sun.com/jsp/jstl/core">
+
 <h:head>
-	<title>Jstorm UI</title>
+	<title>Jstorm UI Log View</title>
 </h:head>
 
 <h:body>
-	<h:outputLink value="cluster.jsf">
-		<h1>
-			<h:outputText value="JStorm UI" />
-		</h1>
-	</h:outputLink>
-	<h2>Task Logs: '#{logpage.componentTask.topologyid}_#{logpage.componentTask.componentid}_#{logpage.componentTask.taskid}'
-	</h2>
+	<h2>Logs: '#{logpage.logFileName}'</h2>
+	
+	
+                
+	<hr />
+	<!-- 
+	<p:dataTable id="data" var="pages" value="#{logpage.pages}" rows="10">
 
-	<h:form>
-
-		<h:outputText value="#{logpage.log}" />
+		<p:dataScroller id="scroll_1" for="data" fastStep="10"
+			paginator="true" paginatorMaxPages="9">
+			<f:facet name="first">
+				<p:graphicImage url="images/first.gif" border="1" />
+			</f:facet>
+			<f:facet name="last">
+				<p:graphicImage url="images/end.gif" border="1" />
+			</f:facet>
+			<f:facet name="previous">
+				<p:graphicImage url="images/prev.gif" border="1" />
+			</f:facet>
+			<f:facet name="next">
+				<p:graphicImage url="images/next.gif" border="1" />
+			</f:facet>
+			<f:facet name="fastforward">
+				<p:graphicImage url="images/ff.gif" border="1" />
+			</f:facet>
+			<f:facet name="fastrewind">
+				<p:graphicImage url="images/bb.gif" border="1" />
+			</f:facet>
+		</p:dataScroller>
+	</p:dataTable>
+	 -->
+	<pre>
+    <h:outputText value="#{logpage.log}" />
+	</pre>
+	
+   <hr />           
+   <h:form style="text-align:right">
+   <!-- 
+		<p:dataTable id="pagetable" var="pages"
+			value="#{logpage.pages}">
+			<p:column>
+			<f:facet  name="header">
+				<h:outputText value="pages" />
+			</f:facet>
+				<h:outputLink value="log.jsf" target="_blank">
+                    <h:outputText value="#{pages.index}" />
+                    <f:param name="host" value="#{logpage.host}" />
+                    <f:param name="log" value="#{logpage.logFileName}" />
+                    <f:param name="pos" value="#{pages.pos}"  />
+                </h:outputLink>
+			
+			</p:column>
+			
+		</p:dataTable>
 		
-	</h:form>
+		<% out.println("sdfsdf") %>
+		 -->
+	<c:forEach items="#{logpage.pages}" var="pages" >
+		<h:outputLink value="log.jsf" target="_blank">
+                    <h:outputText value="page:#{pages.index}"  />
+                    <f:param name="host" value="#{logpage.host}" />
+                    <f:param name="log" value="#{logpage.logFileName}" />
+                    <f:param name="pos" value="#{pages.pos}"  />
+                </h:outputLink>
+                <h:outputText value=" "  />
+	</c:forEach>
+	
 
+	
+	  
+	</h:form>	
+				
+	
 </h:body>
 </html>

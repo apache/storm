@@ -1,5 +1,37 @@
 [JStorm 0.9.0 ΩÈ…‹](http://wenku.baidu.com/view/59e81017dd36a32d7375818b.html)
 
+#Release 0.9.3
+## New feature
+1. Support Aliyun Apsara/Hadoop Yarn
+
+## Enhancement
+1. Redesign Logview
+2. Kill old worker under the same port when worker is starting
+3. Add zk information/version information on UI
+4. Add nodeport information for dead task in nimbus
+5. Add interface to get values when spout doing ack
+6. Add timeout statics in bolt
+7. jstorm script return status
+8. Add logs when fail to deserialize tuple 
+9. Skip sleep operation when max_pending is 1 and waiting ack
+10. Remove useless dependency
+11. Longer task timeout setting
+12. Add supervisor.use.ip setting
+13. Redirect supervisor out/err to /dev/null, redirect worker out/err to one file
+
+
+## Bug Fix
+1. Fix kryo fail to deserialize object when enable classloader
+2. Fix fail to reassign dead task when worker number is less than topology apply
+3. Set samller jvm heap memory for jstorm-client 
+4. Fix fail to set topology status as active when  do rebalance operation twice at one time,
+5. Fix local mode bug under linux
+6. Fix average latency isn't accurate
+7. GC tuning.
+8. Add default kill function for AysncLoopRunnable
+ 
+
+
 #Release 0.9.2
 ## New feature
 1. Support LocalCluster/LocalDrpc mode, support debugging topology under local mode

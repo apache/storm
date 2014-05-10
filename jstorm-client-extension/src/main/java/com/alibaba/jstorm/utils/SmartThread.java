@@ -13,4 +13,6 @@ public interface SmartThread {
 	public void interrupt();
 
 	public Boolean isSleeping();
+	
+	public void cleanup();
 }

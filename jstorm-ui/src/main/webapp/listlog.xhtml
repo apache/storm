@@ -1,0 +1,58 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:p="http://primefaces.org/ui">
+<h:head>
+	<title>Jstorm UI Log View</title>
+</h:head>
+
+<h:body>
+	<h2>List Logs: '#{listlogpage.summary}'</h2>
+
+
+
+	<hr />
+	<h:form>
+		<p:dataTable id="files" var="files" value="#{listlogpage.files}"
+			sortBy="#{files.modifyTime}" sortOrder="DESCENDING">
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Name" />
+				</f:facet>
+				<h:outputLink value="log.jsf" target="_blank">
+					<h:outputText value="#{files.fileName}" />
+					<f:param name="host" value="#{param.host}" />
+					<f:param name="log" value="#{files.fileName}" />
+				</h:outputLink>
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="isDir" />
+				</f:facet>
+				<h:outputText value="#{files.isDir}" />
+
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Modify Time" />
+				</f:facet>
+				<h:outputText value="#{files.modifyTime}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Size" />
+				</f:facet>
+				<h:outputText value="#{files.size}" />
+			</p:column>
+		</p:dataTable>
+	</h:form>
+
+
+
+</h:body>
+</html>

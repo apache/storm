@@ -13,12 +13,9 @@
 			<h:outputText value="JStorm UI" />
 		</h1>
 	</h:outputLink>
-	<h2>Summary
-	
-	</h2>
+	<h2>Summary</h2>
 	<h:form>
-		<p:dataTable id="componenttable" var="com"
-			value="#{spoutpage.coms}">
+		<p:dataTable id="componenttable" var="com" value="#{spoutpage.coms}">
 			<p:column>
 				<f:facet name="header">
 					<h:outputText value="Component Id" />
@@ -31,9 +28,9 @@
 					<h:outputText value="Topology Name" />
 				</f:facet>
 				<h:outputLink value="topology.jsf">
-                    <h:outputText value="#{com.topologyname}" />
-                    <f:param name="topologyid" value="#{param.topologyid}" />
-                </h:outputLink>
+					<h:outputText value="#{com.topologyname}" />
+					<f:param name="topologyid" value="#{param.topologyid}" />
+				</h:outputLink>
 			</p:column>
 
 			<p:column>
@@ -42,21 +39,21 @@
 				</f:facet>
 				<h:outputText value="#{com.parallelism}" />
 			</p:column>
-			
+
 			<p:column>
 				<f:facet name="header">
 					<h:outputText value="Cpu Slot Num" />
 				</f:facet>
 				<h:outputText value="#{com.cpuNum}" />
 			</p:column>
-			
+
 			<p:column>
 				<f:facet name="header">
 					<h:outputText value="Memory Slot Num" />
 				</f:facet>
 				<h:outputText value="#{com.memNum}" />
 			</p:column>
-			
+
 			<p:column>
 				<f:facet name="header">
 					<h:outputText value="Disk Slot Num" />
@@ -66,33 +63,35 @@
 		</p:dataTable>
 	</h:form>
 	<h2>
-        <h:outputText value="Component stats" />
-        <span style="display:inline-block;">
-        <form name = "aaa" action="spout.jsf" method="post">
-            <input id="topologyid" name="topologyid" type="hidden" value="#{param.topologyid}" />
-            <input id="componentid" name="componentid" type="hidden" value="#{param.componentid}" />
-            <input id="windowpara" name="windowparaname" type="hidden" value="#{param.window}" />
-            <select id ="window" name="window" onchange= "submit();">
-                <option value="0d0h10m0s">0d0h10m0s</option>
-                <option value="0d3h0m0s">0d3h0m0s</option>
-                <option value="1d0h0m0s">1d0h0m0s</option>
-                <option value="All-time">All-time</option>
-            </select>
-        </form>
-        </span>
-        
-    </h2>
-	
+		<h:outputText value="Component stats" />
+		<span style="display: inline-block;">
+			<form name="aaa" action="spout.jsf" method="post">
+				<input id="topologyid" name="topologyid" type="hidden"
+					value="#{param.topologyid}" /> 
+				<input id="componentid" name="componentid" type="hidden" 
+					value="#{param.componentid}" /> 
+				<input id="windowpara" name="windowparaname" type="hidden"
+					value="#{param.window}" /> 
+				<select id="window" name="window" onchange="submit();">
+					<option value="0d0h10m0s">0d0h10m0s</option>
+					<option value="0d3h0m0s">0d3h0m0s</option>
+					<option value="1d0h0m0s">1d0h0m0s</option>
+					<option value="All-time">All-time</option>
+				</select>
+			</form>
+		</span>
+
+	</h2>
+
 	<h:form>
-		<p:dataTable id="statstable" var="stats"
-			value="#{spoutpage.comstats}" sortBy="#{stats.window}"
-			sortOrder="ASCENDING">
+		<p:dataTable id="statstable" var="stats" value="#{spoutpage.comstats}"
+			sortBy="#{stats.window}" sortOrder="ASCENDING">
 
 			<p:column>
 				<f:facet name="header">
 					<h:outputText value="Window" />
 				</f:facet>
-				<h:outputText value="#{stats.window}"/>
+				<h:outputText value="#{stats.window}" />
 			</p:column>
 
 			<p:column>
@@ -103,25 +102,25 @@
 			</p:column>
 
 			<p:column>
-                <f:facet name="header">
-                    <h:outputText value="Send TPS" />
-                </f:facet>
-                <h:outputText value="#{stats.sendTps}" />
-            </p:column>
-            
-            <p:column>
-                <f:facet name="header">
-                    <h:outputText value="Recv TPS" />
-                </f:facet>
-                <h:outputText value="#{stats.recvTps}" />
-            </p:column>
+				<f:facet name="header">
+					<h:outputText value="Send TPS" />
+				</f:facet>
+				<h:outputText value="#{stats.sendTps}" />
+			</p:column>
 
-            <p:column>
-                <f:facet name="header">
-                    <h:outputText value="Process latency (ms)" />
-                </f:facet>
-                <h:outputText value="#{stats.process}" />
-            </p:column>
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Recv TPS" />
+				</f:facet>
+				<h:outputText value="#{stats.recvTps}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Process latency (ms)" />
+				</f:facet>
+				<h:outputText value="#{stats.process}" />
+			</p:column>
 
 			<p:column>
 				<f:facet name="header">
@@ -161,32 +160,32 @@
 			</p:column>
 
 			<p:column>
-                <f:facet name="header">
-                    <h:outputText value="Send TPS" />
-                </f:facet>
-                <h:outputText value="#{coo.sendTps}" />
-            </p:column>
-            
-            <p:column>
-                <f:facet name="header">
-                    <h:outputText value="Process latency (ms)" />
-                </f:facet>
-                <h:outputText value="#{coo.process}" />
-            </p:column>
+				<f:facet name="header">
+					<h:outputText value="Send TPS" />
+				</f:facet>
+				<h:outputText value="#{coo.sendTps}" />
+			</p:column>
 
-            <p:column>
-                <f:facet name="header">
-                    <h:outputText value="Acked" />
-                </f:facet>
-                <h:outputText value="#{coo.acked}" />
-            </p:column>
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Process latency (ms)" />
+				</f:facet>
+				<h:outputText value="#{coo.process}" />
+			</p:column>
 
-            <p:column>
-                <f:facet name="header">
-                    <h:outputText value="Failed" />
-                </f:facet>
-                <h:outputText value="#{coo.failed}" />
-            </p:column>
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Acked" />
+				</f:facet>
+				<h:outputText value="#{coo.acked}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Failed" />
+				</f:facet>
+				<h:outputText value="#{coo.failed}" />
+			</p:column>
 		</p:dataTable>
 	</h:form>
 
@@ -201,7 +200,7 @@
 				<f:facet name="header">
 					<h:outputText value="Taskid" />
 				</f:facet>
-				<h:outputText value="#{ct.taskid}" /> 
+				<h:outputText value="#{ct.taskid}" />
 				<!-- 
 				<h:outputLink value="task.jsf">
 					<h:outputText value="#{ct.taskid}" />
@@ -242,25 +241,25 @@
 			</p:column>
 
 			<p:column>
-                <f:facet name="header">
-                    <h:outputText value="Send TPS" />
-                </f:facet>
-                <h:outputText value="#{ct.sendTps}" />
-            </p:column>
-            
-            <p:column>
-                <f:facet name="header">
-                    <h:outputText value="Recv TPS" />
-                </f:facet>
-                <h:outputText value="#{ct.recvTps}" />
-            </p:column>
+				<f:facet name="header">
+					<h:outputText value="Send TPS" />
+				</f:facet>
+				<h:outputText value="#{ct.sendTps}" />
+			</p:column>
 
-            <p:column>
-                <f:facet name="header">
-                    <h:outputText value="Process latency (ms)" />
-                </f:facet>
-                <h:outputText value="#{ct.process}" />
-            </p:column>
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Recv TPS" />
+				</f:facet>
+				<h:outputText value="#{ct.recvTps}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Process latency (ms)" />
+				</f:facet>
+				<h:outputText value="#{ct.process}" />
+			</p:column>
 
 			<p:column>
 				<f:facet name="header">
@@ -275,7 +274,18 @@
 				</f:facet>
 				<h:outputText value="#{ct.failed}" />
 			</p:column>
-			
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Task Log" />
+				</f:facet>
+				<h:outputLink value="log.jsf" target="_blank">
+					<h:outputText value="log" />
+					<f:param name="topologyid" value="#{param.topologyid}" />
+					<f:param name="taskid" value="#{ct.taskid}" />
+				</h:outputLink>
+			</p:column>
+
 			<p:column>
 				<f:facet name="header">
 					<h:outputText value="Disk Slot" />
@@ -289,22 +299,8 @@
 				</f:facet>
 				<h:outputText value="#{ct.lastErr}" />
 			</p:column>
-			
-			<p:column>
-				<f:facet name="header">
-					<h:outputText value="Task Log" />
-				</f:facet>
-				<h:outputLink value="http://#{ct.ip}:7621/logview?log=#{param.topologyid}-worker-#{ct.port}.log&amp;mode=l4k">
-                    <h:outputText value="Last 4KB" />
-                </h:outputLink>
-                <h:outputLink value="http://#{ct.ip}:7621/logview?log=#{param.topologyid}-worker-#{ct.port}.log&amp;mode=l8k">
-                    <h:outputText value="Last 8KB" />
-                </h:outputLink>
-                <h:outputLink value="http://#{ct.ip}:7621/logview?log=#{param.topologyid}-worker-#{ct.port}.log&amp;mode=all">
-                    <h:outputText value="ALL" />
-                </h:outputLink>
-			</p:column>
-			
+
+
 		</p:dataTable>
 	</h:form>
 </h:body>

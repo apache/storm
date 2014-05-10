@@ -24,7 +24,7 @@ public class StormConfig {
 	public final static String RESOURCES_SUBDIR = "resources";
 	public final static String WORKER_DATA_SUBDIR = "worker_shared_data";
 
-	public static final String FILE_SEPERATEOR = "/";
+	public static final String FILE_SEPERATEOR = File.separator;
 
 	public static String clojureConfigName(String name) {
 		return name.toUpperCase().replace("_", "-");
@@ -173,6 +173,43 @@ public class StormConfig {
 			throws IOException {
 		return supervisor_stormdist_root(conf) + FILE_SEPERATEOR + topologyId;
 	}
+	
+	/**
+	 * Return supervisor's pid dir
+	 * 
+	 * @param conf
+	 * @return
+	 * @throws IOException
+	 */
+	public static String supervisorPids(Map conf)throws IOException {
+		String ret = supervisor_local_dir(conf) + FILE_SEPERATEOR + "pids";
+		try {
+			FileUtils.forceMkdir(new File(ret));
+		} catch (IOException e) {
+			LOG.error("Failed to create dir " + ret, e);
+			throw e;
+		}
+		return ret;
+	}
+	
+	
+	/**
+	 * Return nimbus's heartbeat dir for apsara
+	 * 
+	 * @param conf
+	 * @return
+	 * @throws IOException
+	 */
+	public static String supervisorHearbeatForContainer(Map conf)throws IOException {
+		String ret = supervisor_local_dir(conf) + FILE_SEPERATEOR + "supervisor.heartbeat";
+		try {
+			FileUtils.forceMkdir(new File(ret));
+		} catch (IOException e) {
+			LOG.error("Failed to create dir " + ret, e);
+			throw e;
+		}
+		return ret;
+	}
 
 	public static String stormjar_path(String stormroot) {
 		return stormroot + FILE_SEPERATEOR + "stormjar.jar";
@@ -240,6 +277,43 @@ public class StormConfig {
 
 	public static String masterInimbus(Map conf) throws IOException {
 		String ret = masterLocalDir(conf) + FILE_SEPERATEOR + "ininumbus";
+		try {
+			FileUtils.forceMkdir(new File(ret));
+		} catch (IOException e) {
+			LOG.error("Failed to create dir " + ret, e);
+			throw e;
+		}
+		return ret;
+	}
+	
+	/**
+	 * Return nimbus's pid dir
+	 * 
+	 * @param conf
+	 * @return
+	 * @throws IOException
+	 */
+	public static String masterPids(Map conf)throws IOException {
+		String ret = masterLocalDir(conf) + FILE_SEPERATEOR + "pids";
+		try {
+			FileUtils.forceMkdir(new File(ret));
+		} catch (IOException e) {
+			LOG.error("Failed to create dir " + ret, e);
+			throw e;
+		}
+		return ret;
+	}
+	
+	
+	/**
+	 * Return nimbus's heartbeat dir for apsara
+	 * 
+	 * @param conf
+	 * @return
+	 * @throws IOException
+	 */
+	public static String masterHearbeatForContainer(Map conf)throws IOException {
+		String ret = masterLocalDir(conf) + FILE_SEPERATEOR + "nimbus.heartbeat";
 		try {
 			FileUtils.forceMkdir(new File(ret));
 		} catch (IOException e) {
@@ -366,5 +440,6 @@ public class StormConfig {
 		return (int) (1 / Double.parseDouble(String.valueOf(conf
 				.get(Config.TOPOLOGY_STATS_SAMPLE_RATE))));
 	}
+	
 
 }

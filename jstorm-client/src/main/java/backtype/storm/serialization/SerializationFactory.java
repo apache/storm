@@ -11,6 +11,7 @@ import backtype.storm.transactional.TransactionAttempt;
 import backtype.storm.tuple.Values;
 import backtype.storm.utils.ListDelegate;
 import backtype.storm.utils.Utils;
+import backtype.storm.utils.WorkerClassLoader;
 import carbonite.JavaBridge;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Serializer;
@@ -34,13 +35,16 @@ public class SerializationFactory {
 		IKryoFactory kryoFactory = (IKryoFactory) Utils
 				.newInstance((String) conf.get(Config.TOPOLOGY_KRYO_FACTORY));
 		Kryo k = kryoFactory.getKryo(conf);
+		if (WorkerClassLoader.getInstance() != null)
+			k.setClassLoader(WorkerClassLoader.getInstance());
 		k.register(byte[].class);
 
 		/* tuple payload serializer is specified via configuration */
 		String payloadSerializerName = (String) conf
 				.get(Config.TOPOLOGY_TUPLE_SERIALIZER);
 		try {
-			Class serializerClass = Class.forName(payloadSerializerName);
+			Class serializerClass = Class.forName(
+					payloadSerializerName, true, k.getClassLoader());
 			Serializer serializer = resolveSerializerInstance(k,
 					ListDelegate.class, serializerClass, conf);
 			k.register(ListDelegate.class, serializer);
@@ -72,10 +76,13 @@ public class SerializationFactory {
 		for (String klassName : registrations.keySet()) {
 			String serializerClassName = registrations.get(klassName);
 			try {
-				Class klass = Class.forName(klassName);
+				Class klass = Class.forName(
+						klassName, true, k.getClassLoader());
+						
 				Class serializerClass = null;
 				if (serializerClassName != null)
-					serializerClass = Class.forName(serializerClassName);
+					serializerClass = Class.forName(
+							serializerClassName, true, k.getClassLoader());
 				if (serializerClass == null) {
 					k.register(klass);
 				} else {
@@ -101,7 +108,8 @@ public class SerializationFactory {
 			for (String klassName : (List<String>) conf
 					.get(Config.TOPOLOGY_KRYO_DECORATORS)) {
 				try {
-					Class klass = Class.forName(klassName);
+					Class klass = Class.forName(
+							klassName, true, k.getClassLoader());
 					IKryoDecorator decorator = (IKryoDecorator) klass
 							.newInstance();
 					decorator.decorate(k);

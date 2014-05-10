@@ -12,6 +12,7 @@ import backtype.storm.utils.WorkerClassLoader;
 
 import com.alibaba.jstorm.callback.AsyncLoopThread;
 import com.alibaba.jstorm.cluster.StormClusterState;
+import com.alibaba.jstorm.utils.JStormUtils;
 
 /**
  * shutdown one task
@@ -65,6 +66,8 @@ public class TaskShutdownDameon implements ShutdownableDameon {
 
 		for (AsyncLoopThread thr : all_threads) {
 			LOG.info("Begin to shutdown " + thr.getThread().getName());
+			thr.cleanup();
+			JStormUtils.sleepMs(10);
 			thr.interrupt();
 			try {
 				//thr.join();

@@ -48,7 +48,9 @@ public class WorkerClassLoader extends URLClassLoader {
 		try {
 			if (name.startsWith("org.slf4j") == false
 					&& name.startsWith("org.apache.log4j") == false
-					&& name.startsWith("ch.qos.logback") == false) {
+					&& name.startsWith("ch.qos.logback") == false
+					&& name.startsWith("backtype.storm") == false
+					&& name.startsWith("com.alibaba.jstorm") == false) {
 				result = findClass(name);
 
 				if (result != null) {

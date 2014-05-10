@@ -2,20 +2,14 @@ package com.alibaba.jstorm.utils;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.TreeMap;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 
-import backtype.storm.utils.Time;
 import backtype.storm.utils.Utils;
 
-import com.alibaba.jstorm.callback.AsyncLoopDefaultKill;
-import com.alibaba.jstorm.callback.RunnableCallback;
 import com.alibaba.jstorm.cluster.StormConfig;
 
 /**
@@ -28,35 +22,6 @@ import com.alibaba.jstorm.cluster.StormConfig;
 public class JStormServerUtils {
 
 	private static final Logger LOG = Logger.getLogger(JStormServerUtils.class);
-
-	public static RunnableCallback getDefaultKillfn() {
-
-		return new AsyncLoopDefaultKill();
-	}
-
-	public static TreeMap<Integer, Integer> integer_divided(int sum,
-			int num_pieces) {
-		return Utils.integerDivided(sum, num_pieces);
-	}
-
-	public static void sleep_secs(long secs) throws InterruptedException {
-		Time.sleep(1000 * secs);
-	}
-
-	public static <K, V> HashMap<K, V> filter_val(RunnableCallback fn,
-			Map<K, V> amap) {
-		HashMap<K, V> rtn = new HashMap<K, V>();
-
-		for (Entry<K, V> entry : amap.entrySet()) {
-			V value = entry.getValue();
-			Object result = fn.execute(value);
-
-			if (result == (Boolean) true) {
-				rtn.put(entry.getKey(), value);
-			}
-		}
-		return rtn;
-	}
 
 	public static void downloadCodeFromMaster(Map conf, String localRoot,
 			String masterCodeDir) throws IOException, TException {
@@ -73,6 +38,41 @@ public class JStormServerUtils {
 		String localStormConfPath = StormConfig.sotrmconf_path(localRoot);
 		String masterStormConfPath = StormConfig.sotrmconf_path(masterCodeDir);
 		Utils.downloadFromMaster(conf, masterStormConfPath, localStormConfPath);
+	}
+	
+	public static void createPid(String dir) throws Exception{
+		File file = new File(dir);
+		
+		if (file.exists() == false) {
+			file.mkdirs();
+		}else if (file.isDirectory() == false) {
+			throw new RuntimeException("pid dir:" + dir + " isn't directory");
+		}
+		
+		String[] existPids = file.list();
+		
+		// touch pid before
+		String pid = JStormUtils.process_pid();
+		String pidPath = dir + File.separator + pid;
+		PathUtils.touch(pidPath);
+		LOG.info("Successfully touch pid  " + pidPath);
+		
+		
+		for (String existPid : existPids) {
+			try {
+				JStormUtils.kill(Integer.valueOf(existPid));
+				PathUtils.rmpath(dir + File.separator + existPid);
+			}catch(Exception e) {
+				LOG.warn(e.getMessage(), e);
+			}
+		}
+		
+		
+	}
+	
+	public static void startTaobaoJvmMonitor() {
+//		JmonitorBootstrap bootstrap = JmonitorBootstrap.getInstance();
+//		bootstrap.start();
 	}
 
 }

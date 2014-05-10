@@ -62,7 +62,7 @@ public class BaseExecutors extends RunnableCallback {
 	ITaskReportErr report_error;
 
 	protected DisruptorQueue disruptorRecvQueue;
-	
+
 	protected AsyncLoopThread recvThread;
 
 	// protected IntervalCheck intervalCheck = new IntervalCheck();
@@ -88,7 +88,7 @@ public class BaseExecutors extends RunnableCallback {
 		this.report_error = _report_error;
 
 		this.deserializer = new KryoTupleDeserializer(storm_conf,
-				topology_context, WorkerClassLoader.getInstance());// (KryoTupleDeserializer.
+				topology_context);// (KryoTupleDeserializer.
 
 		this.isDebugRecv = ConfigExtension.isTopologyDebugRecvTuple(storm_conf);
 		this.isDebug = JStormUtils.parseBoolean(

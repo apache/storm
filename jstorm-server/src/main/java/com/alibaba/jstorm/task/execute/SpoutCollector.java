@@ -130,6 +130,7 @@ public class SpoutCollector implements ISpoutOutputCollector {
 			info.setValues(values);
 			info.setMessageId(message_id);
 			info.setTimestamp(System.currentTimeMillis());
+			
 			pending.put(root_id, info);
 
 			List<Object> ackerTuple = JStormUtils.mk_list((Object) root_id,
@@ -139,8 +140,13 @@ public class SpoutCollector implements ISpoutOutputCollector {
 					Acker.ACKER_INIT_STREAM_ID, ackerTuple);
 
 		} else if (message_id != null) {
-			AckSpoutMsg ack = new AckSpoutMsg(spout, message_id, isDebug,
-					out_stream_id, 0, task_stats);
+			TupleInfo info = new TupleInfo();
+			info.setStream(out_stream_id);
+			info.setValues(values);
+			info.setMessageId(message_id);
+			info.setTimestamp(0);
+			
+			AckSpoutMsg ack = new AckSpoutMsg(spout, info, task_stats, isDebug);
 
 			try {
 				// @@@ Change the logic

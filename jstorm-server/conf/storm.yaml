@@ -4,7 +4,8 @@
 
  storm.zookeeper.root: "/jstorm"
  
- storm.local.dir: "jstorm"
+# %JSTORM_HOME% is the jstorm home directory
+ storm.local.dir: "%JSTORM_HOME%/data"
  
  java.library.path: "/usr/local/lib:/opt/local/lib:/usr/lib"
 # 

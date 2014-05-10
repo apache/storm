@@ -6,8 +6,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 
 import com.alibaba.jstorm.daemon.supervisor.SupervisorInfo;
 import com.alibaba.jstorm.resource.ResourceAssignment;
@@ -82,8 +82,8 @@ public class PostAssignTaskPort implements IPostAssignTask {
 
 		// get to know how many workers every supervisor
 		int index = 0;
-		int tmp = allocWorkerNum;
-		while (tmp > 0) {
+		int tmp = Math.min(allocWorkerNum, newAssigns.size());
+		while (tmp > 0 && sortSupervisorList.size() > 0) {
 			if (index >= sortSupervisorList.size()) {
 				index = 0;
 			}
@@ -108,10 +108,14 @@ public class PostAssignTaskPort implements IPostAssignTask {
 				assignNum = assignNum + 1;
 				supervisorAssignSlotNumMap.put(supervisorId, assignNum);
 
+				index++;
+				tmp--;
+			}else {
+				sortSupervisorList.remove(index);
+				continue;
 			}
 
-			index++;
-			tmp--;
+			
 		}
 	}
 

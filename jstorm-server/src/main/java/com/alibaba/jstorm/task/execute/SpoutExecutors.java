@@ -150,13 +150,14 @@ public class SpoutExecutors extends BaseExecutors implements EventHandler {
 
 			return;
 		} else {
-			if (supportRecvThread == true) {
-				JStormUtils.sleepMs(1);
-			} else {
-				// if here do sleep, the tps will slow down much
-				// JStormUtils.sleepNs(100);
-
-			}
+			// just return 
+//			if (supportRecvThread == true) {
+//				JStormUtils.sleepMs(1);
+//			} else {
+//				// if here do sleep, the tps will slow down much
+//				// JStormUtils.sleepNs(100);
+//
+//			}
 		}
 
 	}
@@ -192,9 +193,7 @@ public class SpoutExecutors extends BaseExecutors implements EventHandler {
 
 				if (stream_id.equals(Acker.ACKER_ACK_STREAM_ID)) {
 
-					runnable = new AckSpoutMsg(spout, tupleInfo.getMessageId(),
-							isDebug, tupleInfo.getStream(),
-							tupleInfo.getTimestamp(), task_stats);
+					runnable = new AckSpoutMsg(spout, tupleInfo, task_stats, isDebug);
 				} else if (stream_id.equals(Acker.ACKER_FAIL_STREAM_ID)) {
 					runnable = new FailSpoutMsg(spout, tupleInfo, task_stats,
 							isDebug);

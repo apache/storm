@@ -6,6 +6,7 @@ import org.apache.log4j.Logger;
 
 import backtype.storm.utils.Time;
 
+import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.SmartThread;
 
 /**
@@ -20,6 +21,8 @@ public class AsyncLoopThread implements SmartThread {
 	private static final Logger LOG = Logger.getLogger(AsyncLoopThread.class);
 
 	private Thread thread;
+	
+	private RunnableCallback afn;
 
 	public AsyncLoopThread(RunnableCallback afn) {
 		this.init(afn, false, Thread.NORM_PRIORITY, true);
@@ -53,6 +56,10 @@ public class AsyncLoopThread implements SmartThread {
 	 */
 	private void init(RunnableCallback afn, boolean daemon,
 			RunnableCallback kill_fn, int priority, boolean start) {
+		if (kill_fn == null) {
+			kill_fn = new AsyncLoopDefaultKill();
+		}
+		
 		Runnable runable = new AsyncLoopRunnable(afn, kill_fn);
 		thread = new Thread(runable);
 		thread.setName(afn.getClass().getSimpleName());
@@ -62,11 +69,16 @@ public class AsyncLoopThread implements SmartThread {
 			@Override
 			public void uncaughtException(Thread t, Throwable e) {
 				LOG.error("UncaughtException", e);
+				JStormUtils.halt_process(1, "UncaughtException");
 			}
 		});
+		
+		this.afn = afn;
+		
 		if (start) {
 			thread.start();
 		}
+		
 	}
 
 	@Override
@@ -97,4 +109,10 @@ public class AsyncLoopThread implements SmartThread {
 	public Thread getThread() {
 		return thread;
 	}
+
+    @Override
+    public void cleanup() {
+        // TODO Auto-generated method stub
+        afn.cleanup();
+    }
 }

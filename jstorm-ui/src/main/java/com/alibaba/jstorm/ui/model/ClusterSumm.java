@@ -10,6 +10,7 @@ import java.io.Serializable;
 public class ClusterSumm implements Serializable {
 	private static final long serialVersionUID = -7936384220562644886L;
 	
+	private String nimbusIp;
 	private String nimbusHostname;
 	private String nimbusUptime;
 	private String isGroupModel;
@@ -28,6 +29,14 @@ public class ClusterSumm implements Serializable {
 	private String usedPortSlotNum;
 	private String freePortSlotNum;
 
+	public String getNimbusIp() {
+		return nimbusIp;
+	}
+
+	public void setNimbusIp(String nimbusIp) {
+		this.nimbusIp = nimbusIp;
+	}
+	
 	public String getNimbusHostname() {
 		return nimbusHostname;
 	}

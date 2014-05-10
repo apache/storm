@@ -61,6 +61,7 @@ import com.alibaba.jstorm.task.Assignment;
 import com.alibaba.jstorm.task.TaskInfo;
 import com.alibaba.jstorm.utils.FailedAssignTopologyException;
 import com.alibaba.jstorm.utils.JStormUtils;
+import com.alibaba.jstorm.utils.NetWorkUtils;
 import com.alibaba.jstorm.utils.Thrift;
 import com.alibaba.jstorm.utils.TimeUtils;
 
@@ -562,6 +563,9 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 
 			String supervisorId = null;
 			SupervisorInfo supervisorInfo = null;
+			
+			String ip = NetWorkUtils.host2Ip(host);
+			String hostName = NetWorkUtils.ip2Host(host);
 
 			// all supervisors
 			Map<String, SupervisorInfo> supervisorInfos = Cluster
@@ -571,7 +575,8 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 					.entrySet()) {
 
 				SupervisorInfo info = entry.getValue();
-				if (info.getHostName().equals(host)) {
+				if (info.getHostName().equals(hostName) ||
+					 info.getHostName().equals(ip)) {
 					supervisorId = entry.getKey();
 					supervisorInfo = info;
 					break;

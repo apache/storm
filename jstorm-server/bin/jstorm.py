@@ -56,7 +56,7 @@ def get_classpath(extrajars):
 
 def confvalue(name, extrapaths):
     command = [
-        "java", "-client", "-Xms512m", "-Xmx512m", get_config_opts(), "-cp", get_classpath(extrapaths), "backtype.storm.command.config_value", name
+        "java", "-client", "-Xms256m", "-Xmx256m", get_config_opts(), "-cp", get_classpath(extrapaths), "backtype.storm.command.config_value", name
     ]
     p = sub.Popen(command, stdout=sub.PIPE)
     output, errors = p.communicate()
@@ -65,6 +65,9 @@ def confvalue(name, extrapaths):
         tokens = line.split(" ")
         if tokens[0] == "VALUE:":
             return " ".join(tokens[1:])
+    print "Failed to get config " + name
+    print errors
+    print output
 
 def print_localconfvalue(name):
     """Syntax: [jstorm localconfvalue conf-name]
@@ -91,7 +94,8 @@ def exec_storm_class(klass, jvmtype="-server", childopts="", extrajars=[], args=
     args_str = " ".join(map(lambda s: "\"" + s + "\"", args))
     command = "java " + jvmtype + " -Djstorm.home=" + JSTORM_DIR + " " + get_config_opts() + " -Djava.library.path=" + nativepath + " " + childopts + " -cp " + get_classpath(extrajars) + " " + klass + " " + args_str
     print "Running: " + command    
-    os.system(command)
+    ret = os.system(command)
+    sys.exit(ret)
 
 def jar(jarfile, klass, *args):
     """Syntax: [jstorm jar topology-jar-path class ...]

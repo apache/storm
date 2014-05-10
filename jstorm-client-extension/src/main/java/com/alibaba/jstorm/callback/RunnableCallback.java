@@ -27,7 +27,17 @@ public class RunnableCallback implements Runnable, Callback {
 		return null;
 	}
 
+	/**
+	 * Called by exception
+	 */
 	public void shutdown() {
+	}
+	
+	/**
+	 * Normal quit
+	 */
+	public void cleanup() {
+	    
 	}
 
 }

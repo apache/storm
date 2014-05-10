@@ -46,19 +46,8 @@ public class ShutdownWork extends RunnableCallback {
 		}
 
 		for (String pid : pids) {
-			JStormUtils.process_killed(Integer.parseInt(pid));
-		}
 
-		// wait all thread exit correctly
-		try {
-			Thread.sleep(1000 * 2);
-		} catch (InterruptedException e) {
-
-		}
-
-		for (String pid : pids) {
-
-			JStormUtils.ensure_process_killed(Integer.parseInt(pid));
+			JStormUtils.kill(Integer.parseInt(pid));
 			PathUtils.rmpath(StormConfig.worker_pid_path(conf, workerId, pid));
 
 		}

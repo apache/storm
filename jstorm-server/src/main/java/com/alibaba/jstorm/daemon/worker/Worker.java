@@ -1,15 +1,21 @@
 package com.alibaba.jstorm.daemon.worker;
 
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import backtype.storm.daemon.Shutdownable;
@@ -24,6 +30,9 @@ import com.alibaba.jstorm.callback.RunnableCallback;
 import com.alibaba.jstorm.cluster.StormConfig;
 import com.alibaba.jstorm.task.Task;
 import com.alibaba.jstorm.task.TaskShutdownDameon;
+import com.alibaba.jstorm.utils.JStormServerUtils;
+import com.alibaba.jstorm.utils.JStormUtils;
+import com.alibaba.jstorm.utils.SyncContainerHb;
 
 /**
  * worker entrance
@@ -117,6 +126,8 @@ public class Worker {
 		List<TaskShutdownDameon> shutdowntasks = createTasks();
 		workerData.setShutdownTasks(shutdowntasks);
 
+		List<AsyncLoopThread> threads = new ArrayList<AsyncLoopThread>();
+
 		// create virtual port object
 		// when worker receives tupls, dispatch targetTask according to task_id
 		// conf, supervisorId, topologyId, port, context, taskids
@@ -127,23 +138,32 @@ public class Worker {
 		RefreshConnections refreshConn = makeRefreshConnections();
 		AsyncLoopThread refreshconn = new AsyncLoopThread(refreshConn, false,
 				Thread.MIN_PRIORITY, true);
+		threads.add(refreshconn);
 
 		// refresh ZK active status
 		RefreshActive refreshZkActive = new RefreshActive(workerData);
 		AsyncLoopThread refreshzk = new AsyncLoopThread(refreshZkActive, false,
 				Thread.MIN_PRIORITY, true);
+		threads.add(refreshzk);
 
 		// refresh hearbeat to Local dir
 		RunnableCallback heartbeat_fn = new WorkerHeartbeatRunable(workerData);
 		AsyncLoopThread hb = new AsyncLoopThread(heartbeat_fn, false, null,
 				Thread.NORM_PRIORITY, true);
+		threads.add(hb);
 
 		// transferQueue, nodeportSocket, taskNodeport
 		DrainerRunable drainer = new DrainerRunable(workerData);
 		AsyncLoopThread dr = new AsyncLoopThread(drainer, false,
 				Thread.MAX_PRIORITY, true);
+		threads.add(dr);
 
-		AsyncLoopThread[] threads = { refreshconn, refreshzk, hb, dr };
+		// Sync heartbeat to Apsara Container
+		AsyncLoopThread syncContainerHbThread = SyncContainerHb
+				.mkWorkerInstance(workerData.getConf());
+		if (syncContainerHbThread != null) {
+			threads.add(syncContainerHbThread);
+		}
 
 		return new WorkerShutdown(workerData, shutdowntasks,
 				virtual_port_shutdown, threads);
@@ -184,21 +204,120 @@ public class Worker {
 	public static void redirectOutput(String port) throws Exception {
 
 		if (System.getenv("REDIRECT") == null
-				|| !System.getenv("REDIRECT").equals("true"))
+				|| !System.getenv("REDIRECT").equals("true")) {
 			return;
+		}
+		
+		String OUT_TARGET_FILE = JStormUtils.getLogFileName();
+		if (OUT_TARGET_FILE == null) {
+			OUT_TARGET_FILE = "/dev/null";
+		}else {
+			OUT_TARGET_FILE += ".out";
+		}
+		
+		JStormUtils.redirectOutput(OUT_TARGET_FILE);
 
-		String OUT_TARGET_FILE = "/dev/null";
+	}
 
-		System.out.println("Redirect output to " + OUT_TARGET_FILE);
+	/**
+	 * Have one problem if the worker's start parameter length is longer than
+	 * 4096, ps -ef|grep com.alibaba.jstorm.daemon.worker.Worker can't find
+	 * worker
+	 * 
+	 * @param port
+	 */
 
-		FileOutputStream workerOut = new FileOutputStream(new File(
-				OUT_TARGET_FILE));
+	public static List<Integer> getOldPortPids(String port) {
+		String currPid = JStormUtils.process_pid();
 
-		PrintStream ps = new PrintStream(new BufferedOutputStream(workerOut),
-				true);
-		System.setOut(ps);
+		List<Integer> ret = new ArrayList<Integer>();
 
-		LOG.info("Successfully redirect System.out to " + OUT_TARGET_FILE);
+		StringBuilder sb = new StringBuilder();
+
+		sb.append("ps -Af ");
+		// sb.append(" | grep ");
+		// sb.append(Worker.class.getName());
+		// sb.append(" |grep ");
+		// sb.append(port);
+		// sb.append(" |grep -v grep");
+
+		try {
+			LOG.info("Begin to execute " + sb.toString());
+			Process process = JStormUtils.launch_process(sb.toString(),
+					new HashMap<String, String>());
+
+			// Process process = Runtime.getRuntime().exec(sb.toString());
+
+			InputStream stdin = process.getInputStream();
+			BufferedReader reader = new BufferedReader(new InputStreamReader(
+					stdin));
+
+			JStormUtils.sleepMs(1000);
+
+			// if (process.exitValue() != 0) {
+			// LOG.info("Failed to execute " + sb.toString());
+			// return null;
+			// }
+
+			StringBuilder output = new StringBuilder();
+			String str;
+			while ((str = reader.readLine()) != null) {
+				if (StringUtils.isBlank(str)) {
+					// LOG.info(str + " is Blank");
+					continue;
+				}
+
+				// LOG.info("Output:" + str);
+				if (str.contains(Worker.class.getName()) == false) {
+					continue;
+				} else if (str.contains(port) == false) {
+					continue;
+				}
+
+				LOG.info("Find :" + str);
+
+				String[] fields = StringUtils.split(str);
+
+				// for (String field : fields) {
+				// LOG.info("Filed:" + field);
+				// }
+
+				if (fields.length >= 2) {
+					try {
+						if (currPid.equals(fields[1])) {
+							LOG.info("Skip kill myself");
+							continue;
+						}
+
+						Integer pid = Integer.valueOf(fields[1]);
+
+						LOG.info("Find one process :" + pid.toString());
+						ret.add(pid);
+					} catch (Exception e) {
+						LOG.error(e.getMessage(), e);
+						continue;
+					}
+				}
+
+			}
+
+			return ret;
+		} catch (IOException e) {
+			LOG.info("Failed to execute " + sb.toString());
+			return ret;
+		} catch (Exception e) {
+			LOG.info(e.getCause(), e);
+			return ret;
+		}
+	}
+
+	public static void killOldWorker(String port) {
+
+		List<Integer> oldPids = getOldPortPids(port);
+		for (Integer pid : oldPids) {
+
+			JStormUtils.kill(pid);
+		}
 
 	}
 
@@ -225,8 +344,12 @@ public class Worker {
 		String worker_id = args[3];
 		String jar_path = args[4];
 
+		killOldWorker(port_str);
+
 		Map conf = Utils.readStormConfig();
 		StormConfig.validate_distributed_mode(conf);
+		
+		JStormServerUtils.startTaobaoJvmMonitor();
 
 		StringBuilder sb = new StringBuilder();
 		sb.append("topologyId:" + topology_id + ", ");
