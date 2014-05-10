@@ -11,7 +11,7 @@
 			<source>jstorm-server/bin/jstorm.py</source>
 			<outputDirectory>/bin</outputDirectory>
 			<fileMode>0755</fileMode>
-			<destName>aloha</destName>
+			<destName>jstorm</destName>
 		</file>
 
 		<file>
