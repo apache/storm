@@ -1,9 +1,10 @@
 package com.alipay.dw.jstorm.example.drpc;
 
-import org.apache.thrift.TException;
+import org.apache.thrift7.TException;
 
 import backtype.storm.generated.DRPCExecutionException;
 import backtype.storm.utils.DRPCClient;
+
 
 public class TestReachTopology {
     

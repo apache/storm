@@ -21,16 +21,16 @@ import java.util.Arrays;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, ClusterSummary._Fields>, java.io.Serializable, Cloneable {
-  private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("ClusterSummary");
+public class ClusterSummary implements org.apache.thrift7.TBase<ClusterSummary, ClusterSummary._Fields>, java.io.Serializable, Cloneable {
+  private static final org.apache.thrift7.protocol.TStruct STRUCT_DESC = new org.apache.thrift7.protocol.TStruct("ClusterSummary");
 
-  private static final org.apache.thrift.protocol.TField SUPERVISORS_FIELD_DESC = new org.apache.thrift.protocol.TField("supervisors", org.apache.thrift.protocol.TType.LIST, (short)1);
-  private static final org.apache.thrift.protocol.TField NIMBUS_UPTIME_SECS_FIELD_DESC = new org.apache.thrift.protocol.TField("nimbus_uptime_secs", org.apache.thrift.protocol.TType.I32, (short)2);
-  private static final org.apache.thrift.protocol.TField TOPOLOGIES_FIELD_DESC = new org.apache.thrift.protocol.TField("topologies", org.apache.thrift.protocol.TType.LIST, (short)3);
-  private static final org.apache.thrift.protocol.TField GROUP_TO_TOPOLOGY_FIELD_DESC = new org.apache.thrift.protocol.TField("groupToTopology", org.apache.thrift.protocol.TType.MAP, (short)4);
-  private static final org.apache.thrift.protocol.TField GROUP_TO_RESOURCE_FIELD_DESC = new org.apache.thrift.protocol.TField("groupToResource", org.apache.thrift.protocol.TType.MAP, (short)5);
-  private static final org.apache.thrift.protocol.TField GROUP_TO_USED_RESOURCE_FIELD_DESC = new org.apache.thrift.protocol.TField("groupToUsedResource", org.apache.thrift.protocol.TType.MAP, (short)6);
-  private static final org.apache.thrift.protocol.TField IS_GROUP_MODEL_FIELD_DESC = new org.apache.thrift.protocol.TField("isGroupModel", org.apache.thrift.protocol.TType.BOOL, (short)7);
+  private static final org.apache.thrift7.protocol.TField SUPERVISORS_FIELD_DESC = new org.apache.thrift7.protocol.TField("supervisors", org.apache.thrift7.protocol.TType.LIST, (short)1);
+  private static final org.apache.thrift7.protocol.TField NIMBUS_UPTIME_SECS_FIELD_DESC = new org.apache.thrift7.protocol.TField("nimbus_uptime_secs", org.apache.thrift7.protocol.TType.I32, (short)2);
+  private static final org.apache.thrift7.protocol.TField TOPOLOGIES_FIELD_DESC = new org.apache.thrift7.protocol.TField("topologies", org.apache.thrift7.protocol.TType.LIST, (short)3);
+  private static final org.apache.thrift7.protocol.TField GROUP_TO_TOPOLOGY_FIELD_DESC = new org.apache.thrift7.protocol.TField("groupToTopology", org.apache.thrift7.protocol.TType.MAP, (short)4);
+  private static final org.apache.thrift7.protocol.TField GROUP_TO_RESOURCE_FIELD_DESC = new org.apache.thrift7.protocol.TField("groupToResource", org.apache.thrift7.protocol.TType.MAP, (short)5);
+  private static final org.apache.thrift7.protocol.TField GROUP_TO_USED_RESOURCE_FIELD_DESC = new org.apache.thrift7.protocol.TField("groupToUsedResource", org.apache.thrift7.protocol.TType.MAP, (short)6);
+  private static final org.apache.thrift7.protocol.TField IS_GROUP_MODEL_FIELD_DESC = new org.apache.thrift7.protocol.TField("isGroupModel", org.apache.thrift7.protocol.TType.BOOL, (short)7);
 
   private List<SupervisorSummary> supervisors; // required
   private int nimbus_uptime_secs; // required
@@ -41,7 +41,7 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
   private boolean isGroupModel; // required
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
-  public enum _Fields implements org.apache.thrift.TFieldIdEnum {
+  public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
     SUPERVISORS((short)1, "supervisors"),
     NIMBUS_UPTIME_SECS((short)2, "nimbus_uptime_secs"),
     TOPOLOGIES((short)3, "topologies"),
@@ -121,41 +121,41 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
   private static final int __ISGROUPMODEL_ISSET_ID = 1;
   private BitSet __isset_bit_vector = new BitSet(2);
 
-  public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
+  public static final Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> metaDataMap;
   static {
-    Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
-    tmpMap.put(_Fields.SUPERVISORS, new org.apache.thrift.meta_data.FieldMetaData("supervisors", org.apache.thrift.TFieldRequirementType.REQUIRED, 
-        new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST, 
-            new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, SupervisorSummary.class))));
-    tmpMap.put(_Fields.NIMBUS_UPTIME_SECS, new org.apache.thrift.meta_data.FieldMetaData("nimbus_uptime_secs", org.apache.thrift.TFieldRequirementType.REQUIRED, 
-        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
-    tmpMap.put(_Fields.TOPOLOGIES, new org.apache.thrift.meta_data.FieldMetaData("topologies", org.apache.thrift.TFieldRequirementType.REQUIRED, 
-        new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST, 
-            new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, TopologySummary.class))));
-    tmpMap.put(_Fields.GROUP_TO_TOPOLOGY, new org.apache.thrift.meta_data.FieldMetaData("groupToTopology", org.apache.thrift.TFieldRequirementType.REQUIRED, 
-        new org.apache.thrift.meta_data.MapMetaData(org.apache.thrift.protocol.TType.MAP, 
-            new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING), 
-            new org.apache.thrift.meta_data.MapMetaData(org.apache.thrift.protocol.TType.MAP, 
-                new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING), 
-                new org.apache.thrift.meta_data.MapMetaData(org.apache.thrift.protocol.TType.MAP, 
-                    new org.apache.thrift.meta_data.EnumMetaData(org.apache.thrift.protocol.TType.ENUM, ThriftResourceType.class), 
-                    new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32))))));
-    tmpMap.put(_Fields.GROUP_TO_RESOURCE, new org.apache.thrift.meta_data.FieldMetaData("groupToResource", org.apache.thrift.TFieldRequirementType.REQUIRED, 
-        new org.apache.thrift.meta_data.MapMetaData(org.apache.thrift.protocol.TType.MAP, 
-            new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING), 
-            new org.apache.thrift.meta_data.MapMetaData(org.apache.thrift.protocol.TType.MAP, 
-                new org.apache.thrift.meta_data.EnumMetaData(org.apache.thrift.protocol.TType.ENUM, ThriftResourceType.class), 
-                new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)))));
-    tmpMap.put(_Fields.GROUP_TO_USED_RESOURCE, new org.apache.thrift.meta_data.FieldMetaData("groupToUsedResource", org.apache.thrift.TFieldRequirementType.REQUIRED, 
-        new org.apache.thrift.meta_data.MapMetaData(org.apache.thrift.protocol.TType.MAP, 
-            new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING), 
-            new org.apache.thrift.meta_data.MapMetaData(org.apache.thrift.protocol.TType.MAP, 
-                new org.apache.thrift.meta_data.EnumMetaData(org.apache.thrift.protocol.TType.ENUM, ThriftResourceType.class), 
-                new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)))));
-    tmpMap.put(_Fields.IS_GROUP_MODEL, new org.apache.thrift.meta_data.FieldMetaData("isGroupModel", org.apache.thrift.TFieldRequirementType.REQUIRED, 
-        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.BOOL)));
+    Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift7.meta_data.FieldMetaData>(_Fields.class);
+    tmpMap.put(_Fields.SUPERVISORS, new org.apache.thrift7.meta_data.FieldMetaData("supervisors", org.apache.thrift7.TFieldRequirementType.REQUIRED, 
+        new org.apache.thrift7.meta_data.ListMetaData(org.apache.thrift7.protocol.TType.LIST, 
+            new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, SupervisorSummary.class))));
+    tmpMap.put(_Fields.NIMBUS_UPTIME_SECS, new org.apache.thrift7.meta_data.FieldMetaData("nimbus_uptime_secs", org.apache.thrift7.TFieldRequirementType.REQUIRED, 
+        new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.I32)));
+    tmpMap.put(_Fields.TOPOLOGIES, new org.apache.thrift7.meta_data.FieldMetaData("topologies", org.apache.thrift7.TFieldRequirementType.REQUIRED, 
+        new org.apache.thrift7.meta_data.ListMetaData(org.apache.thrift7.protocol.TType.LIST, 
+            new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, TopologySummary.class))));
+    tmpMap.put(_Fields.GROUP_TO_TOPOLOGY, new org.apache.thrift7.meta_data.FieldMetaData("groupToTopology", org.apache.thrift7.TFieldRequirementType.REQUIRED, 
+        new org.apache.thrift7.meta_data.MapMetaData(org.apache.thrift7.protocol.TType.MAP, 
+            new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRING), 
+            new org.apache.thrift7.meta_data.MapMetaData(org.apache.thrift7.protocol.TType.MAP, 
+                new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRING), 
+                new org.apache.thrift7.meta_data.MapMetaData(org.apache.thrift7.protocol.TType.MAP, 
+                    new org.apache.thrift7.meta_data.EnumMetaData(org.apache.thrift7.protocol.TType.ENUM, ThriftResourceType.class), 
+                    new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.I32))))));
+    tmpMap.put(_Fields.GROUP_TO_RESOURCE, new org.apache.thrift7.meta_data.FieldMetaData("groupToResource", org.apache.thrift7.TFieldRequirementType.REQUIRED, 
+        new org.apache.thrift7.meta_data.MapMetaData(org.apache.thrift7.protocol.TType.MAP, 
+            new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRING), 
+            new org.apache.thrift7.meta_data.MapMetaData(org.apache.thrift7.protocol.TType.MAP, 
+                new org.apache.thrift7.meta_data.EnumMetaData(org.apache.thrift7.protocol.TType.ENUM, ThriftResourceType.class), 
+                new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.I32)))));
+    tmpMap.put(_Fields.GROUP_TO_USED_RESOURCE, new org.apache.thrift7.meta_data.FieldMetaData("groupToUsedResource", org.apache.thrift7.TFieldRequirementType.REQUIRED, 
+        new org.apache.thrift7.meta_data.MapMetaData(org.apache.thrift7.protocol.TType.MAP, 
+            new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRING), 
+            new org.apache.thrift7.meta_data.MapMetaData(org.apache.thrift7.protocol.TType.MAP, 
+                new org.apache.thrift7.meta_data.EnumMetaData(org.apache.thrift7.protocol.TType.ENUM, ThriftResourceType.class), 
+                new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.I32)))));
+    tmpMap.put(_Fields.IS_GROUP_MODEL, new org.apache.thrift7.meta_data.FieldMetaData("isGroupModel", org.apache.thrift7.TFieldRequirementType.REQUIRED, 
+        new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.BOOL)));
     metaDataMap = Collections.unmodifiableMap(tmpMap);
-    org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(ClusterSummary.class, metaDataMap);
+    org.apache.thrift7.meta_data.FieldMetaData.addStructMetaDataMap(ClusterSummary.class, metaDataMap);
   }
 
   public ClusterSummary() {
@@ -781,7 +781,7 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
       return lastComparison;
     }
     if (is_set_supervisors()) {
-      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.supervisors, typedOther.supervisors);
+      lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.supervisors, typedOther.supervisors);
       if (lastComparison != 0) {
         return lastComparison;
       }
@@ -791,7 +791,7 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
       return lastComparison;
     }
     if (is_set_nimbus_uptime_secs()) {
-      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.nimbus_uptime_secs, typedOther.nimbus_uptime_secs);
+      lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.nimbus_uptime_secs, typedOther.nimbus_uptime_secs);
       if (lastComparison != 0) {
         return lastComparison;
       }
@@ -801,7 +801,7 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
       return lastComparison;
     }
     if (is_set_topologies()) {
-      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.topologies, typedOther.topologies);
+      lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.topologies, typedOther.topologies);
       if (lastComparison != 0) {
         return lastComparison;
       }
@@ -811,7 +811,7 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
       return lastComparison;
     }
     if (is_set_groupToTopology()) {
-      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.groupToTopology, typedOther.groupToTopology);
+      lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.groupToTopology, typedOther.groupToTopology);
       if (lastComparison != 0) {
         return lastComparison;
       }
@@ -821,7 +821,7 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
       return lastComparison;
     }
     if (is_set_groupToResource()) {
-      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.groupToResource, typedOther.groupToResource);
+      lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.groupToResource, typedOther.groupToResource);
       if (lastComparison != 0) {
         return lastComparison;
       }
@@ -831,7 +831,7 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
       return lastComparison;
     }
     if (is_set_groupToUsedResource()) {
-      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.groupToUsedResource, typedOther.groupToUsedResource);
+      lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.groupToUsedResource, typedOther.groupToUsedResource);
       if (lastComparison != 0) {
         return lastComparison;
       }
@@ -841,7 +841,7 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
       return lastComparison;
     }
     if (is_set_isGroupModel()) {
-      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.isGroupModel, typedOther.isGroupModel);
+      lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.isGroupModel, typedOther.isGroupModel);
       if (lastComparison != 0) {
         return lastComparison;
       }
@@ -853,20 +853,20 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
     return _Fields.findByThriftId(fieldId);
   }
 
-  public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
-    org.apache.thrift.protocol.TField field;
+  public void read(org.apache.thrift7.protocol.TProtocol iprot) throws org.apache.thrift7.TException {
+    org.apache.thrift7.protocol.TField field;
     iprot.readStructBegin();
     while (true)
     {
       field = iprot.readFieldBegin();
-      if (field.type == org.apache.thrift.protocol.TType.STOP) { 
+      if (field.type == org.apache.thrift7.protocol.TType.STOP) { 
         break;
       }
       switch (field.id) {
         case 1: // SUPERVISORS
-          if (field.type == org.apache.thrift.protocol.TType.LIST) {
+          if (field.type == org.apache.thrift7.protocol.TType.LIST) {
             {
-              org.apache.thrift.protocol.TList _list37 = iprot.readListBegin();
+              org.apache.thrift7.protocol.TList _list37 = iprot.readListBegin();
               this.supervisors = new ArrayList<SupervisorSummary>(_list37.size);
               for (int _i38 = 0; _i38 < _list37.size; ++_i38)
               {
@@ -878,21 +878,21 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
               iprot.readListEnd();
             }
           } else { 
-            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case 2: // NIMBUS_UPTIME_SECS
-          if (field.type == org.apache.thrift.protocol.TType.I32) {
+          if (field.type == org.apache.thrift7.protocol.TType.I32) {
             this.nimbus_uptime_secs = iprot.readI32();
             set_nimbus_uptime_secs_isSet(true);
           } else { 
-            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case 3: // TOPOLOGIES
-          if (field.type == org.apache.thrift.protocol.TType.LIST) {
+          if (field.type == org.apache.thrift7.protocol.TType.LIST) {
             {
-              org.apache.thrift.protocol.TList _list40 = iprot.readListBegin();
+              org.apache.thrift7.protocol.TList _list40 = iprot.readListBegin();
               this.topologies = new ArrayList<TopologySummary>(_list40.size);
               for (int _i41 = 0; _i41 < _list40.size; ++_i41)
               {
@@ -904,13 +904,13 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
               iprot.readListEnd();
             }
           } else { 
-            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case 4: // GROUP_TO_TOPOLOGY
-          if (field.type == org.apache.thrift.protocol.TType.MAP) {
+          if (field.type == org.apache.thrift7.protocol.TType.MAP) {
             {
-              org.apache.thrift.protocol.TMap _map43 = iprot.readMapBegin();
+              org.apache.thrift7.protocol.TMap _map43 = iprot.readMapBegin();
               this.groupToTopology = new HashMap<String,Map<String,Map<ThriftResourceType,Integer>>>(2*_map43.size);
               for (int _i44 = 0; _i44 < _map43.size; ++_i44)
               {
@@ -918,7 +918,7 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
                 Map<String,Map<ThriftResourceType,Integer>> _val46; // required
                 _key45 = iprot.readString();
                 {
-                  org.apache.thrift.protocol.TMap _map47 = iprot.readMapBegin();
+                  org.apache.thrift7.protocol.TMap _map47 = iprot.readMapBegin();
                   _val46 = new HashMap<String,Map<ThriftResourceType,Integer>>(2*_map47.size);
                   for (int _i48 = 0; _i48 < _map47.size; ++_i48)
                   {
@@ -926,7 +926,7 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
                     Map<ThriftResourceType,Integer> _val50; // required
                     _key49 = iprot.readString();
                     {
-                      org.apache.thrift.protocol.TMap _map51 = iprot.readMapBegin();
+                      org.apache.thrift7.protocol.TMap _map51 = iprot.readMapBegin();
                       _val50 = new HashMap<ThriftResourceType,Integer>(2*_map51.size);
                       for (int _i52 = 0; _i52 < _map51.size; ++_i52)
                       {
@@ -947,13 +947,13 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
               iprot.readMapEnd();
             }
           } else { 
-            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case 5: // GROUP_TO_RESOURCE
-          if (field.type == org.apache.thrift.protocol.TType.MAP) {
+          if (field.type == org.apache.thrift7.protocol.TType.MAP) {
             {
-              org.apache.thrift.protocol.TMap _map55 = iprot.readMapBegin();
+              org.apache.thrift7.protocol.TMap _map55 = iprot.readMapBegin();
               this.groupToResource = new HashMap<String,Map<ThriftResourceType,Integer>>(2*_map55.size);
               for (int _i56 = 0; _i56 < _map55.size; ++_i56)
               {
@@ -961,7 +961,7 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
                 Map<ThriftResourceType,Integer> _val58; // required
                 _key57 = iprot.readString();
                 {
-                  org.apache.thrift.protocol.TMap _map59 = iprot.readMapBegin();
+                  org.apache.thrift7.protocol.TMap _map59 = iprot.readMapBegin();
                   _val58 = new HashMap<ThriftResourceType,Integer>(2*_map59.size);
                   for (int _i60 = 0; _i60 < _map59.size; ++_i60)
                   {
@@ -978,13 +978,13 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
               iprot.readMapEnd();
             }
           } else { 
-            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case 6: // GROUP_TO_USED_RESOURCE
-          if (field.type == org.apache.thrift.protocol.TType.MAP) {
+          if (field.type == org.apache.thrift7.protocol.TType.MAP) {
             {
-              org.apache.thrift.protocol.TMap _map63 = iprot.readMapBegin();
+              org.apache.thrift7.protocol.TMap _map63 = iprot.readMapBegin();
               this.groupToUsedResource = new HashMap<String,Map<ThriftResourceType,Integer>>(2*_map63.size);
               for (int _i64 = 0; _i64 < _map63.size; ++_i64)
               {
@@ -992,7 +992,7 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
                 Map<ThriftResourceType,Integer> _val66; // required
                 _key65 = iprot.readString();
                 {
-                  org.apache.thrift.protocol.TMap _map67 = iprot.readMapBegin();
+                  org.apache.thrift7.protocol.TMap _map67 = iprot.readMapBegin();
                   _val66 = new HashMap<ThriftResourceType,Integer>(2*_map67.size);
                   for (int _i68 = 0; _i68 < _map67.size; ++_i68)
                   {
@@ -1009,19 +1009,19 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
               iprot.readMapEnd();
             }
           } else { 
-            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         case 7: // IS_GROUP_MODEL
-          if (field.type == org.apache.thrift.protocol.TType.BOOL) {
+          if (field.type == org.apache.thrift7.protocol.TType.BOOL) {
             this.isGroupModel = iprot.readBool();
             set_isGroupModel_isSet(true);
           } else { 
-            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
           }
           break;
         default:
-          org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+          org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
       }
       iprot.readFieldEnd();
     }
@@ -1029,14 +1029,14 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
     validate();
   }
 
-  public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
+  public void write(org.apache.thrift7.protocol.TProtocol oprot) throws org.apache.thrift7.TException {
     validate();
 
     oprot.writeStructBegin(STRUCT_DESC);
     if (this.supervisors != null) {
       oprot.writeFieldBegin(SUPERVISORS_FIELD_DESC);
       {
-        oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, this.supervisors.size()));
+        oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRUCT, this.supervisors.size()));
         for (SupervisorSummary _iter71 : this.supervisors)
         {
           _iter71.write(oprot);
@@ -1051,7 +1051,7 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
     if (this.topologies != null) {
       oprot.writeFieldBegin(TOPOLOGIES_FIELD_DESC);
       {
-        oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, this.topologies.size()));
+        oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRUCT, this.topologies.size()));
         for (TopologySummary _iter72 : this.topologies)
         {
           _iter72.write(oprot);
@@ -1063,17 +1063,17 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
     if (this.groupToTopology != null) {
       oprot.writeFieldBegin(GROUP_TO_TOPOLOGY_FIELD_DESC);
       {
-        oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.MAP, this.groupToTopology.size()));
+        oprot.writeMapBegin(new org.apache.thrift7.protocol.TMap(org.apache.thrift7.protocol.TType.STRING, org.apache.thrift7.protocol.TType.MAP, this.groupToTopology.size()));
         for (Map.Entry<String, Map<String,Map<ThriftResourceType,Integer>>> _iter73 : this.groupToTopology.entrySet())
         {
           oprot.writeString(_iter73.getKey());
           {
-            oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.MAP, _iter73.getValue().size()));
+            oprot.writeMapBegin(new org.apache.thrift7.protocol.TMap(org.apache.thrift7.protocol.TType.STRING, org.apache.thrift7.protocol.TType.MAP, _iter73.getValue().size()));
             for (Map.Entry<String, Map<ThriftResourceType,Integer>> _iter74 : _iter73.getValue().entrySet())
             {
               oprot.writeString(_iter74.getKey());
               {
-                oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.I32, org.apache.thrift.protocol.TType.I32, _iter74.getValue().size()));
+                oprot.writeMapBegin(new org.apache.thrift7.protocol.TMap(org.apache.thrift7.protocol.TType.I32, org.apache.thrift7.protocol.TType.I32, _iter74.getValue().size()));
                 for (Map.Entry<ThriftResourceType, Integer> _iter75 : _iter74.getValue().entrySet())
                 {
                   oprot.writeI32(_iter75.getKey().getValue());
@@ -1092,12 +1092,12 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
     if (this.groupToResource != null) {
       oprot.writeFieldBegin(GROUP_TO_RESOURCE_FIELD_DESC);
       {
-        oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.MAP, this.groupToResource.size()));
+        oprot.writeMapBegin(new org.apache.thrift7.protocol.TMap(org.apache.thrift7.protocol.TType.STRING, org.apache.thrift7.protocol.TType.MAP, this.groupToResource.size()));
         for (Map.Entry<String, Map<ThriftResourceType,Integer>> _iter76 : this.groupToResource.entrySet())
         {
           oprot.writeString(_iter76.getKey());
           {
-            oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.I32, org.apache.thrift.protocol.TType.I32, _iter76.getValue().size()));
+            oprot.writeMapBegin(new org.apache.thrift7.protocol.TMap(org.apache.thrift7.protocol.TType.I32, org.apache.thrift7.protocol.TType.I32, _iter76.getValue().size()));
             for (Map.Entry<ThriftResourceType, Integer> _iter77 : _iter76.getValue().entrySet())
             {
               oprot.writeI32(_iter77.getKey().getValue());
@@ -1113,12 +1113,12 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
     if (this.groupToUsedResource != null) {
       oprot.writeFieldBegin(GROUP_TO_USED_RESOURCE_FIELD_DESC);
       {
-        oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.MAP, this.groupToUsedResource.size()));
+        oprot.writeMapBegin(new org.apache.thrift7.protocol.TMap(org.apache.thrift7.protocol.TType.STRING, org.apache.thrift7.protocol.TType.MAP, this.groupToUsedResource.size()));
         for (Map.Entry<String, Map<ThriftResourceType,Integer>> _iter78 : this.groupToUsedResource.entrySet())
         {
           oprot.writeString(_iter78.getKey());
           {
-            oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.I32, org.apache.thrift.protocol.TType.I32, _iter78.getValue().size()));
+            oprot.writeMapBegin(new org.apache.thrift7.protocol.TMap(org.apache.thrift7.protocol.TType.I32, org.apache.thrift7.protocol.TType.I32, _iter78.getValue().size()));
             for (Map.Entry<ThriftResourceType, Integer> _iter79 : _iter78.getValue().entrySet())
             {
               oprot.writeI32(_iter79.getKey().getValue());
@@ -1194,42 +1194,42 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
     return sb.toString();
   }
 
-  public void validate() throws org.apache.thrift.TException {
+  public void validate() throws org.apache.thrift7.TException {
     // check for required fields
     if (!is_set_supervisors()) {
-      throw new org.apache.thrift.protocol.TProtocolException("Required field 'supervisors' is unset! Struct:" + toString());
+      throw new org.apache.thrift7.protocol.TProtocolException("Required field 'supervisors' is unset! Struct:" + toString());
     }
 
     if (!is_set_nimbus_uptime_secs()) {
-      throw new org.apache.thrift.protocol.TProtocolException("Required field 'nimbus_uptime_secs' is unset! Struct:" + toString());
+      throw new org.apache.thrift7.protocol.TProtocolException("Required field 'nimbus_uptime_secs' is unset! Struct:" + toString());
     }
 
     if (!is_set_topologies()) {
-      throw new org.apache.thrift.protocol.TProtocolException("Required field 'topologies' is unset! Struct:" + toString());
+      throw new org.apache.thrift7.protocol.TProtocolException("Required field 'topologies' is unset! Struct:" + toString());
     }
 
     if (!is_set_groupToTopology()) {
-      throw new org.apache.thrift.protocol.TProtocolException("Required field 'groupToTopology' is unset! Struct:" + toString());
+      throw new org.apache.thrift7.protocol.TProtocolException("Required field 'groupToTopology' is unset! Struct:" + toString());
     }
 
     if (!is_set_groupToResource()) {
-      throw new org.apache.thrift.protocol.TProtocolException("Required field 'groupToResource' is unset! Struct:" + toString());
+      throw new org.apache.thrift7.protocol.TProtocolException("Required field 'groupToResource' is unset! Struct:" + toString());
     }
 
     if (!is_set_groupToUsedResource()) {
-      throw new org.apache.thrift.protocol.TProtocolException("Required field 'groupToUsedResource' is unset! Struct:" + toString());
+      throw new org.apache.thrift7.protocol.TProtocolException("Required field 'groupToUsedResource' is unset! Struct:" + toString());
     }
 
     if (!is_set_isGroupModel()) {
-      throw new org.apache.thrift.protocol.TProtocolException("Required field 'isGroupModel' is unset! Struct:" + toString());
+      throw new org.apache.thrift7.protocol.TProtocolException("Required field 'isGroupModel' is unset! Struct:" + toString());
     }
 
   }
 
   private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
     try {
-      write(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(out)));
-    } catch (org.apache.thrift.TException te) {
+      write(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(out)));
+    } catch (org.apache.thrift7.TException te) {
       throw new java.io.IOException(te);
     }
   }
@@ -1238,8 +1238,8 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
     try {
       // it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
       __isset_bit_vector = new BitSet(1);
-      read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
-    } catch (org.apache.thrift.TException te) {
+      read(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(in)));
+    } catch (org.apache.thrift7.TException te) {
       throw new java.io.IOException(te);
     }
   }

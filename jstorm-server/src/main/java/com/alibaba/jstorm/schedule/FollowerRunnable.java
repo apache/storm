@@ -9,7 +9,7 @@ import java.util.UUID;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
-import org.apache.thrift.TException;
+import org.apache.thrift7.TException;
 
 import backtype.storm.Config;
 import backtype.storm.utils.Utils;
@@ -24,7 +24,6 @@ import com.alibaba.jstorm.utils.JStormServerUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.NetWorkUtils;
 import com.alibaba.jstorm.utils.PathUtils;
-import com.netflix.curator.framework.CuratorFramework;
 
 public class FollowerRunnable implements Runnable {
 

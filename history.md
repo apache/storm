@@ -1,5 +1,12 @@
 [JStorm 0.9.0 ΩÈ…‹](http://wenku.baidu.com/view/59e81017dd36a32d7375818b.html)
 
+#Release 0.9.3.1
+
+## Enhancement
+1. switch apache thrift7 to storm thrift7
+2. set defatult acker number is 1
+3. add "spout.single.thread" setting
+
 #Release 0.9.3
 ## New feature
 1. Support Aliyun Apsara/Hadoop Yarn
@@ -38,7 +45,7 @@
 2. Support CGroups, assigning CPU in hardware level.
 3. Support simple logview
 
-## Bug fix
+## Bug fix or enhancement
 1. Change SpoutExecutor's RotatingMap to TimeCacheMap, when putting too much timeout tuple is easy to cause deadlock in spout acker thread
 2. Tunning gc parameter, improve performance and avoid full GC
 3. Improve Topology's own gc priority, make it higher than JStorm system setting.
@@ -81,7 +88,7 @@
    please enable application classloader.
 2. Group Quato, Different group with different resource quato.
 
-## Bug fix
+## Bug fix or enhancement
 1. Fix Rotation Map competition issue.
 2. Set default acker number as 0
 3. Set default spout/bolt number as 1

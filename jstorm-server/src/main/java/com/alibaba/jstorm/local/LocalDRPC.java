@@ -2,7 +2,7 @@ package com.alibaba.jstorm.local;
 
 
 import org.apache.log4j.Logger;
-import org.apache.thrift.TException;
+import org.apache.thrift7.TException;
 
 import backtype.storm.ILocalDRPC;
 import backtype.storm.generated.DRPCExecutionException;

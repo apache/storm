@@ -7,10 +7,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.thrift.TBase;
-import org.apache.thrift.TDeserializer;
-import org.apache.thrift.TException;
-import org.apache.thrift.TSerializer;
+import org.apache.thrift7.TBase;
+import org.apache.thrift7.TDeserializer;
+import org.apache.thrift7.TException;
+import org.apache.thrift7.TSerializer;
 import org.jgrapht.DirectedGraph;
 
 import backtype.storm.generated.StreamInfo;

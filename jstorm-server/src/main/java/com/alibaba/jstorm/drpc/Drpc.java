@@ -11,10 +11,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.log4j.Logger;
-import org.apache.thrift.TException;
-import org.apache.thrift.protocol.TBinaryProtocol;
-import org.apache.thrift.server.THsHaServer;
-import org.apache.thrift.transport.TNonblockingServerSocket;
+import org.apache.thrift7.TException;
+import org.apache.thrift7.protocol.TBinaryProtocol;
+import org.apache.thrift7.server.THsHaServer;
+import org.apache.thrift7.transport.TNonblockingServerSocket;
 
 import backtype.storm.Config;
 import backtype.storm.daemon.Shutdownable;

@@ -1,13 +1,11 @@
 package com.alibaba.jstorm.local;
 
 import java.util.Map;
-import java.util.Properties;
 
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
-import org.apache.thrift.TException;
+import org.apache.thrift7.TException;
 import org.json.simple.JSONValue;
 
 import backtype.storm.ILocalCluster;

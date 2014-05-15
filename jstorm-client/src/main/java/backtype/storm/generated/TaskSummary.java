@@ -21,1327 +21,1198 @@ import java.util.Arrays;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class TaskSummary implements
-		org.apache.thrift.TBase<TaskSummary, TaskSummary._Fields>,
-		java.io.Serializable, Cloneable {
-	private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct(
-			"TaskSummary");
-
-	private static final org.apache.thrift.protocol.TField TASK_ID_FIELD_DESC = new org.apache.thrift.protocol.TField(
-			"task_id", org.apache.thrift.protocol.TType.I32, (short) 1);
-	private static final org.apache.thrift.protocol.TField COMPONENT_ID_FIELD_DESC = new org.apache.thrift.protocol.TField(
-			"component_id", org.apache.thrift.protocol.TType.STRING, (short) 2);
-	private static final org.apache.thrift.protocol.TField HOST_FIELD_DESC = new org.apache.thrift.protocol.TField(
-			"host", org.apache.thrift.protocol.TType.STRING, (short) 3);
-	private static final org.apache.thrift.protocol.TField CPU_FIELD_DESC = new org.apache.thrift.protocol.TField(
-			"cpu", org.apache.thrift.protocol.TType.I32, (short) 4);
-	private static final org.apache.thrift.protocol.TField MEM_FIELD_DESC = new org.apache.thrift.protocol.TField(
-			"mem", org.apache.thrift.protocol.TType.I32, (short) 5);
-	private static final org.apache.thrift.protocol.TField DISK_FIELD_DESC = new org.apache.thrift.protocol.TField(
-			"disk", org.apache.thrift.protocol.TType.STRING, (short) 6);
-	private static final org.apache.thrift.protocol.TField PORT_FIELD_DESC = new org.apache.thrift.protocol.TField(
-			"port", org.apache.thrift.protocol.TType.I32, (short) 7);
-	private static final org.apache.thrift.protocol.TField UPTIME_SECS_FIELD_DESC = new org.apache.thrift.protocol.TField(
-			"uptime_secs", org.apache.thrift.protocol.TType.I32, (short) 8);
-	private static final org.apache.thrift.protocol.TField ERRORS_FIELD_DESC = new org.apache.thrift.protocol.TField(
-			"errors", org.apache.thrift.protocol.TType.LIST, (short) 9);
-	private static final org.apache.thrift.protocol.TField STATS_FIELD_DESC = new org.apache.thrift.protocol.TField(
-			"stats", org.apache.thrift.protocol.TType.STRUCT, (short) 10);
-
-	private int task_id; // required
-	private String component_id; // required
-	private String host; // required
-	private int cpu; // required
-	private int mem; // required
-	private String disk; // required
-	private int port; // required
-	private int uptime_secs; // required
-	private List<ErrorInfo> errors; // required
-	private TaskStats stats; // required
-
-	/**
-	 * The set of fields this struct contains, along with convenience methods
-	 * for finding and manipulating them.
-	 */
-	public enum _Fields implements org.apache.thrift.TFieldIdEnum {
-		TASK_ID((short) 1, "task_id"), COMPONENT_ID((short) 2, "component_id"), HOST(
-				(short) 3, "host"), CPU((short) 4, "cpu"), MEM((short) 5, "mem"), DISK(
-				(short) 6, "disk"), PORT((short) 7, "port"), UPTIME_SECS(
-				(short) 8, "uptime_secs"), ERRORS((short) 9, "errors"), STATS(
-				(short) 10, "stats");
-
-		private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
-
-		static {
-			for (_Fields field : EnumSet.allOf(_Fields.class)) {
-				byName.put(field.getFieldName(), field);
-			}
-		}
-
-		/**
-		 * Find the _Fields constant that matches fieldId, or null if its not
-		 * found.
-		 */
-		public static _Fields findByThriftId(int fieldId) {
-			switch (fieldId) {
-			case 1: // TASK_ID
-				return TASK_ID;
-			case 2: // COMPONENT_ID
-				return COMPONENT_ID;
-			case 3: // HOST
-				return HOST;
-			case 4: // CPU
-				return CPU;
-			case 5: // MEM
-				return MEM;
-			case 6: // DISK
-				return DISK;
-			case 7: // PORT
-				return PORT;
-			case 8: // UPTIME_SECS
-				return UPTIME_SECS;
-			case 9: // ERRORS
-				return ERRORS;
-			case 10: // STATS
-				return STATS;
-			default:
-				return null;
-			}
-		}
-
-		/**
-		 * Find the _Fields constant that matches fieldId, throwing an exception
-		 * if it is not found.
-		 */
-		public static _Fields findByThriftIdOrThrow(int fieldId) {
-			_Fields fields = findByThriftId(fieldId);
-			if (fields == null)
-				throw new IllegalArgumentException("Field " + fieldId
-						+ " doesn't exist!");
-			return fields;
-		}
-
-		/**
-		 * Find the _Fields constant that matches name, or null if its not
-		 * found.
-		 */
-		public static _Fields findByName(String name) {
-			return byName.get(name);
-		}
-
-		private final short _thriftId;
-		private final String _fieldName;
-
-		_Fields(short thriftId, String fieldName) {
-			_thriftId = thriftId;
-			_fieldName = fieldName;
-		}
-
-		public short getThriftFieldId() {
-			return _thriftId;
-		}
-
-		public String getFieldName() {
-			return _fieldName;
-		}
-	}
-
-	// isset id assignments
-	private static final int __TASK_ID_ISSET_ID = 0;
-	private static final int __CPU_ISSET_ID = 1;
-	private static final int __MEM_ISSET_ID = 2;
-	private static final int __PORT_ISSET_ID = 3;
-	private static final int __UPTIME_SECS_ISSET_ID = 4;
-	private BitSet __isset_bit_vector = new BitSet(5);
-
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(
-				_Fields.class);
-		tmpMap.put(_Fields.TASK_ID,
-				new org.apache.thrift.meta_data.FieldMetaData("task_id",
-						org.apache.thrift.TFieldRequirementType.REQUIRED,
-						new org.apache.thrift.meta_data.FieldValueMetaData(
-								org.apache.thrift.protocol.TType.I32)));
-		tmpMap.put(_Fields.COMPONENT_ID,
-				new org.apache.thrift.meta_data.FieldMetaData("component_id",
-						org.apache.thrift.TFieldRequirementType.REQUIRED,
-						new org.apache.thrift.meta_data.FieldValueMetaData(
-								org.apache.thrift.protocol.TType.STRING)));
-		tmpMap.put(_Fields.HOST, new org.apache.thrift.meta_data.FieldMetaData(
-				"host", org.apache.thrift.TFieldRequirementType.REQUIRED,
-				new org.apache.thrift.meta_data.FieldValueMetaData(
-						org.apache.thrift.protocol.TType.STRING)));
-		tmpMap.put(_Fields.CPU, new org.apache.thrift.meta_data.FieldMetaData(
-				"cpu", org.apache.thrift.TFieldRequirementType.REQUIRED,
-				new org.apache.thrift.meta_data.FieldValueMetaData(
-						org.apache.thrift.protocol.TType.I32)));
-		tmpMap.put(_Fields.MEM, new org.apache.thrift.meta_data.FieldMetaData(
-				"mem", org.apache.thrift.TFieldRequirementType.REQUIRED,
-				new org.apache.thrift.meta_data.FieldValueMetaData(
-						org.apache.thrift.protocol.TType.I32)));
-		tmpMap.put(_Fields.DISK, new org.apache.thrift.meta_data.FieldMetaData(
-				"disk", org.apache.thrift.TFieldRequirementType.REQUIRED,
-				new org.apache.thrift.meta_data.FieldValueMetaData(
-						org.apache.thrift.protocol.TType.STRING)));
-		tmpMap.put(_Fields.PORT, new org.apache.thrift.meta_data.FieldMetaData(
-				"port", org.apache.thrift.TFieldRequirementType.REQUIRED,
-				new org.apache.thrift.meta_data.FieldValueMetaData(
-						org.apache.thrift.protocol.TType.I32)));
-		tmpMap.put(_Fields.UPTIME_SECS,
-				new org.apache.thrift.meta_data.FieldMetaData("uptime_secs",
-						org.apache.thrift.TFieldRequirementType.REQUIRED,
-						new org.apache.thrift.meta_data.FieldValueMetaData(
-								org.apache.thrift.protocol.TType.I32)));
-		tmpMap.put(
-				_Fields.ERRORS,
-				new org.apache.thrift.meta_data.FieldMetaData(
-						"errors",
-						org.apache.thrift.TFieldRequirementType.REQUIRED,
-						new org.apache.thrift.meta_data.ListMetaData(
-								org.apache.thrift.protocol.TType.LIST,
-								new org.apache.thrift.meta_data.StructMetaData(
-										org.apache.thrift.protocol.TType.STRUCT,
-										ErrorInfo.class))));
-		tmpMap.put(_Fields.STATS,
-				new org.apache.thrift.meta_data.FieldMetaData("stats",
-						org.apache.thrift.TFieldRequirementType.OPTIONAL,
-						new org.apache.thrift.meta_data.StructMetaData(
-								org.apache.thrift.protocol.TType.STRUCT,
-								TaskStats.class)));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(
-				TaskSummary.class, metaDataMap);
-	}
-
-	public TaskSummary() {
-	}
-
-	public TaskSummary(int task_id, String component_id, String host, int cpu,
-			int mem, String disk, int port, int uptime_secs,
-			List<ErrorInfo> errors) {
-		this();
-		this.task_id = task_id;
-		set_task_id_isSet(true);
-		this.component_id = component_id;
-		this.host = host;
-		this.cpu = cpu;
-		set_cpu_isSet(true);
-		this.mem = mem;
-		set_mem_isSet(true);
-		this.disk = disk;
-		this.port = port;
-		set_port_isSet(true);
-		this.uptime_secs = uptime_secs;
-		set_uptime_secs_isSet(true);
-		this.errors = errors;
-	}
-
-	/**
-	 * Performs a deep copy on <i>other</i>.
-	 */
-	public TaskSummary(TaskSummary other) {
-		__isset_bit_vector.clear();
-		__isset_bit_vector.or(other.__isset_bit_vector);
-		this.task_id = other.task_id;
-		if (other.is_set_component_id()) {
-			this.component_id = other.component_id;
-		}
-		if (other.is_set_host()) {
-			this.host = other.host;
-		}
-		this.cpu = other.cpu;
-		this.mem = other.mem;
-		if (other.is_set_disk()) {
-			this.disk = other.disk;
-		}
-		this.port = other.port;
-		this.uptime_secs = other.uptime_secs;
-		if (other.is_set_errors()) {
-			List<ErrorInfo> __this__errors = new ArrayList<ErrorInfo>();
-			for (ErrorInfo other_element : other.errors) {
-				__this__errors.add(new ErrorInfo(other_element));
-			}
-			this.errors = __this__errors;
-		}
-		if (other.is_set_stats()) {
-			this.stats = new TaskStats(other.stats);
-		}
-	}
-
-	public TaskSummary deepCopy() {
-		return new TaskSummary(this);
-	}
-
-	@Override
-	public void clear() {
-		set_task_id_isSet(false);
-		this.task_id = 0;
-		this.component_id = null;
-		this.host = null;
-		set_cpu_isSet(false);
-		this.cpu = 0;
-		set_mem_isSet(false);
-		this.mem = 0;
-		this.disk = null;
-		set_port_isSet(false);
-		this.port = 0;
-		set_uptime_secs_isSet(false);
-		this.uptime_secs = 0;
-		this.errors = null;
-		this.stats = null;
-	}
-
-	public int get_task_id() {
-		return this.task_id;
-	}
-
-	public void set_task_id(int task_id) {
-		this.task_id = task_id;
-		set_task_id_isSet(true);
-	}
-
-	public void unset_task_id() {
-		__isset_bit_vector.clear(__TASK_ID_ISSET_ID);
-	}
-
-	/**
-	 * Returns true if field task_id is set (has been assigned a value) and
-	 * false otherwise
-	 */
-	public boolean is_set_task_id() {
-		return __isset_bit_vector.get(__TASK_ID_ISSET_ID);
-	}
-
-	public void set_task_id_isSet(boolean value) {
-		__isset_bit_vector.set(__TASK_ID_ISSET_ID, value);
-	}
-
-	public String get_component_id() {
-		return this.component_id;
-	}
-
-	public void set_component_id(String component_id) {
-		this.component_id = component_id;
-	}
-
-	public void unset_component_id() {
-		this.component_id = null;
-	}
-
-	/**
-	 * Returns true if field component_id is set (has been assigned a value) and
-	 * false otherwise
-	 */
-	public boolean is_set_component_id() {
-		return this.component_id != null;
-	}
-
-	public void set_component_id_isSet(boolean value) {
-		if (!value) {
-			this.component_id = null;
-		}
-	}
-
-	public String get_host() {
-		return this.host;
-	}
-
-	public void set_host(String host) {
-		this.host = host;
-	}
-
-	public void unset_host() {
-		this.host = null;
-	}
-
-	/**
-	 * Returns true if field host is set (has been assigned a value) and false
-	 * otherwise
-	 */
-	public boolean is_set_host() {
-		return this.host != null;
-	}
-
-	public void set_host_isSet(boolean value) {
-		if (!value) {
-			this.host = null;
-		}
-	}
-
-	public int get_cpu() {
-		return this.cpu;
-	}
-
-	public void set_cpu(int cpu) {
-		this.cpu = cpu;
-		set_cpu_isSet(true);
-	}
-
-	public void unset_cpu() {
-		__isset_bit_vector.clear(__CPU_ISSET_ID);
-	}
-
-	/**
-	 * Returns true if field cpu is set (has been assigned a value) and false
-	 * otherwise
-	 */
-	public boolean is_set_cpu() {
-		return __isset_bit_vector.get(__CPU_ISSET_ID);
-	}
-
-	public void set_cpu_isSet(boolean value) {
-		__isset_bit_vector.set(__CPU_ISSET_ID, value);
-	}
-
-	public int get_mem() {
-		return this.mem;
-	}
-
-	public void set_mem(int mem) {
-		this.mem = mem;
-		set_mem_isSet(true);
-	}
-
-	public void unset_mem() {
-		__isset_bit_vector.clear(__MEM_ISSET_ID);
-	}
-
-	/**
-	 * Returns true if field mem is set (has been assigned a value) and false
-	 * otherwise
-	 */
-	public boolean is_set_mem() {
-		return __isset_bit_vector.get(__MEM_ISSET_ID);
-	}
-
-	public void set_mem_isSet(boolean value) {
-		__isset_bit_vector.set(__MEM_ISSET_ID, value);
-	}
-
-	public String get_disk() {
-		return this.disk;
-	}
-
-	public void set_disk(String disk) {
-		this.disk = disk;
-	}
-
-	public void unset_disk() {
-		this.disk = null;
-	}
-
-	/**
-	 * Returns true if field disk is set (has been assigned a value) and false
-	 * otherwise
-	 */
-	public boolean is_set_disk() {
-		return this.disk != null;
-	}
-
-	public void set_disk_isSet(boolean value) {
-		if (!value) {
-			this.disk = null;
-		}
-	}
-
-	public int get_port() {
-		return this.port;
-	}
-
-	public void set_port(int port) {
-		this.port = port;
-		set_port_isSet(true);
-	}
-
-	public void unset_port() {
-		__isset_bit_vector.clear(__PORT_ISSET_ID);
-	}
-
-	/**
-	 * Returns true if field port is set (has been assigned a value) and false
-	 * otherwise
-	 */
-	public boolean is_set_port() {
-		return __isset_bit_vector.get(__PORT_ISSET_ID);
-	}
-
-	public void set_port_isSet(boolean value) {
-		__isset_bit_vector.set(__PORT_ISSET_ID, value);
-	}
-
-	public int get_uptime_secs() {
-		return this.uptime_secs;
-	}
-
-	public void set_uptime_secs(int uptime_secs) {
-		this.uptime_secs = uptime_secs;
-		set_uptime_secs_isSet(true);
-	}
-
-	public void unset_uptime_secs() {
-		__isset_bit_vector.clear(__UPTIME_SECS_ISSET_ID);
-	}
-
-	/**
-	 * Returns true if field uptime_secs is set (has been assigned a value) and
-	 * false otherwise
-	 */
-	public boolean is_set_uptime_secs() {
-		return __isset_bit_vector.get(__UPTIME_SECS_ISSET_ID);
-	}
-
-	public void set_uptime_secs_isSet(boolean value) {
-		__isset_bit_vector.set(__UPTIME_SECS_ISSET_ID, value);
-	}
-
-	public int get_errors_size() {
-		return (this.errors == null) ? 0 : this.errors.size();
-	}
-
-	public java.util.Iterator<ErrorInfo> get_errors_iterator() {
-		return (this.errors == null) ? null : this.errors.iterator();
-	}
-
-	public void add_to_errors(ErrorInfo elem) {
-		if (this.errors == null) {
-			this.errors = new ArrayList<ErrorInfo>();
-		}
-		this.errors.add(elem);
-	}
-
-	public List<ErrorInfo> get_errors() {
-		return this.errors;
-	}
-
-	public void set_errors(List<ErrorInfo> errors) {
-		this.errors = errors;
-	}
-
-	public void unset_errors() {
-		this.errors = null;
-	}
-
-	/**
-	 * Returns true if field errors is set (has been assigned a value) and false
-	 * otherwise
-	 */
-	public boolean is_set_errors() {
-		return this.errors != null;
-	}
-
-	public void set_errors_isSet(boolean value) {
-		if (!value) {
-			this.errors = null;
-		}
-	}
-
-	public TaskStats get_stats() {
-		return this.stats;
-	}
-
-	public void set_stats(TaskStats stats) {
-		this.stats = stats;
-	}
-
-	public void unset_stats() {
-		this.stats = null;
-	}
-
-	/**
-	 * Returns true if field stats is set (has been assigned a value) and false
-	 * otherwise
-	 */
-	public boolean is_set_stats() {
-		return this.stats != null;
-	}
-
-	public void set_stats_isSet(boolean value) {
-		if (!value) {
-			this.stats = null;
-		}
-	}
-
-	public void setFieldValue(_Fields field, Object value) {
-		switch (field) {
-		case TASK_ID:
-			if (value == null) {
-				unset_task_id();
-			} else {
-				set_task_id((Integer) value);
-			}
-			break;
-
-		case COMPONENT_ID:
-			if (value == null) {
-				unset_component_id();
-			} else {
-				set_component_id((String) value);
-			}
-			break;
-
-		case HOST:
-			if (value == null) {
-				unset_host();
-			} else {
-				set_host((String) value);
-			}
-			break;
-
-		case CPU:
-			if (value == null) {
-				unset_cpu();
-			} else {
-				set_cpu((Integer) value);
-			}
-			break;
-
-		case MEM:
-			if (value == null) {
-				unset_mem();
-			} else {
-				set_mem((Integer) value);
-			}
-			break;
-
-		case DISK:
-			if (value == null) {
-				unset_disk();
-			} else {
-				set_disk((String) value);
-			}
-			break;
-
-		case PORT:
-			if (value == null) {
-				unset_port();
-			} else {
-				set_port((Integer) value);
-			}
-			break;
-
-		case UPTIME_SECS:
-			if (value == null) {
-				unset_uptime_secs();
-			} else {
-				set_uptime_secs((Integer) value);
-			}
-			break;
-
-		case ERRORS:
-			if (value == null) {
-				unset_errors();
-			} else {
-				set_errors((List<ErrorInfo>) value);
-			}
-			break;
-
-		case STATS:
-			if (value == null) {
-				unset_stats();
-			} else {
-				set_stats((TaskStats) value);
-			}
-			break;
-
-		}
-	}
-
-	public Object getFieldValue(_Fields field) {
-		switch (field) {
-		case TASK_ID:
-			return Integer.valueOf(get_task_id());
-
-		case COMPONENT_ID:
-			return get_component_id();
-
-		case HOST:
-			return get_host();
-
-		case CPU:
-			return Integer.valueOf(get_cpu());
-
-		case MEM:
-			return Integer.valueOf(get_mem());
-
-		case DISK:
-			return get_disk();
-
-		case PORT:
-			return Integer.valueOf(get_port());
-
-		case UPTIME_SECS:
-			return Integer.valueOf(get_uptime_secs());
-
-		case ERRORS:
-			return get_errors();
-
-		case STATS:
-			return get_stats();
-
-		}
-		throw new IllegalStateException();
-	}
-
-	/**
-	 * Returns true if field corresponding to fieldID is set (has been assigned
-	 * a value) and false otherwise
-	 */
-	public boolean isSet(_Fields field) {
-		if (field == null) {
-			throw new IllegalArgumentException();
-		}
-
-		switch (field) {
-		case TASK_ID:
-			return is_set_task_id();
-		case COMPONENT_ID:
-			return is_set_component_id();
-		case HOST:
-			return is_set_host();
-		case CPU:
-			return is_set_cpu();
-		case MEM:
-			return is_set_mem();
-		case DISK:
-			return is_set_disk();
-		case PORT:
-			return is_set_port();
-		case UPTIME_SECS:
-			return is_set_uptime_secs();
-		case ERRORS:
-			return is_set_errors();
-		case STATS:
-			return is_set_stats();
-		}
-		throw new IllegalStateException();
-	}
-
-	@Override
-	public boolean equals(Object that) {
-		if (that == null)
-			return false;
-		if (that instanceof TaskSummary)
-			return this.equals((TaskSummary) that);
-		return false;
-	}
-
-	public boolean equals(TaskSummary that) {
-		if (that == null)
-			return false;
-
-		boolean this_present_task_id = true;
-		boolean that_present_task_id = true;
-		if (this_present_task_id || that_present_task_id) {
-			if (!(this_present_task_id && that_present_task_id))
-				return false;
-			if (this.task_id != that.task_id)
-				return false;
-		}
-
-		boolean this_present_component_id = true && this.is_set_component_id();
-		boolean that_present_component_id = true && that.is_set_component_id();
-		if (this_present_component_id || that_present_component_id) {
-			if (!(this_present_component_id && that_present_component_id))
-				return false;
-			if (!this.component_id.equals(that.component_id))
-				return false;
-		}
-
-		boolean this_present_host = true && this.is_set_host();
-		boolean that_present_host = true && that.is_set_host();
-		if (this_present_host || that_present_host) {
-			if (!(this_present_host && that_present_host))
-				return false;
-			if (!this.host.equals(that.host))
-				return false;
-		}
-
-		boolean this_present_cpu = true;
-		boolean that_present_cpu = true;
-		if (this_present_cpu || that_present_cpu) {
-			if (!(this_present_cpu && that_present_cpu))
-				return false;
-			if (this.cpu != that.cpu)
-				return false;
-		}
-
-		boolean this_present_mem = true;
-		boolean that_present_mem = true;
-		if (this_present_mem || that_present_mem) {
-			if (!(this_present_mem && that_present_mem))
-				return false;
-			if (this.mem != that.mem)
-				return false;
-		}
-
-		boolean this_present_disk = true && this.is_set_disk();
-		boolean that_present_disk = true && that.is_set_disk();
-		if (this_present_disk || that_present_disk) {
-			if (!(this_present_disk && that_present_disk))
-				return false;
-			if (!this.disk.equals(that.disk))
-				return false;
-		}
-
-		boolean this_present_port = true;
-		boolean that_present_port = true;
-		if (this_present_port || that_present_port) {
-			if (!(this_present_port && that_present_port))
-				return false;
-			if (this.port != that.port)
-				return false;
-		}
-
-		boolean this_present_uptime_secs = true;
-		boolean that_present_uptime_secs = true;
-		if (this_present_uptime_secs || that_present_uptime_secs) {
-			if (!(this_present_uptime_secs && that_present_uptime_secs))
-				return false;
-			if (this.uptime_secs != that.uptime_secs)
-				return false;
-		}
-
-		boolean this_present_errors = true && this.is_set_errors();
-		boolean that_present_errors = true && that.is_set_errors();
-		if (this_present_errors || that_present_errors) {
-			if (!(this_present_errors && that_present_errors))
-				return false;
-			if (!this.errors.equals(that.errors))
-				return false;
-		}
-
-		boolean this_present_stats = true && this.is_set_stats();
-		boolean that_present_stats = true && that.is_set_stats();
-		if (this_present_stats || that_present_stats) {
-			if (!(this_present_stats && that_present_stats))
-				return false;
-			if (!this.stats.equals(that.stats))
-				return false;
-		}
-
-		return true;
-	}
-
-	@Override
-	public int hashCode() {
-		HashCodeBuilder builder = new HashCodeBuilder();
-
-		boolean present_task_id = true;
-		builder.append(present_task_id);
-		if (present_task_id)
-			builder.append(task_id);
-
-		boolean present_component_id = true && (is_set_component_id());
-		builder.append(present_component_id);
-		if (present_component_id)
-			builder.append(component_id);
-
-		boolean present_host = true && (is_set_host());
-		builder.append(present_host);
-		if (present_host)
-			builder.append(host);
-
-		boolean present_cpu = true;
-		builder.append(present_cpu);
-		if (present_cpu)
-			builder.append(cpu);
-
-		boolean present_mem = true;
-		builder.append(present_mem);
-		if (present_mem)
-			builder.append(mem);
-
-		boolean present_disk = true && (is_set_disk());
-		builder.append(present_disk);
-		if (present_disk)
-			builder.append(disk);
-
-		boolean present_port = true;
-		builder.append(present_port);
-		if (present_port)
-			builder.append(port);
-
-		boolean present_uptime_secs = true;
-		builder.append(present_uptime_secs);
-		if (present_uptime_secs)
-			builder.append(uptime_secs);
-
-		boolean present_errors = true && (is_set_errors());
-		builder.append(present_errors);
-		if (present_errors)
-			builder.append(errors);
-
-		boolean present_stats = true && (is_set_stats());
-		builder.append(present_stats);
-		if (present_stats)
-			builder.append(stats);
-
-		return builder.toHashCode();
-	}
-
-	public int compareTo(TaskSummary other) {
-		if (!getClass().equals(other.getClass())) {
-			return getClass().getName().compareTo(other.getClass().getName());
-		}
-
-		int lastComparison = 0;
-		TaskSummary typedOther = (TaskSummary) other;
-
-		lastComparison = Boolean.valueOf(is_set_task_id()).compareTo(
-				typedOther.is_set_task_id());
-		if (lastComparison != 0) {
-			return lastComparison;
-		}
-		if (is_set_task_id()) {
-			lastComparison = org.apache.thrift.TBaseHelper.compareTo(
-					this.task_id, typedOther.task_id);
-			if (lastComparison != 0) {
-				return lastComparison;
-			}
-		}
-		lastComparison = Boolean.valueOf(is_set_component_id()).compareTo(
-				typedOther.is_set_component_id());
-		if (lastComparison != 0) {
-			return lastComparison;
-		}
-		if (is_set_component_id()) {
-			lastComparison = org.apache.thrift.TBaseHelper.compareTo(
-					this.component_id, typedOther.component_id);
-			if (lastComparison != 0) {
-				return lastComparison;
-			}
-		}
-		lastComparison = Boolean.valueOf(is_set_host()).compareTo(
-				typedOther.is_set_host());
-		if (lastComparison != 0) {
-			return lastComparison;
-		}
-		if (is_set_host()) {
-			lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.host,
-					typedOther.host);
-			if (lastComparison != 0) {
-				return lastComparison;
-			}
-		}
-		lastComparison = Boolean.valueOf(is_set_cpu()).compareTo(
-				typedOther.is_set_cpu());
-		if (lastComparison != 0) {
-			return lastComparison;
-		}
-		if (is_set_cpu()) {
-			lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.cpu,
-					typedOther.cpu);
-			if (lastComparison != 0) {
-				return lastComparison;
-			}
-		}
-		lastComparison = Boolean.valueOf(is_set_mem()).compareTo(
-				typedOther.is_set_mem());
-		if (lastComparison != 0) {
-			return lastComparison;
-		}
-		if (is_set_mem()) {
-			lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.mem,
-					typedOther.mem);
-			if (lastComparison != 0) {
-				return lastComparison;
-			}
-		}
-		lastComparison = Boolean.valueOf(is_set_disk()).compareTo(
-				typedOther.is_set_disk());
-		if (lastComparison != 0) {
-			return lastComparison;
-		}
-		if (is_set_disk()) {
-			lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.disk,
-					typedOther.disk);
-			if (lastComparison != 0) {
-				return lastComparison;
-			}
-		}
-		lastComparison = Boolean.valueOf(is_set_port()).compareTo(
-				typedOther.is_set_port());
-		if (lastComparison != 0) {
-			return lastComparison;
-		}
-		if (is_set_port()) {
-			lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.port,
-					typedOther.port);
-			if (lastComparison != 0) {
-				return lastComparison;
-			}
-		}
-		lastComparison = Boolean.valueOf(is_set_uptime_secs()).compareTo(
-				typedOther.is_set_uptime_secs());
-		if (lastComparison != 0) {
-			return lastComparison;
-		}
-		if (is_set_uptime_secs()) {
-			lastComparison = org.apache.thrift.TBaseHelper.compareTo(
-					this.uptime_secs, typedOther.uptime_secs);
-			if (lastComparison != 0) {
-				return lastComparison;
-			}
-		}
-		lastComparison = Boolean.valueOf(is_set_errors()).compareTo(
-				typedOther.is_set_errors());
-		if (lastComparison != 0) {
-			return lastComparison;
-		}
-		if (is_set_errors()) {
-			lastComparison = org.apache.thrift.TBaseHelper.compareTo(
-					this.errors, typedOther.errors);
-			if (lastComparison != 0) {
-				return lastComparison;
-			}
-		}
-		lastComparison = Boolean.valueOf(is_set_stats()).compareTo(
-				typedOther.is_set_stats());
-		if (lastComparison != 0) {
-			return lastComparison;
-		}
-		if (is_set_stats()) {
-			lastComparison = org.apache.thrift.TBaseHelper.compareTo(
-					this.stats, typedOther.stats);
-			if (lastComparison != 0) {
-				return lastComparison;
-			}
-		}
-		return 0;
-	}
-
-	public _Fields fieldForId(int fieldId) {
-		return _Fields.findByThriftId(fieldId);
-	}
-
-	public void read(org.apache.thrift.protocol.TProtocol iprot)
-			throws org.apache.thrift.TException {
-		org.apache.thrift.protocol.TField field;
-		iprot.readStructBegin();
-		while (true) {
-			field = iprot.readFieldBegin();
-			if (field.type == org.apache.thrift.protocol.TType.STOP) {
-				break;
-			}
-			switch (field.id) {
-			case 1: // TASK_ID
-				if (field.type == org.apache.thrift.protocol.TType.I32) {
-					this.task_id = iprot.readI32();
-					set_task_id_isSet(true);
-				} else {
-					org.apache.thrift.protocol.TProtocolUtil.skip(iprot,
-							field.type);
-				}
-				break;
-			case 2: // COMPONENT_ID
-				if (field.type == org.apache.thrift.protocol.TType.STRING) {
-					this.component_id = iprot.readString();
-				} else {
-					org.apache.thrift.protocol.TProtocolUtil.skip(iprot,
-							field.type);
-				}
-				break;
-			case 3: // HOST
-				if (field.type == org.apache.thrift.protocol.TType.STRING) {
-					this.host = iprot.readString();
-				} else {
-					org.apache.thrift.protocol.TProtocolUtil.skip(iprot,
-							field.type);
-				}
-				break;
-			case 4: // CPU
-				if (field.type == org.apache.thrift.protocol.TType.I32) {
-					this.cpu = iprot.readI32();
-					set_cpu_isSet(true);
-				} else {
-					org.apache.thrift.protocol.TProtocolUtil.skip(iprot,
-							field.type);
-				}
-				break;
-			case 5: // MEM
-				if (field.type == org.apache.thrift.protocol.TType.I32) {
-					this.mem = iprot.readI32();
-					set_mem_isSet(true);
-				} else {
-					org.apache.thrift.protocol.TProtocolUtil.skip(iprot,
-							field.type);
-				}
-				break;
-			case 6: // DISK
-				if (field.type == org.apache.thrift.protocol.TType.STRING) {
-					this.disk = iprot.readString();
-				} else {
-					org.apache.thrift.protocol.TProtocolUtil.skip(iprot,
-							field.type);
-				}
-				break;
-			case 7: // PORT
-				if (field.type == org.apache.thrift.protocol.TType.I32) {
-					this.port = iprot.readI32();
-					set_port_isSet(true);
-				} else {
-					org.apache.thrift.protocol.TProtocolUtil.skip(iprot,
-							field.type);
-				}
-				break;
-			case 8: // UPTIME_SECS
-				if (field.type == org.apache.thrift.protocol.TType.I32) {
-					this.uptime_secs = iprot.readI32();
-					set_uptime_secs_isSet(true);
-				} else {
-					org.apache.thrift.protocol.TProtocolUtil.skip(iprot,
-							field.type);
-				}
-				break;
-			case 9: // ERRORS
-				if (field.type == org.apache.thrift.protocol.TType.LIST) {
-					{
-						org.apache.thrift.protocol.TList _list185 = iprot
-								.readListBegin();
-						this.errors = new ArrayList<ErrorInfo>(_list185.size);
-						for (int _i186 = 0; _i186 < _list185.size; ++_i186) {
-							ErrorInfo _elem187; // required
-							_elem187 = new ErrorInfo();
-							_elem187.read(iprot);
-							this.errors.add(_elem187);
-						}
-						iprot.readListEnd();
-					}
-				} else {
-					org.apache.thrift.protocol.TProtocolUtil.skip(iprot,
-							field.type);
-				}
-				break;
-			case 10: // STATS
-				if (field.type == org.apache.thrift.protocol.TType.STRUCT) {
-					this.stats = new TaskStats();
-					this.stats.read(iprot);
-				} else {
-					org.apache.thrift.protocol.TProtocolUtil.skip(iprot,
-							field.type);
-				}
-				break;
-			default:
-				org.apache.thrift.protocol.TProtocolUtil
-						.skip(iprot, field.type);
-			}
-			iprot.readFieldEnd();
-		}
-		iprot.readStructEnd();
-		validate();
-	}
-
-	public void write(org.apache.thrift.protocol.TProtocol oprot)
-			throws org.apache.thrift.TException {
-		validate();
-
-		oprot.writeStructBegin(STRUCT_DESC);
-		oprot.writeFieldBegin(TASK_ID_FIELD_DESC);
-		oprot.writeI32(this.task_id);
-		oprot.writeFieldEnd();
-		if (this.component_id != null) {
-			oprot.writeFieldBegin(COMPONENT_ID_FIELD_DESC);
-			oprot.writeString(this.component_id);
-			oprot.writeFieldEnd();
-		}
-		if (this.host != null) {
-			oprot.writeFieldBegin(HOST_FIELD_DESC);
-			oprot.writeString(this.host);
-			oprot.writeFieldEnd();
-		}
-		oprot.writeFieldBegin(CPU_FIELD_DESC);
-		oprot.writeI32(this.cpu);
-		oprot.writeFieldEnd();
-		oprot.writeFieldBegin(MEM_FIELD_DESC);
-		oprot.writeI32(this.mem);
-		oprot.writeFieldEnd();
-		if (this.disk != null) {
-			oprot.writeFieldBegin(DISK_FIELD_DESC);
-			oprot.writeString(this.disk);
-			oprot.writeFieldEnd();
-		}
-		oprot.writeFieldBegin(PORT_FIELD_DESC);
-		oprot.writeI32(this.port);
-		oprot.writeFieldEnd();
-		oprot.writeFieldBegin(UPTIME_SECS_FIELD_DESC);
-		oprot.writeI32(this.uptime_secs);
-		oprot.writeFieldEnd();
-		if (this.errors != null) {
-			oprot.writeFieldBegin(ERRORS_FIELD_DESC);
-			{
-				oprot.writeListBegin(new org.apache.thrift.protocol.TList(
-						org.apache.thrift.protocol.TType.STRUCT, this.errors
-								.size()));
-				for (ErrorInfo _iter188 : this.errors) {
-					_iter188.write(oprot);
-				}
-				oprot.writeListEnd();
-			}
-			oprot.writeFieldEnd();
-		}
-		if (this.stats != null) {
-			if (is_set_stats()) {
-				oprot.writeFieldBegin(STATS_FIELD_DESC);
-				this.stats.write(oprot);
-				oprot.writeFieldEnd();
-			}
-		}
-		oprot.writeFieldStop();
-		oprot.writeStructEnd();
-	}
-
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder("TaskSummary(");
-		boolean first = true;
-
-		sb.append("task_id:");
-		sb.append(this.task_id);
-		first = false;
-		if (!first)
-			sb.append(", ");
-		sb.append("component_id:");
-		if (this.component_id == null) {
-			sb.append("null");
-		} else {
-			sb.append(this.component_id);
-		}
-		first = false;
-		if (!first)
-			sb.append(", ");
-		sb.append("host:");
-		if (this.host == null) {
-			sb.append("null");
-		} else {
-			sb.append(this.host);
-		}
-		first = false;
-		if (!first)
-			sb.append(", ");
-		sb.append("cpu:");
-		sb.append(this.cpu);
-		first = false;
-		if (!first)
-			sb.append(", ");
-		sb.append("mem:");
-		sb.append(this.mem);
-		first = false;
-		if (!first)
-			sb.append(", ");
-		sb.append("disk:");
-		if (this.disk == null) {
-			sb.append("null");
-		} else {
-			sb.append(this.disk);
-		}
-		first = false;
-		if (!first)
-			sb.append(", ");
-		sb.append("port:");
-		sb.append(this.port);
-		first = false;
-		if (!first)
-			sb.append(", ");
-		sb.append("uptime_secs:");
-		sb.append(this.uptime_secs);
-		first = false;
-		if (!first)
-			sb.append(", ");
-		sb.append("errors:");
-		if (this.errors == null) {
-			sb.append("null");
-		} else {
-			sb.append(this.errors);
-		}
-		first = false;
-		if (is_set_stats()) {
-			if (!first)
-				sb.append(", ");
-			sb.append("stats:");
-			if (this.stats == null) {
-				sb.append("null");
-			} else {
-				sb.append(this.stats);
-			}
-			first = false;
-		}
-		sb.append(")");
-		return sb.toString();
-	}
-
-	public void validate() throws org.apache.thrift.TException {
-		// check for required fields
-		if (!is_set_task_id()) {
-			throw new org.apache.thrift.protocol.TProtocolException(
-					"Required field 'task_id' is unset! Struct:" + toString());
-		}
-
-		if (!is_set_component_id()) {
-			throw new org.apache.thrift.protocol.TProtocolException(
-					"Required field 'component_id' is unset! Struct:"
-							+ toString());
-		}
-
-		if (!is_set_host()) {
-			throw new org.apache.thrift.protocol.TProtocolException(
-					"Required field 'host' is unset! Struct:" + toString());
-		}
-
-		if (!is_set_cpu()) {
-			throw new org.apache.thrift.protocol.TProtocolException(
-					"Required field 'cpu' is unset! Struct:" + toString());
-		}
-
-		if (!is_set_mem()) {
-			throw new org.apache.thrift.protocol.TProtocolException(
-					"Required field 'mem' is unset! Struct:" + toString());
-		}
-
-		if (!is_set_disk()) {
-			throw new org.apache.thrift.protocol.TProtocolException(
-					"Required field 'disk' is unset! Struct:" + toString());
-		}
-
-		if (!is_set_port()) {
-			throw new org.apache.thrift.protocol.TProtocolException(
-					"Required field 'port' is unset! Struct:" + toString());
-		}
-
-		if (!is_set_uptime_secs()) {
-			throw new org.apache.thrift.protocol.TProtocolException(
-					"Required field 'uptime_secs' is unset! Struct:"
-							+ toString());
-		}
-
-		if (!is_set_errors()) {
-			throw new org.apache.thrift.protocol.TProtocolException(
-					"Required field 'errors' is unset! Struct:" + toString());
-		}
-
-	}
-
-	private void writeObject(java.io.ObjectOutputStream out)
-			throws java.io.IOException {
-		try {
-			write(new org.apache.thrift.protocol.TCompactProtocol(
-					new org.apache.thrift.transport.TIOStreamTransport(out)));
-		} catch (org.apache.thrift.TException te) {
-			throw new java.io.IOException(te);
-		}
-	}
-
-	private void readObject(java.io.ObjectInputStream in)
-			throws java.io.IOException, ClassNotFoundException {
-		try {
-			// it doesn't seem like you should have to do this, but java
-			// serialization is wacky, and doesn't call the default constructor.
-			__isset_bit_vector = new BitSet(1);
-			read(new org.apache.thrift.protocol.TCompactProtocol(
-					new org.apache.thrift.transport.TIOStreamTransport(in)));
-		} catch (org.apache.thrift.TException te) {
-			throw new java.io.IOException(te);
-		}
-	}
+public class TaskSummary implements org.apache.thrift7.TBase<TaskSummary, TaskSummary._Fields>, java.io.Serializable, Cloneable {
+  private static final org.apache.thrift7.protocol.TStruct STRUCT_DESC = new org.apache.thrift7.protocol.TStruct("TaskSummary");
+
+  private static final org.apache.thrift7.protocol.TField TASK_ID_FIELD_DESC = new org.apache.thrift7.protocol.TField("task_id", org.apache.thrift7.protocol.TType.I32, (short)1);
+  private static final org.apache.thrift7.protocol.TField COMPONENT_ID_FIELD_DESC = new org.apache.thrift7.protocol.TField("component_id", org.apache.thrift7.protocol.TType.STRING, (short)2);
+  private static final org.apache.thrift7.protocol.TField HOST_FIELD_DESC = new org.apache.thrift7.protocol.TField("host", org.apache.thrift7.protocol.TType.STRING, (short)3);
+  private static final org.apache.thrift7.protocol.TField CPU_FIELD_DESC = new org.apache.thrift7.protocol.TField("cpu", org.apache.thrift7.protocol.TType.I32, (short)4);
+  private static final org.apache.thrift7.protocol.TField MEM_FIELD_DESC = new org.apache.thrift7.protocol.TField("mem", org.apache.thrift7.protocol.TType.I32, (short)5);
+  private static final org.apache.thrift7.protocol.TField DISK_FIELD_DESC = new org.apache.thrift7.protocol.TField("disk", org.apache.thrift7.protocol.TType.STRING, (short)6);
+  private static final org.apache.thrift7.protocol.TField PORT_FIELD_DESC = new org.apache.thrift7.protocol.TField("port", org.apache.thrift7.protocol.TType.I32, (short)7);
+  private static final org.apache.thrift7.protocol.TField UPTIME_SECS_FIELD_DESC = new org.apache.thrift7.protocol.TField("uptime_secs", org.apache.thrift7.protocol.TType.I32, (short)8);
+  private static final org.apache.thrift7.protocol.TField ERRORS_FIELD_DESC = new org.apache.thrift7.protocol.TField("errors", org.apache.thrift7.protocol.TType.LIST, (short)9);
+  private static final org.apache.thrift7.protocol.TField STATS_FIELD_DESC = new org.apache.thrift7.protocol.TField("stats", org.apache.thrift7.protocol.TType.STRUCT, (short)10);
+
+  private int task_id; // required
+  private String component_id; // required
+  private String host; // required
+  private int cpu; // required
+  private int mem; // required
+  private String disk; // required
+  private int port; // required
+  private int uptime_secs; // required
+  private List<ErrorInfo> errors; // required
+  private TaskStats stats; // required
+
+  /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+  public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
+    TASK_ID((short)1, "task_id"),
+    COMPONENT_ID((short)2, "component_id"),
+    HOST((short)3, "host"),
+    CPU((short)4, "cpu"),
+    MEM((short)5, "mem"),
+    DISK((short)6, "disk"),
+    PORT((short)7, "port"),
+    UPTIME_SECS((short)8, "uptime_secs"),
+    ERRORS((short)9, "errors"),
+    STATS((short)10, "stats");
+
+    private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+    static {
+      for (_Fields field : EnumSet.allOf(_Fields.class)) {
+        byName.put(field.getFieldName(), field);
+      }
+    }
+
+    /**
+     * Find the _Fields constant that matches fieldId, or null if its not found.
+     */
+    public static _Fields findByThriftId(int fieldId) {
+      switch(fieldId) {
+        case 1: // TASK_ID
+          return TASK_ID;
+        case 2: // COMPONENT_ID
+          return COMPONENT_ID;
+        case 3: // HOST
+          return HOST;
+        case 4: // CPU
+          return CPU;
+        case 5: // MEM
+          return MEM;
+        case 6: // DISK
+          return DISK;
+        case 7: // PORT
+          return PORT;
+        case 8: // UPTIME_SECS
+          return UPTIME_SECS;
+        case 9: // ERRORS
+          return ERRORS;
+        case 10: // STATS
+          return STATS;
+        default:
+          return null;
+      }
+    }
+
+    /**
+     * Find the _Fields constant that matches fieldId, throwing an exception
+     * if it is not found.
+     */
+    public static _Fields findByThriftIdOrThrow(int fieldId) {
+      _Fields fields = findByThriftId(fieldId);
+      if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+      return fields;
+    }
+
+    /**
+     * Find the _Fields constant that matches name, or null if its not found.
+     */
+    public static _Fields findByName(String name) {
+      return byName.get(name);
+    }
+
+    private final short _thriftId;
+    private final String _fieldName;
+
+    _Fields(short thriftId, String fieldName) {
+      _thriftId = thriftId;
+      _fieldName = fieldName;
+    }
+
+    public short getThriftFieldId() {
+      return _thriftId;
+    }
+
+    public String getFieldName() {
+      return _fieldName;
+    }
+  }
+
+  // isset id assignments
+  private static final int __TASK_ID_ISSET_ID = 0;
+  private static final int __CPU_ISSET_ID = 1;
+  private static final int __MEM_ISSET_ID = 2;
+  private static final int __PORT_ISSET_ID = 3;
+  private static final int __UPTIME_SECS_ISSET_ID = 4;
+  private BitSet __isset_bit_vector = new BitSet(5);
+
+  public static final Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> metaDataMap;
+  static {
+    Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift7.meta_data.FieldMetaData>(_Fields.class);
+    tmpMap.put(_Fields.TASK_ID, new org.apache.thrift7.meta_data.FieldMetaData("task_id", org.apache.thrift7.TFieldRequirementType.REQUIRED, 
+        new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.I32)));
+    tmpMap.put(_Fields.COMPONENT_ID, new org.apache.thrift7.meta_data.FieldMetaData("component_id", org.apache.thrift7.TFieldRequirementType.REQUIRED, 
+        new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRING)));
+    tmpMap.put(_Fields.HOST, new org.apache.thrift7.meta_data.FieldMetaData("host", org.apache.thrift7.TFieldRequirementType.REQUIRED, 
+        new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRING)));
+    tmpMap.put(_Fields.CPU, new org.apache.thrift7.meta_data.FieldMetaData("cpu", org.apache.thrift7.TFieldRequirementType.REQUIRED, 
+        new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.I32)));
+    tmpMap.put(_Fields.MEM, new org.apache.thrift7.meta_data.FieldMetaData("mem", org.apache.thrift7.TFieldRequirementType.REQUIRED, 
+        new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.I32)));
+    tmpMap.put(_Fields.DISK, new org.apache.thrift7.meta_data.FieldMetaData("disk", org.apache.thrift7.TFieldRequirementType.REQUIRED, 
+        new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRING)));
+    tmpMap.put(_Fields.PORT, new org.apache.thrift7.meta_data.FieldMetaData("port", org.apache.thrift7.TFieldRequirementType.REQUIRED, 
+        new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.I32)));
+    tmpMap.put(_Fields.UPTIME_SECS, new org.apache.thrift7.meta_data.FieldMetaData("uptime_secs", org.apache.thrift7.TFieldRequirementType.REQUIRED, 
+        new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.I32)));
+    tmpMap.put(_Fields.ERRORS, new org.apache.thrift7.meta_data.FieldMetaData("errors", org.apache.thrift7.TFieldRequirementType.REQUIRED, 
+        new org.apache.thrift7.meta_data.ListMetaData(org.apache.thrift7.protocol.TType.LIST, 
+            new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, ErrorInfo.class))));
+    tmpMap.put(_Fields.STATS, new org.apache.thrift7.meta_data.FieldMetaData("stats", org.apache.thrift7.TFieldRequirementType.OPTIONAL, 
+        new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, TaskStats.class)));
+    metaDataMap = Collections.unmodifiableMap(tmpMap);
+    org.apache.thrift7.meta_data.FieldMetaData.addStructMetaDataMap(TaskSummary.class, metaDataMap);
+  }
+
+  public TaskSummary() {
+  }
+
+  public TaskSummary(
+    int task_id,
+    String component_id,
+    String host,
+    int cpu,
+    int mem,
+    String disk,
+    int port,
+    int uptime_secs,
+    List<ErrorInfo> errors)
+  {
+    this();
+    this.task_id = task_id;
+    set_task_id_isSet(true);
+    this.component_id = component_id;
+    this.host = host;
+    this.cpu = cpu;
+    set_cpu_isSet(true);
+    this.mem = mem;
+    set_mem_isSet(true);
+    this.disk = disk;
+    this.port = port;
+    set_port_isSet(true);
+    this.uptime_secs = uptime_secs;
+    set_uptime_secs_isSet(true);
+    this.errors = errors;
+  }
+
+  /**
+   * Performs a deep copy on <i>other</i>.
+   */
+  public TaskSummary(TaskSummary other) {
+    __isset_bit_vector.clear();
+    __isset_bit_vector.or(other.__isset_bit_vector);
+    this.task_id = other.task_id;
+    if (other.is_set_component_id()) {
+      this.component_id = other.component_id;
+    }
+    if (other.is_set_host()) {
+      this.host = other.host;
+    }
+    this.cpu = other.cpu;
+    this.mem = other.mem;
+    if (other.is_set_disk()) {
+      this.disk = other.disk;
+    }
+    this.port = other.port;
+    this.uptime_secs = other.uptime_secs;
+    if (other.is_set_errors()) {
+      List<ErrorInfo> __this__errors = new ArrayList<ErrorInfo>();
+      for (ErrorInfo other_element : other.errors) {
+        __this__errors.add(new ErrorInfo(other_element));
+      }
+      this.errors = __this__errors;
+    }
+    if (other.is_set_stats()) {
+      this.stats = new TaskStats(other.stats);
+    }
+  }
+
+  public TaskSummary deepCopy() {
+    return new TaskSummary(this);
+  }
+
+  @Override
+  public void clear() {
+    set_task_id_isSet(false);
+    this.task_id = 0;
+    this.component_id = null;
+    this.host = null;
+    set_cpu_isSet(false);
+    this.cpu = 0;
+    set_mem_isSet(false);
+    this.mem = 0;
+    this.disk = null;
+    set_port_isSet(false);
+    this.port = 0;
+    set_uptime_secs_isSet(false);
+    this.uptime_secs = 0;
+    this.errors = null;
+    this.stats = null;
+  }
+
+  public int get_task_id() {
+    return this.task_id;
+  }
+
+  public void set_task_id(int task_id) {
+    this.task_id = task_id;
+    set_task_id_isSet(true);
+  }
+
+  public void unset_task_id() {
+    __isset_bit_vector.clear(__TASK_ID_ISSET_ID);
+  }
+
+  /** Returns true if field task_id is set (has been assigned a value) and false otherwise */
+  public boolean is_set_task_id() {
+    return __isset_bit_vector.get(__TASK_ID_ISSET_ID);
+  }
+
+  public void set_task_id_isSet(boolean value) {
+    __isset_bit_vector.set(__TASK_ID_ISSET_ID, value);
+  }
+
+  public String get_component_id() {
+    return this.component_id;
+  }
+
+  public void set_component_id(String component_id) {
+    this.component_id = component_id;
+  }
+
+  public void unset_component_id() {
+    this.component_id = null;
+  }
+
+  /** Returns true if field component_id is set (has been assigned a value) and false otherwise */
+  public boolean is_set_component_id() {
+    return this.component_id != null;
+  }
+
+  public void set_component_id_isSet(boolean value) {
+    if (!value) {
+      this.component_id = null;
+    }
+  }
+
+  public String get_host() {
+    return this.host;
+  }
+
+  public void set_host(String host) {
+    this.host = host;
+  }
+
+  public void unset_host() {
+    this.host = null;
+  }
+
+  /** Returns true if field host is set (has been assigned a value) and false otherwise */
+  public boolean is_set_host() {
+    return this.host != null;
+  }
+
+  public void set_host_isSet(boolean value) {
+    if (!value) {
+      this.host = null;
+    }
+  }
+
+  public int get_cpu() {
+    return this.cpu;
+  }
+
+  public void set_cpu(int cpu) {
+    this.cpu = cpu;
+    set_cpu_isSet(true);
+  }
+
+  public void unset_cpu() {
+    __isset_bit_vector.clear(__CPU_ISSET_ID);
+  }
+
+  /** Returns true if field cpu is set (has been assigned a value) and false otherwise */
+  public boolean is_set_cpu() {
+    return __isset_bit_vector.get(__CPU_ISSET_ID);
+  }
+
+  public void set_cpu_isSet(boolean value) {
+    __isset_bit_vector.set(__CPU_ISSET_ID, value);
+  }
+
+  public int get_mem() {
+    return this.mem;
+  }
+
+  public void set_mem(int mem) {
+    this.mem = mem;
+    set_mem_isSet(true);
+  }
+
+  public void unset_mem() {
+    __isset_bit_vector.clear(__MEM_ISSET_ID);
+  }
+
+  /** Returns true if field mem is set (has been assigned a value) and false otherwise */
+  public boolean is_set_mem() {
+    return __isset_bit_vector.get(__MEM_ISSET_ID);
+  }
+
+  public void set_mem_isSet(boolean value) {
+    __isset_bit_vector.set(__MEM_ISSET_ID, value);
+  }
+
+  public String get_disk() {
+    return this.disk;
+  }
+
+  public void set_disk(String disk) {
+    this.disk = disk;
+  }
+
+  public void unset_disk() {
+    this.disk = null;
+  }
+
+  /** Returns true if field disk is set (has been assigned a value) and false otherwise */
+  public boolean is_set_disk() {
+    return this.disk != null;
+  }
+
+  public void set_disk_isSet(boolean value) {
+    if (!value) {
+      this.disk = null;
+    }
+  }
+
+  public int get_port() {
+    return this.port;
+  }
+
+  public void set_port(int port) {
+    this.port = port;
+    set_port_isSet(true);
+  }
+
+  public void unset_port() {
+    __isset_bit_vector.clear(__PORT_ISSET_ID);
+  }
+
+  /** Returns true if field port is set (has been assigned a value) and false otherwise */
+  public boolean is_set_port() {
+    return __isset_bit_vector.get(__PORT_ISSET_ID);
+  }
+
+  public void set_port_isSet(boolean value) {
+    __isset_bit_vector.set(__PORT_ISSET_ID, value);
+  }
+
+  public int get_uptime_secs() {
+    return this.uptime_secs;
+  }
+
+  public void set_uptime_secs(int uptime_secs) {
+    this.uptime_secs = uptime_secs;
+    set_uptime_secs_isSet(true);
+  }
+
+  public void unset_uptime_secs() {
+    __isset_bit_vector.clear(__UPTIME_SECS_ISSET_ID);
+  }
+
+  /** Returns true if field uptime_secs is set (has been assigned a value) and false otherwise */
+  public boolean is_set_uptime_secs() {
+    return __isset_bit_vector.get(__UPTIME_SECS_ISSET_ID);
+  }
+
+  public void set_uptime_secs_isSet(boolean value) {
+    __isset_bit_vector.set(__UPTIME_SECS_ISSET_ID, value);
+  }
+
+  public int get_errors_size() {
+    return (this.errors == null) ? 0 : this.errors.size();
+  }
+
+  public java.util.Iterator<ErrorInfo> get_errors_iterator() {
+    return (this.errors == null) ? null : this.errors.iterator();
+  }
+
+  public void add_to_errors(ErrorInfo elem) {
+    if (this.errors == null) {
+      this.errors = new ArrayList<ErrorInfo>();
+    }
+    this.errors.add(elem);
+  }
+
+  public List<ErrorInfo> get_errors() {
+    return this.errors;
+  }
+
+  public void set_errors(List<ErrorInfo> errors) {
+    this.errors = errors;
+  }
+
+  public void unset_errors() {
+    this.errors = null;
+  }
+
+  /** Returns true if field errors is set (has been assigned a value) and false otherwise */
+  public boolean is_set_errors() {
+    return this.errors != null;
+  }
+
+  public void set_errors_isSet(boolean value) {
+    if (!value) {
+      this.errors = null;
+    }
+  }
+
+  public TaskStats get_stats() {
+    return this.stats;
+  }
+
+  public void set_stats(TaskStats stats) {
+    this.stats = stats;
+  }
+
+  public void unset_stats() {
+    this.stats = null;
+  }
+
+  /** Returns true if field stats is set (has been assigned a value) and false otherwise */
+  public boolean is_set_stats() {
+    return this.stats != null;
+  }
+
+  public void set_stats_isSet(boolean value) {
+    if (!value) {
+      this.stats = null;
+    }
+  }
+
+  public void setFieldValue(_Fields field, Object value) {
+    switch (field) {
+    case TASK_ID:
+      if (value == null) {
+        unset_task_id();
+      } else {
+        set_task_id((Integer)value);
+      }
+      break;
+
+    case COMPONENT_ID:
+      if (value == null) {
+        unset_component_id();
+      } else {
+        set_component_id((String)value);
+      }
+      break;
+
+    case HOST:
+      if (value == null) {
+        unset_host();
+      } else {
+        set_host((String)value);
+      }
+      break;
+
+    case CPU:
+      if (value == null) {
+        unset_cpu();
+      } else {
+        set_cpu((Integer)value);
+      }
+      break;
+
+    case MEM:
+      if (value == null) {
+        unset_mem();
+      } else {
+        set_mem((Integer)value);
+      }
+      break;
+
+    case DISK:
+      if (value == null) {
+        unset_disk();
+      } else {
+        set_disk((String)value);
+      }
+      break;
+
+    case PORT:
+      if (value == null) {
+        unset_port();
+      } else {
+        set_port((Integer)value);
+      }
+      break;
+
+    case UPTIME_SECS:
+      if (value == null) {
+        unset_uptime_secs();
+      } else {
+        set_uptime_secs((Integer)value);
+      }
+      break;
+
+    case ERRORS:
+      if (value == null) {
+        unset_errors();
+      } else {
+        set_errors((List<ErrorInfo>)value);
+      }
+      break;
+
+    case STATS:
+      if (value == null) {
+        unset_stats();
+      } else {
+        set_stats((TaskStats)value);
+      }
+      break;
+
+    }
+  }
+
+  public Object getFieldValue(_Fields field) {
+    switch (field) {
+    case TASK_ID:
+      return Integer.valueOf(get_task_id());
+
+    case COMPONENT_ID:
+      return get_component_id();
+
+    case HOST:
+      return get_host();
+
+    case CPU:
+      return Integer.valueOf(get_cpu());
+
+    case MEM:
+      return Integer.valueOf(get_mem());
+
+    case DISK:
+      return get_disk();
+
+    case PORT:
+      return Integer.valueOf(get_port());
+
+    case UPTIME_SECS:
+      return Integer.valueOf(get_uptime_secs());
+
+    case ERRORS:
+      return get_errors();
+
+    case STATS:
+      return get_stats();
+
+    }
+    throw new IllegalStateException();
+  }
+
+  /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+  public boolean isSet(_Fields field) {
+    if (field == null) {
+      throw new IllegalArgumentException();
+    }
+
+    switch (field) {
+    case TASK_ID:
+      return is_set_task_id();
+    case COMPONENT_ID:
+      return is_set_component_id();
+    case HOST:
+      return is_set_host();
+    case CPU:
+      return is_set_cpu();
+    case MEM:
+      return is_set_mem();
+    case DISK:
+      return is_set_disk();
+    case PORT:
+      return is_set_port();
+    case UPTIME_SECS:
+      return is_set_uptime_secs();
+    case ERRORS:
+      return is_set_errors();
+    case STATS:
+      return is_set_stats();
+    }
+    throw new IllegalStateException();
+  }
+
+  @Override
+  public boolean equals(Object that) {
+    if (that == null)
+      return false;
+    if (that instanceof TaskSummary)
+      return this.equals((TaskSummary)that);
+    return false;
+  }
+
+  public boolean equals(TaskSummary that) {
+    if (that == null)
+      return false;
+
+    boolean this_present_task_id = true;
+    boolean that_present_task_id = true;
+    if (this_present_task_id || that_present_task_id) {
+      if (!(this_present_task_id && that_present_task_id))
+        return false;
+      if (this.task_id != that.task_id)
+        return false;
+    }
+
+    boolean this_present_component_id = true && this.is_set_component_id();
+    boolean that_present_component_id = true && that.is_set_component_id();
+    if (this_present_component_id || that_present_component_id) {
+      if (!(this_present_component_id && that_present_component_id))
+        return false;
+      if (!this.component_id.equals(that.component_id))
+        return false;
+    }
+
+    boolean this_present_host = true && this.is_set_host();
+    boolean that_present_host = true && that.is_set_host();
+    if (this_present_host || that_present_host) {
+      if (!(this_present_host && that_present_host))
+        return false;
+      if (!this.host.equals(that.host))
+        return false;
+    }
+
+    boolean this_present_cpu = true;
+    boolean that_present_cpu = true;
+    if (this_present_cpu || that_present_cpu) {
+      if (!(this_present_cpu && that_present_cpu))
+        return false;
+      if (this.cpu != that.cpu)
+        return false;
+    }
+
+    boolean this_present_mem = true;
+    boolean that_present_mem = true;
+    if (this_present_mem || that_present_mem) {
+      if (!(this_present_mem && that_present_mem))
+        return false;
+      if (this.mem != that.mem)
+        return false;
+    }
+
+    boolean this_present_disk = true && this.is_set_disk();
+    boolean that_present_disk = true && that.is_set_disk();
+    if (this_present_disk || that_present_disk) {
+      if (!(this_present_disk && that_present_disk))
+        return false;
+      if (!this.disk.equals(that.disk))
+        return false;
+    }
+
+    boolean this_present_port = true;
+    boolean that_present_port = true;
+    if (this_present_port || that_present_port) {
+      if (!(this_present_port && that_present_port))
+        return false;
+      if (this.port != that.port)
+        return false;
+    }
+
+    boolean this_present_uptime_secs = true;
+    boolean that_present_uptime_secs = true;
+    if (this_present_uptime_secs || that_present_uptime_secs) {
+      if (!(this_present_uptime_secs && that_present_uptime_secs))
+        return false;
+      if (this.uptime_secs != that.uptime_secs)
+        return false;
+    }
+
+    boolean this_present_errors = true && this.is_set_errors();
+    boolean that_present_errors = true && that.is_set_errors();
+    if (this_present_errors || that_present_errors) {
+      if (!(this_present_errors && that_present_errors))
+        return false;
+      if (!this.errors.equals(that.errors))
+        return false;
+    }
+
+    boolean this_present_stats = true && this.is_set_stats();
+    boolean that_present_stats = true && that.is_set_stats();
+    if (this_present_stats || that_present_stats) {
+      if (!(this_present_stats && that_present_stats))
+        return false;
+      if (!this.stats.equals(that.stats))
+        return false;
+    }
+
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    HashCodeBuilder builder = new HashCodeBuilder();
+
+    boolean present_task_id = true;
+    builder.append(present_task_id);
+    if (present_task_id)
+      builder.append(task_id);
+
+    boolean present_component_id = true && (is_set_component_id());
+    builder.append(present_component_id);
+    if (present_component_id)
+      builder.append(component_id);
+
+    boolean present_host = true && (is_set_host());
+    builder.append(present_host);
+    if (present_host)
+      builder.append(host);
+
+    boolean present_cpu = true;
+    builder.append(present_cpu);
+    if (present_cpu)
+      builder.append(cpu);
+
+    boolean present_mem = true;
+    builder.append(present_mem);
+    if (present_mem)
+      builder.append(mem);
+
+    boolean present_disk = true && (is_set_disk());
+    builder.append(present_disk);
+    if (present_disk)
+      builder.append(disk);
+
+    boolean present_port = true;
+    builder.append(present_port);
+    if (present_port)
+      builder.append(port);
+
+    boolean present_uptime_secs = true;
+    builder.append(present_uptime_secs);
+    if (present_uptime_secs)
+      builder.append(uptime_secs);
+
+    boolean present_errors = true && (is_set_errors());
+    builder.append(present_errors);
+    if (present_errors)
+      builder.append(errors);
+
+    boolean present_stats = true && (is_set_stats());
+    builder.append(present_stats);
+    if (present_stats)
+      builder.append(stats);
+
+    return builder.toHashCode();
+  }
+
+  public int compareTo(TaskSummary other) {
+    if (!getClass().equals(other.getClass())) {
+      return getClass().getName().compareTo(other.getClass().getName());
+    }
+
+    int lastComparison = 0;
+    TaskSummary typedOther = (TaskSummary)other;
+
+    lastComparison = Boolean.valueOf(is_set_task_id()).compareTo(typedOther.is_set_task_id());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_task_id()) {
+      lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.task_id, typedOther.task_id);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_component_id()).compareTo(typedOther.is_set_component_id());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_component_id()) {
+      lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.component_id, typedOther.component_id);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_host()).compareTo(typedOther.is_set_host());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_host()) {
+      lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.host, typedOther.host);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_cpu()).compareTo(typedOther.is_set_cpu());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_cpu()) {
+      lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.cpu, typedOther.cpu);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_mem()).compareTo(typedOther.is_set_mem());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_mem()) {
+      lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.mem, typedOther.mem);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_disk()).compareTo(typedOther.is_set_disk());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_disk()) {
+      lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.disk, typedOther.disk);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_port()).compareTo(typedOther.is_set_port());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_port()) {
+      lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.port, typedOther.port);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_uptime_secs()).compareTo(typedOther.is_set_uptime_secs());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_uptime_secs()) {
+      lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.uptime_secs, typedOther.uptime_secs);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_errors()).compareTo(typedOther.is_set_errors());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_errors()) {
+      lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.errors, typedOther.errors);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_stats()).compareTo(typedOther.is_set_stats());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_stats()) {
+      lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.stats, typedOther.stats);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    return 0;
+  }
+
+  public _Fields fieldForId(int fieldId) {
+    return _Fields.findByThriftId(fieldId);
+  }
+
+  public void read(org.apache.thrift7.protocol.TProtocol iprot) throws org.apache.thrift7.TException {
+    org.apache.thrift7.protocol.TField field;
+    iprot.readStructBegin();
+    while (true)
+    {
+      field = iprot.readFieldBegin();
+      if (field.type == org.apache.thrift7.protocol.TType.STOP) { 
+        break;
+      }
+      switch (field.id) {
+        case 1: // TASK_ID
+          if (field.type == org.apache.thrift7.protocol.TType.I32) {
+            this.task_id = iprot.readI32();
+            set_task_id_isSet(true);
+          } else { 
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
+        case 2: // COMPONENT_ID
+          if (field.type == org.apache.thrift7.protocol.TType.STRING) {
+            this.component_id = iprot.readString();
+          } else { 
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
+        case 3: // HOST
+          if (field.type == org.apache.thrift7.protocol.TType.STRING) {
+            this.host = iprot.readString();
+          } else { 
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
+        case 4: // CPU
+          if (field.type == org.apache.thrift7.protocol.TType.I32) {
+            this.cpu = iprot.readI32();
+            set_cpu_isSet(true);
+          } else { 
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
+        case 5: // MEM
+          if (field.type == org.apache.thrift7.protocol.TType.I32) {
+            this.mem = iprot.readI32();
+            set_mem_isSet(true);
+          } else { 
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
+        case 6: // DISK
+          if (field.type == org.apache.thrift7.protocol.TType.STRING) {
+            this.disk = iprot.readString();
+          } else { 
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
+        case 7: // PORT
+          if (field.type == org.apache.thrift7.protocol.TType.I32) {
+            this.port = iprot.readI32();
+            set_port_isSet(true);
+          } else { 
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
+        case 8: // UPTIME_SECS
+          if (field.type == org.apache.thrift7.protocol.TType.I32) {
+            this.uptime_secs = iprot.readI32();
+            set_uptime_secs_isSet(true);
+          } else { 
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
+        case 9: // ERRORS
+          if (field.type == org.apache.thrift7.protocol.TType.LIST) {
+            {
+              org.apache.thrift7.protocol.TList _list220 = iprot.readListBegin();
+              this.errors = new ArrayList<ErrorInfo>(_list220.size);
+              for (int _i221 = 0; _i221 < _list220.size; ++_i221)
+              {
+                ErrorInfo _elem222; // required
+                _elem222 = new ErrorInfo();
+                _elem222.read(iprot);
+                this.errors.add(_elem222);
+              }
+              iprot.readListEnd();
+            }
+          } else { 
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
+        case 10: // STATS
+          if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
+            this.stats = new TaskStats();
+            this.stats.read(iprot);
+          } else { 
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
+        default:
+          org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+      }
+      iprot.readFieldEnd();
+    }
+    iprot.readStructEnd();
+    validate();
+  }
+
+  public void write(org.apache.thrift7.protocol.TProtocol oprot) throws org.apache.thrift7.TException {
+    validate();
+
+    oprot.writeStructBegin(STRUCT_DESC);
+    oprot.writeFieldBegin(TASK_ID_FIELD_DESC);
+    oprot.writeI32(this.task_id);
+    oprot.writeFieldEnd();
+    if (this.component_id != null) {
+      oprot.writeFieldBegin(COMPONENT_ID_FIELD_DESC);
+      oprot.writeString(this.component_id);
+      oprot.writeFieldEnd();
+    }
+    if (this.host != null) {
+      oprot.writeFieldBegin(HOST_FIELD_DESC);
+      oprot.writeString(this.host);
+      oprot.writeFieldEnd();
+    }
+    oprot.writeFieldBegin(CPU_FIELD_DESC);
+    oprot.writeI32(this.cpu);
+    oprot.writeFieldEnd();
+    oprot.writeFieldBegin(MEM_FIELD_DESC);
+    oprot.writeI32(this.mem);
+    oprot.writeFieldEnd();
+    if (this.disk != null) {
+      oprot.writeFieldBegin(DISK_FIELD_DESC);
+      oprot.writeString(this.disk);
+      oprot.writeFieldEnd();
+    }
+    oprot.writeFieldBegin(PORT_FIELD_DESC);
+    oprot.writeI32(this.port);
+    oprot.writeFieldEnd();
+    oprot.writeFieldBegin(UPTIME_SECS_FIELD_DESC);
+    oprot.writeI32(this.uptime_secs);
+    oprot.writeFieldEnd();
+    if (this.errors != null) {
+      oprot.writeFieldBegin(ERRORS_FIELD_DESC);
+      {
+        oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRUCT, this.errors.size()));
+        for (ErrorInfo _iter223 : this.errors)
+        {
+          _iter223.write(oprot);
+        }
+        oprot.writeListEnd();
+      }
+      oprot.writeFieldEnd();
+    }
+    if (this.stats != null) {
+      if (is_set_stats()) {
+        oprot.writeFieldBegin(STATS_FIELD_DESC);
+        this.stats.write(oprot);
+        oprot.writeFieldEnd();
+      }
+    }
+    oprot.writeFieldStop();
+    oprot.writeStructEnd();
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder("TaskSummary(");
+    boolean first = true;
+
+    sb.append("task_id:");
+    sb.append(this.task_id);
+    first = false;
+    if (!first) sb.append(", ");
+    sb.append("component_id:");
+    if (this.component_id == null) {
+      sb.append("null");
+    } else {
+      sb.append(this.component_id);
+    }
+    first = false;
+    if (!first) sb.append(", ");
+    sb.append("host:");
+    if (this.host == null) {
+      sb.append("null");
+    } else {
+      sb.append(this.host);
+    }
+    first = false;
+    if (!first) sb.append(", ");
+    sb.append("cpu:");
+    sb.append(this.cpu);
+    first = false;
+    if (!first) sb.append(", ");
+    sb.append("mem:");
+    sb.append(this.mem);
+    first = false;
+    if (!first) sb.append(", ");
+    sb.append("disk:");
+    if (this.disk == null) {
+      sb.append("null");
+    } else {
+      sb.append(this.disk);
+    }
+    first = false;
+    if (!first) sb.append(", ");
+    sb.append("port:");
+    sb.append(this.port);
+    first = false;
+    if (!first) sb.append(", ");
+    sb.append("uptime_secs:");
+    sb.append(this.uptime_secs);
+    first = false;
+    if (!first) sb.append(", ");
+    sb.append("errors:");
+    if (this.errors == null) {
+      sb.append("null");
+    } else {
+      sb.append(this.errors);
+    }
+    first = false;
+    if (is_set_stats()) {
+      if (!first) sb.append(", ");
+      sb.append("stats:");
+      if (this.stats == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.stats);
+      }
+      first = false;
+    }
+    sb.append(")");
+    return sb.toString();
+  }
+
+  public void validate() throws org.apache.thrift7.TException {
+    // check for required fields
+    if (!is_set_task_id()) {
+      throw new org.apache.thrift7.protocol.TProtocolException("Required field 'task_id' is unset! Struct:" + toString());
+    }
+
+    if (!is_set_component_id()) {
+      throw new org.apache.thrift7.protocol.TProtocolException("Required field 'component_id' is unset! Struct:" + toString());
+    }
+
+    if (!is_set_host()) {
+      throw new org.apache.thrift7.protocol.TProtocolException("Required field 'host' is unset! Struct:" + toString());
+    }
+
+    if (!is_set_cpu()) {
+      throw new org.apache.thrift7.protocol.TProtocolException("Required field 'cpu' is unset! Struct:" + toString());
+    }
+
+    if (!is_set_mem()) {
+      throw new org.apache.thrift7.protocol.TProtocolException("Required field 'mem' is unset! Struct:" + toString());
+    }
+
+    if (!is_set_disk()) {
+      throw new org.apache.thrift7.protocol.TProtocolException("Required field 'disk' is unset! Struct:" + toString());
+    }
+
+    if (!is_set_port()) {
+      throw new org.apache.thrift7.protocol.TProtocolException("Required field 'port' is unset! Struct:" + toString());
+    }
+
+    if (!is_set_uptime_secs()) {
+      throw new org.apache.thrift7.protocol.TProtocolException("Required field 'uptime_secs' is unset! Struct:" + toString());
+    }
+
+    if (!is_set_errors()) {
+      throw new org.apache.thrift7.protocol.TProtocolException("Required field 'errors' is unset! Struct:" + toString());
+    }
+
+  }
+
+  private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+    try {
+      write(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(out)));
+    } catch (org.apache.thrift7.TException te) {
+      throw new java.io.IOException(te);
+    }
+  }
+
+  private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+    try {
+      // it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
+      __isset_bit_vector = new BitSet(1);
+      read(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(in)));
+    } catch (org.apache.thrift7.TException te) {
+      throw new java.io.IOException(te);
+    }
+  }
 
 }
+

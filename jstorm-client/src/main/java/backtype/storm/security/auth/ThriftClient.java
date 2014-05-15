@@ -4,18 +4,13 @@ import java.io.IOException;
 import java.security.InvalidParameterException;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
-import java.util.Map.Entry;
 
 import javax.security.auth.login.Configuration;
 
-import org.apache.thrift.protocol.TBinaryProtocol;
-import org.apache.thrift.protocol.TProtocol;
-import org.apache.thrift.transport.TSocket;
-import org.apache.thrift.transport.TTransport;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher.Event.EventType;
-import org.apache.zookeeper.Watcher.Event.KeeperState;
+import org.apache.thrift7.protocol.TBinaryProtocol;
+import org.apache.thrift7.protocol.TProtocol;
+import org.apache.thrift7.transport.TSocket;
+import org.apache.thrift7.transport.TTransport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,10 +18,6 @@ import backtype.storm.Config;
 import backtype.storm.utils.Utils;
 
 import com.netflix.curator.framework.CuratorFramework;
-import com.netflix.curator.framework.api.CuratorEvent;
-import com.netflix.curator.framework.api.CuratorEventType;
-import com.netflix.curator.framework.api.CuratorListener;
-import com.netflix.curator.framework.api.UnhandledErrorListener;
 
 public class ThriftClient {
 	private static final Logger LOG = LoggerFactory

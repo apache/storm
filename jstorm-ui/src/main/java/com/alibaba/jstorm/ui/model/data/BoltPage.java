@@ -16,7 +16,7 @@ import javax.faces.bean.ViewScoped;
 import javax.faces.context.FacesContext;
 
 import org.apache.log4j.Logger;
-import org.apache.thrift.TException;
+import org.apache.thrift7.TException;
 
 import backtype.storm.generated.GlobalStreamId;
 import backtype.storm.generated.NotAliveException;

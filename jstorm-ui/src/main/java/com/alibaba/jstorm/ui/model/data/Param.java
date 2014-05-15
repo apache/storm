@@ -6,12 +6,11 @@ package com.alibaba.jstorm.ui.model.data;
 
 import java.io.Serializable;
 
-import javax.faces.context.FacesContext;
 import javax.faces.bean.ManagedBean;
 import javax.faces.bean.ViewScoped;
+import javax.faces.context.FacesContext;
 
 import com.alibaba.jstorm.common.stats.StatBuckets;
-import com.alibaba.jstorm.ui.UIUtils;
 
 /**
  * 

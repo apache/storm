@@ -21,1496 +21,1265 @@ import java.util.Arrays;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class TaskStats implements
-		org.apache.thrift.TBase<TaskStats, TaskStats._Fields>,
-		java.io.Serializable, Cloneable {
-	private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct(
-			"TaskStats");
-
-	private static final org.apache.thrift.protocol.TField EMITTED_FIELD_DESC = new org.apache.thrift.protocol.TField(
-			"emitted", org.apache.thrift.protocol.TType.MAP, (short) 1);
-	private static final org.apache.thrift.protocol.TField SEND_TPS_FIELD_DESC = new org.apache.thrift.protocol.TField(
-			"send_tps", org.apache.thrift.protocol.TType.MAP, (short) 2);
-	private static final org.apache.thrift.protocol.TField RECV_TPS_FIELD_DESC = new org.apache.thrift.protocol.TField(
-			"recv_tps", org.apache.thrift.protocol.TType.MAP, (short) 3);
-	private static final org.apache.thrift.protocol.TField ACKED_FIELD_DESC = new org.apache.thrift.protocol.TField(
-			"acked", org.apache.thrift.protocol.TType.MAP, (short) 4);
-	private static final org.apache.thrift.protocol.TField FAILED_FIELD_DESC = new org.apache.thrift.protocol.TField(
-			"failed", org.apache.thrift.protocol.TType.MAP, (short) 5);
-	private static final org.apache.thrift.protocol.TField PROCESS_MS_AVG_FIELD_DESC = new org.apache.thrift.protocol.TField(
-			"process_ms_avg", org.apache.thrift.protocol.TType.MAP, (short) 6);
-
-	private Map<String, Map<String, Long>> emitted; // required
-	private Map<String, Map<String, Double>> send_tps; // required
-	private Map<String, Map<GlobalStreamId, Double>> recv_tps; // required
-	private Map<String, Map<GlobalStreamId, Long>> acked; // required
-	private Map<String, Map<GlobalStreamId, Long>> failed; // required
-	private Map<String, Map<GlobalStreamId, Double>> process_ms_avg; // required
-
-	/**
-	 * The set of fields this struct contains, along with convenience methods
-	 * for finding and manipulating them.
-	 */
-	public enum _Fields implements org.apache.thrift.TFieldIdEnum {
-		EMITTED((short) 1, "emitted"), SEND_TPS((short) 2, "send_tps"), RECV_TPS(
-				(short) 3, "recv_tps"), ACKED((short) 4, "acked"), FAILED(
-				(short) 5, "failed"), PROCESS_MS_AVG((short) 6,
-				"process_ms_avg");
-
-		private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
-
-		static {
-			for (_Fields field : EnumSet.allOf(_Fields.class)) {
-				byName.put(field.getFieldName(), field);
-			}
-		}
-
-		/**
-		 * Find the _Fields constant that matches fieldId, or null if its not
-		 * found.
-		 */
-		public static _Fields findByThriftId(int fieldId) {
-			switch (fieldId) {
-			case 1: // EMITTED
-				return EMITTED;
-			case 2: // SEND_TPS
-				return SEND_TPS;
-			case 3: // RECV_TPS
-				return RECV_TPS;
-			case 4: // ACKED
-				return ACKED;
-			case 5: // FAILED
-				return FAILED;
-			case 6: // PROCESS_MS_AVG
-				return PROCESS_MS_AVG;
-			default:
-				return null;
-			}
-		}
-
-		/**
-		 * Find the _Fields constant that matches fieldId, throwing an exception
-		 * if it is not found.
-		 */
-		public static _Fields findByThriftIdOrThrow(int fieldId) {
-			_Fields fields = findByThriftId(fieldId);
-			if (fields == null)
-				throw new IllegalArgumentException("Field " + fieldId
-						+ " doesn't exist!");
-			return fields;
-		}
-
-		/**
-		 * Find the _Fields constant that matches name, or null if its not
-		 * found.
-		 */
-		public static _Fields findByName(String name) {
-			return byName.get(name);
-		}
-
-		private final short _thriftId;
-		private final String _fieldName;
-
-		_Fields(short thriftId, String fieldName) {
-			_thriftId = thriftId;
-			_fieldName = fieldName;
-		}
-
-		public short getThriftFieldId() {
-			return _thriftId;
-		}
-
-		public String getFieldName() {
-			return _fieldName;
-		}
-	}
-
-	// isset id assignments
-
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(
-				_Fields.class);
-		tmpMap.put(
-				_Fields.EMITTED,
-				new org.apache.thrift.meta_data.FieldMetaData(
-						"emitted",
-						org.apache.thrift.TFieldRequirementType.REQUIRED,
-						new org.apache.thrift.meta_data.MapMetaData(
-								org.apache.thrift.protocol.TType.MAP,
-								new org.apache.thrift.meta_data.FieldValueMetaData(
-										org.apache.thrift.protocol.TType.STRING),
-								new org.apache.thrift.meta_data.MapMetaData(
-										org.apache.thrift.protocol.TType.MAP,
-										new org.apache.thrift.meta_data.FieldValueMetaData(
-												org.apache.thrift.protocol.TType.STRING),
-										new org.apache.thrift.meta_data.FieldValueMetaData(
-												org.apache.thrift.protocol.TType.I64)))));
-		tmpMap.put(
-				_Fields.SEND_TPS,
-				new org.apache.thrift.meta_data.FieldMetaData(
-						"send_tps",
-						org.apache.thrift.TFieldRequirementType.REQUIRED,
-						new org.apache.thrift.meta_data.MapMetaData(
-								org.apache.thrift.protocol.TType.MAP,
-								new org.apache.thrift.meta_data.FieldValueMetaData(
-										org.apache.thrift.protocol.TType.STRING),
-								new org.apache.thrift.meta_data.MapMetaData(
-										org.apache.thrift.protocol.TType.MAP,
-										new org.apache.thrift.meta_data.FieldValueMetaData(
-												org.apache.thrift.protocol.TType.STRING),
-										new org.apache.thrift.meta_data.FieldValueMetaData(
-												org.apache.thrift.protocol.TType.DOUBLE)))));
-		tmpMap.put(
-				_Fields.RECV_TPS,
-				new org.apache.thrift.meta_data.FieldMetaData(
-						"recv_tps",
-						org.apache.thrift.TFieldRequirementType.REQUIRED,
-						new org.apache.thrift.meta_data.MapMetaData(
-								org.apache.thrift.protocol.TType.MAP,
-								new org.apache.thrift.meta_data.FieldValueMetaData(
-										org.apache.thrift.protocol.TType.STRING),
-								new org.apache.thrift.meta_data.MapMetaData(
-										org.apache.thrift.protocol.TType.MAP,
-										new org.apache.thrift.meta_data.StructMetaData(
-												org.apache.thrift.protocol.TType.STRUCT,
-												GlobalStreamId.class),
-										new org.apache.thrift.meta_data.FieldValueMetaData(
-												org.apache.thrift.protocol.TType.DOUBLE)))));
-		tmpMap.put(
-				_Fields.ACKED,
-				new org.apache.thrift.meta_data.FieldMetaData(
-						"acked",
-						org.apache.thrift.TFieldRequirementType.REQUIRED,
-						new org.apache.thrift.meta_data.MapMetaData(
-								org.apache.thrift.protocol.TType.MAP,
-								new org.apache.thrift.meta_data.FieldValueMetaData(
-										org.apache.thrift.protocol.TType.STRING),
-								new org.apache.thrift.meta_data.MapMetaData(
-										org.apache.thrift.protocol.TType.MAP,
-										new org.apache.thrift.meta_data.StructMetaData(
-												org.apache.thrift.protocol.TType.STRUCT,
-												GlobalStreamId.class),
-										new org.apache.thrift.meta_data.FieldValueMetaData(
-												org.apache.thrift.protocol.TType.I64)))));
-		tmpMap.put(
-				_Fields.FAILED,
-				new org.apache.thrift.meta_data.FieldMetaData(
-						"failed",
-						org.apache.thrift.TFieldRequirementType.REQUIRED,
-						new org.apache.thrift.meta_data.MapMetaData(
-								org.apache.thrift.protocol.TType.MAP,
-								new org.apache.thrift.meta_data.FieldValueMetaData(
-										org.apache.thrift.protocol.TType.STRING),
-								new org.apache.thrift.meta_data.MapMetaData(
-										org.apache.thrift.protocol.TType.MAP,
-										new org.apache.thrift.meta_data.StructMetaData(
-												org.apache.thrift.protocol.TType.STRUCT,
-												GlobalStreamId.class),
-										new org.apache.thrift.meta_data.FieldValueMetaData(
-												org.apache.thrift.protocol.TType.I64)))));
-		tmpMap.put(
-				_Fields.PROCESS_MS_AVG,
-				new org.apache.thrift.meta_data.FieldMetaData(
-						"process_ms_avg",
-						org.apache.thrift.TFieldRequirementType.REQUIRED,
-						new org.apache.thrift.meta_data.MapMetaData(
-								org.apache.thrift.protocol.TType.MAP,
-								new org.apache.thrift.meta_data.FieldValueMetaData(
-										org.apache.thrift.protocol.TType.STRING),
-								new org.apache.thrift.meta_data.MapMetaData(
-										org.apache.thrift.protocol.TType.MAP,
-										new org.apache.thrift.meta_data.StructMetaData(
-												org.apache.thrift.protocol.TType.STRUCT,
-												GlobalStreamId.class),
-										new org.apache.thrift.meta_data.FieldValueMetaData(
-												org.apache.thrift.protocol.TType.DOUBLE)))));
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(
-				TaskStats.class, metaDataMap);
-	}
-
-	public TaskStats() {
-	}
-
-	public TaskStats(Map<String, Map<String, Long>> emitted,
-			Map<String, Map<String, Double>> send_tps,
-			Map<String, Map<GlobalStreamId, Double>> recv_tps,
-			Map<String, Map<GlobalStreamId, Long>> acked,
-			Map<String, Map<GlobalStreamId, Long>> failed,
-			Map<String, Map<GlobalStreamId, Double>> process_ms_avg) {
-		this();
-		this.emitted = emitted;
-		this.send_tps = send_tps;
-		this.recv_tps = recv_tps;
-		this.acked = acked;
-		this.failed = failed;
-		this.process_ms_avg = process_ms_avg;
-	}
-
-	/**
-	 * Performs a deep copy on <i>other</i>.
-	 */
-	public TaskStats(TaskStats other) {
-		if (other.is_set_emitted()) {
-			Map<String, Map<String, Long>> __this__emitted = new HashMap<String, Map<String, Long>>();
-			for (Map.Entry<String, Map<String, Long>> other_element : other.emitted
-					.entrySet()) {
-
-				String other_element_key = other_element.getKey();
-				Map<String, Long> other_element_value = other_element
-						.getValue();
-
-				String __this__emitted_copy_key = other_element_key;
-
-				Map<String, Long> __this__emitted_copy_value = new HashMap<String, Long>();
-				for (Map.Entry<String, Long> other_element_value_element : other_element_value
-						.entrySet()) {
-
-					String other_element_value_element_key = other_element_value_element
-							.getKey();
-					Long other_element_value_element_value = other_element_value_element
-							.getValue();
-
-					String __this__emitted_copy_value_copy_key = other_element_value_element_key;
-
-					Long __this__emitted_copy_value_copy_value = other_element_value_element_value;
-
-					__this__emitted_copy_value.put(
-							__this__emitted_copy_value_copy_key,
-							__this__emitted_copy_value_copy_value);
-				}
-
-				__this__emitted.put(__this__emitted_copy_key,
-						__this__emitted_copy_value);
-			}
-			this.emitted = __this__emitted;
-		}
-		if (other.is_set_send_tps()) {
-			Map<String, Map<String, Double>> __this__send_tps = new HashMap<String, Map<String, Double>>();
-			for (Map.Entry<String, Map<String, Double>> other_element : other.send_tps
-					.entrySet()) {
-
-				String other_element_key = other_element.getKey();
-				Map<String, Double> other_element_value = other_element
-						.getValue();
-
-				String __this__send_tps_copy_key = other_element_key;
-
-				Map<String, Double> __this__send_tps_copy_value = new HashMap<String, Double>();
-				for (Map.Entry<String, Double> other_element_value_element : other_element_value
-						.entrySet()) {
-
-					String other_element_value_element_key = other_element_value_element
-							.getKey();
-					Double other_element_value_element_value = other_element_value_element
-							.getValue();
-
-					String __this__send_tps_copy_value_copy_key = other_element_value_element_key;
-
-					Double __this__send_tps_copy_value_copy_value = other_element_value_element_value;
-
-					__this__send_tps_copy_value.put(
-							__this__send_tps_copy_value_copy_key,
-							__this__send_tps_copy_value_copy_value);
-				}
-
-				__this__send_tps.put(__this__send_tps_copy_key,
-						__this__send_tps_copy_value);
-			}
-			this.send_tps = __this__send_tps;
-		}
-		if (other.is_set_recv_tps()) {
-			Map<String, Map<GlobalStreamId, Double>> __this__recv_tps = new HashMap<String, Map<GlobalStreamId, Double>>();
-			for (Map.Entry<String, Map<GlobalStreamId, Double>> other_element : other.recv_tps
-					.entrySet()) {
-
-				String other_element_key = other_element.getKey();
-				Map<GlobalStreamId, Double> other_element_value = other_element
-						.getValue();
-
-				String __this__recv_tps_copy_key = other_element_key;
-
-				Map<GlobalStreamId, Double> __this__recv_tps_copy_value = new HashMap<GlobalStreamId, Double>();
-				for (Map.Entry<GlobalStreamId, Double> other_element_value_element : other_element_value
-						.entrySet()) {
-
-					GlobalStreamId other_element_value_element_key = other_element_value_element
-							.getKey();
-					Double other_element_value_element_value = other_element_value_element
-							.getValue();
-
-					GlobalStreamId __this__recv_tps_copy_value_copy_key = new GlobalStreamId(
-							other_element_value_element_key);
-
-					Double __this__recv_tps_copy_value_copy_value = other_element_value_element_value;
-
-					__this__recv_tps_copy_value.put(
-							__this__recv_tps_copy_value_copy_key,
-							__this__recv_tps_copy_value_copy_value);
-				}
-
-				__this__recv_tps.put(__this__recv_tps_copy_key,
-						__this__recv_tps_copy_value);
-			}
-			this.recv_tps = __this__recv_tps;
-		}
-		if (other.is_set_acked()) {
-			Map<String, Map<GlobalStreamId, Long>> __this__acked = new HashMap<String, Map<GlobalStreamId, Long>>();
-			for (Map.Entry<String, Map<GlobalStreamId, Long>> other_element : other.acked
-					.entrySet()) {
-
-				String other_element_key = other_element.getKey();
-				Map<GlobalStreamId, Long> other_element_value = other_element
-						.getValue();
-
-				String __this__acked_copy_key = other_element_key;
-
-				Map<GlobalStreamId, Long> __this__acked_copy_value = new HashMap<GlobalStreamId, Long>();
-				for (Map.Entry<GlobalStreamId, Long> other_element_value_element : other_element_value
-						.entrySet()) {
-
-					GlobalStreamId other_element_value_element_key = other_element_value_element
-							.getKey();
-					Long other_element_value_element_value = other_element_value_element
-							.getValue();
-
-					GlobalStreamId __this__acked_copy_value_copy_key = new GlobalStreamId(
-							other_element_value_element_key);
-
-					Long __this__acked_copy_value_copy_value = other_element_value_element_value;
-
-					__this__acked_copy_value.put(
-							__this__acked_copy_value_copy_key,
-							__this__acked_copy_value_copy_value);
-				}
-
-				__this__acked.put(__this__acked_copy_key,
-						__this__acked_copy_value);
-			}
-			this.acked = __this__acked;
-		}
-		if (other.is_set_failed()) {
-			Map<String, Map<GlobalStreamId, Long>> __this__failed = new HashMap<String, Map<GlobalStreamId, Long>>();
-			for (Map.Entry<String, Map<GlobalStreamId, Long>> other_element : other.failed
-					.entrySet()) {
-
-				String other_element_key = other_element.getKey();
-				Map<GlobalStreamId, Long> other_element_value = other_element
-						.getValue();
-
-				String __this__failed_copy_key = other_element_key;
-
-				Map<GlobalStreamId, Long> __this__failed_copy_value = new HashMap<GlobalStreamId, Long>();
-				for (Map.Entry<GlobalStreamId, Long> other_element_value_element : other_element_value
-						.entrySet()) {
-
-					GlobalStreamId other_element_value_element_key = other_element_value_element
-							.getKey();
-					Long other_element_value_element_value = other_element_value_element
-							.getValue();
-
-					GlobalStreamId __this__failed_copy_value_copy_key = new GlobalStreamId(
-							other_element_value_element_key);
-
-					Long __this__failed_copy_value_copy_value = other_element_value_element_value;
-
-					__this__failed_copy_value.put(
-							__this__failed_copy_value_copy_key,
-							__this__failed_copy_value_copy_value);
-				}
-
-				__this__failed.put(__this__failed_copy_key,
-						__this__failed_copy_value);
-			}
-			this.failed = __this__failed;
-		}
-		if (other.is_set_process_ms_avg()) {
-			Map<String, Map<GlobalStreamId, Double>> __this__process_ms_avg = new HashMap<String, Map<GlobalStreamId, Double>>();
-			for (Map.Entry<String, Map<GlobalStreamId, Double>> other_element : other.process_ms_avg
-					.entrySet()) {
-
-				String other_element_key = other_element.getKey();
-				Map<GlobalStreamId, Double> other_element_value = other_element
-						.getValue();
-
-				String __this__process_ms_avg_copy_key = other_element_key;
-
-				Map<GlobalStreamId, Double> __this__process_ms_avg_copy_value = new HashMap<GlobalStreamId, Double>();
-				for (Map.Entry<GlobalStreamId, Double> other_element_value_element : other_element_value
-						.entrySet()) {
-
-					GlobalStreamId other_element_value_element_key = other_element_value_element
-							.getKey();
-					Double other_element_value_element_value = other_element_value_element
-							.getValue();
-
-					GlobalStreamId __this__process_ms_avg_copy_value_copy_key = new GlobalStreamId(
-							other_element_value_element_key);
-
-					Double __this__process_ms_avg_copy_value_copy_value = other_element_value_element_value;
-
-					__this__process_ms_avg_copy_value.put(
-							__this__process_ms_avg_copy_value_copy_key,
-							__this__process_ms_avg_copy_value_copy_value);
-				}
-
-				__this__process_ms_avg.put(__this__process_ms_avg_copy_key,
-						__this__process_ms_avg_copy_value);
-			}
-			this.process_ms_avg = __this__process_ms_avg;
-		}
-	}
-
-	public TaskStats deepCopy() {
-		return new TaskStats(this);
-	}
-
-	@Override
-	public void clear() {
-		this.emitted = null;
-		this.send_tps = null;
-		this.recv_tps = null;
-		this.acked = null;
-		this.failed = null;
-		this.process_ms_avg = null;
-	}
-
-	public int get_emitted_size() {
-		return (this.emitted == null) ? 0 : this.emitted.size();
-	}
-
-	public void put_to_emitted(String key, Map<String, Long> val) {
-		if (this.emitted == null) {
-			this.emitted = new HashMap<String, Map<String, Long>>();
-		}
-		this.emitted.put(key, val);
-	}
-
-	public Map<String, Map<String, Long>> get_emitted() {
-		return this.emitted;
-	}
-
-	public void set_emitted(Map<String, Map<String, Long>> emitted) {
-		this.emitted = emitted;
-	}
-
-	public void unset_emitted() {
-		this.emitted = null;
-	}
-
-	/**
-	 * Returns true if field emitted is set (has been assigned a value) and
-	 * false otherwise
-	 */
-	public boolean is_set_emitted() {
-		return this.emitted != null;
-	}
-
-	public void set_emitted_isSet(boolean value) {
-		if (!value) {
-			this.emitted = null;
-		}
-	}
-
-	public int get_send_tps_size() {
-		return (this.send_tps == null) ? 0 : this.send_tps.size();
-	}
-
-	public void put_to_send_tps(String key, Map<String, Double> val) {
-		if (this.send_tps == null) {
-			this.send_tps = new HashMap<String, Map<String, Double>>();
-		}
-		this.send_tps.put(key, val);
-	}
-
-	public Map<String, Map<String, Double>> get_send_tps() {
-		return this.send_tps;
-	}
-
-	public void set_send_tps(Map<String, Map<String, Double>> send_tps) {
-		this.send_tps = send_tps;
-	}
-
-	public void unset_send_tps() {
-		this.send_tps = null;
-	}
-
-	/**
-	 * Returns true if field send_tps is set (has been assigned a value) and
-	 * false otherwise
-	 */
-	public boolean is_set_send_tps() {
-		return this.send_tps != null;
-	}
-
-	public void set_send_tps_isSet(boolean value) {
-		if (!value) {
-			this.send_tps = null;
-		}
-	}
-
-	public int get_recv_tps_size() {
-		return (this.recv_tps == null) ? 0 : this.recv_tps.size();
-	}
-
-	public void put_to_recv_tps(String key, Map<GlobalStreamId, Double> val) {
-		if (this.recv_tps == null) {
-			this.recv_tps = new HashMap<String, Map<GlobalStreamId, Double>>();
-		}
-		this.recv_tps.put(key, val);
-	}
-
-	public Map<String, Map<GlobalStreamId, Double>> get_recv_tps() {
-		return this.recv_tps;
-	}
-
-	public void set_recv_tps(Map<String, Map<GlobalStreamId, Double>> recv_tps) {
-		this.recv_tps = recv_tps;
-	}
-
-	public void unset_recv_tps() {
-		this.recv_tps = null;
-	}
-
-	/**
-	 * Returns true if field recv_tps is set (has been assigned a value) and
-	 * false otherwise
-	 */
-	public boolean is_set_recv_tps() {
-		return this.recv_tps != null;
-	}
-
-	public void set_recv_tps_isSet(boolean value) {
-		if (!value) {
-			this.recv_tps = null;
-		}
-	}
-
-	public int get_acked_size() {
-		return (this.acked == null) ? 0 : this.acked.size();
-	}
-
-	public void put_to_acked(String key, Map<GlobalStreamId, Long> val) {
-		if (this.acked == null) {
-			this.acked = new HashMap<String, Map<GlobalStreamId, Long>>();
-		}
-		this.acked.put(key, val);
-	}
-
-	public Map<String, Map<GlobalStreamId, Long>> get_acked() {
-		return this.acked;
-	}
-
-	public void set_acked(Map<String, Map<GlobalStreamId, Long>> acked) {
-		this.acked = acked;
-	}
-
-	public void unset_acked() {
-		this.acked = null;
-	}
-
-	/**
-	 * Returns true if field acked is set (has been assigned a value) and false
-	 * otherwise
-	 */
-	public boolean is_set_acked() {
-		return this.acked != null;
-	}
-
-	public void set_acked_isSet(boolean value) {
-		if (!value) {
-			this.acked = null;
-		}
-	}
-
-	public int get_failed_size() {
-		return (this.failed == null) ? 0 : this.failed.size();
-	}
-
-	public void put_to_failed(String key, Map<GlobalStreamId, Long> val) {
-		if (this.failed == null) {
-			this.failed = new HashMap<String, Map<GlobalStreamId, Long>>();
-		}
-		this.failed.put(key, val);
-	}
-
-	public Map<String, Map<GlobalStreamId, Long>> get_failed() {
-		return this.failed;
-	}
-
-	public void set_failed(Map<String, Map<GlobalStreamId, Long>> failed) {
-		this.failed = failed;
-	}
-
-	public void unset_failed() {
-		this.failed = null;
-	}
-
-	/**
-	 * Returns true if field failed is set (has been assigned a value) and false
-	 * otherwise
-	 */
-	public boolean is_set_failed() {
-		return this.failed != null;
-	}
-
-	public void set_failed_isSet(boolean value) {
-		if (!value) {
-			this.failed = null;
-		}
-	}
-
-	public int get_process_ms_avg_size() {
-		return (this.process_ms_avg == null) ? 0 : this.process_ms_avg.size();
-	}
-
-	public void put_to_process_ms_avg(String key,
-			Map<GlobalStreamId, Double> val) {
-		if (this.process_ms_avg == null) {
-			this.process_ms_avg = new HashMap<String, Map<GlobalStreamId, Double>>();
-		}
-		this.process_ms_avg.put(key, val);
-	}
-
-	public Map<String, Map<GlobalStreamId, Double>> get_process_ms_avg() {
-		return this.process_ms_avg;
-	}
-
-	public void set_process_ms_avg(
-			Map<String, Map<GlobalStreamId, Double>> process_ms_avg) {
-		this.process_ms_avg = process_ms_avg;
-	}
-
-	public void unset_process_ms_avg() {
-		this.process_ms_avg = null;
-	}
-
-	/**
-	 * Returns true if field process_ms_avg is set (has been assigned a value)
-	 * and false otherwise
-	 */
-	public boolean is_set_process_ms_avg() {
-		return this.process_ms_avg != null;
-	}
-
-	public void set_process_ms_avg_isSet(boolean value) {
-		if (!value) {
-			this.process_ms_avg = null;
-		}
-	}
-
-	public void setFieldValue(_Fields field, Object value) {
-		switch (field) {
-		case EMITTED:
-			if (value == null) {
-				unset_emitted();
-			} else {
-				set_emitted((Map<String, Map<String, Long>>) value);
-			}
-			break;
-
-		case SEND_TPS:
-			if (value == null) {
-				unset_send_tps();
-			} else {
-				set_send_tps((Map<String, Map<String, Double>>) value);
-			}
-			break;
-
-		case RECV_TPS:
-			if (value == null) {
-				unset_recv_tps();
-			} else {
-				set_recv_tps((Map<String, Map<GlobalStreamId, Double>>) value);
-			}
-			break;
-
-		case ACKED:
-			if (value == null) {
-				unset_acked();
-			} else {
-				set_acked((Map<String, Map<GlobalStreamId, Long>>) value);
-			}
-			break;
-
-		case FAILED:
-			if (value == null) {
-				unset_failed();
-			} else {
-				set_failed((Map<String, Map<GlobalStreamId, Long>>) value);
-			}
-			break;
-
-		case PROCESS_MS_AVG:
-			if (value == null) {
-				unset_process_ms_avg();
-			} else {
-				set_process_ms_avg((Map<String, Map<GlobalStreamId, Double>>) value);
-			}
-			break;
-
-		}
-	}
-
-	public Object getFieldValue(_Fields field) {
-		switch (field) {
-		case EMITTED:
-			return get_emitted();
-
-		case SEND_TPS:
-			return get_send_tps();
-
-		case RECV_TPS:
-			return get_recv_tps();
-
-		case ACKED:
-			return get_acked();
-
-		case FAILED:
-			return get_failed();
-
-		case PROCESS_MS_AVG:
-			return get_process_ms_avg();
-
-		}
-		throw new IllegalStateException();
-	}
-
-	/**
-	 * Returns true if field corresponding to fieldID is set (has been assigned
-	 * a value) and false otherwise
-	 */
-	public boolean isSet(_Fields field) {
-		if (field == null) {
-			throw new IllegalArgumentException();
-		}
-
-		switch (field) {
-		case EMITTED:
-			return is_set_emitted();
-		case SEND_TPS:
-			return is_set_send_tps();
-		case RECV_TPS:
-			return is_set_recv_tps();
-		case ACKED:
-			return is_set_acked();
-		case FAILED:
-			return is_set_failed();
-		case PROCESS_MS_AVG:
-			return is_set_process_ms_avg();
-		}
-		throw new IllegalStateException();
-	}
-
-	@Override
-	public boolean equals(Object that) {
-		if (that == null)
-			return false;
-		if (that instanceof TaskStats)
-			return this.equals((TaskStats) that);
-		return false;
-	}
-
-	public boolean equals(TaskStats that) {
-		if (that == null)
-			return false;
-
-		boolean this_present_emitted = true && this.is_set_emitted();
-		boolean that_present_emitted = true && that.is_set_emitted();
-		if (this_present_emitted || that_present_emitted) {
-			if (!(this_present_emitted && that_present_emitted))
-				return false;
-			if (!this.emitted.equals(that.emitted))
-				return false;
-		}
-
-		boolean this_present_send_tps = true && this.is_set_send_tps();
-		boolean that_present_send_tps = true && that.is_set_send_tps();
-		if (this_present_send_tps || that_present_send_tps) {
-			if (!(this_present_send_tps && that_present_send_tps))
-				return false;
-			if (!this.send_tps.equals(that.send_tps))
-				return false;
-		}
-
-		boolean this_present_recv_tps = true && this.is_set_recv_tps();
-		boolean that_present_recv_tps = true && that.is_set_recv_tps();
-		if (this_present_recv_tps || that_present_recv_tps) {
-			if (!(this_present_recv_tps && that_present_recv_tps))
-				return false;
-			if (!this.recv_tps.equals(that.recv_tps))
-				return false;
-		}
-
-		boolean this_present_acked = true && this.is_set_acked();
-		boolean that_present_acked = true && that.is_set_acked();
-		if (this_present_acked || that_present_acked) {
-			if (!(this_present_acked && that_present_acked))
-				return false;
-			if (!this.acked.equals(that.acked))
-				return false;
-		}
-
-		boolean this_present_failed = true && this.is_set_failed();
-		boolean that_present_failed = true && that.is_set_failed();
-		if (this_present_failed || that_present_failed) {
-			if (!(this_present_failed && that_present_failed))
-				return false;
-			if (!this.failed.equals(that.failed))
-				return false;
-		}
-
-		boolean this_present_process_ms_avg = true && this
-				.is_set_process_ms_avg();
-		boolean that_present_process_ms_avg = true && that
-				.is_set_process_ms_avg();
-		if (this_present_process_ms_avg || that_present_process_ms_avg) {
-			if (!(this_present_process_ms_avg && that_present_process_ms_avg))
-				return false;
-			if (!this.process_ms_avg.equals(that.process_ms_avg))
-				return false;
-		}
-
-		return true;
-	}
-
-	@Override
-	public int hashCode() {
-		HashCodeBuilder builder = new HashCodeBuilder();
-
-		boolean present_emitted = true && (is_set_emitted());
-		builder.append(present_emitted);
-		if (present_emitted)
-			builder.append(emitted);
-
-		boolean present_send_tps = true && (is_set_send_tps());
-		builder.append(present_send_tps);
-		if (present_send_tps)
-			builder.append(send_tps);
-
-		boolean present_recv_tps = true && (is_set_recv_tps());
-		builder.append(present_recv_tps);
-		if (present_recv_tps)
-			builder.append(recv_tps);
-
-		boolean present_acked = true && (is_set_acked());
-		builder.append(present_acked);
-		if (present_acked)
-			builder.append(acked);
-
-		boolean present_failed = true && (is_set_failed());
-		builder.append(present_failed);
-		if (present_failed)
-			builder.append(failed);
-
-		boolean present_process_ms_avg = true && (is_set_process_ms_avg());
-		builder.append(present_process_ms_avg);
-		if (present_process_ms_avg)
-			builder.append(process_ms_avg);
-
-		return builder.toHashCode();
-	}
-
-	public int compareTo(TaskStats other) {
-		if (!getClass().equals(other.getClass())) {
-			return getClass().getName().compareTo(other.getClass().getName());
-		}
-
-		int lastComparison = 0;
-		TaskStats typedOther = (TaskStats) other;
-
-		lastComparison = Boolean.valueOf(is_set_emitted()).compareTo(
-				typedOther.is_set_emitted());
-		if (lastComparison != 0) {
-			return lastComparison;
-		}
-		if (is_set_emitted()) {
-			lastComparison = org.apache.thrift.TBaseHelper.compareTo(
-					this.emitted, typedOther.emitted);
-			if (lastComparison != 0) {
-				return lastComparison;
-			}
-		}
-		lastComparison = Boolean.valueOf(is_set_send_tps()).compareTo(
-				typedOther.is_set_send_tps());
-		if (lastComparison != 0) {
-			return lastComparison;
-		}
-		if (is_set_send_tps()) {
-			lastComparison = org.apache.thrift.TBaseHelper.compareTo(
-					this.send_tps, typedOther.send_tps);
-			if (lastComparison != 0) {
-				return lastComparison;
-			}
-		}
-		lastComparison = Boolean.valueOf(is_set_recv_tps()).compareTo(
-				typedOther.is_set_recv_tps());
-		if (lastComparison != 0) {
-			return lastComparison;
-		}
-		if (is_set_recv_tps()) {
-			lastComparison = org.apache.thrift.TBaseHelper.compareTo(
-					this.recv_tps, typedOther.recv_tps);
-			if (lastComparison != 0) {
-				return lastComparison;
-			}
-		}
-		lastComparison = Boolean.valueOf(is_set_acked()).compareTo(
-				typedOther.is_set_acked());
-		if (lastComparison != 0) {
-			return lastComparison;
-		}
-		if (is_set_acked()) {
-			lastComparison = org.apache.thrift.TBaseHelper.compareTo(
-					this.acked, typedOther.acked);
-			if (lastComparison != 0) {
-				return lastComparison;
-			}
-		}
-		lastComparison = Boolean.valueOf(is_set_failed()).compareTo(
-				typedOther.is_set_failed());
-		if (lastComparison != 0) {
-			return lastComparison;
-		}
-		if (is_set_failed()) {
-			lastComparison = org.apache.thrift.TBaseHelper.compareTo(
-					this.failed, typedOther.failed);
-			if (lastComparison != 0) {
-				return lastComparison;
-			}
-		}
-		lastComparison = Boolean.valueOf(is_set_process_ms_avg()).compareTo(
-				typedOther.is_set_process_ms_avg());
-		if (lastComparison != 0) {
-			return lastComparison;
-		}
-		if (is_set_process_ms_avg()) {
-			lastComparison = org.apache.thrift.TBaseHelper.compareTo(
-					this.process_ms_avg, typedOther.process_ms_avg);
-			if (lastComparison != 0) {
-				return lastComparison;
-			}
-		}
-		return 0;
-	}
-
-	public _Fields fieldForId(int fieldId) {
-		return _Fields.findByThriftId(fieldId);
-	}
-
-	public void read(org.apache.thrift.protocol.TProtocol iprot)
-			throws org.apache.thrift.TException {
-		org.apache.thrift.protocol.TField field;
-		iprot.readStructBegin();
-		while (true) {
-			field = iprot.readFieldBegin();
-			if (field.type == org.apache.thrift.protocol.TType.STOP) {
-				break;
-			}
-			switch (field.id) {
-			case 1: // EMITTED
-				if (field.type == org.apache.thrift.protocol.TType.MAP) {
-					{
-						org.apache.thrift.protocol.TMap _map125 = iprot
-								.readMapBegin();
-						this.emitted = new HashMap<String, Map<String, Long>>(
-								2 * _map125.size);
-						for (int _i126 = 0; _i126 < _map125.size; ++_i126) {
-							String _key127; // required
-							Map<String, Long> _val128; // required
-							_key127 = iprot.readString();
-							{
-								org.apache.thrift.protocol.TMap _map129 = iprot
-										.readMapBegin();
-								_val128 = new HashMap<String, Long>(
-										2 * _map129.size);
-								for (int _i130 = 0; _i130 < _map129.size; ++_i130) {
-									String _key131; // required
-									long _val132; // required
-									_key131 = iprot.readString();
-									_val132 = iprot.readI64();
-									_val128.put(_key131, _val132);
-								}
-								iprot.readMapEnd();
-							}
-							this.emitted.put(_key127, _val128);
-						}
-						iprot.readMapEnd();
-					}
-				} else {
-					org.apache.thrift.protocol.TProtocolUtil.skip(iprot,
-							field.type);
-				}
-				break;
-			case 2: // SEND_TPS
-				if (field.type == org.apache.thrift.protocol.TType.MAP) {
-					{
-						org.apache.thrift.protocol.TMap _map133 = iprot
-								.readMapBegin();
-						this.send_tps = new HashMap<String, Map<String, Double>>(
-								2 * _map133.size);
-						for (int _i134 = 0; _i134 < _map133.size; ++_i134) {
-							String _key135; // required
-							Map<String, Double> _val136; // required
-							_key135 = iprot.readString();
-							{
-								org.apache.thrift.protocol.TMap _map137 = iprot
-										.readMapBegin();
-								_val136 = new HashMap<String, Double>(
-										2 * _map137.size);
-								for (int _i138 = 0; _i138 < _map137.size; ++_i138) {
-									String _key139; // required
-									double _val140; // required
-									_key139 = iprot.readString();
-									_val140 = iprot.readDouble();
-									_val136.put(_key139, _val140);
-								}
-								iprot.readMapEnd();
-							}
-							this.send_tps.put(_key135, _val136);
-						}
-						iprot.readMapEnd();
-					}
-				} else {
-					org.apache.thrift.protocol.TProtocolUtil.skip(iprot,
-							field.type);
-				}
-				break;
-			case 3: // RECV_TPS
-				if (field.type == org.apache.thrift.protocol.TType.MAP) {
-					{
-						org.apache.thrift.protocol.TMap _map141 = iprot
-								.readMapBegin();
-						this.recv_tps = new HashMap<String, Map<GlobalStreamId, Double>>(
-								2 * _map141.size);
-						for (int _i142 = 0; _i142 < _map141.size; ++_i142) {
-							String _key143; // required
-							Map<GlobalStreamId, Double> _val144; // required
-							_key143 = iprot.readString();
-							{
-								org.apache.thrift.protocol.TMap _map145 = iprot
-										.readMapBegin();
-								_val144 = new HashMap<GlobalStreamId, Double>(
-										2 * _map145.size);
-								for (int _i146 = 0; _i146 < _map145.size; ++_i146) {
-									GlobalStreamId _key147; // required
-									double _val148; // required
-									_key147 = new GlobalStreamId();
-									_key147.read(iprot);
-									_val148 = iprot.readDouble();
-									_val144.put(_key147, _val148);
-								}
-								iprot.readMapEnd();
-							}
-							this.recv_tps.put(_key143, _val144);
-						}
-						iprot.readMapEnd();
-					}
-				} else {
-					org.apache.thrift.protocol.TProtocolUtil.skip(iprot,
-							field.type);
-				}
-				break;
-			case 4: // ACKED
-				if (field.type == org.apache.thrift.protocol.TType.MAP) {
-					{
-						org.apache.thrift.protocol.TMap _map149 = iprot
-								.readMapBegin();
-						this.acked = new HashMap<String, Map<GlobalStreamId, Long>>(
-								2 * _map149.size);
-						for (int _i150 = 0; _i150 < _map149.size; ++_i150) {
-							String _key151; // required
-							Map<GlobalStreamId, Long> _val152; // required
-							_key151 = iprot.readString();
-							{
-								org.apache.thrift.protocol.TMap _map153 = iprot
-										.readMapBegin();
-								_val152 = new HashMap<GlobalStreamId, Long>(
-										2 * _map153.size);
-								for (int _i154 = 0; _i154 < _map153.size; ++_i154) {
-									GlobalStreamId _key155; // required
-									long _val156; // required
-									_key155 = new GlobalStreamId();
-									_key155.read(iprot);
-									_val156 = iprot.readI64();
-									_val152.put(_key155, _val156);
-								}
-								iprot.readMapEnd();
-							}
-							this.acked.put(_key151, _val152);
-						}
-						iprot.readMapEnd();
-					}
-				} else {
-					org.apache.thrift.protocol.TProtocolUtil.skip(iprot,
-							field.type);
-				}
-				break;
-			case 5: // FAILED
-				if (field.type == org.apache.thrift.protocol.TType.MAP) {
-					{
-						org.apache.thrift.protocol.TMap _map157 = iprot
-								.readMapBegin();
-						this.failed = new HashMap<String, Map<GlobalStreamId, Long>>(
-								2 * _map157.size);
-						for (int _i158 = 0; _i158 < _map157.size; ++_i158) {
-							String _key159; // required
-							Map<GlobalStreamId, Long> _val160; // required
-							_key159 = iprot.readString();
-							{
-								org.apache.thrift.protocol.TMap _map161 = iprot
-										.readMapBegin();
-								_val160 = new HashMap<GlobalStreamId, Long>(
-										2 * _map161.size);
-								for (int _i162 = 0; _i162 < _map161.size; ++_i162) {
-									GlobalStreamId _key163; // required
-									long _val164; // required
-									_key163 = new GlobalStreamId();
-									_key163.read(iprot);
-									_val164 = iprot.readI64();
-									_val160.put(_key163, _val164);
-								}
-								iprot.readMapEnd();
-							}
-							this.failed.put(_key159, _val160);
-						}
-						iprot.readMapEnd();
-					}
-				} else {
-					org.apache.thrift.protocol.TProtocolUtil.skip(iprot,
-							field.type);
-				}
-				break;
-			case 6: // PROCESS_MS_AVG
-				if (field.type == org.apache.thrift.protocol.TType.MAP) {
-					{
-						org.apache.thrift.protocol.TMap _map165 = iprot
-								.readMapBegin();
-						this.process_ms_avg = new HashMap<String, Map<GlobalStreamId, Double>>(
-								2 * _map165.size);
-						for (int _i166 = 0; _i166 < _map165.size; ++_i166) {
-							String _key167; // required
-							Map<GlobalStreamId, Double> _val168; // required
-							_key167 = iprot.readString();
-							{
-								org.apache.thrift.protocol.TMap _map169 = iprot
-										.readMapBegin();
-								_val168 = new HashMap<GlobalStreamId, Double>(
-										2 * _map169.size);
-								for (int _i170 = 0; _i170 < _map169.size; ++_i170) {
-									GlobalStreamId _key171; // required
-									double _val172; // required
-									_key171 = new GlobalStreamId();
-									_key171.read(iprot);
-									_val172 = iprot.readDouble();
-									_val168.put(_key171, _val172);
-								}
-								iprot.readMapEnd();
-							}
-							this.process_ms_avg.put(_key167, _val168);
-						}
-						iprot.readMapEnd();
-					}
-				} else {
-					org.apache.thrift.protocol.TProtocolUtil.skip(iprot,
-							field.type);
-				}
-				break;
-			default:
-				org.apache.thrift.protocol.TProtocolUtil
-						.skip(iprot, field.type);
-			}
-			iprot.readFieldEnd();
-		}
-		iprot.readStructEnd();
-		validate();
-	}
-
-	public void write(org.apache.thrift.protocol.TProtocol oprot)
-			throws org.apache.thrift.TException {
-		validate();
-
-		oprot.writeStructBegin(STRUCT_DESC);
-		if (this.emitted != null) {
-			oprot.writeFieldBegin(EMITTED_FIELD_DESC);
-			{
-				oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(
-						org.apache.thrift.protocol.TType.STRING,
-						org.apache.thrift.protocol.TType.MAP, this.emitted
-								.size()));
-				for (Map.Entry<String, Map<String, Long>> _iter173 : this.emitted
-						.entrySet()) {
-					oprot.writeString(_iter173.getKey());
-					{
-						oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(
-								org.apache.thrift.protocol.TType.STRING,
-								org.apache.thrift.protocol.TType.I64, _iter173
-										.getValue().size()));
-						for (Map.Entry<String, Long> _iter174 : _iter173
-								.getValue().entrySet()) {
-							oprot.writeString(_iter174.getKey());
-							oprot.writeI64(_iter174.getValue());
-						}
-						oprot.writeMapEnd();
-					}
-				}
-				oprot.writeMapEnd();
-			}
-			oprot.writeFieldEnd();
-		}
-		if (this.send_tps != null) {
-			oprot.writeFieldBegin(SEND_TPS_FIELD_DESC);
-			{
-				oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(
-						org.apache.thrift.protocol.TType.STRING,
-						org.apache.thrift.protocol.TType.MAP, this.send_tps
-								.size()));
-				for (Map.Entry<String, Map<String, Double>> _iter175 : this.send_tps
-						.entrySet()) {
-					oprot.writeString(_iter175.getKey());
-					{
-						oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(
-								org.apache.thrift.protocol.TType.STRING,
-								org.apache.thrift.protocol.TType.DOUBLE,
-								_iter175.getValue().size()));
-						for (Map.Entry<String, Double> _iter176 : _iter175
-								.getValue().entrySet()) {
-							oprot.writeString(_iter176.getKey());
-							oprot.writeDouble(_iter176.getValue());
-						}
-						oprot.writeMapEnd();
-					}
-				}
-				oprot.writeMapEnd();
-			}
-			oprot.writeFieldEnd();
-		}
-		if (this.recv_tps != null) {
-			oprot.writeFieldBegin(RECV_TPS_FIELD_DESC);
-			{
-				oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(
-						org.apache.thrift.protocol.TType.STRING,
-						org.apache.thrift.protocol.TType.MAP, this.recv_tps
-								.size()));
-				for (Map.Entry<String, Map<GlobalStreamId, Double>> _iter177 : this.recv_tps
-						.entrySet()) {
-					oprot.writeString(_iter177.getKey());
-					{
-						oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(
-								org.apache.thrift.protocol.TType.STRUCT,
-								org.apache.thrift.protocol.TType.DOUBLE,
-								_iter177.getValue().size()));
-						for (Map.Entry<GlobalStreamId, Double> _iter178 : _iter177
-								.getValue().entrySet()) {
-							_iter178.getKey().write(oprot);
-							oprot.writeDouble(_iter178.getValue());
-						}
-						oprot.writeMapEnd();
-					}
-				}
-				oprot.writeMapEnd();
-			}
-			oprot.writeFieldEnd();
-		}
-		if (this.acked != null) {
-			oprot.writeFieldBegin(ACKED_FIELD_DESC);
-			{
-				oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(
-						org.apache.thrift.protocol.TType.STRING,
-						org.apache.thrift.protocol.TType.MAP, this.acked.size()));
-				for (Map.Entry<String, Map<GlobalStreamId, Long>> _iter179 : this.acked
-						.entrySet()) {
-					oprot.writeString(_iter179.getKey());
-					{
-						oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(
-								org.apache.thrift.protocol.TType.STRUCT,
-								org.apache.thrift.protocol.TType.I64, _iter179
-										.getValue().size()));
-						for (Map.Entry<GlobalStreamId, Long> _iter180 : _iter179
-								.getValue().entrySet()) {
-							_iter180.getKey().write(oprot);
-							oprot.writeI64(_iter180.getValue());
-						}
-						oprot.writeMapEnd();
-					}
-				}
-				oprot.writeMapEnd();
-			}
-			oprot.writeFieldEnd();
-		}
-		if (this.failed != null) {
-			oprot.writeFieldBegin(FAILED_FIELD_DESC);
-			{
-				oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(
-						org.apache.thrift.protocol.TType.STRING,
-						org.apache.thrift.protocol.TType.MAP, this.failed
-								.size()));
-				for (Map.Entry<String, Map<GlobalStreamId, Long>> _iter181 : this.failed
-						.entrySet()) {
-					oprot.writeString(_iter181.getKey());
-					{
-						oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(
-								org.apache.thrift.protocol.TType.STRUCT,
-								org.apache.thrift.protocol.TType.I64, _iter181
-										.getValue().size()));
-						for (Map.Entry<GlobalStreamId, Long> _iter182 : _iter181
-								.getValue().entrySet()) {
-							_iter182.getKey().write(oprot);
-							oprot.writeI64(_iter182.getValue());
-						}
-						oprot.writeMapEnd();
-					}
-				}
-				oprot.writeMapEnd();
-			}
-			oprot.writeFieldEnd();
-		}
-		if (this.process_ms_avg != null) {
-			oprot.writeFieldBegin(PROCESS_MS_AVG_FIELD_DESC);
-			{
-				oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(
-						org.apache.thrift.protocol.TType.STRING,
-						org.apache.thrift.protocol.TType.MAP,
-						this.process_ms_avg.size()));
-				for (Map.Entry<String, Map<GlobalStreamId, Double>> _iter183 : this.process_ms_avg
-						.entrySet()) {
-					oprot.writeString(_iter183.getKey());
-					{
-						oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(
-								org.apache.thrift.protocol.TType.STRUCT,
-								org.apache.thrift.protocol.TType.DOUBLE,
-								_iter183.getValue().size()));
-						for (Map.Entry<GlobalStreamId, Double> _iter184 : _iter183
-								.getValue().entrySet()) {
-							_iter184.getKey().write(oprot);
-							oprot.writeDouble(_iter184.getValue());
-						}
-						oprot.writeMapEnd();
-					}
-				}
-				oprot.writeMapEnd();
-			}
-			oprot.writeFieldEnd();
-		}
-		oprot.writeFieldStop();
-		oprot.writeStructEnd();
-	}
-
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder("TaskStats(");
-		boolean first = true;
-
-		sb.append("emitted:");
-		if (this.emitted == null) {
-			sb.append("null");
-		} else {
-			sb.append(this.emitted);
-		}
-		first = false;
-		if (!first)
-			sb.append(", ");
-		sb.append("send_tps:");
-		if (this.send_tps == null) {
-			sb.append("null");
-		} else {
-			sb.append(this.send_tps);
-		}
-		first = false;
-		if (!first)
-			sb.append(", ");
-		sb.append("recv_tps:");
-		if (this.recv_tps == null) {
-			sb.append("null");
-		} else {
-			sb.append(this.recv_tps);
-		}
-		first = false;
-		if (!first)
-			sb.append(", ");
-		sb.append("acked:");
-		if (this.acked == null) {
-			sb.append("null");
-		} else {
-			sb.append(this.acked);
-		}
-		first = false;
-		if (!first)
-			sb.append(", ");
-		sb.append("failed:");
-		if (this.failed == null) {
-			sb.append("null");
-		} else {
-			sb.append(this.failed);
-		}
-		first = false;
-		if (!first)
-			sb.append(", ");
-		sb.append("process_ms_avg:");
-		if (this.process_ms_avg == null) {
-			sb.append("null");
-		} else {
-			sb.append(this.process_ms_avg);
-		}
-		first = false;
-		sb.append(")");
-		return sb.toString();
-	}
-
-	public void validate() throws org.apache.thrift.TException {
-		// check for required fields
-		if (!is_set_emitted()) {
-			throw new org.apache.thrift.protocol.TProtocolException(
-					"Required field 'emitted' is unset! Struct:" + toString());
-		}
-
-		if (!is_set_send_tps()) {
-			throw new org.apache.thrift.protocol.TProtocolException(
-					"Required field 'send_tps' is unset! Struct:" + toString());
-		}
-
-		if (!is_set_recv_tps()) {
-			throw new org.apache.thrift.protocol.TProtocolException(
-					"Required field 'recv_tps' is unset! Struct:" + toString());
-		}
-
-		if (!is_set_acked()) {
-			throw new org.apache.thrift.protocol.TProtocolException(
-					"Required field 'acked' is unset! Struct:" + toString());
-		}
-
-		if (!is_set_failed()) {
-			throw new org.apache.thrift.protocol.TProtocolException(
-					"Required field 'failed' is unset! Struct:" + toString());
-		}
-
-		if (!is_set_process_ms_avg()) {
-			throw new org.apache.thrift.protocol.TProtocolException(
-					"Required field 'process_ms_avg' is unset! Struct:"
-							+ toString());
-		}
-
-	}
-
-	private void writeObject(java.io.ObjectOutputStream out)
-			throws java.io.IOException {
-		try {
-			write(new org.apache.thrift.protocol.TCompactProtocol(
-					new org.apache.thrift.transport.TIOStreamTransport(out)));
-		} catch (org.apache.thrift.TException te) {
-			throw new java.io.IOException(te);
-		}
-	}
-
-	private void readObject(java.io.ObjectInputStream in)
-			throws java.io.IOException, ClassNotFoundException {
-		try {
-			read(new org.apache.thrift.protocol.TCompactProtocol(
-					new org.apache.thrift.transport.TIOStreamTransport(in)));
-		} catch (org.apache.thrift.TException te) {
-			throw new java.io.IOException(te);
-		}
-	}
+public class TaskStats implements org.apache.thrift7.TBase<TaskStats, TaskStats._Fields>, java.io.Serializable, Cloneable {
+  private static final org.apache.thrift7.protocol.TStruct STRUCT_DESC = new org.apache.thrift7.protocol.TStruct("TaskStats");
+
+  private static final org.apache.thrift7.protocol.TField EMITTED_FIELD_DESC = new org.apache.thrift7.protocol.TField("emitted", org.apache.thrift7.protocol.TType.MAP, (short)1);
+  private static final org.apache.thrift7.protocol.TField SEND_TPS_FIELD_DESC = new org.apache.thrift7.protocol.TField("send_tps", org.apache.thrift7.protocol.TType.MAP, (short)2);
+  private static final org.apache.thrift7.protocol.TField RECV_TPS_FIELD_DESC = new org.apache.thrift7.protocol.TField("recv_tps", org.apache.thrift7.protocol.TType.MAP, (short)3);
+  private static final org.apache.thrift7.protocol.TField ACKED_FIELD_DESC = new org.apache.thrift7.protocol.TField("acked", org.apache.thrift7.protocol.TType.MAP, (short)4);
+  private static final org.apache.thrift7.protocol.TField FAILED_FIELD_DESC = new org.apache.thrift7.protocol.TField("failed", org.apache.thrift7.protocol.TType.MAP, (short)5);
+  private static final org.apache.thrift7.protocol.TField PROCESS_MS_AVG_FIELD_DESC = new org.apache.thrift7.protocol.TField("process_ms_avg", org.apache.thrift7.protocol.TType.MAP, (short)6);
+
+  private Map<String,Map<String,Long>> emitted; // required
+  private Map<String,Map<String,Double>> send_tps; // required
+  private Map<String,Map<GlobalStreamId,Double>> recv_tps; // required
+  private Map<String,Map<GlobalStreamId,Long>> acked; // required
+  private Map<String,Map<GlobalStreamId,Long>> failed; // required
+  private Map<String,Map<GlobalStreamId,Double>> process_ms_avg; // required
+
+  /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+  public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
+    EMITTED((short)1, "emitted"),
+    SEND_TPS((short)2, "send_tps"),
+    RECV_TPS((short)3, "recv_tps"),
+    ACKED((short)4, "acked"),
+    FAILED((short)5, "failed"),
+    PROCESS_MS_AVG((short)6, "process_ms_avg");
+
+    private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+    static {
+      for (_Fields field : EnumSet.allOf(_Fields.class)) {
+        byName.put(field.getFieldName(), field);
+      }
+    }
+
+    /**
+     * Find the _Fields constant that matches fieldId, or null if its not found.
+     */
+    public static _Fields findByThriftId(int fieldId) {
+      switch(fieldId) {
+        case 1: // EMITTED
+          return EMITTED;
+        case 2: // SEND_TPS
+          return SEND_TPS;
+        case 3: // RECV_TPS
+          return RECV_TPS;
+        case 4: // ACKED
+          return ACKED;
+        case 5: // FAILED
+          return FAILED;
+        case 6: // PROCESS_MS_AVG
+          return PROCESS_MS_AVG;
+        default:
+          return null;
+      }
+    }
+
+    /**
+     * Find the _Fields constant that matches fieldId, throwing an exception
+     * if it is not found.
+     */
+    public static _Fields findByThriftIdOrThrow(int fieldId) {
+      _Fields fields = findByThriftId(fieldId);
+      if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+      return fields;
+    }
+
+    /**
+     * Find the _Fields constant that matches name, or null if its not found.
+     */
+    public static _Fields findByName(String name) {
+      return byName.get(name);
+    }
+
+    private final short _thriftId;
+    private final String _fieldName;
+
+    _Fields(short thriftId, String fieldName) {
+      _thriftId = thriftId;
+      _fieldName = fieldName;
+    }
+
+    public short getThriftFieldId() {
+      return _thriftId;
+    }
+
+    public String getFieldName() {
+      return _fieldName;
+    }
+  }
+
+  // isset id assignments
+
+  public static final Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> metaDataMap;
+  static {
+    Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift7.meta_data.FieldMetaData>(_Fields.class);
+    tmpMap.put(_Fields.EMITTED, new org.apache.thrift7.meta_data.FieldMetaData("emitted", org.apache.thrift7.TFieldRequirementType.REQUIRED, 
+        new org.apache.thrift7.meta_data.MapMetaData(org.apache.thrift7.protocol.TType.MAP, 
+            new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRING), 
+            new org.apache.thrift7.meta_data.MapMetaData(org.apache.thrift7.protocol.TType.MAP, 
+                new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRING), 
+                new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.I64)))));
+    tmpMap.put(_Fields.SEND_TPS, new org.apache.thrift7.meta_data.FieldMetaData("send_tps", org.apache.thrift7.TFieldRequirementType.REQUIRED, 
+        new org.apache.thrift7.meta_data.MapMetaData(org.apache.thrift7.protocol.TType.MAP, 
+            new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRING), 
+            new org.apache.thrift7.meta_data.MapMetaData(org.apache.thrift7.protocol.TType.MAP, 
+                new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRING), 
+                new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.DOUBLE)))));
+    tmpMap.put(_Fields.RECV_TPS, new org.apache.thrift7.meta_data.FieldMetaData("recv_tps", org.apache.thrift7.TFieldRequirementType.REQUIRED, 
+        new org.apache.thrift7.meta_data.MapMetaData(org.apache.thrift7.protocol.TType.MAP, 
+            new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRING), 
+            new org.apache.thrift7.meta_data.MapMetaData(org.apache.thrift7.protocol.TType.MAP, 
+                new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, GlobalStreamId.class), 
+                new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.DOUBLE)))));
+    tmpMap.put(_Fields.ACKED, new org.apache.thrift7.meta_data.FieldMetaData("acked", org.apache.thrift7.TFieldRequirementType.REQUIRED, 
+        new org.apache.thrift7.meta_data.MapMetaData(org.apache.thrift7.protocol.TType.MAP, 
+            new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRING), 
+            new org.apache.thrift7.meta_data.MapMetaData(org.apache.thrift7.protocol.TType.MAP, 
+                new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, GlobalStreamId.class), 
+                new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.I64)))));
+    tmpMap.put(_Fields.FAILED, new org.apache.thrift7.meta_data.FieldMetaData("failed", org.apache.thrift7.TFieldRequirementType.REQUIRED, 
+        new org.apache.thrift7.meta_data.MapMetaData(org.apache.thrift7.protocol.TType.MAP, 
+            new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRING), 
+            new org.apache.thrift7.meta_data.MapMetaData(org.apache.thrift7.protocol.TType.MAP, 
+                new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, GlobalStreamId.class), 
+                new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.I64)))));
+    tmpMap.put(_Fields.PROCESS_MS_AVG, new org.apache.thrift7.meta_data.FieldMetaData("process_ms_avg", org.apache.thrift7.TFieldRequirementType.REQUIRED, 
+        new org.apache.thrift7.meta_data.MapMetaData(org.apache.thrift7.protocol.TType.MAP, 
+            new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRING), 
+            new org.apache.thrift7.meta_data.MapMetaData(org.apache.thrift7.protocol.TType.MAP, 
+                new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, GlobalStreamId.class), 
+                new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.DOUBLE)))));
+    metaDataMap = Collections.unmodifiableMap(tmpMap);
+    org.apache.thrift7.meta_data.FieldMetaData.addStructMetaDataMap(TaskStats.class, metaDataMap);
+  }
+
+  public TaskStats() {
+  }
+
+  public TaskStats(
+    Map<String,Map<String,Long>> emitted,
+    Map<String,Map<String,Double>> send_tps,
+    Map<String,Map<GlobalStreamId,Double>> recv_tps,
+    Map<String,Map<GlobalStreamId,Long>> acked,
+    Map<String,Map<GlobalStreamId,Long>> failed,
+    Map<String,Map<GlobalStreamId,Double>> process_ms_avg)
+  {
+    this();
+    this.emitted = emitted;
+    this.send_tps = send_tps;
+    this.recv_tps = recv_tps;
+    this.acked = acked;
+    this.failed = failed;
+    this.process_ms_avg = process_ms_avg;
+  }
+
+  /**
+   * Performs a deep copy on <i>other</i>.
+   */
+  public TaskStats(TaskStats other) {
+    if (other.is_set_emitted()) {
+      Map<String,Map<String,Long>> __this__emitted = new HashMap<String,Map<String,Long>>();
+      for (Map.Entry<String, Map<String,Long>> other_element : other.emitted.entrySet()) {
+
+        String other_element_key = other_element.getKey();
+        Map<String,Long> other_element_value = other_element.getValue();
+
+        String __this__emitted_copy_key = other_element_key;
+
+        Map<String,Long> __this__emitted_copy_value = new HashMap<String,Long>();
+        for (Map.Entry<String, Long> other_element_value_element : other_element_value.entrySet()) {
+
+          String other_element_value_element_key = other_element_value_element.getKey();
+          Long other_element_value_element_value = other_element_value_element.getValue();
+
+          String __this__emitted_copy_value_copy_key = other_element_value_element_key;
+
+          Long __this__emitted_copy_value_copy_value = other_element_value_element_value;
+
+          __this__emitted_copy_value.put(__this__emitted_copy_value_copy_key, __this__emitted_copy_value_copy_value);
+        }
+
+        __this__emitted.put(__this__emitted_copy_key, __this__emitted_copy_value);
+      }
+      this.emitted = __this__emitted;
+    }
+    if (other.is_set_send_tps()) {
+      Map<String,Map<String,Double>> __this__send_tps = new HashMap<String,Map<String,Double>>();
+      for (Map.Entry<String, Map<String,Double>> other_element : other.send_tps.entrySet()) {
+
+        String other_element_key = other_element.getKey();
+        Map<String,Double> other_element_value = other_element.getValue();
+
+        String __this__send_tps_copy_key = other_element_key;
+
+        Map<String,Double> __this__send_tps_copy_value = new HashMap<String,Double>();
+        for (Map.Entry<String, Double> other_element_value_element : other_element_value.entrySet()) {
+
+          String other_element_value_element_key = other_element_value_element.getKey();
+          Double other_element_value_element_value = other_element_value_element.getValue();
+
+          String __this__send_tps_copy_value_copy_key = other_element_value_element_key;
+
+          Double __this__send_tps_copy_value_copy_value = other_element_value_element_value;
+
+          __this__send_tps_copy_value.put(__this__send_tps_copy_value_copy_key, __this__send_tps_copy_value_copy_value);
+        }
+
+        __this__send_tps.put(__this__send_tps_copy_key, __this__send_tps_copy_value);
+      }
+      this.send_tps = __this__send_tps;
+    }
+    if (other.is_set_recv_tps()) {
+      Map<String,Map<GlobalStreamId,Double>> __this__recv_tps = new HashMap<String,Map<GlobalStreamId,Double>>();
+      for (Map.Entry<String, Map<GlobalStreamId,Double>> other_element : other.recv_tps.entrySet()) {
+
+        String other_element_key = other_element.getKey();
+        Map<GlobalStreamId,Double> other_element_value = other_element.getValue();
+
+        String __this__recv_tps_copy_key = other_element_key;
+
+        Map<GlobalStreamId,Double> __this__recv_tps_copy_value = new HashMap<GlobalStreamId,Double>();
+        for (Map.Entry<GlobalStreamId, Double> other_element_value_element : other_element_value.entrySet()) {
+
+          GlobalStreamId other_element_value_element_key = other_element_value_element.getKey();
+          Double other_element_value_element_value = other_element_value_element.getValue();
+
+          GlobalStreamId __this__recv_tps_copy_value_copy_key = new GlobalStreamId(other_element_value_element_key);
+
+          Double __this__recv_tps_copy_value_copy_value = other_element_value_element_value;
+
+          __this__recv_tps_copy_value.put(__this__recv_tps_copy_value_copy_key, __this__recv_tps_copy_value_copy_value);
+        }
+
+        __this__recv_tps.put(__this__recv_tps_copy_key, __this__recv_tps_copy_value);
+      }
+      this.recv_tps = __this__recv_tps;
+    }
+    if (other.is_set_acked()) {
+      Map<String,Map<GlobalStreamId,Long>> __this__acked = new HashMap<String,Map<GlobalStreamId,Long>>();
+      for (Map.Entry<String, Map<GlobalStreamId,Long>> other_element : other.acked.entrySet()) {
+
+        String other_element_key = other_element.getKey();
+        Map<GlobalStreamId,Long> other_element_value = other_element.getValue();
+
+        String __this__acked_copy_key = other_element_key;
+
+        Map<GlobalStreamId,Long> __this__acked_copy_value = new HashMap<GlobalStreamId,Long>();
+        for (Map.Entry<GlobalStreamId, Long> other_element_value_element : other_element_value.entrySet()) {
+
+          GlobalStreamId other_element_value_element_key = other_element_value_element.getKey();
+          Long other_element_value_element_value = other_element_value_element.getValue();
+
+          GlobalStreamId __this__acked_copy_value_copy_key = new GlobalStreamId(other_element_value_element_key);
+
+          Long __this__acked_copy_value_copy_value = other_element_value_element_value;
+
+          __this__acked_copy_value.put(__this__acked_copy_value_copy_key, __this__acked_copy_value_copy_value);
+        }
+
+        __this__acked.put(__this__acked_copy_key, __this__acked_copy_value);
+      }
+      this.acked = __this__acked;
+    }
+    if (other.is_set_failed()) {
+      Map<String,Map<GlobalStreamId,Long>> __this__failed = new HashMap<String,Map<GlobalStreamId,Long>>();
+      for (Map.Entry<String, Map<GlobalStreamId,Long>> other_element : other.failed.entrySet()) {
+
+        String other_element_key = other_element.getKey();
+        Map<GlobalStreamId,Long> other_element_value = other_element.getValue();
+
+        String __this__failed_copy_key = other_element_key;
+
+        Map<GlobalStreamId,Long> __this__failed_copy_value = new HashMap<GlobalStreamId,Long>();
+        for (Map.Entry<GlobalStreamId, Long> other_element_value_element : other_element_value.entrySet()) {
+
+          GlobalStreamId other_element_value_element_key = other_element_value_element.getKey();
+          Long other_element_value_element_value = other_element_value_element.getValue();
+
+          GlobalStreamId __this__failed_copy_value_copy_key = new GlobalStreamId(other_element_value_element_key);
+
+          Long __this__failed_copy_value_copy_value = other_element_value_element_value;
+
+          __this__failed_copy_value.put(__this__failed_copy_value_copy_key, __this__failed_copy_value_copy_value);
+        }
+
+        __this__failed.put(__this__failed_copy_key, __this__failed_copy_value);
+      }
+      this.failed = __this__failed;
+    }
+    if (other.is_set_process_ms_avg()) {
+      Map<String,Map<GlobalStreamId,Double>> __this__process_ms_avg = new HashMap<String,Map<GlobalStreamId,Double>>();
+      for (Map.Entry<String, Map<GlobalStreamId,Double>> other_element : other.process_ms_avg.entrySet()) {
+
+        String other_element_key = other_element.getKey();
+        Map<GlobalStreamId,Double> other_element_value = other_element.getValue();
+
+        String __this__process_ms_avg_copy_key = other_element_key;
+
+        Map<GlobalStreamId,Double> __this__process_ms_avg_copy_value = new HashMap<GlobalStreamId,Double>();
+        for (Map.Entry<GlobalStreamId, Double> other_element_value_element : other_element_value.entrySet()) {
+
+          GlobalStreamId other_element_value_element_key = other_element_value_element.getKey();
+          Double other_element_value_element_value = other_element_value_element.getValue();
+
+          GlobalStreamId __this__process_ms_avg_copy_value_copy_key = new GlobalStreamId(other_element_value_element_key);
+
+          Double __this__process_ms_avg_copy_value_copy_value = other_element_value_element_value;
+
+          __this__process_ms_avg_copy_value.put(__this__process_ms_avg_copy_value_copy_key, __this__process_ms_avg_copy_value_copy_value);
+        }
+
+        __this__process_ms_avg.put(__this__process_ms_avg_copy_key, __this__process_ms_avg_copy_value);
+      }
+      this.process_ms_avg = __this__process_ms_avg;
+    }
+  }
+
+  public TaskStats deepCopy() {
+    return new TaskStats(this);
+  }
+
+  @Override
+  public void clear() {
+    this.emitted = null;
+    this.send_tps = null;
+    this.recv_tps = null;
+    this.acked = null;
+    this.failed = null;
+    this.process_ms_avg = null;
+  }
+
+  public int get_emitted_size() {
+    return (this.emitted == null) ? 0 : this.emitted.size();
+  }
+
+  public void put_to_emitted(String key, Map<String,Long> val) {
+    if (this.emitted == null) {
+      this.emitted = new HashMap<String,Map<String,Long>>();
+    }
+    this.emitted.put(key, val);
+  }
+
+  public Map<String,Map<String,Long>> get_emitted() {
+    return this.emitted;
+  }
+
+  public void set_emitted(Map<String,Map<String,Long>> emitted) {
+    this.emitted = emitted;
+  }
+
+  public void unset_emitted() {
+    this.emitted = null;
+  }
+
+  /** Returns true if field emitted is set (has been assigned a value) and false otherwise */
+  public boolean is_set_emitted() {
+    return this.emitted != null;
+  }
+
+  public void set_emitted_isSet(boolean value) {
+    if (!value) {
+      this.emitted = null;
+    }
+  }
+
+  public int get_send_tps_size() {
+    return (this.send_tps == null) ? 0 : this.send_tps.size();
+  }
+
+  public void put_to_send_tps(String key, Map<String,Double> val) {
+    if (this.send_tps == null) {
+      this.send_tps = new HashMap<String,Map<String,Double>>();
+    }
+    this.send_tps.put(key, val);
+  }
+
+  public Map<String,Map<String,Double>> get_send_tps() {
+    return this.send_tps;
+  }
+
+  public void set_send_tps(Map<String,Map<String,Double>> send_tps) {
+    this.send_tps = send_tps;
+  }
+
+  public void unset_send_tps() {
+    this.send_tps = null;
+  }
+
+  /** Returns true if field send_tps is set (has been assigned a value) and false otherwise */
+  public boolean is_set_send_tps() {
+    return this.send_tps != null;
+  }
+
+  public void set_send_tps_isSet(boolean value) {
+    if (!value) {
+      this.send_tps = null;
+    }
+  }
+
+  public int get_recv_tps_size() {
+    return (this.recv_tps == null) ? 0 : this.recv_tps.size();
+  }
+
+  public void put_to_recv_tps(String key, Map<GlobalStreamId,Double> val) {
+    if (this.recv_tps == null) {
+      this.recv_tps = new HashMap<String,Map<GlobalStreamId,Double>>();
+    }
+    this.recv_tps.put(key, val);
+  }
+
+  public Map<String,Map<GlobalStreamId,Double>> get_recv_tps() {
+    return this.recv_tps;
+  }
+
+  public void set_recv_tps(Map<String,Map<GlobalStreamId,Double>> recv_tps) {
+    this.recv_tps = recv_tps;
+  }
+
+  public void unset_recv_tps() {
+    this.recv_tps = null;
+  }
+
+  /** Returns true if field recv_tps is set (has been assigned a value) and false otherwise */
+  public boolean is_set_recv_tps() {
+    return this.recv_tps != null;
+  }
+
+  public void set_recv_tps_isSet(boolean value) {
+    if (!value) {
+      this.recv_tps = null;
+    }
+  }
+
+  public int get_acked_size() {
+    return (this.acked == null) ? 0 : this.acked.size();
+  }
+
+  public void put_to_acked(String key, Map<GlobalStreamId,Long> val) {
+    if (this.acked == null) {
+      this.acked = new HashMap<String,Map<GlobalStreamId,Long>>();
+    }
+    this.acked.put(key, val);
+  }
+
+  public Map<String,Map<GlobalStreamId,Long>> get_acked() {
+    return this.acked;
+  }
+
+  public void set_acked(Map<String,Map<GlobalStreamId,Long>> acked) {
+    this.acked = acked;
+  }
+
+  public void unset_acked() {
+    this.acked = null;
+  }
+
+  /** Returns true if field acked is set (has been assigned a value) and false otherwise */
+  public boolean is_set_acked() {
+    return this.acked != null;
+  }
+
+  public void set_acked_isSet(boolean value) {
+    if (!value) {
+      this.acked = null;
+    }
+  }
+
+  public int get_failed_size() {
+    return (this.failed == null) ? 0 : this.failed.size();
+  }
+
+  public void put_to_failed(String key, Map<GlobalStreamId,Long> val) {
+    if (this.failed == null) {
+      this.failed = new HashMap<String,Map<GlobalStreamId,Long>>();
+    }
+    this.failed.put(key, val);
+  }
+
+  public Map<String,Map<GlobalStreamId,Long>> get_failed() {
+    return this.failed;
+  }
+
+  public void set_failed(Map<String,Map<GlobalStreamId,Long>> failed) {
+    this.failed = failed;
+  }
+
+  public void unset_failed() {
+    this.failed = null;
+  }
+
+  /** Returns true if field failed is set (has been assigned a value) and false otherwise */
+  public boolean is_set_failed() {
+    return this.failed != null;
+  }
+
+  public void set_failed_isSet(boolean value) {
+    if (!value) {
+      this.failed = null;
+    }
+  }
+
+  public int get_process_ms_avg_size() {
+    return (this.process_ms_avg == null) ? 0 : this.process_ms_avg.size();
+  }
+
+  public void put_to_process_ms_avg(String key, Map<GlobalStreamId,Double> val) {
+    if (this.process_ms_avg == null) {
+      this.process_ms_avg = new HashMap<String,Map<GlobalStreamId,Double>>();
+    }
+    this.process_ms_avg.put(key, val);
+  }
+
+  public Map<String,Map<GlobalStreamId,Double>> get_process_ms_avg() {
+    return this.process_ms_avg;
+  }
+
+  public void set_process_ms_avg(Map<String,Map<GlobalStreamId,Double>> process_ms_avg) {
+    this.process_ms_avg = process_ms_avg;
+  }
+
+  public void unset_process_ms_avg() {
+    this.process_ms_avg = null;
+  }
+
+  /** Returns true if field process_ms_avg is set (has been assigned a value) and false otherwise */
+  public boolean is_set_process_ms_avg() {
+    return this.process_ms_avg != null;
+  }
+
+  public void set_process_ms_avg_isSet(boolean value) {
+    if (!value) {
+      this.process_ms_avg = null;
+    }
+  }
+
+  public void setFieldValue(_Fields field, Object value) {
+    switch (field) {
+    case EMITTED:
+      if (value == null) {
+        unset_emitted();
+      } else {
+        set_emitted((Map<String,Map<String,Long>>)value);
+      }
+      break;
+
+    case SEND_TPS:
+      if (value == null) {
+        unset_send_tps();
+      } else {
+        set_send_tps((Map<String,Map<String,Double>>)value);
+      }
+      break;
+
+    case RECV_TPS:
+      if (value == null) {
+        unset_recv_tps();
+      } else {
+        set_recv_tps((Map<String,Map<GlobalStreamId,Double>>)value);
+      }
+      break;
+
+    case ACKED:
+      if (value == null) {
+        unset_acked();
+      } else {
+        set_acked((Map<String,Map<GlobalStreamId,Long>>)value);
+      }
+      break;
+
+    case FAILED:
+      if (value == null) {
+        unset_failed();
+      } else {
+        set_failed((Map<String,Map<GlobalStreamId,Long>>)value);
+      }
+      break;
+
+    case PROCESS_MS_AVG:
+      if (value == null) {
+        unset_process_ms_avg();
+      } else {
+        set_process_ms_avg((Map<String,Map<GlobalStreamId,Double>>)value);
+      }
+      break;
+
+    }
+  }
+
+  public Object getFieldValue(_Fields field) {
+    switch (field) {
+    case EMITTED:
+      return get_emitted();
+
+    case SEND_TPS:
+      return get_send_tps();
+
+    case RECV_TPS:
+      return get_recv_tps();
+
+    case ACKED:
+      return get_acked();
+
+    case FAILED:
+      return get_failed();
+
+    case PROCESS_MS_AVG:
+      return get_process_ms_avg();
+
+    }
+    throw new IllegalStateException();
+  }
+
+  /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+  public boolean isSet(_Fields field) {
+    if (field == null) {
+      throw new IllegalArgumentException();
+    }
+
+    switch (field) {
+    case EMITTED:
+      return is_set_emitted();
+    case SEND_TPS:
+      return is_set_send_tps();
+    case RECV_TPS:
+      return is_set_recv_tps();
+    case ACKED:
+      return is_set_acked();
+    case FAILED:
+      return is_set_failed();
+    case PROCESS_MS_AVG:
+      return is_set_process_ms_avg();
+    }
+    throw new IllegalStateException();
+  }
+
+  @Override
+  public boolean equals(Object that) {
+    if (that == null)
+      return false;
+    if (that instanceof TaskStats)
+      return this.equals((TaskStats)that);
+    return false;
+  }
+
+  public boolean equals(TaskStats that) {
+    if (that == null)
+      return false;
+
+    boolean this_present_emitted = true && this.is_set_emitted();
+    boolean that_present_emitted = true && that.is_set_emitted();
+    if (this_present_emitted || that_present_emitted) {
+      if (!(this_present_emitted && that_present_emitted))
+        return false;
+      if (!this.emitted.equals(that.emitted))
+        return false;
+    }
+
+    boolean this_present_send_tps = true && this.is_set_send_tps();
+    boolean that_present_send_tps = true && that.is_set_send_tps();
+    if (this_present_send_tps || that_present_send_tps) {
+      if (!(this_present_send_tps && that_present_send_tps))
+        return false;
+      if (!this.send_tps.equals(that.send_tps))
+        return false;
+    }
+
+    boolean this_present_recv_tps = true && this.is_set_recv_tps();
+    boolean that_present_recv_tps = true && that.is_set_recv_tps();
+    if (this_present_recv_tps || that_present_recv_tps) {
+      if (!(this_present_recv_tps && that_present_recv_tps))
+        return false;
+      if (!this.recv_tps.equals(that.recv_tps))
+        return false;
+    }
+
+    boolean this_present_acked = true && this.is_set_acked();
+    boolean that_present_acked = true && that.is_set_acked();
+    if (this_present_acked || that_present_acked) {
+      if (!(this_present_acked && that_present_acked))
+        return false;
+      if (!this.acked.equals(that.acked))
+        return false;
+    }
+
+    boolean this_present_failed = true && this.is_set_failed();
+    boolean that_present_failed = true && that.is_set_failed();
+    if (this_present_failed || that_present_failed) {
+      if (!(this_present_failed && that_present_failed))
+        return false;
+      if (!this.failed.equals(that.failed))
+        return false;
+    }
+
+    boolean this_present_process_ms_avg = true && this.is_set_process_ms_avg();
+    boolean that_present_process_ms_avg = true && that.is_set_process_ms_avg();
+    if (this_present_process_ms_avg || that_present_process_ms_avg) {
+      if (!(this_present_process_ms_avg && that_present_process_ms_avg))
+        return false;
+      if (!this.process_ms_avg.equals(that.process_ms_avg))
+        return false;
+    }
+
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    HashCodeBuilder builder = new HashCodeBuilder();
+
+    boolean present_emitted = true && (is_set_emitted());
+    builder.append(present_emitted);
+    if (present_emitted)
+      builder.append(emitted);
+
+    boolean present_send_tps = true && (is_set_send_tps());
+    builder.append(present_send_tps);
+    if (present_send_tps)
+      builder.append(send_tps);
+
+    boolean present_recv_tps = true && (is_set_recv_tps());
+    builder.append(present_recv_tps);
+    if (present_recv_tps)
+      builder.append(recv_tps);
+
+    boolean present_acked = true && (is_set_acked());
+    builder.append(present_acked);
+    if (present_acked)
+      builder.append(acked);
+
+    boolean present_failed = true && (is_set_failed());
+    builder.append(present_failed);
+    if (present_failed)
+      builder.append(failed);
+
+    boolean present_process_ms_avg = true && (is_set_process_ms_avg());
+    builder.append(present_process_ms_avg);
+    if (present_process_ms_avg)
+      builder.append(process_ms_avg);
+
+    return builder.toHashCode();
+  }
+
+  public int compareTo(TaskStats other) {
+    if (!getClass().equals(other.getClass())) {
+      return getClass().getName().compareTo(other.getClass().getName());
+    }
+
+    int lastComparison = 0;
+    TaskStats typedOther = (TaskStats)other;
+
+    lastComparison = Boolean.valueOf(is_set_emitted()).compareTo(typedOther.is_set_emitted());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_emitted()) {
+      lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.emitted, typedOther.emitted);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_send_tps()).compareTo(typedOther.is_set_send_tps());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_send_tps()) {
+      lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.send_tps, typedOther.send_tps);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_recv_tps()).compareTo(typedOther.is_set_recv_tps());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_recv_tps()) {
+      lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.recv_tps, typedOther.recv_tps);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_acked()).compareTo(typedOther.is_set_acked());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_acked()) {
+      lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.acked, typedOther.acked);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_failed()).compareTo(typedOther.is_set_failed());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_failed()) {
+      lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.failed, typedOther.failed);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_process_ms_avg()).compareTo(typedOther.is_set_process_ms_avg());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_process_ms_avg()) {
+      lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.process_ms_avg, typedOther.process_ms_avg);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    return 0;
+  }
+
+  public _Fields fieldForId(int fieldId) {
+    return _Fields.findByThriftId(fieldId);
+  }
+
+  public void read(org.apache.thrift7.protocol.TProtocol iprot) throws org.apache.thrift7.TException {
+    org.apache.thrift7.protocol.TField field;
+    iprot.readStructBegin();
+    while (true)
+    {
+      field = iprot.readFieldBegin();
+      if (field.type == org.apache.thrift7.protocol.TType.STOP) { 
+        break;
+      }
+      switch (field.id) {
+        case 1: // EMITTED
+          if (field.type == org.apache.thrift7.protocol.TType.MAP) {
+            {
+              org.apache.thrift7.protocol.TMap _map160 = iprot.readMapBegin();
+              this.emitted = new HashMap<String,Map<String,Long>>(2*_map160.size);
+              for (int _i161 = 0; _i161 < _map160.size; ++_i161)
+              {
+                String _key162; // required
+                Map<String,Long> _val163; // required
+                _key162 = iprot.readString();
+                {
+                  org.apache.thrift7.protocol.TMap _map164 = iprot.readMapBegin();
+                  _val163 = new HashMap<String,Long>(2*_map164.size);
+                  for (int _i165 = 0; _i165 < _map164.size; ++_i165)
+                  {
+                    String _key166; // required
+                    long _val167; // required
+                    _key166 = iprot.readString();
+                    _val167 = iprot.readI64();
+                    _val163.put(_key166, _val167);
+                  }
+                  iprot.readMapEnd();
+                }
+                this.emitted.put(_key162, _val163);
+              }
+              iprot.readMapEnd();
+            }
+          } else { 
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
+        case 2: // SEND_TPS
+          if (field.type == org.apache.thrift7.protocol.TType.MAP) {
+            {
+              org.apache.thrift7.protocol.TMap _map168 = iprot.readMapBegin();
+              this.send_tps = new HashMap<String,Map<String,Double>>(2*_map168.size);
+              for (int _i169 = 0; _i169 < _map168.size; ++_i169)
+              {
+                String _key170; // required
+                Map<String,Double> _val171; // required
+                _key170 = iprot.readString();
+                {
+                  org.apache.thrift7.protocol.TMap _map172 = iprot.readMapBegin();
+                  _val171 = new HashMap<String,Double>(2*_map172.size);
+                  for (int _i173 = 0; _i173 < _map172.size; ++_i173)
+                  {
+                    String _key174; // required
+                    double _val175; // required
+                    _key174 = iprot.readString();
+                    _val175 = iprot.readDouble();
+                    _val171.put(_key174, _val175);
+                  }
+                  iprot.readMapEnd();
+                }
+                this.send_tps.put(_key170, _val171);
+              }
+              iprot.readMapEnd();
+            }
+          } else { 
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
+        case 3: // RECV_TPS
+          if (field.type == org.apache.thrift7.protocol.TType.MAP) {
+            {
+              org.apache.thrift7.protocol.TMap _map176 = iprot.readMapBegin();
+              this.recv_tps = new HashMap<String,Map<GlobalStreamId,Double>>(2*_map176.size);
+              for (int _i177 = 0; _i177 < _map176.size; ++_i177)
+              {
+                String _key178; // required
+                Map<GlobalStreamId,Double> _val179; // required
+                _key178 = iprot.readString();
+                {
+                  org.apache.thrift7.protocol.TMap _map180 = iprot.readMapBegin();
+                  _val179 = new HashMap<GlobalStreamId,Double>(2*_map180.size);
+                  for (int _i181 = 0; _i181 < _map180.size; ++_i181)
+                  {
+                    GlobalStreamId _key182; // required
+                    double _val183; // required
+                    _key182 = new GlobalStreamId();
+                    _key182.read(iprot);
+                    _val183 = iprot.readDouble();
+                    _val179.put(_key182, _val183);
+                  }
+                  iprot.readMapEnd();
+                }
+                this.recv_tps.put(_key178, _val179);
+              }
+              iprot.readMapEnd();
+            }
+          } else { 
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
+        case 4: // ACKED
+          if (field.type == org.apache.thrift7.protocol.TType.MAP) {
+            {
+              org.apache.thrift7.protocol.TMap _map184 = iprot.readMapBegin();
+              this.acked = new HashMap<String,Map<GlobalStreamId,Long>>(2*_map184.size);
+              for (int _i185 = 0; _i185 < _map184.size; ++_i185)
+              {
+                String _key186; // required
+                Map<GlobalStreamId,Long> _val187; // required
+                _key186 = iprot.readString();
+                {
+                  org.apache.thrift7.protocol.TMap _map188 = iprot.readMapBegin();
+                  _val187 = new HashMap<GlobalStreamId,Long>(2*_map188.size);
+                  for (int _i189 = 0; _i189 < _map188.size; ++_i189)
+                  {
+                    GlobalStreamId _key190; // required
+                    long _val191; // required
+                    _key190 = new GlobalStreamId();
+                    _key190.read(iprot);
+                    _val191 = iprot.readI64();
+                    _val187.put(_key190, _val191);
+                  }
+                  iprot.readMapEnd();
+                }
+                this.acked.put(_key186, _val187);
+              }
+              iprot.readMapEnd();
+            }
+          } else { 
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
+        case 5: // FAILED
+          if (field.type == org.apache.thrift7.protocol.TType.MAP) {
+            {
+              org.apache.thrift7.protocol.TMap _map192 = iprot.readMapBegin();
+              this.failed = new HashMap<String,Map<GlobalStreamId,Long>>(2*_map192.size);
+              for (int _i193 = 0; _i193 < _map192.size; ++_i193)
+              {
+                String _key194; // required
+                Map<GlobalStreamId,Long> _val195; // required
+                _key194 = iprot.readString();
+                {
+                  org.apache.thrift7.protocol.TMap _map196 = iprot.readMapBegin();
+                  _val195 = new HashMap<GlobalStreamId,Long>(2*_map196.size);
+                  for (int _i197 = 0; _i197 < _map196.size; ++_i197)
+                  {
+                    GlobalStreamId _key198; // required
+                    long _val199; // required
+                    _key198 = new GlobalStreamId();
+                    _key198.read(iprot);
+                    _val199 = iprot.readI64();
+                    _val195.put(_key198, _val199);
+                  }
+                  iprot.readMapEnd();
+                }
+                this.failed.put(_key194, _val195);
+              }
+              iprot.readMapEnd();
+            }
+          } else { 
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
+        case 6: // PROCESS_MS_AVG
+          if (field.type == org.apache.thrift7.protocol.TType.MAP) {
+            {
+              org.apache.thrift7.protocol.TMap _map200 = iprot.readMapBegin();
+              this.process_ms_avg = new HashMap<String,Map<GlobalStreamId,Double>>(2*_map200.size);
+              for (int _i201 = 0; _i201 < _map200.size; ++_i201)
+              {
+                String _key202; // required
+                Map<GlobalStreamId,Double> _val203; // required
+                _key202 = iprot.readString();
+                {
+                  org.apache.thrift7.protocol.TMap _map204 = iprot.readMapBegin();
+                  _val203 = new HashMap<GlobalStreamId,Double>(2*_map204.size);
+                  for (int _i205 = 0; _i205 < _map204.size; ++_i205)
+                  {
+                    GlobalStreamId _key206; // required
+                    double _val207; // required
+                    _key206 = new GlobalStreamId();
+                    _key206.read(iprot);
+                    _val207 = iprot.readDouble();
+                    _val203.put(_key206, _val207);
+                  }
+                  iprot.readMapEnd();
+                }
+                this.process_ms_avg.put(_key202, _val203);
+              }
+              iprot.readMapEnd();
+            }
+          } else { 
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
+        default:
+          org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+      }
+      iprot.readFieldEnd();
+    }
+    iprot.readStructEnd();
+    validate();
+  }
+
+  public void write(org.apache.thrift7.protocol.TProtocol oprot) throws org.apache.thrift7.TException {
+    validate();
+
+    oprot.writeStructBegin(STRUCT_DESC);
+    if (this.emitted != null) {
+      oprot.writeFieldBegin(EMITTED_FIELD_DESC);
+      {
+        oprot.writeMapBegin(new org.apache.thrift7.protocol.TMap(org.apache.thrift7.protocol.TType.STRING, org.apache.thrift7.protocol.TType.MAP, this.emitted.size()));
+        for (Map.Entry<String, Map<String,Long>> _iter208 : this.emitted.entrySet())
+        {
+          oprot.writeString(_iter208.getKey());
+          {
+            oprot.writeMapBegin(new org.apache.thrift7.protocol.TMap(org.apache.thrift7.protocol.TType.STRING, org.apache.thrift7.protocol.TType.I64, _iter208.getValue().size()));
+            for (Map.Entry<String, Long> _iter209 : _iter208.getValue().entrySet())
+            {
+              oprot.writeString(_iter209.getKey());
+              oprot.writeI64(_iter209.getValue());
+            }
+            oprot.writeMapEnd();
+          }
+        }
+        oprot.writeMapEnd();
+      }
+      oprot.writeFieldEnd();
+    }
+    if (this.send_tps != null) {
+      oprot.writeFieldBegin(SEND_TPS_FIELD_DESC);
+      {
+        oprot.writeMapBegin(new org.apache.thrift7.protocol.TMap(org.apache.thrift7.protocol.TType.STRING, org.apache.thrift7.protocol.TType.MAP, this.send_tps.size()));
+        for (Map.Entry<String, Map<String,Double>> _iter210 : this.send_tps.entrySet())
+        {
+          oprot.writeString(_iter210.getKey());
+          {
+            oprot.writeMapBegin(new org.apache.thrift7.protocol.TMap(org.apache.thrift7.protocol.TType.STRING, org.apache.thrift7.protocol.TType.DOUBLE, _iter210.getValue().size()));
+            for (Map.Entry<String, Double> _iter211 : _iter210.getValue().entrySet())
+            {
+              oprot.writeString(_iter211.getKey());
+              oprot.writeDouble(_iter211.getValue());
+            }
+            oprot.writeMapEnd();
+          }
+        }
+        oprot.writeMapEnd();
+      }
+      oprot.writeFieldEnd();
+    }
+    if (this.recv_tps != null) {
+      oprot.writeFieldBegin(RECV_TPS_FIELD_DESC);
+      {
+        oprot.writeMapBegin(new org.apache.thrift7.protocol.TMap(org.apache.thrift7.protocol.TType.STRING, org.apache.thrift7.protocol.TType.MAP, this.recv_tps.size()));
+        for (Map.Entry<String, Map<GlobalStreamId,Double>> _iter212 : this.recv_tps.entrySet())
+        {
+          oprot.writeString(_iter212.getKey());
+          {
+            oprot.writeMapBegin(new org.apache.thrift7.protocol.TMap(org.apache.thrift7.protocol.TType.STRUCT, org.apache.thrift7.protocol.TType.DOUBLE, _iter212.getValue().size()));
+            for (Map.Entry<GlobalStreamId, Double> _iter213 : _iter212.getValue().entrySet())
+            {
+              _iter213.getKey().write(oprot);
+              oprot.writeDouble(_iter213.getValue());
+            }
+            oprot.writeMapEnd();
+          }
+        }
+        oprot.writeMapEnd();
+      }
+      oprot.writeFieldEnd();
+    }
+    if (this.acked != null) {
+      oprot.writeFieldBegin(ACKED_FIELD_DESC);
+      {
+        oprot.writeMapBegin(new org.apache.thrift7.protocol.TMap(org.apache.thrift7.protocol.TType.STRING, org.apache.thrift7.protocol.TType.MAP, this.acked.size()));
+        for (Map.Entry<String, Map<GlobalStreamId,Long>> _iter214 : this.acked.entrySet())
+        {
+          oprot.writeString(_iter214.getKey());
+          {
+            oprot.writeMapBegin(new org.apache.thrift7.protocol.TMap(org.apache.thrift7.protocol.TType.STRUCT, org.apache.thrift7.protocol.TType.I64, _iter214.getValue().size()));
+            for (Map.Entry<GlobalStreamId, Long> _iter215 : _iter214.getValue().entrySet())
+            {
+              _iter215.getKey().write(oprot);
+              oprot.writeI64(_iter215.getValue());
+            }
+            oprot.writeMapEnd();
+          }
+        }
+        oprot.writeMapEnd();
+      }
+      oprot.writeFieldEnd();
+    }
+    if (this.failed != null) {
+      oprot.writeFieldBegin(FAILED_FIELD_DESC);
+      {
+        oprot.writeMapBegin(new org.apache.thrift7.protocol.TMap(org.apache.thrift7.protocol.TType.STRING, org.apache.thrift7.protocol.TType.MAP, this.failed.size()));
+        for (Map.Entry<String, Map<GlobalStreamId,Long>> _iter216 : this.failed.entrySet())
+        {
+          oprot.writeString(_iter216.getKey());
+          {
+            oprot.writeMapBegin(new org.apache.thrift7.protocol.TMap(org.apache.thrift7.protocol.TType.STRUCT, org.apache.thrift7.protocol.TType.I64, _iter216.getValue().size()));
+            for (Map.Entry<GlobalStreamId, Long> _iter217 : _iter216.getValue().entrySet())
+            {
+              _iter217.getKey().write(oprot);
+              oprot.writeI64(_iter217.getValue());
+            }
+            oprot.writeMapEnd();
+          }
+        }
+        oprot.writeMapEnd();
+      }
+      oprot.writeFieldEnd();
+    }
+    if (this.process_ms_avg != null) {
+      oprot.writeFieldBegin(PROCESS_MS_AVG_FIELD_DESC);
+      {
+        oprot.writeMapBegin(new org.apache.thrift7.protocol.TMap(org.apache.thrift7.protocol.TType.STRING, org.apache.thrift7.protocol.TType.MAP, this.process_ms_avg.size()));
+        for (Map.Entry<String, Map<GlobalStreamId,Double>> _iter218 : this.process_ms_avg.entrySet())
+        {
+          oprot.writeString(_iter218.getKey());
+          {
+            oprot.writeMapBegin(new org.apache.thrift7.protocol.TMap(org.apache.thrift7.protocol.TType.STRUCT, org.apache.thrift7.protocol.TType.DOUBLE, _iter218.getValue().size()));
+            for (Map.Entry<GlobalStreamId, Double> _iter219 : _iter218.getValue().entrySet())
+            {
+              _iter219.getKey().write(oprot);
+              oprot.writeDouble(_iter219.getValue());
+            }
+            oprot.writeMapEnd();
+          }
+        }
+        oprot.writeMapEnd();
+      }
+      oprot.writeFieldEnd();
+    }
+    oprot.writeFieldStop();
+    oprot.writeStructEnd();
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder("TaskStats(");
+    boolean first = true;
+
+    sb.append("emitted:");
+    if (this.emitted == null) {
+      sb.append("null");
+    } else {
+      sb.append(this.emitted);
+    }
+    first = false;
+    if (!first) sb.append(", ");
+    sb.append("send_tps:");
+    if (this.send_tps == null) {
+      sb.append("null");
+    } else {
+      sb.append(this.send_tps);
+    }
+    first = false;
+    if (!first) sb.append(", ");
+    sb.append("recv_tps:");
+    if (this.recv_tps == null) {
+      sb.append("null");
+    } else {
+      sb.append(this.recv_tps);
+    }
+    first = false;
+    if (!first) sb.append(", ");
+    sb.append("acked:");
+    if (this.acked == null) {
+      sb.append("null");
+    } else {
+      sb.append(this.acked);
+    }
+    first = false;
+    if (!first) sb.append(", ");
+    sb.append("failed:");
+    if (this.failed == null) {
+      sb.append("null");
+    } else {
+      sb.append(this.failed);
+    }
+    first = false;
+    if (!first) sb.append(", ");
+    sb.append("process_ms_avg:");
+    if (this.process_ms_avg == null) {
+      sb.append("null");
+    } else {
+      sb.append(this.process_ms_avg);
+    }
+    first = false;
+    sb.append(")");
+    return sb.toString();
+  }
+
+  public void validate() throws org.apache.thrift7.TException {
+    // check for required fields
+    if (!is_set_emitted()) {
+      throw new org.apache.thrift7.protocol.TProtocolException("Required field 'emitted' is unset! Struct:" + toString());
+    }
+
+    if (!is_set_send_tps()) {
+      throw new org.apache.thrift7.protocol.TProtocolException("Required field 'send_tps' is unset! Struct:" + toString());
+    }
+
+    if (!is_set_recv_tps()) {
+      throw new org.apache.thrift7.protocol.TProtocolException("Required field 'recv_tps' is unset! Struct:" + toString());
+    }
+
+    if (!is_set_acked()) {
+      throw new org.apache.thrift7.protocol.TProtocolException("Required field 'acked' is unset! Struct:" + toString());
+    }
+
+    if (!is_set_failed()) {
+      throw new org.apache.thrift7.protocol.TProtocolException("Required field 'failed' is unset! Struct:" + toString());
+    }
+
+    if (!is_set_process_ms_avg()) {
+      throw new org.apache.thrift7.protocol.TProtocolException("Required field 'process_ms_avg' is unset! Struct:" + toString());
+    }
+
+  }
+
+  private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+    try {
+      write(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(out)));
+    } catch (org.apache.thrift7.TException te) {
+      throw new java.io.IOException(te);
+    }
+  }
+
+  private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+    try {
+      read(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(in)));
+    } catch (org.apache.thrift7.TException te) {
+      throw new java.io.IOException(te);
+    }
+  }
 
 }
+

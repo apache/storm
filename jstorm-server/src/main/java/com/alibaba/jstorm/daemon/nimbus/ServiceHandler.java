@@ -20,7 +20,7 @@ import java.util.UUID;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
-import org.apache.thrift.TException;
+import org.apache.thrift7.TException;
 
 import backtype.storm.Config;
 import backtype.storm.daemon.Shutdownable;

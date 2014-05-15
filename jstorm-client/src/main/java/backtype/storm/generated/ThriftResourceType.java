@@ -8,9 +8,9 @@ package backtype.storm.generated;
 
 import java.util.Map;
 import java.util.HashMap;
-import org.apache.thrift.TEnum;
+import org.apache.thrift7.TEnum;
 
-public enum ThriftResourceType implements org.apache.thrift.TEnum {
+public enum ThriftResourceType implements org.apache.thrift7.TEnum {
   UNKNOWN(1),
   CPU(2),
   MEM(3),

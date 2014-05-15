@@ -16,10 +16,10 @@ import org.apache.commons.io.monitor.FileAlterationListenerAdaptor;
 import org.apache.commons.io.monitor.FileAlterationMonitor;
 import org.apache.commons.io.monitor.FileAlterationObserver;
 import org.apache.log4j.Logger;
-import org.apache.thrift.protocol.TBinaryProtocol;
-import org.apache.thrift.server.THsHaServer;
-import org.apache.thrift.transport.TNonblockingServerSocket;
-import org.apache.thrift.transport.TTransportException;
+import org.apache.thrift7.protocol.TBinaryProtocol;
+import org.apache.thrift7.server.THsHaServer;
+import org.apache.thrift7.transport.TNonblockingServerSocket;
+import org.apache.thrift7.transport.TTransportException;
 import org.ini4j.Ini;
 import org.ini4j.Profile.Section;
 

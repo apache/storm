@@ -74,7 +74,11 @@ public class SpoutExecutors extends BaseExecutors implements EventHandler {
 
 		this.max_spout_pending = JStormUtils.parseInt(storm_conf
 				.get(Config.TOPOLOGY_MAX_SPOUT_PENDING));
-		if (max_spout_pending != null && max_spout_pending.intValue() == 1) {
+		
+		if (ConfigExtension.isSpoutSingleThread(_storm_conf) == true) {
+			LOG.info("Setting spout single thread");
+			supportRecvThread = false;
+		}else if (max_spout_pending != null && max_spout_pending.intValue() == 1) {
 			LOG.info("Do recv/ack in execute thread");
 			supportRecvThread = false;
 		} else {

@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>storm</groupId>
 	<artifactId>sequence-split-merge</artifactId>
-	<version>1.0.6</version>
+	<version>1.0.7</version>
 	<packaging>jar</packaging>
 
 	<name>sequence-split-merge</name>
@@ -33,21 +33,21 @@
 		<dependency>
 			<groupId>com.alibaba.jstorm</groupId>
 			<artifactId>jstorm-client</artifactId>
-			<version>0.9.2</version>
+			<version>0.9.3.1</version>
 			<scope>provided</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>com.alibaba.jstorm</groupId>
 			<artifactId>jstorm-client-extension</artifactId>
-			<version>0.9.2</version>
+			<version>0.9.3.1</version>
 			<scope>provided</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>com.alibaba.jstorm</groupId>
 			<artifactId>jstorm-server</artifactId>
-			<version>0.9.2</version>
+			<version>0.9.3.1</version>
 			<scope>provided</scope>
 		</dependency>
 

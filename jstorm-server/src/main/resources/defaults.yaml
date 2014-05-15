@@ -196,6 +196,9 @@ topology.debug.recv.tuple: false
 # the default setting is 30 seconds
 spout.delay.run: 30
 
+#Force spout use single thread
+spout.single.thread: false
+
 # One memory slot size, the unit size of memory, the default setting is 1G
 # For example , if it is 1G, and one task set "memory.slots.per.task" as 2
 # then the task will use 2G memory

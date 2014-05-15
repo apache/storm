@@ -22,7 +22,6 @@ import backtype.storm.generated.StormTopology;
 import backtype.storm.generated.TaskSummary;
 import backtype.storm.generated.TopologyInfo;
 import backtype.storm.utils.NimbusClient;
-import backtype.storm.utils.Utils;
 
 import com.alibaba.jstorm.common.stats.StatBuckets;
 import com.alibaba.jstorm.ui.UIUtils;

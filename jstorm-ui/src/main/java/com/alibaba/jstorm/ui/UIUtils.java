@@ -3,8 +3,6 @@ package com.alibaba.jstorm.ui;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -17,10 +15,10 @@ import java.util.TreeMap;
 
 import javax.faces.context.FacesContext;
 
-import org.apache.thrift.protocol.TBinaryProtocol;
-import org.apache.thrift.transport.TFramedTransport;
-import org.apache.thrift.transport.TSocket;
-import org.apache.thrift.transport.TTransportException;
+import org.apache.thrift7.protocol.TBinaryProtocol;
+import org.apache.thrift7.transport.TFramedTransport;
+import org.apache.thrift7.transport.TSocket;
+import org.apache.thrift7.transport.TTransportException;
 import org.yaml.snakeyaml.Yaml;
 
 import backtype.storm.Config;
@@ -50,7 +48,6 @@ import com.alibaba.jstorm.ui.model.SupervisorSumm;
 import com.alibaba.jstorm.ui.model.TopologySumm;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.NetWorkUtils;
-import com.google.common.collect.Lists;
 
 public class UIUtils {
 

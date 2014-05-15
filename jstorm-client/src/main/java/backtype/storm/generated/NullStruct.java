@@ -21,224 +21,205 @@ import java.util.Arrays;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class NullStruct implements
-		org.apache.thrift.TBase<NullStruct, NullStruct._Fields>,
-		java.io.Serializable, Cloneable {
-	private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct(
-			"NullStruct");
+public class NullStruct implements org.apache.thrift7.TBase<NullStruct, NullStruct._Fields>, java.io.Serializable, Cloneable {
+  private static final org.apache.thrift7.protocol.TStruct STRUCT_DESC = new org.apache.thrift7.protocol.TStruct("NullStruct");
 
-	/**
-	 * The set of fields this struct contains, along with convenience methods
-	 * for finding and manipulating them.
-	 */
-	public enum _Fields implements org.apache.thrift.TFieldIdEnum {
-		;
 
-		private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
-		static {
-			for (_Fields field : EnumSet.allOf(_Fields.class)) {
-				byName.put(field.getFieldName(), field);
-			}
-		}
+  /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+  public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
+;
 
-		/**
-		 * Find the _Fields constant that matches fieldId, or null if its not
-		 * found.
-		 */
-		public static _Fields findByThriftId(int fieldId) {
-			switch (fieldId) {
-			default:
-				return null;
-			}
-		}
+    private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
-		/**
-		 * Find the _Fields constant that matches fieldId, throwing an exception
-		 * if it is not found.
-		 */
-		public static _Fields findByThriftIdOrThrow(int fieldId) {
-			_Fields fields = findByThriftId(fieldId);
-			if (fields == null)
-				throw new IllegalArgumentException("Field " + fieldId
-						+ " doesn't exist!");
-			return fields;
-		}
+    static {
+      for (_Fields field : EnumSet.allOf(_Fields.class)) {
+        byName.put(field.getFieldName(), field);
+      }
+    }
 
-		/**
-		 * Find the _Fields constant that matches name, or null if its not
-		 * found.
-		 */
-		public static _Fields findByName(String name) {
-			return byName.get(name);
-		}
+    /**
+     * Find the _Fields constant that matches fieldId, or null if its not found.
+     */
+    public static _Fields findByThriftId(int fieldId) {
+      switch(fieldId) {
+        default:
+          return null;
+      }
+    }
 
-		private final short _thriftId;
-		private final String _fieldName;
+    /**
+     * Find the _Fields constant that matches fieldId, throwing an exception
+     * if it is not found.
+     */
+    public static _Fields findByThriftIdOrThrow(int fieldId) {
+      _Fields fields = findByThriftId(fieldId);
+      if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+      return fields;
+    }
 
-		_Fields(short thriftId, String fieldName) {
-			_thriftId = thriftId;
-			_fieldName = fieldName;
-		}
+    /**
+     * Find the _Fields constant that matches name, or null if its not found.
+     */
+    public static _Fields findByName(String name) {
+      return byName.get(name);
+    }
 
-		public short getThriftFieldId() {
-			return _thriftId;
-		}
+    private final short _thriftId;
+    private final String _fieldName;
 
-		public String getFieldName() {
-			return _fieldName;
-		}
-	}
+    _Fields(short thriftId, String fieldName) {
+      _thriftId = thriftId;
+      _fieldName = fieldName;
+    }
 
-	public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
-	static {
-		Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(
-				_Fields.class);
-		metaDataMap = Collections.unmodifiableMap(tmpMap);
-		org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(
-				NullStruct.class, metaDataMap);
-	}
+    public short getThriftFieldId() {
+      return _thriftId;
+    }
 
-	public NullStruct() {
-	}
+    public String getFieldName() {
+      return _fieldName;
+    }
+  }
+  public static final Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> metaDataMap;
+  static {
+    Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift7.meta_data.FieldMetaData>(_Fields.class);
+    metaDataMap = Collections.unmodifiableMap(tmpMap);
+    org.apache.thrift7.meta_data.FieldMetaData.addStructMetaDataMap(NullStruct.class, metaDataMap);
+  }
 
-	/**
-	 * Performs a deep copy on <i>other</i>.
-	 */
-	public NullStruct(NullStruct other) {
-	}
+  public NullStruct() {
+  }
 
-	public NullStruct deepCopy() {
-		return new NullStruct(this);
-	}
+  /**
+   * Performs a deep copy on <i>other</i>.
+   */
+  public NullStruct(NullStruct other) {
+  }
 
-	@Override
-	public void clear() {
-	}
+  public NullStruct deepCopy() {
+    return new NullStruct(this);
+  }
 
-	public void setFieldValue(_Fields field, Object value) {
-		switch (field) {
-		}
-	}
+  @Override
+  public void clear() {
+  }
 
-	public Object getFieldValue(_Fields field) {
-		switch (field) {
-		}
-		throw new IllegalStateException();
-	}
+  public void setFieldValue(_Fields field, Object value) {
+    switch (field) {
+    }
+  }
 
-	/**
-	 * Returns true if field corresponding to fieldID is set (has been assigned
-	 * a value) and false otherwise
-	 */
-	public boolean isSet(_Fields field) {
-		if (field == null) {
-			throw new IllegalArgumentException();
-		}
+  public Object getFieldValue(_Fields field) {
+    switch (field) {
+    }
+    throw new IllegalStateException();
+  }
 
-		switch (field) {
-		}
-		throw new IllegalStateException();
-	}
+  /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+  public boolean isSet(_Fields field) {
+    if (field == null) {
+      throw new IllegalArgumentException();
+    }
 
-	@Override
-	public boolean equals(Object that) {
-		if (that == null)
-			return false;
-		if (that instanceof NullStruct)
-			return this.equals((NullStruct) that);
-		return false;
-	}
+    switch (field) {
+    }
+    throw new IllegalStateException();
+  }
 
-	public boolean equals(NullStruct that) {
-		if (that == null)
-			return false;
+  @Override
+  public boolean equals(Object that) {
+    if (that == null)
+      return false;
+    if (that instanceof NullStruct)
+      return this.equals((NullStruct)that);
+    return false;
+  }
 
-		return true;
-	}
+  public boolean equals(NullStruct that) {
+    if (that == null)
+      return false;
 
-	@Override
-	public int hashCode() {
-		HashCodeBuilder builder = new HashCodeBuilder();
+    return true;
+  }
 
-		return builder.toHashCode();
-	}
+  @Override
+  public int hashCode() {
+    HashCodeBuilder builder = new HashCodeBuilder();
 
-	public int compareTo(NullStruct other) {
-		if (!getClass().equals(other.getClass())) {
-			return getClass().getName().compareTo(other.getClass().getName());
-		}
+    return builder.toHashCode();
+  }
 
-		int lastComparison = 0;
-		NullStruct typedOther = (NullStruct) other;
+  public int compareTo(NullStruct other) {
+    if (!getClass().equals(other.getClass())) {
+      return getClass().getName().compareTo(other.getClass().getName());
+    }
 
-		return 0;
-	}
+    int lastComparison = 0;
+    NullStruct typedOther = (NullStruct)other;
 
-	public _Fields fieldForId(int fieldId) {
-		return _Fields.findByThriftId(fieldId);
-	}
+    return 0;
+  }
 
-	public void read(org.apache.thrift.protocol.TProtocol iprot)
-			throws org.apache.thrift.TException {
-		org.apache.thrift.protocol.TField field;
-		iprot.readStructBegin();
-		while (true) {
-			field = iprot.readFieldBegin();
-			if (field.type == org.apache.thrift.protocol.TType.STOP) {
-				break;
-			}
-			switch (field.id) {
-			default:
-				org.apache.thrift.protocol.TProtocolUtil
-						.skip(iprot, field.type);
-			}
-			iprot.readFieldEnd();
-		}
-		iprot.readStructEnd();
-		validate();
-	}
+  public _Fields fieldForId(int fieldId) {
+    return _Fields.findByThriftId(fieldId);
+  }
 
-	public void write(org.apache.thrift.protocol.TProtocol oprot)
-			throws org.apache.thrift.TException {
-		validate();
+  public void read(org.apache.thrift7.protocol.TProtocol iprot) throws org.apache.thrift7.TException {
+    org.apache.thrift7.protocol.TField field;
+    iprot.readStructBegin();
+    while (true)
+    {
+      field = iprot.readFieldBegin();
+      if (field.type == org.apache.thrift7.protocol.TType.STOP) { 
+        break;
+      }
+      switch (field.id) {
+        default:
+          org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+      }
+      iprot.readFieldEnd();
+    }
+    iprot.readStructEnd();
+    validate();
+  }
 
-		oprot.writeStructBegin(STRUCT_DESC);
-		oprot.writeFieldStop();
-		oprot.writeStructEnd();
-	}
+  public void write(org.apache.thrift7.protocol.TProtocol oprot) throws org.apache.thrift7.TException {
+    validate();
 
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder("NullStruct(");
-		boolean first = true;
+    oprot.writeStructBegin(STRUCT_DESC);
+    oprot.writeFieldStop();
+    oprot.writeStructEnd();
+  }
 
-		sb.append(")");
-		return sb.toString();
-	}
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder("NullStruct(");
+    boolean first = true;
 
-	public void validate() throws org.apache.thrift.TException {
-		// check for required fields
-	}
+    sb.append(")");
+    return sb.toString();
+  }
 
-	private void writeObject(java.io.ObjectOutputStream out)
-			throws java.io.IOException {
-		try {
-			write(new org.apache.thrift.protocol.TCompactProtocol(
-					new org.apache.thrift.transport.TIOStreamTransport(out)));
-		} catch (org.apache.thrift.TException te) {
-			throw new java.io.IOException(te);
-		}
-	}
+  public void validate() throws org.apache.thrift7.TException {
+    // check for required fields
+  }
 
-	private void readObject(java.io.ObjectInputStream in)
-			throws java.io.IOException, ClassNotFoundException {
-		try {
-			read(new org.apache.thrift.protocol.TCompactProtocol(
-					new org.apache.thrift.transport.TIOStreamTransport(in)));
-		} catch (org.apache.thrift.TException te) {
-			throw new java.io.IOException(te);
-		}
-	}
+  private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+    try {
+      write(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(out)));
+    } catch (org.apache.thrift7.TException te) {
+      throw new java.io.IOException(te);
+    }
+  }
+
+  private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+    try {
+      read(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(in)));
+    } catch (org.apache.thrift7.TException te) {
+      throw new java.io.IOException(te);
+    }
+  }
 
 }
+

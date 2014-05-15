@@ -10,12 +10,9 @@ import javax.faces.bean.ManagedBean;
 import javax.faces.bean.ViewScoped;
 
 import org.apache.log4j.Logger;
-import org.apache.thrift.TException;
 
 import backtype.storm.Config;
 import backtype.storm.generated.ClusterSummary;
-import backtype.storm.generated.SupervisorSummary;
-import backtype.storm.generated.TopologySummary;
 import backtype.storm.utils.NimbusClient;
 
 import com.alibaba.jstorm.cluster.ClusterState;

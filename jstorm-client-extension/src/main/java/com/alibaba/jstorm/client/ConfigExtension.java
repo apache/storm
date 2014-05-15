@@ -506,5 +506,15 @@ public class ConfigExtension {
 	public static boolean isJavaSandBoxEnable(Map conf) {
 		return JStormUtils.parseBoolean(conf.get(JAVA_SANDBOX_ENABLE), false);
 	}
+	
+	protected static String SPOUT_SINGLE_THREAD = "spout.single.thread";
+	
+	public static boolean isSpoutSingleThread(Map conf) {
+		return JStormUtils.parseBoolean(conf.get(SPOUT_SINGLE_THREAD), false);
+	}
+	
+	public static void setSpoutSingleThread(Map conf, boolean enable) {
+		conf.put(SPOUT_SINGLE_THREAD, enable);
+	}
 
 }

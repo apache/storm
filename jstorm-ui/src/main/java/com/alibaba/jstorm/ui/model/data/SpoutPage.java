@@ -10,14 +10,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.TreeMap;
 
 import javax.faces.bean.ManagedBean;
 import javax.faces.bean.ViewScoped;
 import javax.faces.context.FacesContext;
 
 import org.apache.log4j.Logger;
-import org.apache.thrift.TException;
+import org.apache.thrift7.TException;
 
 import backtype.storm.generated.GlobalStreamId;
 import backtype.storm.generated.NotAliveException;
@@ -30,8 +29,6 @@ import backtype.storm.utils.NimbusClient;
 import com.alibaba.jstorm.common.stats.StatBuckets;
 import com.alibaba.jstorm.common.stats.StaticsType;
 import com.alibaba.jstorm.ui.UIUtils;
-import com.alibaba.jstorm.ui.model.ComponentInput;
-import com.alibaba.jstorm.ui.model.ComponentOutput;
 import com.alibaba.jstorm.ui.model.ComponentSummary;
 import com.alibaba.jstorm.ui.model.ComponentTask;
 import com.alibaba.jstorm.ui.model.SpoutOutput;

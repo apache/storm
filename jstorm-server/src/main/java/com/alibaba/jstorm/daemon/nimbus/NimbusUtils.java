@@ -164,7 +164,7 @@ public class NimbusUtils {
 		Integer ackerNum = JStormUtils.parseInt(totalConf
 				.get(Config.TOPOLOGY_ACKER_EXECUTORS));
 		if (ackerNum == null) {
-			ackerNum = Integer.valueOf(0);
+			ackerNum = Integer.valueOf(1);
 		}
 
 		Map rtn = new HashMap();
@@ -592,7 +592,7 @@ public class NimbusUtils {
 				zkReportTime = zkTaskHeartbeat.getTimeSecs();
 			}
 		} catch (Exception e) {
-			LOG.error("Failed to get ZK task hearbeat " + idStr);
+			LOG.error("Failed to get ZK task hearbeat " + idStr, e);
 			return true;
 		}
 

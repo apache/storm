@@ -5,10 +5,10 @@ import java.util.Map;
 
 import javax.security.auth.login.Configuration;
 
-import org.apache.thrift.TProcessor;
-import org.apache.thrift.server.TServer;
-import org.apache.thrift.transport.TTransport;
-import org.apache.thrift.transport.TTransportException;
+import org.apache.thrift7.TProcessor;
+import org.apache.thrift7.server.TServer;
+import org.apache.thrift7.transport.TTransport;
+import org.apache.thrift7.transport.TTransportException;
 
 /**
  * Interface for Thrift Transport plugin
