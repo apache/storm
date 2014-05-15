@@ -499,6 +499,12 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_DEBUG = "topology.debug";
     public static final Object TOPOLOGY_DEBUG_SCHEMA = Boolean.class;
 
+    /**
+     * The serializer for communication between shell components and non-JVM
+     * processes
+     */
+    public static final String TOPOLOGY_MULTILANG_SERIALIZER = "topology.multilang.serializer";
+    public static final Object TOPOLOGY_MULTILANG_SERIALIZER_SCHEMA = String.class;
 
     /**
      * Whether or not the master should optimize topologies by running multiple
