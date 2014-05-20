@@ -62,9 +62,9 @@ public class Context implements IContext {
             clientChannelFactory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(bossFactory),
                     Executors.newCachedThreadPool(workerFactory));
         }
-        
-        int workers = Utils.getInt(storm_conf.get(Config.TOPOLOGY_WORKERS));
-        int poolSize = Math.min(workers, MAX_CLIENT_SCHEDULER_THREAD_POOL_SIZE); 
+
+        int otherWorkers = Utils.getInt(storm_conf.get(Config.TOPOLOGY_WORKERS)) - 1;
+        int poolSize = Math.min(Math.max(1, otherWorkers), MAX_CLIENT_SCHEDULER_THREAD_POOL_SIZE);
         clientScheduleService = Executors.newScheduledThreadPool(poolSize, new NettyRenameThreadFactory("client-schedule-service"));
     }
 
