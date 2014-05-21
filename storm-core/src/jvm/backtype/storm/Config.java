@@ -404,7 +404,12 @@ public class Config extends HashMap<String, Object> {
     public static final String SUPERVISOR_SLOTS_PORTS = "supervisor.slots.ports";
     public static final Object SUPERVISOR_SLOTS_PORTS_SCHEMA = ConfigValidation.NumbersValidator;
 
-
+    /**
+     * Num of workers managed by single supervisor
+     */
+    public static final String SUPERVISOR_SLOTS = "supervisor.slots";
+    public static final Object SUPERVISOR_SLOTS_SCHEMA = Number.class;
+    
     /**
      * This parameter is used by the storm-deploy project to configure the
      * jvm options for the supervisor daemon.
