@@ -67,7 +67,7 @@ public class Utils {
             throw new RuntimeException(e);
         }
     }
-    
+
     public static byte[] serialize(Object obj) {
         try {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -113,7 +113,7 @@ public class Utils {
             throw new RuntimeException(e);
         }
     }
-    
+
     public static List<URL> findResources(String name) {
         try {
             Enumeration<URL> resources = Thread.currentThread().getContextClassLoader().getResources(name);
@@ -148,10 +148,10 @@ public class Utils {
                 input.close();
             }
             if(ret==null) ret = new HashMap();
-            
+
 
             return new HashMap(ret);
-            
+
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -164,7 +164,7 @@ public class Utils {
     public static Map readDefaultConfig() {
         return findAndReadConfigFile("defaults.yaml", true);
     }
-    
+
     public static Map readCommandLineOpts() {
         Map ret = new HashMap();
         String commandOptions = System.getProperty("storm.options");
@@ -198,7 +198,7 @@ public class Utils {
         ret.putAll(readCommandLineOpts());
         return ret;
     }
-    
+
     private static Object normalizeConf(Object conf) {
         if(conf==null) return new HashMap();
         if(conf instanceof Map) {
@@ -223,7 +223,7 @@ public class Utils {
             return conf;
         }
     }
-    
+
     public static boolean isValidConf(Map<String, Object> stormConf) {
         return normalizeConf(stormConf).equals(normalizeConf((Map) JSONValue.parse(JSONValue.toJSONString(stormConf))));
     }
@@ -245,7 +245,7 @@ public class Utils {
         }
         return ret;
     }
-    
+
     public static List<Object> tuple(Object... values) {
         List<Object> ret = new ArrayList<Object>();
         for(Object v: values) {
@@ -265,20 +265,20 @@ public class Utils {
         }
         out.close();
     }
-    
+
     public static IFn loadClojureFn(String namespace, String name) {
         try {
           clojure.lang.Compiler.eval(RT.readString("(require '" + namespace + ")"));
         } catch (Exception e) {
           //if playing from the repl and defining functions, file won't exist
         }
-        return (IFn) RT.var(namespace, name).deref();        
+        return (IFn) RT.var(namespace, name).deref();
     }
-    
+
     public static boolean isSystemId(String id) {
         return id.startsWith("__");
     }
-        
+
     public static <K, V> Map<V, K> reverseMap(Map<K, V> map) {
         Map<V, K> ret = new HashMap<V, K>();
         for(K key: map.keySet()) {
@@ -286,7 +286,7 @@ public class Utils {
         }
         return ret;
     }
-    
+
     public static ComponentCommon getComponentCommon(StormTopology topology, String id) {
         if(topology.get_spouts().containsKey(id)) {
             return topology.get_spouts().get(id).get_common();
@@ -299,7 +299,7 @@ public class Utils {
         }
         throw new IllegalArgumentException("Could not find component with id " + id);
     }
-    
+
     public static Integer getInt(Object o) {
         if(o instanceof Long) {
             return ((Long) o ).intValue();
@@ -307,16 +307,18 @@ public class Utils {
             return (Integer) o;
         } else if (o instanceof Short) {
             return ((Short) o).intValue();
+        } else if (o instanceof String) {
+            return Integer.parseInt((String) o);
         } else {
             throw new IllegalArgumentException("Don't know how to convert " + o + " + to int");
         }
     }
-    
+
     public static long secureRandomLong() {
         return UUID.randomUUID().getLeastSignificantBits();
     }
-    
-    
+
+
     public static CuratorFramework newCurator(Map conf, List<String> servers, Object port, String root) {
         return newCurator(conf, servers, port, root, null);
     }
@@ -325,7 +327,7 @@ public class Utils {
 
         protected final int maxRetryInterval;
 
-        public BoundedExponentialBackoffRetry(int baseSleepTimeMs, 
+        public BoundedExponentialBackoffRetry(int baseSleepTimeMs,
                 int maxRetries, int maxSleepTimeMs) {
             super(baseSleepTimeMs, maxRetries);
             this.maxRetryInterval = maxSleepTimeMs;
@@ -378,8 +380,8 @@ public class Utils {
         CuratorFramework ret = newCurator(conf, servers, port);
         ret.start();
         return ret;
-    }    
-    
+    }
+
     /**
      *
 (defn integer-divided [sum num-pieces]
@@ -392,9 +394,9 @@ public class Utils {
       )))
      * @param sum
      * @param numPieces
-     * @return 
+     * @return
      */
-    
+
     public static TreeMap<Integer, Integer> integerDivided(int sum, int numPieces) {
         int base = sum / numPieces;
         int numInc = sum % numPieces;
