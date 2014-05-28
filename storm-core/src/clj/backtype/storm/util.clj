@@ -920,3 +920,6 @@
                 (meta form))
               (list form x)))
   ([x form & more] `(-<> (-<> ~x ~form) ~@more)))
+
+(defn hashmap-to-persistent [^HashMap m]
+  (zipmap (.keySet m) (.values m)))
