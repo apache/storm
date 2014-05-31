@@ -12,15 +12,18 @@ public class NimbusSlave implements Serializable {
 
 	private String ip;
 	
+	private String logviewPort;
+	
 	private String hostname;
 	
 	private String uptime;
 	
-	public NimbusSlave(String hostname, String uptime) {
+	public NimbusSlave(String hostname, String uptime, int port) {
 		this.hostname = hostname;
 		this.uptime = uptime;
 		String[] fields = StringUtils.split(hostname, ":");
 		this.ip = NetWorkUtils.host2Ip(fields[0]);
+		this.logviewPort = String.valueOf(port);
 	}
 	
 	public String getIp() {
@@ -43,5 +46,14 @@ public class NimbusSlave implements Serializable {
 	public void setUptime(String uptime) {
 		this.uptime = uptime;
 	}
+
+	public String getLogviewPort() {
+		return logviewPort;
+	}
+
+	public void setLogviewPort(String logviewPort) {
+		this.logviewPort = logviewPort;
+	}
+	
 	
 }

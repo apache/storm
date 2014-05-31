@@ -151,7 +151,8 @@ public class Supervisor {
 
 
 		//Step 7 start httpserver
-		Httpserver httpserver = new Httpserver(conf);
+		int port = ConfigExtension.getSupervisorDeamonHttpserverPort(conf);
+		Httpserver httpserver = new Httpserver(port);
 		httpserver.start();
 		
 		

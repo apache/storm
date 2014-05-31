@@ -2,6 +2,7 @@ package com.alibaba.jstorm.superivosr.deamon;
 
 import org.junit.Test;
 
+import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.daemon.supervisor.Httpserver;
 import com.google.common.collect.Maps;
 
@@ -9,7 +10,8 @@ public class HttpserverTest {
 	
 	@Test
 	public void test_httpserver() {
-		Httpserver httpserver = new Httpserver(Maps.newHashMap());
+		int port = ConfigExtension.getSupervisorDeamonHttpserverPort(Maps.newHashMap());
+		Httpserver httpserver = new Httpserver(port);
 		httpserver.start();
 		System.out.println("start....");
 	}

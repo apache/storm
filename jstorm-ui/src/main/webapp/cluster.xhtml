@@ -59,10 +59,10 @@
 				<f:facet name="header">
 					<h:outputText value="Log" />
 				</f:facet>
-				<h:outputLink value="log.jsf" target="_blank">
-					<h:outputText value="log" />
+				<h:outputLink value="listlog.jsf" target="_blank">
+					<h:outputText value="logs" />
 					<f:param name="host" value="#{cls.nimbusIp}" />
-					<f:param name="log" value="nimbus.log" />
+					<f:param name="port" value="#{cls.nimbusLogPort}" />
 				</h:outputLink>
 			</p:column>
 
@@ -92,10 +92,10 @@
 				<f:facet name="header">
 					<h:outputText value="Log" />
 				</f:facet>
-				<h:outputLink value="log.jsf" target="_blank">
-					<h:outputText value="log" />
+				<h:outputLink value="listlog.jsf" target="_blank">
+					<h:outputText value="logs" />
 					<f:param name="host" value="#{sla.ip}" />
-					<f:param name="log" value="nimbus.log" />
+					<f:param name="port" value="#{sla.logviewPort}" />
 				</h:outputLink>
 			</p:column>
 

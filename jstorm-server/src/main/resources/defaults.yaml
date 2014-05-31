@@ -96,7 +96,6 @@ supervisor.disk.slot: null
 ### worker.* configs are for task workers
 # worker gc configuration
 # worker.gc.path will put all gc logs and memory dump file
-worker.gc.path: "%JSTORM_HOME%/logs"
 worker.gc.childopts: " -XX:SurvivorRatio=4 -XX:MaxTenuringThreshold=20 -XX:+UseConcMarkSweepGC  -XX:+UseCMSInitiatingOccupancyOnly -XX:CMSInitiatingOccupancyFraction=70 -XX:CMSFullGCsBeforeCompaction=5 -XX:+HeapDumpOnOutOfMemoryError -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseCMSCompactAtFullCollection -XX:CMSMaxAbortablePrecleanTime=5000 "
 worker.heartbeat.frequency.secs: 2
 worker.classpath: ""
@@ -240,4 +239,5 @@ container.heartbeat.frequence: 10
 java.sandbox.enable: false.
 
 # logview port
-deamon.logview.port: 7621
+nimbus.deamon.logview.port: 7621
+supervisor.deamon.logview.port: 7622

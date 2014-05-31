@@ -482,7 +482,8 @@ class SyncProcessEvent extends ShutdownWork {
 	}
 	
 	private String getGcDumpParam(Map totalConf) {
-		String gcPath = ConfigExtension.getWorkerGcPath(totalConf);
+		//String gcPath = ConfigExtension.getWorkerGcPath(totalConf);
+		String gcPath = JStormUtils.getLogDir();
 		
 		Date now = new Date();
 		String nowStr = TimeFormat.getSecond(now);

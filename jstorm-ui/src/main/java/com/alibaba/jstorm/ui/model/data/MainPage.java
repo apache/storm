@@ -15,6 +15,7 @@ import backtype.storm.Config;
 import backtype.storm.generated.ClusterSummary;
 import backtype.storm.utils.NimbusClient;
 
+import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.cluster.ClusterState;
 import com.alibaba.jstorm.common.stats.StatBuckets;
 import com.alibaba.jstorm.ui.UIUtils;
@@ -68,7 +69,7 @@ public class MainPage implements Serializable {
 
 			tsumm = UIUtils.topologySummary(summ.get_topologies(), summ
 					.get_groupToResource().keySet());
-			csumm = UIUtils.clusterSummary(summ, client);
+			csumm = UIUtils.clusterSummary(summ, client, conf);
 			ssumm = UIUtils.supervisorSummary(summ.get_supervisors());
 			gsumm = UIUtils.groupSummary(summ.get_groupToResource(),
 					summ.get_groupToUsedResource());
@@ -76,7 +77,7 @@ public class MainPage implements Serializable {
 				gsumm = new ArrayList<GroupSumm>();
 			
 			cluster_state = ZkTool.mk_distributed_cluster_state(client.getConf());
-			slaves = getNimbusSlave(cluster_state);
+			slaves = getNimbusSlave(cluster_state, conf);
 			
 			zkServers = getZkServer(conf);
 			zkPort = String.valueOf(conf.get(Config.STORM_ZOOKEEPER_PORT));
@@ -94,13 +95,14 @@ public class MainPage implements Serializable {
 		}
 	}
 	
-	private List<NimbusSlave> getNimbusSlave(ClusterState cluster_state) throws Exception {
+	private List<NimbusSlave> getNimbusSlave(ClusterState cluster_state, Map conf) throws Exception {
+		int port = ConfigExtension.getNimbusDeamonHttpserverPort(conf);
 		List<NimbusSlave> slaves = Lists.newArrayList();
 		Map<String, String> followerMap = ZkTool.get_followers(cluster_state);
 		if (!followerMap.isEmpty()) {
 			for (Entry<String, String> entry : followerMap.entrySet()) {
 				String uptime = StatBuckets.prettyUptimeStr(Integer.valueOf(entry.getValue()));
-				slaves.add(new NimbusSlave(entry.getKey(), uptime));
+				slaves.add(new NimbusSlave(entry.getKey(), uptime, port));
 			}
 		}
 		return slaves;

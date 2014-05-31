@@ -11,6 +11,7 @@ public class ClusterSumm implements Serializable {
 	private static final long serialVersionUID = -7936384220562644886L;
 	
 	private String nimbusIp;
+	private String nimbusLogPort;
 	private String nimbusHostname;
 	private String nimbusUptime;
 	private String isGroupModel;
@@ -37,6 +38,14 @@ public class ClusterSumm implements Serializable {
 		this.nimbusIp = nimbusIp;
 	}
 	
+	public String getNimbusLogPort() {
+		return nimbusLogPort;
+	}
+
+	public void setNimbusLogPort(String nimbusLogPort) {
+		this.nimbusLogPort = nimbusLogPort;
+	}
+
 	public String getNimbusHostname() {
 		return nimbusHostname;
 	}

@@ -14,6 +14,48 @@
 
 
 	<hr />
+	<h2>Dirs</h2>
+	<h:form>
+		<p:dataTable id="dirs" var="dirs" value="#{listlogpage.dirs}"
+			sortBy="#{dirs.modifyTime}" sortOrder="DESCENDING">
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Name" />
+				</f:facet>
+				<h:outputLink value="listlog.jsf" target="_blank">
+					<h:outputText value="#{dirs.fileName}" />
+					<f:param name="host" value="#{param.host}" />
+					<f:param name="port" value="#{listlogpage.portStr}" />
+					<f:param name="parent" value="#{listlogpage.parent}" />
+					<f:param name="dir" value="#{dirs.fileName}" />
+				</h:outputLink>
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="isDir" />
+				</f:facet>
+				<h:outputText value="#{dirs.isDir}" />
+
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Modify Time" />
+				</f:facet>
+				<h:outputText value="#{dirs.modifyTime}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Size" />
+				</f:facet>
+				<h:outputText value="#{dirs.size}" />
+			</p:column>
+		</p:dataTable>
+	</h:form>
+
+	<h2>Files</h2>
 	<h:form>
 		<p:dataTable id="files" var="files" value="#{listlogpage.files}"
 			sortBy="#{files.modifyTime}" sortOrder="DESCENDING">
@@ -24,6 +66,8 @@
 				<h:outputLink value="log.jsf" target="_blank">
 					<h:outputText value="#{files.fileName}" />
 					<f:param name="host" value="#{param.host}" />
+					<f:param name="port" value="#{listlogpage.portStr}" />
+					<f:param name="parent" value="#{listlogpage.parent}" />
 					<f:param name="log" value="#{files.fileName}" />
 				</h:outputLink>
 			</p:column>

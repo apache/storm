@@ -38,6 +38,7 @@ import backtype.storm.scheduler.WorkerSlot;
 import backtype.storm.utils.NimbusClient;
 import backtype.storm.utils.Utils;
 
+import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.common.stats.StatBuckets;
 import com.alibaba.jstorm.common.stats.StaticsType;
 import com.alibaba.jstorm.ui.model.ClusterSumm;
@@ -466,7 +467,7 @@ public class UIUtils {
 	 * @return
 	 */
 	public static List<ClusterSumm> clusterSummary(ClusterSummary summ,
-			NimbusClient client) throws Exception {
+			NimbusClient client, Map conf) throws Exception {
 		// "Supervisors" "Used slots" "Free slots" "Total slots" "Running task"
 		List<SupervisorSummary> sups = summ.get_supervisors();
 		int supSize = 0;
@@ -533,6 +534,8 @@ public class UIUtils {
 		} else {
 			clusterSumm.setNimbusIp(NetWorkUtils.host2Ip(master));
 		}
+		int port = ConfigExtension.getNimbusDeamonHttpserverPort(conf);
+		clusterSumm.setNimbusLogPort(String.valueOf(port));
 		if (summ.is_isGroupModel())
 			clusterSumm.setIsGroupModel("true");
 		else

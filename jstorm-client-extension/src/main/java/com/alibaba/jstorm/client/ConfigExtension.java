@@ -60,10 +60,26 @@ public class ConfigExtension {
 	 */
 	private static final Integer DEFAULT_DEAMON_HTTPSERVER_PORT = 7621;
 
+	@Deprecated
 	protected static final String DEAMON_HTTPSERVER_PORT = "deamon.logview.port";
 
+	@Deprecated
 	public static Integer getDeamonHttpserverPort(Map conf) {
 		return JStormUtils.parseInt(conf.get(DEAMON_HTTPSERVER_PORT),
+				DEFAULT_DEAMON_HTTPSERVER_PORT);
+	}
+	
+	protected static final String SUPERVISOR_DEAMON_HTTPSERVER_PORT = "supervisor.deamon.logview.port";
+
+	public static Integer getSupervisorDeamonHttpserverPort(Map conf) {
+		return JStormUtils.parseInt(conf.get(SUPERVISOR_DEAMON_HTTPSERVER_PORT),
+				DEFAULT_DEAMON_HTTPSERVER_PORT + 1);
+	}
+	
+	protected static final String NIMBUS_DEAMON_HTTPSERVER_PORT = "nimbus.deamon.logview.port";
+
+	public static Integer getNimbusDeamonHttpserverPort(Map conf) {
+		return JStormUtils.parseInt(conf.get(NIMBUS_DEAMON_HTTPSERVER_PORT),
 				DEFAULT_DEAMON_HTTPSERVER_PORT);
 	}
 
@@ -418,10 +434,24 @@ public class ConfigExtension {
 
 	protected static final String WORKER_GC_PATH = "worker.gc.path";
 
+	/**
+	 * Useless from 0.9.3.1
+	 * 
+	 * @param conf
+	 * @param path
+	 */
+	@Deprecated
 	public static void setWorkerGcPath(Map conf, String path) {
 		conf.put(WORKER_GC_PATH, path);
 	}
 
+	/**
+	 * Useless from 0.9.3.1
+	 * 
+	 * @param conf
+	 * @param path
+	 */
+	@Deprecated
 	public static String getWorkerGcPath(Map conf) {
 		return (String) conf.get(WORKER_GC_PATH);
 	}

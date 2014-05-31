@@ -6,6 +6,10 @@
 1. switch apache thrift7 to storm thrift7
 2. set defatult acker number is 1
 3. add "spout.single.thread" setting
+4. make nimbus logview port different from supervisor's
+5. web ui can list all files of log's subdir
+6. Set gc dump dir as log's dir
+
 
 #Release 0.9.3
 ## New feature

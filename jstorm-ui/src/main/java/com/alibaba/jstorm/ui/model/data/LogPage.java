@@ -1,5 +1,6 @@
 package com.alibaba.jstorm.ui.model.data;
 
+import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +29,7 @@ import com.alibaba.jstorm.ui.UIUtils;
 import com.alibaba.jstorm.ui.model.ComponentTask;
 import com.alibaba.jstorm.ui.model.LogPageIndex;
 import com.alibaba.jstorm.utils.HttpserverUtils;
+import com.alibaba.jstorm.utils.JStormUtils;
 
 /**
  * task log view page service. <br />
@@ -73,6 +75,8 @@ public class LogPage implements Serializable {
 	private Map conf;
 
 	private String host;
+	
+	
 
 	public LogPage() throws Exception {
 		FacesContext ctx = FacesContext.getCurrentInstance();
@@ -81,15 +85,26 @@ public class LogPage implements Serializable {
 			position = ctx.getExternalContext().getRequestParameterMap()
 					.get(HttpserverUtils.HTTPSERVER_LOGVIEW_PARAM_POS);
 		}
+		
+		if (ctx.getExternalContext().getRequestParameterMap().get("port") != null) {
+        	
+			port = JStormUtils.parseInt(ctx.getExternalContext()
+					.getRequestParameterMap().get("port"), 0);
+		}
 
 		init();
 	}
 
 	private void init() throws Exception {
-		conf = UIUtils.readUiConfig();
-		port = ConfigExtension.getDeamonHttpserverPort(conf);
+		
 
 		try {
+			conf = UIUtils.readUiConfig();
+			
+			if (port == 0) {
+				port = ConfigExtension.getSupervisorDeamonHttpserverPort(conf);
+			}
+			
 			generateLogFileName();
 
 			// proxy call
@@ -107,14 +122,27 @@ public class LogPage implements Serializable {
 			host = ctx.getExternalContext().getRequestParameterMap()
 					.get("host");
 		}
-
+		
+		String log = null;
 		if (ctx.getExternalContext().getRequestParameterMap().get("log") != null) {
-			logFileName = ctx.getExternalContext().getRequestParameterMap()
+			log = ctx.getExternalContext().getRequestParameterMap()
 					.get("log");
 		}
 
 		if (StringUtils.isBlank(host) == false
-				&& StringUtils.isBlank(logFileName) == false) {
+				&& StringUtils.isBlank(log) == false) {
+			String parent = null;
+			if (ctx.getExternalContext().getRequestParameterMap().get("parent") != null) {
+				parent = ctx.getExternalContext().getRequestParameterMap()
+						.get("parent");
+			}
+			
+			if (parent == null) {
+				logFileName = log;
+			}else {
+				logFileName = parent + File.separator + log;
+			}
+			
 			return;
 		}
 
@@ -301,8 +329,8 @@ public class LogPage implements Serializable {
 		this.pages = pages;
 	}
 
-	public int getPort() {
-		return port;
+	public String getPort() {
+		return String.valueOf(port);
 	}
 
 	public void setPort(int port) {

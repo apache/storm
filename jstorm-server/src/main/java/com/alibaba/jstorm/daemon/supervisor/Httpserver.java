@@ -39,11 +39,11 @@ public class Httpserver implements Shutdownable {
 
 	private static Logger LOG = Logger.getLogger(Httpserver.class);
 
-	private static Map storm_conf;
 	private HttpServer hs;
+	private int port;
 
-	public Httpserver(Map storm_conf) {
-		this.storm_conf = storm_conf;
+	public Httpserver(int port) {
+		this.port = port;
 	}
 
 	static class LogHandler implements HttpHandler {
@@ -195,15 +195,23 @@ public class Httpserver implements Shutdownable {
 
 		}
 
-		byte[] getJSonFiles() throws Exception {
+		byte[] getJSonFiles(String dir) throws Exception {
 			Map<String, FileAttribute> fileMap = new HashMap<String, FileAttribute>();
 
-			File file = new File(logDir);
+			
+			String path = logDir;
+			if (dir != null) {
+				path = path + File.separator + dir;
+			}
+			
+			LOG.info("List dir " + path);
+			
+			File file = new File(path);
 
 			String[] files = file.list();
 
 			for (String fileName : files) {
-				String logFile = Joiner.on(File.separator).join(logDir,
+				String logFile = Joiner.on(File.separator).join(path,
 						fileName);
 
 				FileAttribute fileAttribute = new FileAttribute();
@@ -239,7 +247,8 @@ public class Httpserver implements Shutdownable {
 			byte[] filesJson = "Failed to get file list".getBytes();
 
 			try {
-				filesJson = getJSonFiles();
+				String dir = paramMap.get(HttpserverUtils.HTTPSERVER_LOGVIEW_PARAM_DIR);
+				filesJson = getJSonFiles(dir);
 			} catch (Exception e) {
 				handlFailure(t, "Failed to get file list");
 				return;
@@ -255,7 +264,6 @@ public class Httpserver implements Shutdownable {
 
 	public void start() {
 		int numHandler = 3;
-		int port = ConfigExtension.getDeamonHttpserverPort(storm_conf);
 		InetSocketAddress socketAddr = new InetSocketAddress(port);
 		Executor executor = Executors.newFixedThreadPool(numHandler);
 
