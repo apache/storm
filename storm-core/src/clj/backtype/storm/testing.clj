@@ -100,9 +100,9 @@
                    ports
                    (doall (repeatedly ports (:port-counter cluster-map))))
         supervisor-conf (merge (:daemon-conf cluster-map)
-                               conf
-                               {STORM-LOCAL-DIR tmp-dir
-                                SUPERVISOR-SLOTS-PORTS port-ids})
+                          conf
+                          {STORM-LOCAL-DIR tmp-dir
+                           SUPERVISOR-SLOTS-PORTS port-ids})
         id-fn (if id (fn [] id) supervisor/generate-supervisor-id)
         daemon (with-var-roots [supervisor/generate-supervisor-id id-fn] (supervisor/mk-supervisor supervisor-conf (:shared-context cluster-map) (supervisor/standalone-supervisor)))]
     (swap! (:supervisors cluster-map) conj daemon)
@@ -121,14 +121,14 @@
   (let [zk-tmp (local-temp-path)
         [zk-port zk-handle] (zk/mk-inprocess-zookeeper zk-tmp)
         daemon-conf (merge (read-storm-config)
-                           {TOPOLOGY-SKIP-MISSING-KRYO-REGISTRATIONS true
-                            ZMQ-LINGER-MILLIS 0
-                            TOPOLOGY-ENABLE-MESSAGE-TIMEOUTS false
-                            TOPOLOGY-TRIDENT-BATCH-EMIT-INTERVAL-MILLIS 50}
-                           daemon-conf
-                           {STORM-CLUSTER-MODE "local"
-                            STORM-ZOOKEEPER-PORT zk-port
-                            STORM-ZOOKEEPER-SERVERS ["localhost"]})
+                      {TOPOLOGY-SKIP-MISSING-KRYO-REGISTRATIONS true
+                       ZMQ-LINGER-MILLIS 0
+                       TOPOLOGY-ENABLE-MESSAGE-TIMEOUTS false
+                       TOPOLOGY-TRIDENT-BATCH-EMIT-INTERVAL-MILLIS 50}
+                      daemon-conf
+                      {STORM-CLUSTER-MODE "local"
+                       STORM-ZOOKEEPER-PORT zk-port
+                       STORM-ZOOKEEPER-SERVERS ["localhost"]})
         nimbus-tmp (local-temp-path)
         port-counter (mk-counter supervisor-slot-port-min)
         nimbus (nimbus/service-handler
@@ -159,7 +159,7 @@
   (let [finder-fn #(= (.get-id %) supervisor-id)
         supervisors @(:supervisors cluster-map)
         sup (find-first finder-fn
-                        supervisors)]
+              supervisors)]
     ;; tmp-dir will be taken care of by shutdown
     (reset! (:supervisors cluster-map) (remove-first finder-fn supervisors))
     (.shutdown sup)))
@@ -204,22 +204,22 @@
                   ; because a worker may already be dead
                   workers)]
     (while-timeout TEST-TIMEOUT-MS (not (every? (memfn waiting?) daemons))
-                   (Thread/sleep 10)
-                   ;;      (doseq [d daemons]
-                   ;;        (if-not ((memfn waiting?) d)
-                   ;;          (println d)))
-                   )))
+      (Thread/sleep 10)
+      ;;      (doseq [d daemons]
+      ;;        (if-not ((memfn waiting?) d)
+      ;;          (println d)))
+      )))
 
 (defn advance-cluster-time
   ([cluster-map secs increment-secs]
-   (loop [left secs]
-     (when (> left 0)
-       (let [diff (min left increment-secs)]
-         (advance-time-secs! diff)
-         (wait-until-cluster-waiting cluster-map)
-         (recur (- left diff))))))
+    (loop [left secs]
+      (when (> left 0)
+        (let [diff (min left increment-secs)]
+          (advance-time-secs! diff)
+          (wait-until-cluster-waiting cluster-map)
+          (recur (- left diff))))))
   ([cluster-map secs]
-   (advance-cluster-time cluster-map secs 1)))
+    (advance-cluster-time cluster-map secs 1)))
 
 (defmacro with-local-cluster
   [[cluster-sym & args] & body]
@@ -240,11 +240,11 @@
 (defmacro with-inprocess-zookeeper
   [port-sym & body]
   `(with-local-tmp [tmp#]
-                   (let [[~port-sym zks#] (zk/mk-inprocess-zookeeper tmp#)]
-                     (try
-                       ~@body
-                       (finally
-                         (zk/shutdown-inprocess-zookeeper zks#))))))
+     (let [[~port-sym zks#] (zk/mk-inprocess-zookeeper tmp#)]
+       (try
+         ~@body
+         (finally
+           (zk/shutdown-inprocess-zookeeper zks#))))))
 
 (defn submit-local-topology
   [nimbus storm-name conf topology]
@@ -273,7 +273,7 @@
                    nimbus/compute-new-topology->executor->node+port (mocked-compute-new-topology->executor->node+port
                                                                       storm-name
                                                                       executor->node+port)]
-                  (submit-local-topology nimbus storm-name conf topology)))
+    (submit-local-topology nimbus storm-name conf topology)))
 
 (defn mk-capture-launch-fn [capture-atom]
   (fn [supervisor storm-id port worker-id]
@@ -310,9 +310,9 @@
          shutdown-captured# (atom {})]
      (with-var-roots [supervisor/launch-worker (mk-capture-launch-fn launch-captured#)
                       supervisor/shutdown-worker (mk-capture-shutdown-fn shutdown-captured#)]
-                     ~@body
-                     {:launched @launch-captured#
-                      :shutdown @shutdown-captured#})))
+       ~@body
+       {:launched @launch-captured#
+        :shutdown @shutdown-captured#})))
 
 (defmacro capture-launched-workers
   [& body]
@@ -377,44 +377,44 @@
 (extend-type FixedTupleSpout
   CompletableSpout
   (exhausted? [this]
-              (= (-> this .getSourceTuples count)
-                 (.getCompleted this)))
+    (= (-> this .getSourceTuples count)
+      (.getCompleted this)))
   (cleanup [this]
-           (.cleanup this))
+    (.cleanup this))
   (startup [this]))
 
 (extend-type TransactionalSpoutCoordinator
   CompletableSpout
   (exhausted? [this]
-              (exhausted? (.getSpout this)))
+    (exhausted? (.getSpout this)))
   (cleanup [this]
-           (cleanup (.getSpout this)))
+    (cleanup (.getSpout this)))
   (startup [this]
-           (startup (.getSpout this))))
+    (startup (.getSpout this))))
 
 (extend-type PartitionedTransactionalSpoutExecutor
   CompletableSpout
   (exhausted? [this]
-              (exhausted? (.getPartitionedSpout this)))
+    (exhausted? (.getPartitionedSpout this)))
   (cleanup [this]
-           (cleanup (.getPartitionedSpout this)))
+    (cleanup (.getPartitionedSpout this)))
   (startup [this]
-           (startup (.getPartitionedSpout this))))
+    (startup (.getPartitionedSpout this))))
 
 (extend-type MemoryTransactionalSpout
   CompletableSpout
   (exhausted? [this]
-              (.isExhaustedTuples this))
+    (.isExhaustedTuples this))
   (cleanup [this]
-           (.cleanup this))
+    (.cleanup this))
   (startup [this]
-           (.startup this)))
+    (.startup this)))
 
 (defn spout-objects [spec-map]
   (for [[_ spout-spec] spec-map]
     (-> spout-spec
-        .get_spout_object
-        deserialized-component-object)))
+      .get_spout_object
+      deserialized-component-object)))
 
 (defn capture-topology
   [topology]
@@ -422,22 +422,22 @@
         spouts (.get_spouts topology)
         bolts (.get_bolts topology)
         all-streams (apply concat
-                           (for [[id spec] (merge (clojurify-structure spouts)
-                                                  (clojurify-structure bolts))]
-                             (for [[stream info] (.. spec get_common get_streams)]
-                               [(GlobalStreamId. id stream) (.is_direct info)])))
+                      (for [[id spec] (merge (clojurify-structure spouts)
+                                        (clojurify-structure bolts))]
+                        (for [[stream info] (.. spec get_common get_streams)]
+                          [(GlobalStreamId. id stream) (.is_direct info)])))
         capturer (TupleCaptureBolt.)]
     (.set_bolts topology
-                (assoc (clojurify-structure bolts)
-                  (uuid)
-                  (Bolt.
-                    (serialize-component-object capturer)
-                    (mk-plain-component-common (into {} (for [[id direct?] all-streams]
-                                                          [id (if direct?
-                                                                (mk-direct-grouping)
-                                                                (mk-global-grouping))]))
-                                               {}
-                                               nil))))
+      (assoc (clojurify-structure bolts)
+        (uuid)
+        (Bolt.
+          (serialize-component-object capturer)
+          (mk-plain-component-common (into {} (for [[id direct?] all-streams]
+                                                [id (if direct?
+                                                      (mk-direct-grouping)
+                                                      (mk-global-grouping))]))
+            {}
+            nil))))
     {:topology topology
      :capturer capturer}))
 
@@ -460,7 +460,7 @@
                                     (if (map? tup)
                                       (FixedTuple. (:stream tup) (:values tup))
                                       tup))))
-                              mock-sources)]
+                       mock-sources)]
     (doseq [[id spout] replacements]
       (let [spout-spec (get spouts id)]
         (.set_spout_object spout-spec (serialize-component-object spout))))
@@ -475,11 +475,11 @@
 
     (let [storm-id (common/get-storm-id state storm-name)]
       (while-timeout TEST-TIMEOUT-MS (not (every? exhausted? (spout-objects spouts)))
-                     (simulate-wait cluster-map))
+        (simulate-wait cluster-map))
 
       (.killTopologyWithOpts (:nimbus cluster-map) storm-name (doto (KillOptions.) (.set_wait_secs 0)))
       (while-timeout TEST-TIMEOUT-MS (.assignment-info state storm-id nil)
-                     (simulate-wait cluster-map))
+        (simulate-wait cluster-map))
       (when cleanup-state
         (doseq [spout (spout-objects spouts)]
           (cleanup spout))))
@@ -490,15 +490,15 @@
 
 (defn read-tuples
   ([results component-id stream-id]
-   (let [fixed-tuples (get results component-id [])]
-     (mapcat
-       (fn [ft]
-         (if (= stream-id (. ft stream))
-           [(vec (. ft values))]))
-       fixed-tuples)
-     ))
+    (let [fixed-tuples (get results component-id [])]
+      (mapcat
+        (fn [ft]
+          (if (= stream-id (. ft stream))
+            [(vec (. ft values))]))
+        fixed-tuples)
+      ))
   ([results component-id]
-   (read-tuples results component-id Utils/DEFAULT_STREAM_ID)))
+    (read-tuples results component-id Utils/DEFAULT_STREAM_ID)))
 
 (defn ms=
   [& args]
@@ -509,19 +509,19 @@
 ;; TODO: should override system-topology! and wrap everything there
 (defn mk-tracked-topology
   ([tracked-cluster topology]
-   (let [track-id (::track-id tracked-cluster)
-         ret (.deepCopy topology)]
-     (dofor [[_ bolt] (.get_bolts ret)
-             :let [obj (deserialized-component-object (.get_bolt_object bolt))]]
-            (.set_bolt_object bolt (serialize-component-object
-                                     (BoltTracker. obj track-id))))
-     (dofor [[_ spout] (.get_spouts ret)
-             :let [obj (deserialized-component-object (.get_spout_object spout))]]
-            (.set_spout_object spout (serialize-component-object
-                                       (SpoutTracker. obj track-id))))
-     {:topology ret
-      :last-spout-emit (atom 0)
-      :cluster tracked-cluster})))
+    (let [track-id (::track-id tracked-cluster)
+          ret (.deepCopy topology)]
+      (dofor [[_ bolt] (.get_bolts ret)
+              :let [obj (deserialized-component-object (.get_bolt_object bolt))]]
+        (.set_bolt_object bolt (serialize-component-object
+                                 (BoltTracker. obj track-id))))
+      (dofor [[_ spout] (.get_spouts ret)
+              :let [obj (deserialized-component-object (.get_spout_object spout))]]
+        (.set_spout_object spout (serialize-component-object
+                                   (SpoutTracker. obj track-id))))
+      {:topology ret
+       :last-spout-emit (atom 0)
+       :cluster tracked-cluster})))
 
 (defn assoc-track-id
   [cluster track-id]
@@ -530,14 +530,14 @@
 (defn increment-global!
   [id key amt]
   (-> (RegisteredGlobalState/getState id)
-      (get key)
-      (.addAndGet amt)))
+    (get key)
+    (.addAndGet amt)))
 
 (defn global-amt
   [id key]
   (-> (RegisteredGlobalState/getState id)
-      (get key)
-      .get))
+    (get key)
+    .get))
 
 (defmacro with-tracked-cluster
   [[cluster-sym & cluster-args] & body]
@@ -566,28 +566,28 @@
                 (increment-global! id# "transferred" 1)
                 (apply transferrer# args2#)))))]
        (with-local-cluster [~cluster-sym ~@cluster-args]
-                           (let [~cluster-sym (assoc-track-id ~cluster-sym id#)]
-                             ~@body)))
+         (let [~cluster-sym (assoc-track-id ~cluster-sym id#)]
+           ~@body)))
      (RegisteredGlobalState/clearState id#)))
 
 (defn tracked-wait
   "Waits until topology is idle and 'amt' more tuples have been emitted by spouts."
   ([tracked-topology]
-   (tracked-wait tracked-topology 1))
+    (tracked-wait tracked-topology 1))
   ([tracked-topology amt]
-   (let [target (+ amt @(:last-spout-emit tracked-topology))
-         track-id (-> tracked-topology :cluster ::track-id)
-         waiting? (fn []
-                    (or (not= target (global-amt track-id "spout-emitted"))
-                        (not= (global-amt track-id "transferred")
-                              (global-amt track-id "processed"))
-                        ))]
-     (while-timeout TEST-TIMEOUT-MS (waiting?)
-                    ;; (println "Spout emitted: " (global-amt track-id "spout-emitted"))
-                    ;; (println "Processed: " (global-amt track-id "processed"))
-                    ;; (println "Transferred: " (global-amt track-id "transferred"))
-                    (Thread/sleep 500))
-     (reset! (:last-spout-emit tracked-topology) target))))
+    (let [target (+ amt @(:last-spout-emit tracked-topology))
+          track-id (-> tracked-topology :cluster ::track-id)
+          waiting? (fn []
+                     (or (not= target (global-amt track-id "spout-emitted"))
+                       (not= (global-amt track-id "transferred")
+                         (global-amt track-id "processed"))
+                       ))]
+      (while-timeout TEST-TIMEOUT-MS (waiting?)
+        ;; (println "Spout emitted: " (global-amt track-id "spout-emitted"))
+        ;; (println "Processed: " (global-amt track-id "processed"))
+        ;; (println "Transferred: " (global-amt track-id "transferred"))
+        (Thread/sleep 500))
+      (reset! (:last-spout-emit tracked-topology) target))))
 
 (defnk test-tuple
   [values
@@ -595,11 +595,11 @@
    :component "component"
    :fields nil]
   (let [fields (or fields
-                   (->> (iterate inc 1)
-                        (take (count values))
-                        (map #(str "field" %))))
+                 (->> (iterate inc 1)
+                   (take (count values))
+                   (map #(str "field" %))))
         spout-spec (mk-spout-spec* (TestWordSpout.)
-                                   {stream fields})
+                     {stream fields})
         topology (StormTopology. {component spout-spec} {} {})
         context (TopologyContext.
                   topology
