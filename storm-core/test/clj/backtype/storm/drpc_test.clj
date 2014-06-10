@@ -33,8 +33,8 @@
 
 (defbolt exclamation-bolt ["result" "return-info"] [tuple collector]
   (emit-bolt! collector
-              [(str (.getString tuple 0) "!!!") (.getValue tuple 1)]
-              :anchor tuple)
+    [(str (.getString tuple 0) "!!!") (.getValue tuple 1)]
+    :anchor tuple)
   (ack! collector tuple)
   )
 
@@ -43,26 +43,26 @@
         spout (DRPCSpout. "test" drpc)
         cluster (LocalCluster.)
         topology (topology
-                  {"1" (spout-spec spout)}
-                  {"2" (bolt-spec {"1" :shuffle}
-                                exclamation-bolt)
-                   "3" (bolt-spec {"2" :shuffle}
-                                (ReturnResults.))})]
+                   {"1" (spout-spec spout)}
+                   {"2" (bolt-spec {"1" :shuffle}
+                          exclamation-bolt)
+                    "3" (bolt-spec {"2" :shuffle}
+                          (ReturnResults.))})]
     (.submitTopology cluster "test" {} topology)
 
     (is (= "aaa!!!" (.execute drpc "test" "aaa")))
     (is (= "b!!!" (.execute drpc "test" "b")))
     (is (= "c!!!" (.execute drpc "test" "c")))
-    
-    
+
+
     (.shutdown cluster)
     (.shutdown drpc)
     ))
 
 (defbolt exclamation-bolt-drpc ["id" "result"] [tuple collector]
   (emit-bolt! collector
-              [(.getValue tuple 0) (str (.getString tuple 1) "!!!")]
-              :anchor tuple)
+    [(.getValue tuple 0) (str (.getString tuple 1) "!!!")]
+    :anchor tuple)
   (ack! collector tuple)
   )
 
@@ -73,13 +73,13 @@
         ]
     (.addBolt builder exclamation-bolt-drpc 3)
     (.submitTopology cluster
-                     "builder-test"
-                     {}
-                     (.createLocalTopology builder drpc))
+      "builder-test"
+      {}
+      (.createLocalTopology builder drpc))
     (is (= "aaa!!!" (.execute drpc "test" "aaa")))
     (is (= "b!!!" (.execute drpc "test" "b")))
-    (is (= "c!!!" (.execute drpc "test" "c")))  
-    
+    (is (= "c!!!" (.execute drpc "test" "c")))
+
     (.shutdown cluster)
     (.shutdown drpc)
     ))
@@ -91,15 +91,15 @@
   [conf context collector]
   (let [counts (atom {})]
     (bolt
-     (execute [tuple]
-              (let [id (.getValue tuple 0)]
-                (swap! counts update-in [id] safe-inc)
-                (ack! collector tuple)
-                ))
-     CoordinatedBolt$FinishedCallback
-     (finishedId [this id]
-                 (emit-bolt! collector [id (get @counts id 0)])
-                 ))
+      (execute [tuple]
+        (let [id (.getValue tuple 0)]
+          (swap! counts update-in [id] safe-inc)
+          (ack! collector tuple)
+          ))
+      CoordinatedBolt$FinishedCallback
+      (finishedId [this id]
+        (emit-bolt! collector [id (get @counts id 0)])
+        ))
     ))
 
 (defn safe+ [v1 v2]
@@ -109,16 +109,16 @@
   [conf context collector]
   (let [counts (atom {})]
     (bolt
-     (execute [tuple]
-              (let [id (.getValue tuple 0)
-                    count (.getValue tuple 1)]
-                (swap! counts update-in [id] safe+ count)
-                (ack! collector tuple)
-                ))
-     CoordinatedBolt$FinishedCallback
-     (finishedId [this id]
-                 (emit-bolt! collector [id (get @counts id 0)])
-                 ))
+      (execute [tuple]
+        (let [id (.getValue tuple 0)
+              count (.getValue tuple 1)]
+          (swap! counts update-in [id] safe+ count)
+          (ack! collector tuple)
+          ))
+      CoordinatedBolt$FinishedCallback
+      (finishedId [this id]
+        (emit-bolt! collector [id (get @counts id 0)])
+        ))
     ))
 
 (defbolt create-tuples ["request"] [tuple collector]
@@ -141,35 +141,35 @@
       (.fieldsGrouping (Fields. ["request"])))
 
     (.submitTopology cluster
-                     "squared"
-                     {}
-                     (.createLocalTopology builder drpc))
+      "squared"
+      {}
+      (.createLocalTopology builder drpc))
     (is (= "4" (.execute drpc "square" "2")))
     (is (= "100" (.execute drpc "square" "10")))
     (is (= "1" (.execute drpc "square" "1")))
     (is (= "0" (.execute drpc "square" "0")))
-    
-    
+
+
     (.shutdown cluster)
     (.shutdown drpc)
     ))
 
 (defbolt id-bolt ["request" "val"] [tuple collector]
   (emit-bolt! collector
-              (.getValues tuple)
-              :anchor tuple)
+    (.getValues tuple)
+    :anchor tuple)
   (ack! collector tuple))
 
 (defbolt emit-finish ["request" "result"] {:prepare true}
   [conf context collector]
   (bolt
-   (execute [tuple]
-            (ack! collector tuple)
-            )
-   CoordinatedBolt$FinishedCallback
-   (finishedId [this id]
-               (emit-bolt! collector [id "done"])
-               )))
+    (execute [tuple]
+      (ack! collector tuple)
+      )
+    CoordinatedBolt$FinishedCallback
+    (finishedId [this id]
+      (emit-bolt! collector [id "done"])
+      )))
 
 (deftest test-drpc-coordination-tricky
   (let [drpc (LocalDRPC.)
@@ -183,9 +183,9 @@
       (.fieldsGrouping (Fields. ["request"])))
 
     (.submitTopology cluster
-                     "tricky"
-                     {}
-                     (.createLocalTopology builder drpc))
+      "tricky"
+      {}
+      (.createLocalTopology builder drpc))
     (is (= "done" (.execute drpc "tricky" "2")))
     (is (= "done" (.execute drpc "tricky" "3")))
     (is (= "done" (.execute drpc "tricky" "4")))
@@ -196,12 +196,12 @@
 (defbolt fail-finish-bolt ["request" "result"] {:prepare true}
   [conf context collector]
   (bolt
-   (execute [tuple]
-            (ack! collector tuple))
-   CoordinatedBolt$FinishedCallback
-   (finishedId [this id]
-               (throw (FailedException.))
-               )))
+    (execute [tuple]
+      (ack! collector tuple))
+    CoordinatedBolt$FinishedCallback
+    (finishedId [this id]
+      (throw (FailedException.))
+      )))
 
 (deftest test-drpc-fail-finish
   (let [drpc (LocalDRPC.)
@@ -211,10 +211,10 @@
     (.addBolt builder fail-finish-bolt 3)
 
     (.submitTopology cluster
-                     "fail2"
-                     {}
-                     (.createLocalTopology builder drpc))
-    
+      "fail2"
+      {}
+      (.createLocalTopology builder drpc))
+
     (is (thrown? DRPCExecutionException (.execute drpc "fail2" "2")))
 
     (.shutdown cluster)
@@ -227,5 +227,16 @@
     (stubbing [acquire-queue queue
                read-storm-config {DRPC-REQUEST-TIMEOUT-SECS delay-seconds}]
       (let [drpc-handler (service-handler)]
-        (.execute drpc-handler "ArbitraryDRPCFunctionName" "")
+        (is (thrown? DRPCExecutionException
+              (.execute drpc-handler "ArbitraryDRPCFunctionName" "")))
         (is (= 0 (.size queue)))))))
+
+(deftest test-drpc-timeout-cleanup
+  (let [queue (ConcurrentLinkedQueue.)
+        delay-seconds 1]
+    (stubbing [acquire-queue queue
+               read-storm-config {DRPC-REQUEST-TIMEOUT-SECS delay-seconds}
+               timeout-check-secs delay-seconds]
+      (let [drpc-handler (service-handler)]
+        (is (thrown? DRPCExecutionException
+              (.execute drpc-handler "ArbitraryDRPCFunctionName" "no-args")))))))

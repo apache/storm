@@ -94,11 +94,11 @@
 (defn schedule-recurring
   [timer delay-secs recur-secs afn]
   (schedule timer
-    delay-secs
-    (fn this []
-      (afn)
-      ; This avoids a race condition with cancel-timer.
-      (schedule timer recur-secs this :check-active false))))
+            delay-secs
+            (fn this []
+              (afn)
+              ; This avoids a race condition with cancel-timer.
+              (schedule timer recur-secs this :check-active false))))
 
 (defn cancel-timer
   [timer]

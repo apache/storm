@@ -1,4 +1,22 @@
-// Inspired by 
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+// Inspired by
 // https://github.com/samizdatco/arbor/blob/master/docs/sample-project/main.js
 
 function renderGraph(elem) {
@@ -16,7 +34,7 @@ function renderGraph(elem) {
     var update = false;
 
     var myRenderer = {
-        init: function(system){ 
+        init: function(system){
             psys = system;
             psys.screenSize(canvas.width, canvas.height)
             psys.screenPadding(20);
@@ -27,11 +45,11 @@ function renderGraph(elem) {
             update = true;
         },
 
-        redraw: function() { 
-            
+        redraw: function() {
+
             if(!psys)
                 return;
-            
+
             if(update) {
                 totaltrans = calculate_total_transmitted(psys);
                 weights = calculate_weights(psys, totaltrans);
@@ -44,7 +62,7 @@ function renderGraph(elem) {
             ctx.fillStyle = "white";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             var x = 0;
-            
+
 
             psys.eachEdge(function(edge, pt1, pt2) {
 
@@ -52,7 +70,7 @@ function renderGraph(elem) {
                 var sublen = len - (Math.max(50, 20 + gfx.textWidth(edge.target.name)) / 2);
                 var thirdlen = len/3;
                 var theta = Math.atan2(pt2.y - pt1.y, pt2.x - pt1.x);
-                
+
                 var newpt2 = {
                     x : pt1.x + (Math.cos(theta) * sublen),
                     y : pt1.y + (Math.sin(theta) * sublen)
@@ -64,7 +82,7 @@ function renderGraph(elem) {
                 }
 
                 weight = weights[edge.source.name + edge.target.name];
-                
+
                 if(!weights[edge.source.name + edge.target.name])
                 {
                     totaltrans = calculate_total_transmitted(psys);
@@ -82,7 +100,7 @@ function renderGraph(elem) {
                 ctx.moveTo(newpt2.x, newpt2.y);
                 ctx.lineTo(newpt2.x - arrlen * Math.cos(theta+Math.PI/6), newpt2.y - arrlen * Math.sin(theta + Math.PI/6));
 
-                
+
                 if (texts[edge.source.name + edge.target.name] == null)
                 {
                     totaltrans = calculate_total_transmitted(psys);
@@ -97,7 +115,7 @@ function renderGraph(elem) {
                 var col;
 
                 var real_trans = gather_stream_count(node.data[":stats"], "default", "600");
-                
+
                 if(node.data[":type"] === "bolt") {
                     var cap = Math.min(node.data[":capacity"], 1);
                     var red = Math.floor(cap * 225) + 30;
@@ -107,15 +125,15 @@ function renderGraph(elem) {
                 } else {
                     col = "#0000FF";
                 }
-                
+
                 var w = Math.max(55, 25 + gfx.textWidth(node.name));
-                
+
                 gfx.oval(pt.x - w/2, pt.y - w/2, w, w, {fill: col});
                 gfx.text(node.name, pt.x, pt.y+3, {color:"white", align:"center", font:"Arial", size:12});
                 gfx.text(node.name, pt.x, pt.y+3, {color:"white", align:"center", font:"Arial", size:12});
-                
+
                 gfx.text(parseFloat(node.data[":latency"]).toFixed(2) + " ms", pt.x, pt.y + 17, {color:"white", align:"center", font:"Arial", size:12});
-                
+
             });
 
             // Draw gradient sidebar
@@ -125,52 +143,52 @@ function renderGraph(elem) {
             grd.addColorStop(1, '#ff0000');
             ctx.fillStyle=grd;
             ctx.fillRect(0,0,50,canvas.height);
-            
-            
+
+
         },
-        
+
         initMouseHandling:function() {
             var dragged = null;
 
             var clicked = false;
-            
+
             var handler = {
                 clicked:function(e){
                     var pos = $(canvas).offset();
                     _mouseP = arbor.Point(e.pageX-pos.left, e.pageY - pos.top);
                     dragged = psys.nearest(_mouseP);
-                    
+
                     if(dragged && dragged.node !== null) {
                         dragged.node.fixed = true;
                     }
-                    
+
                     clicked = true;
                     setTimeout(function(){clicked = false;}, 50);
 
                     $(canvas).bind('mousemove', handler.dragged);
                     $(window).bind('mouseup', handler.dropped);
-                    
+
                     return false;
                 },
-                
+
                 dragged:function(e) {
 
                     var pos = $(canvas).offset();
                     var s = arbor.Point(e.pageX-pos.left, e.pageY-pos.top);
-                    
+
                     if(dragged && dragged.node != null) {
                         var p = psys.fromScreen(s);
                         dragged.node.p = p;
                     }
-                    
+
                     return false;
-                    
+
                 },
 
                 dropped:function(e) {
                     if(clicked) {
                         if(dragged.distance < 50) {
-                            if(dragged && dragged.node != null) { 
+                            if(dragged && dragged.node != null) {
                                 window.location = dragged.node.data[":link"];
                             }
                         }
@@ -185,13 +203,13 @@ function renderGraph(elem) {
                     _mouseP = null;
                     return false;
                 }
-                
+
             }
-            
+
             $(canvas).mousedown(handler.clicked);
         }
     }
-    
+
     return myRenderer;
 }
 
@@ -202,16 +220,16 @@ function calculate_texts(psys, totaltrans) {
         for(var i = 0; i < edge.target.data[":inputs"].length; i++) {
             var stream = edge.target.data[":inputs"][i][":stream"];
             var sani_stream = edge.target.data[":inputs"][i][":sani-stream"];
-            if(stream_checked(sani_stream) 
+            if(stream_checked(sani_stream)
                && edge.target.data[":inputs"][i][":component"] === edge.source.name) {
                 stream_transfered = gather_stream_count(edge.source.data[":stats"], sani_stream, "600");
-                text += stream + ": " 
-                    + stream_transfered + ": " 
+                text += stream + ": "
+                    + stream_transfered + ": "
                     + (totaltrans > 0  ? Math.round((stream_transfered/totaltrans) * 100) : 0) + "%\n";
-                
+
             }
         }
-        
+
         texts[edge.source.name + edge.target.name] = text;
     });
 
@@ -220,7 +238,7 @@ function calculate_texts(psys, totaltrans) {
 
 function calculate_weights(psys, totaltrans) {
     var weights = {};
- 
+
     psys.eachEdge(function(edge, pt1, pt2) {
         var trans = 0;
         for(var i = 0; i < edge.target.data[":inputs"].length; i++) {
@@ -254,17 +272,17 @@ function calculate_total_transmitted(psys) {
                 }
             }
         }
-        
+
     });
 
     return totaltrans;
 }
 
 function has_checked_stream_input(inputs) {
-    
+
     for(var i = 0; i < inputs.length; i++) {
         var x = stream_checked(inputs[i][":sani-stream"]);
-        if(x) 
+        if(x)
             return true;
     }
     return false;
@@ -279,7 +297,7 @@ function has_checked_stream_output(jdat, component) {
     var ret = false;
     $.each(jdat, function(k, v) {
         for(var i = 0; i < v[":inputs"].length; i++) {
-            if(stream_checked(v[":inputs"][i][":sani-stream"]) 
+            if(stream_checked(v[":inputs"][i][":sani-stream"])
                && v[":inputs"][i][":component"] == component)
                 ret = true;
         }
@@ -311,12 +329,12 @@ function rechoose(jdat, sys, box) {
             if( has_checked_stream_input(v[":inputs"]) || has_checked_stream_output(jdat, k))
                 sys.addNode(k,v);
         });
-           
+
         //Check each node in our json data and add necessary edges based on selected components.
         $.each(jdat, function(k, v) {
             for(var i = 0; i < v[":inputs"].length; i++)
                 if(v[":inputs"][i][":sani-stream"] === id) {
-                    
+
                     sys.addEdge(v[":inputs"][i][":component"], k, v);
                 }
         });
@@ -326,16 +344,16 @@ function rechoose(jdat, sys, box) {
         sys.prune(function(node, from, to) {
             return !has_checked_stream_input(node.data[":inputs"]) && !has_checked_stream_output(jdat, node.name);
         });
-        
+
         //Check each edge to see if it represents any selected streams. If not, prune it.
         sys.eachEdge(function(edge, pt1, pt2) {
             var inputs = edge.target.data[":inputs"];
-            
+
             if($.grep(inputs, function(input) {
-                
-                return input[":component"] === edge.source.name 
+
+                return input[":component"] === edge.source.name
                     && stream_checked(input[":sani-stream"]);
-            
+
             }).length == 0)
             {
                 sys.pruneEdge(edge);
@@ -366,14 +384,14 @@ function show_visualization(sys) {
         sys.renderer = renderGraph("#topoGraph");
         sys.stop();
 
-        $(".stream-box").click(function () { rechoose(topology_data, sys, this) });    
+        $(".stream-box").click(function () { rechoose(topology_data, sys, this) });
     }
 
     should_update = true;
     var update_freq_ms = 10000;
     var update = function(should_rechoose){
         $.ajax({
-            url: document.URL.split('?')[0] + "/visualization",
+            url: "/api/v1/topology/"+$.url().param("id")+"/visualization",
             success: function(data, status, jqXHR) {
                 topology_data = data;
                 update_data(topology_data, sys);
@@ -386,7 +404,7 @@ function show_visualization(sys) {
             }
         });
     };
-    
+
     update(true);
     $("#visualization-container").show(500);
     $("#show-hide-visualization").attr('value', 'Hide Visualization');
@@ -401,13 +419,3 @@ function hide_visualization(sys) {
     $("#show-hide-visualization").unbind("click");
     $("#show-hide-visualization").click(function () { show_visualization(sys) });
 }
-
-$(document).ready(function() {
-
-    if($("#visualization-container"))
-    {
-        var sys = null;
-        $("#show-hide-visualization").click(function () { show_visualization(sys) });
-    
-    }
-})
