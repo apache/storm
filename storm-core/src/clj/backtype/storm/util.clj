@@ -15,7 +15,7 @@
 ;; limitations under the License.
 (ns backtype.storm.util
   (:import [java.net InetAddress])
-  (:import [java.util Map Map$Entry List ArrayList Collection Iterator HashMap])
+  (:import [java.util Map Map$Entry List ArrayList Collection Iterator HashMap Timer TimerTask])
   (:import [java.io FileReader FileNotFoundException])
   (:import [backtype.storm Config])
   (:import [backtype.storm.utils Time Container ClojureTimerTask Utils
@@ -414,7 +414,7 @@
                           (if(== signum sig-kill) "taskkill /f /pid " "taskkill /pid ")
                           (str "kill -" signum " "))
                      pid))
-    (catch ExecuteException e
+    (catch Exception e
       (log-message "Error when trying to kill " pid ". Process is probably already dead."))))
 
 (defn force-kill-process [pid]
@@ -425,16 +425,20 @@
 
 (def process-killer-timer (java.util.Timer. "process-killer-timer" true))
 
-(defn delayed-execute [func delay-secs]
-  "executes func after delay-secs have elapsed, wanted to use timer.clj but that results in circular dependency"
-    (.schedule process-killer-timer (proxy [java.util.TimerTask] [] (run [] (func))) delay-secs))
+)
+
+(defn- delayed-execute [func delay-secs]
+  "executes func after delay-secs have elapsed, can throw illegal state exception if timer is already cancelled"
+    ;, wanted to use timer.clj but that results in circular dependency as timer.clj uses this file
+  (try-cause
+    (.schedule process-killer-timer (proxy [java.util.TimerTask] [] (run [] (func))) (* delay-secs 1000))))
 
 (defn ensure-process-killed! [pid]
   ;; TODO: should probably do a ps ax of some sort to make sure it was killed
   (try-cause
     (kill-process-with-sig-term pid)
-    (delayed-execute force-kill-process 5) ;TODO this should come from some config, allow 5 secs for cleanup.
-    (catch ExecuteException e
+    (delayed-execute force-kill-process 5) ;allow 5 secs for cleanup then force kill the process.
+    (catch Exception e
       (log-message "Error when trying to kill " pid ". Process is probably already dead."))))
 
 (defprotocol SmartThread
