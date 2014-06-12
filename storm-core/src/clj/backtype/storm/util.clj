@@ -956,8 +956,4 @@
   ([x form & more] `(-<> (-<> ~x ~form) ~@more)))
 
 (defn hashmap-to-persistent [^HashMap m]
-<<<<<<< HEAD
   (zipmap (.keySet m) (.values m)))
-=======
-  (zipmap (.keySet m) (.values m)))
->>>>>>> Merge branch 'master' into idiomatic-clojure-01
