@@ -415,7 +415,7 @@
                           (if(== signum sig-kill) "taskkill /f /pid " "taskkill /pid ")
                           (str "kill -" signum " "))
                      pid))
-    (catch Exception e
+    (catch ExecuteException e
       (log-message "Error when trying to kill " pid ". Process is probably already dead."))))
 
 (defn force-kill-process
