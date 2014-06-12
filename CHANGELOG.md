@@ -1,3 +1,6 @@
+## 0.9.3-incubating (unreleased)
+ * STORM-338: Move towards idiomatic Clojure style
+
 ## 0.9.2-incubating
  * STORM-335: add drpc test for removing timed out requests from queue
  * STORM-69: Storm UI Visualizations for Topologies
@@ -94,7 +97,7 @@
 * Added timeout to unit tests to prevent a situation where tests would hang indefinitely (thanks d2r)
 * Fixed and issue in the system bolt where local mode would not be detected accurately (thanks miofthena)
 
-## 0.9.0-rc2 
+## 0.9.0-rc2
 
 * Fixed `storm jar` command to work properly when STORM_JAR_JVM_OPTS is not specified (thanks roadkill001)
 
@@ -128,7 +131,7 @@
  * Sort topologies by name in UI (thanks jaked)
  * Added LoggingMetricsConsumer to log all metrics to a file, by default not enabled (thanks mrflip)
  * Add prepare(Map conf) method to TopologyValidator (thanks ankitoshniwal)
- * Bug fix: Supervisor provides full path to workers to logging config rather than relative path (thanks revans2) 
+ * Bug fix: Supervisor provides full path to workers to logging config rather than relative path (thanks revans2)
  * Bug fix: Call ReducerAggregator#init properly when used within persistentAggregate (thanks lorcan)
  * Bug fix: Set component-specific configs correctly for Trident spouts
 
@@ -184,7 +187,7 @@
  * Bug fix: fixed NPE when emitting during emit method of Aggregator
  * Bug fix: URLs with periods in them in Storm UI now route correctly
  * Bug fix: Fix occasional cascading worker crashes due when a worker dies due to not removing connections from connection cache appropriately
-  
+
 ## 0.8.1
 
  * Exposed Storm's unit testing facilities via the backtype.storm.Testing class. Notable functions are Testing/withLocalCluster and Testing/completeTopology (thanks xumingming)
@@ -333,14 +336,14 @@ NOTE: The change from 0.7.0 in which OutputCollector no longer assumes immutable
 ## 0.7.0
 
  * Transactional topologies: a new higher level abstraction that enables exactly-once messaging semantics for most computations. Documented on the wiki.
- * Component-specific configurations: Can now set configurations on a per-spout or per-bolt basis. 
+ * Component-specific configurations: Can now set configurations on a per-spout or per-bolt basis.
  * New batch bolt abstraction that simplifies the processing of batches in DRPC or transactional topologies. A new batch bolt is created per batch and they are automatically cleaned up.
  * Introduction of base classes for various bolt and spout types. These base classes are in the backtype.storm.topology.base package and provide empty implementations for commonly unused methods
  * CoordinatedBolt generalized to handle non-linear topologies. This will make it easy to implement a non-linear DRPC topology abstraction.
  * Can customize the JVM options for Storm UI with new ui.childopts config
  * BigIntegers are now serializable by default
  * All bolts/spouts now emit a system stream (id "__system"). Currently it only emits startup events, but may emit other events in the future.
- * Optimized tuple trees for batch processing in DRPC and transactional topologies. Only the coordination tuples are anchored. OutputCollector#fail still works because CoordinatedBolt will propagate the fail to all other tuples in the batch. 
+ * Optimized tuple trees for batch processing in DRPC and transactional topologies. Only the coordination tuples are anchored. OutputCollector#fail still works because CoordinatedBolt will propagate the fail to all other tuples in the batch.
  * CoordinatedBolt moved to backtype.storm.coordination package
  * Clojure test framework significantly more composable
  * Massive internal refactorings and simplifications, including changes to the Thrift definition for storm topologies.
@@ -376,10 +379,10 @@ NOTE: The change from 0.7.0 in which OutputCollector no longer assumes immutable
  * storm client "activate" and "deactivate" commands
  * storm client "rebalance" command
  * Nimbus will automatically detect and cleanup corrupt topologies (this would previously give an error of the form "file storm...ser cannot be found").
- * "storm" client will not run unless it's being used from a release. 
+ * "storm" client will not run unless it's being used from a release.
  * Topology jar path now passed in using a java property rather than an environment variable.
  * LD\_LIBRARY\_PATH environment variable is now set on worker processes appropriately.
- * Replaced jvyaml with snakeyaml. UTF-8 YAML files should now work properly. 
+ * Replaced jvyaml with snakeyaml. UTF-8 YAML files should now work properly.
  * Upgraded httpclient, httpcore, and commons-codec dependencies.
 
 ## 0.6.0
@@ -389,44 +392,44 @@ NOTE: The change from 0.7.0 in which OutputCollector no longer assumes immutable
  * Pluggable stream groupings
  * Storm now chooses an unused port for Zookeeper in local mode instead of crashing when 2181 was in use.
  * Better support for defining topologies in non-JVM languages. The Thrift structure for topologies now allows you to specify components using a Java class name and a list of arguments to that class's constructor.
- * Bug fix: errors during the preparation phase of spouts or bolts will be reported to the Storm UI 
- * Bug fix: Fixed bugs related to LinearDRPC topologies where the last bolt implements FinishedCallback 
- * Bug fix: String greater than 64K will now serialize properly 
- * Generalized type of anchors in OutputCollector methods to Collection from List. 
+ * Bug fix: errors during the preparation phase of spouts or bolts will be reported to the Storm UI
+ * Bug fix: Fixed bugs related to LinearDRPC topologies where the last bolt implements FinishedCallback
+ * Bug fix: String greater than 64K will now serialize properly
+ * Generalized type of anchors in OutputCollector methods to Collection from List.
  * Improved logging throughout.
- * In the "worker.childopts" config, %ID% will be replaced by the worker port. 
- * Significant internal refactorings to clean up the codebase. 
+ * In the "worker.childopts" config, %ID% will be replaced by the worker port.
+ * Significant internal refactorings to clean up the codebase.
 
 ## 0.5.4
 
- * LinearDRPCTopologyBuilder, a polished DRPC implementation, 
- * Improved custom serialization support. no longer need to provide "token" ids. 
- * Fallback on Java serialization by default. Can be turned off by setting "topology.fall.back.on.java.serialization" to false. 
+ * LinearDRPCTopologyBuilder, a polished DRPC implementation,
+ * Improved custom serialization support. no longer need to provide "token" ids.
+ * Fallback on Java serialization by default. Can be turned off by setting "topology.fall.back.on.java.serialization" to false.
  * Improved "storm kill" command. Can override the wait time with "-w" flag.
  * Display topology status in Storm UI
  * Changed Thrift namespace to avoid conflicts
  * Better error messages throughout
- * Storm UI port is configurable through "ui.port" 
- * Minor improvements to Clojure DSL 
+ * Storm UI port is configurable through "ui.port"
+ * Minor improvements to Clojure DSL
 
 ## 0.5.3
 
- * Nimbus and supervisor daemons can now share a local dir. 
+ * Nimbus and supervisor daemons can now share a local dir.
  * Greatly improved Clojure DSL for creating topologies.
  * Increased the default timeouts for startup of workers and tasks.
  * Added the commands "localconfvalue", "remoteconfvalue", and "repl" to the storm script.
- * Better error message when "storm jar" can't find the nimbus host in the configuration. 
+ * Better error message when "storm jar" can't find the nimbus host in the configuration.
 
 ## 0.5.2
 
  * No longer need any native dependencies to run Storm in local mode. Storm now uses a pure Java messaging system in local mode
- * Fixed logging configurations so that logging is no longer suppressed when including the Storm release jars on the classpath in local mode. 
+ * Fixed logging configurations so that logging is no longer suppressed when including the Storm release jars on the classpath in local mode.
 
 ## 0.5.1
 
  * Changed ISerialization's "accept" interface to not annotate the Class with the generic type
  * Made Config class implement Map and added helper methods for setting common configs
- 
+
 ## 0.5.0
- 
+
  * Initial release!
