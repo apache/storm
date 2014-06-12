@@ -543,7 +543,7 @@
 (defn -launch [supervisor]
   (let [conf (read-storm-config)]
     (validate-distributed-mode! conf)
-    (mk-supervisor conf nil supervisor)))
+    (.addShutdownHook (Runtime/getRuntime) (Thread. (fn [] (.shutdown (mk-supervisor conf nil supervisor)))))))
 
 (defn standalone-supervisor []
   (let [conf-atom (atom nil)

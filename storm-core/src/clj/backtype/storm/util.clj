@@ -389,14 +389,6 @@
     (log-message "Could not extract " dir " from " jarpath))
   ))
 
-(defn ensure-process-killed! [pid]
-  ;; TODO: should probably do a ps ax of some sort to make sure it was killed
-  (try-cause
-    (exec-command! (str (if on-windows? "taskkill /f /pid " "kill -9 ") pid))
-  (catch ExecuteException e
-    (log-message "Error when trying to kill " pid ". Process is probably already dead."))
-    ))
-
 (defnk launch-process [command :environment {}]
   (let [builder (ProcessBuilder. command)
         process-env (.environment builder)]
@@ -411,6 +403,39 @@
 
 (defn sleep-until-secs [target-secs]
   (Time/sleepUntil (* (long target-secs) 1000)))
+
+(def ^:const sig-kill 9)
+
+(def ^:const sig-term 15)
+
+(defn send-signal-to-process [pid signum]
+  (try-cause
+    (exec-command! (str (if on-windows?
+                          (if(== signum sig-kill) "taskkill /f /pid " "taskkill /pid ")
+                          (str "kill -" signum " "))
+                     pid))
+    (catch ExecuteException e
+      (log-message "Error when trying to kill " pid ". Process is probably already dead."))))
+
+(defn force-kill-process [pid]
+  (send-signal-to-process pid sig-kill))
+
+(defn kill-process-with-sig-term [pid]
+  (send-signal-to-process pid sig-term))
+
+(def process-killer-timer (java.util.Timer. "process-killer-timer" true))
+
+(defn delayed-execute [func delay-secs]
+  "executes func after delay-secs have elapsed, wanted to use timer.clj but that results in circular dependency"
+    (.schedule process-killer-timer (proxy [java.util.TimerTask] [] (run [] (func))) delay-secs))
+
+(defn ensure-process-killed! [pid]
+  ;; TODO: should probably do a ps ax of some sort to make sure it was killed
+  (try-cause
+    (kill-process-with-sig-term pid)
+    (delayed-execute force-kill-process 5) ;TODO this should come from some config, allow 5 secs for cleanup.
+    (catch ExecuteException e
+      (log-message "Error when trying to kill " pid ". Process is probably already dead."))))
 
 (defprotocol SmartThread
   (start [this])
