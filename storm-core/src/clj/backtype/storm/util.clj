@@ -428,8 +428,6 @@
   [pid]
   (send-signal-to-process pid sig-term))
 
-(def process-killer-timer (java.util.Timer. "process-killer-timer" true))
-
 (defn ensure-process-killed!
   [pid]
   ;; TODO: should probably do a ps ax of some sort to make sure it was killed
