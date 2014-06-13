@@ -170,7 +170,7 @@
 (defn mk-halting-timer [timer-name]
   (mk-timer :kill-fn (fn [t]
                        (log-error t "Error when processing event")
-                       (halt-process! 20 "Error when processing an event")
+                       (exit-process! 20 "Error when processing an event")
                        )
     :timer-name timer-name))
 
@@ -331,7 +331,7 @@
     (:port worker)
     (:transfer-local-fn worker)
     (-> worker :storm-conf (get TOPOLOGY-RECEIVER-BUFFER-SIZE))
-    :kill-fn (fn [t] (halt-process! 11))))
+    :kill-fn (fn [t] (exit-process! 11))))
 
 (defn- close-resources [worker]
   (let [dr (:default-shared-resources worker)]
@@ -450,7 +450,7 @@
 
 (defn -main
   [storm-id assignment-id port-str worker-id]
-  (let [conf (read-storm-config)]
-    (validate-distributed-mode! conf)
-    (let [worker (mk-worker conf nil storm-id assignment-id (Integer/parseInt port-str) worker-id)]
+    (let [conf (read-storm-config)]
+      (validate-distributed-mode! conf)
+      (let [worker (mk-worker conf nil storm-id assignment-id (Integer/parseInt port-str) worker-id)]
       (add-shutdown-hook-with-force-kill-in-1-sec #(.shutdown worker)))))

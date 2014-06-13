@@ -16,7 +16,7 @@
 
 (ns backtype.storm.util
   (:import [java.net InetAddress])
-  (:import [java.util Map Map$Entry List ArrayList Collection Iterator HashMap Timer TimerTask])
+  (:import [java.util Map Map$Entry List ArrayList Collection Iterator HashMap])
   (:import [java.io FileReader FileNotFoundException])
   (:import [backtype.storm Config])
   (:import [backtype.storm.utils Time Container ClojureTimerTask Utils
