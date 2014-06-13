@@ -15,7 +15,7 @@
 ;; limitations under the License.
 (ns backtype.storm.util
   (:import [java.net InetAddress])
-  (:import [java.util Map Map$Entry List ArrayList Collection Iterator HashMap Timer TimerTask])
+  (:import [java.util Map Map$Entry List ArrayList Collection Iterator HashMap])
   (:import [java.io FileReader FileNotFoundException])
   (:import [backtype.storm Config])
   (:import [backtype.storm.utils Time Container ClojureTimerTask Utils
@@ -310,9 +310,9 @@
 (defn barr [& vals]
   (byte-array (map byte vals)))
 
-(defn halt-process! [val & msg]
-  (log-message "Halting process: " msg)
-  (.halt (Runtime/getRuntime) val)
+(defn exit-process! [val & msg]
+  (log-message "exiting process: " msg)
+  (.exit (Runtime/getRuntime) val)
   )
 
 (defn sum [vals]
@@ -397,47 +397,54 @@
     (.start builder)
     ))
 
-(defn sleep-secs [secs]
+(defn sleep-secs
+  [secs]
   (when (pos? secs)
     (Time/sleep (* (long secs) 1000))))
 
-(defn sleep-until-secs [target-secs]
+(defn sleep-until-secs
+  [target-secs]
   (Time/sleepUntil (* (long target-secs) 1000)))
 
 (def ^:const sig-kill 9)
 
 (def ^:const sig-term 15)
 
-(defn send-signal-to-process [pid signum]
+(defn send-signal-to-process
+  [pid signum]
   (try-cause
     (exec-command! (str (if on-windows?
                           (if(== signum sig-kill) "taskkill /f /pid " "taskkill /pid ")
                           (str "kill -" signum " "))
                      pid))
-    (catch Exception e
+    (catch ExecuteException e
       (log-message "Error when trying to kill " pid ". Process is probably already dead."))))
 
-(defn force-kill-process [pid]
+(defn force-kill-process
+  [pid]
   (send-signal-to-process pid sig-kill))
 
-(defn kill-process-with-sig-term [pid]
+(defn kill-process-with-sig-term
+  [pid]
   (send-signal-to-process pid sig-term))
 
 (def process-killer-timer (java.util.Timer. "process-killer-timer" true))
 
-(defn- delayed-execute [func delay-secs]
-  "executes func after delay-secs have elapsed, can throw illegal state exception if timer is already cancelled"
-    ;, wanted to use timer.clj but that results in circular dependency as timer.clj uses this file
-  (try-cause
-    (.schedule process-killer-timer (proxy [java.util.TimerTask] [] (run [] (func))) (* delay-secs 1000))))
-
-(defn ensure-process-killed! [pid]
+(defn ensure-process-killed!
+  [pid]
   ;; TODO: should probably do a ps ax of some sort to make sure it was killed
   (try-cause
     (kill-process-with-sig-term pid)
-    (delayed-execute force-kill-process 5) ;allow 5 secs for cleanup then force kill the process.
-    (catch Exception e
+    (catch ExecuteException e
       (log-message "Error when trying to kill " pid ". Process is probably already dead."))))
+
+(defn add-shutdown-hook-with-force-kill-in-1-sec
+  "adds the user supplied function as a shutdown hook for cleanup.
+   Also adds a function that sleeps for a second and then sends kill -9 to process to avoid any zombie process in case cleanup function hangs."
+  [func]
+  (.addShutdownHook (Runtime/getRuntime) (Thread. #((func)
+                                                     (sleep-secs 1)
+                                                     (force-kill-process (process-pid))))))
 
 (defprotocol SmartThread
   (start [this])
@@ -448,7 +455,7 @@
 ;; afn returns amount of time to sleep
 (defnk async-loop [afn
                    :daemon false
-                   :kill-fn (fn [error] (halt-process! 1 "Async loop died!"))
+                   :kill-fn (fn [error] (exit-process! 1 "Async loop died!"))
                    :priority Thread/NORM_PRIORITY
                    :factory? false
                    :start true

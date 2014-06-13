@@ -161,7 +161,7 @@
 (defn mk-halting-timer []
   (mk-timer :kill-fn (fn [t]
                        (log-error t "Error when processing event")
-                       (halt-process! 20 "Error when processing an event")
+                       (exit-process! 20 "Error when processing an event")
                        )))
 
 (defn worker-data [conf mq-context storm-id assignment-id port worker-id]
@@ -328,7 +328,7 @@
     (:port worker)
     (:transfer-local-fn worker)
     (-> worker :storm-conf (get TOPOLOGY-RECEIVER-BUFFER-SIZE))
-    :kill-fn (fn [t] (halt-process! 11))))
+    :kill-fn (fn [t] (exit-process! 11))))
 
 (defn- close-resources [worker]
   (let [dr (:default-shared-resources worker)]
@@ -439,15 +439,15 @@
 
 (defmethod mk-suicide-fn
   :local [conf]
-  (fn [] (halt-process! 1 "Worker died")))
+  (fn [] (exit-process! 1 "Worker died")))
 
 (defmethod mk-suicide-fn
   :distributed [conf]
-  (fn [] (halt-process! 1 "Worker died")))
+  (fn [] (exit-process! 1 "Worker died")))
 
-(defn -main [storm-id assignment-id port-str worker-id]  
-  (let [conf (read-storm-config)]
-    (validate-distributed-mode! conf)
-    (.addShutdownHook (Runtime/getRuntime)
-      (Thread. (fn []
-                 (.shutdown (mk-worker conf nil storm-id assignment-id (Integer/parseInt port-str) worker-id)))))))
+(defn -main
+  [storm-id assignment-id port-str worker-id]
+    (let [conf (read-storm-config)]
+      (validate-distributed-mode! conf)
+      (let [worker (mk-worker conf nil storm-id assignment-id (Integer/parseInt port-str) worker-id)]
+      (add-shutdown-hook-with-force-kill-in-1-sec #(.shutdown worker)))))
