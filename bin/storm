@@ -155,7 +155,8 @@ def exec_storm_class(klass, jvmtype="-server", jvmopts=[], extrajars=[], args=[]
         storm_log_dir = STORM_DIR+"/logs"
     all_args = [
         JAVA_CMD, jvmtype, get_config_opts(),
-        "-Dstorm.home=" + STORM_DIR, 
+        "-Dstorm.home=" + STORM_DIR,
+        "-Dstorm.log.dir=" + storm_log_dir,
         "-Djava.library.path=" + confvalue("java.library.path", extrajars),
         "-Dstorm.conf.file=" + CONFFILE,
         "-cp", get_classpath(extrajars),
