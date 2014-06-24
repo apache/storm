@@ -19,7 +19,6 @@
   (:use [clojure [string :only [join]]])
   (:use [backtype.storm.util :only [uuid defnk url-encode]])
   (:use [clj-time coerce format])
-  (:import [org.joda.time DateTimeZone DateTime])
   (:import [backtype.storm.generated ExecutorInfo ExecutorSummary])
   (:require [compojure.route :as route]
             [compojure.handler :as handler]))
@@ -124,13 +123,9 @@ $(\"table#%s\").each(function(i) { $(this).tablesorter({ sortList: %s, headers: 
        [(apply sort-table id args)])
      )))
 
-(defn from-long-dtz
-  [#^Long millis #^DateTimeZone dtz]
-  (DateTime. millis dtz))
-
 (defn date-str [secs]
-  (let [dt (from-long-dtz (* 1000 (long secs)) (DateTimeZone/getDefault))]
-    (unparse (formatter "EEE, dd MMM yyyy HH:mm:ss Z" (.getZone dt)) dt)
+  (let [dt (from-long (* 1000 (long secs)))]
+    (unparse (:rfc822 formatters) dt)
     ))
 
 (defn url-format [fmt & args]
