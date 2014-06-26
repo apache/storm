@@ -236,11 +236,11 @@ Spout.prototype.handleNewCommand = function(command) {
     }
 
     if (command["command"] === "ack") {
-        this.ack(msg["id"], callback);
+        this.ack(command["id"], callback);
     }
 
     if (command["command"] === "fail") {
-        this.fail(msg["id"], callback);
+        this.fail(command["id"], callback);
     }
 }
 
