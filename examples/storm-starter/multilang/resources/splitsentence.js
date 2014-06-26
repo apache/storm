@@ -1,9 +1,12 @@
 var storm = require('./storm');
 var BasicBolt = storm.BasicBolt;
 
-function SplitSentenceBolt() {};
+function SplitSentenceBolt() {
+    BasicBolt.call(this);
+};
 
 SplitSentenceBolt.prototype = new BasicBolt();
+SplitSentenceBolt.prototype = Object.create(BasicBolt.prototype);
 
 SplitSentenceBolt.prototype.process = function(tup) {
         var self = this;
