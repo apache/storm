@@ -2,6 +2,7 @@
 var fs = require('fs');
 
 function logToFile(msg) {
+
     fs.appendFileSync('/Users/anya/tmp/storm/log', msg + '\n\n\n');
 }
 
@@ -35,6 +36,10 @@ function Storm() {
     this.numMessages = 0;
 }
 
+Storm.prototype.logToFile = function(msg) {
+    logToFile(this.name + ':\n' + msg);
+}
+
 Storm.prototype.initSetupInfo = function(setupInfo) {
     sendpid(setupInfo['pidDir']);
     this.initialize(setupInfo['conf'], setupInfo['context']);
@@ -42,18 +47,14 @@ Storm.prototype.initSetupInfo = function(setupInfo) {
 
 Storm.prototype.startReadingInput = function() {
     var self = this;
-    logToFile('startReadingInput');
+    this.logToFile('startReadingInput');
 
     process.stdin.on('readable', function() {
         var chunk = process.stdin.read();
 
-        logToFile('CHUNK (length ' + chunk.length + '): ' + chunk.toString());
-
         if (!!chunk && chunk.length !== 0) {
           var lines = chunk.toString().split('\n');
           lines.forEach(function(line) {
-              logToFile('LINE:***' + line + '***');
-
               self.handleNewLine(line);
           })
         }
@@ -61,10 +62,10 @@ Storm.prototype.startReadingInput = function() {
 }
 
 Storm.prototype.handleNewLine = function(line) {
-    logToFile('handleNewLine LINE: ' + line);
+    this.logToFile('handleNewLine LINE: ' + line);
 
     if (line === 'end') {
-        logToFile('MESSAGE READY!!\n');
+        this.logToFile('MESSAGE READY!!\n');
         var msg = this.collectMessageLines();
         this.cleanLines();
         this.handleNewMessage(msg);
@@ -96,20 +97,26 @@ Storm.prototype.isTaskId = function(msg) {
 Storm.prototype.handleNewMessage = function(msg) {
     var parsedMsg = JSON.parse(msg);
 
-    logToFile('handleNewMessage ' + msg);
+    this.logToFile('handleNewMessage ' + msg);
 
     if (this.isFirstMsg()) {
-        logToFile('first message');
+        this.logToFile('first message');
         this.initSetupInfo(parsedMsg);
     } else if (this.isTaskId(parsedMsg)) {
-        logToFile('task id');
+        this.logToFile('task id');
         this.handleNewTaskId(parsedMsg);
     } else {
-        logToFile('command');
+        this.logToFile('command');
         this.handleNewCommand(parsedMsg);
     }
-
     this.numMessages++;
+}
+
+Storm.prototype.handleNewTaskId = function(taskId) {
+    var callback = this.taskIdCallbacks.shift();
+    if (callback) {
+        callback(taskId);
+    }
 }
 
 Storm.prototype.emit = function(tup, stream, id, directTask, callback) {
@@ -122,6 +129,11 @@ Storm.prototype.emitDirect = function(tup, stream, id, directTask) {
 }
 
 Storm.prototype.initialize = function(conf, context) {}
+
+Storm.prototype.run = function() {
+    this.logToFile('run');
+    this.startReadingInput();
+}
 
 function Tuple(id, component, stream, task, values) {
     this.id = id;
@@ -161,6 +173,7 @@ function Tuple(id, component, stream, task, values) {
 function BasicBolt() {
     Storm.call(this);
     this.anchorTuple = null;
+    this.name = 'BOLT'
 };
 
 BasicBolt.prototype = Object.create(Storm.prototype);
@@ -168,26 +181,24 @@ BasicBolt.prototype.constructor = Storm;
 
 BasicBolt.prototype.process = function(tuple) {};
 
-BasicBolt.prototype.run = function() {
-    logToFile('run');
-    this.startReadingInput();
-}
-
 BasicBolt.prototype.__emit = function(tup, stream, anchors, directTask) {
+    var self = this;
     if (typeof anchors === 'undefined') {
         anchors = [];
     }
 
     if (this.anchorTuple !== null) {
+        this.logToFile('Anchor tuple id - ' + this.anchorTuple.id);
         anchors = [this.anchorTuple]
     }
     var m = {"command": "emit"};
 
-    if (!typeof stream === 'undefined') {
+    if (typeof stream !== 'undefined') {
         m["stream"] = stream
     }
 
     m["anchors"] = anchors.map(function (a) {
+        self.logToFile('ID - ' + a.id);
         return a.id;
     });
 
@@ -198,15 +209,9 @@ BasicBolt.prototype.__emit = function(tup, stream, anchors, directTask) {
     sendMsgToParent(m);
 }
 
-BasicBolt.prototype.handleNewTaskId = function(taskId) {
-    var callback = this.taskIdCallbacks.shift();
-    if (callback) {
-        callback(taskId);
-    }
-}
-
 BasicBolt.prototype.handleNewCommand = function(command) {
     var tup = new Tuple(command["id"], command["comp"], command["stream"], command["task"], command["tuple"]);
+    this.logToFile('Anchor tuple: id - ' + command["id"] + ' tuple - ' + JSON.stringify(command['tuple']));
     this.anchorTuple = tup;
     this.process(tup);
     this.ack(tup);
@@ -216,8 +221,16 @@ BasicBolt.prototype.ack = function(tup) {
     sendMsgToParent({"command": "ack", "id": tup.id});
 }
 
-function Spout() {};
-Spout.prototype.initialize = function(conf, context) {};
+function Spout() {
+    Storm.call(this);
+    this.name = 'SPOUT';
+};
+Spout.prototype = Object.create(Storm.prototype);
+Spout.prototype.constructor = Storm;
+
+Spout.prototype.initialize = function(conf, context) {
+    this.emit(['Spout Initializing']);
+};
 
 Spout.prototype.ack = function(id) {};
 
@@ -228,7 +241,7 @@ Spout.prototype.nextTuple = function(callback) {};
 Spout.prototype.handleNewCommand = function(command) {
     var self = this;
     var callback = function() {
-        self.sync();
+        sync();
     }
 
     if (command["command"] === "next") {
@@ -264,4 +277,5 @@ Spout.prototype.__emit = function(tup, stream, id, directTask) {
 
 module.exports.BasicBolt = BasicBolt;
 module.exports.logToFile = logToFile;
-
+module.exports.Spout = Spout;
+module.exports.log = log;
