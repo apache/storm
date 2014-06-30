@@ -3,6 +3,10 @@
  * STORM-320: Support STORM_CONF_DIR environment variable to support
  * STORM-360: Add node details for Error Topology and Component pages
  * STORM-54: Per-Topology Classpath and Environment for Workers
+ * STORM-355: excluding outdated netty transitively included via curator
+ * STORM-183: Replacing RunTime.halt() with RunTime.exit()
+ * STORM-213: Decouple In-Process ZooKeeper from LocalCluster.
+ * STORM-365: Add support for Python 3 to storm command.
 
 ## 0.9.2-incubating
  * STORM-66: send taskid on initial handshake

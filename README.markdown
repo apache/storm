@@ -145,6 +145,8 @@ under the License.
 * Troy Ding ([@troyding](https://github.com/troyding)) 
 * Aaron Zimmerman ([@aaronzimmerman](https://github.com/aaronzimmerman))
 * Albert Chu ([@chu11](https://github.com/chu11))
+* Krystian Nowak ([@krystiannowak](https://github.com/krystiannowak))
+* Parth-Brahmbhatt ([@Parth-Brahmbhatt](https://github.com/Parth-Brahmbhatt))
 
 ## Acknowledgements
 
