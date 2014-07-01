@@ -19,16 +19,16 @@ package storm.kafka;
 
 import backtype.storm.Config;
 import backtype.storm.utils.Utils;
-import com.netflix.curator.framework.CuratorFramework;
-import com.netflix.curator.framework.CuratorFrameworkFactory;
-import com.netflix.curator.retry.RetryNTimes;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.retry.RetryNTimes;
 import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import storm.kafka.trident.GlobalPartitionInformation;
 
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.SocketTimeoutException;
 import java.util.List;
 import java.util.Map;
 
@@ -52,15 +52,15 @@ public class DynamicBrokersReader {
                             Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_RETRY_INTERVAL))));
             _curator.start();
         } catch (Exception ex) {
-            LOG.error("can't connect to zookeeper");
+            LOG.error("Couldn't connect to zookeeper", ex);
         }
     }
 
     /**
      * Get all partitions with their current leaders
      */
-    public GlobalPartitionInformation getBrokerInfo() {
-        GlobalPartitionInformation globalPartitionInformation = new GlobalPartitionInformation();
+    public GlobalPartitionInformation getBrokerInfo() throws SocketTimeoutException {
+      GlobalPartitionInformation globalPartitionInformation = new GlobalPartitionInformation();
         try {
             int numPartitionsForTopic = getNumPartitions();
             String brokerInfoPath = brokerPath();
@@ -75,6 +75,8 @@ public class DynamicBrokersReader {
                     LOG.error("Node {} does not exist ", path);
                 }
             }
+        } catch (SocketTimeoutException e) {
+					throw e;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

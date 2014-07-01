@@ -84,7 +84,20 @@ public class Config extends HashMap<String, Object> {
      */
     public static final String STORM_MESSAGING_NETTY_CLIENT_WORKER_THREADS = "storm.messaging.netty.client_worker_threads"; 
     public static final Object STORM_MESSAGING_NETTY_CLIENT_WORKER_THREADS_SCHEMA = Number.class;
+    
+    /**
+     * If the Netty messaging layer is busy, the Netty client will try to batch message as more as possible up to the size of STORM_NETTY_MESSAGE_BATCH_SIZE bytes
+     */
+    public static final String STORM_NETTY_MESSAGE_BATCH_SIZE = "storm.messaging.netty.transfer.batch.size";
+    public static final Object STORM_NETTY_MESSAGE_BATCH_SIZE_SCHEMA = Number.class;
 
+    /**
+     * We check with this interval that whether the Netty channel is writable and try to write pending messages
+     */
+    public static final String STORM_NETTY_FLUSH_CHECK_INTERVAL_MS = "storm.messaging.netty.flush.check.interval.ms";
+    public static final Object STORM_NETTY_FLUSH_CHECK_INTERVAL_MS_SCHEMA = Number.class;
+    
+    
     /**
      * A list of hosts of ZooKeeper servers used to manage the cluster.
      */
@@ -462,6 +475,12 @@ public class Config extends HashMap<String, Object> {
     public static final Object WORKER_CHILDOPTS_SCHEMA = ConfigValidation.StringOrStringListValidator;
 
     /**
+     * control how many worker receiver threads we need per worker
+     */
+    public static final String WORKER_RECEIVER_THREAD_COUNT = "topology.worker.receiver.thread.count";
+    public static final Object WORKER_RECEIVER_THREAD_COUNT_SCHEMA = Number.class;
+    
+    /**
      * How often this worker should heartbeat to the supervisor.
      */
     public static final String WORKER_HEARTBEAT_FREQUENCY_SECS = "worker.heartbeat.frequency.secs";
@@ -499,13 +518,12 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_DEBUG = "topology.debug";
     public static final Object TOPOLOGY_DEBUG_SCHEMA = Boolean.class;
 
-
     /**
-     * Whether or not the master should optimize topologies by running multiple
-     * tasks in a single thread where appropriate.
+     * The serializer for communication between shell components and non-JVM
+     * processes
      */
-    public static final String TOPOLOGY_OPTIMIZE = "topology.optimize";
-    public static final Object TOPOLOGY_OPTIMIZE_SCHEMA = Boolean.class;
+    public static final String TOPOLOGY_MULTILANG_SERIALIZER = "topology.multilang.serializer";
+    public static final Object TOPOLOGY_MULTILANG_SERIALIZER_SCHEMA = String.class;
 
     /**
      * How many processes should be spawned around the cluster to execute this
@@ -662,6 +680,19 @@ public class Config extends HashMap<String, Object> {
      */
     public static final String TOPOLOGY_WORKER_CHILDOPTS="topology.worker.childopts";
     public static final Object TOPOLOGY_WORKER_CHILDOPTS_SCHEMA = ConfigValidation.StringOrStringListValidator;
+
+    /**
+     * Topology-specific classpath for the worker child process. This is combined to the usual classpath.
+     */
+    public static final String TOPOLOGY_CLASSPATH="topology.classpath";
+    public static final Object TOPOLOGY_CLASSPATH_SCHEMA = ConfigValidation.StringOrStringListValidator;
+
+    /**
+     * Topology-specific environment variables for the worker child process. 
+     * This is added to the existing environment (that of the supervisor)
+     */
+     public static final String TOPOLOGY_ENVIRONMENT="topology.environment";
+     public static final Object TOPOLOGY_ENVIRONMENT_SCHEMA = Map.class;
 
     /**
      * This config is available for TransactionalSpouts, and contains the id ( a String) for
@@ -825,6 +856,22 @@ public class Config extends HashMap<String, Object> {
     public static final String ISOLATION_SCHEDULER_MACHINES = "isolation.scheduler.machines";
     public static final Object ISOLATION_SCHEDULER_MACHINES_SCHEMA = Map.class;
 
+    public static void setClasspath(Map conf, String cp) {
+        conf.put(Config.TOPOLOGY_CLASSPATH, cp);
+    }
+
+    public void setClasspath(String cp) {
+        setClasspath(this, cp);
+    }
+
+    public static void setEnvironment(Map conf, Map env) {
+        conf.put(Config.TOPOLOGY_ENVIRONMENT, env);
+    }
+
+    public void setEnvironment(Map env) {
+        setEnvironment(this, env);
+    }
+
     public static void setDebug(Map conf, boolean isOn) {
         conf.put(Config.TOPOLOGY_DEBUG, isOn);
     } 
@@ -832,11 +879,6 @@ public class Config extends HashMap<String, Object> {
     public void setDebug(boolean isOn) {
         setDebug(this, isOn);
     }
-    
-    @Deprecated
-    public void setOptimize(boolean isOn) {
-        put(Config.TOPOLOGY_OPTIMIZE, isOn);
-    } 
     
     public static void setNumWorkers(Map conf, int workers) {
         conf.put(Config.TOPOLOGY_WORKERS, workers);

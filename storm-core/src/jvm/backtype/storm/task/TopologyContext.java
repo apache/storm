@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.commons.lang.NotImplementedException;
+import org.json.simple.JSONValue;
 
 /**
  * A TopologyContext is given to bolts and spouts in their "prepare" and "open"
@@ -217,6 +218,16 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
     public Collection<ITaskHook> getHooks() {
         return _hooks;
     }
+    
+    @Override
+    public String toJSONString() {
+        Map obj = new HashMap();
+        obj.put("task->component", this.getTaskToComponent());
+        obj.put("taskid", this.getThisTaskId());
+        // TODO: jsonify StormTopology
+        // at the minimum should send source info
+        return JSONValue.toJSONString(obj);
+    }
 
     /*
      * Register a IMetric instance. 
@@ -233,6 +244,11 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
 
         if (metric == null) {
             throw new IllegalArgumentException("Cannot register a null metric");
+        }
+
+        if (timeBucketSizeInSecs <= 0) {
+            throw new IllegalArgumentException("TopologyContext.registerMetric can only be called with timeBucketSizeInSecs " +
+                                               "greater than or equal to 1 second.");
         }
         
         Map m1 = _registeredMetrics;

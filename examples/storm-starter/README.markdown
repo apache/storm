@@ -31,6 +31,7 @@ code.
 
 ## storm-starter overview
 
+
 storm-starter contains a variety of examples of using Storm.  If this is your first time working with Storm, check out
 these topologies first:
 
@@ -57,6 +58,20 @@ Install [Maven](http://maven.apache.org/) (preferably version 3.x) by following
 the [Maven installation instructions](http://maven.apache.org/download.cgi).
 
 
+## Build and install Storm jars locally
+
+If you are using the latest development version of Storm, e.g. by having cloned the Storm git repository,
+then you must first perform a local build of Storm itself.  Otherwise you will run into Maven errors such as
+"Could not resolve dependencies for project `org.apache.storm:storm-starter:<storm-version>-SNAPSHOT`".
+
+    # Must be run from the top-level directory of the Storm code repository
+    $ mvn clean install -DskipTests=true
+
+This command will build Storm locally and install its jar files to your user's `$HOME/.m2/repository/`.  When you run
+the Maven command to build and run storm-starter (see below), Maven will then be able to find the corresponding version
+of Storm in this local Maven repository at `$HOME/.m2/repository`.
+
+
 ## Running topologies with Maven
 
 storm-starter topologies can be run with the maven-exec-plugin. For example, to
@@ -68,14 +83,43 @@ You can also run clojure topologies with Maven:
 
     $ mvn compile exec:java -Dstorm.topology=storm.starter.clj.word_count
 
+In Windows parameter should be quoted, like this:
+
+    $ mvn compile exec:java "-Dstorm.topology=storm.starter.clj.word_count"
+
 ## Packaging storm-starter for use on a Storm cluster
 
 You can package a jar suitable for submitting to a Storm cluster with the command:
 
     $ mvn package
 
-This will package your code and all the non-Storm dependencies into a single "uberjar" at the path
+This will package your code and all the non-Storm dependencies into a single "uberjar" (or "fat jar") at the path
 `target/storm-starter-{version}-jar-with-dependencies.jar`.
+
+Example filename of the uberjar:
+
+    >>> target/storm-starter-0.9.3-incubating-SNAPSHOT-jar-with-dependencies.jar
+
+You can submit (run) a topology contained in this uberjar to Storm via the `storm` CLI tool:
+
+    # Example 1: Run the RollingTopWords in local mode (LocalCluster)
+    $ storm jar storm-starter-*-jar-with-dependencies.jar storm.starter.RollingTopWords
+
+    # Example 2: Run the RollingTopWords in remote/cluster mode,
+    #            under the name "production-topology"
+    $ storm jar storm-starter-*-jar-with-dependencies.jar storm.starter.RollingTopWords production-topology remote
+
+_Submitting a topology in local vs. remote mode:_
+It depends on the actual code of a topology how you can or even must tell Storm whether to run the topology locally (in
+an in-memory LocalCluster instance of Storm) or remotely (in a "real" Storm cluster).  In the case of
+[RollingTopWords](src/jvm/storm/starter/RollingTopWords.java), for instance, this can be done by passing command line
+arguments.
+Topologies other than `RollingTopWords` -- such as [ExclamationTopology](src/jvm/storm/starter/ExclamationTopology.java)
+-- may behave differently, e.g. by always submitting to a remote cluster (i.e. hardcoded in a way that you, as a user,
+cannot change without modifying the topology code), or by requiring a customized configuration file that the topology
+code will parse prior submitting the topology to Storm.  Similarly, further options such as the name of the topology may
+be user-configurable or be hardcoded into the topology code.  So make sure you understand how the topology of your
+choice is set up and configured!
 
 
 ## Running unit tests

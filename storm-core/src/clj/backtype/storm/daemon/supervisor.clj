@@ -172,11 +172,13 @@
     (when thread-pid
       (psim/kill-process thread-pid))
     (doseq [pid pids]
-      (ensure-process-killed! pid)
+      (kill-process-with-sig-term pid))
+    (if-not (empty? pids) (sleep-secs 1)) ;; allow 1 second for execution of cleanup threads on worker.
+    (doseq [pid pids]
+      (force-kill-process pid)
       (try
         (rmpath (worker-pid-path conf id pid))
-        (catch Exception e)) ;; on windows, the supervisor may still holds the lock on the worker directory
-      )
+        (catch Exception e))) ;; on windows, the supervisor may still holds the lock on the worker directory
     (try-cleanup-worker conf id))
   (log-message "Shut down " (:supervisor-id supervisor) ":" id))
 
@@ -197,7 +199,7 @@
    :curr-assignment (atom nil) ;; used for reporting used ports when heartbeating
    :timer (mk-timer :kill-fn (fn [t]
                                (log-error t "Error when processing event")
-                               (halt-process! 20 "Error when processing an event")
+                               (exit-process! 20 "Error when processing an event")
                                ))
    })
 
@@ -438,30 +440,54 @@
       (FileUtils/moveDirectory (File. tmproot) (File. stormroot))
       ))
 
+(defn jlp [stormroot conf]
+  (let [resource-root (str stormroot File/separator RESOURCES-SUBDIR)
+        os (clojure.string/replace (System/getProperty "os.name") #"\s+" "_")
+        arch (System/getProperty "os.arch")
+        arch-resource-root (str resource-root File/separator os "-" arch)]
+    (str arch-resource-root File/pathSeparator resource-root File/pathSeparator (conf JAVA-LIBRARY-PATH)))) 
+
 (defn- substitute-worker-childopts [value port]
   (let [sub-fn (fn [s] (.replaceAll s "%ID%" (str port)))]
     (if (list? value)
       (map sub-fn value)
       (-> value sub-fn (.split " ")))))
 
+(defn java-cmd []
+  (let [java-home (.get (System/getenv) "JAVA_HOME")]
+    (if (nil? java-home)
+      "java"
+      (str java-home file-path-separator "bin" file-path-separator "java")
+      )))
+
+
 (defmethod launch-worker
     :distributed [supervisor storm-id port worker-id]
     (let [conf (:conf supervisor)
           storm-home (System/getProperty "storm.home")
           stormroot (supervisor-stormdist-root conf storm-id)
+          jlp (jlp stormroot conf)
           stormjar (supervisor-stormjar-path stormroot)
           storm-conf (read-supervisor-storm-conf conf storm-id)
-          classpath (add-to-classpath (current-classpath) [stormjar])
+          topo-classpath (if-let [cp (storm-conf TOPOLOGY-CLASSPATH)]
+                           [cp]
+                           [])
+          classpath (-> (current-classpath)
+                        (add-to-classpath [stormjar])
+                        (add-to-classpath topo-classpath))
           worker-childopts (when-let [s (conf WORKER-CHILDOPTS)]
                              (substitute-worker-childopts s port))
           topo-worker-childopts (when-let [s (storm-conf TOPOLOGY-WORKER-CHILDOPTS)]
                                   (substitute-worker-childopts s port))
+          topology-worker-environment (if-let [env (storm-conf TOPOLOGY-ENVIRONMENT)]
+                                        (merge env {"LD_LIBRARY_PATH" jlp})
+                                        {"LD_LIBRARY_PATH" jlp})
           logfilename (str "worker-" port ".log")
           command (concat
-                    ["java" "-server"]
+                    [(java-cmd) "-server"]
                     worker-childopts
                     topo-worker-childopts
-                    [(str "-Djava.library.path=" (conf JAVA-LIBRARY-PATH))
+                    [(str "-Djava.library.path=" jlp)
                      (str "-Dlogfile.name=" logfilename)
                      (str "-Dstorm.home=" storm-home)
                      (str "-Dlogback.configurationFile=" storm-home "/logback/cluster.xml")
@@ -479,7 +505,7 @@
                          (map #(str \' (clojure.string/escape % {\' "\\'"}) \'))
                          (clojure.string/join " "))]
       (log-message "Launching worker with command: " shell-cmd)
-      (launch-process command :environment {"LD_LIBRARY_PATH" (conf JAVA-LIBRARY-PATH)})
+      (launch-process command :environment topology-worker-environment)
       ))
 
 ;; local implementation
@@ -527,7 +553,8 @@
 (defn -launch [supervisor]
   (let [conf (read-storm-config)]
     (validate-distributed-mode! conf)
-    (mk-supervisor conf nil supervisor)))
+    (let [supervisor (mk-supervisor conf nil supervisor)]
+      (add-shutdown-hook-with-force-kill-in-1-sec #(.shutdown supervisor)))))
 
 (defn standalone-supervisor []
   (let [conf-atom (atom nil)

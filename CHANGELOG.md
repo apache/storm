@@ -1,4 +1,53 @@
-## 0.9.2-incubating (unreleased)
+## 0.9.3-incubating
+ * STORM-337: Expose managed spout ids publicly
+ * STORM-320: Support STORM_CONF_DIR environment variable to support
+ * STORM-360: Add node details for Error Topology and Component pages
+ * STORM-54: Per-Topology Classpath and Environment for Workers
+ * STORM-355: excluding outdated netty transitively included via curator
+ * STORM-183: Replacing RunTime.halt() with RunTime.exit()
+ * STORM-213: Decouple In-Process ZooKeeper from LocalCluster.
+ * STORM-365: Add support for Python 3 to storm command.
+ * STORM-332: Enable Kryo serialization in storm-kafka
+ * STORM-370: Add check for empty table before sorting dom in UI
+ * STORM-359: add logviewer paging and download
+ * STORM-372: Typo in storm_env.ini
+ * STORM-266: Adding shell process pid and name in the log message
+ * STORM-367: Storm UI REST api documentation.
+
+## 0.9.2-incubating
+ * STORM-66: send taskid on initial handshake
+ * STORM-342: Contention in Disruptor Queue which may cause out of order or lost messages
+ * STORM-338: Move towards idiomatic Clojure style 
+ * STORM-335: add drpc test for removing timed out requests from queue
+ * STORM-69: Storm UI Visualizations for Topologies
+ * STORM-297: Performance scaling with CPU
+ * STORM-244: DRPC timeout can return null instead of throwing an exception
+ * STORM-63: remove timeout drpc request from its function's request queue
+ * STORM-313: Remove log-level-page from logviewer
+ * STORM-205: Add REST API To Storm UI
+ * STORM-326: tasks send duplicate metrics
+ * STORM-331: Update the Kafka dependency of storm-kafka to 0.8.1.1
+ * STORM-308: Add support for config_value to {supervisor,nimbus,ui,drpc,logviewer} childopts
+ * STORM-309: storm-starter Readme: windows documentation update
+ * STORM-318: update storm-kafka to use apache curator-2.4.0
+ * STORM-303: storm-kafka reliability improvements
+ * STORM-233: Removed inline heartbeat to nimbus to avoid workers being killed when under heavy ZK load
+ * STORM-267: fix package name of LoggingMetricsConsumer in storm.yaml.example
+ * STORM-265: upgrade to clojure 1.5.1
+ * STORM-232: ship JNI dependencies with the topology jar
+ * STORM-295: Add storm configuration to define JAVA_HOME
+ * STORM-138: Pluggable serialization for multilang
+ * STORM-264: Removes references to the deprecated topology.optimize
+ * STORM-245: implement Stream.localOrShuffle() for trident
+ * STORM-317: Add SECURITY.md to release binaries
+ * STORM-310: Change Twitter authentication
+ * STORM-305: Create developer documentation
+ * STORM-280: storm unit tests are failing on windows
+ * STORM-298: Logback file does not include full path for metrics appender fileNamePattern
+ * STORM-316: added validation to registermetrics to have timebucketSizeInSecs >= 1
+ * STORM-315: Added progress bar when submitting topology
+ * STORM-214: Windows: storm.cmd does not properly handle multiple -c arguments
+ * STORM-306: Add security documentation
  * STORM-302: Fix Indentation for pom.xml in storm-dist
  * STORM-235: Registering a null metric should blow up early
  * STORM-113: making thrift usage thread safe for local cluster

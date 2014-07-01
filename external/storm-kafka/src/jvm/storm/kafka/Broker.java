@@ -17,13 +17,19 @@
  */
 package storm.kafka;
 
-import java.io.Serializable;
 import com.google.common.base.Objects;
 
-public class Broker implements Serializable, Comparable<Broker> {
-    public final String host;
-    public final int port;
+import java.io.Serializable;
 
+public class Broker implements Serializable, Comparable<Broker> {
+    public String host;
+    public int port;
+
+    // for kryo compatibility
+    private Broker() {
+	
+    }
+    
     public Broker(String host, int port) {
         this.host = host;
         this.port = port;
