@@ -1017,6 +1017,9 @@ class submitTopology_args:
     (4, TType.STRUCT, 'topology', (StormTopology, StormTopology.thrift_spec), None, ), # 4
   )
 
+  def __hash__(self):
+    return 0 + hash(self.name) + hash(self.uploadedJarLocation) + hash(self.jsonConf) + hash(self.topology)
+
   def __init__(self, name=None, uploadedJarLocation=None, jsonConf=None, topology=None,):
     self.name = name
     self.uploadedJarLocation = uploadedJarLocation
@@ -1110,6 +1113,9 @@ class submitTopology_result:
     (2, TType.STRUCT, 'ite', (InvalidTopologyException, InvalidTopologyException.thrift_spec), None, ), # 2
   )
 
+  def __hash__(self):
+    return 0 + hash(self.e) + hash(self.ite)
+
   def __init__(self, e=None, ite=None,):
     self.e = e
     self.ite = ite
@@ -1189,6 +1195,9 @@ class submitTopologyWithOpts_args:
     (4, TType.STRUCT, 'topology', (StormTopology, StormTopology.thrift_spec), None, ), # 4
     (5, TType.STRUCT, 'options', (SubmitOptions, SubmitOptions.thrift_spec), None, ), # 5
   )
+
+  def __hash__(self):
+    return 0 + hash(self.name) + hash(self.uploadedJarLocation) + hash(self.jsonConf) + hash(self.topology) + hash(self.options)
 
   def __init__(self, name=None, uploadedJarLocation=None, jsonConf=None, topology=None, options=None,):
     self.name = name
@@ -1294,6 +1303,9 @@ class submitTopologyWithOpts_result:
     (2, TType.STRUCT, 'ite', (InvalidTopologyException, InvalidTopologyException.thrift_spec), None, ), # 2
   )
 
+  def __hash__(self):
+    return 0 + hash(self.e) + hash(self.ite)
+
   def __init__(self, e=None, ite=None,):
     self.e = e
     self.ite = ite
@@ -1366,6 +1378,9 @@ class killTopology_args:
     (1, TType.STRING, 'name', None, None, ), # 1
   )
 
+  def __hash__(self):
+    return 0 + hash(self.name)
+
   def __init__(self, name=None,):
     self.name = name
 
@@ -1425,6 +1440,9 @@ class killTopology_result:
     None, # 0
     (1, TType.STRUCT, 'e', (NotAliveException, NotAliveException.thrift_spec), None, ), # 1
   )
+
+  def __hash__(self):
+    return 0 + hash(self.e)
 
   def __init__(self, e=None,):
     self.e = e
@@ -1488,6 +1506,9 @@ class killTopologyWithOpts_args:
     (1, TType.STRING, 'name', None, None, ), # 1
     (2, TType.STRUCT, 'options', (KillOptions, KillOptions.thrift_spec), None, ), # 2
   )
+
+  def __hash__(self):
+    return 0 + hash(self.name) + hash(self.options)
 
   def __init__(self, name=None, options=None,):
     self.name = name
@@ -1560,6 +1581,9 @@ class killTopologyWithOpts_result:
     (1, TType.STRUCT, 'e', (NotAliveException, NotAliveException.thrift_spec), None, ), # 1
   )
 
+  def __hash__(self):
+    return 0 + hash(self.e)
+
   def __init__(self, e=None,):
     self.e = e
 
@@ -1621,6 +1645,9 @@ class activate_args:
     (1, TType.STRING, 'name', None, None, ), # 1
   )
 
+  def __hash__(self):
+    return 0 + hash(self.name)
+
   def __init__(self, name=None,):
     self.name = name
 
@@ -1680,6 +1707,9 @@ class activate_result:
     None, # 0
     (1, TType.STRUCT, 'e', (NotAliveException, NotAliveException.thrift_spec), None, ), # 1
   )
+
+  def __hash__(self):
+    return 0 + hash(self.e)
 
   def __init__(self, e=None,):
     self.e = e
@@ -1742,6 +1772,9 @@ class deactivate_args:
     (1, TType.STRING, 'name', None, None, ), # 1
   )
 
+  def __hash__(self):
+    return 0 + hash(self.name)
+
   def __init__(self, name=None,):
     self.name = name
 
@@ -1801,6 +1834,9 @@ class deactivate_result:
     None, # 0
     (1, TType.STRUCT, 'e', (NotAliveException, NotAliveException.thrift_spec), None, ), # 1
   )
+
+  def __hash__(self):
+    return 0 + hash(self.e)
 
   def __init__(self, e=None,):
     self.e = e
@@ -1864,6 +1900,9 @@ class rebalance_args:
     (1, TType.STRING, 'name', None, None, ), # 1
     (2, TType.STRUCT, 'options', (RebalanceOptions, RebalanceOptions.thrift_spec), None, ), # 2
   )
+
+  def __hash__(self):
+    return 0 + hash(self.name) + hash(self.options)
 
   def __init__(self, name=None, options=None,):
     self.name = name
@@ -1938,6 +1977,9 @@ class rebalance_result:
     (2, TType.STRUCT, 'ite', (InvalidTopologyException, InvalidTopologyException.thrift_spec), None, ), # 2
   )
 
+  def __hash__(self):
+    return 0 + hash(self.e) + hash(self.ite)
+
   def __init__(self, e=None, ite=None,):
     self.e = e
     self.ite = ite
@@ -2004,6 +2046,9 @@ class beginFileUpload_args:
   thrift_spec = (
   )
 
+  def __hash__(self):
+    return 0
+
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
       fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
@@ -2050,6 +2095,9 @@ class beginFileUpload_result:
   thrift_spec = (
     (0, TType.STRING, 'success', None, None, ), # 0
   )
+
+  def __hash__(self):
+    return 0 + hash(self.success)
 
   def __init__(self, success=None,):
     self.success = success
@@ -2112,6 +2160,9 @@ class uploadChunk_args:
     (1, TType.STRING, 'location', None, None, ), # 1
     (2, TType.STRING, 'chunk', None, None, ), # 2
   )
+
+  def __hash__(self):
+    return 0 + hash(self.location) + hash(self.chunk)
 
   def __init__(self, location=None, chunk=None,):
     self.location = location
@@ -2177,6 +2228,9 @@ class uploadChunk_result:
   thrift_spec = (
   )
 
+  def __hash__(self):
+    return 0
+
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
       fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
@@ -2224,6 +2278,9 @@ class finishFileUpload_args:
     None, # 0
     (1, TType.STRING, 'location', None, None, ), # 1
   )
+
+  def __hash__(self):
+    return 0 + hash(self.location)
 
   def __init__(self, location=None,):
     self.location = location
@@ -2279,6 +2336,9 @@ class finishFileUpload_result:
   thrift_spec = (
   )
 
+  def __hash__(self):
+    return 0
+
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
       fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
@@ -2326,6 +2386,9 @@ class beginFileDownload_args:
     None, # 0
     (1, TType.STRING, 'file', None, None, ), # 1
   )
+
+  def __hash__(self):
+    return 0 + hash(self.file)
 
   def __init__(self, file=None,):
     self.file = file
@@ -2385,6 +2448,9 @@ class beginFileDownload_result:
   thrift_spec = (
     (0, TType.STRING, 'success', None, None, ), # 0
   )
+
+  def __hash__(self):
+    return 0 + hash(self.success)
 
   def __init__(self, success=None,):
     self.success = success
@@ -2446,6 +2512,9 @@ class downloadChunk_args:
     (1, TType.STRING, 'id', None, None, ), # 1
   )
 
+  def __hash__(self):
+    return 0 + hash(self.id)
+
   def __init__(self, id=None,):
     self.id = id
 
@@ -2505,6 +2574,9 @@ class downloadChunk_result:
     (0, TType.STRING, 'success', None, None, ), # 0
   )
 
+  def __hash__(self):
+    return 0 + hash(self.success)
+
   def __init__(self, success=None,):
     self.success = success
 
@@ -2559,6 +2631,9 @@ class getNimbusConf_args:
   thrift_spec = (
   )
 
+  def __hash__(self):
+    return 0
+
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
       fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
@@ -2605,6 +2680,9 @@ class getNimbusConf_result:
   thrift_spec = (
     (0, TType.STRING, 'success', None, None, ), # 0
   )
+
+  def __hash__(self):
+    return 0 + hash(self.success)
 
   def __init__(self, success=None,):
     self.success = success
@@ -2660,6 +2738,9 @@ class getClusterInfo_args:
   thrift_spec = (
   )
 
+  def __hash__(self):
+    return 0
+
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
       fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
@@ -2706,6 +2787,9 @@ class getClusterInfo_result:
   thrift_spec = (
     (0, TType.STRUCT, 'success', (ClusterSummary, ClusterSummary.thrift_spec), None, ), # 0
   )
+
+  def __hash__(self):
+    return 0 + hash(self.success)
 
   def __init__(self, success=None,):
     self.success = success
@@ -2768,6 +2852,9 @@ class getTopologyInfo_args:
     (1, TType.STRING, 'id', None, None, ), # 1
   )
 
+  def __hash__(self):
+    return 0 + hash(self.id)
+
   def __init__(self, id=None,):
     self.id = id
 
@@ -2828,6 +2915,9 @@ class getTopologyInfo_result:
     (0, TType.STRUCT, 'success', (TopologyInfo, TopologyInfo.thrift_spec), None, ), # 0
     (1, TType.STRUCT, 'e', (NotAliveException, NotAliveException.thrift_spec), None, ), # 1
   )
+
+  def __hash__(self):
+    return 0 + hash(self.success) + hash(self.e)
 
   def __init__(self, success=None, e=None,):
     self.success = success
@@ -2901,6 +2991,9 @@ class getTopologyConf_args:
     (1, TType.STRING, 'id', None, None, ), # 1
   )
 
+  def __hash__(self):
+    return 0 + hash(self.id)
+
   def __init__(self, id=None,):
     self.id = id
 
@@ -2961,6 +3054,9 @@ class getTopologyConf_result:
     (0, TType.STRING, 'success', None, None, ), # 0
     (1, TType.STRUCT, 'e', (NotAliveException, NotAliveException.thrift_spec), None, ), # 1
   )
+
+  def __hash__(self):
+    return 0 + hash(self.success) + hash(self.e)
 
   def __init__(self, success=None, e=None,):
     self.success = success
@@ -3033,6 +3129,9 @@ class getTopology_args:
     (1, TType.STRING, 'id', None, None, ), # 1
   )
 
+  def __hash__(self):
+    return 0 + hash(self.id)
+
   def __init__(self, id=None,):
     self.id = id
 
@@ -3093,6 +3192,9 @@ class getTopology_result:
     (0, TType.STRUCT, 'success', (StormTopology, StormTopology.thrift_spec), None, ), # 0
     (1, TType.STRUCT, 'e', (NotAliveException, NotAliveException.thrift_spec), None, ), # 1
   )
+
+  def __hash__(self):
+    return 0 + hash(self.success) + hash(self.e)
 
   def __init__(self, success=None, e=None,):
     self.success = success
@@ -3166,6 +3268,9 @@ class getUserTopology_args:
     (1, TType.STRING, 'id', None, None, ), # 1
   )
 
+  def __hash__(self):
+    return 0 + hash(self.id)
+
   def __init__(self, id=None,):
     self.id = id
 
@@ -3226,6 +3331,9 @@ class getUserTopology_result:
     (0, TType.STRUCT, 'success', (StormTopology, StormTopology.thrift_spec), None, ), # 0
     (1, TType.STRUCT, 'e', (NotAliveException, NotAliveException.thrift_spec), None, ), # 1
   )
+
+  def __hash__(self):
+    return 0 + hash(self.success) + hash(self.e)
 
   def __init__(self, success=None, e=None,):
     self.success = success
