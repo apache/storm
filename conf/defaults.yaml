@@ -51,7 +51,6 @@ storm.auth.simple-acl.admins: []
 nimbus.host: "localhost"
 nimbus.thrift.port: 6627
 nimbus.thrift.threads: 64
-nimbus.thrift.max_buffer_size: 1048576
 nimbus.childopts: "-Xmx1024m"
 nimbus.task.timeout.secs: 30
 nimbus.supervisor.timeout.secs: 60
