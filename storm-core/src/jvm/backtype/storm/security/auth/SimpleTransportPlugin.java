@@ -70,13 +70,12 @@ public class SimpleTransportPlugin implements ITransportPlugin {
         int port = type.getPort(storm_conf);
         TNonblockingServerSocket serverTransport = new TNonblockingServerSocket(port);
         int numWorkerThreads = type.getNumThreads(storm_conf);
-        int maxBufferSize = type.getMaxBufferSize(storm_conf);
         Integer queueSize = type.getQueueSize(storm_conf);
 
         THsHaServer.Args server_args = new THsHaServer.Args(serverTransport).
                 processor(new SimpleWrapProcessor(processor)).
                 workerThreads(numWorkerThreads).
-                protocolFactory(new TBinaryProtocol.Factory(false, true, maxBufferSize));
+                protocolFactory(new TBinaryProtocol.Factory(false, true));
 
         if (queueSize != null) {
             server_args.executorService(new ThreadPoolExecutor(numWorkerThreads, numWorkerThreads, 
