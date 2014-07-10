@@ -91,9 +91,13 @@
             <artifactId>commons-lang</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.apache.thrift</groupId>
             <artifactId>libthrift</artifactId>
-            <version>0.7.0</version>
+            <version>${libthrift.version}</version>
             <scope>compile</scope>
             <exclusions>
                 <exclusion>
