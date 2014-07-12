@@ -235,13 +235,6 @@ public class Config extends HashMap<String, Object> {
     public static final Object NIMBUS_THRIFT_PORT_SCHEMA = Number.class;
 
     /**
-     * The maximum buffer size thrift should use when reading messages.
-     */
-    public static final String NIMBUS_THRIFT_MAX_BUFFER_SIZE = "nimbus.thrift.max_buffer_size";
-    public static final Object NIMBUS_THRIFT_MAX_BUFFER_SIZE_SCHEMA = Number.class;
-
-
-    /**
      * This parameter is used by the storm-deploy project to configure the
      * jvm options for the nimbus daemon.
      */

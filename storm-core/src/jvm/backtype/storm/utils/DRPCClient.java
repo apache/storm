@@ -72,9 +72,6 @@ public class DRPCClient implements DistributedRPC.Iface {
         } catch(TException e) {
             client = null;
             throw e;
-        } catch(DRPCExecutionException e) {
-            client = null;
-            throw e;
         }
     }
 
