@@ -1,9 +1,7 @@
 package backtype.storm.contrib.jms.spout;
 
 import java.io.Serializable;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -60,7 +58,9 @@ public class JmsSpout extends BaseRichSpout implements MessageListener {
 	private JmsProvider jmsProvider;
 
 	private LinkedBlockingQueue<Message> queue;
-	private ConcurrentHashMap<String, Message> pendingMessages;
+	private TreeSet<JmsMessageID> toCommit;
+    private HashMap<JmsMessageID, Message> pendingMessages;
+    private long messageSequence = 0;
 
 	private SpoutOutputCollector collector;
 
@@ -167,7 +167,8 @@ public class JmsSpout extends BaseRichSpout implements MessageListener {
 		    		" secs. This could lead to a message replay flood!");
 		}
 		this.queue = new LinkedBlockingQueue<Message>();
-		this.pendingMessages = new ConcurrentHashMap<String, Message>();
+		this.toCommit = new TreeSet<JmsMessageID>();
+        this.pendingMessages = new HashMap<JmsMessageID, Message>();
 		this.collector = collector;
 		try {
 			ConnectionFactory cf = this.jmsProvider.connectionFactory();
@@ -216,12 +217,14 @@ public class JmsSpout extends BaseRichSpout implements MessageListener {
 				if (this.isDurableSubscription()
 						|| (msg.getJMSDeliveryMode() != Session.AUTO_ACKNOWLEDGE)) {
 					LOG.debug("Requesting acks.");
-					this.collector.emit(vals, msg.getJMSMessageID());
+                    JmsMessageID messageId = new JmsMessageID(this.messageSequence++, msg.getJMSMessageID());
+					this.collector.emit(vals, messageId);
 
 					// at this point we successfully emitted. Store
 					// the message and message ID so we can do a
 					// JMS acknowledge later
-					this.pendingMessages.put(msg.getJMSMessageID(), msg);
+					this.pendingMessages.put(messageId, msg);
+                    this.toCommit.add(messageId);
 				} else {
 					this.collector.emit(vals);
 				}
@@ -239,16 +242,23 @@ public class JmsSpout extends BaseRichSpout implements MessageListener {
 	public void ack(Object msgId) {
 
 		Message msg = this.pendingMessages.remove(msgId);
-		if (msg != null) {
-			try {
-				msg.acknowledge();
-				LOG.debug("JMS Message acked: " + msgId);
-			} catch (JMSException e) {
-				LOG.warn("Error acknowldging JMS message: " + msgId, e);
-			}
-		} else {
-			LOG.warn("Couldn't acknowledge unknown JMS message ID: " + msgId);
-		}
+        JmsMessageID oldest = this.toCommit.first();
+        if(msgId.equals(oldest)) {
+            if (msg != null) {
+                try {
+                    LOG.debug("Committing...");
+                    msg.acknowledge();
+                    LOG.debug("JMS Message acked: " + msgId);
+                    this.toCommit.remove(msgId);
+                } catch (JMSException e) {
+                    LOG.warn("Error acknowldging JMS message: " + msgId, e);
+                }
+            } else {
+                LOG.warn("Couldn't acknowledge unknown JMS message ID: " + msgId);
+            }
+        } else {
+            this.toCommit.remove(msgId);
+        }
 
 	}
 
@@ -257,7 +267,8 @@ public class JmsSpout extends BaseRichSpout implements MessageListener {
 	 */
 	public void fail(Object msgId) {
 		LOG.warn("Message failed: " + msgId);
-		this.pendingMessages.remove(msgId);
+        this.pendingMessages.clear();
+        this.toCommit.clear();
 		synchronized(this.recoveryMutex){
 		    this.hasFailures = true;
 		}
