@@ -52,24 +52,4 @@ public class JmsMessageID implements Comparable<JmsMessageID>, Serializable {
         }
     }
 
-    public String toString(){
-        return String.valueOf(this.sequence);
-    }
-
-
-    public static void main(String[] args) {
-        TreeSet<JmsMessageID> set = new TreeSet<JmsMessageID>();
-        set.add(new JmsMessageID(7, "bar"));
-        set.add(new JmsMessageID(1, "barfoo"));
-
-        set.add(new JmsMessageID(10, "foobar"));
-        set.add(new JmsMessageID(3, "foo"));
-
-        for(JmsMessageID id : set){
-            System.out.println(id);
-        }
-
-
-
-    }
 }
