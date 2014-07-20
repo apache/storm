@@ -471,7 +471,7 @@
 
 (defn cluster-configuration []
   (with-nimbus nimbus
-    (from-json (.getNimbusConf ^Nimbus$Client nimbus))))
+    (.getNimbusConf ^Nimbus$Client nimbus)))
 
 (defn cluster-summary
   ([]
@@ -815,20 +815,22 @@
   [sys?]
   (if (or (nil? sys?) (= "false" sys?)) false true))
 
-(defn add-padding-to-json [callback response]
+(defn wrap-json-in-callback [callback response]
   (str callback "(" response ");"))
 
-(defn json-response
-  [data callback & [status]]
-     {:status (or status 200)
+(defnk json-response
+  [data callback :serialize-fn to-json :status 200]
+     {:status status
       :headers (if (not-nil? callback) {"Content-Type" "application/javascript"}
                 {"Content-Type" "application/json"})
-      :body (if (not-nil? callback) (add-padding-to-json callback (to-json data))
-                (to-json data))})
+      :body (if (not-nil? callback)
+              (wrap-json-in-callback callback (serialize-fn data))
+              (serialize-fn data))})
 
 (defroutes main-routes
   (GET "/api/v1/cluster/configuration" [& m]
-       (json-response (cluster-configuration) (:callback m)))
+       (json-response (cluster-configuration)
+                      (:callback m) :serialize-fn identity))
   (GET "/api/v1/cluster/summary" [& m]
        (json-response (cluster-summary) (:callback m)))
   (GET "/api/v1/supervisor/summary" [& m]
@@ -901,7 +903,7 @@
     (try
       (handler request)
       (catch Exception ex
-        (json-response (exception->json ex) ((:query-params request) "callback") 500 )))))
+        (json-response (exception->json ex) ((:query-params request) "callback") :status 500)))))
 
 (def app
   (handler/site (-> main-routes
