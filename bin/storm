@@ -84,10 +84,10 @@ def get_config_opts():
     return "-Dstorm.options=" + ','.join(map(quote_plus,CONFIG_OPTS))
 
 if not os.path.exists(STORM_DIR + "/RELEASE"):
-    print "******************************************"
-    print "The storm client can only be run from within a release. You appear to be trying to run the client from a checkout of Storm's source code."
-    print "\nYou can download a Storm release at http://storm-project.net/downloads.html"
-    print "******************************************"
+    print("******************************************")
+    print("The storm client can only be run from within a release. You appear to be trying to run the client from a checkout of Storm's source code.")
+    print("\nYou can download a Storm release at http://storm-project.net/downloads.html")
+    print("******************************************")
     sys.exit(1)
 
 def get_jars_full(adir):
@@ -163,7 +163,7 @@ def parse_args(string):
 
 def exec_storm_class(klass, jvmtype="-server", jvmopts=[], extrajars=[], args=[], fork=False):
     global CONFFILE
-    storm_log_dir = confvalue("storm.log.dir",[USER_CONF_DIR])
+    storm_log_dir = confvalue("storm.log.dir",[CLUSTER_CONF_DIR])
     if(storm_log_dir == None or storm_log_dir == "nil"):
         storm_log_dir = STORM_DIR+"/logs"
     all_args = [
