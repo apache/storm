@@ -1,5 +1,6 @@
 package com.alibaba.jstorm.daemon.worker;
 
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -11,6 +12,8 @@ import backtype.storm.scheduler.WorkerSlot;
 import backtype.storm.utils.DisruptorQueue;
 
 import com.alibaba.jstorm.callback.RunnableCallback;
+import com.alibaba.jstorm.utils.DisruptorRunable;
+import com.alibaba.jstorm.utils.Pair;
 import com.alibaba.jstorm.utils.RunCounter;
 import com.lmax.disruptor.EventHandler;
 
@@ -23,83 +26,24 @@ import com.lmax.disruptor.EventHandler;
  * @author yannian
  * 
  */
-public class DrainerRunable extends RunnableCallback implements EventHandler {
+public class DrainerRunable extends DisruptorRunable{
 	private final static Logger LOG = Logger.getLogger(DrainerRunable.class);
 
-	private DisruptorQueue transferQueue;
-	private ConcurrentHashMap<WorkerSlot, IConnection> nodeportSocket;
-	private ConcurrentHashMap<Integer, WorkerSlot> taskNodeport;
-	private AtomicBoolean workerActive;
-	private RunCounter drainerCounter = new RunCounter("DrainerRunable",
-			DrainerRunable.class);
+
 
 	public DrainerRunable(WorkerData workerData) {
-		this.transferQueue = workerData.getTransferQueue();
-		this.nodeportSocket = workerData.getNodeportSocket();
-		this.taskNodeport = workerData.getTaskNodeport();
-		this.workerActive = workerData.getActive();
+		super(workerData.getSendingQueue(), 
+				DrainerRunable.class.getSimpleName(), workerData.getActive());
 	}
 
 	@Override
-	public void onEvent(Object event, long sequence, boolean endOfBatch)
+	public void handleEvent(Object event, boolean endOfBatch)
 			throws Exception {
 
-		if (event == null) {
-			return;
-		}
-		long before = System.currentTimeMillis();
-		TaskMessage felem = (TaskMessage) event;
-
-		int taskId = felem.task();
-		byte[] tuple = felem.message();
-
-		WorkerSlot nodePort = taskNodeport.get(taskId);
-		if (nodePort == null) {
-			String errormsg = "can`t not found IConnection to " + taskId;
-			LOG.warn("DrainerRunable warn", new Exception(errormsg));
-			return;
-		}
-		IConnection conn = nodeportSocket.get(nodePort);
-		if (conn == null) {
-			String errormsg = "can`t not found nodePort " + nodePort;
-			LOG.warn("DrainerRunable warn", new Exception(errormsg));
-			return;
-		}
-
-		if (conn.isClosed() == true) {
-			// if connection has been closed, just skip the package
-			return;
-		}
-
-		conn.send(taskId, tuple);
-
-		long after = System.currentTimeMillis();
-		drainerCounter.count(after - before);
-	}
-
-	@Override
-	public void run() {
-		transferQueue.consumerStarted();
-		while (workerActive.get()) {
-			try {
-
-				transferQueue.consumeBatchWhenAvailable(this);
-
-			} catch (Exception e) {
-				if (workerActive.get() == true) {
-					LOG.error("DrainerRunable send error", e);
-					throw new RuntimeException(e);
-				}
-			}
-		}
-	}
-
-	@Override
-	public Object getResult() {
-		if (workerActive.get())
-			return 0;
-		else
-			return -1;
+		Pair<IConnection, List<TaskMessage>> pair = (Pair<IConnection, List<TaskMessage>>)event;
+		
+		pair.getFirst().send(pair.getSecond());
+		
 	}
 
 }

@@ -3,18 +3,20 @@ package backtype.storm.utils;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
 
-
 public class WorkerClassLoader extends URLClassLoader {
 
 	public static Logger LOG = Logger.getLogger(WorkerClassLoader.class);
 
-	private ClassLoader parent;
+	private ClassLoader defaultClassLoader;
+
+	private ClassLoader JDKClassLoader;
 
 	protected static WorkerClassLoader instance;
 
@@ -22,9 +24,11 @@ public class WorkerClassLoader extends URLClassLoader {
 
 	protected static Map<Thread, ClassLoader> threadContextCache;
 
-	protected WorkerClassLoader(URL[] urls, ClassLoader parent) {
-		super(urls, parent);
-		this.parent = parent;
+	protected WorkerClassLoader(URL[] urls, ClassLoader defaultClassLoader,
+			ClassLoader JDKClassLoader) {
+		super(urls, defaultClassLoader);
+		this.defaultClassLoader = defaultClassLoader;
+		this.JDKClassLoader = JDKClassLoader;
 		// TODO Auto-generated constructor stub
 	}
 
@@ -33,18 +37,21 @@ public class WorkerClassLoader extends URLClassLoader {
 		Class<?> result = null;
 
 		result = this.findLoadedClass(name);
-		if (result != null) {
+
+		if (result != null && result.getClassLoader() == this) {
 			return result;
+		} else {
+			result = null;
 		}
 
 		try {
-			result = parent.getParent().loadClass(name);
+			result = JDKClassLoader.loadClass(name);
 			if (result != null)
 				return result;
 		} catch (Exception e) {
 
 		}
-		
+
 		try {
 			if (name.startsWith("org.slf4j") == false
 					&& name.startsWith("org.apache.log4j") == false
@@ -62,10 +69,11 @@ public class WorkerClassLoader extends URLClassLoader {
 
 		}
 
-		return parent.loadClass(name);
+		return defaultClassLoader.loadClass(name);
 	}
 
-	public static WorkerClassLoader mkInstance(URL[] urls, ClassLoader parent,
+	public static WorkerClassLoader mkInstance(URL[] urls,
+			ClassLoader DefaultClassLoader, ClassLoader JDKClassLoader,
 			boolean enable) {
 		WorkerClassLoader.enable = enable;
 		if (enable == false) {
@@ -75,7 +83,8 @@ public class WorkerClassLoader extends URLClassLoader {
 
 		synchronized (WorkerClassLoader.class) {
 			if (instance == null) {
-				instance = new WorkerClassLoader(urls, parent);
+				instance = new WorkerClassLoader(urls, DefaultClassLoader,
+						JDKClassLoader);
 
 				threadContextCache = new ConcurrentHashMap<Thread, ClassLoader>();
 			}
@@ -118,7 +127,7 @@ public class WorkerClassLoader extends URLClassLoader {
 			LOG.info("No context classloader of " + thread.getName());
 		}
 	}
-	
+
 	private static <V> List<V> mk_list(V... args) {
 		ArrayList<V> rtn = new ArrayList<V>();
 		for (V o : args) {

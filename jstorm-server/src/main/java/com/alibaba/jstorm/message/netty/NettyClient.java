@@ -2,20 +2,20 @@ package com.alibaba.jstorm.message.netty;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
+import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.channel.ChannelFutureListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,41 +26,79 @@ import backtype.storm.utils.DisruptorQueue;
 import backtype.storm.utils.Utils;
 
 import com.alibaba.jstorm.client.ConfigExtension;
+import com.alibaba.jstorm.daemon.worker.metrics.JStormHistogram;
+import com.alibaba.jstorm.daemon.worker.metrics.JStormTimer;
+import com.alibaba.jstorm.daemon.worker.metrics.Metrics;
+import com.alibaba.jstorm.utils.JStormServerUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
-import com.lmax.disruptor.EventHandler;
-import com.lmax.disruptor.InsufficientCapacityException;
-import com.lmax.disruptor.SingleThreadedClaimStrategy;
-import com.lmax.disruptor.WaitStrategy;
+import com.codahale.metrics.Gauge;
 
-class NettyClient implements IConnection, EventHandler {
+class NettyClient implements IConnection {
 	private static final Logger LOG = LoggerFactory
 			.getLogger(NettyClient.class);
+	public static final String PREFIX = "Netty-Client-";
+
+	// when batch buffer size is more than BATCH_THREASHOLD_WARN
+	// it will block Drainer thread
+	private final long BATCH_THREASHOLD_WARN;
+
 	private final int max_retries;
 	private final int base_sleep_ms;
 	private final int max_sleep_ms;
-	private LinkedBlockingQueue<Object> blockingQueue; // entry should either be
-														// TaskMessage or
-														// ControlMessage
-	private final DisruptorQueue disruptorQueue;
-	private final boolean useDisruptor;
+
 	private AtomicReference<Channel> channelRef;
 	private final ClientBootstrap bootstrap;
 	private final InetSocketAddress remote_addr;
 	private AtomicInteger retries;
 	// private final Random random = new Random();
 	private final ChannelFactory factory;
-
 	private final int buffer_size;
 	private final AtomicBoolean being_closed;
-	// if batch set true, at first performance is pretty good,
-	// but after a while it is very pool
-	private final boolean batchHighLevel = false;
+
+	/**
+	 * Don't use request-response method, client just send/server just receive
+	 */
+	private final boolean noResponse = true;
+	private final boolean directlySend;
+
+	private int messageBatchSize;
+
+	private AtomicLong pendings;
+
+	private AtomicReference<MessageBatch> messageBatchRef;
+	private AtomicBoolean flush_later;
+	private int flushCheckInterval;
+	private ScheduledExecutorService scheduler;
+
+	private String sendTimerName;
+	private JStormTimer sendTimer;
+	private String histogramName;
+	private JStormHistogram histogram;
+	private String pendingGaugeName;
+
+	private ReconnectRunnable reconnector;
+
+	boolean isDirectSend(Map conf) {
+
+		if (JStormServerUtils.isOnePending(conf) == true) {
+			return true;
+		}
+
+		return !ConfigExtension.isNettyTransferAsyncBatch(conf);
+	}
 
 	@SuppressWarnings("rawtypes")
-	NettyClient(Map storm_conf, String host, int port) {
+	NettyClient(Map storm_conf, ChannelFactory factory,
+			ScheduledExecutorService scheduler, String host, int port,
+			ReconnectRunnable reconnector) {
+		this.factory = factory;
+		this.scheduler = scheduler;
+		this.reconnector = reconnector;
 		retries = new AtomicInteger(0);
 		channelRef = new AtomicReference<Channel>(null);
 		being_closed = new AtomicBoolean(false);
+		pendings = new AtomicLong(0);
+		flush_later = new AtomicBoolean(false);
 		// Configure
 		buffer_size = Utils.getInt(storm_conf
 				.get(Config.STORM_MESSAGING_NETTY_BUFFER_SIZE));
@@ -70,34 +108,18 @@ class NettyClient implements IConnection, EventHandler {
 				.get(Config.STORM_MESSAGING_NETTY_MIN_SLEEP_MS));
 		max_sleep_ms = Utils.getInt(storm_conf
 				.get(Config.STORM_MESSAGING_NETTY_MAX_SLEEP_MS));
-		useDisruptor = ConfigExtension.isNettyEnableDisruptor(storm_conf);
 
-		int queue_size;
+		BATCH_THREASHOLD_WARN = ConfigExtension
+				.getNettyBufferThresholdSize(storm_conf);
 
-		if (batchHighLevel == true) {
-			queue_size = 16;
-			scheduExec = Executors.newSingleThreadScheduledExecutor();
-			scheduExec.scheduleAtFixedRate(new Flush(), 1, 1, TimeUnit.SECONDS);
-		} else {
-			queue_size = Utils.getInt(storm_conf
-					.get(Config.TOPOLOGY_TRANSFER_BUFFER_SIZE));
-		}
-		WaitStrategy waitStrategy;
-		waitStrategy = (WaitStrategy) Utils.newInstance((String) storm_conf
-				.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
+		directlySend = isDirectSend(storm_conf);
 
-		disruptorQueue = new DisruptorQueue(new SingleThreadedClaimStrategy(
-				queue_size), waitStrategy);
+		this.messageBatchSize = Utils.getInt(
+				storm_conf.get(Config.STORM_NETTY_MESSAGE_BATCH_SIZE), 262144);
+		flushCheckInterval = Utils.getInt(
+				storm_conf.get(Config.STORM_NETTY_FLUSH_CHECK_INTERVAL_MS), 10);
 
-		blockingQueue = new LinkedBlockingQueue<Object>();
-
-		int maxWorkers = Utils.getInt(storm_conf
-				.get(Config.STORM_MESSAGING_NETTY_CLIENT_WORKER_THREADS));
-
-		// worker thread number is 1
-		factory = new NioClientSocketChannelFactory(
-				Executors.newCachedThreadPool(),
-				Executors.newCachedThreadPool(), 1);
+		messageBatchRef = new AtomicReference<MessageBatch>();
 
 		bootstrap = new ClientBootstrap(factory);
 		bootstrap.setOption("tcpNoDelay", true);
@@ -110,234 +132,225 @@ class NettyClient implements IConnection, EventHandler {
 		// Start the connection attempt.
 		remote_addr = new InetSocketAddress(host, port);
 		bootstrap.connect(remote_addr);
-		
-		LOG.info("Begin to connect {}, useDisrutpor: {}", remote_addr,
-				useDisruptor);
 
+		sendTimerName = JStormServerUtils.getName(host, port)
+				+ "-netty-send-timer";
+		sendTimer = Metrics.registerTimer(sendTimerName);
+		histogramName = JStormServerUtils.getName(host, port)
+				+ "-netty-send-histogram";
+		histogram = Metrics.registerHistograms(histogramName);
+
+		pendingGaugeName = JStormServerUtils.getName(host, port)
+				+ "-netty-send-pending-gauge";
+		Metrics.register(pendingGaugeName, new Gauge<Long>() {
+
+			@Override
+			public Long getValue() {
+				return pendings.get();
+			}
+		});
+
+		StringBuilder sb = new StringBuilder();
+		sb.append("New Netty Client, connect to ").append(remote_addr);
+		sb.append(", netty buffer size").append(buffer_size);
+		sb.append(", batch size:").append(messageBatchSize);
+		sb.append(", directlySend:").append(directlySend);
+		sb.append(", slow down buffer threshold size:").append(
+				BATCH_THREASHOLD_WARN);
+		LOG.info(sb.toString());
+
+		Runnable flusher = new Runnable() {
+			@Override
+			public void run() {
+				flush();
+			}
+		};
+		long initialDelay = Math.min(1000, max_sleep_ms * max_retries);
+		scheduler.scheduleWithFixedDelay(flusher, initialDelay,
+				flushCheckInterval, TimeUnit.MILLISECONDS);
 	}
 
 	/**
-	 * We will retry connection with exponential back-off policy
+	 * The function can't be synchronized, otherwise it will be deadlock
+	 * 
 	 */
-	void reconnect() {
-		try {
-			// int tried_count = retries.incrementAndGet();
-			// if (tried_count <= max_retries) {
-			// Thread.sleep(getSleepTimeMs());
-			// LOG.info("Reconnect ... [{}], {}", tried_count, target_Server);
-			// bootstrap.connect(remote_addr);
-			// } else {
-			// LOG.warn("Remote address is not reachable. We will close this client {}.",
-			// target_Server);
-			// close();
-			// }
-			if (isClosed() == false) {
-				int tried_count = retries.incrementAndGet();
-				Thread.sleep(getSleepTimeMs());
-				LOG.info("Reconnect ... [{}], {}", tried_count, remote_addr);
-				bootstrap.connect(remote_addr);
-			}
-
-		} catch (InterruptedException e) {
-			if (isClosed() == false) {
-				LOG.warn("connection failed", e);
-			}
+	public void doReconnect() {
+		if (channelRef.get() != null) {
+			return;
 		}
+
+		if (isClosed() == true) {
+			return;
+		}
+
+		long sleepMs = getSleepTimeMs();
+		LOG.info("Reconnect ... [{}], {}, sleep {}ms", retries.get(),
+				remote_addr, sleepMs);
+		ChannelFuture future = bootstrap.connect(remote_addr);
+		future.addListener(new ChannelFutureListener() {
+			public void operationComplete(ChannelFuture future)
+					throws Exception {
+
+				if (future.isSuccess()) {
+					// do something else
+				} else {
+					LOG.info("Failed to reconnect ... [{}], {}", retries.get(),
+							remote_addr);
+					reconnect();
+				}
+			}
+		});
+		JStormUtils.sleepMs(sleepMs);
+
+		return;
+
+	}
+
+	public void reconnect() {
+		reconnector.pushEvent(this);
 	}
 
 	/**
 	 * # of milliseconds to wait per exponential back-off policy
 	 */
 	private int getSleepTimeMs() {
-		// int backoff = 1 << Math.max(1, retries.get());
-		// int sleepMs = base_sleep_ms * Math.max(1, random.nextInt(backoff));
-		// if (sleepMs > max_sleep_ms)
-		// sleepMs = max_sleep_ms;
-		// if (sleepMs < base_sleep_ms)
-		// sleepMs = base_sleep_ms;
 
-		return base_sleep_ms * retries.get();
+		return base_sleep_ms * retries.incrementAndGet();
 	}
 
 	/**
 	 * Enqueue a task message to be sent to server
 	 */
 	@Override
-	public void send(int task, byte[] message) {
+	public void send(List<TaskMessage> messages) {
 		// throw exception if the client is being closed
 		if (isClosed()) {
-			throw new RuntimeException(
-					"Client is being closed, and does not take requests any more");
-		}
-
-		try {
-			push(new TaskMessage(task, message));
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	private void push(Object obj) {
-		if (useDisruptor) {
-			if (batchHighLevel) {
-				pushBatch((TaskMessage) obj);
-			} else {
-				disruptorQueue.publish(obj);
-			}
-
-		} else {
-			blockingQueue.offer(obj);
-		}
-	}
-
-	private boolean tryPush(Object obj) {
-		if (useDisruptor) {
-			try {
-				disruptorQueue.tryPublish(obj);
-			} catch (InsufficientCapacityException e) {
-				return false;
-			}
-			return true;
-		} else {
-			return blockingQueue.offer(obj);
-		}
-	}
-
-	private MessageBatch takeFromBlockQ() throws InterruptedException {
-		// 1st message
-		MessageBatch batch = new MessageBatch(buffer_size);
-		Object msg = blockingQueue.take();
-		batch.add(msg);
-
-		// we will discard any message after CLOSE
-		if (msg == ControlMessage.CLOSE_MESSAGE)
-			return batch;
-
-		while (!batch.isFull()) {
-			// peek the next message
-			msg = blockingQueue.peek();
-			// no more messages
-			if (msg == null)
-				break;
-
-			// we will discard any message after CLOSE
-			if (msg == ControlMessage.CLOSE_MESSAGE) {
-				blockingQueue.take();
-				batch.add(msg);
-				break;
-			}
-
-			// try to add this msg into batch
-			if (!batch.tryAdd((TaskMessage) msg))
-				break;
-
-			// remove this message
-			blockingQueue.take();
-		}
-
-		return batch;
-	}
-
-	private ConcurrentLinkedQueue<Object> msgCacheList = new ConcurrentLinkedQueue<Object>();
-	private ConcurrentLinkedQueue<MessageBatch> readyBatchs = new ConcurrentLinkedQueue<MessageBatch>();
-
-	@Override
-	public void onEvent(Object event, long sequence, boolean endOfBatch)
-			throws Exception {
-		if (event == null) {
-			// set endOfBatch as true
-			endOfBatch = true;
-		} else {
-			msgCacheList.add(event);
-		}
-
-		if (!endOfBatch) {
+			LOG.warn("Client is being closed, and does not take requests any more");
 			return;
 		}
 
-		MessageBatch batch = new MessageBatch(buffer_size);
-		while (true) {
-			Object _event = msgCacheList.poll();
-			if (_event == null) {
-				break;
-			}
-			// discard any message after CLOSE
-			if (_event == ControlMessage.CLOSE_MESSAGE) {
-				batch.add(_event);
-				break;
-			}
-
-			TaskMessage message = (TaskMessage) _event;
-			batch.add(message);
-
-			if (batch.isFull() == true) {
-				// rebuild a messageBatch because of asynchronous send
-				readyBatchs.offer(batch);
-				batch = new MessageBatch(buffer_size);
-			}
+		sendTimer.start();
+		try {
+			pushBatch(messages);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		} finally {
+			sendTimer.stop();
+			histogram.update(messages.size());
 		}
-
-		if (batch.isEmpty() == false) {
-			readyBatchs.offer(batch);
-		}
-
 	}
 
-	private MessageBatch currentBatch = new MessageBatch(
-			(int) (5 * JStormUtils.SIZE_1_M));
-	private AtomicBoolean flush = new AtomicBoolean(false);
-	private ScheduledExecutorService scheduExec = null;
-
-	class Flush implements Runnable {
-
-		@Override
-		public void run() {
-			flush.set(true);
+	@Override
+	public void send(TaskMessage message) {
+		// throw exception if the client is being closed
+		if (isClosed()) {
+			LOG.warn("Client is being closed, and does not take requests any more");
+			return;
 		}
 
+		sendTimer.start();
+		try {
+			pushBatch(message);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		} finally {
+			sendTimer.stop();
+			histogram.update(1);
+		}
 	}
 
-	private boolean checkFlush() {
-		return currentBatch.isFull();
-		// boolean isFlush = flush.get();
-		//
-		// if (isFlush == false) {
-		// return currentBatch.isFull();
-		// }else {
-		// // if disruptorQueue is empty, return true,
-		// // else still batch
-		// return disruptorQueue.population() == 0;
-		// }
+	void handleFailedChannel(MessageBatch messageBatch) {
+
+		messageBatchRef.set(messageBatch);
+		flush_later.set(true);
+
+		long cachedSize = messageBatch.getEncoded_length();
+		if (cachedSize > BATCH_THREASHOLD_WARN) {
+			long count = (cachedSize + BATCH_THREASHOLD_WARN - 1)
+					/ BATCH_THREASHOLD_WARN;
+			long sleepMs = count * 20;
+			LOG.warn("Too much cached buffer {}, sleep {}ms ", cachedSize,
+					sleepMs);
+
+			JStormUtils.sleepMs(sleepMs);
+			reconnect();
+		}
+		return;
+	}
+
+	void pushBatch(List<TaskMessage> messages) {
+
+		if (messages.isEmpty()) {
+			return;
+		}
+
+		MessageBatch messageBatch = messageBatchRef.getAndSet(null);
+		if (null == messageBatch) {
+			messageBatch = new MessageBatch(messageBatchSize);
+		}
+
+		for (TaskMessage message : messages) {
+			if (TaskMessage.isEmpty(message)) {
+				continue;
+			}
+
+			messageBatch.add(message);
+
+			if (messageBatch.isFull()) {
+				Channel channel = isChannelReady();
+				if (channel != null) {
+					flushRequest(channel, messageBatch);
+
+					messageBatch = new MessageBatch(messageBatchSize);
+				}
+
+			}
+		}
+
+		Channel channel = isChannelReady();
+		if (channel == null) {
+			handleFailedChannel(messageBatch);
+			return;
+		} else if (messageBatch.isEmpty() == false) {
+			flushRequest(channel, messageBatch);
+		}
+
+		return;
 	}
 
 	void pushBatch(TaskMessage message) {
 
-		currentBatch.add(message);
-		if (checkFlush() == true) {
-			// rebuild a messageBatch because of asynchronous send
-			flush.set(false);
-
-			disruptorQueue.publish(currentBatch);
-
-			currentBatch = new MessageBatch(buffer_size);
+		if (TaskMessage.isEmpty(message)) {
+			return;
 		}
-	}
 
-	MessageBatch taskFromeDisruptorQ() throws Exception {
-		if (batchHighLevel) {
-			// flush.set(true);
-			MessageBatch retBatch = (MessageBatch) disruptorQueue.take();
+		MessageBatch messageBatch = messageBatchRef.getAndSet(null);
+		if (null == messageBatch) {
+			messageBatch = new MessageBatch(messageBatchSize);
+		}
 
-			return retBatch;
+		messageBatch.add(message);
+
+		Channel channel = isChannelReady();
+		if (channel == null) {
+			handleFailedChannel(messageBatch);
+			return;
+		}
+
+		if (messageBatch.isFull()) {
+			flushRequest(channel, messageBatch);
+
+			return;
+		}
+
+		if (directlySend) {
+			flushRequest(channel, messageBatch);
 		} else {
-			MessageBatch retBatch = readyBatchs.poll();
-			if (retBatch == null) {
-				disruptorQueue.consumeBatchWhenAvailable(this);
-				retBatch = readyBatchs.poll();
-			}
-			return retBatch;
+			messageBatchRef.compareAndSet(null, messageBatch);
+			flush_later.set(true);
 		}
 
+		return;
 	}
 
 	/**
@@ -346,12 +359,70 @@ class NettyClient implements IConnection, EventHandler {
 	 * @return
 	 * @throws InterruptedException
 	 */
+	@Deprecated
 	MessageBatch takeMessages() throws Exception {
-		if (useDisruptor) {
-			return taskFromeDisruptorQ();
-		} else {
-			return takeFromBlockQ();
+		return messageBatchRef.getAndSet(null);
+	}
+
+	public String name() {
+		if (null != remote_addr) {
+			return PREFIX + remote_addr.toString();
 		}
+		return "";
+	}
+
+	private void flush() {
+		if (isClosed() == true) {
+			return;
+		}
+
+		if (flush_later.get() == false) {
+			return;
+		}
+
+		Channel channel = isChannelReady();
+		if (channel == null) {
+			return;
+		}
+
+		MessageBatch toBeFlushed = messageBatchRef.getAndSet(null);
+		flushRequest(channel, toBeFlushed);
+		flush_later.set(false);
+	}
+
+	private synchronized void flushRequest(Channel channel,
+			final MessageBatch requests) {
+		if (requests == null || requests.isEmpty())
+			return;
+
+		long pending = pendings.incrementAndGet();
+		LOG.debug("Flush pending {}, this message size:{}", pending,
+				requests.getEncoded_length());
+		ChannelFuture future = channel.write(requests);
+		future.addListener(new ChannelFutureListener() {
+			public void operationComplete(ChannelFuture future)
+					throws Exception {
+
+				pendings.decrementAndGet();
+				if (!future.isSuccess()) {
+					if (isClosed() == false) {
+						LOG.info(
+								"Failed to send requests to "
+										+ remote_addr.toString() + ": ",
+								future.getCause());
+					}
+
+					Channel channel = future.getChannel();
+
+					if (null != channel) {
+
+						exceptionChannel(channel);
+					}
+				} else {
+					LOG.debug("{} request(s) sent", requests.size());
+				}
+			}
+		});
 	}
 
 	/**
@@ -361,18 +432,52 @@ class NettyClient implements IConnection, EventHandler {
 	 * method
 	 */
 	public synchronized void close() {
+		LOG.info("Close netty connection to {}", name());
 
-		if (!isClosed()) {
-			being_closed.set(true);
-			// enqueue a CLOSE message so that shutdown() will be invoked
-			// if (!tryPush(ControlMessage.CLOSE_MESSAGE)) {
-			// LOG.warn("client can't send CLOSE message because of queue is full");
-			//
-			// }
+		Metrics.unregister(pendingGaugeName);
+		Metrics.unregister(histogramName);
+		Metrics.unregister(sendTimerName);
 
-			close_n_release();
-
+		if (isClosed() == true) {
+			return;
 		}
+		being_closed.set(true);
+
+		Channel channel = channelRef.get();
+		if (channel == null) {
+			LOG.info("Channel {} has been closed before", name());
+			return;
+		}
+
+		if (channel.isWritable()) {
+			MessageBatch toBeFlushed = messageBatchRef.getAndSet(null);
+			flushRequest(channel, toBeFlushed);
+		}
+
+		// wait for pendings to exit
+		final long timeoutMilliSeconds = 10 * 1000;
+		final long start = System.currentTimeMillis();
+
+		LOG.info("Waiting for pending batchs to be sent with " + name()
+				+ "..., timeout: {}ms, pendings: {}", timeoutMilliSeconds,
+				pendings.get());
+
+		while (pendings.get() != 0) {
+			try {
+				long delta = System.currentTimeMillis() - start;
+				if (delta > timeoutMilliSeconds) {
+					LOG.error(
+							"Timeout when sending pending batchs with {}..., there are still {} pending batchs not sent",
+							name(), pendings.get());
+					break;
+				}
+				Thread.sleep(1000); // sleep 1s
+			} catch (InterruptedException e) {
+				break;
+			}
+		}
+
+		close_n_release();
 
 	}
 
@@ -380,33 +485,51 @@ class NettyClient implements IConnection, EventHandler {
 	 * close_n_release() is invoked after all messages have been sent.
 	 */
 	void close_n_release() {
-		if (channelRef.get() != null)
-			channelRef.get().close().awaitUninterruptibly();
-
-		// we need to release resources
-		new Thread(new Runnable() {
-			@Override
-			public void run() {
-				if (useDisruptor) {
-					disruptorQueue.clear();
-				}
-				factory.releaseExternalResources();
-
-				LOG.info("Successfully close connection to {}", remote_addr);
-			}
-		}).start();
+		if (channelRef.get() != null) {
+			setChannel(null);
+		}
 	}
 
-	public byte[] recv(int flags) {
-		throw new UnsupportedOperationException(
-				"Client connection should not receive any messages");
+	void exceptionChannel(Channel channel) {
+		if (channel == channelRef.get()) {
+			setChannel(null);
+		} else {
+			channel.close();
+		}
 	}
 
-	void setChannel(Channel channel) {
-		channelRef.set(channel);
-		// reset retries
-		if (channel != null)
+	void setChannel(Channel newChannel) {
+		Channel oldChannel = channelRef.getAndSet(newChannel);
+
+		if (newChannel != null) {
 			retries.set(0);
+		}
+
+		String oldLocalAddres = (oldChannel == null) ? "null" : oldChannel
+				.getLocalAddress().toString();
+		String newLocalAddress = (newChannel == null) ? "null" : newChannel
+				.getLocalAddress().toString();
+		LOG.info("Use new channel {} replace old channel {}", newLocalAddress,
+				oldLocalAddres);
+
+		// avoid one netty client use too much connection, close old one
+		if (oldChannel != newChannel && oldChannel != null) {
+			oldChannel.close();
+			LOG.info("Close old channel " + oldLocalAddres);
+		}
+	}
+
+	Channel isChannelReady() {
+		Channel channel = channelRef.get();
+		if (channel == null) {
+			return null;
+		}
+
+		// improve performance skill check
+		if (channel.isWritable() == false) {
+			return null;
+		}
+		return channel;
 	}
 
 	@Override
@@ -426,4 +549,65 @@ class NettyClient implements IConnection, EventHandler {
 		return remote_addr;
 	}
 
+	public boolean isNoResponse() {
+		return noResponse;
+	}
+
+	@Override
+	public TaskMessage recv(int flags) {
+		throw new UnsupportedOperationException(
+				"recvTask: Client connection should not receive any messages");
+	}
+
+	@Override
+	public void registerQueue(DisruptorQueue recvQueu) {
+		throw new UnsupportedOperationException(
+				"recvTask: Client connection should not receive any messages");
+	}
+
+	@Override
+	public void enqueue(TaskMessage message) {
+		throw new UnsupportedOperationException(
+				"recvTask: Client connection should not receive any messages");
+	}
+
+	public void blockReConnect() {
+
+		Channel channel = null;
+
+		try {
+
+			int tried = 0;
+			while (tried <= max_retries) {
+
+				LOG.info("Reconnect started for {}... [{}]", name(), tried);
+
+				ChannelFuture future = bootstrap.connect(remote_addr);
+				future.awaitUninterruptibly(10, TimeUnit.SECONDS);
+				Channel current = future.getChannel();
+				if (!future.isSuccess()) {
+					if (null != current) {
+						current.close();
+					}
+				} else {
+					channel = current;
+					break;
+				}
+				JStormUtils.sleepMs(getSleepTimeMs());
+				tried++;
+			}
+		} catch (Exception e) {
+			LOG.error("Occur exception when reconnect to " + name());
+			channel = null;
+		}
+
+		if (null != channel) {
+			LOG.info("connection established to a remote host " + name() + ", "
+					+ channel.toString());
+			setChannel(channel);
+		} else {
+			LOG.info("Failed to connect to a remote host " + name());
+			JStormUtils.sleepMs(getSleepTimeMs());
+		}
+	}
 }

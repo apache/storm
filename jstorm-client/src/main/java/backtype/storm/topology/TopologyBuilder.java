@@ -13,9 +13,11 @@ import backtype.storm.generated.StormTopology;
 import backtype.storm.grouping.CustomStreamGrouping;
 import backtype.storm.tuple.Fields;
 import backtype.storm.utils.Utils;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+
 import org.json.simple.JSONValue;
 
 /**
@@ -339,6 +341,18 @@ public class TopologyBuilder {
 			return grouping(componentId, streamId,
 					Grouping.local_or_shuffle(new NullStruct()));
 		}
+		
+		@Override
+		public BoltDeclarer localFirstGrouping(String componentId) {
+			return localFirstGrouping(componentId, Utils.DEFAULT_STREAM_ID);
+		}
+
+		@Override
+		public BoltDeclarer localFirstGrouping(String componentId,
+				String streamId) {
+			return grouping(componentId, streamId,
+					Grouping.localFirst(new NullStruct()));
+		}
 
 		public BoltDeclarer noneGrouping(String componentId) {
 			return noneGrouping(componentId, Utils.DEFAULT_STREAM_ID);
@@ -392,6 +406,8 @@ public class TopologyBuilder {
 		public BoltDeclarer grouping(GlobalStreamId id, Grouping grouping) {
 			return grouping(id.get_componentId(), id.get_streamId(), grouping);
 		}
+
+		
 	}
 
 	private static Map parseJson(String json) {

@@ -2,6 +2,7 @@ package backtype.storm;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.thrift7.TException;
@@ -104,12 +105,12 @@ public class StormSubmitter {
 					LOG.info("Submitting topology " + name
 							+ " in distributed mode with conf " + serConf);
 					if (opts != null) {
-						client.getClient().submitTopologyWithOpts(name,
-								submittedJar, serConf, topology, opts);
+						client.getClient().submitTopologyWithOpts(name, path,
+								serConf, topology, opts);
 					} else {
 						// this is for backwards compatibility
-						client.getClient().submitTopology(name, submittedJar,
-								serConf, topology);
+						client.getClient().submitTopology(name, path, serConf,
+								topology);
 					}
 				} catch (InvalidTopologyException e) {
 					LOG.warn("Topology submission exception", e);
@@ -149,28 +150,60 @@ public class StormSubmitter {
 	}
 
 	private static String submittedJar = null;
+	private static String path = null;
 
 	private static void submitJar(Map conf) {
 		if (submittedJar == null) {
-			LOG.info("Jar not uploaded to master yet. Submitting jar...");
-			String localJar = System.getProperty("storm.jar");
-			submittedJar = submitJar(conf, localJar);
+			NimbusClient client = NimbusClient.getConfiguredClient(conf);
+			try {
+				LOG.info("Jar not uploaded to master yet. Submitting jar...");
+				String localJar = System.getProperty("storm.jar");
+				path = client.getClient().beginFileUpload();
+				String[] pathCache = path.split("/");
+				String uploadLocation = path + "/stormjar-"
+						+ pathCache[pathCache.length - 1] + ".jar";
+				submittedJar = submitJar(conf, localJar, uploadLocation, client);
+				List<String> lib = (List<String>) conf
+						.get(GenericOptionsParser.TOPOLOGY_LIB_NAME);
+				Map<String, String> libPath = (Map<String, String>) conf
+						.get(GenericOptionsParser.TOPOLOGY_LIB_PATH);
+				if (lib != null) {
+					for (String libName : lib) {
+						String jarPath = path + "/" + libName;
+						client.getClient().beginLibUpload(jarPath);
+						submitJar(conf, libPath.get(libName), jarPath, client);
+					}
+				}
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			} finally {
+				client.close();
+			}
 		} else {
 			LOG.info("Jar already uploaded to master. Not submitting jar.");
 		}
 	}
 
-	public static String submitJar(Map conf, String localJar) {
+	public static String submitJar(Map conf, String localJar,
+			String uploadLocation, NimbusClient client) {
 		if (localJar == null) {
 			throw new RuntimeException(
 					"Must submit topologies using the 'storm' client script so that StormSubmitter knows which jar to upload.");
 		}
-		NimbusClient client = NimbusClient.getConfiguredClient(conf);
+
 		try {
-			String uploadLocation = client.getClient().beginFileUpload();
+
 			LOG.info("Uploading topology jar " + localJar
 					+ " to assigned location: " + uploadLocation);
-			BufferFileInputStream is = new BufferFileInputStream(localJar);
+			int bufferSize = 512 * 1024;
+			Object maxBufSizeObject = conf
+					.get(Config.NIMBUS_THRIFT_MAX_BUFFER_SIZE);
+			if (maxBufSizeObject != null) {
+				bufferSize = Utils.getInt(maxBufSizeObject) / 2;
+			}
+
+			BufferFileInputStream is = new BufferFileInputStream(localJar,
+					bufferSize);
 			while (true) {
 				byte[] toSubmit = is.read();
 				if (toSubmit.length == 0)
@@ -185,10 +218,10 @@ public class StormSubmitter {
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		} finally {
-			client.close();
+			
 		}
 	}
-	
+
 	private static void putUserInfo(Map conf, Map stormConf) {
 		stormConf.put("user.group", conf.get("user.group"));
 		stormConf.put("user.name", conf.get("user.name"));

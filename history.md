@@ -1,5 +1,30 @@
 [JStorm 0.9.0 ΩÈ…‹](http://wenku.baidu.com/view/59e81017dd36a32d7375818b.html)
 
+
+#Release 0.9.4
+
+## Big features
+1. Add transaction programming mode
+2. Rewrite netty code, 1. use share boss/worker thread pool;2 async send batch tuples;3 single thread to do reconnect job;4 receive batch tuples
+3. Add metrics and statics
+4. Merge Alimama storm branch into this version, submit jar with -conf, -D, -lib
+
+
+## Enhancement
+1. add setting when supervisor has been shutdown, worker will shutdown automatically
+2. add LocalFristGrouping api
+3. enable cgroup for normal user
+
+
+
+##Bug fix:
+1. Setting buffer size  when upload jar
+2. Add lock between ZK watch and timer thread when refresh connection
+3. Enable nimbus monitor thread only when topology is running in cluster mode
+4. Fix exception when failed to read old assignment of ZK
+5. classloader fix when both parent and current classloader load the same class
+6. Fix log view null pointer exception
+
 #Release 0.9.3.1
 
 ## Enhancement

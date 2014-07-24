@@ -36,6 +36,7 @@ import com.alibaba.jstorm.callback.AsyncLoopThread;
 import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.cluster.StormConfig;
 import com.alibaba.jstorm.daemon.supervisor.Httpserver;
+import com.alibaba.jstorm.daemon.worker.hearbeat.SyncContainerHb;
 import com.alibaba.jstorm.schedule.CleanRunnable;
 import com.alibaba.jstorm.schedule.FollowerRunnable;
 import com.alibaba.jstorm.schedule.MonitorRunnable;
@@ -43,7 +44,6 @@ import com.alibaba.jstorm.utils.JStormServerUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.PathUtils;
 import com.alibaba.jstorm.utils.SmartThread;
-import com.alibaba.jstorm.utils.SyncContainerHb;
 
 /**
  * 
@@ -169,13 +169,12 @@ public class NimbusServer {
 
 		initTopologyStatus();
 
-		initMonitor(conf);
-
 		initCleaner(conf);
 		
 		serviceHandler = new ServiceHandler(data);
 
 		if (!data.isLocalMode()) {
+			initMonitor(conf);
 			
 			initGroup(conf);
 

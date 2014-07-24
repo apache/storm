@@ -104,6 +104,8 @@ public class SupervisorManger extends ShutdownWork implements Shutdownable,
 		// }
 		
 		isFinishShutdown = true;
+		
+		JStormUtils.halt_process(0, "!!!Shutdown!!!");
 	}
 
 	@Override

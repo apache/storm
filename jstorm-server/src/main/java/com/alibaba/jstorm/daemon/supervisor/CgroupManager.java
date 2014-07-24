@@ -34,17 +34,23 @@ public class CgroupManager {
 
 	private CgroupCommon rootCgroup;
 
+	private static final String JSTORM_CPU_HIERARCHY_DIR = "/cgroup/cpu";
+	private static String root_dir;
 	public CgroupManager(Map conf) {
 		LOG.info("running on cgroup mode");
 		this.CPU_SLOT_PER_WEIGHT = ConfigExtension.getCpuSlotPerWeight(conf);
-		try {
-			if (!SystemOperation.isRoot())
+	
+		// Cgconfig service is used to create the corresponding cpu hierarchy "/cgroup/cpu"
+		root_dir = ConfigExtension.getCgroupRootDir(conf);
+		if(root_dir == null)
 				throw new RuntimeException(
-						"If you want to use cgroup, please start supervisor on root");
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			LOG.error("check root error", e);
-			throw new RuntimeException(e);
+					"Check configuration file. The supervisor.cgroup.rootdir is missing.");
+		
+		File file = new File(JSTORM_CPU_HIERARCHY_DIR + "/" + root_dir);
+		if(!file.exists()) {		
+		    LOG.error(JSTORM_CPU_HIERARCHY_DIR + "/" + root_dir + " is not existing.");
+			throw new RuntimeException(
+					"Check if cgconfig service starts or /etc/cgconfig.conf is consistent with configuration file.");
 		}
 		center = CgroupCenter.getInstance();
 		if (center == null)
@@ -81,23 +87,12 @@ public class CgroupManager {
 	}
 
 	private void prepareSubSystem() {
-		try {
 			h = center.busy(SubSystemType.cpu);
 			if (h == null) {
 				Set<SubSystemType> types = new HashSet<SubSystemType>();
 				types.add(SubSystemType.cpu);
-				h = new Hierarchy(JSTORM_HIERARCHY_NAME, types,
-						"/jstorm/cgroup/cpu");
-				center.mount(h);
+			h = new Hierarchy(JSTORM_HIERARCHY_NAME, types,JSTORM_CPU_HIERARCHY_DIR);
 			}
-			File file = new File(h.getDir() + "/worker_root");
-			rootCgroup = new CgroupCommon("worker_root", h, h.getRootCgroups());
-			if (!file.exists()) {
-				center.create(rootCgroup);
-			}
-		} catch (IOException e) {
-			LOG.error("prepare subsystem error!", e);
-			throw new RuntimeException(e);
-		}
+		rootCgroup = new CgroupCommon(root_dir, h, h.getRootCgroups());
 	}
 }

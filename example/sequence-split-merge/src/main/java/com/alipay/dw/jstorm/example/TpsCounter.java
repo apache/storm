@@ -1,67 +1,89 @@
 package com.alipay.dw.jstorm.example;
 
+import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.log4j.Logger;
 
-import com.alibaba.jstorm.utils.IntervalCheck;
+public class TpsCounter implements Serializable{
 
-public class TpsCounter {
-    public static Logger  LOG           = LoggerFactory.getLogger(TpsCounter.class);
-    
-    private AtomicLong    total         = new AtomicLong(0);
-    private AtomicLong    tps           = new AtomicLong(0);
-    private AtomicLong    spend         = new AtomicLong(0);
-    
-    private IntervalCheck intervalCheck = new IntervalCheck();
-    
-    private String        id;
-    
-    public TpsCounter(String id) {
-        this.id = id;
-        
-    }
-    
-    public void count() {
-        long totalValue = total.incrementAndGet();
-        long tpsValue = tps.incrementAndGet();
-        
-        if (intervalCheck.check() == true) {
-            LOG.info(id + " tps " + tpsValue / intervalCheck.getInterval()
-                    + ", total:" + totalValue);
-            tps.set(0);
-        }
-    }
-    
-    public void count(long value) {
-        long totalValue = total.incrementAndGet();
-        long tpsValue = tps.incrementAndGet();
-        long spendValue = spend.addAndGet(value);
-        
-        if (intervalCheck.check() == true) {
-            StringBuilder sb = new StringBuilder();
-            sb.append(id);
-            sb.append(" tps:" + tpsValue / intervalCheck.getInterval());
-            sb.append(", total:" + totalValue);
-            sb.append(", spend:" + spendValue/tpsValue);
-            LOG.info(sb.toString());
-            tps.set(0);
-            spend.set(0);
-        }
-    }
-    
-    public void cleanup() {
-        
-        LOG.info(id + ", total:" + total);
-    }
-    
-    /**
-     * @param args
-     */
-    public static void main(String[] args) {
-        // TODO Auto-generated method stub
-        
-    }
-    
+	private static final long serialVersionUID = 2177944366059817622L;
+	private AtomicLong total = new AtomicLong(0);
+	private AtomicLong times = new AtomicLong(0);
+	private AtomicLong values = new AtomicLong(0);
+
+	private IntervalCheck intervalCheck;
+
+	private final String id;
+	private final Logger LOG;
+
+	public TpsCounter() {
+		this("", TpsCounter.class);
+	}
+
+	public TpsCounter(String id) {
+		this(id, TpsCounter.class);
+	}
+
+	public TpsCounter(Class tclass) {
+		this("", tclass);
+
+	}
+
+	public TpsCounter(String id, Class tclass) {
+		this.id = id;
+		this.LOG = Logger.getLogger(tclass);
+
+		intervalCheck = new IntervalCheck();
+		intervalCheck.setInterval(60);
+	}
+
+	public Double count(long value) {
+		long totalValue = total.incrementAndGet();
+		long timesValue = times.incrementAndGet();
+		long v = values.addAndGet(value);
+
+		Double pass = intervalCheck.checkAndGet();
+		if (pass != null) {
+			times.set(0);
+			values.set(0);
+			
+			Double tps = timesValue / pass;
+
+			StringBuilder sb = new StringBuilder();
+			sb.append(id);
+			sb.append(", tps:" + tps);
+			sb.append(", avg:" + ((double) v) / timesValue);
+			sb.append(", total:" + totalValue);
+			LOG.info(sb.toString());
+
+			return tps;
+		}
+		
+		return null;
+	}
+	
+	public Double count() {
+		return count(Long.valueOf(1));
+	}
+
+	public void cleanup() {
+
+		LOG.info(id + ", total:" + total);
+	}
+	
+	
+
+	public IntervalCheck getIntervalCheck() {
+		return intervalCheck;
+	}
+
+	/**
+	 * @param args
+	 */
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+
+	}
+
 }

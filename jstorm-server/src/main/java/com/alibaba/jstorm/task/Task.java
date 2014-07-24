@@ -6,18 +6,20 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import backtype.storm.messaging.IConnection;
+import backtype.storm.Config;
 import backtype.storm.messaging.IContext;
 import backtype.storm.serialization.KryoTupleSerializer;
 import backtype.storm.spout.ISpout;
 import backtype.storm.task.IBolt;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.utils.DisruptorQueue;
+import backtype.storm.utils.Utils;
 import backtype.storm.utils.WorkerClassLoader;
 import clojure.lang.Atom;
 
 import com.alibaba.jstorm.callback.AsyncLoopThread;
 import com.alibaba.jstorm.callback.RunnableCallback;
+import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.cluster.Common;
 import com.alibaba.jstorm.cluster.StormClusterState;
 import com.alibaba.jstorm.cluster.StormConfig;
@@ -31,13 +33,18 @@ import com.alibaba.jstorm.task.comm.UnanchoredSend;
 import com.alibaba.jstorm.task.error.ITaskReportErr;
 import com.alibaba.jstorm.task.error.TaskReportError;
 import com.alibaba.jstorm.task.error.TaskReportErrorAndDie;
-import com.alibaba.jstorm.task.execute.BoltExecutors;
-import com.alibaba.jstorm.task.execute.SpoutExecutors;
 import com.alibaba.jstorm.task.execute.BaseExecutors;
+import com.alibaba.jstorm.task.execute.BoltExecutors;
+import com.alibaba.jstorm.task.execute.spout.MultipleThreadSpoutExecutors;
+import com.alibaba.jstorm.task.execute.spout.SingleThreadSpoutExecutors;
+import com.alibaba.jstorm.task.execute.spout.SpoutExecutors;
 import com.alibaba.jstorm.task.group.MkGrouper;
 import com.alibaba.jstorm.task.heartbeat.TaskHeartbeatRunable;
 import com.alibaba.jstorm.utils.JStormServerConfig;
+import com.alibaba.jstorm.utils.JStormServerUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
+import com.lmax.disruptor.SingleThreadedClaimStrategy;
+import com.lmax.disruptor.WaitStrategy;
 
 /**
  * Task instance
@@ -58,6 +65,7 @@ public class Task {
 
 	private TaskTransfer taskTransfer;
 	private Map<Integer, DisruptorQueue> innerTaskTransfer;
+	private Map<Integer, DisruptorQueue> deserializeQueues;
 	private WorkerHaltRunable workHalt;
 
 	private Integer taskid;
@@ -70,9 +78,11 @@ public class Task {
 	private StormClusterState zkCluster;
 	private Object taskObj;
 	private CommonStatsRolling taskStats;
+	private WorkerData workerData;
 
 	@SuppressWarnings("rawtypes")
 	public Task(WorkerData workerData, int taskId) throws Exception {
+		this.workerData = workerData;
 		openOrPrepareWasCalled = new Atom(Boolean.valueOf(false));
 
 		this.topologyContext = workerData.getContextMaker()
@@ -80,17 +90,20 @@ public class Task {
 						openOrPrepareWasCalled);
 		this.userContext = workerData.getContextMaker().makeTopologyContext(
 				workerData.getRawTopology(), taskId, openOrPrepareWasCalled);
+		
+		this.taskid = taskId;
+		this.componentid = topologyContext.getThisComponentId();
 
 		this.taskStatus = new TaskStatus();
 		this.taskTransfer = getSendingTransfer(workerData);
 		this.innerTaskTransfer = workerData.getInnerTaskTransfer();
+		this.deserializeQueues = workerData.getDeserializeQueues();
 		this.topologyid = workerData.getTopologyId();
 		this.context = workerData.getContext();
 		this.workHalt = workerData.getWorkHalt();
 		this.zkCluster = new StormZkClusterState(workerData.getZkClusterstate());
 
-		this.taskid = taskId;
-		this.componentid = topologyContext.getThisComponentId();
+		
 		this.stormConf = Common.component_conf(workerData.getStormConf(),
 				topologyContext, componentid);
 		String diskSlot = getAssignDiskSlot();
@@ -113,7 +126,7 @@ public class Task {
 		// get current task's output
 		// <Stream_id,<component, Grouping>>
 		Map<String, Map<String, MkGrouper>> streamComponentGrouper = Common
-				.outbound_components(topologyContext);
+				.outbound_components(topologyContext, workerData);
 
 		Map<Integer, String> task2Component = topologyContext
 				.getTaskToComponent();
@@ -152,8 +165,9 @@ public class Task {
 		KryoTupleSerializer serializer = new KryoTupleSerializer(
 				workerData.getStormConf(), topologyContext);
 
+		String taskName = JStormServerUtils.getName(componentid, taskid);
 		// Task sending all tuples through this Object
-		return new TaskTransfer(serializer, taskStatus, workerData);
+		return new TaskTransfer(taskName, serializer, taskStatus, workerData);
 	}
 
 	public TaskSendTargets echoToSystemBolt() {
@@ -169,19 +183,38 @@ public class Task {
 		return sendTargets;
 	}
 
-	public RunnableCallback mk_executors(IConnection _puller,
-			TaskSendTargets sendTargets, ITaskReportErr _report_error) {
+	public boolean isSingleThread(Map conf) {
+		boolean isOnePending = JStormServerUtils.isOnePending(conf);
+		if (isOnePending == true) {
+			return true;
+		}
+		
+		return ConfigExtension.isSpoutSingleThread(conf) ;
+	}
+	
+	public RunnableCallback mk_executors(DisruptorQueue deserializeQueue,
+			TaskSendTargets sendTargets, ITaskReportErr report_error) {
 
 		if (taskObj instanceof IBolt) {
 			return new BoltExecutors((IBolt) taskObj, taskTransfer,
-					innerTaskTransfer, stormConf, _puller, sendTargets,
+					innerTaskTransfer, stormConf, deserializeQueue, sendTargets,
 					taskStatus, topologyContext, userContext, taskStats,
-					_report_error);
+					report_error);
 		} else if (taskObj instanceof ISpout) {
-			return new SpoutExecutors((ISpout) taskObj, taskTransfer,
-					innerTaskTransfer, stormConf, _puller, sendTargets,
-					taskStatus, topologyContext, userContext, taskStats,
-					_report_error);
+			if (isSingleThread(stormConf) == true) {
+				return new SingleThreadSpoutExecutors((ISpout) taskObj, taskTransfer,
+						innerTaskTransfer, stormConf, deserializeQueue, sendTargets,
+						taskStatus, topologyContext, userContext, taskStats,
+						report_error);
+			}else {
+				return new MultipleThreadSpoutExecutors((ISpout) taskObj, taskTransfer,
+						innerTaskTransfer, stormConf, deserializeQueue, sendTargets,
+						taskStatus, topologyContext, userContext, taskStats,
+						report_error);
+			}
+			
+			
+			
 		}
 
 		return null;
@@ -194,7 +227,7 @@ public class Task {
 	 * @param sendTargets
 	 * @return
 	 */
-	private RunnableCallback mkExecutor(IConnection puller,
+	private RunnableCallback mkExecutor(DisruptorQueue deserializeQueue,
 			TaskSendTargets sendTargets) {
 		// create report error callback,
 		// in fact it is storm_cluster.report-task-error
@@ -205,7 +238,22 @@ public class Task {
 		TaskReportErrorAndDie reportErrorDie = new TaskReportErrorAndDie(
 				reportError, workHalt);
 
-		return mk_executors(puller, sendTargets, reportErrorDie);
+		return mk_executors(deserializeQueue, sendTargets, reportErrorDie);
+	}
+	
+	public DisruptorQueue registerDisruptorQueue() {
+		int queueSize = JStormUtils.parseInt(
+				stormConf.get(Config.TOPOLOGY_EXECUTOR_RECEIVE_BUFFER_SIZE), 256);
+		
+		WaitStrategy waitStrategy = (WaitStrategy) Utils
+				.newInstance((String) stormConf
+						.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
+		DisruptorQueue queue = new DisruptorQueue(
+				new SingleThreadedClaimStrategy(queueSize), waitStrategy);
+		
+		deserializeQueues.put(taskid, queue);
+		
+		return queue;
 	}
 
 	public TaskShutdownDameon execute() throws Exception {
@@ -217,13 +265,13 @@ public class Task {
 		AsyncLoopThread heartbeat_thread = new AsyncLoopThread(hb, false,
 				Thread.MIN_PRIORITY, true);
 
-		IConnection puller = context.bind(topologyid, taskid, false);
+		DisruptorQueue deserializeQueue = registerDisruptorQueue();
 
 		TaskSendTargets sendTargets = echoToSystemBolt();
 
 		// create thread to get tuple from zeroMQ,
 		// and pass the tuple to bolt/spout
-		RunnableCallback baseExecutor = mkExecutor(puller, sendTargets);
+		RunnableCallback baseExecutor = mkExecutor(deserializeQueue, sendTargets);
 		AsyncLoopThread executor_threads = new AsyncLoopThread(baseExecutor,
 				false, Thread.MAX_PRIORITY, true);
 		
@@ -233,11 +281,11 @@ public class Task {
 
 		LOG.info("Finished loading task " + componentid + ":" + taskid);
 
-		return getShutdown(allThreads, heartbeat_thread, puller, baseExecutor);
+		return getShutdown(allThreads, heartbeat_thread, deserializeQueue, baseExecutor);
 	}
 
 	public TaskShutdownDameon getShutdown(List<AsyncLoopThread> allThreads,
-			AsyncLoopThread heartbeat_thread, IConnection puller,
+			AsyncLoopThread heartbeat_thread, DisruptorQueue deserializeQueue,
 			RunnableCallback baseExecutor) {
 
 		AsyncLoopThread ackerThread = null;
@@ -248,7 +296,7 @@ public class Task {
 				allThreads.add(ackerThread);
 			}
 		}
-		AsyncLoopThread recvThread = ((BaseExecutors) baseExecutor).getRecvThread();
+		AsyncLoopThread recvThread = ((BaseExecutors) baseExecutor).getDeserlizeThread();
 		allThreads.add(recvThread);
 		
 		
@@ -256,8 +304,7 @@ public class Task {
 		allThreads.add(serializeThread);
 		
 		TaskShutdownDameon shutdown = new TaskShutdownDameon(taskStatus,
-				topologyid, taskid, context, allThreads, zkCluster, puller,
-				taskObj);
+				topologyid, taskid, allThreads, zkCluster, taskObj);
 
 		return shutdown;
 	}

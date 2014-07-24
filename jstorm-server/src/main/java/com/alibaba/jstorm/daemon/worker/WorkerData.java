@@ -38,6 +38,7 @@ import com.alibaba.jstorm.utils.JStormServerUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.zk.ZkTool;
 import com.lmax.disruptor.MultiThreadedClaimStrategy;
+import com.lmax.disruptor.SingleThreadedClaimStrategy;
 import com.lmax.disruptor.WaitStrategy;
 
 public class WorkerData {
@@ -77,7 +78,10 @@ public class WorkerData {
 
 	private ConcurrentHashMap<Integer, ResourceAssignment> taskToResource;
 
+	private Set<Integer> localNodeTasks;
+
 	private ConcurrentHashMap<Integer, DisruptorQueue> innerTaskTransfer;
+	private ConcurrentHashMap<Integer, DisruptorQueue> deserializeQueues;
 
 	// <taskId, component>
 	private HashMap<Integer, String> tasksToComponent;
@@ -104,6 +108,8 @@ public class WorkerData {
 	// sending tuple's queue
 	// private LinkedBlockingQueue<TransferData> transferQueue;
 	private DisruptorQueue transferQueue;
+	
+	private DisruptorQueue sendingQueue;
 
 	private List<TaskShutdownDameon> shutdownTasks;
 
@@ -136,7 +142,7 @@ public class WorkerData {
 		this.stormConf = new HashMap<Object, Object>();
 		this.stormConf.putAll(conf);
 		this.stormConf.putAll(rawConf);
-		
+
 		LOG.info("Worker Configuration " + stormConf);
 
 		try {
@@ -149,14 +155,15 @@ public class WorkerData {
 					URL url = new URL("File:" + path);
 					urls.add(url);
 				}
-				WorkerClassLoader.mkInstance(
-						urls.toArray(new URL[0]),
-						ClassLoader.getSystemClassLoader(),
+				WorkerClassLoader.mkInstance(urls.toArray(new URL[0]),
+						ClassLoader.getSystemClassLoader(), ClassLoader
+								.getSystemClassLoader().getParent(),
 						ConfigExtension.isEnableTopologyClassLoader(stormConf));
 			} else {
-				WorkerClassLoader.mkInstance(new URL[0],
-						ClassLoader.getSystemClassLoader(),
-						ConfigExtension.isEnableTopologyClassLoader(stormConf));
+				WorkerClassLoader.mkInstance(new URL[0], ClassLoader
+						.getSystemClassLoader(), ClassLoader
+						.getSystemClassLoader().getParent(), ConfigExtension
+						.isEnableTopologyClassLoader(stormConf));
 			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -176,11 +183,17 @@ public class WorkerData {
 						.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
 		this.transferQueue = new DisruptorQueue(new MultiThreadedClaimStrategy(
 				buffer_size), waitStrategy);
+		this.transferQueue.consumerStarted();
+		
+		this.sendingQueue = new DisruptorQueue(new SingleThreadedClaimStrategy(
+				buffer_size), waitStrategy);
 
 		this.nodeportSocket = new ConcurrentHashMap<WorkerSlot, IConnection>();
 		this.taskNodeport = new ConcurrentHashMap<Integer, WorkerSlot>();
 		this.taskToResource = new ConcurrentHashMap<Integer, ResourceAssignment>();
 		this.innerTaskTransfer = new ConcurrentHashMap<Integer, DisruptorQueue>();
+		this.deserializeQueues = new ConcurrentHashMap<Integer, DisruptorQueue>();
+		
 
 		Assignment assignment = zkCluster.assignment_info(topologyId, null);
 		if (assignment == null) {
@@ -311,6 +324,10 @@ public class WorkerData {
 	public ConcurrentHashMap<Integer, DisruptorQueue> getInnerTaskTransfer() {
 		return innerTaskTransfer;
 	}
+	
+	public ConcurrentHashMap<Integer, DisruptorQueue> getDeserializeQueues() {
+		return deserializeQueues;
+	}
 
 	public HashMap<Integer, String> getTasksToComponent() {
 		return tasksToComponent;
@@ -335,10 +352,14 @@ public class WorkerData {
 	public DisruptorQueue getTransferQueue() {
 		return transferQueue;
 	}
-
+	
 	// public LinkedBlockingQueue<TransferData> getTransferQueue() {
 	// return transferQueue;
 	// }
+
+	public DisruptorQueue getSendingQueue() {
+		return sendingQueue;
+	}
 
 	public Map<String, List<Integer>> getComponentToSortedTasks() {
 		return componentToSortedTasks;
@@ -366,6 +387,14 @@ public class WorkerData {
 
 	public void setShutdownTasks(List<TaskShutdownDameon> shutdownTasks) {
 		this.shutdownTasks = shutdownTasks;
+	}
+
+	public Set<Integer> getLocalNodeTasks() {
+		return localNodeTasks;
+	}
+
+	public void setLocalNodeTasks(Set<Integer> localNodeTasks) {
+		this.localNodeTasks = localNodeTasks;
 	}
 
 }

@@ -16,15 +16,19 @@ import backtype.storm.tuple.MessageId;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.TupleImplExt;
 
+import com.alibaba.jstorm.daemon.worker.metrics.JStormTimer;
+import com.alibaba.jstorm.daemon.worker.metrics.Metrics;
 import com.alibaba.jstorm.stats.CommonStatsRolling;
 import com.alibaba.jstorm.task.TaskTransfer;
 import com.alibaba.jstorm.task.acker.Acker;
 import com.alibaba.jstorm.task.comm.TaskSendTargets;
 import com.alibaba.jstorm.task.comm.UnanchoredSend;
 import com.alibaba.jstorm.task.error.ITaskReportErr;
+import com.alibaba.jstorm.utils.JStormServerUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.RotatingMap;
 import com.alibaba.jstorm.utils.TimeUtils;
+import com.codahale.metrics.Timer;
 
 /**
  * bolt output interface, do emit/ack/fail
@@ -50,6 +54,7 @@ public class BoltCollector implements IOutputCollector {
 
 	private Map storm_conf;
 	private Integer ackerNum;
+	private JStormTimer   timer;
 
 	public BoltCollector(int message_timeout_secs, ITaskReportErr report_error,
 			TaskSendTargets _send_fn, Map _storm_conf,
@@ -75,6 +80,9 @@ public class BoltCollector implements IOutputCollector {
 
 		this.ackerNum = JStormUtils.parseInt(storm_conf
 				.get(Config.TOPOLOGY_ACKER_EXECUTORS));
+		
+		String componentId = topologyContext.getThisComponentId();
+		timer = Metrics.registerTimer(JStormServerUtils.getName(componentId, task_id) + "-emit-timer");
 
 	}
 
@@ -92,6 +100,7 @@ public class BoltCollector implements IOutputCollector {
 
 	private List<Integer> boltEmit(String out_stream_id,
 			Collection<Tuple> anchors, List<Object> values, Integer out_task_id) {
+		timer.start();
 		try {
 			java.util.List<Integer> out_tasks = null;
 			if (out_task_id != null) {
@@ -128,6 +137,8 @@ public class BoltCollector implements IOutputCollector {
 			return out_tasks;
 		} catch (Exception e) {
 			LOG.error("bolt emit", e);
+		}finally {
+			timer.stop();
 		}
 		return new ArrayList<Integer>();
 	}

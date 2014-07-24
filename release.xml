@@ -11,9 +11,20 @@
 			<source>jstorm-server/bin/jstorm.py</source>
 			<outputDirectory>/bin</outputDirectory>
 			<fileMode>0755</fileMode>
-			<destName>jstorm</destName>
+			<destName>aloha</destName>
 		</file>
-
+		<file>
+			<source>jstorm-server/bin/start.sh</source>
+			<outputDirectory>/bin</outputDirectory>
+			<fileMode>0755</fileMode>
+			<destName>start.sh</destName>
+		</file>
+		<file>
+			<source>jstorm-server/bin/stop.sh</source>
+			<outputDirectory>/bin</outputDirectory>
+			<fileMode>0755</fileMode>
+			<destName>stop.sh</destName>
+		</file>
 		<file>
 			<source>./version</source>
 			<outputDirectory>./</outputDirectory>
@@ -52,7 +63,6 @@
 			
 			<excludes> 
 				<exclude>com.alibaba.jstorm:jstorm-ui</exclude> 
-				<exclude>com.alibaba.jstorm:jstorm-console</exclude> 
 			</excludes> 
 			 
 			<binaries>

@@ -1,6 +1,8 @@
 package com.alibaba.jstorm.message.netty;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -51,21 +53,25 @@ class StormServerHandler extends SimpleChannelUpstreamHandler {
 
 	@Override
 	public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
+		LOG.info("Connection established {}", e.getChannel().getRemoteAddress());
 		server.addChannel(e.getChannel());
 	}
 
 	@Override
 	public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) {
-		Object msg = e.getMessage();
-		if (msg == null)
+      List<TaskMessage> msgs = (List<TaskMessage>) e.getMessage();
+      if (msgs == null) {
 			return;
-
+      }
 		// end of batch?
-		if (msg == ControlMessage.EOB_MESSAGE) {
-			Channel channel = ctx.getChannel();
-			LOG.debug("Receive ...{}", msg);
+		//if (msg == ControlMessage.EOB_MESSAGE) {
+		//	Channel channel = ctx.getChannel();
+		//	LOG.debug("Receive ...{}", msg);
+			
+		//	if (server.isAsyncBatch()) return;
+			
 			// simplify the logic, just send OK_RESPONSE
-			channel.write(ControlMessage.OK_RESPONSE);
+		//	channel.write(ControlMessage.OK_RESPONSE);
 			// if (getFailureCounter(channel) == 0) {
 			// channel.write(ControlMessage.OK_RESPONSE);
 			// }else {
@@ -73,17 +79,22 @@ class StormServerHandler extends SimpleChannelUpstreamHandler {
 			// removeFailureCounter(channel);
 			// }
 
-			return;
-		} else if (msg instanceof ControlMessage) {
-			LOG.debug("Receive ...{}", msg);
-			return;
-		}
+		//	return;
+		//} else if (msg instanceof ControlMessage) {
+		//	LOG.debug("Receive ...{}", msg);
+		//	return;
+		//}
 
 		// enqueue the received message for processing
 		try {
-			server.enqueue((TaskMessage) msg);
+			
+		    Iterator<TaskMessage> iter = msgs.iterator();	
+		  
+		    while(iter.hasNext()) {
+			    server.enqueue((TaskMessage) iter.next());
+		    }
 		} catch (Exception e1) {
-			LOG.warn("Failed to enqueue a request message", e);
+			LOG.warn("Failed to enqueue a request message" + e1.toString(), e);
 			// Channel channel = ctx.getChannel();
 			// incFailureCounter(channel);
 		}
@@ -92,6 +103,10 @@ class StormServerHandler extends SimpleChannelUpstreamHandler {
 	@Override
 	public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
 		// removeFailureCounter(e.getChannel());
+		if (e.getChannel() != null) {
+			LOG.info("Channel occur exception {}", e.getChannel().getRemoteAddress());
+		}
+		
 		server.closeChannel(e.getChannel());
 	}
 }

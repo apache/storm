@@ -35,6 +35,7 @@ union Grouping {
   6: JavaObject custom_object;
   7: binary custom_serialized;
   8: NullStruct local_or_shuffle; // prefer sending to tasks in the same worker process, otherwise shuffle
+  9: NullStruct localFirst; //  local worker shuffle > local node shuffle > other node shuffle 
 }
 
 struct StreamInfo {
@@ -258,6 +259,7 @@ service Nimbus {
 
   // need to add functions for asking about status of storms, what nodes they're running on, looking at task logs
 
+  void beginLibUpload(1: string libName);
   string beginFileUpload();
   void uploadChunk(1: string location, 2: binary chunk);
   void finishFileUpload(1: string location);

@@ -24,6 +24,7 @@ import backtype.storm.transactional.partitioned.IPartitionedTransactionalSpout;
 import backtype.storm.transactional.partitioned.OpaquePartitionedTransactionalSpoutExecutor;
 import backtype.storm.transactional.partitioned.PartitionedTransactionalSpoutExecutor;
 import backtype.storm.tuple.Fields;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -366,6 +367,39 @@ public class TransactionalTopologyBuilder {
 			});
 			return this;
 		}
+		
+		@Override
+		public BoltDeclarer localFirstGrouping(final String component) {
+			addDeclaration(new InputDeclaration() {
+				@Override
+				public void declare(InputDeclarer declarer) {
+					declarer.localFirstGrouping(component);
+				}
+
+				@Override
+				public String getComponent() {
+					return component;
+				}
+			});
+			return this;
+		}
+
+		@Override
+		public BoltDeclarer localFirstGrouping(final String component,
+				final String streamId) {
+			addDeclaration(new InputDeclaration() {
+				@Override
+				public void declare(InputDeclarer declarer) {
+					declarer.localFirstGrouping(component, streamId);
+				}
+
+				@Override
+				public String getComponent() {
+					return component;
+				}
+			});
+			return this;
+		}
 
 		@Override
 		public BoltDeclarer noneGrouping(final String component) {
@@ -526,5 +560,7 @@ public class TransactionalTopologyBuilder {
 			_component.componentConfs.add(conf);
 			return this;
 		}
+
+		
 	}
 }

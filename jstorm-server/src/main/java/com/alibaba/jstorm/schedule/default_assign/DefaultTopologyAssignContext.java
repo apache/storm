@@ -10,6 +10,7 @@ import java.util.Set;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.log4j.Logger;
 
 import backtype.storm.Config;
 import backtype.storm.generated.Bolt;
@@ -31,7 +32,9 @@ import com.alibaba.jstorm.utils.JStormServerConfig;
 import com.alibaba.jstorm.utils.JStormUtils;
 
 public class DefaultTopologyAssignContext extends TopologyAssignContext {
-
+	private static final Logger LOG = Logger.getLogger(
+			DefaultTopologyAssignContext.class);
+	
 	private final StormTopology sysTopology;
 	private final Map<String, String> sidToHostname;
 	private final Map<String, List<String>> hostToSid;
@@ -181,12 +184,23 @@ public class DefaultTopologyAssignContext extends TopologyAssignContext {
 		sidToHostname = generateSidToHost();
 		hostToSid = JStormUtils.reverse_map(sidToHostname);
 
+		Map<WorkerSlot, List<Integer>> oldTasks = new HashMap<WorkerSlot, List<Integer>>();
 		if (oldAssignment != null) {
-			oldWorkerTasks = Assignment.getWorkerTasks(oldAssignment
+			
+			try {
+				oldTasks = Assignment.getWorkerTasks(oldAssignment
 					.getTaskToResource());
-		} else {
-			oldWorkerTasks = new HashMap<WorkerSlot, List<Integer>>();
-		}
+			}catch(Exception e) {
+				StringBuilder sb = new StringBuilder();
+				sb.append("Failed to get oldWorkerTasks from assignment ");
+				sb.append(oldAssignment);
+				sb.append("Reset oldAssignment as null");
+				LOG.warn(sb.toString(), e);
+				oldAssignment = null;
+			}
+		} 
+		oldWorkerTasks = oldTasks;
+		
 
 		refineDeadTasks();
 

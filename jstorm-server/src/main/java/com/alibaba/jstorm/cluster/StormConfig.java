@@ -219,8 +219,16 @@ public class StormConfig {
 		return stormroot + FILE_SEPERATEOR + "stormcode.ser";
 	}
 
-	public static String sotrmconf_path(String stormroot) {
+	public static String stormconf_path(String stormroot) {
 		return stormroot + FILE_SEPERATEOR + "stormconf.ser";
+	}
+	
+	public static String stormlib_path(String stormroot, String libname) {
+		return stormroot + FILE_SEPERATEOR + "lib" + FILE_SEPERATEOR + libname;
+	}
+	
+	public static String stormlib_path(String stormroot) {
+		return stormroot + FILE_SEPERATEOR + "lib";
 	}
 
 	public static String stormdist_path(String stormroot) {
@@ -363,7 +371,7 @@ public class StormConfig {
 			throws IOException {
 		String topologyRoot = StormConfig.supervisor_stormdist_root(conf,
 				topologyId);
-		String confPath = StormConfig.sotrmconf_path(topologyRoot);
+		String confPath = StormConfig.stormconf_path(topologyRoot);
 		return (Map) readLocalObject(topologyId, confPath);
 	}
 
@@ -390,7 +398,7 @@ public class StormConfig {
 	public static Map read_nimbus_topology_conf(Map conf, String topologyId)
 			throws IOException {
 		String topologyRoot = StormConfig.masterStormdistRoot(conf, topologyId);
-		String readFile = StormConfig.sotrmconf_path(topologyRoot);
+		String readFile = StormConfig.stormconf_path(topologyRoot);
 
 		return (Map) readLocalObject(topologyId, readFile);
 	}

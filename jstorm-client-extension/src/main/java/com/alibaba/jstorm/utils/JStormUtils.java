@@ -216,8 +216,8 @@ public class JStormUtils {
 		try {
 			exec_command(cmd);
 		} catch (Exception e) {
-			LOG.warn("No " + dir + " from " + jarpath + 
-					"by cmd:" + cmd + "!" + e.getMessage());
+			LOG.warn("No " + dir + " from " + jarpath + "by cmd:" + cmd + "!"
+					+ e.getMessage());
 		}
 
 	}
@@ -250,12 +250,12 @@ public class JStormUtils {
 			LOG.info("Error when trying to kill " + pid + ".Exception ", e);
 		}
 	}
-	
+
 	public static void kill(Integer pid) {
 		process_killed(pid);
-		
+
 		sleepMs(5 * 1000);
-		
+
 		ensure_process_killed(pid);
 	}
 
@@ -728,7 +728,7 @@ public class JStormUtils {
 
 		return ret;
 	}
-	
+
 	public static String getLogFileName() {
 		Enumeration<Appender> enumAppender = Logger.getRootLogger()
 				.getAllAppenders();
@@ -741,34 +741,34 @@ public class JStormUtils {
 			}
 		}
 		if (fileAppender != null) {
-			return  fileAppender.getFile();
-			
+			return fileAppender.getFile();
+
 		}
-		
+
 		return null;
 	}
-	
+
 	public static String getLogDir() {
 		String file = JStormUtils.getLogFileName();
 		if (file != null) {
+			if (file.lastIndexOf(File.separator) < 0)
+				return "";
 			return file.substring(0, file.lastIndexOf(File.separator));
 		}
-		
+
 		String stormHome = System.getProperty("jstorm.home");
 		if (stormHome == null) {
 			return "." + File.separator + "logs";
-		}else {
+		} else {
 			return stormHome + File.separator + "logs";
 		}
 	}
-	
+
 	public static void redirectOutput(String file) throws Exception {
-		
 
 		System.out.println("Redirect output to " + file);
 
-		FileOutputStream workerOut = new FileOutputStream(new File(
-				file));
+		FileOutputStream workerOut = new FileOutputStream(new File(file));
 
 		PrintStream ps = new PrintStream(new BufferedOutputStream(workerOut),
 				true);
@@ -778,7 +778,7 @@ public class JStormUtils {
 		LOG.info("Successfully redirect System.out to " + file);
 
 	}
-	
+
 	public static RunnableCallback getDefaultKillfn() {
 
 		return new AsyncLoopDefaultKill();

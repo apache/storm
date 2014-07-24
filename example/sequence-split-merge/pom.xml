@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>storm</groupId>
 	<artifactId>sequence-split-merge</artifactId>
-	<version>1.0.7</version>
+	<version>1.0.8</version>
 	<packaging>jar</packaging>
 
 	<name>sequence-split-merge</name>
@@ -11,6 +11,8 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<jstorm.version>0.9.4</jstorm.version>
+		<storm.version>storm-0.9.2-incubating</storm.version>
 	</properties>
 	<repositories>
 		<repository>
@@ -27,29 +29,38 @@
 		</repository>
 	</repositories>
 	<dependencies>
-		<!-- <dependency> <groupId>storm</groupId> <artifactId>storm</artifactId> 
-			<version>0.7.1</version> <scope>provided</scope> </dependency> -->
-
-		<dependency>
-			<groupId>com.alibaba.jstorm</groupId>
-			<artifactId>jstorm-client</artifactId>
-			<version>0.9.3.1</version>
+		<!-- 
+		 <dependency>
+			<groupId>org.apache.storm</groupId>
+			<artifactId>storm</artifactId>
+        	<version>${storm.version}</version>
 			<scope>provided</scope>
-		</dependency>
-
+		</dependency> 
+		 -->
+		 
 		<dependency>
 			<groupId>com.alibaba.jstorm</groupId>
 			<artifactId>jstorm-client-extension</artifactId>
-			<version>0.9.3.1</version>
+			<version>${jstorm.version}</version>
+			<scope>provided</scope>
+		</dependency>
+
+		
+		<dependency>
+			<groupId>com.alibaba.jstorm</groupId>
+			<artifactId>jstorm-client</artifactId>
+			<version>${jstorm.version}</version>
 			<scope>provided</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>com.alibaba.jstorm</groupId>
 			<artifactId>jstorm-server</artifactId>
-			<version>0.9.3.1</version>
+			<version>${jstorm.version}</version>
 			<scope>provided</scope>
 		</dependency>
+		
+		 
 
 		<!-- <dependency> <groupId>org.clojure</groupId> <artifactId>clojure</artifactId> 
 			<version>1.2.0</version> </dependency> <dependency> <groupId>org.clojure</groupId> 

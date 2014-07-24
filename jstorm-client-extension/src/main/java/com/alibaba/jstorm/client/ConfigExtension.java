@@ -33,10 +33,12 @@ public class ConfigExtension {
 	 */
 	protected static final String NETTY_ENABLE_DISRUPTOR_QUEUE = "storm.messaging.netty.disruptor";
 
+	@Deprecated
 	public static void setNettyEnableDisruptor(Map conf, boolean enable) {
 		conf.put(NETTY_ENABLE_DISRUPTOR_QUEUE, Boolean.valueOf(enable));
 	}
 
+	@Deprecated
 	public static Boolean isNettyEnableDisruptor(Map conf) {
 		return JStormUtils.parseBoolean(conf.get(NETTY_ENABLE_DISRUPTOR_QUEUE),
 				true);
@@ -547,4 +549,45 @@ public class ConfigExtension {
 		conf.put(SPOUT_SINGLE_THREAD, enable);
 	}
 
+	protected static String WORKER_STOP_WITHOUT_SUPERVISOR = "worker.stop.without.supervisor";
+	
+	public  static boolean isWorkerStopWithoutSupervisor(Map conf) {
+		return JStormUtils.parseBoolean(conf.get(WORKER_STOP_WITHOUT_SUPERVISOR), false);
+	}
+	
+	protected static String CGROUP_ROOT_DIR = "supervisor.cgroup.rootdir";
+	
+	public static String getCgroupRootDir(Map conf) {
+		return (String) conf.get(CGROUP_ROOT_DIR);
+	}
+	
+	protected static String NETTY_TRANSFER_ASYNC_AND_BATCH = "storm.messaging.netty.transfer.async.batch";
+	
+    public static boolean isNettyTransferAsyncBatch(Map conf) {
+        return JStormUtils.parseBoolean(conf.get(NETTY_TRANSFER_ASYNC_AND_BATCH), true);
+    }
+    
+    protected static String  TOPOLOGY_PERFORMANCE_METRICS = "topology.performance.metrics";
+    
+    public static boolean isEnablePerformanceMetrics(Map conf) {
+    	return JStormUtils.parseBoolean(conf.get(TOPOLOGY_PERFORMANCE_METRICS), true);
+    }
+    
+    public static void setPerformanceMetrics(Map conf, boolean isEnable) {
+    	conf.put(TOPOLOGY_PERFORMANCE_METRICS, isEnable);
+    }
+    
+    protected static String NETTY_BUFFER_THRESHOLD_SIZE = "storm.messaging.netty.buffer.threshold";
+
+	public static long getNettyBufferThresholdSize(Map conf) {
+		return JStormUtils.parseLong(conf.get(NETTY_BUFFER_THRESHOLD_SIZE), 33554432);
+	}
+
+	public static void setNettyBufferThresholdSize(
+			Map conf, long size) {
+		conf.put(NETTY_BUFFER_THRESHOLD_SIZE, size);
+	}
+    
+    
+    
 }

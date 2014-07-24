@@ -1,6 +1,8 @@
 package com.alibaba.jstorm.utils;
 
+import java.util.Deque;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
@@ -16,25 +18,27 @@ import java.util.concurrent.LinkedBlockingDeque;
  * get, put, remove, containsKey, and size take O(numBuckets) time to run.
  * 
  */
-public class RotatingMap<K, V> {
+public class RotatingMap<K, V> implements TimeOutMap<K, V>{
 	// this default ensures things expire at most 50% past the expiration time
 	private static final int DEFAULT_NUM_BUCKETS = 3;
 
-	public static interface ExpiredCallback<K, V> {
-		public void expire(K key, V val);
-	}
 
-	private LinkedBlockingDeque<Map<K, V>> _buckets;
+	private Deque<Map<K, V>> _buckets;
 
 	private ExpiredCallback _callback;
 
 	private final Object lock = new Object();
 
-	public RotatingMap(int numBuckets, ExpiredCallback<K, V> callback) {
+	public RotatingMap(int numBuckets, ExpiredCallback<K, V> callback, boolean isSingleThread) {
 		if (numBuckets < 2) {
 			throw new IllegalArgumentException("numBuckets must be >= 2");
 		}
-		_buckets = new LinkedBlockingDeque<Map<K, V>>();
+		if (isSingleThread == true) {
+			_buckets = new LinkedList<Map<K, V>>();
+		}else {
+			_buckets = new LinkedBlockingDeque<Map<K, V>>();
+		}
+		
 		for (int i = 0; i < numBuckets; i++) {
 			_buckets.add(new ConcurrentHashMap<K, V>());
 		}
@@ -43,11 +47,11 @@ public class RotatingMap<K, V> {
 	}
 
 	public RotatingMap(ExpiredCallback<K, V> callback) {
-		this(DEFAULT_NUM_BUCKETS, callback);
+		this(DEFAULT_NUM_BUCKETS, callback, false);
 	}
 
 	public RotatingMap(int numBuckets) {
-		this(numBuckets, null);
+		this(numBuckets, null, false);
 	}
 
 	public Map<K, V> rotate() {
@@ -61,6 +65,7 @@ public class RotatingMap<K, V> {
 		return dead;
 	}
 
+	@Override
 	public boolean containsKey(K key) {
 		for (Map<K, V> bucket : _buckets) {
 			if (bucket.containsKey(key)) {
@@ -70,6 +75,7 @@ public class RotatingMap<K, V> {
 		return false;
 	}
 
+	@Override
 	public V get(K key) {
 		for (Map<K, V> bucket : _buckets) {
 			if (bucket.containsKey(key)) {
@@ -78,7 +84,13 @@ public class RotatingMap<K, V> {
 		}
 		return null;
 	}
+	
+	@Override
+	public void putHead(K key, V value) {
+		_buckets.peekFirst().put(key, value);
+	}
 
+	@Override
 	public void put(K key, V value) {
 		Iterator<Map<K, V>> it = _buckets.iterator();
 		Map<K, V> bucket = it.next();
@@ -89,16 +101,6 @@ public class RotatingMap<K, V> {
 		}
 	}
 
-	/**
-	 * In order to improving performance and avoid competition, just put entry
-	 * to list head,
-	 * 
-	 * Please make sure no duplicate key
-	 */
-	public void putHead(K key, V value) {
-		Map<K, V> bucket = _buckets.getFirst();
-		bucket.put(key, value);
-	}
 
 	/**
 	 * Remove item from Rotate
@@ -109,6 +111,7 @@ public class RotatingMap<K, V> {
 	 * @param key
 	 * @return
 	 */
+	@Override
 	public Object remove(K key) {
 		for (Map<K, V> bucket : _buckets) {
 			Object value = bucket.remove(key);
@@ -119,6 +122,7 @@ public class RotatingMap<K, V> {
 		return null;
 	}
 
+	@Override
 	public int size() {
 		int size = 0;
 		for (Map<K, V> bucket : _buckets) {

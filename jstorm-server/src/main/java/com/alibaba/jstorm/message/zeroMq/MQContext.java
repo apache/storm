@@ -1,6 +1,5 @@
 package com.alibaba.jstorm.message.zeroMq;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -14,7 +13,6 @@ import backtype.storm.messaging.IContext;
 
 import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.cluster.StormConfig;
-import com.alibaba.jstorm.message.QueueConnection;
 import com.alibaba.jstorm.utils.JStormUtils;
 
 /**
@@ -31,7 +29,6 @@ public class MQContext implements IContext {
 	protected boolean ipc;
 	protected boolean virtportZmq = false;
 	protected int maxQueueMsg;
-	protected Map<Integer, IConnection> queueConnections = new HashMap<Integer, IConnection>();
 	
 	private Context context;
 	
@@ -56,47 +53,17 @@ public class MQContext implements IContext {
 		context = ZeroMq.context(zmqThreads);
 	}
 
-	// public IContext makeContext(Map storm_conf) {
-	// int zmqThreads =
-	// JStormUtils.parseInt(storm_conf.get(Config.ZMQ_THREADS));
-	//
-	// int linger =
-	// JStormUtils.parseInt(storm_conf.get(Config.ZMQ_LINGER_MILLIS));
-	//
-	// int maxQueueMsg = JStormUtils.parseInt(
-	// storm_conf.get(Config.ZMQ_HWM),
-	// ConfigExtension.DEFAULT_ZMQ_MAX_QUEUE_MSG);
-	//
-	// boolean isLocal = StormConfig.cluster_mode(storm_conf).equals("local");
-	//
-	// // virtport ZMQ will define whether use ZMQ in worker internal
-	// commnication
-	// boolean virtportZmq = JStormUtils.parseBoolean(
-	// storm_conf.get(Config.STORM_LOCAL_MODE_ZMQ), false);
-	//
-	// Context context = ZeroMq.context(zmqThreads);
-	//
-	// return new MQContext(context, linger, isLocal, virtportZmq, maxQueueMsg);
-	//
-	// }
-
-	// public static MQContext mk_zmq_context(int num_threads, int linger,
-	// boolean local, boolean virtportZmq, int maxQueueMsg) {
-	// Context context = ZeroMq.context(num_threads);
-	// return new MQContext(context, linger, local, virtportZmq, maxQueueMsg);
-	// }
 
 	@SuppressWarnings("unused")
 	protected MQContext() {
 	}
 
+	
 	@Override
-	public IConnection bind(String topology_id, int port, boolean distribute) {
-		if (distribute || virtportZmq) {
-			return zmq_bind(distribute, port);
-		} else {
-			return queue_bind(port);
-		}
+	public IConnection bind(String topology_id, int port) {
+
+		return zmq_bind(true, port);
+
 	}
 
 	protected IConnection zmq_bind(boolean distributeZmq, int port) {
@@ -123,18 +90,10 @@ public class MQContext implements IContext {
 		return new ZMQRecvConnection(socket);
 	}
 
-	private IConnection queue_bind(int port) {
-		return queue_connect(port);
-	}
-
+	
 	@Override
-	public IConnection connect(String topology_id, String host, int port,
-			boolean distribute) {
-		if (distribute || virtportZmq) {
-			return zmq_connect(distribute, host, port);
-		} else {
-			return queue_connect(port);
-		}
+	public IConnection connect(String topology_id, String host, int port) {
+		return zmq_connect(true, host, port);
 	}
 
 	protected IConnection zmq_connect(boolean distributeZmq, String host, int port) {
@@ -157,29 +116,14 @@ public class MQContext implements IContext {
 		ZeroMq.set_hwm(socket, maxQueueMsg);
 
 		LOG.info("Create zmq sender {}", url);
-		return new ZMQSendConnection(socket);
-	}
-
-	private IConnection queue_connect(int port) {
-		IConnection queueConnection = null;
-		synchronized (this) {
-			queueConnection = queueConnections.get(port);
-			if (queueConnection == null) {
-				queueConnection = new QueueConnection(storm_conf);
-
-				queueConnections.put(port, queueConnection);
-
-				LOG.info("Create internal queue connect {}", port);
-			}
-		}
-
-		return queueConnection;
+		return new ZMQSendConnection(socket, host, port);
 	}
 
 	public void term() {
 		LOG.info("ZMQ context terminates ");
 		context.term();
 	}
+
 
 //	public Context getContext() {
 //		return context;

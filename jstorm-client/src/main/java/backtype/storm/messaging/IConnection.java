@@ -1,21 +1,31 @@
 package backtype.storm.messaging;
 
+import java.util.List;
+
+import backtype.storm.utils.DisruptorQueue;
+
 public interface IConnection {
+	
 	/**
+	 * (flags != 1) synchronously 
+	 * (flags==1) asynchronously 
+	 * 
 	 * @param flags
-	 *            0: block, 1: non-block
 	 * @return
 	 */
-	public byte[] recv(int flags);
-
+	public TaskMessage recv(int flags);
+	
 	/**
-	 * send a message with taskId and payload
+	 * In the new design, receive flow is through registerQueue, 
+	 * then push message into queue 
 	 * 
-	 * @param taskId
-	 *            task ID
-	 * @param payload
+	 * @param recvQueu
 	 */
-	public void send(int taskId, byte[] message);
+	public void registerQueue(DisruptorQueue recvQueu);
+	public void enqueue(TaskMessage message);
+	
+	public void send(List<TaskMessage> messages);
+	public void send(TaskMessage message);
 
 	/**
 	 * close this connection

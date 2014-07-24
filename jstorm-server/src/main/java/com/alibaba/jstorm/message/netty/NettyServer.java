@@ -1,9 +1,11 @@
 package com.alibaba.jstorm.message.netty;
 
 import java.net.InetSocketAddress;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jboss.netty.bootstrap.ServerBootstrap;
@@ -15,16 +17,13 @@ import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.alibaba.jstorm.utils.JStormUtils;
+
 import backtype.storm.Config;
 import backtype.storm.messaging.IConnection;
 import backtype.storm.messaging.TaskMessage;
 import backtype.storm.utils.DisruptorQueue;
 import backtype.storm.utils.Utils;
-
-import com.alibaba.jstorm.client.ConfigExtension;
-import com.alibaba.jstorm.utils.JStormUtils;
-import com.lmax.disruptor.SingleThreadedClaimStrategy;
-import com.lmax.disruptor.WaitStrategy;
 
 class NettyServer implements IConnection {
 	private static final Logger LOG = LoggerFactory
@@ -32,9 +31,7 @@ class NettyServer implements IConnection {
 	@SuppressWarnings("rawtypes")
 	Map storm_conf;
 	int port;
-	private LinkedBlockingQueue<TaskMessage> blockQ;
-	private DisruptorQueue disruptorQ;
-	private final boolean useDisruptor;
+	DisruptorQueue recvQueue;
 	// private LinkedBlockingQueue message_queue;
 	volatile ChannelGroup allChannels = new DefaultChannelGroup("jstorm-server");
 	final ChannelFactory factory;
@@ -43,36 +40,35 @@ class NettyServer implements IConnection {
 	// @@@ testing code
 	private final AtomicInteger counter = new AtomicInteger(0);
 
+	// ayncBatch is only one solution, so directly set it as true
+	private final boolean noResponse = true;
+
 	@SuppressWarnings("rawtypes")
 	NettyServer(Map storm_conf, int port) {
 		this.storm_conf = storm_conf;
 		this.port = port;
-
-		useDisruptor = ConfigExtension.isNettyEnableDisruptor(storm_conf);
-		blockQ = new LinkedBlockingQueue<TaskMessage>();
-		int queue_size = Utils.getInt(storm_conf
-				.get(Config.TOPOLOGY_TRANSFER_BUFFER_SIZE));
-		WaitStrategy waitStrategy = (WaitStrategy) Utils
-				.newInstance((String) storm_conf
-						.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
-		disruptorQ = new DisruptorQueue(new SingleThreadedClaimStrategy(
-				queue_size), waitStrategy);
-
 		// Configure the server.
 		int buffer_size = Utils.getInt(storm_conf
 				.get(Config.STORM_MESSAGING_NETTY_BUFFER_SIZE));
 		int maxWorkers = Utils.getInt(storm_conf
 				.get(Config.STORM_MESSAGING_NETTY_SERVER_WORKER_THREADS));
 
+		//asyncBatch = ConfigExtension.isNettyTransferAsyncBatch(storm_conf);
+
+		ThreadFactory bossFactory = new NettyRenameThreadFactory("server"
+				+ "-boss");
+		ThreadFactory workerFactory = new NettyRenameThreadFactory("server"
+				+ "-worker");
 		if (maxWorkers > 0) {
 			factory = new NioServerSocketChannelFactory(
-					Executors.newCachedThreadPool(),
-					Executors.newCachedThreadPool(), maxWorkers);
+					Executors.newCachedThreadPool(bossFactory),
+					Executors.newCachedThreadPool(workerFactory), maxWorkers);
 		} else {
 			factory = new NioServerSocketChannelFactory(
-					Executors.newCachedThreadPool(),
-					Executors.newCachedThreadPool());
+					Executors.newCachedThreadPool(bossFactory),
+					Executors.newCachedThreadPool(workerFactory));
 		}
+
 		bootstrap = new ServerBootstrap(factory);
 		bootstrap.setOption("child.tcpNoDelay", true);
 		bootstrap.setOption("child.receiveBufferSize", buffer_size);
@@ -85,24 +81,25 @@ class NettyServer implements IConnection {
 		Channel channel = bootstrap.bind(new InetSocketAddress(port));
 		allChannels.add(channel);
 
-		LOG.info("Successfull bind {}, use disruptor:{}", port, useDisruptor);
+		LOG.info("Successfull bind {}, buffer_size:{}, maxWorkers:{}", port,
+				buffer_size, maxWorkers);
 	}
 
+	@Override
+	public void registerQueue(DisruptorQueue recvQueu) {
+		this.recvQueue = recvQueu;
+	}
 	/**
 	 * enqueue a received message
 	 * 
 	 * @param message
 	 * @throws InterruptedException
 	 */
-	protected void enqueue(TaskMessage message) throws InterruptedException {
+	public void enqueue(TaskMessage message) {
 		LOG.debug("message received with task: {},  receive: {} ",
 				message.task(), counter.incrementAndGet());
 
-		if (useDisruptor) {
-			disruptorQ.publish(message);
-		} else {
-			blockQ.offer(message);
-		}
+		recvQueue.publish(message);
 
 	}
 
@@ -110,30 +107,17 @@ class NettyServer implements IConnection {
 	 * fetch a message from message queue synchronously (flags != 1) or
 	 * asynchronously (flags==1)
 	 */
-	public byte[] recv(int flags) {
+	public TaskMessage recv(int flags) {
 		try {
-			Object message = null;
 			if ((flags & 0x01) == 0x01) {
+				return (TaskMessage) recvQueue.poll();
 				// non-blocking
-				if (useDisruptor) {
-					message = disruptorQ.poll();
-				} else {
-					message = blockQ.poll();
-				}
+
 			} else {
-				if (useDisruptor) {
-					message = disruptorQ.take();
-				} else {
-					message = blockQ.take();
-				}
-				// LOG.debug("request to be processed: {}", message);
+				return (TaskMessage) recvQueue.take();
+
 			}
 
-			if (message != null) {
-				return ((TaskMessage) message).message();
-			} else {
-				return null;
-			}
 		} catch (Exception e) {
 			LOG.warn("Occur unexception ", e);
 			return null;
@@ -164,14 +148,38 @@ class NettyServer implements IConnection {
 	 * close all channels, and release resources
 	 */
 	public synchronized void close() {
+		LOG.info("Begin to shutdown NettyServer");
 		if (allChannels != null) {
-			allChannels.close().awaitUninterruptibly();
-			factory.releaseExternalResources();
-			allChannels = null;
+			new Thread(new Runnable() {
+				
+				@Override
+				public void run() {
+					try {
+						// await(5, TimeUnit.SECONDS)
+						// sometimes allChannels.close() will block the exit thread
+						allChannels.close().await(1, TimeUnit.SECONDS);
+						LOG.info("Successfully close all channel");
+						factory.releaseExternalResources();
+					}catch(Exception e) {
+						
+					}
+					allChannels = null;
+				}
+			}).start();
+			
+			JStormUtils.sleepMs(1 * 1000);
 		}
+		LOG.info("Successfully shutdown NettyServer");
 	}
 
-	public void send(int task, byte[] message) {
+	@Override
+	public void send(List<TaskMessage> messages) {
+		throw new UnsupportedOperationException(
+				"Server connection should not send any messages");
+	}
+	
+	@Override
+	public void send(TaskMessage message) {
 		throw new UnsupportedOperationException(
 				"Server connection should not send any messages");
 	}
@@ -181,4 +189,13 @@ class NettyServer implements IConnection {
 		// TODO Auto-generated method stub
 		return false;
 	}
+
+	public boolean isNoResponse() {
+		return noResponse;
+	}
+
+	
+
+	
+
 }

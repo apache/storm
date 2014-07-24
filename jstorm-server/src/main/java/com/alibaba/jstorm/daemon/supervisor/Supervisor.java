@@ -22,6 +22,7 @@ import com.alibaba.jstorm.cluster.Cluster;
 import com.alibaba.jstorm.cluster.Common;
 import com.alibaba.jstorm.cluster.StormClusterState;
 import com.alibaba.jstorm.cluster.StormConfig;
+import com.alibaba.jstorm.daemon.worker.hearbeat.SyncContainerHb;
 import com.alibaba.jstorm.event.EventManager;
 import com.alibaba.jstorm.event.EventManagerImp;
 import com.alibaba.jstorm.event.EventManagerPusher;
@@ -29,7 +30,6 @@ import com.alibaba.jstorm.utils.JStormServerUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.NetWorkUtils;
 import com.alibaba.jstorm.utils.SmartThread;
-import com.alibaba.jstorm.utils.SyncContainerHb;
 
 /**
  * 

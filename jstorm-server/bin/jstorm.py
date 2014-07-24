@@ -34,7 +34,7 @@ def get_config_opts():
 
 if not os.path.exists(JSTORM_DIR + "/RELEASE"):
     print "******************************************"
-    print "The jstorm client can only be run from within a release. You appear to be trying to run the client from a checkout of Storm's source code."
+    print "The jstorm client can only be run from within a release. You appear to be trying to run the client from a checkout of JStorm's source code."
     print "\nYou can download a JStorm release "
     print "******************************************"
     sys.exit(1)  
@@ -72,8 +72,8 @@ def confvalue(name, extrapaths):
 def print_localconfvalue(name):
     """Syntax: [jstorm localconfvalue conf-name]
 
-    Prints out the value for conf-name in the local Storm configs. 
-    The local Storm configs are the ones in ~/.jstorm/storm.yaml merged 
+    Prints out the value for conf-name in the local JStorm configs. 
+    The local JStorm configs are the ones in ~/.jstorm/storm.yaml merged 
     in with the configs in defaults.yaml.
     """
     print name + ": " + confvalue(name, [CONF_DIR])
@@ -81,8 +81,8 @@ def print_localconfvalue(name):
 def print_remoteconfvalue(name):
     """Syntax: [jstorm remoteconfvalue conf-name]
 
-    Prints out the value for conf-name in the cluster's Storm configs. 
-    The cluster's Storm configs are the ones in $STORM-PATH/conf/storm.yaml 
+    Prints out the value for conf-name in the cluster's JStorm configs. 
+    The cluster's JStorm configs are the ones in $STORM-PATH/conf/storm.yaml 
     merged in with the configs in defaults.yaml. 
 
     This command must be run on a cluster machine.
@@ -136,14 +136,14 @@ def zktool(*args):
         childopts=childopts)
 
 def kill(*args):
-    """Syntax: [jstorm kill topology-name [-w wait-time-secs]]
+    """Syntax: [jstorm kill topology-name [wait-time-secs]]
 
-    Kills the topology with the name topology-name. Storm will 
+    Kills the topology with the name topology-name. JStorm will 
     first deactivate the topology's spouts for the duration of 
     the topology's message timeout to allow all messages currently 
-    being processed to finish processing. Storm will then shutdown 
+    being processed to finish processing. JStorm will then shutdown 
     the workers and clean up their state. You can override the length 
-    of time Storm waits between deactivation and shutdown with the -w flag.
+    of time JStorm waits between deactivation and shutdown.
     """
     childopts = (" -Dstorm.root.logger=INFO,stdout -Dlog4j.configuration=File:%s/conf/aloha_log4j.properties"  %JSTORM_DIR)
     #childopts = (" -Dstorm.root.logger=INFO,stdout -Dlogback.configurationFile=%s/conf/aloha_logback.xml"  %JSTORM_DIR)
@@ -191,13 +191,13 @@ def rebalance(*args):
     Sometimes you may wish to spread out where the workers for a topology 
     are running. For example, let's say you have a 10 node cluster running 
     4 workers per node, and then let's say you add another 10 nodes to 
-    the cluster. You may wish to have Storm spread out the workers for the 
+    the cluster. You may wish to have JStorm spread out the workers for the 
     running topology so that each node runs 2 workers. One way to do this 
-    is to kill the topology and resubmit it, but Storm provides a "rebalance" 
+    is to kill the topology and resubmit it, but JStorm provides a "rebalance" 
     command that provides an easier way to do this.
 
     Rebalance will first deactivate the topology for the duration of the 
-    message timeout (overridable with the -w flag) and then redistribute 
+    message timeout  and then redistribute 
     the workers evenly around the cluster. The topology will then return to 
     its previous state of activation (so a deactivated topology will still 
     be deactivated and an activated topology will go back to being activated).
@@ -219,7 +219,7 @@ def nimbus():
     Launches the nimbus daemon. This command should be run under 
     supervision with a tool like daemontools or monit. 
 
-    See Setting up a Storm cluster for more information.
+    See Setting up a JStorm cluster for more information.
     (https://github.com/alibaba/jstorm/wiki/JStorm-Chinese-Documentation)
     """
     cppaths = [JSTORM_CONF_DIR]
@@ -238,7 +238,7 @@ def supervisor():
     Launches the supervisor daemon. This command should be run 
     under supervision with a tool like daemontools or monit. 
 
-    See Setting up a Storm cluster for more information.
+    See Setting up a JStorm cluster for more information.
     (https://github.com/alibaba/jstorm/wiki/JStorm-Chinese-Documentation)
     """
     cppaths = [JSTORM_CONF_DIR]

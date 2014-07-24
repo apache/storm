@@ -2,6 +2,8 @@ package backtype.storm.messaging;
 
 import java.util.Map;
 
+import backtype.storm.utils.DisruptorQueue;
+
 /**
  * This interface needs to be implemented for messaging plugin.
  * 
@@ -37,7 +39,7 @@ public interface IContext {
 	 *            true -- receive other worker's data
 	 * @return server side connection
 	 */
-	public IConnection bind(String topology_id, int port, boolean distribute);
+	public IConnection bind(String topology_id, int port);
 
 	/**
 	 * This method establish a client side connection to a remote server
@@ -52,6 +54,5 @@ public interface IContext {
 	 *            true -- send other worker data
 	 * @return client side connection
 	 */
-	public IConnection connect(String topology_id, String host, int port,
-			boolean distribute);
+	public IConnection connect(String topology_id, String host, int port);
 };

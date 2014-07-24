@@ -30,18 +30,34 @@ public class CleanRunnable implements Runnable {
 	@Override
 	public void run() {
 		File inboxdir = new File(dir_location);
+		clean(inboxdir);
+	}
 
+	private void clean(File file) {
 		// filter
 		OlderFileFilter filter = new OlderFileFilter(seconds);
 
-		File[] files = inboxdir.listFiles(filter);
+		File[] files = file.listFiles(filter);
 		for (File f : files) {
-			log.info("Cleaning inbox ... deleted: " + f.getName());
-			try {
-				f.delete();
-			} catch (Exception e) {
-				log.error("Cleaning inbox ... error deleting:" + f.getName()
-						+ "," + e);
+			if (f.isFile()) {
+				log.info("Cleaning inbox ... deleted: " + f.getName());
+				try {
+					f.delete();
+				} catch (Exception e) {
+					log.error("Cleaning inbox ... error deleting:"
+							+ f.getName() + "," + e);
+				}
+			} else {
+				clean(f);
+				if (f.listFiles().length == 0) {
+					log.info("Cleaning inbox ... deleted: " + f.getName());
+					try {
+						f.delete();
+					} catch (Exception e) {
+						log.error("Cleaning inbox ... error deleting:"
+								+ f.getName() + "," + e);
+					}
+				}
 			}
 		}
 	}

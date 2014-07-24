@@ -6,7 +6,6 @@ import java.util.Map.Entry;
 import org.apache.log4j.Logger;
 
 import backtype.storm.Config;
-import backtype.storm.messaging.IConnection;
 import backtype.storm.task.IBolt;
 import backtype.storm.task.IOutputCollector;
 import backtype.storm.task.OutputCollector;
@@ -15,6 +14,9 @@ import backtype.storm.tuple.Tuple;
 import backtype.storm.utils.DisruptorQueue;
 import backtype.storm.utils.WorkerClassLoader;
 
+import com.alibaba.jstorm.daemon.worker.TimeTick;
+import com.alibaba.jstorm.daemon.worker.metrics.JStormTimer;
+import com.alibaba.jstorm.daemon.worker.metrics.Metrics;
 import com.alibaba.jstorm.stats.CommonStatsRolling;
 import com.alibaba.jstorm.task.TaskStatus;
 import com.alibaba.jstorm.task.TaskTransfer;
@@ -39,22 +41,22 @@ public class BoltExecutors extends BaseExecutors implements EventHandler {
 	protected IBolt bolt;
 
 	protected RotatingMap<Tuple, Long> tuple_start_times;
-	private long lastRotate = System.currentTimeMillis();
-	private long rotateTime;
-	
+
 	private int ackerNum = 0;
 
 	// internal outputCollector is BoltCollector
 	private OutputCollector outputCollector;
 
+	private JStormTimer boltExeTimer;
+
 	public BoltExecutors(IBolt _bolt, TaskTransfer _transfer_fn,
 			Map<Integer, DisruptorQueue> innerTaskTransfer, Map storm_conf,
-			IConnection _puller, TaskSendTargets _send_fn,
+			DisruptorQueue deserializeQueue, TaskSendTargets _send_fn,
 			TaskStatus taskStatus, TopologyContext sysTopologyCxt,
 			TopologyContext userTopologyCxt, CommonStatsRolling _task_stats,
 			ITaskReportErr _report_error) {
 
-		super(_transfer_fn, storm_conf, _puller, innerTaskTransfer,
+		super(_transfer_fn, storm_conf, deserializeQueue, innerTaskTransfer,
 				sysTopologyCxt, userTopologyCxt, _task_stats, taskStatus,
 				_report_error);
 
@@ -64,8 +66,7 @@ public class BoltExecutors extends BaseExecutors implements EventHandler {
 
 		this.tuple_start_times = new RotatingMap<Tuple, Long>(
 				Acker.TIMEOUT_BUCKET_NUM);
-		this.rotateTime = 1000L * message_timeout_secs/Acker.TIMEOUT_BUCKET_NUM;
-		
+
 		this.ackerNum = JStormUtils.parseInt(storm_conf
 				.get(Config.TOPOLOGY_ACKER_EXECUTORS));
 
@@ -85,6 +86,9 @@ public class BoltExecutors extends BaseExecutors implements EventHandler {
 				_task_stats);
 
 		outputCollector = new OutputCollector(output_collector);
+
+		boltExeTimer = Metrics.registerTimer(idStr + "-exe-timer");
+		TimeTick.registerTimer(idStr + "-sampling-tick", exeQueue);
 
 		try {
 			// do prepare
@@ -110,22 +114,7 @@ public class BoltExecutors extends BaseExecutors implements EventHandler {
 		while (taskStatus.isShutdown() == false) {
 			try {
 
-				long now = System.currentTimeMillis();
-				if (now - lastRotate > rotateTime) {
-					Map<Tuple, Long> timeoutMap = tuple_start_times.rotate();
-					lastRotate = now;
-					
-					if (ackerNum > 0) {
-						// only when acker is enable
-						for (Entry<Tuple, Long> entry : timeoutMap.entrySet()) {
-							Tuple input = entry.getKey();
-							task_stats.bolt_failed_tuple(input.getSourceComponent(),
-									input.getSourceStreamId());
-						}
-					}
-				}
-
-				disruptorRecvQueue.consumeBatchWhenAvailable(this);
+				exeQueue.consumeBatchWhenAvailable(this);
 
 			} catch (Exception e) {
 				if (taskStatus.isShutdown() == false) {
@@ -145,30 +134,55 @@ public class BoltExecutors extends BaseExecutors implements EventHandler {
 			return;
 		}
 
-		Tuple tuple = (Tuple) event;
-
-		task_stats.recv_tuple(tuple.getSourceComponent(),
-				tuple.getSourceStreamId());
-		
-		tuple_start_times.put(tuple, System.currentTimeMillis());
+		boltExeTimer.start();
 
 		try {
-			bolt.execute(tuple);
-		} catch (Exception e) {
-			error = e;
-			LOG.error("bolt execute error ", e);
-			report_error.report(e);
-		}
-		
-		if (ackerNum == 0) {
-			// only when acker is disable 
-			// get tuple process latency
-			Long start_time = (Long) tuple_start_times.remove(tuple);
-			if (start_time != null) {
-				Long delta = TimeUtils.time_delta_ms(start_time);
-				task_stats.bolt_acked_tuple(tuple.getSourceComponent(),
-						tuple.getSourceStreamId(), delta);
+
+			if (event instanceof TimeTick.Tick) {
+				// don't check the timetick name to improve performance
+				
+				Map<Tuple, Long> timeoutMap = tuple_start_times.rotate();
+
+				if (ackerNum > 0) {
+					// only when acker is enable
+					for (Entry<Tuple, Long> entry : timeoutMap.entrySet()) {
+						Tuple input = entry.getKey();
+						task_stats.bolt_failed_tuple(
+								input.getSourceComponent(),
+								input.getSourceStreamId());
+					}
+				}
+
+				return;
 			}
+
+			Tuple tuple = (Tuple) event;
+
+			task_stats.recv_tuple(tuple.getSourceComponent(),
+					tuple.getSourceStreamId());
+
+			tuple_start_times.put(tuple, System.currentTimeMillis());
+
+			try {
+				bolt.execute(tuple);
+			} catch (Exception e) {
+				error = e;
+				LOG.error("bolt execute error ", e);
+				report_error.report(e);
+			}
+
+			if (ackerNum == 0) {
+				// only when acker is disable
+				// get tuple process latency
+				Long start_time = (Long) tuple_start_times.remove(tuple);
+				if (start_time != null) {
+					Long delta = TimeUtils.time_delta_ms(start_time);
+					task_stats.bolt_acked_tuple(tuple.getSourceComponent(),
+							tuple.getSourceStreamId(), delta);
+				}
+			}
+		} finally {
+			boltExeTimer.stop();
 		}
 	}
 

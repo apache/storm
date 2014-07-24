@@ -343,11 +343,16 @@ public class TopologyAssign implements Runnable {
 		if (existingAssignment == null) {
 			ret.setAssignType(TopologyAssignContext.ASSIGN_TYPE_NEW);
 
-			AssignmentBak lastAssignment = stormClusterState
+			try {
+				AssignmentBak lastAssignment = stormClusterState
 					.assignment_bak(event.getTopologyName());
-			if (lastAssignment != null) {
+				if (lastAssignment != null) {
 
-				ret.setOldAssignment(lastAssignment.getAssignment());
+					ret.setOldAssignment(lastAssignment.getAssignment());
+				}
+
+			}catch(Exception e) {
+				LOG.warn("Failed to get old Assignment,", e);
 			}
 		} else {
 			ret.setOldAssignment(existingAssignment);

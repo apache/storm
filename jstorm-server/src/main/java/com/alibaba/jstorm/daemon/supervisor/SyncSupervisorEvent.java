@@ -130,7 +130,8 @@ class SyncSupervisorEvent extends RunnableCallback {
 
 			// Step 5: download code from ZK
 
-			Map<String, String> topologyCodes = getTopologyCodeLocations(assignments, supervisorId);
+			Map<String, String> topologyCodes = getTopologyCodeLocations(
+					assignments, supervisorId);
 
 			downloadTopology(topologyCodes, downloadedTopologyIds);
 
@@ -176,7 +177,8 @@ class SyncSupervisorEvent extends RunnableCallback {
 			String masterCodeDir) throws IOException, TException {
 
 		// STORM-LOCAL-DIR/supervisor/stormdist/storm-id
-		String stormroot = StormConfig.supervisor_stormdist_root(conf, topologyId);
+		String stormroot = StormConfig.supervisor_stormdist_root(conf,
+				topologyId);
 
 		FileUtils.copyDirectory(new File(masterCodeDir), new File(stormroot));
 
@@ -229,7 +231,8 @@ class SyncSupervisorEvent extends RunnableCallback {
 		String stormroot = StormConfig.supervisor_stormdist_root(conf,
 				topologyId);
 
-		JStormServerUtils.downloadCodeFromMaster(conf, tmproot, masterCodeDir);
+		JStormServerUtils.downloadCodeFromMaster(conf, tmproot, masterCodeDir,
+				topologyId, true);
 
 		// tmproot/stormjar.jar
 		String localFileJarTmp = StormConfig.stormjar_path(tmproot);
@@ -282,7 +285,7 @@ class SyncSupervisorEvent extends RunnableCallback {
 	 * @param stormClusterState
 	 * @param supervisorId
 	 * @param callback
-	 * @throws Exception 
+	 * @throws Exception
 	 * @returns map: {port,LocalAssignment}
 	 */
 	private Map<Integer, LocalAssignment> getLocalAssign(
@@ -328,15 +331,14 @@ class SyncSupervisorEvent extends RunnableCallback {
 	 * @param supervisorId
 	 * @param callback
 	 * @return Map: {port, LocalAssignment}
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	private Map<Integer, LocalAssignment> readMyTasks(
 			StormClusterState stormClusterState, String topologyId,
 			String supervisorId, Assignment assignmenInfo) throws Exception {
-		
+
 		Map<Integer, LocalAssignment> portTasks = new HashMap<Integer, LocalAssignment>();
-		
-		
+
 		StormBase stormBase = stormClusterState.storm_base(topologyId, null);
 		if (stormBase == null) {
 			LOG.error("Failed to get StormBase of " + topologyId);
@@ -375,7 +377,7 @@ class SyncSupervisorEvent extends RunnableCallback {
 				taskIds.add(taskId);
 
 				la.addMemSlotNum(resource.getMemSlotNum());
-				
+
 				la.addCpuSlotNum(resource.getCpuSlotNum());
 
 			} else {
@@ -384,10 +386,11 @@ class SyncSupervisorEvent extends RunnableCallback {
 
 				taskIds.add(taskId);
 
-				LocalAssignment la = new LocalAssignment(topologyId, taskIds, stormBase.getStormName());
+				LocalAssignment la = new LocalAssignment(topologyId, taskIds,
+						stormBase.getStormName());
 
 				la.addMemSlotNum(resource.getMemSlotNum());
-				
+
 				la.addCpuSlotNum(resource.getCpuSlotNum());
 
 				portTasks.put(port, la);
@@ -406,16 +409,19 @@ class SyncSupervisorEvent extends RunnableCallback {
 	 * @returns Map: <topologyId, master-code-dir> from zookeeper
 	 */
 	public static Map<String, String> getTopologyCodeLocations(
-			Map<String, Assignment> assignments, String supervisorId) throws Exception {
+			Map<String, Assignment> assignments, String supervisorId)
+			throws Exception {
 
 		Map<String, String> rtn = new HashMap<String, String>();
 
 		for (Entry<String, Assignment> entry : assignments.entrySet()) {
 			String topologyid = entry.getKey();
 			Assignment assignmenInfo = entry.getValue();
-			
-			Map<Integer, ResourceAssignment> taskToNodePort = assignmenInfo.getTaskToResource();
-			for (Entry<Integer, ResourceAssignment> nodePort : taskToNodePort.entrySet()) {
+
+			Map<Integer, ResourceAssignment> taskToNodePort = assignmenInfo
+					.getTaskToResource();
+			for (Entry<Integer, ResourceAssignment> nodePort : taskToNodePort
+					.entrySet()) {
 				String node = nodePort.getValue().getSupervisorId();
 				if (supervisorId.equals(node)) {
 					rtn.put(topologyid, assignmenInfo.getMasterCodeDir());
@@ -437,8 +443,8 @@ class SyncSupervisorEvent extends RunnableCallback {
 
 			if (!downloadedTopologyIds.contains(topologyId)) {
 
-				LOG.info("Downloading code for storm id " + topologyId + " from "
-						+ masterCodeDir);
+				LOG.info("Downloading code for storm id " + topologyId
+						+ " from " + masterCodeDir);
 
 				try {
 					downloadStormCode(conf, topologyId, masterCodeDir);

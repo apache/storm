@@ -118,6 +118,12 @@ class MessageBatch {
 	int size() {
 		return msgs.size();
 	}
+	
+	
+
+	public int getEncoded_length() {
+		return encoded_length;
+	}
 
 	/**
 	 * create a buffer containing the encoding of this batch

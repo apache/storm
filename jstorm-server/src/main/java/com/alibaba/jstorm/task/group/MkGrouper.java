@@ -5,6 +5,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
+import org.apache.log4j.Logger;
+
 import backtype.storm.generated.GlobalStreamId;
 import backtype.storm.generated.Grouping;
 import backtype.storm.generated.JavaObject;
@@ -13,6 +15,7 @@ import backtype.storm.task.TopologyContext;
 import backtype.storm.tuple.Fields;
 import backtype.storm.utils.Utils;
 
+import com.alibaba.jstorm.daemon.worker.WorkerData;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.RandomRange;
 import com.alibaba.jstorm.utils.Thrift;
@@ -24,6 +27,8 @@ import com.alibaba.jstorm.utils.Thrift;
  * 
  */
 public class MkGrouper {
+	private static final Logger LOG = Logger.getLogger(MkGrouper.class);
+	
 	private TopologyContext topology_context;
 	// this component output fields
 	private Fields out_fields;
@@ -40,9 +45,12 @@ public class MkGrouper {
 	private MkCustomGrouper custom_grouper;
 	private MkFieldsGrouper fields_grouper;
 	private MkLocalShuffer local_shuffer_grouper;
+	private MkLocalFirst   localFirst;
+	
 
 	public MkGrouper(TopologyContext _topology_context, Fields _out_fields,
-			Grouping _thrift_grouping, List<Integer> _outTasks, String streamId) {
+			Grouping _thrift_grouping, List<Integer> _outTasks, 
+			String streamId, WorkerData workerData) {
 		this.topology_context = _topology_context;
 		this.out_fields = _out_fields;
 		this.thrift_grouping = _thrift_grouping;
@@ -54,7 +62,9 @@ public class MkGrouper {
 
 		this.local_tasks = _topology_context.getThisWorkerTasks();
 		this.fields = Thrift.groupingType(thrift_grouping);
-		this.grouptype = this.parseGroupType();
+		this.grouptype = this.parseGroupType(workerData);
+		
+		LOG.info("Grouptype is " + grouptype);
 
 	}
 
@@ -62,7 +72,7 @@ public class MkGrouper {
 		return grouptype;
 	}
 
-	private GrouperType parseGroupType() {
+	private GrouperType parseGroupType(WorkerData workerData) {
 
 		GrouperType grouperType = null;
 
@@ -123,7 +133,13 @@ public class MkGrouper {
 			grouperType = GrouperType.local_or_shuffle;
 			local_shuffer_grouper = new MkLocalShuffer(local_tasks, out_tasks);
 
+		}else if (Grouping._Fields.LOCAL_FIRST.equals(fields)) {
+			grouperType = GrouperType.localFirst;
+			
+			localFirst = new MkLocalFirst(local_tasks, out_tasks, workerData);
 		}
+		
+		
 		return grouperType;
 	}
 
@@ -156,6 +172,10 @@ public class MkGrouper {
 			return custom_grouper.grouper(values);
 		} else if (GrouperType.local_or_shuffle.equals(grouptype)) {
 			return local_shuffer_grouper.grouper(values);
+		} else if (GrouperType.localFirst.equals(grouptype)) {
+			return localFirst.grouper(values);
+		}else {
+			LOG.warn("Unsupportted group type");
 		}
 
 		return new ArrayList<Integer>();

@@ -13,12 +13,14 @@ import backtype.storm.topology.IRichBolt;
 import backtype.storm.topology.InputDeclarer;
 import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.tuple.Fields;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 
 public class BatchSubtopologyBuilder {
 	Map<String, Component> _bolts = new HashMap<String, Component>();
@@ -268,6 +270,39 @@ public class BatchSubtopologyBuilder {
 			});
 			return this;
 		}
+		
+		@Override
+		public BoltDeclarer localFirstGrouping(final String componentId) {
+			addDeclaration(new InputDeclaration() {
+				@Override
+				public void declare(InputDeclarer declarer) {
+					declarer.localFirstGrouping(componentId);
+				}
+
+				@Override
+				public String getComponent() {
+					return componentId;
+				}
+			});
+			return this;
+		}
+
+		@Override
+		public BoltDeclarer localFirstGrouping(final String component,
+				final String streamId) {
+			addDeclaration(new InputDeclaration() {
+				@Override
+				public void declare(InputDeclarer declarer) {
+					declarer.localFirstGrouping(component, streamId);
+				}
+
+				@Override
+				public String getComponent() {
+					return component;
+				}
+			});
+			return this;
+		}
 
 		@Override
 		public BoltDeclarer noneGrouping(final String component) {
@@ -428,5 +463,7 @@ public class BatchSubtopologyBuilder {
 			_component.componentConfs.add(conf);
 			return this;
 		}
+
+		
 	}
 }

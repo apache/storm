@@ -18,6 +18,18 @@ public class TaskMessage {
 	public byte[] message() {
 		return _message;
 	}
+	
+	public static boolean isEmpty(TaskMessage message) {
+		if (message == null) {
+			return true;
+		}else if (message.message() == null) {
+			return true;
+		}else if (message.message().length == 0) {
+			return true;
+		}
+		
+		return false;
+	}
 
 	@Deprecated
 	public ByteBuffer serialize() {

@@ -7,15 +7,19 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
+import org.apache.thrift7.server.THsHaServer.Args;
+import org.yaml.snakeyaml.Yaml;
+
 import backtype.storm.Config;
 import backtype.storm.StormSubmitter;
-import backtype.storm.drpc.LinearDRPCTopologyBuilder;
 import backtype.storm.generated.AlreadyAliveException;
 import backtype.storm.generated.InvalidTopologyException;
 import backtype.storm.generated.TopologyAssignException;
+import backtype.storm.topology.BoltDeclarer;
 import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.tuple.Fields;
 
+import com.alibaba.jstorm.cluster.StormConfig;
 import com.alibaba.jstorm.local.LocalCluster;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alipay.dw.jstorm.example.sequence.bean.Pair;
@@ -45,9 +49,14 @@ public class SequenceTopology {
 				conf.get("enable.split"), false);
 
 		if (isEnableSplit == false) {
-			builder.setBolt(SequenceTopologyDef.TOTAL_BOLT_NAME,
-					new TotalCount(), bolt_Parallelism_hint).shuffleGrouping(
-					SequenceTopologyDef.SEQUENCE_SPOUT_NAME);
+			BoltDeclarer boltDeclarer = builder.setBolt(
+					SequenceTopologyDef.TOTAL_BOLT_NAME, new TotalCount(),
+					bolt_Parallelism_hint);
+
+			// localFirstGrouping is only for jstorm
+			// boltDeclarer.localFirstGrouping(SequenceTopologyDef.SEQUENCE_SPOUT_NAME);
+			boltDeclarer
+					.localOrShuffleGrouping(SequenceTopologyDef.SEQUENCE_SPOUT_NAME);
 		} else {
 
 			builder.setBolt(SequenceTopologyDef.SPLIT_BOLT_NAME,
@@ -135,15 +144,6 @@ public class SequenceTopology {
 
 		conf.put(Config.STORM_CLUSTER_MODE, "distributed");
 
-		if (streamName.contains("zeromq")) {
-			conf.put(Config.STORM_MESSAGING_TRANSPORT,
-					"com.alibaba.jstorm.message.zeroMq.MQContext");
-
-		} else {
-			conf.put(Config.STORM_MESSAGING_TRANSPORT,
-					"com.alibaba.jstorm.message.netty.NettyContext");
-		}
-
 		StormSubmitter.submitTopology(streamName, conf,
 				builder.createTopology());
 
@@ -151,17 +151,18 @@ public class SequenceTopology {
 
 	public static void SetDPRCTopology() throws AlreadyAliveException,
 			InvalidTopologyException, TopologyAssignException {
-//		LinearDRPCTopologyBuilder builder = new LinearDRPCTopologyBuilder(
-//				"exclamation");
-//
-//		builder.addBolt(new TotalCount(), 3);
-//
-//		Config conf = new Config();
-//
-//		conf.setNumWorkers(3);
-//		StormSubmitter.submitTopology("rpc", conf,
-//				builder.createRemoteTopology());
-		System.out.println("Please refer to com.alipay.dw.jstorm.example.drpc.ReachTopology");
+		// LinearDRPCTopologyBuilder builder = new LinearDRPCTopologyBuilder(
+		// "exclamation");
+		//
+		// builder.addBolt(new TotalCount(), 3);
+		//
+		// Config conf = new Config();
+		//
+		// conf.setNumWorkers(3);
+		// StormSubmitter.submitTopology("rpc", conf,
+		// builder.createRemoteTopology());
+		System.out
+				.println("Please refer to com.alipay.dw.jstorm.example.drpc.ReachTopology");
 	}
 
 	private static Map conf = new HashMap<Object, Object>();
@@ -183,20 +184,63 @@ public class SequenceTopology {
 		conf.putAll(properties);
 	}
 
-	public static void main(String[] args) throws Exception {
-		if (args.length >= 1) {
-			if (args[0].equals("rpc")) {
-				SetDPRCTopology();
-				return;
-			} else if (args[0].equals("local")) {
-				SetLocalTopology();
-				return;
+	private static void LoadYaml(String confPath) {
+
+		Yaml yaml = new Yaml();
+
+		try {
+			InputStream stream = new FileInputStream(confPath);
+
+			conf = (Map) yaml.load(stream);
+			if (conf == null || conf.isEmpty() == true) {
+				throw new RuntimeException("Failed to read config file");
 			}
 
-			LoadProperty(args[0]);
+		} catch (FileNotFoundException e) {
+			System.out.println("No such file " + confPath);
+			throw new RuntimeException("No config file");
+		} catch (Exception e1) {
+			e1.printStackTrace();
+			throw new RuntimeException("Failed to read config file");
 		}
 
-		SetRemoteTopology();
+		return;
+	}
+
+	private static void LoadConf(String arg) {
+		if (arg.endsWith("yaml")) {
+			LoadYaml(arg);
+		} else {
+			LoadProperty(arg);
+		}
+	}
+
+	public static boolean local_mode(Map conf) {
+		String mode = (String) conf.get(Config.STORM_CLUSTER_MODE);
+		if (mode != null) {
+			if (mode.equals("local")) {
+				return true;
+			}
+		}
+
+		return false;
+
+	}
+
+	public static void main(String[] args) throws Exception {
+		if (args.length == 0) {
+			System.err.println("Please input configuration file");
+			System.exit(-1);
+		}
+
+		LoadConf(args[0]);
+
+		if (local_mode(conf)) {
+			SetLocalTopology();
+		} else {
+			SetRemoteTopology();
+		}
+
 	}
 
 }

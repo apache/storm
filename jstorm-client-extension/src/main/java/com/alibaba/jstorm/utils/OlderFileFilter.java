@@ -22,8 +22,8 @@ public class OlderFileFilter implements FileFilter {
 
 		long current_time = System.currentTimeMillis();
 
-		return pathname.isFile()
-				&& (pathname.lastModified() + seconds * 1000 <= current_time);
+		return (pathname.isFile() && (pathname.lastModified() + seconds * 1000 <= current_time))
+				|| pathname.isDirectory();
 	}
 
 }

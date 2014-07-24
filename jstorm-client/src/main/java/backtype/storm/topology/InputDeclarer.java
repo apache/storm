@@ -21,6 +21,10 @@ public interface InputDeclarer<T extends InputDeclarer> {
 	public T localOrShuffleGrouping(String componentId);
 
 	public T localOrShuffleGrouping(String componentId, String streamId);
+	
+	public T localFirstGrouping(String componentId);
+
+	public T localFirstGrouping(String componentId, String streamId);
 
 	public T noneGrouping(String componentId);
 

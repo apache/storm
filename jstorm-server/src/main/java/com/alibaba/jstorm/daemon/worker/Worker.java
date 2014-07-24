@@ -1,13 +1,9 @@
 package com.alibaba.jstorm.daemon.worker;
 
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -18,21 +14,28 @@ import java.util.Set;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
-import backtype.storm.daemon.Shutdownable;
+import backtype.storm.Config;
 import backtype.storm.generated.Grouping;
 import backtype.storm.generated.StormTopology;
+import backtype.storm.messaging.IConnection;
 import backtype.storm.messaging.IContext;
 import backtype.storm.task.TopologyContext;
+import backtype.storm.utils.DisruptorQueue;
 import backtype.storm.utils.Utils;
 
 import com.alibaba.jstorm.callback.AsyncLoopThread;
 import com.alibaba.jstorm.callback.RunnableCallback;
+import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.cluster.StormConfig;
+import com.alibaba.jstorm.daemon.worker.hearbeat.SyncContainerHb;
+import com.alibaba.jstorm.daemon.worker.hearbeat.WorkerHeartbeatRunable;
+import com.alibaba.jstorm.daemon.worker.metrics.MetricReporter;
 import com.alibaba.jstorm.task.Task;
 import com.alibaba.jstorm.task.TaskShutdownDameon;
 import com.alibaba.jstorm.utils.JStormServerUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
-import com.alibaba.jstorm.utils.SyncContainerHb;
+import com.lmax.disruptor.MultiThreadedClaimStrategy;
+import com.lmax.disruptor.WaitStrategy;
 
 /**
  * worker entrance
@@ -120,43 +123,80 @@ public class Worker {
 		return shutdowntasks;
 	}
 
+	private AsyncLoopThread startDispatchThread() {
+		Map stormConf = workerData.getStormConf();
+
+		int queue_size = Utils.getInt(
+				stormConf.get(Config.TOPOLOGY_TRANSFER_BUFFER_SIZE), 1024);
+		WaitStrategy waitStrategy = (WaitStrategy) Utils
+				.newInstance((String) stormConf
+						.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
+		DisruptorQueue recvQueue = new DisruptorQueue(
+				new MultiThreadedClaimStrategy(queue_size), waitStrategy);
+		recvQueue.consumerStarted();
+
+		IContext context = workerData.getContext();
+		String topologyId = workerData.getTopologyId();
+
+		IConnection recvConnection = context.bind(topologyId,
+				workerData.getPort());
+		recvConnection.registerQueue(recvQueue);
+
+		RunnableCallback recvDispather = new VirtualPortDispatch(workerData,
+				recvConnection, recvQueue);
+
+		AsyncLoopThread vthread = new AsyncLoopThread(recvDispather, false,
+				Thread.MAX_PRIORITY, true);
+
+		return vthread;
+	}
+
 	public WorkerShutdown execute() throws Exception {
-
-		// shutdown task callbacks
-		List<TaskShutdownDameon> shutdowntasks = createTasks();
-		workerData.setShutdownTasks(shutdowntasks);
-
 		List<AsyncLoopThread> threads = new ArrayList<AsyncLoopThread>();
 
-		// create virtual port object
-		// when worker receives tupls, dispatch targetTask according to task_id
-		// conf, supervisorId, topologyId, port, context, taskids
-		WorkerVirtualPort virtual_port = new WorkerVirtualPort(workerData);
-		Shutdownable virtual_port_shutdown = virtual_port.launch();
-
+		// create client before create task
+		// so create client connection before create task
 		// refresh connection
 		RefreshConnections refreshConn = makeRefreshConnections();
 		AsyncLoopThread refreshconn = new AsyncLoopThread(refreshConn, false,
 				Thread.MIN_PRIORITY, true);
 		threads.add(refreshconn);
 
-		// refresh ZK active status
-		RefreshActive refreshZkActive = new RefreshActive(workerData);
-		AsyncLoopThread refreshzk = new AsyncLoopThread(refreshZkActive, false,
-				Thread.MIN_PRIORITY, true);
-		threads.add(refreshzk);
+		// shutdown task callbacks
+		List<TaskShutdownDameon> shutdowntasks = createTasks();
+		workerData.setShutdownTasks(shutdowntasks);
+
+		AsyncLoopThread dispatcher = startDispatchThread();
+		threads.add(dispatcher);
 
 		// refresh hearbeat to Local dir
 		RunnableCallback heartbeat_fn = new WorkerHeartbeatRunable(workerData);
 		AsyncLoopThread hb = new AsyncLoopThread(heartbeat_fn, false, null,
 				Thread.NORM_PRIORITY, true);
 		threads.add(hb);
+		
+		TimeTick timeTick = new TimeTick(workerData);
+		AsyncLoopThread tick = new AsyncLoopThread(timeTick);
+		threads.add(tick);
+
+		// refresh ZK active status
+		RefreshActive refreshZkActive = new RefreshActive(workerData);
+		AsyncLoopThread refreshzk = new AsyncLoopThread(refreshZkActive, false,
+				Thread.MIN_PRIORITY, true);
+		threads.add(refreshzk);
+		
+		BatchTupleRunable batchRunable = new BatchTupleRunable(workerData);
+		AsyncLoopThread batch = new AsyncLoopThread(batchRunable, false,
+				Thread.MAX_PRIORITY, true);
+		threads.add(batch);
 
 		// transferQueue, nodeportSocket, taskNodeport
 		DrainerRunable drainer = new DrainerRunable(workerData);
 		AsyncLoopThread dr = new AsyncLoopThread(drainer, false,
 				Thread.MAX_PRIORITY, true);
 		threads.add(dr);
+		
+		
 
 		// Sync heartbeat to Apsara Container
 		AsyncLoopThread syncContainerHbThread = SyncContainerHb
@@ -164,9 +204,14 @@ public class Worker {
 		if (syncContainerHbThread != null) {
 			threads.add(syncContainerHbThread);
 		}
+		
+		MetricReporter metricReporter = new MetricReporter();
+		boolean isMetricsEnable = ConfigExtension.isEnablePerformanceMetrics(workerData.getStormConf());
+		metricReporter.setEnable(isMetricsEnable);
+		metricReporter.start();
+		LOG.info("Start metrics reporter, enable performance metrics: " + isMetricsEnable);
 
-		return new WorkerShutdown(workerData, shutdowntasks,
-				virtual_port_shutdown, threads);
+		return new WorkerShutdown(workerData, shutdowntasks, threads, metricReporter);
 
 	}
 
@@ -207,14 +252,14 @@ public class Worker {
 				|| !System.getenv("REDIRECT").equals("true")) {
 			return;
 		}
-		
+
 		String OUT_TARGET_FILE = JStormUtils.getLogFileName();
 		if (OUT_TARGET_FILE == null) {
 			OUT_TARGET_FILE = "/dev/null";
-		}else {
+		} else {
 			OUT_TARGET_FILE += ".out";
 		}
-		
+
 		JStormUtils.redirectOutput(OUT_TARGET_FILE);
 
 	}
@@ -348,7 +393,7 @@ public class Worker {
 
 		Map conf = Utils.readStormConfig();
 		StormConfig.validate_distributed_mode(conf);
-		
+
 		JStormServerUtils.startTaobaoJvmMonitor();
 
 		StringBuilder sb = new StringBuilder();

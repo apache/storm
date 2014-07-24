@@ -41,7 +41,12 @@ public class StormClientHandler extends SimpleChannelUpstreamHandler {
 		// register the newly established channel
 		Channel channel = event.getChannel();
 		client.setChannel(channel);
-		LOG.info("connection established to :{}", client.getRemoteAddr());
+		LOG.info("connection established to :{}, local port:{}",
+				client.getRemoteAddr(), channel.getLocalAddress());
+
+		if (client.isNoResponse()) {
+			return;
+		}
 
 		try {
 			// send next request
@@ -59,6 +64,10 @@ public class StormClientHandler extends SimpleChannelUpstreamHandler {
 
 	@Override
 	public void messageReceived(ChannelHandlerContext ctx, MessageEvent event) {
+		if (client.isNoResponse()) {
+			return;
+		}
+
 		// LOG.debug("{} send/recv time (ms): {}",
 		// recvCounter.incrementAndGet(),
 		// (System.currentTimeMillis() - start_time));
@@ -139,27 +148,36 @@ public class StormClientHandler extends SimpleChannelUpstreamHandler {
 		});
 	}
 
+	/**
+	 * 
+	 * @see org.jboss.netty.channel.SimpleChannelUpstreamHandler#exceptionCaught(org.jboss.netty.channel.ChannelHandlerContext, org.jboss.netty.channel.ExceptionEvent)
+	 */
 	@Override
 	public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent event) {
 		Throwable cause = event.getCause();
 		if (being_closed.get() == false) {
 			if (!(cause instanceof ConnectException)) {
-				LOG.info("Connection failed:" + client.getRemoteAddr(),
-						cause);
+				LOG.info("Connection failed:" + client.getRemoteAddr(), cause);
 			}
-			client.setChannel(null);
+
+			client.exceptionChannel(event.getChannel());
 			client.reconnect();
 		}
 	}
 
+	/**
+	 * Attention please, 
+	 * @see org.jboss.netty.channel.SimpleChannelUpstreamHandler#channelDisconnected(org.jboss.netty.channel.ChannelHandlerContext, org.jboss.netty.channel.ChannelStateEvent)
+	 */
 	@Override
 	public void channelDisconnected(ChannelHandlerContext ctx,
 			ChannelStateEvent e) throws Exception {
+		LOG.info("Receive channelDisconnected to {}", client.getRemoteAddr());
 		// ctx.sendUpstream(e);
 		super.channelDisconnected(ctx, e);
-		LOG.info("Receive channelDisconnected to {}", client.getRemoteAddr());
 
 		if (!being_closed.get()) {
+
 			client.setChannel(null);
 			client.reconnect();
 		}

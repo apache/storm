@@ -29,6 +29,7 @@ import backtype.storm.task.TopologyContext;
 import backtype.storm.tuple.Fields;
 import backtype.storm.utils.Utils;
 
+import com.alibaba.jstorm.daemon.worker.WorkerData;
 import com.alibaba.jstorm.task.acker.Acker;
 import com.alibaba.jstorm.task.group.MkGrouper;
 import com.alibaba.jstorm.utils.JStormUtils;
@@ -470,7 +471,7 @@ public class Common {
 	 * @return
 	 */
 	public static Map<String, Map<String, MkGrouper>> outbound_components(
-			TopologyContext topology_context) {
+			TopologyContext topology_context, WorkerData workerData) {
 		Map<String, Map<String, MkGrouper>> rr = new HashMap<String, Map<String, MkGrouper>>();
 
 		// <Stream_id,<component,Grouping>>
@@ -498,7 +499,7 @@ public class Common {
 				// so we don't need send tuple to it
 				if (outTasks.size() > 0) {
 					MkGrouper grouper = new MkGrouper(topology_context,
-							out_fields, tgrouping, outTasks, stream_id);
+							out_fields, tgrouping, outTasks, stream_id, workerData);
 					componentGrouper.put(component, grouper);
 				}
 			}

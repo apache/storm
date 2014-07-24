@@ -6,13 +6,16 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import backtype.storm.Config;
 import backtype.storm.spout.SpoutOutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.IRichSpout;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Values;
+import backtype.storm.utils.Utils;
 
+import com.alibaba.jstorm.utils.JStormUtils;
 import com.alipay.dw.jstorm.example.TpsCounter;
 import com.alipay.dw.jstorm.example.sequence.SequenceTopologyDef;
 import com.alipay.dw.jstorm.example.sequence.bean.Pair;
@@ -37,12 +40,18 @@ public class SequenceSpout implements IRichSpout {
     private long               succeedCount;
     private long               failedCount;
     
+    private AtomicLong         handleCounter = new AtomicLong(0);
+    
+    private Long               MAX_PENDING_COUNTER;
+    
     private TpsCounter          tpsCounter;
 
 	private boolean isFinished;
 	
 	
 	private boolean isLimited = false;
+	
+	private long    SPOUT_MAX_SEND_NUM;
 
 	public boolean isDistributed() {
 		return true;
@@ -52,18 +61,29 @@ public class SequenceSpout implements IRichSpout {
 	    
 	}
 	
-	public void SequenceSpout(boolean isLimited) {
-	    this.isLimited = isLimited;
-	}
 
 	public void open(Map conf, TopologyContext context,
 			SpoutOutputCollector collector) {
 		this.collector = collector;
+		
+		if (conf.get("spout.max.sending.num") == null) {
+			isLimited = false;
+		}else {
+			isLimited = true;
+			SPOUT_MAX_SEND_NUM = JStormUtils.parseLong(conf.get("spout.max.sending.num"));
+		}
 
 		isFinished = false;
 		
 		tpsCounter = new TpsCounter(context.getThisComponentId() + 
 		        ":" + context.getThisTaskId());
+		
+		Object max_spout_pending = conf.get(Config.TOPOLOGY_MAX_SPOUT_PENDING);
+		if (max_spout_pending == null) {
+			MAX_PENDING_COUNTER = Long.MAX_VALUE;
+		}else {
+			MAX_PENDING_COUNTER = Long.valueOf(Utils.getInt(max_spout_pending));
+		}
 		
 		LOG.info("Finish open");
 		
@@ -87,19 +107,18 @@ public class SequenceSpout implements IRichSpout {
     	collector.emit(new Values(tupleId, tradeCustomer), Long.valueOf(tupleId));
         
     	tupleId++;
+    	
+    	handleCounter.incrementAndGet();
+    	
+    	while(handleCounter.get() >= MAX_PENDING_COUNTER - 1) {
+    		try {
+				Thread.sleep(1);
+			} catch (InterruptedException e) {
+			}
+    	}
       
     	tpsCounter.count();
     	
-//    	try {
-//			Thread.sleep(1);
-//		} catch (InterruptedException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-        
-//    	collector.emit(new Values(System.currentTimeMillis()));
-//    	
-//    	tpsCounter.count();
         
     }
 
@@ -111,14 +130,16 @@ public class SequenceSpout implements IRichSpout {
 	    }
 	    
 	    if (isFinished == true) {
+	    	LOG.info("Finish sending ");
 	        return ;
 	    }
 	    
-	    if (tupleId > SequenceTopologyDef.MAX_MESSAGE_COUNT) {
+	    if (tupleId > SPOUT_MAX_SEND_NUM) {
 	        isFinished = true;
 	        return ;
 	    }
 	    
+	    emit();
 	    
 	}
 
@@ -142,12 +163,15 @@ public class SequenceSpout implements IRichSpout {
 	    
 	    succeedCount++;
 	    
+	    handleCounter.decrementAndGet();
+	    
 		return ;
 	}
 
 	public void fail(Object id) {
 		
 	    failedCount++;
+	    handleCounter.decrementAndGet();
 	    Long failId = (Long)id;
 	    LOG.info("Failed to handle " + failId);
 		

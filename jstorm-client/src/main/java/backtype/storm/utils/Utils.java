@@ -359,6 +359,22 @@ public class Utils {
 					+ " + to int");
 		}
 	}
+	
+	public static Integer getInt(Object o, Integer defaultValue) {
+	      if (null == o) {
+	        return defaultValue;
+	      }
+	      
+	      if(o instanceof Long) {
+	          return ((Long) o ).intValue();
+	      } else if (o instanceof Integer) {
+	          return (Integer) o;
+	      } else if (o instanceof Short) {
+	          return ((Short) o).intValue();
+	      } else {
+	          throw new IllegalArgumentException("Don't know how to convert " + o + " + to int");
+	      }
+	    }
 
 	public static long secureRandomLong() {
 		return UUID.randomUUID().getLeastSignificantBits();

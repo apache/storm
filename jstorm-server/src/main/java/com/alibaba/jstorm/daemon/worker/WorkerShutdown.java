@@ -14,6 +14,7 @@ import backtype.storm.scheduler.WorkerSlot;
 import com.alibaba.jstorm.callback.AsyncLoopThread;
 import com.alibaba.jstorm.cluster.ClusterState;
 import com.alibaba.jstorm.cluster.StormClusterState;
+import com.alibaba.jstorm.daemon.worker.metrics.MetricReporter;
 import com.alibaba.jstorm.task.ShutdownableDameon;
 import com.alibaba.jstorm.task.TaskShutdownDameon;
 import com.alibaba.jstorm.utils.JStormUtils;
@@ -30,19 +31,19 @@ public class WorkerShutdown implements ShutdownableDameon {
 	private List<TaskShutdownDameon> shutdowntasks;
 	private AtomicBoolean active;
 	private ConcurrentHashMap<WorkerSlot, IConnection> nodeportSocket;
-	private Shutdownable virtualPortShutdown;
 	private IContext context;
 	private List<AsyncLoopThread> threads;
 	private StormClusterState zkCluster;
 	private ClusterState cluster_state;
+	private MetricReporter metricReporter;
 
 	// active nodeportSocket context zkCluster zkClusterstate
 	public WorkerShutdown(WorkerData workerData,
 			List<TaskShutdownDameon> _shutdowntasks,
-			Shutdownable _virtual_port_shutdown, List<AsyncLoopThread> _threads) {
+			List<AsyncLoopThread> _threads,
+			MetricReporter metricReporter) {
 
 		this.shutdowntasks = _shutdowntasks;
-		this.virtualPortShutdown = _virtual_port_shutdown;
 		this.threads = _threads;
 
 		this.active = workerData.getActive();
@@ -50,6 +51,7 @@ public class WorkerShutdown implements ShutdownableDameon {
 		this.context = workerData.getContext();
 		this.zkCluster = workerData.getZkCluster();
 		this.cluster_state = workerData.getZkClusterstate();
+		this.metricReporter = metricReporter;
 
 		Runtime.getRuntime().addShutdownHook(new Thread(this));
 	}
@@ -58,8 +60,8 @@ public class WorkerShutdown implements ShutdownableDameon {
 	public void shutdown() {
 
 		active.set(false);
-
-		virtualPortShutdown.shutdown();
+		
+		metricReporter.shutdown();
 
 		// send data to close connection
 		for (WorkerSlot k : nodeportSocket.keySet()) {
@@ -78,13 +80,13 @@ public class WorkerShutdown implements ShutdownableDameon {
 		// refreshconn, refreshzk, hb, drainer
 		for (AsyncLoopThread t : threads) {
 			t.cleanup();
-			JStormUtils.sleepMs(10);
+			JStormUtils.sleepMs(100);
 			t.interrupt();
-			try {
-				t.join();
-			} catch (InterruptedException e) {
-				LOG.error("join thread", e);
-			}
+//			try {
+//				t.join();
+//			} catch (InterruptedException e) {
+//				LOG.error("join thread", e);
+//			}
 		}
 
 		// close ZK client
@@ -96,6 +98,7 @@ public class WorkerShutdown implements ShutdownableDameon {
 			LOG.info("Shutdown error,", e);
 		}
 
+		JStormUtils.halt_process(0, "!!!Shutdown!!!");
 	}
 
 	public void join() throws InterruptedException {

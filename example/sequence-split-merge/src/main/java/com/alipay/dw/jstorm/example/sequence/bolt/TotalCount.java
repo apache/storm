@@ -20,6 +20,7 @@ public class TotalCount implements IRichBolt {
     
     private OutputCollector  collector;
     private TpsCounter          tpsCounter;
+    private long                lastTupleId = -1;
     
     @Override
     public void prepare(Map stormConf, TopologyContext context,
@@ -40,6 +41,11 @@ public class TotalCount implements IRichBolt {
     public void execute(Tuple input) {
         
         Long tupleId = input.getLong(0);
+        if (tupleId <= lastTupleId) {
+        	LOG.error("LastTupleId is " + lastTupleId + ", but now:" + tupleId);
+        }
+        lastTupleId = tupleId;
+        
         TradeCustomer tradeCustomer = (TradeCustomer) input.getValue(1);
         
         tradeSum.addAndGet(tradeCustomer.getTrade().getValue());

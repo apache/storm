@@ -143,22 +143,22 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 		serializedConf.put(Config.TOPOLOGY_ID, topologyId);
 		serializedConf.put(Config.TOPOLOGY_NAME, topologyname);
 
-		
-
 		try {
 			Map<Object, Object> stormConf;
-			
+
 			stormConf = NimbusUtils.normalizeConf(conf, serializedConf,
 					topology);
-			
-			Map<Object, Object> totalStormConf = new HashMap<Object, Object>(conf);
+
+			Map<Object, Object> totalStormConf = new HashMap<Object, Object>(
+					conf);
 			totalStormConf.putAll(stormConf);
 
 			StormTopology normalizedTopology = NimbusUtils.normalizeTopology(
 					stormConf, topology);
 
 			// this validates the structure of the topology
-			Common.validate_basic(normalizedTopology, totalStormConf, topologyId);
+			Common.validate_basic(normalizedTopology, totalStormConf,
+					topologyId);
 			// don't need generate real topology, so skip Common.system_topology
 			// Common.system_topology(totalStormConf, topology);
 
@@ -207,7 +207,7 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 			sb.append(", uploadedJarLocation:" + uploadedJarLocation + "\n");
 			LOG.error(sb.toString(), e);
 			throw new TopologyAssignException(sb.toString());
-		}catch (InvalidParameterException e) {
+		} catch (InvalidParameterException e) {
 			StringBuilder sb = new StringBuilder();
 			sb.append("Fail to sumbit topology ");
 			sb.append(e.getMessage());
@@ -356,6 +356,19 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 
 	}
 
+	@Override
+	public void beginLibUpload(String libName) throws TException {
+		try {
+			data.getUploaders().put(libName,
+					Channels.newChannel(new FileOutputStream(libName)));
+			LOG.info("Begin upload file from client to " + libName);
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			LOG.error("Fail to upload jar " + libName, e);
+			throw new TException(e);
+		}
+	}
+
 	/**
 	 * prepare to uploading topology jar, return the file location
 	 * 
@@ -363,22 +376,27 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 	 */
 	@Override
 	public String beginFileUpload() throws TException {
+
 		String fileLoc = null;
 		try {
-			fileLoc = StormConfig.masterInbox(conf) + "/stormjar-"
-					+ UUID.randomUUID() + ".jar";
+			String path = null;
+			String key = UUID.randomUUID().toString();
+			path = StormConfig.masterInbox(conf) + "/" + key;
+			FileUtils.forceMkdir(new File(path));
+			FileUtils.cleanDirectory(new File(path));
+			fileLoc = path + "/stormjar-" + key + ".jar";
 
 			data.getUploaders().put(fileLoc,
 					Channels.newChannel(new FileOutputStream(fileLoc)));
-			LOG.info("Uploading file from client to " + fileLoc);
+			LOG.info("Begin upload file from client to " + fileLoc);
+			return path;
 		} catch (FileNotFoundException e) {
-			LOG.error(" file not found " + fileLoc);
+			LOG.error("File not found: " + fileLoc, e);
 			throw new TException(e);
 		} catch (IOException e) {
-			LOG.error(" IOException  " + fileLoc, e);
+			LOG.error("Upload file error: " + fileLoc, e);
 			throw new TException(e);
 		}
-		return fileLoc;
 	}
 
 	/**
@@ -443,7 +461,11 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 		BufferFileInputStream is = null;
 		String id = null;
 		try {
-			is = new BufferFileInputStream(file);
+			int bufferSize = JStormUtils
+					.parseInt(conf.get(Config.NIMBUS_THRIFT_MAX_BUFFER_SIZE),
+							1024 * 1024) / 2;
+
+			is = new BufferFileInputStream(file, bufferSize);
 			id = UUID.randomUUID().toString();
 			data.getDownloaders().put(id, is);
 		} catch (FileNotFoundException e) {
@@ -461,9 +483,10 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 		if (obj == null) {
 			throw new TException("Could not find input stream for that id");
 		}
-		
+
 		try {
 			if (obj instanceof BufferFileInputStream) {
+
 				BufferFileInputStream is = (BufferFileInputStream) obj;
 				byte[] ret = is.read();
 				if (ret != null) {
@@ -475,10 +498,11 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 						+ id);
 			}
 		} catch (IOException e) {
-			LOG.error("BufferFileInputStream read failed when downloadChunk ", e);
+			LOG.error("BufferFileInputStream read failed when downloadChunk ",
+					e);
 			throw new TException(e);
 		}
-        byte[] empty = {};
+		byte[] empty = {};
 		return ByteBuffer.wrap(empty);
 	}
 
@@ -563,7 +587,7 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 
 			String supervisorId = null;
 			SupervisorInfo supervisorInfo = null;
-			
+
 			String ip = NetWorkUtils.host2Ip(host);
 			String hostName = NetWorkUtils.ip2Host(host);
 
@@ -575,8 +599,8 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 					.entrySet()) {
 
 				SupervisorInfo info = entry.getValue();
-				if (info.getHostName().equals(hostName) ||
-					 info.getHostName().equals(ip)) {
+				if (info.getHostName().equals(hostName)
+						|| info.getHostName().equals(ip)) {
 					supervisorId = entry.getKey();
 					supervisorInfo = info;
 					break;
@@ -864,7 +888,7 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 
 		// serialize to file /local-dir/nimbus/topologyId/stormconf.ser
 		FileUtils.writeByteArrayToFile(
-				new File(StormConfig.sotrmconf_path(stormroot)),
+				new File(StormConfig.stormconf_path(stormroot)),
 				Utils.serialize(stormConf));
 	}
 
@@ -879,14 +903,26 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 	private void setupJar(Map<Object, Object> conf, String tmpJarLocation,
 			String stormroot) throws IOException {
 		if (!StormConfig.local_mode(conf)) {
-			File srcFile = new File(tmpJarLocation);
+			String[] pathCache = tmpJarLocation.split("/");
+			String jarPath = tmpJarLocation + "/stormjar-"
+					+ pathCache[pathCache.length - 1] + ".jar";
+			File srcFile = new File(jarPath);
 			if (!srcFile.exists()) {
-				throw new IllegalArgumentException(tmpJarLocation
-						+ " to copy to " + stormroot + " does not exist!");
+				throw new IllegalArgumentException(jarPath + " to copy to "
+						+ stormroot + " does not exist!");
 			}
 			String path = StormConfig.stormjar_path(stormroot);
 			File destFile = new File(path);
 			FileUtils.copyFile(srcFile, destFile);
+			srcFile.delete();
+			String libPath = StormConfig.stormlib_path(stormroot);
+			srcFile = new File(tmpJarLocation);
+			if (!srcFile.exists()) {
+				throw new IllegalArgumentException(tmpJarLocation
+						+ " to copy to " + stormroot + " does not exist!");
+			}
+			destFile = new File(libPath);
+			FileUtils.copyDirectory(srcFile, destFile);
 		}
 	}
 
@@ -979,9 +1015,10 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 			}
 
 			if (common == null) {
-				throw new RuntimeException("No ComponentCommon of " + entry.getKey());
+				throw new RuntimeException("No ComponentCommon of "
+						+ entry.getKey());
 			}
-			
+
 			int declared = Thrift.parallelismHint(common);
 			Integer parallelism = declared;
 			// Map tmp = (Map) Utils_clj.from_json(common.get_json_conf());

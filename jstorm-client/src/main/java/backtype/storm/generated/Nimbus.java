@@ -39,6 +39,8 @@ public class Nimbus {
 
     public void rebalance(String name, RebalanceOptions options) throws NotAliveException, InvalidTopologyException, org.apache.thrift7.TException;
 
+    public void beginLibUpload(String libName) throws org.apache.thrift7.TException;
+
     public String beginFileUpload() throws org.apache.thrift7.TException;
 
     public void uploadChunk(String location, ByteBuffer chunk) throws org.apache.thrift7.TException;
@@ -80,6 +82,8 @@ public class Nimbus {
     public void deactivate(String name, org.apache.thrift7.async.AsyncMethodCallback<AsyncClient.deactivate_call> resultHandler) throws org.apache.thrift7.TException;
 
     public void rebalance(String name, RebalanceOptions options, org.apache.thrift7.async.AsyncMethodCallback<AsyncClient.rebalance_call> resultHandler) throws org.apache.thrift7.TException;
+
+    public void beginLibUpload(String libName, org.apache.thrift7.async.AsyncMethodCallback<AsyncClient.beginLibUpload_call> resultHandler) throws org.apache.thrift7.TException;
 
     public void beginFileUpload(org.apache.thrift7.async.AsyncMethodCallback<AsyncClient.beginFileUpload_call> resultHandler) throws org.apache.thrift7.TException;
 
@@ -309,6 +313,26 @@ public class Nimbus {
       if (result.ite != null) {
         throw result.ite;
       }
+      return;
+    }
+
+    public void beginLibUpload(String libName) throws org.apache.thrift7.TException
+    {
+      send_beginLibUpload(libName);
+      recv_beginLibUpload();
+    }
+
+    public void send_beginLibUpload(String libName) throws org.apache.thrift7.TException
+    {
+      beginLibUpload_args args = new beginLibUpload_args();
+      args.set_libName(libName);
+      sendBase("beginLibUpload", args);
+    }
+
+    public void recv_beginLibUpload() throws org.apache.thrift7.TException
+    {
+      beginLibUpload_result result = new beginLibUpload_result();
+      receiveBase(result, "beginLibUpload");
       return;
     }
 
@@ -864,6 +888,38 @@ public class Nimbus {
       }
     }
 
+    public void beginLibUpload(String libName, org.apache.thrift7.async.AsyncMethodCallback<beginLibUpload_call> resultHandler) throws org.apache.thrift7.TException {
+      checkReady();
+      beginLibUpload_call method_call = new beginLibUpload_call(libName, resultHandler, this, ___protocolFactory, ___transport);
+      this.___currentMethod = method_call;
+      ___manager.call(method_call);
+    }
+
+    public static class beginLibUpload_call extends org.apache.thrift7.async.TAsyncMethodCall {
+      private String libName;
+      public beginLibUpload_call(String libName, org.apache.thrift7.async.AsyncMethodCallback<beginLibUpload_call> resultHandler, org.apache.thrift7.async.TAsyncClient client, org.apache.thrift7.protocol.TProtocolFactory protocolFactory, org.apache.thrift7.transport.TNonblockingTransport transport) throws org.apache.thrift7.TException {
+        super(client, protocolFactory, transport, resultHandler, false);
+        this.libName = libName;
+      }
+
+      public void write_args(org.apache.thrift7.protocol.TProtocol prot) throws org.apache.thrift7.TException {
+        prot.writeMessageBegin(new org.apache.thrift7.protocol.TMessage("beginLibUpload", org.apache.thrift7.protocol.TMessageType.CALL, 0));
+        beginLibUpload_args args = new beginLibUpload_args();
+        args.set_libName(libName);
+        args.write(prot);
+        prot.writeMessageEnd();
+      }
+
+      public void getResult() throws org.apache.thrift7.TException {
+        if (getState() != org.apache.thrift7.async.TAsyncMethodCall.State.RESPONSE_READ) {
+          throw new IllegalStateException("Method call not finished!");
+        }
+        org.apache.thrift7.transport.TMemoryInputTransport memoryTransport = new org.apache.thrift7.transport.TMemoryInputTransport(getFrameBuffer().array());
+        org.apache.thrift7.protocol.TProtocol prot = client.getProtocolFactory().getProtocol(memoryTransport);
+        (new Client(prot)).recv_beginLibUpload();
+      }
+    }
+
     public void beginFileUpload(org.apache.thrift7.async.AsyncMethodCallback<beginFileUpload_call> resultHandler) throws org.apache.thrift7.TException {
       checkReady();
       beginFileUpload_call method_call = new beginFileUpload_call(resultHandler, this, ___protocolFactory, ___transport);
@@ -1262,6 +1318,7 @@ public class Nimbus {
       processMap.put("activate", new activate());
       processMap.put("deactivate", new deactivate());
       processMap.put("rebalance", new rebalance());
+      processMap.put("beginLibUpload", new beginLibUpload());
       processMap.put("beginFileUpload", new beginFileUpload());
       processMap.put("uploadChunk", new uploadChunk());
       processMap.put("finishFileUpload", new finishFileUpload());
@@ -1423,6 +1480,22 @@ public class Nimbus {
         } catch (InvalidTopologyException ite) {
           result.ite = ite;
         }
+        return result;
+      }
+    }
+
+    private static class beginLibUpload<I extends Iface> extends org.apache.thrift7.ProcessFunction<I, beginLibUpload_args> {
+      public beginLibUpload() {
+        super("beginLibUpload");
+      }
+
+      protected beginLibUpload_args getEmptyArgsInstance() {
+        return new beginLibUpload_args();
+      }
+
+      protected beginLibUpload_result getResult(I iface, beginLibUpload_args args) throws org.apache.thrift7.TException {
+        beginLibUpload_result result = new beginLibUpload_result();
+        iface.beginLibUpload(args.libName);
         return result;
       }
     }
@@ -7136,6 +7209,508 @@ public class Nimbus {
         sb.append(this.ite);
       }
       first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.thrift7.TException {
+      // check for required fields
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(out)));
+      } catch (org.apache.thrift7.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+      try {
+        read(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(in)));
+      } catch (org.apache.thrift7.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+  }
+
+  public static class beginLibUpload_args implements org.apache.thrift7.TBase<beginLibUpload_args, beginLibUpload_args._Fields>, java.io.Serializable, Cloneable   {
+    private static final org.apache.thrift7.protocol.TStruct STRUCT_DESC = new org.apache.thrift7.protocol.TStruct("beginLibUpload_args");
+
+    private static final org.apache.thrift7.protocol.TField LIB_NAME_FIELD_DESC = new org.apache.thrift7.protocol.TField("libName", org.apache.thrift7.protocol.TType.STRING, (short)1);
+
+    private String libName; // required
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
+      LIB_NAME((short)1, "libName");
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 1: // LIB_NAME
+            return LIB_NAME;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+
+    public static final Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift7.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.LIB_NAME, new org.apache.thrift7.meta_data.FieldMetaData("libName", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRING)));
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      org.apache.thrift7.meta_data.FieldMetaData.addStructMetaDataMap(beginLibUpload_args.class, metaDataMap);
+    }
+
+    public beginLibUpload_args() {
+    }
+
+    public beginLibUpload_args(
+      String libName)
+    {
+      this();
+      this.libName = libName;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public beginLibUpload_args(beginLibUpload_args other) {
+      if (other.is_set_libName()) {
+        this.libName = other.libName;
+      }
+    }
+
+    public beginLibUpload_args deepCopy() {
+      return new beginLibUpload_args(this);
+    }
+
+    @Override
+    public void clear() {
+      this.libName = null;
+    }
+
+    public String get_libName() {
+      return this.libName;
+    }
+
+    public void set_libName(String libName) {
+      this.libName = libName;
+    }
+
+    public void unset_libName() {
+      this.libName = null;
+    }
+
+    /** Returns true if field libName is set (has been assigned a value) and false otherwise */
+    public boolean is_set_libName() {
+      return this.libName != null;
+    }
+
+    public void set_libName_isSet(boolean value) {
+      if (!value) {
+        this.libName = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      case LIB_NAME:
+        if (value == null) {
+          unset_libName();
+        } else {
+          set_libName((String)value);
+        }
+        break;
+
+      }
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      case LIB_NAME:
+        return get_libName();
+
+      }
+      throw new IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new IllegalArgumentException();
+      }
+
+      switch (field) {
+      case LIB_NAME:
+        return is_set_libName();
+      }
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof beginLibUpload_args)
+        return this.equals((beginLibUpload_args)that);
+      return false;
+    }
+
+    public boolean equals(beginLibUpload_args that) {
+      if (that == null)
+        return false;
+
+      boolean this_present_libName = true && this.is_set_libName();
+      boolean that_present_libName = true && that.is_set_libName();
+      if (this_present_libName || that_present_libName) {
+        if (!(this_present_libName && that_present_libName))
+          return false;
+        if (!this.libName.equals(that.libName))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      HashCodeBuilder builder = new HashCodeBuilder();
+
+      boolean present_libName = true && (is_set_libName());
+      builder.append(present_libName);
+      if (present_libName)
+        builder.append(libName);
+
+      return builder.toHashCode();
+    }
+
+    public int compareTo(beginLibUpload_args other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+      beginLibUpload_args typedOther = (beginLibUpload_args)other;
+
+      lastComparison = Boolean.valueOf(is_set_libName()).compareTo(typedOther.is_set_libName());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_libName()) {
+        lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.libName, typedOther.libName);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.thrift7.protocol.TProtocol iprot) throws org.apache.thrift7.TException {
+      org.apache.thrift7.protocol.TField field;
+      iprot.readStructBegin();
+      while (true)
+      {
+        field = iprot.readFieldBegin();
+        if (field.type == org.apache.thrift7.protocol.TType.STOP) { 
+          break;
+        }
+        switch (field.id) {
+          case 1: // LIB_NAME
+            if (field.type == org.apache.thrift7.protocol.TType.STRING) {
+              this.libName = iprot.readString();
+            } else { 
+              org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          default:
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+        }
+        iprot.readFieldEnd();
+      }
+      iprot.readStructEnd();
+      validate();
+    }
+
+    public void write(org.apache.thrift7.protocol.TProtocol oprot) throws org.apache.thrift7.TException {
+      validate();
+
+      oprot.writeStructBegin(STRUCT_DESC);
+      if (this.libName != null) {
+        oprot.writeFieldBegin(LIB_NAME_FIELD_DESC);
+        oprot.writeString(this.libName);
+        oprot.writeFieldEnd();
+      }
+      oprot.writeFieldStop();
+      oprot.writeStructEnd();
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("beginLibUpload_args(");
+      boolean first = true;
+
+      sb.append("libName:");
+      if (this.libName == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.libName);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.thrift7.TException {
+      // check for required fields
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(out)));
+      } catch (org.apache.thrift7.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+      try {
+        read(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(in)));
+      } catch (org.apache.thrift7.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+  }
+
+  public static class beginLibUpload_result implements org.apache.thrift7.TBase<beginLibUpload_result, beginLibUpload_result._Fields>, java.io.Serializable, Cloneable   {
+    private static final org.apache.thrift7.protocol.TStruct STRUCT_DESC = new org.apache.thrift7.protocol.TStruct("beginLibUpload_result");
+
+
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
+;
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+    public static final Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift7.meta_data.FieldMetaData>(_Fields.class);
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      org.apache.thrift7.meta_data.FieldMetaData.addStructMetaDataMap(beginLibUpload_result.class, metaDataMap);
+    }
+
+    public beginLibUpload_result() {
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public beginLibUpload_result(beginLibUpload_result other) {
+    }
+
+    public beginLibUpload_result deepCopy() {
+      return new beginLibUpload_result(this);
+    }
+
+    @Override
+    public void clear() {
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      }
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      }
+      throw new IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new IllegalArgumentException();
+      }
+
+      switch (field) {
+      }
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof beginLibUpload_result)
+        return this.equals((beginLibUpload_result)that);
+      return false;
+    }
+
+    public boolean equals(beginLibUpload_result that) {
+      if (that == null)
+        return false;
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      HashCodeBuilder builder = new HashCodeBuilder();
+
+      return builder.toHashCode();
+    }
+
+    public int compareTo(beginLibUpload_result other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+      beginLibUpload_result typedOther = (beginLibUpload_result)other;
+
+      return 0;
+    }
+
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.thrift7.protocol.TProtocol iprot) throws org.apache.thrift7.TException {
+      org.apache.thrift7.protocol.TField field;
+      iprot.readStructBegin();
+      while (true)
+      {
+        field = iprot.readFieldBegin();
+        if (field.type == org.apache.thrift7.protocol.TType.STOP) { 
+          break;
+        }
+        switch (field.id) {
+          default:
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+        }
+        iprot.readFieldEnd();
+      }
+      iprot.readStructEnd();
+      validate();
+    }
+
+    public void write(org.apache.thrift7.protocol.TProtocol oprot) throws org.apache.thrift7.TException {
+      oprot.writeStructBegin(STRUCT_DESC);
+
+      oprot.writeFieldStop();
+      oprot.writeStructEnd();
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("beginLibUpload_result(");
+      boolean first = true;
+
       sb.append(")");
       return sb.toString();
     }

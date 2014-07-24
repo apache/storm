@@ -28,22 +28,18 @@ public class TaskShutdownDameon implements ShutdownableDameon {
 	private TaskStatus taskStatus;
 	private String topology_id;
 	private Integer task_id;
-	private IContext context;
 	private List<AsyncLoopThread> all_threads;
 	private StormClusterState zkCluster;
-	private IConnection puller;
 	private Object task_obj;
 
 	public TaskShutdownDameon(TaskStatus taskStatus, String topology_id,
-			Integer task_id, IContext context, List<AsyncLoopThread> all_threads,
-			StormClusterState zkCluster, IConnection puller, Object task_obj) {
+			Integer task_id, List<AsyncLoopThread> all_threads,
+			StormClusterState zkCluster, Object task_obj) {
 		this.taskStatus = taskStatus;
 		this.topology_id = topology_id;
 		this.task_id = task_id;
-		this.context = context;
 		this.all_threads = all_threads;
 		this.zkCluster = zkCluster;
-		this.puller = puller;
 		this.task_obj = task_obj;
 
 	}
@@ -85,7 +81,7 @@ public class TaskShutdownDameon implements ShutdownableDameon {
 			LOG.info(e);
 		}
 
-		LOG.info("Successfully shut down task " + topology_id + ":" + task_id);
+		LOG.info("Successfully shutdown task " + topology_id + ":" + task_id);
 
 	}
 

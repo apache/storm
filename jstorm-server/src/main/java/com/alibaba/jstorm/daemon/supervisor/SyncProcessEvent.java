@@ -16,6 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.log4j.Logger;
 
 import backtype.storm.Config;
+import backtype.storm.GenericOptionsParser;
 import backtype.storm.messaging.IContext;
 import backtype.storm.utils.LocalState;
 import backtype.storm.utils.Time;
@@ -28,7 +29,6 @@ import com.alibaba.jstorm.daemon.worker.State;
 import com.alibaba.jstorm.daemon.worker.Worker;
 import com.alibaba.jstorm.daemon.worker.WorkerHeartbeat;
 import com.alibaba.jstorm.daemon.worker.WorkerShutdown;
-import com.alibaba.jstorm.message.jeroMq.JMQContext;
 import com.alibaba.jstorm.message.zeroMq.MQContext;
 import com.alibaba.jstorm.task.LocalAssignment;
 import com.alibaba.jstorm.utils.JStormUtils;
@@ -439,7 +439,7 @@ class SyncProcessEvent extends ShutdownWork {
 		String transport_plugin_klassName = (String) totalConf.get(Config.STORM_MESSAGING_TRANSPORT);
 		if (transport_plugin_klassName.equals(MQContext.class.getCanonicalName())) {
 			filterJarKeyword = "jeromq";
-		} else if (transport_plugin_klassName.equals(JMQContext.class.getCanonicalName())) {
+		} else if (transport_plugin_klassName.equals("com.alibaba.jstorm.message.jeroMq.JMQContext")) {
 			filterJarKeyword = "jzmq";
 		}
 		
@@ -619,6 +619,15 @@ class SyncProcessEvent extends ShutdownWork {
 
 		String classpath = getClassPath(stormjar, stormhome, totalConf);
 		String workerClassPath = (String) totalConf.get(Config.WORKER_CLASSPATH);
+		List<String> otherLibs = (List<String>) stormConf.get(GenericOptionsParser.TOPOLOGY_LIB_NAME);
+		StringBuilder sb = new StringBuilder();
+		if (otherLibs != null) {
+			for (String libName : otherLibs) {
+				sb.append(StormConfig.stormlib_path(stormroot, libName)).append(":");
+			}
+		}
+		workerClassPath = workerClassPath + ":" + sb.toString();
+		
 
 		Map<String, String> policyReplaceMap = new HashMap<String, String>();
 		String realClassPath = classpath + ":" + workerClassPath;

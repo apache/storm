@@ -11,14 +11,17 @@ import backtype.storm.topology.InputDeclarer;
 import backtype.storm.topology.SpoutDeclarer;
 import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.tuple.Fields;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
+
 import storm.trident.spout.BatchSpoutExecutor;
 import storm.trident.spout.IBatchSpout;
 import storm.trident.spout.ICommitterTridentSpout;
@@ -504,6 +507,49 @@ public class TridentTopologyBuilder {
         }
         
         @Override
+        public BoltDeclarer localFirstGrouping(final String component) {
+            addDeclaration(new InputDeclaration() {
+                @Override
+                public void declare(InputDeclarer declarer) {
+                    declarer.localFirstGrouping(component);
+                }                
+
+                @Override
+                public String getComponent() {
+                    return component;
+                }                
+
+                @Override
+                public String getStream() {
+                    return null;
+                }
+            });
+            return this;
+        }
+
+        @Override
+        public BoltDeclarer localFirstGrouping(final String component, final String streamId) {
+            addDeclaration(new InputDeclaration() {
+                @Override
+                public void declare(InputDeclarer declarer) {
+                    declarer.localFirstGrouping(component, streamId);
+                }                
+
+                @Override
+                public String getComponent() {
+                    return component;
+                }                
+
+                @Override
+                public String getStream() {
+                    return streamId;
+                }
+            });
+            return this;
+        }
+        
+        
+        @Override
         public BoltDeclarer noneGrouping(final String component) {
             addDeclaration(new InputDeclaration() {
                 @Override
@@ -701,5 +747,7 @@ public class TridentTopologyBuilder {
             _component.componentConfs.add(conf);
             return this;
         }
+
+		
     }    
 }

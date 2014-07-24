@@ -77,8 +77,8 @@ public class FollowerRunnable implements Runnable {
 			try {
 				Thread.sleep(sleepTime);
 				if (data.isLeader()) {
-					data.getStormClusterState().unregister_nimbus_host(
-							hostPort);
+					data.getStormClusterState()
+							.unregister_nimbus_host(hostPort);
 					return;
 				}
 				if (!data.getStormClusterState().leader_existed()) {
@@ -86,8 +86,8 @@ public class FollowerRunnable implements Runnable {
 					continue;
 				}
 				check();
-				data.getStormClusterState().update_follower_hb(
-						hostPort, data.uptime());
+				data.getStormClusterState().update_follower_hb(hostPort,
+						data.uptime());
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				continue;
@@ -166,11 +166,12 @@ public class FollowerRunnable implements Runnable {
 		try {
 			String localRoot = StormConfig.masterStormdistRoot(data.getConf(),
 					topologyId);
-			String tmpDir = localRoot + UUID.randomUUID().toString();;
+			String tmpDir = StormConfig.masterInbox(data.getConf()) + "/"
+					+ UUID.randomUUID().toString();
 			String masterCodeDir = assignment.getMasterCodeDir();
 			JStormServerUtils.downloadCodeFromMaster(data.getConf(), tmpDir,
-					masterCodeDir);
-			
+					masterCodeDir, topologyId, false);
+
 			FileUtils.moveDirectory(new File(tmpDir), new File(localRoot));
 		} catch (TException e) {
 			// TODO Auto-generated catch block
