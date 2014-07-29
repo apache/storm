@@ -356,7 +356,7 @@ public class Utils {
 			return Integer.parseInt(((String) o));
 		} else {
 			throw new IllegalArgumentException("Don't know how to convert " + o
-					+ " + to int");
+					+ " to int");
 		}
 	}
 	
@@ -371,8 +371,10 @@ public class Utils {
 	          return (Integer) o;
 	      } else if (o instanceof Short) {
 	          return ((Short) o).intValue();
+	      } else if (o instanceof String) {
+	          return Integer.parseInt(((String) o));
 	      } else {
-	          throw new IllegalArgumentException("Don't know how to convert " + o + " + to int");
+	          throw new IllegalArgumentException("Don't know how to convert " + o + " to int");
 	      }
 	    }
 

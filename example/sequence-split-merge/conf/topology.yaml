@@ -1,0 +1,9 @@
+
+storm.cluster.mode: "local"
+#storm.cluster.mode: "distributed"
+
+topology.name: "batch_test"
+topology.spout.parallel: 1
+topology.bolt.parallel: 1
+topology.message.timeout.secs: 300
+topology.workers: 10

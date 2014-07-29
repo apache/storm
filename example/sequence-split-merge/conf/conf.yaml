@@ -1,0 +1,17 @@
+topology.name: SequenceTest
+topology.workers: 8
+topology.max.spout.pending: 10000
+topology.acker.executors: 1
+topology.debug: false
+
+
+
+
+spout.parallel: 1
+bolt.parallel: 2
+#send.sleep.second: 100
+check.sequence: true
+kryo.enable: false
+fall.back.on.java.serialization: true
+
+enable.split: false
