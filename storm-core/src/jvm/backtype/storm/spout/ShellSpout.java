@@ -152,8 +152,9 @@ public class ShellSpout implements ISpout {
                 }
             }
         } catch (Exception e) {
-            String processInfo = _process.getProcessInfoString() + _process.getProcessTerminationInfoString();
-            throw new RuntimeException(processInfo, e);
+            LOG.error("Halting process: ShellSpout died.", e);
+            _collector.reportError(e);
+            System.exit(11);
         }
     }
 
