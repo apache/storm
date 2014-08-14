@@ -129,6 +129,12 @@ public class AutoHBase extends AbstractAutoHadoopPlugin {
     }
 
     @Override
+    public void renew(Map<String, String> credentials, Map topologyConf) {
+        //HBASE tokens are not renewable so we always have to get new ones.
+        populateCredentials(credentials, topologyConf);
+    }
+
+    @Override
     protected String getCredentialKey() {
         return HBASE_CREDENTIALS;
     }
