@@ -327,6 +327,9 @@ secure hadoop on http://hadoop.apache.org/docs/current/hadoop-project-dist/hadoo
 You also need to ensure that nimbus user is allowed to act as a super user and get delegation tokens on behalf of other users. To achieve this you need to follow configuration directions listed on this link
 http://hadoop.apache.org/docs/current/hadoop-project-dist/hadoop-common/Superusers.html.
 
+#### Automatic HBase credential push and renewal
+Similar to HDFS , you can configure nimbus to obtain and push Hbase creds on behalf of topology submitter uers. instead of using AutoHDFS class you need to specify AutoHBase class for all the configuration.
+Please read about securing HBase https://hbase.apache.org/book/security.html. Just like HDFS, ensure that all the configuration files are on nimbus' class path.
 
 ### Limits
 By default storm allows any sized topology to be submitted. But ZK and others have limitations on how big a topology can actually be.  The following configs allow you to limit the maximum size a topology can be.
