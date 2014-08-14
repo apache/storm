@@ -19,18 +19,15 @@
 package backtype.storm.security.auth.hadoop;
 
 import backtype.storm.Config;
-import backtype.storm.security.INimbusCredentialPlugin;
-import backtype.storm.security.auth.IAutoCredentials;
-import backtype.storm.security.auth.ICredentialsRenewer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.security.auth.Subject;
-import javax.xml.bind.DatatypeConverter;
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutput;
+import java.io.ObjectOutputStream;
 import java.lang.reflect.Method;
 import java.net.URI;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -74,7 +71,7 @@ public class AutoHDFS extends AbstractAutoHadoopPlugin {
             boolean isSecurityEnabled = (Boolean)isSecurityEnabledMethod.invoke(null);
 
             if(isSecurityEnabled) {
-                final String topologySubmitterUser = (String) conf.get(Config.TOPOLOGY_SUBMITTER_USER);
+                final String topologySubmitterUser = (String) conf.get(Config.TOPOLOGY_SUBMITTER_PRINCIPAL);
                 final String hdfsUser = (String) conf.get(Config.TOPOLOGY_HDFS_PRINCIPAL);
 
                 //FileSystem fs = FileSystem.get(nameNodeURI, configuration, topologySubmitterUser);
@@ -128,7 +125,7 @@ public class AutoHDFS extends AbstractAutoHadoopPlugin {
     @SuppressWarnings("unchecked")
     public static void main(String[] args) throws Exception {
         Map conf = new java.util.HashMap();
-        conf.put(Config.TOPOLOGY_SUBMITTER_PRINCIPAL, args[0]); //with realm e.g. storm@WITZEND.COM
+        conf.put(Config.TOPOLOGY_SUBMITTER_PRINCIPAL, args[0]); //with realm e.g. storm@WITZEND.COM or storm/node.exmaple.com@WITZEND.COM
         conf.put(Config.TOPOLOGY_HDFS_PRINCIPAL, args[1]); //with realm e.g. hdfs@WITZEND.COM
 
         AutoHDFS autoHDFS = new AutoHDFS();
@@ -136,14 +133,14 @@ public class AutoHDFS extends AbstractAutoHadoopPlugin {
 
         Map<String,String> creds  = new HashMap<String, String>();
         autoHDFS.populateCredentials(creds, conf);
-        LOG.info("Got HDFS credentials", autoHDFS.getHadoopCredentials(creds));
+        LOG.info("Got HDFS credentials", autoHDFS.getCredentials(creds));
 
         Subject s = new Subject();
         autoHDFS.populateSubject(s, creds);
         LOG.info("Got a Subject "+ s);
 
         autoHDFS.renew(creds, conf);
-        LOG.info("renewed credentials", autoHDFS.getHadoopCredentials(creds));
+        LOG.info("renewed credentials", autoHDFS.getCredentials(creds));
     }
 }
 

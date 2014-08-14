@@ -52,7 +52,7 @@ public abstract class AbstractAutoHadoopPlugin implements IAutoCredentials, ICre
      * this class's populateCredentials must have been called before.
      */
     @SuppressWarnings("unchecked")
-    private Object getCredentials(Map<String, String> credentials) {
+    protected Object getCredentials(Map<String, String> credentials) {
         Object credential = null;
         if (credentials != null && credentials.containsKey(getCredentialKey())) {
             try {

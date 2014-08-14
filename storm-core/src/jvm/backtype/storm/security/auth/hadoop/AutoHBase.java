@@ -19,18 +19,22 @@
 package backtype.storm.security.auth.hadoop;
 
 import backtype.storm.Config;
-import backtype.storm.security.INimbusCredentialPlugin;
-import backtype.storm.security.auth.IAutoCredentials;
-import backtype.storm.security.auth.ICredentialsRenewer;
+import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.security.Credentials;
+import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.security.token.Token;
+import org.apache.hadoop.security.token.TokenIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.security.auth.Subject;
-import javax.xml.bind.DatatypeConverter;
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutput;
+import java.io.ObjectOutputStream;
 import java.lang.reflect.Method;
-import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -39,6 +43,7 @@ import java.util.Map;
  */
 public class AutoHBase extends AbstractAutoHadoopPlugin {
     private static final Logger LOG = LoggerFactory.getLogger(AutoHBase.class);
+
     public static final String HBASE_CREDENTIALS = "HBASE_CREDENTIALS";
 
     @SuppressWarnings("unchecked")
@@ -61,8 +66,7 @@ public class AutoHBase extends AbstractAutoHadoopPlugin {
             // and then return the credential object from the proxyUser.getCredentials() as a bytearray.
 
 
-
-            //HBaseConfiguration
+            //Configuration hbaseConf = HBaseConfiguration.create();
             Class configurationClass = Class.forName("org.apache.hadoop.hbase.HBaseConfiguration");
 
             Method createConfigMethod = configurationClass.getMethod("create");
@@ -74,10 +78,10 @@ public class AutoHBase extends AbstractAutoHadoopPlugin {
             boolean isSecurityEnabled = (Boolean)isSecurityEnabledMethod.invoke(null);
 
             if(isSecurityEnabled) {
-                final String topologySubmitterUser = (String) conf.get(Config.TOPOLOGY_SUBMITTER_USER);
-
+                final String topologySubmitterUser = (String) conf.get(Config.TOPOLOGY_SUBMITTER_PRINCIPAL);
                 //UserGroupInformation.setConfiguration(hbaseConf);
-                Method setConfigMethod = ugiClass.getMethod("setConfiguration");
+                Class hadoopConfigClass = Class.forName("org.apache.hadoop.conf.Configuration");
+                Method setConfigMethod = ugiClass.getMethod("setConfiguration", hadoopConfigClass);
                 setConfigMethod.invoke(null,hbaseConf);
 
                 //UserGroupInformation ugi = UserGroupInformation.getCurrentUser();
@@ -88,25 +92,27 @@ public class AutoHBase extends AbstractAutoHadoopPlugin {
                 Method createProxyUserMethod = ugiClass.getMethod("createProxyUser", String.class, ugiClass);
                 Object proxyUGI = createProxyUserMethod.invoke(null, topologySubmitterUser, ugi);
 
-                //Credentials credential= proxyUser.getCredentials();
-                Method getCredentialsMethod = ugiClass.getMethod("getCredentials");
-                Object credentials = getCredentialsMethod.invoke(proxyUGI);
-
                 //User user = User.create(ugi);
                 Class userClass = Class.forName("org.apache.hadoop.hbase.security.User");
-                Method createMethod = userClass.getMethod("create");
+                Method createMethod = userClass.getMethod("create", ugiClass);
                 Object user = createMethod.invoke(null, proxyUGI);
 
-                //user.isHBaseSecurityEnabled
-                Method isHBaseSecurityEnabledMethod = userClass.getMethod("isHBaseSecurityEnabled");
-                Boolean isHbaseSecurityEnabled = (Boolean) isHBaseSecurityEnabledMethod.invoke(user);
+                //user.isHBaseSecurityEnabled()
+                Method isHBaseSecurityEnabledMethod = userClass.getMethod("isHBaseSecurityEnabled", hadoopConfigClass);
+                Boolean isHbaseSecurityEnabled = (Boolean) isHBaseSecurityEnabledMethod.invoke(user, hbaseConf);
                 if(isHbaseSecurityEnabled) {
                     //TokenUtil.obtainAndCacheToken(hbaseConf, proxyUser);
                     Class tokenUtilClass = Class.forName("org.apache.hadoop.hbase.security.token.TokenUtil");
+
                     Method obtainAndCacheTokenMethod = tokenUtilClass.getMethod("obtainAndCacheToken",
-                            Class.forName("org.apache.hadoop.conf.Configuration"),
+                            hadoopConfigClass,
                             ugiClass);
                     obtainAndCacheTokenMethod.invoke(null, hbaseConf, proxyUGI);
+
+                    //Credentials credential= proxyUser.getCredentials();
+                    Method getCredentialsMethod = ugiClass.getMethod("getCredentials");
+                    Object credentials = getCredentialsMethod.invoke(proxyUGI);
+
                     Class credentialClass = Class.forName("org.apache.hadoop.security.Credentials");
 
                     ByteArrayOutputStream bao = new ByteArrayOutputStream();
@@ -135,6 +141,12 @@ public class AutoHBase extends AbstractAutoHadoopPlugin {
     }
 
     @Override
+    public void renew(Map<String, String> credentials, Map topologyConf) {
+        //HBASE tokens are not renewable so we always have to get new ones.
+        populateCredentials(credentials, topologyConf);
+    }
+
+    @Override
     protected String getCredentialKey() {
         return HBASE_CREDENTIALS;
     }
@@ -150,14 +162,14 @@ public class AutoHBase extends AbstractAutoHadoopPlugin {
 
         Map<String,String> creds  = new HashMap<String, String>();
         autoHBase.populateCredentials(creds, conf);
-        LOG.info("Got HBase credentials", autoHBase.getHadoopCredentials(creds));
+        LOG.info("Got HBase credentials" + autoHBase.getCredentials(creds));
 
         Subject s = new Subject();
         autoHBase.populateSubject(s, creds);
         LOG.info("Got a Subject " + s);
 
         autoHBase.renew(creds, conf);
-        LOG.info("renewed credentials", autoHBase.getHadoopCredentials(creds));
+        LOG.info("renewed credentials" + autoHBase.getCredentials(creds));
     }
 }
 
