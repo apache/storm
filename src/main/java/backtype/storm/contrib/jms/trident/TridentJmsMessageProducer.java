@@ -1,4 +1,4 @@
-package backtype.storm.contrib.jms;
+package backtype.storm.contrib.jms.trident;
 
 import backtype.storm.tuple.Tuple;
 import storm.trident.tuple.TridentTuple;

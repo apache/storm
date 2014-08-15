@@ -1,4 +1,4 @@
-package backtype.storm.contrib.jms;
+package backtype.storm.contrib.jms.trident;
 
 /**
  * Batch coordination metadata object for the TridentJmsSpout.

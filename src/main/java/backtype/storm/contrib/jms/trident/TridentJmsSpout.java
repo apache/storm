@@ -1,4 +1,4 @@
-package backtype.storm.contrib.jms;
+package backtype.storm.contrib.jms.trident;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +14,8 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
 import javax.jms.Session;
 
+import backtype.storm.contrib.jms.JmsProvider;
+import backtype.storm.contrib.jms.JmsTupleProducer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
