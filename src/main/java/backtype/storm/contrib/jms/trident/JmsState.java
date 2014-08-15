@@ -95,12 +95,18 @@ public class JmsState implements State {
 
     @Override
     public void beginCommit(Long aLong) {
-        LOG.debug("beginCommit is noop.");
     }
 
     @Override
     public void commit(Long aLong) {
-        LOG.debug("commit is noop.");
+        LOG.debug("Committing JMS transaction.");
+        if(this.options.jmsTransactional) {
+            try {
+                session.commit();
+            } catch(JMSException e){
+                LOG.error("JMS Session commit failed.", e);
+            }
+        }
     }
 
     public void updateState(List<TridentTuple> tuples, TridentCollector collector) throws JMSException {
@@ -121,9 +127,6 @@ public class JmsState implements State {
                 session.rollback();
             }
             throw new FailedException("Failed to write tuples", e);
-        }
-        if(this.options.jmsTransactional) {
-            session.commit();
         }
     }
 }
