@@ -27,6 +27,7 @@ import com.alibaba.jstorm.task.error.ITaskReportErr;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.RotatingMap;
 import com.alibaba.jstorm.utils.TimeCacheMap;
+import com.codahale.metrics.Gauge;
 
 /**
  * spout executor
@@ -53,8 +54,21 @@ public class MultipleThreadSpoutExecutors extends SpoutExecutors {
 
 		ackerRunnableThread = new AsyncLoopThread(new AckerRunnable());
 		pending = new RotatingMap<Long, TupleInfo>(Acker.TIMEOUT_BUCKET_NUM, null, false);
+		Metrics.register(idStr + "-pending-map-gauge", new Gauge<Integer>() {
+
+			@Override
+			public Integer getValue() {
+				return pending.size();
+			}
+			
+		});
 
 		super.prepare(sendTargets, _transfer_fn, topology_context);
+	}
+	
+	@Override
+	public String getThreadName() {
+		return idStr + "-" +MultipleThreadSpoutExecutors.class.getSimpleName();
 	}
 
 	@Override
@@ -72,6 +86,11 @@ public class MultipleThreadSpoutExecutors extends SpoutExecutors {
 	}
 
 	class AckerRunnable extends RunnableCallback {
+		
+		@Override
+		public String getThreadName() {
+			return idStr + "-" +AckerRunnable.class.getSimpleName();
+		}
 
 		@Override
 		public void run() {

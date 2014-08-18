@@ -62,7 +62,11 @@ public class AsyncLoopThread implements SmartThread {
 		
 		Runnable runable = new AsyncLoopRunnable(afn, kill_fn);
 		thread = new Thread(runable);
-		thread.setName(afn.getClass().getSimpleName());
+		String threadName = afn.getThreadName();
+		if (threadName == null) {
+			threadName = afn.getClass().getSimpleName();
+		}
+		thread.setName(threadName);
 		thread.setDaemon(daemon);
 		thread.setPriority(priority);
 		thread.setUncaughtExceptionHandler(new UncaughtExceptionHandler() {

@@ -79,7 +79,8 @@ public class FollowerRunnable implements Runnable {
 				if (data.isLeader()) {
 					data.getStormClusterState()
 							.unregister_nimbus_host(hostPort);
-					return;
+					checkOwnMaster();
+					continue;
 				}
 				if (!data.getStormClusterState().leader_existed()) {
 					this.tryToBeLeader(data.getConf());
@@ -199,6 +200,36 @@ public class FollowerRunnable implements Runnable {
 		};
 		data.setLeader(data.getStormClusterState().try_to_be_leader(
 				Cluster.MASTER_SUBTREE, hostPort, masterCallback));
+	}
+	
+	/**
+	 * Check whether current node is master or not
+	 * @throws Exception 
+	 */
+	private void checkOwnMaster() throws Exception {
+		int retry_times = 10;
+		
+		
+		StormClusterState zkClient = data.getStormClusterState();
+		for (int i = 0; i < retry_times; i++, JStormUtils.sleepMs(sleepTime)) {
+			
+			if (zkClient.leader_existed() == false) {
+				continue;
+			}
+			
+			String zkHost = zkClient.get_leader_host();
+			if (hostPort.equals(zkHost) == true) {
+				// current process own master
+				return ;
+			}
+			LOG.warn("Current Nimbus has start thrift, but fail to own zk master :" + zkHost);
+		}
+		
+		// current process doesn't own master
+		String err = "Current Nimubs fail to own nimbus_master, should halt process";
+		LOG.error(err);
+		JStormUtils.halt_process(0, err);
+		
 	}
 
 }

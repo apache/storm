@@ -90,6 +90,11 @@ public class TaskTransfer {
 	}
 
 	class TransferRunnable extends RunnableCallback implements EventHandler {
+		
+		@Override
+		public String getThreadName() {
+			return taskName + "-" +TransferRunnable.class.getSimpleName();
+		}
 
 		@Override
 		public void run() {

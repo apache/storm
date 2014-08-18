@@ -1,48 +1,38 @@
 #!/bin/sh
 
-JAVA_HOME=/opt/taobao/java
-export PATH=$PATH:$JAVA_HOME/bin
+if [ "x$JAVA_HOME" != "x" ]
+then
+    echo "JAVA_HOME has been set"
+else
+    export JAVA_HOME=/opt/taobao/java
+fi
 
-HSOTNAME=`hostname`
+export JSTORM_HOME=/home/admin/jstorm-current
+export PATH=$JAVA_HOME/bin:$JSTORM_HOME/bin:$PATH
 
-ALOHA_HOME=/home/admin/aloha
 
-cd `dirname $0`
 
-function checkAndStart()
+function startJStorm()
 {
-     PROCESS=$1
-     jps=`ps aux | grep $PROCESS | grep -v 'grep' | awk '{print $2}'`
-     if [ "$jps" = "" ]
-     then
-        echo "start $PROCESS"
-        if [ "$PROCESS" = "NimbusServer" ]
-        then
-            $ALOHA_HOME/target/aloha-run/bin/aloha nimbus &
-        elif [ "$PROCESS" = "Supervisor" ]
-        then    
-            $ALOHA_HOME/target/aloha-run/bin/aloha supervisor &
-        else
-            echo "$PROCESS not support in jstorm commond"
-        fi
-     else
-        echo "Already exist $PROCESS"
-     fi
+	PROCESS=$1
+  echo "start $PROCESS"
+  cd $JSTORM_HOME/bin; nohup $JSTORM_HOME/bin/jstorm $PROCESS >/dev/null 2>&1 &
+	sleep 4
+	rm -rf nohup
+	ps -ef|grep $2
 }
 
-cp -f $ALOHA_HOME/conf/storm.yaml ../conf/
 
-rm -rf ../logs
-mkdir ../logs
 
-NIMBUS_MASTER=`grep "nimbus.host:" ../conf/storm.yaml  | awk  '{print $2}'`
-NIMBUS_SLAVE=`grep "nimbus.host:" ../conf/storm.yaml  | awk  '{print $3}'`
+HOSTNAME=`hostname -i`
+NIMBUS_HOST=`grep "nimbus.host:" $JSTORM_HOME/conf/storm.yaml  | grep $HOSTNAME`
 
-if [ "$HOSTNAME" = "${NIMBUS_MASTER}" ] || [ "$HOSTNAME" = "${NIMBUS_SLAVE}" ]
+if [ "X${NIMBUS_HOST}" != "X" ] 
 then
-   checkAndStart "NimbusServer"
-   checkAndStart "Supervisor"
+	startJStorm "nimbus" "NimbusServer"
+	startJStorm "supervisor" "Supervisor"
 else
-   checkAndStart "Supervisor"
+	startJStorm "supervisor" "Supervisor"
 fi
-   echo "end start...."
+
+echo "Successfully  start jstorm daemon...."

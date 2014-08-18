@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Map.Entry;
 
 import org.apache.log4j.Logger;
@@ -55,6 +56,7 @@ public class BoltCollector implements IOutputCollector {
 	private Map storm_conf;
 	private Integer ackerNum;
 	private JStormTimer   timer;
+	private Random  random;
 
 	public BoltCollector(int message_timeout_secs, ITaskReportErr report_error,
 			TaskSendTargets _send_fn, Map _storm_conf,
@@ -62,7 +64,7 @@ public class BoltCollector implements IOutputCollector {
 			Integer task_id, RotatingMap<Tuple, Long> tuple_start_times,
 			CommonStatsRolling _task_stats) {
 
-		this.rotateTime = 1000L * message_timeout_secs;
+		this.rotateTime = 1000L * message_timeout_secs/(Acker.TIMEOUT_BUCKET_NUM - 1);
 		this.reportError = report_error;
 		this.sendTargets = _send_fn;
 		this.storm_conf = _storm_conf;
@@ -83,6 +85,9 @@ public class BoltCollector implements IOutputCollector {
 		
 		String componentId = topologyContext.getThisComponentId();
 		timer = Metrics.registerTimer(JStormServerUtils.getName(componentId, task_id) + "-emit-timer");
+		
+		random = new Random();
+		random.setSeed(System.currentTimeMillis());
 
 	}
 
@@ -113,7 +118,8 @@ public class BoltCollector implements IOutputCollector {
 				Map<Long, Long> anchors_to_ids = new HashMap<Long, Long>();
 				if (anchors != null) {
 					for (Tuple a : anchors) {
-						Long edge_id = MessageId.generateId();
+						//Long edge_id = MessageId.generateId();
+						Long edge_id = MessageId.generateId(random);
 						long now = System.currentTimeMillis();
 						if (now - lastRotate > rotateTime) {
 							pending_acks.rotate();

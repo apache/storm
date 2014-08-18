@@ -1,5 +1,24 @@
 [JStorm 0.9.0 ΩÈ…‹](http://wenku.baidu.com/view/59e81017dd36a32d7375818b.html)
 
+#Release 0.9.4.1
+##Bug fix:
+1. Improve speed between tasks who is running in one worker
+2. Fix wrong timeout seconds
+3. Add checking port when worker initialize and begin to kill old worker
+4. Move worker hearbeat thread before initializing tasks
+5. Move init netty-server before initializeing tasks 
+6. Check whether tuple's rootId is duplicated
+7. Add default value into Utils.getInt
+8. Add result function in ReconnectRunnable
+9. Add operation to start Timetick
+10. Halt process when master nimbus lost ZK node
+11. Add exception catch when cgroups kill process
+12. Speed up  reconnect to netty-server
+13. Share one task hearbeat thread for all tasks
+14. Quickly haltprocess when initialization failed.
+15. Check web-ui logview page size 
+
+
 
 #Release 0.9.4
 

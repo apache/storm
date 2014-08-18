@@ -690,8 +690,9 @@ class SyncProcessEvent extends ShutdownWork {
 
 				try {
 					shutWorker(conf, supervisorId, workerid, workerThreadPids);
-					if (cgroupManager != null)
+					if (cgroupManager != null) {
 						cgroupManager.shutDownWorker(workerid);
+					}
 				} catch (IOException e) {
 					String errMsg = "Failed to shutdown worker workId:"
 							+ workerid + ",supervisorId: " + supervisorId

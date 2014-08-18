@@ -75,3 +75,8 @@
 # You can get more about cgroup:
 #   http://t.cn/8s7nexU
  supervisor.enable.cgroup: false
+
+
+### Netty will send multiple messages in one batch  
+### Setting true will improve throughput, but more latency
+ storm.messaging.netty.transfer.async.batch: false

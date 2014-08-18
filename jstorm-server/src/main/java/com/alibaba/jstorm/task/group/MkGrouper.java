@@ -64,7 +64,8 @@ public class MkGrouper {
 		this.fields = Thrift.groupingType(thrift_grouping);
 		this.grouptype = this.parseGroupType(workerData);
 		
-		LOG.info("Grouptype is " + grouptype);
+		String id = _topology_context.getThisTaskId() + ":" + streamId;
+		LOG.info(id + " grouptype is " + grouptype);
 
 	}
 

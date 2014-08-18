@@ -120,17 +120,21 @@ public class SpoutCollector implements ISpoutOutputCollector {
 			List<Long> ackSeq = new ArrayList<Long>();
 			Boolean needAck = (message_id != null) && (ackerNum > 0);
 
-			Long root_id = null;
+			//This change storm logic
+			// Storm can't make sure root_id is unique
+			// storm's logic is root_id = MessageId.generateId(random);
+			// when duplicate root_id, it will miss call ack/fail
+			Long root_id = MessageId.generateId(random);
 			if (needAck) {
-				root_id = MessageId.generateId();
-			} else {
-				root_id = MessageId.generateId(random);
-			}
-
+				while(pending.containsKey(root_id) == true) {
+					root_id = MessageId.generateId(random);
+				}
+			} 
 			for (Integer t : out_tasks) {
 				MessageId msgid;
 				if (needAck) {
-					Long as = MessageId.generateId();
+					//Long as = MessageId.generateId();
+					Long as = MessageId.generateId(random);
 					msgid = MessageId.makeRootId(root_id, as);
 					ackSeq.add(as);
 				} else {

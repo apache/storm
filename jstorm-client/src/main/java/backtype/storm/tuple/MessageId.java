@@ -13,6 +13,7 @@ import java.util.Set;
 public class MessageId {
 	private Map<Long, Long> _anchorsToIds;
 
+	@Deprecated
 	public static long generateId() {
 		return Utils.secureRandomLong();
 	}

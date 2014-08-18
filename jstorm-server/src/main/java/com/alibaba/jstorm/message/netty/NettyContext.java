@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import com.alibaba.jstorm.callback.AsyncLoopRunnable;
 import com.alibaba.jstorm.callback.AsyncLoopThread;
+import com.alibaba.jstorm.utils.JStormUtils;
 
 import backtype.storm.Config;
 import backtype.storm.messaging.IConnection;
@@ -64,7 +65,15 @@ public class NettyContext implements IContext {
 
 	@Override
 	public IConnection bind(String topology_id, int port) {
-		return new NettyServer(storm_conf, port);
+		IConnection retConnection = null;
+		try {
+
+			retConnection = new NettyServer(storm_conf, port);
+		} catch (Throwable e) {
+			JStormUtils.halt_process(-1, "Failed to bind " + port);
+		}
+
+		return retConnection;
 	}
 
 	@Override

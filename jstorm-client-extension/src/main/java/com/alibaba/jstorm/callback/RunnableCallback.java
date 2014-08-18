@@ -39,5 +39,9 @@ public class RunnableCallback implements Runnable, Callback {
 	public void cleanup() {
 	    
 	}
+	
+	public String getThreadName() {
+		return null;
+	}
 
 }

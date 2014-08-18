@@ -1,6 +1,9 @@
 package com.alibaba.jstorm.task.heartbeat;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.log4j.Logger;
 
@@ -8,6 +11,7 @@ import backtype.storm.Config;
 
 import com.alibaba.jstorm.callback.RunnableCallback;
 import com.alibaba.jstorm.cluster.StormClusterState;
+import com.alibaba.jstorm.daemon.worker.WorkerData;
 import com.alibaba.jstorm.stats.CommonStatsRolling;
 import com.alibaba.jstorm.task.TaskStatus;
 import com.alibaba.jstorm.task.UptimeComputer;
@@ -26,58 +30,71 @@ public class TaskHeartbeatRunable extends RunnableCallback {
 
 	private StormClusterState zkCluster;
 	private String topology_id;
-	private int task_id;
-	private String idStr;
 	private UptimeComputer uptime;
-	private CommonStatsRolling task_stats;
-	private volatile TaskStatus taskStatus;
 	private Map storm_conf;
 	private Integer frequence;
+	
+	private AtomicBoolean active;
+	
+	private static Map<Integer, CommonStatsRolling> taskStatsMap = 
+			new HashMap<Integer, CommonStatsRolling>();
+	
+	public static void registerTaskStats(int taskId, CommonStatsRolling taskStats) {
+		taskStatsMap.put(taskId, taskStats);
+	}
 
-	public TaskHeartbeatRunable(StormClusterState zkCluster, String _topology_id,
-			int _task_id, UptimeComputer _uptime,
-			CommonStatsRolling _task_stats, TaskStatus _taskStatus,
-			Map _storm_conf) {
-		this.zkCluster = zkCluster;
-		this.topology_id = _topology_id;
-		this.task_id = _task_id;
-		this.uptime = _uptime;
-		this.task_stats = _task_stats;
-		this.taskStatus = _taskStatus;
-		this.storm_conf = _storm_conf;
+	public TaskHeartbeatRunable(WorkerData workerData) {
+//		StormClusterState zkCluster, String _topology_id,
+//		int _task_id, UptimeComputer _uptime,
+//		CommonStatsRolling _task_stats, TaskStatus _taskStatus,
+//		Map _storm_conf;
+		
+		
+		this.zkCluster = workerData.getZkCluster();
+		this.topology_id = workerData.getTopologyId();
+		this.uptime = new UptimeComputer();;
+		this.storm_conf = workerData.getStormConf();
+		this.active = workerData.getActive();
 
 		String key = Config.TASK_HEARTBEAT_FREQUENCY_SECS;
 		Object time = storm_conf.get(key);
 		frequence = JStormUtils.parseInt(time, 10);
 
-		idStr = " " + topology_id + ":" + task_id + " ";
 	}
 
 	@Override
 	public void run() {
 		Integer currtime = TimeUtils.current_time_secs();
-		TaskHeartbeat hb = new TaskHeartbeat(currtime, uptime.uptime(),
-				task_stats.render_stats());
 
-		try {
-			zkCluster.task_heartbeat(topology_id, task_id, hb);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			String errMsg = "Failed to update heartbeat to ZK " + idStr + "\n";
-			LOG.error(errMsg, e);
-			return;
+		for (Entry<Integer, CommonStatsRolling> entry : taskStatsMap.entrySet()) {
+			Integer taskId = entry.getKey();
+			CommonStatsRolling taskStats = entry.getValue();
+
+			String idStr = " " + topology_id + ":" + taskId + " ";
+
+			try {
+				TaskHeartbeat hb = new TaskHeartbeat(currtime, uptime.uptime(),
+						taskStats.render_stats());
+				zkCluster.task_heartbeat(topology_id, taskId, hb);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				String errMsg = "Failed to update heartbeat to ZK " + idStr
+						+ "\n";
+				LOG.error(errMsg, e);
+				continue;
+			}
 		}
 
-		LOG.info("task hearbeat task_id=" + idStr + " ts " + currtime);
+		LOG.info("update all task hearbeat ts " + currtime);
 	}
 
 	@Override
 	public Object getResult() {
-		if (taskStatus.isShutdown() == false) {
+		if (active.get() == true) {
 			return frequence;
 
 		} else {
-			LOG.info("Successfully shutdown Task's headbeat thread" + idStr);
+			LOG.info("Successfully shutdown Task's headbeat thread");
 			return -1;
 		}
 	}

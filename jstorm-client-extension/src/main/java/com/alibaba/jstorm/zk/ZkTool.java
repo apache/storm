@@ -10,7 +10,6 @@ import backtype.storm.utils.Utils;
 
 import com.alibaba.jstorm.cluster.ClusterState;
 import com.alibaba.jstorm.cluster.DistributedClusterState;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 public class ZkTool {
@@ -27,8 +26,7 @@ public class ZkTool {
 		LOG.info("\nDelete topology backup assignment, please do as following:");
 		LOG.info(ZkTool.class.getName() + " rm topologyname");
 	}
-	
-	
+
 	public static String getData(DistributedClusterState zkClusterState,
 			String path) throws Exception {
 		byte[] data = zkClusterState.get_data(path, false);
@@ -76,7 +74,7 @@ public class ZkTool {
 			}
 		}
 	}
-	
+
 	public static void rmBakTopology(String topologyName) {
 
 		DistributedClusterState zkClusterState = null;
@@ -146,51 +144,60 @@ public class ZkTool {
 		}
 
 	}
-	
+
 	/*******************************************************************/
-	
+
 	public static String assignment_bak_path(String id) {
-		return ZkConstant.ASSIGNMENTS_BAK_SUBTREE + ZkConstant.ZK_SEPERATOR + id;
+		return ZkConstant.ASSIGNMENTS_BAK_SUBTREE + ZkConstant.ZK_SEPERATOR
+				+ id;
 	}
-	
+
 	@SuppressWarnings("rawtypes")
 	public static ClusterState mk_distributed_cluster_state(Map _conf)
 			throws Exception {
 		return new DistributedClusterState(_conf);
 	}
-	
-	public static Map<String, String> get_followers(ClusterState cluster_state) throws Exception {
+
+	public static Map<String, String> get_followers(ClusterState cluster_state)
+			throws Exception {
 		Map<String, String> ret = Maps.newHashMap();
+		if (!cluster_state.node_existed(ZkConstant.NIMBUS_SLAVE_SUBTREE, false))
+			return ret;
 		List<String> followers = cluster_state.get_children(
 				ZkConstant.NIMBUS_SLAVE_SUBTREE, false);
 		if (followers == null || followers.size() == 0) {
 			return ret;
 		}
 		for (String follower : followers) {
-			String uptime = new String(cluster_state.get_data(ZkConstant.NIMBUS_SLAVE_SUBTREE 
-					+ ZkConstant.ZK_SEPERATOR + follower, false));
-			ret.put(follower, uptime);
+			if (follower != null) {
+				String uptime = new String(cluster_state.get_data(
+						ZkConstant.NIMBUS_SLAVE_SUBTREE + ZkConstant.ZK_SEPERATOR
+								+ follower, false));
+				ret.put(follower, uptime);
+			}
 		}
 		return ret;
 	}
-	
-//	public static List<String> get_follower_hosts(ClusterState cluster_state) throws Exception {
-//		List<String> followers = cluster_state.get_children(
-//				ZkConstant.NIMBUS_SLAVE_SUBTREE, false);
-//		if (followers == null || followers.size() == 0) {
-//			return Lists.newArrayList();
-//		}
-//		return followers;
-//	}
-//
-//	public static List<String> get_follower_hbs(ClusterState cluster_state) throws Exception {
-//		List<String> ret = Lists.newArrayList();
-//		List<String> followers = get_follower_hosts(cluster_state);
-//		for (String follower : followers) {
-//			ret.add(new String(cluster_state.get_data(ZkConstant.NIMBUS_SLAVE_SUBTREE 
-//				+ ZkConstant.ZK_SEPERATOR + follower, false)));
-//		}
-//		return ret;
-//	}
+
+	// public static List<String> get_follower_hosts(ClusterState cluster_state)
+	// throws Exception {
+	// List<String> followers = cluster_state.get_children(
+	// ZkConstant.NIMBUS_SLAVE_SUBTREE, false);
+	// if (followers == null || followers.size() == 0) {
+	// return Lists.newArrayList();
+	// }
+	// return followers;
+	// }
+	//
+	// public static List<String> get_follower_hbs(ClusterState cluster_state)
+	// throws Exception {
+	// List<String> ret = Lists.newArrayList();
+	// List<String> followers = get_follower_hosts(cluster_state);
+	// for (String follower : followers) {
+	// ret.add(new String(cluster_state.get_data(ZkConstant.NIMBUS_SLAVE_SUBTREE
+	// + ZkConstant.ZK_SEPERATOR + follower, false)));
+	// }
+	// return ret;
+	// }
 
 }

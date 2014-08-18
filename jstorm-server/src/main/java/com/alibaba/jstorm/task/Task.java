@@ -257,14 +257,7 @@ public class Task {
 	}
 
 	public TaskShutdownDameon execute() throws Exception {
-
-		// create heartbeat
-		TaskHeartbeatRunable hb = new TaskHeartbeatRunable(zkCluster,
-				topologyid, taskid, uptime, taskStats, taskStatus, stormConf);
-
-		AsyncLoopThread heartbeat_thread = new AsyncLoopThread(hb, false,
-				Thread.MIN_PRIORITY, true);
-
+		
 		DisruptorQueue deserializeQueue = registerDisruptorQueue();
 
 		TaskSendTargets sendTargets = echoToSystemBolt();
@@ -276,17 +269,16 @@ public class Task {
 				false, Thread.MAX_PRIORITY, true);
 		
 		List<AsyncLoopThread> allThreads = new ArrayList<AsyncLoopThread>();
-		allThreads.add(heartbeat_thread);
 		allThreads.add(executor_threads);
-
+		
+		TaskHeartbeatRunable.registerTaskStats(taskid, taskStats);
 		LOG.info("Finished loading task " + componentid + ":" + taskid);
 
-		return getShutdown(allThreads, heartbeat_thread, deserializeQueue, baseExecutor);
+		return getShutdown(allThreads,  deserializeQueue, baseExecutor);
 	}
 
 	public TaskShutdownDameon getShutdown(List<AsyncLoopThread> allThreads,
-			AsyncLoopThread heartbeat_thread, DisruptorQueue deserializeQueue,
-			RunnableCallback baseExecutor) {
+			DisruptorQueue deserializeQueue, RunnableCallback baseExecutor) {
 
 		AsyncLoopThread ackerThread = null;
 		if (baseExecutor instanceof SpoutExecutors) {

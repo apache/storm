@@ -75,8 +75,12 @@ public class CgroupManager {
 	public void shutDownWorker(String workerId) throws IOException {
 		CgroupCommon workerGroup = new CgroupCommon(workerId, h,
 				this.rootCgroup);
-		for (Integer pid : workerGroup.getTasks()) {
-			JStormUtils.kill(pid);
+		try {
+			for (Integer pid : workerGroup.getTasks()) {
+				JStormUtils.kill(pid);
+			}
+		}catch(Exception e) {
+			LOG.info("No task of " + workerId);
 		}
 		JStormUtils.sleepMs(1500);
 		center.delete(workerGroup);

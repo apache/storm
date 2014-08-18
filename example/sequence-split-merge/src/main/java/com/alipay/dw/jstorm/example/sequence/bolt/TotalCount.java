@@ -12,6 +12,7 @@ import backtype.storm.topology.IRichBolt;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.tuple.Tuple;
 
+import com.alibaba.jstorm.utils.JStormUtils;
 import com.alipay.dw.jstorm.example.TpsCounter;
 import com.alipay.dw.jstorm.example.sequence.bean.TradeCustomer;
 
@@ -22,6 +23,8 @@ public class TotalCount implements IRichBolt {
     private TpsCounter          tpsCounter;
     private long                lastTupleId = -1;
     
+    private boolean             checkTupleId = false;
+    
     @Override
     public void prepare(Map stormConf, TopologyContext context,
             OutputCollector collector) {
@@ -31,6 +34,8 @@ public class TotalCount implements IRichBolt {
         tpsCounter = new TpsCounter(context.getThisComponentId() + 
                 ":" + context.getThisTaskId());
         
+        checkTupleId = JStormUtils.parseBoolean(stormConf.get("bolt.check.tupleId"), false);
+        
         LOG.info("Finished preparation");
     }
     
@@ -39,13 +44,15 @@ public class TotalCount implements IRichBolt {
     
     @Override
     public void execute(Tuple input) {
-        
-        Long tupleId = input.getLong(0);
-        if (tupleId <= lastTupleId) {
-        	LOG.error("LastTupleId is " + lastTupleId + ", but now:" + tupleId);
-        }
-        lastTupleId = tupleId;
-        
+    	
+    	if (checkTupleId) {
+    		Long tupleId = input.getLong(0);
+            if (tupleId <= lastTupleId) {
+            	LOG.error("LastTupleId is " + lastTupleId + ", but now:" + tupleId);
+            }
+            lastTupleId = tupleId;
+    	}
+
         TradeCustomer tradeCustomer = (TradeCustomer) input.getValue(1);
         
         tradeSum.addAndGet(tradeCustomer.getTrade().getValue());

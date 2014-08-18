@@ -61,6 +61,7 @@ public abstract class DisruptorRunable extends RunnableCallback implements Event
 	@Override
 	public void run() {
 		LOG.info("Successfully start thread " + idStr);
+		queue.consumerStarted();
 
 		while (active.get()) {
 			try {

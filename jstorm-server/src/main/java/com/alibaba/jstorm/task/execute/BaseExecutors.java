@@ -190,6 +190,11 @@ public class BaseExecutors extends RunnableCallback {
 			this.deserializeQueue = deserializeQueue;
 			this.exeQueue = exeQueue;
 		}
+		
+		@Override
+		public String getThreadName() {
+			return idStr + "-deserializer";
+		}
 
 		protected Tuple deserialize(byte[] ser_msg) {
 			deserializeTimer.start();
@@ -246,8 +251,6 @@ public class BaseExecutors extends RunnableCallback {
 
 		@Override
 		public void run() {
-			Thread.currentThread().setName(
-					component_id + "-" + taskId + "-recvThread");
 			WorkerClassLoader.switchThreadContext();
 
 			LOG.info("Successfully start recvThread of " + idStr);

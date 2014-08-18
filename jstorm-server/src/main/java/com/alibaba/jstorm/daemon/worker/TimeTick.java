@@ -27,6 +27,7 @@ public class TimeTick extends RunnableCallback {
 	private AtomicBoolean active;
 
 	private Integer frequence;
+	private Integer firstSleep;
 
 	private static Map<String, DisruptorQueue> queues = new HashMap<String, DisruptorQueue>();
 	
@@ -60,11 +61,19 @@ public class TimeTick extends RunnableCallback {
 		Map conf = workerData.getStormConf();
 		int msgTimeOut = JStormUtils.parseInt(
 				conf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS), 30);
-		frequence = (msgTimeOut) / Acker.TIMEOUT_BUCKET_NUM;
+		frequence = (msgTimeOut) / (Acker.TIMEOUT_BUCKET_NUM - 1);
 		if (frequence <= 0) {
 			frequence = 1;
 		}
+		
+		firstSleep = JStormUtils.parseInt(
+				conf.get(Config.SUPERVISOR_WORKER_START_TIMEOUT_SECS), 120);
+		
+		firstSleep += frequence;
+		LOG.info("TimeTick frequence " + frequence);
 	}
+	
+	private boolean isFirstTime = true;
 
 	@Override
 	public void run() {
@@ -73,7 +82,11 @@ public class TimeTick extends RunnableCallback {
 			return;
 		}
 
-		
+		if (isFirstTime == true) {
+			isFirstTime = false;
+			JStormUtils.sleepMs(firstSleep * 1000);
+			LOG.info("Start TimeTick");
+		}
 		
 		for (Entry<String, DisruptorQueue> entry: queues.entrySet()) {
 			String name = entry.getKey();

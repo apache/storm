@@ -106,6 +106,11 @@ public class BoltExecutors extends BaseExecutors implements EventHandler {
 		LOG.info("Successfully create BoltExecutors " + idStr);
 
 	}
+	
+	@Override
+	public String getThreadName() {
+		return idStr + "-" + BoltExecutors.class.getSimpleName();
+	}
 
 	@Override
 	public void run() {

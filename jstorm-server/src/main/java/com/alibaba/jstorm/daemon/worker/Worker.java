@@ -32,6 +32,7 @@ import com.alibaba.jstorm.daemon.worker.hearbeat.WorkerHeartbeatRunable;
 import com.alibaba.jstorm.daemon.worker.metrics.MetricReporter;
 import com.alibaba.jstorm.task.Task;
 import com.alibaba.jstorm.task.TaskShutdownDameon;
+import com.alibaba.jstorm.task.heartbeat.TaskHeartbeatRunable;
 import com.alibaba.jstorm.utils.JStormServerUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.lmax.disruptor.MultiThreadedClaimStrategy;
@@ -133,7 +134,8 @@ public class Worker {
 						.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
 		DisruptorQueue recvQueue = new DisruptorQueue(
 				new MultiThreadedClaimStrategy(queue_size), waitStrategy);
-		recvQueue.consumerStarted();
+		// stop  consumerStarted
+		//recvQueue.consumerStarted();
 
 		IContext context = workerData.getContext();
 		String topologyId = workerData.getTopologyId();
@@ -146,13 +148,16 @@ public class Worker {
 				recvConnection, recvQueue);
 
 		AsyncLoopThread vthread = new AsyncLoopThread(recvDispather, false,
-				Thread.MAX_PRIORITY, true);
+				Thread.MAX_PRIORITY, false);
 
 		return vthread;
 	}
 
 	public WorkerShutdown execute() throws Exception {
 		List<AsyncLoopThread> threads = new ArrayList<AsyncLoopThread>();
+		
+		AsyncLoopThread dispatcher = startDispatchThread();
+		threads.add(dispatcher);
 
 		// create client before create task
 		// so create client connection before create task
@@ -162,19 +167,6 @@ public class Worker {
 				Thread.MIN_PRIORITY, true);
 		threads.add(refreshconn);
 
-		// shutdown task callbacks
-		List<TaskShutdownDameon> shutdowntasks = createTasks();
-		workerData.setShutdownTasks(shutdowntasks);
-
-		AsyncLoopThread dispatcher = startDispatchThread();
-		threads.add(dispatcher);
-
-		// refresh hearbeat to Local dir
-		RunnableCallback heartbeat_fn = new WorkerHeartbeatRunable(workerData);
-		AsyncLoopThread hb = new AsyncLoopThread(heartbeat_fn, false, null,
-				Thread.NORM_PRIORITY, true);
-		threads.add(hb);
-		
 		TimeTick timeTick = new TimeTick(workerData);
 		AsyncLoopThread tick = new AsyncLoopThread(timeTick);
 		threads.add(tick);
@@ -184,7 +176,7 @@ public class Worker {
 		AsyncLoopThread refreshzk = new AsyncLoopThread(refreshZkActive, false,
 				Thread.MIN_PRIORITY, true);
 		threads.add(refreshzk);
-		
+
 		BatchTupleRunable batchRunable = new BatchTupleRunable(workerData);
 		AsyncLoopThread batch = new AsyncLoopThread(batchRunable, false,
 				Thread.MAX_PRIORITY, true);
@@ -195,8 +187,6 @@ public class Worker {
 		AsyncLoopThread dr = new AsyncLoopThread(drainer, false,
 				Thread.MAX_PRIORITY, true);
 		threads.add(dr);
-		
-		
 
 		// Sync heartbeat to Apsara Container
 		AsyncLoopThread syncContainerHbThread = SyncContainerHb
@@ -204,12 +194,32 @@ public class Worker {
 		if (syncContainerHbThread != null) {
 			threads.add(syncContainerHbThread);
 		}
-		
+
 		MetricReporter metricReporter = new MetricReporter();
-		boolean isMetricsEnable = ConfigExtension.isEnablePerformanceMetrics(workerData.getStormConf());
+		boolean isMetricsEnable = ConfigExtension
+				.isEnablePerformanceMetrics(workerData.getStormConf());
 		metricReporter.setEnable(isMetricsEnable);
 		metricReporter.start();
-		LOG.info("Start metrics reporter, enable performance metrics: " + isMetricsEnable);
+		LOG.info("Start metrics reporter, enable performance metrics: "
+				+ isMetricsEnable);
+		
+		// create task heartbeat
+		TaskHeartbeatRunable taskHB = new TaskHeartbeatRunable(workerData);
+		AsyncLoopThread taskHBThread = new AsyncLoopThread(taskHB);
+		threads.add(taskHBThread);
+
+		// refresh hearbeat to Local dir
+		RunnableCallback heartbeat_fn = new WorkerHeartbeatRunable(workerData);
+		AsyncLoopThread hb = new AsyncLoopThread(heartbeat_fn, false, null,
+				Thread.NORM_PRIORITY, true);
+		threads.add(hb);
+
+		// shutdown task callbacks
+		List<TaskShutdownDameon> shutdowntasks = createTasks();
+		workerData.setShutdownTasks(shutdowntasks);
+
+		// start dispatcher
+		dispatcher.start();
 
 		return new WorkerShutdown(workerData, shutdowntasks, threads, metricReporter);
 
@@ -323,9 +333,28 @@ public class Worker {
 
 				String[] fields = StringUtils.split(str);
 
-				// for (String field : fields) {
-				// LOG.info("Filed:" + field);
-				// }
+				boolean find = false;
+				int i = 0;
+				 for (; i < fields.length; i++) {
+					 String field = fields[i];
+					 LOG.debug("Filed, " + i+ ":" + field);
+					 
+					 if (field.contains(Worker.class.getName()) == true) {
+						 if (i + 3 >= fields.length) {
+							 LOG.info("Failed to find port ");
+							 
+						 }else if (fields[i + 3].equals(String.valueOf(port))) {
+							 find = true;
+						 }
+						 
+						 break;
+					 }
+				 }
+				 
+				 if (find == false) {
+					 LOG.info("No old port worker");
+					 continue;
+				 }
 
 				if (fields.length >= 2) {
 					try {
@@ -414,6 +443,7 @@ public class Worker {
 		} catch (Throwable e) {
 			String errMsg = "Failed to create worker, " + sb.toString();
 			LOG.error(errMsg, e);
+			JStormUtils.halt_process(-1, errMsg);
 		}
 	}
 

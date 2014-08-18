@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <assembly>
 	<id>tgz</id>
-	<baseDirectory>aloha-run</baseDirectory>
+	<baseDirectory>jstorm-${project.version}</baseDirectory>
 	<formats>
 		<format>dir</format>
-		<format>tar.gz</format>
+		<format>zip</format>
 	</formats>
 	<files>
 		<file>
 			<source>jstorm-server/bin/jstorm.py</source>
 			<outputDirectory>/bin</outputDirectory>
 			<fileMode>0755</fileMode>
-			<destName>aloha</destName>
+			<destName>jstorm</destName>
 		</file>
 		<file>
 			<source>jstorm-server/bin/start.sh</source>
@@ -30,12 +30,27 @@
 			<outputDirectory>./</outputDirectory>
 			<destName>RELEASE</destName>
 		</file>
-		
+		<file>
+			<source>./history.md</source>
+			<outputDirectory>./</outputDirectory>
+			<destName>history.md</destName>
+		</file>
+		<file>
+			<source>./LICENSE.html</source>
+			<outputDirectory>./</outputDirectory>
+			<destName>LICENSE.html</destName>
+		</file>
+		<file>
+			<source>./README.md</source>
+			<outputDirectory>./</outputDirectory>
+			<destName>README.md</destName>
+		</file>
+
 		<file>
 			<source>jstorm-ui/target/jstorm-ui-${project.version}.war</source>
 			<outputDirectory>./</outputDirectory>
 			<fileMode>0755</fileMode>
-			<destName>jstorm-ui.war</destName>
+			<destName>jstorm-ui-${project.version}.war</destName>
 		</file>
 	</files>
 	<fileSets>
@@ -47,26 +62,34 @@
 			</includes>
 		</fileSet>
 		<fileSet>
-			<directory>jstorm-server/logs</directory>
+			<directory>jstorm-server/conf</directory>
 			<outputDirectory>/logs</outputDirectory>
+			<directoryMode>0755</directoryMode>
+			<excludes>
+				<exclude>*</exclude>
+			</excludes>
 		</fileSet>
-		
+
 		<fileSet>
-			<directory>jstorm-server/data</directory>
+			<directory>jstorm-server/conf</directory>
 			<outputDirectory>/data</outputDirectory>
+			<directoryMode>0755</directoryMode>
+			<excludes>
+				<exclude>*</exclude>
+			</excludes>
 		</fileSet>
-		
+
 	</fileSets>
 	<moduleSets>
 		<moduleSet>
 
-			
-			<excludes> 
-				<exclude>com.alibaba.jstorm:jstorm-ui</exclude> 
-			</excludes> 
-			 
+
+			<excludes>
+				<exclude>com.alibaba.jstorm:jstorm-ui</exclude>
+			</excludes>
+
 			<binaries>
-				<outputFileNameMapping>${artifact.artifactId}.${artifact.extension}</outputFileNameMapping>
+				<!-- <outputFileNameMapping>${artifact.artifactId}.${artifact.extension}</outputFileNameMapping> -->
 				<outputDirectory>./</outputDirectory>
 				<unpack>false</unpack>
 				<dependencySets>

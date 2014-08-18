@@ -8,6 +8,7 @@ import backtype.storm.task.TopologyContext;
 import backtype.storm.utils.DisruptorQueue;
 import backtype.storm.utils.WorkerClassLoader;
 
+import com.alibaba.jstorm.daemon.worker.metrics.Metrics;
 import com.alibaba.jstorm.stats.CommonStatsRolling;
 import com.alibaba.jstorm.task.TaskStatus;
 import com.alibaba.jstorm.task.TaskTransfer;
@@ -16,6 +17,7 @@ import com.alibaba.jstorm.task.comm.TaskSendTargets;
 import com.alibaba.jstorm.task.comm.TupleInfo;
 import com.alibaba.jstorm.task.error.ITaskReportErr;
 import com.alibaba.jstorm.utils.RotatingMap;
+import com.codahale.metrics.Gauge;
 
 /**
  * spout executor
@@ -42,8 +44,21 @@ public class SingleThreadSpoutExecutors extends SpoutExecutors {
 
 		// sending Tuple's TimeCacheMap
 		pending = new RotatingMap<Long, TupleInfo>(Acker.TIMEOUT_BUCKET_NUM, null, true);
+		Metrics.register(idStr + "-pending-map-gauge", new Gauge<Integer>() {
+
+			@Override
+			public Integer getValue() {
+				return pending.size();
+			}
+			
+		});
 
 		super.prepare(sendTargets, _transfer_fn, topology_context);
+	}
+	
+	@Override
+	public String getThreadName() {
+		return idStr + "-" +SingleThreadSpoutExecutors.class.getSimpleName();
 	}
 
 	@Override

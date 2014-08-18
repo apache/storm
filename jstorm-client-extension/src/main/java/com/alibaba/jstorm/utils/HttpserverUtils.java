@@ -16,7 +16,7 @@ public class HttpserverUtils {
 	
 	public static final String HTTPSERVER_LOGVIEW_PARAM_DIR = "dir";
 	
-	public static final long HTTPSERVER_LOGVIEW_PAGESIZE = 8192;
+	public static final long HTTPSERVER_LOGVIEW_PAGESIZE = 16384;
 	
 	public static final String HTTPSERVER_LOGVIEW_PARAM_SIZE_FORMAT = "%016d\n";
 	

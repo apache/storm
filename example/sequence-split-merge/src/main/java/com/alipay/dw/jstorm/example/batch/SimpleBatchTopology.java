@@ -18,6 +18,7 @@ import backtype.storm.topology.TopologyBuilder;
 import com.alibaba.jstorm.batch.BatchTopologyBuilder;
 import com.alibaba.jstorm.cluster.StormConfig;
 import com.alibaba.jstorm.local.LocalCluster;
+import com.alibaba.jstorm.utils.JStormUtils;
 
 public class SimpleBatchTopology {
 
@@ -52,11 +53,14 @@ public class SimpleBatchTopology {
 	public static TopologyBuilder SetBuilder() {
 		BatchTopologyBuilder topologyBuilder = new BatchTopologyBuilder(
 				topologyName);
+		
+		int spoutParallel = JStormUtils.parseInt(conf.get("topology.spout.parallel"), 1);
 
 		BoltDeclarer boltDeclarer = topologyBuilder.setSpout("Spout",
-				new SimpleSpout(), 3);
+				new SimpleSpout(), spoutParallel);
 
-		topologyBuilder.setBolt("Bolt", new SimpleBolt(), 1).shuffleGrouping(
+		int boltParallel = JStormUtils.parseInt(conf.get("topology.bolt.parallel"), 2);
+		topologyBuilder.setBolt("Bolt", new SimpleBolt(), boltParallel).shuffleGrouping(
 				"Spout");
 
 		return topologyBuilder.getTopologyBuilder();

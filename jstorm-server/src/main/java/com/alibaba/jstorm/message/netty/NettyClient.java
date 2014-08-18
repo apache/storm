@@ -215,7 +215,11 @@ class NettyClient implements IConnection {
 	 */
 	private int getSleepTimeMs() {
 
-		return base_sleep_ms * retries.incrementAndGet();
+		int sleepMs =  base_sleep_ms * retries.incrementAndGet();
+		if (sleepMs > 1000) {
+			sleepMs = 1000;
+		}
+		return sleepMs ;
 	}
 
 	/**
@@ -236,7 +240,7 @@ class NettyClient implements IConnection {
 			throw new RuntimeException(e);
 		} finally {
 			sendTimer.stop();
-			histogram.update(messages.size());
+			
 		}
 	}
 
@@ -255,7 +259,6 @@ class NettyClient implements IConnection {
 			throw new RuntimeException(e);
 		} finally {
 			sendTimer.stop();
-			histogram.update(1);
 		}
 	}
 
@@ -395,6 +398,7 @@ class NettyClient implements IConnection {
 		if (requests == null || requests.isEmpty())
 			return;
 
+		histogram.update(requests.getEncoded_length());
 		long pending = pendings.incrementAndGet();
 		LOG.debug("Flush pending {}, this message size:{}", pending,
 				requests.getEncoded_length());

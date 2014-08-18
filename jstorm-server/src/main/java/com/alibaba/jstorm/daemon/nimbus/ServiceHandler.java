@@ -123,27 +123,28 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 		} catch (AlreadyAliveException e) {
 			LOG.info(topologyname + " is already exist ");
 			throw e;
-		} catch (Exception e) {
+		} catch (Throwable e) {
 			LOG.info("Failed to check whether topology is alive or not", e);
 			throw new TException(e);
 		}
-
+		
 		int counter = data.getSubmittedCount().incrementAndGet();
 		String topologyId = topologyname + "-" + counter + "-"
 				+ TimeUtils.current_time_secs();
 
-		Map<Object, Object> serializedConf = (Map<Object, Object>) JStormUtils
-				.from_json(jsonConf);
-		if (serializedConf == null) {
-			LOG.warn("Failed to serialized Configuration");
-			throw new InvalidTopologyException(
-					"Failed to serilaze topology configuration");
-		}
-
-		serializedConf.put(Config.TOPOLOGY_ID, topologyId);
-		serializedConf.put(Config.TOPOLOGY_NAME, topologyname);
-
 		try {
+
+			Map<Object, Object> serializedConf = (Map<Object, Object>) JStormUtils
+					.from_json(jsonConf);
+			if (serializedConf == null) {
+				LOG.warn("Failed to serialized Configuration");
+				throw new InvalidTopologyException(
+						"Failed to serilaze topology configuration");
+			}
+
+			serializedConf.put(Config.TOPOLOGY_ID, topologyId);
+			serializedConf.put(Config.TOPOLOGY_NAME, topologyname);
+			
 			Map<Object, Object> stormConf;
 
 			stormConf = NimbusUtils.normalizeConf(conf, serializedConf,
