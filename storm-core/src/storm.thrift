@@ -168,7 +168,7 @@ struct BoltStats {
   3: required map<string, map<GlobalStreamId, double>> process_ms_avg;
   4: required map<string, map<GlobalStreamId, i64>> executed;  
   5: required map<string, map<GlobalStreamId, double>> execute_ms_avg;
-  6: optional map<string, double> queue_length;
+  6: optional map<string, map<string, double>> queue_length;
 }
 
 struct SpoutStats {
