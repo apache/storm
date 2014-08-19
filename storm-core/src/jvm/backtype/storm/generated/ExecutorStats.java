@@ -497,27 +497,27 @@ public class ExecutorStats implements org.apache.thrift.TBase<ExecutorStats, Exe
         case 1: // EMITTED
           if (field.type == org.apache.thrift.protocol.TType.MAP) {
             {
-              org.apache.thrift.protocol.TMap _map125 = iprot.readMapBegin();
-              this.emitted = new HashMap<String,Map<String,Long>>(2*_map125.size);
-              for (int _i126 = 0; _i126 < _map125.size; ++_i126)
+              org.apache.thrift.protocol.TMap _map145 = iprot.readMapBegin();
+              this.emitted = new HashMap<String,Map<String,Long>>(2*_map145.size);
+              for (int _i146 = 0; _i146 < _map145.size; ++_i146)
               {
-                String _key127; // required
-                Map<String,Long> _val128; // required
-                _key127 = iprot.readString();
+                String _key147; // required
+                Map<String,Long> _val148; // required
+                _key147 = iprot.readString();
                 {
-                  org.apache.thrift.protocol.TMap _map129 = iprot.readMapBegin();
-                  _val128 = new HashMap<String,Long>(2*_map129.size);
-                  for (int _i130 = 0; _i130 < _map129.size; ++_i130)
+                  org.apache.thrift.protocol.TMap _map149 = iprot.readMapBegin();
+                  _val148 = new HashMap<String,Long>(2*_map149.size);
+                  for (int _i150 = 0; _i150 < _map149.size; ++_i150)
                   {
-                    String _key131; // required
-                    long _val132; // required
-                    _key131 = iprot.readString();
-                    _val132 = iprot.readI64();
-                    _val128.put(_key131, _val132);
+                    String _key151; // required
+                    long _val152; // required
+                    _key151 = iprot.readString();
+                    _val152 = iprot.readI64();
+                    _val148.put(_key151, _val152);
                   }
                   iprot.readMapEnd();
                 }
-                this.emitted.put(_key127, _val128);
+                this.emitted.put(_key147, _val148);
               }
               iprot.readMapEnd();
             }
@@ -528,27 +528,27 @@ public class ExecutorStats implements org.apache.thrift.TBase<ExecutorStats, Exe
         case 2: // TRANSFERRED
           if (field.type == org.apache.thrift.protocol.TType.MAP) {
             {
-              org.apache.thrift.protocol.TMap _map133 = iprot.readMapBegin();
-              this.transferred = new HashMap<String,Map<String,Long>>(2*_map133.size);
-              for (int _i134 = 0; _i134 < _map133.size; ++_i134)
+              org.apache.thrift.protocol.TMap _map153 = iprot.readMapBegin();
+              this.transferred = new HashMap<String,Map<String,Long>>(2*_map153.size);
+              for (int _i154 = 0; _i154 < _map153.size; ++_i154)
               {
-                String _key135; // required
-                Map<String,Long> _val136; // required
-                _key135 = iprot.readString();
+                String _key155; // required
+                Map<String,Long> _val156; // required
+                _key155 = iprot.readString();
                 {
-                  org.apache.thrift.protocol.TMap _map137 = iprot.readMapBegin();
-                  _val136 = new HashMap<String,Long>(2*_map137.size);
-                  for (int _i138 = 0; _i138 < _map137.size; ++_i138)
+                  org.apache.thrift.protocol.TMap _map157 = iprot.readMapBegin();
+                  _val156 = new HashMap<String,Long>(2*_map157.size);
+                  for (int _i158 = 0; _i158 < _map157.size; ++_i158)
                   {
-                    String _key139; // required
-                    long _val140; // required
-                    _key139 = iprot.readString();
-                    _val140 = iprot.readI64();
-                    _val136.put(_key139, _val140);
+                    String _key159; // required
+                    long _val160; // required
+                    _key159 = iprot.readString();
+                    _val160 = iprot.readI64();
+                    _val156.put(_key159, _val160);
                   }
                   iprot.readMapEnd();
                 }
-                this.transferred.put(_key135, _val136);
+                this.transferred.put(_key155, _val156);
               }
               iprot.readMapEnd();
             }
@@ -581,15 +581,15 @@ public class ExecutorStats implements org.apache.thrift.TBase<ExecutorStats, Exe
       oprot.writeFieldBegin(EMITTED_FIELD_DESC);
       {
         oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.MAP, this.emitted.size()));
-        for (Map.Entry<String, Map<String,Long>> _iter141 : this.emitted.entrySet())
+        for (Map.Entry<String, Map<String,Long>> _iter161 : this.emitted.entrySet())
         {
-          oprot.writeString(_iter141.getKey());
+          oprot.writeString(_iter161.getKey());
           {
-            oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.I64, _iter141.getValue().size()));
-            for (Map.Entry<String, Long> _iter142 : _iter141.getValue().entrySet())
+            oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.I64, _iter161.getValue().size()));
+            for (Map.Entry<String, Long> _iter162 : _iter161.getValue().entrySet())
             {
-              oprot.writeString(_iter142.getKey());
-              oprot.writeI64(_iter142.getValue());
+              oprot.writeString(_iter162.getKey());
+              oprot.writeI64(_iter162.getValue());
             }
             oprot.writeMapEnd();
           }
@@ -602,15 +602,15 @@ public class ExecutorStats implements org.apache.thrift.TBase<ExecutorStats, Exe
       oprot.writeFieldBegin(TRANSFERRED_FIELD_DESC);
       {
         oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.MAP, this.transferred.size()));
-        for (Map.Entry<String, Map<String,Long>> _iter143 : this.transferred.entrySet())
+        for (Map.Entry<String, Map<String,Long>> _iter163 : this.transferred.entrySet())
         {
-          oprot.writeString(_iter143.getKey());
+          oprot.writeString(_iter163.getKey());
           {
-            oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.I64, _iter143.getValue().size()));
-            for (Map.Entry<String, Long> _iter144 : _iter143.getValue().entrySet())
+            oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.I64, _iter163.getValue().size()));
+            for (Map.Entry<String, Long> _iter164 : _iter163.getValue().entrySet())
             {
-              oprot.writeString(_iter144.getKey());
-              oprot.writeI64(_iter144.getValue());
+              oprot.writeString(_iter164.getKey());
+              oprot.writeI64(_iter164.getValue());
             }
             oprot.writeMapEnd();
           }

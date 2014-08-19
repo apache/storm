@@ -46,12 +46,14 @@ public class BoltStats implements org.apache.thrift.TBase<BoltStats, BoltStats._
   private static final org.apache.thrift.protocol.TField PROCESS_MS_AVG_FIELD_DESC = new org.apache.thrift.protocol.TField("process_ms_avg", org.apache.thrift.protocol.TType.MAP, (short)3);
   private static final org.apache.thrift.protocol.TField EXECUTED_FIELD_DESC = new org.apache.thrift.protocol.TField("executed", org.apache.thrift.protocol.TType.MAP, (short)4);
   private static final org.apache.thrift.protocol.TField EXECUTE_MS_AVG_FIELD_DESC = new org.apache.thrift.protocol.TField("execute_ms_avg", org.apache.thrift.protocol.TType.MAP, (short)5);
+  private static final org.apache.thrift.protocol.TField QUEUE_LENGTH_FIELD_DESC = new org.apache.thrift.protocol.TField("queue_length", org.apache.thrift.protocol.TType.MAP, (short)6);
 
   private Map<String,Map<GlobalStreamId,Long>> acked; // required
   private Map<String,Map<GlobalStreamId,Long>> failed; // required
   private Map<String,Map<GlobalStreamId,Double>> process_ms_avg; // required
   private Map<String,Map<GlobalStreamId,Long>> executed; // required
   private Map<String,Map<GlobalStreamId,Double>> execute_ms_avg; // required
+  private Map<String,Map<GlobalStreamId,Double>> queue_length; // required
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift.TFieldIdEnum {
@@ -59,7 +61,8 @@ public class BoltStats implements org.apache.thrift.TBase<BoltStats, BoltStats._
     FAILED((short)2, "failed"),
     PROCESS_MS_AVG((short)3, "process_ms_avg"),
     EXECUTED((short)4, "executed"),
-    EXECUTE_MS_AVG((short)5, "execute_ms_avg");
+    EXECUTE_MS_AVG((short)5, "execute_ms_avg"),
+    QUEUE_LENGTH((short)6, "queue_length");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -84,6 +87,8 @@ public class BoltStats implements org.apache.thrift.TBase<BoltStats, BoltStats._
           return EXECUTED;
         case 5: // EXECUTE_MS_AVG
           return EXECUTE_MS_AVG;
+        case 6: // QUEUE_LENGTH
+          return QUEUE_LENGTH;
         default:
           return null;
       }
@@ -153,6 +158,12 @@ public class BoltStats implements org.apache.thrift.TBase<BoltStats, BoltStats._
                 new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, GlobalStreamId.class), 
                 new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I64)))));
     tmpMap.put(_Fields.EXECUTE_MS_AVG, new org.apache.thrift.meta_data.FieldMetaData("execute_ms_avg", org.apache.thrift.TFieldRequirementType.REQUIRED, 
+        new org.apache.thrift.meta_data.MapMetaData(org.apache.thrift.protocol.TType.MAP, 
+            new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING), 
+            new org.apache.thrift.meta_data.MapMetaData(org.apache.thrift.protocol.TType.MAP, 
+                new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, GlobalStreamId.class), 
+                new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.DOUBLE)))));
+    tmpMap.put(_Fields.QUEUE_LENGTH, new org.apache.thrift.meta_data.FieldMetaData("queue_length", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
         new org.apache.thrift.meta_data.MapMetaData(org.apache.thrift.protocol.TType.MAP, 
             new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING), 
             new org.apache.thrift.meta_data.MapMetaData(org.apache.thrift.protocol.TType.MAP, 
@@ -314,6 +325,32 @@ public class BoltStats implements org.apache.thrift.TBase<BoltStats, BoltStats._
       }
       this.execute_ms_avg = __this__execute_ms_avg;
     }
+    if (other.is_set_queue_length()) {
+      Map<String,Map<GlobalStreamId,Double>> __this__queue_length = new HashMap<String,Map<GlobalStreamId,Double>>();
+      for (Map.Entry<String, Map<GlobalStreamId,Double>> other_element : other.queue_length.entrySet()) {
+
+        String other_element_key = other_element.getKey();
+        Map<GlobalStreamId,Double> other_element_value = other_element.getValue();
+
+        String __this__queue_length_copy_key = other_element_key;
+
+        Map<GlobalStreamId,Double> __this__queue_length_copy_value = new HashMap<GlobalStreamId,Double>();
+        for (Map.Entry<GlobalStreamId, Double> other_element_value_element : other_element_value.entrySet()) {
+
+          GlobalStreamId other_element_value_element_key = other_element_value_element.getKey();
+          Double other_element_value_element_value = other_element_value_element.getValue();
+
+          GlobalStreamId __this__queue_length_copy_value_copy_key = new GlobalStreamId(other_element_value_element_key);
+
+          Double __this__queue_length_copy_value_copy_value = other_element_value_element_value;
+
+          __this__queue_length_copy_value.put(__this__queue_length_copy_value_copy_key, __this__queue_length_copy_value_copy_value);
+        }
+
+        __this__queue_length.put(__this__queue_length_copy_key, __this__queue_length_copy_value);
+      }
+      this.queue_length = __this__queue_length;
+    }
   }
 
   public BoltStats deepCopy() {
@@ -327,6 +364,7 @@ public class BoltStats implements org.apache.thrift.TBase<BoltStats, BoltStats._
     this.process_ms_avg = null;
     this.executed = null;
     this.execute_ms_avg = null;
+    this.queue_length = null;
   }
 
   public int get_acked_size() {
@@ -499,6 +537,40 @@ public class BoltStats implements org.apache.thrift.TBase<BoltStats, BoltStats._
     }
   }
 
+  public int get_queue_length_size() {
+    return (this.queue_length == null) ? 0 : this.queue_length.size();
+  }
+
+  public void put_to_queue_length(String key, Map<GlobalStreamId,Double> val) {
+    if (this.queue_length == null) {
+      this.queue_length = new HashMap<String,Map<GlobalStreamId,Double>>();
+    }
+    this.queue_length.put(key, val);
+  }
+
+  public Map<String,Map<GlobalStreamId,Double>> get_queue_length() {
+    return this.queue_length;
+  }
+
+  public void set_queue_length(Map<String,Map<GlobalStreamId,Double>> queue_length) {
+    this.queue_length = queue_length;
+  }
+
+  public void unset_queue_length() {
+    this.queue_length = null;
+  }
+
+  /** Returns true if field queue_length is set (has been assigned a value) and false otherwise */
+  public boolean is_set_queue_length() {
+    return this.queue_length != null;
+  }
+
+  public void set_queue_length_isSet(boolean value) {
+    if (!value) {
+      this.queue_length = null;
+    }
+  }
+
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case ACKED:
@@ -541,6 +613,14 @@ public class BoltStats implements org.apache.thrift.TBase<BoltStats, BoltStats._
       }
       break;
 
+    case QUEUE_LENGTH:
+      if (value == null) {
+        unset_queue_length();
+      } else {
+        set_queue_length((Map<String,Map<GlobalStreamId,Double>>)value);
+      }
+      break;
+
     }
   }
 
@@ -560,6 +640,9 @@ public class BoltStats implements org.apache.thrift.TBase<BoltStats, BoltStats._
 
     case EXECUTE_MS_AVG:
       return get_execute_ms_avg();
+
+    case QUEUE_LENGTH:
+      return get_queue_length();
 
     }
     throw new IllegalStateException();
@@ -582,6 +665,8 @@ public class BoltStats implements org.apache.thrift.TBase<BoltStats, BoltStats._
       return is_set_executed();
     case EXECUTE_MS_AVG:
       return is_set_execute_ms_avg();
+    case QUEUE_LENGTH:
+      return is_set_queue_length();
     }
     throw new IllegalStateException();
   }
@@ -644,6 +729,15 @@ public class BoltStats implements org.apache.thrift.TBase<BoltStats, BoltStats._
         return false;
     }
 
+    boolean this_present_queue_length = true && this.is_set_queue_length();
+    boolean that_present_queue_length = true && that.is_set_queue_length();
+    if (this_present_queue_length || that_present_queue_length) {
+      if (!(this_present_queue_length && that_present_queue_length))
+        return false;
+      if (!this.queue_length.equals(that.queue_length))
+        return false;
+    }
+
     return true;
   }
 
@@ -675,6 +769,11 @@ public class BoltStats implements org.apache.thrift.TBase<BoltStats, BoltStats._
     builder.append(present_execute_ms_avg);
     if (present_execute_ms_avg)
       builder.append(execute_ms_avg);
+
+    boolean present_queue_length = true && (is_set_queue_length());
+    builder.append(present_queue_length);
+    if (present_queue_length)
+      builder.append(queue_length);
 
     return builder.toHashCode();
   }
@@ -733,6 +832,16 @@ public class BoltStats implements org.apache.thrift.TBase<BoltStats, BoltStats._
     }
     if (is_set_execute_ms_avg()) {
       lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.execute_ms_avg, typedOther.execute_ms_avg);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_queue_length()).compareTo(typedOther.is_set_queue_length());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_queue_length()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.queue_length, typedOther.queue_length);
       if (lastComparison != 0) {
         return lastComparison;
       }
@@ -914,6 +1023,38 @@ public class BoltStats implements org.apache.thrift.TBase<BoltStats, BoltStats._
             org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
           }
           break;
+        case 6: // QUEUE_LENGTH
+          if (field.type == org.apache.thrift.protocol.TType.MAP) {
+            {
+              org.apache.thrift.protocol.TMap _map85 = iprot.readMapBegin();
+              this.queue_length = new HashMap<String,Map<GlobalStreamId,Double>>(2*_map85.size);
+              for (int _i86 = 0; _i86 < _map85.size; ++_i86)
+              {
+                String _key87; // required
+                Map<GlobalStreamId,Double> _val88; // required
+                _key87 = iprot.readString();
+                {
+                  org.apache.thrift.protocol.TMap _map89 = iprot.readMapBegin();
+                  _val88 = new HashMap<GlobalStreamId,Double>(2*_map89.size);
+                  for (int _i90 = 0; _i90 < _map89.size; ++_i90)
+                  {
+                    GlobalStreamId _key91; // required
+                    double _val92; // required
+                    _key91 = new GlobalStreamId();
+                    _key91.read(iprot);
+                    _val92 = iprot.readDouble();
+                    _val88.put(_key91, _val92);
+                  }
+                  iprot.readMapEnd();
+                }
+                this.queue_length.put(_key87, _val88);
+              }
+              iprot.readMapEnd();
+            }
+          } else { 
+            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
         default:
           org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
       }
@@ -931,15 +1072,15 @@ public class BoltStats implements org.apache.thrift.TBase<BoltStats, BoltStats._
       oprot.writeFieldBegin(ACKED_FIELD_DESC);
       {
         oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.MAP, this.acked.size()));
-        for (Map.Entry<String, Map<GlobalStreamId,Long>> _iter85 : this.acked.entrySet())
+        for (Map.Entry<String, Map<GlobalStreamId,Long>> _iter93 : this.acked.entrySet())
         {
-          oprot.writeString(_iter85.getKey());
+          oprot.writeString(_iter93.getKey());
           {
-            oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRUCT, org.apache.thrift.protocol.TType.I64, _iter85.getValue().size()));
-            for (Map.Entry<GlobalStreamId, Long> _iter86 : _iter85.getValue().entrySet())
+            oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRUCT, org.apache.thrift.protocol.TType.I64, _iter93.getValue().size()));
+            for (Map.Entry<GlobalStreamId, Long> _iter94 : _iter93.getValue().entrySet())
             {
-              _iter86.getKey().write(oprot);
-              oprot.writeI64(_iter86.getValue());
+              _iter94.getKey().write(oprot);
+              oprot.writeI64(_iter94.getValue());
             }
             oprot.writeMapEnd();
           }
@@ -952,15 +1093,15 @@ public class BoltStats implements org.apache.thrift.TBase<BoltStats, BoltStats._
       oprot.writeFieldBegin(FAILED_FIELD_DESC);
       {
         oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.MAP, this.failed.size()));
-        for (Map.Entry<String, Map<GlobalStreamId,Long>> _iter87 : this.failed.entrySet())
+        for (Map.Entry<String, Map<GlobalStreamId,Long>> _iter95 : this.failed.entrySet())
         {
-          oprot.writeString(_iter87.getKey());
+          oprot.writeString(_iter95.getKey());
           {
-            oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRUCT, org.apache.thrift.protocol.TType.I64, _iter87.getValue().size()));
-            for (Map.Entry<GlobalStreamId, Long> _iter88 : _iter87.getValue().entrySet())
+            oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRUCT, org.apache.thrift.protocol.TType.I64, _iter95.getValue().size()));
+            for (Map.Entry<GlobalStreamId, Long> _iter96 : _iter95.getValue().entrySet())
             {
-              _iter88.getKey().write(oprot);
-              oprot.writeI64(_iter88.getValue());
+              _iter96.getKey().write(oprot);
+              oprot.writeI64(_iter96.getValue());
             }
             oprot.writeMapEnd();
           }
@@ -973,15 +1114,15 @@ public class BoltStats implements org.apache.thrift.TBase<BoltStats, BoltStats._
       oprot.writeFieldBegin(PROCESS_MS_AVG_FIELD_DESC);
       {
         oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.MAP, this.process_ms_avg.size()));
-        for (Map.Entry<String, Map<GlobalStreamId,Double>> _iter89 : this.process_ms_avg.entrySet())
+        for (Map.Entry<String, Map<GlobalStreamId,Double>> _iter97 : this.process_ms_avg.entrySet())
         {
-          oprot.writeString(_iter89.getKey());
+          oprot.writeString(_iter97.getKey());
           {
-            oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRUCT, org.apache.thrift.protocol.TType.DOUBLE, _iter89.getValue().size()));
-            for (Map.Entry<GlobalStreamId, Double> _iter90 : _iter89.getValue().entrySet())
+            oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRUCT, org.apache.thrift.protocol.TType.DOUBLE, _iter97.getValue().size()));
+            for (Map.Entry<GlobalStreamId, Double> _iter98 : _iter97.getValue().entrySet())
             {
-              _iter90.getKey().write(oprot);
-              oprot.writeDouble(_iter90.getValue());
+              _iter98.getKey().write(oprot);
+              oprot.writeDouble(_iter98.getValue());
             }
             oprot.writeMapEnd();
           }
@@ -994,15 +1135,15 @@ public class BoltStats implements org.apache.thrift.TBase<BoltStats, BoltStats._
       oprot.writeFieldBegin(EXECUTED_FIELD_DESC);
       {
         oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.MAP, this.executed.size()));
-        for (Map.Entry<String, Map<GlobalStreamId,Long>> _iter91 : this.executed.entrySet())
+        for (Map.Entry<String, Map<GlobalStreamId,Long>> _iter99 : this.executed.entrySet())
         {
-          oprot.writeString(_iter91.getKey());
+          oprot.writeString(_iter99.getKey());
           {
-            oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRUCT, org.apache.thrift.protocol.TType.I64, _iter91.getValue().size()));
-            for (Map.Entry<GlobalStreamId, Long> _iter92 : _iter91.getValue().entrySet())
+            oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRUCT, org.apache.thrift.protocol.TType.I64, _iter99.getValue().size()));
+            for (Map.Entry<GlobalStreamId, Long> _iter100 : _iter99.getValue().entrySet())
             {
-              _iter92.getKey().write(oprot);
-              oprot.writeI64(_iter92.getValue());
+              _iter100.getKey().write(oprot);
+              oprot.writeI64(_iter100.getValue());
             }
             oprot.writeMapEnd();
           }
@@ -1015,15 +1156,15 @@ public class BoltStats implements org.apache.thrift.TBase<BoltStats, BoltStats._
       oprot.writeFieldBegin(EXECUTE_MS_AVG_FIELD_DESC);
       {
         oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.MAP, this.execute_ms_avg.size()));
-        for (Map.Entry<String, Map<GlobalStreamId,Double>> _iter93 : this.execute_ms_avg.entrySet())
+        for (Map.Entry<String, Map<GlobalStreamId,Double>> _iter101 : this.execute_ms_avg.entrySet())
         {
-          oprot.writeString(_iter93.getKey());
+          oprot.writeString(_iter101.getKey());
           {
-            oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRUCT, org.apache.thrift.protocol.TType.DOUBLE, _iter93.getValue().size()));
-            for (Map.Entry<GlobalStreamId, Double> _iter94 : _iter93.getValue().entrySet())
+            oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRUCT, org.apache.thrift.protocol.TType.DOUBLE, _iter101.getValue().size()));
+            for (Map.Entry<GlobalStreamId, Double> _iter102 : _iter101.getValue().entrySet())
             {
-              _iter94.getKey().write(oprot);
-              oprot.writeDouble(_iter94.getValue());
+              _iter102.getKey().write(oprot);
+              oprot.writeDouble(_iter102.getValue());
             }
             oprot.writeMapEnd();
           }
@@ -1031,6 +1172,29 @@ public class BoltStats implements org.apache.thrift.TBase<BoltStats, BoltStats._
         oprot.writeMapEnd();
       }
       oprot.writeFieldEnd();
+    }
+    if (this.queue_length != null) {
+      if (is_set_queue_length()) {
+        oprot.writeFieldBegin(QUEUE_LENGTH_FIELD_DESC);
+        {
+          oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.MAP, this.queue_length.size()));
+          for (Map.Entry<String, Map<GlobalStreamId,Double>> _iter103 : this.queue_length.entrySet())
+          {
+            oprot.writeString(_iter103.getKey());
+            {
+              oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRUCT, org.apache.thrift.protocol.TType.DOUBLE, _iter103.getValue().size()));
+              for (Map.Entry<GlobalStreamId, Double> _iter104 : _iter103.getValue().entrySet())
+              {
+                _iter104.getKey().write(oprot);
+                oprot.writeDouble(_iter104.getValue());
+              }
+              oprot.writeMapEnd();
+            }
+          }
+          oprot.writeMapEnd();
+        }
+        oprot.writeFieldEnd();
+      }
     }
     oprot.writeFieldStop();
     oprot.writeStructEnd();
@@ -1080,6 +1244,16 @@ public class BoltStats implements org.apache.thrift.TBase<BoltStats, BoltStats._
       sb.append(this.execute_ms_avg);
     }
     first = false;
+    if (is_set_queue_length()) {
+      if (!first) sb.append(", ");
+      sb.append("queue_length:");
+      if (this.queue_length == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.queue_length);
+      }
+      first = false;
+    }
     sb.append(")");
     return sb.toString();
   }
