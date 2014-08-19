@@ -167,6 +167,7 @@
 
 (defn aggregate-bolt-stats
   [stats-seq include-sys?]
+  (log-message "Stats: " stats-seq)
   (let [stats-seq (collectify stats-seq)]
     (merge (pre-process (aggregate-common-stats stats-seq) include-sys?)
            {:acked

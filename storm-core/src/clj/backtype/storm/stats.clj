@@ -19,7 +19,7 @@
             NotAliveException AlreadyAliveException InvalidTopologyException GlobalStreamId
             ClusterSummary TopologyInfo TopologySummary ExecutorSummary ExecutorStats ExecutorSpecificStats
             SpoutStats BoltStats ErrorInfo SupervisorSummary])
-  (:use [backtype.storm util])
+  (:use [backtype.storm util log])
   (:use [clojure.math.numeric-tower :only [ceil]]))
 
 ;;TODO: consider replacing this with some sort of RRD
@@ -166,11 +166,11 @@
 
 (def BOLT-FIELDS [:acked :failed :process-latencies :executed :execute-latencies])
 ;;acked and failed count individual tuples
-(defrecord BoltExecutorStats [common acked failed process-latencies executed execute-latencies])
+(defrecord BoltExecutorStats [common acked failed process-latencies executed execute-latencies queue-length])
 
 (def SPOUT-FIELDS [:acked :failed :complete-latencies])
 ;;acked and failed count tuple completion
-(defrecord SpoutExecutorStats [common acked failed complete-latencies])
+(defrecord SpoutExecutorStats [common acked failed complete-latencies queue-length])
 
 (def NUM-STAT-BUCKETS 20)
 ;; 10 minutes, 3 hours, 1 day
@@ -191,6 +191,7 @@
     (atom (apply keyed-counter-rolling-window-set NUM-STAT-BUCKETS STAT-BUCKETS))
     (atom (apply keyed-avg-rolling-window-set NUM-STAT-BUCKETS STAT-BUCKETS))
     (atom (apply keyed-counter-rolling-window-set NUM-STAT-BUCKETS STAT-BUCKETS))
+    (atom (apply keyed-avg-rolling-window-set NUM-STAT-BUCKETS STAT-BUCKETS))
     (atom (apply keyed-avg-rolling-window-set NUM-STAT-BUCKETS STAT-BUCKETS))))
 
 (defn mk-spout-stats
@@ -199,6 +200,7 @@
     (mk-common-stats rate)
     (atom (apply keyed-counter-rolling-window-set NUM-STAT-BUCKETS STAT-BUCKETS))
     (atom (apply keyed-counter-rolling-window-set NUM-STAT-BUCKETS STAT-BUCKETS))
+    (atom (apply keyed-avg-rolling-window-set NUM-STAT-BUCKETS STAT-BUCKETS))
     (atom (apply keyed-avg-rolling-window-set NUM-STAT-BUCKETS STAT-BUCKETS))))
 
 (defmacro update-executor-stat!
@@ -217,6 +219,11 @@
 (defn transferred-tuples!
   [stats stream amt]
   (update-executor-stat! stats [:common :transferred] stream (* (stats-rate stats) amt)))
+
+(defn queue-consumed! 
+  [stats component queue-length]
+  (log-message "Stats: " stats "Component: " component)
+  (update-executor-stat! stats :queue component queue-length))
 
 (defn bolt-execute-tuple!
   [^BoltExecutorStats stats component stream latency-ms]

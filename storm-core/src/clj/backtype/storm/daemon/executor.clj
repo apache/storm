@@ -257,7 +257,8 @@
             (worker-transfer-fn serializer alist)
             (.setObject cached-emit (ArrayList.))
             )))
-      :kill-fn (:report-error-and-die executor-data))))
+      :kill-fn (:report-error-and-die executor-data)
+      :executor-data executor-data)))
 
 (defn setup-metrics! [executor-data]
   (let [{:keys [storm-conf receive-queue worker-context interval->task->metric-registry]} executor-data
