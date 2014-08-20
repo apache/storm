@@ -231,8 +231,7 @@
    :emitted (aggregate-count-streams (:emitted stats))
    :transferred (aggregate-count-streams (:transferred stats))
    :complete-latencies (aggregate-avg-streams (:complete-latencies stats)
-                                              (:acked stats))
-   :queue-length (aggregate-count-streams (:queue-length stats))})
+                                              (:acked stats))})
 
 (defn spout-summary?
   [topology s]

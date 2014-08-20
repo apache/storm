@@ -19,7 +19,7 @@
             NotAliveException AlreadyAliveException InvalidTopologyException GlobalStreamId
             ClusterSummary TopologyInfo TopologySummary ExecutorSummary ExecutorStats ExecutorSpecificStats
             SpoutStats BoltStats ErrorInfo SupervisorSummary])
-  (:use [backtype.storm util log])
+  (:use [backtype.storm util])
   (:use [clojure.math.numeric-tower :only [ceil]]))
 
 ;;TODO: consider replacing this with some sort of RRD
@@ -220,7 +220,7 @@
   [stats stream amt]
   (update-executor-stat! stats [:common :transferred] stream (* (stats-rate stats) amt)))
 
-(defn queue-consumed! 
+(defn queue-consumed!
   [stats component queue-length]
   (when (and stats component queue-length)
     (update-executor-stat! stats :queue-length component queue-length)))

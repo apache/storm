@@ -22,16 +22,14 @@
                                 ^MultiReducedMetric complete-latency
                                 ^MultiCountMetric fail-count
                                 ^MultiCountMetric emit-count
-                                ^MultiCountMetric transfer-count
-                                ^MultiReducedMetric queue-count])
+                                ^MultiCountMetric transfer-count])
 (defrecord BuiltinBoltMetrics [^MultiCountMetric ack-count
                                ^MultiReducedMetric process-latency
                                ^MultiCountMetric fail-count
                                ^MultiCountMetric execute-count
                                ^MultiReducedMetric execute-latency
                                ^MultiCountMetric emit-count
-                               ^MultiCountMetric transfer-count
-                               ^MultiReducedMetric queue-count])
+                               ^MultiCountMetric transfer-count])
 
 (defn make-data [executor-type]
   (condp = executor-type
@@ -39,16 +37,14 @@
                                  (MultiReducedMetric. (MeanReducer.))
                                  (MultiCountMetric.)
                                  (MultiCountMetric.)
-                                 (MultiCountMetric.)
-                                 (MultiReducedMetric. (MeanReducer.)))
+                                 (MultiCountMetric.))
     :bolt (BuiltinBoltMetrics. (MultiCountMetric.)
                                (MultiReducedMetric. (MeanReducer.))
                                (MultiCountMetric.)
                                (MultiCountMetric.)
                                (MultiReducedMetric. (MeanReducer.))
                                (MultiCountMetric.)
-                               (MultiCountMetric.)
-                               (MultiReducedMetric. (MeanReducer.)))))
+                               (MultiCountMetric.))))
 
 (defn register-all [builtin-metrics  storm-conf topology-context]
   (doseq [[kw imetric] builtin-metrics]
@@ -86,6 +82,3 @@
 
 (defn transferred-tuple! [m stats stream num-out-tasks]
   (-> m :transfer-count (.scope stream) (.incrBy (* num-out-tasks (stats-rate stats)))))
-
-(defn queue-consumed! [m stats comp-id queue-length]
-  (-> m .queue-count (.scope comp-id) (.update queue-length)))
