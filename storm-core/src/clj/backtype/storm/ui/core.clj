@@ -206,10 +206,7 @@
             (aggregate-averages (map #(.. ^ExecutorStats % get_specific get_spout get_complete_ms_avg)
                                      stats-seq)
                                 (map #(.. ^ExecutorStats % get_specific get_spout get_acked)
-                                     stats-seq))
-            :queue-length
-            (aggregate-counts (map #(.. ^ExecutorStats % get_specific get_spout get_queue_length)
-                                   stats-seq))})))
+                                     stats-seq))})))
 
 (defn aggregate-bolt-streams
   [stats]
