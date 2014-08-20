@@ -167,7 +167,6 @@
 
 (defn aggregate-bolt-stats
   [stats-seq include-sys?]
-  (log-message "Stats: " stats-seq)
   (let [stats-seq (collectify stats-seq)]
     (merge (pre-process (aggregate-common-stats stats-seq) include-sys?)
            {:acked
@@ -188,7 +187,10 @@
             (aggregate-averages (map #(.. ^ExecutorStats % get_specific get_bolt get_execute_ms_avg)
                                      stats-seq)
                                 (map #(.. ^ExecutorStats % get_specific get_bolt get_executed)
-                                     stats-seq))})))
+                                     stats-seq))
+            :queue-length
+            (aggregate-counts (map #(.. ^ExecutorStats % get_specific get_bolt get_queue_length)
+                                   stats-seq))})))
 
 (defn aggregate-spout-stats
   [stats-seq include-sys?]
@@ -204,7 +206,10 @@
             (aggregate-averages (map #(.. ^ExecutorStats % get_specific get_spout get_complete_ms_avg)
                                      stats-seq)
                                 (map #(.. ^ExecutorStats % get_specific get_spout get_acked)
-                                     stats-seq))})))
+                                     stats-seq))
+            :queue-length
+            (aggregate-counts (map #(.. ^ExecutorStats % get_specific get_spout get_queue_length)
+                                   stats-seq))})))
 
 (defn aggregate-bolt-streams
   [stats]
@@ -216,7 +221,8 @@
                                              (:acked stats))
    :executed (aggregate-count-streams (:executed stats))
    :execute-latencies (aggregate-avg-streams (:execute-latencies stats)
-                                             (:executed stats))})
+                                             (:executed stats))
+   :queue-length (aggregate-count-streams (:queue-length stats))})
 
 (defn aggregate-spout-streams
   [stats]
@@ -225,7 +231,8 @@
    :emitted (aggregate-count-streams (:emitted stats))
    :transferred (aggregate-count-streams (:transferred stats))
    :complete-latencies (aggregate-avg-streams (:complete-latencies stats)
-                                              (:acked stats))})
+                                              (:acked stats))
+   :queue-length (aggregate-count-streams (:queue-length stats))})
 
 (defn spout-summary?
   [topology s]
@@ -777,7 +784,8 @@
      "processLatency" (float-str (:process-latencies stats))
      "acked" (nil-to-zero (:acked stats))
      "failed" (nil-to-zero (:failed stats))
-     "workerLogLink" (worker-log-link (.get_host e) (.get_port e))}))
+     "workerLogLink" (worker-log-link (.get_host e) (.get_port e))
+     "queueLength" (float-str (:queue-length stats))}))
 
 (defn bolt-stats
   [window ^TopologyInfo topology-info component executors include-sys?]

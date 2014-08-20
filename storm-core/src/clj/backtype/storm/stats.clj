@@ -164,11 +164,11 @@
 (def COMMON-FIELDS [:emitted :transferred])
 (defrecord CommonStats [emitted transferred rate])
 
-(def BOLT-FIELDS [:acked :failed :process-latencies :executed :execute-latencies])
+(def BOLT-FIELDS [:acked :failed :process-latencies :executed :execute-latencies :queue-length])
 ;;acked and failed count individual tuples
 (defrecord BoltExecutorStats [common acked failed process-latencies executed execute-latencies queue-length])
 
-(def SPOUT-FIELDS [:acked :failed :complete-latencies])
+(def SPOUT-FIELDS [:acked :failed :complete-latencies :queue-length])
 ;;acked and failed count tuple completion
 (defrecord SpoutExecutorStats [common acked failed complete-latencies queue-length])
 
@@ -222,8 +222,8 @@
 
 (defn queue-consumed! 
   [stats component queue-length]
-  (log-message "Stats: " stats "Component: " component)
-  (update-executor-stat! stats :queue component queue-length))
+  (when (and stats component queue-length)
+    (update-executor-stat! stats :queue-length component queue-length)))
 
 (defn bolt-execute-tuple!
   [^BoltExecutorStats stats component stream latency-ms]
@@ -327,19 +327,23 @@
 (defmethod thriftify-specific-stats :bolt
   [stats]
   (ExecutorSpecificStats/bolt
-    (BoltStats.
-      (window-set-converter (:acked stats) to-global-stream-id)
-      (window-set-converter (:failed stats) to-global-stream-id)
-      (window-set-converter (:process-latencies stats) to-global-stream-id)
-      (window-set-converter (:executed stats) to-global-stream-id)
-      (window-set-converter (:execute-latencies stats) to-global-stream-id))))
+   (doto
+       (BoltStats.
+        (window-set-converter (:acked stats) to-global-stream-id)
+        (window-set-converter (:failed stats) to-global-stream-id)
+        (window-set-converter (:process-latencies stats) to-global-stream-id)
+        (window-set-converter (:executed stats) to-global-stream-id)
+        (window-set-converter (:execute-latencies stats) to-global-stream-id))
+     (.set_queue_length (window-set-converter (:queue-length stats))))))
 
 (defmethod thriftify-specific-stats :spout
   [stats]
   (ExecutorSpecificStats/spout
-    (SpoutStats. (window-set-converter (:acked stats))
-                 (window-set-converter (:failed stats))
-                 (window-set-converter (:complete-latencies stats)))))
+   (doto
+       (SpoutStats. (window-set-converter (:acked stats))
+                    (window-set-converter (:failed stats))
+                    (window-set-converter (:complete-latencies stats)))
+     (.set_queue_length (window-set-converter (:queue-length stats))))))
 
 (defn thriftify-executor-stats
   [stats]
