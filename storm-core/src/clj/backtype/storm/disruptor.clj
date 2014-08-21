@@ -91,14 +91,9 @@
 
 (defnk consume-loop*
   [^DisruptorQueue queue handler
-   :kill-fn (fn [error] (exit-process! 1 "Async loop died!"))
-   :executor-data nil]
+   :kill-fn (fn [error] (exit-process! 1 "Async loop died!"))]
   (let [ret (async-loop
-              (fn []
-                (stats/queue-consumed! (:stats executor-data)
-                                       (:component-id executor-data)
-                                       (.population queue))
-                (consume-batch-when-available queue handler) 0)
+              (fn [](consume-batch-when-available queue handler) 0)
               :kill-fn kill-fn
               :thread-name (.getName queue))]
      (consumer-started! queue) ret))

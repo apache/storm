@@ -220,7 +220,7 @@
   [stats stream amt]
   (update-executor-stat! stats [:common :transferred] stream (* (stats-rate stats) amt)))
 
-(defn queue-consumed!
+(defn update-queue!
   [stats component queue-length]
   (when (and stats component queue-length)
     (update-executor-stat! stats :queue-length component queue-length)))

@@ -157,7 +157,8 @@
 
 (defprotocol RunningExecutor
   (render-stats [this])
-  (get-executor-id [this]))
+  (get-executor-id [this])
+  (update-queue-stats [this]))
 
 (defn throttled-report-error-fn [executor]
   (let [storm-conf (:storm-conf executor)
@@ -257,8 +258,7 @@
             (worker-transfer-fn serializer alist)
             (.setObject cached-emit (ArrayList.))
             )))
-      :kill-fn (:report-error-and-die executor-data)
-      :executor-data executor-data)))
+      :kill-fn (:report-error-and-die executor-data))))
 
 (defn setup-metrics! [executor-data]
   (let [{:keys [storm-conf receive-queue worker-context interval->task->metric-registry]} executor-data
@@ -344,6 +344,10 @@
         (stats/render-stats! (:stats executor-data)))
       (get-executor-id [this]
         executor-id )
+      (update-queue-stats [this]
+        (stats/update-queue! (:stats executor-data)
+                             (:component-id executor-data)
+                             (.population (:receive-queue executor-data))))
       Shutdownable
       (shutdown
         [this]
