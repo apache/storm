@@ -80,7 +80,7 @@ public class ShellBolt implements IBolt {
 
     private Thread _readerThread;
     private Thread _writerThread;
-    
+
     private TopologyContext _context;
 
     public ShellBolt(ShellComponent component) {
@@ -272,7 +272,7 @@ public class ShellBolt implements IBolt {
         if (name.isEmpty()) {
             throw new RuntimeException("Receive Metrics name is empty");
         }
-        
+
         //get metric by name
         IMetric iMetric = _context.getRegisteredMetricByName(name);
         if (iMetric == null) {
@@ -282,7 +282,7 @@ public class ShellBolt implements IBolt {
             throw new RuntimeException("Metric["+name+"] is not IShellMetric, can not call by RPC");
         }
         IShellMetric iShellMetric = (IShellMetric)iMetric;
-        
+
         //call updateMetricFromRPC with params
         Object paramsObj = shellMsg.getMetricParams();
         try {
@@ -291,7 +291,7 @@ public class ShellBolt implements IBolt {
             throw re;
         } catch (Exception e) {
             throw new RuntimeException(e);
-        }       
+        }
     }
 
     private void die(Throwable exception) {
@@ -299,7 +299,7 @@ public class ShellBolt implements IBolt {
         _exception = new RuntimeException(processInfo, exception);
         LOG.error("Halting process: ShellBolt died.", exception);
         _collector.reportError(exception);
-        System.exit(11);
+        System.exit(0);
     }
 
 }
