@@ -2,10 +2,10 @@ package com.alibaba.jstorm.ui.model;
 
 import java.io.Serializable;
 
-import com.alibaba.jstorm.common.stats.StatBuckets;
-
 import backtype.storm.generated.TaskSummary;
 import backtype.storm.generated.WorkerSummary;
+
+import com.alibaba.jstorm.common.stats.StatBuckets;
 
 /**
  * mainpage:SupervisorSummary
@@ -21,9 +21,6 @@ public class WorkerSumm implements Serializable {
 	private String uptime;
 	private String tasks;
 	private String components;
-	private String cpuNum;
-	private String memNum;
-	private String disks;
 
 	public WorkerSumm() {
 	}
@@ -34,11 +31,7 @@ public class WorkerSumm implements Serializable {
 
 		StringBuilder taskSB = new StringBuilder();
 		StringBuilder componentSB = new StringBuilder();
-		StringBuilder diskSB = new StringBuilder();
 		boolean isFirst = true;
-
-		int cpuNum = 0;
-		int memNum = 0;
 
 		int minUptime = 0;
 		for (TaskSummary taskSummary : workerSummary.get_tasks()) {
@@ -52,13 +45,6 @@ public class WorkerSumm implements Serializable {
 			taskSB.append(taskSummary.get_task_id());
 			componentSB.append(taskSummary.get_component_id());
 
-			String disk = taskSummary.get_disk();
-			if (disk != null && disk.isEmpty() != false) {
-				diskSB.append(disk + " ");
-			}
-			cpuNum += taskSummary.get_cpu();
-			memNum += taskSummary.get_mem();
-
 			if (minUptime < taskSummary.get_uptime_secs()) {
 				minUptime = taskSummary.get_uptime_secs();
 			}
@@ -69,9 +55,7 @@ public class WorkerSumm implements Serializable {
 		this.uptime = StatBuckets.prettyUptimeStr(minUptime);
 		this.tasks = taskSB.toString();
 		this.components = componentSB.toString();
-		this.cpuNum = String.valueOf(cpuNum);
-		this.memNum = String.valueOf(memNum);
-		this.disks = diskSB.toString();
+
 	}
 
 	public String getPort() {
@@ -112,30 +96,6 @@ public class WorkerSumm implements Serializable {
 
 	public void setComponents(String components) {
 		this.components = components;
-	}
-
-	public String getCpuNum() {
-		return cpuNum;
-	}
-
-	public void setCpuNum(String cpuNum) {
-		this.cpuNum = cpuNum;
-	}
-
-	public String getMemNum() {
-		return memNum;
-	}
-
-	public void setMemNum(String memNum) {
-		this.memNum = memNum;
-	}
-
-	public String getDisks() {
-		return disks;
-	}
-
-	public void setDisks(String disks) {
-		this.disks = disks;
 	}
 
 }

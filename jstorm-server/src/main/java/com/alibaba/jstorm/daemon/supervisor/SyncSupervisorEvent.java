@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -26,7 +25,7 @@ import com.alibaba.jstorm.cluster.StormClusterState;
 import com.alibaba.jstorm.cluster.StormConfig;
 import com.alibaba.jstorm.event.EventManager;
 import com.alibaba.jstorm.event.EventManagerZkPusher;
-import com.alibaba.jstorm.resource.ResourceAssignment;
+import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
 import com.alibaba.jstorm.task.Assignment;
 import com.alibaba.jstorm.task.LocalAssignment;
 import com.alibaba.jstorm.utils.JStormServerUtils;
@@ -345,56 +344,19 @@ class SyncSupervisorEvent extends RunnableCallback {
 			return portTasks;
 		}
 
-		Map<Integer, ResourceAssignment> taskToResource = assignmenInfo
-				.getTaskToResource();
-		if (taskToResource == null) {
-			LOG.error("No taskToWorkerSlot of assignement's " + assignmenInfo);
+		Set<ResourceWorkerSlot> workers = assignmenInfo.getWorkers();
+		if (workers == null) {
+			LOG.error("No worker of assignement's " + assignmenInfo);
 			return portTasks;
 		}
 
-		for (Entry<Integer, ResourceAssignment> entry : taskToResource
-				.entrySet()) {
-
-			Integer taskId = entry.getKey();
-
-			ResourceAssignment resource = entry.getValue();
-
-			Integer port = resource.getPort();
-
-			String node = resource.getSupervisorId();
-
-			if (supervisorId.equals(node) == false) {
-				// not localhost
+		for (ResourceWorkerSlot worker : workers) {
+			if (!supervisorId.equals(worker.getNodeId()))
 				continue;
-			}
-
-			if (portTasks.containsKey(port)) {
-
-				LocalAssignment la = portTasks.get(port);
-
-				Set<Integer> taskIds = la.getTaskIds();
-
-				taskIds.add(taskId);
-
-				la.addMemSlotNum(resource.getMemSlotNum());
-
-				la.addCpuSlotNum(resource.getCpuSlotNum());
-
-			} else {
-
-				Set<Integer> taskIds = new HashSet<Integer>();
-
-				taskIds.add(taskId);
-
-				LocalAssignment la = new LocalAssignment(topologyId, taskIds,
-						stormBase.getStormName());
-
-				la.addMemSlotNum(resource.getMemSlotNum());
-
-				la.addCpuSlotNum(resource.getCpuSlotNum());
-
-				portTasks.put(port, la);
-			}
+			portTasks.put(worker.getPort(),
+					new LocalAssignment(topologyId, worker.getTasks(),
+							stormBase.getStormName(), worker.getMemSize(),
+							worker.getCpu(), worker.getJvm()));
 		}
 
 		return portTasks;
@@ -413,16 +375,13 @@ class SyncSupervisorEvent extends RunnableCallback {
 			throws Exception {
 
 		Map<String, String> rtn = new HashMap<String, String>();
-
 		for (Entry<String, Assignment> entry : assignments.entrySet()) {
 			String topologyid = entry.getKey();
 			Assignment assignmenInfo = entry.getValue();
 
-			Map<Integer, ResourceAssignment> taskToNodePort = assignmenInfo
-					.getTaskToResource();
-			for (Entry<Integer, ResourceAssignment> nodePort : taskToNodePort
-					.entrySet()) {
-				String node = nodePort.getValue().getSupervisorId();
+			Set<ResourceWorkerSlot> workers = assignmenInfo.getWorkers();
+			for (ResourceWorkerSlot worker : workers) {
+				String node = worker.getNodeId();
 				if (supervisorId.equals(node)) {
 					rtn.put(topologyid, assignmenInfo.getMasterCodeDir());
 					break;

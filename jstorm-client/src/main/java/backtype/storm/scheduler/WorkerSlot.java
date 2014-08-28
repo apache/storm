@@ -1,12 +1,20 @@
 package backtype.storm.scheduler;
 
-public class WorkerSlot implements Comparable<WorkerSlot> {
+import java.io.Serializable;
+
+public class WorkerSlot implements Comparable<WorkerSlot>, Serializable {
+
+	private static final long serialVersionUID = -4451854497340313268L;
 	String nodeId;
 	int port;
 
 	public WorkerSlot(String nodeId, Number port) {
 		this.nodeId = nodeId;
 		this.port = port.intValue();
+	}
+	
+	public WorkerSlot() {
+		
 	}
 
 	public String getNodeId() {
@@ -17,15 +25,40 @@ public class WorkerSlot implements Comparable<WorkerSlot> {
 		return port;
 	}
 
-	@Override
-	public int hashCode() {
-		return nodeId.hashCode() + 13 * ((Integer) port).hashCode();
+	public void setNodeId(String nodeId) {
+		this.nodeId = nodeId;
+	}
+
+	public void setPort(int port) {
+		this.port = port;
 	}
 
 	@Override
-	public boolean equals(Object o) {
-		WorkerSlot other = (WorkerSlot) o;
-		return this.port == other.port && this.nodeId.equals(other.nodeId);
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((nodeId == null) ? 0 : nodeId.hashCode());
+		result = prime * result + port;
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		WorkerSlot other = (WorkerSlot) obj;
+		if (nodeId == null) {
+			if (other.nodeId != null)
+				return false;
+		} else if (!nodeId.equals(other.nodeId))
+			return false;
+		if (port != other.port)
+			return false;
+		return true;
 	}
 
 	@Override

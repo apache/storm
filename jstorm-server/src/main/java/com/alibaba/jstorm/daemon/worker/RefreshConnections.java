@@ -17,7 +17,7 @@ import backtype.storm.scheduler.WorkerSlot;
 
 import com.alibaba.jstorm.callback.RunnableCallback;
 import com.alibaba.jstorm.cluster.StormClusterState;
-import com.alibaba.jstorm.resource.ResourceAssignment;
+import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
 import com.alibaba.jstorm.task.Assignment;
 import com.alibaba.jstorm.utils.JStormUtils;
 
@@ -53,8 +53,8 @@ public class RefreshConnections extends RunnableCallback {
 	private ConcurrentHashMap<Integer, WorkerSlot> taskNodeport;
 
 	private Integer frequence;
-	
-	private String  supervisorId;
+
+	private String supervisorId;
 
 	// private ReentrantReadWriteLock endpoint_socket_lock;
 
@@ -90,8 +90,10 @@ public class RefreshConnections extends RunnableCallback {
 			// @@@ does lock need?
 			// endpoint_socket_lock.writeLock().lock();
 			//
+
 			synchronized (this) {
-				Assignment assignment = zkCluster.assignment_info(topologyId, this);
+				Assignment assignment = zkCluster.assignment_info(topologyId,
+						this);
 				if (assignment == null) {
 					String errMsg = "Failed to get Assignment of " + topologyId;
 					LOG.error(errMsg);
@@ -99,14 +101,14 @@ public class RefreshConnections extends RunnableCallback {
 					return;
 				}
 
-				Map<Integer, ResourceAssignment> taskToResource = assignment
-						.getTaskToResource();
-				if (taskToResource == null) {
-					String errMsg = "Failed to get taskToResource of " + topologyId;
+				Set<ResourceWorkerSlot> workers = assignment.getWorkers();
+				if (workers == null) {
+					String errMsg = "Failed to get taskToResource of "
+							+ topologyId;
 					LOG.error(errMsg);
 					return;
 				}
-				workerData.getTaskToResource().putAll(taskToResource);
+				workerData.getWorkerToResource().addAll(workers);
 
 				Map<Integer, WorkerSlot> my_assignment = new HashMap<Integer, WorkerSlot>();
 
@@ -114,23 +116,18 @@ public class RefreshConnections extends RunnableCallback {
 
 				// only reserve outboundTasks
 				Set<WorkerSlot> need_connections = new HashSet<WorkerSlot>();
-				
-				Set<Integer>    localNodeTasks = new HashSet<Integer>();
 
-				if (taskToResource != null && outboundTasks != null) {
-					for (Entry<Integer, ResourceAssignment> mm : taskToResource
-							.entrySet()) {
-						int taks_id = mm.getKey();
-						ResourceAssignment resource = mm.getValue();
-						if (outboundTasks.contains(taks_id)) {
-							WorkerSlot workerSlot = new WorkerSlot(
-									resource.getSupervisorId(), resource.getPort());
-							my_assignment.put(taks_id, workerSlot);
-							need_connections.add(workerSlot);
-						}
-						
-						if (supervisorId.equals(resource.getSupervisorId())) {
-							localNodeTasks.add(taks_id);
+				Set<Integer> localNodeTasks = new HashSet<Integer>();
+
+				if (workers != null && outboundTasks != null) {
+					for (ResourceWorkerSlot worker : workers) {
+						if (supervisorId.equals(worker.getNodeId()))
+							localNodeTasks.addAll(worker.getTasks());
+						for (Integer id : worker.getTasks()) {
+							if (outboundTasks.contains(id)) {
+								my_assignment.put(id, worker);
+								need_connections.add(worker);
+							}
 						}
 					}
 				}
@@ -161,8 +158,7 @@ public class RefreshConnections extends RunnableCallback {
 
 					int port = nodePort.getPort();
 
-					IConnection conn = context
-							.connect(topologyId, host, port);
+					IConnection conn = context.connect(topologyId, host, port);
 
 					nodeportSocket.put(nodePort, conn);
 
@@ -175,8 +171,6 @@ public class RefreshConnections extends RunnableCallback {
 					nodeportSocket.remove(node_port).close();
 				}
 			}
-
-			
 		} catch (Exception e) {
 			LOG.error("Failed to refresh worker Connection", e);
 			throw new RuntimeException(e);

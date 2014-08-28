@@ -1,21 +1,14 @@
 package com.alibaba.jstorm.task;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.TreeMap;
-import java.util.List;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
-import java.util.TreeSet;
-
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 
-import backtype.storm.scheduler.WorkerSlot;
-
-import com.alibaba.jstorm.resource.ResourceAssignment;
+import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
 
 /**
  * Assignment of one Toplogy, stored in /ZK-DIR/assignments/{topologyid}
@@ -36,13 +29,12 @@ public class Assignment implements Serializable {
 	 */
 	private final Map<String, String> nodeHost;
 	private final Map<Integer, Integer> taskStartTimeSecs;
-	private final Map<Integer, ResourceAssignment> taskToResource;
+	private final Set<ResourceWorkerSlot> workers;
 
-	public Assignment(String masterCodeDir,
-			Map<Integer, ResourceAssignment> taskToResource,
+	public Assignment(String masterCodeDir, Set<ResourceWorkerSlot> workers,
 			Map<String, String> nodeHost,
 			Map<Integer, Integer> taskStartTimeSecs) {
-		this.taskToResource = taskToResource;
+		this.workers = workers;
 		this.nodeHost = nodeHost;
 		this.taskStartTimeSecs = taskStartTimeSecs;
 		this.masterCodeDir = masterCodeDir;
@@ -60,81 +52,47 @@ public class Assignment implements Serializable {
 		return masterCodeDir;
 	}
 
-	public Map<Integer, ResourceAssignment> getTaskToResource() {
-		return taskToResource;
+	public Set<ResourceWorkerSlot> getWorkers() {
+		return workers;
 	}
 
 	/**
-	 * find taskToResource for every supervisorId (node)
+	 * find workers for every supervisorId (node)
 	 * 
 	 * @param supervisorId
 	 * @return Map<Integer, WorkerSlot>
 	 */
-	public Map<Integer, ResourceAssignment> getTaskToResourcebyNode(
+	public Map<Integer, ResourceWorkerSlot> getTaskToNodePortbyNode(
 			String supervisorId) {
 
-		Map<Integer, ResourceAssignment> taskToPortbyNode = new TreeMap<Integer, ResourceAssignment>();
-
-		for (Entry<Integer, ResourceAssignment> entry : taskToResource
-				.entrySet()) {
-			String node = entry.getValue().getSupervisorId();
-			if (node.equals(supervisorId)) {
-				taskToPortbyNode.put(entry.getKey(), entry.getValue());
+		Map<Integer, ResourceWorkerSlot> result = new HashMap<Integer, ResourceWorkerSlot>();
+		for (ResourceWorkerSlot worker : workers) {
+			if (worker.getNodeId().equals(supervisorId)) {
+				result.put(worker.getPort(), worker);
 			}
 		}
-		return taskToPortbyNode;
+		return result;
 	}
 
-	public Set<Integer> getCurrentWokerTasks(String supervisorId, int port) {
-		Set<Integer> ret = new TreeSet<Integer>();
+	public Set<Integer> getCurrentWorkerTasks(String supervisorId, int port) {
 
-		for (Entry<Integer, ResourceAssignment> entry : taskToResource
-				.entrySet()) {
-			Integer taskId = entry.getKey();
-			ResourceAssignment resource = entry.getValue();
-
-			if (resource.getSupervisorId().equals(supervisorId) == false) {
-				continue;
-			}
-
-			if (resource.getPort() != port) {
-				continue;
-			}
-
-			ret.add(taskId);
+		for (ResourceWorkerSlot worker : workers) {
+			if (worker.getNodeId().equals(supervisorId)
+					&& worker.getPort() == port)
+				return worker.getTasks();
 		}
 
-		return ret;
+		return new HashSet<Integer>();
+	}
+	
+	public ResourceWorkerSlot getWorkerByTaskId(Integer taskId) {
+		for (ResourceWorkerSlot worker : workers) {
+			if (worker.getTasks().contains(taskId))
+				return worker;
+		}
+		return null;
 	}
 
-	public static Map<WorkerSlot, List<Integer>> getWorkerTasks(
-			Map<Integer, ResourceAssignment> taskToResource) {
-		Map<WorkerSlot, List<Integer>> ret = new TreeMap<WorkerSlot, List<Integer>>();
-
-		for (Entry<Integer, ResourceAssignment> entry : taskToResource
-				.entrySet()) {
-			Integer taskId = entry.getKey();
-			ResourceAssignment assignment = entry.getValue();
-
-			WorkerSlot workerSlot = new WorkerSlot(
-					assignment.getSupervisorId(), assignment.getPort());
-
-			List<Integer> taskList = ret.get(workerSlot);
-			if (taskList == null) {
-				taskList = new ArrayList<Integer>();
-				ret.put(workerSlot, taskList);
-			}
-
-			taskList.add(taskId);
-		}
-
-		for (Entry<WorkerSlot, List<Integer>> entry : ret.entrySet()) {
-			List<Integer> list = entry.getValue();
-			Collections.sort(list);
-		}
-		return ret;
-	}
-    
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -147,8 +105,7 @@ public class Assignment implements Serializable {
 				* result
 				+ ((taskStartTimeSecs == null) ? 0 : taskStartTimeSecs
 						.hashCode());
-		result = prime * result
-				+ ((taskToResource == null) ? 0 : taskToResource.hashCode());
+		result = prime * result + ((workers == null) ? 0 : workers.hashCode());
 		return result;
 	}
 
@@ -176,10 +133,10 @@ public class Assignment implements Serializable {
 				return false;
 		} else if (!taskStartTimeSecs.equals(other.taskStartTimeSecs))
 			return false;
-		if (taskToResource == null) {
-			if (other.taskToResource != null)
+		if (workers == null) {
+			if (other.workers != null)
 				return false;
-		} else if (!taskToResource.equals(other.taskToResource))
+		} else if (!workers.equals(other.workers))
 			return false;
 		return true;
 	}

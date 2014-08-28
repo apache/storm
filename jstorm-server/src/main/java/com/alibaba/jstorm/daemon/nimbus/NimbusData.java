@@ -13,7 +13,6 @@ import org.apache.commons.lang.StringUtils;
 
 import backtype.storm.generated.ThriftResourceType;
 import backtype.storm.scheduler.INimbus;
-import backtype.storm.scheduler.IScheduler;
 import backtype.storm.utils.TimeCacheMap;
 
 import com.alibaba.jstorm.client.ConfigExtension;
@@ -54,17 +53,11 @@ public class NimbusData {
 
 	private final INimbus inimubs;
 
-	private final IScheduler scheduler;
-
 	private Map<String, Map<String, Map<ThriftResourceType, Integer>>> groupToTopology;
 
 	private Map<String, Map<ThriftResourceType, Integer>> groupToResource;
 
 	private Map<String, Map<ThriftResourceType, Integer>> groupToUsedResource;
-
-	private final boolean groupMode;
-	
-	private Lock flushGroupFileLock;
 	
 	private final boolean localMode;
 	
@@ -92,21 +85,13 @@ public class NimbusData {
 
 		this.inimubs = inimbus;
 
-		this.scheduler = NimbusUtils.mkScheduler(conf, inimbus);
-
 		this.groupToTopology = new HashMap<String, Map<String, Map<ThriftResourceType, Integer>>>();
 
 		this.groupToResource = new ConcurrentHashMap<String, Map<ThriftResourceType, Integer>>();
 
 		this.groupToUsedResource = new ConcurrentHashMap<String, Map<ThriftResourceType, Integer>>();
 		
-		this.flushGroupFileLock = new ReentrantLock();
-
-		String groupCfg = ConfigExtension.getGroupFilePath(conf);
-		if ( StringUtils.isBlank(groupCfg))
-			groupMode = false;
-		else
-			groupMode = true;
+		new ReentrantLock();
 		
 		localMode = StormConfig.local_mode(conf);
 	}
@@ -118,10 +103,8 @@ public class NimbusData {
 		scheduExec = Executors.newScheduledThreadPool(6);
 
 		inimubs = null;
-		groupMode = false;
 		conf = new HashMap<Object, Object>();
 		localMode = false;
-		scheduler = NimbusUtils.mkScheduler(conf, inimubs);
 	}
 
 	public int uptime() {
@@ -211,10 +194,6 @@ public class NimbusData {
 		return inimubs;
 	}
 
-	public IScheduler getScheduler() {
-		return scheduler;
-	}
-
 	public Map<String, Map<ThriftResourceType, Integer>> getGroupToResource() {
 		return groupToResource;
 	}
@@ -225,18 +204,6 @@ public class NimbusData {
 
 	public Map<String, Map<ThriftResourceType, Integer>> getGroupToUsedResource() {
 		return groupToUsedResource;
-	}
-
-	public boolean isGroupMode() {
-		return groupMode;
-	}
-
-	public Lock getFlushGroupFileLock() {
-		return flushGroupFileLock;
-	}
-
-	public void setFlushGroupFileLock(Lock flushGroupFileLock) {
-		this.flushGroupFileLock = flushGroupFileLock;
 	}
 
 	public boolean isLocalMode() {

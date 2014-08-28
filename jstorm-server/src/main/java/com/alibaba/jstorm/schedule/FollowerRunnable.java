@@ -15,6 +15,7 @@ import backtype.storm.Config;
 import backtype.storm.utils.Utils;
 
 import com.alibaba.jstorm.callback.RunnableCallback;
+import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.cluster.Cluster;
 import com.alibaba.jstorm.cluster.StormClusterState;
 import com.alibaba.jstorm.cluster.StormConfig;
@@ -43,10 +44,17 @@ public class FollowerRunnable implements Runnable {
 	public FollowerRunnable(final NimbusData data, int sleepTime) {
 		this.data = data;
 		this.sleepTime = sleepTime;
-		this.hostPort = NetWorkUtils.hostname()
-				+ ":"
-				+ String.valueOf(Utils.getInt(data.getConf().get(
-						Config.NIMBUS_THRIFT_PORT)));
+		if (!ConfigExtension.isNimbusUseIp(data.getConf())) {
+			this.hostPort = NetWorkUtils.hostname()
+					+ ":"
+					+ String.valueOf(Utils.getInt(data.getConf().get(
+							Config.NIMBUS_THRIFT_PORT)));
+		} else {
+			this.hostPort = NetWorkUtils.ip()
+					+ ":"
+					+ String.valueOf(Utils.getInt(data.getConf().get(
+							Config.NIMBUS_THRIFT_PORT)));
+		}
 		try {
 			this.tryToBeLeader(data.getConf());
 		} catch (Exception e1) {
@@ -201,35 +209,36 @@ public class FollowerRunnable implements Runnable {
 		data.setLeader(data.getStormClusterState().try_to_be_leader(
 				Cluster.MASTER_SUBTREE, hostPort, masterCallback));
 	}
-	
+
 	/**
 	 * Check whether current node is master or not
-	 * @throws Exception 
+	 * 
+	 * @throws Exception
 	 */
 	private void checkOwnMaster() throws Exception {
 		int retry_times = 10;
-		
-		
+
 		StormClusterState zkClient = data.getStormClusterState();
 		for (int i = 0; i < retry_times; i++, JStormUtils.sleepMs(sleepTime)) {
-			
+
 			if (zkClient.leader_existed() == false) {
 				continue;
 			}
-			
+
 			String zkHost = zkClient.get_leader_host();
 			if (hostPort.equals(zkHost) == true) {
 				// current process own master
-				return ;
+				return;
 			}
-			LOG.warn("Current Nimbus has start thrift, but fail to own zk master :" + zkHost);
+			LOG.warn("Current Nimbus has start thrift, but fail to own zk master :"
+					+ zkHost);
 		}
-		
+
 		// current process doesn't own master
 		String err = "Current Nimubs fail to own nimbus_master, should halt process";
 		LOG.error(err);
 		JStormUtils.halt_process(0, err);
-		
+
 	}
 
 }

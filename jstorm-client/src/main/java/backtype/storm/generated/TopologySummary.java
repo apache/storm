@@ -30,10 +30,6 @@ public class TopologySummary implements org.apache.thrift7.TBase<TopologySummary
   private static final org.apache.thrift7.protocol.TField UPTIME_SECS_FIELD_DESC = new org.apache.thrift7.protocol.TField("uptime_secs", org.apache.thrift7.protocol.TType.I32, (short)4);
   private static final org.apache.thrift7.protocol.TField NUM_TASKS_FIELD_DESC = new org.apache.thrift7.protocol.TField("num_tasks", org.apache.thrift7.protocol.TType.I32, (short)5);
   private static final org.apache.thrift7.protocol.TField NUM_WORKERS_FIELD_DESC = new org.apache.thrift7.protocol.TField("num_workers", org.apache.thrift7.protocol.TType.I32, (short)6);
-  private static final org.apache.thrift7.protocol.TField NUM_CPU_FIELD_DESC = new org.apache.thrift7.protocol.TField("num_cpu", org.apache.thrift7.protocol.TType.I32, (short)7);
-  private static final org.apache.thrift7.protocol.TField NUM_MEM_FIELD_DESC = new org.apache.thrift7.protocol.TField("num_mem", org.apache.thrift7.protocol.TType.I32, (short)8);
-  private static final org.apache.thrift7.protocol.TField NUM_DISK_FIELD_DESC = new org.apache.thrift7.protocol.TField("num_disk", org.apache.thrift7.protocol.TType.I32, (short)9);
-  private static final org.apache.thrift7.protocol.TField GROUP_FIELD_DESC = new org.apache.thrift7.protocol.TField("group", org.apache.thrift7.protocol.TType.STRING, (short)10);
 
   private String id; // required
   private String name; // required
@@ -41,10 +37,6 @@ public class TopologySummary implements org.apache.thrift7.TBase<TopologySummary
   private int uptime_secs; // required
   private int num_tasks; // required
   private int num_workers; // required
-  private int num_cpu; // required
-  private int num_mem; // required
-  private int num_disk; // required
-  private String group; // required
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
@@ -53,11 +45,7 @@ public class TopologySummary implements org.apache.thrift7.TBase<TopologySummary
     STATUS((short)3, "status"),
     UPTIME_SECS((short)4, "uptime_secs"),
     NUM_TASKS((short)5, "num_tasks"),
-    NUM_WORKERS((short)6, "num_workers"),
-    NUM_CPU((short)7, "num_cpu"),
-    NUM_MEM((short)8, "num_mem"),
-    NUM_DISK((short)9, "num_disk"),
-    GROUP((short)10, "group");
+    NUM_WORKERS((short)6, "num_workers");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -84,14 +72,6 @@ public class TopologySummary implements org.apache.thrift7.TBase<TopologySummary
           return NUM_TASKS;
         case 6: // NUM_WORKERS
           return NUM_WORKERS;
-        case 7: // NUM_CPU
-          return NUM_CPU;
-        case 8: // NUM_MEM
-          return NUM_MEM;
-        case 9: // NUM_DISK
-          return NUM_DISK;
-        case 10: // GROUP
-          return GROUP;
         default:
           return null;
       }
@@ -135,10 +115,7 @@ public class TopologySummary implements org.apache.thrift7.TBase<TopologySummary
   private static final int __UPTIME_SECS_ISSET_ID = 0;
   private static final int __NUM_TASKS_ISSET_ID = 1;
   private static final int __NUM_WORKERS_ISSET_ID = 2;
-  private static final int __NUM_CPU_ISSET_ID = 3;
-  private static final int __NUM_MEM_ISSET_ID = 4;
-  private static final int __NUM_DISK_ISSET_ID = 5;
-  private BitSet __isset_bit_vector = new BitSet(6);
+  private BitSet __isset_bit_vector = new BitSet(3);
 
   public static final Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> metaDataMap;
   static {
@@ -155,14 +132,6 @@ public class TopologySummary implements org.apache.thrift7.TBase<TopologySummary
         new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.I32)));
     tmpMap.put(_Fields.NUM_WORKERS, new org.apache.thrift7.meta_data.FieldMetaData("num_workers", org.apache.thrift7.TFieldRequirementType.REQUIRED, 
         new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.I32)));
-    tmpMap.put(_Fields.NUM_CPU, new org.apache.thrift7.meta_data.FieldMetaData("num_cpu", org.apache.thrift7.TFieldRequirementType.REQUIRED, 
-        new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.I32)));
-    tmpMap.put(_Fields.NUM_MEM, new org.apache.thrift7.meta_data.FieldMetaData("num_mem", org.apache.thrift7.TFieldRequirementType.REQUIRED, 
-        new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.I32)));
-    tmpMap.put(_Fields.NUM_DISK, new org.apache.thrift7.meta_data.FieldMetaData("num_disk", org.apache.thrift7.TFieldRequirementType.REQUIRED, 
-        new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.I32)));
-    tmpMap.put(_Fields.GROUP, new org.apache.thrift7.meta_data.FieldMetaData("group", org.apache.thrift7.TFieldRequirementType.REQUIRED, 
-        new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRING)));
     metaDataMap = Collections.unmodifiableMap(tmpMap);
     org.apache.thrift7.meta_data.FieldMetaData.addStructMetaDataMap(TopologySummary.class, metaDataMap);
   }
@@ -176,11 +145,7 @@ public class TopologySummary implements org.apache.thrift7.TBase<TopologySummary
     String status,
     int uptime_secs,
     int num_tasks,
-    int num_workers,
-    int num_cpu,
-    int num_mem,
-    int num_disk,
-    String group)
+    int num_workers)
   {
     this();
     this.id = id;
@@ -192,13 +157,6 @@ public class TopologySummary implements org.apache.thrift7.TBase<TopologySummary
     set_num_tasks_isSet(true);
     this.num_workers = num_workers;
     set_num_workers_isSet(true);
-    this.num_cpu = num_cpu;
-    set_num_cpu_isSet(true);
-    this.num_mem = num_mem;
-    set_num_mem_isSet(true);
-    this.num_disk = num_disk;
-    set_num_disk_isSet(true);
-    this.group = group;
   }
 
   /**
@@ -219,12 +177,6 @@ public class TopologySummary implements org.apache.thrift7.TBase<TopologySummary
     this.uptime_secs = other.uptime_secs;
     this.num_tasks = other.num_tasks;
     this.num_workers = other.num_workers;
-    this.num_cpu = other.num_cpu;
-    this.num_mem = other.num_mem;
-    this.num_disk = other.num_disk;
-    if (other.is_set_group()) {
-      this.group = other.group;
-    }
   }
 
   public TopologySummary deepCopy() {
@@ -242,13 +194,6 @@ public class TopologySummary implements org.apache.thrift7.TBase<TopologySummary
     this.num_tasks = 0;
     set_num_workers_isSet(false);
     this.num_workers = 0;
-    set_num_cpu_isSet(false);
-    this.num_cpu = 0;
-    set_num_mem_isSet(false);
-    this.num_mem = 0;
-    set_num_disk_isSet(false);
-    this.num_disk = 0;
-    this.group = null;
   }
 
   public String get_id() {
@@ -386,95 +331,6 @@ public class TopologySummary implements org.apache.thrift7.TBase<TopologySummary
     __isset_bit_vector.set(__NUM_WORKERS_ISSET_ID, value);
   }
 
-  public int get_num_cpu() {
-    return this.num_cpu;
-  }
-
-  public void set_num_cpu(int num_cpu) {
-    this.num_cpu = num_cpu;
-    set_num_cpu_isSet(true);
-  }
-
-  public void unset_num_cpu() {
-    __isset_bit_vector.clear(__NUM_CPU_ISSET_ID);
-  }
-
-  /** Returns true if field num_cpu is set (has been assigned a value) and false otherwise */
-  public boolean is_set_num_cpu() {
-    return __isset_bit_vector.get(__NUM_CPU_ISSET_ID);
-  }
-
-  public void set_num_cpu_isSet(boolean value) {
-    __isset_bit_vector.set(__NUM_CPU_ISSET_ID, value);
-  }
-
-  public int get_num_mem() {
-    return this.num_mem;
-  }
-
-  public void set_num_mem(int num_mem) {
-    this.num_mem = num_mem;
-    set_num_mem_isSet(true);
-  }
-
-  public void unset_num_mem() {
-    __isset_bit_vector.clear(__NUM_MEM_ISSET_ID);
-  }
-
-  /** Returns true if field num_mem is set (has been assigned a value) and false otherwise */
-  public boolean is_set_num_mem() {
-    return __isset_bit_vector.get(__NUM_MEM_ISSET_ID);
-  }
-
-  public void set_num_mem_isSet(boolean value) {
-    __isset_bit_vector.set(__NUM_MEM_ISSET_ID, value);
-  }
-
-  public int get_num_disk() {
-    return this.num_disk;
-  }
-
-  public void set_num_disk(int num_disk) {
-    this.num_disk = num_disk;
-    set_num_disk_isSet(true);
-  }
-
-  public void unset_num_disk() {
-    __isset_bit_vector.clear(__NUM_DISK_ISSET_ID);
-  }
-
-  /** Returns true if field num_disk is set (has been assigned a value) and false otherwise */
-  public boolean is_set_num_disk() {
-    return __isset_bit_vector.get(__NUM_DISK_ISSET_ID);
-  }
-
-  public void set_num_disk_isSet(boolean value) {
-    __isset_bit_vector.set(__NUM_DISK_ISSET_ID, value);
-  }
-
-  public String get_group() {
-    return this.group;
-  }
-
-  public void set_group(String group) {
-    this.group = group;
-  }
-
-  public void unset_group() {
-    this.group = null;
-  }
-
-  /** Returns true if field group is set (has been assigned a value) and false otherwise */
-  public boolean is_set_group() {
-    return this.group != null;
-  }
-
-  public void set_group_isSet(boolean value) {
-    if (!value) {
-      this.group = null;
-    }
-  }
-
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case ID:
@@ -525,38 +381,6 @@ public class TopologySummary implements org.apache.thrift7.TBase<TopologySummary
       }
       break;
 
-    case NUM_CPU:
-      if (value == null) {
-        unset_num_cpu();
-      } else {
-        set_num_cpu((Integer)value);
-      }
-      break;
-
-    case NUM_MEM:
-      if (value == null) {
-        unset_num_mem();
-      } else {
-        set_num_mem((Integer)value);
-      }
-      break;
-
-    case NUM_DISK:
-      if (value == null) {
-        unset_num_disk();
-      } else {
-        set_num_disk((Integer)value);
-      }
-      break;
-
-    case GROUP:
-      if (value == null) {
-        unset_group();
-      } else {
-        set_group((String)value);
-      }
-      break;
-
     }
   }
 
@@ -579,18 +403,6 @@ public class TopologySummary implements org.apache.thrift7.TBase<TopologySummary
 
     case NUM_WORKERS:
       return Integer.valueOf(get_num_workers());
-
-    case NUM_CPU:
-      return Integer.valueOf(get_num_cpu());
-
-    case NUM_MEM:
-      return Integer.valueOf(get_num_mem());
-
-    case NUM_DISK:
-      return Integer.valueOf(get_num_disk());
-
-    case GROUP:
-      return get_group();
 
     }
     throw new IllegalStateException();
@@ -615,14 +427,6 @@ public class TopologySummary implements org.apache.thrift7.TBase<TopologySummary
       return is_set_num_tasks();
     case NUM_WORKERS:
       return is_set_num_workers();
-    case NUM_CPU:
-      return is_set_num_cpu();
-    case NUM_MEM:
-      return is_set_num_mem();
-    case NUM_DISK:
-      return is_set_num_disk();
-    case GROUP:
-      return is_set_group();
     }
     throw new IllegalStateException();
   }
@@ -694,42 +498,6 @@ public class TopologySummary implements org.apache.thrift7.TBase<TopologySummary
         return false;
     }
 
-    boolean this_present_num_cpu = true;
-    boolean that_present_num_cpu = true;
-    if (this_present_num_cpu || that_present_num_cpu) {
-      if (!(this_present_num_cpu && that_present_num_cpu))
-        return false;
-      if (this.num_cpu != that.num_cpu)
-        return false;
-    }
-
-    boolean this_present_num_mem = true;
-    boolean that_present_num_mem = true;
-    if (this_present_num_mem || that_present_num_mem) {
-      if (!(this_present_num_mem && that_present_num_mem))
-        return false;
-      if (this.num_mem != that.num_mem)
-        return false;
-    }
-
-    boolean this_present_num_disk = true;
-    boolean that_present_num_disk = true;
-    if (this_present_num_disk || that_present_num_disk) {
-      if (!(this_present_num_disk && that_present_num_disk))
-        return false;
-      if (this.num_disk != that.num_disk)
-        return false;
-    }
-
-    boolean this_present_group = true && this.is_set_group();
-    boolean that_present_group = true && that.is_set_group();
-    if (this_present_group || that_present_group) {
-      if (!(this_present_group && that_present_group))
-        return false;
-      if (!this.group.equals(that.group))
-        return false;
-    }
-
     return true;
   }
 
@@ -766,26 +534,6 @@ public class TopologySummary implements org.apache.thrift7.TBase<TopologySummary
     builder.append(present_num_workers);
     if (present_num_workers)
       builder.append(num_workers);
-
-    boolean present_num_cpu = true;
-    builder.append(present_num_cpu);
-    if (present_num_cpu)
-      builder.append(num_cpu);
-
-    boolean present_num_mem = true;
-    builder.append(present_num_mem);
-    if (present_num_mem)
-      builder.append(num_mem);
-
-    boolean present_num_disk = true;
-    builder.append(present_num_disk);
-    if (present_num_disk)
-      builder.append(num_disk);
-
-    boolean present_group = true && (is_set_group());
-    builder.append(present_group);
-    if (present_group)
-      builder.append(group);
 
     return builder.toHashCode();
   }
@@ -858,46 +606,6 @@ public class TopologySummary implements org.apache.thrift7.TBase<TopologySummary
         return lastComparison;
       }
     }
-    lastComparison = Boolean.valueOf(is_set_num_cpu()).compareTo(typedOther.is_set_num_cpu());
-    if (lastComparison != 0) {
-      return lastComparison;
-    }
-    if (is_set_num_cpu()) {
-      lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.num_cpu, typedOther.num_cpu);
-      if (lastComparison != 0) {
-        return lastComparison;
-      }
-    }
-    lastComparison = Boolean.valueOf(is_set_num_mem()).compareTo(typedOther.is_set_num_mem());
-    if (lastComparison != 0) {
-      return lastComparison;
-    }
-    if (is_set_num_mem()) {
-      lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.num_mem, typedOther.num_mem);
-      if (lastComparison != 0) {
-        return lastComparison;
-      }
-    }
-    lastComparison = Boolean.valueOf(is_set_num_disk()).compareTo(typedOther.is_set_num_disk());
-    if (lastComparison != 0) {
-      return lastComparison;
-    }
-    if (is_set_num_disk()) {
-      lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.num_disk, typedOther.num_disk);
-      if (lastComparison != 0) {
-        return lastComparison;
-      }
-    }
-    lastComparison = Boolean.valueOf(is_set_group()).compareTo(typedOther.is_set_group());
-    if (lastComparison != 0) {
-      return lastComparison;
-    }
-    if (is_set_group()) {
-      lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.group, typedOther.group);
-      if (lastComparison != 0) {
-        return lastComparison;
-      }
-    }
     return 0;
   }
 
@@ -960,37 +668,6 @@ public class TopologySummary implements org.apache.thrift7.TBase<TopologySummary
             org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
           }
           break;
-        case 7: // NUM_CPU
-          if (field.type == org.apache.thrift7.protocol.TType.I32) {
-            this.num_cpu = iprot.readI32();
-            set_num_cpu_isSet(true);
-          } else { 
-            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
-          }
-          break;
-        case 8: // NUM_MEM
-          if (field.type == org.apache.thrift7.protocol.TType.I32) {
-            this.num_mem = iprot.readI32();
-            set_num_mem_isSet(true);
-          } else { 
-            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
-          }
-          break;
-        case 9: // NUM_DISK
-          if (field.type == org.apache.thrift7.protocol.TType.I32) {
-            this.num_disk = iprot.readI32();
-            set_num_disk_isSet(true);
-          } else { 
-            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
-          }
-          break;
-        case 10: // GROUP
-          if (field.type == org.apache.thrift7.protocol.TType.STRING) {
-            this.group = iprot.readString();
-          } else { 
-            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
-          }
-          break;
         default:
           org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
       }
@@ -1028,20 +705,6 @@ public class TopologySummary implements org.apache.thrift7.TBase<TopologySummary
     oprot.writeFieldBegin(NUM_WORKERS_FIELD_DESC);
     oprot.writeI32(this.num_workers);
     oprot.writeFieldEnd();
-    oprot.writeFieldBegin(NUM_CPU_FIELD_DESC);
-    oprot.writeI32(this.num_cpu);
-    oprot.writeFieldEnd();
-    oprot.writeFieldBegin(NUM_MEM_FIELD_DESC);
-    oprot.writeI32(this.num_mem);
-    oprot.writeFieldEnd();
-    oprot.writeFieldBegin(NUM_DISK_FIELD_DESC);
-    oprot.writeI32(this.num_disk);
-    oprot.writeFieldEnd();
-    if (this.group != null) {
-      oprot.writeFieldBegin(GROUP_FIELD_DESC);
-      oprot.writeString(this.group);
-      oprot.writeFieldEnd();
-    }
     oprot.writeFieldStop();
     oprot.writeStructEnd();
   }
@@ -1086,26 +749,6 @@ public class TopologySummary implements org.apache.thrift7.TBase<TopologySummary
     sb.append("num_workers:");
     sb.append(this.num_workers);
     first = false;
-    if (!first) sb.append(", ");
-    sb.append("num_cpu:");
-    sb.append(this.num_cpu);
-    first = false;
-    if (!first) sb.append(", ");
-    sb.append("num_mem:");
-    sb.append(this.num_mem);
-    first = false;
-    if (!first) sb.append(", ");
-    sb.append("num_disk:");
-    sb.append(this.num_disk);
-    first = false;
-    if (!first) sb.append(", ");
-    sb.append("group:");
-    if (this.group == null) {
-      sb.append("null");
-    } else {
-      sb.append(this.group);
-    }
-    first = false;
     sb.append(")");
     return sb.toString();
   }
@@ -1134,22 +777,6 @@ public class TopologySummary implements org.apache.thrift7.TBase<TopologySummary
 
     if (!is_set_num_workers()) {
       throw new org.apache.thrift7.protocol.TProtocolException("Required field 'num_workers' is unset! Struct:" + toString());
-    }
-
-    if (!is_set_num_cpu()) {
-      throw new org.apache.thrift7.protocol.TProtocolException("Required field 'num_cpu' is unset! Struct:" + toString());
-    }
-
-    if (!is_set_num_mem()) {
-      throw new org.apache.thrift7.protocol.TProtocolException("Required field 'num_mem' is unset! Struct:" + toString());
-    }
-
-    if (!is_set_num_disk()) {
-      throw new org.apache.thrift7.protocol.TProtocolException("Required field 'num_disk' is unset! Struct:" + toString());
-    }
-
-    if (!is_set_group()) {
-      throw new org.apache.thrift7.protocol.TProtocolException("Required field 'group' is unset! Struct:" + toString());
     }
 
   }

@@ -92,28 +92,11 @@ public class BoltPage implements Serializable {
 			List<TaskSummary> ts) {
 		List<ComponentSummary> ret = new ArrayList<ComponentSummary>();
 
-		int cpuNum = 0;
-		int memNum = 0;
-		int diskNum = 0;
-
-		for (TaskSummary taskSummary : ts) {
-			cpuNum += taskSummary.get_cpu();
-			memNum += taskSummary.get_mem();
-
-			if (taskSummary.get_disk() != null
-					&& taskSummary.get_disk().isEmpty() == false) {
-				diskNum += 1;
-			}
-		}
-
 		ComponentSummary cs = new ComponentSummary();
 
 		cs.setComponentId(componentid);
 		cs.setTopologyname(summ.get_name());
 		cs.setParallelism(String.valueOf(ts.size()));
-		cs.setCpuNum(String.valueOf(cpuNum));
-		cs.setMemNum(String.valueOf(memNum));
-		cs.setDiskNum(String.valueOf(diskNum));
 
 		ret.add(cs);
 

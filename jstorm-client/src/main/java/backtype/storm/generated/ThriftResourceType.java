@@ -12,10 +12,8 @@ import org.apache.thrift7.TEnum;
 
 public enum ThriftResourceType implements org.apache.thrift7.TEnum {
   UNKNOWN(1),
-  CPU(2),
-  MEM(3),
-  NET(4),
-  DISK(5);
+  MEM(2),
+  NET(3);
 
   private final int value;
 
@@ -39,13 +37,9 @@ public enum ThriftResourceType implements org.apache.thrift7.TEnum {
       case 1:
         return UNKNOWN;
       case 2:
-        return CPU;
-      case 3:
         return MEM;
-      case 4:
+      case 3:
         return NET;
-      case 5:
-        return DISK;
       default:
         return null;
     }

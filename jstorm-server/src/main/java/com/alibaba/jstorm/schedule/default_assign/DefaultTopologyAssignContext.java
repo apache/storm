@@ -10,7 +10,6 @@ import java.util.Set;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
-import org.apache.log4j.Logger;
 
 import backtype.storm.Config;
 import backtype.storm.generated.Bolt;
@@ -18,40 +17,24 @@ import backtype.storm.generated.ComponentCommon;
 import backtype.storm.generated.SpoutSpec;
 import backtype.storm.generated.StateSpoutSpec;
 import backtype.storm.generated.StormTopology;
-import backtype.storm.scheduler.WorkerSlot;
 import backtype.storm.utils.ThriftTopologyUtils;
 
-import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.cluster.Common;
 import com.alibaba.jstorm.daemon.supervisor.SupervisorInfo;
-import com.alibaba.jstorm.resource.ResourceAssignment;
 import com.alibaba.jstorm.schedule.TopologyAssignContext;
-import com.alibaba.jstorm.task.Assignment;
 import com.alibaba.jstorm.utils.FailedAssignTopologyException;
-import com.alibaba.jstorm.utils.JStormServerConfig;
 import com.alibaba.jstorm.utils.JStormUtils;
 
 public class DefaultTopologyAssignContext extends TopologyAssignContext {
-	private static final Logger LOG = Logger.getLogger(
-			DefaultTopologyAssignContext.class);
-	
+
 	private final StormTopology sysTopology;
 	private final Map<String, String> sidToHostname;
 	private final Map<String, List<String>> hostToSid;
-	private final Map<WorkerSlot, List<Integer>> oldWorkerTasks;
+	private final Set<ResourceWorkerSlot> oldWorkers;
 	private final Map<String, List<Integer>> componentTasks;
-	private final Map<Integer, ResourceAssignment> unstoppedAssignments = new HashMap<Integer, ResourceAssignment>();
+	private final Set<ResourceWorkerSlot> unstoppedWorkers = new HashSet<ResourceWorkerSlot>();
 	private final int totalWorkerNum;
 	private final int unstoppedWorkerNum;
-
-	public final int DISK_WEIGHT;
-	public final int CPU_WEIGHT;
-	public final int MEM_WEIGHT;
-	public final int PORT_WEIGHT;
-	public final int TASK_ON_DIFFERENT_NODE_WEIGHT;
-	public final int USE_OLD_ASSIGN_RATIO_WEIGHT;
-	public final int USER_DEFINE_ASSIGN_RATIO_WEIGHT;
-	public final int DEFAULT_WEIGHT;
 
 	private int computeWorkerNum() {
 		Integer settingNum = JStormUtils.parseInt(stormConf
@@ -88,24 +71,13 @@ public class DefaultTopologyAssignContext extends TopologyAssignContext {
 	}
 
 	public int computeUnstoppedAssignments() {
-
-		Set<WorkerSlot> deadSupervisorWorkerSlots = new HashSet<WorkerSlot>();
-
 		for (Integer task : unstoppedTaskIds) {
 			// if unstoppedTasksIds isn't empty, it should be REASSIGN/Monitor
-			ResourceAssignment resourceAssignment = oldAssignment
-					.getTaskToResource().get(task);
-
-			unstoppedAssignments.put(task, resourceAssignment);
-
-			WorkerSlot workerSlot = new WorkerSlot(
-					resourceAssignment.getSupervisorId(),
-					resourceAssignment.getPort());
-
-			deadSupervisorWorkerSlots.add(workerSlot);
+			ResourceWorkerSlot worker = oldAssignment.getWorkerByTaskId(task);
+			unstoppedWorkers.add(worker);
 		}
 
-		return deadSupervisorWorkerSlots.size();
+		return unstoppedWorkers.size();
 	}
 
 	private void refineDeadTasks() {
@@ -121,15 +93,13 @@ public class DefaultTopologyAssignContext extends TopologyAssignContext {
 			if (unstoppedTasks.contains(task)) {
 				continue;
 			}
-
-			for (List<Integer> workerTasks : oldWorkerTasks.values()) {
-				if (workerTasks.contains(task)) {
-					refineDeadTasks.addAll(workerTasks);
+			for (ResourceWorkerSlot worker : oldWorkers) {
+				if (worker.getTasks().contains(task)) {
+					refineDeadTasks.addAll(worker.getTasks());
 
 				}
 			}
 		}
-
 		setDeadTaskIds(refineDeadTasks);
 	}
 
@@ -158,22 +128,6 @@ public class DefaultTopologyAssignContext extends TopologyAssignContext {
 	public DefaultTopologyAssignContext(TopologyAssignContext context) {
 		super(context);
 
-		/**
-		 * Init priorty weight
-		 */
-		DISK_WEIGHT = ConfigExtension.getTopologyDiskWeight(stormConf);
-		CPU_WEIGHT = ConfigExtension.getTopologyCpuWeight(stormConf);
-		MEM_WEIGHT = ConfigExtension.getTopologyMemWeight(stormConf);
-		PORT_WEIGHT = ConfigExtension.getTopologyPortWeight(stormConf);
-		DEFAULT_WEIGHT = CPU_WEIGHT + MEM_WEIGHT;
-
-		TASK_ON_DIFFERENT_NODE_WEIGHT = JStormServerConfig
-				.getTopologyTaskOnDiffWeight(stormConf);
-		USE_OLD_ASSIGN_RATIO_WEIGHT = JStormServerConfig
-				.getTopologyUseOldAssignWeight(stormConf);
-		USER_DEFINE_ASSIGN_RATIO_WEIGHT = JStormServerConfig
-				.getTopologyUserDefineAssignWeight(stormConf);
-
 		try {
 			sysTopology = Common.system_topology(stormConf, rawTopology);
 		} catch (Exception e) {
@@ -184,23 +138,11 @@ public class DefaultTopologyAssignContext extends TopologyAssignContext {
 		sidToHostname = generateSidToHost();
 		hostToSid = JStormUtils.reverse_map(sidToHostname);
 
-		Map<WorkerSlot, List<Integer>> oldTasks = new HashMap<WorkerSlot, List<Integer>>();
-		if (oldAssignment != null) {
-			
-			try {
-				oldTasks = Assignment.getWorkerTasks(oldAssignment
-					.getTaskToResource());
-			}catch(Exception e) {
-				StringBuilder sb = new StringBuilder();
-				sb.append("Failed to get oldWorkerTasks from assignment ");
-				sb.append(oldAssignment);
-				sb.append("Reset oldAssignment as null");
-				LOG.warn(sb.toString(), e);
-				oldAssignment = null;
-			}
-		} 
-		oldWorkerTasks = oldTasks;
-		
+		if (oldAssignment != null && oldAssignment.getWorkers() != null) {
+			oldWorkers = oldAssignment.getWorkers();
+		} else {
+			oldWorkers = new HashSet<ResourceWorkerSlot>();
+		}
 
 		refineDeadTasks();
 
@@ -229,10 +171,6 @@ public class DefaultTopologyAssignContext extends TopologyAssignContext {
 		return hostToSid;
 	}
 
-	public Map<WorkerSlot, List<Integer>> getOldWorkerTasks() {
-		return oldWorkerTasks;
-	}
-
 	public Map<String, List<Integer>> getComponentTasks() {
 		return componentTasks;
 	}
@@ -245,8 +183,12 @@ public class DefaultTopologyAssignContext extends TopologyAssignContext {
 		return unstoppedWorkerNum;
 	}
 
-	public Map<Integer, ResourceAssignment> getUnstoppedAssignments() {
-		return unstoppedAssignments;
+	public Set<ResourceWorkerSlot> getOldWorkers() {
+		return oldWorkers;
+	}
+
+	public Set<ResourceWorkerSlot> getUnstoppedWorkers() {
+		return unstoppedWorkers;
 	}
 
 	@Override

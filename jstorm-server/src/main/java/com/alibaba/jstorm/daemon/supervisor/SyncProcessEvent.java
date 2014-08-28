@@ -53,7 +53,7 @@ class SyncProcessEvent extends ShutdownWork {
 	private IContext sharedContext;
 
 	private CgroupManager cgroupManager;
-	
+
 	private SandBoxMaker sandBoxMaker;
 
 	// private Supervisor supervisor;
@@ -82,11 +82,11 @@ class SyncProcessEvent extends ShutdownWork {
 
 		// right now, sharedContext is null
 		this.sharedContext = sharedContext;
-		
+
 		this.sandBoxMaker = new SandBoxMaker(conf);
 
 		if (ConfigExtension.isEnableCgroup(conf)) {
-			cgroupManager = new CgroupManager(conf); 
+			cgroupManager = new CgroupManager(conf);
 		}
 	}
 
@@ -427,22 +427,25 @@ class SyncProcessEvent extends ShutdownWork {
 					+ File.separator + "lib");
 			for (String file : stormLibFiles) {
 				if (file.endsWith(".jar")) {
-					classSet.add(stormHome + File.separator + "lib" +
-							File.separator + file);
+					classSet.add(stormHome + File.separator + "lib"
+							+ File.separator + file);
 				}
 			}
 
 		}
 
-		//filter jeromq.jar/jzmq.jar to avoid ZMQ.class conflict
+		// filter jeromq.jar/jzmq.jar to avoid ZMQ.class conflict
 		String filterJarKeyword = null;
-		String transport_plugin_klassName = (String) totalConf.get(Config.STORM_MESSAGING_TRANSPORT);
-		if (transport_plugin_klassName.equals(MQContext.class.getCanonicalName())) {
+		String transport_plugin_klassName = (String) totalConf
+				.get(Config.STORM_MESSAGING_TRANSPORT);
+		if (transport_plugin_klassName.equals(MQContext.class
+				.getCanonicalName())) {
 			filterJarKeyword = "jeromq";
-		} else if (transport_plugin_klassName.equals("com.alibaba.jstorm.message.jeroMq.JMQContext")) {
+		} else if (transport_plugin_klassName
+				.equals("com.alibaba.jstorm.message.jeroMq.JMQContext")) {
 			filterJarKeyword = "jzmq";
 		}
-		
+
 		StringBuilder sb = new StringBuilder();
 		if (filterJarKeyword != null) {
 			for (String jar : classSet) {
@@ -456,8 +459,6 @@ class SyncProcessEvent extends ShutdownWork {
 				sb.append(jar + ":");
 			}
 		}
-		
-		
 
 		if (ConfigExtension.isEnableTopologyClassLoader(totalConf)) {
 			return sb.toString().substring(0, sb.length() - 1);
@@ -480,16 +481,16 @@ class SyncProcessEvent extends ShutdownWork {
 
 		return childopts;
 	}
-	
+
 	private String getGcDumpParam(Map totalConf) {
-		//String gcPath = ConfigExtension.getWorkerGcPath(totalConf);
+		// String gcPath = ConfigExtension.getWorkerGcPath(totalConf);
 		String gcPath = JStormUtils.getLogDir();
-		
+
 		Date now = new Date();
 		String nowStr = TimeFormat.getSecond(now);
-		
+
 		StringBuilder gc = new StringBuilder();
-		
+
 		gc.append(" -Xloggc:");
 		gc.append(gcPath);
 		gc.append(File.separator);
@@ -498,11 +499,9 @@ class SyncProcessEvent extends ShutdownWork {
 		gc.append("-gc.log -verbose:gc -XX:HeapDumpPath=");
 		gc.append(gcPath);
 		gc.append(" ");
-		
+
 		return gc.toString();
 	}
-	
-	
 
 	/**
 	 * launch a worker in distributed mode
@@ -545,19 +544,17 @@ class SyncProcessEvent extends ShutdownWork {
 
 		String stormhome = System.getProperty("jstorm.home");
 
-		long memSlotSize = ConfigExtension.getMemSlotSize(totalConf);
-		long memSize = memSlotSize * assignment.getMemSlotNum();
-		int cpuNum = assignment.getCpuSlotNum();
+		long memSize = assignment.getMem();
+		int cpuNum = assignment.getCpu();
 		String childopts = getChildOpts(totalConf);
 
-		
 		childopts += getGcDumpParam(totalConf);
-		
+
 		childopts = childopts.replace("%ID%", port.toString());
 		childopts = childopts.replace("%TOPOLOGYID%", topologyId);
 		if (stormhome != null) {
 			childopts = childopts.replace("%JSTORM_HOME%", stormhome);
-		}else {
+		} else {
 			childopts = childopts.replace("%JSTORM_HOME%", "./");
 		}
 		Map<String, String> environment = new HashMap<String, String>();
@@ -568,7 +565,8 @@ class SyncProcessEvent extends ShutdownWork {
 			environment.put("REDIRECT", "false");
 		}
 
-//		String logFileName = assignment.getTopologyName() + "-worker-" + port + ".log";
+		// String logFileName = assignment.getTopologyName() + "-worker-" + port
+		// + ".log";
 		String logFileName = topologyId + "-worker-" + port + ".log";
 
 		environment.put("LD_LIBRARY_PATH",
@@ -590,18 +588,19 @@ class SyncProcessEvent extends ShutdownWork {
 		commandSB.append("java -server ");
 		commandSB.append(" -Xms" + memSize);
 		commandSB.append(" -Xmx" + memSize + " ");
-		commandSB.append(" -Xmn" + memSize/3 + " ");
-	    commandSB.append(" -XX:PermSize=" + memSize/16);
-		commandSB.append(" -XX:MaxPermSize=" + memSize/8);
-		commandSB.append(childopts);
+		commandSB.append(" -Xmn" + memSize / 3 + " ");
+		commandSB.append(" -XX:PermSize=" + memSize / 16);
+		commandSB.append(" -XX:MaxPermSize=" + memSize / 8);
+		commandSB.append(" " + childopts);
+		commandSB.append(" "
+				+ (assignment.getJvm() == null ? "" : assignment.getJvm()));
 
 		commandSB.append(" -Djava.library.path=");
 		commandSB.append((String) totalConf.get(Config.JAVA_LIBRARY_PATH));
 
 		commandSB.append(" -Dlogfile.name=");
 		commandSB.append(logFileName);
-		
-		
+
 		// commandSB.append(" -Dlog4j.ignoreTCL=true");
 
 		if (stormhome != null) {
@@ -618,21 +617,24 @@ class SyncProcessEvent extends ShutdownWork {
 		}
 
 		String classpath = getClassPath(stormjar, stormhome, totalConf);
-		String workerClassPath = (String) totalConf.get(Config.WORKER_CLASSPATH);
-		List<String> otherLibs = (List<String>) stormConf.get(GenericOptionsParser.TOPOLOGY_LIB_NAME);
+		String workerClassPath = (String) totalConf
+				.get(Config.WORKER_CLASSPATH);
+		List<String> otherLibs = (List<String>) stormConf
+				.get(GenericOptionsParser.TOPOLOGY_LIB_NAME);
 		StringBuilder sb = new StringBuilder();
 		if (otherLibs != null) {
 			for (String libName : otherLibs) {
-				sb.append(StormConfig.stormlib_path(stormroot, libName)).append(":");
+				sb.append(StormConfig.stormlib_path(stormroot, libName))
+						.append(":");
 			}
 		}
 		workerClassPath = workerClassPath + ":" + sb.toString();
-		
 
 		Map<String, String> policyReplaceMap = new HashMap<String, String>();
 		String realClassPath = classpath + ":" + workerClassPath;
 		policyReplaceMap.put(SandBoxMaker.CLASS_PATH_KEY, realClassPath);
-		commandSB.append(sandBoxMaker.sandboxPolicy(workerId, policyReplaceMap));
+		commandSB
+				.append(sandBoxMaker.sandboxPolicy(workerId, policyReplaceMap));
 
 		// commandSB.append(" -Dlog4j.configuration=storm.log.properties");
 

@@ -12,11 +12,9 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 
-import backtype.storm.Config;
 import backtype.storm.generated.StormTopology;
 import backtype.storm.generated.ThriftResourceType;
 import backtype.storm.scheduler.WorkerSlot;
@@ -28,16 +26,15 @@ import com.alibaba.jstorm.cluster.StormClusterState;
 import com.alibaba.jstorm.cluster.StormConfig;
 import com.alibaba.jstorm.cluster.StormStatus;
 import com.alibaba.jstorm.daemon.supervisor.SupervisorInfo;
-import com.alibaba.jstorm.resource.ResourceAssignment;
-import com.alibaba.jstorm.resource.ResourceType;
-import com.alibaba.jstorm.resource.SlotResourcePool;
 import com.alibaba.jstorm.schedule.IToplogyScheduler;
 import com.alibaba.jstorm.schedule.TopologyAssignContext;
 import com.alibaba.jstorm.schedule.default_assign.DefaultTopologyScheduler;
+import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
 import com.alibaba.jstorm.task.Assignment;
 import com.alibaba.jstorm.task.AssignmentBak;
 import com.alibaba.jstorm.utils.FailedAssignTopologyException;
 import com.alibaba.jstorm.utils.JStormUtils;
+import com.alibaba.jstorm.utils.JStromServerConfigExtension;
 import com.alibaba.jstorm.utils.PathUtils;
 import com.alibaba.jstorm.utils.TimeUtils;
 
@@ -66,7 +63,7 @@ public class TopologyAssign implements Runnable {
 	protected NimbusData nimbusData;
 
 	protected Map<String, IToplogyScheduler> schedulers;
-	
+
 	private Thread thread;
 
 	public static final String DEFAULT_SCHEDULER_NAME = "default";
@@ -113,7 +110,7 @@ public class TopologyAssign implements Runnable {
 			if (event == null) {
 				continue;
 			}
-			
+
 			boolean isSuccess = doTopologyAssignment(event);
 
 			if (isSuccess == false) {
@@ -278,16 +275,17 @@ public class TopologyAssign implements Runnable {
 
 		String topologyId = event.getTopologyId();
 
-		Map<Object, Object> conf = nimbusData.getConf();
+		Map<Object, Object> nimbusConf = nimbusData.getConf();
+		Map<Object, Object> topologyConf = StormConfig
+				.read_nimbus_topology_conf(nimbusConf, topologyId);
 
-		StormTopology rawTopology = StormConfig.read_nimbus_topology_code(conf,
-				topologyId);
+		StormTopology rawTopology = StormConfig.read_nimbus_topology_code(
+				nimbusConf, topologyId);
 		ret.setRawTopology(rawTopology);
 
 		Map stormConf = new HashMap();
-		stormConf.putAll(conf);
-		stormConf.putAll(StormConfig
-				.read_nimbus_topology_conf(conf, topologyId));
+		stormConf.putAll(nimbusConf);
+		stormConf.putAll(topologyConf);
 		ret.setStormConf(stormConf);
 
 		StormClusterState stormClusterState = nimbusData.getStormClusterState();
@@ -345,14 +343,12 @@ public class TopologyAssign implements Runnable {
 
 			try {
 				AssignmentBak lastAssignment = stormClusterState
-					.assignment_bak(event.getTopologyName());
+						.assignment_bak(event.getTopologyName());
 				if (lastAssignment != null) {
-
 					ret.setOldAssignment(lastAssignment.getAssignment());
 				}
-
-			}catch(Exception e) {
-				LOG.warn("Failed to get old Assignment,", e);
+			} catch (Exception e) {
+				LOG.warn("Fail to get old assignment", e);
 			}
 		} else {
 			ret.setOldAssignment(existingAssignment);
@@ -364,113 +360,6 @@ public class TopologyAssign implements Runnable {
 		}
 
 		return ret;
-	}
-
-	private void checkGroupResource(Map conf,
-			Map<Integer, ResourceAssignment> assignment, String topologyName)
-			throws Exception {
-		if (!nimbusData.isGroupMode())
-			return;
-		String group = ConfigExtension.getUserGroup(conf);
-		if (group == null)
-			throw new FailedAssignTopologyException(
-					"It's group model, do you forget to set group name in your topology's conf? ^_^");
-		Map<ThriftResourceType, Integer> groupResource = nimbusData
-				.getGroupToResource().get(group);
-		if (groupResource == null)
-			throw new FailedAssignTopologyException("Your group name: " + group
-					+ " is not valid");
-		Map<ThriftResourceType, Integer> usedResource = nimbusData
-				.getGroupToUsedResource().get(group);
-		if (usedResource == null) {
-			usedResource = new HashMap<ThriftResourceType, Integer>();
-			nimbusData.getGroupToUsedResource().put(group, usedResource);
-			usedResource.put(ThriftResourceType.CPU, 0);
-			usedResource.put(ThriftResourceType.MEM, 0);
-			usedResource.put(ThriftResourceType.DISK, 0);
-			usedResource.put(ThriftResourceType.NET, 0);
-		}
-		Map<ThriftResourceType, Integer> topologyResource = NimbusUtils
-				.getTopologyResource(null, assignment);
-		for (Entry<ThriftResourceType, Integer> entry : topologyResource
-				.entrySet()) {
-			int used = usedResource.get(entry.getKey());
-			int had = groupResource.get(entry.getKey());
-			if ((used + entry.getValue()) > had) {
-				StringBuilder failMSG = new StringBuilder();
-				failMSG.append("Your group '").append(group)
-						.append("' have not enough ")
-						.append(entry.getKey().name()).append("\n")
-						.append("Your group's ").append(entry.getKey())
-						.append("POOL size is:").append(had).append(" ")
-						.append("and had been used:").append(used).append(" ")
-						.append("but your topology '").append(topologyName)
-						.append("' need:").append(entry.getValue())
-						.append("\n");
-				throw new FailedAssignTopologyException(failMSG.toString());
-			}
-		}
-		takeTopologyResource(group, topologyResource, usedResource,
-				topologyName);
-	}
-
-	private void takeTopologyResource(String group,
-			Map<ThriftResourceType, Integer> topologyResource,
-			Map<ThriftResourceType, Integer> usedResource, String topologyName)
-			throws Exception {
-		for (Entry<ThriftResourceType, Integer> entry : topologyResource
-				.entrySet()) {
-			usedResource.put(entry.getKey(), usedResource.get(entry.getKey())
-					+ entry.getValue());
-		}
-		Map<String, Map<ThriftResourceType, Integer>> topologys = nimbusData
-				.getGroupToTopology().get(group);
-		if (topologys == null) {
-			topologys = new HashMap<String, Map<ThriftResourceType, Integer>>();
-			nimbusData.getGroupToTopology().put(group, topologys);
-		}
-		topologys.put(topologyName, topologyResource);
-	}
-
-	private void upadateUsedResrouce(String topologyId,
-			Map<Integer, ResourceAssignment> assignment) throws Exception {
-		StormBase topology = nimbusData.getStormClusterState().storm_base(
-				topologyId, null);
-		String topologyName = topology.getStormName();
-		String groupName = topology.getGroup();
-		Map<ThriftResourceType, Integer> used = nimbusData
-				.getGroupToUsedResource().get(groupName);
-		Map<ThriftResourceType, Integer> topologyResource = NimbusUtils
-				.getTopologyResource(null, assignment);
-		NimbusUtils.releaseGroupResource(nimbusData, topologyName, groupName);
-		takeTopologyResource(groupName, topologyResource, used, topologyName);
-	}
-
-	public void updateGroupResource(TopologyAssignContext context,
-			TopologyAssignEvent event,
-			Map<Integer, ResourceAssignment> taskAssignments) throws Exception {
-
-		if (nimbusData.isGroupMode() == false) {
-			return;
-		}
-
-		String topologyId = event.getTopologyId();
-		nimbusData.getFlushGroupFileLock().lock();
-		try {
-			if (context.getAssignType() == TopologyAssignContext.ASSIGN_TYPE_NEW) {
-				String topologyName = event.getTopologyName();
-				checkGroupResource(context.getStormConf(), taskAssignments,
-						topologyName);
-				event.setGroup(ConfigExtension.getUserGroup(context
-						.getStormConf()));
-			} else {
-				upadateUsedResrouce(topologyId, taskAssignments);
-			}
-		} finally {
-			nimbusData.getFlushGroupFileLock().unlock();
-		}
-
-		return;
 	}
 
 	/**
@@ -494,34 +383,30 @@ public class TopologyAssign implements Runnable {
 
 		TopologyAssignContext context = prepareTopologyAssign(event);
 
-		Map<Integer, ResourceAssignment> taskAssignments = null;
+		Set<ResourceWorkerSlot> assignments = null;
 
 		if (!StormConfig.local_mode(nimbusData.getConf())) {
 
 			IToplogyScheduler scheduler = schedulers
 					.get(DEFAULT_SCHEDULER_NAME);
 
-			taskAssignments = scheduler.assignTasks(context);
-			updateGroupResource(context, event, taskAssignments);
+			assignments = scheduler.assignTasks(context);
 
 		} else {
-			taskAssignments = mkLocalAssignment(context);
+			assignments = mkLocalAssignment(context);
 		}
 		Assignment assignment = null;
 
 		Map<String, String> nodeHost = getTopologyNodeHost(
-				context.getCluster(), context.getOldAssignment(),
-				taskAssignments);
+				context.getCluster(), context.getOldAssignment(), assignments);
 
 		Map<Integer, Integer> startTimes = getTaskStartTimes(context,
-				nimbusData, topologyId, context.getOldAssignment(),
-				taskAssignments);
+				nimbusData, topologyId, context.getOldAssignment(), assignments);
 
 		String codeDir = StormConfig.masterStormdistRoot(nimbusData.getConf(),
 				topologyId);
 
-		assignment = new Assignment(codeDir, taskAssignments, nodeHost,
-				startTimes);
+		assignment = new Assignment(codeDir, assignments, nodeHost, startTimes);
 
 		StormClusterState stormClusterState = nimbusData.getStormClusterState();
 
@@ -536,9 +421,9 @@ public class TopologyAssign implements Runnable {
 		return assignment;
 	}
 
-	private static Map<Integer, ResourceAssignment> mkLocalAssignment(
+	private static Set<ResourceWorkerSlot> mkLocalAssignment(
 			TopologyAssignContext context) {
-		Map<Integer, ResourceAssignment> result = new HashMap<Integer, ResourceAssignment>();
+		Set<ResourceWorkerSlot> result = new HashSet<ResourceWorkerSlot>();
 		Map<String, SupervisorInfo> cluster = context.getCluster();
 		if (cluster.size() != 1)
 			throw new RuntimeException();
@@ -548,17 +433,11 @@ public class TopologyAssign implements Runnable {
 			supervisorId = entry.getKey();
 			localSupervisor = entry.getValue();
 		}
-		int port = localSupervisor.getNetPool().alloc(null);
-		for (Integer task : context.getAllTaskIds()) {
-			ResourceAssignment resourceAssignment = new ResourceAssignment();
-			resourceAssignment.setHostname(localSupervisor.getHostName());
-			resourceAssignment.setSupervisorId(supervisorId);
-			resourceAssignment.setPort(port);
-			resourceAssignment.setCpuSlotNum(0);
-			resourceAssignment.setMemSlotNum(0);
-			result.put(task, resourceAssignment);
-		}
-
+		int port = localSupervisor.getWorkerPorts().iterator().next();
+		ResourceWorkerSlot worker = new ResourceWorkerSlot(supervisorId, port);
+		worker.setTasks(new HashSet<Integer>(context.getAllTaskIds()));
+		worker.setHostname(localSupervisor.getHostName());
+		result.add(worker);
 		return result;
 	}
 
@@ -572,20 +451,22 @@ public class TopologyAssign implements Runnable {
 	public static Map<Integer, Integer> getTaskStartTimes(
 			TopologyAssignContext context, NimbusData nimbusData,
 			String topologyId, Assignment existingAssignment,
-			Map<Integer, ResourceAssignment> taskWorkerSlot) throws Exception {
+			Set<ResourceWorkerSlot> workers) throws Exception {
 
 		Map<Integer, Integer> startTimes = new TreeMap<Integer, Integer>();
 
 		if (context.getAssignType() == TopologyAssignContext.ASSIGN_TYPE_NEW) {
 			int nowSecs = TimeUtils.current_time_secs();
-			for (Integer changedTaskId : taskWorkerSlot.keySet()) {
-				startTimes.put(changedTaskId, nowSecs);
+			for (ResourceWorkerSlot worker : workers) {
+				for (Integer changedTaskId : worker.getTasks()) {
+					startTimes.put(changedTaskId, nowSecs);
+				}
 			}
 
 			return startTimes;
 		}
 
-		Map<Integer, ResourceAssignment> oldTaskToWorkerSlot = new HashMap<Integer, ResourceAssignment>();
+		Set<ResourceWorkerSlot> oldWorkers = new HashSet<ResourceWorkerSlot>();
 
 		if (existingAssignment != null) {
 			Map<Integer, Integer> taskStartTimeSecs = existingAssignment
@@ -594,14 +475,13 @@ public class TopologyAssign implements Runnable {
 				startTimes.putAll(taskStartTimeSecs);
 			}
 
-			if (existingAssignment.getTaskToResource() != null) {
-				oldTaskToWorkerSlot = existingAssignment.getTaskToResource();
+			if (existingAssignment.getWorkers() != null) {
+				oldWorkers = existingAssignment.getWorkers();
 			}
 		}
 
 		StormClusterState zkClusterState = nimbusData.getStormClusterState();
-		Set<Integer> changeTaskIds = getChangeTaskIds(oldTaskToWorkerSlot,
-				taskWorkerSlot);
+		Set<Integer> changeTaskIds = getChangeTaskIds(oldWorkers, workers);
 		int nowSecs = TimeUtils.current_time_secs();
 		for (Integer changedTaskId : changeTaskIds) {
 			startTimes.put(changedTaskId, nowSecs);
@@ -615,15 +495,13 @@ public class TopologyAssign implements Runnable {
 
 	public static Map<String, String> getTopologyNodeHost(
 			Map<String, SupervisorInfo> supervisorMap,
-			Assignment existingAssignment,
-			Map<Integer, ResourceAssignment> taskWorkerSlot) {
+			Assignment existingAssignment, Set<ResourceWorkerSlot> workers) {
 
 		// the following is that remove unused node from allNodeHost
 		Set<String> usedNodes = new HashSet<String>();
-		for (Entry<Integer, ResourceAssignment> entry : taskWorkerSlot
-				.entrySet()) {
+		for (ResourceWorkerSlot worker : workers) {
 
-			usedNodes.add(entry.getValue().getSupervisorId());
+			usedNodes.add(worker.getNodeId());
 		}
 
 		// map<supervisorId, hostname>
@@ -662,55 +540,12 @@ public class TopologyAssign implements Runnable {
 	 * @return Set<Integer> taskid which should reassigned
 	 */
 	public static Set<Integer> getChangeTaskIds(
-			Map<Integer, ResourceAssignment> oldTaskToWorkerSlot,
-			Map<Integer, ResourceAssignment> newTaskToWorkerSlot) {
-
-		Map<WorkerSlot, List<Integer>> oldSlotAssigned = Assignment
-				.getWorkerTasks(oldTaskToWorkerSlot);
-		Map<WorkerSlot, List<Integer>> newSlotAssigned = Assignment
-				.getWorkerTasks(newTaskToWorkerSlot);
+			Set<ResourceWorkerSlot> oldWorkers, Set<ResourceWorkerSlot> workers) {
 
 		Set<Integer> rtn = new HashSet<Integer>();
-
-		for (Entry<WorkerSlot, List<Integer>> entry : newSlotAssigned
-				.entrySet()) {
-
-			List<Integer> oldList = oldSlotAssigned.get(entry.getKey());
-			List<Integer> newList = entry.getValue();
-			if (oldList == null) {
-				rtn.addAll(newList);
-				continue;
-			} else {
-
-				if (oldList.equals(newList) == false) {
-					rtn.addAll(newList);
-					continue;
-				}
-
-				// The following is that oldList is equal newList
-				boolean isSame = true;
-				for (Integer taskId : newList) {
-					ResourceAssignment oldResource = oldTaskToWorkerSlot
-							.get(taskId);
-					ResourceAssignment newResource = newTaskToWorkerSlot
-							.get(taskId);
-
-					if (oldResource == null) {
-						// shouldn't occur
-						isSame = false;
-						break;
-					} else if (oldResource.equals(newResource) == false) {
-						isSame = false;
-						break;
-					}
-				}
-
-				if (isSame == false) {
-					rtn.addAll(newList);
-					continue;
-				}
-			}
-
+		for (ResourceWorkerSlot worker : workers) {
+			if (!oldWorkers.contains(worker))
+				rtn.addAll(worker.getTasks());
 		}
 		return rtn;
 	}
@@ -794,28 +629,25 @@ public class TopologyAssign implements Runnable {
 			Map<String, SupervisorInfo> supInfos, Assignment existAssignment) {
 		Set<Integer> ret = new HashSet<Integer>();
 
-		Map<Integer, ResourceAssignment> oldAssignment = existAssignment
-				.getTaskToResource();
+		Set<ResourceWorkerSlot> oldWorkers = existAssignment.getWorkers();
 
 		Set<String> aliveSupervisors = supInfos.keySet();
 
-		for (Entry<Integer, ResourceAssignment> entry : oldAssignment
-				.entrySet()) {
-			Integer taskId = entry.getKey();
-			ResourceAssignment resource = entry.getValue();
-			if (aliveTasks.contains(taskId) == false) {
-				// task is dead
-				continue;
+		for (ResourceWorkerSlot worker : oldWorkers) {
+			for (Integer taskId : worker.getTasks()) {
+				if (aliveTasks.contains(taskId) == false) {
+					// task is dead
+					continue;
+				}
+
+				String oldTaskSupervisorId = worker.getNodeId();
+
+				if (aliveSupervisors.contains(oldTaskSupervisorId) == false) {
+					// supervisor is dead
+					ret.add(taskId);
+					continue;
+				}
 			}
-
-			String oldTaskSupervisorId = resource.getSupervisorId();
-
-			if (aliveSupervisors.contains(oldTaskSupervisorId) == false) {
-				// supervisor is dead
-				ret.add(taskId);
-				continue;
-			}
-
 		}
 
 		return ret;
@@ -840,25 +672,17 @@ public class TopologyAssign implements Runnable {
 			String topologyId = entry.getKey();
 			Assignment assignment = entry.getValue();
 
-			Map<Integer, ResourceAssignment> taskAssignments = assignment
-					.getTaskToResource();
+			Set<ResourceWorkerSlot> workers = assignment.getWorkers();
 
-			for (ResourceAssignment resource : taskAssignments.values()) {
+			for (ResourceWorkerSlot worker : workers) {
 
-				SupervisorInfo supervisorInfo = supervisorInfos.get(resource
-						.getSupervisorId());
+				SupervisorInfo supervisorInfo = supervisorInfos.get(worker
+						.getNodeId());
 				if (supervisorInfo == null) {
 					// the supervisor is dead
 					continue;
 				}
-
-				supervisorInfo.getCpuPool().alloc(resource.getCpuSlotNum(),
-						null);
-				supervisorInfo.getMemPool().alloc(resource.getMemSlotNum(),
-						null);
-				supervisorInfo.getDiskPool()
-						.alloc(resource.getDiskSlot(), null);
-				supervisorInfo.getNetPool().alloc(resource.getPort(), null);
+				supervisorInfo.getWorkerPorts().remove(worker.getPort());
 			}
 		}
 

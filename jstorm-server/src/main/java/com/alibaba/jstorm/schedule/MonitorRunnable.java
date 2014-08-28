@@ -1,15 +1,13 @@
 package com.alibaba.jstorm.schedule;
 
 import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
 import com.alibaba.jstorm.cluster.StormClusterState;
 import com.alibaba.jstorm.daemon.nimbus.NimbusData;
 import com.alibaba.jstorm.daemon.nimbus.NimbusUtils;
 import com.alibaba.jstorm.daemon.nimbus.StatusType;
-import com.alibaba.jstorm.resource.ResourceAssignment;
+import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
 import com.alibaba.jstorm.task.Assignment;
 
 /**
@@ -70,20 +68,13 @@ public class MonitorRunnable implements Runnable {
 						LOG.info("Found " + topologyid + ",taskid:" + task
 								+ " is dead");
 						
-						ResourceAssignment resource = null;
+						ResourceWorkerSlot resource = null;
 						if (assignment != null)
-							resource = assignment.getTaskToResource().get(task);
-						if (resource != null) {
-							String host = resource.getHostname();
-							if (host == null) {
-								host = assignment.getNodeHost().
-										get(resource.getSupervisorId());
-							}
+							resource = assignment.getWorkerByTaskId(task);
+						if (resource != null)
 							LOG.info("taskid: " + task + " is on "
-									+ host + ":"
+									+ resource.getHostname() + ":"
 									+ resource.getPort());
-						}
-							
 						needReassign = true;
 						break;
 					}

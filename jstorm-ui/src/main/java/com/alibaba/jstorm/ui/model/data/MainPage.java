@@ -20,7 +20,6 @@ import com.alibaba.jstorm.cluster.ClusterState;
 import com.alibaba.jstorm.common.stats.StatBuckets;
 import com.alibaba.jstorm.ui.UIUtils;
 import com.alibaba.jstorm.ui.model.ClusterSumm;
-import com.alibaba.jstorm.ui.model.GroupSumm;
 import com.alibaba.jstorm.ui.model.NimbusSlave;
 import com.alibaba.jstorm.ui.model.SupervisorSumm;
 import com.alibaba.jstorm.ui.model.TopologySumm;
@@ -32,7 +31,7 @@ import com.google.common.collect.Lists;
  * 
  * @author xin.zhou/Longda
  */
-@ManagedBean(name="mainpage")
+@ManagedBean(name = "mainpage")
 @ViewScoped
 public class MainPage implements Serializable {
 
@@ -46,8 +45,7 @@ public class MainPage implements Serializable {
 	private List<ClusterSumm> csumm = null;
 	private List<TopologySumm> tsumm = null;
 	private List<SupervisorSumm> ssumm = null;
-	private List<GroupSumm> gsumm = null;
-	
+
 	private List<NimbusSlave> slaves = null;
 	private List<String> zkServers = null;
 	private String zkPort = null;
@@ -67,21 +65,17 @@ public class MainPage implements Serializable {
 			client = NimbusClient.getConfiguredClient(conf);
 			summ = client.getClient().getClusterInfo();
 
-			tsumm = UIUtils.topologySummary(summ.get_topologies(), summ
-					.get_groupToResource().keySet());
+			tsumm = UIUtils.topologySummary(summ.get_topologies());
 			csumm = UIUtils.clusterSummary(summ, client, conf);
 			ssumm = UIUtils.supervisorSummary(summ.get_supervisors());
-			gsumm = UIUtils.groupSummary(summ.get_groupToResource(),
-					summ.get_groupToUsedResource());
-			if (!summ.is_isGroupModel())
-				gsumm = new ArrayList<GroupSumm>();
-			
-			cluster_state = ZkTool.mk_distributed_cluster_state(client.getConf());
+
+			cluster_state = ZkTool.mk_distributed_cluster_state(client
+					.getConf());
 			slaves = getNimbusSlave(cluster_state, conf);
-			
+
 			zkServers = getZkServer(conf);
 			zkPort = String.valueOf(conf.get(Config.STORM_ZOOKEEPER_PORT));
-			
+
 		} catch (Exception e) {
 			LOG.error("Failed to get cluster information:", e);
 			throw e;
@@ -94,23 +88,26 @@ public class MainPage implements Serializable {
 			}
 		}
 	}
-	
-	private List<NimbusSlave> getNimbusSlave(ClusterState cluster_state, Map conf) throws Exception {
+
+	private List<NimbusSlave> getNimbusSlave(ClusterState cluster_state,
+			Map conf) throws Exception {
 		int port = ConfigExtension.getNimbusDeamonHttpserverPort(conf);
 		List<NimbusSlave> slaves = Lists.newArrayList();
 		Map<String, String> followerMap = ZkTool.get_followers(cluster_state);
 		if (!followerMap.isEmpty()) {
 			for (Entry<String, String> entry : followerMap.entrySet()) {
-				String uptime = StatBuckets.prettyUptimeStr(Integer.valueOf(entry.getValue()));
+				String uptime = StatBuckets.prettyUptimeStr(Integer
+						.valueOf(entry.getValue()));
 				slaves.add(new NimbusSlave(entry.getKey(), uptime, port));
 			}
 		}
 		return slaves;
 	}
-	
+
 	private List<String> getZkServer(Map conf) {
 		List<String> servers = Lists.newArrayList();
-		for (String ip : (List<String>)conf.get(Config.STORM_ZOOKEEPER_SERVERS)) {
+		for (String ip : (List<String>) conf
+				.get(Config.STORM_ZOOKEEPER_SERVERS)) {
 			servers.add(NetWorkUtils.ip2Host(ip));
 		}
 		return servers;
@@ -119,7 +116,6 @@ public class MainPage implements Serializable {
 	public List<ClusterSumm> getCsumm() {
 		return csumm;
 	}
-	
 
 	public ClusterSummary getSumm() {
 		return summ;
@@ -141,10 +137,6 @@ public class MainPage implements Serializable {
 		this.ssumm = ssumm;
 	}
 
-	public void setGsumm(List<GroupSumm> gsumm) {
-		this.gsumm = gsumm;
-	}
-
 	public List<TopologySumm> getTsumm() {
 
 		return tsumm;
@@ -155,11 +147,6 @@ public class MainPage implements Serializable {
 		return ssumm;
 	}
 
-	public List<GroupSumm> getGsumm() {
-
-		return gsumm;
-	}
-
 	public String getHost() {
 		return host;
 	}
@@ -167,7 +154,7 @@ public class MainPage implements Serializable {
 	public void setHost(String host) {
 		this.host = host;
 	}
-	
+
 	public List<NimbusSlave> getSlaves() {
 		return slaves;
 	}
@@ -183,7 +170,7 @@ public class MainPage implements Serializable {
 	public void setZkServers(List<String> zkServers) {
 		this.zkServers = zkServers;
 	}
-	
+
 	public String getZkPort() {
 		return zkPort;
 	}

@@ -36,13 +36,6 @@
 
 			<p:column>
 				<f:facet name="header">
-					<h:outputText value="Group Mode" />
-				</f:facet>
-				<h:outputText value="#{cls.isGroupModel}" />
-			</p:column>
-
-			<p:column>
-				<f:facet name="header">
 					<h:outputText value="Supervisors" />
 				</f:facet>
 				<h:outputText value="#{cls.supervisorNum}" />
@@ -52,7 +45,7 @@
 				<f:facet name="header">
 					<h:outputText value="version" />
 				</f:facet>
-				<h:outputText value="0.9.4.1" />
+				<h:outputText value="0.9.5" />
 			</p:column>
 
 			<p:column>
@@ -134,101 +127,6 @@
 					</p:dataTable>
 				</h:form>
 			</p:column>
-
-			<p:column>
-				<f:facet name="header">
-					<h:outputText value="CPU Slot" />
-				</f:facet>
-				<h:form>
-					<p:dataTable id="cpusummary" var="cls2" value="#{mainpage.csumm}">
-						<p:column>
-							<f:facet name="header">
-								<h:outputText value="Total" />
-							</f:facet>
-							<h:outputText value="#{cls2.totalCpuSlotNum}" />
-						</p:column>
-						<p:column>
-							<f:facet name="header">
-								<h:outputText value="Used" />
-							</f:facet>
-							<h:outputText value="#{cls2.usedCpuSlotNum}" />
-						</p:column>
-						<p:column>
-							<f:facet name="header">
-								<h:outputText value="Free" />
-							</f:facet>
-							<h:outputText value="#{cls2.freeCpuSlotNum}" />
-						</p:column>
-					</p:dataTable>
-				</h:form>
-
-			</p:column>
-
-			<p:column>
-				<f:facet name="header">
-					<h:outputText value="Memory Slot" />
-				</f:facet>
-				<h:form>
-					<p:dataTable id="memsummary" var="cls3" value="#{mainpage.csumm}">
-						<p:column>
-							<f:facet name="header">
-								<h:outputText value="Total" />
-							</f:facet>
-							<h:outputText value="#{cls3.totalMemSlotNum}" />
-						</p:column>
-						<p:column>
-							<f:facet name="header">
-								<h:outputText value="Used" />
-							</f:facet>
-							<h:outputText value="#{cls3.usedMemSlotNum}" />
-						</p:column>
-						<p:column>
-							<f:facet name="header">
-								<h:outputText value="Free" />
-							</f:facet>
-							<h:outputText value="#{cls3.freeMemSlotNum}" />
-						</p:column>
-					</p:dataTable>
-				</h:form>
-			</p:column>
-
-			<p:column>
-				<f:facet name="header">
-					<h:outputText value="Disk Slot" />
-				</f:facet>
-				<h:form>
-					<p:dataTable id="disksummary" var="cls4" value="#{mainpage.csumm}">
-						<p:column>
-							<f:facet name="header">
-								<h:outputText value="Total" />
-							</f:facet>
-							<h:outputText value="#{cls4.totalDiskSlotNum}" />
-						</p:column>
-						<p:column>
-							<f:facet name="header">
-								<h:outputText value="Used" />
-							</f:facet>
-							<h:outputText value="#{cls4.usedDiskSlotNum}" />
-						</p:column>
-						<p:column>
-							<f:facet name="header">
-								<h:outputText value="Free" />
-							</f:facet>
-							<h:outputText value="#{cls4.freeDiskSlotNum}" />
-						</p:column>
-					</p:dataTable>
-				</h:form>
-			</p:column>
-
-
-			<!-- 
-			<p:column>
-				<f:facet name="header">
-					<h:outputText value="Running tasks" />
-				</f:facet>
-				<h:outputText value="#{cls.runningTaskNum}" />
-			</p:column>
-			 -->
 		</p:dataTable>
 	</h:form>
 
@@ -254,14 +152,6 @@
 					<h:outputText value="Topology Id" />
 				</f:facet>
 				<h:outputText value="#{topo.topologyId}" />
-
-			</p:column>
-
-			<p:column>
-				<f:facet name="header">
-					<h:outputText value="Group" />
-				</f:facet>
-				<h:outputText value="#{topo.group}" />
 
 			</p:column>
 
@@ -293,26 +183,6 @@
 				<h:outputText value="#{topo.numTasks}" />
 			</p:column>
 
-			<p:column>
-				<f:facet name="header">
-					<h:outputText value="Cpu Num" />
-				</f:facet>
-				<h:outputText value="#{topo.numCpu}" />
-			</p:column>
-
-			<p:column>
-				<f:facet name="header">
-					<h:outputText value="Memory Num" />
-				</f:facet>
-				<h:outputText value="#{topo.numMem}" />
-			</p:column>
-
-			<p:column>
-				<f:facet name="header">
-					<h:outputText value="Disk num" />
-				</f:facet>
-				<h:outputText value="#{topo.numDisk}" />
-			</p:column>
 		</p:dataTable>
 	</h:form>
 	<h2>Supervisor Summary</h2>
@@ -351,118 +221,6 @@
 					<h:outputText value="Used Port" />
 				</f:facet>
 				<h:outputText value="#{ssumm.usedPort}" />
-			</p:column>
-
-			<p:column>
-				<f:facet name="header">
-					<h:outputText value="Total Cpu" />
-				</f:facet>
-				<h:outputText value="#{ssumm.totalCpu}" />
-			</p:column>
-
-			<p:column>
-				<f:facet name="header">
-					<h:outputText value="Used Cpu" />
-				</f:facet>
-				<h:outputText value="#{ssumm.usedCpu}" />
-			</p:column>
-
-			<p:column>
-				<f:facet name="header">
-					<h:outputText value="Total Memory" />
-				</f:facet>
-				<h:outputText value="#{ssumm.totalMem}" />
-			</p:column>
-
-			<p:column>
-				<f:facet name="header">
-					<h:outputText value="Used Memory" />
-				</f:facet>
-				<h:outputText value="#{ssumm.usedMem}" />
-			</p:column>
-
-			<p:column>
-				<f:facet name="header">
-					<h:outputText value="Total Disk" />
-				</f:facet>
-				<h:outputText value="#{ssumm.totalDisk}" />
-			</p:column>
-
-			<p:column>
-				<f:facet name="header">
-					<h:outputText value="Used Disk" />
-				</f:facet>
-				<h:outputText value="#{ssumm.usedDisk}" />
-			</p:column>
-
-		</p:dataTable>
-	</h:form>
-
-	<h2>Group Summary</h2>
-	<h:form>
-		<p:dataTable id="groupsummary" var="gsumm" value="#{mainpage.gsumm}"
-			sortBy="#{gsumm.name}" sortOrder="ASCENDING">
-			<p:column>
-				<f:facet name="header">
-					<h:outputText value="Name" />
-				</f:facet>
-				<h:outputText value="#{gsumm.name}" />
-			</p:column>
-
-			<p:column>
-				<f:facet name="header">
-					<h:outputText value="Total Port" />
-				</f:facet>
-				<h:outputText value="#{gsumm.totalPort}" />
-			</p:column>
-
-			<p:column>
-				<f:facet name="header">
-					<h:outputText value="Used Port" />
-				</f:facet>
-				<h:outputText value="#{gsumm.usedPort}" />
-			</p:column>
-
-			<p:column>
-				<f:facet name="header">
-					<h:outputText value="Total Cpu" />
-				</f:facet>
-				<h:outputText value="#{gsumm.totalCpu}" />
-			</p:column>
-
-			<p:column>
-				<f:facet name="header">
-					<h:outputText value="Used Cpu" />
-				</f:facet>
-				<h:outputText value="#{gsumm.usedCpu}" />
-			</p:column>
-
-			<p:column>
-				<f:facet name="header">
-					<h:outputText value="Total Memory" />
-				</f:facet>
-				<h:outputText value="#{gsumm.totalMem}" />
-			</p:column>
-
-			<p:column>
-				<f:facet name="header">
-					<h:outputText value="Used Memory" />
-				</f:facet>
-				<h:outputText value="#{gsumm.usedMem}" />
-			</p:column>
-
-			<p:column>
-				<f:facet name="header">
-					<h:outputText value="Total Disk" />
-				</f:facet>
-				<h:outputText value="#{gsumm.totalDisk}" />
-			</p:column>
-
-			<p:column>
-				<f:facet name="header">
-					<h:outputText value="Used Disk" />
-				</f:facet>
-				<h:outputText value="#{gsumm.usedDisk}" />
 			</p:column>
 
 		</p:dataTable>

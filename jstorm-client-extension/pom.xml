@@ -4,18 +4,18 @@
 	<parent>
 		<groupId>com.alibaba.jstorm</groupId>
 		<artifactId>jstorm-all</artifactId>
-		<version>0.9.4.1</version>
+		<version>0.9.5</version>
 		<relativePath>..</relativePath>
-	</parent>
+	</parent> 
  	<!--<parent>
  		<groupId>com.taobao</groupId> 
  		<artifactId>parent</artifactId> 
  		<version>1.0.2</version> 
- 	</parent>  -->
+ 	</parent> -->
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.alibaba.jstorm</groupId>
 	<artifactId>jstorm-client-extension</artifactId>
-	<version>0.9.4.1</version>
+	<version>0.9.5</version>
 	<packaging>jar</packaging>
 	<name>${project.artifactId}-${project.version}</name>
 
@@ -63,78 +63,16 @@
 			<version>${project.version}</version>
 			<scope>provided</scope>
 		</dependency>
-
-		<dependency>
-			<groupId>commons-io</groupId>
-			<artifactId>commons-io</artifactId>
-			<version>2.4</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-exec</artifactId>
-			<version>1.1</version>
-		</dependency>
-		<dependency>
-			<groupId>commons-lang</groupId>
-			<artifactId>commons-lang</artifactId>
-			<version>2.5</version>
-		</dependency>
-		<dependency>
-			<groupId>org.ini4j</groupId>
-			<artifactId>ini4j</artifactId>
-			<version>0.5.2</version>
-		</dependency> 
 		<dependency>
 			<groupId>com.googlecode.json-simple</groupId>
 			<artifactId>json-simple</artifactId>
 			<version>1.1</version>
 		</dependency>
-<!-- 		<dependency> -->
-<!-- 			<groupId>commons-httpclient</groupId> -->
-<!-- 			<artifactId>commons-httpclient</artifactId> -->
-<!-- 			<version>3.1</version> -->
-<!-- 			<exclusions> -->
-<!-- 				<exclusion> -->
-<!-- 					<artifactId>log4j</artifactId> -->
-<!-- 					<groupId>log4j</groupId> -->
-<!-- 				</exclusion> -->
-<!-- 			</exclusions> -->
-<!-- 		</dependency> -->
-<!-- 		<dependency> -->
-<!-- 			<groupId>com.google.guava</groupId> -->
-<!-- 			<artifactId>guava</artifactId> -->
-<!-- 			<version>12.0</version> -->
-<!-- 		</dependency> -->
 		<dependency>
 		  <groupId>com.sun.net.httpserver</groupId>
 		  <artifactId>http</artifactId>
 		  <version>20070405</version>
 		</dependency>
-
-		<!-- <dependency> <groupId>org.apache.thrift</groupId> <artifactId>libthrift</artifactId> 
-			<version>0.7.0</version> <exclusions> <exclusion> <groupId>org.slf4j</groupId> 
-			<artifactId>slf4j-api</artifactId> </exclusion> </exclusions> </dependency> 
-			<dependency> <groupId>clj-time</groupId> <artifactId>clj-time</artifactId> 
-			<version>0.4.1</version> </dependency> <dependency> <groupId>com.netflix.curator</groupId> 
-			<artifactId>curator-framework</artifactId> <version>1.1.15</version> <exclusions> 
-			<exclusion> <groupId>log4j</groupId> <artifactId>log4j</artifactId> </exclusion> 
-			<exclusion> <groupId>org.slf4j</groupId> <artifactId>slf4j-api</artifactId> 
-			</exclusion> </exclusions> </dependency> <dependency> <groupId>com.netflix.curator</groupId> 
-			<artifactId>curator-recipes</artifactId> <version>1.1.15</version> <exclusions> 
-			<exclusion> <groupId>log4j</groupId> <artifactId>log4j</artifactId> </exclusion> 
-			</exclusions> </dependency> <dependency> <groupId>org.apache.zookeeper</groupId> 
-			<artifactId>zookeeper</artifactId> <version>3.3.4</version> <exclusions> 
-			<exclusion> <groupId>log4j</groupId> <artifactId>log4j</artifactId> </exclusion> 
-			</exclusions> </dependency> <dependency> <groupId>backtype</groupId> <artifactId>jzmq</artifactId> 
-			<version>2.1.0</version> </dependency> <dependency> <groupId>com.esotericsoftware.kryo</groupId> 
-			<artifactId>kryo</artifactId> <version>2.17</version> </dependency> <dependency> 
-			<groupId>storm</groupId> <artifactId>carbonite</artifactId> <version>1.5.0</version> 
-			</dependency> <dependency> <groupId>org.yaml</groupId> <artifactId>snakeyaml</artifactId> 
-			<version>1.11</version> </dependency> <dependency> <groupId>com.googlecode.disruptor</groupId> 
-			<artifactId>disruptor</artifactId> <version>2.10.1</version> </dependency> 
-			<dependency> <groupId>org.jboss.netty</groupId> <artifactId>netty</artifactId> 
-			<version>3.2.7.Final</version> </dependency> <dependency> <groupId>storm</groupId> 
-			<artifactId>jgrapht</artifactId> <version>0.8.3</version> </dependency> -->
 		<dependency>
 			<groupId>org.powermock</groupId>
 			<artifactId>powermock-module-junit4</artifactId>
@@ -151,8 +89,5 @@
 			<artifactId>slf4j-log4j12</artifactId>
 			<version>1.7.5</version>
 		</dependency>
-		<!-- <dependency> <groupId>ch.qos.logback</groupId> <artifactId>logback-classic</artifactId> 
-			<version>1.0.13</version> </dependency> <dependency> <groupId>org.slf4j</groupId> 
-			<artifactId>log4j-over-slf4j</artifactId> <version>1.7.5</version> </dependency> -->
 	</dependencies>
 </project>

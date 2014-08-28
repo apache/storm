@@ -6,6 +6,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 
 import backtype.storm.metric.api.IStatefulObject;
+import backtype.storm.utils.disruptor.MultiThreadedSleepClaimStrategy;
+import backtype.storm.utils.disruptor.SingleThreadedSleepClaimStrategy;
 
 import com.lmax.disruptor.AlertException;
 import com.lmax.disruptor.ClaimStrategy;
@@ -25,6 +27,11 @@ import com.lmax.disruptor.WaitStrategy;
  * in batches.
  */
 public class DisruptorQueue implements IStatefulObject {
+	static boolean useSleep = true;
+	public static void setUseSleep(boolean useSleep) {
+		DisruptorQueue.useSleep = useSleep;
+	}
+	
 	static final Object FLUSH_CACHE = new Object();
 	static final Object INTERRUPT = new Object();
 
@@ -36,10 +43,28 @@ public class DisruptorQueue implements IStatefulObject {
 	// reads?
 	volatile boolean consumerStartedFlag = false;
 	ConcurrentLinkedQueue<Object> _cache = new ConcurrentLinkedQueue();
+	
+	protected ClaimStrategy getRealClaim(ClaimStrategy claim) {
+		ClaimStrategy ret = claim;
+		
+		if (useSleep == false) {
+			return ret;
+		}
+		
+		if (claim instanceof SingleThreadedClaimStrategy) {
+			ret = new SingleThreadedSleepClaimStrategy(claim);
+
+		} else {
+			ret = new MultiThreadedSleepClaimStrategy(claim);
+		}
+
+		return ret;
+	}
 
 	public DisruptorQueue(ClaimStrategy claim, WaitStrategy wait) {
+		ClaimStrategy realClaim = getRealClaim(claim);
 		_buffer = new RingBuffer<MutableObject>(new ObjectEventFactory(),
-				claim, wait);
+				realClaim, wait);
 		_consumer = new Sequence();
 		_barrier = _buffer.newBarrier();
 		_buffer.setGatingSequences(_consumer);

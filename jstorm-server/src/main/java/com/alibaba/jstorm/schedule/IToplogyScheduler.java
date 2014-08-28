@@ -1,13 +1,14 @@
 package com.alibaba.jstorm.schedule;
 
 import java.util.Map;
+import java.util.Set;
 
-import com.alibaba.jstorm.resource.ResourceAssignment;
+import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
 import com.alibaba.jstorm.utils.FailedAssignTopologyException;
 
 public interface IToplogyScheduler {
 	void prepare(Map conf);
 
-	Map<Integer, ResourceAssignment> assignTasks(TopologyAssignContext contex)
+	Set<ResourceWorkerSlot> assignTasks(TopologyAssignContext contex)
 			throws FailedAssignTopologyException;
 }

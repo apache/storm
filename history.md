@@ -1,5 +1,13 @@
 [JStorm 0.9.0 ΩÈ…‹](http://wenku.baidu.com/view/59e81017dd36a32d7375818b.html)
 
+#Release 0.9.5
+##Big feature:
+1. Redesign scheduler arithmetic, basing worker not task .
+
+## Bug fix
+1. Fix disruptor use too much cpu
+2. Add target NettyServer log when fail to send data by netty
+
 #Release 0.9.4.1
 ##Bug fix:
 1. Improve speed between tasks who is running in one worker

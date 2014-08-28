@@ -272,8 +272,8 @@ class NettyClient implements IConnection {
 			long count = (cachedSize + BATCH_THREASHOLD_WARN - 1)
 					/ BATCH_THREASHOLD_WARN;
 			long sleepMs = count * 20;
-			LOG.warn("Too much cached buffer {}, sleep {}ms ", cachedSize,
-					sleepMs);
+			LOG.warn("Too much cached buffer {}, sleep {}ms, {}", cachedSize,
+					sleepMs, remote_addr.toString());
 
 			JStormUtils.sleepMs(sleepMs);
 			reconnect();

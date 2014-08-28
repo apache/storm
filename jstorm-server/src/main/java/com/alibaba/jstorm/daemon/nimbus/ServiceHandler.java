@@ -56,11 +56,12 @@ import com.alibaba.jstorm.cluster.StormBase;
 import com.alibaba.jstorm.cluster.StormClusterState;
 import com.alibaba.jstorm.cluster.StormConfig;
 import com.alibaba.jstorm.daemon.supervisor.SupervisorInfo;
-import com.alibaba.jstorm.resource.ResourceAssignment;
+import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
 import com.alibaba.jstorm.task.Assignment;
 import com.alibaba.jstorm.task.TaskInfo;
 import com.alibaba.jstorm.utils.FailedAssignTopologyException;
 import com.alibaba.jstorm.utils.JStormUtils;
+import com.alibaba.jstorm.utils.JStromServerConfigExtension;
 import com.alibaba.jstorm.utils.NetWorkUtils;
 import com.alibaba.jstorm.utils.Thrift;
 import com.alibaba.jstorm.utils.TimeUtils;
@@ -543,16 +544,11 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 					continue;
 				}
 				assignments.put(topologyId, assignment);
-				String group = "default";
-				if (data.isGroupMode())
-					group = base.getGroup();
-				if (group == null)
-					group = "default";
 
 				TopologySummary topology = NimbusUtils.mkTopologySummary(
 						assignment, topologyId, base.getStormName(),
 						base.getStatusString(),
-						TimeUtils.time_delta(base.getLanchTimeSecs()), group);
+						TimeUtils.time_delta(base.getLanchTimeSecs()));
 
 				topologySummaries.add(topology);
 
@@ -567,9 +563,7 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 					.mkSupervisorSummaries(supervisorInfos, assignments);
 
 			return new ClusterSummary(supervisorSummaries, uptime,
-					topologySummaries, data.getGroupToTopology(),
-					data.getGroupToResource(), data.getGroupToUsedResource(),
-					data.isGroupMode());
+					topologySummaries);
 
 		} catch (TException e) {
 			LOG.info("Failed to get ClusterSummary ", e);
@@ -633,6 +627,7 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 			}
 
 			Map<Integer, WorkerSummary> portWorkerSummarys = new TreeMap<Integer, WorkerSummary>();
+			Map<String, Integer> supervisorToUsedSlotNum = new HashMap<String, Integer>();
 			for (Entry<String, Assignment> entry : assignments.entrySet()) {
 				String topologyId = entry.getKey();
 				Assignment assignment = entry.getValue();
@@ -640,43 +635,46 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 				Map<Integer, String> taskToComponent = Cluster
 						.topology_task_info(stormClusterState, topologyId);
 
-				Map<Integer, ResourceAssignment> taskToResource = assignment
-						.getTaskToResource();
+				Set<ResourceWorkerSlot> workers = assignment.getWorkers();
 
-				for (Entry<Integer, ResourceAssignment> resourceEntry : taskToResource
-						.entrySet()) {
-					Integer taskId = resourceEntry.getKey();
-					ResourceAssignment resourceAssignment = resourceEntry
-							.getValue();
+				for (ResourceWorkerSlot worker : workers) {
+					for (Integer taskId : worker.getTasks()) {
 
-					if (supervisorId.equals(resourceAssignment
-							.getSupervisorId()) == false) {
-						continue;
+						if (supervisorId.equals(worker.getNodeId()) == false) {
+							continue;
+						}
+						Integer slotNum = supervisorToUsedSlotNum
+								.get(supervisorId);
+						if (slotNum == null) {
+							slotNum = 0;
+							supervisorToUsedSlotNum.put(supervisorId, slotNum);
+						}
+						supervisorToUsedSlotNum.put(supervisorId, ++slotNum);
+
+						Integer port = worker.getPort();
+						WorkerSummary workerSummary = portWorkerSummarys
+								.get(port);
+						if (workerSummary == null) {
+							workerSummary = new WorkerSummary();
+							workerSummary.set_port(port);
+							workerSummary.set_topology(topologyId);
+							workerSummary
+									.set_tasks(new ArrayList<TaskSummary>());
+
+							portWorkerSummarys.put(port, workerSummary);
+						}
+
+						String componentName = taskToComponent.get(taskId);
+						int uptime = TimeUtils.time_delta(assignment
+								.getTaskStartTimeSecs().get(taskId));
+						List<TaskSummary> tasks = workerSummary.get_tasks();
+
+						TaskSummary taskSummary = NimbusUtils
+								.mkSimpleTaskSummary(worker, taskId,
+										componentName, host, uptime);
+
+						tasks.add(taskSummary);
 					}
-
-					supervisorInfo.allocResource(resourceAssignment);
-
-					Integer port = resourceAssignment.getPort();
-					WorkerSummary workerSummary = portWorkerSummarys.get(port);
-					if (workerSummary == null) {
-						workerSummary = new WorkerSummary();
-						workerSummary.set_port(port);
-						workerSummary.set_topology(topologyId);
-						workerSummary.set_tasks(new ArrayList<TaskSummary>());
-
-						portWorkerSummarys.put(port, workerSummary);
-					}
-
-					String componentName = taskToComponent.get(taskId);
-					int uptime = TimeUtils.time_delta(assignment
-							.getTaskStartTimeSecs().get(taskId));
-					List<TaskSummary> tasks = workerSummary.get_tasks();
-
-					TaskSummary taskSummary = NimbusUtils.mkSimpleTaskSummary(
-							resourceAssignment, taskId, componentName, host,
-							uptime);
-
-					tasks.add(taskSummary);
 				}
 			}
 
@@ -684,7 +682,8 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 			wokersList.addAll(portWorkerSummarys.values());
 
 			SupervisorSummary supervisorSummary = NimbusUtils
-					.mkSupervisorSummary(supervisorInfo, supervisorId);
+					.mkSupervisorSummary(supervisorInfo, supervisorId,
+							supervisorToUsedSlotNum);
 			return new SupervisorWorkers(supervisorSummary, wokersList);
 
 		} catch (TException e) {
@@ -734,9 +733,16 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 			Map<Integer, String> taskInfo = Cluster.topology_task_info(
 					stormClusterState, topologyId);
 
-			List<TaskSummary> tasks = NimbusUtils.mkTaskSummary(
+			Map<Integer, TaskSummary> tasks = NimbusUtils.mkTaskSummary(
 					stormClusterState, assignment, taskInfo, topologyId);
-			topologyInfo.set_tasks(tasks);
+			List<TaskSummary> taskSumms = new ArrayList<TaskSummary>();
+			for (Entry<Integer, TaskSummary> entry : tasks.entrySet()) {
+				taskSumms.add(entry.getValue());
+			}
+			topologyInfo.set_tasks(taskSumms);
+			List<WorkerSummary> workers = NimbusUtils.mkWorkerSummary(
+					topologyId, assignment, tasks);
+			topologyInfo.set_workers(workers);
 
 			return topologyInfo;
 		} catch (TException e) {

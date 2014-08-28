@@ -14,9 +14,6 @@ public class ComponentSummary implements Serializable {
 	private String componentId;
 	private String topologyname;
 	private String parallelism;
-	private String cpuNum;
-	private String memNum;
-	private String diskNum;
 
 	public ComponentSummary() {
 	}
@@ -43,30 +40,6 @@ public class ComponentSummary implements Serializable {
 
 	public void setParallelism(String parallelism) {
 		this.parallelism = parallelism;
-	}
-
-	public String getCpuNum() {
-		return cpuNum;
-	}
-
-	public void setCpuNum(String cpuNum) {
-		this.cpuNum = cpuNum;
-	}
-
-	public String getMemNum() {
-		return memNum;
-	}
-
-	public void setMemNum(String memNum) {
-		this.memNum = memNum;
-	}
-
-	public String getDiskNum() {
-		return diskNum;
-	}
-
-	public void setDiskNum(String diskNum) {
-		this.diskNum = diskNum;
 	}
 
 }

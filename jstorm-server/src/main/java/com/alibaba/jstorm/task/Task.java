@@ -26,7 +26,6 @@ import com.alibaba.jstorm.cluster.StormConfig;
 import com.alibaba.jstorm.cluster.StormZkClusterState;
 import com.alibaba.jstorm.daemon.worker.WorkerData;
 import com.alibaba.jstorm.daemon.worker.WorkerHaltRunable;
-import com.alibaba.jstorm.resource.ResourceAssignment;
 import com.alibaba.jstorm.stats.CommonStatsRolling;
 import com.alibaba.jstorm.task.comm.TaskSendTargets;
 import com.alibaba.jstorm.task.comm.UnanchoredSend;
@@ -40,7 +39,6 @@ import com.alibaba.jstorm.task.execute.spout.SingleThreadSpoutExecutors;
 import com.alibaba.jstorm.task.execute.spout.SpoutExecutors;
 import com.alibaba.jstorm.task.group.MkGrouper;
 import com.alibaba.jstorm.task.heartbeat.TaskHeartbeatRunable;
-import com.alibaba.jstorm.utils.JStormServerConfig;
 import com.alibaba.jstorm.utils.JStormServerUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.lmax.disruptor.SingleThreadedClaimStrategy;
@@ -106,8 +104,6 @@ public class Task {
 		
 		this.stormConf = Common.component_conf(workerData.getStormConf(),
 				topologyContext, componentid);
-		String diskSlot = getAssignDiskSlot();
-		JStormServerConfig.setTaskAssignDiskSlot(stormConf, diskSlot);
 
 
 		// get real task object -- spout/bolt/spoutspec
@@ -116,8 +112,6 @@ public class Task {
 		int samplerate = StormConfig.sampling_rate(stormConf);
 		this.taskStats = new CommonStatsRolling(samplerate);
 
-		LOG.info("Loading task " + componentid + ":" + taskid + " disk slot:"
-				+ diskSlot);
 	}
 
 	private TaskSendTargets makeSendTargets() {
@@ -136,27 +130,6 @@ public class Task {
 		return new TaskSendTargets(stormConf, component,
 				streamComponentGrouper, topologyContext, component2Tasks,
 				taskStats);
-	}
-
-	private String getAssignDiskSlot() {
-		Assignment topologyAssignment = null;
-		try {
-			topologyAssignment = zkCluster.assignment_info(topologyid, null);
-		} catch (Exception e) {
-			throw new RuntimeException("Failed to get assignment ");
-		}
-		if (topologyAssignment == null) {
-			throw new RuntimeException("Failed to get assignment ");
-		}
-
-		ResourceAssignment taskResource = topologyAssignment
-				.getTaskToResource().get(taskid);
-		if (taskResource == null) {
-			throw new RuntimeException(
-					"Failed to get task ResourceAssignment of " + taskid);
-		}
-
-		return taskResource.getDiskSlot();
 	}
 
 	private TaskTransfer getSendingTransfer(WorkerData workerData) {
@@ -274,7 +247,7 @@ public class Task {
 		TaskHeartbeatRunable.registerTaskStats(taskid, taskStats);
 		LOG.info("Finished loading task " + componentid + ":" + taskid);
 
-		return getShutdown(allThreads,  deserializeQueue, baseExecutor);
+		return getShutdown(allThreads, deserializeQueue, baseExecutor);
 	}
 
 	public TaskShutdownDameon getShutdown(List<AsyncLoopThread> allThreads,

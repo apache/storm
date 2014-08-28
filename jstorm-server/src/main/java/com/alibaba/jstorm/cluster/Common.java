@@ -4,6 +4,7 @@ import java.net.URLClassLoader;
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -27,13 +28,16 @@ import backtype.storm.task.IBolt;
 import backtype.storm.task.ShellBolt;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.tuple.Fields;
+import backtype.storm.utils.ThriftTopologyUtils;
 import backtype.storm.utils.Utils;
 
 import com.alibaba.jstorm.daemon.worker.WorkerData;
+import com.alibaba.jstorm.schedule.default_assign.DefaultTopologyAssignContext;
 import com.alibaba.jstorm.task.acker.Acker;
 import com.alibaba.jstorm.task.group.MkGrouper;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.Thrift;
+import com.google.common.collect.Maps;
 
 /**
  * Base utility function
@@ -499,7 +503,8 @@ public class Common {
 				// so we don't need send tuple to it
 				if (outTasks.size() > 0) {
 					MkGrouper grouper = new MkGrouper(topology_context,
-							out_fields, tgrouping, outTasks, stream_id, workerData);
+							out_fields, tgrouping, outTasks, stream_id,
+							workerData);
 					componentGrouper.put(component, grouper);
 				}
 			}
@@ -508,6 +513,70 @@ public class Common {
 			}
 		}
 		return rr;
+	}
+
+	/**
+	 * get the component's configuration
+	 * 
+	 * @param topology_context
+	 * @param task_id
+	 * @return component's configurations
+	 */
+	public static Map getComponentMap(DefaultTopologyAssignContext context,
+			Integer task) {
+		String componentName = context.getTaskToComponent().get(task);
+		ComponentCommon componentCommon = ThriftTopologyUtils
+				.getComponentCommon(context.getSysTopology(), componentName);
+
+		Map componentMap = (Map) JStormUtils.from_json(componentCommon
+				.get_json_conf());
+		if (componentMap == null) {
+			componentMap = Maps.newHashMap();
+		}
+		return componentMap;
+	}
+
+	/**
+	 * get all bolts' inputs and spouts' outputs <Bolt_name, <Input_name>>
+	 * <Spout_name, <Output_name>>
+	 * 
+	 * @param topology_context
+	 * @return all bolts' inputs and spouts' outputs
+	 */
+	public static Map<String, Set<String>> buildSpoutOutoputAndBoltInputMap(
+			DefaultTopologyAssignContext context) {
+		Set<String> bolts = context.getRawTopology().get_bolts().keySet();
+		Set<String> spouts = context.getRawTopology().get_spouts().keySet();
+		Map<String, Set<String>> relationship = new HashMap<String, Set<String>>();
+		for (Entry<String, Bolt> entry : context.getRawTopology().get_bolts()
+				.entrySet()) {
+			Map<GlobalStreamId, Grouping> inputs = entry.getValue()
+					.get_common().get_inputs();
+			Set<String> input = new HashSet<String>();
+			relationship.put(entry.getKey(), input);
+			for (Entry<GlobalStreamId, Grouping> inEntry : inputs.entrySet()) {
+				String component = inEntry.getKey().get_componentId();
+				input.add(component);
+				if (!bolts.contains(component)) {
+					// spout
+					Set<String> spoutOutput = relationship.get(component);
+					if (spoutOutput == null) {
+						spoutOutput = new HashSet<String>();
+						relationship.put(component, spoutOutput);
+					}
+					spoutOutput.add(entry.getKey());
+				}
+			}
+		}
+		for (String spout : spouts) {
+			if (relationship.get(spout) == null)
+				relationship.put(spout, new HashSet<String>());
+		}
+		for (String bolt : bolts) {
+			if (relationship.get(bolt) == null)
+				relationship.put(bolt, new HashSet<String>());
+		}
+		return relationship;
 	}
 
 }

@@ -24,6 +24,7 @@ public class TotalCount implements IRichBolt {
     private long                lastTupleId = -1;
     
     private boolean             checkTupleId = false;
+    private boolean             slowDonw = false;
     
     @Override
     public void prepare(Map stormConf, TopologyContext context,
@@ -35,6 +36,8 @@ public class TotalCount implements IRichBolt {
                 ":" + context.getThisTaskId());
         
         checkTupleId = JStormUtils.parseBoolean(stormConf.get("bolt.check.tupleId"), false);
+        
+        slowDonw = JStormUtils.parseBoolean(stormConf.get("bolt.slow.down"), false);
         
         LOG.info("Finished preparation");
     }
@@ -67,6 +70,10 @@ public class TotalCount implements IRichBolt {
         
 //    	  long spend = System.currentTimeMillis() - input.getLong(0);
 //    	  tpsCounter.count(spend);
+        
+        if (slowDonw) {
+        	JStormUtils.sleepMs(20);
+        }
     }
     
     public void cleanup() {

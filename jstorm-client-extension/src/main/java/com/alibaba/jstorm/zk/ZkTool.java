@@ -161,8 +161,6 @@ public class ZkTool {
 	public static Map<String, String> get_followers(ClusterState cluster_state)
 			throws Exception {
 		Map<String, String> ret = Maps.newHashMap();
-		if (!cluster_state.node_existed(ZkConstant.NIMBUS_SLAVE_SUBTREE, false))
-			return ret;
 		List<String> followers = cluster_state.get_children(
 				ZkConstant.NIMBUS_SLAVE_SUBTREE, false);
 		if (followers == null || followers.size() == 0) {

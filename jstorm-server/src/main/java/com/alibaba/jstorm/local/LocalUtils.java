@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
-import org.apache.zookeeper.server.NIOServerCnxn.Factory;
 
 import backtype.storm.Config;
 import backtype.storm.messaging.IContext;
@@ -18,6 +17,7 @@ import com.alibaba.jstorm.daemon.nimbus.DefaultInimbus;
 import com.alibaba.jstorm.daemon.nimbus.NimbusServer;
 import com.alibaba.jstorm.daemon.supervisor.Supervisor;
 import com.alibaba.jstorm.message.netty.NettyContext;
+import com.alibaba.jstorm.zk.Factory;
 import com.alibaba.jstorm.zk.Zookeeper;
 
 public class LocalUtils {

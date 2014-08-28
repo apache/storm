@@ -6,11 +6,9 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.TreeMap;
 
 import javax.faces.context.FacesContext;
@@ -31,10 +29,9 @@ import backtype.storm.generated.StormTopology;
 import backtype.storm.generated.SupervisorSummary;
 import backtype.storm.generated.TaskStats;
 import backtype.storm.generated.TaskSummary;
-import backtype.storm.generated.ThriftResourceType;
 import backtype.storm.generated.TopologyInfo;
 import backtype.storm.generated.TopologySummary;
-import backtype.storm.scheduler.WorkerSlot;
+import backtype.storm.generated.WorkerSummary;
 import backtype.storm.utils.NimbusClient;
 import backtype.storm.utils.Utils;
 
@@ -44,7 +41,6 @@ import com.alibaba.jstorm.common.stats.StaticsType;
 import com.alibaba.jstorm.ui.model.ClusterSumm;
 import com.alibaba.jstorm.ui.model.ComponentTask;
 import com.alibaba.jstorm.ui.model.Components;
-import com.alibaba.jstorm.ui.model.GroupSumm;
 import com.alibaba.jstorm.ui.model.SupervisorSumm;
 import com.alibaba.jstorm.ui.model.TopologySumm;
 import com.alibaba.jstorm.utils.JStormUtils;
@@ -256,17 +252,18 @@ public class UIUtils {
 
 		return component;
 	}
-	
+
 	/**
 	 * Convert thrift TaskSummary to UI bean ComponentTask
 	 * 
 	 * @param summ
 	 * @return
 	 */
-	public static ComponentTask getComponentTask(TaskSummary task, String topologyid) {
+	public static ComponentTask getComponentTask(TaskSummary task,
+			String topologyid) {
 
 		ComponentTask componentTask = new ComponentTask();
-		
+
 		componentTask.setComponentid(task.get_component_id());
 		componentTask.setTaskid(String.valueOf(task.get_task_id()));
 		componentTask.setHost(task.get_host());
@@ -274,20 +271,14 @@ public class UIUtils {
 		componentTask.setUptime(StatBuckets.prettyUptimeStr(task
 				.get_uptime_secs()));
 		componentTask.setLastErr(UIUtils.getTaskError(task.get_errors()));
-		
+
 		componentTask.setIp(NetWorkUtils.host2Ip(task.get_host()));
 
-		if (task.get_disk() != null) {
-			componentTask.setDiskSlot(task.get_disk());
-		} else {
-			componentTask.setDiskSlot("");
-		}
-		
 		componentTask.setTopologyid(topologyid);
 
 		return componentTask;
 	}
-	
+
 	public static List<TaskSummary> getTaskList(
 			List<TaskSummary> taskSummaries, String componentId) {
 		List<TaskSummary> ret = new ArrayList<TaskSummary>();
@@ -372,8 +363,7 @@ public class UIUtils {
 	 * @param ts
 	 * @return
 	 */
-	public static List<TopologySumm> topologySummary(List<TopologySummary> ts,
-			Set<String> groups) {
+	public static List<TopologySumm> topologySummary(List<TopologySummary> ts) {
 
 		List<TopologySumm> tsumm = new ArrayList<TopologySumm>();
 		if (ts != null) {
@@ -382,20 +372,13 @@ public class UIUtils {
 				TopologySumm topologySumm = new TopologySumm();
 				topologySumm.setTopologyId(t.get_id());
 				topologySumm.setTopologyName(t.get_name());
-				if (t.get_group() == null || !groups.contains(t.get_group()))
-					topologySumm.setGroup("default");
-				else
-					topologySumm.setGroup(t.get_group());
+
 				topologySumm.setStatus(t.get_status());
 				topologySumm.setUptime(StatBuckets.prettyUptimeStr(t
 						.get_uptime_secs()));
 
-				topologySumm.setNumCpu(String.valueOf(t.get_num_cpu()));
-				topologySumm.setNumMem(String.valueOf(t.get_num_mem()));
-				topologySumm.setNumDisk(String.valueOf(t.get_num_disk()));
 				topologySumm.setNumWorkers(String.valueOf(t.get_num_workers()));
 				topologySumm.setNumTasks(String.valueOf(t.get_num_tasks()));
-
 				tsumm.add(topologySumm);
 			}
 		}
@@ -410,30 +393,11 @@ public class UIUtils {
 	 */
 	public static List<TopologySumm> topologySummary(TopologyInfo t) {
 
-		List<TaskSummary> tasks = t.get_tasks();
-		Set<WorkerSlot> workers = new HashSet<WorkerSlot>();
+		List<WorkerSummary> workers = t.get_workers();
 		int taskNum = 0;
-
-		int cpuNum = 0;
 		int memNum = 0;
-		int diskNum = 0;
-		Set<Integer> ports = new HashSet<Integer>();
-		if (tasks != null) {
-			taskNum = tasks.size();
-			for (int i = 0; i < taskNum; i++) {
-				TaskSummary task = tasks.get(i);
-
-				cpuNum += task.get_cpu();
-				memNum += task.get_mem();
-
-				if (task.get_disk() != null
-						&& task.get_disk().isEmpty() == false) {
-					diskNum++;
-				}
-				ports.add(task.get_port());
-				workers.add(new WorkerSlot(task.get_host(), task.get_port()));
-
-			}
+		for (WorkerSummary worker : workers) {
+			taskNum += worker.get_tasks_size();
 		}
 
 		List<TopologySumm> tsumm = new ArrayList<TopologySumm>();
@@ -450,9 +414,6 @@ public class UIUtils {
 		topologySumm
 				.setUptime(StatBuckets.prettyUptimeStr(t.get_uptime_secs()));
 
-		topologySumm.setNumCpu(String.valueOf(cpuNum));
-		topologySumm.setNumMem(String.valueOf(memNum));
-		topologySumm.setNumDisk(String.valueOf(diskNum));
 		topologySumm.setNumWorkers(String.valueOf(workers.size()));
 		topologySumm.setNumTasks(String.valueOf(taskNum));
 
@@ -472,17 +433,9 @@ public class UIUtils {
 		List<SupervisorSummary> sups = summ.get_supervisors();
 		int supSize = 0;
 
-		int totalCpuSlots = 0;
-		int useCpuSlots = 0;
-		int freeCpuSlots = 0;
-
 		int totalMemSlots = 0;
 		int useMemSlots = 0;
 		int freeMemSlots = 0;
-
-		int totalDiskSlots = 0;
-		int useDiskSlots = 0;
-		int freeDiskSlots = 0;
 
 		int totalPortSlots = 0;
 		int usePortSlots = 0;
@@ -491,22 +444,12 @@ public class UIUtils {
 		if (sups != null) {
 			supSize = sups.size();
 			for (SupervisorSummary ss : sups) {
-				totalCpuSlots += ss.get_num_cpu();
-				useCpuSlots += ss.get_num_used_cpu();
-
-				totalMemSlots += ss.get_num_mem();
-				useMemSlots += ss.get_num_used_mem();
-
-				totalDiskSlots += ss.get_num_disk();
-				useDiskSlots += ss.get_num_used_disk();
 
 				totalPortSlots += ss.get_num_workers();
 				usePortSlots += ss.get_num_used_workers();
 			}
 
-			freeCpuSlots = totalCpuSlots - useCpuSlots;
 			freeMemSlots = totalMemSlots - useMemSlots;
-			freeDiskSlots = totalDiskSlots - useDiskSlots;
 			freePortSlots = totalPortSlots - usePortSlots;
 		}
 
@@ -520,7 +463,7 @@ public class UIUtils {
 			}
 
 		}
-		
+
 		String nimbustime = StatBuckets.prettyUptimeStr(summ
 				.get_nimbus_uptime_secs());
 
@@ -530,31 +473,16 @@ public class UIUtils {
 		String master = client.getMasterHost();
 		clusterSumm.setNimbusHostname(master);
 		if (master.contains(":")) {
-			clusterSumm.setNimbusIp(NetWorkUtils.host2Ip(master.substring(0, master.indexOf(":"))));
+			clusterSumm.setNimbusIp(NetWorkUtils.host2Ip(master.substring(0,
+					master.indexOf(":"))));
 		} else {
 			clusterSumm.setNimbusIp(NetWorkUtils.host2Ip(master));
 		}
 		int port = ConfigExtension.getNimbusDeamonHttpserverPort(conf);
 		clusterSumm.setNimbusLogPort(String.valueOf(port));
-		if (summ.is_isGroupModel())
-			clusterSumm.setIsGroupModel("true");
-		else
-			clusterSumm.setIsGroupModel("false");
 		clusterSumm.setNimbusUptime(nimbustime);
 		clusterSumm.setSupervisorNum(String.valueOf(supSize));
 		clusterSumm.setRunningTaskNum(String.valueOf(totalTasks));
-
-		clusterSumm.setTotalCpuSlotNum(String.valueOf(totalCpuSlots));
-		clusterSumm.setUsedCpuSlotNum(String.valueOf(useCpuSlots));
-		clusterSumm.setFreeCpuSlotNum(String.valueOf(freeCpuSlots));
-
-		clusterSumm.setTotalMemSlotNum(String.valueOf(totalMemSlots));
-		clusterSumm.setUsedMemSlotNum(String.valueOf(useMemSlots));
-		clusterSumm.setFreeMemSlotNum(String.valueOf(freeMemSlots));
-
-		clusterSumm.setTotalDiskSlotNum(String.valueOf(totalDiskSlots));
-		clusterSumm.setUsedDiskSlotNum(String.valueOf(useDiskSlots));
-		clusterSumm.setFreeDiskSlotNum(String.valueOf(freeDiskSlots));
 
 		clusterSumm.setTotalPortSlotNum(String.valueOf(totalPortSlots));
 		clusterSumm.setUsedPortSlotNum(String.valueOf(usePortSlots));
@@ -589,26 +517,6 @@ public class UIUtils {
 		return ssumm;
 	}
 
-	public static List<GroupSumm> groupSummary(
-			Map<String, Map<ThriftResourceType, Integer>> total,
-			Map<String, Map<ThriftResourceType, Integer>> used) {
-		List<GroupSumm> result = new ArrayList<GroupSumm>();
-		for (Entry<String, Map<ThriftResourceType, Integer>> entry : total
-				.entrySet()) {
-			if (used.get(entry.getKey()) == null) {
-				Map<ThriftResourceType, Integer> cache = new HashMap<ThriftResourceType, Integer>();
-				cache.put(ThriftResourceType.CPU, 0);
-				cache.put(ThriftResourceType.MEM, 0);
-				cache.put(ThriftResourceType.DISK, 0);
-				cache.put(ThriftResourceType.NET, 0);
-				used.put(entry.getKey(), cache);
-			}
-			result.add(new GroupSumm(entry.getKey(), entry.getValue(), used
-					.get(entry.getKey())));
-		}
-		return result;
-	}
-
 	public static Map readUiConfig() {
 		Map ret = Utils.readStormConfig();
 		String curDir = System.getProperty("user.home");
@@ -623,7 +531,7 @@ public class UIUtils {
 				Yaml yaml = new Yaml();
 
 				Map clientConf = (Map) yaml.load(fileStream);
-				
+
 				if (clientConf != null) {
 					ret.putAll(clientConf);
 				}
@@ -638,7 +546,7 @@ public class UIUtils {
 		}
 		return ret;
 	}
-	
+
 	public static void main(String[] args) {
 	}
 }

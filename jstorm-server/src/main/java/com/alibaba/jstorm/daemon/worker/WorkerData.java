@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.lang.StringUtils;
@@ -31,7 +32,7 @@ import com.alibaba.jstorm.cluster.Common;
 import com.alibaba.jstorm.cluster.StormClusterState;
 import com.alibaba.jstorm.cluster.StormConfig;
 import com.alibaba.jstorm.daemon.nimbus.StatusType;
-import com.alibaba.jstorm.resource.ResourceAssignment;
+import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
 import com.alibaba.jstorm.task.Assignment;
 import com.alibaba.jstorm.task.TaskShutdownDameon;
 import com.alibaba.jstorm.utils.JStormServerUtils;
@@ -76,7 +77,7 @@ public class WorkerData {
 	// <taskId, NodePort>
 	private ConcurrentHashMap<Integer, WorkerSlot> taskNodeport;
 
-	private ConcurrentHashMap<Integer, ResourceAssignment> taskToResource;
+	private ConcurrentSkipListSet<ResourceWorkerSlot> workerToResource;
 
 	private Set<Integer> localNodeTasks;
 
@@ -108,7 +109,7 @@ public class WorkerData {
 	// sending tuple's queue
 	// private LinkedBlockingQueue<TransferData> transferQueue;
 	private DisruptorQueue transferQueue;
-	
+
 	private DisruptorQueue sendingQueue;
 
 	private List<TaskShutdownDameon> shutdownTasks;
@@ -175,6 +176,11 @@ public class WorkerData {
 			this.context = TransportFactory.makeContext(stormConf);
 		}
 
+		boolean disruptorUseSleep = ConfigExtension
+				.isDisruptorUseSleep(stormConf);
+		DisruptorQueue.setUseSleep(disruptorUseSleep);
+		LOG.info("Disruptor use sleep " + disruptorUseSleep);
+
 		// this.transferQueue = new LinkedBlockingQueue<TransferData>();
 		int buffer_size = Utils.getInt(conf
 				.get(Config.TOPOLOGY_TRANSFER_BUFFER_SIZE));
@@ -184,16 +190,14 @@ public class WorkerData {
 		this.transferQueue = new DisruptorQueue(new MultiThreadedClaimStrategy(
 				buffer_size), waitStrategy);
 		this.transferQueue.consumerStarted();
-		
 		this.sendingQueue = new DisruptorQueue(new SingleThreadedClaimStrategy(
 				buffer_size), waitStrategy);
 
 		this.nodeportSocket = new ConcurrentHashMap<WorkerSlot, IConnection>();
 		this.taskNodeport = new ConcurrentHashMap<Integer, WorkerSlot>();
-		this.taskToResource = new ConcurrentHashMap<Integer, ResourceAssignment>();
+		this.workerToResource = new ConcurrentSkipListSet<ResourceWorkerSlot>();
 		this.innerTaskTransfer = new ConcurrentHashMap<Integer, DisruptorQueue>();
 		this.deserializeQueues = new ConcurrentHashMap<Integer, DisruptorQueue>();
-		
 
 		Assignment assignment = zkCluster.assignment_info(topologyId, null);
 		if (assignment == null) {
@@ -201,11 +205,11 @@ public class WorkerData {
 			LOG.error(errMsg);
 			throw new RuntimeException(errMsg);
 		}
-		taskToResource.putAll(assignment.getTaskToResource());
+		workerToResource.addAll(assignment.getWorkers());
 
 		// get current worker's task list
 
-		this.taskids = assignment.getCurrentWokerTasks(supervisorId, port);
+		this.taskids = assignment.getCurrentWorkerTasks(supervisorId, port);
 		if (taskids.size() == 0) {
 			throw new RuntimeException("No tasks running current workers");
 		}
@@ -317,14 +321,14 @@ public class WorkerData {
 		return taskNodeport;
 	}
 
-	public ConcurrentHashMap<Integer, ResourceAssignment> getTaskToResource() {
-		return taskToResource;
+	public ConcurrentSkipListSet<ResourceWorkerSlot> getWorkerToResource() {
+		return workerToResource;
 	}
 
 	public ConcurrentHashMap<Integer, DisruptorQueue> getInnerTaskTransfer() {
 		return innerTaskTransfer;
 	}
-	
+
 	public ConcurrentHashMap<Integer, DisruptorQueue> getDeserializeQueues() {
 		return deserializeQueues;
 	}
@@ -352,7 +356,7 @@ public class WorkerData {
 	public DisruptorQueue getTransferQueue() {
 		return transferQueue;
 	}
-	
+
 	// public LinkedBlockingQueue<TransferData> getTransferQueue() {
 	// return transferQueue;
 	// }
@@ -396,5 +400,4 @@ public class WorkerData {
 	public void setLocalNodeTasks(Set<Integer> localNodeTasks) {
 		this.localNodeTasks = localNodeTasks;
 	}
-
 }

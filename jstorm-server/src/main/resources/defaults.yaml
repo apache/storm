@@ -51,6 +51,18 @@ drpc.childopts: " -Xms1g -Xmx1g -Xmn256m -XX:PermSize=96m -Xmn128m -XX:PermSize=
 transactional.zookeeper.root: "/transactional"
 transactional.zookeeper.servers: null
 transactional.zookeeper.port: null
+# 
+# 
+# ##### These may optionally be filled in:
+#    
+## Map of tokens to a serialization class. tokens less than 32 are reserved by storm.
+## Tokens are written on the wire to identify the field.
+# topology.serializations: 
+#     - "org.mycompany.MyObjectSerialization"
+#     - "org.mycompany.MyOtherObjectSerialization"
+## Locations of the drpc servers
+drpc.servers:
+     - "localhost"
 
 ### supervisor.* configs are for node supervisors
 # Define the amount of workers that can be run on this machine. Each worker is assigned a port to use for communication
@@ -75,24 +87,6 @@ supervisor.hostname: null
 supervisor.use.ip: false
 
 
-#How many cpu slot one supervisor can support , if it is null, it will be set by JStorm
-supervisor.cpu.slot.num: null
-
-#How many memory slot one supervisor can support , if it is null, it will be set by JStorm
-supervisor.mem.slot.num: null
-
-# How much disk slot one supervisor can support
-# if it is null, it will use $(storm.local.dir)/worker_shared_data
-supervisor.disk.slot: null
-# if use multiple disks, it can be set as the following
-#supervisor.disk.slot:
-#	- /disk0/jstorm/data
-#	- /disk1/jstorm/data
-#	- /disk2/jstorm/data
-#	- /disk3/jstorm/data
-
-
-
 ### worker.* configs are for task workers
 # worker gc configuration
 # worker.gc.path will put all gc logs and memory dump file
@@ -102,6 +96,7 @@ worker.classpath: ""
 worker.redirect.output: true
 # when supervisor is shutdown, automatically shutdown worker
 worker.stop.without.supervisor: false
+worker.memory.size: 2147483648
 
 task.heartbeat.frequency.secs: 10
 task.refresh.poll.secs: 10
@@ -162,28 +157,6 @@ topology.tuple.serializer: "backtype.storm.serialization.types.ListDelegateSeria
 topology.trident.batch.emit.interval.millis: 500
 topology.performance.metrics: false
 
-# set topology resource assign priority weight
-# the new topology resource assign resource will according to CPU/memory/disk/port 4 part
-# so different weight, different priority
-topology.disk.weight: 5
-topology.cpu.weight: 3
-topology.memory.weight: 1
-topology.port.weight: 2
-
-# if this is false, select supervisor whose weight is highest(left_disk_slot_num * disk.weight 
-# + left_cpu_slot_num * cpu.weight + left_memory_slot_num * memory.weight + 
-# left_port_slot_num * port.weight)
-# it this is true, select which supervisor is best one according to slot level by level, 
-# select the supervisor whose disk slot is the most
-# if the last select result isn't 1, then select supervisor according to cpu
-# then according to port, last  according to memory
-topology.assign.supervisor.bylevel: true
-
-#the following weight will decide which task will be assign firstly
-topology.task.on.different.node.weight: 2
-topology.use.old.assign.ratio.weight: 2
-topology.user.define.assign.ratio.weight: 2
-
 
 # enable topology use user-define classloader to avoid class conflict
 topology.enable.classloader: false
@@ -217,36 +190,6 @@ spout.delay.run: 30
 #Force spout use single thread
 spout.single.thread: false
 
-# One memory slot size, the unit size of memory, the default setting is 1G
-# For example , if it is 1G, and one task set "memory.slots.per.task" as 2
-# then the task will use 2G memory
-memory.slot.per.size: 1073741824
-
-# This weight means the number of logic cpu slots corresponding to per hardware cpu core
-# For example , if a supervisor have 4 cpu cores and set this weight as 2 , this supervisor
-# will have 8 logic cpu slots. This weight also effects the cgroup , if this weight is 1 ,
-# one cpu slot corresponds to 1024 of cgroup's cpu weight ; when you set this weight as 2 , 
-# one cpu slot corresponds to 512 of cgroup's cpu weight ;
-# You can get more about cgroup cpu weight(cpu.share):
-#     http://t.cn/8std8UV 
-cpu.slot.per.weight: 2
-
-# if you want to start nimbus with group model, you should 
-# set your group file path like follow:
-# use absolute path
-# nimbus.groupfile.path: /home/admin/jstorm/conf/group_file.ini
-nimbus.groupfile.path: null
-
-
-# if you want to submit topology on the nimbus with group
-# module, you must set your gourp name (user.group)here or 
-# in your topology;The user.name and the user.password is
-# useless in this version 
-user.group: null
-user.name: null
-user.password: null
-
-
 # container setting means jstorm is running under other system, such as hadoop-yarn/Ali-Apsara
 # For example, in Ali-Apsara, Fuxi start c++ container process, 
 # the C++ container fork process to start nimbus or supervisor 
@@ -260,3 +203,9 @@ java.sandbox.enable: false.
 # logview port
 nimbus.deamon.logview.port: 7621
 supervisor.deamon.logview.port: 7622
+
+
+### when disruptor queue is full, sleep until queue isn't full
+### the default disruptor  will query disruptor until queue isn't full
+### this will cost much cpu
+disruptor.use.sleep: true
