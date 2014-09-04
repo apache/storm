@@ -24,18 +24,20 @@ import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import org.jboss.netty.channel.SimpleChannelHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import backtype.storm.Config;
 
-public class SaslStormClientHandler extends SimpleChannelUpstreamHandler {
+public class SaslStormClientHandler extends SimpleChannelHandler {
 
     private static final Logger LOG = LoggerFactory
             .getLogger(SaslStormClientHandler.class);
+    
     private Client client;
     long start_time;
+    
     /** Used for client or server's token to send or receive from each other. */
     private byte[] token;
     private String topologyName;
@@ -62,7 +64,7 @@ public class SaslStormClientHandler extends SimpleChannelUpstreamHandler {
             if (saslNettyClient == null) {
                 LOG.debug("Creating saslNettyClient now " + "for channel: "
                         + channel);
-                saslNettyClient = new SaslNettyClient(topologyName, token);
+                saslNettyClient = new SaslNettyClient(topologyName, token, this.client.storm_conf);
                 SaslNettyClientState.getSaslNettyClient.set(channel,
                         saslNettyClient);
             }
@@ -105,6 +107,15 @@ public class SaslStormClientHandler extends SimpleChannelUpstreamHandler {
                             + "Sasl-complete message, but as far as "
                             + "we can tell, we are not authenticated yet.");
                 }
+                
+                SaslUtils.checkSaslNegotiatedProtection(saslNettyClient, this.client.storm_conf);
+                saslNettyClient.setUseWrapUnwrap();
+                
+                if(this.client.getAuthenticatedSignal()!=null) {
+                	LOG.debug("sasl authentication compeleted, hence releasing the lock");
+                	this.client.getAuthenticatedSignal().countDown();
+                }
+                
                 ctx.getPipeline().remove(this);
                 // We call fireMessageReceived since the client is allowed to
                 // perform this request. The client's request will now proceed

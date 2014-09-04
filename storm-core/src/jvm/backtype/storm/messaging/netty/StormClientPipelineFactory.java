@@ -34,10 +34,13 @@ class StormClientPipelineFactory implements ChannelPipelineFactory {
         // Create a default pipeline implementation.
         ChannelPipeline pipeline = Channels.pipeline();
 
-        // Decoder
-        pipeline.addLast("decoder", new MessageDecoder());
+        // Wrap Encoder
+        pipeline.addLast("clientWrapEncoder", new ClientWrapMessageEncoder());
         // Encoder
         pipeline.addLast("encoder", new MessageEncoder());
+        // Decoder
+        pipeline.addLast("decoder", new ClientUnwrapMessageDecoder());
+        //pipeline.addLast("decoder", new MessageDecoder());
 
         boolean isNettyAuth = (Boolean) this.client.storm_conf
                 .get(Config.STORM_MESSAGING_NETTY_AUTHENTICATION);

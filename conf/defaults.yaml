@@ -159,6 +159,10 @@ storm.messaging.netty.flush.check.interval.ms: 10
 # By default, the Netty SASL authentication is set to false.  Users can override and set it true for a specific topology.
 storm.messaging.netty.authentication: false
 
+# By default, the Netty SASL quality of protection is set to "auth".  Users can override and set it to either "auth-int"
+# for authentication plus integrity or "auth-conf" for authentication plus integrity plus confidentiality.
+storm.messaging.netty.protection: "auth"
+
 # default number of seconds group mapping service will cache user group
 storm.group.mapping.service.cache.duration.secs: 120
 

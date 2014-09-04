@@ -29,6 +29,7 @@ enum ControlMessage {
     OK_RESPONSE((short)-200),
     FAILURE_RESPONSE((short)-400),
     SASL_TOKEN_MESSAGE_REQUEST((short)-202),
+    SASL_TOKEN_MESSAGE((short) -500),
     SASL_COMPLETE_REQUEST((short)-203);
 
     private short code;

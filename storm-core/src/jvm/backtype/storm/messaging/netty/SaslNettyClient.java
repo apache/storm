@@ -18,6 +18,7 @@
 package backtype.storm.messaging.netty;
 
 import java.io.IOException;
+import java.util.Map;
 
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
@@ -42,15 +43,20 @@ public class SaslNettyClient {
             .getLogger(SaslNettyClient.class);
 
     /**
-     * Used to respond to server's counterpart, SaslServer with SASL tokens
+     * Used to respond to server's counterpart, SaslClient with SASL tokens
      * represented as byte arrays.
      */
     private SaslClient saslClient;
+    
+    /**
+     * Used to wrap and unwrap payload based on the negotiated qop.
+     */
+    private boolean useWrapUnwrap = false;
 
     /**
      * Create a SaslNettyClient for authentication with servers.
      */
-    public SaslNettyClient(String topologyName, byte[] token) {
+    public SaslNettyClient(String topologyName, byte[] token, Map conf) {
         try {
             LOG.debug("SaslNettyClient: Creating SASL "
                     + SaslUtils.AUTH_DIGEST_MD5
@@ -58,7 +64,7 @@ public class SaslNettyClient {
 
             saslClient = Sasl.createSaslClient(
                     new String[] { SaslUtils.AUTH_DIGEST_MD5 }, null, null,
-                    SaslUtils.DEFAULT_REALM, SaslUtils.getSaslProps(),
+                    SaslUtils.DEFAULT_REALM, SaslUtils.getSaslProps(conf),
                     new SaslClientCallbackHandler(topologyName, token));
 
         } catch (IOException e) {
@@ -67,10 +73,78 @@ public class SaslNettyClient {
             saslClient = null;
         }
     }
+    
+    /**
+     * Disposes any resources held during sasl authentication. 
+     * @throws SaslException
+     */
+    public void dispose() throws SaslException {
+        saslClient.dispose();
+    }
+    
+    /**
+     * Gets the negotiated qop.
+     * @return String containing the negotiated qop.
+     */
+    public String getNegotiatedQop() {
+        return (String) saslClient.getNegotiatedProperty(Sasl.QOP);
+    }
+    
+    /**
+     * Check if sasl authentication is completed.
+     * @return true if success else false
+     */
 
     public boolean isComplete() {
         return saslClient.isComplete();
     }
+    
+    /**
+     * Check if wrap and unwrap is required.
+     * @return true if wrap and unwrap required else false.
+     */
+    public boolean isUseWrapUnwrap() {
+    	return this.useWrapUnwrap;
+    }
+    
+    /**
+     * Sets the wrap & unwrap feature if the negotiated property contains
+     * "auth-int" or "auth-conf"
+     */
+    public void setUseWrapUnwrap() {
+        String qop = (String) saslClient.getNegotiatedProperty(Sasl.QOP);
+        this.useWrapUnwrap = qop != null && !"auth".equalsIgnoreCase(qop);
+        LOG.debug("Setting SaslNettyClient useWrapUnwrap to "+ useWrapUnwrap);
+    }
+
+    /**
+     * Unwrap the message payload using sasl client for incoming messages.
+     * 
+     * @param outgoing - wrapped message.
+     * @param off - offset, usually starts at 0.
+     * @param len - length of wrapped message 
+     * @return
+     * @throws SaslException
+     */
+    public byte[] unwrap(final byte[] outgoing, final int off, final int len)
+            throws SaslException {
+        return saslClient.unwrap(outgoing, off, len);
+    }
+    
+    /**
+     * Wrap the message payload using sasl client for outgoing messages.
+     * 
+     * @param outgoing - unwrapped message.
+     * @param off - offset, usually starts at 0.
+     * @param len - length of unwrapped message.
+     * @return
+     * @throws SaslException
+     */
+    public byte[] wrap(final byte[] outgoing, final int off, final int len)
+            throws SaslException {
+        return saslClient.wrap(outgoing, off, len);
+    }
+    
 
     /**
      * Respond to server's SASL token.
@@ -162,5 +236,4 @@ public class SaslNettyClient {
             }
         }
     }
-
 }

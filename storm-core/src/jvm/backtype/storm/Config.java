@@ -108,7 +108,15 @@ public class Config extends HashMap<String, Object> {
      */
     public static final String STORM_MESSAGING_NETTY_AUTHENTICATION = "storm.messaging.netty.authentication";
     public static final Object STORM_MESSAGING_NETTY_AUTHENTICATION_SCHEMA = Boolean.class;
-
+    
+    /**
+     * Netty based messaging: A quality of protection (qop) value is one of "auth" - authentication only, 
+     * "auth-int" - authentication plus integrity protection, "auth-conf" - authentication plus integrity and confidentiality protection.
+     * The default qop is "auth".
+     */
+    public static final String STORM_MESSAGING_NETTY_PROTECTION = "storm.messaging.netty.protection";
+    public static final Object STORM_MESSAGING_NETTY_PROTECTION_SCHEMA = String.class;
+    
     /**
      * The delegate for serializing metadata, should be used for serialized objects stored in zookeeper and on disk.
      * This is NOT used for compressing serialized tuples sent between topologies.
