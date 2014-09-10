@@ -93,7 +93,7 @@ public class SpoutExecutors extends BaseExecutors implements EventHandler {
 			WorkerClassLoader.switchThreadContext();
 			this.spout.open(storm_conf, userTopologyCtx,
 					new SpoutOutputCollector(output_collector));
-		} catch (Exception e) {
+		} catch (Throwable e) {
 			error = e;
 			LOG.error("spout open error ", e);
 			report_error.report(e);
@@ -130,7 +130,7 @@ public class SpoutExecutors extends BaseExecutors implements EventHandler {
 			nextTupleTimer.start();
 			try {
 				spout.nextTuple();
-			} catch (Exception e) {
+			} catch (Throwable e) {
 				error = e;
 				LOG.error("spout execute error ", e);
 				report_error.report(e);
@@ -224,7 +224,7 @@ public class SpoutExecutors extends BaseExecutors implements EventHandler {
 
 			runnable.run();
 
-		} catch (Exception e) {
+		} catch (Throwable e) {
 			if (taskStatus.isShutdown() == false) {
 				LOG.info("Unknow excpetion ", e);
 				report_error.report(e);

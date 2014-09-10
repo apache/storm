@@ -6,6 +6,7 @@ import org.apache.log4j.Logger;
 
 import backtype.storm.utils.DisruptorQueue;
 
+import com.alibaba.jstorm.daemon.worker.Worker;
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Histogram;
@@ -21,6 +22,7 @@ import com.codahale.metrics.jvm.ThreadStatesGaugeSet;
 public class Metrics {
 
 	private static final Logger LOG = Logger.getLogger(Metrics.class);
+	private static final Logger DEFAULT_LOG = Logger.getLogger(Worker.class);
 
 	private static final MetricRegistry metrics = new MetricRegistry();
 
@@ -73,21 +75,28 @@ public class Metrics {
 
 	public static class QueueGauge implements Gauge<Float> {
 		DisruptorQueue queue;
+		String         name;
 		
-		public QueueGauge(DisruptorQueue queue) {
+		public QueueGauge(String name, DisruptorQueue queue) {
 			this.queue = queue;
+			this.name = name;
 		}
 		
 		@Override
 		public Float getValue() {
-			return queue.pctFull();
+			Float ret = queue.pctFull();
+			if (ret > 0.8) {
+				DEFAULT_LOG.info("Queue " + name + "is full " + ret);
+			}
+			
+			return ret;
 		}
 		
 	}
 
 	public static Gauge<Float> registerQueue(String name, DisruptorQueue queue) {
 		LOG.info("Register Metric " + name);
-		return metrics.register(name, new QueueGauge(queue));
+		return metrics.register(name, new QueueGauge(name, queue));
 	}
 
 	public static Counter registerCounter(String name) {

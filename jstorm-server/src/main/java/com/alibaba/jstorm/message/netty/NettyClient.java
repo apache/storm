@@ -4,18 +4,22 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
+import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,55 +41,38 @@ class NettyClient implements IConnection {
 	private static final Logger LOG = LoggerFactory
 			.getLogger(NettyClient.class);
 	public static final String PREFIX = "Netty-Client-";
+	protected String name;
 
-	// when batch buffer size is more than BATCH_THREASHOLD_WARN
-	// it will block Drainer thread
-	private final long BATCH_THREASHOLD_WARN;
+	protected final int max_retries;
+	protected final int base_sleep_ms;
+	protected final int max_sleep_ms;
+	protected final int timeoutSecond;
+	protected final int MAX_SEND_PENDING;
 
-	private final int max_retries;
-	private final int base_sleep_ms;
-	private final int max_sleep_ms;
+	protected AtomicInteger retries;
 
-	private AtomicReference<Channel> channelRef;
-	private final ClientBootstrap bootstrap;
-	private final InetSocketAddress remote_addr;
-	private AtomicInteger retries;
-	// private final Random random = new Random();
-	private final ChannelFactory factory;
-	private final int buffer_size;
-	private final AtomicBoolean being_closed;
+	protected AtomicReference<Channel> channelRef;
+	protected ClientBootstrap bootstrap;
+	protected final InetSocketAddress remote_addr;
+	protected final ChannelFactory factory;
 
-	/**
-	 * Don't use request-response method, client just send/server just receive
-	 */
-	private final boolean noResponse = true;
-	private final boolean directlySend;
+	protected final int buffer_size;
+	protected final AtomicBoolean being_closed;
 
-	private int messageBatchSize;
+	protected AtomicLong pendings;
+	protected int messageBatchSize;
+	protected AtomicReference<MessageBatch> messageBatchRef;
 
-	private AtomicLong pendings;
+	protected ScheduledExecutorService scheduler;
 
-	private AtomicReference<MessageBatch> messageBatchRef;
-	private AtomicBoolean flush_later;
-	private int flushCheckInterval;
-	private ScheduledExecutorService scheduler;
+	protected String sendTimerName;
+	protected JStormTimer sendTimer;
+	protected String histogramName;
+	protected JStormHistogram histogram;
+	protected String pendingGaugeName;
 
-	private String sendTimerName;
-	private JStormTimer sendTimer;
-	private String histogramName;
-	private JStormHistogram histogram;
-	private String pendingGaugeName;
-
-	private ReconnectRunnable reconnector;
-
-	boolean isDirectSend(Map conf) {
-
-		if (JStormServerUtils.isOnePending(conf) == true) {
-			return true;
-		}
-
-		return !ConfigExtension.isNettyTransferAsyncBatch(conf);
-	}
+	protected ReconnectRunnable reconnector;
+	protected ChannelFactory clientChannelFactory;
 
 	@SuppressWarnings("rawtypes")
 	NettyClient(Map storm_conf, ChannelFactory factory,
@@ -94,11 +81,12 @@ class NettyClient implements IConnection {
 		this.factory = factory;
 		this.scheduler = scheduler;
 		this.reconnector = reconnector;
+
 		retries = new AtomicInteger(0);
 		channelRef = new AtomicReference<Channel>(null);
 		being_closed = new AtomicBoolean(false);
 		pendings = new AtomicLong(0);
-		flush_later = new AtomicBoolean(false);
+
 		// Configure
 		buffer_size = Utils.getInt(storm_conf
 				.get(Config.STORM_MESSAGING_NETTY_BUFFER_SIZE));
@@ -109,29 +97,18 @@ class NettyClient implements IConnection {
 		max_sleep_ms = Utils.getInt(storm_conf
 				.get(Config.STORM_MESSAGING_NETTY_MAX_SLEEP_MS));
 
-		BATCH_THREASHOLD_WARN = ConfigExtension
-				.getNettyBufferThresholdSize(storm_conf);
-
-		directlySend = isDirectSend(storm_conf);
+		timeoutSecond = JStormUtils.parseInt(
+				storm_conf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS), 30);
+		MAX_SEND_PENDING = (int) ConfigExtension
+				.getNettyMaxSendPending(storm_conf);
 
 		this.messageBatchSize = Utils.getInt(
 				storm_conf.get(Config.STORM_NETTY_MESSAGE_BATCH_SIZE), 262144);
-		flushCheckInterval = Utils.getInt(
-				storm_conf.get(Config.STORM_NETTY_FLUSH_CHECK_INTERVAL_MS), 10);
-
 		messageBatchRef = new AtomicReference<MessageBatch>();
-
-		bootstrap = new ClientBootstrap(factory);
-		bootstrap.setOption("tcpNoDelay", true);
-		bootstrap.setOption("sendBufferSize", buffer_size);
-		bootstrap.setOption("keepAlive", true);
-
-		// Set up the pipeline factory.
-		bootstrap.setPipelineFactory(new StormClientPipelineFactory(this));
 
 		// Start the connection attempt.
 		remote_addr = new InetSocketAddress(host, port);
-		bootstrap.connect(remote_addr);
+		name = remote_addr.toString();
 
 		sendTimerName = JStormServerUtils.getName(host, port)
 				+ "-netty-send-timer";
@@ -150,24 +127,17 @@ class NettyClient implements IConnection {
 			}
 		});
 
-		StringBuilder sb = new StringBuilder();
-		sb.append("New Netty Client, connect to ").append(remote_addr);
-		sb.append(", netty buffer size").append(buffer_size);
-		sb.append(", batch size:").append(messageBatchSize);
-		sb.append(", directlySend:").append(directlySend);
-		sb.append(", slow down buffer threshold size:").append(
-				BATCH_THREASHOLD_WARN);
-		LOG.info(sb.toString());
+	}
 
-		Runnable flusher = new Runnable() {
-			@Override
-			public void run() {
-				flush();
-			}
-		};
-		long initialDelay = Math.min(1000, max_sleep_ms * max_retries);
-		scheduler.scheduleWithFixedDelay(flusher, initialDelay,
-				flushCheckInterval, TimeUnit.MILLISECONDS);
+	public void start() {
+		bootstrap = new ClientBootstrap(clientChannelFactory);
+		bootstrap.setOption("tcpNoDelay", true);
+		bootstrap.setOption("sendBufferSize", buffer_size);
+		bootstrap.setOption("keepAlive", true);
+
+		// Set up the pipeline factory.
+		bootstrap.setPipelineFactory(new StormClientPipelineFactory(this));
+		doReconnect();
 	}
 
 	/**
@@ -184,8 +154,8 @@ class NettyClient implements IConnection {
 		}
 
 		long sleepMs = getSleepTimeMs();
-		LOG.info("Reconnect ... [{}], {}, sleep {}ms", retries.get(),
-				remote_addr, sleepMs);
+		LOG.info("Reconnect ... [{}], {}, sleep {}ms", retries.get(), name,
+				sleepMs);
 		ChannelFuture future = bootstrap.connect(remote_addr);
 		future.addListener(new ChannelFutureListener() {
 			public void operationComplete(ChannelFuture future)
@@ -195,7 +165,7 @@ class NettyClient implements IConnection {
 					// do something else
 				} else {
 					LOG.info("Failed to reconnect ... [{}], {}", retries.get(),
-							remote_addr);
+							name);
 					reconnect();
 				}
 			}
@@ -215,11 +185,11 @@ class NettyClient implements IConnection {
 	 */
 	private int getSleepTimeMs() {
 
-		int sleepMs =  base_sleep_ms * retries.incrementAndGet();
+		int sleepMs = base_sleep_ms * retries.incrementAndGet();
 		if (sleepMs > 1000) {
 			sleepMs = 1000;
 		}
-		return sleepMs ;
+		return sleepMs;
 	}
 
 	/**
@@ -227,181 +197,21 @@ class NettyClient implements IConnection {
 	 */
 	@Override
 	public void send(List<TaskMessage> messages) {
-		// throw exception if the client is being closed
-		if (isClosed()) {
-			LOG.warn("Client is being closed, and does not take requests any more");
-			return;
-		}
-
-		sendTimer.start();
-		try {
-			pushBatch(messages);
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		} finally {
-			sendTimer.stop();
-			
-		}
+		LOG.warn("Should be overload");
 	}
 
 	@Override
 	public void send(TaskMessage message) {
-		// throw exception if the client is being closed
-		if (isClosed()) {
-			LOG.warn("Client is being closed, and does not take requests any more");
-			return;
-		}
-
-		sendTimer.start();
-		try {
-			pushBatch(message);
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		} finally {
-			sendTimer.stop();
-		}
+		LOG.warn("Should be overload");
 	}
 
-	void handleFailedChannel(MessageBatch messageBatch) {
-
-		messageBatchRef.set(messageBatch);
-		flush_later.set(true);
-
-		long cachedSize = messageBatch.getEncoded_length();
-		if (cachedSize > BATCH_THREASHOLD_WARN) {
-			long count = (cachedSize + BATCH_THREASHOLD_WARN - 1)
-					/ BATCH_THREASHOLD_WARN;
-			long sleepMs = count * 20;
-			LOG.warn("Too much cached buffer {}, sleep {}ms, {}", cachedSize,
-					sleepMs, remote_addr.toString());
-
-			JStormUtils.sleepMs(sleepMs);
-			reconnect();
-		}
-		return;
-	}
-
-	void pushBatch(List<TaskMessage> messages) {
-
-		if (messages.isEmpty()) {
-			return;
-		}
-
-		MessageBatch messageBatch = messageBatchRef.getAndSet(null);
-		if (null == messageBatch) {
-			messageBatch = new MessageBatch(messageBatchSize);
-		}
-
-		for (TaskMessage message : messages) {
-			if (TaskMessage.isEmpty(message)) {
-				continue;
-			}
-
-			messageBatch.add(message);
-
-			if (messageBatch.isFull()) {
-				Channel channel = isChannelReady();
-				if (channel != null) {
-					flushRequest(channel, messageBatch);
-
-					messageBatch = new MessageBatch(messageBatchSize);
-				}
-
-			}
-		}
-
-		Channel channel = isChannelReady();
-		if (channel == null) {
-			handleFailedChannel(messageBatch);
-			return;
-		} else if (messageBatch.isEmpty() == false) {
-			flushRequest(channel, messageBatch);
-		}
-
-		return;
-	}
-
-	void pushBatch(TaskMessage message) {
-
-		if (TaskMessage.isEmpty(message)) {
-			return;
-		}
-
-		MessageBatch messageBatch = messageBatchRef.getAndSet(null);
-		if (null == messageBatch) {
-			messageBatch = new MessageBatch(messageBatchSize);
-		}
-
-		messageBatch.add(message);
-
-		Channel channel = isChannelReady();
-		if (channel == null) {
-			handleFailedChannel(messageBatch);
-			return;
-		}
-
-		if (messageBatch.isFull()) {
-			flushRequest(channel, messageBatch);
-
-			return;
-		}
-
-		if (directlySend) {
-			flushRequest(channel, messageBatch);
-		} else {
-			messageBatchRef.compareAndSet(null, messageBatch);
-			flush_later.set(true);
-		}
-
-		return;
-	}
-
-	/**
-	 * Take all enqueued messages from queue
-	 * 
-	 * @return
-	 * @throws InterruptedException
-	 */
-	@Deprecated
-	MessageBatch takeMessages() throws Exception {
-		return messageBatchRef.getAndSet(null);
-	}
-
-	public String name() {
-		if (null != remote_addr) {
-			return PREFIX + remote_addr.toString();
-		}
-		return "";
-	}
-
-	private void flush() {
-		if (isClosed() == true) {
-			return;
-		}
-
-		if (flush_later.get() == false) {
-			return;
-		}
-
-		Channel channel = isChannelReady();
-		if (channel == null) {
-			return;
-		}
-
-		MessageBatch toBeFlushed = messageBatchRef.getAndSet(null);
-		flushRequest(channel, toBeFlushed);
-		flush_later.set(false);
-	}
-
-	private synchronized void flushRequest(Channel channel,
+	protected synchronized void flushRequest(Channel channel,
 			final MessageBatch requests) {
 		if (requests == null || requests.isEmpty())
 			return;
 
 		histogram.update(requests.getEncoded_length());
-		long pending = pendings.incrementAndGet();
-		LOG.debug("Flush pending {}, this message size:{}", pending,
-				requests.getEncoded_length());
+		pendings.incrementAndGet();
 		ChannelFuture future = channel.write(requests);
 		future.addListener(new ChannelFutureListener() {
 			public void operationComplete(ChannelFuture future)
@@ -410,9 +220,7 @@ class NettyClient implements IConnection {
 				pendings.decrementAndGet();
 				if (!future.isSuccess()) {
 					if (isClosed() == false) {
-						LOG.info(
-								"Failed to send requests to "
-										+ remote_addr.toString() + ": ",
+						LOG.info("Failed to send requests to " + name + ": ",
 								future.getCause());
 					}
 
@@ -423,7 +231,7 @@ class NettyClient implements IConnection {
 						exceptionChannel(channel);
 					}
 				} else {
-					LOG.debug("{} request(s) sent", requests.size());
+					// LOG.debug("{} request(s) sent", requests.size());
 				}
 			}
 		});
@@ -437,15 +245,14 @@ class NettyClient implements IConnection {
 	 */
 	public synchronized void close() {
 		LOG.info("Close netty connection to {}", name());
-
-		Metrics.unregister(pendingGaugeName);
-		Metrics.unregister(histogramName);
-		Metrics.unregister(sendTimerName);
-
 		if (isClosed() == true) {
 			return;
 		}
 		being_closed.set(true);
+
+		Metrics.unregister(pendingGaugeName);
+		Metrics.unregister(histogramName);
+		Metrics.unregister(sendTimerName);
 
 		Channel channel = channelRef.get();
 		if (channel == null) {
@@ -492,6 +299,7 @@ class NettyClient implements IConnection {
 		if (channelRef.get() != null) {
 			setChannel(null);
 		}
+
 	}
 
 	void exceptionChannel(Channel channel) {
@@ -520,20 +328,10 @@ class NettyClient implements IConnection {
 		if (oldChannel != newChannel && oldChannel != null) {
 			oldChannel.close();
 			LOG.info("Close old channel " + oldLocalAddres);
-		}
-	}
 
-	Channel isChannelReady() {
-		Channel channel = channelRef.get();
-		if (channel == null) {
-			return null;
+			// @@@ todo
+			// pendings.set(0);
 		}
-
-		// improve performance skill check
-		if (channel.isWritable() == false) {
-			return null;
-		}
-		return channel;
 	}
 
 	@Override
@@ -553,8 +351,12 @@ class NettyClient implements IConnection {
 		return remote_addr;
 	}
 
-	public boolean isNoResponse() {
-		return noResponse;
+	public String name() {
+		return name;
+	}
+
+	public void handleResponse() {
+		LOG.warn("Should be overload");
 	}
 
 	@Override
@@ -573,45 +375,5 @@ class NettyClient implements IConnection {
 	public void enqueue(TaskMessage message) {
 		throw new UnsupportedOperationException(
 				"recvTask: Client connection should not receive any messages");
-	}
-
-	public void blockReConnect() {
-
-		Channel channel = null;
-
-		try {
-
-			int tried = 0;
-			while (tried <= max_retries) {
-
-				LOG.info("Reconnect started for {}... [{}]", name(), tried);
-
-				ChannelFuture future = bootstrap.connect(remote_addr);
-				future.awaitUninterruptibly(10, TimeUnit.SECONDS);
-				Channel current = future.getChannel();
-				if (!future.isSuccess()) {
-					if (null != current) {
-						current.close();
-					}
-				} else {
-					channel = current;
-					break;
-				}
-				JStormUtils.sleepMs(getSleepTimeMs());
-				tried++;
-			}
-		} catch (Exception e) {
-			LOG.error("Occur exception when reconnect to " + name());
-			channel = null;
-		}
-
-		if (null != channel) {
-			LOG.info("connection established to a remote host " + name() + ", "
-					+ channel.toString());
-			setChannel(channel);
-		} else {
-			LOG.info("Failed to connect to a remote host " + name());
-			JStormUtils.sleepMs(getSleepTimeMs());
-		}
 	}
 }

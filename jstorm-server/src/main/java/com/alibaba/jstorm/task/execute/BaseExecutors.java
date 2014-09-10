@@ -58,7 +58,7 @@ public class BaseExecutors extends RunnableCallback {
 
 	protected int message_timeout_secs = 30;
 
-	protected Exception error = null;
+	protected Throwable error = null;
 
 	protected ITaskReportErr report_error;
 
@@ -143,7 +143,11 @@ public class BaseExecutors extends RunnableCallback {
 
 	@Override
 	public Exception error() {
-		return error;
+		if (error == null) {
+			return null;
+		}
+		
+		return new Exception(error);
 	}
 
 	@Override
@@ -225,7 +229,7 @@ public class BaseExecutors extends RunnableCallback {
 
 				return tuple;
 
-			} catch (Exception e) {
+			} catch (Throwable e) {
 				if (taskStatus.isShutdown() == false) {
 					LOG.error(
 							idStr + " recv thread error "
@@ -259,7 +263,7 @@ public class BaseExecutors extends RunnableCallback {
 				try {
 
 					deserializeQueue.consumeBatchWhenAvailable(this);
-				} catch (Exception e) {
+				} catch (Throwable e) {
 					if (taskStatus.isShutdown() == false) {
 						LOG.error("Unknow exception ", e);
 						report_error.report(e);
@@ -274,6 +278,7 @@ public class BaseExecutors extends RunnableCallback {
 		}
 
 		public Object getResult() {
+			LOG.info("Begin to shutdown recvThread of " + idStr);
 			return -1;
 		}
 

@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import com.alibaba.jstorm.callback.AsyncLoopRunnable;
 import com.alibaba.jstorm.callback.AsyncLoopThread;
+import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.utils.JStormUtils;
 
 import backtype.storm.Config;
@@ -31,6 +32,8 @@ public class NettyContext implements IContext {
     private final int MAX_CLIENT_SCHEDULER_THREAD_POOL_SIZE = 10;
     
     private ReconnectRunnable reconnector;
+    
+    private boolean isSyncMode = false;
 
 	@SuppressWarnings("unused")
 	public NettyContext() {
@@ -61,6 +64,8 @@ public class NettyContext implements IContext {
 	
         reconnector = new ReconnectRunnable();
         new AsyncLoopThread(reconnector, true, Thread.MIN_PRIORITY, true);
+        
+        isSyncMode = ConfigExtension.isNettySyncMode(storm_conf);
 	}
 
 	@Override
@@ -68,7 +73,7 @@ public class NettyContext implements IContext {
 		IConnection retConnection = null;
 		try {
 
-			retConnection = new NettyServer(storm_conf, port);
+			retConnection = new NettyServer(storm_conf, port, isSyncMode);
 		} catch (Throwable e) {
 			JStormUtils.halt_process(-1, "Failed to bind " + port);
 		}
@@ -78,7 +83,11 @@ public class NettyContext implements IContext {
 
 	@Override
 	public IConnection connect(String topology_id, String host, int port) {
-		return new NettyClient(storm_conf, clientChannelFactory, clientScheduleService, host, port, reconnector);
+		if (isSyncMode == true) {
+			return new NettyClientSync(storm_conf, clientChannelFactory, clientScheduleService, host, port, reconnector);
+		}else {
+			return new NettyClientAsync(storm_conf, clientChannelFactory, clientScheduleService, host, port, reconnector);
+		}
 	}
 
 
@@ -91,7 +100,7 @@ public class NettyContext implements IContext {
 		// conn.close();
 		// }
         try {
-            clientScheduleService.awaitTermination(30, TimeUnit.SECONDS);
+            clientScheduleService.awaitTermination(10, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             LOG.error("Error when shutting down client scheduler", e);
         }

@@ -114,6 +114,7 @@ public class MultipleThreadSpoutExecutors extends SpoutExecutors {
 		}
 
 		public Object getResult() {
+			LOG.info("Begin to shutdown Spout's acker thread " + idStr);
 			return -1;
 		}
 

@@ -95,7 +95,7 @@ public class BoltExecutors extends BaseExecutors implements EventHandler {
 			WorkerClassLoader.switchThreadContext();
 			bolt.prepare(storm_conf, userTopologyCxt, outputCollector);
 
-		} catch (Exception e) {
+		} catch (Throwable e) {
 			error = e;
 			LOG.error("bolt prepare error ", e);
 			report_error.report(e);
@@ -121,7 +121,7 @@ public class BoltExecutors extends BaseExecutors implements EventHandler {
 
 				exeQueue.consumeBatchWhenAvailable(this);
 
-			} catch (Exception e) {
+			} catch (Throwable e) {
 				if (taskStatus.isShutdown() == false) {
 					LOG.error(idStr + " bolt exeutor  error", e);
 				}
@@ -170,7 +170,7 @@ public class BoltExecutors extends BaseExecutors implements EventHandler {
 
 			try {
 				bolt.execute(tuple);
-			} catch (Exception e) {
+			} catch (Throwable e) {
 				error = e;
 				LOG.error("bolt execute error ", e);
 				report_error.report(e);

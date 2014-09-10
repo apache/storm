@@ -20,9 +20,10 @@ import backtype.storm.utils.Utils;
 
 import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.utils.JStormUtils;
-import com.google.common.collect.Maps;
 import com.lmax.disruptor.SingleThreadedClaimStrategy;
 import com.lmax.disruptor.WaitStrategy;
+
+import java.util.concurrent.Semaphore;
 
 public class NettyUnitTest {
 
@@ -30,23 +31,21 @@ public class NettyUnitTest {
 
 	private static int port = 6700;
 	private static int task = 1;
+	private Object waitObj;
 
 	private static String context_class_name = "com.alibaba.jstorm.message.netty.NettyContext";
 
 	private static Map storm_conf = new HashMap<Object, Object>();
 	static {
-		storm_conf.put(Config.STORM_MESSAGING_TRANSPORT, context_class_name);
-		storm_conf.put(Config.STORM_MESSAGING_NETTY_BUFFER_SIZE,
-				5 * 1024 * 1024);
-		storm_conf.put(Config.STORM_MESSAGING_NETTY_MAX_RETRIES, 10);
-		storm_conf.put(Config.STORM_MESSAGING_NETTY_MIN_SLEEP_MS, 1000);
-		storm_conf.put(Config.STORM_MESSAGING_NETTY_MAX_SLEEP_MS, 5000);
-		storm_conf.put(Config.STORM_MESSAGING_NETTY_SERVER_WORKER_THREADS, 1);
-		storm_conf.put(Config.STORM_MESSAGING_NETTY_CLIENT_WORKER_THREADS, 1);
-		storm_conf.put(Config.TOPOLOGY_TRANSFER_BUFFER_SIZE, 1024);
-		storm_conf.put(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY,
-				"com.lmax.disruptor.BlockingWaitStrategy");
-		storm_conf.put(Config.STORM_CLUSTER_MODE, "distributed");
+		storm_conf = Utils.readDefaultConfig();
+		boolean syncMode = false;
+		if (syncMode) {
+			ConfigExtension.setNettyMaxSendPending(storm_conf, 1);
+			ConfigExtension.setNettySyncMode(storm_conf, true);
+		} else {
+			ConfigExtension.setNettySyncMode(storm_conf, false);
+		}
+
 	}
 
 	@Test
@@ -86,8 +85,6 @@ public class NettyUnitTest {
 
 		System.out.println("!!!!!!!!!!!!End test_small_message!!!!!!!!!!!!!");
 	}
-	
-	
 
 	public String setupLargMsg() {
 		StringBuilder sb = new StringBuilder();
@@ -124,6 +121,7 @@ public class NettyUnitTest {
 		TaskMessage message = new TaskMessage(task, req_msg.getBytes());
 		list.add(message);
 
+		LOG.info("Client send data");
 		client.send(message);
 
 		TaskMessage recv = server.recv(0);
@@ -159,6 +157,7 @@ public class NettyUnitTest {
 		TaskMessage message = new TaskMessage(task, req_msg.getBytes());
 		list.add(message);
 
+		LOG.info("Client send data");
 		client.send(message);
 		Thread.sleep(1000);
 
@@ -170,27 +169,38 @@ public class NettyUnitTest {
 		context.term();
 		System.out.println("!!!!!!!!!!End delay message test!!!!!!!!");
 	}
-	
+
 	@Test
 	public void test_first_client() {
 		System.out.println("!!!!!!!!Start test_first_client !!!!!!!!!!!");
-		String req_msg = setupLargMsg();
+		final String req_msg = setupLargMsg();
 
-		IContext context = TransportFactory.makeContext(storm_conf);
+		final IContext context = TransportFactory.makeContext(storm_conf);
+
+		new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+
+				IConnection client = context.connect(null, "localhost", port);
+
+				List<TaskMessage> list = new ArrayList<TaskMessage>();
+				TaskMessage message = new TaskMessage(task, req_msg.getBytes());
+				list.add(message);
+
+				client.send(message);
+				System.out.println("!!Client has sent data");
+				JStormUtils.sleepMs(1000);
+
+				client.close();
+			}
+		}).start();
+
 		IConnection server = null;
-		IConnection client = null;
 
-		client = context.connect(null, "localhost", port);
-
-		List<TaskMessage> list = new ArrayList<TaskMessage>();
-		TaskMessage message = new TaskMessage(task, req_msg.getBytes());
-		list.add(message);
-
-		client.send(message);
-		
 		JStormUtils.sleepMs(1000);
-		System.out.println("!!Client has sent data, but server no start!!!!!");
-		
+		System.out.println("!!server begin start!!!!!");
+
 		server = context.bind(null, port);
 
 		WaitStrategy waitStrategy = (WaitStrategy) Utils
@@ -204,19 +214,19 @@ public class NettyUnitTest {
 		Assert.assertEquals(req_msg, new String(recv.message()));
 
 		server.close();
-		client.close();
+
 		context.term();
 
 		System.out.println("!!!!!!!!!!!!End test_first_client!!!!!!!!!!!!!");
 	}
 
 	@Test
-	public void test_batch() {
+	public void test_batch() throws InterruptedException {
 		System.out.println("!!!!!!!!!!Start batch message test!!!!!!!!");
+		final int base = 100000;
 
-		IContext context = TransportFactory.makeContext(storm_conf);
+		final IContext context = TransportFactory.makeContext(storm_conf);
 		final IConnection server = context.bind(null, port);
-		IConnection client = null;
 
 		WaitStrategy waitStrategy = (WaitStrategy) Utils
 				.newInstance((String) storm_conf
@@ -225,24 +235,41 @@ public class NettyUnitTest {
 				new SingleThreadedClaimStrategy(1024), waitStrategy);
 		server.registerQueue(recvQueue);
 
-		client = context.connect(null, "localhost", port);
+		final Semaphore semp = new Semaphore(1);
 
-		final int base = 100000;
+		new Thread(new Runnable() {
 
-		List<TaskMessage> list = new ArrayList<TaskMessage>();
+			@Override
+			public void run() {
+				try {
+					semp.acquire();
+				} catch (InterruptedException e) {
+				}
+				IConnection client = null;
 
-		for (int i = 1; i < Short.MAX_VALUE; i++) {
+				client = context.connect(null, "localhost", port);
 
-			String req_msg = String.valueOf(i + base);
+				List<TaskMessage> list = new ArrayList<TaskMessage>();
 
-			TaskMessage message = new TaskMessage(task, req_msg.getBytes());
-			list.add(message);
+				for (int i = 1; i < Short.MAX_VALUE; i++) {
 
-		}
+					String req_msg = String.valueOf(i + base);
 
-		client.send(list);
+					TaskMessage message = new TaskMessage(i, req_msg.getBytes());
+					list.add(message);
 
-		System.out.println("Finish Send ");
+				}
+
+				client.send(list);
+
+				System.out.println("Finish Send ");
+				JStormUtils.sleepMs(1000);
+
+				client.close();
+
+				semp.release();
+			}
+		}).start();
 
 		for (int i = 1; i < Short.MAX_VALUE; i++) {
 			TaskMessage message = server.recv(0);
@@ -251,26 +278,209 @@ public class NettyUnitTest {
 					new String(message.message()));
 
 			if (i % 1000 == 0) {
-				System.out.println("Receive " + i);
+				System.out.println("Receive " + message.task());
 			}
 		}
 
 		System.out.println("Finish Receive ");
 
-		client.close();
 		server.close();
+
+		semp.acquire();
 		context.term();
+		semp.release();
 		System.out.println("!!!!!!!!!!End batch message test!!!!!!!!");
+	}
+
+	@Test
+	public void test_slow_receive() {
+		System.out
+				.println("!!!!!!!!!!Start test_slow_receive message test!!!!!!!!");
+		final int base = 100000;
+
+		final IContext context = TransportFactory.makeContext(storm_conf);
+		final IConnection server = context.bind(null, port);
+
+		WaitStrategy waitStrategy = (WaitStrategy) Utils
+				.newInstance((String) storm_conf
+						.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
+		DisruptorQueue recvQueue = new DisruptorQueue(
+				new SingleThreadedClaimStrategy(2), waitStrategy);
+		server.registerQueue(recvQueue);
+
+		final Semaphore semp = new Semaphore(1);
+
+		new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				try {
+					semp.acquire();
+				} catch (InterruptedException e) {
+				}
+
+				IConnection client = null;
+
+				client = context.connect(null, "localhost", port);
+
+				List<TaskMessage> list = new ArrayList<TaskMessage>();
+
+				for (int i = 1; i < Short.MAX_VALUE; i++) {
+
+					String req_msg = String.valueOf(i + base);
+
+					TaskMessage message = new TaskMessage(i, req_msg.getBytes());
+					list.add(message);
+
+					if (i % 1000 == 0) {
+						System.out.println("send " + i);
+						client.send(list);
+						list = new ArrayList<TaskMessage>();
+					}
+
+				}
+
+				client.send(list);
+
+				System.out.println("Finish Send ");
+				JStormUtils.sleepMs(1000);
+
+				client.close();
+
+				semp.release();
+			}
+		}).start();
+
+		for (int i = 1; i < Short.MAX_VALUE; i++) {
+			TaskMessage message = server.recv(0);
+			JStormUtils.sleepMs(1);
+
+			Assert.assertEquals(String.valueOf(i + base),
+					new String(message.message()));
+
+			if (i % 1000 == 0) {
+				System.out.println("Receive " + message.task());
+			}
+		}
+
+		System.out.println("Finish Receive ");
+
+		server.close();
+
+		try {
+			semp.acquire();
+		} catch (InterruptedException e) {
+		}
+		context.term();
+		semp.release();
+		System.out
+				.println("!!!!!!!!!!End test_slow_receive message test!!!!!!!!");
+	}
+
+	@Test
+	public void test_slow_receive_big() throws InterruptedException {
+		System.out
+				.println("!!!!!!!!!!Start test_slow_receive_big message test!!!!!!!!");
+		final int base = 100;
+		final String req_msg = setupLargMsg();
+
+		final IContext context = TransportFactory.makeContext(storm_conf);
+		final IConnection server = context.bind(null, port);
+
+		final IConnection client = context.connect(null, "localhost", port);
+
+		WaitStrategy waitStrategy = (WaitStrategy) Utils
+				.newInstance((String) storm_conf
+						.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
+		DisruptorQueue recvQueue = new DisruptorQueue(
+				new SingleThreadedClaimStrategy(2), waitStrategy);
+		server.registerQueue(recvQueue);
+
+		new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+
+				for (int i = 1; i < base; i++) {
+
+					TaskMessage message = new TaskMessage(i, req_msg.getBytes());
+					System.out.println("send " + i);
+					client.send(message);
+
+				}
+
+				System.out.println("Finish Send ");
+				JStormUtils.sleepMs(1000);
+
+			}
+		}).start();
+
+		for (int i = 1; i < base; i++) {
+			TaskMessage message = server.recv(0);
+			JStormUtils.sleepMs(100);
+
+			Assert.assertEquals(req_msg, new String(message.message()));
+			System.out.println("receive " + message.task());
+
+		}
+
+		System.out.println("Finish Receive ");
+
+		server.close();
+
+		client.close();
+
+		context.term();
+		System.out
+				.println("!!!!!!!!!!End test_slow_receive_big message test!!!!!!!!");
 	}
 
 	@Test
 	public void test_client_reboot() throws InterruptedException {
 		System.out.println("!!!!!!!!!!Start client reboot test!!!!!!!!");
-		String req_msg = setupLargMsg();
+		final String req_msg = setupLargMsg();
 
-		IContext context = TransportFactory.makeContext(storm_conf);
+		final IContext context = TransportFactory.makeContext(storm_conf);
+		final Semaphore semp = new Semaphore(1);
+
+		new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				try {
+					semp.acquire();
+				} catch (InterruptedException e1) {
+				}
+				IConnection client = null;
+				client = context.connect(null, "localhost", port);
+
+				List<TaskMessage> list = new ArrayList<TaskMessage>();
+				TaskMessage message = new TaskMessage(task, req_msg.getBytes());
+				list.add(message);
+
+				client.send(message);
+
+				System.out.println("Send first");
+
+				try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e) {
+				}
+				client.close();
+
+				IConnection client2 = context.connect(null, "localhost", port);
+				System.out.println("!!!!!!! restart client !!!!!!!!!!");
+
+				client2.send(message);
+				System.out.println("Send second");
+				JStormUtils.sleepMs(1000);
+				client2.close();
+
+				semp.release();
+			}
+		}).start();
+
 		IConnection server = null;
-		IConnection client = null;
 
 		server = context.bind(null, port);
 
@@ -281,42 +491,58 @@ public class NettyUnitTest {
 				new SingleThreadedClaimStrategy(1024), waitStrategy);
 		server.registerQueue(recvQueue);
 
-		client = context.connect(null, "localhost", port);
-
-		List<TaskMessage> list = new ArrayList<TaskMessage>();
-		TaskMessage message = new TaskMessage(task, req_msg.getBytes());
-		list.add(message);
-
-		client.send(message);
-
 		TaskMessage recv = server.recv(0);
+		System.out.println("Sever receive first");
 		Assert.assertEquals(req_msg, new String(recv.message()));
 
-		client.close();
-		Thread.sleep(1000);
-		IConnection client2 = context.connect(null, "localhost", port);
-		System.out.println("!!!!!!! restart client !!!!!!!!!!");
-
-		client2.send(message);
 		Thread.sleep(1000);
 
 		TaskMessage recv2 = server.recv(0);
+		System.out.println("Sever receive second");
 		Assert.assertEquals(req_msg, new String(recv2.message()));
 
-		client2.close();
 		server.close();
+
+		semp.acquire();
 		context.term();
+		semp.release();
 		System.out.println("!!!!!!!!!!End client reboot test!!!!!!!!");
 	}
 
 	@Test
 	public void test_server_reboot() throws InterruptedException {
 		System.out.println("!!!!!!!!!!Start server reboot test!!!!!!!!");
-		String req_msg = setupLargMsg();
+		final String req_msg = setupLargMsg();
 
-		IContext context = TransportFactory.makeContext(storm_conf);
+		final IContext context = TransportFactory.makeContext(storm_conf);
 		IConnection server = null;
-		IConnection client = null;
+		final IConnection client = context.connect(null, "localhost", port);
+
+		new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+
+				List<TaskMessage> list = new ArrayList<TaskMessage>();
+				TaskMessage message = new TaskMessage(task, req_msg.getBytes());
+				list.add(message);
+
+				client.send(message);
+
+				System.out.println("Send first");
+
+				JStormUtils.sleepMs(10000);
+
+				System.out.println("Begin to Send second");
+				client.send(message);
+				System.out.println("Send second");
+
+				JStormUtils.sleepMs(15000);
+				client.send(message);
+				System.out.println("Send third time");
+
+			}
+		}).start();
 
 		server = context.bind(null, port);
 
@@ -327,20 +553,12 @@ public class NettyUnitTest {
 				new SingleThreadedClaimStrategy(1024), waitStrategy);
 		server.registerQueue(recvQueue);
 
-		client = context.connect(null, "localhost", port);
-
-		List<TaskMessage> list = new ArrayList<TaskMessage>();
-		TaskMessage message = new TaskMessage(task, req_msg.getBytes());
-		list.add(message);
-
-		client.send(message);
-
 		TaskMessage recv = server.recv(0);
+		System.out.println("Receive first");
 		Assert.assertEquals(req_msg, new String(recv.message()));
 
 		server.close();
 
-		client.send(message);
 		System.out.println("!!shutdow server and sleep 30s, please wait!!");
 		Thread.sleep(30000);
 
@@ -351,10 +569,10 @@ public class NettyUnitTest {
 		TaskMessage recv2 = server2.recv(0);
 		Assert.assertEquals(req_msg, new String(recv2.message()));
 
-		client.close();
 		server2.close();
+		client.close();
+
 		context.term();
 		System.out.println("!!!!!!!!!!End server reboot test!!!!!!!!");
 	}
-
 }

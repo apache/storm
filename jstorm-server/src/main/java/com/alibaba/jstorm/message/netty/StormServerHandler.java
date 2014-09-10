@@ -59,40 +59,27 @@ class StormServerHandler extends SimpleChannelUpstreamHandler {
 
 	@Override
 	public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) {
-      List<TaskMessage> msgs = (List<TaskMessage>) e.getMessage();
-      if (msgs == null) {
+      
+		Object msg = e.getMessage();
+		if (msg == null)
 			return;
-      }
-		// end of batch?
-		//if (msg == ControlMessage.EOB_MESSAGE) {
-		//	Channel channel = ctx.getChannel();
-		//	LOG.debug("Receive ...{}", msg);
-			
-		//	if (server.isAsyncBatch()) return;
-			
-			// simplify the logic, just send OK_RESPONSE
-		//	channel.write(ControlMessage.OK_RESPONSE);
-			// if (getFailureCounter(channel) == 0) {
-			// channel.write(ControlMessage.OK_RESPONSE);
-			// }else {
-			// channel.write(ControlMessage.FAILURE_RESPONSE);
-			// removeFailureCounter(channel);
-			// }
 
-		//	return;
-		//} else if (msg instanceof ControlMessage) {
-		//	LOG.debug("Receive ...{}", msg);
-		//	return;
-		//}
+		// end of batch?
+		if (msg == ControlMessage.EOB_MESSAGE) {
+			if (server.isSyncMode() == true) {
+				Channel channel = ctx.getChannel();
+				// simplify the logic, just send OK_RESPONSE
+				channel.write(ControlMessage.OK_RESPONSE);
+			}
+			return;
+		} else if (msg instanceof ControlMessage) {
+			//LOG.debug("Receive ...{}", msg);
+			return;
+		}
 
 		// enqueue the received message for processing
 		try {
-			
-		    Iterator<TaskMessage> iter = msgs.iterator();	
-		  
-		    while(iter.hasNext()) {
-			    server.enqueue((TaskMessage) iter.next());
-		    }
+			server.enqueue((TaskMessage) msg);
 		} catch (Exception e1) {
 			LOG.warn("Failed to enqueue a request message" + e1.toString(), e);
 			// Channel channel = ctx.getChannel();

@@ -8,6 +8,8 @@ import java.util.Map;
 import org.apache.commons.lang.StringUtils;
 import org.json.simple.JSONValue;
 
+import backtype.storm.Config;
+
 import com.alibaba.jstorm.utils.JStormUtils;
 
 public class ConfigExtension {
@@ -329,14 +331,24 @@ public class ConfigExtension {
 
 	public static long getNettyBufferThresholdSize(Map conf) {
 		return JStormUtils.parseLong(conf.get(NETTY_BUFFER_THRESHOLD_SIZE),
-				33554432);
+				8 *JStormUtils.SIZE_1_M);
 	}
 
 	public static void setNettyBufferThresholdSize(Map conf, long size) {
 		conf.put(NETTY_BUFFER_THRESHOLD_SIZE, size);
 	}
+	
+	protected static String NETTY_MAX_SEND_PENDING = "storm.messaging.netty.max.pending";
+	
+	public static void setNettyMaxSendPending(Map conf, long pending) {
+		conf.put(NETTY_MAX_SEND_PENDING, pending);
+	}
+	
+	public static long getNettyMaxSendPending(Map conf) {
+		return JStormUtils.parseLong(conf.get(NETTY_MAX_SEND_PENDING), 16);
+	}
 
-	public static String DISRUPTOR_USE_SLEEP = "disruptor.use.sleep";
+	protected static String DISRUPTOR_USE_SLEEP = "disruptor.use.sleep";
     
     public static boolean isDisruptorUseSleep(Map conf) {
     	return JStormUtils.parseBoolean(conf.get(DISRUPTOR_USE_SLEEP), true);
@@ -344,5 +356,24 @@ public class ConfigExtension {
     
     public static void setDisruptorUseSleep(Map conf, boolean useSleep) {
     	conf.put(DISRUPTOR_USE_SLEEP, useSleep);
+    }
+    
+    public static boolean isTopologyContainAcker(Map conf) {
+    	int num = JStormUtils.parseInt(conf.get(Config.TOPOLOGY_ACKER_EXECUTORS), 1);
+    	if (num > 0) {
+    		return true;
+    	}else {
+    		return false;
+    	}
+    }
+    
+    protected static String NETTY_SYNC_MODE = "storm.messaging.netty.sync.mode";
+    
+    public static boolean isNettySyncMode(Map conf) {
+    	return JStormUtils.parseBoolean(conf.get(NETTY_SYNC_MODE), false);
+    }
+    
+    public static void setNettySyncMode(Map conf, boolean sync) {
+    	conf.put(NETTY_SYNC_MODE, sync);
     }
 }

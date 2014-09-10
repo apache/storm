@@ -6,8 +6,7 @@ import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 
 enum ControlMessage {
-	CLOSE_MESSAGE((short) -100), EOB_MESSAGE((short) -201), OK_RESPONSE(
-			(short) -200), FAILURE_RESPONSE((short) -400);
+	EOB_MESSAGE((short) -201), OK_RESPONSE((short) -200);
 
 	private short code;
 

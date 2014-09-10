@@ -107,7 +107,7 @@ zmq.hwm: 0
 
 # Netty thread num: 0 means no limit
 storm.messaging.netty.server_worker_threads: 1
-storm.messaging.netty.client_worker_threads: 0
+storm.messaging.netty.client_worker_threads: 1
 storm.messaging.netty.buffer_size: 5242880 #5MB buffer
 storm.messaging.netty.max_retries: 30
 storm.messaging.netty.max_wait_ms: 1000
@@ -122,7 +122,9 @@ storm.messaging.netty.flush.check.interval.ms: 10
 # when netty connection is broken, 
 # when buffer size is more than storm.messaging.netty.buffer.threshold
 # it will slow down the netty sending speed
-storm.messaging.netty.buffer.threshold: 33554432
+storm.messaging.netty.buffer.threshold: 8388608
+storm.messaging.netty.max.pending: 16
+storm.messaging.netty.sync.mode: false
 
 ### topology.* configs are for specific executing storms
 topology.enable.message.timeouts: true

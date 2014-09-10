@@ -4,12 +4,15 @@ import org.apache.log4j.Logger;
 import org.junit.Test;
 
 import backtype.storm.utils.DisruptorQueue;
+import clojure.lang.Compiler.NewExpr;
 
 import com.alibaba.jstorm.queue.disruptor.JstormEvent;
 import com.alibaba.jstorm.queue.disruptor.JstormEventHandler;
 import com.alibaba.jstorm.queue.disruptor.JstormProducer;
+import com.alibaba.jstorm.utils.JStormUtils;
 import com.lmax.disruptor.BatchEventProcessor;
 import com.lmax.disruptor.BlockingWaitStrategy;
+import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.SequenceBarrier;
 import com.lmax.disruptor.SingleThreadedClaimStrategy;
@@ -21,67 +24,68 @@ public class DisruptorTest {
 
 	private Logger logger = Logger.getLogger(DisruptorTest.class);
 
-	// @Test
-	// public void test_1P1C() {
-	// RingBuffer<JstormEvent> ringBuffer = new RingBuffer<JstormEvent>(
-	// JstormEvent.EVENT_FACTORY, new SingleThreadedClaimStrategy(buffer_size),
-	// new BlockingWaitStrategy());
-	// SequenceBarrier seqBarrier = ringBuffer.newBarrier();
-	// JstormEventHandler handler = new JstormEventHandler(count);
-	// BatchEventProcessor<JstormEvent> batchHandler = new
-	// BatchEventProcessor<JstormEvent>(
-	// ringBuffer, seqBarrier, handler);
-	// ringBuffer.setGatingSequences(batchHandler.getSequence());
-	//
-	// //consumer
-	// Thread consumer = new Thread(batchHandler);
-	// consumer.start();
-	//
-	// //producer
-	// Thread producer = new Thread(new JstormProducer(ringBuffer, count));
-	// producer.start();
-	//
-	// try {
-	// producer.join();
-	// consumer.join();
-	// } catch (InterruptedException e) {
-	// e.printStackTrace();
-	// }
-	// }
-	//
-	// @Test
-	// public void test_queue() {
-	// final DisruptorQueue queue = new DisruptorQueue(new
-	// SingleThreadedClaimStrategy(buffer_size),
-	// new BlockingWaitStrategy());
-	//
-	// logger.warn("start..." + System.currentTimeMillis());
-	// //Consumer
-	// Thread consumer = new Thread(new Runnable(){
-	//
-	// @Override
-	// public void run() {
-	// while (true) {
-	// queue.consumeBatchWhenAvailable(new JstormEventHandler(count));
-	// }
-	//
-	// }
-	//
-	// });
-	// consumer.start();
-	//
-	// //Producer
-	// for (int i = 0; i < count; i++) {
-	// JstormEvent event = new JstormEvent();
-	// event.setMsgId(String.valueOf(i));
-	// queue.publish(event);
-	// }
-	//
-	// try {
-	// consumer.join();
-	// } catch (InterruptedException e) {
-	// e.printStackTrace();
-	// }
-	// }
+	//@Test
+	public void testMultipleConsume() {
+		final DisruptorQueue disruptorQueue = new DisruptorQueue(
+				new SingleThreadedClaimStrategy(1024), new BlockingWaitStrategy());
+		
+//		new Thread(new Runnable() {
+//			
+//			@Override
+//			public void run() {
+//				System.out.println("Begin to produce item");
+//				JStormUtils.sleepMs(1000);
+//				
+//				for (int i = 0; i < 1000000; i++) {
+//					disruptorQueue.publish(Integer.valueOf(i));
+//				}
+//				
+//				System.out.println("Finish produce item");
+//			}
+//		}).start();
+//		
+//		
+//		new Thread(new Runnable() {
+//			
+//			@Override
+//			public void run() {
+//				while(true) {
+//					disruptorQueue.consumeBatchWhenAvailable(new EventHandler<Object>() {
+//
+//						@Override
+//						public void onEvent(Object event, long sequence,
+//								boolean endOfBatch) throws Exception {
+//							
+//							System.out.println("Consumer 1:" + (Integer)event);
+//						}
+//						
+//					});
+//				}
+//				
+//			}
+//		}).start();
+//		
+//		new Thread(new Runnable() {
+//			
+//			@Override
+//			public void run() {
+//				while(true) {
+//					disruptorQueue.consumeBatchWhenAvailable(new EventHandler<Object>() {
+//
+//						@Override
+//						public void onEvent(Object event, long sequence,
+//								boolean endOfBatch) throws Exception {
+//							
+//							System.out.println("Consumer 2:" + (Integer)event);
+//						}
+//						
+//					});
+//				}
+//				
+//			}
+//		}).start();
+//		
+//		JStormUtils.sleepMs(100000);
+	}
 
 }
