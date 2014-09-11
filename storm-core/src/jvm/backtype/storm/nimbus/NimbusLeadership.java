@@ -25,12 +25,12 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.recipes.locks.InterProcessMutex;
+import org.apache.curator.utils.ZKPaths;
+
 import backtype.storm.Config;
 import backtype.storm.utils.Utils;
-
-import com.netflix.curator.framework.CuratorFramework;
-import com.netflix.curator.framework.recipes.locks.InterProcessMutex;
-import com.netflix.curator.utils.ZKPaths;
 
 @SuppressWarnings("rawtypes")
 public class NimbusLeadership {
