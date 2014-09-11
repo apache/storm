@@ -34,7 +34,7 @@ class NettyClientAsync extends NettyClient {
 
 	protected AtomicBoolean flush_later;
 	protected int flushCheckInterval;
-	protected final boolean isWithAcker;
+    protected final boolean blockSend;
 
 	boolean isDirectSend(Map conf) {
 
@@ -43,6 +43,14 @@ class NettyClientAsync extends NettyClient {
 		}
 
 		return !ConfigExtension.isNettyTransferAsyncBatch(conf);
+	}
+	
+	boolean isBlockSend(Map storm_conf) {
+		if (ConfigExtension.isTopologyContainAcker(storm_conf) == false) {
+			return false;
+		}
+		
+		return ConfigExtension.isNettyASyncBlock(storm_conf);
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -54,7 +62,7 @@ class NettyClientAsync extends NettyClient {
 		BATCH_THREASHOLD_WARN = ConfigExtension
 				.getNettyBufferThresholdSize(storm_conf);
 
-		isWithAcker = ConfigExtension.isTopologyContainAcker(storm_conf);
+		blockSend = isBlockSend(storm_conf);
 
 		directlySend = isDirectSend(storm_conf);
 
@@ -174,7 +182,7 @@ class NettyClientAsync extends NettyClient {
 					/ BATCH_THREASHOLD_WARN;
 			long sleepMs = count * 10;
 
-			if (isWithAcker == false) {
+			if (blockSend == false) {
 				LOG.warn(
 						"Target server  {} is unavailable, pending {}, bufferSize {}, block sending {}ms",
 						name, pendings.get(), cachedSize, sleepMs);
@@ -294,7 +302,7 @@ class NettyClientAsync extends NettyClient {
 			return null;
 		}
 
-		if (isWithAcker == true && pendings.get() >= MAX_SEND_PENDING) {
+		if (blockSend == true && pendings.get() >= MAX_SEND_PENDING) {
 			return null;
 		}
 		return channel;

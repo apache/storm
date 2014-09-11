@@ -13,6 +13,7 @@ public class TradeCustomer implements Serializable {
     protected final long      timestamp        = System.currentTimeMillis();
     protected Pair            trade;
     protected Pair            customer;
+    protected String          buffer;
     
     public Pair getTrade() {
         return trade;
@@ -34,7 +35,15 @@ public class TradeCustomer implements Serializable {
         return timestamp;
     }
     
-    @Override
+    public String getBuffer() {
+		return buffer;
+	}
+
+	public void setBuffer(String buffer) {
+		this.buffer = buffer;
+	}
+
+	@Override
     public String toString() {
         return ToStringBuilder.reflectionToString(this,
                 ToStringStyle.SHORT_PREFIX_STYLE);

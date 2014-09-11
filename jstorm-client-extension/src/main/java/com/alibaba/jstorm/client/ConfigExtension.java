@@ -376,4 +376,13 @@ public class ConfigExtension {
     public static void setNettySyncMode(Map conf, boolean sync) {
     	conf.put(NETTY_SYNC_MODE, sync);
     }
+    
+    protected static String NETTY_ASYNC_BLOCK = "storm.messaging.netty.async.block";
+    public static boolean isNettyASyncBlock(Map conf) {
+    	return JStormUtils.parseBoolean(conf.get(NETTY_ASYNC_BLOCK), true);
+    }
+    
+    public static void setNettyASyncBlock(Map conf, boolean block) {
+    	conf.put(NETTY_ASYNC_BLOCK, block);
+    }
 }

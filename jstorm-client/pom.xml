@@ -5,10 +5,10 @@
 	<parent>
 		<groupId>com.alibaba.jstorm</groupId>
 		<artifactId>jstorm-all</artifactId>
-		<version>0.9.5</version>
+		<version>0.9.5.1</version>
 		<relativePath>..</relativePath>
 	</parent>
-	<!--<parent> 
+	<!-- <parent> 
 		<groupId>com.taobao</groupId> 
 		<artifactId>parent</artifactId> 
 		<version>1.0.2</version> 
@@ -16,7 +16,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.alibaba.jstorm</groupId>
 	<artifactId>jstorm-client</artifactId>
-	<version>0.9.5</version>
+	<version>0.9.5.1</version>
 	<packaging>jar</packaging>
 	<name>${project.artifactId}-${project.version}</name>
 

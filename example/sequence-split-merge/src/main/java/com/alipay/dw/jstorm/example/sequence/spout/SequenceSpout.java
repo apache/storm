@@ -1,6 +1,7 @@
 package com.alipay.dw.jstorm.example.sequence.spout;
 
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.slf4j.Logger;
@@ -54,6 +55,9 @@ public class SequenceSpout implements IRichSpout {
 	private boolean isLimited = false;
 
 	private long SPOUT_MAX_SEND_NUM;
+	
+	private int bufferLen = 0;
+	private Random random;
 
 	public boolean isDistributed() {
 		return true;
@@ -100,8 +104,13 @@ public class SequenceSpout implements IRichSpout {
 				+ context.getThisTaskId());
 
 		MAX_PENDING_COUNTER = getMaxPending(conf);
-
-		LOG.info("Finish open");
+		
+		bufferLen = JStormUtils.parseInt(conf.get("byte.buffer.len"), 0);
+		
+		random = new Random();
+		random.setSeed(System.currentTimeMillis());
+		
+		LOG.info("Finish open, buffer Len:"  + bufferLen);
 
 	}
 
@@ -109,6 +118,18 @@ public class SequenceSpout implements IRichSpout {
 	private AtomicLong customerSum = new AtomicLong(0);
 
 	public void emit() {
+		
+		String buffer = null;
+		if (bufferLen > 0) {
+			byte[] byteBuffer = new byte[bufferLen];
+			
+			for (int i = 0; i < bufferLen; i++) {
+				byteBuffer[i] = (byte)random.nextInt(200);
+			}
+			
+			buffer = new String(byteBuffer);
+		}
+		
 
 		Pair trade = PairMaker.makeTradeInstance();
 		Pair customer = PairMaker.makeCustomerInstance();
@@ -116,6 +137,7 @@ public class SequenceSpout implements IRichSpout {
 		TradeCustomer tradeCustomer = new TradeCustomer();
 		tradeCustomer.setTrade(trade);
 		tradeCustomer.setCustomer(customer);
+		tradeCustomer.setBuffer(buffer);
 
 		tradeSum.addAndGet(trade.getValue());
 		customerSum.addAndGet(customer.getValue());

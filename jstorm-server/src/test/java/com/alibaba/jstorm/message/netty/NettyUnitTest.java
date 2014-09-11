@@ -44,6 +44,7 @@ public class NettyUnitTest {
 			ConfigExtension.setNettySyncMode(storm_conf, true);
 		} else {
 			ConfigExtension.setNettySyncMode(storm_conf, false);
+			ConfigExtension.setNettyASyncBlock(storm_conf, false);
 		}
 
 	}

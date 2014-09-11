@@ -124,7 +124,11 @@ storm.messaging.netty.flush.check.interval.ms: 10
 # it will slow down the netty sending speed
 storm.messaging.netty.buffer.threshold: 8388608
 storm.messaging.netty.max.pending: 16
+## send message with sync or async mode
 storm.messaging.netty.sync.mode: false
+## when netty is in sync mode and client channel is unavailable, 
+## it will block sending until channel is ready
+storm.messaging.netty.async.block: true
 
 ### topology.* configs are for specific executing storms
 topology.enable.message.timeouts: true

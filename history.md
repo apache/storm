@@ -1,5 +1,13 @@
 [JStorm 0.9.0 ΩÈ…‹](http://wenku.baidu.com/view/59e81017dd36a32d7375818b.html)
 
+#Release 0.9.5.1
+1. Add netty sync mode
+2. Add block operation in netty async mode
+3. Replace exception with Throwable in executor layer
+4. Upgrade curator-framework version from 1.15 to 1.3.2
+5. Add more netty junit test
+6. Add log when queue is full
+
 #Release 0.9.5
 ##Big feature:
 1. Redesign scheduler arithmetic, basing worker not task .
