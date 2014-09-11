@@ -74,7 +74,7 @@
      :validator (new-instance (conf NIMBUS-TOPOLOGY-VALIDATOR))
      :timer (mk-timer :kill-fn (fn [t]
                                  (log-error t "Error when processing event")
-                                 (halt-process! 20 "Error when processing an event")
+                                 (exit-process! 20 "Error when processing an event")
                                  ))
      :scheduler (mk-scheduler conf inimbus)
      }))
@@ -300,12 +300,6 @@
     (dofor [^WorkerSlot slot ret]
       [(.getNodeId slot) (.getPort slot)]
       )))
-
-(defn- optimize-topology [topology]
-  ;; TODO: create new topology by collapsing bolts into CompoundSpout
-  ;; and CompoundBolt
-  ;; need to somehow maintain stream/component ids inside tuples
-  topology)
 
 (defn- setup-storm-code [conf storm-id tmp-jar-location storm-conf topology]
   (let [stormroot (master-stormdist-root conf storm-id)]
@@ -615,7 +609,9 @@
     new-topology->executor->node+port))
 
 (defn changed-executors [executor->node+port new-executor->node+port]
-  (let [slot-assigned (reverse-map executor->node+port)
+  (let [executor->node+port (if executor->node+port (sort executor->node+port) nil)
+        new-executor->node+port (if new-executor->node+port (sort new-executor->node+port) nil)
+        slot-assigned (reverse-map executor->node+port)
         new-slot-assigned (reverse-map new-executor->node+port)
         brand-new-slots (map-diff slot-assigned new-slot-assigned)]
     (apply concat (vals brand-new-slots))
@@ -864,7 +860,9 @@
 
 (defn- get-errors [storm-cluster-state storm-id component-id]
   (->> (.errors storm-cluster-state storm-id component-id)
-       (map #(ErrorInfo. (:error %) (:time-secs %)))))
+       (map #(doto (ErrorInfo. (:error %) (:time-secs %))
+                   (.set_host (:host %))
+                   (.set_port (:port %))))))
 
 (defn- thriftify-executor-id [[first-task-id last-task-id]]
   (ExecutorInfo. (int first-task-id) (int last-task-id)))
@@ -984,9 +982,6 @@
                             topology)
                 total-storm-conf (merge conf storm-conf)
                 topology (normalize-topology total-storm-conf topology)
-                topology (if (total-storm-conf TOPOLOGY-OPTIMIZE)
-                           (optimize-topology topology)
-                           topology)
                 storm-cluster-state (:storm-cluster-state nimbus)]
             (system-topology! total-storm-conf topology) ;; this validates the structure of the topology
             (log-message "Received topology submission for " storm-name " with conf " storm-conf)
@@ -1201,7 +1196,9 @@
                     (.processor (Nimbus$Processor. service-handler))
                     )
        server (THsHaServer. (do (set! (. options maxReadBufferBytes)(conf NIMBUS-THRIFT-MAX-BUFFER-SIZE)) options))]
-    (.addShutdownHook (Runtime/getRuntime) (Thread. (fn [] (.shutdown service-handler) (.stop server))))
+    (add-shutdown-hook-with-force-kill-in-1-sec (fn []
+                                                  (.shutdown service-handler)
+                                                  (.stop server)))
     (log-message "Starting Nimbus server...")
     (.serve server)))
 
