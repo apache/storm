@@ -54,8 +54,8 @@
   {:sys-stats "Use this to toggle inclusion of storm system components."
    :version (str "The version of storm installed on the UI node. (Hopefully, "
                  "this is the same on all storm nodes!)")
-   :nimbus-uptime (str "The duration the current Nimbus instance has been "
-                       "running. (Note that the storm cluster may have been "
+   :nimbus-leader-uptime (str "The duration the current Nimbus instance has been "
+                       "running as a leader. (Note that the storm cluster may have been "
                        "deployed and available for a much longer period than "
                        "the current Nimbus process has been running.)")
    :num-supervisors "The number of nodes in the cluster currently."

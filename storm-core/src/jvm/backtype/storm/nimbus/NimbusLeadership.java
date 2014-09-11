@@ -1,3 +1,20 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package backtype.storm.nimbus;
 
 import java.io.UnsupportedEncodingException;
@@ -24,11 +41,11 @@ public class NimbusLeadership {
 	private CuratorFramework curator;
 	private InterProcessMutex mutex;
 	private boolean isLeader = false;
-	
+
 	public NimbusLeadership(final Map conf) {
 		this.conf = conf;
 	}
-	
+
 	public void acquireLeaderShip() throws Exception {
 		String nimbusHostName = InetAddress.getLocalHost().getCanonicalHostName();
 		Object nimbusPort = conf.get(Config.NIMBUS_THRIFT_PORT);
@@ -62,17 +79,17 @@ public class NimbusLeadership {
 		close();
 		return nimbusAddressList;
 	}
-	
-    public void close() {
-        if (isLeader) {
-            try {
-                mutex.release();
-            } catch (Exception e) {
-                throw new RuntimeException("Exception while releasing mutex", e);
-            }
-        }
-        curator.close();
-    }
+
+	public void close() {
+		if (isLeader) {
+			try {
+				mutex.release();
+			} catch (Exception e) {
+				throw new RuntimeException("Exception while releasing mutex", e);
+			}
+		}
+		curator.close();
+	}
 
 	@SuppressWarnings("unchecked")
 	private void initCurator() throws Exception {
@@ -82,7 +99,7 @@ public class NimbusLeadership {
 	}
 
 	private void initLeadershipMutex(final String nodeId) throws Exception {
-		String path = (String)conf.get(Config.STORM_ZOOKEEPER_ROOT) + STORM_NIMBUS_LEADERSHIP_PATH;
+		String path = (String) conf.get(Config.STORM_ZOOKEEPER_ROOT) + STORM_NIMBUS_LEADERSHIP_PATH;
 		ZKPaths.mkdirs(curator.getZookeeperClient().getZooKeeper(), path);
 		mutex = new InterProcessMutex(curator, path) {
 			@Override
