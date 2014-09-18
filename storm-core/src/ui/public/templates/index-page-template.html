@@ -174,7 +174,32 @@
   </tbody>
 </table>
 </script>
-
+<script id="nimbus-summary-template" type="text/html">
+  <table id="nimbus-summary-table">
+  <thead>
+    <tr>
+      <th>
+        <span class="tip right" title="The hostname where nimbus is running.">
+          Nimbus host
+        </span>
+      </th>
+      <th>
+        <span class="tip right" title="Hint if this nimbus node is the leader of all nimbus nodes, true if it is.">
+          isLeader
+        </span>
+      </th>
+    </tr>
+  </thead>
+  <tbody>
+  	{{#nimbuses}}
+    <tr>
+      <td>{{nimbusHost}}</td>
+      <td>{{isLeader}}</td>
+    </tr>
+    {{/nimbuses}}
+  </tbody>
+  </table>
+</script>
 <script id="configuration-template" type="text/html">
   <table class="zebra-striped" id="nimbus-configuration-table">
     <thead>
