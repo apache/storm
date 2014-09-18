@@ -207,7 +207,7 @@
    :isupervisor isupervisor
    :active (atom true)
    :uptime (uptime-computer)
-   :worker-thread-pids-atom (atom {})
+   :worker-thread-pids-atom (atom {}) ;; used for saving jvm thread id when running in local mode
    :storm-cluster-state (cluster/mk-storm-cluster-state conf)
    :local-state (supervisor-state conf)
    :supervisor-id (.getSupervisorId isupervisor)
