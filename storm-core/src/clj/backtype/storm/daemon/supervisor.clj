@@ -542,9 +542,14 @@
           command (->> command (map str) (filter (complement empty?)))
           shell-cmd (->> command
                          (map #(str \' (clojure.string/escape % {\' "\\'"}) \'))
-                         (clojure.string/join " "))]
-      (log-message "Launching worker with command: " shell-cmd)
-      (launch-process command :environment topology-worker-environment)
+                         (clojure.string/join " "))
+          _ (log-message "Launching worker with command: " shell-cmd)
+          process (launch-process command :environment topology-worker-environment)
+          process-out (slurp (.getInputStream process))
+          process-err (slurp (.getErrorStream process))
+          ]
+      (log-message "Worker out:" process-out)
+      (log-message "Worker err:" process-err)
       ))
 
 ;; local implementation
