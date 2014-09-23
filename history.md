@@ -1,4 +1,18 @@
-[JStorm 0.9.0 ΩÈ…‹](http://wenku.baidu.com/view/59e81017dd36a32d7375818b.html)
+[JStorm 0.9.0 ‰ªãÁªç](http://wenku.baidu.com/view/59e81017dd36a32d7375818b.html)
+
+#Release 0.9.6
+1. Update UI 
+  - Display the metrics information of task and worker
+  - Add warning flag when errors occur for a topology
+  - Add link from supervisor page to task page
+2. Send metrics data to Alimonitor
+3. Add metrics interface for user
+4. Add task.cleanup.timeout.sec setting to let task gently cleanup
+5. Set the worker's log name as topologyName-worker-port.log
+6. Add setting "worker.redirect.output.file", so worker can redirect System.out/System.err to one setting file
+7. Add storm list command
+8. Add closing channel check in netty client to avoid double close
+9. Add connecting check in netty client to avoid connecting one server twice at one time 
 
 #Release 0.9.5.1
 1. Add netty sync mode

@@ -31,14 +31,14 @@ public class SystemOperation {
 	}
 
 	public static String exec(String cmd) throws IOException {
-		LOG.info("Shell cmd: " + cmd);
+		LOG.debug("Shell cmd: " + cmd);
 		Process process = new ProcessBuilder(new String[] { "/bin/bash", "-c",
 				cmd }).start();
 		try {
 			process.waitFor();
 			String output = IOUtils.toString(process.getInputStream());
 			String errorOutput = IOUtils.toString(process.getErrorStream());
-			LOG.info("Shell Output: " + output);
+			LOG.debug("Shell Output: " + output);
 			if (errorOutput.length() != 0) {
 				LOG.error("Shell Error Output: " + errorOutput);
 				throw new IOException(errorOutput);

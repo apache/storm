@@ -37,3 +37,13 @@
  
 ### default worker memory size, unit is byte
  worker.memory.size: 2147483648
+
+# Metrics Monitor
+# topology.performance.metrics: it is the switch flag for performance 
+# purpose. When it is disabled, the data of timer and histogram metrics 
+# will not be collected.
+# topology.alimonitor.metrics.post: If it is disable, metrics data
+# will only be printed to log. If it is enabled, the metrics data will be
+# posted to alimonitor besides printing to log.
+ topology.performance.metrics: true
+ topology.alimonitor.metrics.post: true

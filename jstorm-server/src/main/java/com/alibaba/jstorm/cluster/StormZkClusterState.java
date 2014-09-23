@@ -5,6 +5,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
@@ -21,6 +23,7 @@ import com.alibaba.jstorm.daemon.supervisor.SupervisorInfo;
 import com.alibaba.jstorm.task.Assignment;
 import com.alibaba.jstorm.task.AssignmentBak;
 import com.alibaba.jstorm.task.TaskInfo;
+import com.alibaba.jstorm.task.TaskMetricInfo;
 import com.alibaba.jstorm.task.error.TaskError;
 import com.alibaba.jstorm.task.heartbeat.TaskHeartbeat;
 import com.alibaba.jstorm.utils.JStormUtils;
@@ -28,6 +31,9 @@ import com.alibaba.jstorm.utils.PathUtils;
 import com.alibaba.jstorm.utils.TimeUtils;
 import com.alibaba.jstorm.zk.ZkConstant;
 import com.alibaba.jstorm.zk.ZkTool;
+import com.alibaba.jstorm.daemon.worker.WorkerMetricInfo;
+import com.alibaba.jstorm.metric.UserDefMetric;
+import com.alibaba.jstorm.metric.UserDefMetricData;
 
 public class StormZkClusterState implements StormClusterState {
 	private static Logger LOG = Logger.getLogger(StormZkClusterState.class);
@@ -118,7 +124,7 @@ public class StormZkClusterState implements StormClusterState {
 		String[] pathlist = JStormUtils.mk_arr(Cluster.ASSIGNMENTS_SUBTREE,
 				Cluster.TASKS_SUBTREE, Cluster.STORMS_SUBTREE,
 				Cluster.SUPERVISORS_SUBTREE, Cluster.TASKBEATS_SUBTREE,
-				Cluster.TASKERRORS_SUBTREE);
+				Cluster.TASKERRORS_SUBTREE, Cluster.MONITOR_SUBTREE);
 		for (String path : pathlist) {
 			cluster_state.mkdirs(path);
 		}
@@ -196,6 +202,11 @@ public class StormZkClusterState implements StormClusterState {
 	public List<String> active_storms() throws Exception {
 		return cluster_state.get_children(Cluster.STORMS_SUBTREE, false);
 	}
+	
+	@Override
+	public List<String> monitor_user_workers(String topologyId) throws Exception {
+		return cluster_state.get_children(Cluster.monitor_userdir_path(topologyId), false);
+	}
 
 	@Override
 	public List<String> heartbeat_storms() throws Exception {
@@ -215,6 +226,7 @@ public class StormZkClusterState implements StormClusterState {
 		// wait 10 seconds, so supervisor will kill worker smoothly
 		JStormUtils.sleepMs(10000);
 		cluster_state.delete_node(Cluster.storm_task_root(topologyId));
+		cluster_state.delete_node(Cluster.monitor_path(topologyId));
 		this.remove_storm_base(topologyId);
 	}
 
@@ -234,31 +246,53 @@ public class StormZkClusterState implements StormClusterState {
 	@Override
 	public void report_task_error(String topologyId, int taskId, Throwable error)
 			throws Exception {
+		report_task_error(topologyId, taskId, new String(JStormUtils.getErrorInfo(error)));
+	}
+	
+	public void report_task_error(String topologyId, int taskId, String error)
+			throws Exception {
+	    boolean found = false;
 		String path = Cluster.taskerror_path(topologyId, taskId);
 		cluster_state.mkdirs(path);
 
 		List<Integer> children = new ArrayList<Integer>();
 
+		String timeStamp = String.valueOf(TimeUtils.current_time_secs());
+		String timestampPath = path + Cluster.ZK_SEPERATOR + timeStamp;
+		
 		for (String str : cluster_state.get_children(path, false)) {
 			children.add(Integer.parseInt(str));
+			
+			String errorPath = path + "/" + str;
+			byte[] data = cluster_state.get_data(errorPath, false);
+			if (data == null) continue;
+			String errorInfo = new String(data);
+			if (errorInfo.equals(error)) {
+				cluster_state.delete_node(errorPath);
+				cluster_state.set_data(timestampPath, error.getBytes());
+				found = true;
+				break;
+			}	
 		}
 
-		Collections.sort(children);
+		if (found == false) {
+		    Collections.sort(children);
 
-		while (children.size() >= 10) {
-			cluster_state.delete_node(path + Cluster.ZK_SEPERATOR
-					+ children.remove(0));
+		    while (children.size() >= 10) {
+			    cluster_state.delete_node(path + Cluster.ZK_SEPERATOR
+					    + children.remove(0));
+		    }
+
+		    cluster_state.set_data(timestampPath, error.getBytes());
 		}
-
-		String timestampPath = path + Cluster.ZK_SEPERATOR
-				+ TimeUtils.current_time_secs();
-		byte[] errorData = new String(JStormUtils.getErrorInfo(error))
-				.getBytes();
-
-		cluster_state.set_data(timestampPath, errorData);
-
+		
+		//Set error information in task error topology patch
+		String taskErrTopoPath = Cluster.taskerror_storm_root(topologyId);
+		cluster_state.set_data(taskErrTopoPath + "/" + "last_error", timeStamp.getBytes());
 	}
 
+	
+	
 	@Override
 	public void set_task(String topologyId, int taskId, TaskInfo info)
 			throws Exception {
@@ -325,6 +359,15 @@ public class StormZkClusterState implements StormClusterState {
 	}
 
 	@Override
+	public String topo_lastErr_time(String topologyId) throws Exception {
+		String path = Cluster.taskerror_storm_root(topologyId);
+		String lastErrTime = null;
+		byte[] data = cluster_state.get_data(path + "/" + "last_error", false);
+		if (data != null) lastErrTime = new String(data);
+		return lastErrTime;
+	}
+	
+	@Override
 	public List<String> task_error_storms() throws Exception {
 		return cluster_state.get_children(Cluster.TASKERRORS_SUBTREE, false);
 	}
@@ -378,6 +421,29 @@ public class StormZkClusterState implements StormClusterState {
 		}
 		return (TaskHeartbeat) data;
 	}
+	
+	@Override
+	public Map<String, TaskHeartbeat> task_heartbeat(String topologyId)
+			throws Exception {
+		Map<String, TaskHeartbeat> ret = new HashMap<String, TaskHeartbeat>();
+		
+		String topoTbPath = Cluster.taskbeat_storm_root(topologyId);
+		List<String> taskList = cluster_state.get_children(topoTbPath, false);
+		
+		for (String taskId : taskList) {
+		    String taskbeatPath = Cluster.taskbeat_path(topologyId, Integer.parseInt(taskId));
+
+		    byte[] znodeData = cluster_state.get_data(taskbeatPath, false);
+
+		    Object data = Cluster.maybe_deserialize(znodeData);
+		    if (data == null) {
+			    continue;
+		    }
+		    ret.put(taskId, (TaskHeartbeat)data);
+		}
+		
+		return ret;
+	}
 
 	@Override
 	public void task_heartbeat(String topologyId, int taskId, TaskHeartbeat info)
@@ -415,6 +481,20 @@ public class StormZkClusterState implements StormClusterState {
 			return null;
 		}
 		return (TaskInfo) data;
+	}
+	
+	@Override
+	public Map<Integer, TaskInfo> task_info_list(String topologyId) throws Exception {
+		Map<Integer, TaskInfo> taskInfoList = new HashMap<Integer, TaskInfo>();
+		
+		List<Integer> taskIds = task_ids(topologyId);
+		
+		for (Integer taskId : taskIds) {
+			TaskInfo taskInfo = task_info(topologyId, taskId);
+			taskInfoList.put(taskId, taskInfo);
+		}
+		
+		return taskInfoList;
 	}
 
 	@Override
@@ -518,5 +598,154 @@ public class StormZkClusterState implements StormClusterState {
 		}
 		return true;
 	}
+	
+	@Override
+	public void set_storm_monitor(String topologyId, StormMonitor metricsMonitor) throws Exception {
+	    String monitorPath = Cluster.monitor_path(topologyId);
+	    cluster_state.set_data(monitorPath, Utils.serialize(metricsMonitor));
+	    cluster_state.mkdirs(Cluster.monitor_taskdir_path(topologyId));
+	    cluster_state.mkdirs(Cluster.monitor_workerdir_path(topologyId));
+	    cluster_state.mkdirs(Cluster.monitor_userdir_path(topologyId));
+	    // Update the task list under /zk_root/monitor/task
+	    //Map<Integer, TaskInfo> taskInfoList = task_info_list(topologyId);
+	    //for(Entry<Integer, TaskInfo> taskEntry : taskInfoList.entrySet()) {
+	    //	TaskMetricInfo taskMetricInfo = new TaskMetricInfo(taskEntry.getValue().getComponentId());
+	    //	String taskMetricsPath = monitorPath + taskEntry.getKey();
+	    //	cluster_state.set_data(taskMetricsPath, Utils.serialize(taskMetricInfo));
+	    //}
+	}
 
+	@Override 
+	public StormMonitor get_storm_monitor(String topologyId) throws Exception {
+		String monitorPath = Cluster.monitor_path(topologyId);
+		
+		byte[] metricsMonitorData = cluster_state.get_data(monitorPath, false);
+		Object metricsMonitor = Cluster.maybe_deserialize(metricsMonitorData);
+		
+		return (StormMonitor)metricsMonitor;
+	}
+	public UserDefMetricData get_userDef_metric(String topologyId,String workerId) throws Exception{
+		String workerMetricPath = Cluster.monitor_user_path(topologyId, workerId);
+		byte[] userMetricsData=cluster_state.get_data(workerMetricPath, false);
+		Object userMetrics = Cluster.maybe_deserialize(userMetricsData);
+		return (UserDefMetricData)userMetrics;	
+	}
+	
+	@Override
+	public void update_task_metric(String topologyId, String taskId, TaskMetricInfo metricInfo) throws Exception {
+		String taskMetricPath = Cluster.monitor_task_path(topologyId, taskId);
+		cluster_state.set_data(taskMetricPath, Utils.serialize(metricInfo));
+	}
+	
+	@Override
+	public void update_worker_metric(String topologyId, String workerId, WorkerMetricInfo metricInfo) throws Exception {
+		String workerMetricPath = Cluster.monitor_worker_path(topologyId, workerId);
+		cluster_state.set_data(workerMetricPath, Utils.serialize(metricInfo));
+	}
+	
+	@Override
+	public void update_userDef_metric(String topologyId, String workerId, UserDefMetricData metricInfo) throws Exception {
+		String userMetricPath = Cluster.monitor_user_path(topologyId, workerId);
+		cluster_state.set_data(userMetricPath, Utils.serialize(metricInfo));
+	}
+	
+	@Override
+	public List<TaskMetricInfo> get_task_metric_list(String topologyId) throws Exception {
+		List<TaskMetricInfo> taskMetricList = new ArrayList<TaskMetricInfo>();
+		
+		String monitorTaskDirPath = Cluster.monitor_taskdir_path(topologyId);	
+		List<String> taskList = cluster_state.get_children(monitorTaskDirPath, false);
+		
+		for(String taskId : taskList) {
+			Object taskMetric = Cluster.maybe_deserialize(
+					cluster_state.get_data(Cluster.monitor_task_path(topologyId, taskId), false));
+			if(taskMetric != null) {
+				taskMetricList.add((TaskMetricInfo)taskMetric);
+			} else {
+				LOG.warn("get_task_metric_list failed, topoId: " + topologyId + " taskId:" + taskId);
+			}
+		}
+		
+		return taskMetricList;
+	}
+	
+	@Override
+	public List<String> get_metric_taskIds(String topologyId) throws Exception {
+		String monitorTaskDirPath = Cluster.monitor_taskdir_path(topologyId);	
+		return cluster_state.get_children(monitorTaskDirPath, false);
+	}
+	
+	@Override
+	public void remove_metric_task(String topologyId, String taskId) throws Exception {
+		String monitorTaskPath = Cluster.monitor_task_path(topologyId, taskId);	
+		cluster_state.delete_node(monitorTaskPath);
+	}
+	
+	@Override
+	public List<WorkerMetricInfo> get_worker_metric_list(String topologyId) throws Exception {
+		List<WorkerMetricInfo> workerMetricList = new ArrayList<WorkerMetricInfo>();
+		
+		String monitorWorkerDirPath = Cluster.monitor_workerdir_path(topologyId);
+		List<String> workerList = cluster_state.get_children(monitorWorkerDirPath, false);
+		
+		for(String workerId : workerList) {
+			byte[] byteArray = cluster_state.get_data(Cluster.monitor_worker_path(topologyId, workerId), false);
+			if(byteArray != null) {
+				WorkerMetricInfo workerMetric = (WorkerMetricInfo)Cluster.maybe_deserialize(byteArray);
+			    if(workerMetric != null) {
+				    workerMetricList.add(workerMetric);
+			    } 
+			} else {
+				LOG.warn("get_worker_metric_list failed, workerMetric is null, topoId: " + topologyId + " workerId:" + workerId);
+			}
+		}
+		
+		return workerMetricList;
+	}
+	
+	@Override
+	public List<String> get_metric_workerIds(String topologyId) throws Exception {
+		String monitorWorkerDirPath = Cluster.monitor_workerdir_path(topologyId);
+		return cluster_state.get_children(monitorWorkerDirPath, false);
+	}
+	
+	@Override
+	public void remove_metric_worker(String topologyId, String workerId) throws Exception {
+		String monitorWorkerPath = Cluster.monitor_worker_path(topologyId, workerId);	
+		cluster_state.delete_node(monitorWorkerPath);
+	}
+	
+	@Override
+	public List<String> get_metric_users(String topologyId) throws Exception {
+		String monitorUserDirPath = Cluster.monitor_userdir_path(topologyId);
+		return cluster_state.get_children(monitorUserDirPath, false);
+	}
+	
+	@Override
+	public void remove_metric_user(String topologyId, String workerId) throws Exception {
+		String monitorUserPath = Cluster.monitor_user_path(topologyId, workerId);	
+		cluster_state.delete_node(monitorUserPath);
+	}
+	
+	@Override
+	public TaskMetricInfo get_task_metric(String topologyId, int taskId) throws Exception {
+		TaskMetricInfo taskMetric = null;
+		
+		String monitorTaskPath = Cluster.monitor_task_path(topologyId, String.valueOf(taskId));	
+		taskMetric = (TaskMetricInfo)(Cluster.maybe_deserialize(
+				cluster_state.get_data(monitorTaskPath, false)));
+		
+		return taskMetric;
+	}
+	
+	@Override
+	public WorkerMetricInfo get_worker_metric(String topologyId, String workerId) throws Exception {
+		WorkerMetricInfo workerMetric = null;
+		
+		String monitorWorkerPath = Cluster.monitor_worker_path(topologyId, workerId);	
+		workerMetric = (WorkerMetricInfo)(Cluster.maybe_deserialize(
+				cluster_state.get_data(monitorWorkerPath, false)));
+		
+		return workerMetric;
+	}
 }

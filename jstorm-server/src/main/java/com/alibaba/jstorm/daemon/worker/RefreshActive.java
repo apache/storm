@@ -11,12 +11,15 @@ import backtype.storm.Config;
 import com.alibaba.jstorm.callback.RunnableCallback;
 import com.alibaba.jstorm.cluster.StormBase;
 import com.alibaba.jstorm.cluster.StormClusterState;
+import com.alibaba.jstorm.cluster.StormMonitor;
 import com.alibaba.jstorm.daemon.nimbus.StatusType;
+import com.alibaba.jstorm.daemon.worker.metrics.MetricReporter;
 import com.alibaba.jstorm.task.TaskShutdownDameon;
 import com.alibaba.jstorm.utils.JStormUtils;
 
 /**
- * Timely check whether topology is active or not from ZK
+ * Timely check whether topology is active or not and whether
+ * the metrics monitor is enable or disable from ZK
  * 
  * @author yannian/Longda
  * 
@@ -66,6 +69,30 @@ public class RefreshActive extends RunnableCallback {
 				newTopologyStatus = base.getStatus().getStatusType();
 			}
 
+			// Start metrics report if metrics monitor is enabled.
+			// Stop metrics report if metrics monitor is disabled. 
+			try {
+			    StormMonitor monitor = zkCluster.get_storm_monitor(topologyId);
+			    if (null != monitor) {
+			        boolean newMetricsMonitor = monitor.getMetrics();
+			        MetricReporter metricReporter = workerData.getMetricsReporter();
+			        boolean oldMetricsMonitor = metricReporter.isEnable();
+			    
+			        if (oldMetricsMonitor != newMetricsMonitor) {
+			            metricReporter.setEnable(newMetricsMonitor);
+			            if (true == newMetricsMonitor) {
+			                LOG.info("Start metrics reporter");
+			            } else {
+			    	        LOG.info("Stop metrics reporter");
+			            }
+			        }
+			    }
+			} catch (Exception e) {
+				LOG.warn("Failed to get monitor status of topology " + topologyId);
+				LOG.debug(e);
+			}
+			
+			// Process the topology status change
 			StatusType oldTopologyStatus = workerData.getTopologyStatus();
 
 			if (newTopologyStatus.equals(oldTopologyStatus)) {

@@ -258,6 +258,18 @@ public class JStormUtils {
 
 		ensure_process_killed(pid);
 	}
+	
+	public static void kill_signal(Integer pid, String signal) {
+		String cmd = "kill " + signal  + " " + pid;
+		try {
+			exec_command(cmd);
+			LOG.info(cmd);
+		} catch (ExecuteException e) {
+			LOG.info("Error when run " + cmd + ". Process has been killed. ");
+		} catch (Exception e) {
+			LOG.info("Error when run " + cmd + ". Exception ", e);
+		}
+	}
 
 	public static java.lang.Process launch_process(String command,
 			Map<String, String> environment) throws IOException {
@@ -653,6 +665,50 @@ public class JStormUtils {
 		}
 
 	}
+	
+	public static double formatDoubleDecPoint2(Double value) {
+		try {
+			java.text.DecimalFormat form = new java.text.DecimalFormat(
+					"##.00");
+			String s = form.format(value);
+			return Double.valueOf(s);
+		} catch (Exception e) {
+			return 0.0;
+		}
+	}
+	
+	public static double formatDoubleDecPoint4(Double value) {
+		try {
+			java.text.DecimalFormat form = new java.text.DecimalFormat(
+					"###.0000");
+			String s = form.format(value);
+			return Double.valueOf(s);
+		} catch (Exception e) {
+			return 0.0;
+		}
+	}
+	
+	public static Double convertToDouble(Object value) {
+		Double ret;
+		
+		if (value == null) {
+			ret = null;
+		} else {
+			if (value instanceof Integer) {
+				ret = ((Integer) value).doubleValue();
+			} else if (value instanceof Long) {
+				ret = ((Long) value).doubleValue();
+			} else if (value instanceof Float) {
+				ret = ((Float) value).doubleValue();
+			} else if (value instanceof Double) {
+				ret = (Double) value;
+			} else {
+				ret = null;
+			}
+		}
+		
+		return ret;
+	}
 
 	public static String formatValue(Object value) {
 		if (value == null) {
@@ -727,6 +783,10 @@ public class JStormUtils {
 		Long ret = (Long) object;
 
 		return ret;
+	}
+	
+	public static String genLogName(String topology, Integer port) {
+		return topology + "-worker-" + port	 + ".log";
 	}
 
 	public static String getLogFileName() {

@@ -31,6 +31,7 @@ public class TaskSummary implements org.apache.thrift7.TBase<TaskSummary, TaskSu
   private static final org.apache.thrift7.protocol.TField UPTIME_SECS_FIELD_DESC = new org.apache.thrift7.protocol.TField("uptime_secs", org.apache.thrift7.protocol.TType.I32, (short)5);
   private static final org.apache.thrift7.protocol.TField ERRORS_FIELD_DESC = new org.apache.thrift7.protocol.TField("errors", org.apache.thrift7.protocol.TType.LIST, (short)6);
   private static final org.apache.thrift7.protocol.TField STATS_FIELD_DESC = new org.apache.thrift7.protocol.TField("stats", org.apache.thrift7.protocol.TType.STRUCT, (short)7);
+  private static final org.apache.thrift7.protocol.TField COMPONENT_TYPE_FIELD_DESC = new org.apache.thrift7.protocol.TField("component_type", org.apache.thrift7.protocol.TType.STRING, (short)8);
 
   private int task_id; // required
   private String component_id; // required
@@ -39,6 +40,7 @@ public class TaskSummary implements org.apache.thrift7.TBase<TaskSummary, TaskSu
   private int uptime_secs; // required
   private List<ErrorInfo> errors; // required
   private TaskStats stats; // required
+  private String component_type; // required
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
@@ -48,7 +50,8 @@ public class TaskSummary implements org.apache.thrift7.TBase<TaskSummary, TaskSu
     PORT((short)4, "port"),
     UPTIME_SECS((short)5, "uptime_secs"),
     ERRORS((short)6, "errors"),
-    STATS((short)7, "stats");
+    STATS((short)7, "stats"),
+    COMPONENT_TYPE((short)8, "component_type");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -77,6 +80,8 @@ public class TaskSummary implements org.apache.thrift7.TBase<TaskSummary, TaskSu
           return ERRORS;
         case 7: // STATS
           return STATS;
+        case 8: // COMPONENT_TYPE
+          return COMPONENT_TYPE;
         default:
           return null;
       }
@@ -140,6 +145,8 @@ public class TaskSummary implements org.apache.thrift7.TBase<TaskSummary, TaskSu
             new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, ErrorInfo.class))));
     tmpMap.put(_Fields.STATS, new org.apache.thrift7.meta_data.FieldMetaData("stats", org.apache.thrift7.TFieldRequirementType.OPTIONAL, 
         new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, TaskStats.class)));
+    tmpMap.put(_Fields.COMPONENT_TYPE, new org.apache.thrift7.meta_data.FieldMetaData("component_type", org.apache.thrift7.TFieldRequirementType.OPTIONAL, 
+        new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRING)));
     metaDataMap = Collections.unmodifiableMap(tmpMap);
     org.apache.thrift7.meta_data.FieldMetaData.addStructMetaDataMap(TaskSummary.class, metaDataMap);
   }
@@ -192,6 +199,9 @@ public class TaskSummary implements org.apache.thrift7.TBase<TaskSummary, TaskSu
     if (other.is_set_stats()) {
       this.stats = new TaskStats(other.stats);
     }
+    if (other.is_set_component_type()) {
+      this.component_type = other.component_type;
+    }
   }
 
   public TaskSummary deepCopy() {
@@ -210,6 +220,7 @@ public class TaskSummary implements org.apache.thrift7.TBase<TaskSummary, TaskSu
     this.uptime_secs = 0;
     this.errors = null;
     this.stats = null;
+    this.component_type = null;
   }
 
   public int get_task_id() {
@@ -385,6 +396,29 @@ public class TaskSummary implements org.apache.thrift7.TBase<TaskSummary, TaskSu
     }
   }
 
+  public String get_component_type() {
+    return this.component_type;
+  }
+
+  public void set_component_type(String component_type) {
+    this.component_type = component_type;
+  }
+
+  public void unset_component_type() {
+    this.component_type = null;
+  }
+
+  /** Returns true if field component_type is set (has been assigned a value) and false otherwise */
+  public boolean is_set_component_type() {
+    return this.component_type != null;
+  }
+
+  public void set_component_type_isSet(boolean value) {
+    if (!value) {
+      this.component_type = null;
+    }
+  }
+
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case TASK_ID:
@@ -443,6 +477,14 @@ public class TaskSummary implements org.apache.thrift7.TBase<TaskSummary, TaskSu
       }
       break;
 
+    case COMPONENT_TYPE:
+      if (value == null) {
+        unset_component_type();
+      } else {
+        set_component_type((String)value);
+      }
+      break;
+
     }
   }
 
@@ -469,6 +511,9 @@ public class TaskSummary implements org.apache.thrift7.TBase<TaskSummary, TaskSu
     case STATS:
       return get_stats();
 
+    case COMPONENT_TYPE:
+      return get_component_type();
+
     }
     throw new IllegalStateException();
   }
@@ -494,6 +539,8 @@ public class TaskSummary implements org.apache.thrift7.TBase<TaskSummary, TaskSu
       return is_set_errors();
     case STATS:
       return is_set_stats();
+    case COMPONENT_TYPE:
+      return is_set_component_type();
     }
     throw new IllegalStateException();
   }
@@ -574,6 +621,15 @@ public class TaskSummary implements org.apache.thrift7.TBase<TaskSummary, TaskSu
         return false;
     }
 
+    boolean this_present_component_type = true && this.is_set_component_type();
+    boolean that_present_component_type = true && that.is_set_component_type();
+    if (this_present_component_type || that_present_component_type) {
+      if (!(this_present_component_type && that_present_component_type))
+        return false;
+      if (!this.component_type.equals(that.component_type))
+        return false;
+    }
+
     return true;
   }
 
@@ -615,6 +671,11 @@ public class TaskSummary implements org.apache.thrift7.TBase<TaskSummary, TaskSu
     builder.append(present_stats);
     if (present_stats)
       builder.append(stats);
+
+    boolean present_component_type = true && (is_set_component_type());
+    builder.append(present_component_type);
+    if (present_component_type)
+      builder.append(component_type);
 
     return builder.toHashCode();
   }
@@ -693,6 +754,16 @@ public class TaskSummary implements org.apache.thrift7.TBase<TaskSummary, TaskSu
     }
     if (is_set_stats()) {
       lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.stats, typedOther.stats);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_component_type()).compareTo(typedOther.is_set_component_type());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_component_type()) {
+      lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.component_type, typedOther.component_type);
       if (lastComparison != 0) {
         return lastComparison;
       }
@@ -778,6 +849,13 @@ public class TaskSummary implements org.apache.thrift7.TBase<TaskSummary, TaskSu
             org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
           }
           break;
+        case 8: // COMPONENT_TYPE
+          if (field.type == org.apache.thrift7.protocol.TType.STRING) {
+            this.component_type = iprot.readString();
+          } else { 
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
         default:
           org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
       }
@@ -826,6 +904,13 @@ public class TaskSummary implements org.apache.thrift7.TBase<TaskSummary, TaskSu
       if (is_set_stats()) {
         oprot.writeFieldBegin(STATS_FIELD_DESC);
         this.stats.write(oprot);
+        oprot.writeFieldEnd();
+      }
+    }
+    if (this.component_type != null) {
+      if (is_set_component_type()) {
+        oprot.writeFieldBegin(COMPONENT_TYPE_FIELD_DESC);
+        oprot.writeString(this.component_type);
         oprot.writeFieldEnd();
       }
     }
@@ -880,6 +965,16 @@ public class TaskSummary implements org.apache.thrift7.TBase<TaskSummary, TaskSu
         sb.append("null");
       } else {
         sb.append(this.stats);
+      }
+      first = false;
+    }
+    if (is_set_component_type()) {
+      if (!first) sb.append(", ");
+      sb.append("component_type:");
+      if (this.component_type == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.component_type);
       }
       first = false;
     }

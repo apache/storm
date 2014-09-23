@@ -35,6 +35,11 @@ public class EventManagerImp implements EventManager {
 		RunnableCallback event = queue.poll();
 		return event;
 	}
+	
+	public RunnableCallback take() throws InterruptedException {
+		RunnableCallback event = queue.take();
+		return event;
+	}
 
 	public void proccessinc() {
 		processed.incrementAndGet();

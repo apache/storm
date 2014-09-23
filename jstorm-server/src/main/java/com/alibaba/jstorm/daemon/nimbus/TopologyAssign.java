@@ -25,10 +25,12 @@ import com.alibaba.jstorm.cluster.StormBase;
 import com.alibaba.jstorm.cluster.StormClusterState;
 import com.alibaba.jstorm.cluster.StormConfig;
 import com.alibaba.jstorm.cluster.StormStatus;
+import com.alibaba.jstorm.cluster.StormMonitor;
 import com.alibaba.jstorm.daemon.supervisor.SupervisorInfo;
 import com.alibaba.jstorm.schedule.IToplogyScheduler;
 import com.alibaba.jstorm.schedule.TopologyAssignContext;
 import com.alibaba.jstorm.schedule.default_assign.DefaultTopologyScheduler;
+import com.alibaba.jstorm.utils.JStromServerConfigExtension;
 import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
 import com.alibaba.jstorm.task.Assignment;
 import com.alibaba.jstorm.task.AssignmentBak;
@@ -136,7 +138,7 @@ public class TopologyAssign implements Runnable {
 		Assignment assignment = null;
 		try {
 			assignment = mkAssignment(event);
-
+			
 			setTopologyStatus(event);
 		} catch (Throwable e) {
 			LOG.error("Failed to assign topology " + event.getTopologyId(), e);
@@ -415,6 +417,14 @@ public class TopologyAssign implements Runnable {
 		// update task heartbeat's start time
 		NimbusUtils.updateTaskHbStartTime(nimbusData, assignment, topologyId);
 
+		// Update metrics information in ZK when rebalance or reassignment
+		// Only update metrics monitor status when creating topology
+		if (context.getAssignType() == TopologyAssignContext.ASSIGN_TYPE_REBALANCE 
+				|| context.getAssignType() == TopologyAssignContext.ASSIGN_TYPE_MONITOR)
+			NimbusUtils.updateMetricsInfo(nimbusData, topologyId, assignment);
+		else
+			metricsMonitor(event);
+		
 		LOG.info("Successfully make assignment for topology id " + topologyId
 				+ ": " + assignment);
 
@@ -762,6 +772,19 @@ public class TopologyAssign implements Runnable {
 		} catch (Exception e) {
 			LOG.warn("Failed to backup " + topologyId + " assignment "
 					+ assignment, e);
+		}
+	}
+	
+	public void metricsMonitor(TopologyAssignEvent event) {
+		String topologyId = event.getTopologyId();
+		try {
+			Map<Object, Object> conf = nimbusData.getConf();
+			boolean isEnable =  ConfigExtension.isEnablePerformanceMetrics(conf);
+			StormClusterState zkClusterState = nimbusData.getStormClusterState();
+			StormMonitor monitor = new StormMonitor(isEnable);
+			zkClusterState.set_storm_monitor(topologyId, monitor);
+		} catch (Exception e) {
+			LOG.warn("Failed to update metrics monitor status of " + topologyId, e);
 		}
 	}
 

@@ -28,6 +28,13 @@
 
 			<p:column>
 				<f:facet name="header">
+					<h:outputText value="IP" />
+				</f:facet>
+				<h:outputText value="#{ssumm.ip}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
 					<h:outputText value="Uptime" />
 				</f:facet>
 				<h:outputText value="#{ssumm.uptime}" />
@@ -62,8 +69,8 @@
 	
 	<h2>Used Worker Summary</h2>
     <h:form>
-        <p:dataTable id="workersummary" var="wsumm"
-            value="#{supervisorpage.wsumm}">
+        <p:dataTable id="workersummary" var="wsumm" value="#{supervisorpage.wsumm}"
+	        sortBy="#{wsumm.port}" sortOrder="ASCENDING">
             <p:column>
                 <f:facet name="header">
                     <h:outputText value="port" />
@@ -89,16 +96,129 @@
                 <f:facet name="header">
                     <h:outputText value="Task List" />
                 </f:facet>
+		<p:dataTable id="task" var="task"
+                        value="#{wsumm.taskSummList}">
+                    <p:column>
+		        <h:outputLink value="#{task._component_type}.jsf">
+			<h:outputText value="#{task._component_id}-#{task._task_id}" />
+			    <f:param name="topologyid" value="#{wsumm.topology}" />
+			    <f:param name="window" value="All-time" />
+			    <f:param name="componentid" value="#{task._component_id}" />
+		        </h:outputLink>
+                    </p:column>
+		</p:dataTable>
+	    </p:column>
+            <!--<p:column>
+                <f:facet name="header">
+                    <h:outputText value="Task List" />
+                </f:facet>
                 <h:outputText value="#{wsumm.tasks}" />
+	    </p:column>-->
+            
+        </p:dataTable>
+    </h:form>
+    <h2>Worker Metrics</h2>
+    <h:form>
+        <p:dataTable id="workermetrics" var="wmetr" value="#{supervisorpage.workermetrics}"
+	        sortBy="#{wmetr.port}" sortOrder="ASCENDING">
+	    <p:column>
+                <f:facet name="header">
+                    <h:outputText value="Port" />
+                </f:facet>
+                <h:outputText value="#{wmetr.port}" />
             </p:column>
             
             <p:column>
                 <f:facet name="header">
-                    <h:outputText value="Component List" />
+                    <h:outputText value="Used Cpu(%)" />
                 </f:facet>
-                <h:outputText value="#{wsumm.components}" />
+                <h:outputText value="#{wmetr.usedCpu}" />
             </p:column>
-            
+
+            <p:column>
+                <f:facet name="header">
+                    <h:outputText value="Used Mem(M)" />
+                </f:facet>
+                <h:outputText value="#{wmetr.usedMem}" />
+            </p:column>
+
+	    <p:column>
+		<f:facet name="header">
+                    <h:outputText value="Batch Trans Time over network(ms)" />
+                </f:facet>
+                <h:outputText value="#{wmetr.nettyservMsgTransTime}" />
+             </p:column>
+
+            <p:column>
+                <f:facet name="header">
+                    <h:outputText value="Msg Decode Time(ms)" />
+                </f:facet>
+                <h:outputText value="#{wmetr.nettyservDecodeTime}" />
+	    </p:column>
+
+	    <p:column>
+		<f:facet name="header">
+                    <h:outputText value="Dispatch Time(ms)" />
+                </f:facet>
+                <h:outputText value="#{wmetr.dispatchTime}" />
+	    </p:column>
+
+	    <p:column>
+                <f:facet name="header">
+		    <h:outputText value="Dispatch Queue(%)" />
+                </f:facet>
+                <h:outputText value="#{wmetr.dispatchQueue}" />
+	    </p:column>
+
+	    <p:column>
+		<f:facet name="header">
+                    <h:outputText value="Batch Tuple Time(ms)" />
+                </f:facet>
+                <h:outputText value="#{wmetr.batchTupleTime}" />
+	    </p:column>
+
+	    <p:column>
+                <f:facet name="header">
+		    <h:outputText value="Batch Tuple Queue(%)" />
+                </f:facet>
+                <h:outputText value="#{wmetr.batchTupleQueue}" />
+	    </p:column>
+
+            <p:column>
+		<f:facet name="header">
+		    <h:outputText value="Netty Client send Time(ms)" />
+                </f:facet>
+                <h:outputText value="#{wmetr.nettycliSendTime}" />
+	    </p:column>
+
+	    <p:column>
+		<f:facet name="header">
+                    <h:outputText value="Netty Send Pending Num" />
+                </f:facet>
+                <h:outputText value="#{wmetr.nettycliSendPending}" />
+	    </p:column>
+
+            <p:column>
+		<f:facet name="header">
+                    <h:outputText value="Netty Client Batch Size" />
+                </f:facet>
+                <h:outputText value="#{wmetr.nettycliBatchSize}" />
+	    </p:column>
+
+            <p:column>
+		<f:facet name="header">
+                    <h:outputText value="Netty Sync Batch Queue" />
+                </f:facet>
+                <h:outputText value="#{wmetr.nettycliSyncBatchQueue}" />
+	    </p:column>
+
+	    <p:column>
+		<f:facet name="header">
+                    <h:outputText value="Netty Sync Disr Queue" />
+                </f:facet>
+                <h:outputText value="#{wmetr.nettycliSyncDisrpQueue}" />
+	    </p:column>
+
         </p:dataTable>
     </h:form>
 </h:body>

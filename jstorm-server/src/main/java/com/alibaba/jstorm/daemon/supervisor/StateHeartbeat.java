@@ -1,5 +1,8 @@
 package com.alibaba.jstorm.daemon.supervisor;
 
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
+
 import com.alibaba.jstorm.daemon.worker.State;
 import com.alibaba.jstorm.daemon.worker.WorkerHeartbeat;
 
@@ -25,4 +28,9 @@ public class StateHeartbeat {
 		return this.hb;
 	}
 
+	@Override
+	public String toString() {
+		return ToStringBuilder.reflectionToString(this,
+				ToStringStyle.SHORT_PREFIX_STYLE);
+	}
 }

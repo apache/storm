@@ -66,21 +66,19 @@ public class StormClientHandler extends SimpleChannelUpstreamHandler {
 	@Override
 	public void channelDisconnected(ChannelHandlerContext ctx,
 			ChannelStateEvent e) throws Exception {
-		LOG.info("Receive channelDisconnected to {}", client.getRemoteAddr());
+		LOG.info("Receive channelDisconnected to {}, channel = {}", 
+				client.getRemoteAddr(), e.getChannel());
 		// ctx.sendUpstream(e);
 		super.channelDisconnected(ctx, e);
 
-		if (!being_closed.get()) {
-
-			client.setChannel(null);
-			client.reconnect();
-		}
+		client.disconnectChannel(e.getChannel());
 	}
 
 	 @Override
 	 public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e)
 	 throws Exception {
-		 LOG.info("Connection to {} has been closed", client.getRemoteAddr());
+		 LOG.info("Connection to {} has been closed, channel = {}", 
+				 client.getRemoteAddr(), e.getChannel());
 		 super.channelClosed(ctx, e);
 	 }
 

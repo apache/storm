@@ -5,7 +5,6 @@ import org.apache.log4j.Logger;
 import com.alibaba.jstorm.callback.BaseCallback;
 import com.alibaba.jstorm.cluster.StormBase;
 import com.alibaba.jstorm.daemon.nimbus.NimbusData;
-import com.alibaba.jstorm.daemon.nimbus.NimbusUtils;
 
 /**
  * Remove topology /ZK-DIR/topology data
@@ -39,9 +38,6 @@ public class RemoveTransitionCallback extends BaseCallback {
 				LOG.info("Topology " + topologyid + " has been removed ");
 				return null;
 			}
-			String topologyName = stormBase.getStormName();
-			String group = stormBase.getGroup();
-
 			data.getStormClusterState().remove_storm(topologyid);
 			LOG.info("Successfully removed ZK items topology: " + topologyid);
 

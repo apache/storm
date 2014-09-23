@@ -7,8 +7,8 @@ import org.apache.log4j.Logger;
 import backtype.storm.utils.DisruptorQueue;
 
 import com.alibaba.jstorm.callback.RunnableCallback;
-import com.alibaba.jstorm.daemon.worker.metrics.JStormTimer;
-import com.alibaba.jstorm.daemon.worker.metrics.Metrics;
+import com.alibaba.jstorm.metric.JStormTimer;
+import com.alibaba.jstorm.metric.Metrics;
 import com.codahale.metrics.Timer;
 import com.lmax.disruptor.EventHandler;
 
@@ -30,13 +30,12 @@ public abstract class DisruptorRunable extends RunnableCallback implements Event
 	protected JStormTimer   timer;
 
 
-	public DisruptorRunable(DisruptorQueue queue,String idStr,
-			AtomicBoolean  active) {
-		this.queue = queue;
-		this.idStr = idStr;
+	public DisruptorRunable(DisruptorQueue queue, JStormTimer timer, String idStr,
+			AtomicBoolean active) {
+		this.queue  = queue;
+		this.timer  = timer;
+		this.idStr  = idStr;
 		this.active = active;
-		this.timer = Metrics.registerTimer(idStr + "-timer");
-		Metrics.registerQueue(idStr + "-queue", queue);
 	}
 
 	public abstract void handleEvent(Object event, boolean endOfBatch) throws Exception;

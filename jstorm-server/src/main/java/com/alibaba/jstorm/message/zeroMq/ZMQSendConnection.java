@@ -8,9 +8,10 @@ import backtype.storm.messaging.IConnection;
 import backtype.storm.messaging.TaskMessage;
 import backtype.storm.utils.DisruptorQueue;
 
-import com.alibaba.jstorm.daemon.worker.metrics.JStormHistogram;
-import com.alibaba.jstorm.daemon.worker.metrics.JStormTimer;
-import com.alibaba.jstorm.daemon.worker.metrics.Metrics;
+import com.alibaba.jstorm.metric.MetricDef;
+import com.alibaba.jstorm.metric.JStormHistogram;
+import com.alibaba.jstorm.metric.JStormTimer;
+import com.alibaba.jstorm.metric.Metrics;
 import com.alibaba.jstorm.utils.JStormServerUtils;
 
 /**
@@ -23,13 +24,15 @@ public class ZMQSendConnection implements IConnection {
 	private boolean closed = false;
 	private JStormTimer timer;
 	private JStormHistogram histogram;
+	private String prefix;
 
 	public ZMQSendConnection(Socket _socket, String host, int port) {
 		socket = _socket;
-		timer = Metrics.registerTimer(JStormServerUtils.getName(host, port)
-				+ "-zmq-send-timer");
-		histogram = Metrics.registerHistograms(JStormServerUtils.getName(host,
-				port) + "-zmq-send-histogram");
+		prefix = JStormServerUtils.getName(host, port);
+		timer = Metrics.registerTimer(prefix, MetricDef.ZMQ_SEND_TIME, 
+				null, Metrics.MetricType.WORKER);
+		histogram = Metrics.registerHistograms(prefix, MetricDef.ZMQ_SEND_MSG_SIZE, 
+				null, Metrics.MetricType.WORKER);
 	}
 
 	@Override

@@ -8,7 +8,7 @@ import org.apache.commons.lang.builder.ToStringStyle;
 import com.alibaba.jstorm.daemon.nimbus.StatusType;
 
 /**
- * author: lixin
+ * author: lixin/longda
  * 
  * Dedicate Topology status
  * 
@@ -21,31 +21,24 @@ public class StormStatus implements Serializable {
 
 	private static final long serialVersionUID = -2276901070967900100L;
 	private StatusType type;
+	@Deprecated
 	private int killTimeSecs;
 	private int delaySecs;
 	private StormStatus oldStatus = null;
 
-	public StormStatus(int killTimeSecs, StatusType type, StormStatus oldStatus) {
-		this.type = type;
-		this.killTimeSecs = killTimeSecs;
-		this.oldStatus = oldStatus;
+	public StormStatus(StatusType type) {
+		this(0, type);
 	}
-
-	public StormStatus(int killTimeSecs, StatusType type) {
-		this.type = type;
-		this.killTimeSecs = killTimeSecs;
+	
+	public StormStatus(int delaySecs, StatusType type) {
+		this(type, delaySecs, null);
 	}
 
 	public StormStatus(StatusType type, int delaySecs, StormStatus oldStatus) {
 		this.type = type;
 		this.delaySecs = delaySecs;
+		this.killTimeSecs = delaySecs;
 		this.oldStatus = oldStatus;
-	}
-
-	public StormStatus(StatusType type) {
-		this.type = type;
-		this.killTimeSecs = -1;
-		this.delaySecs = -1;
 	}
 
 	public StatusType getStatusType() {
@@ -56,10 +49,12 @@ public class StormStatus implements Serializable {
 		this.type = type;
 	}
 
+	@Deprecated
 	public Integer getKillTimeSecs() {
 		return killTimeSecs;
 	}
 
+	@Deprecated
 	public void setKillTimeSecs(int killTimeSecs) {
 		this.killTimeSecs = killTimeSecs;
 	}

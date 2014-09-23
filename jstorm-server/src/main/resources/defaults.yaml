@@ -94,12 +94,17 @@ worker.gc.childopts: " -XX:SurvivorRatio=4 -XX:MaxTenuringThreshold=20 -XX:+UseC
 worker.heartbeat.frequency.secs: 2
 worker.classpath: ""
 worker.redirect.output: true
+# if worker.redirect.output.file is null, then it will be $LOG.out
+# please use absolute path
+worker.redirect.output.file: null
 # when supervisor is shutdown, automatically shutdown worker
 worker.stop.without.supervisor: false
 worker.memory.size: 2147483648
 
 task.heartbeat.frequency.secs: 10
 task.refresh.poll.secs: 10
+# how long task do cleanup 
+task.cleanup.timeout.sec: 10
 
 zmq.threads: 1
 zmq.linger.millis: 5000
@@ -161,7 +166,8 @@ topology.max.error.report.per.interval: 5
 topology.kryo.factory: "backtype.storm.serialization.DefaultKryoFactory"
 topology.tuple.serializer: "backtype.storm.serialization.types.ListDelegateSerializer"
 topology.trident.batch.emit.interval.millis: 500
-topology.performance.metrics: false
+topology.performance.metrics: true
+topology.alimonitor.metrics.post: true
 
 
 # enable topology use user-define classloader to avoid class conflict

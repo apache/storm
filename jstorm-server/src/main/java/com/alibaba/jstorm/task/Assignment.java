@@ -73,6 +73,28 @@ public class Assignment implements Serializable {
 		}
 		return result;
 	}
+	
+	public Set<Integer> getCurrentSuperviosrTasks(String supervisorId) {
+		Set<Integer> Tasks = new HashSet<Integer>();
+		
+		for (ResourceWorkerSlot worker : workers) {
+			if (worker.getNodeId().equals(supervisorId))
+				Tasks.addAll(worker.getTasks());
+		}
+		
+		return Tasks;
+	}
+	
+	public Set<Integer> getCurrentSuperviosrWorkers(String supervisorId) {
+		Set<Integer> workerSet = new HashSet<Integer>();
+		
+		for (ResourceWorkerSlot worker : workers) {
+			if (worker.getNodeId().equals(supervisorId))
+				workerSet.add(worker.getPort());
+		}
+		
+		return workerSet;
+	}
 
 	public Set<Integer> getCurrentWorkerTasks(String supervisorId, int port) {
 

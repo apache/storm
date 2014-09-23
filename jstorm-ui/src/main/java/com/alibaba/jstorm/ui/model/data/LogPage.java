@@ -193,8 +193,10 @@ public class LogPage implements Serializable {
 
 			host = componentTask.getHost();
 
-			logFileName = componentTask.getTopologyid() + "-worker-"
-					+ componentTask.getPort() + ".log";
+//			logFileName = componentTask.getTopologyid() + "-worker-"
+//					+ componentTask.getPort() + ".log";
+			logFileName = JStormUtils.genLogName(summ.get_name(), 
+					Integer.valueOf(componentTask.getPort()));
 
 		} catch (TException e) {
 			LOG.error(e.getCause(), e);

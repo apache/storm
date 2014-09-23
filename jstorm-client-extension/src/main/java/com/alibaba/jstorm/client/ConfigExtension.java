@@ -73,6 +73,16 @@ public class ConfigExtension {
 			return true;
 		return (Boolean) result;
 	}
+	
+	protected static final String WOREKER_REDIRECT_OUTPUT_FILE = "worker.redirect.output.file";
+	
+	public static void setWorkerRedirectOutputFile(Map conf, String outputPath) {
+		conf.put(WOREKER_REDIRECT_OUTPUT_FILE, outputPath);
+	}
+	
+	public static String getWorkerRedirectOutputFile(Map conf) {
+		return (String)conf.get(WOREKER_REDIRECT_OUTPUT_FILE);
+	}
 
 	/**
 	 * Usually, spout finish prepare before bolt, so spout need wait several
@@ -385,4 +395,26 @@ public class ConfigExtension {
     public static void setNettyASyncBlock(Map conf, boolean block) {
     	conf.put(NETTY_ASYNC_BLOCK, block);
     }
+    
+    protected static String ALIMONITOR_METRICS_POST = "topology.alimonitor.metrics.post";
+    
+    public static boolean isAlimonitorMetricsPost(Map conf) {
+    	return JStormUtils.parseBoolean(conf.get(ALIMONITOR_METRICS_POST), true);
+    }
+    
+    public static void setAlimonitorMetricsPost(Map conf, boolean post) {
+    	conf.put(ALIMONITOR_METRICS_POST, post);
+    }
+	
+	protected static String TASK_CLEANUP_TIMEOUT_SEC = "task.cleanup.timeout.sec";
+    
+    public static int getTaskCleanupTimeoutSec(Map conf) {
+    	return JStormUtils.parseInt(conf.get(TASK_CLEANUP_TIMEOUT_SEC), 10);
+    }
+    
+    public static void setTaskCleanupTimeoutSec(Map conf, int timeout) {
+    	conf.put(TASK_CLEANUP_TIMEOUT_SEC, timeout);
+    }
+    
+    
 }

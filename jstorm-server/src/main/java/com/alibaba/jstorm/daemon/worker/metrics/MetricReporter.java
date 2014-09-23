@@ -11,40 +11,52 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.Slf4jReporter;
 import com.codahale.metrics.Snapshot;
 import com.codahale.metrics.Timer;
+import com.alibaba.jstorm.daemon.worker.WorkerData;
+import com.alibaba.jstorm.metric.JStormHistogram;
+import com.alibaba.jstorm.metric.JStormTimer;
+import com.alibaba.jstorm.metric.Metrics;
 
-public class MetricReporter  {
+public class MetricReporter {
 
-	final Slf4jReporter reporter1Minute;
+	final StormMetricReporter reporter1Minute;
 	final Slf4jReporter reporter10Minute;
-	
+
+	WorkerData workerData;
+
 	private boolean isEnable;
 
-	public MetricReporter() {
-		reporter1Minute = Slf4jReporter.forRegistry(Metrics.getMetrics())
+	public MetricReporter(WorkerData workerData) {
+		this.workerData = workerData;
+
+		reporter1Minute = StormMetricReporter.forRegistry(Metrics.getMetrics())
 				.outputTo(LoggerFactory.getLogger(MetricReporter.class))
 				.convertRatesTo(TimeUnit.SECONDS)
-				.convertDurationsTo(TimeUnit.MILLISECONDS).build();
-		
-		
+				.convertDurationsTo(TimeUnit.MILLISECONDS)
+				.setWorkerData(workerData).build();
+
 		reporter10Minute = Slf4jReporter.forRegistry(Metrics.getJstack())
 				.outputTo(LoggerFactory.getLogger(MetricReporter.class))
 				.convertRatesTo(TimeUnit.SECONDS)
 				.convertDurationsTo(TimeUnit.MILLISECONDS).build();
-		
+
 	}
-	
+
 	public void start() {
 		reporter1Minute.start(1, TimeUnit.MINUTES);
 		reporter10Minute.start(10, TimeUnit.MINUTES);
-		
+
 	}
-	
+
+	public void stop() {
+		reporter1Minute.stop();
+		reporter10Minute.stop();
+
+	}
+
 	public void shutdown() {
 		reporter10Minute.close();
 		reporter1Minute.close();
 	}
-	
-	
 
 	public boolean isEnable() {
 		return isEnable;
@@ -55,8 +67,6 @@ public class MetricReporter  {
 		JStormTimer.setEnable(isEnable);
 		JStormHistogram.setEnable(isEnable);
 	}
-
-
 
 	private static class LatencyRatio implements Gauge<Double> {
 		Timer timer;
@@ -114,7 +124,8 @@ public class MetricReporter  {
 		});
 
 		Metrics.getMetrics().registerAll(Metrics.getJstack());
-		final ConsoleReporter reporter = ConsoleReporter.forRegistry(Metrics.getMetrics())
+		final ConsoleReporter reporter = ConsoleReporter
+				.forRegistry(Metrics.getMetrics())
 				.convertRatesTo(TimeUnit.SECONDS)
 				.convertDurationsTo(TimeUnit.MILLISECONDS).build();
 		reporter.start(1, TimeUnit.MINUTES);

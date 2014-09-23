@@ -9,6 +9,7 @@ enum ControlMessage {
 	EOB_MESSAGE((short) -201), OK_RESPONSE((short) -200);
 
 	private short code;
+	private long timeStamp;
 
 	// private constructor
 	private ControlMessage(short code) {
@@ -30,7 +31,7 @@ enum ControlMessage {
 	}
 
 	int encodeLength() {
-		return 2; // short
+		return 10; // short + long
 	}
 
 	/**
@@ -48,5 +49,14 @@ enum ControlMessage {
 
 	void write(ChannelBufferOutputStream bout) throws Exception {
 		bout.writeShort(code);
+		bout.writeLong(System.currentTimeMillis());
+	}
+	
+	long getTimeStamp() {
+		return timeStamp;
+	}
+	
+	void setTimeStamp(long timeStamp) {
+		this.timeStamp = timeStamp;
 	}
 }

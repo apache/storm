@@ -4,6 +4,9 @@ import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
+
 /**
  * Worker's Heartbeat data woker will update the object to
  * /LOCAL-DIR/workers/${woker-id}/heartbeats
@@ -61,8 +64,9 @@ public class WorkerHeartbeat implements Serializable {
 		this.port = port;
 	}
 
+	@Override
 	public String toString() {
-		return "topologyId:" + topologyId + ", timeSecs:" + timeSecs
-				+ ", port:" + port + ", taskIds:" + taskIds.toString();
+		return ToStringBuilder.reflectionToString(this,
+				ToStringStyle.SHORT_PREFIX_STYLE);
 	}
 }

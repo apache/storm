@@ -7,6 +7,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import backtype.storm.Config;
+import backtype.storm.messaging.IConnection;
 import backtype.storm.messaging.IContext;
 import backtype.storm.serialization.KryoTupleSerializer;
 import backtype.storm.spout.ISpout;
@@ -32,13 +33,14 @@ import com.alibaba.jstorm.task.comm.UnanchoredSend;
 import com.alibaba.jstorm.task.error.ITaskReportErr;
 import com.alibaba.jstorm.task.error.TaskReportError;
 import com.alibaba.jstorm.task.error.TaskReportErrorAndDie;
-import com.alibaba.jstorm.task.execute.BaseExecutors;
 import com.alibaba.jstorm.task.execute.BoltExecutors;
+import com.alibaba.jstorm.task.execute.BaseExecutors;
 import com.alibaba.jstorm.task.execute.spout.MultipleThreadSpoutExecutors;
 import com.alibaba.jstorm.task.execute.spout.SingleThreadSpoutExecutors;
 import com.alibaba.jstorm.task.execute.spout.SpoutExecutors;
 import com.alibaba.jstorm.task.group.MkGrouper;
 import com.alibaba.jstorm.task.heartbeat.TaskHeartbeatRunable;
+import com.alibaba.jstorm.task.heartbeat.TaskStats;
 import com.alibaba.jstorm.utils.JStormServerUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.lmax.disruptor.SingleThreadedClaimStrategy;
@@ -77,18 +79,18 @@ public class Task {
 	private Object taskObj;
 	private CommonStatsRolling taskStats;
 	private WorkerData workerData;
+	private String componentType; //"spout" or "bolt"
 
 	@SuppressWarnings("rawtypes")
 	public Task(WorkerData workerData, int taskId) throws Exception {
-		this.workerData = workerData;
 		openOrPrepareWasCalled = new Atom(Boolean.valueOf(false));
 
+		this.workerData = workerData;
 		this.topologyContext = workerData.getContextMaker()
 				.makeTopologyContext(workerData.getSysTopology(), taskId,
 						openOrPrepareWasCalled);
 		this.userContext = workerData.getContextMaker().makeTopologyContext(
 				workerData.getRawTopology(), taskId, openOrPrepareWasCalled);
-		
 		this.taskid = taskId;
 		this.componentid = topologyContext.getThisComponentId();
 
@@ -101,10 +103,8 @@ public class Task {
 		this.workHalt = workerData.getWorkHalt();
 		this.zkCluster = new StormZkClusterState(workerData.getZkClusterstate());
 
-		
 		this.stormConf = Common.component_conf(workerData.getStormConf(),
 				topologyContext, componentid);
-
 
 		// get real task object -- spout/bolt/spoutspec
 		this.taskObj = Common.get_task_object(topologyContext.getRawTopology(),
@@ -112,6 +112,15 @@ public class Task {
 		int samplerate = StormConfig.sampling_rate(stormConf);
 		this.taskStats = new CommonStatsRolling(samplerate);
 
+		LOG.info("Loading task " + componentid + ":" + taskid);
+	}
+	
+	private void setComponentType() {
+		if (taskObj instanceof IBolt) {
+			componentType = "bolt";
+		} else if (taskObj instanceof ISpout) {
+			componentType = "spout";
+		}
 	}
 
 	private TaskSendTargets makeSendTargets() {
@@ -161,10 +170,10 @@ public class Task {
 		if (isOnePending == true) {
 			return true;
 		}
-		
-		return ConfigExtension.isSpoutSingleThread(conf) ;
+
+		return ConfigExtension.isSpoutSingleThread(conf);
 	}
-	
+
 	public RunnableCallback mk_executors(DisruptorQueue deserializeQueue,
 			TaskSendTargets sendTargets, ITaskReportErr report_error) {
 
@@ -185,9 +194,6 @@ public class Task {
 						taskStatus, topologyContext, userContext, taskStats,
 						report_error);
 			}
-			
-			
-			
 		}
 
 		return null;
@@ -213,7 +219,7 @@ public class Task {
 
 		return mk_executors(deserializeQueue, sendTargets, reportErrorDie);
 	}
-	
+
 	public DisruptorQueue registerDisruptorQueue() {
 		int queueSize = JStormUtils.parseInt(
 				stormConf.get(Config.TOPOLOGY_EXECUTOR_RECEIVE_BUFFER_SIZE), 256);
@@ -223,14 +229,15 @@ public class Task {
 						.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
 		DisruptorQueue queue = new DisruptorQueue(
 				new SingleThreadedClaimStrategy(queueSize), waitStrategy);
-		
+
 		deserializeQueues.put(taskid, queue);
-		
+
 		return queue;
 	}
 
 	public TaskShutdownDameon execute() throws Exception {
-		
+		setComponentType();
+
 		DisruptorQueue deserializeQueue = registerDisruptorQueue();
 
 		TaskSendTargets sendTargets = echoToSystemBolt();
@@ -240,11 +247,11 @@ public class Task {
 		RunnableCallback baseExecutor = mkExecutor(deserializeQueue, sendTargets);
 		AsyncLoopThread executor_threads = new AsyncLoopThread(baseExecutor,
 				false, Thread.MAX_PRIORITY, true);
-		
+
 		List<AsyncLoopThread> allThreads = new ArrayList<AsyncLoopThread>();
 		allThreads.add(executor_threads);
 		
-		TaskHeartbeatRunable.registerTaskStats(taskid, taskStats);
+		TaskHeartbeatRunable.registerTaskStats(taskid, new TaskStats(componentType, taskStats));
 		LOG.info("Finished loading task " + componentid + ":" + taskid);
 
 		return getShutdown(allThreads, deserializeQueue, baseExecutor);
@@ -263,11 +270,10 @@ public class Task {
 		}
 		AsyncLoopThread recvThread = ((BaseExecutors) baseExecutor).getDeserlizeThread();
 		allThreads.add(recvThread);
-		
-		
+
 		AsyncLoopThread serializeThread = taskTransfer.getSerializeThread();
 		allThreads.add(serializeThread);
-		
+
 		TaskShutdownDameon shutdown = new TaskShutdownDameon(taskStatus,
 				topologyid, taskid, allThreads, zkCluster, taskObj);
 

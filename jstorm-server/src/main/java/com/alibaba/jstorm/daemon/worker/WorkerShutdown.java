@@ -6,7 +6,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.log4j.Logger;
 
-import backtype.storm.daemon.Shutdownable;
 import backtype.storm.messaging.IConnection;
 import backtype.storm.messaging.IContext;
 import backtype.storm.scheduler.WorkerSlot;
@@ -28,6 +27,8 @@ import com.alibaba.jstorm.utils.JStormUtils;
 public class WorkerShutdown implements ShutdownableDameon {
 	private static Logger LOG = Logger.getLogger(WorkerShutdown.class);
 
+	public static final String HOOK_SIGNAL = "USR2";
+
 	private List<TaskShutdownDameon> shutdowntasks;
 	private AtomicBoolean active;
 	private ConcurrentHashMap<WorkerSlot, IConnection> nodeportSocket;
@@ -40,8 +41,7 @@ public class WorkerShutdown implements ShutdownableDameon {
 	// active nodeportSocket context zkCluster zkClusterstate
 	public WorkerShutdown(WorkerData workerData,
 			List<TaskShutdownDameon> _shutdowntasks,
-			List<AsyncLoopThread> _threads,
-			MetricReporter metricReporter) {
+			List<AsyncLoopThread> _threads, MetricReporter metricReporter) {
 
 		this.shutdowntasks = _shutdowntasks;
 		this.threads = _threads;
@@ -54,22 +54,19 @@ public class WorkerShutdown implements ShutdownableDameon {
 		this.metricReporter = metricReporter;
 
 		Runtime.getRuntime().addShutdownHook(new Thread(this));
+
+		// PreCleanupTasks preCleanupTasks = new PreCleanupTasks();
+		// // install signals
+		// Signal sig = new Signal(HOOK_SIGNAL);
+		// Signal.handle(sig, preCleanupTasks);
 	}
 
 	@Override
 	public void shutdown() {
 
 		active.set(false);
-		
+
 		metricReporter.shutdown();
-
-		// send data to close connection
-		for (WorkerSlot k : nodeportSocket.keySet()) {
-			IConnection value = nodeportSocket.get(k);
-			value.close();
-		}
-
-		context.term();
 
 		// shutdown tasks
 		for (ShutdownableDameon task : shutdowntasks) {
@@ -79,15 +76,25 @@ public class WorkerShutdown implements ShutdownableDameon {
 		// shutdown worker's demon thread
 		// refreshconn, refreshzk, hb, drainer
 		for (AsyncLoopThread t : threads) {
+			LOG.info("Begin to shutdown " + t.getThread().getName());
 			t.cleanup();
 			JStormUtils.sleepMs(100);
 			t.interrupt();
-//			try {
-//				t.join();
-//			} catch (InterruptedException e) {
-//				LOG.error("join thread", e);
-//			}
+			// try {
+			// t.join();
+			// } catch (InterruptedException e) {
+			// LOG.error("join thread", e);
+			// }
+			LOG.info("Successfully " + t.getThread().getName());
 		}
+
+		// send data to close connection
+		for (WorkerSlot k : nodeportSocket.keySet()) {
+			IConnection value = nodeportSocket.get(k);
+			value.close();
+		}
+
+		context.term();
 
 		// close ZK client
 		try {
@@ -133,5 +140,20 @@ public class WorkerShutdown implements ShutdownableDameon {
 		// TODO Auto-generated method stub
 		shutdown();
 	}
+
+	// class PreCleanupTasks implements SignalHandler {
+	//
+	// @Override
+	// public void handle(Signal arg0) {
+	// LOG.info("Receive " + arg0.getName() + ", begin to do pre_cleanup job");
+	//
+	// for (ShutdownableDameon task : shutdowntasks) {
+	// task.shutdown();
+	// }
+	//
+	// LOG.info("Successfully do pre_cleanup job");
+	// }
+	//
+	// }
 
 }

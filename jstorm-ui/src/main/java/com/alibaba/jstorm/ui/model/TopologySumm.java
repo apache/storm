@@ -17,6 +17,7 @@ public class TopologySumm implements Serializable {
 	private String uptime;
 	private String numWorkers;
 	private String numTasks;
+	private String errorInfo;
 
 	public String getTopologyName() {
 		return topologyName;
@@ -64,6 +65,14 @@ public class TopologySumm implements Serializable {
 
 	public void setNumTasks(String numTasks) {
 		this.numTasks = numTasks;
+	}
+	
+	public String getErrorInfo() {
+		return this.errorInfo;
+	}
+	
+	public void setErrorInfo(String errorInfo) {
+		this.errorInfo = errorInfo;
 	}
 
 }

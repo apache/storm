@@ -6,6 +6,9 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.io.FileUtils;
@@ -23,6 +26,7 @@ import com.alibaba.jstorm.cluster.Common;
 import com.alibaba.jstorm.cluster.StormClusterState;
 import com.alibaba.jstorm.cluster.StormConfig;
 import com.alibaba.jstorm.daemon.worker.hearbeat.SyncContainerHb;
+import com.alibaba.jstorm.daemon.worker.metrics.UploadSupervMetric;
 import com.alibaba.jstorm.event.EventManager;
 import com.alibaba.jstorm.event.EventManagerImp;
 import com.alibaba.jstorm.event.EventManagerPusher;
@@ -155,7 +159,12 @@ public class Supervisor {
 		Httpserver httpserver = new Httpserver(port);
 		httpserver.start();
 		
-		
+		//Step 8 start uploading every 60 secs
+		if (ConfigExtension.isAlimonitorMetricsPost(conf)) {
+		    UploadSupervMetric uploadMetric = new UploadSupervMetric(stormClusterState, supervisorId, active, 60);
+		    AsyncLoopThread uploadMetricThread = new AsyncLoopThread(uploadMetric);
+		    threads.add(uploadMetricThread);
+		}
 		
 		// SupervisorManger which can shutdown all supervisor and workers
 		return new SupervisorManger(conf, supervisorId, active, threads,

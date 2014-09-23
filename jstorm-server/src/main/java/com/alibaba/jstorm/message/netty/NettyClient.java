@@ -2,24 +2,21 @@ package com.alibaba.jstorm.message.netty;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executors;
+import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,9 +27,10 @@ import backtype.storm.utils.DisruptorQueue;
 import backtype.storm.utils.Utils;
 
 import com.alibaba.jstorm.client.ConfigExtension;
-import com.alibaba.jstorm.daemon.worker.metrics.JStormHistogram;
-import com.alibaba.jstorm.daemon.worker.metrics.JStormTimer;
-import com.alibaba.jstorm.daemon.worker.metrics.Metrics;
+import com.alibaba.jstorm.metric.MetricDef;
+import com.alibaba.jstorm.metric.JStormHistogram;
+import com.alibaba.jstorm.metric.JStormTimer;
+import com.alibaba.jstorm.metric.Metrics;
 import com.alibaba.jstorm.utils.JStormServerUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.codahale.metrics.Gauge;
@@ -65,14 +63,16 @@ class NettyClient implements IConnection {
 
 	protected ScheduledExecutorService scheduler;
 
-	protected String sendTimerName;
+	protected String address;
 	protected JStormTimer sendTimer;
-	protected String histogramName;
 	protected JStormHistogram histogram;
-	protected String pendingGaugeName;
 
 	protected ReconnectRunnable reconnector;
 	protected ChannelFactory clientChannelFactory;
+	
+	protected Set<Channel> closingChannel;
+	
+	protected AtomicBoolean isConnecting = new AtomicBoolean(false);
 
 	@SuppressWarnings("rawtypes")
 	NettyClient(Map storm_conf, ChannelFactory factory,
@@ -110,23 +110,20 @@ class NettyClient implements IConnection {
 		remote_addr = new InetSocketAddress(host, port);
 		name = remote_addr.toString();
 
-		sendTimerName = JStormServerUtils.getName(host, port)
-				+ "-netty-send-timer";
-		sendTimer = Metrics.registerTimer(sendTimerName);
-		histogramName = JStormServerUtils.getName(host, port)
-				+ "-netty-send-histogram";
-		histogram = Metrics.registerHistograms(histogramName);
-
-		pendingGaugeName = JStormServerUtils.getName(host, port)
-				+ "-netty-send-pending-gauge";
-		Metrics.register(pendingGaugeName, new Gauge<Long>() {
+		address = JStormServerUtils.getName(host, port);
+		sendTimer = Metrics.registerTimer(address, MetricDef.NETTY_CLI_SEND_TIME, 
+				null, Metrics.MetricType.WORKER);
+		histogram = Metrics.registerHistograms(address, MetricDef.NETTY_CLI_BATCH_SIZE, 
+				null, Metrics.MetricType.WORKER);
+		Metrics.register(address, MetricDef.NETTY_CLI_SEND_PENDING, new Gauge<Long>() {
 
 			@Override
 			public Long getValue() {
 				return pendings.get();
 			}
-		});
+		}, null, Metrics.MetricType.WORKER);
 
+		closingChannel = new HashSet<Channel>();
 	}
 
 	public void start() {
@@ -137,7 +134,7 @@ class NettyClient implements IConnection {
 
 		// Set up the pipeline factory.
 		bootstrap.setPipelineFactory(new StormClientPipelineFactory(this));
-		doReconnect();
+		reconnect();
 	}
 
 	/**
@@ -145,12 +142,22 @@ class NettyClient implements IConnection {
 	 * 
 	 */
 	public void doReconnect() {
-		if (channelRef.get() != null) {
+		if (channelRef.get() != null ) {
+			
+//			if (channelRef.get().isWritable()) {
+//				LOG.info("already exist a writable channel, give up reconnect, {}",
+//						channelRef.get());
+//				return;
+//			}
 			return;
 		}
 
 		if (isClosed() == true) {
 			return;
+		}
+		
+		if (isConnecting.getAndSet(true)) {
+			return ;
 		}
 
 		long sleepMs = getSleepTimeMs();
@@ -161,11 +168,14 @@ class NettyClient implements IConnection {
 			public void operationComplete(ChannelFuture future)
 					throws Exception {
 
+				isConnecting.set(false);
 				if (future.isSuccess()) {
 					// do something else
 				} else {
-					LOG.info("Failed to reconnect ... [{}], {}", retries.get(),
-							name);
+					LOG.info(
+							"Failed to reconnect ... [{}], {}, channel = {}, cause = {}",
+							retries.get(), name, future.getChannel(),
+							future.getCause());
 					reconnect();
 				}
 			}
@@ -219,12 +229,14 @@ class NettyClient implements IConnection {
 
 				pendings.decrementAndGet();
 				if (!future.isSuccess()) {
+					Channel channel = future.getChannel();
 					if (isClosed() == false) {
-						LOG.info("Failed to send requests to " + name + ": ",
-								future.getCause());
+						LOG.info("Failed to send requests to " + name + ": " + 
+								channel.toString() + ":",
+								future.getCause() );
 					}
 
-					Channel channel = future.getChannel();
+					
 
 					if (null != channel) {
 
@@ -250,9 +262,9 @@ class NettyClient implements IConnection {
 		}
 		being_closed.set(true);
 
-		Metrics.unregister(pendingGaugeName);
-		Metrics.unregister(histogramName);
-		Metrics.unregister(sendTimerName);
+		Metrics.unregister(address, MetricDef.NETTY_CLI_SEND_TIME, null, Metrics.MetricType.WORKER);
+		Metrics.unregister(address, MetricDef.NETTY_CLI_BATCH_SIZE, null, Metrics.MetricType.WORKER);
+		Metrics.unregister(address, MetricDef.NETTY_CLI_SEND_PENDING, null, Metrics.MetricType.WORKER);
 
 		Channel channel = channelRef.get();
 		if (channel == null) {
@@ -301,23 +313,67 @@ class NettyClient implements IConnection {
 		}
 
 	}
+	
+	/**
+	 * Avoid channel double close
+	 * 
+	 * @param channel
+	 */
+	void closeChannel(final Channel channel) {
+		synchronized (this) {
+			if (closingChannel.contains(channel)) {
+				LOG.info(channel.toString() + " is already closed");
+				return ;
+			}
+			
+			closingChannel.add(channel);
+		}
+		
+		LOG.debug(channel.toString() + " begin to closed");
+		ChannelFuture closeFuture = channel.close();
+		closeFuture.addListener(new ChannelFutureListener() {
+			public void operationComplete(ChannelFuture future)
+					throws Exception {
+
+				synchronized (this) {
+					closingChannel.remove(channel);
+				}
+				LOG.debug(channel.toString() + " finish closed");
+			}
+		});
+	}
+	
+	
+	void disconnectChannel(Channel channel) {
+		if (isClosed()) {
+			return ;
+		}
+		
+		if (channel == channelRef.get()) {
+			setChannel(null);
+			reconnect();
+		}else {
+			closeChannel(channel);
+		}
+
+	}
 
 	void exceptionChannel(Channel channel) {
 		if (channel == channelRef.get()) {
 			setChannel(null);
 		} else {
-			channel.close();
+			closeChannel(channel);
 		}
 	}
 
 	void setChannel(Channel newChannel) {
-		Channel oldChannel = channelRef.getAndSet(newChannel);
+		final Channel oldChannel = channelRef.getAndSet(newChannel);
 
 		if (newChannel != null) {
 			retries.set(0);
 		}
 
-		String oldLocalAddres = (oldChannel == null) ? "null" : oldChannel
+		final String oldLocalAddres = (oldChannel == null) ? "null" : oldChannel
 				.getLocalAddress().toString();
 		String newLocalAddress = (newChannel == null) ? "null" : newChannel
 				.getLocalAddress().toString();
@@ -326,8 +382,17 @@ class NettyClient implements IConnection {
 
 		// avoid one netty client use too much connection, close old one
 		if (oldChannel != newChannel && oldChannel != null) {
-			oldChannel.close();
-			LOG.info("Close old channel " + oldLocalAddres);
+			
+			closeChannel(oldChannel);
+			LOG.info("Successfully close old channel " + oldLocalAddres);
+//			scheduler.schedule(new Runnable() {
+//				
+//				@Override
+//				public void run() {
+//					
+//				}
+//			}, 10, TimeUnit.SECONDS);
+			
 
 			// @@@ todo
 			// pendings.set(0);

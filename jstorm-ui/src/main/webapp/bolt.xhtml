@@ -234,7 +234,11 @@
 				<f:facet name="header">
 					<h:outputText value="Host" />
 				</f:facet>
+				<!--<h:outputText value="#{ct.host}" />-->
+				<h:outputLink value="supervisor.jsf">
 				<h:outputText value="#{ct.host}" />
+					<f:param name="host" value="#{ct.host}" />
+				</h:outputLink>
 			</p:column>
 
 			<p:column>
@@ -305,6 +309,100 @@
 			</p:column>
 
 
+		</p:dataTable>
+	</h:form>
+	<h2>
+		<h:outputText value="Task Metrics(Time AND Queue)" />
+	</h2>
+	<h:form>
+		<p:dataTable id="taskmetrics" var="tm" value="#{boltpage.taskmetrics}"
+			sortBy="#{tm.taskId}" sortOrder="ASCENDING">
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Taskid" />
+				</f:facet>
+				<h:outputText value="#{tm.taskId}" />
+				<!-- 
+				<h:outputLink value="task.jsf">
+					<h:outputText value="#{ct.taskid}" />
+					<f:param name="topologyid" value="#{param.topologyid}" />
+					<f:param name="componentid" value="#{param.componentid}" />
+					<f:param name="taskid" value="#{ct.taskid}" />
+					<f:param name="window" value="#{param.window}" />
+				</h:outputLink>
+				-->
+			</p:column>
+	
+                        <p:column>
+				<f:facet name="header">
+					<h:outputText value="Deserialize: Time(ms)" />
+				</f:facet>
+                                <h:outputText value="#{tm.deserializeTime}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Deserialize: Queue(%)" />
+				</f:facet>
+				<h:outputText value="#{tm.deserializeQueue}" />
+			</p:column>
+
+                        <p:column>
+				<f:facet name="header">
+					<h:outputText value="Execute: Time(ms)" />
+				</f:facet>
+				<h:outputText value="#{tm.executorTime}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Execute: Queue(%)" />
+				</f:facet>
+				<h:outputText value="#{tm.executorQueue}" />
+			</p:column>
+
+                        <p:column>
+			    <f:facet name="header">
+				<h:outputText value="Serialize: Time(ms)" />
+			    </f:facet>
+			    <h:outputText value="#{tm.serializeTime}" />
+                        </p:column>
+
+			<p:column>
+			    <f:facet name="header">
+				<h:outputText value="serialize: Queue(%)" />
+			    </f:facet>
+			    <h:outputText value="#{tm.serializeQueue}" />
+			</p:column>
+<!--
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Pending Num" />
+				</f:facet>
+				<h:outputText value="#{tm.pendingNum}" />
+			</p:column>
+
+                        <p:column>
+				<f:facet name="header">
+					<h:outputText value="Emit Time(ms)" />
+				</f:facet>
+				<h:outputText value="#{tm.emitTime}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Acker Time(ms)" />
+				</f:facet>
+				<h:outputText value="#{tm.ackerTime}" />
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Empty CPU Ratio" />
+				</f:facet>
+				<h:outputText value="#{tm.emptyCpuRatio}" />
+			</p:column>
+-->	
 		</p:dataTable>
 	</h:form>
 </h:body>

@@ -15,8 +15,9 @@ import backtype.storm.utils.WorkerClassLoader;
 import com.alibaba.jstorm.callback.AsyncLoopThread;
 import com.alibaba.jstorm.callback.RunnableCallback;
 import com.alibaba.jstorm.client.ConfigExtension;
-import com.alibaba.jstorm.daemon.worker.metrics.JStormTimer;
-import com.alibaba.jstorm.daemon.worker.metrics.Metrics;
+import com.alibaba.jstorm.metric.MetricDef;
+import com.alibaba.jstorm.metric.JStormTimer;
+import com.alibaba.jstorm.metric.Metrics;
 import com.alibaba.jstorm.stats.CommonStatsRolling;
 import com.alibaba.jstorm.task.TaskStatus;
 import com.alibaba.jstorm.task.TaskTransfer;
@@ -54,14 +55,14 @@ public class MultipleThreadSpoutExecutors extends SpoutExecutors {
 
 		ackerRunnableThread = new AsyncLoopThread(new AckerRunnable());
 		pending = new RotatingMap<Long, TupleInfo>(Acker.TIMEOUT_BUCKET_NUM, null, false);
-		Metrics.register(idStr + "-pending-map-gauge", new Gauge<Integer>() {
+		Metrics.register(idStr, MetricDef.PENDING_MAP, new Gauge<Integer>() {
 
 			@Override
 			public Integer getValue() {
 				return pending.size();
 			}
 			
-		});
+		}, String.valueOf(taskId), Metrics.MetricType.TASK);
 
 		super.prepare(sendTargets, _transfer_fn, topology_context);
 	}

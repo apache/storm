@@ -99,7 +99,7 @@ public class StatusTransition {
 		if (changingCallbacks == null
 				|| changingCallbacks.containsKey(changeStatus) == false
 				|| changingCallbacks.get(changeStatus) == null) {
-			String msg = "No transition for event: changing status"
+			String msg = "No transition for event: changing status:"
 					+ changeStatus.getStatus() + ", current status: "
 					+ currentStatus.getStatusType() + " topology-id: "
 					+ topologyid;

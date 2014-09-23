@@ -32,6 +32,7 @@ import com.alibaba.jstorm.cluster.Common;
 import com.alibaba.jstorm.cluster.StormClusterState;
 import com.alibaba.jstorm.cluster.StormConfig;
 import com.alibaba.jstorm.daemon.nimbus.StatusType;
+import com.alibaba.jstorm.daemon.worker.metrics.MetricReporter;
 import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
 import com.alibaba.jstorm.task.Assignment;
 import com.alibaba.jstorm.task.TaskShutdownDameon;
@@ -113,6 +114,7 @@ public class WorkerData {
 	private DisruptorQueue sendingQueue;
 
 	private List<TaskShutdownDameon> shutdownTasks;
+	private MetricReporter metricReporter;
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public WorkerData(Map conf, IContext context, String topology_id,
@@ -223,6 +225,8 @@ public class WorkerData {
 		generateMaps();
 
 		contextMaker = new ContextMaker(this);
+		
+		metricReporter = new MetricReporter(this);
 
 		LOG.info("Successfully create WorkerData");
 
@@ -399,5 +403,13 @@ public class WorkerData {
 
 	public void setLocalNodeTasks(Set<Integer> localNodeTasks) {
 		this.localNodeTasks = localNodeTasks;
+	}
+
+	public void setMetricsReporter(MetricReporter reporter) {
+		this.metricReporter = reporter;
+	}
+
+	public MetricReporter getMetricsReporter() {
+		return this.metricReporter;
 	}
 }

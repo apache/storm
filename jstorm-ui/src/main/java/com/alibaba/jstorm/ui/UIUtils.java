@@ -306,7 +306,13 @@ public class UIUtils {
 				for (int j = 0; j < einfoSize; j++) {
 					ErrorInfo einfo = einfos.get(j);
 					long current = System.currentTimeMillis() / 1000;
-					if (current - einfo.get_error_time_secs() < maxErrortime) {
+					
+					//shorten the most recent time for "queue is full" error
+					int maxTime = maxErrortime;
+					if (einfo.get_error().indexOf("queue is full") != -1)
+						maxTime = maxErrortime / 10;
+						
+					if (current - einfo.get_error_time_secs() < maxTime) {
 						map.put(new Integer(einfo.get_error_time_secs()),
 								einfo.get_error());
 					}
@@ -338,7 +344,13 @@ public class UIUtils {
 		for (ErrorInfo einfo : errList) {
 
 			long current = System.currentTimeMillis() / 1000;
-			if (current - einfo.get_error_time_secs() < maxErrortime) {
+			
+			//shorten the most recent time for "queue is full" error
+			int maxTime = maxErrortime;
+			if (einfo.get_error().indexOf("queue is full") != -1)
+				maxTime = maxErrortime / 10;
+			
+			if (current - einfo.get_error_time_secs() < maxTime) {
 				map.put(new Integer(einfo.get_error_time_secs()),
 						einfo.get_error());
 			}
@@ -379,6 +391,8 @@ public class UIUtils {
 
 				topologySumm.setNumWorkers(String.valueOf(t.get_num_workers()));
 				topologySumm.setNumTasks(String.valueOf(t.get_num_tasks()));
+				
+				topologySumm.setErrorInfo(t.get_error_info());
 				tsumm.add(topologySumm);
 			}
 		}
@@ -544,6 +558,11 @@ public class UIUtils {
 			ret.put(Config.NIMBUS_HOST, "localhost");
 
 		}
+		return ret;
+	}
+	
+	public static double getDoubleValue(Double value) {
+		double ret = (value != null ? value.doubleValue() : 0.0);
 		return ret;
 	}
 

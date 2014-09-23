@@ -15,8 +15,9 @@ import backtype.storm.utils.WorkerClassLoader;
 import com.alibaba.jstorm.callback.AsyncLoopThread;
 import com.alibaba.jstorm.callback.RunnableCallback;
 import com.alibaba.jstorm.client.ConfigExtension;
-import com.alibaba.jstorm.daemon.worker.metrics.JStormTimer;
-import com.alibaba.jstorm.daemon.worker.metrics.Metrics;
+import com.alibaba.jstorm.metric.JStormTimer;
+import com.alibaba.jstorm.metric.Metrics;
+import com.alibaba.jstorm.metric.MetricDef;
 //import com.alibaba.jstorm.message.zeroMq.IRecvConnection;
 import com.alibaba.jstorm.stats.CommonStatsRolling;
 import com.alibaba.jstorm.task.TaskStatus;
@@ -114,9 +115,9 @@ public class BaseExecutors extends RunnableCallback {
 		deserializeThread = new AsyncLoopThread(new DeserializeRunnable(
 				deserializeQueue, exeQueue));
 		
-		deserializeTimer = Metrics.registerTimer(idStr + "-deserialize-timer");
-		Metrics.registerQueue(idStr + "-deserialize-queue" , deserializeQueue);
-		Metrics.registerQueue(idStr + "-exe-queue" , exeQueue);
+		deserializeTimer = Metrics.registerTimer(idStr, MetricDef.DESERIALIZE_TIME, String.valueOf(taskId), Metrics.MetricType.TASK);
+		Metrics.registerQueue(idStr, MetricDef.DESERIALIZE_QUEUE, deserializeQueue, String.valueOf(taskId), Metrics.MetricType.TASK);
+		Metrics.registerQueue(idStr, MetricDef.EXECUTE_QUEUE, exeQueue, String.valueOf(taskId), Metrics.MetricType.TASK);
 	}
 
 	@Override

@@ -1,13 +1,16 @@
 package com.alibaba.jstorm.daemon.supervisor;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
 
 import com.alibaba.jstorm.callback.RunnableCallback;
+import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.cluster.StormConfig;
 import com.alibaba.jstorm.daemon.worker.ProcessSimulator;
 import com.alibaba.jstorm.utils.JStormUtils;
@@ -16,45 +19,87 @@ import com.alibaba.jstorm.utils.PathUtils;
 public class ShutdownWork extends RunnableCallback {
 
 	private static Logger LOG = Logger.getLogger(ShutdownWork.class);
-
+	
 	/**
-	 * shutdown the spec worker of the supervisor. and clean the local dir of
-	 * workers
-	 * 
+	 * shutdown all workers
 	 * 
 	 * @param conf
 	 * @param supervisorId
-	 * @param workerId
-	 * @param workerThreadPidsAtom
-	 * @param workerThreadPidsAtomReadLock
+	 * @param removed
+	 * @param workerThreadPids
+	 * @param cgroupManager
 	 */
-	public void shutWorker(Map conf, String supervisorId, String workerId,
-			ConcurrentHashMap<String, String> workerThreadPids)
-			throws IOException {
+	public void shutWorker(Map conf, String supervisorId,
+			Map<String, String> removed,
+			ConcurrentHashMap<String, String> workerThreadPids,
+			CgroupManager cgroupManager) {
 
-		LOG.info("Begin to shut down " + supervisorId + ":" + workerId);
+		Map<String, List<String>> workerId2Pids = new HashMap<String, List<String>>();
+		
+		boolean localMode = false;
 
-		// STORM-LOCAL-DIR/workers/workerId/pids
-		String workerPidPath = StormConfig.worker_pids_root(conf, workerId);
+		int maxWaitTime = 0;
 
-		List<String> pids = PathUtils.read_dir_contents(workerPidPath);
+		for (Entry<String, String> entry : removed.entrySet()) {
+			String workerId = entry.getKey();
+			String topologyId = entry.getValue();
 
-		String threadPid = workerThreadPids.get(workerId);
+			LOG.info("Begin to shut down " + topologyId + ":" + workerId);
+			try {
 
-		if (threadPid != null) {
-			ProcessSimulator.killProcess(threadPid);
+				// STORM-LOCAL-DIR/workers/workerId/pids
+				String workerPidPath = StormConfig.worker_pids_root(conf,
+						workerId);
+
+				List<String> pids = PathUtils.read_dir_contents(workerPidPath);
+				workerId2Pids.put(workerId, pids);
+
+				String threadPid = workerThreadPids.get(workerId);
+
+				// local mode
+				if (threadPid != null) {
+					ProcessSimulator.killProcess(threadPid);
+					localMode = true;
+					continue;
+				}
+					
+				for (String pid : pids) {
+					JStormUtils.process_killed(Integer.parseInt(pid));
+				}
+				
+				maxWaitTime = ConfigExtension
+						.getTaskCleanupTimeoutSec(conf);
+				// The best design is get getTaskCleanupTimeoutSec from 
+				// topology configuration, but topology configuration is likely
+				// to be deleted before kill worker, so in order to simplify 
+				// the logical, just get task.cleanup.timeout.sec from 
+				// supervisor configuration
+
+			} catch (Exception e) {
+				LOG.info("Failed to shutdown ", e);
+			}
+	
 		}
+		
+		JStormUtils.sleepMs(maxWaitTime * 1000);
 
-		for (String pid : pids) {
+		for (Entry<String, List<String>> entry : workerId2Pids.entrySet()) {
+			String workerId = entry.getKey();
+			List<String> pids = entry.getValue();
 
-			JStormUtils.kill(Integer.parseInt(pid));
-			PathUtils.rmpath(StormConfig.worker_pid_path(conf, workerId, pid));
+			if (localMode == false) {
+				for (String pid : pids) {
+	
+					JStormUtils.ensure_process_killed(Integer.parseInt(pid));
+					if (cgroupManager != null) {
+						cgroupManager.shutDownWorker(workerId, true);
+					}
+				}
+			}
 
+			tryCleanupWorkerDir(conf, workerId);
+			LOG.info("Successfully shut down "  + workerId);
 		}
-
-		tryCleanupWorkerDir(conf, workerId);
-
-		LOG.info("Successfully shut down " + supervisorId + ":" + workerId);
 	}
 
 	/**

@@ -39,6 +39,8 @@ public class Nimbus {
 
     public void rebalance(String name, RebalanceOptions options) throws NotAliveException, InvalidTopologyException, org.apache.thrift7.TException;
 
+    public void metricMonitor(String name, MonitorOptions options) throws NotAliveException, org.apache.thrift7.TException;
+
     public void beginLibUpload(String libName) throws org.apache.thrift7.TException;
 
     public String beginFileUpload() throws org.apache.thrift7.TException;
@@ -65,6 +67,8 @@ public class Nimbus {
 
     public StormTopology getUserTopology(String id) throws NotAliveException, org.apache.thrift7.TException;
 
+    public TopologyMetricInfo getTopologyMetric(String id) throws NotAliveException, org.apache.thrift7.TException;
+
   }
 
   public interface AsyncIface {
@@ -82,6 +86,8 @@ public class Nimbus {
     public void deactivate(String name, org.apache.thrift7.async.AsyncMethodCallback<AsyncClient.deactivate_call> resultHandler) throws org.apache.thrift7.TException;
 
     public void rebalance(String name, RebalanceOptions options, org.apache.thrift7.async.AsyncMethodCallback<AsyncClient.rebalance_call> resultHandler) throws org.apache.thrift7.TException;
+
+    public void metricMonitor(String name, MonitorOptions options, org.apache.thrift7.async.AsyncMethodCallback<AsyncClient.metricMonitor_call> resultHandler) throws org.apache.thrift7.TException;
 
     public void beginLibUpload(String libName, org.apache.thrift7.async.AsyncMethodCallback<AsyncClient.beginLibUpload_call> resultHandler) throws org.apache.thrift7.TException;
 
@@ -108,6 +114,8 @@ public class Nimbus {
     public void getTopology(String id, org.apache.thrift7.async.AsyncMethodCallback<AsyncClient.getTopology_call> resultHandler) throws org.apache.thrift7.TException;
 
     public void getUserTopology(String id, org.apache.thrift7.async.AsyncMethodCallback<AsyncClient.getUserTopology_call> resultHandler) throws org.apache.thrift7.TException;
+
+    public void getTopologyMetric(String id, org.apache.thrift7.async.AsyncMethodCallback<AsyncClient.getTopologyMetric_call> resultHandler) throws org.apache.thrift7.TException;
 
   }
 
@@ -312,6 +320,30 @@ public class Nimbus {
       }
       if (result.ite != null) {
         throw result.ite;
+      }
+      return;
+    }
+
+    public void metricMonitor(String name, MonitorOptions options) throws NotAliveException, org.apache.thrift7.TException
+    {
+      send_metricMonitor(name, options);
+      recv_metricMonitor();
+    }
+
+    public void send_metricMonitor(String name, MonitorOptions options) throws org.apache.thrift7.TException
+    {
+      metricMonitor_args args = new metricMonitor_args();
+      args.set_name(name);
+      args.set_options(options);
+      sendBase("metricMonitor", args);
+    }
+
+    public void recv_metricMonitor() throws NotAliveException, org.apache.thrift7.TException
+    {
+      metricMonitor_result result = new metricMonitor_result();
+      receiveBase(result, "metricMonitor");
+      if (result.e != null) {
+        throw result.e;
       }
       return;
     }
@@ -619,6 +651,32 @@ public class Nimbus {
       throw new org.apache.thrift7.TApplicationException(org.apache.thrift7.TApplicationException.MISSING_RESULT, "getUserTopology failed: unknown result");
     }
 
+    public TopologyMetricInfo getTopologyMetric(String id) throws NotAliveException, org.apache.thrift7.TException
+    {
+      send_getTopologyMetric(id);
+      return recv_getTopologyMetric();
+    }
+
+    public void send_getTopologyMetric(String id) throws org.apache.thrift7.TException
+    {
+      getTopologyMetric_args args = new getTopologyMetric_args();
+      args.set_id(id);
+      sendBase("getTopologyMetric", args);
+    }
+
+    public TopologyMetricInfo recv_getTopologyMetric() throws NotAliveException, org.apache.thrift7.TException
+    {
+      getTopologyMetric_result result = new getTopologyMetric_result();
+      receiveBase(result, "getTopologyMetric");
+      if (result.is_set_success()) {
+        return result.success;
+      }
+      if (result.e != null) {
+        throw result.e;
+      }
+      throw new org.apache.thrift7.TApplicationException(org.apache.thrift7.TApplicationException.MISSING_RESULT, "getTopologyMetric failed: unknown result");
+    }
+
   }
   public static class AsyncClient extends org.apache.thrift7.async.TAsyncClient implements AsyncIface {
     public static class Factory implements org.apache.thrift7.async.TAsyncClientFactory<AsyncClient> {
@@ -885,6 +943,41 @@ public class Nimbus {
         org.apache.thrift7.transport.TMemoryInputTransport memoryTransport = new org.apache.thrift7.transport.TMemoryInputTransport(getFrameBuffer().array());
         org.apache.thrift7.protocol.TProtocol prot = client.getProtocolFactory().getProtocol(memoryTransport);
         (new Client(prot)).recv_rebalance();
+      }
+    }
+
+    public void metricMonitor(String name, MonitorOptions options, org.apache.thrift7.async.AsyncMethodCallback<metricMonitor_call> resultHandler) throws org.apache.thrift7.TException {
+      checkReady();
+      metricMonitor_call method_call = new metricMonitor_call(name, options, resultHandler, this, ___protocolFactory, ___transport);
+      this.___currentMethod = method_call;
+      ___manager.call(method_call);
+    }
+
+    public static class metricMonitor_call extends org.apache.thrift7.async.TAsyncMethodCall {
+      private String name;
+      private MonitorOptions options;
+      public metricMonitor_call(String name, MonitorOptions options, org.apache.thrift7.async.AsyncMethodCallback<metricMonitor_call> resultHandler, org.apache.thrift7.async.TAsyncClient client, org.apache.thrift7.protocol.TProtocolFactory protocolFactory, org.apache.thrift7.transport.TNonblockingTransport transport) throws org.apache.thrift7.TException {
+        super(client, protocolFactory, transport, resultHandler, false);
+        this.name = name;
+        this.options = options;
+      }
+
+      public void write_args(org.apache.thrift7.protocol.TProtocol prot) throws org.apache.thrift7.TException {
+        prot.writeMessageBegin(new org.apache.thrift7.protocol.TMessage("metricMonitor", org.apache.thrift7.protocol.TMessageType.CALL, 0));
+        metricMonitor_args args = new metricMonitor_args();
+        args.set_name(name);
+        args.set_options(options);
+        args.write(prot);
+        prot.writeMessageEnd();
+      }
+
+      public void getResult() throws NotAliveException, org.apache.thrift7.TException {
+        if (getState() != org.apache.thrift7.async.TAsyncMethodCall.State.RESPONSE_READ) {
+          throw new IllegalStateException("Method call not finished!");
+        }
+        org.apache.thrift7.transport.TMemoryInputTransport memoryTransport = new org.apache.thrift7.transport.TMemoryInputTransport(getFrameBuffer().array());
+        org.apache.thrift7.protocol.TProtocol prot = client.getProtocolFactory().getProtocol(memoryTransport);
+        (new Client(prot)).recv_metricMonitor();
       }
     }
 
@@ -1298,6 +1391,38 @@ public class Nimbus {
       }
     }
 
+    public void getTopologyMetric(String id, org.apache.thrift7.async.AsyncMethodCallback<getTopologyMetric_call> resultHandler) throws org.apache.thrift7.TException {
+      checkReady();
+      getTopologyMetric_call method_call = new getTopologyMetric_call(id, resultHandler, this, ___protocolFactory, ___transport);
+      this.___currentMethod = method_call;
+      ___manager.call(method_call);
+    }
+
+    public static class getTopologyMetric_call extends org.apache.thrift7.async.TAsyncMethodCall {
+      private String id;
+      public getTopologyMetric_call(String id, org.apache.thrift7.async.AsyncMethodCallback<getTopologyMetric_call> resultHandler, org.apache.thrift7.async.TAsyncClient client, org.apache.thrift7.protocol.TProtocolFactory protocolFactory, org.apache.thrift7.transport.TNonblockingTransport transport) throws org.apache.thrift7.TException {
+        super(client, protocolFactory, transport, resultHandler, false);
+        this.id = id;
+      }
+
+      public void write_args(org.apache.thrift7.protocol.TProtocol prot) throws org.apache.thrift7.TException {
+        prot.writeMessageBegin(new org.apache.thrift7.protocol.TMessage("getTopologyMetric", org.apache.thrift7.protocol.TMessageType.CALL, 0));
+        getTopologyMetric_args args = new getTopologyMetric_args();
+        args.set_id(id);
+        args.write(prot);
+        prot.writeMessageEnd();
+      }
+
+      public TopologyMetricInfo getResult() throws NotAliveException, org.apache.thrift7.TException {
+        if (getState() != org.apache.thrift7.async.TAsyncMethodCall.State.RESPONSE_READ) {
+          throw new IllegalStateException("Method call not finished!");
+        }
+        org.apache.thrift7.transport.TMemoryInputTransport memoryTransport = new org.apache.thrift7.transport.TMemoryInputTransport(getFrameBuffer().array());
+        org.apache.thrift7.protocol.TProtocol prot = client.getProtocolFactory().getProtocol(memoryTransport);
+        return (new Client(prot)).recv_getTopologyMetric();
+      }
+    }
+
   }
 
   public static class Processor<I extends Iface> extends org.apache.thrift7.TBaseProcessor implements org.apache.thrift7.TProcessor {
@@ -1318,6 +1443,7 @@ public class Nimbus {
       processMap.put("activate", new activate());
       processMap.put("deactivate", new deactivate());
       processMap.put("rebalance", new rebalance());
+      processMap.put("metricMonitor", new metricMonitor());
       processMap.put("beginLibUpload", new beginLibUpload());
       processMap.put("beginFileUpload", new beginFileUpload());
       processMap.put("uploadChunk", new uploadChunk());
@@ -1331,6 +1457,7 @@ public class Nimbus {
       processMap.put("getTopologyConf", new getTopologyConf());
       processMap.put("getTopology", new getTopology());
       processMap.put("getUserTopology", new getUserTopology());
+      processMap.put("getTopologyMetric", new getTopologyMetric());
       return processMap;
     }
 
@@ -1479,6 +1606,26 @@ public class Nimbus {
           result.e = e;
         } catch (InvalidTopologyException ite) {
           result.ite = ite;
+        }
+        return result;
+      }
+    }
+
+    private static class metricMonitor<I extends Iface> extends org.apache.thrift7.ProcessFunction<I, metricMonitor_args> {
+      public metricMonitor() {
+        super("metricMonitor");
+      }
+
+      protected metricMonitor_args getEmptyArgsInstance() {
+        return new metricMonitor_args();
+      }
+
+      protected metricMonitor_result getResult(I iface, metricMonitor_args args) throws org.apache.thrift7.TException {
+        metricMonitor_result result = new metricMonitor_result();
+        try {
+          iface.metricMonitor(args.name, args.options);
+        } catch (NotAliveException e) {
+          result.e = e;
         }
         return result;
       }
@@ -1705,6 +1852,26 @@ public class Nimbus {
         getUserTopology_result result = new getUserTopology_result();
         try {
           result.success = iface.getUserTopology(args.id);
+        } catch (NotAliveException e) {
+          result.e = e;
+        }
+        return result;
+      }
+    }
+
+    private static class getTopologyMetric<I extends Iface> extends org.apache.thrift7.ProcessFunction<I, getTopologyMetric_args> {
+      public getTopologyMetric() {
+        super("getTopologyMetric");
+      }
+
+      protected getTopologyMetric_args getEmptyArgsInstance() {
+        return new getTopologyMetric_args();
+      }
+
+      protected getTopologyMetric_result getResult(I iface, getTopologyMetric_args args) throws org.apache.thrift7.TException {
+        getTopologyMetric_result result = new getTopologyMetric_result();
+        try {
+          result.success = iface.getTopologyMetric(args.id);
         } catch (NotAliveException e) {
           result.e = e;
         }
@@ -7207,6 +7374,702 @@ public class Nimbus {
         sb.append("null");
       } else {
         sb.append(this.ite);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.thrift7.TException {
+      // check for required fields
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(out)));
+      } catch (org.apache.thrift7.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+      try {
+        read(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(in)));
+      } catch (org.apache.thrift7.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+  }
+
+  public static class metricMonitor_args implements org.apache.thrift7.TBase<metricMonitor_args, metricMonitor_args._Fields>, java.io.Serializable, Cloneable   {
+    private static final org.apache.thrift7.protocol.TStruct STRUCT_DESC = new org.apache.thrift7.protocol.TStruct("metricMonitor_args");
+
+    private static final org.apache.thrift7.protocol.TField NAME_FIELD_DESC = new org.apache.thrift7.protocol.TField("name", org.apache.thrift7.protocol.TType.STRING, (short)1);
+    private static final org.apache.thrift7.protocol.TField OPTIONS_FIELD_DESC = new org.apache.thrift7.protocol.TField("options", org.apache.thrift7.protocol.TType.STRUCT, (short)2);
+
+    private String name; // required
+    private MonitorOptions options; // required
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
+      NAME((short)1, "name"),
+      OPTIONS((short)2, "options");
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 1: // NAME
+            return NAME;
+          case 2: // OPTIONS
+            return OPTIONS;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+
+    public static final Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift7.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.NAME, new org.apache.thrift7.meta_data.FieldMetaData("name", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRING)));
+      tmpMap.put(_Fields.OPTIONS, new org.apache.thrift7.meta_data.FieldMetaData("options", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, MonitorOptions.class)));
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      org.apache.thrift7.meta_data.FieldMetaData.addStructMetaDataMap(metricMonitor_args.class, metaDataMap);
+    }
+
+    public metricMonitor_args() {
+    }
+
+    public metricMonitor_args(
+      String name,
+      MonitorOptions options)
+    {
+      this();
+      this.name = name;
+      this.options = options;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public metricMonitor_args(metricMonitor_args other) {
+      if (other.is_set_name()) {
+        this.name = other.name;
+      }
+      if (other.is_set_options()) {
+        this.options = new MonitorOptions(other.options);
+      }
+    }
+
+    public metricMonitor_args deepCopy() {
+      return new metricMonitor_args(this);
+    }
+
+    @Override
+    public void clear() {
+      this.name = null;
+      this.options = null;
+    }
+
+    public String get_name() {
+      return this.name;
+    }
+
+    public void set_name(String name) {
+      this.name = name;
+    }
+
+    public void unset_name() {
+      this.name = null;
+    }
+
+    /** Returns true if field name is set (has been assigned a value) and false otherwise */
+    public boolean is_set_name() {
+      return this.name != null;
+    }
+
+    public void set_name_isSet(boolean value) {
+      if (!value) {
+        this.name = null;
+      }
+    }
+
+    public MonitorOptions get_options() {
+      return this.options;
+    }
+
+    public void set_options(MonitorOptions options) {
+      this.options = options;
+    }
+
+    public void unset_options() {
+      this.options = null;
+    }
+
+    /** Returns true if field options is set (has been assigned a value) and false otherwise */
+    public boolean is_set_options() {
+      return this.options != null;
+    }
+
+    public void set_options_isSet(boolean value) {
+      if (!value) {
+        this.options = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      case NAME:
+        if (value == null) {
+          unset_name();
+        } else {
+          set_name((String)value);
+        }
+        break;
+
+      case OPTIONS:
+        if (value == null) {
+          unset_options();
+        } else {
+          set_options((MonitorOptions)value);
+        }
+        break;
+
+      }
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      case NAME:
+        return get_name();
+
+      case OPTIONS:
+        return get_options();
+
+      }
+      throw new IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new IllegalArgumentException();
+      }
+
+      switch (field) {
+      case NAME:
+        return is_set_name();
+      case OPTIONS:
+        return is_set_options();
+      }
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof metricMonitor_args)
+        return this.equals((metricMonitor_args)that);
+      return false;
+    }
+
+    public boolean equals(metricMonitor_args that) {
+      if (that == null)
+        return false;
+
+      boolean this_present_name = true && this.is_set_name();
+      boolean that_present_name = true && that.is_set_name();
+      if (this_present_name || that_present_name) {
+        if (!(this_present_name && that_present_name))
+          return false;
+        if (!this.name.equals(that.name))
+          return false;
+      }
+
+      boolean this_present_options = true && this.is_set_options();
+      boolean that_present_options = true && that.is_set_options();
+      if (this_present_options || that_present_options) {
+        if (!(this_present_options && that_present_options))
+          return false;
+        if (!this.options.equals(that.options))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      HashCodeBuilder builder = new HashCodeBuilder();
+
+      boolean present_name = true && (is_set_name());
+      builder.append(present_name);
+      if (present_name)
+        builder.append(name);
+
+      boolean present_options = true && (is_set_options());
+      builder.append(present_options);
+      if (present_options)
+        builder.append(options);
+
+      return builder.toHashCode();
+    }
+
+    public int compareTo(metricMonitor_args other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+      metricMonitor_args typedOther = (metricMonitor_args)other;
+
+      lastComparison = Boolean.valueOf(is_set_name()).compareTo(typedOther.is_set_name());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_name()) {
+        lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.name, typedOther.name);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      lastComparison = Boolean.valueOf(is_set_options()).compareTo(typedOther.is_set_options());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_options()) {
+        lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.options, typedOther.options);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.thrift7.protocol.TProtocol iprot) throws org.apache.thrift7.TException {
+      org.apache.thrift7.protocol.TField field;
+      iprot.readStructBegin();
+      while (true)
+      {
+        field = iprot.readFieldBegin();
+        if (field.type == org.apache.thrift7.protocol.TType.STOP) { 
+          break;
+        }
+        switch (field.id) {
+          case 1: // NAME
+            if (field.type == org.apache.thrift7.protocol.TType.STRING) {
+              this.name = iprot.readString();
+            } else { 
+              org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          case 2: // OPTIONS
+            if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
+              this.options = new MonitorOptions();
+              this.options.read(iprot);
+            } else { 
+              org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          default:
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+        }
+        iprot.readFieldEnd();
+      }
+      iprot.readStructEnd();
+      validate();
+    }
+
+    public void write(org.apache.thrift7.protocol.TProtocol oprot) throws org.apache.thrift7.TException {
+      validate();
+
+      oprot.writeStructBegin(STRUCT_DESC);
+      if (this.name != null) {
+        oprot.writeFieldBegin(NAME_FIELD_DESC);
+        oprot.writeString(this.name);
+        oprot.writeFieldEnd();
+      }
+      if (this.options != null) {
+        oprot.writeFieldBegin(OPTIONS_FIELD_DESC);
+        this.options.write(oprot);
+        oprot.writeFieldEnd();
+      }
+      oprot.writeFieldStop();
+      oprot.writeStructEnd();
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("metricMonitor_args(");
+      boolean first = true;
+
+      sb.append("name:");
+      if (this.name == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.name);
+      }
+      first = false;
+      if (!first) sb.append(", ");
+      sb.append("options:");
+      if (this.options == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.options);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.thrift7.TException {
+      // check for required fields
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(out)));
+      } catch (org.apache.thrift7.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+      try {
+        read(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(in)));
+      } catch (org.apache.thrift7.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+  }
+
+  public static class metricMonitor_result implements org.apache.thrift7.TBase<metricMonitor_result, metricMonitor_result._Fields>, java.io.Serializable, Cloneable   {
+    private static final org.apache.thrift7.protocol.TStruct STRUCT_DESC = new org.apache.thrift7.protocol.TStruct("metricMonitor_result");
+
+    private static final org.apache.thrift7.protocol.TField E_FIELD_DESC = new org.apache.thrift7.protocol.TField("e", org.apache.thrift7.protocol.TType.STRUCT, (short)1);
+
+    private NotAliveException e; // required
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
+      E((short)1, "e");
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 1: // E
+            return E;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+
+    public static final Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift7.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.E, new org.apache.thrift7.meta_data.FieldMetaData("e", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRUCT)));
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      org.apache.thrift7.meta_data.FieldMetaData.addStructMetaDataMap(metricMonitor_result.class, metaDataMap);
+    }
+
+    public metricMonitor_result() {
+    }
+
+    public metricMonitor_result(
+      NotAliveException e)
+    {
+      this();
+      this.e = e;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public metricMonitor_result(metricMonitor_result other) {
+      if (other.is_set_e()) {
+        this.e = new NotAliveException(other.e);
+      }
+    }
+
+    public metricMonitor_result deepCopy() {
+      return new metricMonitor_result(this);
+    }
+
+    @Override
+    public void clear() {
+      this.e = null;
+    }
+
+    public NotAliveException get_e() {
+      return this.e;
+    }
+
+    public void set_e(NotAliveException e) {
+      this.e = e;
+    }
+
+    public void unset_e() {
+      this.e = null;
+    }
+
+    /** Returns true if field e is set (has been assigned a value) and false otherwise */
+    public boolean is_set_e() {
+      return this.e != null;
+    }
+
+    public void set_e_isSet(boolean value) {
+      if (!value) {
+        this.e = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      case E:
+        if (value == null) {
+          unset_e();
+        } else {
+          set_e((NotAliveException)value);
+        }
+        break;
+
+      }
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      case E:
+        return get_e();
+
+      }
+      throw new IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new IllegalArgumentException();
+      }
+
+      switch (field) {
+      case E:
+        return is_set_e();
+      }
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof metricMonitor_result)
+        return this.equals((metricMonitor_result)that);
+      return false;
+    }
+
+    public boolean equals(metricMonitor_result that) {
+      if (that == null)
+        return false;
+
+      boolean this_present_e = true && this.is_set_e();
+      boolean that_present_e = true && that.is_set_e();
+      if (this_present_e || that_present_e) {
+        if (!(this_present_e && that_present_e))
+          return false;
+        if (!this.e.equals(that.e))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      HashCodeBuilder builder = new HashCodeBuilder();
+
+      boolean present_e = true && (is_set_e());
+      builder.append(present_e);
+      if (present_e)
+        builder.append(e);
+
+      return builder.toHashCode();
+    }
+
+    public int compareTo(metricMonitor_result other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+      metricMonitor_result typedOther = (metricMonitor_result)other;
+
+      lastComparison = Boolean.valueOf(is_set_e()).compareTo(typedOther.is_set_e());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_e()) {
+        lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.e, typedOther.e);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.thrift7.protocol.TProtocol iprot) throws org.apache.thrift7.TException {
+      org.apache.thrift7.protocol.TField field;
+      iprot.readStructBegin();
+      while (true)
+      {
+        field = iprot.readFieldBegin();
+        if (field.type == org.apache.thrift7.protocol.TType.STOP) { 
+          break;
+        }
+        switch (field.id) {
+          case 1: // E
+            if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
+              this.e = new NotAliveException();
+              this.e.read(iprot);
+            } else { 
+              org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          default:
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+        }
+        iprot.readFieldEnd();
+      }
+      iprot.readStructEnd();
+      validate();
+    }
+
+    public void write(org.apache.thrift7.protocol.TProtocol oprot) throws org.apache.thrift7.TException {
+      oprot.writeStructBegin(STRUCT_DESC);
+
+      if (this.is_set_e()) {
+        oprot.writeFieldBegin(E_FIELD_DESC);
+        this.e.write(oprot);
+        oprot.writeFieldEnd();
+      }
+      oprot.writeFieldStop();
+      oprot.writeStructEnd();
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("metricMonitor_result(");
+      boolean first = true;
+
+      sb.append("e:");
+      if (this.e == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.e);
       }
       first = false;
       sb.append(")");
@@ -14994,6 +15857,701 @@ public class Nimbus {
     @Override
     public String toString() {
       StringBuilder sb = new StringBuilder("getUserTopology_result(");
+      boolean first = true;
+
+      sb.append("success:");
+      if (this.success == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.success);
+      }
+      first = false;
+      if (!first) sb.append(", ");
+      sb.append("e:");
+      if (this.e == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.e);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.thrift7.TException {
+      // check for required fields
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(out)));
+      } catch (org.apache.thrift7.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+      try {
+        read(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(in)));
+      } catch (org.apache.thrift7.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+  }
+
+  public static class getTopologyMetric_args implements org.apache.thrift7.TBase<getTopologyMetric_args, getTopologyMetric_args._Fields>, java.io.Serializable, Cloneable   {
+    private static final org.apache.thrift7.protocol.TStruct STRUCT_DESC = new org.apache.thrift7.protocol.TStruct("getTopologyMetric_args");
+
+    private static final org.apache.thrift7.protocol.TField ID_FIELD_DESC = new org.apache.thrift7.protocol.TField("id", org.apache.thrift7.protocol.TType.STRING, (short)1);
+
+    private String id; // required
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
+      ID((short)1, "id");
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 1: // ID
+            return ID;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+
+    public static final Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift7.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.ID, new org.apache.thrift7.meta_data.FieldMetaData("id", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRING)));
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      org.apache.thrift7.meta_data.FieldMetaData.addStructMetaDataMap(getTopologyMetric_args.class, metaDataMap);
+    }
+
+    public getTopologyMetric_args() {
+    }
+
+    public getTopologyMetric_args(
+      String id)
+    {
+      this();
+      this.id = id;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public getTopologyMetric_args(getTopologyMetric_args other) {
+      if (other.is_set_id()) {
+        this.id = other.id;
+      }
+    }
+
+    public getTopologyMetric_args deepCopy() {
+      return new getTopologyMetric_args(this);
+    }
+
+    @Override
+    public void clear() {
+      this.id = null;
+    }
+
+    public String get_id() {
+      return this.id;
+    }
+
+    public void set_id(String id) {
+      this.id = id;
+    }
+
+    public void unset_id() {
+      this.id = null;
+    }
+
+    /** Returns true if field id is set (has been assigned a value) and false otherwise */
+    public boolean is_set_id() {
+      return this.id != null;
+    }
+
+    public void set_id_isSet(boolean value) {
+      if (!value) {
+        this.id = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      case ID:
+        if (value == null) {
+          unset_id();
+        } else {
+          set_id((String)value);
+        }
+        break;
+
+      }
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      case ID:
+        return get_id();
+
+      }
+      throw new IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new IllegalArgumentException();
+      }
+
+      switch (field) {
+      case ID:
+        return is_set_id();
+      }
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof getTopologyMetric_args)
+        return this.equals((getTopologyMetric_args)that);
+      return false;
+    }
+
+    public boolean equals(getTopologyMetric_args that) {
+      if (that == null)
+        return false;
+
+      boolean this_present_id = true && this.is_set_id();
+      boolean that_present_id = true && that.is_set_id();
+      if (this_present_id || that_present_id) {
+        if (!(this_present_id && that_present_id))
+          return false;
+        if (!this.id.equals(that.id))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      HashCodeBuilder builder = new HashCodeBuilder();
+
+      boolean present_id = true && (is_set_id());
+      builder.append(present_id);
+      if (present_id)
+        builder.append(id);
+
+      return builder.toHashCode();
+    }
+
+    public int compareTo(getTopologyMetric_args other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+      getTopologyMetric_args typedOther = (getTopologyMetric_args)other;
+
+      lastComparison = Boolean.valueOf(is_set_id()).compareTo(typedOther.is_set_id());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_id()) {
+        lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.id, typedOther.id);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.thrift7.protocol.TProtocol iprot) throws org.apache.thrift7.TException {
+      org.apache.thrift7.protocol.TField field;
+      iprot.readStructBegin();
+      while (true)
+      {
+        field = iprot.readFieldBegin();
+        if (field.type == org.apache.thrift7.protocol.TType.STOP) { 
+          break;
+        }
+        switch (field.id) {
+          case 1: // ID
+            if (field.type == org.apache.thrift7.protocol.TType.STRING) {
+              this.id = iprot.readString();
+            } else { 
+              org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          default:
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+        }
+        iprot.readFieldEnd();
+      }
+      iprot.readStructEnd();
+      validate();
+    }
+
+    public void write(org.apache.thrift7.protocol.TProtocol oprot) throws org.apache.thrift7.TException {
+      validate();
+
+      oprot.writeStructBegin(STRUCT_DESC);
+      if (this.id != null) {
+        oprot.writeFieldBegin(ID_FIELD_DESC);
+        oprot.writeString(this.id);
+        oprot.writeFieldEnd();
+      }
+      oprot.writeFieldStop();
+      oprot.writeStructEnd();
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("getTopologyMetric_args(");
+      boolean first = true;
+
+      sb.append("id:");
+      if (this.id == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.id);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.thrift7.TException {
+      // check for required fields
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(out)));
+      } catch (org.apache.thrift7.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+      try {
+        read(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(in)));
+      } catch (org.apache.thrift7.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+  }
+
+  public static class getTopologyMetric_result implements org.apache.thrift7.TBase<getTopologyMetric_result, getTopologyMetric_result._Fields>, java.io.Serializable, Cloneable   {
+    private static final org.apache.thrift7.protocol.TStruct STRUCT_DESC = new org.apache.thrift7.protocol.TStruct("getTopologyMetric_result");
+
+    private static final org.apache.thrift7.protocol.TField SUCCESS_FIELD_DESC = new org.apache.thrift7.protocol.TField("success", org.apache.thrift7.protocol.TType.STRUCT, (short)0);
+    private static final org.apache.thrift7.protocol.TField E_FIELD_DESC = new org.apache.thrift7.protocol.TField("e", org.apache.thrift7.protocol.TType.STRUCT, (short)1);
+
+    private TopologyMetricInfo success; // required
+    private NotAliveException e; // required
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
+      SUCCESS((short)0, "success"),
+      E((short)1, "e");
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 0: // SUCCESS
+            return SUCCESS;
+          case 1: // E
+            return E;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+
+    public static final Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift7.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.SUCCESS, new org.apache.thrift7.meta_data.FieldMetaData("success", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, TopologyMetricInfo.class)));
+      tmpMap.put(_Fields.E, new org.apache.thrift7.meta_data.FieldMetaData("e", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRUCT)));
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      org.apache.thrift7.meta_data.FieldMetaData.addStructMetaDataMap(getTopologyMetric_result.class, metaDataMap);
+    }
+
+    public getTopologyMetric_result() {
+    }
+
+    public getTopologyMetric_result(
+      TopologyMetricInfo success,
+      NotAliveException e)
+    {
+      this();
+      this.success = success;
+      this.e = e;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public getTopologyMetric_result(getTopologyMetric_result other) {
+      if (other.is_set_success()) {
+        this.success = new TopologyMetricInfo(other.success);
+      }
+      if (other.is_set_e()) {
+        this.e = new NotAliveException(other.e);
+      }
+    }
+
+    public getTopologyMetric_result deepCopy() {
+      return new getTopologyMetric_result(this);
+    }
+
+    @Override
+    public void clear() {
+      this.success = null;
+      this.e = null;
+    }
+
+    public TopologyMetricInfo get_success() {
+      return this.success;
+    }
+
+    public void set_success(TopologyMetricInfo success) {
+      this.success = success;
+    }
+
+    public void unset_success() {
+      this.success = null;
+    }
+
+    /** Returns true if field success is set (has been assigned a value) and false otherwise */
+    public boolean is_set_success() {
+      return this.success != null;
+    }
+
+    public void set_success_isSet(boolean value) {
+      if (!value) {
+        this.success = null;
+      }
+    }
+
+    public NotAliveException get_e() {
+      return this.e;
+    }
+
+    public void set_e(NotAliveException e) {
+      this.e = e;
+    }
+
+    public void unset_e() {
+      this.e = null;
+    }
+
+    /** Returns true if field e is set (has been assigned a value) and false otherwise */
+    public boolean is_set_e() {
+      return this.e != null;
+    }
+
+    public void set_e_isSet(boolean value) {
+      if (!value) {
+        this.e = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      case SUCCESS:
+        if (value == null) {
+          unset_success();
+        } else {
+          set_success((TopologyMetricInfo)value);
+        }
+        break;
+
+      case E:
+        if (value == null) {
+          unset_e();
+        } else {
+          set_e((NotAliveException)value);
+        }
+        break;
+
+      }
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      case SUCCESS:
+        return get_success();
+
+      case E:
+        return get_e();
+
+      }
+      throw new IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new IllegalArgumentException();
+      }
+
+      switch (field) {
+      case SUCCESS:
+        return is_set_success();
+      case E:
+        return is_set_e();
+      }
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof getTopologyMetric_result)
+        return this.equals((getTopologyMetric_result)that);
+      return false;
+    }
+
+    public boolean equals(getTopologyMetric_result that) {
+      if (that == null)
+        return false;
+
+      boolean this_present_success = true && this.is_set_success();
+      boolean that_present_success = true && that.is_set_success();
+      if (this_present_success || that_present_success) {
+        if (!(this_present_success && that_present_success))
+          return false;
+        if (!this.success.equals(that.success))
+          return false;
+      }
+
+      boolean this_present_e = true && this.is_set_e();
+      boolean that_present_e = true && that.is_set_e();
+      if (this_present_e || that_present_e) {
+        if (!(this_present_e && that_present_e))
+          return false;
+        if (!this.e.equals(that.e))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      HashCodeBuilder builder = new HashCodeBuilder();
+
+      boolean present_success = true && (is_set_success());
+      builder.append(present_success);
+      if (present_success)
+        builder.append(success);
+
+      boolean present_e = true && (is_set_e());
+      builder.append(present_e);
+      if (present_e)
+        builder.append(e);
+
+      return builder.toHashCode();
+    }
+
+    public int compareTo(getTopologyMetric_result other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+      getTopologyMetric_result typedOther = (getTopologyMetric_result)other;
+
+      lastComparison = Boolean.valueOf(is_set_success()).compareTo(typedOther.is_set_success());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_success()) {
+        lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.success, typedOther.success);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      lastComparison = Boolean.valueOf(is_set_e()).compareTo(typedOther.is_set_e());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_e()) {
+        lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.e, typedOther.e);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.thrift7.protocol.TProtocol iprot) throws org.apache.thrift7.TException {
+      org.apache.thrift7.protocol.TField field;
+      iprot.readStructBegin();
+      while (true)
+      {
+        field = iprot.readFieldBegin();
+        if (field.type == org.apache.thrift7.protocol.TType.STOP) { 
+          break;
+        }
+        switch (field.id) {
+          case 0: // SUCCESS
+            if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
+              this.success = new TopologyMetricInfo();
+              this.success.read(iprot);
+            } else { 
+              org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          case 1: // E
+            if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
+              this.e = new NotAliveException();
+              this.e.read(iprot);
+            } else { 
+              org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          default:
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+        }
+        iprot.readFieldEnd();
+      }
+      iprot.readStructEnd();
+      validate();
+    }
+
+    public void write(org.apache.thrift7.protocol.TProtocol oprot) throws org.apache.thrift7.TException {
+      oprot.writeStructBegin(STRUCT_DESC);
+
+      if (this.is_set_success()) {
+        oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
+        this.success.write(oprot);
+        oprot.writeFieldEnd();
+      } else if (this.is_set_e()) {
+        oprot.writeFieldBegin(E_FIELD_DESC);
+        this.e.write(oprot);
+        oprot.writeFieldEnd();
+      }
+      oprot.writeFieldStop();
+      oprot.writeStructEnd();
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("getTopologyMetric_result(");
       boolean first = true;
 
       sb.append("success:");

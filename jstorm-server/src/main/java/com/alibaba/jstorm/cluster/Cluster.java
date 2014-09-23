@@ -38,6 +38,11 @@ public class Cluster {
 	public static final String TASKBEATS_ROOT = "taskbeats";
 	public static final String TASKERRORS_ROOT = "taskerrors";
 	public static final String MASTER_ROOT = "nimbus_master";
+	public static final String MONITOR_ROOT = "monitor";
+	
+	public static final String TASK_DIR = "task";
+	public static final String WORKER_DIR = "worker";
+	public static final String USER_DIR = "user";
 
 	public static final String ASSIGNMENTS_SUBTREE;
 	public static final String TASKS_SUBTREE;
@@ -46,6 +51,7 @@ public class Cluster {
 	public static final String TASKBEATS_SUBTREE;
 	public static final String TASKERRORS_SUBTREE;
 	public static final String MASTER_SUBTREE;
+	public static final String MONITOR_SUBTREE;
 
 	static {
 		ASSIGNMENTS_SUBTREE = ZK_SEPERATOR + ASSIGNMENTS_ROOT;
@@ -55,6 +61,7 @@ public class Cluster {
 		TASKBEATS_SUBTREE = ZK_SEPERATOR + TASKBEATS_ROOT;
 		TASKERRORS_SUBTREE = ZK_SEPERATOR + TASKERRORS_ROOT;
 		MASTER_SUBTREE = ZK_SEPERATOR + MASTER_ROOT;
+		MONITOR_SUBTREE = ZK_SEPERATOR + MONITOR_ROOT;
 	}
 
 	public static String supervisor_path(String id) {
@@ -93,6 +100,34 @@ public class Cluster {
 		return taskerror_storm_root(topology_id) + ZK_SEPERATOR + task_id;
 	}
 
+	public static String monitor_path(String topology_id) {
+		return MONITOR_SUBTREE + ZK_SEPERATOR + topology_id;
+	}
+	
+	public static String monitor_taskdir_path(String topology_id) {
+		return monitor_path(topology_id) + ZK_SEPERATOR + TASK_DIR;
+	}
+	
+	public static String monitor_workerdir_path(String topology_id) {
+		return monitor_path(topology_id) + ZK_SEPERATOR + WORKER_DIR;
+	}
+	
+	public static String monitor_userdir_path(String topology_id) {
+		return monitor_path(topology_id) + ZK_SEPERATOR + USER_DIR;
+	}
+
+	public static String monitor_task_path(String topology_id, String task_id) {
+		return monitor_taskdir_path(topology_id) + ZK_SEPERATOR + task_id;
+	}
+	
+	public static String monitor_worker_path(String topology_id, String worker_id) {
+		return monitor_workerdir_path(topology_id) + ZK_SEPERATOR + worker_id;
+	}
+	
+	public static String monitor_user_path(String topology_id, String worker_id) {
+		return monitor_userdir_path(topology_id) + ZK_SEPERATOR + worker_id;
+	}
+	
 	public static Object maybe_deserialize(byte[] data) {
 		if (data == null) {
 			return null;
@@ -134,6 +169,34 @@ public class Cluster {
 			}
 			String componentId = info.getComponentId();
 			rtn.put(task, componentId);
+		}
+
+		return rtn;
+	}
+	
+	/**
+	 * return Map<taskId, ComponentType>
+	 * 
+	 * @param zkCluster
+	 * @param topology_id
+	 * @return
+	 * @throws Exception
+	 */
+	public static HashMap<Integer, String> topology_task_compType(
+			StormClusterState zkCluster, String topology_id) throws Exception {
+		HashMap<Integer, String> rtn = new HashMap<Integer, String>();
+
+		List<Integer> taks_ids = zkCluster.task_ids(topology_id);
+
+		for (Integer task : taks_ids) {
+			TaskInfo info = zkCluster.task_info(topology_id, task);
+			if (info == null) {
+				LOG.error("Failed to get TaskInfo of " + topology_id
+						+ ",taskid:" + task);
+				continue;
+			}
+			String componentType = info.getComponentType();
+			rtn.put(task, componentType);
 		}
 
 		return rtn;

@@ -22,7 +22,8 @@ import backtype.storm.messaging.TaskMessage;
 import backtype.storm.utils.DisruptorQueue;
 import backtype.storm.utils.Utils;
 
-import com.alibaba.jstorm.daemon.worker.metrics.Metrics;
+import com.alibaba.jstorm.metric.MetricDef;
+import com.alibaba.jstorm.metric.Metrics;
 import com.alibaba.jstorm.utils.JStormServerUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.codahale.metrics.Gauge;
@@ -34,9 +35,7 @@ class NettyClientSync extends NettyClient implements EventHandler {
 	private static final Logger LOG = LoggerFactory
 			.getLogger(NettyClientSync.class);
 
-	private String batchQueueName;
 	private ConcurrentLinkedQueue<MessageBatch> batchQueue;
-	private String disruptorQueueName;
 	private DisruptorQueue disruptorQueue;
 
 	private AtomicLong emitTs = new AtomicLong(0);
@@ -46,19 +45,15 @@ class NettyClientSync extends NettyClient implements EventHandler {
 			ScheduledExecutorService scheduler, String host, int port,
 			ReconnectRunnable reconnector) {
 		super(storm_conf, factory, scheduler, host, port, reconnector);
-
+		
 		batchQueue = new ConcurrentLinkedQueue<MessageBatch>();
-		batchQueueName = JStormServerUtils.getName(host, port)
-				+ "-batchQueue-counter";
-
-		Metrics.register(batchQueueName, new Gauge<Integer>() {
-
-			@Override
-			public Integer getValue() {
-				return batchQueue.size();
-			}
-
-		});
+		Metrics.register(address, MetricDef.NETTY_CLI_SYNC_BATCH_QUEUE, 
+				new Gauge<Integer>() {
+			        @Override
+			        public Integer getValue() {
+				        return batchQueue.size();
+			        }
+		        }, null, Metrics.MetricType.WORKER);
 
 		WaitStrategy waitStrategy = (WaitStrategy) Utils
 				.newInstance((String) storm_conf
@@ -67,9 +62,8 @@ class NettyClientSync extends NettyClient implements EventHandler {
 		disruptorQueue = new DisruptorQueue(new SingleThreadedClaimStrategy(
 				MAX_SEND_PENDING * 8), waitStrategy);
 
-		disruptorQueueName = JStormServerUtils.getName(host, port)
-				+ "-disruptorQueue";
-		Metrics.registerQueue(disruptorQueueName, disruptorQueue);
+		Metrics.registerQueue(address, MetricDef.NETTY_CLI_SYNC_DISR_QUEUE, disruptorQueue, 
+				null, Metrics.MetricType.WORKER);
 
 		Runnable trigger = new Runnable() {
 			@Override
@@ -249,8 +243,8 @@ class NettyClientSync extends NettyClient implements EventHandler {
 				"Begin to close connection to {} and flush all data, batchQueue {}, disruptor {}",
 				name, batchQueue.size(), disruptorQueue.population());
 		sendAllData();
-		Metrics.unregister(batchQueueName);
-		Metrics.unregister(disruptorQueueName);
+		Metrics.unregister(address, MetricDef.NETTY_CLI_SYNC_BATCH_QUEUE, null, Metrics.MetricType.WORKER);
+		Metrics.unregister(address, MetricDef.NETTY_CLI_SYNC_DISR_QUEUE, null, Metrics.MetricType.WORKER);
 		super.close();
 
 		clientChannelFactory.releaseExternalResources();

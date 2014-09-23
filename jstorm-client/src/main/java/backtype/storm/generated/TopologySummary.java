@@ -30,6 +30,7 @@ public class TopologySummary implements org.apache.thrift7.TBase<TopologySummary
   private static final org.apache.thrift7.protocol.TField UPTIME_SECS_FIELD_DESC = new org.apache.thrift7.protocol.TField("uptime_secs", org.apache.thrift7.protocol.TType.I32, (short)4);
   private static final org.apache.thrift7.protocol.TField NUM_TASKS_FIELD_DESC = new org.apache.thrift7.protocol.TField("num_tasks", org.apache.thrift7.protocol.TType.I32, (short)5);
   private static final org.apache.thrift7.protocol.TField NUM_WORKERS_FIELD_DESC = new org.apache.thrift7.protocol.TField("num_workers", org.apache.thrift7.protocol.TType.I32, (short)6);
+  private static final org.apache.thrift7.protocol.TField ERROR_INFO_FIELD_DESC = new org.apache.thrift7.protocol.TField("error_info", org.apache.thrift7.protocol.TType.STRING, (short)7);
 
   private String id; // required
   private String name; // required
@@ -37,6 +38,7 @@ public class TopologySummary implements org.apache.thrift7.TBase<TopologySummary
   private int uptime_secs; // required
   private int num_tasks; // required
   private int num_workers; // required
+  private String error_info; // required
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
@@ -45,7 +47,8 @@ public class TopologySummary implements org.apache.thrift7.TBase<TopologySummary
     STATUS((short)3, "status"),
     UPTIME_SECS((short)4, "uptime_secs"),
     NUM_TASKS((short)5, "num_tasks"),
-    NUM_WORKERS((short)6, "num_workers");
+    NUM_WORKERS((short)6, "num_workers"),
+    ERROR_INFO((short)7, "error_info");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -72,6 +75,8 @@ public class TopologySummary implements org.apache.thrift7.TBase<TopologySummary
           return NUM_TASKS;
         case 6: // NUM_WORKERS
           return NUM_WORKERS;
+        case 7: // ERROR_INFO
+          return ERROR_INFO;
         default:
           return null;
       }
@@ -132,6 +137,8 @@ public class TopologySummary implements org.apache.thrift7.TBase<TopologySummary
         new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.I32)));
     tmpMap.put(_Fields.NUM_WORKERS, new org.apache.thrift7.meta_data.FieldMetaData("num_workers", org.apache.thrift7.TFieldRequirementType.REQUIRED, 
         new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.I32)));
+    tmpMap.put(_Fields.ERROR_INFO, new org.apache.thrift7.meta_data.FieldMetaData("error_info", org.apache.thrift7.TFieldRequirementType.REQUIRED, 
+        new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRING)));
     metaDataMap = Collections.unmodifiableMap(tmpMap);
     org.apache.thrift7.meta_data.FieldMetaData.addStructMetaDataMap(TopologySummary.class, metaDataMap);
   }
@@ -145,7 +152,8 @@ public class TopologySummary implements org.apache.thrift7.TBase<TopologySummary
     String status,
     int uptime_secs,
     int num_tasks,
-    int num_workers)
+    int num_workers,
+    String error_info)
   {
     this();
     this.id = id;
@@ -157,6 +165,7 @@ public class TopologySummary implements org.apache.thrift7.TBase<TopologySummary
     set_num_tasks_isSet(true);
     this.num_workers = num_workers;
     set_num_workers_isSet(true);
+    this.error_info = error_info;
   }
 
   /**
@@ -177,6 +186,9 @@ public class TopologySummary implements org.apache.thrift7.TBase<TopologySummary
     this.uptime_secs = other.uptime_secs;
     this.num_tasks = other.num_tasks;
     this.num_workers = other.num_workers;
+    if (other.is_set_error_info()) {
+      this.error_info = other.error_info;
+    }
   }
 
   public TopologySummary deepCopy() {
@@ -194,6 +206,7 @@ public class TopologySummary implements org.apache.thrift7.TBase<TopologySummary
     this.num_tasks = 0;
     set_num_workers_isSet(false);
     this.num_workers = 0;
+    this.error_info = null;
   }
 
   public String get_id() {
@@ -331,6 +344,29 @@ public class TopologySummary implements org.apache.thrift7.TBase<TopologySummary
     __isset_bit_vector.set(__NUM_WORKERS_ISSET_ID, value);
   }
 
+  public String get_error_info() {
+    return this.error_info;
+  }
+
+  public void set_error_info(String error_info) {
+    this.error_info = error_info;
+  }
+
+  public void unset_error_info() {
+    this.error_info = null;
+  }
+
+  /** Returns true if field error_info is set (has been assigned a value) and false otherwise */
+  public boolean is_set_error_info() {
+    return this.error_info != null;
+  }
+
+  public void set_error_info_isSet(boolean value) {
+    if (!value) {
+      this.error_info = null;
+    }
+  }
+
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case ID:
@@ -381,6 +417,14 @@ public class TopologySummary implements org.apache.thrift7.TBase<TopologySummary
       }
       break;
 
+    case ERROR_INFO:
+      if (value == null) {
+        unset_error_info();
+      } else {
+        set_error_info((String)value);
+      }
+      break;
+
     }
   }
 
@@ -403,6 +447,9 @@ public class TopologySummary implements org.apache.thrift7.TBase<TopologySummary
 
     case NUM_WORKERS:
       return Integer.valueOf(get_num_workers());
+
+    case ERROR_INFO:
+      return get_error_info();
 
     }
     throw new IllegalStateException();
@@ -427,6 +474,8 @@ public class TopologySummary implements org.apache.thrift7.TBase<TopologySummary
       return is_set_num_tasks();
     case NUM_WORKERS:
       return is_set_num_workers();
+    case ERROR_INFO:
+      return is_set_error_info();
     }
     throw new IllegalStateException();
   }
@@ -498,6 +547,15 @@ public class TopologySummary implements org.apache.thrift7.TBase<TopologySummary
         return false;
     }
 
+    boolean this_present_error_info = true && this.is_set_error_info();
+    boolean that_present_error_info = true && that.is_set_error_info();
+    if (this_present_error_info || that_present_error_info) {
+      if (!(this_present_error_info && that_present_error_info))
+        return false;
+      if (!this.error_info.equals(that.error_info))
+        return false;
+    }
+
     return true;
   }
 
@@ -534,6 +592,11 @@ public class TopologySummary implements org.apache.thrift7.TBase<TopologySummary
     builder.append(present_num_workers);
     if (present_num_workers)
       builder.append(num_workers);
+
+    boolean present_error_info = true && (is_set_error_info());
+    builder.append(present_error_info);
+    if (present_error_info)
+      builder.append(error_info);
 
     return builder.toHashCode();
   }
@@ -606,6 +669,16 @@ public class TopologySummary implements org.apache.thrift7.TBase<TopologySummary
         return lastComparison;
       }
     }
+    lastComparison = Boolean.valueOf(is_set_error_info()).compareTo(typedOther.is_set_error_info());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_error_info()) {
+      lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.error_info, typedOther.error_info);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
     return 0;
   }
 
@@ -668,6 +741,13 @@ public class TopologySummary implements org.apache.thrift7.TBase<TopologySummary
             org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
           }
           break;
+        case 7: // ERROR_INFO
+          if (field.type == org.apache.thrift7.protocol.TType.STRING) {
+            this.error_info = iprot.readString();
+          } else { 
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
         default:
           org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
       }
@@ -705,6 +785,11 @@ public class TopologySummary implements org.apache.thrift7.TBase<TopologySummary
     oprot.writeFieldBegin(NUM_WORKERS_FIELD_DESC);
     oprot.writeI32(this.num_workers);
     oprot.writeFieldEnd();
+    if (this.error_info != null) {
+      oprot.writeFieldBegin(ERROR_INFO_FIELD_DESC);
+      oprot.writeString(this.error_info);
+      oprot.writeFieldEnd();
+    }
     oprot.writeFieldStop();
     oprot.writeStructEnd();
   }
@@ -749,6 +834,14 @@ public class TopologySummary implements org.apache.thrift7.TBase<TopologySummary
     sb.append("num_workers:");
     sb.append(this.num_workers);
     first = false;
+    if (!first) sb.append(", ");
+    sb.append("error_info:");
+    if (this.error_info == null) {
+      sb.append("null");
+    } else {
+      sb.append(this.error_info);
+    }
+    first = false;
     sb.append(")");
     return sb.toString();
   }
@@ -777,6 +870,10 @@ public class TopologySummary implements org.apache.thrift7.TBase<TopologySummary
 
     if (!is_set_num_workers()) {
       throw new org.apache.thrift7.protocol.TProtocolException("Required field 'num_workers' is unset! Struct:" + toString());
+    }
+
+    if (!is_set_error_info()) {
+      throw new org.apache.thrift7.protocol.TProtocolException("Required field 'error_info' is unset! Struct:" + toString());
     }
 
   }

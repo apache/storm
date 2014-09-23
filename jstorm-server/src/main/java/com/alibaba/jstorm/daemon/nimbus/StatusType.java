@@ -1,5 +1,6 @@
 package com.alibaba.jstorm.daemon.nimbus;
 
+
 /**
  * topology status:
  * 
@@ -22,12 +23,18 @@ package com.alibaba.jstorm.daemon.nimbus;
  * 
  * 
  */
+
 public enum StatusType {
 
-	kill("kill"), killed("killed"), monitor("monitor"), inactive("inactive"), inactivate(
-			"inactivate"), active("active"), activate("activate"), startup(
-			"startup"), remove("remove"), rebalance("rebalance"), rebalancing(
-			"rebalancing"), do_rebalance("do-rebalance");
+	// status
+	active("active"), inactive("inactive"), rebalancing("rebalancing"), 
+	killed("killed"),  
+	
+	// actions
+	activate("activate"), inactivate("inactivate"), 
+	monitor("monitor"),    startup("startup"),
+	kill("kill"), remove("remove"), 
+	rebalance("rebalance"),  do_rebalance("do-rebalance");
 
 	private String status;
 

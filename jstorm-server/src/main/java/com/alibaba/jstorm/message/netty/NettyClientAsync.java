@@ -170,6 +170,17 @@ class NettyClientAsync extends NettyClient {
 			}
 		}
 	}
+	
+	long getDelaySec(long cachedSize) {
+		long count = cachedSize / BATCH_THREASHOLD_WARN;
+		long sleepMs = (long)(Math.pow(2, count) * 10);
+		
+		if (sleepMs > 1000) {
+			sleepMs = 1000;
+		}
+		
+		return sleepMs;
+	}
 
 	void handleFailedChannel(MessageBatch messageBatch) {
 
@@ -178,10 +189,9 @@ class NettyClientAsync extends NettyClient {
 
 		long cachedSize = messageBatch.getEncoded_length();
 		if (cachedSize > BATCH_THREASHOLD_WARN) {
-			long count = (cachedSize + BATCH_THREASHOLD_WARN - 1)
-					/ BATCH_THREASHOLD_WARN;
-			long sleepMs = count * 10;
-
+			
+			long sleepMs = getDelaySec(cachedSize);
+			
 			if (blockSend == false) {
 				LOG.warn(
 						"Target server  {} is unavailable, pending {}, bufferSize {}, block sending {}ms",

@@ -565,9 +565,8 @@ class SyncProcessEvent extends ShutdownWork {
 			environment.put("REDIRECT", "false");
 		}
 
-		// String logFileName = assignment.getTopologyName() + "-worker-" + port
-		// + ".log";
-		String logFileName = topologyId + "-worker-" + port + ".log";
+		 String logFileName = JStormUtils.genLogName(assignment.getTopologyName(), port);
+		//String logFileName = topologyId + "-worker-" + port + ".log";
 
 		environment.put("LD_LIBRARY_PATH",
 				(String) totalConf.get(Config.JAVA_LIBRARY_PATH));
@@ -667,7 +666,7 @@ class SyncProcessEvent extends ShutdownWork {
 
 	private Set<Integer> killUselessWorkers(
 			Map<String, StateHeartbeat> localWorkerStats) {
-		Set<String> removed = new HashSet<String>();
+		Map<String, String> removed = new HashMap<String, String>();
 		Set<Integer> keepPorts = new HashSet<Integer>();
 
 		for (Entry<String, StateHeartbeat> entry : localWorkerStats.entrySet()) {
@@ -679,33 +678,22 @@ class SyncProcessEvent extends ShutdownWork {
 				// hbstate.getHeartbeat() won't be null
 				keepPorts.add(hbstate.getHeartbeat().getPort());
 			} else {
-				removed.add(workerid);
+				removed.put(workerid, hbstate.getHeartbeat().getTopologyId());
 
 				StringBuilder sb = new StringBuilder();
 				sb.append("Shutting down and clearing state for id ");
 				sb.append(workerid);
 				sb.append(";State:");
-				sb.append(hbstate.getState());
-				sb.append(";Heartbeat");
-				sb.append(hbstate.getHeartbeat());
+				sb.append(hbstate);
+
 				LOG.info(sb);
-
-				try {
-					shutWorker(conf, supervisorId, workerid, workerThreadPids);
-					if (cgroupManager != null) {
-						cgroupManager.shutDownWorker(workerid);
-					}
-				} catch (IOException e) {
-					String errMsg = "Failed to shutdown worker workId:"
-							+ workerid + ",supervisorId: " + supervisorId
-							+ ",workerThreadPids:" + workerThreadPids;
-					LOG.error(errMsg, e);
-				}
-
 			}
 		}
+		
+		shutWorker(conf, supervisorId, removed, workerThreadPids, cgroupManager);
 
-		for (String removedWorkerId : removed) {
+
+		for (String removedWorkerId : removed.keySet()) {
 			localWorkerStats.remove(removedWorkerId);
 		}
 

@@ -13,6 +13,7 @@ import backtype.storm.Config;
 import backtype.storm.GenericOptionsParser;
 import backtype.storm.utils.Utils;
 
+import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.cluster.StormConfig;
 
 /**
@@ -113,6 +114,19 @@ public class JStormServerUtils {
 	
 	public static String getName(String componentId, int taskId) {
 		return componentId + ":" + taskId;
+	}
+	
+	public static String getHostName(Map conf) {
+		String hostName = ConfigExtension.getSupervisorHost(conf);
+		if (hostName == null) {
+			hostName = NetWorkUtils.hostname();
+		}
+
+		if (ConfigExtension.isSupervisorUseIp(conf)) {
+			hostName = NetWorkUtils.ip();
+		}
+		
+		return hostName;
 	}
 
 };

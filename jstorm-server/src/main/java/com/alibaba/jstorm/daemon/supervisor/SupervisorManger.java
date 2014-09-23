@@ -1,6 +1,7 @@
 package com.alibaba.jstorm.daemon.supervisor;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
@@ -120,18 +121,13 @@ public class SupervisorManger extends ShutdownWork implements Shutdownable,
 			return;
 		}
 		List<String> myWorkerIds = PathUtils.read_dir_contents(path);
+		HashMap<String, String> workerId2topologyIds = new HashMap<String, String>();
 
 		for (String workerId : myWorkerIds) {
-			try {
-				shutWorker(conf, supervisorId, workerId, workerThreadPidsAtom);
-			} catch (Exception e) {
-				String errMsg = "Failed to shutdown supervisorId:"
-						+ supervisorId + ",workerId:" + workerId
-						+ "workerThreadPidsAtom:" + workerThreadPidsAtom + "\n";
-				LOG.error(errMsg, e);
-
-			}
+			workerId2topologyIds.put(workerId, null);
 		}
+		
+		shutWorker(conf, supervisorId, workerId2topologyIds, workerThreadPidsAtom, null);
 	}
 
 	@Override

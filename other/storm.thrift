@@ -120,6 +120,7 @@ struct TopologySummary {
   4: required i32 uptime_secs;
   5: required i32 num_tasks;
   6: required i32 num_workers;
+  7: required string error_info;
 }
 
 struct SupervisorSummary {
@@ -183,7 +184,7 @@ struct TaskSummary {
   5: required i32 uptime_secs;
   6: required list<ErrorInfo> errors;
   7: optional TaskStats stats;
-
+  8: optional string component_type;
 }
 
 struct WorkerSummary {
@@ -223,6 +224,33 @@ struct SubmitOptions {
   1: required TopologyInitialStatus initial_status;
 }
 
+struct MonitorOptions {
+  1: optional bool isEnable;
+}
+struct TaskMetricData {
+  1:  required i32    task_id;
+  2:  required string component_id;
+  3:  required map<string, double> gauge;
+  4:  required map<string, double> counter;
+  5:  required map<string, double> meter;
+  6:  required map<string, double> timer;
+  7:  required map<string, double> histogram;
+}
+struct WorkerMetricData {
+  1:  required string hostname;
+  2:  required i32    port;
+  3:  required map<string, double> gauge;
+  4:  required map<string, double> counter;
+  5:  required map<string, double> meter;
+  6:  required map<string, double> timer;
+  7:  required map<string, double> histogram;
+}
+struct TopologyMetricInfo {
+  1: required string topology_id;
+  2: optional list<TaskMetricData>   task_metric_list;
+  3: optional list<WorkerMetricData> worker_metric_list;
+}
+
 service Nimbus {
   void submitTopology(1: string name, 2: string uploadedJarLocation, 3: string jsonConf, 4: StormTopology topology) throws (1: AlreadyAliveException e, 2: InvalidTopologyException ite, 3: TopologyAssignException tae);
   void submitTopologyWithOpts(1: string name, 2: string uploadedJarLocation, 3: string jsonConf, 4: StormTopology topology, 5: SubmitOptions options) throws (1: AlreadyAliveException e, 2: InvalidTopologyException ite, 3:TopologyAssignException tae);
@@ -231,6 +259,7 @@ service Nimbus {
   void activate(1: string name) throws (1: NotAliveException e);
   void deactivate(1: string name) throws (1: NotAliveException e);
   void rebalance(1: string name, 2: RebalanceOptions options) throws (1: NotAliveException e, 2: InvalidTopologyException ite);
+  void metricMonitor(1: string name, 2: MonitorOptions options) throws (1: NotAliveException e);
 
   // need to add functions for asking about status of storms, what nodes they're running on, looking at task logs
 
@@ -253,6 +282,7 @@ service Nimbus {
   string getTopologyConf(1: string id) throws (1: NotAliveException e);
   StormTopology getTopology(1: string id) throws (1: NotAliveException e);
   StormTopology getUserTopology(1: string id) throws (1: NotAliveException e);
+  TopologyMetricInfo getTopologyMetric(1: string id) throws (1: NotAliveException e);
 }
 
 struct DRPCRequest {

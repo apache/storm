@@ -23,17 +23,23 @@ import backtype.storm.generated.SpoutSpec;
 import backtype.storm.generated.StateSpoutSpec;
 import backtype.storm.generated.StormTopology;
 import backtype.storm.generated.SupervisorSummary;
+import backtype.storm.generated.TaskMetricData;
 import backtype.storm.generated.TaskSummary;
 import backtype.storm.generated.TopologySummary;
+import backtype.storm.generated.WorkerMetricData;
 import backtype.storm.generated.WorkerSummary;
 import backtype.storm.utils.ThriftTopologyUtils;
 
 import com.alibaba.jstorm.cluster.Cluster;
 import com.alibaba.jstorm.cluster.StormClusterState;
 import com.alibaba.jstorm.cluster.StormConfig;
+import com.alibaba.jstorm.cluster.StormMonitor;
 import com.alibaba.jstorm.daemon.supervisor.SupervisorInfo;
+import com.alibaba.jstorm.daemon.worker.WorkerMetricInfo;
 import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
+import com.alibaba.jstorm.metric.MetricDef;
 import com.alibaba.jstorm.task.Assignment;
+import com.alibaba.jstorm.task.TaskMetricInfo;
 import com.alibaba.jstorm.task.TkHbCacheTime;
 import com.alibaba.jstorm.task.error.TaskError;
 import com.alibaba.jstorm.task.heartbeat.TaskHeartbeat;
@@ -471,7 +477,7 @@ public class NimbusUtils {
 
 	public static TopologySummary mkTopologySummary(Assignment assignment,
 			String topologyId, String topologyName, String status,
-			int uptime_secs) {
+			int uptime_secs, String lastErrTimeStamp) {
 
 		int num_workers = assignment.getWorkers().size();
 		int num_tasks = 0;
@@ -479,9 +485,20 @@ public class NimbusUtils {
 		for (ResourceWorkerSlot worker : assignment.getWorkers()) {
 			num_tasks = num_tasks + worker.getTasks().size();
 		}
+		
+		long currentTimeSecs = System.currentTimeMillis() / 1000;
+		String errorInfo;
+		if (lastErrTimeStamp == null)
+			errorInfo = "N";
+		else {
+		    if ((currentTimeSecs - Long.valueOf(lastErrTimeStamp)) < 1800) 
+			    errorInfo = "Y";
+		    else
+			    errorInfo = "N";
+		}
 
 		TopologySummary ret = new TopologySummary(topologyId, topologyName,
-				status, uptime_secs, num_tasks, num_workers);
+				status, uptime_secs, num_tasks, num_workers, errorInfo);
 
 		return ret;
 	}
@@ -548,11 +565,12 @@ public class NimbusUtils {
 	}
 
 	public static TaskSummary mkSimpleTaskSummary(ResourceWorkerSlot resource,
-			int taskId, String component, String host, int uptime) {
+			int taskId, String component, String componentType, String host, int uptime) {
 		TaskSummary ret = new TaskSummary();
 
 		ret.set_task_id(taskId);
 		ret.set_component_id(component);
+		ret.set_component_type(componentType);
 		ret.set_host(host);
 		ret.set_port(resource.getPort());
 		ret.set_uptime_secs(uptime);
@@ -631,5 +649,80 @@ public class NimbusUtils {
 			result.add(workerSumm);
 		}
 		return result;
+	}
+	
+	public static void updateMetricMonitorStatus(StormClusterState clusterState, 
+			String topologyId, boolean isEnable) throws Exception {
+		StormMonitor stormMonitor = new StormMonitor(isEnable);
+		clusterState.set_storm_monitor(topologyId, stormMonitor);
+	}
+	
+	public static void updateMetricsInfo(NimbusData data, String topologyId, 
+			Assignment assignment) {
+		List<Integer> taskList = new ArrayList<Integer>();
+		List<String> workerList = new ArrayList<String>();
+		
+		StormClusterState clusterState = data.getStormClusterState();
+		
+		Set<ResourceWorkerSlot> workerSlotSet = assignment.getWorkers();
+		
+		for (ResourceWorkerSlot workerSlot : workerSlotSet) {
+			String workerId = workerSlot.getHostname() + ":" + workerSlot.getPort();
+			workerList.add(workerId);
+			
+			taskList.addAll(workerSlot.getTasks());
+		}
+		
+		try {
+		    //Remove the obsolete tasks of metrics monitor in ZK
+		    List<String> metricTaskList = clusterState.get_metric_taskIds(topologyId);
+		    for (String task : metricTaskList) {
+		    	Integer taskId = Integer.valueOf(task);
+			    if(taskList.contains(taskId) == false)
+			    	clusterState.remove_metric_task(topologyId, String.valueOf(taskId));
+		    }
+		    
+		    //Remove the obsolete workers of metrics monitor in ZK
+		    List<String> metricWorkerList = clusterState.get_metric_workerIds(topologyId);
+		    for (String workerId : metricWorkerList) {
+		    	if (workerList.contains(workerId) == false)
+		    		clusterState.remove_metric_worker(topologyId, workerId);
+		    }
+		    
+		    //Remove the obsolete user workers of metrics monitor in ZK
+		    List<String> metricUserList = clusterState.get_metric_users(topologyId);
+		    for (String workerId : metricUserList) {
+		    	if (workerList.contains(workerId) == false)
+		    		clusterState.remove_metric_user(topologyId, workerId);
+		    }
+		} catch (Exception e) {
+			LOG.error("Failed to update metrics info when rebalance or reassignment, topologyId=" + 
+		              topologyId, e);
+		}
+	}
+	
+	public static void updateTaskMetricData(TaskMetricData metricData, TaskMetricInfo metricInfo) {
+		metricData.set_task_id(Integer.valueOf(metricInfo.getTaskId()));
+		metricData.set_component_id(metricInfo.getComponent());
+		metricData.set_gauge(metricInfo.getGaugeData());
+		metricData.set_counter(metricInfo.getCounterData());
+		metricData.set_meter(metricInfo.getMeterData());
+		metricData.set_timer(metricInfo.getTimerData());
+		metricData.set_histogram(metricInfo.getHistogramData());
+	}
+	
+	public static void updateWorkerMetricData(WorkerMetricData metricData, WorkerMetricInfo metricInfo) {
+		metricData.set_hostname(metricInfo.getHostName());
+		metricData.set_port(metricInfo.getPort());
+		metricData.set_gauge(metricInfo.getGaugeData());
+		metricData.set_counter(metricInfo.getCounterData());
+		metricData.set_meter(metricInfo.getMeterData());
+		metricData.set_timer(metricInfo.getTimerData());
+		metricData.set_histogram(metricInfo.getHistogramData());
+		
+		//Add cpu and Mem into gauge map
+		Map<String, Double> gaugeMap = metricData.get_gauge();
+		gaugeMap.put(MetricDef.CPU_USED_RATIO, metricInfo.getUsedCpu());
+		gaugeMap.put(MetricDef.MEMORY_USED,((Long) metricInfo.getUsedMem()).doubleValue());
 	}
 }

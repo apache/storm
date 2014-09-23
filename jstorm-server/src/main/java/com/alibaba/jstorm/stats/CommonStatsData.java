@@ -28,6 +28,8 @@ public class CommonStatsData implements Serializable {
 	protected int rate = StatFunction.NUM_STAT_BUCKETS;
 	
 	public static final long LATENCY_MS_RATIO = 1000;
+	
+	public static final Integer ALL_TIME_KEY = new Integer(0);
 
 	public CommonStatsData() {
 		staticsMap = new HashMap<StaticsType, Map<Integer, Object>>();
@@ -198,6 +200,65 @@ public class CommonStatsData implements Serializable {
 			ret.put(windowStr, newStreamMap);
 		}
 		
+		return ret;
+	}
+	
+	/*
+	 * Get total statics of all-time
+	 */
+	public Long get_total_emitted() {
+		Long ret = new Long(0);
+		
+		Map<String, Long> allTimeEmitted = get_emitted().get(StatBuckets.ALL_WINDOW_STR);
+		for (Entry<String, Long> entry : allTimeEmitted.entrySet()) {
+			ret += entry.getValue();
+		}		
+		
+		return ret;
+	}
+	
+	public Double get_total_send_tps() {
+		Double ret = new Double(0);
+		
+		Map<String, Double> allTimeSendTps = get_send_tps().get(StatBuckets.ALL_WINDOW_STR);
+		for (Entry<String, Double> entry : allTimeSendTps.entrySet()) {
+			ret += entry.getValue();
+		}
+		
+		return ret;
+	}
+	
+	public Double get_total_recv_tps() {
+		Double ret = new Double(0);
+		
+		Map<GlobalStreamId, Double> allTimeRecvTps = get_recv_tps().get(StatBuckets.ALL_WINDOW_STR);
+		for (Entry<GlobalStreamId, Double> entry : allTimeRecvTps.entrySet()) {
+			ret += entry.getValue();
+		}
+		
+		return ret;
+	}
+	
+	public Long get_total_failed() {
+		Long ret = new Long(0);
+		
+		Map<GlobalStreamId, Long> allTimeFailed = get_failed().get(StatBuckets.ALL_WINDOW_STR);
+		for (Entry<GlobalStreamId, Long> entry : allTimeFailed.entrySet()) {
+			ret += entry.getValue();
+		}
+		
+		return ret;
+	}
+	
+	public Double get_avg_latency() {
+		Double ret = new Double(0);
+		int i = 0;
+		
+		Map<GlobalStreamId, Double> allAvglatency = get_process_latencie().get(StatBuckets.ALL_WINDOW_STR);
+		for (Entry<GlobalStreamId, Double> entry : allAvglatency.entrySet()) {
+			ret += entry.getValue();
+			i++;
+		}
 		return ret;
 	}
 

@@ -12,9 +12,11 @@ public class TaskInfo implements Serializable {
 
 	private static final long serialVersionUID = 5625165079055837777L;
 	private String componentId;
+	private String componentType;
 
-	public TaskInfo(String componentId) {
+	public TaskInfo(String componentId, String componentType) {
 		this.componentId = componentId;
+		this.componentType = componentType;
 	}
 
 	public String getComponentId() {
@@ -25,11 +27,19 @@ public class TaskInfo implements Serializable {
 		this.componentId = componentId;
 	}
 
+	public String getComponentType() {
+		return componentType;
+	}
+
+	public void setComponentType(String componentType) {
+		this.componentType = componentType;
+	}
+		
 	@Override
 	public boolean equals(Object assignment) {
 		if (assignment instanceof TaskInfo
-				&& ((TaskInfo) assignment).getComponentId().equals(
-						getComponentId())) {
+				&& ((TaskInfo) assignment).getComponentId().equals(getComponentId())
+				&& ((TaskInfo) assignment).getComponentType().equals(componentType)) {
 			return true;
 		}
 		return false;
@@ -37,7 +47,7 @@ public class TaskInfo implements Serializable {
 
 	@Override
 	public int hashCode() {
-		return this.getComponentId().hashCode();
+		return this.getComponentId().hashCode() + this.getComponentType().hashCode();
 	}
 
 	@Override

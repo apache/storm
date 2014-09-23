@@ -1,6 +1,7 @@
 package com.alibaba.jstorm.daemon.worker;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -35,6 +36,7 @@ import com.alibaba.jstorm.task.TaskShutdownDameon;
 import com.alibaba.jstorm.task.heartbeat.TaskHeartbeatRunable;
 import com.alibaba.jstorm.utils.JStormServerUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
+import com.alibaba.jstorm.utils.PathUtils;
 import com.lmax.disruptor.MultiThreadedClaimStrategy;
 import com.lmax.disruptor.WaitStrategy;
 
@@ -195,7 +197,7 @@ public class Worker {
 			threads.add(syncContainerHbThread);
 		}
 
-		MetricReporter metricReporter = new MetricReporter();
+		MetricReporter metricReporter = workerData.getMetricsReporter();
 		boolean isMetricsEnable = ConfigExtension
 				.isEnablePerformanceMetrics(workerData.getStormConf());
 		metricReporter.setEnable(isMetricsEnable);
@@ -252,25 +254,55 @@ public class Worker {
 
 		Worker w = new Worker(conf, context, topology_id, supervisor_id, port,
 				worker_id, jar_path);
+		
+		w.redirectOutput();
 
 		return w.execute();
 	}
 
-	public static void redirectOutput(String port) throws Exception {
+	public void redirectOutput(){
 
 		if (System.getenv("REDIRECT") == null
 				|| !System.getenv("REDIRECT").equals("true")) {
 			return;
 		}
-
-		String OUT_TARGET_FILE = JStormUtils.getLogFileName();
-		if (OUT_TARGET_FILE == null) {
-			OUT_TARGET_FILE = "/dev/null";
+		
+		String DEFAULT_OUT_TARGET_FILE = JStormUtils.getLogFileName();
+		if (DEFAULT_OUT_TARGET_FILE == null) {
+			DEFAULT_OUT_TARGET_FILE = "/dev/null";
 		} else {
-			OUT_TARGET_FILE += ".out";
+			DEFAULT_OUT_TARGET_FILE += ".out";
+		}
+		
+		String outputFile = ConfigExtension.getWorkerRedirectOutputFile(workerData.getStormConf());
+		if (outputFile == null) {
+			outputFile = DEFAULT_OUT_TARGET_FILE;
+		}else {
+			try {
+				File file = new File(outputFile);
+				if (file.exists() == false) {
+					PathUtils.touch(outputFile);
+				}else {
+					if (file.isDirectory() == true) {
+						LOG.warn("Failed to write " + outputFile);
+						outputFile = DEFAULT_OUT_TARGET_FILE;
+					}else if (file.canWrite() == false) {
+						LOG.warn("Failed to write " + outputFile);
+						outputFile = DEFAULT_OUT_TARGET_FILE;
+					}
+				}
+
+			}catch(Exception e) {
+				LOG.warn("Failed to touch " + outputFile, e);
+				outputFile = DEFAULT_OUT_TARGET_FILE;
+			}
 		}
 
-		JStormUtils.redirectOutput(OUT_TARGET_FILE);
+		try {
+			JStormUtils.redirectOutput(outputFile);
+		}catch(Exception e) {
+			LOG.warn("Failed to redirect to " + outputFile, e);
+		}
 
 	}
 
@@ -432,8 +464,7 @@ public class Worker {
 		sb.append("jar_path:" + jar_path + "\n");
 
 		try {
-			redirectOutput(port_str);
-
+			
 			WorkerShutdown sd = mk_worker(conf, null, topology_id,
 					supervisor_id, Integer.parseInt(port_str), worker_id,
 					jar_path);

@@ -20,11 +20,13 @@ public class TaskHeartbeat implements Serializable {
 	private Integer uptimeSecs;
 	private CommonStatsData stats; // BoltTaskStats or
 									// SpoutTaskStats
+	private String componentType;
 
-	public TaskHeartbeat(int timeSecs, int uptimeSecs, CommonStatsData stats) {
+	public TaskHeartbeat(int timeSecs, int uptimeSecs, CommonStatsData stats, String componentType) {
 		this.timeSecs = timeSecs;
 		this.uptimeSecs = uptimeSecs;
 		this.stats = stats;
+		this.componentType = componentType;
 	}
 
 	public int getTimeSecs() {
@@ -55,6 +57,14 @@ public class TaskHeartbeat implements Serializable {
 
 	public void setStats(CommonStatsData stats) {
 		this.stats = stats;
+	}
+	
+	public void setComponentType(String componentType) {
+		this.componentType = componentType;
+	}
+	
+	public String getComponentType() {
+		return componentType;
 	}
 
 	@Override

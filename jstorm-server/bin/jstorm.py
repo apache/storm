@@ -297,10 +297,36 @@ def unknown_command(*args):
     print "Unknown command: [jstorm %s]" % ' '.join(sys.argv[1:])
     print_usage()
 
+def metrics_Monitor(*args):
+    """Syntax: [jstorm metricsMonitor topologyname bool]
+    Enable or disable the metrics monitor of one topology.
+    """
+    childopts = (" -Dstorm.root.logger=INFO,stdout -Dlog4j.configuration=File:%s/conf/aloha_log4j.properties"  %JSTORM_DIR)
+    exec_storm_class(
+        "backtype.storm.command.metrics_monitor", 
+        args=args, 
+        jvmtype="-client -Xms256m -Xmx256m", 
+        extrajars=[CONF_DIR, JSTORM_DIR + "/bin", LOG4J_CONF],
+        childopts=childopts)
+
+def list(*args):
+    """Syntax: [jstorm list]
+
+    List cluster information
+    """
+    childopts = (" -Dstorm.root.logger=INFO,stdout -Dlog4j.configuration=File:%s/conf/aloha_log4j.properties"  %JSTORM_DIR)
+    exec_storm_class(
+        "backtype.storm.command.list", 
+        args=args, 
+        jvmtype="-client -Xms256m -Xmx256m", 
+        extrajars=[CONF_DIR, JSTORM_DIR + "/bin", LOG4J_CONF],
+        childopts=childopts)
+
 COMMANDS = {"jar": jar, "kill": kill, "nimbus": nimbus, "zktool": zktool,
             "drpc": drpc, "supervisor": supervisor, "localconfvalue": print_localconfvalue,
             "remoteconfvalue": print_remoteconfvalue, "classpath": print_classpath,
-            "activate": activate, "deactivate": deactivate, "rebalance": rebalance, "help": print_usage}
+            "activate": activate, "deactivate": deactivate, "rebalance": rebalance, "help": print_usage,
+	    "metricsMonitor": metrics_Monitor, "list": list}
 
 def parse_config(config_list):
     global CONFIG_OPTS

@@ -15,8 +15,9 @@ import backtype.storm.utils.WorkerClassLoader;
 import com.alibaba.jstorm.callback.AsyncLoopThread;
 import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.daemon.worker.TimeTick;
-import com.alibaba.jstorm.daemon.worker.metrics.JStormTimer;
-import com.alibaba.jstorm.daemon.worker.metrics.Metrics;
+import com.alibaba.jstorm.metric.MetricDef;
+import com.alibaba.jstorm.metric.JStormTimer;
+import com.alibaba.jstorm.metric.Metrics;
 import com.alibaba.jstorm.stats.CommonStatsRolling;
 import com.alibaba.jstorm.task.TaskStatus;
 import com.alibaba.jstorm.task.TaskTransfer;
@@ -71,10 +72,13 @@ public class SpoutExecutors extends BaseExecutors implements EventHandler {
 		this.max_spout_pending = JStormUtils.parseInt(storm_conf
 				.get(Config.TOPOLOGY_MAX_SPOUT_PENDING));
 
-		this.nextTupleTimer = Metrics.registerTimer(idStr + "-nextTuple-timer");
-		this.ackerTimer = Metrics.registerTimer(idStr + "-acker-timer");
+		this.nextTupleTimer = Metrics.registerTimer(idStr, MetricDef.EXECUTE_TIME, 
+				String.valueOf(taskId), Metrics.MetricType.TASK);
+		this.ackerTimer = Metrics.registerTimer(idStr, MetricDef.ACKER_TIME, 
+				String.valueOf(taskId), Metrics.MetricType.TASK);
 		this.emptyCpuCounter = new TimerRatio();
-		Metrics.register(idStr + "-empty-cputime-ratio", emptyCpuCounter);
+		Metrics.register(idStr, MetricDef.EMPTY_CPU_RATIO, emptyCpuCounter, 
+				String.valueOf(taskId), Metrics.MetricType.TASK);
 
 		TimeTick.registerTimer(idStr+ "-acker-tick", exeQueue);
 

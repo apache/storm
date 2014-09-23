@@ -43,9 +43,27 @@
 
 			<p:column>
 				<f:facet name="header">
+				<h:outputText value="Total Ports" />
+				</f:facet>
+				<h:outputText value="#{cls.totalPortSlotNum}" />
+			</p:column>
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Used Ports" />
+				</f:facet>
+				<h:outputText value="#{cls.usedPortSlotNum}" />
+			</p:column>
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Free Ports" />
+				</f:facet>
+				<h:outputText value="#{cls.freePortSlotNum}" />
+			</p:column>
+			<p:column>
+				<f:facet name="header">
 					<h:outputText value="version" />
 				</f:facet>
-				<h:outputText value="0.9.5.1" />
+				<h:outputText value="0.9.6" />
 			</p:column>
 
 			<p:column>
@@ -92,41 +110,6 @@
 				</h:outputLink>
 			</p:column>
 
-		</p:dataTable>
-	</h:form>
-
-	<h2>Resource Summary</h2>
-
-	<h:form>
-		<p:dataTable id="resourcesummary" var="rss" value="#{mainpage.csumm}">
-
-			<p:column>
-				<f:facet name="header">
-					<h:outputText value="Port Slot" />
-				</f:facet>
-				<h:form>
-					<p:dataTable id="portsummary" var="cls1" value="#{mainpage.csumm}">
-						<p:column>
-							<f:facet name="header">
-								<h:outputText value="Total" />
-							</f:facet>
-							<h:outputText value="#{cls1.totalPortSlotNum}" />
-						</p:column>
-						<p:column>
-							<f:facet name="header">
-								<h:outputText value="Used" />
-							</f:facet>
-							<h:outputText value="#{cls1.usedPortSlotNum}" />
-						</p:column>
-						<p:column>
-							<f:facet name="header">
-								<h:outputText value="Free" />
-							</f:facet>
-							<h:outputText value="#{cls1.freePortSlotNum}" />
-						</p:column>
-					</p:dataTable>
-				</h:form>
-			</p:column>
 		</p:dataTable>
 	</h:form>
 
@@ -181,6 +164,13 @@
 					<h:outputText value="Task Num" />
 				</f:facet>
 				<h:outputText value="#{topo.numTasks}" />
+			</p:column>
+
+                        <p:column>
+				<f:facet name="header">
+					<h:outputText value="Warning" />
+				</f:facet>
+				<h:outputText value="#{topo.errorInfo}" />
 			</p:column>
 
 		</p:dataTable>

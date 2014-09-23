@@ -69,18 +69,21 @@ public class CgroupManager {
 		return sb.toString();
 	}
 
-	public void shutDownWorker(String workerId) throws IOException {
+	public void shutDownWorker(String workerId, boolean isKilled) {
 		CgroupCommon workerGroup = new CgroupCommon(workerId, h,
 				this.rootCgroup);
 		try {
-			for (Integer pid : workerGroup.getTasks()) {
-				JStormUtils.kill(pid);
+			if (isKilled == false) {
+				for (Integer pid : workerGroup.getTasks()) {
+					JStormUtils.kill(pid);
+				}
+				JStormUtils.sleepMs(1500);
 			}
+			center.delete(workerGroup);
 		}catch(Exception e) {
 			LOG.info("No task of " + workerId);
 		}
-		JStormUtils.sleepMs(1500);
-		center.delete(workerGroup);
+		
 	}
 
 	public void close() throws IOException {

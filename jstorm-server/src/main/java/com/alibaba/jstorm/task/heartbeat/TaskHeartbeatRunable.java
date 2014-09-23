@@ -36,11 +36,15 @@ public class TaskHeartbeatRunable extends RunnableCallback {
 	
 	private AtomicBoolean active;
 	
-	private static Map<Integer, CommonStatsRolling> taskStatsMap = 
-			new HashMap<Integer, CommonStatsRolling>();
+	private static Map<Integer, TaskStats> taskStatsMap = 
+			new HashMap<Integer, TaskStats>();
 	
-	public static void registerTaskStats(int taskId, CommonStatsRolling taskStats) {
+	public static void registerTaskStats(int taskId, TaskStats taskStats) {
 		taskStatsMap.put(taskId, taskStats);
+	}
+	
+	public static void unregisterTaskStats(int taskId) {
+		taskStatsMap.remove(taskId);
 	}
 
 	public TaskHeartbeatRunable(WorkerData workerData) {
@@ -66,15 +70,15 @@ public class TaskHeartbeatRunable extends RunnableCallback {
 	public void run() {
 		Integer currtime = TimeUtils.current_time_secs();
 
-		for (Entry<Integer, CommonStatsRolling> entry : taskStatsMap.entrySet()) {
+		for (Entry<Integer, TaskStats> entry : taskStatsMap.entrySet()) {
 			Integer taskId = entry.getKey();
-			CommonStatsRolling taskStats = entry.getValue();
+			CommonStatsRolling taskStats = entry.getValue().getTaskStat();
 
 			String idStr = " " + topology_id + ":" + taskId + " ";
 
 			try {
 				TaskHeartbeat hb = new TaskHeartbeat(currtime, uptime.uptime(),
-						taskStats.render_stats());
+						taskStats.render_stats(), entry.getValue().getComponentType());
 				zkCluster.task_heartbeat(topology_id, taskId, hb);
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
@@ -85,7 +89,7 @@ public class TaskHeartbeatRunable extends RunnableCallback {
 			}
 		}
 
-		LOG.info("update all task hearbeat ts " + currtime);
+		LOG.info("update all task hearbeat ts " + currtime + "," + taskStatsMap.keySet());
 	}
 
 	@Override

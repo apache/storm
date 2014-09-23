@@ -17,6 +17,7 @@ import com.alibaba.jstorm.cluster.StormConfig;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.NetWorkUtils;
 import com.alibaba.jstorm.utils.TimeUtils;
+import com.alibaba.jstorm.utils.JStormServerUtils;
 
 /**
  * supervisor Heartbeat, just write SupervisorInfo to ZK
@@ -52,14 +53,7 @@ class Heartbeat extends RunnableCallback {
 	public Heartbeat(Map conf, StormClusterState stormClusterState,
 			String supervisorId, AtomicBoolean active) {
 
-		String myHostName = ConfigExtension.getSupervisorHost(conf);
-		if (myHostName == null) {
-			myHostName = NetWorkUtils.hostname();
-		}
-
-		if (ConfigExtension.isSupervisorUseIp(conf)) {
-			myHostName = NetWorkUtils.ip();
-		}
+		String myHostName = JStormServerUtils.getHostName(conf);
 
 		this.stormClusterState = stormClusterState;
 		this.supervisorId = supervisorId;

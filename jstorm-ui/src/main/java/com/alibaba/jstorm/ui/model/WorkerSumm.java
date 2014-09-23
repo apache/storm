@@ -1,6 +1,7 @@
 package com.alibaba.jstorm.ui.model;
 
 import java.io.Serializable;
+import java.util.List;
 
 import backtype.storm.generated.TaskSummary;
 import backtype.storm.generated.WorkerSummary;
@@ -21,6 +22,10 @@ public class WorkerSumm implements Serializable {
 	private String uptime;
 	private String tasks;
 	private String components;
+	private String cpuNum;
+	private String memNum;
+	private String disks;
+	private List<TaskSummary> taskSummList;
 
 	public WorkerSumm() {
 	}
@@ -34,7 +39,8 @@ public class WorkerSumm implements Serializable {
 		boolean isFirst = true;
 
 		int minUptime = 0;
-		for (TaskSummary taskSummary : workerSummary.get_tasks()) {
+		taskSummList = workerSummary.get_tasks();
+		for (TaskSummary taskSummary : taskSummList) {
 			if (isFirst == false) {
 				taskSB.append(',');
 				componentSB.append(',');
@@ -98,4 +104,11 @@ public class WorkerSumm implements Serializable {
 		this.components = components;
 	}
 
+	public List<TaskSummary> gettaskSummList() {
+		return taskSummList;
+	}
+	
+	public void settaskSummList(List<TaskSummary> taskSummList) {
+		this.taskSummList = taskSummList;
+	}
 }

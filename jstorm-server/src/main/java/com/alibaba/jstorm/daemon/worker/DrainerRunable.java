@@ -12,6 +12,9 @@ import backtype.storm.scheduler.WorkerSlot;
 import backtype.storm.utils.DisruptorQueue;
 
 import com.alibaba.jstorm.callback.RunnableCallback;
+import com.alibaba.jstorm.metric.MetricDef;
+import com.alibaba.jstorm.metric.JStormTimer;
+import com.alibaba.jstorm.metric.Metrics;
 import com.alibaba.jstorm.utils.DisruptorRunable;
 import com.alibaba.jstorm.utils.Pair;
 import com.alibaba.jstorm.utils.RunCounter;
@@ -29,11 +32,14 @@ import com.lmax.disruptor.EventHandler;
 public class DrainerRunable extends DisruptorRunable{
 	private final static Logger LOG = Logger.getLogger(DrainerRunable.class);
 
-
+	private static JStormTimer timer = Metrics.registerTimer(null, 
+			MetricDef.DRAINER_TIME, null, Metrics.MetricType.WORKER);
 
 	public DrainerRunable(WorkerData workerData) {
-		super(workerData.getSendingQueue(), 
+		super(workerData.getSendingQueue(), timer, 
 				DrainerRunable.class.getSimpleName(), workerData.getActive());
+		
+		Metrics.registerQueue(null, MetricDef.DRAINER_QUEUE, queue, null, Metrics.MetricType.WORKER);
 	}
 
 	@Override

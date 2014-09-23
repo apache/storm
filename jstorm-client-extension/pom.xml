@@ -4,18 +4,18 @@
 	<parent>
 		<groupId>com.alibaba.jstorm</groupId>
 		<artifactId>jstorm-all</artifactId>
-		<version>0.9.5.1</version>
+		<version>0.9.6</version>
 		<relativePath>..</relativePath>
-	</parent>  
+	</parent>
  	<!--<parent>
  		<groupId>com.taobao</groupId> 
  		<artifactId>parent</artifactId> 
  		<version>1.0.2</version> 
- 	</parent>-->
+ 	</parent>  -->
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.alibaba.jstorm</groupId>
 	<artifactId>jstorm-client-extension</artifactId>
-	<version>0.9.5.1</version>
+	<version>0.9.6</version>
 	<packaging>jar</packaging>
 	<name>${project.artifactId}-${project.version}</name>
 
@@ -88,6 +88,16 @@
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-log4j12</artifactId>
 			<version>1.7.5</version>
+		</dependency>		
+		<dependency>
+			<groupId>com.codahale.metrics</groupId>
+			<artifactId>metrics-core</artifactId>
+			<version>3.0.1</version>
+		</dependency>		
+		<dependency>
+			<groupId>com.codahale.metrics</groupId>
+			<artifactId>metrics-jvm</artifactId>
+			<version>3.0.1</version>
 		</dependency>
 	</dependencies>
 </project>

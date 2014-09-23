@@ -75,6 +75,7 @@ public class NettyContext implements IContext {
 
 			retConnection = new NettyServer(storm_conf, port, isSyncMode);
 		} catch (Throwable e) {
+			LOG.error("Failed to instance NettyServer", e.getCause());
 			JStormUtils.halt_process(-1, "Failed to bind " + port);
 		}
 

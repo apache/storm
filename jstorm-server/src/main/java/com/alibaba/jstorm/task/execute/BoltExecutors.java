@@ -15,8 +15,9 @@ import backtype.storm.utils.DisruptorQueue;
 import backtype.storm.utils.WorkerClassLoader;
 
 import com.alibaba.jstorm.daemon.worker.TimeTick;
-import com.alibaba.jstorm.daemon.worker.metrics.JStormTimer;
-import com.alibaba.jstorm.daemon.worker.metrics.Metrics;
+import com.alibaba.jstorm.metric.MetricDef;
+import com.alibaba.jstorm.metric.JStormTimer;
+import com.alibaba.jstorm.metric.Metrics;
 import com.alibaba.jstorm.stats.CommonStatsRolling;
 import com.alibaba.jstorm.task.TaskStatus;
 import com.alibaba.jstorm.task.TaskTransfer;
@@ -87,7 +88,8 @@ public class BoltExecutors extends BaseExecutors implements EventHandler {
 
 		outputCollector = new OutputCollector(output_collector);
 
-		boltExeTimer = Metrics.registerTimer(idStr + "-exe-timer");
+		boltExeTimer = Metrics.registerTimer(idStr, MetricDef.EXECUTE_TIME, 
+				String.valueOf(taskId), Metrics.MetricType.TASK);
 		TimeTick.registerTimer(idStr + "-sampling-tick", exeQueue);
 
 		try {

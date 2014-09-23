@@ -5,22 +5,34 @@
 	<parent>
 		<groupId>com.alibaba.jstorm</groupId>
 		<artifactId>jstorm-all</artifactId>
-		<version>0.9.5.1</version>
+		<version>0.9.6</version>
 		<relativePath>..</relativePath>
-	</parent> 
+	</parent>
  	<!-- <parent>
  		<groupId>com.taobao</groupId> 
  		<artifactId>parent</artifactId> 
  		<version>1.0.2</version> 
- 	</parent>--> 
+ 	</parent> --> 
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.alibaba.jstorm</groupId>
 	<artifactId>jstorm-server</artifactId>
-	<version>0.9.5.1</version>
+	<version>0.9.6</version>
 	<packaging>jar</packaging>
 	<name>${project.artifactId}-${project.version}</name>
 	<description>jstorm server modules</description>
 
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<forkMode>pertest</forkMode>
+					<argLine>-Xms1024m -Xmx2048m</argLine>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 
 	<dependencies>
 		<dependency>
@@ -43,17 +55,6 @@
 			<scope>test</scope>
 		</dependency>
 
-		<dependency>
-			<groupId>com.codahale.metrics</groupId>
-			<artifactId>metrics-core</artifactId>
-			<version>3.0.1</version>
-		</dependency>
-		
-		<dependency>
-			<groupId>com.codahale.metrics</groupId>
-			<artifactId>metrics-jvm</artifactId>
-			<version>3.0.1</version>
-		</dependency>
 
 		<!-- <dependency> <groupId>com.alibaba.alimonitor</groupId> <artifactId>alimonitor-jmonitor</artifactId> 
 			<version>0.5.3</version> </dependency> -->

@@ -1,5 +1,12 @@
 package com.alibaba.jstorm.message.netty;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.net.SocketAddress;
+import java.net.InetSocketAddress;
+
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
@@ -9,15 +16,19 @@ import org.slf4j.LoggerFactory;
 
 import backtype.storm.messaging.TaskMessage;
 
-import com.alibaba.jstorm.daemon.worker.metrics.JStormTimer;
-import com.alibaba.jstorm.daemon.worker.metrics.Metrics;
+import com.alibaba.jstorm.metric.MetricDef;
+import com.alibaba.jstorm.metric.JStormHistogram;
+import com.alibaba.jstorm.metric.JStormTimer;
+import com.alibaba.jstorm.metric.Metrics;
 
 public class MessageDecoder extends FrameDecoder {
 	private static final Logger LOG = LoggerFactory
 			.getLogger(MessageDecoder.class);
 
 
-	private static JStormTimer timer = Metrics.registerTimer("netty-server-decode-timer");
+	private static JStormTimer timer = Metrics.registerTimer(null, MetricDef.NETTY_SERV_DECODE_TIME, 
+			null, Metrics.MetricType.WORKER);
+	private static Map<String, JStormHistogram> networkTransmitTimeMap = new HashMap<String, JStormHistogram>();
 
 	/*
 	 * Each ControlMessage is encoded as: code (<0) ... short(2) Each
@@ -25,10 +36,12 @@ public class MessageDecoder extends FrameDecoder {
 	 * ... byte[] *
 	 */
 	protected Object decode(ChannelHandlerContext ctx, Channel channel,
-			ChannelBuffer buf) throws Exception {
+			ChannelBuffer buf) throws Exception {		
 		// Make sure that we have received at least a short
 		long available = buf.readableBytes();
-		if (available < 2) {
+		// Length of control message is 10. 
+		// Minimum length of a task message is 6(short taskId, int length).
+		if (available < 6) {
 			// need more data
 			return null;
 		}
@@ -42,26 +55,50 @@ public class MessageDecoder extends FrameDecoder {
 			// there's not enough bytes in the buffer.
 			buf.markReaderIndex();
 
-			// read the short field
-			short code = buf.readShort();
+				// read the short field
+				short code = buf.readShort();
+				available -= 2;
 
-			// case 1: Control message
-			ControlMessage ctrl_msg = ControlMessage.mkMessage(code);
-			if (ctrl_msg != null) {
-				return ctrl_msg;
-			}
+				// case 1: Control message
+				ControlMessage ctrl_msg = ControlMessage.mkMessage(code);
+				if (ctrl_msg != null) {
+					if (available < 8) {
+						// The time stamp bytes were not received yet - return null.
+						buf.resetReaderIndex();
+						return null;
+					}					
+                    long timeStamp = buf.readLong();
+                    available -= 8;
+					if (ctrl_msg == ControlMessage.EOB_MESSAGE) {
+						InetSocketAddress sockAddr = (InetSocketAddress)(channel.getRemoteAddress());
+					    String remoteAddr = sockAddr.getHostName() + ":" + sockAddr.getPort();
+						
+					    long interval = System.currentTimeMillis() - timeStamp;
+					    if (interval < 0) interval = 0;
 
-			// case 2: task Message
-			short task = code;
+					    JStormHistogram netTransTime = networkTransmitTimeMap.get(remoteAddr);
+					    if (netTransTime == null) {
+					    	netTransTime = Metrics.registerHistograms(remoteAddr, MetricDef.NETWORK_MSG_TRANS_TIME, 
+					    			null, Metrics.MetricType.WORKER);
+					    	networkTransmitTimeMap.put(remoteAddr, netTransTime);
+					    }
+					    
+					    netTransTime.update(interval);
+					} 
+					
+					return ctrl_msg;
+				}
 
-			// Make sure that we have received at least an integer (length)
-			available -= 2;
-			if (available < 4) {
-				// need more data
-				buf.resetReaderIndex();
+				// case 2: task Message
+				short task = code;
 
-				return null;
-			}
+				// Make sure that we have received at least an integer (length)
+				if (available < 4) {
+					// need more data
+					buf.resetReaderIndex();
+
+				    return null;
+				}
 
 			// Read the length field.
 			int length = buf.readInt();

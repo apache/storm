@@ -14,8 +14,9 @@ import backtype.storm.tuple.MessageId;
 import backtype.storm.tuple.TupleImplExt;
 import backtype.storm.utils.DisruptorQueue;
 
-import com.alibaba.jstorm.daemon.worker.metrics.JStormTimer;
-import com.alibaba.jstorm.daemon.worker.metrics.Metrics;
+import com.alibaba.jstorm.metric.MetricDef;
+import com.alibaba.jstorm.metric.JStormTimer;
+import com.alibaba.jstorm.metric.Metrics;
 import com.alibaba.jstorm.stats.CommonStatsRolling;
 import com.alibaba.jstorm.task.TaskTransfer;
 import com.alibaba.jstorm.task.acker.Acker;
@@ -84,8 +85,8 @@ public class SpoutCollector implements ISpoutOutputCollector {
 		random.setSeed(System.currentTimeMillis());
 
 		String componentId = topology_context.getThisComponentId();
-		emitTotalTimer = Metrics.registerTimer(JStormServerUtils.getName(
-				componentId, task_id) + "-emit-timer");
+		emitTotalTimer = Metrics.registerTimer(JStormServerUtils.getName(componentId, task_id), 
+				MetricDef.EMIT_TIME, String.valueOf(task_id), Metrics.MetricType.TASK);
 	}
 
 	@Override

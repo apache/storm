@@ -21,9 +21,11 @@ import org.apache.thrift7.TException;
 import backtype.storm.generated.GlobalStreamId;
 import backtype.storm.generated.NotAliveException;
 import backtype.storm.generated.StormTopology;
+import backtype.storm.generated.TaskMetricData;
 import backtype.storm.generated.TaskStats;
 import backtype.storm.generated.TaskSummary;
 import backtype.storm.generated.TopologyInfo;
+import backtype.storm.generated.TopologyMetricInfo;
 import backtype.storm.utils.NimbusClient;
 
 import com.alibaba.jstorm.common.stats.StatBuckets;
@@ -34,6 +36,7 @@ import com.alibaba.jstorm.ui.model.ComponentOutput;
 import com.alibaba.jstorm.ui.model.ComponentSummary;
 import com.alibaba.jstorm.ui.model.ComponentTask;
 import com.alibaba.jstorm.ui.model.WinComponentStats;
+import com.alibaba.jstorm.ui.model.TaskMetrics;
 import com.alibaba.jstorm.utils.JStormUtils;
 
 /**
@@ -51,11 +54,13 @@ public class BoltPage implements Serializable {
 	private String topologyid = null;
 	private String window = null;
 	private String componentid = null;
+	private String topologyName = null;
 	private List<ComponentSummary> coms = null;
 	private List<WinComponentStats> comstats = null;
 	private List<ComponentOutput> coos = null;
 	private List<ComponentInput> cois = null;
 	private List<ComponentTask> cts = null;
+	private List<TaskMetrics> taskmetrics = null;
 
 	public BoltPage() throws TException, NotAliveException {
 		FacesContext ctx = FacesContext.getCurrentInstance();
@@ -235,6 +240,19 @@ public class BoltPage implements Serializable {
 		return;
 
 	}
+	public List<TaskMetrics> getTaskMetricsList(List<TaskMetricData> totalTskMetrList) {
+		if (totalTskMetrList == null) return null;
+    	List<TaskMetrics> ret = new ArrayList<TaskMetrics>();
+    	LOG.debug("get task metrics list: component ID: " + this.componentid);
+	    for (TaskMetricData taskMetricData : totalTskMetrList) {
+	    	if ((taskMetricData.get_component_id()).equals(this.componentid)) {
+	    		TaskMetrics taskMetircs = new TaskMetrics();
+	    		taskMetircs.updateTaskMetricData(taskMetricData);
+	    		ret.add(taskMetircs);
+	    	}
+	    }
+	    return ret;
+	}
 
 	@SuppressWarnings("rawtypes")
 	private void init() throws TException, NotAliveException {
@@ -247,11 +265,14 @@ public class BoltPage implements Serializable {
 
 			TopologyInfo summ = client.getClient().getTopologyInfo(topologyid);
 			StormTopology topology = client.getClient().getTopology(topologyid);
+			TopologyMetricInfo topologyMetricInfo = client.getClient().getTopologyMetric(topologyid);
 
 			String type = UIUtils.componentType(topology, componentid);
 
 			List<TaskSummary> ts = UIUtils.getTaskList(summ.get_tasks(),
 					componentid);
+			
+			topologyName = summ.get_name();
 
 			coms = getComponentSummaries(summ, ts);
 
@@ -260,6 +281,8 @@ public class BoltPage implements Serializable {
 			comstats = getWinComponentStats(ts, window);
 
 			getInputOutputSummary(ts, window);
+			List<TaskMetricData> totoaltaskmetrics = topologyMetricInfo.get_task_metric_list();
+			taskmetrics = getTaskMetricsList(totoaltaskmetrics);
 
 		} catch (TException e) {
 			LOG.error(e.getCause(), e);
@@ -313,6 +336,22 @@ public class BoltPage implements Serializable {
 
 	public void setComs(List<ComponentSummary> coms) {
 		this.coms = coms;
+	}
+	
+	public List<TaskMetrics> gettaskmetrics() {
+		return this.taskmetrics;
+	}
+	
+	public void settaskmetrics(List<TaskMetrics> taskmetrs) {
+		this.taskmetrics = taskmetrs;
+	}
+
+	public String getTopologyName() {
+		return topologyName;
+	}
+
+	public void setTopologyName(String topologyName) {
+		this.topologyName = topologyName;
 	}
 
 	public static void main(String[] args) {

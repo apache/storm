@@ -21,7 +21,7 @@ public class EventManagerImpExecute implements Runnable {
 			while (manager.isRunning()) {
 				RunnableCallback r = null;
 				try {
-					r = manager.poll();
+					r = manager.take();
 				} catch (InterruptedException e) {
 					// LOG.info("Failed to get ArgsRunable from EventManager queue");
 				}

@@ -12,6 +12,7 @@ import backtype.storm.utils.WorkerClassLoader;
 
 import com.alibaba.jstorm.callback.AsyncLoopThread;
 import com.alibaba.jstorm.cluster.StormClusterState;
+import com.alibaba.jstorm.task.heartbeat.TaskHeartbeatRunable;
 import com.alibaba.jstorm.utils.JStormUtils;
 
 /**
@@ -31,6 +32,7 @@ public class TaskShutdownDameon implements ShutdownableDameon {
 	private List<AsyncLoopThread> all_threads;
 	private StormClusterState zkCluster;
 	private Object task_obj;
+	private boolean isClosed = false;
 
 	public TaskShutdownDameon(TaskStatus taskStatus, String topology_id,
 			Integer task_id, List<AsyncLoopThread> all_threads,
@@ -46,14 +48,19 @@ public class TaskShutdownDameon implements ShutdownableDameon {
 
 	@Override
 	public void shutdown() {
+		synchronized (this) {
+			if (isClosed == true) {
+				return ;
+			}
+			isClosed = true;
+		}
+		
 		LOG.info("Begin to shut down task " + topology_id + ":" + task_id);
 
 		// all thread will check the taskStatus
 		// once it has been set SHUTDOWN, it will quit
 		taskStatus.setStatus(TaskStatus.SHUTDOWN);
 		
-		closeComponent(task_obj);
-
 		// waiting 100ms for executor thread shutting it's own
 		try {
 			Thread.sleep(100);
@@ -65,15 +72,18 @@ public class TaskShutdownDameon implements ShutdownableDameon {
 			thr.cleanup();
 			JStormUtils.sleepMs(10);
 			thr.interrupt();
-			try {
-				//thr.join();
-				thr.getThread().stop();
-			} catch (Exception e) {
-			}
+//			try {
+//				//thr.join();
+//				thr.getThread().stop(new RuntimeException());
+//			} catch (Throwable e) {
+//			}
 			LOG.info("Successfully shutdown " + thr.getThread().getName());
 		}
+		
+		closeComponent(task_obj);
 
 		try {
+			TaskHeartbeatRunable.unregisterTaskStats(task_id);
 			zkCluster.remove_task_heartbeat(topology_id, task_id);
 			zkCluster.disconnect();
 		} catch (Exception e) {

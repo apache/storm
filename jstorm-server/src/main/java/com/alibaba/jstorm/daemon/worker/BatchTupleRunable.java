@@ -16,6 +16,9 @@ import backtype.storm.scheduler.WorkerSlot;
 import backtype.storm.utils.DisruptorQueue;
 
 import com.alibaba.jstorm.callback.RunnableCallback;
+import com.alibaba.jstorm.metric.MetricDef;
+import com.alibaba.jstorm.metric.JStormTimer;
+import com.alibaba.jstorm.metric.Metrics;
 import com.alibaba.jstorm.utils.DisruptorRunable;
 import com.alibaba.jstorm.utils.Pair;
 import com.lmax.disruptor.EventHandler;
@@ -41,17 +44,22 @@ public class BatchTupleRunable extends DisruptorRunable {
 	private DisruptorQueue sendingQueue;
 	
 	private final boolean isDirectSend = true;
+	
+	private static JStormTimer timer = Metrics.registerTimer(null, 
+			MetricDef.BATCH_TUPLE_TIME, null, Metrics.MetricType.WORKER);
+	private DisruptorQueue queue;
 
 	public BatchTupleRunable(WorkerData workerData) {
-		super(workerData.getTransferQueue(), 
-				BatchTupleRunable.class.getSimpleName(), workerData.getActive());
-		
+		super(workerData.getTransferQueue(), timer, BatchTupleRunable.class.getSimpleName(), workerData.getActive());
 		this.sendingQueue = workerData.getSendingQueue();
 		this.nodeportSocket = workerData.getNodeportSocket();
 		this.taskNodeport = workerData.getTaskNodeport();
 		this.dispatchMap = new HashMap<IConnection, List<TaskMessage>>();
 		
-		workerData.getTransferQueue().consumerStarted();
+		this.queue = workerData.getTransferQueue();
+		Metrics.registerQueue(null, MetricDef.BATCH_TUPLE_QUEUE, this.queue, null, Metrics.MetricType.WORKER);
+		
+		this.queue.consumerStarted();
 	}
 	
 	public void handleOneEvent(TaskMessage felem) {

@@ -80,11 +80,14 @@ public class LocalClusterMap {
 	}
 
 	public void clean() {
-		if (nimbusServer != null)
-			nimbusServer.cleanup();
+		
 		if (supervisor != null) {
 			supervisor.ShutdownAllWorkers();
 			supervisor.shutdown();
+		}
+		
+		if (nimbusServer != null) {
+			nimbusServer.cleanup();
 		}
 
 		if (zookeeper != null)
