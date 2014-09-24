@@ -19,12 +19,6 @@
 package backtype.storm.security.auth.hadoop;
 
 import backtype.storm.Config;
-import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.apache.hadoop.hbase.client.HTable;
-import org.apache.hadoop.security.Credentials;
-import org.apache.hadoop.security.UserGroupInformation;
-import org.apache.hadoop.security.token.Token;
-import org.apache.hadoop.security.token.TokenIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +28,6 @@ import java.io.DataOutput;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.Method;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -140,11 +133,6 @@ public class AutoHBase extends AbstractAutoHadoopPlugin {
         populateCredentials(credentials, topologyConf);
     }
 
-    @Override
-    public void renew(Map<String, String> credentials, Map topologyConf) {
-        //HBASE tokens are not renewable so we always have to get new ones.
-        populateCredentials(credentials, topologyConf);
-    }
 
     @Override
     protected String getCredentialKey() {
