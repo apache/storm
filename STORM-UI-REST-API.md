@@ -1,6 +1,7 @@
 # Storm UI REST API
 Storm UI server provides a REST Api to access cluster, topology, component overview and metrics. 
 This api returns json response.  
+REST API supports JSONP. User can pass callback query param to wrap json in the callback function.
 Please ignore undocumented elements in the json repsonse.
 
 ## Using the UI REST Api
@@ -129,7 +130,7 @@ Request Parameters:
 |Parameter |Value   |Description  |
 |----------|--------|-------------|
 |id   	   |String (required)| Topology Id  |
-|window    |String. Default value :all-time| Window duration for metrics in ms|
+|window    |String. Default value :all-time| Window duration for metrics in seconds|
 |sys       |String. Values 1 or 0. Default value 0| Controls including sys stats part of the response|
 
 
@@ -179,7 +180,7 @@ Response Fields:
 |bolts.errorLapsedSecs| Integer |Number of seconds elapsed since that last error happened in a bolt|
 |bolts.errorWorkerLogLink| String | Link to the worker log that reported the exception |
 |bolts.emitted| Long |Number of tuples emitted|
-
+|antiForgeryToken| String | CSRF token|
 
 
 Examples:  
@@ -324,6 +325,7 @@ Sample Response:
         "supervisor.enable": true,
         "storm.messaging.netty.server_worker_threads": 1
     },
+    "antiForgeryToken": "lAFTN\/5iSedRLwJeUNqkJ8hgYubRl2OxjXGoDf9A4Bt1nZY3rvJW0\/P4zqu9yAk\/LvDhlmn7gigw\/z8C"
 }
 ```
   
@@ -336,7 +338,7 @@ Returns detailed metrics and executor information
 |----------|--------|-------------|
 |id   	   |String (required)| Topology Id  |
 |component |String (required)| Component Id |
-|window    |String. Default value :all-time| window duration for metrics in ms|
+|window    |String. Default value :all-time| window duration for metrics in seconds|
 |sys       |String. Values 1 or 0. Default value 0| controls including sys stats part of the response|
 
 Response Fields:
@@ -518,6 +520,20 @@ Sample Response:
     ]
 }
 ```
+## Cross site request forgery(CSRF) prevention in post requests
+In order to prevent CSRF vulnerability, storm rest API uses a CSRF token. This is primarily done for the ui however we 
+do not have alternative apis/paths for ui and non ui clients. 
+
+The token is generated during the /api/v1/topology/:id (GET) request.The json response for this GET request contains 
+a field called "antiForgeryToken". All the post requests below must include a header "x-csrf-token" with the value of 
+"antiForgeryToken" from the GET response. In absence of this header with the right token value you will get following 
+error response:
+````
+{{
+    "error" : "Forbidden action."
+    "errorMessage" : "missing CSRF token."
+}}
+````
 
 ### /api/v1/topology/:id/activate (POST)
 activates a  topology 

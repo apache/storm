@@ -71,7 +71,8 @@ function ensureInt(n) {
 function confirmAction(id, name, action, wait, defaultWait) {
     var opts = {
         type:'POST',
-        url:'/api/v1/topology/' + id + '/' + action
+        url:'/api/v1/topology/' + id + '/' + action,
+        headers: { 'x-csrf-token': $.trim($('#anti-forgery-token').text()) }
     };
     if (wait) {
         var waitSecs = prompt('Do you really want to ' + action + ' topology "' + name + '"? ' +
@@ -140,9 +141,8 @@ function renderToggleSys(div) {
     }
 }
 
-function topologyActionJson(id,name,status,msgTimeout, uiActionsEnabled) {
+function topologyActionJson(id,name,status,msgTimeout) {
     var jsonData = {};
-    jsonData["uiActionsEnabled"] = uiActionsEnabled;
     jsonData["id"] = id;
     jsonData["name"] = name;
     jsonData["msgTimeout"] = msgTimeout;
@@ -162,3 +162,14 @@ function topologyActionButton(id,name,status,actionLabel,command,wait,defaultWai
     buttonData["defaultWait"] = defaultWait;
     return buttonData;
 }
+
+$.blockUI.defaults.css = {
+    border: 'none',
+    padding: '15px',
+    backgroundColor: '#000',
+    '-webkit-border-radius': '10px',
+    '-moz-border-radius': '10px',
+    'border-radius': '10px',
+    opacity: .5,
+    color: '#fff',margin:0,width:"30%",top:"40%",left:"35%",textAlign:"center"
+};

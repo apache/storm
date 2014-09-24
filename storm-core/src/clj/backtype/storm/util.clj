@@ -319,7 +319,7 @@
 
 (defn exit-process!
   [val & msg]
-  (log-message "Halting process: " msg)
+  (log-error (RuntimeException. (str msg)) "Halting process: " msg)
   (.exit (Runtime/getRuntime) val))
 
 (defn sum

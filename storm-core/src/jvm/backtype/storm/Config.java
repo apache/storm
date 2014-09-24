@@ -58,39 +58,39 @@ public class Config extends HashMap<String, Object> {
     /**
      * Netty based messaging: The buffer size for send/recv buffer
      */
-    public static final String STORM_MESSAGING_NETTY_BUFFER_SIZE = "storm.messaging.netty.buffer_size"; 
+    public static final String STORM_MESSAGING_NETTY_BUFFER_SIZE = "storm.messaging.netty.buffer_size";
     public static final Object STORM_MESSAGING_NETTY_BUFFER_SIZE_SCHEMA = ConfigValidation.IntegerValidator;
 
     /**
      * Netty based messaging: The max # of retries that a peer will perform when a remote is not accessible
      */
-    public static final String STORM_MESSAGING_NETTY_MAX_RETRIES = "storm.messaging.netty.max_retries"; 
+    public static final String STORM_MESSAGING_NETTY_MAX_RETRIES = "storm.messaging.netty.max_retries";
     public static final Object STORM_MESSAGING_NETTY_MAX_RETRIES_SCHEMA = ConfigValidation.IntegerValidator;
 
     /**
      * Netty based messaging: The min # of milliseconds that a peer will wait.
      */
-    public static final String STORM_MESSAGING_NETTY_MIN_SLEEP_MS = "storm.messaging.netty.min_wait_ms"; 
+    public static final String STORM_MESSAGING_NETTY_MIN_SLEEP_MS = "storm.messaging.netty.min_wait_ms";
     public static final Object STORM_MESSAGING_NETTY_MIN_SLEEP_MS_SCHEMA = ConfigValidation.IntegerValidator;
 
     /**
      * Netty based messaging: The max # of milliseconds that a peer will wait.
      */
-    public static final String STORM_MESSAGING_NETTY_MAX_SLEEP_MS = "storm.messaging.netty.max_wait_ms"; 
+    public static final String STORM_MESSAGING_NETTY_MAX_SLEEP_MS = "storm.messaging.netty.max_wait_ms";
     public static final Object STORM_MESSAGING_NETTY_MAX_SLEEP_MS_SCHEMA = ConfigValidation.IntegerValidator;
 
     /**
      * Netty based messaging: The # of worker threads for the server.
      */
-    public static final String STORM_MESSAGING_NETTY_SERVER_WORKER_THREADS = "storm.messaging.netty.server_worker_threads"; 
+    public static final String STORM_MESSAGING_NETTY_SERVER_WORKER_THREADS = "storm.messaging.netty.server_worker_threads";
     public static final Object STORM_MESSAGING_NETTY_SERVER_WORKER_THREADS_SCHEMA = ConfigValidation.IntegerValidator;
 
     /**
      * Netty based messaging: The # of worker threads for the client.
      */
-    public static final String STORM_MESSAGING_NETTY_CLIENT_WORKER_THREADS = "storm.messaging.netty.client_worker_threads"; 
+    public static final String STORM_MESSAGING_NETTY_CLIENT_WORKER_THREADS = "storm.messaging.netty.client_worker_threads";
     public static final Object STORM_MESSAGING_NETTY_CLIENT_WORKER_THREADS_SCHEMA = ConfigValidation.IntegerValidator;
-    
+
     /**
      * If the Netty messaging layer is busy, the Netty client will try to batch message as more as possible up to the size of STORM_NETTY_MESSAGE_BATCH_SIZE bytes
      */
@@ -106,8 +106,15 @@ public class Config extends HashMap<String, Object> {
     /**
      * Netty based messaging: Is authentication required for Netty messaging from client worker process to server worker process.
      */
-    public static final String STORM_MESSAGING_NETTY_AUTHENTICATION = "storm.messaging.netty.authentication"; 
+    public static final String STORM_MESSAGING_NETTY_AUTHENTICATION = "storm.messaging.netty.authentication";
     public static final Object STORM_MESSAGING_NETTY_AUTHENTICATION_SCHEMA = Boolean.class;
+
+    /**
+     * The delegate for serializing metadata, should be used for serialized objects stored in zookeeper and on disk.
+     * This is NOT used for compressing serialized tuples sent between topologies.
+     */
+    public static final String STORM_META_SERIALIZATION_DELEGATE = "storm.meta.serialization.delegate";
+    public static final Object STORM_META_SERIALIZATION_DELEGATE_SCHEMA = String.class;
     
     /**
      * A list of hosts of ZooKeeper servers used to manage the cluster.
@@ -520,15 +527,6 @@ public class Config extends HashMap<String, Object> {
     public static final Object UI_USERS_SCHEMA = ConfigValidation.StringsValidator;
 
     /**
-     * Whether or not actions should be enabled.  When disabled, requests to
-     * modify the state of topologies via HTTP will not be honored.
-     *
-     * Defaults to true.
-     */
-    public static final String UI_ACTIONS_ENABLED = "ui.actions.enabled";
-    public static final Object UI_ACTIONS_ENABLED_SCHEMA = Boolean.class;
-
-    /**
      * List of DRPC servers so that the DRPCSpout knows who to talk to.
      */
     public static final String DRPC_SERVERS = "drpc.servers";
@@ -768,9 +766,12 @@ public class Config extends HashMap<String, Object> {
     public static final Object SUPERVISOR_WORKER_LAUNCHER_SCHEMA = String.class;
 
     /**
-     * The jvm opts provided to workers launched by this supervisor. All "%ID%" substrings are replaced
-     * with an identifier for this worker. Also, "%WORKER-ID%", "%STORM-ID%" and "%WORKER-PORT%" are
-     * replaced with appropriate runtime values for this worker.
+     * The jvm opts provided to workers launched by this supervisor. All "%ID%", "%WORKER-ID%", "%TOPOLOGY-ID%"
+     * and "%WORKER-PORT%" substrings are replaced with:
+     * %ID%          -> port (for backward compatibility),
+     * %WORKER-ID%   -> worker-id, 
+     * %TOPOLOGY-ID%    -> topology-id,
+     * %WORKER-PORT% -> port.
      */
     public static final String WORKER_CHILDOPTS = "worker.childopts";
     public static final Object WORKER_CHILDOPTS_SCHEMA = ConfigValidation.StringOrStringListValidator;
@@ -788,7 +789,7 @@ public class Config extends HashMap<String, Object> {
      */
     public static final String WORKER_RECEIVER_THREAD_COUNT = "topology.worker.receiver.thread.count";
     public static final Object WORKER_RECEIVER_THREAD_COUNT_SCHEMA = ConfigValidation.IntegerValidator;
-    
+
     /**
      * How often this worker should heartbeat to the supervisor.
      */
@@ -953,7 +954,7 @@ public class Config extends HashMap<String, Object> {
      * Note that this config parameter has no effect for unreliable spouts that don't tag
      * their tuples with a message id.
      */
-    public static final String TOPOLOGY_MAX_SPOUT_PENDING="topology.max.spout.pending"; 
+    public static final String TOPOLOGY_MAX_SPOUT_PENDING="topology.max.spout.pending";
     public static final Object TOPOLOGY_MAX_SPOUT_PENDING_SCHEMA = ConfigValidation.IntegerValidator;
 
     /**
@@ -1016,7 +1017,7 @@ public class Config extends HashMap<String, Object> {
     public static final Object TOPOLOGY_CLASSPATH_SCHEMA = ConfigValidation.StringOrStringListValidator;
 
     /**
-     * Topology-specific environment variables for the worker child process. 
+     * Topology-specific environment variables for the worker child process.
      * This is added to the existing environment (that of the supervisor)
      */
      public static final String TOPOLOGY_ENVIRONMENT="topology.environment";
@@ -1303,25 +1304,37 @@ public class Config extends HashMap<String, Object> {
     public void registerSerialization(Class klass, Class<? extends Serializer> serializerClass) {
         registerSerialization(this, klass, serializerClass);
     }
-
-    public void registerMetricsConsumer(Class klass, Object argument, long parallelismHint) {
+    
+    public static void registerMetricsConsumer(Map conf, Class klass, Object argument, long parallelismHint) {
         HashMap m = new HashMap();
         m.put("class", klass.getCanonicalName());
         m.put("parallelism.hint", parallelismHint);
         m.put("argument", argument);
 
-        List l = (List)this.get(TOPOLOGY_METRICS_CONSUMER_REGISTER);
-        if(l == null) { l = new ArrayList(); }
+        List l = (List)conf.get(TOPOLOGY_METRICS_CONSUMER_REGISTER);
+        if (l == null) { l = new ArrayList(); }
         l.add(m);
-        this.put(TOPOLOGY_METRICS_CONSUMER_REGISTER, l);
+        conf.put(TOPOLOGY_METRICS_CONSUMER_REGISTER, l);
+    }
+
+    public void registerMetricsConsumer(Class klass, Object argument, long parallelismHint) {
+       registerMetricsConsumer(this, klass, argument, parallelismHint);
+    }
+
+    public static void registerMetricsConsumer(Map conf, Class klass, long parallelismHint) {
+        registerMetricsConsumer(conf, klass, null, parallelismHint);
     }
 
     public void registerMetricsConsumer(Class klass, long parallelismHint) {
-        registerMetricsConsumer(klass, null, parallelismHint);
+        registerMetricsConsumer(this, klass, parallelismHint);
+    }
+
+    public static void registerMetricsConsumer(Map conf, Class klass) {
+        registerMetricsConsumer(conf, klass, null, 1L);
     }
 
     public void registerMetricsConsumer(Class klass) {
-        registerMetricsConsumer(klass, null, 1L);
+        registerMetricsConsumer(this, klass);
     }
 
     public static void registerDecorator(Map conf, Class<? extends IKryoDecorator> klass) {

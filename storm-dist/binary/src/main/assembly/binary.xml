@@ -75,6 +75,20 @@
                 <include>README.*</include>
             </includes>
         </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-hdfs/target</directory>
+            <outputDirectory>external/storm-hdfs</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-hdfs</directory>
+            <outputDirectory>external/storm-hdfs</outputDirectory>
+            <includes>
+                <include>README.*</include>
+            </includes>
+        </fileSet>
 
 
     </fileSets>
@@ -114,6 +128,10 @@
             <outputDirectory>/logback</outputDirectory>
         </file>
 
+        <file>
+            <source>${project.basedir}/../../logback/worker.xml</source>
+            <outputDirectory>/logback</outputDirectory>
+        </file>
 
         <file>
             <source>${project.basedir}/LICENSE</source>

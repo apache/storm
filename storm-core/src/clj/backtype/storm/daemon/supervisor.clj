@@ -16,7 +16,8 @@
 (ns backtype.storm.daemon.supervisor
   (:import [java.io OutputStreamWriter BufferedWriter IOException])
   (:import [backtype.storm.scheduler ISupervisor]
-           [java.net JarURLConnection])
+           [java.net JarURLConnection]
+           [java.net URI])
   (:use [backtype.storm bootstrap])
   (:use [backtype.storm.daemon common])
   (:require [backtype.storm.daemon [worker :as worker]])
@@ -577,23 +578,21 @@
         arch-resource-root (str resource-root File/separator os "-" arch)]
     (str arch-resource-root File/pathSeparator resource-root File/pathSeparator (conf JAVA-LIBRARY-PATH)))) 
 
-(defn substitute-childopts
-  [childopts worker-id storm-id port]
-  (
-    let [replacement-map {"%ID%"          (str port)
-                          "%WORKER-ID%"   (str worker-id)
-                          "%STORM-ID%"    (str storm-id)
-                          "%WORKER-PORT%" (str port)}
-         sub-fn (fn [s] 
-                  (reduce (fn [string entry]
-                    (apply clojure.string/replace string entry))
-                     s replacement-map))]
-    (if-not (nil? childopts)
-      (if (sequential? childopts)
-        (map sub-fn childopts)
-        (-> childopts sub-fn (.split " ")))
-      nil)
-    ))
+(defn substitute-childopts 
+  "Generates runtime childopts by replacing keys with topology-id, worker-id, port"
+  [value worker-id topology-id port]
+  (let [replacement-map {"%ID%"          (str port)
+                         "%WORKER-ID%"   (str worker-id)
+                         "%TOPOLOGY-ID%"    (str topology-id)
+                         "%WORKER-PORT%" (str port)}
+        sub-fn #(reduce (fn [string entry]
+                          (apply clojure.string/replace string entry))
+                        % 
+                        replacement-map)]
+    (cond
+      (nil? value) nil
+      (list? value) (map sub-fn value)
+      :else (-> value sub-fn (clojure.string/split #"\s+")))))
 
 (defn java-cmd []
   (let [java-home (.get (System/getenv) "JAVA_HOME")]
@@ -608,6 +607,7 @@
     (let [conf (:conf supervisor)
           run-worker-as-user (conf SUPERVISOR-RUN-WORKER-AS-USER)
           storm-home (System/getProperty "storm.home")
+          storm-log-dir (or (System/getProperty "storm.log.dir") (str storm-home "/logs"))
           stormroot (supervisor-stormdist-root conf storm-id)
           jlp (jlp stormroot conf)
           stormjar (supervisor-stormjar-path stormroot)
@@ -637,7 +637,8 @@
                     [(str "-Djava.library.path=" jlp)
                      (str "-Dlogfile.name=" logfilename)
                      (str "-Dstorm.home=" storm-home)
-                     (str "-Dlogback.configurationFile=" storm-home "/logback/cluster.xml")
+                     (str "-Dstorm.log.dir=" storm-log-dir)
+                     (str "-Dlogback.configurationFile=" storm-home "/logback/worker.xml")
                      (str "-Dstorm.id=" storm-id)
                      (str "-Dworker.id=" worker-id)
                      (str "-Dworker.port=" port)
@@ -685,10 +686,10 @@
                 (extract-dir-from-jar resources-jar RESOURCES-SUBDIR stormroot))
               url
               (do
-                (log-message "Copying resources at " (str url) " to " target-dir)
+                (log-message "Copying resources at " (URI. (str url)) " to " target-dir)
                 (if (= (.getProtocol url) "jar" )
                     (extract-dir-from-jar (.getFile (.getJarFileURL (.openConnection url))) RESOURCES-SUBDIR stormroot)
-                    (FileUtils/copyDirectory (File. (.getFile url)) (File. target-dir)))
+                    (FileUtils/copyDirectory (File. (.getPath (URI. (str url)))) (File. target-dir)))
                 )
               )
             )))

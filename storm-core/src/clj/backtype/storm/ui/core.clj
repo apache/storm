@@ -20,9 +20,9 @@
   (:use [hiccup core page-helpers])
   (:use [backtype.storm config util log])
   (:use [backtype.storm.ui helpers])
-  (:use [backtype.storm.daemon [common :only [ACKER-COMPONENT-ID ACKER-INIT-STREAM-ID
-                                              ACKER-ACK-STREAM-ID ACKER-FAIL-STREAM-ID system-id?]]])
-  (:use [ring.adapter.jetty :only [run-jetty]])
+  (:use [backtype.storm.daemon [common :only [ACKER-COMPONENT-ID ACKER-INIT-STREAM-ID ACKER-ACK-STREAM-ID
+                                              ACKER-FAIL-STREAM-ID system-id? mk-authorization-handler]]])
+  (:use [ring.middleware.anti-forgery])
   (:use [clojure.string :only [blank? lower-case trim]])
   (:import [backtype.storm.utils Utils])
   (:import [backtype.storm.generated ExecutorSpecificStats
@@ -30,6 +30,8 @@
             ErrorInfo ClusterSummary SupervisorSummary TopologySummary
             Nimbus$Client StormTopology GlobalStreamId RebalanceOptions
             KillOptions])
+  (:import [backtype.storm.security.auth AuthUtils ReqContext])
+  (:import [backtype.storm.generated AuthorizationException])
   (:import [backtype.storm.security.auth AuthUtils])
   (:import [java.io File])
   (:require [compojure.route :as route]
@@ -40,6 +42,9 @@
   (:gen-class))
 
 (def ^:dynamic *STORM-CONF* (read-storm-config))
+(def ^:dynamic *UI-ACL-HANDLER* (mk-authorization-handler (*STORM-CONF* NIMBUS-AUTHORIZER) *STORM-CONF*))
+
+(def http-creds-handler (AuthUtils/GetUiHttpCredentialsPlugin *STORM-CONF*))
 
 (defmacro with-nimbus
   [nimbus-sym & body]
@@ -47,33 +52,19 @@
      [~nimbus-sym (*STORM-CONF* NIMBUS-HOST) (*STORM-CONF* NIMBUS-THRIFT-PORT)]
      ~@body))
 
-(defn authorized-ui-user?
-  [user conf topology-conf]
-  (let [ui-users (concat (conf UI-USERS)
-                         (conf NIMBUS-ADMINS)
-                         (topology-conf UI-USERS)
-                         (topology-conf TOPOLOGY-USERS))]
-    (or (blank? (conf UI-FILTER))
-        (and (not (blank? user))
-          (some #(= % user) ui-users)))))
-
-(defn assert-authorized-ui-user
-  [user conf topology-conf]
-  (if (not (authorized-ui-user? user conf topology-conf))
-    ;;TODO need a better exception here so the UI can appear better
-    (throw (RuntimeException. (str "User " user " is not authorized.")))))
-
-(defn- ui-actions-enabled?
-  []
-  (= "true" (lower-case (*STORM-CONF* UI-ACTIONS-ENABLED))))
-
-(defn assert-authorized-topology-user
-  [user]
-  ;;TODO eventually we will want to use the Authorizatin handler from nimbus, but for now
-  ;; Disable the calls conditionally
-  (if (not (ui-actions-enabled?))
-    ;;TODO need a better exception here so the UI can appear better
-    (throw (RuntimeException. (str "Topology actions for the UI have been disabled")))))
+(defn assert-authorized-user
+  ([servlet-request op]
+    (assert-authorized-user servlet-request op nil))
+  ([servlet-request op topology-conf]
+     (if http-creds-handler (.populateContext http-creds-handler (ReqContext/context) servlet-request))
+     (if *UI-ACL-HANDLER*
+       (let [context (ReqContext/context)]
+         (if-not (.permit *UI-ACL-HANDLER* context op topology-conf)
+           (let [principal (.principal context)
+                 user (if principal (.getName principal) "unknown")]
+             (throw (AuthorizationException.
+                     (str "UI request '" op "' for '"
+                          user "' user is not authorized")))))))))
 
 (defn get-filled-stats
   [summs]
@@ -474,9 +465,9 @@
                                  :checked (is-ack-stream (get m :stream))}))))))]
     (map (fn [row]
            {:row row}) (partition 4 4 nil streams))))
-  
+
 (defn mk-visualization-data
-  [id window include-sys? user]
+  [id window include-sys?]
   (with-nimbus
     nimbus
     (let [window (if window window ":all-time")
@@ -491,10 +482,9 @@
           bolt-comp-summs (group-by-comp bolt-summs)
           bolt-comp-summs (filter-key (mk-include-sys-fn include-sys?)
                                       bolt-comp-summs)
-          topology-conf (from-json 
+          topology-conf (from-json
                           (.getTopologyConf ^Nimbus$Client nimbus id))]
-      (assert-authorized-ui-user user *STORM-CONF* topology-conf)
-      (visualization-data 
+      (visualization-data
        (merge (hashmap-to-persistent spouts)
               (hashmap-to-persistent bolts))
        spout-comp-summs bolt-comp-summs window id))))
@@ -675,7 +665,6 @@
                                               bolt-comp-summs
                                               window
                                               id)]
-      (assert-authorized-ui-user user *STORM-CONF* topology-conf)
       (merge
        (topology-summary summ)
        {"user" user
@@ -687,7 +676,7 @@
         "bolts" (bolt-comp id bolt-comp-summs (.get_errors summ) window include-sys?)
         "configuration" topology-conf
         "visualizationTable" (stream-boxes visualizer-data)
-        "uiActionsEnabled" (ui-actions-enabled?)}))))
+        "antiForgeryToken" *anti-forgery-token*}))))
 
 (defn spout-output-stats
   [stream-summary window]
@@ -842,7 +831,6 @@
           spec (cond (= type :spout) (spout-stats window summ component summs include-sys?)
                      (= type :bolt) (bolt-stats window summ component summs include-sys?))
           errors (component-errors (get (.get_errors summ) component) topology-id)]
-      (assert-authorized-ui-user user *STORM-CONF* topology-conf)
       (merge
         {"user" user
          "id" component
@@ -855,58 +843,72 @@
          "windowHint" (window-hint window)}
        spec errors))))
 
+(defn topology-config [topology-id]
+  (with-nimbus nimbus
+     (from-json (.getTopologyConf ^Nimbus$Client nimbus topology-id))))
+
 (defn check-include-sys?
   [sys?]
   (if (or (nil? sys?) (= "false" sys?)) false true))
 
-(defn json-response [data & [status]]
-  {:status (or status 200)
-   :headers {"Content-Type" "application/json"}
-   :body (to-json data)})
+(defn wrap-json-in-callback [callback response]
+  (str callback "(" response ");"))
+
+(defnk json-response
+  [data callback :serialize-fn to-json :status 200]
+     {:status status
+      :headers (if (not-nil? callback) {"Content-Type" "application/javascript"}
+                {"Content-Type" "application/json"})
+      :body (if (not-nil? callback)
+              (wrap-json-in-callback callback (serialize-fn data))
+              (serialize-fn data))})
 
 (def http-creds-handler (AuthUtils/GetUiHttpCredentialsPlugin *STORM-CONF*))
 
 (defroutes main-routes
-  (GET "/api/v1/cluster/configuration" []
-       (cluster-configuration))
-  (GET "/api/v1/cluster/summary" [:as {:keys [cookies servlet-request]}]
+  (GET "/api/v1/cluster/configuration" [& m]
+       (json-response (cluster-configuration)
+                      (:callback m) :serialize-fn identity))
+  (GET "/api/v1/cluster/summary" [:as {:keys [cookies servlet-request]} & m]
        (let [user (.getUserName http-creds-handler servlet-request)]
-         (json-response (cluster-summary user))))
-  (GET "/api/v1/supervisor/summary" []
-       (json-response (supervisor-summary)))
-  (GET "/api/v1/topology/summary" []
-       (json-response (all-topologies-summary)))
+         (assert-authorized-user servlet-request "getClusterInfo")
+         (json-response (cluster-summary user) (:callback m))))
+  (GET "/api/v1/supervisor/summary" [:as {:keys [cookies servlet-request]} & m]
+       (assert-authorized-user servlet-request "getClusterInfo")
+       (json-response (supervisor-summary) (:callback m)))
+  (GET "/api/v1/topology/summary" [:as {:keys [cookies servlet-request]} & m]
+       (assert-authorized-user servlet-request "getClusterInfo")
+       (json-response (all-topologies-summary) (:callback m)))
   (GET  "/api/v1/topology/:id" [:as {:keys [cookies servlet-request]} id & m]
         (let [id (url-decode id)
               user (.getUserName http-creds-handler servlet-request)]
-          (json-response (topology-page id (:window m) (check-include-sys? (:sys m)) user))))
+          (assert-authorized-user servlet-request "getTopology" (topology-config id))
+          (json-response (topology-page id (:window m) (check-include-sys? (:sys m)) user) (:callback m))))
   (GET "/api/v1/topology/:id/visualization" [:as {:keys [cookies servlet-request]} id & m]
-        (let [id (url-decode id)
-              user (.getUserName http-creds-handler servlet-request)]
-          (json-response (mk-visualization-data id (:window m) (check-include-sys? (:sys m)) user))))
+        (let [id (url-decode id)]
+          (assert-authorized-user servlet-request "getTopology" (topology-config id))
+          (json-response (mk-visualization-data id (:window m) (check-include-sys? (:sys m))) (:callback m))))
   (GET "/api/v1/topology/:id/component/:component" [:as {:keys [cookies servlet-request]} id component & m]
        (let [id (url-decode id)
              component (url-decode component)
              user (.getUserName http-creds-handler servlet-request)]
-         (json-response (component-page id component (:window m) (check-include-sys? (:sys m)) user))))
+         (assert-authorized-user servlet-request "getTopology" (topology-config id))
+         (json-response (component-page id component (:window m) (check-include-sys? (:sys m)) user) (:callback m))))
   (POST "/api/v1/topology/:id/activate" [:as {:keys [cookies servlet-request]} id]
     (with-nimbus nimbus
       (let [id (url-decode id)
             tplg (.getTopologyInfo ^Nimbus$Client nimbus id)
-            name (.get_name tplg)
-            user (.getUserName http-creds-handler servlet-request)]
-        (assert-authorized-topology-user user)
+            name (.get_name tplg)]
+        (assert-authorized-user servlet-request "activate" (topology-config id))
         (.activate nimbus name)
         (log-message "Activating topology '" name "'")))
     (resp/redirect (str "/api/v1/topology/" id)))
-
   (POST "/api/v1/topology/:id/deactivate" [:as {:keys [cookies servlet-request]} id]
     (with-nimbus nimbus
       (let [id (url-decode id)
             tplg (.getTopologyInfo ^Nimbus$Client nimbus id)
-            name (.get_name tplg)
-            user (.getUserName http-creds-handler servlet-request)]
-        (assert-authorized-topology-user user)
+            name (.get_name tplg)]
+        (assert-authorized-user servlet-request "deactivate" (topology-config id))
         (.deactivate nimbus name)
         (log-message "Deactivating topology '" name "'")))
     (resp/redirect (str "/api/v1/topology/" id)))
@@ -915,9 +917,8 @@
       (let [id (url-decode id)
             tplg (.getTopologyInfo ^Nimbus$Client nimbus id)
             name (.get_name tplg)
-            options (RebalanceOptions.)
-            user (.getUserName http-creds-handler servlet-request)]
-        (assert-authorized-topology-user user)
+            options (RebalanceOptions.)]
+        (assert-authorized-user servlet-request "rebalance" (topology-config id))
         (.set_wait_secs options (Integer/parseInt wait-time))
         (.rebalance nimbus name options)
         (log-message "Rebalancing topology '" name "' with wait time: " wait-time " secs")))
@@ -927,9 +928,8 @@
       (let [id (url-decode id)
             tplg (.getTopologyInfo ^Nimbus$Client nimbus id)
             name (.get_name tplg)
-            options (KillOptions.)
-            user (.getUserName http-creds-handler servlet-request)]
-        (assert-authorized-topology-user user)
+            options (KillOptions.)]
+        (assert-authorized-user servlet-request "killTopology" (topology-config id))
         (.set_wait_secs options (Integer/parseInt wait-time))
         (.killTopologyWithOpts nimbus name options)
         (log-message "Killing topology '" name "' with wait time: " wait-time " secs")))
@@ -954,12 +954,18 @@
     (try
       (handler request)
       (catch Exception ex
-        (json-response (exception->json ex) 500)))))
+        (json-response (exception->json ex) ((:query-params request) "callback") :status 500)))))
+
+
+(def csrf-error-response
+  (json-response {"error" "Forbidden action."
+                  "errorMessage" "missing CSRF token."} 403))
 
 (def app
   (handler/site (-> main-routes
-                    (wrap-reload '[backtype.storm.ui.core])
-                    catch-errors)))
+                  (wrap-reload '[backtype.storm.ui.core])
+                  (wrap-anti-forgery {:error-response csrf-error-response})
+                  catch-errors)))
 
 (defn start-server!
   []
@@ -968,12 +974,11 @@
           header-buffer-size (int (.get conf UI-HEADER-BUFFER-BYTES))
           filters-confs [{:filter-class (conf UI-FILTER)
                           :filter-params (conf UI-FILTER-PARAMS)}]]
-      (run-jetty app {:port (conf UI-PORT)
-                          :join? false
-                          :configurator (fn [server]
-                                          (doseq [connector (.getConnectors server)]
-                                            (.setHeaderBufferSize connector header-buffer-size))
-                                          (config-filter server app filters-confs))}))
+      (storm-run-jetty {:port (conf UI-PORT)
+                        :configurator (fn [server]
+                                        (doseq [connector (.getConnectors server)]
+                                          (.setRequestHeaderSize connector header-buffer-size))
+                                        (config-filter server app filters-confs))}))
    (catch Exception ex
      (log-error ex))))
 
