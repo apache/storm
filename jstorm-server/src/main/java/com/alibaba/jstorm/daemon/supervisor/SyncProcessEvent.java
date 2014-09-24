@@ -678,8 +678,12 @@ class SyncProcessEvent extends ShutdownWork {
 				// hbstate.getHeartbeat() won't be null
 				keepPorts.add(hbstate.getHeartbeat().getPort());
 			} else {
-				removed.put(workerid, hbstate.getHeartbeat().getTopologyId());
-
+				if (hbstate.getHeartbeat() != null) {
+					removed.put(workerid, hbstate.getHeartbeat().getTopologyId());
+				}else {
+					removed.put(workerid, null);
+				}
+				
 				StringBuilder sb = new StringBuilder();
 				sb.append("Shutting down and clearing state for id ");
 				sb.append(workerid);
