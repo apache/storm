@@ -322,14 +322,10 @@
         ]
     (disruptor/clojure-handler
       (fn [packets _ batch-end?]
-        (.add drainer packets)
+        (read-locked endpoint-socket-lock
+          (let [node+port->socket @node+port->socket]
+            (.add drainer packets node+port->socket)))))))
         
-        (when batch-end?
-          (read-locked endpoint-socket-lock
-            (let [node+port->socket @node+port->socket]
-              (.send drainer node+port->socket)))
-          (.clear drainer))))))
-
 (defn launch-receive-thread [worker]
   (log-message "Launching receive-thread for " (:assignment-id worker) ":" (:port worker))
   (msg-loader/launch-receive-thread!

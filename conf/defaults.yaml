@@ -108,11 +108,14 @@ zmq.hwm: 0
 
 storm.messaging.netty.server_worker_threads: 1
 storm.messaging.netty.client_worker_threads: 1
-storm.messaging.netty.buffer_size: 5242880 #5MB buffer
+storm.messaging.netty.send_recv_buffer_size: 5242880 #5MB buffer
 # Since nimbus.task.launch.secs and supervisor.worker.start.timeout.secs are 120, other workers should also wait at least that long before giving up on connecting to the other worker.
 storm.messaging.netty.max_retries: 300
 storm.messaging.netty.max_wait_ms: 1000
 storm.messaging.netty.min_wait_ms: 100
+
+# We buffer the message at client until it exceed the size of storm.messaging.netty.client_buffer_size, otherwise we will wait until there are enough buffer for the new arrival messages.
+storm.messaging.netty.client_buffer_size: 52428800 #50M
 
 # If the Netty messaging layer is busy(netty internal buffer not writable), the Netty client will try to batch message as more as possible up to the size of storm.messaging.netty.transfer.batch.size bytes, otherwise it will try to flush message as soon as possible to reduce latency.
 storm.messaging.netty.transfer.batch.size: 262144

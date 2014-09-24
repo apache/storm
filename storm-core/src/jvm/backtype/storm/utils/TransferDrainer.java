@@ -20,94 +20,29 @@ package backtype.storm.utils;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
+import backtype.storm.Config;
 import backtype.storm.messaging.IConnection;
 import backtype.storm.messaging.TaskMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TransferDrainer {
+    private static final Logger LOG = LoggerFactory.getLogger(TransferDrainer.class);
 
-  private HashMap<String, ArrayList<ArrayList<TaskMessage>>> bundles = new HashMap();
-  
-  public void add(HashMap<String, ArrayList<TaskMessage>> workerTupleSetMap) {
-    for (String key : workerTupleSetMap.keySet()) {
-      
-      ArrayList<ArrayList<TaskMessage>> bundle = bundles.get(key);
-      if (null == bundle) {
-        bundle = new ArrayList<ArrayList<TaskMessage>>();
-        bundles.put(key, bundle);
-      }
-      
-      ArrayList tupleSet = workerTupleSetMap.get(key);
-      if (null != tupleSet && tupleSet.size() > 0) {
-        bundle.add(tupleSet);
-      }
-    } 
-  }
-  
-  public void send(HashMap<String, IConnection> connections) {
-    for (String hostPort : bundles.keySet()) {
-      IConnection connection = connections.get(hostPort);
-      if (null != connection) { 
-        ArrayList<ArrayList<TaskMessage>> bundle = bundles.get(hostPort);
-        Iterator<TaskMessage> iter = getBundleIterator(bundle);
-        if (null != iter && iter.hasNext()) {
-          connection.send(iter);
+    public void add(HashMap<String, ArrayList<TaskMessage>> workerTupleSetMap, HashMap<String, IConnection> connections) {
+        for (Map.Entry<String, ArrayList<TaskMessage>> entry : workerTupleSetMap.entrySet()) {
+            IConnection connection = connections.get(entry.getKey());
+            if (connection == null) {
+                LOG.warn("Client for remote server: " + entry.getKey() + " not exist," +
+                        "we will drop " + entry.getValue().size() + " messages");
+                return;
+            }
+
+            connection.send(entry.getValue());
         }
-      }
-    } 
-  }
-  
-  private Iterator<TaskMessage> getBundleIterator(final ArrayList<ArrayList<TaskMessage>> bundle) {
-    
-    if (null == bundle) {
-      return null;
     }
-    
-    return new Iterator<TaskMessage> () {
-      
-      private int offset = 0;
-      private int size = 0;
-      {
-        for (ArrayList<TaskMessage> list : bundle) {
-            size += list.size();
-        }
-      }
-      
-      private int bundleOffset = 0;
-      private Iterator<TaskMessage> iter = bundle.get(bundleOffset).iterator();
-      
-      @Override
-      public boolean hasNext() {
-        if (offset < size) {
-          return true;
-        }
-        return false;
-      }
-
-      @Override
-      public TaskMessage next() {
-        TaskMessage msg = null;
-        if (iter.hasNext()) {
-          msg = iter.next(); 
-        } else {
-          bundleOffset++;
-          iter = bundle.get(bundleOffset).iterator();
-          msg = iter.next();
-        }
-        if (null != msg) {
-          offset++;
-        }
-        return msg;
-      }
-
-      @Override
-      public void remove() {
-        throw new RuntimeException("not supported");
-      }
-    };
-  }
-  
-  public void clear() {
-    bundles.clear();
-  }
 }

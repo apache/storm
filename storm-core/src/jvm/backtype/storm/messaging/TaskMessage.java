@@ -37,7 +37,7 @@ public class TaskMessage {
     }
     
     public ByteBuffer serialize() {
-        ByteBuffer bb = ByteBuffer.allocate(_message.length+2);
+        ByteBuffer bb = ByteBuffer.allocate(length());
         bb.putShort((short)_task);
         bb.put(_message);
         return bb;
@@ -48,6 +48,10 @@ public class TaskMessage {
         _task = packet.getShort();
         _message = new byte[packet.limit()-2];
         packet.get(_message);
+    }
+
+    public int length() {
+        return _message.length + 2;
     }
 
 }

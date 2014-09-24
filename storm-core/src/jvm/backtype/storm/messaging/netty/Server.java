@@ -78,7 +78,7 @@ class Server implements IConnection {
         }
         
         // Configure the server.
-        int buffer_size = Utils.getInt(storm_conf.get(Config.STORM_MESSAGING_NETTY_BUFFER_SIZE));
+        int buffer_size = Utils.getInt(storm_conf.get(Config.STORM_MESSAGING_NETTY_SEND_RECV_BUFFER_SIZE));
         int maxWorkers = Utils.getInt(storm_conf.get(Config.STORM_MESSAGING_NETTY_SERVER_WORKER_THREADS));
 
         ThreadFactory bossFactory = new NettyRenameThreadFactory(name() + "-boss");
@@ -232,8 +232,9 @@ class Server implements IConnection {
     public void send(int task, byte[] message) {
         throw new RuntimeException("Server connection should not send any messages");
     }
-    
-    public void send(Iterator<TaskMessage> msgs) {
+
+    @Override
+    public void send(ArrayList<TaskMessage> msgs) {
       throw new RuntimeException("Server connection should not send any messages");
     }
 	
