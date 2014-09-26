@@ -320,8 +320,10 @@ public class Client implements IConnection {
                 channel.close();
                 channelRef.compareAndSet(channel, null);
             }
-            clientState = ClientState.DISCONNECTED;
-            scheduler.execute(connector);
+            if (clientState != ClientState.CLOSED) {
+                clientState = ClientState.DISCONNECTED;
+                scheduler.execute(connector);
+            }
         }
     }
 
