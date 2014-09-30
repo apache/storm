@@ -137,7 +137,6 @@ public class Client implements IConnection {
 
         cachedTaskMessages = new TimeCacheMap<Long, ArrayList<TaskMessage>>(messageTimeoutSecs, new CachedTaskMessageHandler());
         retryPolicy = new StormBoundedExponentialBackoffRetry(base_sleep_ms, max_sleep_ms, max_retries);
-//        flushScheduler = Executors.newScheduledThreadPool(1, new NettyRenameThreadFactory("client-flush-service"));
 
         flusher = new Runnable() {
             @Override
@@ -251,8 +250,10 @@ public class Client implements IConnection {
     }
 
     private synchronized void flushWithSchedule() {
-        flush();
-        scheduler.schedule(flusher, flushCheckInterval, TimeUnit.MILLISECONDS);
+        if (clientState != ClientState.CLOSED) {
+            flush();
+            scheduler.schedule(flusher, flushCheckInterval, TimeUnit.MILLISECONDS);
+        }
     }
 
     private synchronized void flush() {
@@ -265,7 +266,7 @@ public class Client implements IConnection {
         assert(channel != null);
         if (!channel.isConnected()) {
             LOG.warn("channel not connected, we will reconnect to : " + remote_addr.toString());
-            scheduler.execute(connector);
+            scheduleReconnect(channel);
             return;
         }
 
@@ -275,7 +276,7 @@ public class Client implements IConnection {
                 break;
             }
 
-            ArrayList<TaskMessage> taskMessages = cachedTaskMessages.get(curTaskMessageIndex.getAndIncrement());
+            ArrayList<TaskMessage> taskMessages = (ArrayList<TaskMessage>)cachedTaskMessages.remove(curTaskMessageIndex.getAndIncrement());
             // this taskMessages may has timeout and deleted by cachedTaskMessages;
             if (taskMessages == null) {
                 continue;
@@ -316,14 +317,18 @@ public class Client implements IConnection {
             LOG.info("failed to send requests to " + remote_addr.toString() + ": ", channelFuture.getCause());
 
             Channel channel = channelFuture.getChannel();
-            if (null != channel) {
-                channel.close();
-                channelRef.compareAndSet(channel, null);
-            }
-            if (clientState != ClientState.CLOSED) {
-                clientState = ClientState.DISCONNECTED;
-                scheduler.execute(connector);
-            }
+            scheduleReconnect(channel);
+        }
+    }
+
+    private void scheduleReconnect(Channel channel) {
+        if (null != channel) {
+            channel.close();
+            channelRef.compareAndSet(channel, null);
+        }
+        if (clientState != ClientState.CLOSED) {
+            clientState = ClientState.DISCONNECTED;
+            scheduler.execute(connector);
         }
     }
 
@@ -332,7 +337,7 @@ public class Client implements IConnection {
         for (TaskMessage taskMessage : taskMessages) {
             taskMessageSize += taskMessage.length();
         }
-        LOG.warn("message timeout before send out, we will drop " + taskMessageSize + " Byte messages");
+        LOG.warn("message for " + remote_addr.toString() +  " timeout before send out, we will drop " + taskMessageSize + " Byte messages");
         clientFactory.onMessageSendFinished(taskMessageSize);
     }
 
