@@ -76,6 +76,7 @@ init_storm_env()
 CONFIG_OPTS = []
 CONFFILE = ""
 JAR_JVM_OPTS = shlex.split(os.getenv('STORM_JAR_JVM_OPTS', ''))
+JAVA_SERVICE_NAME = os.getenv('JAVA_SERVICE_NAME', None)
 JAVA_HOME = os.getenv('JAVA_HOME', None)
 JAVA_CMD = 'java' if not JAVA_HOME else os.path.join(JAVA_HOME, 'bin', 'java')
 
@@ -167,7 +168,8 @@ def exec_storm_class(klass, jvmtype="-server", jvmopts=[], extrajars=[], args=[]
     if(storm_log_dir == None or storm_log_dir == "nil"):
         storm_log_dir = STORM_DIR+"/logs"
     all_args = [
-        JAVA_CMD, jvmtype, get_config_opts(),
+        JAVA_CMD, jvmtype, JAVA_SERVICE_NAME,
+        get_config_opts(),
         "-Dstorm.home=" + STORM_DIR,
         "-Dstorm.log.dir=" + storm_log_dir, 
         "-Djava.library.path=" + confvalue("java.library.path", extrajars),
