@@ -1,0 +1,15 @@
+meta.consumer.group=test1Groupaa
+meta.topic=tlog-test
+meta.subexpress=*
+meta.fetch.max.msg=128
+
+topology.name=test_meta_spout
+topology.version=1.0.0
+topology.workers=5
+
+topology.spout.pending=100
+topology.spout.parallel=1
+topology.writer.parallel=1
+
+topology.acker.executors=1
+topology.use.transaction=false
