@@ -1,0 +1,42 @@
+#  Copyright (c) 2013 Yahoo! Inc. All Rights Reserved.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License. See accompanying LICENSE file.
+#
+master.host: "localhost"
+master.thrift.port: 9000
+master.initial-num-supervisors: 1
+master.container.priority: 0
+master.container.size-mb: 5120
+master.heartbeat.interval.millis: 1000
+master.timeout.secs: 1000
+yarn.report.wait.millis: 10000
+nimbusui.startup.ms: 10000
+
+ui.port: 7070
+
+storm.messaging.transport: "backtype.storm.messaging.netty.Context"
+storm.messaging.netty.buffer_size: 1048576
+storm.messaging.netty.max_retries: 100
+storm.messaging.netty.min_wait_ms: 1000
+storm.messaging.netty.max_wait_ms: 5000
+
+# Configuration parameter that allows the launching machine to specify the JAVA_JOME
+# used when the application is executed on the YARN cluster.
+#
+# storm.yarn.java_home: "/vol/anarchy/boneill/jdk1.7.0_40"
+
+# Configuration parameter that allows the launching machine to specify the yarn classpath
+# used when the application is executed on the YARN cluster.  To find this value, run
+# "yarn classpath" on the target machines.
+#
+# storm.yarn.yarn_classpath: "/home/boneill/hadoop/etc/hadoop:/home/boneill/hadoop/etc/hadoop:/home/boneill/hadoop/etc/hadoop:/home/boneill/hadoop/share/hadoop/common/lib/*:/home/boneill/hadoop/share/hadoop/common/*:/home/boneill/hadoop/share/hadoop/hdfs:/home/boneill/hadoop/share/hadoop/hdfs/lib/*:/home/boneill/hadoop/share/hadoop/hdfs/*:/home/boneill/hadoop/share/hadoop/yarn/lib/*:/home/boneill/hadoop/share/hadoop/yarn/*:/home/boneill/hadoop/share/hadoop/mapreduce/lib/*:/home/boneill/hadoop/share/hadoop/mapreduce/*:/Users/bone/tools/hadoop/contrib/capacity-scheduler/*.jar:/home/boneill/hadoop/share/hadoop/yarn/*:/home/boneill/hadoop/share/hadoop/yarn/lib/*"
