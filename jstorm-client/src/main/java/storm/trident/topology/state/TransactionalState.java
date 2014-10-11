@@ -1,17 +1,20 @@
 package storm.trident.topology.state;
 
 
-import backtype.storm.Config;
-import backtype.storm.utils.Utils;
-import com.netflix.curator.framework.CuratorFramework;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
-import org.json.simple.JSONValue;
+
+import backtype.storm.Config;
+import backtype.storm.utils.Utils;
+
+import com.alibaba.fastjson.JSON;
+import com.netflix.curator.framework.CuratorFramework;
 
 public class TransactionalState {
     CuratorFramework _curator;
@@ -49,7 +52,7 @@ public class TransactionalState {
         path = "/" + path;
         byte[] ser;
         try {
-            ser = JSONValue.toJSONString(obj).getBytes("UTF-8");
+            ser = JSON.toJSONString(obj).getBytes("UTF-8");
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
@@ -97,7 +100,7 @@ public class TransactionalState {
         path = "/" + path;
         try {
             if(_curator.checkExists().forPath(path)!=null) {
-                return JSONValue.parse(new String(_curator.getData().forPath(path), "UTF-8"));
+                return JSON.parse(new String(_curator.getData().forPath(path), "UTF-8"));
             } else {
                 return null;
             }

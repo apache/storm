@@ -73,6 +73,7 @@ public class RichSpoutBatchExecutor implements ITridentSpout {
             if(now - lastRotate > rotateTime) {
                 Map<Long, List<Object>> failed = idsMap.rotate();
                 for(Long id: failed.keySet()) {
+                    //TODO: this isn't right... it's not in the map anymore
                     fail(id);
                 }
                 lastRotate = now;
@@ -128,7 +129,7 @@ public class RichSpoutBatchExecutor implements ITridentSpout {
     
     class RichSpoutCoordinator implements ITridentSpout.BatchCoordinator {
         @Override
-        public Object initializeTransaction(long txid, Object prevMetadata) {
+        public Object initializeTransaction(long txid, Object prevMetadata, Object currMetadata) {
             return null;
         }
 

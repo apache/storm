@@ -27,16 +27,19 @@ public class ClusterSummary implements org.apache.thrift7.TBase<ClusterSummary, 
   private static final org.apache.thrift7.protocol.TField SUPERVISORS_FIELD_DESC = new org.apache.thrift7.protocol.TField("supervisors", org.apache.thrift7.protocol.TType.LIST, (short)1);
   private static final org.apache.thrift7.protocol.TField NIMBUS_UPTIME_SECS_FIELD_DESC = new org.apache.thrift7.protocol.TField("nimbus_uptime_secs", org.apache.thrift7.protocol.TType.I32, (short)2);
   private static final org.apache.thrift7.protocol.TField TOPOLOGIES_FIELD_DESC = new org.apache.thrift7.protocol.TField("topologies", org.apache.thrift7.protocol.TType.LIST, (short)3);
+  private static final org.apache.thrift7.protocol.TField VERSION_FIELD_DESC = new org.apache.thrift7.protocol.TField("version", org.apache.thrift7.protocol.TType.STRING, (short)4);
 
   private List<SupervisorSummary> supervisors; // required
   private int nimbus_uptime_secs; // required
   private List<TopologySummary> topologies; // required
+  private String version; // required
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
     SUPERVISORS((short)1, "supervisors"),
     NIMBUS_UPTIME_SECS((short)2, "nimbus_uptime_secs"),
-    TOPOLOGIES((short)3, "topologies");
+    TOPOLOGIES((short)3, "topologies"),
+    VERSION((short)4, "version");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -57,6 +60,8 @@ public class ClusterSummary implements org.apache.thrift7.TBase<ClusterSummary, 
           return NIMBUS_UPTIME_SECS;
         case 3: // TOPOLOGIES
           return TOPOLOGIES;
+        case 4: // VERSION
+          return VERSION;
         default:
           return null;
       }
@@ -111,6 +116,8 @@ public class ClusterSummary implements org.apache.thrift7.TBase<ClusterSummary, 
     tmpMap.put(_Fields.TOPOLOGIES, new org.apache.thrift7.meta_data.FieldMetaData("topologies", org.apache.thrift7.TFieldRequirementType.REQUIRED, 
         new org.apache.thrift7.meta_data.ListMetaData(org.apache.thrift7.protocol.TType.LIST, 
             new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, TopologySummary.class))));
+    tmpMap.put(_Fields.VERSION, new org.apache.thrift7.meta_data.FieldMetaData("version", org.apache.thrift7.TFieldRequirementType.OPTIONAL, 
+        new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRING)));
     metaDataMap = Collections.unmodifiableMap(tmpMap);
     org.apache.thrift7.meta_data.FieldMetaData.addStructMetaDataMap(ClusterSummary.class, metaDataMap);
   }
@@ -151,6 +158,9 @@ public class ClusterSummary implements org.apache.thrift7.TBase<ClusterSummary, 
       }
       this.topologies = __this__topologies;
     }
+    if (other.is_set_version()) {
+      this.version = other.version;
+    }
   }
 
   public ClusterSummary deepCopy() {
@@ -163,6 +173,7 @@ public class ClusterSummary implements org.apache.thrift7.TBase<ClusterSummary, 
     set_nimbus_uptime_secs_isSet(false);
     this.nimbus_uptime_secs = 0;
     this.topologies = null;
+    this.version = null;
   }
 
   public int get_supervisors_size() {
@@ -263,6 +274,29 @@ public class ClusterSummary implements org.apache.thrift7.TBase<ClusterSummary, 
     }
   }
 
+  public String get_version() {
+    return this.version;
+  }
+
+  public void set_version(String version) {
+    this.version = version;
+  }
+
+  public void unset_version() {
+    this.version = null;
+  }
+
+  /** Returns true if field version is set (has been assigned a value) and false otherwise */
+  public boolean is_set_version() {
+    return this.version != null;
+  }
+
+  public void set_version_isSet(boolean value) {
+    if (!value) {
+      this.version = null;
+    }
+  }
+
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case SUPERVISORS:
@@ -289,6 +323,14 @@ public class ClusterSummary implements org.apache.thrift7.TBase<ClusterSummary, 
       }
       break;
 
+    case VERSION:
+      if (value == null) {
+        unset_version();
+      } else {
+        set_version((String)value);
+      }
+      break;
+
     }
   }
 
@@ -302,6 +344,9 @@ public class ClusterSummary implements org.apache.thrift7.TBase<ClusterSummary, 
 
     case TOPOLOGIES:
       return get_topologies();
+
+    case VERSION:
+      return get_version();
 
     }
     throw new IllegalStateException();
@@ -320,6 +365,8 @@ public class ClusterSummary implements org.apache.thrift7.TBase<ClusterSummary, 
       return is_set_nimbus_uptime_secs();
     case TOPOLOGIES:
       return is_set_topologies();
+    case VERSION:
+      return is_set_version();
     }
     throw new IllegalStateException();
   }
@@ -364,6 +411,15 @@ public class ClusterSummary implements org.apache.thrift7.TBase<ClusterSummary, 
         return false;
     }
 
+    boolean this_present_version = true && this.is_set_version();
+    boolean that_present_version = true && that.is_set_version();
+    if (this_present_version || that_present_version) {
+      if (!(this_present_version && that_present_version))
+        return false;
+      if (!this.version.equals(that.version))
+        return false;
+    }
+
     return true;
   }
 
@@ -385,6 +441,11 @@ public class ClusterSummary implements org.apache.thrift7.TBase<ClusterSummary, 
     builder.append(present_topologies);
     if (present_topologies)
       builder.append(topologies);
+
+    boolean present_version = true && (is_set_version());
+    builder.append(present_version);
+    if (present_version)
+      builder.append(version);
 
     return builder.toHashCode();
   }
@@ -423,6 +484,16 @@ public class ClusterSummary implements org.apache.thrift7.TBase<ClusterSummary, 
     }
     if (is_set_topologies()) {
       lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.topologies, typedOther.topologies);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_version()).compareTo(typedOther.is_set_version());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_version()) {
+      lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.version, typedOther.version);
       if (lastComparison != 0) {
         return lastComparison;
       }
@@ -488,6 +559,13 @@ public class ClusterSummary implements org.apache.thrift7.TBase<ClusterSummary, 
             org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
           }
           break;
+        case 4: // VERSION
+          if (field.type == org.apache.thrift7.protocol.TType.STRING) {
+            this.version = iprot.readString();
+          } else { 
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
         default:
           org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
       }
@@ -528,6 +606,13 @@ public class ClusterSummary implements org.apache.thrift7.TBase<ClusterSummary, 
       }
       oprot.writeFieldEnd();
     }
+    if (this.version != null) {
+      if (is_set_version()) {
+        oprot.writeFieldBegin(VERSION_FIELD_DESC);
+        oprot.writeString(this.version);
+        oprot.writeFieldEnd();
+      }
+    }
     oprot.writeFieldStop();
     oprot.writeStructEnd();
   }
@@ -556,6 +641,16 @@ public class ClusterSummary implements org.apache.thrift7.TBase<ClusterSummary, 
       sb.append(this.topologies);
     }
     first = false;
+    if (is_set_version()) {
+      if (!first) sb.append(", ");
+      sb.append("version:");
+      if (this.version == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.version);
+      }
+      first = false;
+    }
     sb.append(")");
     return sb.toString();
   }

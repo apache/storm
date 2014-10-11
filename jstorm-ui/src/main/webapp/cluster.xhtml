@@ -9,9 +9,9 @@
 </h:head>
 
 <h:body>
-	<h:outputLink value="cluster.jsf">
+	<h:outputLink value="clusters.jsf">
 		<h1>
-			<h:outputText value="JStorm UI" />
+			<h:outputText value="JStorm Clusters" />
 		</h1>
 	</h:outputLink>
 	<h2>Cluster Summary</h2>
@@ -63,7 +63,7 @@
 				<f:facet name="header">
 					<h:outputText value="version" />
 				</f:facet>
-				<h:outputText value="0.9.6" />
+				<h:outputText value="#{cls.version}" />
 			</p:column>
 
 			<p:column>
@@ -125,6 +125,7 @@
 
 				<h:outputLink value="topology.jsf">
 					<h:outputText value="#{topo.topologyName}" />
+                                        <f:param name="clusterName" value="#{param.clusterName}" />
 					<f:param name="topologyid" value="#{topo.topologyId}" />
 				</h:outputLink>
 
@@ -187,6 +188,7 @@
 
 				<h:outputLink value="supervisor.jsf">
 					<h:outputText value="#{ssumm.host}" />
+					<f:param name="clusterName" value="#{param.clusterName}" />
 					<f:param name="host" value="#{ssumm.host}" />
 				</h:outputLink>
 			</p:column>

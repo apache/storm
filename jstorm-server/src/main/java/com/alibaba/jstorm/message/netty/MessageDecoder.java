@@ -25,10 +25,17 @@ public class MessageDecoder extends FrameDecoder {
 	private static final Logger LOG = LoggerFactory
 			.getLogger(MessageDecoder.class);
 
-
-	private static JStormTimer timer = Metrics.registerTimer(null, MetricDef.NETTY_SERV_DECODE_TIME, 
-			null, Metrics.MetricType.WORKER);
-	private static Map<String, JStormHistogram> networkTransmitTimeMap = new HashMap<String, JStormHistogram>();
+	private static JStormTimer timer = null;
+	private static Map<String, JStormHistogram> networkTransmitTimeMap = null;
+	
+	public MessageDecoder(boolean isServer) {
+		if (isServer) {
+		    timer = Metrics.registerTimer(null, MetricDef.NETTY_SERV_DECODE_TIME, 
+				    null, Metrics.MetricType.WORKER);
+		}
+		
+		networkTransmitTimeMap = new HashMap<String, JStormHistogram>();
+	}
 
 	/*
 	 * Each ControlMessage is encoded as: code (<0) ... short(2) Each
@@ -47,7 +54,7 @@ public class MessageDecoder extends FrameDecoder {
 		}
 
 
-		timer.start();
+		if (timer != null) timer.start();
 		try {
 			// Mark the current buffer position before reading task/len field
 			// because the whole frame might not be in the buffer yet.
@@ -131,7 +138,7 @@ public class MessageDecoder extends FrameDecoder {
 
 			return ret;
 		} finally {
-			timer.stop();
+			if (timer != null) timer.stop();
 		}
 
 	}

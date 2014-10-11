@@ -852,7 +852,7 @@ public class Config extends HashMap<String, Object> {
 	 * scheduler.
 	 */
 	public static final String ISOLATION_SCHEDULER_MACHINES = "isolation.scheduler.machines";
-	public static final Object ISOLATION_SCHEDULER_MACHINES_SCHEMA = Map.class;
+	public static final Object ISOLATION_SCHEDULER_MACHINES_SCHEMA = List.class;
 
 	public static final String WORKER_CLASSPATH = "worker.classpath";
 	public static final Object WORKER_CLASSPATH_SCHEMA = String.class;

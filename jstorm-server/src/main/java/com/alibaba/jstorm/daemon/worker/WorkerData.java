@@ -40,7 +40,6 @@ import com.alibaba.jstorm.utils.JStormServerUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.zk.ZkTool;
 import com.lmax.disruptor.MultiThreadedClaimStrategy;
-import com.lmax.disruptor.SingleThreadedClaimStrategy;
 import com.lmax.disruptor.WaitStrategy;
 
 public class WorkerData {
@@ -192,8 +191,10 @@ public class WorkerData {
 		this.transferQueue = new DisruptorQueue(new MultiThreadedClaimStrategy(
 				buffer_size), waitStrategy);
 		this.transferQueue.consumerStarted();
-		this.sendingQueue = new DisruptorQueue(new SingleThreadedClaimStrategy(
+		this.sendingQueue = new DisruptorQueue(new MultiThreadedClaimStrategy(
 				buffer_size), waitStrategy);
+		this.sendingQueue.consumerStarted();
+		
 
 		this.nodeportSocket = new ConcurrentHashMap<WorkerSlot, IConnection>();
 		this.taskNodeport = new ConcurrentHashMap<Integer, WorkerSlot>();

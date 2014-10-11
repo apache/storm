@@ -16,8 +16,8 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Logger;
-import org.json.simple.JSONObject;
 
+import com.alibaba.fastjson.JSONObject;
 import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.ui.UIUtils;
 import com.alibaba.jstorm.utils.FileAttribute;

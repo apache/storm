@@ -82,9 +82,13 @@ public class ZMQRecvConnection extends RunnableCallback implements IConnection {
 	public void run() {
 		LOG.info("Successfully start ZMQ Recv thread");
 		
-		while(isClosed()) {
-			TaskMessage message = recv(0);
-			enqueue(message);
+		while(isClosed() == false) {
+			try {
+				TaskMessage message = recv(0);
+				enqueue(message);
+			}catch (Exception e) {
+				LOG.warn("ZMQ Recv thread receive error", e);
+			}
 		}
 		
 		LOG.info("Successfully shutdown ZMQ Recv thread");
@@ -93,6 +97,7 @@ public class ZMQRecvConnection extends RunnableCallback implements IConnection {
 
 	@Override
 	public Object getResult() {
+		LOG.info("Begin to shutdown ZMQ Recv thread");
 		return -1;
 	}
 

@@ -3,6 +3,8 @@ package com.alibaba.jstorm.task;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
 
 import org.apache.log4j.Logger;
 
@@ -36,6 +38,8 @@ public class TaskMetricInfo implements Serializable {
     private Map<String, Double> histogramData;
 
 	private static final double FULL_RATIO = 100.0;
+	
+	public static final String QEUEU_IS_FULL = "queue is full";
 
 	public TaskMetricInfo(String taskId, String component) {
 		this.taskId    = taskId;
@@ -124,12 +128,16 @@ public class TaskMetricInfo implements Serializable {
 		}
 	}
 	
-	public String anyQueueFull() {
-		String ret = null;
-	    if (gaugeData.get(MetricDef.DESERIALIZE_QUEUE) == FULL_RATIO || 
-	    		gaugeData.get(MetricDef.SERIALIZE_QUEUE) == FULL_RATIO ||
-	    		gaugeData.get(MetricDef.EXECUTE_QUEUE) == FULL_RATIO) {
-	    	ret = component + "-" + taskId + ": queue is full";
+	public List<String> anyQueueFull() {
+		List<String> ret = new ArrayList<String>();
+		String taskInfo = component + "-" + taskId + ": ";
+	    if (gaugeData.get(MetricDef.DESERIALIZE_QUEUE) == FULL_RATIO) {
+	    	ret.add(taskInfo + "deserialize-" + QEUEU_IS_FULL);
+	    } else if (gaugeData.get(MetricDef.SERIALIZE_QUEUE) == FULL_RATIO)
+	    {
+	    	ret.add(taskInfo + "serialize-" + QEUEU_IS_FULL);
+	    } else if (gaugeData.get(MetricDef.EXECUTE_QUEUE) == FULL_RATIO) {
+	    	ret.add(taskInfo + "execute-" + QEUEU_IS_FULL);
 	    }
 	    return ret;
 	}

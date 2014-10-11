@@ -553,7 +553,18 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 				}
 				assignments.put(topologyId, assignment);
 
-				String lastErrTimeStamp = stormClusterState.topo_lastErr_time(topologyId);
+				Map<Integer, String> lastErrTimeStamp = null;
+				try {
+				    lastErrTimeStamp = stormClusterState.topo_lastErr_time(topologyId);
+				} catch (Exception e) {
+					LOG.error("Failed to get last error timestamp map for "+ topologyId + 
+							", and begin to remove the corrupt data", e);
+					try {
+						stormClusterState.remove_lastErr_time(topologyId);
+					} catch (Exception rmErr) {
+						LOG.error("Failed to remove last error timestamp in ZK for " + topologyId, rmErr);
+					}
+				}
 				
 				TopologySummary topology = NimbusUtils.mkTopologySummary(
 						assignment, topologyId, base.getStormName(),
@@ -572,8 +583,12 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 			List<SupervisorSummary> supervisorSummaries = NimbusUtils
 					.mkSupervisorSummaries(supervisorInfos, assignments);
 
-			return new ClusterSummary(supervisorSummaries, uptime,
+			ClusterSummary ret = new ClusterSummary(supervisorSummaries, uptime,
 					topologySummaries);
+			// set cluster version
+			ret.set_version(NimbusUtils.getNimbusVersion());
+			
+			return ret;
 
 		} catch (TException e) {
 			LOG.info("Failed to get ClusterSummary ", e);

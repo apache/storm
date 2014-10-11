@@ -18,6 +18,7 @@ import javax.faces.context.FacesContext;
 import org.apache.log4j.Logger;
 import org.apache.thrift7.TException;
 
+import backtype.storm.Config;
 import backtype.storm.generated.GlobalStreamId;
 import backtype.storm.generated.NotAliveException;
 import backtype.storm.generated.StormTopology;
@@ -50,6 +51,7 @@ public class SpoutPage implements Serializable {
 
 	private static final Logger LOG = Logger.getLogger(SpoutPage.class);
 
+	private String clusterName = null;
 	private String topologyid = null;
 	private String window = null;
 	private String componentid = null;
@@ -61,6 +63,11 @@ public class SpoutPage implements Serializable {
 
 	public SpoutPage() throws TException, NotAliveException {
 		FacesContext ctx = FacesContext.getCurrentInstance();
+		if (ctx.getExternalContext().getRequestParameterMap().get("clusterName") != null) {
+			clusterName = (String) ctx.getExternalContext()
+					.getRequestParameterMap().get("clusterName");
+		}
+		
 		if (ctx.getExternalContext().getRequestParameterMap().get("topologyid") != null) {
 			topologyid = (String) ctx.getExternalContext()
 					.getRequestParameterMap().get("topologyid");
@@ -81,8 +88,9 @@ public class SpoutPage implements Serializable {
 		init();
 	}
 
-	public SpoutPage(String topologyId, String componentId, String window)
+	public SpoutPage(String clusterName, String topologyId, String componentId, String window)
 			throws TException, NotAliveException {
+		this.clusterName = clusterName;
 		this.topologyid = topologyId;
 		this.componentid = componentId;
 		this.window = window;
@@ -263,6 +271,9 @@ public class SpoutPage implements Serializable {
 
 		try {
 			Map conf = UIUtils.readUiConfig();
+			if(clusterName != null  && !(clusterName.equals(""))) {
+				UIUtils.getClusterInfoByName(conf, clusterName);
+			}
 			client = NimbusClient.getConfiguredClient(conf);
 
 			TopologyInfo summ = client.getClient().getTopologyInfo(topologyid);
@@ -364,7 +375,7 @@ public class SpoutPage implements Serializable {
 
 	public static void main(String[] args) {
 		try {
-			SpoutPage instance = new SpoutPage("sequence_test-3-1363789458",
+			SpoutPage instance = new SpoutPage("/jstorm", "sequence_test-3-1363789458",
 					"SequenceSpoutge", StatBuckets.ALL_WINDOW_STR);
 		} catch (TException e) {
 			// TODO Auto-generated catch block

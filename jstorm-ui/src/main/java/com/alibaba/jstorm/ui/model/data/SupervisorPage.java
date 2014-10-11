@@ -11,6 +11,7 @@ import javax.faces.context.FacesContext;
 
 import org.apache.log4j.Logger;
 
+import backtype.storm.Config;
 import backtype.storm.generated.SupervisorWorkers;
 import backtype.storm.generated.TopologyMetricInfo;
 import backtype.storm.generated.WorkerSummary;
@@ -34,6 +35,7 @@ public class SupervisorPage implements Serializable {
 
 	private static final Logger LOG = Logger.getLogger(SupervisorPage.class);
 
+	private String clusterName = null;
 	private String host = "localhost";
 	private String ip = null;
 
@@ -45,6 +47,10 @@ public class SupervisorPage implements Serializable {
 
 	public SupervisorPage() throws Exception {
 		FacesContext ctx = FacesContext.getCurrentInstance();
+		if (ctx.getExternalContext().getRequestParameterMap().get("clusterName") != null) {
+			clusterName = (String) ctx.getExternalContext().getRequestParameterMap()
+					.get("clusterName");
+		}
 		if (ctx.getExternalContext().getRequestParameterMap().get("host") != null) {
 			host = (String) ctx.getExternalContext().getRequestParameterMap()
 					.get("host");
@@ -60,6 +66,9 @@ public class SupervisorPage implements Serializable {
 		try {
 
 			Map conf = UIUtils.readUiConfig();
+			if(clusterName != null  && !(clusterName.equals(""))) {
+				UIUtils.getClusterInfoByName(conf, clusterName);
+			}
 			client = NimbusClient.getConfiguredClient(conf);
 			SupervisorWorkers supervisorWorkers = client.getClient()
 					.getSupervisorWorkers(host);

@@ -1,6 +1,7 @@
 package com.alibaba.jstorm.container;
 
 import java.util.Set;
+
 import com.alibaba.jstorm.container.cgroup.CgroupCommon;
 
 public class Hierarchy {
@@ -32,10 +33,40 @@ public class Hierarchy {
 	}
 
 	@Override
-	public boolean equals(Object h) {
-		if (h instanceof Hierarchy && ((Hierarchy) h).type.equals(this.type))
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((dir == null) ? 0 : dir.hashCode());
+		result = prime * result + ((name == null) ? 0 : name.hashCode());
+		result = prime * result + ((type == null) ? 0 : type.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
 			return true;
-		return false;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Hierarchy other = (Hierarchy) obj;
+		if (dir == null) {
+			if (other.dir != null)
+				return false;
+		} else if (!dir.equals(other.dir))
+			return false;
+		if (name == null) {
+			if (other.name != null)
+				return false;
+		} else if (!name.equals(other.name))
+			return false;
+		if (type == null) {
+			if (other.type != null)
+				return false;
+		} else if (!type.equals(other.type))
+			return false;
+		return true;
 	}
 
 	public String getDir() {

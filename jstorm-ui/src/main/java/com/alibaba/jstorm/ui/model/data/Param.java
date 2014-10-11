@@ -21,6 +21,7 @@ import com.alibaba.jstorm.common.stats.StatBuckets;
 public class Param implements Serializable {
 
 	private static final long serialVersionUID = -1087749257427646824L;
+	private String clusterName = null;
 	private String topologyid = "";
 	private String window = null;
 	private String componentid = "";
@@ -32,6 +33,10 @@ public class Param implements Serializable {
 
 	private void init() {
 		FacesContext ctx = FacesContext.getCurrentInstance();
+		if (ctx.getExternalContext().getRequestParameterMap().get("clusterName") != null) {
+			clusterName = (String) ctx.getExternalContext()
+					.getRequestParameterMap().get("clusterName");
+		}
 		if (ctx.getExternalContext().getRequestParameterMap().get("topologyid") != null) {
 			topologyid = (String) ctx.getExternalContext()
 					.getRequestParameterMap().get("topologyid");
@@ -51,6 +56,14 @@ public class Param implements Serializable {
 		}
 
 		window = StatBuckets.getShowTimeStr(window);
+	}
+	
+	public String getClusterName() {
+		return clusterName;
+	}
+
+	public void setClusterName(String clusterName) {
+		this.clusterName = clusterName;
 	}
 
 	public String getTopologyid() {

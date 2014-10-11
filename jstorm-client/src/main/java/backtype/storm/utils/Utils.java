@@ -26,7 +26,6 @@ import java.util.UUID;
 import org.apache.commons.io.input.ClassLoaderObjectInputStream;
 import org.apache.commons.lang.StringUtils;
 import org.apache.thrift7.TException;
-import org.json.simple.JSONValue;
 import org.yaml.snakeyaml.Yaml;
 
 import backtype.storm.Config;
@@ -36,6 +35,7 @@ import backtype.storm.generated.StormTopology;
 import clojure.lang.IFn;
 import clojure.lang.RT;
 
+import com.alibaba.fastjson.JSON;
 import com.netflix.curator.framework.CuratorFramework;
 import com.netflix.curator.framework.CuratorFrameworkFactory;
 import com.netflix.curator.retry.ExponentialBackoffRetry;
@@ -255,7 +255,7 @@ public class Utils {
 
 	public static boolean isValidConf(Map<String, Object> stormConf) {
 		return normalizeConf(stormConf).equals(
-				normalizeConf((Map) JSONValue.parse(JSONValue
+				normalizeConf((Map) JSON.parse(JSON
 						.toJSONString(stormConf))));
 	}
 

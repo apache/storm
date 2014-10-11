@@ -4,18 +4,18 @@
 	<parent>
 		<groupId>com.alibaba.jstorm</groupId>
 		<artifactId>jstorm-all</artifactId>
-		<version>0.9.6</version>
+		<version>0.9.6.1</version>
 		<relativePath>..</relativePath>
-	</parent>
+	</parent> 
  	<!--<parent>
  		<groupId>com.taobao</groupId> 
  		<artifactId>parent</artifactId> 
  		<version>1.0.2</version> 
- 	</parent>  -->
+ 	</parent> -->
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.alibaba.jstorm</groupId>
 	<artifactId>jstorm-client-extension</artifactId>
-	<version>0.9.6</version>
+	<version>0.9.6.1</version>
 	<packaging>jar</packaging>
 	<name>${project.artifactId}-${project.version}</name>
 
@@ -55,6 +55,7 @@
 	</build>
 	<properties>
 		<powermock.version>1.4.11</powermock.version>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -64,9 +65,9 @@
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
-			<groupId>com.googlecode.json-simple</groupId>
-			<artifactId>json-simple</artifactId>
-			<version>1.1</version>
+			<groupId>com.alibaba</groupId>
+			<artifactId>fastjson</artifactId>
+			<version>1.1.41</version>
 		</dependency>
 		<dependency>
 		  <groupId>com.sun.net.httpserver</groupId>
@@ -78,17 +79,7 @@
 			<artifactId>powermock-module-junit4</artifactId>
 			<version>${powermock.version}</version>
 			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>log4j</groupId>
-			<artifactId>log4j</artifactId>
-			<version>1.2.16</version>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-log4j12</artifactId>
-			<version>1.7.5</version>
-		</dependency>		
+		</dependency>	
 		<dependency>
 			<groupId>com.codahale.metrics</groupId>
 			<artifactId>metrics-core</artifactId>

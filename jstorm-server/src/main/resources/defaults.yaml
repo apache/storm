@@ -12,7 +12,7 @@ storm.zookeeper.port: 2181
 storm.zookeeper.root: "/jstorm"
 storm.zookeeper.session.timeout: 20000
 storm.zookeeper.connection.timeout: 15000
-storm.zookeeper.retry.times: 30
+storm.zookeeper.retry.times: 20
 storm.zookeeper.retry.interval: 1000
 storm.zookeeper.retry.intervalceiling.millis: 30000
 storm.cluster.mode: "distributed" # can be distributed or local
@@ -167,7 +167,7 @@ topology.kryo.factory: "backtype.storm.serialization.DefaultKryoFactory"
 topology.tuple.serializer: "backtype.storm.serialization.types.ListDelegateSerializer"
 topology.trident.batch.emit.interval.millis: 500
 topology.performance.metrics: true
-topology.alimonitor.metrics.post: true
+topology.alimonitor.metrics.post: false
 
 
 # enable topology use user-define classloader to avoid class conflict

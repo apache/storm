@@ -168,6 +168,11 @@ class NettyClientAsync extends NettyClient {
 					changeThreadhold = true;
 				}
 			}
+			
+			if (isClosed()) {
+				LOG.info("Channel has been closed " + name());
+				break;
+			}
 		}
 	}
 	

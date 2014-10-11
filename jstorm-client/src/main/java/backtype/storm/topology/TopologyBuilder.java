@@ -1,5 +1,9 @@
 package backtype.storm.topology;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
 import backtype.storm.Config;
 import backtype.storm.generated.Bolt;
 import backtype.storm.generated.ComponentCommon;
@@ -14,11 +18,7 @@ import backtype.storm.grouping.CustomStreamGrouping;
 import backtype.storm.tuple.Fields;
 import backtype.storm.utils.Utils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-
-import org.json.simple.JSONValue;
+import com.alibaba.fastjson.JSON;
 
 /**
  * TopologyBuilder exposes the Java API for specifying a topology for Storm to
@@ -263,7 +263,7 @@ public class TopologyBuilder {
 		}
 		Map conf = component.getComponentConfiguration();
 		if (conf != null)
-			common.set_json_conf(JSONValue.toJSONString(conf));
+			common.set_json_conf(JSON.toJSONString(conf));
 		_commons.put(id, common);
 	}
 
@@ -414,13 +414,13 @@ public class TopologyBuilder {
 		if (json == null)
 			return new HashMap();
 		else
-			return (Map) JSONValue.parse(json);
+			return (Map) JSON.parse(json);
 	}
 
 	private static String mergeIntoJson(Map into, Map newMap) {
 		Map res = new HashMap(into);
 		if (newMap != null)
 			res.putAll(newMap);
-		return JSONValue.toJSONString(res);
+		return JSON.toJSONString(res);
 	}
 }

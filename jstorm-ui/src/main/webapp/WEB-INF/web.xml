@@ -23,6 +23,6 @@
         </session-timeout>
     </session-config>
     <welcome-file-list>
-        <welcome-file>cluster.jsf</welcome-file>
+        <welcome-file>clusters.jsf</welcome-file>
     </welcome-file-list>
 </web-app>

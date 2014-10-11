@@ -24,9 +24,6 @@ import com.alibaba.jstorm.task.Assignment;
 
 public class UploadSupervMetric extends RunnableCallback {
 	private static Logger LOG = Logger.getLogger(UploadSupervMetric.class);
-    
-    private static final String TASK_MONITOR_NAME = "jstorm_task_metrics";
-    private static final String WORKER_MONITOR_NAME = "jstorm_worker_metrics";
 	
     private AtomicBoolean active;
 	private Integer result;
@@ -35,17 +32,19 @@ public class UploadSupervMetric extends RunnableCallback {
 	private String supervisorId;
 	private String hostName;
 	private StormClusterState cluster;
-	private AlimonitorClient client = new AlimonitorClient();
+	private MetricSendClient client;
 	
 	List<Map<String, Object>> jsonMsgTasks = new ArrayList<Map<String, Object>>();
 	List<Map<String, Object>> jsonMsgWorkers = new ArrayList<Map<String, Object>>();
 	
-	public UploadSupervMetric(StormClusterState cluster, String supervisorId, AtomicBoolean active, int frequence) {
+	public UploadSupervMetric(StormClusterState cluster, String supervisorId, 
+			AtomicBoolean active, int frequence, MetricSendClient client) {
 		this.active = active;
 		this.frequence = frequence;
 		this.result = null;
 		this.cluster = cluster;
 		this.supervisorId = supervisorId;
+		this.client = client;
 		try {
 		    SupervisorInfo supervisorInfo = cluster.supervisor_info(supervisorId);
 		    this.hostName = supervisorInfo.getHostName();
@@ -77,11 +76,20 @@ public class UploadSupervMetric extends RunnableCallback {
 		    List<String> topologys = cluster.active_storms();
 		    
 		    for (String topologyId : topologys) {
-		    	StormMonitor monitor = cluster.get_storm_monitor(topologyId);
-		    	if (monitor == null) continue;
-		    	boolean metricPerf = monitor.getMetrics();
+		    	StormMonitor monitor = null;
+		    	boolean metricPerf = true;
+		    	Assignment assignment = null;
 		    	
-		    	Assignment assignment = cluster.assignment_info(topologyId, null);
+		    	try {
+		    	    monitor = cluster.get_storm_monitor(topologyId);
+		    	    if (monitor != null) metricPerf = monitor.getMetrics();
+		    	
+		    	    assignment = cluster.assignment_info(topologyId, null);
+		    	} catch (Exception e) {
+		    		LOG.error("Error when retrieving monitor status and assignment info "
+		    				+ "for " + topologyId, e);
+		    		continue;
+		    	}
 		    	
 		    	if (assignment != null) {
 		    		Set<Integer> taskSet = new HashSet<Integer>();
@@ -101,13 +109,21 @@ public class UploadSupervMetric extends RunnableCallback {
 		    }
 		    
 		    if (jsonMsgTasks.size() != 0) {
-		    	client.setMonitorName(TASK_MONITOR_NAME);
-		    	client.sendRequest(0, "", jsonMsgTasks);
+		    	if (client instanceof AlimonitorClient) {
+		    	    ((AlimonitorClient) client).setMonitorName(MetricDef.TASK_MONITOR_NAME);
+		    	    ((AlimonitorClient) client).setCollectionFlag(0);
+				    ((AlimonitorClient) client).setErrorInfo("");
+		    	}
+		    	client.send(jsonMsgTasks);
 		    }
 		    
 		    if (jsonMsgWorkers.size() != 0) {
-		    	client.setMonitorName(WORKER_MONITOR_NAME);
-		    	client.sendRequest(0, "", jsonMsgWorkers);
+		    	if (client instanceof AlimonitorClient) {
+		    	    ((AlimonitorClient) client).setMonitorName(MetricDef.WORKER_MONITOR_NAME);
+		    	    ((AlimonitorClient) client).setCollectionFlag(0);
+				    ((AlimonitorClient) client).setErrorInfo("");
+		    	}
+		    	client.send(jsonMsgWorkers);
 		    }
 		    
 		    jsonMsgTasks.clear();

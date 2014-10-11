@@ -242,7 +242,6 @@ public class LogPage implements Serializable {
 					/ HttpserverUtils.HTTPSERVER_LOGVIEW_PAGESIZE;
 		}
 
-		List<Long> ret = new ArrayList<Long>();
 		if (item - current <= 5) {
 			for (long i = item - 1; i > current; i--) {
 				insertPage(i);

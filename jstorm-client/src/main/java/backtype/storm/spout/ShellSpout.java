@@ -1,15 +1,18 @@
 package backtype.storm.spout;
 
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import backtype.storm.generated.ShellComponent;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.utils.ShellProcess;
 import backtype.storm.utils.Utils;
-import java.util.Map;
-import java.util.List;
-import java.io.IOException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.json.simple.JSONObject;
+
+import com.alibaba.fastjson.JSONObject;
 
 public class ShellSpout implements ISpout {
 	public static Logger LOG = LoggerFactory.getLogger(ShellSpout.class);

@@ -19,6 +19,7 @@ public class ClusterSumm implements Serializable {
 	private String totalPortSlotNum;
 	private String usedPortSlotNum;
 	private String freePortSlotNum;
+	private String version;
 
 	public String getNimbusIp() {
 		return nimbusIp;
@@ -90,6 +91,14 @@ public class ClusterSumm implements Serializable {
 
 	public void setFreePortSlotNum(String freePortSlotNum) {
 		this.freePortSlotNum = freePortSlotNum;
+	}
+	
+	public String getVersion() {
+		return version;
+	}
+	
+	public void setVersion(String version) {
+		this.version = version;
 	}
 
 }

@@ -43,7 +43,7 @@ public class SpoutTimeoutCallBack<K, V> implements
 		}
 		try {
 			TupleInfo tupleInfo = (TupleInfo) val;
-			FailSpoutMsg fail = new FailSpoutMsg(spout, (TupleInfo) tupleInfo,
+			FailSpoutMsg fail = new FailSpoutMsg(key, spout, (TupleInfo) tupleInfo,
 					task_stats, isDebug);
 
 			disruptorEventQueue.publish(fail);

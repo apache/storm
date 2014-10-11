@@ -346,7 +346,6 @@ public class Worker {
 			// return null;
 			// }
 
-			StringBuilder output = new StringBuilder();
 			String str;
 			while ((str = reader.readLine()) != null) {
 				if (StringUtils.isBlank(str)) {

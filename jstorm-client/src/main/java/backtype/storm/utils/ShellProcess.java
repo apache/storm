@@ -1,19 +1,20 @@
 package backtype.storm.utils;
 
-import backtype.storm.task.TopologyContext;
 import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.Map;
-import java.util.List;
 
 import org.apache.commons.io.IOUtils;
-import org.json.simple.JSONObject;
-import org.json.simple.JSONValue;
 import org.apache.log4j.Logger;
+
+import backtype.storm.task.TopologyContext;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 
 public class ShellProcess {
 	public static Logger LOG = Logger.getLogger(ShellProcess.class);
@@ -51,7 +52,7 @@ public class ShellProcess {
 	}
 
 	public void writeMessage(Object msg) throws IOException {
-		writeString(JSONValue.toJSONString(msg));
+		writeString(JSON.toJSONString(msg));
 	}
 
 	private void writeString(String str) throws IOException {
@@ -63,7 +64,7 @@ public class ShellProcess {
 
 	public JSONObject readMessage() throws IOException {
 		String string = readString();
-		JSONObject msg = (JSONObject) JSONValue.parse(string);
+		JSONObject msg = (JSONObject) JSON.parse(string);
 		if (msg != null) {
 			return msg;
 		} else {

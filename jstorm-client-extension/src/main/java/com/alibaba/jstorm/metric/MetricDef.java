@@ -28,16 +28,18 @@ public class MetricDef {
 	public static final String NETTY_CLI_SYNC_BATCH_QUEUE = "Netty_Client_Sync_BatchQueue";
 	public static final String NETTY_CLI_SYNC_DISR_QUEUE  = "Netty_Client_Sync_DisrQueue";
 
-    public static final String ZMQ_SEND_TIME = "ZMQ_Send_Time";
+    public static final String ZMQ_SEND_TIME     = "ZMQ_Send_Time";
     public static final String ZMQ_SEND_MSG_SIZE = "ZMQ_Send_MSG_Size";	
 
     public static final String CPU_USED_RATIO = "Used_Cpu";
-    public static final String MEMORY_USED = "Used_Memory";
+    public static final String MEMORY_USED    = "Used_Memory";
     
 	public static final String REMOTE_CLI_ADDR  = "Remote_Client_Address";
 	public static final String REMOTE_SERV_ADDR = "Remote_Server_Address";
     
 	// monitor name in Alimonitor
-	public static final String TASK_MONITOR_NAME   = "jstorm_task_metrics";
-	public static final String WORKER_MONITOR_NAME = "jstorm_worker_metrics";
+	public static final String TOPOLOGY_MONITOR_NAME = "jstorm_metric";
+	public static final String TASK_MONITOR_NAME     = "jstorm_task_metrics";
+	public static final String WORKER_MONITOR_NAME   = "jstorm_worker_metrics";
+	public static final String USER_MONITOR_NAME     = "jstorm_user_metric";
 }

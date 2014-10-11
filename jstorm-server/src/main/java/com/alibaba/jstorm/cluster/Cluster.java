@@ -40,9 +40,12 @@ public class Cluster {
 	public static final String MASTER_ROOT = "nimbus_master";
 	public static final String MONITOR_ROOT = "monitor";
 	
+	public static final String STATUS_DIR = "status";
 	public static final String TASK_DIR = "task";
 	public static final String WORKER_DIR = "worker";
 	public static final String USER_DIR = "user";
+	
+	public static final String LAST_ERROR = "last_error";
 
 	public static final String ASSIGNMENTS_SUBTREE;
 	public static final String TASKS_SUBTREE;
@@ -95,6 +98,10 @@ public class Cluster {
 	public static String taskerror_storm_root(String topology_id) {
 		return TASKERRORS_SUBTREE + ZK_SEPERATOR + topology_id;
 	}
+	
+	public static String lasterror_path(String topology_id) {
+		return taskerror_storm_root(topology_id) + ZK_SEPERATOR + LAST_ERROR;
+	}
 
 	public static String taskerror_path(String topology_id, int task_id) {
 		return taskerror_storm_root(topology_id) + ZK_SEPERATOR + task_id;
@@ -102,6 +109,10 @@ public class Cluster {
 
 	public static String monitor_path(String topology_id) {
 		return MONITOR_SUBTREE + ZK_SEPERATOR + topology_id;
+	}
+	
+	public static String monitor_status_path(String topology_id) {
+		return monitor_path(topology_id) + ZK_SEPERATOR + STATUS_DIR;
 	}
 	
 	public static String monitor_taskdir_path(String topology_id) {

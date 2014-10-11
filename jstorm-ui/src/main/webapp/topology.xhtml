@@ -10,7 +10,8 @@
 <h:body>
 	<h:outputLink value="cluster.jsf">
 		<h1>
-			<h:outputText value="JStorm UI" />
+			<h:outputText value="JStorm Cluster" />
+			<f:param name="clusterName" value="#{param.clusterName}" />
 		</h1>
 	</h:outputLink>
 	<h2>Topology summary</h2>
@@ -66,6 +67,7 @@
         <h:outputText value="Topology stats" > </h:outputText>
         <span style="display:inline-block;">
         <form name = "aaa" action="topology.jsf" method="post">
+            <input id="clusterName" name="clusterName" type="hidden" value="#{param.clusterName}" />
             <input id="topologyid" name="topologyid" type="hidden" value="#{param.topologyid}" />
             <input id="windowpara" name="windowparaname" type="hidden" value="#{param.window}" />
             <select id ="window" name="window" onchange= "submit();" >
@@ -154,6 +156,7 @@
 				<!-- <h:outputText value="#{spout.componetId}" />  -->
 				<h:outputLink value="spout.jsf">
 					<h:outputText value="#{spout.componetId}" />
+					<f:param name="clusterName" value="#{param.clusterName}" />
 					<f:param name="topologyid" value="#{topologypage.topologyid}" />
 					<f:param name="window" value="#{topologypage.window}" />
 					<f:param name="componentid" value="#{spout.componetId}" />
@@ -233,6 +236,7 @@
 				<!-- <h:outputText value="#{bolt.componetId}" />  -->
 				<h:outputLink value="bolt.jsf">
 					<h:outputText value="#{bolt.componetId}" />
+					<f:param name="clusterName" value="#{param.clusterName}" />
 					<f:param name="topologyid" value="#{topologypage.topologyid}" />
 					<f:param name="window" value="#{topologypage.window}" />
 					<f:param name="componentid" value="#{bolt.componetId}" />

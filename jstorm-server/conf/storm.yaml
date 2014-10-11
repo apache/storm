@@ -46,4 +46,15 @@
 # will only be printed to log. If it is enabled, the metrics data will be
 # posted to alimonitor besides printing to log.
  topology.performance.metrics: true
- topology.alimonitor.metrics.post: true
+ topology.alimonitor.metrics.post: false
+
+# UI MultiCluster
+# Following is an example of multicluster UI configuration
+# ui.clusters:
+#     - {
+#         name: "jstorm",
+#         zkRoot: "/jstorm",
+#         zkServers:
+#             [ "localhost"],
+#         zkPort: 2181,
+#       }

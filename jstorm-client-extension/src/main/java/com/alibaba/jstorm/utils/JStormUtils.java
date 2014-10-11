@@ -10,24 +10,18 @@ import java.io.StringWriter;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import javax.management.AttributeNotFoundException;
-import javax.management.InstanceNotFoundException;
-import javax.management.MBeanException;
-import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
-import javax.management.ReflectionException;
 
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
@@ -35,10 +29,10 @@ import org.apache.commons.exec.ExecuteException;
 import org.apache.log4j.Appender;
 import org.apache.log4j.FileAppender;
 import org.apache.log4j.Logger;
-import org.json.simple.JSONValue;
 
 import backtype.storm.utils.Utils;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.jstorm.callback.AsyncLoopDefaultKill;
 import com.alibaba.jstorm.callback.RunnableCallback;
 
@@ -303,14 +297,14 @@ public class JStormUtils {
 	// }
 
 	public static String to_json(Map m) {
-		return JSONValue.toJSONString(m);
+		return JSON.toJSONString(m);
 	}
 
 	public static Object from_json(String json) {
 		if (json == null) {
 			return null;
 		} else {
-			return JSONValue.parse(json);
+			return JSON.parse(json);
 		}
 	}
 

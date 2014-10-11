@@ -1,5 +1,10 @@
 package com.alibaba.jstorm.daemon.nimbus;
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.BufferedReader;
+import java.io.Closeable;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -477,7 +482,7 @@ public class NimbusUtils {
 
 	public static TopologySummary mkTopologySummary(Assignment assignment,
 			String topologyId, String topologyName, String status,
-			int uptime_secs, String lastErrTimeStamp) {
+			int uptime_secs, Map<Integer, String> lastErrTimeStamp) {
 
 		int num_workers = assignment.getWorkers().size();
 		int num_tasks = 0;
@@ -487,14 +492,15 @@ public class NimbusUtils {
 		}
 		
 		long currentTimeSecs = System.currentTimeMillis() / 1000;
-		String errorInfo;
-		if (lastErrTimeStamp == null)
-			errorInfo = "N";
-		else {
-		    if ((currentTimeSecs - Long.valueOf(lastErrTimeStamp)) < 1800) 
-			    errorInfo = "Y";
-		    else
-			    errorInfo = "N";
+		String errorInfo = "";
+		if (lastErrTimeStamp != null)
+		{
+			for (Entry<Integer, String> entry : lastErrTimeStamp.entrySet()) {
+		        if ((currentTimeSecs - Long.valueOf(entry.getValue())) < entry.getKey()) {
+			        errorInfo = "Y";
+			        break;
+		        }
+			}
 		}
 
 		TopologySummary ret = new TopologySummary(topologyId, topologyName,
@@ -724,5 +730,33 @@ public class NimbusUtils {
 		Map<String, Double> gaugeMap = metricData.get_gauge();
 		gaugeMap.put(MetricDef.CPU_USED_RATIO, metricInfo.getUsedCpu());
 		gaugeMap.put(MetricDef.MEMORY_USED,((Long) metricInfo.getUsedMem()).doubleValue());
+	}
+	
+	public static String getNimbusVersion() {
+		String ret = null;
+		
+		String path = System.getProperty("jstorm.home") + "/RELEASE";
+		File file = new File(path);
+		FileReader reader = null;
+        Closeable resource = reader;
+		
+		try{
+		    reader = new FileReader(file);
+		    BufferedReader bufferedReader = new BufferedReader(reader);
+            resource = bufferedReader;
+		    ret = bufferedReader.readLine();
+		} catch (Exception e) {
+			LOG.warn("Failed to get nimbus version", e);
+		} finally {
+			if (resource != null) {
+				try {
+					resource.close();
+				} catch (Exception e) {
+					LOG.error("Failed to close the reader of RELEASE", e);
+				}
+			}
+		}
+		
+		return ret;
 	}
 }

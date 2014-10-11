@@ -178,9 +178,8 @@ public class SpoutExecutors extends BaseExecutors implements EventHandler {
 				Object id = tuple.getValue(0);
 				Object obj = pending.remove((Long) id);
 
-				if (obj == null) {
-					LOG.debug("Pending map no entry:" + id + ", pending size:"
-							+ pending.size());
+				if (obj == null && isDebug) {
+					LOG.info("Pending map no entry:" + id );
 					return;
 				}
 
@@ -193,7 +192,7 @@ public class SpoutExecutors extends BaseExecutors implements EventHandler {
 					runnable = new AckSpoutMsg(spout, tupleInfo, task_stats,
 							isDebug);
 				} else if (stream_id.equals(Acker.ACKER_FAIL_STREAM_ID)) {
-					runnable = new FailSpoutMsg(spout, tupleInfo, task_stats,
+					runnable = new FailSpoutMsg(id, spout, tupleInfo, task_stats,
 							isDebug);
 				} else {
 					LOG.warn("Receive one unknow source Tuple " + idStr);
@@ -209,7 +208,7 @@ public class SpoutExecutors extends BaseExecutors implements EventHandler {
 				for (java.util.Map.Entry<Long, TupleInfo> entry : timeoutMap
 						.entrySet()) {
 					TupleInfo tupleInfo = entry.getValue();
-					FailSpoutMsg fail = new FailSpoutMsg(spout,
+					FailSpoutMsg fail = new FailSpoutMsg(entry.getKey(), spout,
 							(TupleInfo) tupleInfo, task_stats, isDebug);
 					fail.run();
 				}

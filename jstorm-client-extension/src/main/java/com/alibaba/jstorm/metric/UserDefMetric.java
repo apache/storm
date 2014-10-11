@@ -20,7 +20,7 @@ import com.alibaba.jstorm.metric.MetricInfo;
 /**
  * /storm-zk-root/Monitor/{topologyid}/UserDefMetrics/{workerid} data
  */
-public class UserDefMetric implements Serializable {
+public class UserDefMetric {
 
 	private static final long serialVersionUID = 4547327064057659279L;
 	

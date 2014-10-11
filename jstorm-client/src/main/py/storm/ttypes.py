@@ -1832,6 +1832,7 @@ class ClusterSummary:
    - supervisors
    - nimbus_uptime_secs
    - topologies
+   - version
   """
 
   thrift_spec = (
@@ -1839,15 +1840,17 @@ class ClusterSummary:
     (1, TType.LIST, 'supervisors', (TType.STRUCT,(SupervisorSummary, SupervisorSummary.thrift_spec)), None, ), # 1
     (2, TType.I32, 'nimbus_uptime_secs', None, None, ), # 2
     (3, TType.LIST, 'topologies', (TType.STRUCT,(TopologySummary, TopologySummary.thrift_spec)), None, ), # 3
+    (4, TType.STRING, 'version', None, None, ), # 4
   )
 
   def __hash__(self):
-    return 0 + hash(self.supervisors) + hash(self.nimbus_uptime_secs) + hash(self.topologies)
+    return 0 + hash(self.supervisors) + hash(self.nimbus_uptime_secs) + hash(self.topologies) + hash(self.version)
 
-  def __init__(self, supervisors=None, nimbus_uptime_secs=None, topologies=None,):
+  def __init__(self, supervisors=None, nimbus_uptime_secs=None, topologies=None, version=None,):
     self.supervisors = supervisors
     self.nimbus_uptime_secs = nimbus_uptime_secs
     self.topologies = topologies
+    self.version = version
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -1885,6 +1888,11 @@ class ClusterSummary:
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
+      elif fid == 4:
+        if ftype == TType.STRING:
+          self.version = iprot.readString().decode('utf-8')
+        else:
+          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -1912,6 +1920,10 @@ class ClusterSummary:
       for iter79 in self.topologies:
         iter79.write(oprot)
       oprot.writeListEnd()
+      oprot.writeFieldEnd()
+    if self.version is not None:
+      oprot.writeFieldBegin('version', TType.STRING, 4)
+      oprot.writeString(self.version.encode('utf-8'))
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()

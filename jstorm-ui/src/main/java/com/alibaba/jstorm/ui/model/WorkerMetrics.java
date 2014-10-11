@@ -1,15 +1,19 @@
 package com.alibaba.jstorm.ui.model;
 
+import java.io.Serializable;
+
 import org.apache.log4j.Logger;
+
+import backtype.storm.generated.WorkerMetricData;
 
 import com.alibaba.jstorm.metric.MetricDef;
 import com.alibaba.jstorm.ui.UIUtils;
-import com.alibaba.jstorm.ui.model.data.SpoutPage;
 import com.alibaba.jstorm.utils.JStormUtils;
 
-import backtype.storm.generated.*;
+public class WorkerMetrics implements Serializable{
+	/**  */
+	private static final long serialVersionUID = -5610156437643520186L;
 
-public class WorkerMetrics {
 	private static final Logger LOG = Logger.getLogger(WorkerMetrics.class);
 	
     String hostName;

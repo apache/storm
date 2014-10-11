@@ -11,7 +11,8 @@
 <h:body>
 	<h:outputLink value="cluster.jsf">
 		<h1>
-			<h:outputText value="JStorm UI" />
+			<h:outputText value="JStorm Cluster" />
+			<f:param name="clusterName" value="#{param.clusterName}" />
 		</h1>
 	</h:outputLink>
 	
@@ -101,6 +102,7 @@
                     <p:column>
 		        <h:outputLink value="#{task._component_type}.jsf">
 			<h:outputText value="#{task._component_id}-#{task._task_id}" />
+			    <f:param name="clusterName" value="#{param.clusterName}" />
 			    <f:param name="topologyid" value="#{wsumm.topology}" />
 			    <f:param name="window" value="All-time" />
 			    <f:param name="componentid" value="#{task._component_id}" />

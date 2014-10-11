@@ -1,12 +1,17 @@
 package com.alibaba.jstorm.ui.model;
 
+import java.io.Serializable;
+
 import com.alibaba.jstorm.metric.MetricDef;
 import com.alibaba.jstorm.ui.UIUtils;
 
 import backtype.storm.generated.*;
 
-public class TaskMetrics {
-    int    taskId;
+public class TaskMetrics implements Serializable{
+    /**  */
+	private static final long serialVersionUID = -113082870281288187L;
+	
+	int    taskId;
     String componentId;
     double deserializeQueue;
     double deserializeTime;

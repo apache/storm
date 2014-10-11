@@ -30,6 +30,8 @@ import com.alibaba.jstorm.cluster.StormConfig;
 import com.alibaba.jstorm.daemon.supervisor.Httpserver;
 import com.alibaba.jstorm.daemon.worker.hearbeat.SyncContainerHb;
 import com.alibaba.jstorm.daemon.worker.metrics.UploadMetricFromZK;
+import com.alibaba.jstorm.daemon.worker.metrics.MetricSendClient;
+import com.alibaba.jstorm.daemon.worker.metrics.AlimonitorClient;
 import com.alibaba.jstorm.schedule.CleanRunnable;
 import com.alibaba.jstorm.schedule.FollowerRunnable;
 import com.alibaba.jstorm.schedule.MonitorRunnable;
@@ -119,12 +121,12 @@ public class NimbusServer {
 			hs.start();
 
 			initContainerHBThread(conf);
-
-			if (ConfigExtension.isAlimonitorMetricsPost(conf))
-			    initUploadMetricThread(data);
-			
+		
 			while (!data.isLeader())
 				Utils.sleep(5000);
+			
+			
+			initUploadMetricThread(data);
 
 			init(conf);
 		} catch (Throwable e) {
@@ -328,7 +330,15 @@ public class NimbusServer {
 	private void initUploadMetricThread(NimbusData data) {
 		ScheduledExecutorService scheduleService = data.getScheduExec();
 		
-		uploadMetric = new UploadMetricFromZK(data);
+		MetricSendClient client;
+		if (ConfigExtension.isAlimonitorMetricsPost(data.getConf())) {
+		    client = new AlimonitorClient(AlimonitorClient.DEFAUT_ADDR, 
+				    AlimonitorClient.DEFAULT_PORT, true);
+		} else {
+			client = new MetricSendClient();
+		}
+		
+		uploadMetric = new UploadMetricFromZK(data, client);
 		
 		scheduleService.scheduleWithFixedDelay(uploadMetric, 120, 60, TimeUnit.SECONDS);
 		

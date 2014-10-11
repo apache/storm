@@ -45,7 +45,7 @@ public class BatchSpoutTrigger implements IRichSpout {
 
 	private static final String ZK_NODE_PATH = "/trigger";
 
-	private static BatchId currentBatchId;
+	private static BatchId currentBatchId = null;
 
 	private Map conf;
 

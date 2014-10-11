@@ -501,6 +501,8 @@ public class UIUtils {
 		clusterSumm.setTotalPortSlotNum(String.valueOf(totalPortSlots));
 		clusterSumm.setUsedPortSlotNum(String.valueOf(usePortSlots));
 		clusterSumm.setFreePortSlotNum(String.valueOf(freePortSlots));
+		
+		clusterSumm.setVersion(summ.get_version());
 
 		clusumms.add(clusterSumm);
 		return clusumms;
@@ -566,6 +568,19 @@ public class UIUtils {
 		return ret;
 	}
 
+	public static void getClusterInfoByName(Map conf, String clusterName) {
+		List<Map> uiClusters = ConfigExtension.getUiClusters(conf);
+		Map cluster = ConfigExtension.getUiClusterInfo(
+				uiClusters, clusterName);
+		
+		conf.put(Config.STORM_ZOOKEEPER_ROOT, 
+				ConfigExtension.getUiClusterZkRoot(cluster));
+		conf.put(Config.STORM_ZOOKEEPER_SERVERS, 
+				ConfigExtension.getUiClusterZkServers(cluster));
+		conf.put(Config.STORM_ZOOKEEPER_PORT, 
+				ConfigExtension.getUiClusterZkPort(cluster));
+	}
+	
 	public static void main(String[] args) {
 	}
 }

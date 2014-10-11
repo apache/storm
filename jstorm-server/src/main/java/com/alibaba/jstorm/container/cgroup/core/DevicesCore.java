@@ -89,14 +89,35 @@ public class DevicesCore implements CgroupCore {
 		}
 
 		@Override
-		public boolean equals(Object o) {
-			Record actual = (Record) o;
-			boolean result = false;
-			if (type == actual.type && device == actual.device
-					&& accesses == actual.accesses) {
-				result = true;
-			}
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + accesses;
+			result = prime * result
+					+ ((device == null) ? 0 : device.hashCode());
+			result = prime * result + type;
 			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			Record other = (Record) obj;
+			if (accesses != other.accesses)
+				return false;
+			if (device == null) {
+				if (other.device != null)
+					return false;
+			} else if (!device.equals(other.device))
+				return false;
+			if (type != other.type)
+				return false;
+			return true;
 		}
 
 		public static Record[] parseRecordList(List<String> output) {

@@ -7,8 +7,9 @@ import java.util.Map;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
-import org.json.simple.JSONAware;
-import org.json.simple.JSONObject;
+
+import com.alibaba.fastjson.JSONAware;
+import com.alibaba.fastjson.JSONObject;
 
 public class FileAttribute implements Serializable, JSONAware {
 

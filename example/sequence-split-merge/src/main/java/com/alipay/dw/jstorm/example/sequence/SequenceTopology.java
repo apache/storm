@@ -7,10 +7,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import org.apache.thrift7.server.THsHaServer.Args;
 import org.yaml.snakeyaml.Yaml;
 
 import backtype.storm.Config;
+import backtype.storm.LocalCluster;
 import backtype.storm.StormSubmitter;
 import backtype.storm.generated.AlreadyAliveException;
 import backtype.storm.generated.InvalidTopologyException;
@@ -19,8 +19,6 @@ import backtype.storm.topology.BoltDeclarer;
 import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.tuple.Fields;
 
-import com.alibaba.jstorm.cluster.StormConfig;
-import com.alibaba.jstorm.local.LocalCluster;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alipay.dw.jstorm.example.sequence.bean.Pair;
 import com.alipay.dw.jstorm.example.sequence.bean.TradeCustomer;

@@ -285,13 +285,37 @@ public class StormZkClusterState implements StormClusterState {
 
 		    cluster_state.set_data(timestampPath, error.getBytes());
 		}
-		
-		//Set error information in task error topology patch
-		String taskErrTopoPath = Cluster.taskerror_storm_root(topologyId);
-		cluster_state.set_data(taskErrTopoPath + "/" + "last_error", timeStamp.getBytes());
-	}
 
+		setLastErrInfo(topologyId, error, timeStamp);
+	}
 	
+	private void setLastErrInfo(String topologyId, String error, String timeStamp) throws Exception {
+		// Set error information in task error topology patch
+		// Last Error information format in ZK: map<report_duration, timestamp>
+		// report_duration means only the errors will presented in web ui if the
+		// error happens within this duration.
+		// Currently, the duration for "queue full" error is 180sec(3min) while
+		// the duration for other errors is 1800sec(30min). 
+		String lastErrTopoPath = Cluster.lasterror_path(topologyId);
+		Map<Integer, String> lastErrInfo = null;
+		try {
+		    lastErrInfo = (Map<Integer, String>) 
+				    (Cluster.maybe_deserialize(cluster_state.get_data(lastErrTopoPath, false)));
+		} catch (Exception e) {
+			LOG.error("Failed to get last error time. Remove the corrupt node for " + topologyId, e);
+			remove_lastErr_time(topologyId);
+			lastErrInfo = null;
+		}
+		if (lastErrInfo == null)
+			lastErrInfo = new HashMap<Integer, String>();
+
+		if (error.indexOf(TaskMetricInfo.QEUEU_IS_FULL) != -1)
+			lastErrInfo.put(180, timeStamp);
+		else
+			lastErrInfo.put(1800, timeStamp);
+
+		cluster_state.set_data(lastErrTopoPath, Utils.serialize(lastErrInfo));
+	}
 	
 	@Override
 	public void set_task(String topologyId, int taskId, TaskInfo info)
@@ -359,12 +383,18 @@ public class StormZkClusterState implements StormClusterState {
 	}
 
 	@Override
-	public String topo_lastErr_time(String topologyId) throws Exception {
-		String path = Cluster.taskerror_storm_root(topologyId);
-		String lastErrTime = null;
-		byte[] data = cluster_state.get_data(path + "/" + "last_error", false);
-		if (data != null) lastErrTime = new String(data);
+	public Map<Integer, String> topo_lastErr_time(String topologyId) throws Exception {
+		String path = Cluster.lasterror_path(topologyId);
+		Map<Integer, String> lastErrTime;
+		lastErrTime = (Map<Integer, String>) (Cluster.maybe_deserialize(
+				cluster_state.get_data(path, false)));
 		return lastErrTime;
+	}
+	
+	@Override
+	public void remove_lastErr_time(String topologyId) throws Exception {
+		String path = Cluster.lasterror_path(topologyId);
+		cluster_state.delete_node(path);
 	}
 	
 	@Override
@@ -601,23 +631,16 @@ public class StormZkClusterState implements StormClusterState {
 	
 	@Override
 	public void set_storm_monitor(String topologyId, StormMonitor metricsMonitor) throws Exception {
-	    String monitorPath = Cluster.monitor_path(topologyId);
-	    cluster_state.set_data(monitorPath, Utils.serialize(metricsMonitor));
+	    String monitorStatusPath = Cluster.monitor_status_path(topologyId);
+	    cluster_state.set_data(monitorStatusPath, Utils.serialize(metricsMonitor));
 	    cluster_state.mkdirs(Cluster.monitor_taskdir_path(topologyId));
 	    cluster_state.mkdirs(Cluster.monitor_workerdir_path(topologyId));
 	    cluster_state.mkdirs(Cluster.monitor_userdir_path(topologyId));
-	    // Update the task list under /zk_root/monitor/task
-	    //Map<Integer, TaskInfo> taskInfoList = task_info_list(topologyId);
-	    //for(Entry<Integer, TaskInfo> taskEntry : taskInfoList.entrySet()) {
-	    //	TaskMetricInfo taskMetricInfo = new TaskMetricInfo(taskEntry.getValue().getComponentId());
-	    //	String taskMetricsPath = monitorPath + taskEntry.getKey();
-	    //	cluster_state.set_data(taskMetricsPath, Utils.serialize(taskMetricInfo));
-	    //}
 	}
 
 	@Override 
 	public StormMonitor get_storm_monitor(String topologyId) throws Exception {
-		String monitorPath = Cluster.monitor_path(topologyId);
+		String monitorPath = Cluster.monitor_status_path(topologyId);
 		
 		byte[] metricsMonitorData = cluster_state.get_data(monitorPath, false);
 		Object metricsMonitor = Cluster.maybe_deserialize(metricsMonitorData);

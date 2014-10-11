@@ -11,7 +11,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<jstorm.version>0.9.4.1</jstorm.version>
+		<jstorm.version>0.9.6</jstorm.version>
 		<storm.version>storm-0.9.2-incubating</storm.version>
 	</properties>
 	<repositories>
@@ -89,7 +89,7 @@
 					</descriptorRefs>
 					<archive>
 						<manifest>
-							<mainClass>storm.starter.SequenceTopology</mainClass>
+							<mainClass>com.alipay.dw.jstorm.example.sequence.SequenceTopology</mainClass>
 						</manifest>
 					</archive>
 				</configuration>

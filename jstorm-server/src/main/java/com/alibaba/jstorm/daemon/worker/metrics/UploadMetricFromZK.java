@@ -15,6 +15,7 @@ import com.alibaba.jstorm.cluster.StormBase;
 import com.alibaba.jstorm.cluster.StormClusterState;
 import com.alibaba.jstorm.stats.CommonStatsData;
 import com.alibaba.jstorm.task.TaskInfo;
+import com.alibaba.jstorm.metric.MetricDef;
 import com.alibaba.jstorm.metric.UserDefMetricData;
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Metric;
@@ -26,12 +27,13 @@ public class UploadMetricFromZK implements Runnable {
     private NimbusData data;
     private StormClusterState clusterState;
     
-    private AlimonitorClient client = new AlimonitorClient();
+    private MetricSendClient client;
     
     private Map<String, TopoCommStatsInfo> topologyMap;
     
-    public UploadMetricFromZK(NimbusData data) {
+    public UploadMetricFromZK(NimbusData data, MetricSendClient client) {
         this.data = data;
+        this.client = client;
         clusterState = data.getStormClusterState();
         topologyMap = new HashMap<String, TopoCommStatsInfo>();
     }
@@ -145,12 +147,16 @@ public class UploadMetricFromZK implements Runnable {
 		    }
 		    
 		    if(totalMsg.size() > 0) {
-		    	client.setMonitorName("jstorm_user_metric");
-		        client.sendRequest(0, " ", totalMsg);
+		    	// For Alimonitor Client only
+		    	if (client instanceof AlimonitorClient) {
+		    	    ((AlimonitorClient) client).setMonitorName(MetricDef.USER_MONITOR_NAME);
+		    	    ((AlimonitorClient) client).setCollectionFlag(0);
+				    ((AlimonitorClient) client).setErrorInfo("");
+		    	}
+		        client.send(totalMsg);
 		    }
 	    } catch (Exception e) {
-            // TODO Auto-generated catch block
-          e.printStackTrace();
+	    	LOG.warn("Failed to upload user define metric data", e);
         }
 	}
 	
@@ -207,8 +213,13 @@ public class UploadMetricFromZK implements Runnable {
     private void sendCommStatsData(List<Map<String,Object>> listMapMsg) {
 			
 		try {
-			client.setMonitorName("jstorm_metric");
-		    client.sendRequest(0, AlimonitorClient.ERROR_MSG, listMapMsg);
+			// For Alimonitor Client only
+			if (client instanceof AlimonitorClient) {
+			    ((AlimonitorClient) client).setMonitorName(MetricDef.TOPOLOGY_MONITOR_NAME);
+			    ((AlimonitorClient) client).setCollectionFlag(0);
+			    ((AlimonitorClient) client).setErrorInfo("");
+			}
+		    client.send(listMapMsg);
 		} catch (Exception e) {
 			LOG.warn("Error when sending common statistic data.", e);
 		}

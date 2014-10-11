@@ -18,13 +18,15 @@ import com.alibaba.jstorm.task.comm.TupleInfo;
  */
 public class FailSpoutMsg implements IAckMsg {
 	private static Logger LOG = LoggerFactory.getLogger(FailSpoutMsg.class);
+	private Object id;
 	private ISpout spout;
 	private TupleInfo tupleInfo;
 	private CommonStatsRolling task_stats;
 	private boolean isDebug = false;
 
-	public FailSpoutMsg(ISpout _spout, TupleInfo _tupleInfo,
+	public FailSpoutMsg(Object id, ISpout _spout, TupleInfo _tupleInfo,
 			CommonStatsRolling _task_stats, boolean _isDebug) {
+		this.id = id;
 		this.spout = _spout;
 		this.tupleInfo = _tupleInfo;
 		this.task_stats = _task_stats;
@@ -45,8 +47,8 @@ public class FailSpoutMsg implements IAckMsg {
 		task_stats.spout_failed_tuple(tupleInfo.getStream());
 
 		if (isDebug) {
-			LOG.info("Failed message {} : {}", msg_id, tupleInfo.getValues()
-					.toString());
+			LOG.info("Failed message rootId: {}, messageId:{} : {}", id, 
+					msg_id, tupleInfo.getValues().toString());
 		}
 	}
 

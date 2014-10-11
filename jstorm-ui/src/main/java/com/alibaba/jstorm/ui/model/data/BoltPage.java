@@ -18,6 +18,7 @@ import javax.faces.context.FacesContext;
 import org.apache.log4j.Logger;
 import org.apache.thrift7.TException;
 
+import backtype.storm.Config;
 import backtype.storm.generated.GlobalStreamId;
 import backtype.storm.generated.NotAliveException;
 import backtype.storm.generated.StormTopology;
@@ -51,6 +52,7 @@ public class BoltPage implements Serializable {
 
 	private static final Logger LOG = Logger.getLogger(BoltPage.class);
 
+	private String clusterName = null;
 	private String topologyid = null;
 	private String window = null;
 	private String componentid = null;
@@ -64,6 +66,11 @@ public class BoltPage implements Serializable {
 
 	public BoltPage() throws TException, NotAliveException {
 		FacesContext ctx = FacesContext.getCurrentInstance();
+		if (ctx.getExternalContext().getRequestParameterMap().get("clusterName") != null) {
+			clusterName = (String) ctx.getExternalContext()
+					.getRequestParameterMap().get("clusterName");
+		}
+		
 		if (ctx.getExternalContext().getRequestParameterMap().get("topologyid") != null) {
 			topologyid = (String) ctx.getExternalContext()
 					.getRequestParameterMap().get("topologyid");
@@ -84,8 +91,9 @@ public class BoltPage implements Serializable {
 		init();
 	}
 
-	public BoltPage(String topologyId, String componentId, String window)
+	public BoltPage(String clusterName, String topologyId, String componentId, String window)
 			throws TException, NotAliveException {
+		this.clusterName = clusterName;
 		this.topologyid = topologyId;
 		this.componentid = componentId;
 		this.window = window;
@@ -261,6 +269,9 @@ public class BoltPage implements Serializable {
 
 		try {
 			Map conf = UIUtils.readUiConfig();
+			if(clusterName != null  && !(clusterName.equals(""))) {
+				UIUtils.getClusterInfoByName(conf, clusterName);
+			}
 			client = NimbusClient.getConfiguredClient(conf);
 
 			TopologyInfo summ = client.getClient().getTopologyInfo(topologyid);
@@ -356,7 +367,7 @@ public class BoltPage implements Serializable {
 
 	public static void main(String[] args) {
 		try {
-			BoltPage instance = new BoltPage("sequence_test-3-1363789458",
+			BoltPage instance = new BoltPage("/jstorm", "sequence_test-3-1363789458",
 					"Total", StatBuckets.ALL_WINDOW_STR);
 		} catch (TException e) {
 			// TODO Auto-generated catch block

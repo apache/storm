@@ -1,10 +1,12 @@
 package storm.trident.topology.state;
 
+import backtype.storm.utils.Utils;
+import org.apache.zookeeper.KeeperException;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import storm.trident.topology.MasterBatchCoordinator;
 
 public class RotatingTransactionalState {
     public static interface StateInitializer {
@@ -41,6 +43,10 @@ public class RotatingTransactionalState {
         }
     }
     
+    public Object getState(long txid) {
+        return _curr.get(txid);
+    }
+    
     public Object getState(long txid, StateInitializer init) {
         if(!_curr.containsKey(txid)) {
             SortedMap<Long, Object> prevMap = _curr.headMap(txid);
@@ -67,6 +73,12 @@ public class RotatingTransactionalState {
         return _curr.get(txid);
     }
     
+    public Object getPreviousState(long txid) {
+        SortedMap<Long, Object> prevMap = _curr.headMap(txid);
+        if(prevMap.isEmpty()) return null;
+        else return prevMap.get(prevMap.lastKey());
+    }
+    
     public boolean hasCache(long txid) {
         return _curr.containsKey(txid);
     }
@@ -87,7 +99,15 @@ public class RotatingTransactionalState {
         SortedMap<Long, Object> toDelete = _curr.headMap(txid);
         for(long tx: new HashSet<Long>(toDelete.keySet())) {
             _curr.remove(tx);
-            _state.delete(txPath(tx));
+            try {
+                _state.delete(txPath(tx));
+            } catch(RuntimeException e) {
+                // Ignore NoNodeExists exceptions because when sync() it may populate _curr with stale data since
+                // zookeeper reads are eventually consistent.
+                if(!Utils.exceptionCauseIsInstanceOf(KeeperException.NoNodeException.class, e)) {
+                    throw e;
+                }
+            }
         }
     }
     

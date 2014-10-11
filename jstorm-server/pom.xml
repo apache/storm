@@ -2,25 +2,29 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
 
-	<parent>
+	 <parent>
 		<groupId>com.alibaba.jstorm</groupId>
 		<artifactId>jstorm-all</artifactId>
-		<version>0.9.6</version>
+		<version>0.9.6.1</version>
 		<relativePath>..</relativePath>
-	</parent>
- 	<!-- <parent>
+	</parent> 
+ 	<!--<parent>
  		<groupId>com.taobao</groupId> 
  		<artifactId>parent</artifactId> 
  		<version>1.0.2</version> 
- 	</parent> --> 
+ 	</parent>--> 
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.alibaba.jstorm</groupId>
 	<artifactId>jstorm-server</artifactId>
-	<version>0.9.6</version>
+	<version>0.9.6.1</version>
 	<packaging>jar</packaging>
 	<name>${project.artifactId}-${project.version}</name>
 	<description>jstorm server modules</description>
 
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
+	
 	<build>
 		<plugins>
 			<plugin>
@@ -28,7 +32,7 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<configuration>
 					<forkMode>pertest</forkMode>
-					<argLine>-Xms1024m -Xmx2048m</argLine>
+					<argLine>-Xms1024m -Xmx3072m</argLine>
 				</configuration>
 			</plugin>
 		</plugins>

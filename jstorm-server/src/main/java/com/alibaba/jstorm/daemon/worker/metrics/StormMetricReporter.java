@@ -319,9 +319,11 @@ public class StormMetricReporter extends ScheduledReporter {
     			    taskMetricInfo.updateMetricData(metricInfo);
     	  	    }
     	  	    
-    	  	    String error = taskMetricInfo.anyQueueFull();
-    	  	    if (error != null)
-    	  	        clusterState.report_task_error(topologyId, Integer.valueOf(taskId), error);
+    	  	    List<String> errors = taskMetricInfo.anyQueueFull();
+    	  	    if (errors.size() > 0) {
+    	  	    	for (String error : errors)
+    	  	            clusterState.report_task_error(topologyId, Integer.valueOf(taskId), error);
+    	  	    }
     	  	    
     		    clusterState.update_task_metric(topologyId, taskId, taskMetricInfo);
     		} catch(Exception e) {

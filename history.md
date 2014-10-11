@@ -1,4 +1,31 @@
-[JStorm 0.9.0 介绍](http://wenku.baidu.com/view/59e81017dd36a32d7375818b.html)
+[JStorm English introduction](http://42.121.19.155/jstorm/JStorm-introduce-en.pptx)
+[JStorm Chinese introduction](http://42.121.19.155/jstorm/JStorm-introduce.pptx)
+
+#Release 0.9.6.1
+1.Add management of multiclusters in web UI.
+2. Merge trident part from storm-0.9.3
+3. Use fastjson replace gson
+4. Reorganization the code generating metrics json
+5. Get jstorm version from $JSTORM_HOME/RELEASE instead of hardcode
+6. Change task deserialize thread's SingleThreadDisruptorQueue to MultiThreadDisruptorQueue
+7. Fix web ui display wrong number of workers in Supervisor page
+8. Fix taskheart beat thread competition in accessing task map
+9. Fix null pointer exception when killing worker and read worker's hearbeat object
+10. Netty client connect to server only in NettyClient module.
+11. Add break loop operation when netty client connection is closed
+12. Fix the bug that topology warning flag present in cluster page is not consistent with error information present in topology page
+13. Add recovery function when the data of task error information is corrupted
+14. Fix the bug that the metric data can not be uploaded onto Alimonitor when ugrading from pre-0.9.6 to 0.9.6 and executing pkill java without restart the topologying
+15. Fix the bug that zeroMq failed to receive data
+16. Add interface to easily setting worker's memory
+17. Set default value of topology.alimonitor.metrics.post to false
+18. Only start NETTY_SERVER_DECODE_TIME for netty server
+19. Keep compatible with Storm for local mode
+20. Print rootId when tuple failed
+21. In order to keep compatible with Storm, add submitTopologyWithProgressBar interface
+22. Upgrade netty version from 3.2.7 to 3.9.0
+23. Support assign topology to user-defined supervosors
+
 
 #Release 0.9.6
 1. Update UI 
@@ -28,7 +55,7 @@
 
 ## Bug fix
 1. Fix disruptor use too much cpu
-2. Add target NettyServer log when fail to send data by netty
+2. Add target NettyServer log when f1ail to send data by netty
 
 #Release 0.9.4.1
 ##Bug fix:

@@ -17,6 +17,7 @@ import javax.faces.context.FacesContext;
 
 import org.apache.log4j.Logger;
 
+import backtype.storm.Config;
 import backtype.storm.generated.NotAliveException;
 import backtype.storm.generated.StormTopology;
 import backtype.storm.generated.TaskSummary;
@@ -42,6 +43,7 @@ public class TopologyPage implements Serializable {
 
 	private static final Logger LOG = Logger.getLogger(TopologyPage.class);
 
+	private String clusterName = null;
 	private String topologyid = null;
 	private String window = null;
 	private List<TopologySumm> tsumm = null;
@@ -52,11 +54,15 @@ public class TopologyPage implements Serializable {
 	public TopologyPage() throws Exception {
 
 		FacesContext ctx = FacesContext.getCurrentInstance();
+		if (ctx.getExternalContext().getRequestParameterMap().get("clusterName") != null) {
+			clusterName = (String) ctx.getExternalContext()
+					.getRequestParameterMap().get("clusterName");
+		}
 		if (ctx.getExternalContext().getRequestParameterMap().get("topologyid") != null) {
 			topologyid = (String) ctx.getExternalContext()
 					.getRequestParameterMap().get("topologyid");
-			LOG.debug("Query topology " + topologyid);
 		}
+		LOG.debug("Query clusterName=" + clusterName + ", topology=" + topologyid);
 
 		window = UIUtils.getWindow(ctx);
 		LOG.info("Window:" + window);
@@ -71,7 +77,8 @@ public class TopologyPage implements Serializable {
 		init();
 	}
 
-	public TopologyPage(String topologyId, String window) throws Exception {
+	public TopologyPage(String clusterName, String topologyId, String window) throws Exception {
+		this.clusterName = clusterName;
 		this.topologyid = topologyId;
 		this.window = window;
 
@@ -85,6 +92,11 @@ public class TopologyPage implements Serializable {
 
 		try {
 			Map conf = UIUtils.readUiConfig();
+			
+			if(clusterName != null && !(clusterName.equals(""))) {
+				UIUtils.getClusterInfoByName(conf, clusterName);
+			}
+			
 			client = NimbusClient.getConfiguredClient(conf);
 
 			TopologyInfo summ = client.getClient().getTopologyInfo(topologyid);
@@ -264,7 +276,7 @@ public class TopologyPage implements Serializable {
 	public static void main(String[] args) {
 
 		try {
-			TopologyPage instance = new TopologyPage(
+			TopologyPage instance = new TopologyPage("jstorm", 
 					"sequence_test-1-1386516240", StatBuckets.ALL_WINDOW_STR);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block

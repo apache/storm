@@ -10,7 +10,8 @@
 <h:body>
 	<h:outputLink value="cluster.jsf">
 		<h1>
-			<h:outputText value="JStorm UI" />
+			<h:outputText value="JStorm Cluster" />
+			<f:param name="clusterName" value="#{param.clusterName}" />
 		</h1>
 	</h:outputLink>
 	<h2>Summary</h2>
@@ -29,6 +30,7 @@
 				</f:facet>
 				<h:outputLink value="topology.jsf">
 					<h:outputText value="#{com.topologyname}" />
+					<f:param name="clusterName" value="#{param.clusterName}" />
 					<f:param name="topologyid" value="#{param.topologyid}" />
 				</h:outputLink>
 			</p:column>
@@ -46,6 +48,8 @@
 		<h:outputText value="Component stats" />
 		<span style="display: inline-block;">
 			<form name="aaa" action="spout.jsf" method="post">
+                                <input id="clusterName" name="clusterName" type="hidden"
+					value="#{param.clusterName}" />
 				<input id="topologyid" name="topologyid" type="hidden"
 					value="#{param.topologyid}" /> 
 				<input id="componentid" name="componentid" type="hidden" 
@@ -181,15 +185,6 @@
 					<h:outputText value="Taskid" />
 				</f:facet>
 				<h:outputText value="#{ct.taskid}" />
-				<!-- 
-				<h:outputLink value="task.jsf">
-					<h:outputText value="#{ct.taskid}" />
-					<f:param name="topologyid" value="#{param.topologyid}" />
-					<f:param name="componentid" value="#{param.componentid}" />
-					<f:param name="taskid" value="#{ct.taskid}" />
-					<f:param name="window" value="#{param.window}" />
-				</h:outputLink>
-				-->
 			</p:column>
 
 			<p:column>
@@ -206,6 +201,7 @@
 				<!--<h:outputText value="#{ct.host}" />-->
 				<h:outputLink value="supervisor.jsf">
 				<h:outputText value="#{ct.host}" />
+				        <f:param name="clusterName" value="#{param.clusterName}" />
 					<f:param name="host" value="#{ct.host}" />
 				</h:outputLink>
 			</p:column>
@@ -291,15 +287,6 @@
 					<h:outputText value="Taskid" />
 				</f:facet>
 				<h:outputText value="#{tm.taskId}" />
-				<!-- 
-				<h:outputLink value="task.jsf">
-					<h:outputText value="#{ct.taskid}" />
-					<f:param name="topologyid" value="#{param.topologyid}" />
-					<f:param name="componentid" value="#{param.componentid}" />
-					<f:param name="taskid" value="#{ct.taskid}" />
-					<f:param name="window" value="#{param.window}" />
-				</h:outputLink>
-				-->
 			</p:column>
 
 			<p:column>

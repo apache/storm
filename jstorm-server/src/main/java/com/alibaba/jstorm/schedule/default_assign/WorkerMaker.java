@@ -14,6 +14,8 @@ import java.util.Set;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
 
+import backtype.storm.Config;
+
 import com.alibaba.jstorm.client.WorkerAssignment;
 import com.alibaba.jstorm.daemon.supervisor.SupervisorInfo;
 import com.alibaba.jstorm.utils.FailedAssignTopologyException;
@@ -67,6 +69,9 @@ public class WorkerMaker {
 		for (int i = 0; i < defaultWorkerNum; i++) {
 			result.add(new ResourceWorkerSlot());
 		}
+
+		this.putAllWorkerToSupervisor(result,
+				this.getIsolationSupervisors(context));
 		this.putAllWorkerToSupervisor(result,
 				this.getCanUseSupervisors(context.getCluster()));
 		this.setAllWorkerMemAndCpu(context.getStormConf(), result);
@@ -88,6 +93,8 @@ public class WorkerMaker {
 	private void putAllWorkerToSupervisor(List<ResourceWorkerSlot> result,
 			List<SupervisorInfo> supervisors) {
 		for (ResourceWorkerSlot worker : result) {
+			if (worker.getNodeId() != null)
+				continue;
 			if (worker.getHostname() != null) {
 				for (SupervisorInfo supervisor : supervisors) {
 					if (supervisor.getHostName().equals(worker.getHostname())
@@ -127,6 +134,8 @@ public class WorkerMaker {
 			List<SupervisorInfo> supervisors) {
 		int key = 0;
 		for (ResourceWorkerSlot worker : result) {
+			if (supervisors.size() == 0)
+				return;
 			if (worker.getNodeId() != null)
 				continue;
 			if (key >= supervisors.size())
@@ -168,7 +177,7 @@ public class WorkerMaker {
 		if (users.size() + result.size() > workersNum) {
 			return;
 		}
-		
+
 		if (users.size() + result.size() == workersNum
 				&& assigned.size() != needAssign.size()) {
 			return;
@@ -227,5 +236,22 @@ public class WorkerMaker {
 				canUseSupervisors.add(supervisor);
 		}
 		return canUseSupervisors;
+	}
+
+	private List<SupervisorInfo> getIsolationSupervisors(
+			DefaultTopologyAssignContext context) {
+		List<String> isolationHosts = (List<String>) context.getStormConf()
+				.get(Config.ISOLATION_SCHEDULER_MACHINES);
+		LOG.info("Isolation machines: " + isolationHosts);
+		if (isolationHosts == null)
+			return new ArrayList<SupervisorInfo>();
+		List<SupervisorInfo> isolationSupervisors = new ArrayList<SupervisorInfo>();
+		for (SupervisorInfo supervisor : this.getCanUseSupervisors(context
+				.getCluster())) {
+			if (isolationHosts.contains(supervisor.getHostName())) {
+				isolationSupervisors.add(supervisor);
+			}
+		}
+		return isolationSupervisors;
 	}
 }

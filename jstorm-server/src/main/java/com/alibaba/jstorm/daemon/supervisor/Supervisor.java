@@ -26,6 +26,8 @@ import com.alibaba.jstorm.cluster.Common;
 import com.alibaba.jstorm.cluster.StormClusterState;
 import com.alibaba.jstorm.cluster.StormConfig;
 import com.alibaba.jstorm.daemon.worker.hearbeat.SyncContainerHb;
+import com.alibaba.jstorm.daemon.worker.metrics.AlimonitorClient;
+import com.alibaba.jstorm.daemon.worker.metrics.MetricSendClient;
 import com.alibaba.jstorm.daemon.worker.metrics.UploadSupervMetric;
 import com.alibaba.jstorm.event.EventManager;
 import com.alibaba.jstorm.event.EventManagerImp;
@@ -160,11 +162,17 @@ public class Supervisor {
 		httpserver.start();
 		
 		//Step 8 start uploading every 60 secs
+		MetricSendClient client;
 		if (ConfigExtension.isAlimonitorMetricsPost(conf)) {
-		    UploadSupervMetric uploadMetric = new UploadSupervMetric(stormClusterState, supervisorId, active, 60);
-		    AsyncLoopThread uploadMetricThread = new AsyncLoopThread(uploadMetric);
-		    threads.add(uploadMetricThread);
+			client = new AlimonitorClient(AlimonitorClient.DEFAUT_ADDR, 
+					AlimonitorClient.DEFAULT_PORT, true);
+		} else {
+		    client = new MetricSendClient();
 		}
+		UploadSupervMetric uploadMetric = new UploadSupervMetric(stormClusterState, 
+				supervisorId, active, 60, client);
+		AsyncLoopThread uploadMetricThread = new AsyncLoopThread(uploadMetric);
+		threads.add(uploadMetricThread);
 		
 		// SupervisorManger which can shutdown all supervisor and workers
 		return new SupervisorManger(conf, supervisorId, active, threads,

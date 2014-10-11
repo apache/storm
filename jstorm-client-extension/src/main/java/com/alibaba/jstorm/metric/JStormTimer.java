@@ -39,13 +39,10 @@ public class JStormTimer {
 			return ;
 		}
 		
-		if (timerContext.get() != null) {
+		if (timerContext.compareAndSet(null, instance.time()) == false) {
 			LOG.warn("Already start timer " + name);
 			return ;
 		}
-		
-		
-		timerContext.set(instance.time());
 		
 	}
 	

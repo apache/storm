@@ -36,9 +36,9 @@
 			<destName>history.md</destName>
 		</file>
 		<file>
-			<source>./LICENSE.html</source>
+			<source>./LICENSE</source>
 			<outputDirectory>./</outputDirectory>
-			<destName>LICENSE.html</destName>
+			<destName>LICENSE</destName>
 		</file>
 		<file>
 			<source>./README.md</source>

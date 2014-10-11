@@ -99,16 +99,34 @@ public class CpuCore implements CgroupCore {
 		}
 
 		@Override
-		public boolean equals(Object obj) {
-			Stat excepted = (Stat) obj;
-			boolean result = false;
-			if (this.nrPeriods == excepted.nrPeriods
-					&& this.nrThrottled == excepted.nrThrottled
-					&& this.throttledTime == excepted.throttledTime) {
-				result = true;
-			}
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + nrPeriods;
+			result = prime * result + nrThrottled;
+			result = prime * result + throttledTime;
 			return result;
 		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			Stat other = (Stat) obj;
+			if (nrPeriods != other.nrPeriods)
+				return false;
+			if (nrThrottled != other.nrThrottled)
+				return false;
+			if (throttledTime != other.throttledTime)
+				return false;
+			return true;
+		}
+
+		
 	}
 
 }

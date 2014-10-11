@@ -157,6 +157,7 @@ class NettyClient implements IConnection {
 		}
 		
 		if (isConnecting.getAndSet(true)) {
+			LOG.info("Connect twice {}", name());
 			return ;
 		}
 
@@ -167,14 +168,18 @@ class NettyClient implements IConnection {
 		future.addListener(new ChannelFutureListener() {
 			public void operationComplete(ChannelFuture future)
 					throws Exception {
-
 				isConnecting.set(false);
+				Channel channel = future.getChannel();
 				if (future.isSuccess()) {
 					// do something else
+					LOG.info("Connection established, channel = :{}",
+							channel);
+					setChannel(channel);
+					handleResponse();
 				} else {
 					LOG.info(
 							"Failed to reconnect ... [{}], {}, channel = {}, cause = {}",
-							retries.get(), name, future.getChannel(),
+							retries.get(), name, channel,
 							future.getCause());
 					reconnect();
 				}

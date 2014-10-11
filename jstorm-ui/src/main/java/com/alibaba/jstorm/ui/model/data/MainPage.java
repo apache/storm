@@ -8,6 +8,7 @@ import java.util.Map.Entry;
 
 import javax.faces.bean.ManagedBean;
 import javax.faces.bean.ViewScoped;
+import javax.faces.context.FacesContext;
 
 import org.apache.log4j.Logger;
 
@@ -19,6 +20,7 @@ import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.cluster.ClusterState;
 import com.alibaba.jstorm.common.stats.StatBuckets;
 import com.alibaba.jstorm.ui.UIUtils;
+import com.alibaba.jstorm.ui.model.ClusterInfo;
 import com.alibaba.jstorm.ui.model.ClusterSumm;
 import com.alibaba.jstorm.ui.model.NimbusSlave;
 import com.alibaba.jstorm.ui.model.SupervisorSumm;
@@ -41,6 +43,7 @@ public class MainPage implements Serializable {
 
 	private String host = "localhost";
 
+	private String clusterName = null;
 	private ClusterSummary summ = null;
 	private List<ClusterSumm> csumm = null;
 	private List<TopologySumm> tsumm = null;
@@ -51,6 +54,12 @@ public class MainPage implements Serializable {
 	private String zkPort = null;
 
 	public MainPage() throws Exception {
+		FacesContext ctx = FacesContext.getCurrentInstance();
+		if (ctx.getExternalContext().getRequestParameterMap().get("clusterName") != null) {
+			clusterName = (String) ctx.getExternalContext()
+					.getRequestParameterMap().get("clusterName");
+		}
+		
 		init();
 	}
 
@@ -62,6 +71,11 @@ public class MainPage implements Serializable {
 		try {
 			LOG.info("MainPage init...");
 			Map conf = UIUtils.readUiConfig();
+			
+			if(clusterName != null && !(clusterName.equals(""))) {
+				UIUtils.getClusterInfoByName(conf, clusterName);
+			}
+			
 			client = NimbusClient.getConfiguredClient(conf);
 			summ = client.getClient().getClusterInfo();
 
@@ -77,8 +91,11 @@ public class MainPage implements Serializable {
 			zkPort = String.valueOf(conf.get(Config.STORM_ZOOKEEPER_PORT));
 
 		} catch (Exception e) {
-			LOG.error("Failed to get cluster information:", e);
-			throw e;
+			String errorInfo = e.getMessage();
+			if (errorInfo.indexOf("No alive nimbus") == -1) {
+			    LOG.error("Failed to get cluster information:", e);
+			    throw e;
+			}
 		} finally {
 			if (client != null) {
 				client.close();

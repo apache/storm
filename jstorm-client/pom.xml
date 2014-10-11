@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>com.alibaba.jstorm</groupId>
 		<artifactId>jstorm-all</artifactId>
-		<version>0.9.6</version>
+		<version>0.9.6.1</version>
 		<relativePath>..</relativePath>
 	</parent>
 	<!--<parent> 
@@ -16,7 +16,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.alibaba.jstorm</groupId>
 	<artifactId>jstorm-client</artifactId>
-	<version>0.9.6</version>
+	<version>0.9.6.1</version>
 	<packaging>jar</packaging>
 	<name>${project.artifactId}-${project.version}</name>
 
@@ -55,13 +55,15 @@
 		</plugins>
 	</build>
 	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<powermock.version>1.4.11</powermock.version>
-	</properties>
+        
+    </properties>
 	<dependencies>
 		<dependency>
 			<groupId>org.clojure</groupId>
 			<artifactId>clojure</artifactId>
-			<version>1.4.0</version>
+			<version>1.5.1</version>
 		</dependency>
 		<dependency>
 			<groupId>commons-io</groupId>
@@ -120,6 +122,12 @@
 			<version>2.17</version>
 		</dependency>
 		<dependency>
+			<groupId>com.alibaba</groupId>
+			<artifactId>fastjson</artifactId>
+			<version>1.1.41</version>
+		</dependency>
+		<!-- keep compatible with storm, some old project use gson -->
+		<dependency>
 			<groupId>com.googlecode.json-simple</groupId>
 			<artifactId>json-simple</artifactId>
 			<version>1.1</version>
@@ -141,9 +149,9 @@
 			<version>2.10.1</version>
 		</dependency>
 		<dependency>
-			<groupId>org.jboss.netty</groupId>
+			<groupId>io.netty</groupId>
 			<artifactId>netty</artifactId>
-			<version>3.2.7.Final</version>
+			<version>3.9.0.Final</version>
 		</dependency>
 		<dependency>
 			<groupId>storm</groupId>
@@ -186,5 +194,6 @@
 		<!-- <dependency> <groupId>ch.qos.logback</groupId> <artifactId>logback-classic</artifactId> 
 			<version>1.0.13</version> </dependency> <dependency> <groupId>org.slf4j</groupId> 
 			<artifactId>log4j-over-slf4j</artifactId> <version>1.7.5</version> </dependency> -->
+		
 	</dependencies>
 </project>

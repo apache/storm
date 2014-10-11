@@ -8,6 +8,7 @@ import org.apache.log4j.Logger;
 public class RunCounter implements Serializable{
 
 	private static final long serialVersionUID = 2177944366059817622L;
+	private static final Logger LOG = Logger.getLogger(RunCounter.class);
 	private AtomicLong total = new AtomicLong(0);
 	private AtomicLong times = new AtomicLong(0);
 	private AtomicLong values = new AtomicLong(0);
@@ -15,7 +16,7 @@ public class RunCounter implements Serializable{
 	private IntervalCheck intervalCheck;
 
 	private final String id;
-	private final Logger LOG;
+	
 
 	public RunCounter() {
 		this("", RunCounter.class);
@@ -26,13 +27,12 @@ public class RunCounter implements Serializable{
 	}
 
 	public RunCounter(Class tclass) {
-		this("", tclass);
+		this(tclass.getName(), tclass);
 
 	}
 
 	public RunCounter(String id, Class tclass) {
 		this.id = id;
-		this.LOG = Logger.getLogger(tclass);
 
 		intervalCheck = new IntervalCheck();
 		intervalCheck.setInterval(60);

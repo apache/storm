@@ -1,65 +1,159 @@
 package storm.trident.testing;
 
+import backtype.storm.task.IMetricsContext;
+import storm.trident.state.ITupleCollection;
 import backtype.storm.tuple.Values;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+import storm.trident.state.OpaqueValue;
 import storm.trident.state.State;
 import storm.trident.state.StateFactory;
-import storm.trident.state.map.CachedMap;
-import storm.trident.state.map.IBackingMap;
-import storm.trident.state.map.OpaqueMap;
-import storm.trident.state.map.SnapshottableMap;
+import storm.trident.state.ValueUpdater;
+import storm.trident.state.map.*;
+import storm.trident.state.snapshot.Snapshottable;
+
+public class MemoryMapState<T> implements Snapshottable<T>, ITupleCollection, MapState<T>, RemovableMapState<T> {
+
+    MemoryMapStateBacking<OpaqueValue> _backing;
+    SnapshottableMap<T> _delegate;
+    List<List<Object>> _removed = new ArrayList();
+    Long _currTx = null;
 
 
-public class MemoryMapState<T> implements IBackingMap<T> {
+    public MemoryMapState(String id) {
+        _backing = new MemoryMapStateBacking(id);
+        _delegate = new SnapshottableMap(OpaqueMap.build(_backing), new Values("$MEMORY-MAP-STATE-GLOBAL$"));
+    }
+
+    public T update(ValueUpdater updater) {
+        return _delegate.update(updater);
+    }
+
+    public void set(T o) {
+        _delegate.set(o);
+    }
+
+    public T get() {
+        return _delegate.get();
+    }
+
+    public void beginCommit(Long txid) {
+        _delegate.beginCommit(txid);
+        if(txid==null || !txid.equals(_currTx)) {
+            _backing.multiRemove(_removed);
+        }
+        _removed = new ArrayList();
+        _currTx = txid;
+    }
+
+    public void commit(Long txid) {
+        _delegate.commit(txid);
+    }
+
+    public Iterator<List<Object>> getTuples() {
+        return _backing.getTuples();
+    }
+
+    public List<T> multiUpdate(List<List<Object>> keys, List<ValueUpdater> updaters) {
+        return _delegate.multiUpdate(keys, updaters);
+    }
+
+    public void multiPut(List<List<Object>> keys, List<T> vals) {
+        _delegate.multiPut(keys, vals);
+    }
+
+    public List<T> multiGet(List<List<Object>> keys) {
+        return _delegate.multiGet(keys);
+    }
+
+    @Override
+    public void multiRemove(List<List<Object>> keys) {
+        List nulls = new ArrayList();
+        for(int i=0; i<keys.size(); i++) {
+            nulls.add(null);
+        }
+        // first just set the keys to null, then flag to remove them at beginning of next commit when we know the current and last value are both null
+        multiPut(keys, nulls);
+        _removed.addAll(keys);
+    }
+
     public static class Factory implements StateFactory {
+
         String _id;
-        
+
         public Factory() {
             _id = UUID.randomUUID().toString();
         }
-        
+
         @Override
-        public State makeState(Map conf, int partitionIndex, int numPartitions) {
-            return new SnapshottableMap(OpaqueMap.build(new CachedMap(new MemoryMapState(_id), 10)), new Values("$MEMORY-MAP-STATE-GLOBAL$"));
-        }        
-    }
-    
-    public static void clearAll() {
-        _dbs.clear();
-    }
-    
-    static ConcurrentHashMap<String,  Map<List<Object>, Object>> _dbs = new ConcurrentHashMap<String, Map<List<Object>, Object>>();
-    
-    Map<List<Object>, T> db;
-    Long currTx;
-    
-    public MemoryMapState(String id) {
-        if(!_dbs.containsKey(id)) {
-           _dbs.put(id, new HashMap()); 
+        public State makeState(Map conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
+            return new MemoryMapState(_id + partitionIndex);
         }
-        this.db = (Map<List<Object>, T>) _dbs.get(id);
     }
 
-    @Override
-    public List<T> multiGet(List<List<Object>> keys) {
-        List<T> ret = new ArrayList();
-        for(List<Object> key: keys) {
-            ret.add(db.get(key));
-        }
-        return ret;
-    }
+    static ConcurrentHashMap<String, Map<List<Object>, Object>> _dbs = new ConcurrentHashMap<String, Map<List<Object>, Object>>();
+    static class MemoryMapStateBacking<T> implements IBackingMap<T>, ITupleCollection {
 
-    @Override
-    public void multiPut(List<List<Object>> keys, List<T> vals) {
-        for(int i=0; i<keys.size(); i++) {
-            List<Object> key = keys.get(i);
-            T val = vals.get(i);
-            db.put(key, val);
+        public static void clearAll() {
+            _dbs.clear();
         }
-    }    
+        Map<List<Object>, T> db;
+        Long currTx;
+
+        public MemoryMapStateBacking(String id) {
+            if (!_dbs.containsKey(id)) {
+                _dbs.put(id, new HashMap());
+            }
+            this.db = (Map<List<Object>, T>) _dbs.get(id);
+        }
+
+        public void multiRemove(List<List<Object>> keys) {
+            for(List<Object> key: keys) {
+                db.remove(key);
+            }
+        }
+
+        @Override
+        public List<T> multiGet(List<List<Object>> keys) {
+            List<T> ret = new ArrayList();
+            for (List<Object> key : keys) {
+                ret.add(db.get(key));
+            }
+            return ret;
+        }
+
+        @Override
+        public void multiPut(List<List<Object>> keys, List<T> vals) {
+            for (int i = 0; i < keys.size(); i++) {
+                List<Object> key = keys.get(i);
+                T val = vals.get(i);
+                db.put(key, val);
+            }
+        }
+
+        @Override
+        public Iterator<List<Object>> getTuples() {
+            return new Iterator<List<Object>>() {
+
+                private Iterator<Map.Entry<List<Object>, T>> it = db.entrySet().iterator();
+
+                public boolean hasNext() {
+                    return it.hasNext();
+                }
+
+                public List<Object> next() {
+                    Map.Entry<List<Object>, T> e = it.next();
+                    List<Object> ret = new ArrayList<Object>();
+                    ret.addAll(e.getKey());
+                    ret.add(((OpaqueValue)e.getValue()).getCurr());
+                    return ret;
+                }
+
+                public void remove() {
+                    throw new UnsupportedOperationException("Not supported yet.");
+                }
+            };
+        }
+    }
 }

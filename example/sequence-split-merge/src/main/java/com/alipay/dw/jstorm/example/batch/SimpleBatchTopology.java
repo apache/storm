@@ -8,6 +8,7 @@ import java.util.Map;
 import org.yaml.snakeyaml.Yaml;
 
 import backtype.storm.Config;
+import backtype.storm.LocalCluster;
 import backtype.storm.StormSubmitter;
 import backtype.storm.generated.AlreadyAliveException;
 import backtype.storm.generated.InvalidTopologyException;
@@ -17,7 +18,6 @@ import backtype.storm.topology.TopologyBuilder;
 
 import com.alibaba.jstorm.batch.BatchTopologyBuilder;
 import com.alibaba.jstorm.cluster.StormConfig;
-import com.alibaba.jstorm.local.LocalCluster;
 import com.alibaba.jstorm.utils.JStormUtils;
 
 public class SimpleBatchTopology {

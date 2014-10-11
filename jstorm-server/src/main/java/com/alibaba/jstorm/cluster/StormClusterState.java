@@ -96,7 +96,9 @@ public interface StormClusterState {
 	public void report_task_error(String topology_id, int task_id,
 			String error) throws Exception;
 
-	public String topo_lastErr_time(String topologyId) throws Exception;
+	public Map<Integer, String> topo_lastErr_time(String topologyId) throws Exception;
+	
+	public void remove_lastErr_time(String topologyId) throws Exception;
 	
 	public List<TaskError> task_errors(String topology_id, int task_id)
 			throws Exception;

@@ -12,6 +12,7 @@ import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.FailedException;
 import backtype.storm.topology.IRichBolt;
 import backtype.storm.topology.OutputFieldsDeclarer;
+import backtype.storm.topology.ReportedFailedException;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
@@ -26,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.commons.lang.builder.ToStringBuilder;
+import storm.trident.spout.IBatchID;
 
 public class TridentBoltExecutor implements IRichBolt {
     public static String COORD_STREAM_PREFIX = "$coord-";
@@ -96,6 +98,7 @@ public class TridentBoltExecutor implements IRichBolt {
     }
     
     public static class TrackedBatch {
+        int attemptId;
         BatchInfo info;
         CoordCondition condition;
         int reportedTasks = 0;
@@ -106,9 +109,10 @@ public class TridentBoltExecutor implements IRichBolt {
         boolean receivedCommit;
         Tuple delayedAck = null;
         
-        public TrackedBatch(BatchInfo info, CoordCondition condition) {
+        public TrackedBatch(BatchInfo info, CoordCondition condition, int attemptId) {
             this.info = info;
             this.condition = condition;
+            this.attemptId = attemptId;
             receivedCommit = condition.commitStream == null;
         }
 
@@ -210,12 +214,19 @@ public class TridentBoltExecutor implements IRichBolt {
         _bolt.prepare(conf, context, _coordOutputCollector);
     }
     
-    private void failBatch(TrackedBatch tracked) {
+    private void failBatch(TrackedBatch tracked, FailedException e) {
+        if(e!=null && e instanceof ReportedFailedException) {
+            _collector.reportError(e);
+        }
         tracked.failed = true;
         if(tracked.delayedAck!=null) {
             _collector.fail(tracked.delayedAck);
             tracked.delayedAck = null;
         }
+    }
+    
+    private void failBatch(TrackedBatch tracked) {
+        failBatch(tracked, null);
     }
 
     private boolean finishBatch(TrackedBatch tracked, Tuple finishTuple) {
@@ -231,10 +242,10 @@ public class TridentBoltExecutor implements IRichBolt {
                 tracked.delayedAck = null;
             }
         } catch(FailedException e) {
-            failBatch(tracked);
+            failBatch(tracked, e);
             success = false;
         }
-        _batches.remove(tracked.info.batchId);
+        _batches.remove(tracked.info.batchId.getId());
         return success;
     }
     
@@ -287,8 +298,12 @@ public class TridentBoltExecutor implements IRichBolt {
             _collector.ack(tuple);
             return;
         }
-        Object id = tuple.getValue(0);
-        TrackedBatch tracked = (TrackedBatch) _batches.get(id);
+        IBatchID id = (IBatchID) tuple.getValue(0);
+        //get transaction id
+        //if it already exissts and attempt id is greater than the attempt there
+        
+        
+        TrackedBatch tracked = (TrackedBatch) _batches.get(id.getId());
 //        if(_batches.size() > 10 && _context.getThisTaskIndex() == 0) {
 //            System.out.println("Received in " + _context.getThisComponentId() + " " + _context.getThisTaskIndex()
 //                    + " (" + _batches.size() + ")" +
@@ -301,9 +316,21 @@ public class TridentBoltExecutor implements IRichBolt {
 //        }
         //System.out.println("Num tracked: " + _batches.size() + " " + _context.getThisComponentId() + " " + _context.getThisTaskIndex());
         
+        // this code here ensures that only one attempt is ever tracked for a batch, so when
+        // failures happen you don't get an explosion in memory usage in the tasks
+        if(tracked!=null) {
+            if(id.getAttemptId() > tracked.attemptId) {
+                _batches.remove(id.getId());
+                tracked = null;
+            } else if(id.getAttemptId() < tracked.attemptId) {
+                // no reason to try to execute a previous attempt than we've already seen
+                return;
+            }
+        }
+        
         if(tracked==null) {
-            tracked = new TrackedBatch(new BatchInfo(batchGroup, id, _bolt.initBatchState(batchGroup, id)), _coordConditions.get(batchGroup));
-            _batches.put(id, tracked);
+            tracked = new TrackedBatch(new BatchInfo(batchGroup, id, _bolt.initBatchState(batchGroup, id)), _coordConditions.get(batchGroup), id.getAttemptId());
+            _batches.put(id.getId(), tracked);
         }
         _coordCollector.setCurrBatch(tracked);
         
@@ -327,7 +354,7 @@ public class TridentBoltExecutor implements IRichBolt {
                     success = finishBatch(tracked, tuple);
                 }
             } catch(FailedException e) {
-                failBatch(tracked);
+                failBatch(tracked, e);
             }
             if(success) {
                 _collector.ack(tuple);                   

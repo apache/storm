@@ -1,32 +1,18 @@
 package com.alipay.dw.jstorm.example.sequence;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
-
 import backtype.storm.Config;
+import backtype.storm.LocalCluster;
 import backtype.storm.StormSubmitter;
-import backtype.storm.drpc.LinearDRPCTopologyBuilder;
+import backtype.storm.Tool;
+import backtype.storm.ToolRunner;
 import backtype.storm.generated.AlreadyAliveException;
 import backtype.storm.generated.InvalidTopologyException;
+import backtype.storm.generated.StormTopology;
 import backtype.storm.generated.TopologyAssignException;
 import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.tuple.Fields;
 
-import com.alibaba.jstorm.local.LocalCluster;
 import com.alibaba.jstorm.utils.JStormUtils;
-
-
-import backtype.storm.Config;
-import backtype.storm.Tool;
-import backtype.storm.ToolRunner;
-import backtype.storm.topology.TopologyBuilder;
-import backtype.storm.tuple.Fields;
-import backtype.storm.generated.StormTopology;
-
 import com.alipay.dw.jstorm.example.sequence.bean.Pair;
 import com.alipay.dw.jstorm.example.sequence.bean.TradeCustomer;
 import com.alipay.dw.jstorm.example.sequence.bolt.MergeRecord;

@@ -11,17 +11,14 @@ import backtype.storm.topology.InputDeclarer;
 import backtype.storm.topology.SpoutDeclarer;
 import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.tuple.Fields;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
-
 import storm.trident.spout.BatchSpoutExecutor;
 import storm.trident.spout.IBatchSpout;
 import storm.trident.spout.ICommitterTridentSpout;
@@ -167,7 +164,7 @@ public class TridentTopologyBuilder {
                     bd.allGrouping(masterCoordinator(batchGroup), MasterBatchCoordinator.COMMIT_STREAM_ID);
                 }
                 for(Map m: c.componentConfs) {
-                    scd.addConfigurations(m);
+                    bd.addConfigurations(m);
                 }
             }
         }
@@ -547,7 +544,6 @@ public class TridentTopologyBuilder {
             });
             return this;
         }
-        
         
         @Override
         public BoltDeclarer noneGrouping(final String component) {
