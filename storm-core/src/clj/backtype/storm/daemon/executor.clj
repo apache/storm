@@ -224,7 +224,7 @@
      :component-id component-id
      :open-or-prepare-was-called? (atom false)
      :storm-conf storm-conf
-     :receive-queue ((:executor-receive-queue-map worker) executor-id)
+     :receive-queue (@(:executor-receive-queue-map worker) executor-id)
      :storm-id (:storm-id worker)
      :conf (:conf worker)
      :shared-executor-data (HashMap.)
