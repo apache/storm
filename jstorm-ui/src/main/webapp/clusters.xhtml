@@ -1,0 +1,83 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:p="http://primefaces.org/ui">
+<h:head>
+	<title>Jstorm UI</title>
+</h:head>
+
+<h:body>
+	<h:outputLink value="clusters.jsf">
+		<h1>
+			<h:outputText value="JStorm UI" />
+		</h1>
+	</h:outputLink>
+	<h2>Clusters Summary</h2>
+
+	<input type="hidden" name="clusterType" id="clusterType" value="#{clusterpage.clusterType}" />
+
+	<h:form>
+		<p:dataTable id="clusters" var="cls" value="#{clusterpage.clusterInfo}">
+
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Cluster Name" />
+				</f:facet>
+				<h:outputLink value="cluster.jsf">
+					<h:outputText value="#{cls.clusterName}" />
+					<f:param name="clusterName" value="#{cls.clusterName}" />
+				</h:outputLink>
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="ZK Root" />
+				</f:facet>
+				<h:outputText value="#{cls.zkRoot}" />
+			</p:column>
+
+			<!--<p:column>
+				<f:facet name="header">
+					<h:outputText value="version" />
+				</f:facet>
+				<h:outputText value="0.9.6" />
+			</p:column>-->
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Zookeeper Server" />
+				</f:facet>
+				<p:dataTable id="zkServers" var="zkServer"
+					value="#{cls.zkServers}" sortBy="#{zkServer}"
+					sortOrder="ASCENDING">
+					<p:column>
+						<h:outputText value="#{zkServer}" />
+					</p:column>
+				</p:dataTable>
+			</p:column>
+
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Zookeeper Port" />
+				</f:facet>
+				<h:outputText value="#{cls.zkPort}" />
+			</p:column>
+
+		</p:dataTable>
+	</h:form>
+
+</h:body>
+
+<script type="text/javascript">
+    $(document).ready(function(){ 
+        var clusterType = document.getElementById('clusterType').value;
+	if (clusterType == "single") {
+	    window.location.href="cluster.jsf";
+	}
+    }); 
+</script>
+
+</html>
