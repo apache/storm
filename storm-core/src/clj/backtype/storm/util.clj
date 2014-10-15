@@ -356,6 +356,10 @@
     (first split)
     ))
 
+ (defn exists-process?
+  [process-id]
+  (exists-file? (str "/proc/"  process-id))
+
 (defn exec-command! [command]
   (let [[comm-str & args] (seq (.split command " "))
         command (CommandLine. comm-str)]

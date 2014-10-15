@@ -114,6 +114,8 @@
                            :disallowed
                          (not hb)
                            :not-started
+                         (or ((nil? (:process-id hb)) (not (exists-process? (:process-id hb))) ) )
+                           :process-not-exists
                          (> (- now (:time-secs hb))
                             (conf SUPERVISOR-WORKER-TIMEOUT-SECS))
                            :timed-out

@@ -59,7 +59,8 @@
              (current-time-secs)
              (:storm-id worker)
              (:executors worker)
-             (:port worker))
+             (:port worker)
+             (:process-id worker))
         state (worker-state conf (:worker-id worker))]
     (log-debug "Doing heartbeat " (pr-str hb))
     ;; do the local-file-system heartbeat.
@@ -164,7 +165,7 @@
                        (halt-process! 20 "Error when processing an event")
                        )))
 
-(defn worker-data [conf mq-context storm-id assignment-id port worker-id]
+(defn worker-data [conf mq-context storm-id assignment-id port worker-id process-id]
   (let [cluster-state (cluster/mk-distributed-cluster-state conf)
         storm-cluster-state (cluster/mk-storm-cluster-state cluster-state)
         storm-conf (read-supervisor-storm-conf conf storm-id)
@@ -187,6 +188,7 @@
       :assignment-id assignment-id
       :port port
       :worker-id worker-id
+      :process-id process-id
       :cluster-state cluster-state
       :storm-cluster-state storm-cluster-state
       :storm-active-atom (atom false)
@@ -350,7 +352,7 @@
   ;; process. supervisor will register it in this case
   (when (= :distributed (cluster-mode conf))
     (touch (worker-pid-path conf worker-id (process-pid))))
-  (let [worker (worker-data conf shared-mq-context storm-id assignment-id port worker-id)
+  (let [worker (worker-data conf shared-mq-context storm-id assignment-id port worker-id (process-pid))
         heartbeat-fn #(do-heartbeat worker)
         ;; do this here so that the worker process dies if this fails
         ;; it's important that worker heartbeat to supervisor ASAP when launching so that the supervisor knows it's running (and can move on)
