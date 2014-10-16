@@ -372,6 +372,13 @@
       (throw (RuntimeException. (str "Got unexpected process name: " name))))
     (first split)))
 
+(defn exists-process?
+   [process-id]  
+   (if on-windows?
+       (exec-command! ( str "tasklist /v /fi \"PID eq "  process-id "\""))
+       (exists-file? (str "/proc/"  process-id))
+    )  
+
 (defn exec-command! [command]
   (let [[comm-str & args] (seq (.split command " "))
         command (CommandLine. comm-str)]

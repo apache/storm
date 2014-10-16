@@ -133,6 +133,8 @@
                          (or (not (contains? approved-ids id))
                              (not (matches-an-assignment? hb assigned-executors)))
                            :disallowed
+                         (or ((nil? (:process-id hb)) (not (exists-process? (:process-id hb))) ) )
+                           :process-not-exists
                          (> (- now (:time-secs hb))
                             (conf SUPERVISOR-WORKER-TIMEOUT-SECS))
                            :timed-out

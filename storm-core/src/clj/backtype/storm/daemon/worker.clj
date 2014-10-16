@@ -62,7 +62,8 @@
              (current-time-secs)
              (:storm-id worker)
              (:executors worker)
-             (:port worker))
+             (:port worker)
+             (:process-id worker))
         state (worker-state conf (:worker-id worker))]
     (log-debug "Doing heartbeat " (pr-str hb))
     ;; do the local-file-system heartbeat.
@@ -175,7 +176,7 @@
                        )
             :timer-name timer-name))
 
-(defn worker-data [conf mq-context storm-id assignment-id port worker-id]
+(defn worker-data [conf mq-context storm-id assignment-id port worker-id process-id]
   (let [assignment-versions (atom {})
         cluster-state (cluster/mk-distributed-cluster-state conf)
         storm-cluster-state (cluster/mk-storm-cluster-state cluster-state)
@@ -360,7 +361,7 @@
   ;; process. supervisor will register it in this case
   (when (= :distributed (cluster-mode conf))
     (touch (worker-pid-path conf worker-id (process-pid))))
-  (let [worker (worker-data conf shared-mq-context storm-id assignment-id port worker-id)
+  (let [worker (worker-data conf shared-mq-context storm-id assignment-id port worker-id (process-pid))
         heartbeat-fn #(do-heartbeat worker)
 
         ;; do this here so that the worker process dies if this fails
