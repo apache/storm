@@ -201,7 +201,7 @@ public class MetaSpout implements IRichSpout, IAckValueSpout, IFailValueSpout,
 
 	public void finishTuple(MetaTuple metaTuple) {
 		waithHistogram.update(metaTuple.getEmitMs() - metaTuple.getCreateMs());
-		processHistogram.update(System.currentTimeMillis() - metaTuple.emitMs);
+		processHistogram.update(System.currentTimeMillis() - metaTuple.getEmitMs());
 		metaTuple.done();
 	}
 
