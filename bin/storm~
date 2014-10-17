@@ -494,7 +494,7 @@ COMMANDS = {"jar": jar, "kill": kill, "shell": shell, "nimbus": nimbus, "ui": ui
             "drpc": drpc, "supervisor": supervisor, "localconfvalue": print_localconfvalue,
             "remoteconfvalue": print_remoteconfvalue, "repl": repl, "classpath": print_classpath,
             "activate": activate, "deactivate": deactivate, "rebalance": rebalance, "help": print_usage,
-            "list": listtopos, "dev-zookeeper": dev_zookeeper, "version": version, "monitor": monitor}
+            "list": listtopos, "dev-zookeeper": dev_zookeeper, "version": version, "monitor": monitor, "platform":java_platform}
 
 def parse_config(config_list):
     global CONFIG_OPTS
