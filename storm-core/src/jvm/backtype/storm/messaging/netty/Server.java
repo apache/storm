@@ -18,7 +18,7 @@
 package backtype.storm.messaging.netty;
 
 import backtype.storm.Config;
-import backtype.storm.messaging.IConnection;
+import backtype.storm.messaging.ConnectionWithStatus;
 import backtype.storm.messaging.TaskMessage;
 import backtype.storm.utils.Utils;
 import org.jboss.netty.bootstrap.ServerBootstrap;
@@ -41,7 +41,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 
-class Server implements IConnection {
+class Server extends ConnectionWithStatus {
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
     @SuppressWarnings("rawtypes")
     Map storm_conf;
@@ -78,7 +78,7 @@ class Server implements IConnection {
         }
         
         // Configure the server.
-        int buffer_size = Utils.getInt(storm_conf.get(Config.STORM_MESSAGING_NETTY_SEND_RECV_BUFFER_SIZE));
+        int buffer_size = Utils.getInt(storm_conf.get(Config.STORM_MESSAGING_NETTY_BUFFER_SIZE));
         int maxWorkers = Utils.getInt(storm_conf.get(Config.STORM_MESSAGING_NETTY_SERVER_WORKER_THREADS));
 
         ThreadFactory bossFactory = new NettyRenameThreadFactory(name() + "-boss");
@@ -232,13 +232,18 @@ class Server implements IConnection {
     public void send(int task, byte[] message) {
         throw new RuntimeException("Server connection should not send any messages");
     }
-
-    @Override
-    public void send(ArrayList<TaskMessage> msgs) {
+    
+    public void send(Iterator<TaskMessage> msgs) {
       throw new RuntimeException("Server connection should not send any messages");
     }
 	
     public String name() {
       return "Netty-server-localhost-" + port;
+    }
+
+    @Override
+    public Status status() {
+      // The connection is binded in constructor
+      return Status.Ready;
     }
 }

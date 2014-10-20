@@ -49,17 +49,10 @@ public class Config extends HashMap<String, Object> {
     public static final Object STORM_MESSAGING_TRANSPORT_SCHEMA = String.class;
 
     /**
-     * Netty based messaging: The max buffer size for client buffer, if the buffered tuple exceed the limit,
-     * we will drop the new arrived tuple.
-     */
-    public static final String STORM_MESSAGING_NETTY_CLIENT_BUFFER_SIZE = "storm.messaging.netty.client_buffer_size";
-    public static final Object STORM_MESSAGING_NETTY_CLIENT_BUFFER_SIZE_SCHEMA = ConfigValidation.IntegerValidator;
-
-    /**
      * Netty based messaging: The buffer size for send/recv buffer
      */
-    public static final String STORM_MESSAGING_NETTY_SEND_RECV_BUFFER_SIZE = "storm.messaging.netty.send_recv_buffer_size";
-    public static final Object STORM_MESSAGING_NETTY_SEND_RECV_BUFFER_SIZE_SCHEMA = ConfigValidation.IntegerValidator;
+    public static final String STORM_MESSAGING_NETTY_BUFFER_SIZE = "storm.messaging.netty.buffer_size"; 
+    public static final Object STORM_MESSAGING_NETTY_BUFFER_SIZE_SCHEMA = ConfigValidation.IntegerValidator;
 
     /**
      * Netty based messaging: The max # of retries that a peer will perform when a remote is not accessible

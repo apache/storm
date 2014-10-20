@@ -21,7 +21,7 @@
   (:import [java.util ArrayList HashMap])
   (:import [backtype.storm.utils TransferDrainer])
   (:import [backtype.storm.messaging TransportFactory])
-  (:import [backtype.storm.messaging TaskMessage IContext IConnection])
+  (:import [backtype.storm.messaging TaskMessage IContext IConnection ConnectionWithStatus ConnectionWithStatus$Status])
   (:gen-class))
 
 (bootstrap)
@@ -322,10 +322,28 @@
         ]
     (disruptor/clojure-handler
       (fn [packets _ batch-end?]
-        (read-locked endpoint-socket-lock
-          (let [node+port->socket @node+port->socket]
-            (.add drainer packets node+port->socket)))))))
+        (.add drainer packets)
         
+        (when batch-end?
+          (read-locked endpoint-socket-lock
+            (let [node+port->socket @node+port->socket]
+              (.send drainer node+port->socket)))
+          (.clear drainer))))))
+
+;; Check whether this messaging connection is ready to send data
+(defn is-connection-ready [^IConnection connection]
+  (if (instance?  ConnectionWithStatus connection)
+    (let [^ConnectionWithStatus connection connection
+          status (.status connection)]
+      (= status ConnectionWithStatus$Status/Ready))
+    true))
+
+(defn wait-messaging-connections-to-be-ready [worker]
+  (let [connections (vals @(:cached-node+port->socket worker))
+        are-connections-ready (fn [] (every? is-connection-ready connections))]
+  (while (not (are-connections-ready))
+    (Thread/sleep 100)))) ;; sleep 100ms and retry
+
 (defn launch-receive-thread [worker]
   (log-message "Launching receive-thread for " (:assignment-id worker) ":" (:port worker))
   (msg-loader/launch-receive-thread!
@@ -374,6 +392,11 @@
 
         _ (refresh-connections nil)
         _ (refresh-storm-active worker nil)
+
+        ;; make sure all messaging connections are ready for sending data, the netty messaging
+        ;; client will drop the messages if client.send(msg) is called before the connection
+        ;; is established.
+        _ (wait-messaging-connections-to-be-ready worker)
  
         _ (reset! executors (dofor [e (:executors worker)] (executor/mk-executor worker e)))
         receive-thread-shutdown (launch-receive-thread worker)

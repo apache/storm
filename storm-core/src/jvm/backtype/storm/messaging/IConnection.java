@@ -17,7 +17,6 @@
  */
 package backtype.storm.messaging;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 
 public interface IConnection {   
@@ -41,7 +40,7 @@ public interface IConnection {
      * @param msgs
      */
 
-    public void send(ArrayList<TaskMessage> msgs);
+    public void send(Iterator<TaskMessage> msgs);
     
     /**
      * close this connection

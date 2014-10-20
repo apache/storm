@@ -25,8 +25,7 @@
   (with-simulated-time-local-cluster [cluster :supervisors 4 :supervisor-slot-port-min 6710
                                       :daemon-conf {STORM-LOCAL-MODE-ZMQ true 
                                                     STORM-MESSAGING-TRANSPORT  "backtype.storm.messaging.netty.Context"
-                                                    STORM-MESSAGING-NETTY-SEND-RECV-BUFFER-SIZE 1024000
-                                                    STORM-MESSAGING-NETTY-CLIENT-BUFFER-SIZE 2048000
+                                                    STORM-MESSAGING-NETTY-BUFFER-SIZE 1024000
                                                     STORM-MESSAGING-NETTY-MAX-RETRIES 10
                                                     STORM-MESSAGING-NETTY-MIN-SLEEP-MS 1000 
                                                     STORM-MESSAGING-NETTY-MAX-SLEEP-MS 5000

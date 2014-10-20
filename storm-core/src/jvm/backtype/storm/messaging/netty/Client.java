@@ -18,10 +18,9 @@
 package backtype.storm.messaging.netty;
 
 import backtype.storm.Config;
-import backtype.storm.messaging.IConnection;
+import backtype.storm.messaging.ConnectionWithStatus;
 import backtype.storm.messaging.TaskMessage;
 import backtype.storm.utils.StormBoundedExponentialBackoffRetry;
-import backtype.storm.utils.TimeCacheMap;
 import backtype.storm.utils.Utils;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.Channel;
@@ -31,314 +30,245 @@ import org.jboss.netty.channel.ChannelFutureListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.net.InetSocketAddress;
-import java.util.Set;
-import java.util.HashSet;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executors;
+import java.util.Random;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class Client implements IConnection {
-    private static enum ClientState {
-        NEW,
-        CONNECTED,
-        DISCONNECTED,
-        CLOSED,
-    }
-
-    private class CachedTaskMessageHandler implements TimeCacheMap.ExpiredCallback<Long, ArrayList<TaskMessage>> {
-        @Override
-        public void expire(Long key, ArrayList<TaskMessage> val) {
-            onTaskMessageTimeout(val);
-        }
-    }
-
+public class Client extends ConnectionWithStatus {
     private static final Logger LOG = LoggerFactory.getLogger(Client.class);
     private static final String PREFIX = "Netty-Client-";
-
-    // configure
     private final int max_retries;
     private final int base_sleep_ms;
     private final int max_sleep_ms;
-    private final int buffer_size;
-    private final int messageBatchSize;
-    private final int flushCheckInterval;
-    private final int messageTimeoutSecs;
-
-    // netty
+    private final StormBoundedExponentialBackoffRetry retryPolicy;
     private AtomicReference<Channel> channelRef;
     private final ClientBootstrap bootstrap;
     private InetSocketAddress remote_addr;
+    
+    private final Random random = new Random();
     private final ChannelFactory factory;
+    private final int buffer_size;
+    private volatile boolean closing;
 
-    // local
-    private ClientState clientState;
+    private int messageBatchSize;
+    
     private AtomicLong pendings;
-    private AtomicInteger curConnectionRetryTimes;
-    private AtomicLong bufferMessageSize;
-    private AtomicLong nextTaskMessageIndex;
-    private AtomicLong curTaskMessageIndex;
-    private AtomicLong flushCheckTimer;
-    private long curMessageBatchSize;
-    private Runnable connector;
-    private Runnable flusher;
-    private ChannelFutureListener channelFutureListener;
-    private ScheduledExecutorService scheduler;
-    private ClientFactory clientFactory;
-    MessageBatch messageBatch = null;
 
-    private final StormBoundedExponentialBackoffRetry retryPolicy;
-    private TimeCacheMap<Long, ArrayList<TaskMessage>> cachedTaskMessages;
+    MessageBatch messageBatch = null;
+    private AtomicLong flushCheckTimer;
+    private int flushCheckInterval;
+    private ScheduledExecutorService scheduler;
 
     @SuppressWarnings("rawtypes")
-    Client(Map storm_conf, ChannelFactory factory, ScheduledExecutorService scheduler,
-            ClientFactory clientFactory, String host, int port) {
+    Client(Map storm_conf, ChannelFactory factory, 
+            ScheduledExecutorService scheduler, String host, int port) {
         this.factory = factory;
         this.scheduler = scheduler;
-        this.clientFactory = clientFactory;
+        channelRef = new AtomicReference<Channel>(null);
+        closing = false;
+        pendings = new AtomicLong(0);
+        flushCheckTimer = new AtomicLong(Long.MAX_VALUE);
 
         // Configure
-        buffer_size = Utils.getInt(storm_conf.get(Config.STORM_MESSAGING_NETTY_SEND_RECV_BUFFER_SIZE));
+        buffer_size = Utils.getInt(storm_conf.get(Config.STORM_MESSAGING_NETTY_BUFFER_SIZE));
         max_retries = Utils.getInt(storm_conf.get(Config.STORM_MESSAGING_NETTY_MAX_RETRIES));
         base_sleep_ms = Utils.getInt(storm_conf.get(Config.STORM_MESSAGING_NETTY_MIN_SLEEP_MS));
         max_sleep_ms = Utils.getInt(storm_conf.get(Config.STORM_MESSAGING_NETTY_MAX_SLEEP_MS));
+        retryPolicy = new StormBoundedExponentialBackoffRetry(base_sleep_ms, max_sleep_ms, max_retries);
 
-        messageBatchSize = Utils.getInt(storm_conf.get(Config.STORM_NETTY_MESSAGE_BATCH_SIZE), 262144); // default 256K
+        this.messageBatchSize = Utils.getInt(storm_conf.get(Config.STORM_NETTY_MESSAGE_BATCH_SIZE), 262144);
+        
         flushCheckInterval = Utils.getInt(storm_conf.get(Config.STORM_NETTY_FLUSH_CHECK_INTERVAL_MS), 10); // default 10 ms
-        messageTimeoutSecs = Utils.getInt(storm_conf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS));
 
         LOG.info("New Netty Client, connect to " + host + ", " + port
-                + ", config: " + ", send_buffer_size: " + buffer_size);
+                + ", config: " + ", buffer_size: " + buffer_size);
 
-        // netty
-        channelRef = new AtomicReference<Channel>(null);
         bootstrap = new ClientBootstrap(factory);
         bootstrap.setOption("tcpNoDelay", true);
         bootstrap.setOption("sendBufferSize", buffer_size);
         bootstrap.setOption("keepAlive", true);
+
         // Set up the pipeline factory.
         bootstrap.setPipelineFactory(new StormClientPipelineFactory(this));
+
+        // Start the connection attempt.
         remote_addr = new InetSocketAddress(host, port);
-
-        clientState = ClientState.NEW;
-        pendings = new AtomicLong(0);
-        curConnectionRetryTimes = new AtomicInteger(0);
-        bufferMessageSize = new AtomicLong(0);
-        nextTaskMessageIndex = new AtomicLong(0);
-        curTaskMessageIndex = new AtomicLong(0);
-        flushCheckTimer = new AtomicLong(Long.MAX_VALUE);
-        curMessageBatchSize = 0;
-
-        cachedTaskMessages = new TimeCacheMap<Long, ArrayList<TaskMessage>>(messageTimeoutSecs, new CachedTaskMessageHandler());
-        retryPolicy = new StormBoundedExponentialBackoffRetry(base_sleep_ms, max_sleep_ms, max_retries);
-
-        flusher = new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    flushWithSchedule();
-                } catch (Exception e) {
-                    LOG.error("flush catch exception:", e);
-                }
-            }
-        };
-        connector = new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    connect();
-                } catch (Exception e) {
-                    LOG.error("connect catch execption: " , e);
-                }
-            }
-        };
-
-        channelFutureListener = new ChannelFutureListener() {
-            @Override
-            public void operationComplete(ChannelFuture channelFuture) throws Exception {
-                onFlushFinished(channelFuture);
-            }
-        };
-
-        // setup the connection async now
-        scheduler.execute(connector);
-    }
-
-    @Override
-    public void send(ArrayList<TaskMessage> taskMessages) {
-        if (clientState == ClientState.CLOSED) {
-            LOG.warn("Client : " + remote_addr.toString() + "has closed, send abort");
-            return;
-        }
-
-        long taskMessageSize = 0;
-        for (TaskMessage taskMessage : taskMessages) {
-            taskMessageSize += taskMessage.length();
-        }
-
-        // this will block until there enough space to buffer the new arrival TaskMessages;
-        clientFactory.onMessageAdd(taskMessageSize);
-        cacheMessage(taskMessages);
-    }
-
-    private synchronized void cacheMessage(ArrayList<TaskMessage> taskMessages) {
-        cachedTaskMessages.put(nextTaskMessageIndex.getAndIncrement(), taskMessages);
-        // inform flush right now;
+        
+        // setup the connection asyncly now
         scheduler.execute(new Runnable() {
             @Override
-            public void run() {
-                try {
-                    flush();
-                } catch (Exception e) {
-                    LOG.error("flush catch exception:", e);
-                }
+            public void run() {   
+                connect();
             }
         });
+        
+        Runnable flusher = new Runnable() {
+            @Override
+            public void run() {
+
+                if(!closing) {
+                    long flushCheckTime = flushCheckTimer.get();
+                    long now = System.currentTimeMillis();
+                    if (now > flushCheckTime) {
+                        Channel channel = channelRef.get();
+                        if (null != channel && channel.isWritable()) {
+                            flush(channel);
+                        }
+                    }
+                }
+                
+            }
+        };
+        
+        long initialDelay = Math.min(30L * 1000, max_sleep_ms * max_retries); //max wait for 30s
+        scheduler.scheduleWithFixedDelay(flusher, initialDelay, flushCheckInterval, TimeUnit.MILLISECONDS);
     }
 
     /**
-     * connect to remote server
+     * We will retry connection with exponential back-off policy
      */
     private synchronized void connect() {
-        if (clientState == ClientState.CLOSED) {
-            LOG.warn("Client : " + remote_addr.toString() + "has closed, connect abort");
-            return;
-        }
+        try {
 
-        assert (clientState == ClientState.NEW || clientState == ClientState.DISCONNECTED);
-        if (clientState == ClientState.CONNECTED) {
-            LOG.warn("Client : " + remote_addr.toString() + "has connected, connect abort");
-            return;
-        }
-        Channel channel = channelRef.get();
-        assert (channel == null);
-
-        if (curConnectionRetryTimes.get() > max_retries) {
-            LOG.warn("Remote address is not reachable. We will close this client ");
-            close();
-            return;
-        }
-
-        LOG.info("Reconnect started for {}... [{}]", name(), curConnectionRetryTimes);
-        LOG.debug("connection started...");
-
-        ChannelFuture future = bootstrap.connect(remote_addr);
-        future.awaitUninterruptibly();
-        Channel current = future.getChannel();
-        if (!future.isSuccess()) {
-            if (null != current) {
-                current.close();
+            Channel channel = channelRef.get();
+            if (channel != null && channel.isConnected()) {
+                return;
             }
-            curConnectionRetryTimes.getAndIncrement();
-            clientState = ClientState.DISCONNECTED;
-            int sleep_time = retryPolicy.getSleepTimeMs(curConnectionRetryTimes.get(), 0);
-            LOG.info("we will try to connect : " + remote_addr.toString() + " in " + sleep_time + "ms");
-            scheduler.schedule(connector, sleep_time, TimeUnit.MILLISECONDS);
+
+            int tried = 0;
+            while (tried <= max_retries && !closing) {
+
+                LOG.info("Reconnect started for {}... [{}]", name(), tried);
+                LOG.debug("connection started...");
+
+                ChannelFuture future = bootstrap.connect(remote_addr);
+                future.awaitUninterruptibly();
+                Channel current = future.getChannel();
+
+                if (!future.isSuccess()) {
+                    if (null != current) {
+                        current.close();
+                    }
+                } else {
+                    channel = current;
+                    break;
+                }
+                Thread.sleep(retryPolicy.getSleepTimeMs(tried, 0));
+                tried++;  
+            }
+
+            if (null != channel) {
+                LOG.info("connection established to a remote host " + name() + ", " + channel.toString());
+                channelRef.set(channel);
+            } else if (closing) {
+                LOG.info("connection is closing, abort reconnecting...");
+            } else {
+                close();
+                throw new RuntimeException("Remote address is not reachable. We will close this client " + name());
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException("connection failed " + name(), e);
+        }
+    }
+
+  @Override
+  public Status status() {
+        if (closing) {
+            return Status.Closed;
+        } else if(null == channelRef.get()) {
+            return Status.Connecting;
         } else {
-            LOG.info("connection established to a remote host " + name());
-            channelRef.set(current);
-            curConnectionRetryTimes.set(0);
-            clientState = ClientState.CONNECTED;
-            scheduler.execute(flusher);
+            return Status.Ready;
         }
     }
 
-    private synchronized void flushWithSchedule() {
-        if (clientState != ClientState.CLOSED) {
-            flush();
-            scheduler.schedule(flusher, flushCheckInterval, TimeUnit.MILLISECONDS);
+    private int iteratorSize(Iterator<TaskMessage> msgs) {
+        int size = 0;
+        while(msgs.hasNext()) {
+          size++;
+          msgs.next();
         }
+        return size;
     }
 
-    private synchronized void flush() {
-        if (clientState != ClientState.CONNECTED) {
-            LOG.warn("Client : " + remote_addr.toString() + "has not connected, abort flush");
+    private void handleMessageWhenConnectionNotAvailable(Iterator<TaskMessage> msgs) {
+      // we will drop pending messages and let at-least-once message replay kicks in
+      //
+      // Another option is to buffer the message in memory. For this option, it has the risk
+      // of OOM, especially for unacked topology. Because we don't know whether the connection
+      // recovery will succeed or not and how long it will take.
+      dropPendingMessages(msgs);
+    }
+
+    private void dropPendingMessages(Iterator<TaskMessage> msgs) {
+      // msgs iterator is invalid after this call, we cannot use it further
+      int msgCount = iteratorSize(msgs);
+
+      // the connection is down, drop pending messages
+      LOG.error("The Connection channel currently is not available, dropping pending " + msgCount + " messages...");
+      return;
+    }
+
+    /**
+     * Enqueue task messages to be sent to server
+     */
+    synchronized public void send(Iterator<TaskMessage> msgs) {
+
+        // throw exception if the client is being closed
+        if (closing) {
+            throw new RuntimeException("Client is being closed, and does not take requests any more");
+        }
+        
+        if (null == msgs || !msgs.hasNext()) {
             return;
         }
 
         Channel channel = channelRef.get();
-        assert(channel != null);
-        if (!channel.isConnected()) {
-            LOG.warn("channel not connected, we will reconnect to : " + remote_addr.toString());
-            scheduleReconnect(channel);
+        if (null == channel) {
+            handleMessageWhenConnectionNotAvailable(msgs);
             return;
         }
 
-        while (curTaskMessageIndex.get() < nextTaskMessageIndex.get()) {
-            // right now channel is not writable, we will try later;
-            if (!channel.isWritable()) {
-                break;
+        while (msgs.hasNext()) {
+            if (!channel.isConnected()) {
+                connect();
+                channel = channelRef.get();
+            }
+            TaskMessage message = msgs.next();
+            if (null == messageBatch) {
+                messageBatch = new MessageBatch(messageBatchSize);
             }
 
-            ArrayList<TaskMessage> taskMessages = (ArrayList<TaskMessage>)cachedTaskMessages.remove(curTaskMessageIndex.getAndIncrement());
-            // this taskMessages may has timeout and deleted by cachedTaskMessages;
-            if (taskMessages == null) {
-                continue;
-            }
-
-            for (TaskMessage taskMessage : taskMessages) {
-                if (null == messageBatch) {
-                    messageBatch = new MessageBatch(messageBatchSize);
-                }
-
-                messageBatch.add(taskMessage);
-                curMessageBatchSize += taskMessage.length();
-                if (messageBatch.isFull()) {
-                    clientFactory.onMessageSendFinished(curMessageBatchSize);
-                    curMessageBatchSize = 0;
-                    MessageBatch toBeFlushed = messageBatch;
-                    flushRequest(channel, toBeFlushed);
-                    messageBatch = null;
-                }
+            messageBatch.add(message);
+            if (messageBatch.isFull()) {
+                MessageBatch toBeFlushed = messageBatch;
+                flushRequest(channel, toBeFlushed);
+                messageBatch = null;
             }
         }
 
         if (null != messageBatch && !messageBatch.isEmpty()) {
             if (channel.isWritable()) {
-                clientFactory.onMessageSendFinished(curMessageBatchSize);
-                curMessageBatchSize = 0;
+                flushCheckTimer.set(Long.MAX_VALUE);
+                
                 // Flush as fast as we can to reduce the latency
                 MessageBatch toBeFlushed = messageBatch;
                 messageBatch = null;
                 flushRequest(channel, toBeFlushed);
+                
+            } else {
+                // when channel is NOT writable, it means the internal netty buffer is full. 
+                // In this case, we can try to buffer up more incoming messages.
+                flushCheckTimer.set(System.currentTimeMillis() + flushCheckInterval);
             }
         }
-    }
 
-    private synchronized void onFlushFinished(ChannelFuture channelFuture) {
-        pendings.decrementAndGet();
-        if (!channelFuture.isSuccess()) {
-            LOG.info("failed to send requests to " + remote_addr.toString() + ": ", channelFuture.getCause());
-
-            Channel channel = channelFuture.getChannel();
-            scheduleReconnect(channel);
-        }
-    }
-
-    private void scheduleReconnect(Channel channel) {
-        if (null != channel) {
-            channel.close();
-            channelRef.compareAndSet(channel, null);
-        }
-        if (clientState != ClientState.CLOSED) {
-            clientState = ClientState.DISCONNECTED;
-            scheduler.execute(connector);
-        }
-    }
-
-    private synchronized void onTaskMessageTimeout(ArrayList<TaskMessage> taskMessages) {
-        long taskMessageSize = 0;
-        for (TaskMessage taskMessage : taskMessages) {
-            taskMessageSize += taskMessage.length();
-        }
-        LOG.warn("message for " + remote_addr.toString() +  " timeout before send out, we will drop " + taskMessageSize + " Byte messages");
-        clientFactory.onMessageSendFinished(taskMessageSize);
     }
 
     public String name() {
@@ -348,58 +278,65 @@ public class Client implements IConnection {
         return "";
     }
 
+    private synchronized void flush(Channel channel) {
+        if (!closing) {
+            if (null != messageBatch && !messageBatch.isEmpty()) {
+                MessageBatch toBeFlushed = messageBatch;
+                flushCheckTimer.set(Long.MAX_VALUE);
+                flushRequest(channel, toBeFlushed);
+                messageBatch = null;
+            }
+        }
+    }
+    
     /**
      * gracefully close this client.
      * 
      * We will send all existing requests, and then invoke close_n_release()
      * method
+     *
+     * If the close() is called during reconnection, we need to break that process.
      */
-    public synchronized void close() {
-        if (clientState != ClientState.CLOSED) {
-            clientState = ClientState.CLOSED;
-            LOG.info("Closing Netty Client " + name());
+    public void close() {
+        if (!closing) {
 
-            long taskMessageSize = 0;
-            for (long index = curTaskMessageIndex.get(); index < nextTaskMessageIndex.get(); ++index) {
-                ArrayList<TaskMessage> taskMessages = cachedTaskMessages.get(index);
-                if (taskMessages != null) {
-                    for (TaskMessage taskMessage : taskMessages) {
-                        taskMessageSize += taskMessage.length();
-                    }
-                }
-            }
-            clientFactory.onMessageSendFinished(taskMessageSize);
-            cachedTaskMessages.cleanup();
-            if (null != messageBatch && !messageBatch.isEmpty()) {
-                MessageBatch toBeFlushed = messageBatch;
-                Channel channel = channelRef.get();
-                if (channel != null) {
-                    flushRequest(channel, toBeFlushed);
-                }
-                messageBatch = null;
-            }
-        
-            //wait for pendings to exit
-            final long timeoutMilliSeconds = 600 * 1000; //600 seconds
-            final long start = System.currentTimeMillis();
-            
-            LOG.info("Waiting for pending batchs to be sent with "+ name() + "..., timeout: {}ms, pendings: {}", timeoutMilliSeconds, pendings.get());
-            
-            while(pendings.get() != 0) {
-                try {
-                    long delta = System.currentTimeMillis() - start;
-                    if (delta > timeoutMilliSeconds) {
-                        LOG.error("Timeout when sending pending batchs with {}..., there are still {} pending batchs not sent", name(), pendings.get());
-                        break;
-                    }
-                    Thread.sleep(1000); //sleep 1s
-                } catch (InterruptedException e) {
-                    break;
-                } 
-            }
-            
-            close_n_release();
+          //set closing to true so that we can interuppt the reconnecting
+          closing = true;
+          LOG.info("Closing Netty Client " + name());
+          doClose();
         }
+    }
+
+    private synchronized void doClose() {
+        if (null != messageBatch && !messageBatch.isEmpty()) {
+            MessageBatch toBeFlushed = messageBatch;
+            Channel channel = channelRef.get();
+            if (channel != null) {
+                flushRequest(channel, toBeFlushed);
+            }
+            messageBatch = null;
+        }
+
+        //wait for pendings to exit
+        final long timeoutMilliSeconds = 600 * 1000; //600 seconds
+        final long start = System.currentTimeMillis();
+
+        LOG.info("Waiting for pending batchs to be sent with "+ name() + "..., timeout: {}ms, pendings: {}", timeoutMilliSeconds, pendings.get());
+
+        while(pendings.get() != 0) {
+            try {
+                long delta = System.currentTimeMillis() - start;
+                if (delta > timeoutMilliSeconds) {
+                    LOG.error("Timeout when sending pending batchs with {}..., there are still {} pending batchs not sent", name(), pendings.get());
+                    break;
+                }
+                Thread.sleep(1000); //sleep 1s
+            } catch (InterruptedException e) {
+                break;
+            }
+        }
+
+        close_n_release();
     }
 
     /**
@@ -420,9 +357,9 @@ public class Client implements IConnection {
     @Override
     public void send(int taskId, byte[] payload) {
         TaskMessage msg = new TaskMessage(taskId, payload);
-        ArrayList<TaskMessage> wrapper = new ArrayList<TaskMessage>(1);
+        List<TaskMessage> wrapper = new ArrayList<TaskMessage>(1);
         wrapper.add(msg);
-        send(wrapper);
+        send(wrapper.iterator());
     }
 
     private void flushRequest(Channel channel, final MessageBatch requests) {
@@ -431,7 +368,34 @@ public class Client implements IConnection {
 
         pendings.incrementAndGet();
         ChannelFuture future = channel.write(requests);
-        future.addListener(channelFutureListener);
+        future.addListener(new ChannelFutureListener() {
+            public void operationComplete(ChannelFuture future)
+                    throws Exception {
+
+                pendings.decrementAndGet();
+                if (!future.isSuccess()) {
+                    LOG.info(
+                            "failed to send requests to " + remote_addr.toString() + ": ", future.getCause());
+
+                    Channel channel = future.getChannel();
+
+                    if (null != channel) {
+                        channel.close();
+                        if (channelRef.compareAndSet(channel, null)) {
+                            // reconnect
+                            scheduler.execute(new Runnable() {
+                              @Override
+                              public void run() {
+                                connect();
+                              }
+                            });
+                        }
+                    }
+                } else {
+                    LOG.debug("{} request(s) sent", requests.size());
+                }
+            }
+        });
     }
 }
 

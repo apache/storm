@@ -16,7 +16,6 @@
 (ns backtype.storm.messaging.local
   (:refer-clojure :exclude [send])
   (:use [backtype.storm log])
-  (:use [backtype.storm util])
   (:import [backtype.storm.messaging IContext IConnection TaskMessage])
   (:import [java.util.concurrent LinkedBlockingQueue])
   (:import [java.util Map Iterator])
@@ -46,10 +45,10 @@
     (let [send-queue (add-queue! queues-map lock storm-id port)]
       (.put send-queue (TaskMessage. taskId payload))
       ))
-  (^void send [this ^ArrayList msgs]
+  (^void send [this ^Iterator iter]
     (let [send-queue (add-queue! queues-map lock storm-id port)]
-      (fast-list-iter [task msgs]
-        (.put send-queue (TaskMessage. (.task task) (.message task))))
+      (while (.hasNext iter) 
+         (.put send-queue (.next iter)))
       ))
   (^void close [this]
     ))
