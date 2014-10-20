@@ -295,7 +295,7 @@ public class Client extends ConnectionWithStatus {
      * We will send all existing requests, and then invoke close_n_release()
      * method
      *
-     * If the close() is called during reconnection, we need to break that process.
+     * If the reconnection is ongoing when close() is called, we need to break that process.
      */
     public void close() {
         if (!closing) {
