@@ -11,6 +11,7 @@ import org.apache.log4j.Logger;
 
 import com.alibaba.jstorm.daemon.nimbus.NimbusData;
 import com.alibaba.jstorm.task.heartbeat.TaskHeartbeat;
+import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.cluster.StormBase;
 import com.alibaba.jstorm.cluster.StormClusterState;
 import com.alibaba.jstorm.stats.CommonStatsData;
@@ -139,17 +140,13 @@ public class UploadMetricFromZK implements Runnable {
 			    topologyMetricMsg.emptyCountMap();   
 			    Map<String, Object> ret = topologyMetricMsg.convertToKVMap();
 			    if(ret.size() >0) totalMsg.putAll(ret);
-			    /*
-			    if(ret.size() > 0){
-			    	 client.setMonitorName("jstorm_user_metric");
-			    	 client.sendRequest(0, " ",ret);		    	
-			    } */
 		    }
 		    
 		    if(totalMsg.size() > 0) {
 		    	// For Alimonitor Client only
 		    	if (client instanceof AlimonitorClient) {
-		    	    ((AlimonitorClient) client).setMonitorName(MetricDef.USER_MONITOR_NAME);
+		    	    ((AlimonitorClient) client).setMonitorName(
+		    	    		ConfigExtension.getAlmonUserMetricName(data.getConf()));
 		    	    ((AlimonitorClient) client).setCollectionFlag(0);
 				    ((AlimonitorClient) client).setErrorInfo("");
 		    	}
@@ -215,7 +212,8 @@ public class UploadMetricFromZK implements Runnable {
 		try {
 			// For Alimonitor Client only
 			if (client instanceof AlimonitorClient) {
-			    ((AlimonitorClient) client).setMonitorName(MetricDef.TOPOLOGY_MONITOR_NAME);
+			    ((AlimonitorClient) client).setMonitorName(
+			    		ConfigExtension.getAlmonTopoMetricName(data.getConf()));
 			    ((AlimonitorClient) client).setCollectionFlag(0);
 			    ((AlimonitorClient) client).setErrorInfo("");
 			}

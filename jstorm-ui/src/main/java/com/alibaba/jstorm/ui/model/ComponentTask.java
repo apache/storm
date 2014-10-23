@@ -20,6 +20,7 @@ public class ComponentTask extends ComponentStats implements Serializable {
 	private String port;
 	private String uptime;
 	private String lastErr;
+	private String status;
 
 	public String getTopologyid() {
 		return topologyid;
@@ -84,5 +85,12 @@ public class ComponentTask extends ComponentStats implements Serializable {
 	public void setLastErr(String lastErr) {
 		this.lastErr = lastErr;
 	}
+	
+	public String getStatus() {
+		return status;
+	}
 
+	public void setStatus(String status) {
+		this.status = status;
+	}
 }

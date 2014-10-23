@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.BufferedReader;
 import java.io.Closeable;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -35,6 +34,7 @@ import backtype.storm.generated.WorkerMetricData;
 import backtype.storm.generated.WorkerSummary;
 import backtype.storm.utils.ThriftTopologyUtils;
 
+import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.cluster.Cluster;
 import com.alibaba.jstorm.cluster.StormClusterState;
 import com.alibaba.jstorm.cluster.StormConfig;
@@ -224,10 +224,12 @@ public class NimbusUtils {
 	 * finalize component's task paralism
 	 * 
 	 * @param topology
+	 * @param fromConf means if the paralism is read from conf file
+	 *        instead of reading from topology code
 	 * @return
 	 */
 	public static StormTopology normalizeTopology(Map stormConf,
-			StormTopology topology) {
+			StormTopology topology, boolean fromConf) {
 		StormTopology ret = topology.deepCopy();
 
 		Map<String, Object> components = ThriftTopologyUtils.getComponents(ret);
@@ -238,12 +240,24 @@ public class NimbusUtils {
 			ComponentCommon common = null;
 			if (component instanceof Bolt) {
 				common = ((Bolt) component).get_common();
+				if (fromConf) {
+					Integer paraNum = ConfigExtension.getMaxBoltParallelism(stormConf);
+					if (paraNum != null) common.set_parallelism_hint(paraNum);
+				}
 			}
 			if (component instanceof SpoutSpec) {
 				common = ((SpoutSpec) component).get_common();
+				if (fromConf) {
+					Integer paraNum = ConfigExtension.getMaxSpoutParallelism(stormConf);
+					if (paraNum != null) common.set_parallelism_hint(paraNum);
+				}
 			}
 			if (component instanceof StateSpoutSpec) {
 				common = ((StateSpoutSpec) component).get_common();
+				if (fromConf) {
+					Integer paraNum = ConfigExtension.getMaxSpoutParallelism(stormConf);
+					if (paraNum != null) common.set_parallelism_hint(paraNum);
+				}
 			}
 
 			Map componentMap = new HashMap();
@@ -311,6 +325,34 @@ public class NimbusUtils {
 
 	}
 
+	public static List<String> listStormdistFiles(NimbusData data)
+			throws Exception {
+		// get /local-storm-dir/nimbus/stormdist path
+		String master_stormdist_root = StormConfig.masterStormdistRoot(data
+				.getConf());
+
+		// listdir /local-storm-dir/nimbus/stormdist
+		List<String> files = PathUtils
+				.read_dir_contents(master_stormdist_root);
+		
+		return files;
+	}
+	
+	public static String findTopoFileInStormdist(NimbusData data, String name) throws Exception {
+		String ret = null;
+		
+		List<String> files = listStormdistFiles(data);
+		
+		for (String file : files) {
+			if (file.indexOf(name) != -1) {
+				ret = file;
+				break;
+			}
+		}
+		
+		return ret;
+	}
+	
 	public static boolean isTaskDead(NimbusData data, String topologyId,
 			Integer taskId) {
 		String idStr = " topology:" + topologyId + ",taskid:" + taskId;
@@ -596,39 +638,40 @@ public class NimbusUtils {
 
 		for (ResourceWorkerSlot worker : workers) {
 			for (Integer taskId : worker.getTasks()) {
-
+				TaskSummary taskSummary = new TaskSummary();
+				
+				taskSummary.set_task_id(taskId);
+				taskSummary.set_component_id(taskToComponent.get(taskId));
+				taskSummary.set_host(worker.getHostname());
+				taskSummary.set_port(worker.getPort());
+				
 				TaskHeartbeat heartbeat = zkClusterState.task_heartbeat(
 						topologyId, taskId);
 				if (heartbeat == null) {
 					LOG.warn("Topology " + topologyId + " task " + taskId
 							+ " hasn't been started");
-					continue;
+					taskSummary.set_status(ConfigExtension.TASK_STATUS_STARTING);
+				} else {
+				    List<TaskError> errors = zkClusterState.task_errors(topologyId,
+					  	    taskId);
+				    List<ErrorInfo> newErrors = new ArrayList<ErrorInfo>();
+
+				    if (errors != null) {
+					    int size = errors.size();
+					    for (int i = 0; i < size; i++) {
+						    TaskError e = (TaskError) errors.get(i);
+						    newErrors.add(new ErrorInfo(e.getError(), e
+								    .getTimSecs()));
+					    }
+				    }
+
+				    taskSummary.set_uptime_secs(heartbeat.getUptimeSecs());
+				    taskSummary.set_stats(heartbeat.getStats().getTaskStats());
+				    taskSummary.set_errors(newErrors);
+				    
+				    taskSummary.set_status(ConfigExtension.TASK_STATUS_ACTIVE);
 				}
-
-				List<TaskError> errors = zkClusterState.task_errors(topologyId,
-						taskId);
-				List<ErrorInfo> newErrors = new ArrayList<ErrorInfo>();
-
-				if (errors != null) {
-					int size = errors.size();
-					for (int i = 0; i < size; i++) {
-						TaskError e = (TaskError) errors.get(i);
-						newErrors.add(new ErrorInfo(e.getError(), e
-								.getTimSecs()));
-					}
-				}
-
-				TaskSummary taskSummary = new TaskSummary();
-
-				taskSummary.set_task_id(taskId);
-				taskSummary.set_component_id(taskToComponent.get(taskId));
-				taskSummary.set_host(worker.getHostname());
-
-				taskSummary.set_port(worker.getPort());
-				taskSummary.set_uptime_secs(heartbeat.getUptimeSecs());
-				taskSummary.set_stats(heartbeat.getStats().getTaskStats());
-				taskSummary.set_errors(newErrors);
-
+				
 				taskSummaries.put(taskId, taskSummary);
 			}
 		}

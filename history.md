@@ -2,15 +2,15 @@
 [JStorm Chinese introduction](http://42.121.19.155/jstorm/JStorm-introduce.pptx)
 
 #Release 0.9.6.1
-1.Add management of multiclusters in web UI.
-2. Merge trident part from storm-0.9.3
-3. Use fastjson replace gson
-4. Reorganization the code generating metrics json
-5. Get jstorm version from $JSTORM_HOME/RELEASE instead of hardcode
-6. Change task deserialize thread's SingleThreadDisruptorQueue to MultiThreadDisruptorQueue
-7. Fix web ui display wrong number of workers in Supervisor page
-8. Fix taskheart beat thread competition in accessing task map
-9. Fix null pointer exception when killing worker and read worker's hearbeat object
+1. Added management tools for multiclusters in WebUI.
+2. Merged Trident API from storm-0.9.3
+3. Replaced gson with fastjson
+4. Refactored metric json generation code.
+5. Stored version info with $JSTORM_HOME/RELEASE.
+6. Replaced SingleThreadDisruptorQueue with MultiThreadDisruptorQueue in task deserialize thread.
+7. Fixed issues with worker count on Web UI.
+8. Fixed issues with accessing the task map with multi-threads.
+9. Fixed NullPointerException while killing worker and reading worker's hearbeat object.
 10. Netty client connect to server only in NettyClient module.
 11. Add break loop operation when netty client connection is closed
 12. Fix the bug that topology warning flag present in cluster page is not consistent with error information present in topology page
@@ -24,7 +24,10 @@
 20. Print rootId when tuple failed
 21. In order to keep compatible with Storm, add submitTopologyWithProgressBar interface
 22. Upgrade netty version from 3.2.7 to 3.9.0
-23. Support assign topology to user-defined supervosors
+23. Support assign topology to user-defined supervisors
+24. Enable user to configure the char encoding of web UI logview
+25. Added the display of tasks under starting in task page of web UI
+26. Added "restart" jstorm command, which can be used to restart topology program with the configuration changed.
 
 
 #Release 0.9.6

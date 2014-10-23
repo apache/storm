@@ -1,5 +1,6 @@
 package com.alibaba.jstorm.schedule.default_assign;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -25,7 +26,7 @@ public class TaskGanker {
 
 	private final TaskGankerContext taskContext;
 
-	private Set<ResourceWorkerSlot> assignments = new HashSet<ResourceWorkerSlot>();
+	private List<ResourceWorkerSlot> assignments = new ArrayList<ResourceWorkerSlot>();
 
 	private int workerNum;
 
@@ -59,7 +60,7 @@ public class TaskGanker {
 		this.setTaskNum();
 	}
 
-	public Set<ResourceWorkerSlot> gankTask() {
+	public List<ResourceWorkerSlot> gankTask() {
 		if (tasks.size() == 0)
 			return assignments;
 		Set<Integer> hadGanked = this.gankOnDifferentNodeTask();
@@ -80,8 +81,9 @@ public class TaskGanker {
 	}
 
 	private void beginGank(String name, Integer task) {
-		ResourceWorkerSlot worker = this.chooseWorker(name, taskContext
-				.getWorkerToTaskNum().keySet());
+		ResourceWorkerSlot worker = this.chooseWorker(name,
+				new ArrayList<ResourceWorkerSlot>(taskContext
+						.getWorkerToTaskNum().keySet()));
 		this.pushTaskToWorker(task, name, worker);
 	}
 
@@ -101,15 +103,15 @@ public class TaskGanker {
 		return result;
 	}
 
-	private Map<String, Set<ResourceWorkerSlot>> buildSupervisorToWorker(
+	private Map<String, List<ResourceWorkerSlot>> buildSupervisorToWorker(
 			List<ResourceWorkerSlot> workers) {
-		Map<String, Set<ResourceWorkerSlot>> supervisorToWorker = new HashMap<String, Set<ResourceWorkerSlot>>();
+		Map<String, List<ResourceWorkerSlot>> supervisorToWorker = new HashMap<String, List<ResourceWorkerSlot>>();
 		for (ResourceWorkerSlot worker : workers) {
 			if (worker.getTasks() == null || worker.getTasks().size() == 0) {
-				Set<ResourceWorkerSlot> supervisor = supervisorToWorker
+				List<ResourceWorkerSlot> supervisor = supervisorToWorker
 						.get(worker.getNodeId());
 				if (supervisor == null) {
-					supervisor = new HashSet<ResourceWorkerSlot>();
+					supervisor = new ArrayList<ResourceWorkerSlot>();
 					supervisorToWorker.put(worker.getNodeId(), supervisor);
 				}
 				supervisor.add(worker);
@@ -122,9 +124,9 @@ public class TaskGanker {
 	}
 
 	private ResourceWorkerSlot chooseWorker(String name,
-			Set<ResourceWorkerSlot> workers) {
-		Set<ResourceWorkerSlot> result = this.componentSelector.select(workers,
-				name);
+			List<ResourceWorkerSlot> workers) {
+		List<ResourceWorkerSlot> result = this.componentSelector.select(
+				workers, name);
 		result = this.totalTaskNumSelector.select(result, name);
 		if (name.equals(TaskGanker.ACKER_NAME))
 			return result.iterator().next();
@@ -154,7 +156,7 @@ public class TaskGanker {
 				assignments.add(worker);
 			}
 			if (otherNum <= 0) {
-				Set<ResourceWorkerSlot> needDelete = new HashSet<ResourceWorkerSlot>();
+				List<ResourceWorkerSlot> needDelete = new ArrayList<ResourceWorkerSlot>();
 				for (Entry<ResourceWorkerSlot, Integer> entry : taskContext
 						.getWorkerToTaskNum().entrySet()) {
 					if (entry.getValue() == baseNum)
@@ -182,7 +184,7 @@ public class TaskGanker {
 	private void setTaskNum() {
 		this.baseNum = tasks.size() / workerNum;
 		this.otherNum = tasks.size() % workerNum;
-		for (Entry<String, Set<ResourceWorkerSlot>> entry : taskContext
+		for (Entry<String, List<ResourceWorkerSlot>> entry : taskContext
 				.getSupervisorToWorker().entrySet()) {
 			for (ResourceWorkerSlot worker : entry.getValue()) {
 				taskContext.getWorkerToTaskNum().put(worker, 0);
@@ -190,10 +192,10 @@ public class TaskGanker {
 		}
 	}
 
-	private Set<ResourceWorkerSlot> getDifferentNodeTaskWokres(String name) {
-		Set<ResourceWorkerSlot> workers = new HashSet<ResourceWorkerSlot>();
+	private List<ResourceWorkerSlot> getDifferentNodeTaskWokres(String name) {
+		List<ResourceWorkerSlot> workers = new ArrayList<ResourceWorkerSlot>();
 		workers.addAll(taskContext.getWorkerToTaskNum().keySet());
-		for (Entry<String, Set<ResourceWorkerSlot>> entry : taskContext
+		for (Entry<String, List<ResourceWorkerSlot>> entry : taskContext
 				.getSupervisorToWorker().entrySet()) {
 			if (taskContext.getComponentNumOnSupervisor(entry.getKey(), name) != 0)
 				workers.removeAll(entry.getValue());

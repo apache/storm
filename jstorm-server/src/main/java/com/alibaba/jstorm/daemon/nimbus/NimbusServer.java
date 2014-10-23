@@ -117,7 +117,7 @@ public class NimbusServer {
 			initFollowerThread(conf);
 
 			int port = ConfigExtension.getNimbusDeamonHttpserverPort(conf);
-			hs = new Httpserver(port);
+			hs = new Httpserver(port, conf);
 			hs.start();
 
 			initContainerHBThread(conf);

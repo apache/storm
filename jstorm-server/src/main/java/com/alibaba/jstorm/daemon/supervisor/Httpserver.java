@@ -41,18 +41,22 @@ public class Httpserver implements Shutdownable {
 
 	private HttpServer hs;
 	private int port;
+	private Map conf;
 
-	public Httpserver(int port) {
+	public Httpserver(int port, Map conf) {
 		this.port = port;
+		this.conf = conf;
 	}
 
 	static class LogHandler implements HttpHandler {
 
 		private String logDir;
+		Map conf;
 
-		public LogHandler() {
+		public LogHandler(Map conf) {
 
 			logDir = JStormUtils.getLogDir();
+			this.conf = conf;
 
 			LOG.info("logview logDir=" + logDir); // +++
 
@@ -175,7 +179,8 @@ public class Httpserver implements Shutdownable {
 
 				ret = new byte[(int) size];
 				fout.get(ret);
-				return new Pair<Long, byte[]>(fileSize, ret);
+				String str = new String(ret, ConfigExtension.getLogViewEncoding(conf));
+				return new Pair<Long, byte[]>(fileSize, str.getBytes());
 
 			} catch (FileNotFoundException e) {
 				LOG.warn(e);
@@ -270,7 +275,7 @@ public class Httpserver implements Shutdownable {
 		try {
 			hs = HttpServer.create(socketAddr, 0);
 			hs.createContext(HttpserverUtils.HTTPSERVER_CONTEXT_PATH_LOGVIEW,
-					new LogHandler());
+					new LogHandler(conf));
 			hs.setExecutor(executor);
 			hs.start();
 

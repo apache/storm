@@ -36,10 +36,4 @@ public class MetricDef {
     
 	public static final String REMOTE_CLI_ADDR  = "Remote_Client_Address";
 	public static final String REMOTE_SERV_ADDR = "Remote_Server_Address";
-    
-	// monitor name in Alimonitor
-	public static final String TOPOLOGY_MONITOR_NAME = "jstorm_metric";
-	public static final String TASK_MONITOR_NAME     = "jstorm_task_metrics";
-	public static final String WORKER_MONITOR_NAME   = "jstorm_worker_metrics";
-	public static final String USER_MONITOR_NAME     = "jstorm_user_metric";
 }

@@ -55,6 +55,8 @@ public class SpoutExecutors extends BaseExecutors implements EventHandler {
 	protected TimerRatio emptyCpuCounter;
 
 	protected AsyncLoopThread ackerRunnableThread;
+	
+	protected boolean         isSpoutFullSleep;
 
 	public SpoutExecutors(backtype.storm.spout.ISpout _spout,
 			TaskTransfer _transfer_fn,
@@ -81,6 +83,9 @@ public class SpoutExecutors extends BaseExecutors implements EventHandler {
 				String.valueOf(taskId), Metrics.MetricType.TASK);
 
 		TimeTick.registerTimer(idStr+ "-acker-tick", exeQueue);
+		
+		isSpoutFullSleep = ConfigExtension.isSpoutPendFullSleep(storm_conf);
+		LOG.info("isSpoutFullSleep:" + isSpoutFullSleep);
 
 	}
 
@@ -144,6 +149,9 @@ public class SpoutExecutors extends BaseExecutors implements EventHandler {
 
 			return;
 		} else {
+			if (isSpoutFullSleep) {
+				JStormUtils.sleepMs(1);
+			}
 			emptyCpuCounter.start();
 			// just return, no sleep
 		}
@@ -178,8 +186,10 @@ public class SpoutExecutors extends BaseExecutors implements EventHandler {
 				Object id = tuple.getValue(0);
 				Object obj = pending.remove((Long) id);
 
-				if (obj == null && isDebug) {
-					LOG.info("Pending map no entry:" + id );
+				if (obj == null ) {
+					if (isDebug) {
+						LOG.info("Pending map no entry:" + id );
+					}
 					return;
 				}
 

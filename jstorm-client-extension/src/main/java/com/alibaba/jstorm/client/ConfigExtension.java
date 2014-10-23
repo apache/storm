@@ -467,4 +467,63 @@ public class ConfigExtension {
     public static Integer getUiClusterZkPort(Map uiCluster) {
     	return JStormUtils.parseInt(uiCluster.get(UI_CLUSTER_ZK_PORT));
     }
+    
+    protected static String SPOUT_PEND_FULL_SLEEP = "spout.pending.full.sleep";
+    
+    public static boolean isSpoutPendFullSleep(Map conf) {
+    	return JStormUtils.parseBoolean(conf.get(SPOUT_PEND_FULL_SLEEP), false);
+    }
+    
+    public static void setSpoutPendFullSleep(Map conf, boolean sleep) {
+    	conf.put(SPOUT_PEND_FULL_SLEEP, sleep);
+    	
+    }
+    
+    protected static String LOGVIEW_ENCODING = "supervisor.deamon.logview.encoding";
+    protected static String UTF8 = "utf-8";
+    
+    public static String getLogViewEncoding(Map conf) {
+    	String ret = (String) conf.get(LOGVIEW_ENCODING);
+    	if (ret == null) ret = UTF8;
+    	return ret;
+    }
+    
+    public static void setLogViewEncoding(Map conf, String enc) {
+    	conf.put(LOGVIEW_ENCODING,  enc);
+    }
+    
+    public static String TASK_STATUS_ACTIVE = "Active";
+    public static String TASK_STATUS_STARTING = "Starting";
+    
+    protected static String ALIMONITOR_TOPO_METIRC_NAME = "topology.alimonitor.topo.metrics.name";
+    protected static String ALIMONITOR_TASK_METIRC_NAME = "topology.alimonitor.task.metrics.name";
+    protected static String ALIMONITOR_WORKER_METIRC_NAME = "topology.alimonitor.worker.metrics.name";
+    protected static String ALIMONITOR_USER_METIRC_NAME = "topology.alimonitor.user.metrics.name";
+    
+    public static String getAlmonTopoMetricName(Map conf) {
+    	return (String) conf.get(ALIMONITOR_TOPO_METIRC_NAME);
+    }
+    
+    public static String getAlmonTaskMetricName(Map conf) {
+    	return (String) conf.get(ALIMONITOR_TASK_METIRC_NAME);
+    }
+    
+    public static String getAlmonWorkerMetricName(Map conf) {
+    	return (String) conf.get(ALIMONITOR_WORKER_METIRC_NAME);
+    }
+    
+    public static String getAlmonUserMetricName(Map conf) {
+    	return (String) conf.get(ALIMONITOR_USER_METIRC_NAME);
+    }
+    
+    protected static String MAX_SPOUT_PARALLELISM = "topology.max.spout.parallelism";
+    protected static String MAX_BOLT_PARALLELISM = "topology.max.bolt.parallelism";
+    
+    public static Integer getMaxSpoutParallelism(Map conf) {
+    	return JStormUtils.parseInt(conf.get(MAX_SPOUT_PARALLELISM));
+    }
+    
+    public static Integer getMaxBoltParallelism(Map conf) {
+    	return JStormUtils.parseInt(conf.get(MAX_BOLT_PARALLELISM));
+    }
 }

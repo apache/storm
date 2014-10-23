@@ -267,7 +267,7 @@ public class JStormUtils {
 
 	public static java.lang.Process launch_process(String command,
 			Map<String, String> environment) throws IOException {
-		String[] cmdlist = (new String("nohup " + command)).split(" ");
+		String[] cmdlist = (new String("nohup " + command + " &")).split(" ");
 		ArrayList<String> buff = new ArrayList<String>();
 		for (String tok : cmdlist) {
 			if (!tok.isEmpty()) {

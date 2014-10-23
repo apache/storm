@@ -1,12 +1,13 @@
 package com.alibaba.jstorm.schedule.default_assign;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 public class TaskGankerContext {
 
-	private final Map<String, Set<ResourceWorkerSlot>> supervisorToWorker;
+	private final Map<String, List<ResourceWorkerSlot>> supervisorToWorker;
 
 	private final Map<String, Set<String>> relationship;
 
@@ -19,13 +20,13 @@ public class TaskGankerContext {
 	private final Map<ResourceWorkerSlot, Integer> workerToTaskNum = new HashMap<ResourceWorkerSlot, Integer>();
 
 	public TaskGankerContext(
-			Map<String, Set<ResourceWorkerSlot>> supervisorToWorker,
+			Map<String, List<ResourceWorkerSlot>> supervisorToWorker,
 			Map<String, Set<String>> relationship) {
 		this.supervisorToWorker = supervisorToWorker;
 		this.relationship = relationship;
 	}
 
-	public Map<String, Set<ResourceWorkerSlot>> getSupervisorToWorker() {
+	public Map<String, List<ResourceWorkerSlot>> getSupervisorToWorker() {
 		return supervisorToWorker;
 	}
 
@@ -38,7 +39,7 @@ public class TaskGankerContext {
 	}
 
 	public int getComponentNumOnSupervisor(String supervisor, String name) {
-		Set<ResourceWorkerSlot> workers = supervisorToWorker.get(supervisor);
+		List<ResourceWorkerSlot> workers = supervisorToWorker.get(supervisor);
 		if (workers == null)
 			return 0;
 		int result = 0;
@@ -57,7 +58,7 @@ public class TaskGankerContext {
 	}
 
 	public int getTaskNumOnSupervisor(String supervisor) {
-		Set<ResourceWorkerSlot> workers = supervisorToWorker.get(supervisor);
+		List<ResourceWorkerSlot> workers = supervisorToWorker.get(supervisor);
 		if (workers == null)
 			return 0;
 		int result = 0;
@@ -73,7 +74,7 @@ public class TaskGankerContext {
 
 	public int getInputComponentNumOnSupervisor(String supervisor, String name) {
 		int result = 0;
-		Set<ResourceWorkerSlot> workers = supervisorToWorker.get(supervisor);
+		List<ResourceWorkerSlot> workers = supervisorToWorker.get(supervisor);
 		if (workers == null)
 			return 0;
 		for (ResourceWorkerSlot worker : workers)

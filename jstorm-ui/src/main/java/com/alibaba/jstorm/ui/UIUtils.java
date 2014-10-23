@@ -268,9 +268,14 @@ public class UIUtils {
 		componentTask.setTaskid(String.valueOf(task.get_task_id()));
 		componentTask.setHost(task.get_host());
 		componentTask.setPort(String.valueOf(task.get_port()));
-		componentTask.setUptime(StatBuckets.prettyUptimeStr(task
-				.get_uptime_secs()));
-		componentTask.setLastErr(UIUtils.getTaskError(task.get_errors()));
+		
+		componentTask.setStatus(task.get_status());
+		
+		if (componentTask.getStatus().equals(ConfigExtension.TASK_STATUS_ACTIVE)) {
+		    componentTask.setUptime(StatBuckets.prettyUptimeStr(task
+				    .get_uptime_secs()));
+		    componentTask.setLastErr(UIUtils.getTaskError(task.get_errors()));
+		}
 
 		componentTask.setIp(NetWorkUtils.host2Ip(task.get_host()));
 

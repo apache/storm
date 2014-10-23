@@ -1,8 +1,8 @@
 package com.alibaba.jstorm.schedule.default_assign.Selector;
 
+import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.List;
 
 import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
 import com.alibaba.jstorm.schedule.default_assign.TaskGankerContext;
@@ -19,9 +19,9 @@ public abstract class AbstractSelector implements Selector {
 		this.context = context;
 	}
 
-	protected Set<ResourceWorkerSlot> selectWorker(
-			Set<ResourceWorkerSlot> list, Comparator<ResourceWorkerSlot> c) {
-		Set<ResourceWorkerSlot> result = new HashSet<ResourceWorkerSlot>();
+	protected List<ResourceWorkerSlot> selectWorker(
+			List<ResourceWorkerSlot> list, Comparator<ResourceWorkerSlot> c) {
+		List<ResourceWorkerSlot> result = new ArrayList<ResourceWorkerSlot>();
 		ResourceWorkerSlot best = null;
 		for (ResourceWorkerSlot worker : list) {
 			if (best == null) {
@@ -41,7 +41,7 @@ public abstract class AbstractSelector implements Selector {
 	}
 
 	@Override
-	public Set<ResourceWorkerSlot> select(Set<ResourceWorkerSlot> result,
+	public List<ResourceWorkerSlot> select(List<ResourceWorkerSlot> result,
 			String name) {
 		if (result.size() == 1)
 			return result;

@@ -12,6 +12,7 @@ import java.util.HashSet;
 import org.apache.log4j.Logger;
 
 import com.alibaba.jstorm.callback.RunnableCallback;
+import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.cluster.StormBase;
 import com.alibaba.jstorm.cluster.StormClusterState;
 import com.alibaba.jstorm.cluster.StormMonitor;
@@ -29,6 +30,7 @@ public class UploadSupervMetric extends RunnableCallback {
 	private Integer result;
 	private int frequence;
     
+	private Map conf;
 	private String supervisorId;
 	private String hostName;
 	private StormClusterState cluster;
@@ -37,11 +39,12 @@ public class UploadSupervMetric extends RunnableCallback {
 	List<Map<String, Object>> jsonMsgTasks = new ArrayList<Map<String, Object>>();
 	List<Map<String, Object>> jsonMsgWorkers = new ArrayList<Map<String, Object>>();
 	
-	public UploadSupervMetric(StormClusterState cluster, String supervisorId, 
+	public UploadSupervMetric(Map conf, StormClusterState cluster, String supervisorId, 
 			AtomicBoolean active, int frequence, MetricSendClient client) {
 		this.active = active;
 		this.frequence = frequence;
 		this.result = null;
+		this.conf = conf;
 		this.cluster = cluster;
 		this.supervisorId = supervisorId;
 		this.client = client;
@@ -110,7 +113,8 @@ public class UploadSupervMetric extends RunnableCallback {
 		    
 		    if (jsonMsgTasks.size() != 0) {
 		    	if (client instanceof AlimonitorClient) {
-		    	    ((AlimonitorClient) client).setMonitorName(MetricDef.TASK_MONITOR_NAME);
+		    	    ((AlimonitorClient) client).setMonitorName(
+		    	    		ConfigExtension.getAlmonTaskMetricName(conf));
 		    	    ((AlimonitorClient) client).setCollectionFlag(0);
 				    ((AlimonitorClient) client).setErrorInfo("");
 		    	}
@@ -119,7 +123,8 @@ public class UploadSupervMetric extends RunnableCallback {
 		    
 		    if (jsonMsgWorkers.size() != 0) {
 		    	if (client instanceof AlimonitorClient) {
-		    	    ((AlimonitorClient) client).setMonitorName(MetricDef.WORKER_MONITOR_NAME);
+		    	    ((AlimonitorClient) client).setMonitorName(
+		    	    		ConfigExtension.getAlmonWorkerMetricName(conf));
 		    	    ((AlimonitorClient) client).setCollectionFlag(0);
 				    ((AlimonitorClient) client).setErrorInfo("");
 		    	}

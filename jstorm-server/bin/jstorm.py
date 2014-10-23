@@ -212,6 +212,18 @@ def rebalance(*args):
         extrajars=[CONF_DIR, JSTORM_DIR + "/bin", LOG4J_CONF],
         childopts=childopts)
 
+def restart(*args):
+    """Syntax: [jstorm restart topology-name [conf]]
+    """
+    childopts = (" -Dstorm.root.logger=INFO,stdout -Dlog4j.configuration=File:%s/conf/aloha_log4j.properties"  %JSTORM_DIR)
+    #childopts = (" -Dstorm.root.logger=INFO,stdout -Dlogback.configurationFile=%s/conf/aloha_logback.xml"  %JSTORM_DIR)
+    #childopts = " "
+    exec_storm_class(
+        "backtype.storm.command.restart", 
+        args=args, 
+        jvmtype="-client -Xms256m -Xmx256m", 
+        extrajars=[CONF_DIR, JSTORM_DIR + "/bin", LOG4J_CONF],
+        childopts=childopts)
 
 def nimbus():
     """Syntax: [jstorm nimbus]
