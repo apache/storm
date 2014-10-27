@@ -214,8 +214,7 @@ public class JmsSpout extends BaseRichSpout implements MessageListener {
 				// ack if we're not in AUTO_ACKNOWLEDGE mode, or the message requests ACKNOWLEDGE
 				LOG.debug("Requested deliveryMode: " + toDeliveryModeString(msg.getJMSDeliveryMode()));
 				LOG.debug("Our deliveryMode: " + toDeliveryModeString(this.jmsAcknowledgeMode));
-				if (this.isDurableSubscription()
-						|| (msg.getJMSDeliveryMode() != Session.AUTO_ACKNOWLEDGE)) {
+				if (this.isDurableSubscription()) {
 					LOG.debug("Requesting acks.");
                     JmsMessageID messageId = new JmsMessageID(this.messageSequence++, msg.getJMSMessageID());
 					this.collector.emit(vals, messageId);

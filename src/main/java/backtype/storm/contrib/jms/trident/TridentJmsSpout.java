@@ -321,7 +321,7 @@ public class TridentJmsSpout implements ITridentSpout<JmsBatch> {
                 }
                 
                 try {
-                    if (msg.getJMSDeliveryMode() != Session.AUTO_ACKNOWLEDGE) {
+                    if (TridentJmsSpout.this.jmsAcknowledgeMode != Session.AUTO_ACKNOWLEDGE) {
                         batchMessages.add(msg);
                     }
                     Values tuple = tupleProducer.toTuple(msg);
