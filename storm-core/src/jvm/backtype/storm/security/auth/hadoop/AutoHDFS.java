@@ -19,18 +19,15 @@
 package backtype.storm.security.auth.hadoop;
 
 import backtype.storm.Config;
-import backtype.storm.security.INimbusCredentialPlugin;
-import backtype.storm.security.auth.IAutoCredentials;
-import backtype.storm.security.auth.ICredentialsRenewer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.security.auth.Subject;
-import javax.xml.bind.DatatypeConverter;
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutput;
+import java.io.ObjectOutputStream;
 import java.lang.reflect.Method;
 import java.net.URI;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -38,16 +35,13 @@ import java.util.Map;
  * Automatically get HDFS delegation tokens and push it to user's topology. The class
  * assumes that HDFS configuration files are in your class path.
  */
-public class AutoHDFS implements IAutoCredentials, ICredentialsRenewer, INimbusCredentialPlugin {
+public class AutoHDFS extends AbstractAutoHadoopPlugin {
     private static final Logger LOG = LoggerFactory.getLogger(AutoHDFS.class);
     public static final String HDFS_CREDENTIALS = "HDFS_CREDENTIALS";
 
-    public void prepare(Map conf) {
-       //no op.
-    }
-
     @SuppressWarnings("unchecked")
-    private byte[] getHDFSCredsWithDelegationToken(Map conf) throws Exception {
+    @Override
+    protected byte[] getHadoopCredentials(Map conf) {
 
         try {
              // What we want to do is following:
@@ -77,7 +71,7 @@ public class AutoHDFS implements IAutoCredentials, ICredentialsRenewer, INimbusC
             boolean isSecurityEnabled = (Boolean)isSecurityEnabledMethod.invoke(null);
 
             if(isSecurityEnabled) {
-                final String topologySubmitterUser = (String) conf.get(Config.TOPOLOGY_SUBMITTER_USER);
+                final String topologySubmitterUser = (String) conf.get(Config.TOPOLOGY_SUBMITTER_PRINCIPAL);
                 final String hdfsUser = (String) conf.get(Config.TOPOLOGY_HDFS_PRINCIPAL);
 
                 //FileSystem fs = FileSystem.get(nameNodeURI, configuration, topologySubmitterUser);
@@ -124,119 +118,14 @@ public class AutoHDFS implements IAutoCredentials, ICredentialsRenewer, INimbusC
     }
 
     @Override
-    public void populateCredentials(Map<String, String> credentials, Map conf) {
-        if(conf.containsKey(Config.TOPOLOGY_HDFS_PRINCIPAL)) {
-            try {
-                credentials.put(HDFS_CREDENTIALS, DatatypeConverter.printBase64Binary(getHDFSCredsWithDelegationToken(conf)));
-            } catch (Exception e) {
-                LOG.warn("Could not populate HDFS credentials.", e);
-            }
-        }
-    }
-
-    @Override
-    public void populateCredentials(Map<String, String> credentials) {
-        //no op.
-    }
-
-    /*
-     *
-     * @param credentials map with creds.
-     * @return instance of org.apache.hadoop.security.Credentials, if the Map has HDFS_CREDENTIALS.
-     * this class's populateCredentials must have been called before.
-     */
-    @SuppressWarnings("unchecked")
-    private static Object getHDFSCredential(Map<String, String> credentials) {
-        Object credential = null;
-        if (credentials != null && credentials.containsKey(HDFS_CREDENTIALS)) {
-            try {
-                byte[] credBytes = DatatypeConverter.parseBase64Binary(credentials.get(HDFS_CREDENTIALS));
-                ByteArrayInputStream bai = new ByteArrayInputStream(credBytes);
-                ObjectInputStream in = new ObjectInputStream(bai);
-
-                Class credentialClass = Class.forName("org.apache.hadoop.security.Credentials");
-                credential = credentialClass.newInstance();
-                Method readMethod  = credentialClass.getMethod("readFields", DataInput.class);
-                readMethod.invoke(credential, in);
-            } catch (Exception e) {
-                LOG.warn("Could not obtain HDFS credentials from credentials map.", e);
-            }
-        }
-        return credential;
-    }
-
-    @Override
-    public void updateSubject(Subject subject, Map<String, String> credentials) {
-        addCredentialToSubject(subject, credentials);
-    }
-
-    @Override
-    public void populateSubject(Subject subject, Map<String, String> credentials) {
-        addCredentialToSubject(subject, credentials);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static void addCredentialToSubject(Subject subject, Map<String, String> credentials) {
-        try {
-            Object credential = getHDFSCredential(credentials);
-            if (credential != null) {
-                subject.getPrivateCredentials().add(credential);
-            } else {
-                LOG.info("No HDFS credential found in credentials");
-            }
-        } catch (Exception e) {
-            LOG.warn("Failed to initialize and get UserGroupInformation.", e);
-        }
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public void renew(Map<String, String> credentials, Map topologyConf) {
-        Object credential = getHDFSCredential(credentials);
-        //maximum allowed expiration time until which tokens will keep renewing,
-        //currently set to 1 day.
-        final long MAX_ALLOWED_EXPIRATION_MILLIS = 24 * 60 * 60 * 1000;
-
-        /**
-         * We are trying to do the following :
-         * List<Token> tokens = credential.getAllTokens();
-         * for(Token token: tokens) {
-         *      long expiration = token.renew(configuration);
-         * }
-         */
-        try {
-            if (credential != null) {
-                Class configurationClass = Class.forName("org.apache.hadoop.conf.Configuration");
-                Object configuration = configurationClass.newInstance();
-
-                Class credentialClass = Class.forName("org.apache.hadoop.security.Credentials");
-                Class tokenClass = Class.forName("org.apache.hadoop.security.token.Token");
-
-                Method renewMethod = tokenClass.getMethod("renew", configurationClass);
-                Method getAllTokensMethod = credentialClass.getMethod("getAllTokens");
-
-                Collection<?> tokens = (Collection<?>) getAllTokensMethod.invoke(credential);
-
-                for (Object token : tokens) {
-                    long expiration = (Long) renewMethod.invoke(token, configuration);
-                    if(expiration < MAX_ALLOWED_EXPIRATION_MILLIS) {
-                        LOG.debug("expiration {} is less then MAX_ALLOWED_EXPIRATION_MILLIS {}, getting new tokens",
-                                expiration, MAX_ALLOWED_EXPIRATION_MILLIS);
-                        populateCredentials(credentials, topologyConf);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            LOG.warn("could not renew the credentials, one of the possible reason is tokens are beyond " +
-                    "renewal period so attempting to get new tokens.", e);
-            populateCredentials(credentials);
-        }
+    protected String getCredentialKey() {
+        return HDFS_CREDENTIALS;
     }
 
     @SuppressWarnings("unchecked")
     public static void main(String[] args) throws Exception {
         Map conf = new java.util.HashMap();
-        conf.put(Config.TOPOLOGY_SUBMITTER_PRINCIPAL, args[0]); //with realm e.g. storm@WITZEND.COM
+        conf.put(Config.TOPOLOGY_SUBMITTER_PRINCIPAL, args[0]); //with realm e.g. storm@WITZEND.COM or storm/node.exmaple.com@WITZEND.COM
         conf.put(Config.TOPOLOGY_HDFS_PRINCIPAL, args[1]); //with realm e.g. hdfs@WITZEND.COM
 
         AutoHDFS autoHDFS = new AutoHDFS();
@@ -244,19 +133,14 @@ public class AutoHDFS implements IAutoCredentials, ICredentialsRenewer, INimbusC
 
         Map<String,String> creds  = new HashMap<String, String>();
         autoHDFS.populateCredentials(creds, conf);
-        LOG.info("Got HDFS credentials", AutoHDFS.getHDFSCredential(creds));
+        LOG.info("Got HDFS credentials", autoHDFS.getCredentials(creds));
 
         Subject s = new Subject();
         autoHDFS.populateSubject(s, creds);
         LOG.info("Got a Subject "+ s);
 
         autoHDFS.renew(creds, conf);
-        LOG.info("renewed credentials", AutoHDFS.getHDFSCredential(creds));
-    }
-
-    @Override
-    public void shutdown() {
-
+        LOG.info("renewed credentials", autoHDFS.getCredentials(creds));
     }
 }
 
