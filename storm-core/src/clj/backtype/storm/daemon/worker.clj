@@ -393,13 +393,14 @@
         _ (refresh-connections nil)
         _ (refresh-storm-active worker nil)
 
+        receive-thread-shutdown (launch-receive-thread worker)
+
         ;; make sure all messaging connections are ready for sending data, the netty messaging
         ;; client will drop the messages if client.send(msg) is called before the connection
         ;; is established.
         _ (wait-messaging-connections-to-be-ready worker)
  
         _ (reset! executors (dofor [e (:executors worker)] (executor/mk-executor worker e)))
-        receive-thread-shutdown (launch-receive-thread worker)
         
         transfer-tuples (mk-transfer-tuples-handler worker)
         

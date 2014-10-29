@@ -222,7 +222,8 @@ public class Client extends ConnectionWithStatus {
 
         // throw exception if the client is being closed
         if (closing) {
-            throw new RuntimeException("Client is being closed, and does not take requests any more");
+            LOG.info("Client is being closed, and does not take requests any more, drop the messages...");
+            return;
         }
         
         if (null == msgs || !msgs.hasNext()) {
@@ -236,10 +237,6 @@ public class Client extends ConnectionWithStatus {
         }
 
         while (msgs.hasNext()) {
-            if (!channel.isConnected()) {
-                connect();
-                channel = channelRef.get();
-            }
             TaskMessage message = msgs.next();
             if (null == messageBatch) {
                 messageBatch = new MessageBatch(messageBatchSize);
@@ -254,7 +251,7 @@ public class Client extends ConnectionWithStatus {
         }
 
         if (null != messageBatch && !messageBatch.isEmpty()) {
-            if (channel.isWritable()) {
+            if (channel.isConnected() && channel.isWritable()) {
                 flushCheckTimer.set(Long.MAX_VALUE);
                 
                 // Flush as fast as we can to reduce the latency
