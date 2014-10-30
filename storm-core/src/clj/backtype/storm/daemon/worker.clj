@@ -350,8 +350,7 @@
 ;; we will wait all connections to be ready and then activate the spout/bolt
 ;; when the worker bootup
 (defn activate-worker-when-all-connections-ready
-  [timer recur-secs worker]
-
+  [worker]
   (let [timer (:refresh-active-timer worker)
         delay-secs 0
         recur-secs 1]
