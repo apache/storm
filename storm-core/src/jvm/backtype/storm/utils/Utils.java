@@ -19,6 +19,8 @@ package backtype.storm.utils;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -122,35 +124,62 @@ public class Utils {
         }
     }
 
+    // Will try to locate the config file in class path first, then will search local path
     public static Map findAndReadConfigFile(String name, boolean mustExist) {
+        InputStream in = null;
         try {
-            HashSet<URL> resources = new HashSet<URL>(findResources(name));
-            if(resources.isEmpty()) {
-                if(mustExist) throw new RuntimeException("Could not find config file on classpath " + name);
-                else return new HashMap();
+            in = getConfigFileInputStream(name);
+            if (null != in) {
+                Yaml yaml = new Yaml();
+                Map ret = (Map) yaml.load(new InputStreamReader(in));
+                if (null != ret) {
+                    return new HashMap(ret);
+                }
             }
-            if(resources.size() > 1) {
-                throw new RuntimeException("Found multiple " + name + " resources. You're probably bundling the Storm jars with your topology jar. "
-                  + resources);
-            }
-            URL resource = resources.iterator().next();
-            Yaml yaml = new Yaml(new SafeConstructor());
-            Map ret = null;
-            InputStream input = resource.openStream();
-            try {
-                ret = (Map) yaml.load(new InputStreamReader(input));
-            } finally {
-                input.close();
-            }
-            if(ret==null) ret = new HashMap();
-            
 
-            return new HashMap(ret);
-            
+            if (mustExist) {
+                throw new RuntimeException("Could not find config file on classpath " + name);
+            } else {
+                return new HashMap();
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
+        } finally {
+            if (null != in) {
+                try {
+                    in.close();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
         }
     }
+
+    private static InputStream getConfigFileInputStream(String configFilePath)
+            throws IOException {
+        if (null == configFilePath) {
+            throw new IOException(
+                    "Could not find config file, name not specified");
+        }
+
+        HashSet<URL> resources = new HashSet<URL>(findResources(configFilePath));
+        if (resources.isEmpty()) {
+            File configFile = new File(configFilePath);
+            if (configFile.exists()) {
+                return new FileInputStream(configFile);
+            }
+        } else if (resources.size() > 1) {
+            throw new IOException(
+                    "Found multiple " + configFilePath
+                            + " resources. You're probably bundling the Storm jars with your topology jar. "
+                            + resources);
+        } else {
+            URL resource = resources.iterator().next();
+            return resource.openStream();
+        }
+        return null;
+    }
+
 
     public static Map findAndReadConfigFile(String name) {
        return findAndReadConfigFile(name, true);
