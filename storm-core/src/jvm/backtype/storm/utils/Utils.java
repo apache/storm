@@ -19,15 +19,12 @@ package backtype.storm.utils;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.PrintStream;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.ByteBuffer;
@@ -40,7 +37,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -131,65 +127,38 @@ public class Utils {
         }
     }
 
-    // Will try to locate the config file in class path first, then will search local path
     public static Map findAndReadConfigFile(String name, boolean mustExist) {
-        InputStream in = null;
         try {
-            in = getConfigFileInputStream(name);
-            if (null != in) {
-                Yaml yaml = new Yaml();
-                Map ret = (Map) yaml.load(new InputStreamReader(in));
-                if (null != ret) {
-                    return new HashMap(ret);
-                }
+            HashSet<URL> resources = new HashSet<URL>(findResources(name));
+            if(resources.isEmpty()) {
+                if(mustExist) throw new RuntimeException("Could not find config file on classpath " + name);
+                else return new HashMap();
             }
+            if(resources.size() > 1) {
+                throw new RuntimeException("Found multiple " + name + " resources. You're probably bundling the Storm jars with your topology jar. "
+                  + resources);
+            }
+            URL resource = resources.iterator().next();
+            Yaml yaml = new Yaml(new SafeConstructor());
+            Map ret = null;
+            InputStream input = resource.openStream();
+            try {
+                ret = (Map) yaml.load(new InputStreamReader(input));
+            } finally {
+                input.close();
+            }
+            if(ret==null) ret = new HashMap();
+            
 
-            if (mustExist) {
-                throw new RuntimeException("Could not find config file on classpath " + name);
-            } else {
-                return new HashMap();
-            }
+            return new HashMap(ret);
+            
         } catch (IOException e) {
             throw new RuntimeException(e);
-        } finally {
-            if (null != in) {
-                try {
-                    in.close();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
         }
-    }
-          
-
-    private static InputStream getConfigFileInputStream(String configFilePath)
-            throws IOException {
-        if (null == configFilePath) {
-            throw new IOException(
-                    "Could not find config file, name not specified");
-        }
-
-        HashSet<URL> resources = new HashSet<URL>(findResources(configFilePath));
-        if (resources.isEmpty()) {
-            File configFile = new File(configFilePath);
-            if (configFile.exists()) {
-                return new FileInputStream(configFile);
-            }
-        } else if (resources.size() > 1) {
-            throw new IOException(
-                    "Found multiple " + configFilePath
-                            + " resources. You're probably bundling the Storm jars with your topology jar. "
-                            + resources);
-        } else {
-            URL resource = resources.iterator().next();
-            return resource.openStream();
-        }
-        return null;
     }
 
     public static Map findAndReadConfigFile(String name) {
-        return findAndReadConfigFile(name, true);
+       return findAndReadConfigFile(name, true);
     }
 
     public static Map readDefaultConfig() {
@@ -332,39 +301,15 @@ public class Utils {
     }
     
     public static Integer getInt(Object o) {
-      Integer result = getInt(o, null);
-      if (null == result) {
-        throw new IllegalArgumentException("Don't know how to convert null + to int");
-      }
-      return result;
-    }
-    
-    public static Integer getInt(Object o, Integer defaultValue) {
-      if (null == o) {
-        return defaultValue;
-      }
-      
-      if(o instanceof Long) {
-          return ((Long) o ).intValue();
-      } else if (o instanceof Integer) {
-          return (Integer) o;
-      } else if (o instanceof Short) {
-          return ((Short) o).intValue();
-      } else {
-          throw new IllegalArgumentException("Don't know how to convert " + o + " + to int");
-      }
-    }
-
-    public static boolean getBoolean(Object o, boolean defaultValue) {
-      if (null == o) {
-        return defaultValue;
-      }
-      
-      if(o instanceof Boolean) {
-          return (Boolean) o;
-      } else {
-          throw new IllegalArgumentException("Don't know how to convert " + o + " + to boolean");
-      }
+        if(o instanceof Long) {
+            return ((Long) o ).intValue();
+        } else if (o instanceof Integer) {
+            return (Integer) o;
+        } else if (o instanceof Short) {
+            return ((Short) o).intValue();
+        } else {
+            throw new IllegalArgumentException("Don't know how to convert " + o + " + to int");
+        }
     }
     
     public static long secureRandomLong() {
@@ -428,7 +373,7 @@ public class Utils {
         ret.start();
         return ret;
     }
-    
+
     public static CuratorFramework newCuratorStarted(Map conf, List<String> servers, Object port) {
         CuratorFramework ret = newCurator(conf, servers, port);
         ret.start();
