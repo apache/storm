@@ -55,7 +55,7 @@
     goto :eof
   )
 
-  set corecommands=activate deactivate dev-zookeeper drpc kill list nimbus logviewer rebalance repl shell supervisor ui
+  set corecommands=activate deactivate dev-zookeeper drpc kill list nimbus logviewer rebalance remoteconfvalue repl shell supervisor ui
   for %%i in ( %corecommands% ) do (
     if %storm-command% == %%i set corecommand=true  
   )
@@ -80,7 +80,7 @@
     %JAVA% %JAVA_HEAP_MAX% %STORM_OPTS% %STORM_LOG_FILE% %CLASS% %storm-command-arguments%
   )
   set path=%PATH%;%STORM_BIN_DIR%;%STORM_SBIN_DIR%
-  call %JAVA% %JAVA_HEAP_MAX% %STORM_OPTS% %STORM_LOG_FILE% %CLASS% %storm-command-arguments%
+  call start /b %JAVA% %JAVA_HEAP_MAX% %STORM_OPTS% %STORM_LOG_FILE% %CLASS% %storm-command-arguments%
   goto :eof
 
 
@@ -105,7 +105,14 @@
 
 :drpc
   set CLASS=backtype.storm.daemon.drpc
-  set STORM_OPTS=%STORM_SERVER_OPTS% %STORM_OPTS%
+  %JAVA% -client -Dstorm.options= -Dstorm.conf.file= -cp %CLASSPATH% backtype.storm.command.config_value drpc.childopts > temp.txt
+  FOR /F "delims=" %%i in (temp.txt) do (
+     FOR /F "tokens=1,* delims= " %%a in ("%%i") do (
+	  if %%a == VALUE: (
+	   set CHILDOPTS=%%b
+	   call :set_childopts)
+    )
+  )
   goto :eof
 
 :help
@@ -124,16 +131,35 @@
 
 :logviewer
   set CLASS=backtype.storm.daemon.logviewer
-  set STORM_OPTS=%STORM_SERVER_OPTS% %STORM_OPTS%
+   %JAVA% -client -Dstorm.options= -Dstorm.conf.file= -cp %CLASSPATH% backtype.storm.command.config_value logviewer.childopts > temp.txt
+  FOR /F "delims=" %%i in (temp.txt) do (
+     FOR /F "tokens=1,* delims= " %%a in ("%%i") do (
+	  if %%a == VALUE: (
+	   set CHILDOPTS=%%b
+	   call :set_childopts)
+    )
+  )
   goto :eof
 
 :nimbus
   set CLASS=backtype.storm.daemon.nimbus
-  set STORM_OPTS=%STORM_SERVER_OPTS% %STORM_OPTS%
+  %JAVA% -client -Dstorm.options= -Dstorm.conf.file= -cp %CLASSPATH% backtype.storm.command.config_value nimbus.childopts > temp.txt
+  FOR /F "delims=" %%i in (temp.txt) do (
+     FOR /F "tokens=1,* delims= " %%a in ("%%i") do (
+	  if %%a == VALUE: (
+	   set CHILDOPTS=%%b
+	   call :set_childopts)
+    )
+  )
   goto :eof
 
 :rebalance
   set CLASS=backtype.storm.command.rebalance
+  set STORM_OPTS=%STORM_CLIENT_OPTS% %STORM_OPTS%
+  goto :eof
+
+:remoteconfvalue
+  set CLASS=backtype.storm.command.config_value
   set STORM_OPTS=%STORM_CLIENT_OPTS% %STORM_OPTS%
   goto :eof
 
@@ -149,13 +175,27 @@
   
 :supervisor
   set CLASS=backtype.storm.daemon.supervisor
-  set STORM_OPTS=%STORM_SERVER_OPTS% %STORM_OPTS%
+  %JAVA% -client -Dstorm.options= -Dstorm.conf.file= -cp %CLASSPATH% backtype.storm.command.config_value supervisor.childopts > temp.txt
+  FOR /F "delims=" %%i in (temp.txt) do (
+     FOR /F "tokens=1,* delims= " %%a in ("%%i") do (
+	  if %%a == VALUE: (
+	   set CHILDOPTS=%%b
+	   call :set_childopts)
+    )
+  )
   goto :eof
 
 :ui
   set CLASS=backtype.storm.ui.core
   set CLASSPATH=%CLASSPATH%;%STORM_HOME%
-  set STORM_OPTS=%STORM_SERVER_OPTS% %STORM_OPTS%
+  %JAVA% -client -Dstorm.options= -Dstorm.conf.file= -cp %CLASSPATH% backtype.storm.command.config_value ui.childopts > temp.txt
+  FOR /F "delims=" %%i in (temp.txt) do (
+     FOR /F "tokens=1,* delims= " %%a in ("%%i") do (
+	  if %%a == VALUE: (
+	   set CHILDOPTS=%%b
+	   call :set_childopts)
+    )
+  )
   goto :eof
 
 :version
@@ -178,6 +218,11 @@
   )
   set storm-command-arguments=%_arguments%
   goto :eof
+  
+:set_childopts
+  set STORM_OPTS=%STORM_SERVER_OPTS% %STORM_OPTS% %CHILDOPTS%
+  del /F temp.txt
+  goto :eof
 
 :print_usage
   @echo Usage: storm COMMAND
@@ -188,12 +233,13 @@
   @echo   dev-zookeeper        launches a fresh dev/test Zookeeper server
   @echo   drpc                 launches a DRPC daemon
   @echo   help
-  @echo   jar ^<jar^>            run a jar file
+  @echo   jar ^<jar^>          run a jar file
   @echo   kill                 kills the topology with the name topology-name
   @echo   list                 list the running topologies and their statuses
   @echo   nimbus               launches the nimbus daemon
   @echo   rebalance            redistribute or change the parallelism of a running topology
   @echo   repl                 opens up a Clojure REPL
+  @echo   remoteconfvalue      prints value for conf-name from cluster config ../conf/storm.yaml merged with defaults.yaml
   @echo   shell                storm shell
   @echo   supervisor           launches the supervisor daemon
   @echo   ui                   launches the UI daemon

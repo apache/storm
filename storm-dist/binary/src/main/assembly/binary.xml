@@ -75,6 +75,34 @@
                 <include>README.*</include>
             </includes>
         </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-hdfs/target</directory>
+            <outputDirectory>external/storm-hdfs</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-hdfs</directory>
+            <outputDirectory>external/storm-hdfs</outputDirectory>
+            <includes>
+                <include>README.*</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-hbase/target</directory>
+            <outputDirectory>external/storm-hbase</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-hbase</directory>
+            <outputDirectory>external/storm-hbase</outputDirectory>
+            <includes>
+                <include>README.*</include>
+            </includes>
+        </fileSet>
 
 
     </fileSets>
@@ -95,6 +123,11 @@
             <source>${project.basedir}/../../conf/storm.yaml.example</source>
             <outputDirectory>/conf</outputDirectory>
             <destName>storm.yaml</destName>
+        </file>
+        <file>
+            <source>${project.basedir}/../../conf/storm_env.ini</source>
+            <outputDirectory>/conf</outputDirectory>
+            <destName>storm_env.ini</destName>
         </file>
         <!-- TODO this should be a generated file from "target" -->
         <file>
@@ -130,6 +163,11 @@
 
         <file>
             <source>${project.basedir}/../../CHANGELOG.md</source>
+            <outputDirectory>/</outputDirectory>
+        </file>
+
+        <file>
+            <source>${project.basedir}/../../SECURITY.md</source>
             <outputDirectory>/</outputDirectory>
         </file>
     </files>

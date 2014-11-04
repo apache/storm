@@ -18,9 +18,9 @@
 
 <configuration scan="true" scanPeriod="60 seconds">
  <appender name="A1" class="ch.qos.logback.core.rolling.RollingFileAppender">
-    <file>${storm.home}/logs/${logfile.name}</file>
+    <file>${storm.log.dir}/${logfile.name}</file>
     <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-      <fileNamePattern>${storm.home}/logs/${logfile.name}.%i</fileNamePattern>
+      <fileNamePattern>${storm.log.dir}/${logfile.name}.%i</fileNamePattern>
       <minIndex>1</minIndex>
       <maxIndex>9</maxIndex>
     </rollingPolicy>
@@ -30,14 +30,14 @@
     </triggeringPolicy>
 
     <encoder>
-      <pattern>%d{yyyy-MM-dd HH:mm:ss} %c{1} [%p] %m%n</pattern>
+      <pattern>%d{yyyy-MM-dd'T'HH:mm:ss.SSSZZ} %c{1} [%p] %m%n</pattern>
     </encoder>
  </appender>
 
  <appender name="ACCESS" class="ch.qos.logback.core.rolling.RollingFileAppender">
-    <file>${storm.home}/logs/access.log</file>
+    <file>${storm.log.dir}/access.log</file>
     <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-      <fileNamePattern>${storm.home}/logs/access.log.%i</fileNamePattern>
+      <fileNamePattern>${storm.log.dir}/access.log.%i</fileNamePattern>
       <minIndex>1</minIndex>
       <maxIndex>9</maxIndex>
     </rollingPolicy>
@@ -47,14 +47,14 @@
     </triggeringPolicy>
 
     <encoder>
-      <pattern>%d{yyyy-MM-dd HH:mm:ss} %c{1} [%p] %m%n</pattern>
+      <pattern>%d{yyyy-MM-dd'T'HH:mm:ss.SSSZZ} %c{1} [%p] %m%n</pattern>
     </encoder>
   </appender>
 
   <appender name="METRICS" class="ch.qos.logback.core.rolling.RollingFileAppender">
-    <file>${storm.home}/logs/metrics.log</file>
+    <file>${storm.log.dir}/metrics.log</file>
     <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-      <fileNamePattern>metrics.log.%i</fileNamePattern>
+      <fileNamePattern>${storm.log.dir}/logs/metrics.log.%i</fileNamePattern>
       <minIndex>1</minIndex>
       <maxIndex>9</maxIndex>
     </rollingPolicy>

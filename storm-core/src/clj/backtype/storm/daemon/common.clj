@@ -21,6 +21,7 @@
   (:import [backtype.storm.task WorkerTopologyContext])
   (:import [backtype.storm Constants])
   (:import [backtype.storm.metric SystemBolt])
+  (:import [java.io InterruptedIOException])
   (:require [clojure.set :as set])  
   (:require [backtype.storm.daemon.acker :as acker])
   (:require [backtype.storm.thrift :as thrift])
@@ -100,11 +101,13 @@
     (defn ~name [& args#]
       (try-cause
         (apply exec-fn# args#)
+      (catch InterruptedIOException e#
+        (throw e#))
       (catch InterruptedException e#
         (throw e#))
       (catch Throwable t#
         (log-error t# "Error on initialization of server " ~(str name))
-        (halt-process! 13 "Error on initialization")
+        (exit-process! 13 "Error on initialization")
         )))))
 
 (defn- validate-ids! [^StormTopology topology]
