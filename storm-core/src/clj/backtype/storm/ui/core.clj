@@ -22,6 +22,7 @@
   (:use [backtype.storm.ui helpers])
   (:use [backtype.storm.daemon [common :only [ACKER-COMPONENT-ID ACKER-INIT-STREAM-ID
                                               ACKER-ACK-STREAM-ID ACKER-FAIL-STREAM-ID system-id?]]])
+  (:use [backtype.storm.nimbus leadership])
   (:use [ring.adapter.jetty :only [run-jetty]])
   (:use [clojure.string :only [trim]])
   (:import [backtype.storm.utils Utils])
@@ -30,6 +31,7 @@
             ErrorInfo ClusterSummary SupervisorSummary TopologySummary
             Nimbus$Client StormTopology GlobalStreamId RebalanceOptions
             KillOptions])
+  (:import [java.net InetSocketAddress])
   (:import [java.io File])
   (:require [compojure.route :as route]
             [compojure.handler :as handler]
@@ -43,7 +45,7 @@
 (defmacro with-nimbus
   [nimbus-sym & body]
   `(thrift/with-nimbus-connection
-     [~nimbus-sym (*STORM-CONF* NIMBUS-HOST) (*STORM-CONF* NIMBUS-THRIFT-PORT)]
+     [~nimbus-sym (.getHostName (get-nimbus-leader-address *STORM-CONF*)) (*STORM-CONF* NIMBUS-THRIFT-PORT)]
      ~@body))
 
 (defn get-filled-stats
@@ -510,6 +512,15 @@
        "slotsTotal" (.get_num_workers s)
        "slotsUsed" (.get_num_used_workers s)})}))
 
+(defn nimbus-summary []
+  (let [nimbus-hosts (get-nimbus-hosts *STORM-CONF*)
+        nimbus-leader-host (get-nimbus-leader-address *STORM-CONF*)]
+    {"nimbuses" 
+     (for [^InetSocketAddress nimbus-host nimbus-hosts]
+        {"nimbusHost" (str (.getHostName nimbus-host) ":" (.getPort nimbus-host))
+         "isLeader" (if (= nimbus-host nimbus-leader-host) "true" "false")
+         })}))
+
 (defn all-topologies-summary
   ([]
    (with-nimbus
@@ -845,6 +856,8 @@
                       (:callback m) :serialize-fn identity))
   (GET "/api/v1/cluster/summary" [& m]
        (json-response (cluster-summary) (:callback m)))
+  (GET "/api/v1/nimbus/summary" [& m]
+       (json-response (nimbus-summary) (:callback m)))
   (GET "/api/v1/supervisor/summary" [& m]
        (json-response (supervisor-summary) (:callback m)))
   (GET "/api/v1/topology/summary" [& m]

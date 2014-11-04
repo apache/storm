@@ -38,6 +38,9 @@
 <h2>Supervisor summary</h2>
 <div id="supervisor-summary">
 </div>
+<h2>Nimbus summary</h2>
+<div id="nimbus-summary">
+</div>
 <h2>Nimbus Configuration</h2>
 <div id="nimbus-configuration"></div>
 <div id="json-response-error"></div>
@@ -60,6 +63,7 @@ $(document).ready(function() {
     var clusterSummary = $("#cluster-summary");
     var topologySummary = $("#topology-summary");
     var supervisorSummary = $("#supervisor-summary");
+    var nimbusSummary = $("#nimbus-summary");
     var config = $("#nimbus-configuration");
 
     $.getJSON("/api/v1/cluster/summary",function(response,status,jqXHR) {
@@ -80,6 +84,14 @@ $(document).ready(function() {
           supervisorSummary.append(Mustache.render($(template).filter("#supervisor-summary-template").html(),response));
           if(response["supervisors"].length > 0) {
               $("#supervisor-summary-table").tablesorter({ sortList: [[0,0]], headers: {3: { sorter: "stormtimestr"}}});
+          }
+      });
+    });
+    $.getJSON("/api/v1/nimbus/summary",function(response,status,jqXHR) {
+      $.get("/templates/index-page-template.html", function(template) {
+          nimbusSummary.append(Mustache.render($(template).filter("#nimbus-summary-template").html(),response));
+          if(response["nimbuses"].length > 0) {
+              $("#nimbus-summary-table").tablesorter({ sortList: [[0,0]],  headers: {}});
           }
       });
     });

@@ -28,7 +28,8 @@
   (:import [backtype.storm.clojure RichShellBolt RichShellSpout])
   (:import [org.apache.thrift.protocol TBinaryProtocol TProtocol])
   (:import [org.apache.thrift.transport TTransport TFramedTransport TSocket])
-  (:use [backtype.storm util config log]))
+  (:use [backtype.storm util config log])
+  (:use [backtype.storm.nimbus leadership]))
 
 (defn instantiate-java-object
   [^JavaObject obj]
@@ -86,7 +87,7 @@
 (defmacro with-configured-nimbus-connection
   [client-sym & body]
   `(let [conf# (read-storm-config)
-         host# (conf# NIMBUS-HOST)
+         host# (.getHostName (get-nimbus-leader-address conf#))
          port# (conf# NIMBUS-THRIFT-PORT)]
      (with-nimbus-connection [~client-sym host# port#]
        ~@body )))
