@@ -29,6 +29,7 @@ import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
 import storm.starter.spout.RandomSentenceSpout;
+import backtype.storm.LocalCluster;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -95,10 +96,12 @@ public class WordCountTopology {
     else {
       conf.setMaxTaskParallelism(3);
 
-        StormSubmitter cluster = new StormSubmitter();
+      LocalCluster cluster = new LocalCluster();
+      cluster.submitTopology("word-count", conf, builder.createTopology());
       cluster.submitTopology("word count", conf, builder.createTopology());
 
       Thread.sleep(10000);
+      cluster.shutdown();
 
     }
   }
