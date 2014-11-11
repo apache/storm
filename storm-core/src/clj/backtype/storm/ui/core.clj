@@ -850,7 +850,7 @@
   (GET "/api/v1/topology/summary" [& m]
        (json-response (all-topologies-summary) (:callback m)))
   (GET  "/api/v1/topology/:id" [id & m]
-          (json-response (topology-page (url-decode id) (:window m) (check-include-sys? (:sys m))) (:callback m)))
+       (json-response (topology-page (url-decode id) (:window m) (check-include-sys? (:sys m))) (:callback m)))
   (GET "/api/v1/topology/:id/visualization" [:as {:keys [cookies servlet-request]} id & m]
        (json-response (mk-visualization-data id (:window m) (check-include-sys? (:sys m))) (:callback m)))
   (GET "/api/v1/topology/:id/component/:component" [id component & m]
