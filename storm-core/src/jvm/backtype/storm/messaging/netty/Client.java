@@ -333,6 +333,11 @@ public class Client implements IConnection, IStatefulObject{
         send(wrapper.iterator());
     }
 
+    @Override
+    public int getBindPort() {
+        throw new RuntimeException("Client connection should not get bind port");
+    }
+
     private void flushRequest(Channel channel, final MessageBatch requests) {
         if (requests == null)
             return;

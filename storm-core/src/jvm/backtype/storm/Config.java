@@ -797,6 +797,14 @@ public class Config extends HashMap<String, Object> {
     public static final Object WORKER_HEARTBEAT_FREQUENCY_SECS_SCHEMA = ConfigValidation.IntegerValidator;
 
     /**
+     * Worker bind dynamic port or not.
+     * When set false, worker will bind port in supervisor.slots.ports;
+     * When set true, worker will bind port dynamic.
+     */
+    public static final String WORKER_DYNAMIC_PORT = "worker.dynamic.port";
+    public static final Object WORKER_DYNAMIC_PORT_SCHEMA = Boolean.class;
+
+    /**
      * How often a task should heartbeat its status to the master.
      */
     public static final String TASK_HEARTBEAT_FREQUENCY_SECS = "task.heartbeat.frequency.secs";

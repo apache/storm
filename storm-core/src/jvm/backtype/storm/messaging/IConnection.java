@@ -43,6 +43,12 @@ public interface IConnection {
     public void send(Iterator<TaskMessage> msgs);
     
     /**
+     * return the connections' bind port
+     * @return bind port
+     */
+    public int getBindPort();
+
+    /**
      * close this connection
      */
     public void close();

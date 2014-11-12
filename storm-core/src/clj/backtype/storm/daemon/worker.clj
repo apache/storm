@@ -54,6 +54,7 @@
                :executor-stats stats
                :uptime ((:uptime worker))
                :time-secs (current-time-secs)
+               :bind-port (:bind-port worker)
                }]
     ;; do the zookeeper heartbeat
     (.worker-heartbeat! (:storm-cluster-state worker) (:storm-id worker) (:assignment-id worker) (:port worker) zk-hb)    
@@ -205,15 +206,22 @@
         topology (read-supervisor-topology conf storm-id)
         mq-context  (if mq-context
                       mq-context
-                      (TransportFactory/makeContext storm-conf))]
+                      (TransportFactory/makeContext storm-conf))
+        receiver (if (conf WORKER-DYNAMIC-PORT)
+                   (.bind ^IContext mq-context storm-id 0)
+                   (.bind ^IContext mq-context storm-id port))]
 
     (recursive-map
       :conf conf
       :mq-context mq-context
-      :receiver (.bind ^IContext mq-context storm-id port)
+      :receiver receiver
       :storm-id storm-id
       :assignment-id assignment-id
       :port port
+      ;; when set worker.dynamic.port to false, bind-port is same as port;
+      ;; when set worker.dynamic.port to true, bind-port is the port that worker real bind.
+      ;; bind-port will be set once worker launched.
+      :bind-port (.getBindPort receiver)
       :worker-id worker-id
       :cluster-state cluster-state
       :storm-cluster-state storm-cluster-state
@@ -275,8 +283,15 @@
                             (let [new-assignment (.assignment-info-with-version storm-cluster-state storm-id callback)]
                               (swap! (:assignment-versions worker) assoc storm-id new-assignment)
                               (:data new-assignment)))
-              my-assignment (-> assignment
-                                :executor->node+port
+              node+port->bind-port (:node+port->bind-port assignment)
+              executor->node+port (:executor->node+port assignment)
+              running-node+port (into #{}
+                                  (for [[node+port bind-port] node+port->bind-port]
+                                    (if-not (nil? bind-port)
+                                    node+port)))
+              node+port->bind-port (filter-key #(contains? running-node+port %) node+port->bind-port)
+              executor->node+port (filter-val #(contains? running-node+port %) executor->node+port)
+              my-assignment (-> executor->node+port
                                 to-task->node+port
                                 (select-keys outbound-tasks)
                                 (#(map-val endpoint->string %)))
@@ -299,7 +314,7 @@
                            ^IContext (:mq-context worker)
                            storm-id
                            ((:node->host assignment) node)
-                           port)
+                           (node+port->bind-port [node port]))
                           ]
                          )))
               (write-locked (:endpoint-socket-lock worker)
@@ -399,7 +414,7 @@
         ;; do this here so that the worker process dies if this fails
         ;; it's important that worker heartbeat to supervisor ASAP when launching so that the supervisor knows it's running (and can move on)
         _ (heartbeat-fn)
- 
+
         executors (atom nil)
         ;; launch heartbeat threads immediately so that slow-loading tasks don't cause the worker to timeout
         ;; to the supervisor

@@ -47,7 +47,11 @@
 ;; the task id is the virtual port
 ;; node->host is here so that tasks know who to talk to just from assignment
 ;; this avoid situation where node goes down and task doesn't know what to do information-wise
-(defrecord Assignment [master-code-dir node->host executor->node+port executor->start-time-secs])
+;; the port in executor->node+port and node+port->bind-port are nominally port and always specified by supervisor.slots.ports.
+;; node+port->bind-port stand for the map from nominally port to the worker's real bind port;
+;; when worker.dynamic.port set to false, the bind-port is same as port just as worker bind fixed port.
+;; when worker.dynamic.port set to true, the bind-port is select by the system that are not used.
+(defrecord Assignment [master-code-dir node->host executor->node+port node+port->bind-port executor->start-time-secs])
 
 
 ;; component->executors is a map from spout/bolt id to number of executors for that component

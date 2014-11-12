@@ -129,6 +129,11 @@ supervisor.supervisors.commands: []
 worker.childopts: "-Xmx768m"
 worker.gc.childopts: ""
 worker.heartbeat.frequency.secs: 1
+# whether worker bind dynamic port or not.
+# when set false, worker will user port which specified by supervisor.slots.ports.
+# when set ture, worker will bind port that not used, the port which specified by supervisor.slots.ports
+# will be nominally port used in storm, worker will connect each other by the real bind ports.
+worker.dynamic.port: true
 
 # control how many worker receiver threads we need per worker
 topology.worker.receiver.thread.count: 1
