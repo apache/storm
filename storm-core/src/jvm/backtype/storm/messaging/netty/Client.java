@@ -23,6 +23,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -68,8 +69,14 @@ public class Client implements IConnection {
     private AtomicLong flushCheckTimer;
     private int flushCheckInterval;
     private ScheduledExecutorService scheduler;
+    
+    private CountDownLatch authenticatedSignal = null;
 
-    @SuppressWarnings("rawtypes")
+    public CountDownLatch getAuthenticatedSignal() {
+		return authenticatedSignal;
+	}
+
+	@SuppressWarnings("rawtypes")
     Client(Map storm_conf, ChannelFactory factory, 
             ScheduledExecutorService scheduler, String host, int port) {
     	this.storm_conf = storm_conf;
@@ -154,6 +161,14 @@ public class Client implements IConnection {
                 LOG.info("Reconnect started for {}... [{}]", name(), tried);
                 LOG.debug("connection started...");
 
+                // Set authenticated signal for send() method to wait until the connection is
+                // established and authenticated with server.
+        		boolean isNettyAuth = (Boolean) this.storm_conf
+        				.get(Config.STORM_MESSAGING_NETTY_AUTHENTICATION);
+        		if (isNettyAuth) {
+        			authenticatedSignal = new CountDownLatch(1);
+        		}
+                
                 ChannelFuture future = bootstrap.connect(remote_addr);
                 future.awaitUninterruptibly();
                 Channel current = future.getChannel();
@@ -324,6 +339,27 @@ public class Client implements IConnection {
         if (requests == null)
             return;
 
+        // Wait until the netty authentication completes
+		boolean isNettyAuth = (Boolean) this.storm_conf
+				.get(Config.STORM_MESSAGING_NETTY_AUTHENTICATION);
+		if (isNettyAuth && authenticatedSignal != null) {
+			try {
+				LOG.debug("sasl Waiting until the netty authentication completes");
+				authenticatedSignal.await();
+				authenticatedSignal = null;
+				LOG.debug("sasl Netty authentication completed, proceeding further");
+			} catch (InterruptedException e) {
+				LOG.error(
+						"failed to send requests to " + remote_addr.toString()
+								+ ": ", e.getMessage());
+
+				if (null != channel) {
+					channel.close();
+					channelRef.compareAndSet(channel, null);
+				}
+			}
+		}
+		
         pendings.incrementAndGet();
         ChannelFuture future = channel.write(requests);
         future.addListener(new ChannelFutureListener() {

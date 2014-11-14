@@ -24,22 +24,24 @@ import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import org.jboss.netty.channel.SimpleChannelHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import backtype.storm.Config;
 
-public class SaslStormServerHandler extends SimpleChannelUpstreamHandler {
+public class SaslStormServerHandler extends SimpleChannelHandler {
+
+	private static final Logger LOG = LoggerFactory
+            .getLogger(SaslStormServerHandler.class);
 
     Server server;
+    
     /** Used for client or server's token to send or receive from each other. */
     private byte[] token;
     private String topologyName;
 
-    private static final Logger LOG = LoggerFactory
-            .getLogger(SaslStormServerHandler.class);
-
+    
     public SaslStormServerHandler(Server server) throws IOException {
         this.server = server;
         getSASLCredentials();
@@ -65,7 +67,7 @@ public class SaslStormServerHandler extends SimpleChannelUpstreamHandler {
                 LOG.debug("No saslNettyServer for " + channel
                         + " yet; creating now, with topology token: ");
                 try {
-                    saslNettyServer = new SaslNettyServer(topologyName, token);
+                    saslNettyServer = new SaslNettyServer(topologyName, token, this.server.storm_conf);
                 } catch (IOException ioe) {
                     LOG.error("Error occurred while creating saslNettyServer on server "
                             + channel.getLocalAddress()
@@ -122,6 +124,10 @@ public class SaslStormServerHandler extends SimpleChannelUpstreamHandler {
                 channel.write(ControlMessage.SASL_COMPLETE_REQUEST);
                 LOG.debug("Removing SaslServerHandler from pipeline since SASL "
                         + "authentication is complete.");
+                
+                SaslUtils.checkSaslNegotiatedProtection(saslNettyServer, this.server.storm_conf);
+                saslNettyServer.setUseWrapUnwrap();
+                
                 ctx.getPipeline().remove(this);
             }
             return;

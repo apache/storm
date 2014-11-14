@@ -32,7 +32,7 @@ import org.slf4j.LoggerFactory;
 public class SaslStormServerAuthorizeHandler extends SimpleChannelUpstreamHandler {
 
 	private static final Logger LOG = LoggerFactory
-			.getLogger(SaslStormServerHandler.class);
+			.getLogger(SaslStormServerAuthorizeHandler.class);
 
 	/**
 	 * Constructor.
