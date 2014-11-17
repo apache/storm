@@ -22,7 +22,7 @@
 12. Fix the bug: When spout does not implement the ICommitterTrident interface, MasterCoordinatorSpout will stick on commit phase.
 
 #Release 0.9.6.1
-1. Add management of multiclusters to Web UI. Added management tools for multiclusters in WebUI.
+1. Added management tools for multiclusters in WebUI.
 2. Merged Trident API from storm-0.9.3
 3. Replaced gson with fastjson
 4. Refactored metric json generation code.
