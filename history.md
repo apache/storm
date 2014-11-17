@@ -3,12 +3,12 @@
 
 #Release 0.9.6.2-rc
 1. Improve user experience from Web UI
-1.1 Add jstack link
-1.2 Add worker log link in supervisor page
-1.3 Add Web UI log encode setting "gbk" or "utf-8"
-1.4 Show starting tasks in component page
-1.5 Show dead task's information in UI
-1.6 Fix the bug that error info can not be displayed in UI when task is restarting
+    1.  Add jstack link
+    2.   Add worker log link in supervisor page
+    3.   Add Web UI log encode setting "gbk" or "utf-8"
+    4.   Show starting tasks in component page
+    5.   Show dead task's information in UI
+    6.  Fix the bug that error info can not be displayed in UI when task is restarting
 2. Add restart command, with this command, user can reload configuration, reset worker/task parallism
 3. Upgrade curator/disruptor/guava version
 4. Revert json lib to google-simple json, wrap all json operation into two utility method
