@@ -218,6 +218,13 @@
 				<h:outputText value="#{ct.taskid}" />
 			</p:column>
 
+                        <p:column>
+				<f:facet name="header">
+					<h:outputText value="Status" />
+				</f:facet>
+				<h:outputText value="#{ct.status}" />
+			</p:column>
+
 			<p:column>
 				<f:facet name="header">
 					<h:outputText value="Uptime" />
@@ -292,6 +299,7 @@
 				</f:facet>
 				<h:outputLink value="log.jsf" target="_blank">
 					<h:outputText value="log" />
+					<f:param name="clusterName" value="#{param.clusterName}" />
 					<f:param name="topologyid" value="#{param.topologyid}" />
 					<f:param name="taskid" value="#{ct.taskid}" />
 				</h:outputLink>

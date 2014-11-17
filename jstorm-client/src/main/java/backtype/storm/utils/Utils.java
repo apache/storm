@@ -25,7 +25,11 @@ import java.util.UUID;
 
 import org.apache.commons.io.input.ClassLoaderObjectInputStream;
 import org.apache.commons.lang.StringUtils;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.thrift7.TException;
+import org.json.simple.JSONValue;
 import org.yaml.snakeyaml.Yaml;
 
 import backtype.storm.Config;
@@ -34,11 +38,6 @@ import backtype.storm.generated.ComponentObject;
 import backtype.storm.generated.StormTopology;
 import clojure.lang.IFn;
 import clojure.lang.RT;
-
-import com.alibaba.fastjson.JSON;
-import com.netflix.curator.framework.CuratorFramework;
-import com.netflix.curator.framework.CuratorFrameworkFactory;
-import com.netflix.curator.retry.ExponentialBackoffRetry;
 
 public class Utils {
 	public static final String DEFAULT_STREAM_ID = "default";
@@ -85,9 +84,23 @@ public class Utils {
 			throw new RuntimeException(e);
 		}
 	}
-
+	
 	public static Object deserialize(byte[] serialized) {
 		return deserialize(serialized, WorkerClassLoader.getInstance());
+	}
+	
+	public static String to_json(Object m) {
+		//return JSON.toJSONString(m);
+		return JSONValue.toJSONString(m);
+	}
+
+	public static Object from_json(String json) {
+		if (json == null) {
+			return null;
+		} else {
+			//return JSON.parse(json);
+			return JSONValue.parse(json);
+		}
 	}
 
 	public static <T> String join(Iterable<T> coll, String sep) {
@@ -252,11 +265,12 @@ public class Utils {
 			return conf;
 		}
 	}
+	
+	
 
 	public static boolean isValidConf(Map<String, Object> stormConf) {
 		return normalizeConf(stormConf).equals(
-				normalizeConf((Map) JSON.parse(JSON
-						.toJSONString(stormConf))));
+				normalizeConf(Utils.from_json(Utils.to_json(stormConf))));
 	}
 
 	public static Object getSetComponentObject(ComponentObject obj,

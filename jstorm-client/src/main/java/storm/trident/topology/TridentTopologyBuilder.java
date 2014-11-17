@@ -119,6 +119,10 @@ public class TridentTopologyBuilder {
         Map<String, List<String>> batchesToCommitIds = new HashMap<String, List<String>>();
         Map<String, List<ITridentSpout>> batchesToSpouts = new HashMap<String, List<ITridentSpout>>();
         
+        // This set is used to indicate if the masterCoordSpout needs to
+        // send out COMMIT_STREAM message in this batchGroup.
+        Set<String> commitBatchGroup = new HashSet<String>();
+        
         for(String id: _spouts.keySet()) {
             TransactionalSpoutComponent c = _spouts.get(id);
             if(c.spout instanceof IRichSpout) {
@@ -162,6 +166,7 @@ public class TridentTopologyBuilder {
                 bd.allGrouping(masterCoordinator(batchGroup), MasterBatchCoordinator.SUCCESS_STREAM_ID);
                 if(c.spout instanceof ICommitterTridentSpout) {
                     bd.allGrouping(masterCoordinator(batchGroup), MasterBatchCoordinator.COMMIT_STREAM_ID);
+                    if (commitBatchGroup.contains(batchGroup) == false) commitBatchGroup.add(batchGroup);
                 }
                 for(Map m: c.componentConfs) {
                     bd.addConfigurations(m);
@@ -176,11 +181,6 @@ public class TridentTopologyBuilder {
             for(Map conf: c.componentConfs) {
                 d.addConfigurations(conf);
             }
-        }
-        
-        for(String batch: batchesToCommitIds.keySet()) {
-            List<String> commitIds = batchesToCommitIds.get(batch);
-            builder.setSpout(masterCoordinator(batch), new MasterBatchCoordinator(commitIds, batchesToSpouts.get(batch)));
         }
                 
         for(String id: _bolts.keySet()) {
@@ -223,7 +223,15 @@ public class TridentTopologyBuilder {
             
             for(String b: c.committerBatches) {
                 d.allGrouping(masterCoordinator(b), MasterBatchCoordinator.COMMIT_STREAM_ID);
+                if (commitBatchGroup.contains(b) == false) commitBatchGroup.add(b);
             }
+        }
+        
+        for(String batch: batchesToCommitIds.keySet()) {
+            List<String> commitIds = batchesToCommitIds.get(batch);
+            boolean batchCommit = false;
+            if (commitBatchGroup.contains(batch)) batchCommit = true;
+            builder.setSpout(masterCoordinator(batch), new MasterBatchCoordinator(commitIds, batchesToSpouts.get(batch), batchCommit));
         }
 
         return builder.createTopology();

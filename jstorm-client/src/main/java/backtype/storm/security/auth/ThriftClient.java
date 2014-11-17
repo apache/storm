@@ -7,6 +7,7 @@ import java.util.Map;
 
 import javax.security.auth.login.Configuration;
 
+import org.apache.curator.framework.CuratorFramework;
 import org.apache.thrift7.protocol.TBinaryProtocol;
 import org.apache.thrift7.protocol.TProtocol;
 import org.apache.thrift7.transport.TSocket;
@@ -16,8 +17,6 @@ import org.slf4j.LoggerFactory;
 
 import backtype.storm.Config;
 import backtype.storm.utils.Utils;
-
-import com.netflix.curator.framework.CuratorFramework;
 
 public class ThriftClient {
 	private static final Logger LOG = LoggerFactory

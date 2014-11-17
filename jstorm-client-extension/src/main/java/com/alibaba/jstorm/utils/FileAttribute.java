@@ -7,9 +7,9 @@ import java.util.Map;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
+import org.json.simple.JSONAware;
 
-import com.alibaba.fastjson.JSONAware;
-import com.alibaba.fastjson.JSONObject;
+//import com.alibaba.fastjson.JSONAware;
 
 public class FileAttribute implements Serializable, JSONAware {
 
@@ -75,7 +75,7 @@ public class FileAttribute implements Serializable, JSONAware {
 		return JStormUtils.to_json(map);
 	}
 
-	public static FileAttribute fromJSONObject(JSONObject jobj) {
+	public static FileAttribute fromJSONObject(Map jobj) {
 		if (jobj == null) {
 			return null;
 		}
@@ -105,10 +105,10 @@ public class FileAttribute implements Serializable, JSONAware {
 
 		String jsonString = JStormUtils.to_json(map);
 
-		Map<String, JSONObject> map2 = (Map<String, JSONObject>) JStormUtils
+		Map<String, Map> map2 = (Map<String, Map>) JStormUtils
 				.from_json(jsonString);
 
-		JSONObject jObject = map2.get("test");
+		Map jObject = map2.get("test");
 
 		FileAttribute attribute2 = FileAttribute.fromJSONObject(jObject);
 		

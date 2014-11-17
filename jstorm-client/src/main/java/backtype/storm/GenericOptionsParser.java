@@ -226,9 +226,8 @@ public class GenericOptionsParser {
 						.getOptionValue("libjars"));
 				Map<String, String> jars = new HashMap<String, String>(jarFiles.size());
 				List<String> names = new ArrayList<String>(jarFiles.size());
-				for (File f : jarFiles)
-					jars.put(f.getName(), f.getAbsolutePath());
 				for (File f : jarFiles) {
+					jars.put(f.getName(), f.getAbsolutePath());
 					names.add(f.getName());
 				}
 				conf.put(TOPOLOGY_LIB_PATH, jars);

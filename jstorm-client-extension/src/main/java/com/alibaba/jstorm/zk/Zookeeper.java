@@ -6,6 +6,11 @@ import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.api.CuratorEvent;
+import org.apache.curator.framework.api.CuratorEventType;
+import org.apache.curator.framework.api.CuratorListener;
+import org.apache.curator.framework.api.UnhandledErrorListener;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
@@ -19,11 +24,6 @@ import com.alibaba.jstorm.callback.DefaultWatcherCallBack;
 import com.alibaba.jstorm.callback.WatcherCallBack;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.PathUtils;
-import com.netflix.curator.framework.CuratorFramework;
-import com.netflix.curator.framework.api.CuratorEvent;
-import com.netflix.curator.framework.api.CuratorEventType;
-import com.netflix.curator.framework.api.CuratorListener;
-import com.netflix.curator.framework.api.UnhandledErrorListener;
 
 /**
  * ZK simple wrapper

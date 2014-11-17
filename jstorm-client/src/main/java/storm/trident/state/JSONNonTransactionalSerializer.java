@@ -2,7 +2,7 @@ package storm.trident.state;
 
 import java.io.UnsupportedEncodingException;
 
-import com.alibaba.fastjson.JSON;
+import backtype.storm.utils.Utils;
 
 
 public class JSONNonTransactionalSerializer implements Serializer {
@@ -10,7 +10,7 @@ public class JSONNonTransactionalSerializer implements Serializer {
     @Override
     public byte[] serialize(Object obj) {
         try {
-            return JSON.toJSONString(obj).getBytes("UTF-8");
+            return Utils.to_json(obj).getBytes("UTF-8");
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
@@ -19,7 +19,7 @@ public class JSONNonTransactionalSerializer implements Serializer {
     @Override
     public Object deserialize(byte[] b) {
         try {
-            return JSON.parse(new String(b, "UTF-8"));
+            return Utils.from_json(new String(b, "UTF-8"));
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }

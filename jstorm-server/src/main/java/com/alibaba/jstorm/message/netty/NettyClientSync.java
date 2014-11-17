@@ -28,8 +28,8 @@ import com.alibaba.jstorm.utils.JStormServerUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.codahale.metrics.Gauge;
 import com.lmax.disruptor.EventHandler;
-import com.lmax.disruptor.SingleThreadedClaimStrategy;
 import com.lmax.disruptor.WaitStrategy;
+import com.lmax.disruptor.dsl.ProducerType;
 
 class NettyClientSync extends NettyClient implements EventHandler {
 	private static final Logger LOG = LoggerFactory
@@ -59,8 +59,8 @@ class NettyClientSync extends NettyClient implements EventHandler {
 				.newInstance((String) storm_conf
 						.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
 
-		disruptorQueue = new DisruptorQueue(new SingleThreadedClaimStrategy(
-				MAX_SEND_PENDING * 8), waitStrategy);
+		disruptorQueue = new DisruptorQueue(name, ProducerType.MULTI,
+				MAX_SEND_PENDING * 8, waitStrategy);
 
 		Metrics.registerQueue(address, MetricDef.NETTY_CLI_SYNC_DISR_QUEUE, disruptorQueue, 
 				null, Metrics.MetricType.WORKER);
@@ -153,7 +153,7 @@ class NettyClientSync extends NettyClient implements EventHandler {
 
 		sendTimer.start();
 		try {
-			disruptorQueue.consumeBatchWhenAvailableTimeout(this, 10);
+			disruptorQueue.consumeBatch(this);
 			MessageBatch batch = batchQueue.poll();
 			while (batch != null) {
 				Channel channel = channelRef.get();

@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.json.simple.JSONAware;
+
 import backtype.storm.Config;
 import backtype.storm.Constants;
 import backtype.storm.generated.ComponentCommon;
@@ -15,9 +17,6 @@ import backtype.storm.generated.StormTopology;
 import backtype.storm.tuple.Fields;
 import backtype.storm.utils.ThriftTopologyUtils;
 import backtype.storm.utils.Utils;
-
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONAware;
 
 public class GeneralTopologyContext implements JSONAware {
 	private StormTopology _topology;
@@ -166,7 +165,7 @@ public class GeneralTopologyContext implements JSONAware {
 		obj.put("task->component", _taskToComponent);
 		// TODO: jsonify StormTopology
 		// at the minimum should send source info
-		return JSON.toJSONString(obj);
+		return Utils.to_json(obj);
 	}
 
 	/**
@@ -195,7 +194,7 @@ public class GeneralTopologyContext implements JSONAware {
 			ComponentCommon common = getComponentCommon(spout);
 			String jsonConf = common.get_json_conf();
 			if (jsonConf != null) {
-				Map conf = (Map) JSON.parse(jsonConf);
+				Map conf = (Map) Utils.from_json(jsonConf);
 				Object comp = conf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS);
 				if (comp != null) {
 					max = Math.max(Utils.getInt(comp), max);

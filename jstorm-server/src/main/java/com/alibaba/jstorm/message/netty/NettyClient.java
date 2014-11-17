@@ -129,6 +129,7 @@ class NettyClient implements IConnection {
 	public void start() {
 		bootstrap = new ClientBootstrap(clientChannelFactory);
 		bootstrap.setOption("tcpNoDelay", true);
+		bootstrap.setOption("reuserAddress", true);
 		bootstrap.setOption("sendBufferSize", buffer_size);
 		bootstrap.setOption("keepAlive", true);
 

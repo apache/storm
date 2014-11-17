@@ -19,8 +19,6 @@ import backtype.storm.generated.DistributedRPCInvocations;
 import backtype.storm.utils.ServiceRegistry;
 import backtype.storm.utils.Utils;
 
-import com.alibaba.fastjson.JSON;
-
 
 public class ReturnResultsReducer implements MultiReducer<ReturnResultsState> {
     public static class ReturnResultsState {
@@ -60,8 +58,8 @@ public class ReturnResultsReducer implements MultiReducer<ReturnResultsState> {
     public void complete(ReturnResultsState state, TridentCollector collector) {
         // only one of the multireducers will receive the tuples
         if(state.returnInfo!=null) {
-            String result = JSON.toJSONString(state.results);
-            Map retMap = (Map) JSON.parse(state.returnInfo);
+            String result = Utils.to_json(state.results);
+            Map retMap = (Map) Utils.from_json(state.returnInfo);
             final String host = (String) retMap.get("host");
             final int port = Utils.getInt(retMap.get("port"));
             String id = (String) retMap.get("id");

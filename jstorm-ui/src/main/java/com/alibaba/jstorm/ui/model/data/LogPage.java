@@ -108,7 +108,7 @@ public class LogPage implements Serializable {
 			generateLogFileName();
 
 			// proxy call
-			queryLog();
+			queryLog(conf);
 
 		} catch (Exception e) {
 			LOG.error(e.getCause(), e);
@@ -128,28 +128,48 @@ public class LogPage implements Serializable {
 			log = ctx.getExternalContext().getRequestParameterMap()
 					.get("log");
 		}
+		
+		String workerPort = null;
+		if (ctx.getExternalContext().getRequestParameterMap().get("workerPort") != null) {
+			workerPort = ctx.getExternalContext().getRequestParameterMap()
+					.get("workerPort");
+		}
 
-		if (StringUtils.isBlank(host) == false
-				&& StringUtils.isBlank(log) == false) {
-			String parent = null;
-			if (ctx.getExternalContext().getRequestParameterMap().get("parent") != null) {
-				parent = ctx.getExternalContext().getRequestParameterMap()
-						.get("parent");
-			}
+		if (StringUtils.isBlank(host) == false) {
+			if (StringUtils.isBlank(log) == false) {
+			    String parent = null;
+			    if (ctx.getExternalContext().getRequestParameterMap().get("parent") != null) {
+				    parent = ctx.getExternalContext().getRequestParameterMap()
+						    .get("parent");
+			    }
 			
-			if (parent == null) {
-				logFileName = log;
-			}else {
-				logFileName = parent + File.separator + log;
+			    if (parent == null) {
+				    logFileName = log;
+			    }else {
+				    logFileName = parent + File.separator + log;
+			    }
+			} else if (StringUtils.isBlank(workerPort) == false) {
+				String topologyId = null;
+				if (ctx.getExternalContext().getRequestParameterMap().get("topologyId") != null) {
+				    topologyId = ctx.getExternalContext().getRequestParameterMap()
+						    .get("topologyId");
+			    }
+				NimbusClient client = NimbusClient.getConfiguredClient(conf);
+				TopologyInfo summ = client.getClient().getTopologyInfo(topologyId);
+				logFileName = JStormUtils.genLogName(summ.get_name(), Integer.valueOf(workerPort));
 			}
-			
 			return;
 		}
 
 		String topologyid = null;
 		String taskid = null;
+		String clusterName = null;
 
 		// resolve the arguments
+		if (ctx.getExternalContext().getRequestParameterMap().get("clusterName") != null) {
+			clusterName = (String) ctx.getExternalContext()
+					.getRequestParameterMap().get("clusterName");
+		}
 		if (ctx.getExternalContext().getRequestParameterMap().get("topologyid") != null) {
 			topologyid = ctx.getExternalContext().getRequestParameterMap()
 					.get("topologyid");
@@ -169,7 +189,10 @@ public class LogPage implements Serializable {
 		NimbusClient client = null;
 
 		try {
-
+			if(clusterName != null && !(clusterName.equals(""))) {
+				UIUtils.getClusterInfoByName(conf, clusterName);
+			}
+			
 			client = NimbusClient.getConfiguredClient(conf);
 
 			TopologyInfo summ = client.getClient().getTopologyInfo(topologyid);
@@ -271,7 +294,7 @@ public class LogPage implements Serializable {
 	 * @param task
 	 *            the specified task
 	 */
-	private void queryLog() {
+	private void queryLog(Map conf) {
 		// PROXY_URL = "http://%s:%s/logview?%s=%s&log=%s";
 		String baseUrl = String.format(PROXY_URL, host, port,
 				HttpserverUtils.HTTPSERVER_LOGVIEW_PARAM_CMD,
@@ -288,7 +311,7 @@ public class LogPage implements Serializable {
 
 			// 2. check the request is success, then read the log
 			if (response.getStatusLine().getStatusCode() == 200) {
-				String data = EntityUtils.toString(response.getEntity());
+				String data = EntityUtils.toString(response.getEntity(), ConfigExtension.getLogViewEncoding(conf));
 
 				String sizeStr = data.substring(0, 16);
 				genPageUrl(sizeStr);

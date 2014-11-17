@@ -18,8 +18,6 @@ import backtype.storm.grouping.CustomStreamGrouping;
 import backtype.storm.tuple.Fields;
 import backtype.storm.utils.Utils;
 
-import com.alibaba.fastjson.JSON;
-
 /**
  * TopologyBuilder exposes the Java API for specifying a topology for Storm to
  * execute. Topologies are Thrift structures in the end, but since the Thrift
@@ -263,7 +261,7 @@ public class TopologyBuilder {
 		}
 		Map conf = component.getComponentConfiguration();
 		if (conf != null)
-			common.set_json_conf(JSON.toJSONString(conf));
+			common.set_json_conf(Utils.to_json(conf));
 		_commons.put(id, common);
 	}
 
@@ -414,13 +412,13 @@ public class TopologyBuilder {
 		if (json == null)
 			return new HashMap();
 		else
-			return (Map) JSON.parse(json);
+			return (Map) Utils.from_json(json);
 	}
 
 	private static String mergeIntoJson(Map into, Map newMap) {
 		Map res = new HashMap(into);
 		if (newMap != null)
 			res.putAll(newMap);
-		return JSON.toJSONString(res);
+		return Utils.to_json(res);
 	}
 }

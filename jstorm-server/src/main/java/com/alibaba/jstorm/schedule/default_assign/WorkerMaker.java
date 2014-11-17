@@ -155,7 +155,7 @@ public class WorkerMaker {
 			Set<Integer> needAssign, List<ResourceWorkerSlot> result,
 			int workersNum, Collection<ResourceWorkerSlot> workers) {
 		Set<Integer> assigned = new HashSet<Integer>();
-		Set<ResourceWorkerSlot> users = new HashSet<ResourceWorkerSlot>();
+		List<ResourceWorkerSlot> users = new ArrayList<ResourceWorkerSlot>();
 		if (workers == null)
 			return;
 		for (ResourceWorkerSlot worker : workers) {
@@ -201,9 +201,9 @@ public class WorkerMaker {
 	 * @param workers
 	 * @return
 	 */
-	private Set<ResourceWorkerSlot> getUserDefineWorkers(
+	private List<ResourceWorkerSlot> getUserDefineWorkers(
 			DefaultTopologyAssignContext context, List<WorkerAssignment> workers) {
-		Set<ResourceWorkerSlot> ret = new HashSet<ResourceWorkerSlot>();
+		List<ResourceWorkerSlot> ret = new ArrayList<ResourceWorkerSlot>();
 		if (workers == null)
 			return ret;
 		Map<String, List<Integer>> componentToTask = (HashMap<String, List<Integer>>) ((HashMap<String, List<Integer>>) context
@@ -211,8 +211,9 @@ public class WorkerMaker {
 		for (WorkerAssignment worker : workers) {
 			ResourceWorkerSlot workerSlot = new ResourceWorkerSlot(worker,
 					componentToTask);
-			if (workerSlot.getTasks().size() != 0)
+			if (workerSlot.getTasks().size() != 0) {
 				ret.add(workerSlot);
+			}
 		}
 		return ret;
 	}

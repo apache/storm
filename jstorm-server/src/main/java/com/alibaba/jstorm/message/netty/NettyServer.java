@@ -69,6 +69,7 @@ class NettyServer implements IConnection {
 		}
 
 		bootstrap = new ServerBootstrap(factory);
+		bootstrap.setOption("reuserAddress", true);
 		bootstrap.setOption("child.tcpNoDelay", true);
 		bootstrap.setOption("child.receiveBufferSize", buffer_size);
 		bootstrap.setOption("child.keepAlive", true);

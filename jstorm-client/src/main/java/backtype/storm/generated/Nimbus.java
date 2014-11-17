@@ -29,6 +29,8 @@ public class Nimbus {
 
     public void submitTopologyWithOpts(String name, String uploadedJarLocation, String jsonConf, StormTopology topology, SubmitOptions options) throws AlreadyAliveException, InvalidTopologyException, TopologyAssignException, org.apache.thrift7.TException;
 
+    public void submitTopologyAfterRestart(String name, String jsonConf) throws InvalidTopologyException, TopologyAssignException, org.apache.thrift7.TException;
+
     public void killTopology(String name) throws NotAliveException, org.apache.thrift7.TException;
 
     public void killTopologyWithOpts(String name, KillOptions options) throws NotAliveException, org.apache.thrift7.TException;
@@ -40,6 +42,8 @@ public class Nimbus {
     public void rebalance(String name, RebalanceOptions options) throws NotAliveException, InvalidTopologyException, org.apache.thrift7.TException;
 
     public void metricMonitor(String name, MonitorOptions options) throws NotAliveException, org.apache.thrift7.TException;
+
+    public void restart(String name, String jsonConf) throws NotAliveException, InvalidTopologyException, TopologyAssignException, org.apache.thrift7.TException;
 
     public void beginLibUpload(String libName) throws org.apache.thrift7.TException;
 
@@ -77,6 +81,8 @@ public class Nimbus {
 
     public void submitTopologyWithOpts(String name, String uploadedJarLocation, String jsonConf, StormTopology topology, SubmitOptions options, org.apache.thrift7.async.AsyncMethodCallback<AsyncClient.submitTopologyWithOpts_call> resultHandler) throws org.apache.thrift7.TException;
 
+    public void submitTopologyAfterRestart(String name, String jsonConf, org.apache.thrift7.async.AsyncMethodCallback<AsyncClient.submitTopologyAfterRestart_call> resultHandler) throws org.apache.thrift7.TException;
+
     public void killTopology(String name, org.apache.thrift7.async.AsyncMethodCallback<AsyncClient.killTopology_call> resultHandler) throws org.apache.thrift7.TException;
 
     public void killTopologyWithOpts(String name, KillOptions options, org.apache.thrift7.async.AsyncMethodCallback<AsyncClient.killTopologyWithOpts_call> resultHandler) throws org.apache.thrift7.TException;
@@ -88,6 +94,8 @@ public class Nimbus {
     public void rebalance(String name, RebalanceOptions options, org.apache.thrift7.async.AsyncMethodCallback<AsyncClient.rebalance_call> resultHandler) throws org.apache.thrift7.TException;
 
     public void metricMonitor(String name, MonitorOptions options, org.apache.thrift7.async.AsyncMethodCallback<AsyncClient.metricMonitor_call> resultHandler) throws org.apache.thrift7.TException;
+
+    public void restart(String name, String jsonConf, org.apache.thrift7.async.AsyncMethodCallback<AsyncClient.restart_call> resultHandler) throws org.apache.thrift7.TException;
 
     public void beginLibUpload(String libName, org.apache.thrift7.async.AsyncMethodCallback<AsyncClient.beginLibUpload_call> resultHandler) throws org.apache.thrift7.TException;
 
@@ -195,6 +203,33 @@ public class Nimbus {
       if (result.e != null) {
         throw result.e;
       }
+      if (result.ite != null) {
+        throw result.ite;
+      }
+      if (result.tae != null) {
+        throw result.tae;
+      }
+      return;
+    }
+
+    public void submitTopologyAfterRestart(String name, String jsonConf) throws InvalidTopologyException, TopologyAssignException, org.apache.thrift7.TException
+    {
+      send_submitTopologyAfterRestart(name, jsonConf);
+      recv_submitTopologyAfterRestart();
+    }
+
+    public void send_submitTopologyAfterRestart(String name, String jsonConf) throws org.apache.thrift7.TException
+    {
+      submitTopologyAfterRestart_args args = new submitTopologyAfterRestart_args();
+      args.set_name(name);
+      args.set_jsonConf(jsonConf);
+      sendBase("submitTopologyAfterRestart", args);
+    }
+
+    public void recv_submitTopologyAfterRestart() throws InvalidTopologyException, TopologyAssignException, org.apache.thrift7.TException
+    {
+      submitTopologyAfterRestart_result result = new submitTopologyAfterRestart_result();
+      receiveBase(result, "submitTopologyAfterRestart");
       if (result.ite != null) {
         throw result.ite;
       }
@@ -344,6 +379,36 @@ public class Nimbus {
       receiveBase(result, "metricMonitor");
       if (result.e != null) {
         throw result.e;
+      }
+      return;
+    }
+
+    public void restart(String name, String jsonConf) throws NotAliveException, InvalidTopologyException, TopologyAssignException, org.apache.thrift7.TException
+    {
+      send_restart(name, jsonConf);
+      recv_restart();
+    }
+
+    public void send_restart(String name, String jsonConf) throws org.apache.thrift7.TException
+    {
+      restart_args args = new restart_args();
+      args.set_name(name);
+      args.set_jsonConf(jsonConf);
+      sendBase("restart", args);
+    }
+
+    public void recv_restart() throws NotAliveException, InvalidTopologyException, TopologyAssignException, org.apache.thrift7.TException
+    {
+      restart_result result = new restart_result();
+      receiveBase(result, "restart");
+      if (result.e != null) {
+        throw result.e;
+      }
+      if (result.ite != null) {
+        throw result.ite;
+      }
+      if (result.tae != null) {
+        throw result.tae;
       }
       return;
     }
@@ -780,6 +845,41 @@ public class Nimbus {
       }
     }
 
+    public void submitTopologyAfterRestart(String name, String jsonConf, org.apache.thrift7.async.AsyncMethodCallback<submitTopologyAfterRestart_call> resultHandler) throws org.apache.thrift7.TException {
+      checkReady();
+      submitTopologyAfterRestart_call method_call = new submitTopologyAfterRestart_call(name, jsonConf, resultHandler, this, ___protocolFactory, ___transport);
+      this.___currentMethod = method_call;
+      ___manager.call(method_call);
+    }
+
+    public static class submitTopologyAfterRestart_call extends org.apache.thrift7.async.TAsyncMethodCall {
+      private String name;
+      private String jsonConf;
+      public submitTopologyAfterRestart_call(String name, String jsonConf, org.apache.thrift7.async.AsyncMethodCallback<submitTopologyAfterRestart_call> resultHandler, org.apache.thrift7.async.TAsyncClient client, org.apache.thrift7.protocol.TProtocolFactory protocolFactory, org.apache.thrift7.transport.TNonblockingTransport transport) throws org.apache.thrift7.TException {
+        super(client, protocolFactory, transport, resultHandler, false);
+        this.name = name;
+        this.jsonConf = jsonConf;
+      }
+
+      public void write_args(org.apache.thrift7.protocol.TProtocol prot) throws org.apache.thrift7.TException {
+        prot.writeMessageBegin(new org.apache.thrift7.protocol.TMessage("submitTopologyAfterRestart", org.apache.thrift7.protocol.TMessageType.CALL, 0));
+        submitTopologyAfterRestart_args args = new submitTopologyAfterRestart_args();
+        args.set_name(name);
+        args.set_jsonConf(jsonConf);
+        args.write(prot);
+        prot.writeMessageEnd();
+      }
+
+      public void getResult() throws InvalidTopologyException, TopologyAssignException, org.apache.thrift7.TException {
+        if (getState() != org.apache.thrift7.async.TAsyncMethodCall.State.RESPONSE_READ) {
+          throw new IllegalStateException("Method call not finished!");
+        }
+        org.apache.thrift7.transport.TMemoryInputTransport memoryTransport = new org.apache.thrift7.transport.TMemoryInputTransport(getFrameBuffer().array());
+        org.apache.thrift7.protocol.TProtocol prot = client.getProtocolFactory().getProtocol(memoryTransport);
+        (new Client(prot)).recv_submitTopologyAfterRestart();
+      }
+    }
+
     public void killTopology(String name, org.apache.thrift7.async.AsyncMethodCallback<killTopology_call> resultHandler) throws org.apache.thrift7.TException {
       checkReady();
       killTopology_call method_call = new killTopology_call(name, resultHandler, this, ___protocolFactory, ___transport);
@@ -978,6 +1078,41 @@ public class Nimbus {
         org.apache.thrift7.transport.TMemoryInputTransport memoryTransport = new org.apache.thrift7.transport.TMemoryInputTransport(getFrameBuffer().array());
         org.apache.thrift7.protocol.TProtocol prot = client.getProtocolFactory().getProtocol(memoryTransport);
         (new Client(prot)).recv_metricMonitor();
+      }
+    }
+
+    public void restart(String name, String jsonConf, org.apache.thrift7.async.AsyncMethodCallback<restart_call> resultHandler) throws org.apache.thrift7.TException {
+      checkReady();
+      restart_call method_call = new restart_call(name, jsonConf, resultHandler, this, ___protocolFactory, ___transport);
+      this.___currentMethod = method_call;
+      ___manager.call(method_call);
+    }
+
+    public static class restart_call extends org.apache.thrift7.async.TAsyncMethodCall {
+      private String name;
+      private String jsonConf;
+      public restart_call(String name, String jsonConf, org.apache.thrift7.async.AsyncMethodCallback<restart_call> resultHandler, org.apache.thrift7.async.TAsyncClient client, org.apache.thrift7.protocol.TProtocolFactory protocolFactory, org.apache.thrift7.transport.TNonblockingTransport transport) throws org.apache.thrift7.TException {
+        super(client, protocolFactory, transport, resultHandler, false);
+        this.name = name;
+        this.jsonConf = jsonConf;
+      }
+
+      public void write_args(org.apache.thrift7.protocol.TProtocol prot) throws org.apache.thrift7.TException {
+        prot.writeMessageBegin(new org.apache.thrift7.protocol.TMessage("restart", org.apache.thrift7.protocol.TMessageType.CALL, 0));
+        restart_args args = new restart_args();
+        args.set_name(name);
+        args.set_jsonConf(jsonConf);
+        args.write(prot);
+        prot.writeMessageEnd();
+      }
+
+      public void getResult() throws NotAliveException, InvalidTopologyException, TopologyAssignException, org.apache.thrift7.TException {
+        if (getState() != org.apache.thrift7.async.TAsyncMethodCall.State.RESPONSE_READ) {
+          throw new IllegalStateException("Method call not finished!");
+        }
+        org.apache.thrift7.transport.TMemoryInputTransport memoryTransport = new org.apache.thrift7.transport.TMemoryInputTransport(getFrameBuffer().array());
+        org.apache.thrift7.protocol.TProtocol prot = client.getProtocolFactory().getProtocol(memoryTransport);
+        (new Client(prot)).recv_restart();
       }
     }
 
@@ -1438,12 +1573,14 @@ public class Nimbus {
     private static <I extends Iface> Map<String,  org.apache.thrift7.ProcessFunction<I, ? extends  org.apache.thrift7.TBase>> getProcessMap(Map<String,  org.apache.thrift7.ProcessFunction<I, ? extends  org.apache.thrift7.TBase>> processMap) {
       processMap.put("submitTopology", new submitTopology());
       processMap.put("submitTopologyWithOpts", new submitTopologyWithOpts());
+      processMap.put("submitTopologyAfterRestart", new submitTopologyAfterRestart());
       processMap.put("killTopology", new killTopology());
       processMap.put("killTopologyWithOpts", new killTopologyWithOpts());
       processMap.put("activate", new activate());
       processMap.put("deactivate", new deactivate());
       processMap.put("rebalance", new rebalance());
       processMap.put("metricMonitor", new metricMonitor());
+      processMap.put("restart", new restart());
       processMap.put("beginLibUpload", new beginLibUpload());
       processMap.put("beginFileUpload", new beginFileUpload());
       processMap.put("uploadChunk", new uploadChunk());
@@ -1500,6 +1637,28 @@ public class Nimbus {
           iface.submitTopologyWithOpts(args.name, args.uploadedJarLocation, args.jsonConf, args.topology, args.options);
         } catch (AlreadyAliveException e) {
           result.e = e;
+        } catch (InvalidTopologyException ite) {
+          result.ite = ite;
+        } catch (TopologyAssignException tae) {
+          result.tae = tae;
+        }
+        return result;
+      }
+    }
+
+    private static class submitTopologyAfterRestart<I extends Iface> extends org.apache.thrift7.ProcessFunction<I, submitTopologyAfterRestart_args> {
+      public submitTopologyAfterRestart() {
+        super("submitTopologyAfterRestart");
+      }
+
+      protected submitTopologyAfterRestart_args getEmptyArgsInstance() {
+        return new submitTopologyAfterRestart_args();
+      }
+
+      protected submitTopologyAfterRestart_result getResult(I iface, submitTopologyAfterRestart_args args) throws org.apache.thrift7.TException {
+        submitTopologyAfterRestart_result result = new submitTopologyAfterRestart_result();
+        try {
+          iface.submitTopologyAfterRestart(args.name, args.jsonConf);
         } catch (InvalidTopologyException ite) {
           result.ite = ite;
         } catch (TopologyAssignException tae) {
@@ -1626,6 +1785,30 @@ public class Nimbus {
           iface.metricMonitor(args.name, args.options);
         } catch (NotAliveException e) {
           result.e = e;
+        }
+        return result;
+      }
+    }
+
+    private static class restart<I extends Iface> extends org.apache.thrift7.ProcessFunction<I, restart_args> {
+      public restart() {
+        super("restart");
+      }
+
+      protected restart_args getEmptyArgsInstance() {
+        return new restart_args();
+      }
+
+      protected restart_result getResult(I iface, restart_args args) throws org.apache.thrift7.TException {
+        restart_result result = new restart_result();
+        try {
+          iface.restart(args.name, args.jsonConf);
+        } catch (NotAliveException e) {
+          result.e = e;
+        } catch (InvalidTopologyException ite) {
+          result.ite = ite;
+        } catch (TopologyAssignException tae) {
+          result.tae = tae;
         }
         return result;
       }
@@ -4070,6 +4253,794 @@ public class Nimbus {
       }
       first = false;
       if (!first) sb.append(", ");
+      sb.append("ite:");
+      if (this.ite == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.ite);
+      }
+      first = false;
+      if (!first) sb.append(", ");
+      sb.append("tae:");
+      if (this.tae == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.tae);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.thrift7.TException {
+      // check for required fields
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(out)));
+      } catch (org.apache.thrift7.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+      try {
+        read(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(in)));
+      } catch (org.apache.thrift7.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+  }
+
+  public static class submitTopologyAfterRestart_args implements org.apache.thrift7.TBase<submitTopologyAfterRestart_args, submitTopologyAfterRestart_args._Fields>, java.io.Serializable, Cloneable   {
+    private static final org.apache.thrift7.protocol.TStruct STRUCT_DESC = new org.apache.thrift7.protocol.TStruct("submitTopologyAfterRestart_args");
+
+    private static final org.apache.thrift7.protocol.TField NAME_FIELD_DESC = new org.apache.thrift7.protocol.TField("name", org.apache.thrift7.protocol.TType.STRING, (short)1);
+    private static final org.apache.thrift7.protocol.TField JSON_CONF_FIELD_DESC = new org.apache.thrift7.protocol.TField("jsonConf", org.apache.thrift7.protocol.TType.STRING, (short)2);
+
+    private String name; // required
+    private String jsonConf; // required
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
+      NAME((short)1, "name"),
+      JSON_CONF((short)2, "jsonConf");
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 1: // NAME
+            return NAME;
+          case 2: // JSON_CONF
+            return JSON_CONF;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+
+    public static final Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift7.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.NAME, new org.apache.thrift7.meta_data.FieldMetaData("name", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRING)));
+      tmpMap.put(_Fields.JSON_CONF, new org.apache.thrift7.meta_data.FieldMetaData("jsonConf", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRING)));
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      org.apache.thrift7.meta_data.FieldMetaData.addStructMetaDataMap(submitTopologyAfterRestart_args.class, metaDataMap);
+    }
+
+    public submitTopologyAfterRestart_args() {
+    }
+
+    public submitTopologyAfterRestart_args(
+      String name,
+      String jsonConf)
+    {
+      this();
+      this.name = name;
+      this.jsonConf = jsonConf;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public submitTopologyAfterRestart_args(submitTopologyAfterRestart_args other) {
+      if (other.is_set_name()) {
+        this.name = other.name;
+      }
+      if (other.is_set_jsonConf()) {
+        this.jsonConf = other.jsonConf;
+      }
+    }
+
+    public submitTopologyAfterRestart_args deepCopy() {
+      return new submitTopologyAfterRestart_args(this);
+    }
+
+    @Override
+    public void clear() {
+      this.name = null;
+      this.jsonConf = null;
+    }
+
+    public String get_name() {
+      return this.name;
+    }
+
+    public void set_name(String name) {
+      this.name = name;
+    }
+
+    public void unset_name() {
+      this.name = null;
+    }
+
+    /** Returns true if field name is set (has been assigned a value) and false otherwise */
+    public boolean is_set_name() {
+      return this.name != null;
+    }
+
+    public void set_name_isSet(boolean value) {
+      if (!value) {
+        this.name = null;
+      }
+    }
+
+    public String get_jsonConf() {
+      return this.jsonConf;
+    }
+
+    public void set_jsonConf(String jsonConf) {
+      this.jsonConf = jsonConf;
+    }
+
+    public void unset_jsonConf() {
+      this.jsonConf = null;
+    }
+
+    /** Returns true if field jsonConf is set (has been assigned a value) and false otherwise */
+    public boolean is_set_jsonConf() {
+      return this.jsonConf != null;
+    }
+
+    public void set_jsonConf_isSet(boolean value) {
+      if (!value) {
+        this.jsonConf = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      case NAME:
+        if (value == null) {
+          unset_name();
+        } else {
+          set_name((String)value);
+        }
+        break;
+
+      case JSON_CONF:
+        if (value == null) {
+          unset_jsonConf();
+        } else {
+          set_jsonConf((String)value);
+        }
+        break;
+
+      }
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      case NAME:
+        return get_name();
+
+      case JSON_CONF:
+        return get_jsonConf();
+
+      }
+      throw new IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new IllegalArgumentException();
+      }
+
+      switch (field) {
+      case NAME:
+        return is_set_name();
+      case JSON_CONF:
+        return is_set_jsonConf();
+      }
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof submitTopologyAfterRestart_args)
+        return this.equals((submitTopologyAfterRestart_args)that);
+      return false;
+    }
+
+    public boolean equals(submitTopologyAfterRestart_args that) {
+      if (that == null)
+        return false;
+
+      boolean this_present_name = true && this.is_set_name();
+      boolean that_present_name = true && that.is_set_name();
+      if (this_present_name || that_present_name) {
+        if (!(this_present_name && that_present_name))
+          return false;
+        if (!this.name.equals(that.name))
+          return false;
+      }
+
+      boolean this_present_jsonConf = true && this.is_set_jsonConf();
+      boolean that_present_jsonConf = true && that.is_set_jsonConf();
+      if (this_present_jsonConf || that_present_jsonConf) {
+        if (!(this_present_jsonConf && that_present_jsonConf))
+          return false;
+        if (!this.jsonConf.equals(that.jsonConf))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      HashCodeBuilder builder = new HashCodeBuilder();
+
+      boolean present_name = true && (is_set_name());
+      builder.append(present_name);
+      if (present_name)
+        builder.append(name);
+
+      boolean present_jsonConf = true && (is_set_jsonConf());
+      builder.append(present_jsonConf);
+      if (present_jsonConf)
+        builder.append(jsonConf);
+
+      return builder.toHashCode();
+    }
+
+    public int compareTo(submitTopologyAfterRestart_args other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+      submitTopologyAfterRestart_args typedOther = (submitTopologyAfterRestart_args)other;
+
+      lastComparison = Boolean.valueOf(is_set_name()).compareTo(typedOther.is_set_name());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_name()) {
+        lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.name, typedOther.name);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      lastComparison = Boolean.valueOf(is_set_jsonConf()).compareTo(typedOther.is_set_jsonConf());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_jsonConf()) {
+        lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.jsonConf, typedOther.jsonConf);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.thrift7.protocol.TProtocol iprot) throws org.apache.thrift7.TException {
+      org.apache.thrift7.protocol.TField field;
+      iprot.readStructBegin();
+      while (true)
+      {
+        field = iprot.readFieldBegin();
+        if (field.type == org.apache.thrift7.protocol.TType.STOP) { 
+          break;
+        }
+        switch (field.id) {
+          case 1: // NAME
+            if (field.type == org.apache.thrift7.protocol.TType.STRING) {
+              this.name = iprot.readString();
+            } else { 
+              org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          case 2: // JSON_CONF
+            if (field.type == org.apache.thrift7.protocol.TType.STRING) {
+              this.jsonConf = iprot.readString();
+            } else { 
+              org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          default:
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+        }
+        iprot.readFieldEnd();
+      }
+      iprot.readStructEnd();
+      validate();
+    }
+
+    public void write(org.apache.thrift7.protocol.TProtocol oprot) throws org.apache.thrift7.TException {
+      validate();
+
+      oprot.writeStructBegin(STRUCT_DESC);
+      if (this.name != null) {
+        oprot.writeFieldBegin(NAME_FIELD_DESC);
+        oprot.writeString(this.name);
+        oprot.writeFieldEnd();
+      }
+      if (this.jsonConf != null) {
+        oprot.writeFieldBegin(JSON_CONF_FIELD_DESC);
+        oprot.writeString(this.jsonConf);
+        oprot.writeFieldEnd();
+      }
+      oprot.writeFieldStop();
+      oprot.writeStructEnd();
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("submitTopologyAfterRestart_args(");
+      boolean first = true;
+
+      sb.append("name:");
+      if (this.name == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.name);
+      }
+      first = false;
+      if (!first) sb.append(", ");
+      sb.append("jsonConf:");
+      if (this.jsonConf == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.jsonConf);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.thrift7.TException {
+      // check for required fields
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(out)));
+      } catch (org.apache.thrift7.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+      try {
+        read(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(in)));
+      } catch (org.apache.thrift7.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+  }
+
+  public static class submitTopologyAfterRestart_result implements org.apache.thrift7.TBase<submitTopologyAfterRestart_result, submitTopologyAfterRestart_result._Fields>, java.io.Serializable, Cloneable   {
+    private static final org.apache.thrift7.protocol.TStruct STRUCT_DESC = new org.apache.thrift7.protocol.TStruct("submitTopologyAfterRestart_result");
+
+    private static final org.apache.thrift7.protocol.TField ITE_FIELD_DESC = new org.apache.thrift7.protocol.TField("ite", org.apache.thrift7.protocol.TType.STRUCT, (short)1);
+    private static final org.apache.thrift7.protocol.TField TAE_FIELD_DESC = new org.apache.thrift7.protocol.TField("tae", org.apache.thrift7.protocol.TType.STRUCT, (short)2);
+
+    private InvalidTopologyException ite; // required
+    private TopologyAssignException tae; // required
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
+      ITE((short)1, "ite"),
+      TAE((short)2, "tae");
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 1: // ITE
+            return ITE;
+          case 2: // TAE
+            return TAE;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+
+    public static final Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift7.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.ITE, new org.apache.thrift7.meta_data.FieldMetaData("ite", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRUCT)));
+      tmpMap.put(_Fields.TAE, new org.apache.thrift7.meta_data.FieldMetaData("tae", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRUCT)));
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      org.apache.thrift7.meta_data.FieldMetaData.addStructMetaDataMap(submitTopologyAfterRestart_result.class, metaDataMap);
+    }
+
+    public submitTopologyAfterRestart_result() {
+    }
+
+    public submitTopologyAfterRestart_result(
+      InvalidTopologyException ite,
+      TopologyAssignException tae)
+    {
+      this();
+      this.ite = ite;
+      this.tae = tae;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public submitTopologyAfterRestart_result(submitTopologyAfterRestart_result other) {
+      if (other.is_set_ite()) {
+        this.ite = new InvalidTopologyException(other.ite);
+      }
+      if (other.is_set_tae()) {
+        this.tae = new TopologyAssignException(other.tae);
+      }
+    }
+
+    public submitTopologyAfterRestart_result deepCopy() {
+      return new submitTopologyAfterRestart_result(this);
+    }
+
+    @Override
+    public void clear() {
+      this.ite = null;
+      this.tae = null;
+    }
+
+    public InvalidTopologyException get_ite() {
+      return this.ite;
+    }
+
+    public void set_ite(InvalidTopologyException ite) {
+      this.ite = ite;
+    }
+
+    public void unset_ite() {
+      this.ite = null;
+    }
+
+    /** Returns true if field ite is set (has been assigned a value) and false otherwise */
+    public boolean is_set_ite() {
+      return this.ite != null;
+    }
+
+    public void set_ite_isSet(boolean value) {
+      if (!value) {
+        this.ite = null;
+      }
+    }
+
+    public TopologyAssignException get_tae() {
+      return this.tae;
+    }
+
+    public void set_tae(TopologyAssignException tae) {
+      this.tae = tae;
+    }
+
+    public void unset_tae() {
+      this.tae = null;
+    }
+
+    /** Returns true if field tae is set (has been assigned a value) and false otherwise */
+    public boolean is_set_tae() {
+      return this.tae != null;
+    }
+
+    public void set_tae_isSet(boolean value) {
+      if (!value) {
+        this.tae = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      case ITE:
+        if (value == null) {
+          unset_ite();
+        } else {
+          set_ite((InvalidTopologyException)value);
+        }
+        break;
+
+      case TAE:
+        if (value == null) {
+          unset_tae();
+        } else {
+          set_tae((TopologyAssignException)value);
+        }
+        break;
+
+      }
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      case ITE:
+        return get_ite();
+
+      case TAE:
+        return get_tae();
+
+      }
+      throw new IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new IllegalArgumentException();
+      }
+
+      switch (field) {
+      case ITE:
+        return is_set_ite();
+      case TAE:
+        return is_set_tae();
+      }
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof submitTopologyAfterRestart_result)
+        return this.equals((submitTopologyAfterRestart_result)that);
+      return false;
+    }
+
+    public boolean equals(submitTopologyAfterRestart_result that) {
+      if (that == null)
+        return false;
+
+      boolean this_present_ite = true && this.is_set_ite();
+      boolean that_present_ite = true && that.is_set_ite();
+      if (this_present_ite || that_present_ite) {
+        if (!(this_present_ite && that_present_ite))
+          return false;
+        if (!this.ite.equals(that.ite))
+          return false;
+      }
+
+      boolean this_present_tae = true && this.is_set_tae();
+      boolean that_present_tae = true && that.is_set_tae();
+      if (this_present_tae || that_present_tae) {
+        if (!(this_present_tae && that_present_tae))
+          return false;
+        if (!this.tae.equals(that.tae))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      HashCodeBuilder builder = new HashCodeBuilder();
+
+      boolean present_ite = true && (is_set_ite());
+      builder.append(present_ite);
+      if (present_ite)
+        builder.append(ite);
+
+      boolean present_tae = true && (is_set_tae());
+      builder.append(present_tae);
+      if (present_tae)
+        builder.append(tae);
+
+      return builder.toHashCode();
+    }
+
+    public int compareTo(submitTopologyAfterRestart_result other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+      submitTopologyAfterRestart_result typedOther = (submitTopologyAfterRestart_result)other;
+
+      lastComparison = Boolean.valueOf(is_set_ite()).compareTo(typedOther.is_set_ite());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_ite()) {
+        lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.ite, typedOther.ite);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      lastComparison = Boolean.valueOf(is_set_tae()).compareTo(typedOther.is_set_tae());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_tae()) {
+        lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.tae, typedOther.tae);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.thrift7.protocol.TProtocol iprot) throws org.apache.thrift7.TException {
+      org.apache.thrift7.protocol.TField field;
+      iprot.readStructBegin();
+      while (true)
+      {
+        field = iprot.readFieldBegin();
+        if (field.type == org.apache.thrift7.protocol.TType.STOP) { 
+          break;
+        }
+        switch (field.id) {
+          case 1: // ITE
+            if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
+              this.ite = new InvalidTopologyException();
+              this.ite.read(iprot);
+            } else { 
+              org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          case 2: // TAE
+            if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
+              this.tae = new TopologyAssignException();
+              this.tae.read(iprot);
+            } else { 
+              org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          default:
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+        }
+        iprot.readFieldEnd();
+      }
+      iprot.readStructEnd();
+      validate();
+    }
+
+    public void write(org.apache.thrift7.protocol.TProtocol oprot) throws org.apache.thrift7.TException {
+      oprot.writeStructBegin(STRUCT_DESC);
+
+      if (this.is_set_ite()) {
+        oprot.writeFieldBegin(ITE_FIELD_DESC);
+        this.ite.write(oprot);
+        oprot.writeFieldEnd();
+      } else if (this.is_set_tae()) {
+        oprot.writeFieldBegin(TAE_FIELD_DESC);
+        this.tae.write(oprot);
+        oprot.writeFieldEnd();
+      }
+      oprot.writeFieldStop();
+      oprot.writeStructEnd();
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("submitTopologyAfterRestart_result(");
+      boolean first = true;
+
       sb.append("ite:");
       if (this.ite == null) {
         sb.append("null");
@@ -8070,6 +9041,887 @@ public class Nimbus {
         sb.append("null");
       } else {
         sb.append(this.e);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.thrift7.TException {
+      // check for required fields
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(out)));
+      } catch (org.apache.thrift7.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+      try {
+        read(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(in)));
+      } catch (org.apache.thrift7.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+  }
+
+  public static class restart_args implements org.apache.thrift7.TBase<restart_args, restart_args._Fields>, java.io.Serializable, Cloneable   {
+    private static final org.apache.thrift7.protocol.TStruct STRUCT_DESC = new org.apache.thrift7.protocol.TStruct("restart_args");
+
+    private static final org.apache.thrift7.protocol.TField NAME_FIELD_DESC = new org.apache.thrift7.protocol.TField("name", org.apache.thrift7.protocol.TType.STRING, (short)1);
+    private static final org.apache.thrift7.protocol.TField JSON_CONF_FIELD_DESC = new org.apache.thrift7.protocol.TField("jsonConf", org.apache.thrift7.protocol.TType.STRING, (short)2);
+
+    private String name; // required
+    private String jsonConf; // required
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
+      NAME((short)1, "name"),
+      JSON_CONF((short)2, "jsonConf");
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 1: // NAME
+            return NAME;
+          case 2: // JSON_CONF
+            return JSON_CONF;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+
+    public static final Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift7.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.NAME, new org.apache.thrift7.meta_data.FieldMetaData("name", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRING)));
+      tmpMap.put(_Fields.JSON_CONF, new org.apache.thrift7.meta_data.FieldMetaData("jsonConf", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRING)));
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      org.apache.thrift7.meta_data.FieldMetaData.addStructMetaDataMap(restart_args.class, metaDataMap);
+    }
+
+    public restart_args() {
+    }
+
+    public restart_args(
+      String name,
+      String jsonConf)
+    {
+      this();
+      this.name = name;
+      this.jsonConf = jsonConf;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public restart_args(restart_args other) {
+      if (other.is_set_name()) {
+        this.name = other.name;
+      }
+      if (other.is_set_jsonConf()) {
+        this.jsonConf = other.jsonConf;
+      }
+    }
+
+    public restart_args deepCopy() {
+      return new restart_args(this);
+    }
+
+    @Override
+    public void clear() {
+      this.name = null;
+      this.jsonConf = null;
+    }
+
+    public String get_name() {
+      return this.name;
+    }
+
+    public void set_name(String name) {
+      this.name = name;
+    }
+
+    public void unset_name() {
+      this.name = null;
+    }
+
+    /** Returns true if field name is set (has been assigned a value) and false otherwise */
+    public boolean is_set_name() {
+      return this.name != null;
+    }
+
+    public void set_name_isSet(boolean value) {
+      if (!value) {
+        this.name = null;
+      }
+    }
+
+    public String get_jsonConf() {
+      return this.jsonConf;
+    }
+
+    public void set_jsonConf(String jsonConf) {
+      this.jsonConf = jsonConf;
+    }
+
+    public void unset_jsonConf() {
+      this.jsonConf = null;
+    }
+
+    /** Returns true if field jsonConf is set (has been assigned a value) and false otherwise */
+    public boolean is_set_jsonConf() {
+      return this.jsonConf != null;
+    }
+
+    public void set_jsonConf_isSet(boolean value) {
+      if (!value) {
+        this.jsonConf = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      case NAME:
+        if (value == null) {
+          unset_name();
+        } else {
+          set_name((String)value);
+        }
+        break;
+
+      case JSON_CONF:
+        if (value == null) {
+          unset_jsonConf();
+        } else {
+          set_jsonConf((String)value);
+        }
+        break;
+
+      }
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      case NAME:
+        return get_name();
+
+      case JSON_CONF:
+        return get_jsonConf();
+
+      }
+      throw new IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new IllegalArgumentException();
+      }
+
+      switch (field) {
+      case NAME:
+        return is_set_name();
+      case JSON_CONF:
+        return is_set_jsonConf();
+      }
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof restart_args)
+        return this.equals((restart_args)that);
+      return false;
+    }
+
+    public boolean equals(restart_args that) {
+      if (that == null)
+        return false;
+
+      boolean this_present_name = true && this.is_set_name();
+      boolean that_present_name = true && that.is_set_name();
+      if (this_present_name || that_present_name) {
+        if (!(this_present_name && that_present_name))
+          return false;
+        if (!this.name.equals(that.name))
+          return false;
+      }
+
+      boolean this_present_jsonConf = true && this.is_set_jsonConf();
+      boolean that_present_jsonConf = true && that.is_set_jsonConf();
+      if (this_present_jsonConf || that_present_jsonConf) {
+        if (!(this_present_jsonConf && that_present_jsonConf))
+          return false;
+        if (!this.jsonConf.equals(that.jsonConf))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      HashCodeBuilder builder = new HashCodeBuilder();
+
+      boolean present_name = true && (is_set_name());
+      builder.append(present_name);
+      if (present_name)
+        builder.append(name);
+
+      boolean present_jsonConf = true && (is_set_jsonConf());
+      builder.append(present_jsonConf);
+      if (present_jsonConf)
+        builder.append(jsonConf);
+
+      return builder.toHashCode();
+    }
+
+    public int compareTo(restart_args other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+      restart_args typedOther = (restart_args)other;
+
+      lastComparison = Boolean.valueOf(is_set_name()).compareTo(typedOther.is_set_name());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_name()) {
+        lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.name, typedOther.name);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      lastComparison = Boolean.valueOf(is_set_jsonConf()).compareTo(typedOther.is_set_jsonConf());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_jsonConf()) {
+        lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.jsonConf, typedOther.jsonConf);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.thrift7.protocol.TProtocol iprot) throws org.apache.thrift7.TException {
+      org.apache.thrift7.protocol.TField field;
+      iprot.readStructBegin();
+      while (true)
+      {
+        field = iprot.readFieldBegin();
+        if (field.type == org.apache.thrift7.protocol.TType.STOP) { 
+          break;
+        }
+        switch (field.id) {
+          case 1: // NAME
+            if (field.type == org.apache.thrift7.protocol.TType.STRING) {
+              this.name = iprot.readString();
+            } else { 
+              org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          case 2: // JSON_CONF
+            if (field.type == org.apache.thrift7.protocol.TType.STRING) {
+              this.jsonConf = iprot.readString();
+            } else { 
+              org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          default:
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+        }
+        iprot.readFieldEnd();
+      }
+      iprot.readStructEnd();
+      validate();
+    }
+
+    public void write(org.apache.thrift7.protocol.TProtocol oprot) throws org.apache.thrift7.TException {
+      validate();
+
+      oprot.writeStructBegin(STRUCT_DESC);
+      if (this.name != null) {
+        oprot.writeFieldBegin(NAME_FIELD_DESC);
+        oprot.writeString(this.name);
+        oprot.writeFieldEnd();
+      }
+      if (this.jsonConf != null) {
+        oprot.writeFieldBegin(JSON_CONF_FIELD_DESC);
+        oprot.writeString(this.jsonConf);
+        oprot.writeFieldEnd();
+      }
+      oprot.writeFieldStop();
+      oprot.writeStructEnd();
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("restart_args(");
+      boolean first = true;
+
+      sb.append("name:");
+      if (this.name == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.name);
+      }
+      first = false;
+      if (!first) sb.append(", ");
+      sb.append("jsonConf:");
+      if (this.jsonConf == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.jsonConf);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.thrift7.TException {
+      // check for required fields
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(out)));
+      } catch (org.apache.thrift7.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+      try {
+        read(new org.apache.thrift7.protocol.TCompactProtocol(new org.apache.thrift7.transport.TIOStreamTransport(in)));
+      } catch (org.apache.thrift7.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+  }
+
+  public static class restart_result implements org.apache.thrift7.TBase<restart_result, restart_result._Fields>, java.io.Serializable, Cloneable   {
+    private static final org.apache.thrift7.protocol.TStruct STRUCT_DESC = new org.apache.thrift7.protocol.TStruct("restart_result");
+
+    private static final org.apache.thrift7.protocol.TField E_FIELD_DESC = new org.apache.thrift7.protocol.TField("e", org.apache.thrift7.protocol.TType.STRUCT, (short)1);
+    private static final org.apache.thrift7.protocol.TField ITE_FIELD_DESC = new org.apache.thrift7.protocol.TField("ite", org.apache.thrift7.protocol.TType.STRUCT, (short)2);
+    private static final org.apache.thrift7.protocol.TField TAE_FIELD_DESC = new org.apache.thrift7.protocol.TField("tae", org.apache.thrift7.protocol.TType.STRUCT, (short)3);
+
+    private NotAliveException e; // required
+    private InvalidTopologyException ite; // required
+    private TopologyAssignException tae; // required
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
+      E((short)1, "e"),
+      ITE((short)2, "ite"),
+      TAE((short)3, "tae");
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 1: // E
+            return E;
+          case 2: // ITE
+            return ITE;
+          case 3: // TAE
+            return TAE;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+
+    public static final Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, org.apache.thrift7.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift7.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.E, new org.apache.thrift7.meta_data.FieldMetaData("e", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRUCT)));
+      tmpMap.put(_Fields.ITE, new org.apache.thrift7.meta_data.FieldMetaData("ite", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRUCT)));
+      tmpMap.put(_Fields.TAE, new org.apache.thrift7.meta_data.FieldMetaData("tae", org.apache.thrift7.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift7.meta_data.FieldValueMetaData(org.apache.thrift7.protocol.TType.STRUCT)));
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      org.apache.thrift7.meta_data.FieldMetaData.addStructMetaDataMap(restart_result.class, metaDataMap);
+    }
+
+    public restart_result() {
+    }
+
+    public restart_result(
+      NotAliveException e,
+      InvalidTopologyException ite,
+      TopologyAssignException tae)
+    {
+      this();
+      this.e = e;
+      this.ite = ite;
+      this.tae = tae;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public restart_result(restart_result other) {
+      if (other.is_set_e()) {
+        this.e = new NotAliveException(other.e);
+      }
+      if (other.is_set_ite()) {
+        this.ite = new InvalidTopologyException(other.ite);
+      }
+      if (other.is_set_tae()) {
+        this.tae = new TopologyAssignException(other.tae);
+      }
+    }
+
+    public restart_result deepCopy() {
+      return new restart_result(this);
+    }
+
+    @Override
+    public void clear() {
+      this.e = null;
+      this.ite = null;
+      this.tae = null;
+    }
+
+    public NotAliveException get_e() {
+      return this.e;
+    }
+
+    public void set_e(NotAliveException e) {
+      this.e = e;
+    }
+
+    public void unset_e() {
+      this.e = null;
+    }
+
+    /** Returns true if field e is set (has been assigned a value) and false otherwise */
+    public boolean is_set_e() {
+      return this.e != null;
+    }
+
+    public void set_e_isSet(boolean value) {
+      if (!value) {
+        this.e = null;
+      }
+    }
+
+    public InvalidTopologyException get_ite() {
+      return this.ite;
+    }
+
+    public void set_ite(InvalidTopologyException ite) {
+      this.ite = ite;
+    }
+
+    public void unset_ite() {
+      this.ite = null;
+    }
+
+    /** Returns true if field ite is set (has been assigned a value) and false otherwise */
+    public boolean is_set_ite() {
+      return this.ite != null;
+    }
+
+    public void set_ite_isSet(boolean value) {
+      if (!value) {
+        this.ite = null;
+      }
+    }
+
+    public TopologyAssignException get_tae() {
+      return this.tae;
+    }
+
+    public void set_tae(TopologyAssignException tae) {
+      this.tae = tae;
+    }
+
+    public void unset_tae() {
+      this.tae = null;
+    }
+
+    /** Returns true if field tae is set (has been assigned a value) and false otherwise */
+    public boolean is_set_tae() {
+      return this.tae != null;
+    }
+
+    public void set_tae_isSet(boolean value) {
+      if (!value) {
+        this.tae = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      case E:
+        if (value == null) {
+          unset_e();
+        } else {
+          set_e((NotAliveException)value);
+        }
+        break;
+
+      case ITE:
+        if (value == null) {
+          unset_ite();
+        } else {
+          set_ite((InvalidTopologyException)value);
+        }
+        break;
+
+      case TAE:
+        if (value == null) {
+          unset_tae();
+        } else {
+          set_tae((TopologyAssignException)value);
+        }
+        break;
+
+      }
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      case E:
+        return get_e();
+
+      case ITE:
+        return get_ite();
+
+      case TAE:
+        return get_tae();
+
+      }
+      throw new IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new IllegalArgumentException();
+      }
+
+      switch (field) {
+      case E:
+        return is_set_e();
+      case ITE:
+        return is_set_ite();
+      case TAE:
+        return is_set_tae();
+      }
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof restart_result)
+        return this.equals((restart_result)that);
+      return false;
+    }
+
+    public boolean equals(restart_result that) {
+      if (that == null)
+        return false;
+
+      boolean this_present_e = true && this.is_set_e();
+      boolean that_present_e = true && that.is_set_e();
+      if (this_present_e || that_present_e) {
+        if (!(this_present_e && that_present_e))
+          return false;
+        if (!this.e.equals(that.e))
+          return false;
+      }
+
+      boolean this_present_ite = true && this.is_set_ite();
+      boolean that_present_ite = true && that.is_set_ite();
+      if (this_present_ite || that_present_ite) {
+        if (!(this_present_ite && that_present_ite))
+          return false;
+        if (!this.ite.equals(that.ite))
+          return false;
+      }
+
+      boolean this_present_tae = true && this.is_set_tae();
+      boolean that_present_tae = true && that.is_set_tae();
+      if (this_present_tae || that_present_tae) {
+        if (!(this_present_tae && that_present_tae))
+          return false;
+        if (!this.tae.equals(that.tae))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      HashCodeBuilder builder = new HashCodeBuilder();
+
+      boolean present_e = true && (is_set_e());
+      builder.append(present_e);
+      if (present_e)
+        builder.append(e);
+
+      boolean present_ite = true && (is_set_ite());
+      builder.append(present_ite);
+      if (present_ite)
+        builder.append(ite);
+
+      boolean present_tae = true && (is_set_tae());
+      builder.append(present_tae);
+      if (present_tae)
+        builder.append(tae);
+
+      return builder.toHashCode();
+    }
+
+    public int compareTo(restart_result other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+      restart_result typedOther = (restart_result)other;
+
+      lastComparison = Boolean.valueOf(is_set_e()).compareTo(typedOther.is_set_e());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_e()) {
+        lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.e, typedOther.e);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      lastComparison = Boolean.valueOf(is_set_ite()).compareTo(typedOther.is_set_ite());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_ite()) {
+        lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.ite, typedOther.ite);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      lastComparison = Boolean.valueOf(is_set_tae()).compareTo(typedOther.is_set_tae());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (is_set_tae()) {
+        lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.tae, typedOther.tae);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.thrift7.protocol.TProtocol iprot) throws org.apache.thrift7.TException {
+      org.apache.thrift7.protocol.TField field;
+      iprot.readStructBegin();
+      while (true)
+      {
+        field = iprot.readFieldBegin();
+        if (field.type == org.apache.thrift7.protocol.TType.STOP) { 
+          break;
+        }
+        switch (field.id) {
+          case 1: // E
+            if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
+              this.e = new NotAliveException();
+              this.e.read(iprot);
+            } else { 
+              org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          case 2: // ITE
+            if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
+              this.ite = new InvalidTopologyException();
+              this.ite.read(iprot);
+            } else { 
+              org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          case 3: // TAE
+            if (field.type == org.apache.thrift7.protocol.TType.STRUCT) {
+              this.tae = new TopologyAssignException();
+              this.tae.read(iprot);
+            } else { 
+              org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+            }
+            break;
+          default:
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+        }
+        iprot.readFieldEnd();
+      }
+      iprot.readStructEnd();
+      validate();
+    }
+
+    public void write(org.apache.thrift7.protocol.TProtocol oprot) throws org.apache.thrift7.TException {
+      oprot.writeStructBegin(STRUCT_DESC);
+
+      if (this.is_set_e()) {
+        oprot.writeFieldBegin(E_FIELD_DESC);
+        this.e.write(oprot);
+        oprot.writeFieldEnd();
+      } else if (this.is_set_ite()) {
+        oprot.writeFieldBegin(ITE_FIELD_DESC);
+        this.ite.write(oprot);
+        oprot.writeFieldEnd();
+      } else if (this.is_set_tae()) {
+        oprot.writeFieldBegin(TAE_FIELD_DESC);
+        this.tae.write(oprot);
+        oprot.writeFieldEnd();
+      }
+      oprot.writeFieldStop();
+      oprot.writeStructEnd();
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("restart_result(");
+      boolean first = true;
+
+      sb.append("e:");
+      if (this.e == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.e);
+      }
+      first = false;
+      if (!first) sb.append(", ");
+      sb.append("ite:");
+      if (this.ite == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.ite);
+      }
+      first = false;
+      if (!first) sb.append(", ");
+      sb.append("tae:");
+      if (this.tae == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.tae);
       }
       first = false;
       sb.append(")");

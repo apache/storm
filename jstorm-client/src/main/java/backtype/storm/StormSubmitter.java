@@ -1,6 +1,8 @@
 package backtype.storm;
 
+import java.io.File;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,8 +22,6 @@ import backtype.storm.generated.TopologySummary;
 import backtype.storm.utils.BufferFileInputStream;
 import backtype.storm.utils.NimbusClient;
 import backtype.storm.utils.Utils;
-
-import com.alibaba.fastjson.JSON;
 
 /**
  * Use this class to submit topologies to run on the Storm cluster. You should
@@ -58,11 +58,33 @@ public class StormSubmitter {
 			InvalidTopologyException {
 		submitTopology(name, stormConf, topology, null);
 	}
-	
+
 	public static void submitTopology(String name, Map stormConf,
-			StormTopology topology, SubmitOptions opts, ProgressListener listener)
-			throws AlreadyAliveException, InvalidTopologyException
-			 {
+			StormTopology topology, SubmitOptions opts, List<File> jarFiles)
+			throws AlreadyAliveException, InvalidTopologyException {
+		Map<String, String> jars = new HashMap<String, String>(jarFiles.size());
+		List<String> names = new ArrayList<String>(jarFiles.size());
+		if (jarFiles == null)
+			jarFiles = new ArrayList<File>();
+		for (File f : jarFiles) {
+			if (!f.exists()) {
+				LOG.info(f.getName() + " is not existed: "
+						+ f.getAbsolutePath());
+				continue;
+			}
+			jars.put(f.getName(), f.getAbsolutePath());
+			names.add(f.getName());
+		}
+		LOG.info("Files: " + names + " will be loaded");
+		stormConf.put(GenericOptionsParser.TOPOLOGY_LIB_PATH, jars);
+		stormConf.put(GenericOptionsParser.TOPOLOGY_LIB_NAME, names);
+		submitTopology(name, stormConf, topology, opts);
+	}
+
+	public static void submitTopology(String name, Map stormConf,
+			StormTopology topology, SubmitOptions opts,
+			ProgressListener listener) throws AlreadyAliveException,
+			InvalidTopologyException {
 		submitTopology(name, stormConf, topology, opts);
 	}
 
@@ -86,8 +108,7 @@ public class StormSubmitter {
 	 */
 	public static void submitTopology(String name, Map stormConf,
 			StormTopology topology, SubmitOptions opts)
-			throws AlreadyAliveException, InvalidTopologyException
-			 {
+			throws AlreadyAliveException, InvalidTopologyException {
 		if (!Utils.isValidConf(stormConf)) {
 			throw new IllegalArgumentException(
 					"Storm conf is not valid. Must be json-serializable");
@@ -98,7 +119,7 @@ public class StormSubmitter {
 		conf.putAll(stormConf);
 		putUserInfo(conf, stormConf);
 		try {
-			String serConf = JSON.toJSONString(stormConf);
+			String serConf = Utils.to_json(stormConf);
 			if (localNimbus != null) {
 				LOG.info("Submitting topology " + name + " in local mode");
 				localNimbus.submitTopology(name, null, serConf, topology);
@@ -120,7 +141,7 @@ public class StormSubmitter {
 						client.getClient().submitTopology(name, path, serConf,
 								topology);
 					}
-				}  finally {
+				} finally {
 					client.close();
 				}
 			}
@@ -134,12 +155,12 @@ public class StormSubmitter {
 		} catch (TopologyAssignException e) {
 			LOG.warn("Failed to assign " + e.get_msg(), e);
 			throw new RuntimeException(e);
-		}catch (TException e) {
-		    LOG.warn("Failed to assign ", e);
+		} catch (TException e) {
+			LOG.warn("Failed to assign ", e);
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	/**
 	 * Submits a topology to run on the cluster with a progress bar. A topology
 	 * runs forever or until explicitly killed.
@@ -155,7 +176,7 @@ public class StormSubmitter {
 	 *             if a topology with this name is already running
 	 * @throws InvalidTopologyException
 	 *             if an invalid topology was submitted
-	 * @throws TopologyAssignException 
+	 * @throws TopologyAssignException
 	 */
 
 	public static void submitTopologyWithProgressBar(String name,
@@ -163,7 +184,7 @@ public class StormSubmitter {
 			throws AlreadyAliveException, InvalidTopologyException {
 		submitTopologyWithProgressBar(name, stormConf, topology, null);
 	}
-	
+
 	/**
 	 * Submits a topology to run on the cluster with a progress bar. A topology
 	 * runs forever or until explicitly killed.
@@ -181,7 +202,7 @@ public class StormSubmitter {
 	 *             if a topology with this name is already running
 	 * @throws InvalidTopologyException
 	 *             if an invalid topology was submitted
-	 * @throws TopologyAssignException 
+	 * @throws TopologyAssignException
 	 */
 
 	public static void submitTopologyWithProgressBar(String name,
@@ -281,7 +302,7 @@ public class StormSubmitter {
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		} finally {
-			
+
 		}
 	}
 
@@ -290,34 +311,49 @@ public class StormSubmitter {
 		stormConf.put("user.name", conf.get("user.name"));
 		stormConf.put("user.password", conf.get("user.password"));
 	}
-	
+
 	/**
-     * Interface use to track progress of file upload
-     */
-    public interface ProgressListener {
-        /**
-         * called before file is uploaded
-         * @param srcFile - jar file to be uploaded
-         * @param targetFile - destination file
-         * @param totalBytes - total number of bytes of the file
-         */
-        public void onStart(String srcFile, String targetFile, long totalBytes);
+	 * Interface use to track progress of file upload
+	 */
+	public interface ProgressListener {
+		/**
+		 * called before file is uploaded
+		 * 
+		 * @param srcFile
+		 *            - jar file to be uploaded
+		 * @param targetFile
+		 *            - destination file
+		 * @param totalBytes
+		 *            - total number of bytes of the file
+		 */
+		public void onStart(String srcFile, String targetFile, long totalBytes);
 
-        /**
-         * called whenever a chunk of bytes is uploaded
-         * @param srcFile - jar file to be uploaded
-         * @param targetFile - destination file
-         * @param bytesUploaded - number of bytes transferred so far
-         * @param totalBytes - total number of bytes of the file
-         */
-        public void onProgress(String srcFile, String targetFile, long bytesUploaded, long totalBytes);
+		/**
+		 * called whenever a chunk of bytes is uploaded
+		 * 
+		 * @param srcFile
+		 *            - jar file to be uploaded
+		 * @param targetFile
+		 *            - destination file
+		 * @param bytesUploaded
+		 *            - number of bytes transferred so far
+		 * @param totalBytes
+		 *            - total number of bytes of the file
+		 */
+		public void onProgress(String srcFile, String targetFile,
+				long bytesUploaded, long totalBytes);
 
-        /**
-         * called when the file is uploaded
-         * @param srcFile - jar file to be uploaded
-         * @param targetFile - destination file
-         * @param totalBytes - total number of bytes of the file
-         */
-        public void onCompleted(String srcFile, String targetFile, long totalBytes);
-    }
+		/**
+		 * called when the file is uploaded
+		 * 
+		 * @param srcFile
+		 *            - jar file to be uploaded
+		 * @param targetFile
+		 *            - destination file
+		 * @param totalBytes
+		 *            - total number of bytes of the file
+		 */
+		public void onCompleted(String srcFile, String targetFile,
+				long totalBytes);
+	}
 }

@@ -17,7 +17,6 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Logger;
 
-import com.alibaba.fastjson.JSONObject;
 import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.ui.UIUtils;
 import com.alibaba.jstorm.utils.FileAttribute;
@@ -130,10 +129,10 @@ public class ListLogPage implements Serializable {
 	}
 
 	private void parseString(String input) {
-		Map<String, JSONObject> map = (Map<String, JSONObject>) JStormUtils
+		Map<String, Map> map = (Map<String, Map>) JStormUtils
 				.from_json(input);
 
-		for (JSONObject jobj : map.values()) {
+		for (Map jobj : map.values()) {
 			FileAttribute attribute = FileAttribute.fromJSONObject(jobj);
 			if (attribute != null) {
 

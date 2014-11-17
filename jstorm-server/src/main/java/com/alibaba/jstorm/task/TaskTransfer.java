@@ -19,8 +19,8 @@ import com.alibaba.jstorm.metric.JStormTimer;
 import com.alibaba.jstorm.metric.MetricDef;
 import com.alibaba.jstorm.metric.Metrics;
 import com.lmax.disruptor.EventHandler;
-import com.lmax.disruptor.MultiThreadedClaimStrategy;
 import com.lmax.disruptor.WaitStrategy;
+import com.lmax.disruptor.dsl.ProducerType;
 
 /**
  * Sending entrance
@@ -61,8 +61,8 @@ public class TaskTransfer {
 		WaitStrategy waitStrategy = (WaitStrategy) Utils
 				.newInstance((String) storm_conf
 						.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
-		this.serializeQueue = new DisruptorQueue(
-				new MultiThreadedClaimStrategy(queue_size), waitStrategy);
+		this.serializeQueue = new DisruptorQueue(taskName, ProducerType.MULTI, 
+				queue_size, waitStrategy);
 		this.serializeQueue.consumerStarted();
 		
 		String taskId = taskName.substring(taskName.indexOf(":") + 1);

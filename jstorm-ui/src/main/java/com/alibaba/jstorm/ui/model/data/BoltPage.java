@@ -29,6 +29,7 @@ import backtype.storm.generated.TopologyInfo;
 import backtype.storm.generated.TopologyMetricInfo;
 import backtype.storm.utils.NimbusClient;
 
+import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.common.stats.StatBuckets;
 import com.alibaba.jstorm.common.stats.StaticsType;
 import com.alibaba.jstorm.ui.UIUtils;
@@ -121,34 +122,36 @@ public class BoltPage implements Serializable {
 		List<ComponentTask> ret = new ArrayList<ComponentTask>();
 
 		for (TaskSummary task : taskList) {
-			TaskStats taskStats = task.get_stats();
-
-			Map<String, Long> emitted = UIUtils.mergeStream(
-					taskStats.get_emitted(), Long.valueOf(0));
-			Map<String, Double> sendTps = UIUtils.mergeStream(
-					taskStats.get_send_tps(), Double.valueOf(0));
-			Map<String, Double> recvTps = UIUtils.mergeStream(
-					taskStats.get_recv_tps(), Double.valueOf(0));
-			Map<String, Long> acked = UIUtils.mergeStream(
-					taskStats.get_acked(), Long.valueOf(0));
-			Map<String, Long> failed = UIUtils.mergeStream(
-					taskStats.get_failed(), Long.valueOf(0));
-			Map<String, Double> process = UIUtils.mergeStream(
-					taskStats.get_process_ms_avg(), Double.valueOf(0));
-
 			ComponentTask componentTask = UIUtils.getComponentTask(task, topologyid);
+			
+			if (componentTask.getStatus().equals(ConfigExtension.TASK_STATUS_ACTIVE)) {
+			    TaskStats taskStats = task.get_stats();
 
-			componentTask.setEmitted(JStormUtils.formatValue(emitted
-					.get(window)));
-			componentTask.setSendTps(JStormUtils.formatValue(sendTps
-					.get(window)));
-			componentTask.setRecvTps(JStormUtils.formatValue(recvTps
-					.get(window)));
-			componentTask.setAcked(JStormUtils.formatValue(acked.get(window)));
-			componentTask
-					.setFailed(JStormUtils.formatValue(failed.get(window)));
-			componentTask.setProcess(JStormUtils.formatValue(process
-					.get(window)));
+			    Map<String, Long> emitted = UIUtils.mergeStream(
+					    taskStats.get_emitted(), Long.valueOf(0));
+			    Map<String, Double> sendTps = UIUtils.mergeStream(
+					    taskStats.get_send_tps(), Double.valueOf(0));
+			    Map<String, Double> recvTps = UIUtils.mergeStream(
+					    taskStats.get_recv_tps(), Double.valueOf(0));
+			    Map<String, Long> acked = UIUtils.mergeStream(
+					    taskStats.get_acked(), Long.valueOf(0));
+			    Map<String, Long> failed = UIUtils.mergeStream(
+					    taskStats.get_failed(), Long.valueOf(0));
+			    Map<String, Double> process = UIUtils.mergeStream(
+					    taskStats.get_process_ms_avg(), Double.valueOf(0));		
+
+			    componentTask.setEmitted(JStormUtils.formatValue(emitted
+					    .get(window)));
+			    componentTask.setSendTps(JStormUtils.formatValue(sendTps
+					    .get(window)));
+			    componentTask.setRecvTps(JStormUtils.formatValue(recvTps
+					    .get(window)));
+			    componentTask.setAcked(JStormUtils.formatValue(acked.get(window)));
+			    componentTask
+					    .setFailed(JStormUtils.formatValue(failed.get(window)));
+			    componentTask.setProcess(JStormUtils.formatValue(process
+					    .get(window)));
+			}
 
 			ret.add(componentTask);
 		}
@@ -186,6 +189,9 @@ public class BoltPage implements Serializable {
 		List<Map<GlobalStreamId, Double>> processList = new ArrayList<Map<GlobalStreamId, Double>>();
 
 		for (TaskSummary taskSummary : taskSummaries) {
+			if (taskSummary.get_status().equals(ConfigExtension.TASK_STATUS_ACTIVE) == false)
+				continue;
+			
 			TaskStats taskStats = taskSummary.get_stats();
 
 			emittedList.add(taskStats.get_emitted().get(window));

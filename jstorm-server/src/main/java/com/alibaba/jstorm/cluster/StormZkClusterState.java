@@ -289,6 +289,8 @@ public class StormZkClusterState implements StormClusterState {
 		setLastErrInfo(topologyId, error, timeStamp);
 	}
 	
+	private static final String TASK_IS_DEAD = "is dead on"; // Full string is "task-id is dead on hostname:port"
+	
 	private void setLastErrInfo(String topologyId, String error, String timeStamp) throws Exception {
 		// Set error information in task error topology patch
 		// Last Error information format in ZK: map<report_duration, timestamp>
@@ -309,10 +311,13 @@ public class StormZkClusterState implements StormClusterState {
 		if (lastErrInfo == null)
 			lastErrInfo = new HashMap<Integer, String>();
 
+		// The error time is used to indicate how long the error info is present in UI
 		if (error.indexOf(TaskMetricInfo.QEUEU_IS_FULL) != -1)
-			lastErrInfo.put(180, timeStamp);
+			lastErrInfo.put(JStormUtils.MIN_1*3, timeStamp);
+		else if (error.indexOf(TASK_IS_DEAD) != -1)
+			lastErrInfo.put(JStormUtils.DAY_1*3, timeStamp);
 		else
-			lastErrInfo.put(1800, timeStamp);
+			lastErrInfo.put(JStormUtils.MIN_30, timeStamp);
 
 		cluster_state.set_data(lastErrTopoPath, Utils.serialize(lastErrInfo));
 	}

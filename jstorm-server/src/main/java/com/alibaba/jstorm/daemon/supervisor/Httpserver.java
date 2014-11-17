@@ -1,8 +1,11 @@
 package com.alibaba.jstorm.daemon.supervisor;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.net.BindException;
@@ -13,6 +16,7 @@ import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -24,6 +28,7 @@ import org.apache.log4j.Logger;
 import backtype.storm.daemon.Shutdownable;
 
 import com.alibaba.jstorm.client.ConfigExtension;
+import com.alibaba.jstorm.daemon.worker.Worker;
 import com.alibaba.jstorm.utils.FileAttribute;
 import com.alibaba.jstorm.utils.HttpserverUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
@@ -41,18 +46,22 @@ public class Httpserver implements Shutdownable {
 
 	private HttpServer hs;
 	private int port;
+	private Map conf;
 
-	public Httpserver(int port) {
+	public Httpserver(int port, Map conf) {
 		this.port = port;
+		this.conf = conf;
 	}
 
 	static class LogHandler implements HttpHandler {
 
 		private String logDir;
+		Map conf;
 
-		public LogHandler() {
+		public LogHandler(Map conf) {
 
 			logDir = JStormUtils.getLogDir();
+			this.conf = conf;
 
 			LOG.info("logview logDir=" + logDir); // +++
 
@@ -88,6 +97,9 @@ public class Httpserver implements Shutdownable {
 					.equals(cmd)) {
 				handleListDir(t, paramMap);
 				return;
+			}else if (HttpserverUtils.HTTPSERVER_LOGVIEW_PARAM_CMD_JSTACK.equals(cmd)) {
+				handleJstack(t, paramMap);
+				return ;
 			}
 
 			handlFailure(t, "Bad Request, Not support command type " + cmd);
@@ -175,7 +187,8 @@ public class Httpserver implements Shutdownable {
 
 				ret = new byte[(int) size];
 				fout.get(ret);
-				return new Pair<Long, byte[]>(fileSize, ret);
+				String str = new String(ret, ConfigExtension.getLogViewEncoding(conf));
+				return new Pair<Long, byte[]>(fileSize, str.getBytes());
 
 			} catch (FileNotFoundException e) {
 				LOG.warn(e);
@@ -259,6 +272,78 @@ public class Httpserver implements Shutdownable {
 			os.write(filesJson);
 			os.close();
 		}
+		
+		void handleJstack(StringBuffer sb, Integer pid) {
+
+			String cmd = "jstack " + pid;
+
+			try {
+				LOG.info("Begin to execute " + cmd);
+				Process process = JStormUtils.launch_process(cmd,
+						new HashMap<String, String>(), false);
+
+				// Process process = Runtime.getRuntime().exec(sb.toString());
+
+				InputStream stdin = process.getInputStream();
+				BufferedReader reader = new BufferedReader(new InputStreamReader(
+						stdin));
+
+				JStormUtils.sleepMs(1000);
+
+				// if (process.exitValue() != 0) {
+				// LOG.info("Failed to execute " + sb.toString());
+				// return null;
+				// }
+
+				String str;
+				while ((str = reader.readLine()) != null) {
+					if (StringUtils.isBlank(str)) {
+						// LOG.info(str + " is Blank");
+						continue;
+					}
+
+					sb.append(str).append("\r\n");
+				}
+
+				LOG.info("Successfully get output of " + cmd);
+				return ;
+			} catch (IOException e) {
+				LOG.info("Failed to execute " + cmd, e);
+				sb.append("Failed to execute " + cmd);
+				return ;
+			} catch (Exception e) {
+				LOG.info(e.getCause(), e);
+				sb.append("Failed to execute " + cmd + ", " + e.getCause());
+				return ;
+			}
+		}
+		
+		void handleJstack(HttpExchange t, Map<String, String> paramMap)
+				throws IOException {
+			String workerPort = paramMap.get(
+					HttpserverUtils.HTTPSERVER_LOGVIEW_PARAM_WORKER_PORT);
+			if (workerPort == null) {
+				handlFailure(t, "Not set worker's port");
+				return ;
+			}
+			
+			LOG.info("Begin to get jstack of " + workerPort);
+			StringBuffer sb = new StringBuffer();
+			List<Integer> pids = Worker.getOldPortPids(workerPort);
+			for (Integer pid : pids) {
+				sb.append("!!!!!!!!!!!!!!!!!!\r\n");
+				sb.append("WorkerPort:" + workerPort + ", pid:" + pid);
+				sb.append("\r\n!!!!!!!!!!!!!!!!!!\r\n");
+				
+				handleJstack(sb, pid);
+			}
+			
+			byte[] data = sb.toString().getBytes();
+			t.sendResponseHeaders(HttpURLConnection.HTTP_OK, data.length);
+			OutputStream os = t.getResponseBody();
+			os.write(data);
+			os.close();
+		}
 
 	}// LogHandler
 
@@ -270,7 +355,7 @@ public class Httpserver implements Shutdownable {
 		try {
 			hs = HttpServer.create(socketAddr, 0);
 			hs.createContext(HttpserverUtils.HTTPSERVER_CONTEXT_PATH_LOGVIEW,
-					new LogHandler());
+					new LogHandler(conf));
 			hs.setExecutor(executor);
 			hs.start();
 

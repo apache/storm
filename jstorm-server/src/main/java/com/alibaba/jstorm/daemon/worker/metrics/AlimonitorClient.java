@@ -2,6 +2,7 @@ package com.alibaba.jstorm.daemon.worker.metrics;
 
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -17,8 +18,9 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Logger;
 
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
+import backtype.storm.utils.Utils;
+
+
 
 public class AlimonitorClient extends MetricSendClient {
 
@@ -114,14 +116,14 @@ public class AlimonitorClient extends MetricSendClient {
 		}
 	}
 	
-	public JSONObject buildAliMonitorMsg(int collection_flag, String error_message) {
+	public Map buildAliMonitorMsg(int collection_flag, String error_message) {
 		// Json format of the message sent to Alimonitor
 		// {
 		//	 "collection_flag":int,
 		//	 "error_info":string,
 		//	 "MSG": ojbect | array
 		// }
-		JSONObject ret = new JSONObject();
+		Map ret = new HashMap();
 		ret.put(COLLECTION_FLAG, collection_flag);
 		ret.put(ERROR_INFO, error_message);
 		ret.put(MSG, null);
@@ -129,17 +131,17 @@ public class AlimonitorClient extends MetricSendClient {
 		return ret;
 	}
 	
-	private void addMsgData(JSONObject jsonObj, Map<String, Object> map) {
+	private void addMsgData(Map jsonObj, Map<String, Object> map) {
 		jsonObj.put(MSG, map);
 	}
 	
-	private void addMsgData(JSONObject jsonObj, List<Map<String, Object>> mapList) {
-		JSONArray jsonArray = new JSONArray();
-		for(Map<String, Object> map : mapList) {
-			jsonArray.add(map);
-		}
+	private void addMsgData(Map jsonObj, List<Map<String, Object>> mapList) {
+//		JSONArray jsonArray = new JSONArray();
+//		for(Map<String, Object> map : mapList) {
+//			jsonArray.add(map);
+//		}
 		
-		jsonObj.put(MSG, jsonArray);
+		jsonObj.put(MSG, mapList);
 	}
 
 	private boolean sendRequest(int collection_flag, String error_message,
@@ -148,7 +150,7 @@ public class AlimonitorClient extends MetricSendClient {
 		
 		if (msg.size() == 0) return ret;
 		
-		JSONObject jsonObj = buildAliMonitorMsg(collection_flag, error_message);
+		Map jsonObj = buildAliMonitorMsg(collection_flag, error_message);
 		addMsgData(jsonObj, msg);
 		String jsonMsg = jsonObj.toString();
 		LOG.info(jsonMsg);
@@ -174,10 +176,10 @@ public class AlimonitorClient extends MetricSendClient {
 		
 		if (msgList.size() == 0) return ret;
 		
-		JSONObject jsonObj = buildAliMonitorMsg(collection_flag, error_message);
+		Map jsonObj = buildAliMonitorMsg(collection_flag, error_message);
 		addMsgData(jsonObj, msgList);
 
-		String jsonMsg = jsonObj.toJSONString();
+		String jsonMsg = Utils.to_json(jsonObj); 
 		LOG.info(jsonMsg);
 		
 		if (post == true) {

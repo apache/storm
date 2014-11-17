@@ -158,7 +158,7 @@ public class Supervisor {
 
 		//Step 7 start httpserver
 		int port = ConfigExtension.getSupervisorDeamonHttpserverPort(conf);
-		Httpserver httpserver = new Httpserver(port);
+		Httpserver httpserver = new Httpserver(port, conf);
 		httpserver.start();
 		
 		//Step 8 start uploading every 60 secs
@@ -169,7 +169,7 @@ public class Supervisor {
 		} else {
 		    client = new MetricSendClient();
 		}
-		UploadSupervMetric uploadMetric = new UploadSupervMetric(stormClusterState, 
+		UploadSupervMetric uploadMetric = new UploadSupervMetric(conf, stormClusterState, 
 				supervisorId, active, 60, client);
 		AsyncLoopThread uploadMetricThread = new AsyncLoopThread(uploadMetric);
 		threads.add(uploadMetricThread);

@@ -39,8 +39,8 @@ import com.alibaba.jstorm.task.TaskShutdownDameon;
 import com.alibaba.jstorm.utils.JStormServerUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.zk.ZkTool;
-import com.lmax.disruptor.MultiThreadedClaimStrategy;
 import com.lmax.disruptor.WaitStrategy;
+import com.lmax.disruptor.dsl.ProducerType;
 
 public class WorkerData {
 	private static Logger LOG = Logger.getLogger(WorkerData.class);
@@ -188,11 +188,11 @@ public class WorkerData {
 		WaitStrategy waitStrategy = (WaitStrategy) Utils
 				.newInstance((String) conf
 						.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
-		this.transferQueue = new DisruptorQueue(new MultiThreadedClaimStrategy(
-				buffer_size), waitStrategy);
+		this.transferQueue = new DisruptorQueue("TotalTransfer", ProducerType.MULTI,
+				buffer_size, waitStrategy);
 		this.transferQueue.consumerStarted();
-		this.sendingQueue = new DisruptorQueue(new MultiThreadedClaimStrategy(
-				buffer_size), waitStrategy);
+		this.sendingQueue = new DisruptorQueue("TotalSending", ProducerType.MULTI,
+				buffer_size, waitStrategy);
 		this.sendingQueue.consumerStarted();
 		
 

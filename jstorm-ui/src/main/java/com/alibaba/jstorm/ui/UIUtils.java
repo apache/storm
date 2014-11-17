@@ -268,9 +268,14 @@ public class UIUtils {
 		componentTask.setTaskid(String.valueOf(task.get_task_id()));
 		componentTask.setHost(task.get_host());
 		componentTask.setPort(String.valueOf(task.get_port()));
-		componentTask.setUptime(StatBuckets.prettyUptimeStr(task
-				.get_uptime_secs()));
-		componentTask.setLastErr(UIUtils.getTaskError(task.get_errors()));
+		
+		componentTask.setStatus(task.get_status());
+		
+		if (componentTask.getStatus().equals(ConfigExtension.TASK_STATUS_ACTIVE)) {
+		    componentTask.setUptime(StatBuckets.prettyUptimeStr(task
+				    .get_uptime_secs()));
+		    componentTask.setLastErr(UIUtils.getTaskError(task.get_errors()));
+		}
 
 		componentTask.setIp(NetWorkUtils.host2Ip(task.get_host()));
 
@@ -293,43 +298,16 @@ public class UIUtils {
 	}
 
 	public static String mostRecentError(List<TaskSummary> summarys) {
-		TreeMap<Integer, String> map = new TreeMap<Integer, String>(
-				new DescendComparator());
+		String rtn = "";
 		int summarysSzie = 0;
 		if (summarys != null) {
 			summarysSzie = summarys.size();
 		}
 		for (int i = 0; i < summarysSzie; i++) {
 			List<ErrorInfo> einfos = summarys.get(i).get_errors();
-			if (einfos != null) {
-				int einfoSize = einfos.size();
-				for (int j = 0; j < einfoSize; j++) {
-					ErrorInfo einfo = einfos.get(j);
-					long current = System.currentTimeMillis() / 1000;
-					
-					//shorten the most recent time for "queue is full" error
-					int maxTime = maxErrortime;
-					if (einfo.get_error().indexOf("queue is full") != -1)
-						maxTime = maxErrortime / 10;
-						
-					if (current - einfo.get_error_time_secs() < maxTime) {
-						map.put(new Integer(einfo.get_error_time_secs()),
-								einfo.get_error());
-					}
-				}
-			}
+			rtn += getTaskError(einfos);
+		}
 
-		}
-		String rtn = "";
-		Collection<String> values = map.values();
-		int size = 0;
-		for (String s : values) {
-			if (size >= maxErrornum) {
-				break;
-			}
-			rtn += s + ";";
-			size++;
-		}
 		return rtn;
 	}
 
@@ -338,32 +316,30 @@ public class UIUtils {
 			return "";
 		}
 
-		TreeMap<Integer, String> map = new TreeMap<Integer, String>(
-				new DescendComparator());
+		List<String> errors = new ArrayList<String>();
 
 		for (ErrorInfo einfo : errList) {
-
 			long current = System.currentTimeMillis() / 1000;
 			
 			//shorten the most recent time for "queue is full" error
-			int maxTime = maxErrortime;
+			int maxTime = JStormUtils.MIN_30;
 			if (einfo.get_error().indexOf("queue is full") != -1)
-				maxTime = maxErrortime / 10;
+				maxTime = JStormUtils.MIN_1*3;
+			else if (einfo.get_error().indexOf("is dead on") != -1)
+				maxTime = JStormUtils.DAY_1*3;
 			
 			if (current - einfo.get_error_time_secs() < maxTime) {
-				map.put(new Integer(einfo.get_error_time_secs()),
-						einfo.get_error());
+				errors.add(einfo.get_error());
 			}
 		}
 
 		String rtn = "";
-		Collection<String> values = map.values();
 		int size = 0;
-		for (String s : values) {
+		for (String e : errors) {
 			if (size >= maxErrornum) {
 				break;
 			}
-			rtn += s + ";";
+			rtn += e + ";";
 			size++;
 		}
 		return rtn;

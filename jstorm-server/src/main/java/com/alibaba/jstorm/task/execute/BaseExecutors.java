@@ -16,8 +16,8 @@ import com.alibaba.jstorm.callback.AsyncLoopThread;
 import com.alibaba.jstorm.callback.RunnableCallback;
 import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.metric.JStormTimer;
-import com.alibaba.jstorm.metric.Metrics;
 import com.alibaba.jstorm.metric.MetricDef;
+import com.alibaba.jstorm.metric.Metrics;
 //import com.alibaba.jstorm.message.zeroMq.IRecvConnection;
 import com.alibaba.jstorm.stats.CommonStatsRolling;
 import com.alibaba.jstorm.task.TaskStatus;
@@ -26,8 +26,8 @@ import com.alibaba.jstorm.task.error.ITaskReportErr;
 import com.alibaba.jstorm.utils.JStormServerUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.lmax.disruptor.EventHandler;
-import com.lmax.disruptor.MultiThreadedClaimStrategy;
 import com.lmax.disruptor.WaitStrategy;
+import com.lmax.disruptor.dsl.ProducerType;
 
 /**
  * Base executor share between spout and bolt
@@ -106,8 +106,8 @@ public class BaseExecutors extends RunnableCallback {
 		WaitStrategy waitStrategy = (WaitStrategy) Utils
 				.newInstance((String) storm_conf
 						.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
-		this.exeQueue = new DisruptorQueue(new MultiThreadedClaimStrategy(
-				queue_size), waitStrategy);
+		this.exeQueue = new DisruptorQueue(idStr, ProducerType.MULTI,
+				queue_size, waitStrategy);
 		this.exeQueue.consumerStarted();
 
 		this.registerInnerTransfer(exeQueue);

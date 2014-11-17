@@ -7,7 +7,6 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import backtype.storm.Config;
-import backtype.storm.messaging.IConnection;
 import backtype.storm.messaging.IContext;
 import backtype.storm.serialization.KryoTupleSerializer;
 import backtype.storm.spout.ISpout;
@@ -33,8 +32,8 @@ import com.alibaba.jstorm.task.comm.UnanchoredSend;
 import com.alibaba.jstorm.task.error.ITaskReportErr;
 import com.alibaba.jstorm.task.error.TaskReportError;
 import com.alibaba.jstorm.task.error.TaskReportErrorAndDie;
-import com.alibaba.jstorm.task.execute.BoltExecutors;
 import com.alibaba.jstorm.task.execute.BaseExecutors;
+import com.alibaba.jstorm.task.execute.BoltExecutors;
 import com.alibaba.jstorm.task.execute.spout.MultipleThreadSpoutExecutors;
 import com.alibaba.jstorm.task.execute.spout.SingleThreadSpoutExecutors;
 import com.alibaba.jstorm.task.execute.spout.SpoutExecutors;
@@ -43,8 +42,8 @@ import com.alibaba.jstorm.task.heartbeat.TaskHeartbeatRunable;
 import com.alibaba.jstorm.task.heartbeat.TaskStats;
 import com.alibaba.jstorm.utils.JStormServerUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
-import com.lmax.disruptor.SingleThreadedClaimStrategy;
 import com.lmax.disruptor.WaitStrategy;
+import com.lmax.disruptor.dsl.ProducerType;
 
 /**
  * Task instance
@@ -227,8 +226,8 @@ public class Task {
 		WaitStrategy waitStrategy = (WaitStrategy) Utils
 				.newInstance((String) stormConf
 						.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
-		DisruptorQueue queue = new DisruptorQueue(
-				new SingleThreadedClaimStrategy(queueSize), waitStrategy);
+		DisruptorQueue queue = new DisruptorQueue("TaskDeserialize", ProducerType.SINGLE,
+				queueSize, waitStrategy);
 
 		deserializeQueues.put(taskid, queue);
 

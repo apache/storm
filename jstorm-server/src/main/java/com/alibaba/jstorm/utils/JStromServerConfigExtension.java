@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import backtype.storm.utils.Utils;
+
 import com.alibaba.fastjson.JSON;
 import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.client.WorkerAssignment;
@@ -15,7 +17,7 @@ public class JStromServerConfigExtension extends ConfigExtension {
 		if (conf.get(USE_USERDEFINE_ASSIGNMENT) == null)
 			return ret;
 		for (String worker : (List<String>) conf.get(USE_USERDEFINE_ASSIGNMENT)) {
-			ret.add(WorkerAssignment.parseFromObj(JSON.parse(worker)));
+			ret.add(WorkerAssignment.parseFromObj(Utils.from_json(worker)));
 		}
 		return ret;
 	}

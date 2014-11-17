@@ -9,11 +9,11 @@ import org.apache.log4j.Logger;
 
 import backtype.storm.metric.api.IStatefulObject;
 
-import com.lmax.disruptor.ClaimStrategy;
 import com.lmax.disruptor.EventFactory;
 import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.InsufficientCapacityException;
 import com.lmax.disruptor.WaitStrategy;
+import com.lmax.disruptor.dsl.ProducerType;
 
 /**
  * 
@@ -27,7 +27,8 @@ public class DisruptorWrapBlockingQueue implements IStatefulObject {
 
 	private static final int QUEUE_CAPACITY = 1024 * 128;
 	private LinkedBlockingDeque<Object> queue;
-	public DisruptorWrapBlockingQueue(ClaimStrategy claim, WaitStrategy wait) {
+	public DisruptorWrapBlockingQueue(String queueName, ProducerType producerType,
+			int bufferSize, WaitStrategy wait) {
 		queue = new LinkedBlockingDeque<Object>(QUEUE_CAPACITY);
 		LOG.info("Use LinkedBlockingDeque, capacity:" + QUEUE_CAPACITY);
 	}

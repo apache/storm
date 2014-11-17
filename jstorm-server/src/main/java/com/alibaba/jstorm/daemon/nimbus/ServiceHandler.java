@@ -104,6 +104,26 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 		submitTopologyWithOpts(name, uploadedJarLocation, jsonConf, topology,
 				options);
 	}
+	
+	private void makeAssignment(String topologyName, String topologyId, 
+			TopologyInitialStatus status) throws FailedAssignTopologyException {
+		TopologyAssignEvent assignEvent = new TopologyAssignEvent();
+		assignEvent.setTopologyId(topologyId);
+		assignEvent.setScratch(false);
+		assignEvent.setTopologyName(topologyName);
+		assignEvent.setOldStatus(Thrift
+				.topologyInitialStatusToStormStatus(status));
+
+		TopologyAssign.push(assignEvent);
+
+		boolean isSuccess = assignEvent.waitFinish();
+		if (isSuccess == true) {
+			LOG.info("Finish submit for " + topologyName);
+		} else {
+			throw new FailedAssignTopologyException(
+					assignEvent.getErrorMsg());
+		}
+	}
 
 	/**
 	 * Submit one Topology
@@ -164,7 +184,7 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 			totalStormConf.putAll(stormConf);
 
 			StormTopology normalizedTopology = NimbusUtils.normalizeTopology(
-					stormConf, topology);
+					stormConf, topology, false);
 
 			// this validates the structure of the topology
 			Common.validate_basic(normalizedTopology, totalStormConf,
@@ -183,25 +203,9 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 			setupZkTaskInfo(conf, topologyId, stormClusterState);
 
 			// make assignments for a topology
-			TopologyAssignEvent assignEvent = new TopologyAssignEvent();
-			assignEvent.setTopologyId(topologyId);
-			assignEvent.setScratch(false);
-			assignEvent.setTopologyName(topologyname);
-			assignEvent.setOldStatus(Thrift
-					.topologyInitialStatusToStormStatus(options
-							.get_initial_status()));
-
-			TopologyAssign.push(assignEvent);
 			LOG.info("Submit for " + topologyname + " with conf "
 					+ serializedConf);
-
-			boolean isSuccess = assignEvent.waitFinish();
-			if (isSuccess == true) {
-				LOG.info("Finish submit for " + topologyname);
-			} else {
-				throw new FailedAssignTopologyException(
-						assignEvent.getErrorMsg());
-			}
+			makeAssignment(topologyname, topologyId, options.get_initial_status());
 
 		} catch (FailedAssignTopologyException e) {
 			StringBuilder sb = new StringBuilder();
@@ -237,6 +241,112 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 			sb.append(", uploadedJarLocation:" + uploadedJarLocation + "\n");
 			LOG.error(sb.toString(), e);
 			throw new TopologyAssignException(sb.toString());
+		}
+
+	}
+	
+	@ Override
+	public void submitTopologyAfterRestart(String topologyname,
+            String jsonConf)
+			throws InvalidTopologyException,TopologyAssignException, TException {
+		LOG.info("Restart " + topologyname);
+		// @@@ Move validate topologyname in client code
+		try {
+			checkTopologyActive(data, topologyname, false);
+		} catch (AlreadyAliveException e) {
+			LOG.info("Fail to kill " + topologyname + " before restarting");
+			return;
+		} catch (Throwable e) {
+			LOG.info("Failed to check whether topology is alive or not", e);
+			throw new TException(e);
+		}
+		
+		int counter = data.getSubmittedCount().incrementAndGet();
+		String topologyId = topologyname + "-" + counter + "-"
+				+ TimeUtils.current_time_secs();
+
+		String stormDistDir = null;
+	    String stormTmpDir = null;
+		try {
+			// For topology restart, when conf is changed, only stormconf.ser 
+			// and stormcode.ser will be updated. storm.jar will be kept the same.
+			
+			// Copy storm files back to stormdist dir from the tmp dir
+			stormDistDir = StormConfig.masterStormdistRoot(conf, topologyId);
+		    stormTmpDir = StormConfig.masterStormTmpRoot(conf, topologyname);
+		    FileUtils.copyDirectory(new File(stormTmpDir), new File(stormDistDir));
+		    StormTopology topology = StormConfig.read_nimbus_topology_code(conf, topologyId);
+    
+		    if (jsonConf != null) {
+		    	// Update stormconf.ser
+		    	Map serConf = StormConfig.read_nimbusTmp_topology_conf(conf, topologyname);
+			    Map<Object, Object> newSerConf = (Map<Object, Object>) JStormUtils
+					    .from_json(jsonConf);
+                serConf.putAll(newSerConf);
+		    
+                Map<Object, Object> stormConf = NimbusUtils.normalizeConf(conf, serConf,
+					    topology);
+
+                File stormConfFile = new File(StormConfig.stormconf_path(stormDistDir));
+                if (stormConfFile.exists()) stormConfFile.delete();
+                FileUtils.writeByteArrayToFile(stormConfFile, Utils.serialize(stormConf));
+
+                // Update stormcode.ser
+                StormTopology normalizedTopology = NimbusUtils.normalizeTopology(
+					    stormConf, topology, true);
+                File stormCodeFile = new File(StormConfig.stormcode_path(stormDistDir));
+                if (stormCodeFile.exists()) stormCodeFile.delete();
+                FileUtils.writeByteArrayToFile(stormCodeFile, Utils.serialize(normalizedTopology));
+		    }
+		    
+			// generate TaskInfo for every bolt or spout in ZK
+			// /ZK/tasks/topoologyId/xxx
+            StormClusterState stormClusterState = data.getStormClusterState();
+			setupZkTaskInfo(conf, topologyId, stormClusterState);
+
+			// make assignments for a topology
+			LOG.info("Submit for " + topologyname + " with conf " + jsonConf);
+            makeAssignment(topologyname, topologyId, TopologyInitialStatus.ACTIVE);
+		} catch (FailedAssignTopologyException e) {
+			StringBuilder sb = new StringBuilder();
+			sb.append("Fail to sumbit topology, Root cause:");
+			if (e.getMessage() == null) {
+				sb.append("submit timeout");
+			} else {
+				sb.append(e.getMessage());
+			}
+
+			sb.append("\n\n");
+			sb.append("topologyId:" + topologyId + "\n");
+			LOG.error(sb.toString(), e);
+			throw new TopologyAssignException(sb.toString());
+		} catch (InvalidParameterException e) {
+			StringBuilder sb = new StringBuilder();
+			sb.append("Fail to sumbit topology ");
+			sb.append(e.getMessage());
+			sb.append(", cause:" + e.getCause());
+			sb.append("\n\n");
+			sb.append("topologyId:" + topologyId + "\n");
+			LOG.error(sb.toString(), e);
+			throw new InvalidParameterException(sb.toString());
+		} catch (Throwable e) {
+			StringBuilder sb = new StringBuilder();
+			sb.append("Fail to sumbit topology ");
+			sb.append(e.getMessage());
+			sb.append(", cause:" + e.getCause());
+			sb.append("\n\n");
+			sb.append("topologyId:" + topologyId + "\n");
+			LOG.error(sb.toString(), e);
+			throw new TopologyAssignException(sb.toString());
+		} finally {
+			if (stormTmpDir != null) {
+				try {
+			        File dir = new File(stormTmpDir);
+			        if (dir.exists()) FileUtils.deleteDirectory(dir);
+				} catch (Exception e) {
+					LOG.error("Failed to delete stormTmpDir=" + stormTmpDir, e);
+				}
+			}
 		}
 
 	}
@@ -364,6 +474,45 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 			throw new TException(errMsg);
 		}
 
+	}
+	
+	@Override
+	public void restart(String name, String jsonConf) throws NotAliveException, 
+	    InvalidTopologyException, TopologyAssignException, org.apache.thrift7.TException {
+		String topologyId = null;
+		
+		// Copy topology files into a tmp dir and copy the new conf.ser to this dir
+		try {
+		    topologyId = NimbusUtils.findTopoFileInStormdist(data, name);
+		    if (topologyId != null) {
+		        String srcDir = StormConfig.masterStormdistRoot(conf, topologyId);
+		        String destDir = StormConfig.masterStormTmpRoot(conf, name);		    
+		        FileUtils.copyDirectory(new File(srcDir), new File(destDir));
+		    } else {
+		    	String errorInfo = "Topology=" + name + " is not exist!";
+		    	throw new InvalidTopologyException(errorInfo);
+		    }
+		} catch (Exception e) {
+			LOG.info("InvalidTopologyException: " + e.getMessage());
+			throw new InvalidTopologyException(e.getMessage());
+		}
+		
+		// Restart the topology: Deactivate -> Kill -> Submit
+		// 1. Deactivate
+		deactivate(name);
+		JStormUtils.sleepMs(5000);
+		
+		// 2. Kill
+		KillOptions options = new KillOptions();
+		options.set_wait_secs(1);
+		killTopologyWithOpts(name, options);
+		// Wait for supervisors to kill the old topology
+		int delay = (JStormUtils.parseInt(conf.get(
+			Config.SUPERVISOR_MONITOR_FREQUENCY_SECS)))*1000 + 5000;
+		JStormUtils.sleepMs(delay);
+		
+		// 3. Submit
+		submitTopologyAfterRestart(name, jsonConf);
 	}
 
 	@Override

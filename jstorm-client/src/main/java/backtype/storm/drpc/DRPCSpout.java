@@ -22,8 +22,6 @@ import backtype.storm.tuple.Values;
 import backtype.storm.utils.ServiceRegistry;
 import backtype.storm.utils.Utils;
 
-import com.alibaba.fastjson.JSON;
-
 public class DRPCSpout extends BaseRichSpout {
 	public static Logger LOG = LoggerFactory.getLogger(DRPCSpout.class);
 
@@ -100,7 +98,7 @@ public class DRPCSpout extends BaseRichSpout {
 						returnInfo.put("port", client.getPort());
 						gotRequest = true;
 						_collector.emit(new Values(req.get_func_args(),
-								JSON.toJSONString(returnInfo)),
+								Utils.to_json(returnInfo)),
 								new DRPCMessageId(req.get_request_id(), i));
 						break;
 					}
@@ -122,7 +120,7 @@ public class DRPCSpout extends BaseRichSpout {
 						returnInfo.put("port", 0);
 						gotRequest = true;
 						_collector.emit(new Values(req.get_func_args(),
-								JSON.toJSONString(returnInfo)),
+								Utils.to_json(returnInfo)),
 								new DRPCMessageId(req.get_request_id(), 0));
 					}
 				} catch (TException e) {

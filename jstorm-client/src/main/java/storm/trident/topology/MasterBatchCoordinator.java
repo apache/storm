@@ -17,6 +17,7 @@ import java.util.TreeMap;
 import java.util.Random;
 import org.apache.log4j.Logger;
 import storm.trident.spout.ITridentSpout;
+import storm.trident.spout.ICommitterTridentSpout;
 import storm.trident.topology.state.TransactionalState;
 
 public class MasterBatchCoordinator extends BaseRichSpout { 
@@ -50,12 +51,16 @@ public class MasterBatchCoordinator extends BaseRichSpout {
     
     boolean _active = true;
     
-    public MasterBatchCoordinator(List<String> spoutIds, List<ITridentSpout> spouts) {
+    boolean sendCommit = false;
+    
+    public MasterBatchCoordinator(List<String> spoutIds, List<ITridentSpout> spouts, boolean batchCommit) {
         if(spoutIds.isEmpty()) {
             throw new IllegalArgumentException("Must manage at least one spout");
         }
         _managedSpoutIds = spoutIds;
         _spouts = spouts;
+        
+        sendCommit = batchCommit;
     }
 
     public List<String> getManagedSpoutIds(){
@@ -113,9 +118,10 @@ public class MasterBatchCoordinator extends BaseRichSpout {
         TransactionAttempt tx = (TransactionAttempt) msgId;
         TransactionStatus status = _activeTx.get(tx.getTransactionId());
         if(status!=null && tx.equals(status.attempt)) {
-            if(status.status==AttemptStatus.PROCESSING) {
+            if(status.status==AttemptStatus.PROCESSING && sendCommit) {
                 status.status = AttemptStatus.PROCESSED;
-            } else if(status.status==AttemptStatus.COMMITTING) {
+            } else if(status.status==AttemptStatus.COMMITTING || 
+            		(status.status==AttemptStatus.PROCESSING && !sendCommit)) {
                 _activeTx.remove(tx.getTransactionId());
                 _attemptIds.remove(tx.getTransactionId());
                 _collector.emit(SUCCESS_STREAM_ID, new Values(tx));

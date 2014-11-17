@@ -37,8 +37,8 @@ import com.alibaba.jstorm.task.heartbeat.TaskHeartbeatRunable;
 import com.alibaba.jstorm.utils.JStormServerUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.PathUtils;
-import com.lmax.disruptor.MultiThreadedClaimStrategy;
 import com.lmax.disruptor.WaitStrategy;
+import com.lmax.disruptor.dsl.ProducerType;
 
 /**
  * worker entrance
@@ -134,8 +134,8 @@ public class Worker {
 		WaitStrategy waitStrategy = (WaitStrategy) Utils
 				.newInstance((String) stormConf
 						.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
-		DisruptorQueue recvQueue = new DisruptorQueue(
-				new MultiThreadedClaimStrategy(queue_size), waitStrategy);
+		DisruptorQueue recvQueue = new DisruptorQueue("Dispatch", ProducerType.MULTI,
+				queue_size, waitStrategy);
 		// stop  consumerStarted
 		//recvQueue.consumerStarted();
 
@@ -331,7 +331,7 @@ public class Worker {
 		try {
 			LOG.info("Begin to execute " + sb.toString());
 			Process process = JStormUtils.launch_process(sb.toString(),
-					new HashMap<String, String>());
+					new HashMap<String, String>(), false);
 
 			// Process process = Runtime.getRuntime().exec(sb.toString());
 

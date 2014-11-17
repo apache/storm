@@ -36,6 +36,7 @@ nimbus.reassign: true
 nimbus.file.copy.expiration.secs: 600
 nimbus.topology.validator: "backtype.storm.nimbus.DefaultTopologyValidator"
 nimbus.classpath: ""
+nimbus.use.ip: false
 
 ### ui.* configs are for the master
 ui.port: 8080
@@ -146,6 +147,17 @@ topology.tasks: null
 topology.message.timeout.secs: 30
 topology.skip.missing.kryo.registrations: false
 topology.max.task.parallelism: null
+# topology.spout.parallelism and topology.bolt.parallelism are used 
+# to change the component's parallelism when executing restart command
+#topology.spout.parallelism:
+#    {
+#        "spoutName" : Num
+#    }
+#topology.bolt.parallelism: null
+#    {
+#        "BoltName_1" : Num,
+#        "BoltName_2" : Num
+#    }
 topology.max.spout.pending: null
 topology.state.synchronization.timeout.secs: 60
 topology.stats.sample.rate: 0.05
@@ -166,8 +178,14 @@ topology.max.error.report.per.interval: 5
 topology.kryo.factory: "backtype.storm.serialization.DefaultKryoFactory"
 topology.tuple.serializer: "backtype.storm.serialization.types.ListDelegateSerializer"
 topology.trident.batch.emit.interval.millis: 500
+
+# jstorm metrics monitor configuration
 topology.performance.metrics: true
 topology.alimonitor.metrics.post: false
+topology.alimonitor.topo.metrics.name: "jstorm_metric"
+topology.alimonitor.task.metrics.name: "jstorm_task_metrics"
+topology.alimonitor.worker.metrics.name: "jstorm_worker_metrics"
+topology.alimonitor.user.metrics.name: "jstorm_user_metrics"
 
 
 # enable topology use user-define classloader to avoid class conflict
@@ -202,6 +220,9 @@ spout.delay.run: 30
 #Force spout use single thread
 spout.single.thread: false
 
+#When spout pending number is full, spout nextTuple will do sleep operation
+spout.pending.full.sleep: true
+
 # container setting means jstorm is running under other system, such as hadoop-yarn/Ali-Apsara
 # For example, in Ali-Apsara, Fuxi start c++ container process, 
 # the C++ container fork process to start nimbus or supervisor 
@@ -216,6 +237,8 @@ java.sandbox.enable: false.
 nimbus.deamon.logview.port: 7621
 supervisor.deamon.logview.port: 7622
 
+# logview encoding
+supervisor.deamon.logview.encoding: "utf-8"
 
 ### when disruptor queue is full, sleep until queue isn't full
 ### the default disruptor  will query disruptor until queue isn't full

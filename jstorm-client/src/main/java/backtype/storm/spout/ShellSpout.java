@@ -1,6 +1,7 @@
 package backtype.storm.spout;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -12,7 +13,7 @@ import backtype.storm.task.TopologyContext;
 import backtype.storm.utils.ShellProcess;
 import backtype.storm.utils.Utils;
 
-import com.alibaba.fastjson.JSONObject;
+
 
 public class ShellSpout implements ISpout {
 	public static Logger LOG = LoggerFactory.getLogger(ShellSpout.class);
@@ -48,22 +49,22 @@ public class ShellSpout implements ISpout {
 		_process.destroy();
 	}
 
-	private JSONObject _next;
+	private Map _next;
 
 	public void nextTuple() {
 		if (_next == null) {
-			_next = new JSONObject();
+			_next = new HashMap();
 			_next.put("command", "next");
 		}
 
 		querySubprocess(_next);
 	}
 
-	private JSONObject _ack;
+	private Map _ack;
 
 	public void ack(Object msgId) {
 		if (_ack == null) {
-			_ack = new JSONObject();
+			_ack = new HashMap();
 			_ack.put("command", "ack");
 		}
 
@@ -71,11 +72,11 @@ public class ShellSpout implements ISpout {
 		querySubprocess(_ack);
 	}
 
-	private JSONObject _fail;
+	private Map _fail;
 
 	public void fail(Object msgId) {
 		if (_fail == null) {
-			_fail = new JSONObject();
+			_fail = new HashMap();
 			_fail.put("command", "fail");
 		}
 
@@ -88,7 +89,7 @@ public class ShellSpout implements ISpout {
 			_process.writeMessage(query);
 
 			while (true) {
-				JSONObject action = _process.readMessage();
+				Map action = _process.readMessage();
 				String command = (String) action.get("command");
 				if (command.equals("sync")) {
 					return;

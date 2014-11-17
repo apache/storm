@@ -661,7 +661,7 @@ class SyncProcessEvent extends ShutdownWork {
 		LOG.info("Launching worker with command: " + commandSB);
 		LOG.info("Environment:" + environment.toString());
 
-		JStormUtils.launch_process(commandSB.toString(), environment);
+		JStormUtils.launch_process(commandSB.toString(), environment, true);
 	}
 
 	private Set<Integer> killUselessWorkers(

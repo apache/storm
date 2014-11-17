@@ -11,6 +11,7 @@ import org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.log4j.Logger;
 
 import backtype.storm.scheduler.WorkerSlot;
+import backtype.storm.utils.Utils;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONAware;
@@ -218,11 +219,11 @@ public class WorkerAssignment extends WorkerSlot implements Serializable,
 
 		// input.addComponent("2b", 2);
 
-		String outString = JSON.toJSONString(input);
+		String outString = Utils.to_json(input);
 
 		System.out.println(input);
 
-		Object object = JSON.parse(outString);
+		Object object = Utils.from_json(outString);
 
 		System.out.println(parseFromObj(object));
 

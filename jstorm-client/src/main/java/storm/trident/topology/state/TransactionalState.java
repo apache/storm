@@ -7,14 +7,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.curator.framework.CuratorFramework;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 
 import backtype.storm.Config;
 import backtype.storm.utils.Utils;
-
-import com.alibaba.fastjson.JSON;
-import com.netflix.curator.framework.CuratorFramework;
 
 public class TransactionalState {
     CuratorFramework _curator;
@@ -52,7 +50,7 @@ public class TransactionalState {
         path = "/" + path;
         byte[] ser;
         try {
-            ser = JSON.toJSONString(obj).getBytes("UTF-8");
+            ser = Utils.to_json(obj).getBytes("UTF-8");
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
@@ -100,7 +98,7 @@ public class TransactionalState {
         path = "/" + path;
         try {
             if(_curator.checkExists().forPath(path)!=null) {
-                return JSON.parse(new String(_curator.getData().forPath(path), "UTF-8"));
+                return Utils.from_json(new String(_curator.getData().forPath(path), "UTF-8"));
             } else {
                 return null;
             }

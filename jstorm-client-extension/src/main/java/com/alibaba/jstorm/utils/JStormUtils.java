@@ -1,6 +1,7 @@
 package com.alibaba.jstorm.utils;
 
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -26,6 +27,9 @@ import javax.management.ObjectName;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteException;
+import org.apache.commons.exec.ExecuteResultHandler;
+import org.apache.commons.exec.PumpStreamHandler;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Appender;
 import org.apache.log4j.FileAppender;
 import org.apache.log4j.Logger;
@@ -50,6 +54,11 @@ public class JStormUtils {
 	public static long SIZE_1_G = SIZE_1_M * 1024;
 	public static long SIZE_1_T = SIZE_1_G * 1024;
 	public static long SIZE_1_P = SIZE_1_T * 1024;
+	
+	public static final int MIN_1  = 60;
+	public static final int MIN_30 = MIN_1 * 30;
+	public static final int HOUR_1 = MIN_30 * 2;
+	public static final int DAY_1  = HOUR_1 * 24;
 
 	public static String getErrorInfo(String baseInfo, Exception e) {
 		try {
@@ -264,17 +273,72 @@ public class JStormUtils {
 			LOG.info("Error when run " + cmd + ". Exception ", e);
 		}
 	}
+	
+	/**
+	 * If it is backend, please set resultHandler, such as DefaultExecuteResultHandler
+	 * If it is frontend, ByteArrayOutputStream.toString get the result
+	 * 
+	 * This function don't care whether the command is successfully or not
+	 * 
+	 * @param command
+	 * @param environment
+	 * @param workDir
+	 * @param resultHandler
+	 * @return
+	 * @throws IOException
+	 */
+	public static ByteArrayOutputStream launchProcess(String command, final Map environment,
+			final String workDir, ExecuteResultHandler resultHandler)
+			throws IOException {
 
-	public static java.lang.Process launch_process(String command,
-			Map<String, String> environment) throws IOException {
-		String[] cmdlist = (new String("nohup " + command)).split(" ");
+		String[] cmdlist = command.split(" ");
+
+		CommandLine cmd = new CommandLine(cmdlist[0]);
+		for (String cmdItem : cmdlist) {
+			if (StringUtils.isBlank(cmdItem) == false) {
+				cmd.addArgument(cmdItem);
+			}
+		}
+
+		DefaultExecutor executor = new DefaultExecutor();
+
+		executor.setExitValue(0);
+		if (StringUtils.isBlank(workDir) == false) {
+			executor.setWorkingDirectory(new File(workDir));
+		}
+
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+		PumpStreamHandler streamHandler = new PumpStreamHandler(out, out);
+		if (streamHandler != null) {
+			executor.setStreamHandler(streamHandler);
+		}
+
+		try {
+			if (resultHandler == null) {
+				executor.execute(cmd, environment);
+			} else {
+				executor.execute(cmd, environment, resultHandler);
+			}
+		}catch(ExecuteException e) {
+			
+			// @@@@ 
+			// failed to run command
+		}
+
+		return out;
+
+	}
+	
+	protected static java.lang.Process launchProcess(final String[] cmdlist, 
+			final Map<String, String> environment)  throws IOException {
 		ArrayList<String> buff = new ArrayList<String>();
 		for (String tok : cmdlist) {
 			if (!tok.isEmpty()) {
 				buff.add(tok);
 			}
 		}
-
+		
 		ProcessBuilder builder = new ProcessBuilder(buff);
 		builder.redirectErrorStream(true);
 		Map<String, String> process_evn = builder.environment();
@@ -283,6 +347,40 @@ public class JStormUtils {
 		}
 
 		return builder.start();
+	}
+
+	/**
+	 * @@@ it should use DefaultExecutor to start a process,
+	 * but some little problem have been found, such as exitCode/output string 
+	 * so still use the old method to start process
+	 * 
+	 * @param command
+	 * @param environment
+	 * @param backend
+	 * @return
+	 * @throws IOException
+	 */
+	public static java.lang.Process launch_process(final String command,
+			final Map<String, String> environment, boolean backend) throws IOException {
+
+		if (backend == true) {
+			new Thread(new Runnable() {
+				
+				@Override
+				public void run() {
+					String[] cmdlist = (new String("nohup " + command + " &")).split(" ");
+					try {
+						launchProcess(cmdlist, environment);
+					} catch (IOException e) {
+						LOG.error("Failed to run " + cmdlist + ":" + e.getCause(), e);
+					}
+				}
+			}).start();
+			return null;
+		}else {
+			String[] cmdlist = command.split(" ");
+			return launchProcess(cmdlist, environment);
+		}
 	}
 
 	public static String current_classpath() {
@@ -297,15 +395,11 @@ public class JStormUtils {
 	// }
 
 	public static String to_json(Map m) {
-		return JSON.toJSONString(m);
+		return Utils.to_json(m);
 	}
 
 	public static Object from_json(String json) {
-		if (json == null) {
-			return null;
-		} else {
-			return JSON.parse(json);
-		}
+		return Utils.from_json(json);
 	}
 
 	public static <V> HashMap<V, Integer> multi_set(List<V> list) {

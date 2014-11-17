@@ -5,6 +5,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -19,7 +20,6 @@ import backtype.storm.tuple.Tuple;
 import backtype.storm.utils.ShellProcess;
 import backtype.storm.utils.Utils;
 
-import com.alibaba.fastjson.JSONObject;
 
 /**
  * A bolt that shells out to another process to process tuples. ShellBolt
@@ -97,7 +97,7 @@ public class ShellBolt implements IBolt {
 			public void run() {
 				while (_running) {
 					try {
-						JSONObject action = _process.readMessage();
+						Map action = _process.readMessage();
 						if (action == null) {
 							// ignore sync
 						}
@@ -156,7 +156,7 @@ public class ShellBolt implements IBolt {
 		String genId = Long.toString(_rand.nextLong());
 		_inputs.put(genId, input);
 		try {
-			JSONObject obj = new JSONObject();
+			Map obj = new HashMap();
 			obj.put("id", genId);
 			obj.put("comp", input.getSourceComponent());
 			obj.put("stream", input.getSourceStreamId());

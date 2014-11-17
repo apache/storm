@@ -55,6 +55,8 @@ public class RefreshActive extends RunnableCallback {
 		if (active.get() == false) {
 			return;
 		}
+		
+		
 
 		try {
 			StatusType newTopologyStatus = StatusType.activate;
@@ -103,14 +105,17 @@ public class RefreshActive extends RunnableCallback {
 					+ ", new TopologyStatus:" + newTopologyStatus);
 
 			workerData.setTopologyStatus(newTopologyStatus);
+			List<TaskShutdownDameon> tasks = workerData.getShutdownTasks();
+			if(tasks == null) {
+				LOG.info("Tasks aren't ready or begin to shutdown");
+				return ;
+			}
 
 			if (newTopologyStatus.equals(StatusType.active)) {
-				List<TaskShutdownDameon> tasks = workerData.getShutdownTasks();
 				for (TaskShutdownDameon task : tasks) {
 					task.active();
 				}
 			} else {
-				List<TaskShutdownDameon> tasks = workerData.getShutdownTasks();
 				for (TaskShutdownDameon task : tasks) {
 					task.deactive();
 				}

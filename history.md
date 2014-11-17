@@ -1,16 +1,36 @@
 [JStorm English introduction](http://42.121.19.155/jstorm/JStorm-introduce-en.pptx)
 [JStorm Chinese introduction](http://42.121.19.155/jstorm/JStorm-introduce.pptx)
 
+#Release 0.9.6.2-rc
+1. Improve user experience from Web UI
+1.1 Add jstack link
+1.2 Add worker log link in supervisor page
+1.3 Add Web UI log encode setting "gbk" or "utf-8"
+1.4 Show starting tasks in component page
+1.5 Show dead task's information in UI
+1.6 Fix the bug that error info can not be displayed in UI when task is restarting
+2. Add restart command, with this command, user can reload configuration, reset worker/task parallism
+3. Upgrade curator/disruptor/guava version
+4. Revert json lib to google-simple json, wrap all json operation into two utility method
+5. Add new storm submit api, supporting submit topology under java 
+6. Enable launch process with backend method
+7. Set "spout.pending.full.sleep" default value as true
+8. Fix the bug user define sceduler not support a list of workers
+9. Add disruptor/JStormUtils junit test
+10. Enable user to configure the name of monitor name of alimonitor
+11. Add tcp option "reuseAddress" in netty framework
+12. Fix the bug: When spout does not implement the ICommitterTrident interface, MasterCoordinatorSpout will stick on commit phase.
+
 #Release 0.9.6.1
-1.Add management of multiclusters in web UI.
-2. Merge trident part from storm-0.9.3
-3. Use fastjson replace gson
-4. Reorganization the code generating metrics json
-5. Get jstorm version from $JSTORM_HOME/RELEASE instead of hardcode
-6. Change task deserialize thread's SingleThreadDisruptorQueue to MultiThreadDisruptorQueue
-7. Fix web ui display wrong number of workers in Supervisor page
-8. Fix taskheart beat thread competition in accessing task map
-9. Fix null pointer exception when killing worker and read worker's hearbeat object
+1. Add management of multiclusters to Web UI. Added management tools for multiclusters in WebUI.
+2. Merged Trident API from storm-0.9.3
+3. Replaced gson with fastjson
+4. Refactored metric json generation code.
+5. Stored version info with $JSTORM_HOME/RELEASE.
+6. Replaced SingleThreadDisruptorQueue with MultiThreadDisruptorQueue in task deserialize thread.
+7. Fixed issues with worker count on Web UI.
+8. Fixed issues with accessing the task map with multi-threads.
+9. Fixed NullPointerException while killing worker and reading worker's hearbeat object.
 10. Netty client connect to server only in NettyClient module.
 11. Add break loop operation when netty client connection is closed
 12. Fix the bug that topology warning flag present in cluster page is not consistent with error information present in topology page
@@ -24,7 +44,7 @@
 20. Print rootId when tuple failed
 21. In order to keep compatible with Storm, add submitTopologyWithProgressBar interface
 22. Upgrade netty version from 3.2.7 to 3.9.0
-23. Support assign topology to user-defined supervosors
+23. Support assign topology to user-defined supervisors
 
 
 #Release 0.9.6

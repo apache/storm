@@ -8,6 +8,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.curator.framework.CuratorFramework;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.Watcher.Event.EventType;
@@ -19,7 +20,6 @@ import com.alibaba.jstorm.callback.ClusterStateCallback;
 import com.alibaba.jstorm.callback.WatcherCallBack;
 import com.alibaba.jstorm.utils.PathUtils;
 import com.alibaba.jstorm.zk.Zookeeper;
-import com.netflix.curator.framework.CuratorFramework;
 
 /**
  * All ZK interface implementation

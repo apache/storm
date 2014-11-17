@@ -6,15 +6,15 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
+import org.codehaus.plexus.util.cli.shell.CmdShell;
 
 import backtype.storm.task.TopologyContext;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 
 public class ShellProcess {
 	public static Logger LOG = Logger.getLogger(ShellProcess.class);
@@ -38,11 +38,19 @@ public class ShellProcess {
 				_subprocess.getInputStream()));
 		processErrorStream = _subprocess.getErrorStream();
 
-		JSONObject setupInfo = new JSONObject();
+		Map setupInfo = new HashMap();
 		setupInfo.put("pidDir", context.getPIDDir());
 		setupInfo.put("conf", conf);
 		setupInfo.put("context", context);
 		writeMessage(setupInfo);
+		
+		StringBuffer sb = new StringBuffer();
+		sb.append("Begin to run command:");
+		for (String cmd: command) {
+			sb.append(cmd);
+		}
+		sb.append(setupInfo);
+		LOG.info(sb.toString());
 
 		return (Number) readMessage().get("pid");
 	}
@@ -52,7 +60,7 @@ public class ShellProcess {
 	}
 
 	public void writeMessage(Object msg) throws IOException {
-		writeString(JSON.toJSONString(msg));
+		writeString(Utils.to_json(msg));
 	}
 
 	private void writeString(String str) throws IOException {
@@ -62,9 +70,9 @@ public class ShellProcess {
 		processIn.flush();
 	}
 
-	public JSONObject readMessage() throws IOException {
+	public Map readMessage() throws IOException {
 		String string = readString();
-		JSONObject msg = (JSONObject) JSON.parse(string);
+		Map msg =  (Map)Utils.from_json(string);
 		if (msg != null) {
 			return msg;
 		} else {

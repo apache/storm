@@ -51,10 +51,10 @@ public class LocalCluster implements ILocalCluster {
 		try {
 			if (submitOpts == null) {
 				state.getNimbus().submitTopology(topologyName, null,
-						JSON.toJSONString(conf), topology);
+						Utils.to_json(conf), topology);
 			}else {
 				state.getNimbus().submitTopologyWithOpts(topologyName, null,
-						JSON.toJSONString(conf), topology, submitOpts);
+						Utils.to_json(conf), topology, submitOpts);
 			}
 			
 		} catch (Exception e) {

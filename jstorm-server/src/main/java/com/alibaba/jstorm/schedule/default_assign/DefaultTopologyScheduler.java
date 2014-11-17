@@ -148,7 +148,8 @@ public class DefaultTopologyScheduler implements IToplogyScheduler {
 				.makeWorkers(defaultContext, needAssignTasks, allocWorkerNum);
 		TaskGanker ganker = new TaskGanker(defaultContext, needAssignTasks,
 				newAssignList);
-		Set<ResourceWorkerSlot> newAssigns = ganker.gankTask();
+		Set<ResourceWorkerSlot> newAssigns = new HashSet<ResourceWorkerSlot>(
+				ganker.gankTask());
 		ret.addAll(newAssigns);
 
 		LOG.info("Keep Alive slots:" + keepAssigns);

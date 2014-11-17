@@ -23,8 +23,8 @@ import backtype.storm.utils.Utils;
 
 import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.utils.JStormUtils;
-import com.lmax.disruptor.SingleThreadedClaimStrategy;
 import com.lmax.disruptor.WaitStrategy;
+import com.lmax.disruptor.dsl.ProducerType;
 
 public class NettyUnitTest {
 
@@ -66,7 +66,7 @@ public class NettyUnitTest {
 				.newInstance((String) storm_conf
 						.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
 		DisruptorQueue recvQueue = new DisruptorQueue(
-				new SingleThreadedClaimStrategy(1024), waitStrategy);
+				"NettyUnitTest", ProducerType.SINGLE, 1024, waitStrategy);
 		server.registerQueue(recvQueue);
 
 		client = context.connect(null, "localhost", port);
@@ -115,7 +115,7 @@ public class NettyUnitTest {
 				.newInstance((String) storm_conf
 						.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
 		DisruptorQueue recvQueue = new DisruptorQueue(
-				new SingleThreadedClaimStrategy(1024), waitStrategy);
+				"NettyUnitTest", ProducerType.SINGLE, 1024, waitStrategy);
 		server.registerQueue(recvQueue);
 
 		client = context.connect(null, "localhost", port);
@@ -151,7 +151,7 @@ public class NettyUnitTest {
 				.newInstance((String) storm_conf
 						.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
 		DisruptorQueue recvQueue = new DisruptorQueue(
-				new SingleThreadedClaimStrategy(1024), waitStrategy);
+				"NettyUnitTest", ProducerType.SINGLE, 1024, waitStrategy);
 		server.registerQueue(recvQueue);
 
 		client = context.connect(null, "localhost", port);
@@ -221,7 +221,7 @@ public class NettyUnitTest {
 				.newInstance((String) storm_conf
 						.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
 		DisruptorQueue recvQueue = new DisruptorQueue(
-				new SingleThreadedClaimStrategy(1024), waitStrategy);
+				"NettyUnitTest", ProducerType.SINGLE, 1024, waitStrategy);
 		server.registerQueue(recvQueue);
 
 		TaskMessage recv = server.recv(0);
@@ -250,7 +250,7 @@ public class NettyUnitTest {
 				.newInstance((String) storm_conf
 						.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
 		DisruptorQueue recvQueue = new DisruptorQueue(
-				new SingleThreadedClaimStrategy(1024), waitStrategy);
+				"NettyUnitTest", ProducerType.SINGLE, 1024, waitStrategy);
 		server.registerQueue(recvQueue);
 
 
@@ -332,7 +332,7 @@ public class NettyUnitTest {
 				.newInstance((String) storm_conf
 						.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
 		DisruptorQueue recvQueue = new DisruptorQueue(
-				new SingleThreadedClaimStrategy(2), waitStrategy);
+				"NettyJunitTest", ProducerType.SINGLE, 4, waitStrategy);
 		server.registerQueue(recvQueue);
 
 
@@ -420,7 +420,7 @@ public class NettyUnitTest {
 				.newInstance((String) storm_conf
 						.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
 		DisruptorQueue recvQueue = new DisruptorQueue(
-				new SingleThreadedClaimStrategy(2), waitStrategy);
+				"NettyJunitTest", ProducerType.SINGLE, 4, waitStrategy);
 		server.registerQueue(recvQueue);
 
 		new Thread(new Runnable() {
@@ -534,7 +534,7 @@ public class NettyUnitTest {
 				.newInstance((String) storm_conf
 						.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
 		DisruptorQueue recvQueue = new DisruptorQueue(
-				new SingleThreadedClaimStrategy(1024), waitStrategy);
+				"NettyUnitTest", ProducerType.SINGLE, 1024, waitStrategy);
 		server.registerQueue(recvQueue);
 
 		TaskMessage recv = server.recv(0);
@@ -610,7 +610,7 @@ public class NettyUnitTest {
 				.newInstance((String) storm_conf
 						.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
 		DisruptorQueue recvQueue = new DisruptorQueue(
-				new SingleThreadedClaimStrategy(1024), waitStrategy);
+				"NettyUnitTest", ProducerType.SINGLE, 1024, waitStrategy);
 		server.registerQueue(recvQueue);
 
 		TaskMessage recv = server.recv(0);
