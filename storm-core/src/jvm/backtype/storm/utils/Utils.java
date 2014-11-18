@@ -20,7 +20,10 @@ package backtype.storm.utils;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -32,6 +35,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -45,6 +49,7 @@ import java.util.zip.GZIPInputStream;
 
 import backtype.storm.serialization.DefaultSerializationDelegate;
 import backtype.storm.serialization.SerializationDelegate;
+
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.commons.lang.StringUtils;
@@ -127,6 +132,27 @@ public class Utils {
             throw new RuntimeException(e);
         }
     }
+    
+	@SuppressWarnings("unchecked")
+	public static Map<String, Object> loadConfigFile(String file) {
+		Map<String, Object> result = new HashMap<String, Object>();
+		if (file == null) {
+			return result;
+		}
+		Yaml yaml = new Yaml();
+		InputStream in;
+		try {
+			in = new FileInputStream(new File(file));
+			Object obj = yaml.load(in);
+			if (!(obj instanceof Map)) {
+				return Collections.<String, Object> emptyMap();
+			}
+			result = (Map<String, Object>) obj;
+		} catch (FileNotFoundException e) {
+			throw new RuntimeException(e);
+		}
+		return result;
+	}
 
     public static Map findAndReadConfigFile(String name, boolean mustExist) {
         try {
@@ -193,7 +219,7 @@ public class Utils {
         if (confFile==null || confFile.equals("")) {
             storm = findAndReadConfigFile("storm.yaml", false);
         } else {
-            storm = findAndReadConfigFile(confFile, true);
+            storm = loadConfigFile(confFile);
         }
         ret.putAll(storm);
         ret.putAll(readCommandLineOpts());
