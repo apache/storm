@@ -176,7 +176,8 @@
 
       (when (<= @interval-errors max-per-interval)
         (cluster/report-error (:storm-cluster-state executor) (:storm-id executor) (:component-id executor)
-                              (memoized-local-hostname) (.getThisWorkerPort (:worker-context executor)) error)
+                              (hostname storm-conf)
+                              (.getThisWorkerPort (:worker-context executor)) error)
         ))))
 
 ;; in its own function so that it can be mocked out by tracked topologies
@@ -278,7 +279,7 @@
         task-id (:task-id task-data)
         name->imetric (-> interval->task->metric-registry (get interval) (get task-id))
         task-info (IMetricsConsumer$TaskInfo.
-                    (memoized-local-hostname)
+                    (hostname (:storm-conf executor-data))
                     (.getThisWorkerPort worker-context)
                     (:component-id executor-data)
                     task-id
@@ -301,7 +302,7 @@
         context (:worker-context executor-data)]
     (when tick-time-secs
       (if (or (system-id? (:component-id executor-data))
-              (and (not (storm-conf TOPOLOGY-ENABLE-MESSAGE-TIMEOUTS))
+              (and (= false (storm-conf TOPOLOGY-ENABLE-MESSAGE-TIMEOUTS))
                    (= :spout (:type executor-data))))
         (log-message "Timeouts disabled for executor " (:component-id executor-data) ":" (:executor-id executor-data))
         (schedule-recurring

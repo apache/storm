@@ -212,9 +212,7 @@
    :local-state (supervisor-state conf)
    :supervisor-id (.getSupervisorId isupervisor)
    :assignment-id (.getAssignmentId isupervisor)
-   :my-hostname (if (contains? conf STORM-LOCAL-HOSTNAME)
-                  (conf STORM-LOCAL-HOSTNAME)
-                  (local-hostname))
+   :my-hostname (hostname conf)
    :curr-assignment (atom nil) ;; used for reporting used ports when heartbeating
    :timer (mk-timer :kill-fn (fn [t]
                                (log-error t "Error when processing event")
@@ -366,7 +364,7 @@
       (.put local-state
             LS-LOCAL-ASSIGNMENTS
             new-assignment)
-      (swap! (:assignment-versions supervisor) versions)
+      (reset! (:assignment-versions supervisor) versions)
       (reset! (:curr-assignment supervisor) new-assignment)
       ;; remove any downloaded code that's no longer assigned or active
       ;; important that this happens after setting the local assignment so that
@@ -502,6 +500,8 @@
     :distributed [supervisor storm-id port worker-id]
     (let [conf (:conf supervisor)
           storm-home (System/getProperty "storm.home")
+          storm-options (System/getProperty "storm.options")
+          storm-conf-file (System/getProperty "storm.conf.file")
           storm-log-dir (or (System/getProperty "storm.log.dir") (str storm-home file-path-separator "logs"))
           stormroot (supervisor-stormdist-root conf storm-id)
           jlp (jlp stormroot conf)
@@ -528,6 +528,8 @@
                     [(str "-Djava.library.path=" jlp)
                      (str "-Dlogfile.name=" logfilename)
                      (str "-Dstorm.home=" storm-home)
+                     (str "-Dstorm.conf.file=" storm-conf-file)
+                     (str "-Dstorm.options=" storm-options)
                      (str "-Dstorm.log.dir=" storm-log-dir)
                      (str "-Dlogback.configurationFile=" storm-home file-path-separator "logback" file-path-separator "cluster.xml")
                      (str "-Dstorm.id=" storm-id)
