@@ -133,7 +133,7 @@ worker.heartbeat.frequency.secs: 1
 # when set false, worker will user port which specified by supervisor.slots.ports.
 # when set ture, worker will bind port that not used, the port which specified by supervisor.slots.ports
 # will be nominally port used in storm, worker will connect each other by the real bind ports.
-worker.dynamic.port: true
+worker.dynamic.port: false
 
 # control how many worker receiver threads we need per worker
 topology.worker.receiver.thread.count: 1

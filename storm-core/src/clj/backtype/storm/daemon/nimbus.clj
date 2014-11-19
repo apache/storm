@@ -704,18 +704,22 @@
                                                                       (for [id reassign-executors]
                                                                         [id now-secs]
                                                                         )))
-                                              node+port->bind-port (let [existing-executor->node+port (:executor->node+port existing-assignment)
+                                              node+port->bind-port (if-not (conf WORKER-DYNAMIC-PORT)
+                                                                     (into {}
+                                                                       (for [[executor [node port]] executor->node+port]
+                                                                         [[node port] port]))
+                                                                     (let [existing-executor->node+port (:executor->node+port existing-assignment)
                                                                          heartbeat-cache (@(:heartbeats-cache nimbus) topology-id)]
-                                                                     into {}
-                                                                          (for [[executor node+port] executor->node+port]
-                                                                            ;; we only set bind-port for the executors that scheduled node+port not changed,
-                                                                            ;; because the new scheduled worker hasn't launched, noboday knows witch port
-                                                                            ;; the worker will bind. But the not rescheduled executors may not have bind-port
-                                                                            ;; also, just in case nimbus generate schedule table again but worker hasn't
-                                                                            ;; finish it's first heartbeat.
-                                                                            (if (and (contains? existing-executor->node+port executor )
-                                                                                  (= node+port (existing-executor->node+port executor)))
-                                                                                  [node+port (:executor-bind-port (heartbeat-cache executor))])))
+                                                                       into {}
+                                                                            (for [[executor node+port] executor->node+port]
+                                                                              ;; we only set bind-port for the executors that scheduled node+port not changed,
+                                                                              ;; because the new scheduled worker hasn't launched, noboday knows witch port
+                                                                              ;; the worker will bind. But the not rescheduled executors may not have bind-port
+                                                                              ;; also, just in case nimbus generate schedule table again but worker hasn't
+                                                                              ;; finish it's first heartbeat.
+                                                                              (if (and (contains? existing-executor->node+port executor )
+                                                                                    (= node+port (existing-executor->node+port executor)))
+                                                                                    [node+port (:executor-bind-port (heartbeat-cache executor))]))))
                                               ]]
                                    {topology-id (Assignment.
                                                  (master-stormdist-root conf topology-id)

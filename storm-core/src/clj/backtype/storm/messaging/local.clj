@@ -50,6 +50,8 @@
       (while (.hasNext iter) 
          (.put send-queue (.next iter)))
       ))
+  (^int getBindPort [this]
+    port)
   (^void close [this]
     ))
 
