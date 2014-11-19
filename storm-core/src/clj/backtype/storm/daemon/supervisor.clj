@@ -97,7 +97,9 @@
 
 (defn read-worker-heartbeat [conf id]
   (let [local-state (worker-state conf id)]
-    (.get local-state LS-WORKER-HEARTBEAT)
+    (try
+      (.get local-state LS-WORKER-HEARTBEAT)
+      (catch Exception e nil))
     ))
 
 
