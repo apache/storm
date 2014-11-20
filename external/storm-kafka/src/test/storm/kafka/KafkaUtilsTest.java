@@ -111,7 +111,7 @@ public class KafkaUtilsTest {
     @Test
     public void getOffsetFromConfigAndDontForceFromStart() {
         config.forceFromStart = false;
-        config.startOffsetTime = OffsetRequest.EarliestTime();
+        config.startOffsetTime = OffsetRequest.LatestTime();
         createTopicAndSendMessage();
         long latestOffset = KafkaUtils.getOffset(simpleConsumer, config.topic, 0, OffsetRequest.LatestTime());
         long offsetFromConfig = KafkaUtils.getOffset(simpleConsumer, config.topic, 0, config);

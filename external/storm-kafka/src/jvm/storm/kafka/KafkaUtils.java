@@ -60,7 +60,7 @@ public class KafkaUtils {
 
 
     public static long getOffset(SimpleConsumer consumer, String topic, int partition, KafkaConfig config) {
-        long startOffsetTime = kafka.api.OffsetRequest.LatestTime();
+        long startOffsetTime = config.startOffsetTime;
         if ( config.forceFromStart ) {
             startOffsetTime = config.startOffsetTime;
         }
