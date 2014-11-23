@@ -188,10 +188,9 @@
       (catch Exception e (log-message (.getMessage e)))) ))
 
 (def TEST-TIMEOUT-MS
-  (let [testTimeOutKey "STORM_TEST_TIMEOUT_MS"
-        defaultTestTimeout 5000
-        propertyTestTimeout (System/getProperty testTimeOutKey)
-        environmentTestTimout (System/getenv testTimeOutKey)]
+  (let [defaultTestTimeout 5000
+        propertyTestTimeout (System/getProperty "stormTestTimeoutMs")
+        environmentTestTimout (System/getenv "STORM_TEST_TIMEOUT_MS")]
     (max defaultTestTimeout (if propertyTestTimeout (parse-int propertyTestTimeout) 0) (if environmentTestTimout (parse-int environmentTestTimout) 0))))
 
 (defmacro while-timeout [timeout-ms condition & body]
