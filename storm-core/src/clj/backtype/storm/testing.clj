@@ -188,10 +188,8 @@
       (catch Exception e (log-message (.getMessage e)))) ))
 
 (def TEST-TIMEOUT-MS
-  (let [defaultTestTimeout 5000
-        propertyTestTimeout (System/getProperty "stormTestTimeoutMs")
-        environmentTestTimout (System/getenv "STORM_TEST_TIMEOUT_MS")]
-    (max defaultTestTimeout (if propertyTestTimeout (parse-int propertyTestTimeout) 0) (if environmentTestTimout (parse-int environmentTestTimout) 0))))
+  (let [timeout (System/getenv "STORM_TEST_TIMEOUT_MS")]
+    (parse-int (if timeout timeout "5000"))))
 
 (defmacro while-timeout [timeout-ms condition & body]
   `(let [end-time# (+ (System/currentTimeMillis) ~timeout-ms)]
@@ -605,7 +603,7 @@
           track-id (-> tracked-topology :cluster ::track-id)
           waiting? (fn []
                      (or (not= target (global-amt track-id "spout-emitted"))
-                         (not= (global-amt track-id "transferred")
+                         (not= (global-amt track-id "transferred")                                 
                                (global-amt track-id "processed"))))]
       (while-timeout timeout-ms (waiting?)
                      ;; (println "Spout emitted: " (global-amt track-id "spout-emitted"))
