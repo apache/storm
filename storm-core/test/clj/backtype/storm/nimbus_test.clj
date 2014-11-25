@@ -101,19 +101,35 @@
     ((:executor->node+port assignment) executor-id)
     ))
 
+(defn executor-bind-port [cluster storm-id node+port]
+  (let [state (:storm-cluster-state cluster)
+        assignment (.assignment-info state storm-id nil)
+        node+port->bind-port (into {}
+                               (for [[np bind-port] (:node+port->bind-port assignment)]
+                                 (if (= np node+port)
+                                   [np bind-port])))]
+    (get node+port->bind-port node+port)))
+
 (defn executor-start-times [cluster storm-id]
   (let [state (:storm-cluster-state cluster)
         assignment (.assignment-info state storm-id nil)]
     (:executor->start-time-secs assignment)))
 
+(defn generate-bind-port [port]
+  (mod (+ port 12345 ) 65536))
+
 (defn do-executor-heartbeat [cluster storm-id executor]
   (let [state (:storm-cluster-state cluster)
         executor->node+port (:executor->node+port (.assignment-info state storm-id nil))
         [node port] (get executor->node+port executor)
+        conf (:daemon-conf cluster)
+        bind-port (if (conf WORKER-DYNAMIC-PORT)
+                    (generate-bind-port port)
+                    port)
         curr-beat (.get-worker-heartbeat state storm-id node port)
         stats (:executor-stats curr-beat)]
     (.worker-heartbeat! state storm-id node port
-      {:storm-id storm-id :time-secs (current-time-secs) :uptime 10 :executor-stats (merge stats {executor nil})}
+      {:storm-id storm-id :time-secs (current-time-secs) :uptime 10 :bind-port bind-port :executor-stats (merge stats {executor nil})}
       )))
 
 (defn slot-assignments [cluster storm-id]
@@ -146,10 +162,12 @@
 
 (defnk check-consistency [cluster storm-name :assigned? true]
   (let [state (:storm-cluster-state cluster)
+        conf (:daemon-conf cluster)
         storm-id (get-storm-id state storm-name)
         task-ids (task-ids cluster storm-id)
         assignment (.assignment-info state storm-id nil)
         executor->node+port (:executor->node+port assignment)
+        node+port->bind-port (:node+port->bind-port assignment)
         task->node+port (to-task->node+port executor->node+port)
         assigned-task-ids (mapcat executor-id->tasks (keys executor->node+port))
         all-nodes (set (map first (vals executor->node+port)))]
@@ -164,6 +182,12 @@
     (is (= all-nodes (set (keys (:node->host assignment)))))
     (doseq [[e s] executor->node+port]
       (is (not-nil? ((:executor->start-time-secs assignment) e))))
+
+    (doseq [[executor [node port]] executor->node+port]
+      (if (conf WORKER-DYNAMIC-PORT)
+        (is (or (= (generate-bind-port port) (get node+port->bind-port [node port]))
+              (= nil (get node+port->bind-port [node port]))))
+        (is (= port (get node+port->bind-port [node port])))))
     ))
 
  	
@@ -559,6 +583,66 @@
       (check-consistency cluster "test")
       )))
 
+(deftest test-assignment-with-worker-dynamic-port
+  (with-simulated-time-local-cluster [cluster :supervisors 2 :ports-per-supervisor 5
+                                      :daemon-conf {SUPERVISOR-ENABLE false
+                                                    NIMBUS-TASK-LAUNCH-SECS 60
+                                                    NIMBUS-TASK-TIMEOUT-SECS 20
+                                                    NIMBUS-MONITOR-FREQ-SECS 10
+                                                    NIMBUS-SUPERVISOR-TIMEOUT-SECS 100
+                                                    TOPOLOGY-ACKER-EXECUTORS 0
+                                                    WORKER-DYNAMIC-PORT true
+                                                    TOPOLOGY-METRICS-CONSUMER-REGISTER nil}]
+    (letlocals
+      (bind conf (:daemon-conf cluster))
+      (bind topology (thrift/mk-topology
+                       {"1" (thrift/mk-spout-spec (TestPlannerSpout. true) :parallelism-hint 2)}
+                       {}
+                       ))
+      (bind state (:storm-cluster-state cluster))
+      (submit-local-topology (:nimbus cluster) "test" {TOPOLOGY-WORKERS 2} topology)
+      (check-consistency cluster "test")
+      (bind storm-id (get-storm-id state "test"))
+      (bind [executor-id1 executor-id2]  (topology-executors cluster storm-id))
+      (bind ass1 (executor-assignment cluster storm-id executor-id1))
+      (bind ass2 (executor-assignment cluster storm-id executor-id2))
+      ;; before executor heart, there hasn't bind-port;
+      (is (= nil (executor-bind-port cluster storm-id ass1)))
+      (is (= nil (executor-bind-port cluster storm-id ass2)))
+
+      (advance-cluster-time cluster 59)
+      (do-executor-heartbeat cluster storm-id executor-id1)
+      (do-executor-heartbeat cluster storm-id executor-id2)
+
+      (advance-cluster-time cluster 13)
+      (is (= ass1 (executor-assignment cluster storm-id executor-id1)))
+      (is (= ass2 (executor-assignment cluster storm-id executor-id2)))
+      (is (= (generate-bind-port (second ass1)) (executor-bind-port cluster storm-id ass1)))
+      (is (= (generate-bind-port (second ass2)) (executor-bind-port cluster storm-id ass2)))
+      (do-executor-heartbeat cluster storm-id executor-id1)
+
+      (advance-cluster-time cluster 11)
+      (do-executor-heartbeat cluster storm-id executor-id1)
+      (is (= ass1 (executor-assignment cluster storm-id executor-id1)))
+      (is (= (generate-bind-port (second ass1)) (executor-bind-port cluster storm-id ass1)))
+      (check-consistency cluster "test")
+
+      ; have to wait an extra 10 seconds because nimbus may not
+      ; resynchronize its heartbeat time till monitor-time secs after
+      (advance-cluster-time cluster 11)
+      (do-executor-heartbeat cluster storm-id executor-id1)
+      (is (= ass1 (executor-assignment cluster storm-id executor-id1)))
+      (is (= (generate-bind-port (second ass1)) (executor-bind-port cluster storm-id ass1)))
+      (check-consistency cluster "test")
+
+      (advance-cluster-time cluster 11)
+      (is (= ass1 (executor-assignment cluster storm-id executor-id1)))
+      (is (not= ass2 (executor-assignment cluster storm-id executor-id2)))
+      (bind ass3 (executor-assignment cluster storm-id executor-id2))
+      (is (= (generate-bind-port (second ass1)) (executor-bind-port cluster storm-id ass1)))
+      (is (= nil (executor-bind-port cluster storm-id ass3)))
+      (check-consistency cluster "test")
+      )))
 
 (deftest test-reassignment-to-constrained-cluster
   (with-simulated-time-local-cluster [cluster :supervisors 0

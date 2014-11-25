@@ -50,11 +50,12 @@ class Server implements IConnection, IStatefulObject {
     @SuppressWarnings("rawtypes")
     Map storm_conf;
     int port;
+    int bind_port;
     private final ConcurrentHashMap<String, AtomicInteger> messagesEnqueued = new ConcurrentHashMap<String, AtomicInteger>();
     private final AtomicInteger messagesDequeued = new AtomicInteger(0);
     private final AtomicInteger[] pendingMessages;
     
-    
+
     // Create multiple queues for incoming messages. The size equals the number of receiver threads.
     // For message which is sent to same task, it will be stored in the same queue to preserve the message order.
     private LinkedBlockingQueue<ArrayList<TaskMessage>>[] message_queue;
@@ -114,6 +115,9 @@ class Server implements IConnection, IStatefulObject {
 
         // Bind and start to accept incoming connections.
         Channel channel = bootstrap.bind(new InetSocketAddress(port));
+        InetSocketAddress localAddress = (InetSocketAddress)channel.getLocalAddress();
+        bind_port = localAddress.getPort();
+
         allChannels.add(channel);
     }
     
@@ -268,7 +272,12 @@ class Server implements IConnection, IStatefulObject {
     public void send(Iterator<TaskMessage> msgs) {
       throw new RuntimeException("Server connection should not send any messages");
     }
-	
+
+    @Override
+    public int getBindPort() {
+        return bind_port;
+    }
+
     public String name() {
       return "Netty-server-localhost-" + port;
     }

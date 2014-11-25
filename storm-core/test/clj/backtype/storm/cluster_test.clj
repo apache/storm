@@ -168,8 +168,8 @@
 (deftest test-storm-cluster-state-basics
   (with-inprocess-zookeeper zk-port
     (let [state (mk-storm-state zk-port)
-          assignment1 (Assignment. "/aaa" {} {1 [2 2002 1]} {})
-          assignment2 (Assignment. "/aaa" {} {1 [2 2002]} {})
+          assignment1 (Assignment. "/aaa" {} {1 [2 2002 1]} {[2 2002 1] 1} {})
+          assignment2 (Assignment. "/aaa" {} {1 [2 2002]} {[2 2002] 1} {})
           base1 (StormBase. "/tmp/storm1" 1 {:type :active} 2 {} "")
           base2 (StormBase. "/tmp/storm2" 2 {:type :active} 2 {} "")]
       (is (= [] (.assignments state nil)))
@@ -296,3 +296,21 @@
       (mk-storm-cluster-state {})
       (verify-call-times-for mk-distributed-cluster-state 1)
       (verify-first-call-args-for-indices mk-distributed-cluster-state [4] nil))))
+
+(deftest test-storm-executor-heartbeat
+  (with-inprocess-zookeeper zk-port
+    (let [state (mk-storm-state zk-port)
+          executor-heartbeat {:storm-id "storm1"
+                              :executor-stats {1 []}
+                              :uptime 2
+                              :time-secs 2
+                              :bind-port 1024}]
+      (.setup-heartbeats! state "storm1")
+      (.setup-heartbeats! state "storm2")
+      (is (= nil (.get-worker-heartbeat state "storm1" "node1" 1024)))
+      (is (= {} (.executor-beats state "storm1" {1 ["node1" 1024]})))
+      (.worker-heartbeat! state "storm1" "node1" 1024 executor-heartbeat)
+      (is (= 1024 (:bind-port ((.executor-beats state "storm1" {1 ["node1" 1024]}) 1))))
+      (is (= {} (.executor-beats state "storm1" {2 ["node1" 1024]})))
+      (.disconnect state)
+      )))
