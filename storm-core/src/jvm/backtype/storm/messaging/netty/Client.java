@@ -54,9 +54,11 @@ public class Client extends ConnectionWithStatus {
     private final Random random = new Random();
     private final ChannelFactory factory;
     private final int buffer_size;
-    private volatile boolean closing;
+    private Status status;
 
     private int messageBatchSize;
+    private int reconnectRetryTimes;
+    Runnable connector;
     
     private AtomicLong pendings;
 
@@ -66,12 +68,12 @@ public class Client extends ConnectionWithStatus {
     private ScheduledExecutorService scheduler;
 
     @SuppressWarnings("rawtypes")
-    Client(Map storm_conf, ChannelFactory factory, 
+    Client(Map storm_conf, ChannelFactory factory,
             ScheduledExecutorService scheduler, String host, int port) {
         this.factory = factory;
         this.scheduler = scheduler;
         channelRef = new AtomicReference<Channel>(null);
-        closing = false;
+        status = Status.Connecting;
         pendings = new AtomicLong(0);
         flushCheckTimer = new AtomicLong(Long.MAX_VALUE);
 
@@ -83,6 +85,7 @@ public class Client extends ConnectionWithStatus {
         retryPolicy = new StormBoundedExponentialBackoffRetry(base_sleep_ms, max_sleep_ms, max_retries);
 
         this.messageBatchSize = Utils.getInt(storm_conf.get(Config.STORM_NETTY_MESSAGE_BATCH_SIZE), 262144);
+        reconnectRetryTimes = 0;
         
         flushCheckInterval = Utils.getInt(storm_conf.get(Config.STORM_NETTY_FLUSH_CHECK_INTERVAL_MS), 10); // default 10 ms
 
@@ -112,7 +115,7 @@ public class Client extends ConnectionWithStatus {
             @Override
             public void run() {
 
-                if(!closing) {
+                if(status == Status.Ready) {
                     long flushCheckTime = flushCheckTimer.get();
                     long now = System.currentTimeMillis();
                     if (now > flushCheckTime) {
@@ -123,6 +126,15 @@ public class Client extends ConnectionWithStatus {
                     }
                 }
                 
+            }
+        };
+
+        connector = new Runnable() {
+            @Override
+            public void run() {
+                if (status == Status.Connecting) {
+                    connect();
+                }
             }
         };
         
@@ -141,10 +153,9 @@ public class Client extends ConnectionWithStatus {
                 return;
             }
 
-            int tried = 0;
-            while (tried <= max_retries && !closing) {
+            if (reconnectRetryTimes <= max_retries && status != Status.Closed) {
 
-                LOG.info("Reconnect started for {}... [{}]", name(), tried);
+                LOG.info("Reconnect started for {}... [{}]", name(), reconnectRetryTimes);
                 LOG.debug("connection started...");
 
                 ChannelFuture future = bootstrap.connect(remote_addr);
@@ -155,37 +166,32 @@ public class Client extends ConnectionWithStatus {
                     if (null != current) {
                         current.close();
                     }
+                    scheduler.schedule(connector, retryPolicy.getSleepTimeMs(reconnectRetryTimes, 0), TimeUnit.MILLISECONDS);
+                    reconnectRetryTimes++;
                 } else {
                     channel = current;
-                    break;
+                    status = Status.Ready;
+                    reconnectRetryTimes = 0;
                 }
-                Thread.sleep(retryPolicy.getSleepTimeMs(tried, 0));
-                tried++;  
             }
 
             if (null != channel) {
                 LOG.info("connection established to a remote host " + name() + ", " + channel.toString());
                 channelRef.set(channel);
-            } else if (closing) {
+            } else if (status == Status.Closed) {
                 LOG.info("connection is closing, abort reconnecting...");
-            } else {
+            } else if (reconnectRetryTimes > max_retries){
                 close();
                 throw new RuntimeException("Remote address is not reachable. We will close this client " + name());
             }
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
             throw new RuntimeException("connection failed " + name(), e);
         }
     }
 
   @Override
   public Status status() {
-        if (closing) {
-            return Status.Closed;
-        } else if(null == channelRef.get()) {
-            return Status.Connecting;
-        } else {
-            return Status.Ready;
-        }
+        return status;
     }
 
     private int iteratorSize(Iterator<TaskMessage> msgs) {
@@ -221,7 +227,7 @@ public class Client extends ConnectionWithStatus {
     synchronized public void send(Iterator<TaskMessage> msgs) {
 
         // throw exception if the client is being closed
-        if (closing) {
+        if (status == Status.Closed) {
             LOG.info("Client is being closed, and does not take requests any more, drop the messages...");
             return;
         }
@@ -276,7 +282,7 @@ public class Client extends ConnectionWithStatus {
     }
 
     private synchronized void flush(Channel channel) {
-        if (!closing) {
+        if (status == Status.Ready) {
             if (null != messageBatch && !messageBatch.isEmpty()) {
                 MessageBatch toBeFlushed = messageBatch;
                 flushCheckTimer.set(Long.MAX_VALUE);
@@ -295,10 +301,10 @@ public class Client extends ConnectionWithStatus {
      * If the reconnection is ongoing when close() is called, we need to break that process.
      */
     public void close() {
-        if (!closing) {
+        if (status != Status.Closed) {
 
           //set closing to true so that we can interuppt the reconnecting
-          closing = true;
+          status = Status.Closed;
           LOG.info("Closing Netty Client " + name());
           doClose();
         }
@@ -380,12 +386,8 @@ public class Client extends ConnectionWithStatus {
                         channel.close();
                         if (channelRef.compareAndSet(channel, null)) {
                             // reconnect
-                            scheduler.execute(new Runnable() {
-                              @Override
-                              public void run() {
-                                connect();
-                              }
-                            });
+                            status = Status.Connecting;
+                            scheduler.execute(connector);
                         }
                     }
                 } else {
