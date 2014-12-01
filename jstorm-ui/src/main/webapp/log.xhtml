@@ -72,6 +72,7 @@
 	<c:forEach items="#{logpage.pages}" var="pages" >
 		<h:outputLink value="log.jsf" target="_blank">
                     <h:outputText value="page:#{pages.index}"  />
+                    <f:param name="clusterName" value="#{param.clusterName}" />
                     <f:param name="host" value="#{logpage.host}" />
                     <f:param name="port" value="#{logpage.port}" />
                     <f:param name="log" value="#{logpage.logFileName}" />

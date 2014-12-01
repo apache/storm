@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.log4j.Logger;
 import storm.trident.spout.ITridentSpout;
 import storm.trident.spout.ICommitterTridentSpout;
@@ -33,6 +34,12 @@ public class MasterBatchCoordinator extends BaseRichSpout {
     private static final String CURRENT_TX = "currtx";
     private static final String CURRENT_ATTEMPTS = "currattempts";
     
+    private static enum Operation {
+        ACK,
+        FAIL,
+        NEXTTUPLE
+    }
+
     private List<TransactionalState> _states = new ArrayList();
     
     TreeMap<Long, TransactionStatus> _activeTx = new TreeMap<Long, TransactionStatus>();
@@ -51,16 +58,14 @@ public class MasterBatchCoordinator extends BaseRichSpout {
     
     boolean _active = true;
     
-    boolean sendCommit = false;
+    AtomicBoolean failedOccur = new AtomicBoolean(false);
     
-    public MasterBatchCoordinator(List<String> spoutIds, List<ITridentSpout> spouts, boolean batchCommit) {
+    public MasterBatchCoordinator(List<String> spoutIds, List<ITridentSpout> spouts) {
         if(spoutIds.isEmpty()) {
             throw new IllegalArgumentException("Must manage at least one spout");
         }
         _managedSpoutIds = spoutIds;
         _spouts = spouts;
-        
-        sendCommit = batchCommit;
     }
 
     public List<String> getManagedSpoutIds(){
@@ -110,38 +115,17 @@ public class MasterBatchCoordinator extends BaseRichSpout {
 
     @Override
     public void nextTuple() {
-        sync();
+        sync(Operation.NEXTTUPLE, null);
     }
 
     @Override
     public void ack(Object msgId) {
-        TransactionAttempt tx = (TransactionAttempt) msgId;
-        TransactionStatus status = _activeTx.get(tx.getTransactionId());
-        if(status!=null && tx.equals(status.attempt)) {
-            if(status.status==AttemptStatus.PROCESSING && sendCommit) {
-                status.status = AttemptStatus.PROCESSED;
-            } else if(status.status==AttemptStatus.COMMITTING || 
-            		(status.status==AttemptStatus.PROCESSING && !sendCommit)) {
-                _activeTx.remove(tx.getTransactionId());
-                _attemptIds.remove(tx.getTransactionId());
-                _collector.emit(SUCCESS_STREAM_ID, new Values(tx));
-                _currTransaction = nextTransactionId(tx.getTransactionId());
-                for(TransactionalState state: _states) {
-                    state.setData(CURRENT_TX, _currTransaction);                    
-                }
-            }
-            sync();
-        }
+        sync(Operation.ACK, (TransactionAttempt) msgId);
     }
 
     @Override
     public void fail(Object msgId) {
-        TransactionAttempt tx = (TransactionAttempt) msgId;
-        TransactionStatus stored = _activeTx.remove(tx.getTransactionId());
-        if(stored!=null && tx.equals(stored.attempt)) {
-            _activeTx.tailMap(tx.getTransactionId()).clear();
-            sync();
-        }
+        sync(Operation.FAIL, (TransactionAttempt) msgId);
     }
     
     @Override
@@ -153,54 +137,109 @@ public class MasterBatchCoordinator extends BaseRichSpout {
         declarer.declareStream(SUCCESS_STREAM_ID, new Fields("tx"));
     }
     
-    private void sync() {
-        // note that sometimes the tuples active may be less than max_spout_pending, e.g.
-        // max_spout_pending = 3
-        // tx 1, 2, 3 active, tx 2 is acked. there won't be a commit for tx 2 (because tx 1 isn't committed yet),
-        // and there won't be a batch for tx 4 because there's max_spout_pending tx active
-        TransactionStatus maybeCommit = _activeTx.get(_currTransaction);
-        if(maybeCommit!=null && maybeCommit.status == AttemptStatus.PROCESSED) {
-            maybeCommit.status = AttemptStatus.COMMITTING;
-            _collector.emit(COMMIT_STREAM_ID, new Values(maybeCommit.attempt), maybeCommit.attempt);
-        }
+    synchronized private void sync(Operation op, TransactionAttempt attempt) {
+        TransactionStatus status;
+        long txid;
         
-        if(_active) {
-            if(_activeTx.size() < _maxTransactionActive) {
-                Long curr = _currTransaction;
-                for(int i=0; i<_maxTransactionActive; i++) {
-                    if(!_activeTx.containsKey(curr) && isReady(curr)) {
-                        // by using a monotonically increasing attempt id, downstream tasks
-                        // can be memory efficient by clearing out state for old attempts
-                        // as soon as they see a higher attempt id for a transaction
-                        Integer attemptId = _attemptIds.get(curr);
-                        if(attemptId==null) {
-                            attemptId = 0;
-                        } else {
-                            attemptId++;
-                        }
-                        _attemptIds.put(curr, attemptId);
-                        for(TransactionalState state: _states) {
-                            state.setData(CURRENT_ATTEMPTS, _attemptIds);
-                        }
-                        
-                        TransactionAttempt attempt = new TransactionAttempt(curr, attemptId);
-                        _activeTx.put(curr, new TransactionStatus(attempt));
-                        _collector.emit(BATCH_STREAM_ID, new Values(attempt), attempt);
-                        _throttler.markEvent();
-                    }
-                    curr = nextTransactionId(curr);
+        switch (op) {
+            case FAIL:
+                // Remove the failed one and the items whose id is higher than the failed one.
+                // Then those ones will be retried when nextTuple.
+                txid = attempt.getTransactionId();
+                status = _activeTx.remove(txid);
+                if(status!=null && status.attempt.equals(status.attempt)) {
+                    _activeTx.tailMap(txid).clear();
                 }
-            }
+                break;
+                
+            case ACK:
+                txid = attempt.getTransactionId();
+                status = _activeTx.get(txid);
+                if(status!=null && attempt.equals(status.attempt)) {
+                    if(status.status==AttemptStatus.PROCESSING ) {
+                        status.status = AttemptStatus.PROCESSED;
+                    } else if(status.status==AttemptStatus.COMMITTING) {
+                        status.status = AttemptStatus.COMMITTED;
+                    }
+                }
+                break;
+        
+            case NEXTTUPLE:
+                // note that sometimes the tuples active may be less than max_spout_pending, e.g.
+                // max_spout_pending = 3
+                // tx 1, 2, 3 active, tx 2 is acked. there won't be a commit for tx 2 (because tx 1 isn't committed yet),
+                // and there won't be a batch for tx 4 because there's max_spout_pending tx active
+                status = _activeTx.get(_currTransaction);
+                if (status!=null) {
+                    if(status.status == AttemptStatus.PROCESSED) {
+                        status.status = AttemptStatus.COMMITTING;
+                        _collector.emit(COMMIT_STREAM_ID, new Values(status.attempt), status.attempt);
+                    } else if (status.status == AttemptStatus.COMMITTED) {
+                        _activeTx.remove(status.attempt.getTransactionId());
+                        _attemptIds.remove(status.attempt.getTransactionId());
+                        _collector.emit(SUCCESS_STREAM_ID, new Values(status.attempt));
+                        _currTransaction = nextTransactionId(status.attempt.getTransactionId());
+                        for(TransactionalState state: _states) {
+                            state.setData(CURRENT_TX, _currTransaction);
+                        }
+                    }
+                }
+
+                if(_active) {
+                    if(_activeTx.size() < _maxTransactionActive) {
+                        Long curr = _currTransaction;
+                        for(int i=0; i<_maxTransactionActive; i++) {
+                            if(batchDelay()) {
+                                break;
+                            }
+                            
+                            if(isReady(curr)) {
+                                if(!_activeTx.containsKey(curr)) {
+                                    // by using a monotonically increasing attempt id, downstream tasks
+                                    // can be memory efficient by clearing out state for old attempts
+                                    // as soon as they see a higher attempt id for a transaction
+                                    Integer attemptId = _attemptIds.get(curr);
+                                    if(attemptId==null) {
+                                       attemptId = 0;
+                                    } else {
+                                       attemptId++;
+                                    }
+                                    _attemptIds.put(curr, attemptId);
+                                    for(TransactionalState state: _states) {
+                                        state.setData(CURRENT_ATTEMPTS, _attemptIds);
+                                    }
+                        
+                                    TransactionAttempt currAttempt = new TransactionAttempt(curr, attemptId);
+                                    _activeTx.put(curr, new TransactionStatus(currAttempt));
+                                    _collector.emit(BATCH_STREAM_ID, new Values(currAttempt), currAttempt);                   
+                                    _throttler.markEvent();
+                                    break;
+                                } 
+                            }
+                            curr = nextTransactionId(curr);
+                        }
+                    } else {
+                        // Do nothing
+                    }
+                }
+                break;
+            
+            default:
+                LOG.warn("Unknow Operation code=" + op);
+                break;
         }
     }
     
     private boolean isReady(long txid) {
-        if(_throttler.isThrottled()) return false;
         //TODO: make this strategy configurable?... right now it goes if anyone is ready
         for(ITridentSpout.BatchCoordinator coord: _coordinators) {
             if(coord.isReady(txid)) return true;
         }
         return false;
+    }
+    
+    private boolean batchDelay() {
+        return _throttler.isThrottled();
     }
 
     @Override
@@ -214,7 +253,8 @@ public class MasterBatchCoordinator extends BaseRichSpout {
     private static enum AttemptStatus {
         PROCESSING,
         PROCESSED,
-        COMMITTING
+        COMMITTING,
+        COMMITTED
     }
     
     private static class TransactionStatus {

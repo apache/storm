@@ -106,7 +106,7 @@ public class BaseExecutors extends RunnableCallback {
 		WaitStrategy waitStrategy = (WaitStrategy) Utils
 				.newInstance((String) storm_conf
 						.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
-		this.exeQueue = new DisruptorQueue(idStr, ProducerType.MULTI,
+		this.exeQueue = DisruptorQueue.mkInstance(idStr, ProducerType.MULTI,
 				queue_size, waitStrategy);
 		this.exeQueue.consumerStarted();
 

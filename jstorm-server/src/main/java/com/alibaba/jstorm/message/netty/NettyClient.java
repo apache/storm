@@ -176,7 +176,7 @@ class NettyClient implements IConnection {
 					LOG.info("Connection established, channel = :{}",
 							channel);
 					setChannel(channel);
-					handleResponse();
+					//handleResponse();
 				} else {
 					LOG.info(
 							"Failed to reconnect ... [{}], {}, channel = {}, cause = {}",

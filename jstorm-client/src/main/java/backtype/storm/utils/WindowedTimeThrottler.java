@@ -27,7 +27,7 @@ public class WindowedTimeThrottler {
 
 	private void resetIfNecessary() {
 		long now = System.currentTimeMillis();
-		if (now - _windowStartTime > _windowMillis) {
+		if (now - _windowStartTime >= _windowMillis) {
 			_windowStartTime = now;
 			_windowEvents = 0;
 		}

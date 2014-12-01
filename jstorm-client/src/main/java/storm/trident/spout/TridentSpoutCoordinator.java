@@ -46,6 +46,8 @@ public class TridentSpoutCoordinator implements IBasicBolt {
         if(tuple.getSourceStreamId().equals(MasterBatchCoordinator.SUCCESS_STREAM_ID)) {
             _state.cleanupBefore(attempt.getTransactionId());
             _coord.success(attempt.getTransactionId());
+        } else if (tuple.getSourceStreamId().equals(MasterBatchCoordinator.COMMIT_STREAM_ID)) { 
+        	// Do nothing.
         } else {
             long txid = attempt.getTransactionId();
             Object prevMeta = _state.getPreviousState(txid);

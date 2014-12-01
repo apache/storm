@@ -35,9 +35,14 @@ public class Taskpage {
 	private String window = null;
 	private List<TaskSumm> tsumms = null;
 	private List<ErrorSummary> esumms = null;
+	private String clusterName;
 
 	public Taskpage() throws TException, NotAliveException {
 		FacesContext ctx = FacesContext.getCurrentInstance();
+		if (ctx.getExternalContext().getRequestParameterMap().get("clusterName") != null) {
+			clusterName = (String) ctx.getExternalContext()
+					.getRequestParameterMap().get("clusterName");
+		}
 		if (ctx.getExternalContext().getRequestParameterMap().get("topologyid") != null) {
 			topologyid = (String) ctx.getExternalContext()
 					.getRequestParameterMap().get("topologyid");
@@ -61,7 +66,7 @@ public class Taskpage {
 
 		try {
 			Map conf = Utils.readStormConfig();
-			client = NimbusClient.getConfiguredClient(conf);
+			client = UIUtils.getNimbusClient(conf, clusterName);
 
 			TopologyInfo summ = client.getClient().getTopologyInfo(topologyid);
 
@@ -87,7 +92,10 @@ public class Taskpage {
 		} catch (NotAliveException e) {
 			LOG.error(e.getCause(), e);
 			throw e;
-		} finally {
+		} catch (Exception e) {
+			LOG.error(e.getCause(), e);
+			throw new TException(e);
+		}finally {
 			if (client != null) {
 				client.close();
 			}
@@ -138,4 +146,14 @@ public class Taskpage {
 	public void setEsumms(List<ErrorSummary> esumms) {
 		this.esumms = esumms;
 	}
+
+	public String getClusterName() {
+		return clusterName;
+	}
+
+	public void setClusterName(String clusterName) {
+		this.clusterName = clusterName;
+	}
+	
+	
 }

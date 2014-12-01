@@ -129,6 +129,7 @@ public class StormSubmitter {
 					throw new RuntimeException("Topology with name `" + name
 							+ "` already exists on cluster");
 				}
+				
 				submitJar(conf);
 				try {
 					LOG.info("Submitting topology " + name
@@ -246,17 +247,22 @@ public class StormSubmitter {
 				String[] pathCache = path.split("/");
 				String uploadLocation = path + "/stormjar-"
 						+ pathCache[pathCache.length - 1] + ".jar";
-				submittedJar = submitJar(conf, localJar, uploadLocation, client);
 				List<String> lib = (List<String>) conf
 						.get(GenericOptionsParser.TOPOLOGY_LIB_NAME);
 				Map<String, String> libPath = (Map<String, String>) conf
 						.get(GenericOptionsParser.TOPOLOGY_LIB_PATH);
-				if (lib != null) {
+				if (lib != null && lib.size() != 0) {
 					for (String libName : lib) {
 						String jarPath = path + "/" + libName;
 						client.getClient().beginLibUpload(jarPath);
 						submitJar(conf, libPath.get(libName), jarPath, client);
 					}
+					if (localJar != null)
+						submittedJar = submitJar(conf, localJar,
+								uploadLocation, client);
+				} else {
+					submittedJar = submitJar(conf, localJar, uploadLocation,
+							client);
 				}
 			} catch (Exception e) {
 				throw new RuntimeException(e);

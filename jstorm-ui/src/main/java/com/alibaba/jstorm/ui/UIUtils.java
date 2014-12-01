@@ -13,6 +13,7 @@ import java.util.TreeMap;
 
 import javax.faces.context.FacesContext;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.thrift7.protocol.TBinaryProtocol;
 import org.apache.thrift7.transport.TFramedTransport;
 import org.apache.thrift7.transport.TSocket;
@@ -269,7 +270,12 @@ public class UIUtils {
 		componentTask.setHost(task.get_host());
 		componentTask.setPort(String.valueOf(task.get_port()));
 		
+		
 		componentTask.setStatus(task.get_status());
+		if (componentTask.getStatus() == null) {
+			// This is for old jstorm version
+			componentTask.setStatus(ConfigExtension.TASK_STATUS_ACTIVE);
+		}
 		
 		if (componentTask.getStatus().equals(ConfigExtension.TASK_STATUS_ACTIVE)) {
 		    componentTask.setUptime(StatBuckets.prettyUptimeStr(task
@@ -555,6 +561,13 @@ public class UIUtils {
 				ConfigExtension.getUiClusterZkServers(cluster));
 		conf.put(Config.STORM_ZOOKEEPER_PORT, 
 				ConfigExtension.getUiClusterZkPort(cluster));
+	}
+	
+	public static NimbusClient getNimbusClient(Map conf, String clusterName) throws Exception{
+		if(StringUtils.isBlank(clusterName) == false) {
+			getClusterInfoByName(conf, clusterName);
+		}
+		return NimbusClient.getConfiguredClient(conf);
 	}
 	
 	public static void main(String[] args) {

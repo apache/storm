@@ -7,20 +7,14 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.thrift7.TException;
 
-import backtype.storm.ILocalCluster;
-import backtype.storm.generated.AlreadyAliveException;
 import backtype.storm.generated.ClusterSummary;
-import backtype.storm.generated.InvalidTopologyException;
 import backtype.storm.generated.KillOptions;
 import backtype.storm.generated.NotAliveException;
 import backtype.storm.generated.RebalanceOptions;
 import backtype.storm.generated.StormTopology;
 import backtype.storm.generated.SubmitOptions;
-import backtype.storm.generated.TopologyAssignException;
 import backtype.storm.generated.TopologyInfo;
 import backtype.storm.utils.Utils;
-
-import com.alibaba.fastjson.JSON;
 
 public class LocalCluster implements ILocalCluster {
 

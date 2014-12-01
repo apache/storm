@@ -3,6 +3,7 @@ package com.alibaba.jstorm.message.netty;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -37,6 +38,8 @@ class NettyClientSync extends NettyClient implements EventHandler {
 
 	private ConcurrentLinkedQueue<MessageBatch> batchQueue;
 	private DisruptorQueue disruptorQueue;
+	private ExecutorService bossExecutor;
+	private ExecutorService workerExecutor;
 
 	private AtomicLong emitTs = new AtomicLong(0);
 
@@ -59,8 +62,9 @@ class NettyClientSync extends NettyClient implements EventHandler {
 				.newInstance((String) storm_conf
 						.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
 
-		disruptorQueue = new DisruptorQueue(name, ProducerType.MULTI,
+		disruptorQueue = DisruptorQueue.mkInstance(name, ProducerType.MULTI,
 				MAX_SEND_PENDING * 8, waitStrategy);
+		disruptorQueue.consumerStarted();
 
 		Metrics.registerQueue(address, MetricDef.NETTY_CLI_SYNC_DISR_QUEUE, disruptorQueue, 
 				null, Metrics.MetricType.WORKER);
@@ -80,11 +84,14 @@ class NettyClientSync extends NettyClient implements EventHandler {
 		 */
 		ThreadFactory bossFactory = new NettyRenameThreadFactory(
 				PREFIX + JStormServerUtils.getName(host, port) + "-boss");
+		bossExecutor = Executors.newCachedThreadPool(bossFactory);
 		ThreadFactory workerFactory = new NettyRenameThreadFactory(
 				PREFIX + JStormServerUtils.getName(host, port) + "-worker");
+		workerExecutor = Executors.newCachedThreadPool(workerFactory);
+		
 		clientChannelFactory = new NioClientSocketChannelFactory(
-				Executors.newCachedThreadPool(bossFactory),
-				Executors.newCachedThreadPool(workerFactory), 1);
+				bossExecutor,
+				workerExecutor, 1);
 
 		start();
 
@@ -107,18 +114,16 @@ class NettyClientSync extends NettyClient implements EventHandler {
 	}
 
 	public void flushBatch(MessageBatch batch, Channel channel) {
+		emitTs.set(System.currentTimeMillis());
 		if (batch == null) {
 			LOG.warn("Handle no data to {}, this shouldn't occur", name);
 
 		} else if (channel == null || channel.isWritable() == false) {
 			LOG.warn("Channel occur exception, during batch messages {}", name);
 			batchQueue.offer(batch);
-			emitTs.set(System.currentTimeMillis());
-
 		} else {
 
 			flushRequest(channel, batch);
-			emitTs.set(System.currentTimeMillis());
 		}
 	}
 
@@ -225,16 +230,30 @@ class NettyClientSync extends NettyClient implements EventHandler {
 		long now = System.currentTimeMillis();
 
 		long delt = now - emitTime;
-		if (delt < timeoutSecond * 500) {
+		if (delt < timeoutSecond * 100) {
 			return;
 		}
 
 		Channel channel = channelRef.get();
 		if (channel != null) {
-			LOG.warn("Long time no response of {}, {}s", name, delt / 1000);
+			LOG.info("Long time no response of {}, {}s", name, delt / 1000);
 			channel.write(ControlMessage.EOB_MESSAGE);
 		}
 
+	}
+	
+	protected void shutdownPool() {
+		bossExecutor.shutdownNow();
+		workerExecutor.shutdownNow();
+
+        try {
+        	bossExecutor.awaitTermination(1, TimeUnit.SECONDS);
+        	workerExecutor.awaitTermination(1, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            LOG.error("Error when shutting down client scheduler", e);
+        }
+		
+		clientChannelFactory.releaseExternalResources();
 	}
 
 	@Override
@@ -243,11 +262,13 @@ class NettyClientSync extends NettyClient implements EventHandler {
 				"Begin to close connection to {} and flush all data, batchQueue {}, disruptor {}",
 				name, batchQueue.size(), disruptorQueue.population());
 		sendAllData();
+		disruptorQueue.haltWithInterrupt();
 		Metrics.unregister(address, MetricDef.NETTY_CLI_SYNC_BATCH_QUEUE, null, Metrics.MetricType.WORKER);
 		Metrics.unregister(address, MetricDef.NETTY_CLI_SYNC_DISR_QUEUE, null, Metrics.MetricType.WORKER);
 		super.close();
 
-		clientChannelFactory.releaseExternalResources();
+		shutdownPool();
+		
 	}
 
 	@Override

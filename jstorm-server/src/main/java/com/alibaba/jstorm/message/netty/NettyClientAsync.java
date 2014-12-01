@@ -280,8 +280,10 @@ class NettyClientAsync extends NettyClient {
 		if (directlySend) {
 			flushRequest(channel, messageBatch);
 		} else {
-			messageBatchRef.compareAndSet(null, messageBatch);
-			flush_later.set(true);
+			if(messageBatchRef.compareAndSet(null, messageBatch))
+			    flush_later.set(true);
+			else
+			    LOG.error("MessageBatch will be lost. This should not happen.");
 		}
 
 		return;
@@ -301,9 +303,9 @@ class NettyClientAsync extends NettyClient {
 			return;
 		}
 
+		flush_later.set(false);
 		MessageBatch toBeFlushed = messageBatchRef.getAndSet(null);
 		flushRequest(channel, toBeFlushed);
-		flush_later.set(false);
 	}
 
 	Channel isChannelReady() {

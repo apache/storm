@@ -30,11 +30,13 @@ public class MessageDecoder extends FrameDecoder {
 	
 	public MessageDecoder(boolean isServer) {
 		if (isServer) {
-		    timer = Metrics.registerTimer(null, MetricDef.NETTY_SERV_DECODE_TIME, 
-				    null, Metrics.MetricType.WORKER);
+		    if (timer == null)
+		        timer = Metrics.registerTimer(null, MetricDef.NETTY_SERV_DECODE_TIME, 
+				        null, Metrics.MetricType.WORKER);
 		}
 		
-		networkTransmitTimeMap = new HashMap<String, JStormHistogram>();
+		if (networkTransmitTimeMap == null)
+		    networkTransmitTimeMap = new HashMap<String, JStormHistogram>();
 	}
 
 	/*

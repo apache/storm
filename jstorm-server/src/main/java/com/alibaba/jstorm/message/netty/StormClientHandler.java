@@ -27,16 +27,16 @@ public class StormClientHandler extends SimpleChannelUpstreamHandler {
 	/**
 	 * Sometime when connect one bad channel which isn't writable, it will call this function
 	 */
-//	@Override
-//	public void channelConnected(ChannelHandlerContext ctx,
-//			ChannelStateEvent event) {
-//		// register the newly established channel
-//		Channel channel = event.getChannel();
-//		LOG.info("connection established to :{}, local port:{}",
-//				client.getRemoteAddr(), channel.getLocalAddress());
-//
-//		client.handleResponse();
-//	}
+	@Override
+	public void channelConnected(ChannelHandlerContext ctx,
+			ChannelStateEvent event) {
+		// register the newly established channel
+		Channel channel = event.getChannel();
+		LOG.info("connection established to :{}, local port:{}",
+				client.getRemoteAddr(), channel.getLocalAddress());
+
+		client.handleResponse();
+	}
 
 	@Override
 	public void messageReceived(ChannelHandlerContext ctx, MessageEvent event) {

@@ -6,7 +6,6 @@ import java.util.Map;
 
 import backtype.storm.utils.Utils;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.client.WorkerAssignment;
 

@@ -76,10 +76,15 @@ public class LogPage implements Serializable {
 
 	private String host;
 	
-	
+	private String clusterName;
 
 	public LogPage() throws Exception {
 		FacesContext ctx = FacesContext.getCurrentInstance();
+		if (ctx.getExternalContext().getRequestParameterMap().get("clusterName") != null) {
+			clusterName = (String) ctx.getExternalContext()
+					.getRequestParameterMap().get("clusterName");
+		}
+		
 		if (ctx.getExternalContext().getRequestParameterMap()
 				.get(HttpserverUtils.HTTPSERVER_LOGVIEW_PARAM_POS) != null) {
 			position = ctx.getExternalContext().getRequestParameterMap()
@@ -154,9 +159,18 @@ public class LogPage implements Serializable {
 				    topologyId = ctx.getExternalContext().getRequestParameterMap()
 						    .get("topologyId");
 			    }
-				NimbusClient client = NimbusClient.getConfiguredClient(conf);
-				TopologyInfo summ = client.getClient().getTopologyInfo(topologyId);
-				logFileName = JStormUtils.genLogName(summ.get_name(), Integer.valueOf(workerPort));
+				
+				NimbusClient client = null;
+				
+				try {
+					client = UIUtils.getNimbusClient(conf, clusterName);
+					TopologyInfo summ = client.getClient().getTopologyInfo(topologyId);
+					logFileName = JStormUtils.genLogName(summ.get_name(), Integer.valueOf(workerPort));
+				}finally {
+					if (client != null) {
+						client.close();
+					}
+				}
 			}
 			return;
 		}
@@ -189,11 +203,7 @@ public class LogPage implements Serializable {
 		NimbusClient client = null;
 
 		try {
-			if(clusterName != null && !(clusterName.equals(""))) {
-				UIUtils.getClusterInfoByName(conf, clusterName);
-			}
-			
-			client = NimbusClient.getConfiguredClient(conf);
+			client = UIUtils.getNimbusClient(conf, clusterName);
 
 			TopologyInfo summ = client.getClient().getTopologyInfo(topologyid);
 
@@ -383,6 +393,14 @@ public class LogPage implements Serializable {
 
 	public void setHost(String host) {
 		this.host = host;
+	}
+
+	public String getClusterName() {
+		return clusterName;
+	}
+
+	public void setClusterName(String clusterName) {
+		this.clusterName = clusterName;
 	}
 	
 	

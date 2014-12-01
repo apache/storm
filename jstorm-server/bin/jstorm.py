@@ -370,6 +370,9 @@ def main():
     parse_config(config_list)
     COMMAND = args[0]
     ARGS = args[1:]
+    if COMMANDS.get(COMMAND) == None:
+        unknown_command(COMMAND)
+        sys.exit(-1)
     (COMMANDS.get(COMMAND, "help"))(*ARGS)
     
 if __name__ == "__main__":

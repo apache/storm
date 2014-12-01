@@ -97,6 +97,8 @@ public class restart {
 			} else {
 				Map loadConf = LoadConf(args[1]);
 				String jsonConf = Utils.to_json(loadConf);
+				System.out.println("New configuration:\n" + jsonConf);
+				
 				client.getClient().restart(topologyName, jsonConf);
 			}
 

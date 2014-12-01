@@ -158,8 +158,7 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 		}
 		
 		int counter = data.getSubmittedCount().incrementAndGet();
-		String topologyId = topologyname + "-" + counter + "-"
-				+ TimeUtils.current_time_secs();
+		String topologyId = Common.TopologyNameToId(topologyname, counter);
 
 		try {
 
@@ -231,6 +230,9 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 			sb.append(", uploadedJarLocation:" + uploadedJarLocation + "\n");
 			LOG.error(sb.toString(), e);
 			throw new InvalidParameterException(sb.toString());
+		} catch (InvalidTopologyException e) {
+		    LOG.error("Topology is invalid. " + e.get_msg());
+		    throw e;
 		} catch (Throwable e) {
 			StringBuilder sb = new StringBuilder();
 			sb.append("Fail to sumbit topology ");

@@ -104,7 +104,6 @@ public class RefreshActive extends RunnableCallback {
 			LOG.info("Old TopologyStatus:" + oldTopologyStatus
 					+ ", new TopologyStatus:" + newTopologyStatus);
 
-			workerData.setTopologyStatus(newTopologyStatus);
 			List<TaskShutdownDameon> tasks = workerData.getShutdownTasks();
 			if(tasks == null) {
 				LOG.info("Tasks aren't ready or begin to shutdown");
@@ -120,6 +119,7 @@ public class RefreshActive extends RunnableCallback {
 					task.deactive();
 				}
 			}
+			workerData.setTopologyStatus(newTopologyStatus);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			LOG.error("Failed to get topology from ZK ", e);

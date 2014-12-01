@@ -28,6 +28,7 @@
                    <!-- <h:outputText value="#{tsumm.topologyname}" />  -->
                      <h:outputLink  value="topology.jsf" >
                         <h:outputText value="#{tsumm.topologyname}"/>
+                        <f:param name="clusterName" value="#{param.clusterName}" />
                         <f:param name="topologyid" value="#{param.topologyid}"/>
                     </h:outputLink > 
                 </p:column>  
@@ -39,6 +40,7 @@
                       
                     <h:outputLink value="component.jsf">
                         <h:outputText value="#{tsumm.componentId}" />
+                        <f:param name="clusterName" value="#{param.clusterName}" />
 	                    <f:param name="topologyid" value="#{param.topologyid}" />
 	                    <f:param name="componentid" value="#{param.componentid}" />
 	                </h:outputLink>

@@ -21,18 +21,24 @@ import com.lmax.disruptor.dsl.ProducerType;
  * performance is the ability to catch up to the producer by processing tuples
  * in batches.
  */
-public class DisruptorWrapBlockingQueue implements IStatefulObject {
-	private static final Logger LOG = Logger.getLogger(DisruptorWrapBlockingQueue.class);
-	
+public class DisruptorWrapBlockingQueue extends DisruptorQueue {
+	private static final Logger LOG = Logger
+			.getLogger(DisruptorWrapBlockingQueue.class);
 
-	private static final int QUEUE_CAPACITY = 1024 * 128;
+	private static final long QUEUE_CAPACITY = 512;
 	private LinkedBlockingDeque<Object> queue;
-	public DisruptorWrapBlockingQueue(String queueName, ProducerType producerType,
-			int bufferSize, WaitStrategy wait) {
-		queue = new LinkedBlockingDeque<Object>(QUEUE_CAPACITY);
-		LOG.info("Use LinkedBlockingDeque, capacity:" + QUEUE_CAPACITY);
+
+	private String queueName;
+
+	public DisruptorWrapBlockingQueue(String queueName,
+			ProducerType producerType, int bufferSize, WaitStrategy wait) {
+		this.queueName = queueName;
+		queue = new LinkedBlockingDeque<Object>();
 	}
-	
+
+	public String getName() {
+		return queueName;
+	}
 
 	// poll method
 	public void consumeBatch(EventHandler<Object> handler) {
@@ -53,54 +59,40 @@ public class DisruptorWrapBlockingQueue implements IStatefulObject {
 			return null;
 		}
 	}
-
-	public void consumeBatchWhenAvailable(EventHandler<Object> handler) {
-		boolean handled = consumeBatchToCursor(0, handler);;
-		if (handled == false) {
-			try {
-				Object object = queue.take();
-				handler.onEvent(object, 0, false);
-			}catch (InterruptedException e) {
-				LOG.warn("Occur interrupt error");
-			} catch (Exception e) {
-				throw new RuntimeException(e);
-			}
-		}
-		
-	}
 	
-	public void consumeBatchWhenAvailableTimeout(EventHandler<Object> handler, long waitMs) {
-		boolean handled = consumeBatchToCursor(0, handler);;
-		if (handled == false) {
-			try {
-				Object object = queue.poll(waitMs, TimeUnit.MILLISECONDS);
-				if (object != null) {
-					handler.onEvent(object, 0, false);
-				}
-			}catch (InterruptedException e) {
-				LOG.warn("Occur interrupt error");
-			} catch (Exception e) {
-				throw new RuntimeException(e);
-			}
-		}
-	}
-
-	private boolean consumeBatchToCursor(long cursor, EventHandler<Object> handler) {
-		boolean handled = false;
-		Object object = queue.poll();
-		while(object != null) {
-			handled = true;
+	public void drainQueue(Object object, EventHandler<Object> handler) {
+		while (object != null) {
 			try {
 				handler.onEvent(object, 0, false);
 				object = queue.poll();
-			}catch (InterruptedException e) {
-				LOG.warn("Occur interrupt error");
+			} catch (InterruptedException e) {
+				LOG.warn("Occur interrupt error, " + object);
+				break;
 			} catch (Exception e) {
 				throw new RuntimeException(e);
 			}
 		}
-		
-		return handled;
+	}
+
+	public void consumeBatchWhenAvailable(EventHandler<Object> handler) {
+		Object object = queue.poll();
+		if (object == null) {
+			try {
+				object = queue.take();
+			} catch (InterruptedException e) {
+				LOG.warn("Occur interrupt error, " + object);
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+		}
+
+		drainQueue(object, handler);
+
+	}
+
+	public void consumeBatchToCursor(long cursor, EventHandler<Object> handler) {
+		Object object = queue.poll();
+		drainQueue(object, handler);
 	}
 
 	/*
@@ -116,7 +108,7 @@ public class DisruptorWrapBlockingQueue implements IStatefulObject {
 			}
 			isSuccess = queue.offer(obj);
 		}
-		
+
 	}
 
 	public void tryPublish(Object obj) throws InsufficientCapacityException {
@@ -124,14 +116,14 @@ public class DisruptorWrapBlockingQueue implements IStatefulObject {
 		if (isSuccess == false) {
 			throw InsufficientCapacityException.INSTANCE;
 		}
-		
+
 	}
 
 	public void publish(Object obj, boolean block)
 			throws InsufficientCapacityException {
 		if (block == true) {
 			publish(obj);
-		}else {
+		} else {
 			tryPublish(obj);
 		}
 	}
@@ -151,7 +143,12 @@ public class DisruptorWrapBlockingQueue implements IStatefulObject {
 	}
 
 	public long capacity() {
-		return QUEUE_CAPACITY;
+		long used = queue.size();
+		if (used < QUEUE_CAPACITY) {
+			return QUEUE_CAPACITY;
+		} else {
+			return used;
+		}
 	}
 
 	public long writePos() {
@@ -163,7 +160,12 @@ public class DisruptorWrapBlockingQueue implements IStatefulObject {
 	}
 
 	public float pctFull() {
-		return (1.0F * population() / capacity());
+		long used = queue.size();
+		if (used < QUEUE_CAPACITY) {
+			return (1.0F * used / QUEUE_CAPACITY);
+		} else {
+			return 1.0f;
+		}
 	}
 
 	@Override

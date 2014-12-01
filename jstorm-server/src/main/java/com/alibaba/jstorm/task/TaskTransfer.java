@@ -61,7 +61,7 @@ public class TaskTransfer {
 		WaitStrategy waitStrategy = (WaitStrategy) Utils
 				.newInstance((String) storm_conf
 						.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
-		this.serializeQueue = new DisruptorQueue(taskName, ProducerType.MULTI, 
+		this.serializeQueue = DisruptorQueue.mkInstance(taskName, ProducerType.MULTI, 
 				queue_size, waitStrategy);
 		this.serializeQueue.consumerStarted();
 		

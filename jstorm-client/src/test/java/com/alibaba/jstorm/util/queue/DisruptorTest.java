@@ -21,6 +21,7 @@ public class DisruptorTest {
 
 	static {
 		DisruptorQueue.setUseSleep(true);
+		DisruptorQueue.setLimited(false);
 	}
 
 	private int count = 100000000;
@@ -256,7 +257,7 @@ public class DisruptorTest {
 			}
 		});
 
-		run(producer, PRODUCER_NUM, 10000, consumer, 30000);
+		run(producer, PRODUCER_NUM, 1000, consumer, 30000);
 		Assert.assertEquals(
 				"We expect to receive first published message first, but received "
 						+ result[0], "1", result[0]);
@@ -433,6 +434,7 @@ public class DisruptorTest {
 
 			for (int i = 0; i < producerNum; i++) {
 				producerThreads[i].interrupt();
+				producerThreads[i].stop();
 				producerThreads[i].join(TIMEOUT);
 			}
 
@@ -440,6 +442,7 @@ public class DisruptorTest {
 			System.out.println("Please wait seconds" + waitMs / 1000);
 
 			consumerThread.interrupt();
+			consumerThread.stop();
 			consumerThread.join(TIMEOUT);
 		} catch (Throwable e) {
 			e.printStackTrace();
@@ -471,6 +474,10 @@ public class DisruptorTest {
 				System.out.println(Thread.currentThread().getId()
 						+ " quit, insufficientCapacityException " + count);
 				return;
+			}catch (Exception e) {
+				System.out.println(Thread.currentThread().getId()
+						+ " quit, Exception " + count);
+				return;
 			}
 		}
 	}
@@ -491,7 +498,7 @@ public class DisruptorTest {
 				while (true) {
 					queue.consumeBatchWhenAvailable(handler);
 				}
-			} catch (RuntimeException e) {
+			} catch (Exception e) {
 				// break
 			}
 		}
@@ -531,14 +538,8 @@ public class DisruptorTest {
 	private static DisruptorQueue createQueue(String name, ProducerType type,
 			int queueSize) {
 
-		// ClaimStrategy claimStrategy = null;
-		// if (type == ProducerType.SINGLE) {
-		// claimStrategy = new SingleThreadedClaimStrategy(queueSize);
-		// }else {
-		// claimStrategy = new MultiThreadedClaimStrategy(queueSize);
-		// }
 
-		return new DisruptorQueue(name, type, queueSize,
+		return DisruptorQueue.mkInstance(name, type, queueSize,
 				new BlockingWaitStrategy());
 	}
 }

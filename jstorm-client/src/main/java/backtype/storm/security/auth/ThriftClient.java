@@ -43,7 +43,7 @@ public class ThriftClient {
 		LOG.info("zkServer:"
 				+ (List<String>) storm_conf.get(Config.STORM_ZOOKEEPER_SERVERS)
 				+ ", zkPort:"
-				+ (Integer) storm_conf.get(Config.STORM_ZOOKEEPER_PORT));
+				+ Utils.getInt(storm_conf.get(Config.STORM_ZOOKEEPER_PORT)));
 		zkobj = Utils.newCurator(storm_conf,
 				(List<String>) storm_conf.get(Config.STORM_ZOOKEEPER_SERVERS),
 				storm_conf.get(Config.STORM_ZOOKEEPER_PORT), zkMasterDir);

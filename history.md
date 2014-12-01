@@ -1,15 +1,44 @@
 [JStorm English introduction](http://42.121.19.155/jstorm/JStorm-introduce-en.pptx)
-
 [JStorm Chinese introduction](http://42.121.19.155/jstorm/JStorm-introduce.pptx)
+
+#Release 0.9.6.2
+1. Add option to switch between BlockingQueue and Disruptor
+2. Fix the bug which under sync netty mode, client failed to send message to server 
+3. Fix the bug let web UI can dispaly 0.9.6.1 cluster
+4. Fix the bug topology can be submited without main jar but a lot of little jar
+5. Fix the bug restart command 
+6. Fix the bug trident bug
+7. Add the validation of topology name, component name... Only A-Z, a-z, 0-9, '_', '-', '.' are valid now.
+8. Fix the bug close thrift client
 
 #Release 0.9.6.2-rc
 1. Improve user experience from Web UI
-    1.  Add jstack link
-    2.   Add worker log link in supervisor page
-    3.   Add Web UI log encode setting "gbk" or "utf-8"
-    4.   Show starting tasks in component page
-    5.   Show dead task's information in UI
-    6.  Fix the bug that error info can not be displayed in UI when task is restarting
+1.1 Add jstack link
+1.2 Add worker log link in supervisor page
+1.3 Add Web UI log encode setting "gbk" or "utf-8"
+1.4 Show starting tasks in component page
+1.5 Show dead task's information in UI
+1.6 Fix the bug that error info can not be displayed in UI when task is restarting
+2. Add restart command, with this command, user can reload configuration, reset worker/task parallism
+3. Upgrade curator/disruptor/guava version
+4. Revert json lib to google-simple json, wrap all json operation into two utility method
+5. Add new storm submit api, supporting submit topology under java 
+6. Enable launch process with backend method
+7. Set "spout.pending.full.sleep" default value as true
+8. Fix the bug user define sceduler not support a list of workers
+9. Add disruptor/JStormUtils junit test
+10. Enable user to configure the name of monitor name of alimonitor
+11. Add tcp option "reuseAddress" in netty framework
+12. Fix the bug: When spout does not implement the ICommitterTrident interface, MasterCoordinatorSpout will stick on commit phase.
+
+#Release 0.9.6.2-rc
+1. Improve user experience from Web UI
+1.1 Add jstack link
+1.2 Add worker log link in supervisor page
+1.3 Add Web UI log encode setting "gbk" or "utf-8"
+1.4 Show starting tasks in component page
+1.5 Show dead task's information in UI
+1.6 Fix the bug that error info can not be displayed in UI when task is restarting
 2. Add restart command, with this command, user can reload configuration, reset worker/task parallism
 3. Upgrade curator/disruptor/guava version
 4. Revert json lib to google-simple json, wrap all json operation into two utility method
@@ -23,7 +52,7 @@
 12. Fix the bug: When spout does not implement the ICommitterTrident interface, MasterCoordinatorSpout will stick on commit phase.
 
 #Release 0.9.6.1
-1. Added management tools for multiclusters in WebUI.
+1. Add management of multiclusters to Web UI. Added management tools for multiclusters in WebUI.
 2. Merged Trident API from storm-0.9.3
 3. Replaced gson with fastjson
 4. Refactored metric json generation code.

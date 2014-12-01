@@ -66,10 +66,7 @@ public class SupervisorPage implements Serializable {
 		try {
 
 			Map conf = UIUtils.readUiConfig();
-			if(clusterName != null  && !(clusterName.equals(""))) {
-				UIUtils.getClusterInfoByName(conf, clusterName);
-			}
-			client = NimbusClient.getConfiguredClient(conf);
+			client = UIUtils.getNimbusClient(conf, clusterName);
 			SupervisorWorkers supervisorWorkers = client.getClient()
 					.getSupervisorWorkers(host);
 			ssumm = new ArrayList<SupervisorSumm>();

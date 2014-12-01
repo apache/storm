@@ -72,11 +72,7 @@ public class MainPage implements Serializable {
 			LOG.info("MainPage init...");
 			Map conf = UIUtils.readUiConfig();
 			
-			if(clusterName != null && !(clusterName.equals(""))) {
-				UIUtils.getClusterInfoByName(conf, clusterName);
-			}
-			
-			client = NimbusClient.getConfiguredClient(conf);
+			client = UIUtils.getNimbusClient(conf, clusterName);
 			summ = client.getClient().getClusterInfo();
 
 			tsumm = UIUtils.topologySummary(summ.get_topologies());

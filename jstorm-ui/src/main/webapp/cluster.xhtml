@@ -72,6 +72,7 @@
 				</f:facet>
 				<h:outputLink value="listlog.jsf" target="_blank">
 					<h:outputText value="logs" />
+					<f:param name="clusterName" value="#{param.clusterName}" />
 					<f:param name="host" value="#{cls.nimbusIp}" />
 					<f:param name="port" value="#{cls.nimbusLogPort}" />
 				</h:outputLink>
@@ -105,6 +106,7 @@
 				</f:facet>
 				<h:outputLink value="listlog.jsf" target="_blank">
 					<h:outputText value="logs" />
+					<f:param name="clusterName" value="#{param.clusterName}" />
 					<f:param name="host" value="#{sla.ip}" />
 					<f:param name="port" value="#{sla.logviewPort}" />
 				</h:outputLink>
@@ -125,7 +127,7 @@
 
 				<h:outputLink value="topology.jsf">
 					<h:outputText value="#{topo.topologyName}" />
-                                        <f:param name="clusterName" value="#{param.clusterName}" />
+                    <f:param name="clusterName" value="#{param.clusterName}" />
 					<f:param name="topologyid" value="#{topo.topologyId}" />
 				</h:outputLink>
 

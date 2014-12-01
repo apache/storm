@@ -134,7 +134,7 @@ public class Worker {
 		WaitStrategy waitStrategy = (WaitStrategy) Utils
 				.newInstance((String) stormConf
 						.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
-		DisruptorQueue recvQueue = new DisruptorQueue("Dispatch", ProducerType.MULTI,
+		DisruptorQueue recvQueue = DisruptorQueue.mkInstance("Dispatch", ProducerType.MULTI,
 				queue_size, waitStrategy);
 		// stop  consumerStarted
 		//recvQueue.consumerStarted();

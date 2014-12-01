@@ -37,6 +37,7 @@ import com.alibaba.jstorm.task.acker.Acker;
 import com.alibaba.jstorm.task.group.MkGrouper;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.Thrift;
+import com.alibaba.jstorm.utils.TimeUtils;
 import com.google.common.collect.Maps;
 
 /**
@@ -59,6 +60,9 @@ public class Common {
 	public static final String LS_ID = "supervisor-id";
 	public static final String LS_LOCAL_ASSIGNMENTS = "local-assignments";
 	public static final String LS_APPROVED_WORKERS = "approved-workers";
+	
+	public static final String compErrorInfo = "ID can only contains a-z, A-Z, 0-9, '-', '_', '.', '$', and should not start with \"__\".";
+	public static final String nameErrorInfo = "Name can only contains a-z, A-Z, 0-9, '-', '_', '.'";
 
 	public static boolean system_id(String id) {
 		return Utils.isSystemId(id);
@@ -70,26 +74,26 @@ public class Common {
 		if (obj instanceof StateSpoutSpec) {
 			StateSpoutSpec spec = (StateSpoutSpec) obj;
 			for (String id : spec.get_common().get_streams().keySet()) {
-				if (system_id(id)) {
+				if (system_id(id) || !charComponentValidate(id)) {
 					throw new InvalidTopologyException(id
-							+ " is not a valid component id");
+							+ " is not a valid component id. " + compErrorInfo);
 				}
 			}
 
 		} else if (obj instanceof SpoutSpec) {
 			SpoutSpec spec = (SpoutSpec) obj;
 			for (String id : spec.get_common().get_streams().keySet()) {
-				if (system_id(id)) {
+				if (system_id(id) || !charComponentValidate(id)) {
 					throw new InvalidTopologyException(id
-							+ " is not a valid component id");
+							+ " is not a valid component id. " + compErrorInfo);
 				}
 			}
 		} else if (obj instanceof Bolt) {
 			Bolt spec = (Bolt) obj;
 			for (String id : spec.get_common().get_streams().keySet()) {
-				if (system_id(id)) {
+				if (system_id(id) || !charComponentValidate(id)) {
 					throw new InvalidTopologyException(id
-							+ " is not a valid component id");
+							+ " is not a valid component id. " + compErrorInfo);
 				}
 			}
 		} else {
@@ -97,7 +101,46 @@ public class Common {
 		}
 
 	}
+	
+	public static String TopologyNameToId(String topologyName, int counter) {
+	    return topologyName + "-" + counter + "-" + TimeUtils.current_time_secs();
+	}
+	
+	/**
+	 * Convert topologyId to topologyName. TopologyId = topoloygName-counter-timeStamp
+	 * @param topologyId
+	 * @return
+	 */
+	public static String TopologyIdToName(String topologyId) throws InvalidTopologyException {
+	    String ret = null;
+	    int index = topologyId.lastIndexOf('-');
+	    if (index != -1 && index > 2) {
+	        index = topologyId.lastIndexOf('-', index - 1);
+	        if (index != -1 && index > 0)
+	            ret = topologyId.substring(0, index);
+	        else
+	            throw new InvalidTopologyException(topologyId + " is not a valid topologyId");
+	    } else
+	        throw new InvalidTopologyException(topologyId + " is not a valid topologyId");  
+	    return ret;
+	}
 
+	/**
+	 * Validation of topology name chars. Only alpha char, number, '-', '_', '.' are valid. 
+	 * @return
+	 */
+	public static boolean charValidate(String name) {
+	    return name.matches("[a-zA-Z0-9-_.]+");
+	}
+	
+	/**
+     * Validation of topology component chars. Only alpha char, number, '-', '_', '.', '$' are valid. 
+     * @return
+     */
+	public static boolean charComponentValidate(String name) {
+	    return name.matches("[a-zA-Z0-9-_/.$]+");
+	}
+	
 	/**
 	 * Check Whether ID of Bolt or spout is system_id
 	 * 
@@ -105,9 +148,14 @@ public class Common {
 	 * @throws InvalidTopologyException
 	 */
 	@SuppressWarnings("unchecked")
-	public static void validate_ids(StormTopology topology)
+	public static void validate_ids(StormTopology topology, String topologyId)
 			throws InvalidTopologyException {
-
+        String topologyName = TopologyIdToName(topologyId);
+	    if (!charValidate(topologyName)) {
+	        throw new InvalidTopologyException(topologyName + 
+	                " is not a valid topology name. " + nameErrorInfo);
+	    }
+	    
 		List<String> list = new ArrayList<String>();
 
 		for (StormTopology._Fields field : Thrift.STORM_TOPOLOGY_FIELDS) {
@@ -118,9 +166,9 @@ public class Common {
 				Set<String> commids = obj_map.keySet();
 
 				for (String id : commids) {
-					if (system_id(id)) {
+					if (system_id(id) || !charComponentValidate(id)) {
 						throw new InvalidTopologyException(id
-								+ " is not a valid component id");
+								+ " is not a valid component id. " + compErrorInfo);
 					}
 				}
 
@@ -170,7 +218,7 @@ public class Common {
 	public static void validate_basic(StormTopology topology,
 			Map<Object, Object> totalStormConf, String topologyid)
 			throws InvalidTopologyException {
-		validate_ids(topology);
+		validate_ids(topology, topologyid);
 
 		for (StormTopology._Fields field : Thrift.SPOUT_FIELDS) {
 			Object value = topology.getFieldValue(field);

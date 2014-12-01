@@ -36,7 +36,6 @@ import org.apache.log4j.Logger;
 
 import backtype.storm.utils.Utils;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.jstorm.callback.AsyncLoopDefaultKill;
 import com.alibaba.jstorm.callback.RunnableCallback;
 

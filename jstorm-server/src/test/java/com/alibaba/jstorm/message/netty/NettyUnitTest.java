@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -38,10 +39,12 @@ public class NettyUnitTest {
 
 
 	private static Map storm_conf = new HashMap<Object, Object>();
+	private static IContext context = null;
 	static {
 		storm_conf = Utils.readDefaultConfig();
 		boolean syncMode = false;
 		if (syncMode) {
+			DisruptorQueue.setLimited(true);
 			ConfigExtension.setNettyMaxSendPending(storm_conf, 1);
 			ConfigExtension.setNettySyncMode(storm_conf, true);
 		} else {
@@ -49,6 +52,8 @@ public class NettyUnitTest {
 			ConfigExtension.setNettyASyncBlock(storm_conf, false);
 		}
 
+		//Check whether context can be reused or not
+		context = TransportFactory.makeContext(storm_conf);
 	}
 
 	@Test
@@ -56,7 +61,6 @@ public class NettyUnitTest {
 		System.out.println("!!!!!!!!Start test_small_message !!!!!!!!!!!");
 		String req_msg = "Aloha is the most Hawaiian word.";
 
-		IContext context = TransportFactory.makeContext(storm_conf);
 		IConnection server = null;
 		IConnection client = null;
 
@@ -65,7 +69,7 @@ public class NettyUnitTest {
 		WaitStrategy waitStrategy = (WaitStrategy) Utils
 				.newInstance((String) storm_conf
 						.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
-		DisruptorQueue recvQueue = new DisruptorQueue(
+		DisruptorQueue recvQueue = DisruptorQueue.mkInstance(
 				"NettyUnitTest", ProducerType.SINGLE, 1024, waitStrategy);
 		server.registerQueue(recvQueue);
 
@@ -84,10 +88,12 @@ public class NettyUnitTest {
 
 		server.close();
 		client.close();
-		context.term();
+		
 
 		System.out.println("!!!!!!!!!!!!End test_small_message!!!!!!!!!!!!!");
 	}
+	
+	
 
 	public String setupLargMsg() {
 		StringBuilder sb = new StringBuilder();
@@ -105,7 +111,6 @@ public class NettyUnitTest {
 		System.out.println("!!!!Finish batch data, size:" + req_msg.length()
 				+ "!!!!");
 
-		IContext context = TransportFactory.makeContext(storm_conf);
 		IConnection server = null;
 		IConnection client = null;
 
@@ -114,7 +119,7 @@ public class NettyUnitTest {
 		WaitStrategy waitStrategy = (WaitStrategy) Utils
 				.newInstance((String) storm_conf
 						.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
-		DisruptorQueue recvQueue = new DisruptorQueue(
+		DisruptorQueue recvQueue = DisruptorQueue.mkInstance(
 				"NettyUnitTest", ProducerType.SINGLE, 1024, waitStrategy);
 		server.registerQueue(recvQueue);
 
@@ -132,7 +137,6 @@ public class NettyUnitTest {
 
 		client.close();
 		server.close();
-		context.term();
 		System.out.println("!!!!!!!!!!End larget message test!!!!!!!!");
 	}
 
@@ -141,7 +145,7 @@ public class NettyUnitTest {
 		System.out.println("!!!!!!!!!!Start delay message test!!!!!!!!");
 		String req_msg = setupLargMsg();
 
-		IContext context = TransportFactory.makeContext(storm_conf);
+		
 		IConnection server = null;
 		IConnection client = null;
 
@@ -150,7 +154,7 @@ public class NettyUnitTest {
 		WaitStrategy waitStrategy = (WaitStrategy) Utils
 				.newInstance((String) storm_conf
 						.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
-		DisruptorQueue recvQueue = new DisruptorQueue(
+		DisruptorQueue recvQueue = DisruptorQueue.mkInstance(
 				"NettyUnitTest", ProducerType.SINGLE, 1024, waitStrategy);
 		server.registerQueue(recvQueue);
 
@@ -169,7 +173,6 @@ public class NettyUnitTest {
 
 		server.close();
 		client.close();
-		context.term();
 		System.out.println("!!!!!!!!!!End delay message test!!!!!!!!");
 	}
 
@@ -220,7 +223,7 @@ public class NettyUnitTest {
 		WaitStrategy waitStrategy = (WaitStrategy) Utils
 				.newInstance((String) storm_conf
 						.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
-		DisruptorQueue recvQueue = new DisruptorQueue(
+		DisruptorQueue recvQueue = DisruptorQueue.mkInstance(
 				"NettyUnitTest", ProducerType.SINGLE, 1024, waitStrategy);
 		server.registerQueue(recvQueue);
 
@@ -249,7 +252,7 @@ public class NettyUnitTest {
 		WaitStrategy waitStrategy = (WaitStrategy) Utils
 				.newInstance((String) storm_conf
 						.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
-		DisruptorQueue recvQueue = new DisruptorQueue(
+		DisruptorQueue recvQueue = DisruptorQueue.mkInstance(
 				"NettyUnitTest", ProducerType.SINGLE, 1024, waitStrategy);
 		server.registerQueue(recvQueue);
 
@@ -331,7 +334,7 @@ public class NettyUnitTest {
 		WaitStrategy waitStrategy = (WaitStrategy) Utils
 				.newInstance((String) storm_conf
 						.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
-		DisruptorQueue recvQueue = new DisruptorQueue(
+		DisruptorQueue recvQueue = DisruptorQueue.mkInstance(
 				"NettyJunitTest", ProducerType.SINGLE, 4, waitStrategy);
 		server.registerQueue(recvQueue);
 
@@ -419,7 +422,7 @@ public class NettyUnitTest {
 		WaitStrategy waitStrategy = (WaitStrategy) Utils
 				.newInstance((String) storm_conf
 						.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
-		DisruptorQueue recvQueue = new DisruptorQueue(
+		DisruptorQueue recvQueue = DisruptorQueue.mkInstance(
 				"NettyJunitTest", ProducerType.SINGLE, 4, waitStrategy);
 		server.registerQueue(recvQueue);
 
@@ -533,7 +536,7 @@ public class NettyUnitTest {
 		WaitStrategy waitStrategy = (WaitStrategy) Utils
 				.newInstance((String) storm_conf
 						.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
-		DisruptorQueue recvQueue = new DisruptorQueue(
+		DisruptorQueue recvQueue = DisruptorQueue.mkInstance(
 				"NettyUnitTest", ProducerType.SINGLE, 1024, waitStrategy);
 		server.registerQueue(recvQueue);
 
@@ -609,7 +612,7 @@ public class NettyUnitTest {
 		WaitStrategy waitStrategy = (WaitStrategy) Utils
 				.newInstance((String) storm_conf
 						.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
-		DisruptorQueue recvQueue = new DisruptorQueue(
+		DisruptorQueue recvQueue = DisruptorQueue.mkInstance(
 				"NettyUnitTest", ProducerType.SINGLE, 1024, waitStrategy);
 		server.registerQueue(recvQueue);
 
@@ -636,5 +639,143 @@ public class NettyUnitTest {
         context.term();
         lock.unlock();
 		System.out.println("!!!!!!!!!!End server reboot test!!!!!!!!");
+	}
+	
+	/**
+	 * Due to there is only one client to one server in one jvm
+	 * It can't do this test
+	 * 
+	 * @throws InterruptedException
+	 */
+	public void test_multiple_client() throws InterruptedException {
+		System.out.println("!!!!!!!!Start test_multiple_client !!!!!!!!!!!");
+		final String req_msg = setupLargMsg();
+		
+		final int clientNum = 3;
+		final AtomicLong received = new AtomicLong(clientNum);
+		
+		for (int i = 0; i < clientNum; i++ ) {
+
+			new Thread(new Runnable() {
+	
+				@Override
+				public void run() {
+				    
+					IConnection client = context.connect(null, "localhost", port);
+	
+					List<TaskMessage> list = new ArrayList<TaskMessage>();
+					TaskMessage message = new TaskMessage(task, req_msg.getBytes());
+					list.add(message);
+	
+					client.send(message);
+					System.out.println("!!Client has sent data");
+					
+					while(received.get() != 0) {
+						JStormUtils.sleepMs(1000);
+					}
+					
+					
+					client.close();
+					
+				}
+			}).start();
+		}
+		
+		
+		IConnection server = null;
+
+		JStormUtils.sleepMs(1000);
+		System.out.println("!!server begin start!!!!!");
+
+		server = context.bind(null, port);
+
+		WaitStrategy waitStrategy = (WaitStrategy) Utils
+				.newInstance((String) storm_conf
+						.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
+		DisruptorQueue recvQueue = DisruptorQueue.mkInstance(
+				"NettyUnitTest", ProducerType.SINGLE, 1024, waitStrategy);
+		server.registerQueue(recvQueue);
+		
+		for (int i = 0; i < clientNum; i++) {
+			TaskMessage recv = server.recv(0);
+			Assert.assertEquals(req_msg, new String(recv.message()));
+			received.decrementAndGet();
+		}
+
+		server.close();
+
+
+		System.out.println("!!!!!!!!!!!!End test_multiple_client!!!!!!!!!!!!!");
+	}
+	
+	
+	@Test
+	public void test_multiple_server() throws InterruptedException {
+		System.out.println("!!!!!!!!Start test_multiple_server !!!!!!!!!!!");
+		final String req_msg = setupLargMsg();
+		
+		final int clientNum = 3;
+		final AtomicLong received = new AtomicLong(clientNum);
+		
+		for (int i = 0; i < clientNum; i++ ) {
+			final int realPort = port + i;
+
+			new Thread(new Runnable() {
+	
+				@Override
+				public void run() {
+				    
+					IConnection server = null;
+
+					JStormUtils.sleepMs(1000);
+					System.out.println("!!server begin start!!!!!");
+
+					server = context.bind(null, realPort);
+
+					WaitStrategy waitStrategy = (WaitStrategy) Utils
+							.newInstance((String) storm_conf
+									.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
+					DisruptorQueue recvQueue = DisruptorQueue.mkInstance(
+							"NettyUnitTest", ProducerType.SINGLE, 1024, waitStrategy);
+					server.registerQueue(recvQueue);
+
+					TaskMessage recv = server.recv(0);
+					Assert.assertEquals(req_msg, new String(recv.message()));
+					received.decrementAndGet();
+					System.out.println("!!server received !!!!!" + realPort);
+					
+					server.close();
+					
+				}
+			}).start();
+		}
+		
+		List<TaskMessage> list = new ArrayList<TaskMessage>();
+		TaskMessage message = new TaskMessage(task, req_msg.getBytes());
+		list.add(message);
+		
+		List<IConnection> clients = new ArrayList<IConnection>();
+		
+		for (int i = 0; i < clientNum; i++ ) {
+			final int realPort = port + i;
+			
+			IConnection client = context.connect(null, "localhost", realPort);
+			clients.add(client);
+
+			client.send(message);
+			System.out.println("!!Client has sent data to "  + realPort);
+		}
+		
+		
+		
+		while(received.get() != 0) {
+			JStormUtils.sleepMs(1000);
+		}
+		
+		for (int i = 0; i < clientNum; i++) {
+			clients.get(i).close();
+		}
+
+		System.out.println("!!!!!!!!!!!!End test_multiple_server!!!!!!!!!!!!!");
 	}
 }

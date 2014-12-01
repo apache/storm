@@ -180,7 +180,9 @@ public class WorkerData {
 		boolean disruptorUseSleep = ConfigExtension
 				.isDisruptorUseSleep(stormConf);
 		DisruptorQueue.setUseSleep(disruptorUseSleep);
-		LOG.info("Disruptor use sleep " + disruptorUseSleep);
+		boolean isLimited = ConfigExtension.getTopologyBufferSizeLimited(stormConf);
+		DisruptorQueue.setLimited(isLimited);
+		LOG.info("Disruptor use sleep:" + disruptorUseSleep + ", limited size:" + isLimited);
 
 		// this.transferQueue = new LinkedBlockingQueue<TransferData>();
 		int buffer_size = Utils.getInt(conf
@@ -188,10 +190,10 @@ public class WorkerData {
 		WaitStrategy waitStrategy = (WaitStrategy) Utils
 				.newInstance((String) conf
 						.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
-		this.transferQueue = new DisruptorQueue("TotalTransfer", ProducerType.MULTI,
+		this.transferQueue = DisruptorQueue.mkInstance("TotalTransfer", ProducerType.MULTI,
 				buffer_size, waitStrategy);
 		this.transferQueue.consumerStarted();
-		this.sendingQueue = new DisruptorQueue("TotalSending", ProducerType.MULTI,
+		this.sendingQueue = DisruptorQueue.mkInstance("TotalSending", ProducerType.MULTI,
 				buffer_size, waitStrategy);
 		this.sendingQueue.consumerStarted();
 		

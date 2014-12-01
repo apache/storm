@@ -226,7 +226,7 @@ public class Task {
 		WaitStrategy waitStrategy = (WaitStrategy) Utils
 				.newInstance((String) stormConf
 						.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
-		DisruptorQueue queue = new DisruptorQueue("TaskDeserialize", ProducerType.SINGLE,
+		DisruptorQueue queue = DisruptorQueue.mkInstance("TaskDeserialize", ProducerType.SINGLE,
 				queueSize, waitStrategy);
 
 		deserializeQueues.put(taskid, queue);

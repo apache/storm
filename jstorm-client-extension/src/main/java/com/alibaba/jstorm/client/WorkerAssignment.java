@@ -2,24 +2,24 @@ package com.alibaba.jstorm.client;
 
 import java.io.Serializable;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.log4j.Logger;
+import org.json.simple.JSONAware;
+
+import com.alibaba.jstorm.utils.JStormUtils;
 
 import backtype.storm.scheduler.WorkerSlot;
 import backtype.storm.utils.Utils;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONAware;
 
 public class WorkerAssignment extends WorkerSlot implements Serializable,
 		JSONAware {
+	private static final Logger LOG = Logger.getLogger(WorkerAssignment.class);
 
-	public static Logger LOG = Logger.getLogger(WorkerAssignment.class);
 
 	private static final long serialVersionUID = -3483047434535537861L;
 
@@ -32,6 +32,14 @@ public class WorkerAssignment extends WorkerSlot implements Serializable,
 	private String hostName;
 
 	private String jvm;
+	
+	private static final String COMPONENTTONUM_TAG = "componentToNum";
+	private static final String MEM_TAG = "mem";
+	private static final String CPU_TAG = "cpu";
+	private static final String HOSTNAME_TAG = "hostName";
+	private static final String JVM_TAG = "jvm";
+	private static final String NODEID_TAG = "nodeId";
+	private static final String PORT_TAG = "port";
 
 	public WorkerAssignment(String nodeId, Number port) {
 		super(nodeId, port);
@@ -86,29 +94,42 @@ public class WorkerAssignment extends WorkerSlot implements Serializable,
 	public String toJSONString() {
 		StringBuilder sb = new StringBuilder();
 
-		sb.append("[");
-		sb.append("\"" + this.getNodeId() + "\"");
-		sb.append(",");
-		sb.append("\"" + this.hostName + "\"");
-		sb.append(",");
-		sb.append("\"" + String.valueOf(this.getPort()) + "\"");
-		sb.append(",");
-		sb.append("\"" + this.jvm + "\"");
-		sb.append(",");
-		sb.append("\"" + String.valueOf(this.mem) + "\"");
-		sb.append(",");
-		sb.append("\"" + String.valueOf(this.cpu) + "\"");
-		sb.append(",");
-		sb.append("{");
-		for (Entry<String, Integer> entry : componentToNum.entrySet()) {
-			sb.append("\"" + entry.getKey() + "\":");
-			sb.append("\"" + String.valueOf(entry.getValue()) + "\"");
-			sb.append(",");
-		}
-		sb.append("}");
-		sb.append("]");
+//		sb.append("[");
+//		sb.append("\"" + this.getNodeId() + "\"");
+//		sb.append(",");
+//		sb.append("\"" + this.hostName + "\"");
+//		sb.append(",");
+//		sb.append("\"" + String.valueOf(this.getPort()) + "\"");
+//		sb.append(",");
+//		sb.append("\"" + this.jvm + "\"");
+//		sb.append(",");
+//		sb.append("\"" + String.valueOf(this.mem) + "\"");
+//		sb.append(",");
+//		sb.append("\"" + String.valueOf(this.cpu) + "\"");
+//		sb.append(",");
+//		sb.append("{");
+//		for (Entry<String, Integer> entry : componentToNum.entrySet()) {
+//			sb.append("\"" + entry.getKey() + "\":");
+//			sb.append("\"" + String.valueOf(entry.getValue()) + "\"");
+//			sb.append(",");
+//		}
+//		sb.append("}");
+//		sb.append("]");
+		
+		
+		
+		Map<String, String> map = new HashMap<String, String>();
 
-		return sb.toString();
+		map.put(COMPONENTTONUM_TAG, Utils.to_json(componentToNum));
+		map.put(MEM_TAG, String.valueOf(mem));
+		map.put(CPU_TAG, String.valueOf(cpu));
+		map.put(HOSTNAME_TAG, hostName);
+		map.put(JVM_TAG, jvm);
+		map.put(NODEID_TAG, getNodeId());
+		map.put(PORT_TAG, String.valueOf(getPort()));
+	
+		
+		return Utils.to_json(map);
 	}
 
 	public static WorkerAssignment parseFromObj(Object obj) {
@@ -116,38 +137,44 @@ public class WorkerAssignment extends WorkerSlot implements Serializable,
 			return null;
 		}
 
-		if (obj instanceof List<?> == false) {
+		if (obj instanceof Map == false) {
 			return null;
 		}
 
 		try {
-			List list = (List) obj;
-			if (list.size() < 6) {
-				return null;
-			}
-			String supervisorId = getStringFromJson((String) list.get(0));
-			String hostname = getStringFromJson((String) list.get(1));
-			int port = Integer.parseInt(((String) list.get(2)));
-			String jvm = getStringFromJson((String) list.get(3));
-			long mem = Long.parseLong((String) list.get(4));
-			int cpu = Integer.parseInt(((String) list.get(5)));
-			Map<String, String> componentToNum = (Map<String, String>) list
-					.get(6);
+			Map<String, String> map = (Map<String, String>)obj;
+			
+			String supervisorId = map.get(NODEID_TAG);
+			String hostname = map.get(HOSTNAME_TAG);
+			Integer port = JStormUtils.parseInt(map.get(PORT_TAG));
+			String jvm = map.get(JVM_TAG);
+			Long mem = JStormUtils.parseLong(map.get(MEM_TAG));
+			Integer cpu = JStormUtils.parseInt(map.get(CPU_TAG));
+			Map<String, Object> componentToNum = (Map<String, Object>)Utils.from_json(map.get(COMPONENTTONUM_TAG));
 
 			WorkerAssignment ret = new WorkerAssignment(supervisorId, port);
 
+			
 			ret.hostName = hostname;
 			ret.setNodeId(supervisorId);
-			ret.setPort(port);
 			ret.setJvm(jvm);
-			ret.setMem(mem);
-			ret.setCpu(cpu);
-			for (Entry<String, String> entry : componentToNum.entrySet()) {
+			if (port != null) {
+				ret.setPort(port);
+			}
+			if (mem != null) {
+				ret.setMem(mem);
+			}
+			if (cpu != null) {
+				ret.setCpu(cpu);
+			}
+			
+			for (Entry<String, Object> entry : componentToNum.entrySet()) {
 				ret.addComponent(entry.getKey(),
-						Integer.valueOf(entry.getValue()));
+						JStormUtils.parseInt(entry.getValue()));
 			}
 			return ret;
 		} catch (Exception e) {
+			LOG.error("Failed to convert to WorkerAssignment,  raw:" + obj, e);
 			return null;
 		}
 
@@ -211,23 +238,27 @@ public class WorkerAssignment extends WorkerSlot implements Serializable,
 	public static void main(String[] args) {
 		WorkerAssignment input = new WorkerAssignment();
 
-		// input.setJvm("sb");
-		//
-		// input.setCpu(1);
-		//
-		// input.setMem(2);
+		 input.setJvm("sb");
+		
+		 input.setCpu(1);
+		
+		 input.setMem(2);
 
-		// input.addComponent("2b", 2);
+		 input.addComponent("2b", 2);
 
 		String outString = Utils.to_json(input);
 
 		System.out.println(input);
+		
+		//String outString = "[componentToNum={},mem=1610612736,cpu=1,hostName=mobilejstorm-60-1,jvm=<null>,nodeId=<null>,port=0]";
 
 		Object object = Utils.from_json(outString);
+		System.out.println(object);
 
 		System.out.println(parseFromObj(object));
 
 		System.out.print(input.equals(parseFromObj(object)));
 	}
+	
 
 }

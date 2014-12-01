@@ -183,6 +183,11 @@ public class SpoutPage implements Serializable {
 		List<Map<GlobalStreamId, Double>> processList = new ArrayList<Map<GlobalStreamId, Double>>();
 
 		for (TaskSummary taskSummary : taskSummaries) {
+			if (taskSummary.get_status() == null) {
+				// this is for old JStorm version
+				taskSummary.set_status(ConfigExtension.TASK_STATUS_ACTIVE);
+			}
+			
 			if (taskSummary.get_status().equals(ConfigExtension.TASK_STATUS_ACTIVE) == false)
 				continue;
 			
@@ -276,10 +281,7 @@ public class SpoutPage implements Serializable {
 
 		try {
 			Map conf = UIUtils.readUiConfig();
-			if(clusterName != null  && !(clusterName.equals(""))) {
-				UIUtils.getClusterInfoByName(conf, clusterName);
-			}
-			client = NimbusClient.getConfiguredClient(conf);
+			client = UIUtils.getNimbusClient(conf, clusterName);
 
 			TopologyInfo summ = client.getClient().getTopologyInfo(topologyid);
 			StormTopology topology = client.getClient().getTopology(topologyid);
@@ -306,7 +308,10 @@ public class SpoutPage implements Serializable {
 		} catch (NotAliveException e) {
 			LOG.error(e.getCause(), e);
 			throw e;
-		} finally {
+		} catch (Exception e) {
+			LOG.error(e.getCause(), e);
+			throw new TException(e);
+		}finally {
 			if (client != null) {
 				client.close();
 			}

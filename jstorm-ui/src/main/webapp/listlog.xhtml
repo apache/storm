@@ -24,6 +24,7 @@
 				</f:facet>
 				<h:outputLink value="listlog.jsf" target="_blank">
 					<h:outputText value="#{dirs.fileName}" />
+					<f:param name="clusterName" value="#{param.clusterName}" />
 					<f:param name="host" value="#{param.host}" />
 					<f:param name="port" value="#{listlogpage.portStr}" />
 					<f:param name="parent" value="#{listlogpage.parent}" />
@@ -65,6 +66,7 @@
 				</f:facet>
 				<h:outputLink value="log.jsf" target="_blank">
 					<h:outputText value="#{files.fileName}" />
+					<f:param name="clusterName" value="#{param.clusterName}" />
 					<f:param name="host" value="#{param.host}" />
 					<f:param name="port" value="#{listlogpage.portStr}" />
 					<f:param name="parent" value="#{listlogpage.parent}" />

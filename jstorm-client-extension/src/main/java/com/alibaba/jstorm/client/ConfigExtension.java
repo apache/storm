@@ -10,7 +10,6 @@ import org.apache.commons.lang.StringUtils;
 import backtype.storm.Config;
 import backtype.storm.utils.Utils;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.jstorm.utils.JStormUtils;
 
 public class ConfigExtension {
@@ -526,12 +525,32 @@ public class ConfigExtension {
     protected static String BOLT_PARALLELISM = "topology.bolt.parallelism";
     
     public static Integer getSpoutParallelism(Map conf, String componentName) {
+        Integer ret = null;
     	Map<String, String> map = (Map<String, String>)(conf.get(SPOUT_PARALLELISM));
-    	return JStormUtils.parseInt(map.get(componentName));
+    	if(map != null) ret = JStormUtils.parseInt(map.get(componentName));
+    	return ret;
     }
     
     public static Integer getBoltParallelism(Map conf, String componentName) {
+        Integer ret = null;
     	Map<String, String> map = (Map<String, String>)(conf.get(BOLT_PARALLELISM));
-    	return JStormUtils.parseInt(map.get(componentName));
+    	if(map != null) ret = JStormUtils.parseInt(map.get(componentName));
+        return ret;
+    }
+    
+    protected static String TOPOLOGY_BUFFER_SIZE_LIMITED = "topology.buffer.size.limited";
+    
+    public static void setTopologyBufferSizeLimited(Map conf, boolean limited) {
+    	conf.put(TOPOLOGY_BUFFER_SIZE_LIMITED, limited);
+    }
+    
+    public static boolean getTopologyBufferSizeLimited(Map conf) {
+    	boolean isSynchronized = isNettySyncMode(conf);
+    	if (isSynchronized == true) {
+    		return true;
+    	}
+    	
+    	return JStormUtils.parseBoolean(conf.get(TOPOLOGY_BUFFER_SIZE_LIMITED), false);
+    	
     }
 }

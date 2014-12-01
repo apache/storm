@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.alibaba.jstorm</groupId>
 	<artifactId>jstorm-all</artifactId>
-	<version>0.9.6.2-snapshot</version>
+	<version>0.9.6.2</version>
 	<packaging>pom</packaging>
 	<name>java storm</name>
 	<description>java storm</description>
