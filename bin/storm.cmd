@@ -89,7 +89,11 @@
     %JAVA% %JAVA_HEAP_MAX% %STORM_OPTS% %STORM_LOG_FILE% %CLASS% %storm-command-arguments%
   )
   set path=%PATH%;%STORM_BIN_DIR%;%STORM_SBIN_DIR%
-  call start /b %JAVA% %JAVA_HEAP_MAX% %STORM_OPTS% %STORM_LOG_FILE% %CLASS% %storm-command-arguments%
+  if "%FORK%"=="true" (
+	call start /b %JAVA% %JAVA_HEAP_MAX% %STORM_OPTS% %STORM_LOG_FILE% %CLASS% %storm-command-arguments%
+  ) else (
+    %JAVA% %JAVA_HEAP_MAX% %STORM_OPTS% %STORM_LOG_FILE% %CLASS% %storm-command-arguments%
+  )
   goto :eof
 
 

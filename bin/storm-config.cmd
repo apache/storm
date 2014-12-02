@@ -16,6 +16,7 @@
 @rem See the License for the specific language governing permissions and
 @rem limitations under the License.
 
+set FORK=false
 
 set STORM_HOME=%~dp0
 for %%i in (%STORM_HOME%.) do (
