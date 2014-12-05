@@ -21,6 +21,8 @@ import backtype.storm.Config;
 import backtype.storm.utils.Utils;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.framework.api.CuratorEvent;
+import org.apache.curator.framework.api.CuratorListener;
 import org.apache.curator.retry.RetryNTimes;
 import org.json.simple.JSONValue;
 import org.slf4j.Logger;
@@ -40,6 +42,14 @@ public class DynamicBrokersReader {
     private String _zkPath;
     private String _topic;
 
+
+    private static boolean _pathExist = false;
+
+    // Max waiting time when there is no topic on kafka
+    public static long topicWaittime = 20000;
+    private static long _topicWaitInterval = 2000;
+    private static long _topicWaitMaxCount = topicWaittime / _topicWaitInterval;
+
     public DynamicBrokersReader(Map conf, String zkStr, String zkPath, String topic) {
         _zkPath = zkPath;
         _topic = topic;
@@ -50,6 +60,29 @@ public class DynamicBrokersReader {
                     Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_CONNECTION_TIMEOUT)),
                     new RetryNTimes(Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_RETRY_TIMES)),
                             Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_RETRY_INTERVAL))));
+
+            _curator.getCuratorListenable().addListener(new CuratorListener() {
+                @Override
+                public void eventReceived(CuratorFramework curatorFramework, CuratorEvent curatorEvent) throws Exception {
+                    try {
+                        switch (curatorEvent.getType()) {
+                            case WATCHED:
+                                String watchedPath = curatorEvent.getWatchedEvent().getPath();
+                                if (watchedPath == null) {
+                                    break;
+                                } else if (curatorEvent.getWatchedEvent().getPath().equals(partitionPath())) {
+                                    // To exit waiting loop when target topic path is created
+                                    _pathExist = true;
+                                }
+                                break;
+                            default:
+                                break;
+                        }
+                    } catch (Exception ex) {
+                        LOG.error("Handling error from zookeeper", ex);
+                    }
+                }
+            });
             _curator.start();
         } catch (Exception ex) {
             LOG.error("Couldn't connect to zookeeper", ex);
@@ -60,8 +93,20 @@ public class DynamicBrokersReader {
      * Get all partitions with their current leaders
      */
     public GlobalPartitionInformation getBrokerInfo() throws SocketTimeoutException {
-      GlobalPartitionInformation globalPartitionInformation = new GlobalPartitionInformation();
+        GlobalPartitionInformation globalPartitionInformation = new GlobalPartitionInformation();
         try {
+            if (_curator.checkExists().forPath(partitionPath()) == null) {
+                _curator.checkExists().watched().forPath(partitionPath());
+            } else {
+                _pathExist = true;
+            }
+            long waitCount = 0;
+            // Keep waiting unless topic path is created or max waiting time is over
+            while (!_pathExist && waitCount < _topicWaitMaxCount) {
+                LOG.warn("Waiting for creation because of missing partition path {}", partitionPath());
+                Thread.sleep(_topicWaitInterval);
+                waitCount++;
+            }
             int numPartitionsForTopic = getNumPartitions();
             String brokerInfoPath = brokerPath();
             for (int partition = 0; partition < numPartitionsForTopic; partition++) {
@@ -76,7 +121,7 @@ public class DynamicBrokersReader {
                 }
             }
         } catch (SocketTimeoutException e) {
-					throw e;
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
