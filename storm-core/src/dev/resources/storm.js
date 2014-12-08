@@ -52,7 +52,10 @@ Storm.prototype.log = function(msg) {
 
 Storm.prototype.initSetupInfo = function(setupInfo) {
     var self = this;
-    var callback = function() {
+    var callback = function(err) {
+        if (err) {
+            throw err;
+        }
         self.sendPid(setupInfo['pidDir']);
     }
     this.initialize(setupInfo['conf'], setupInfo['context'], callback);
@@ -332,7 +335,10 @@ Spout.prototype.nextTuple = function(done) {};
 
 Spout.prototype.handleNewCommand = function(command) {
     var self = this;
-    var callback = function() {
+    var callback = function(err) {
+        if (err) {
+            throw err;
+        }
         self.sync();
     }
 
