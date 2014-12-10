@@ -54,7 +54,7 @@ public class Client extends ConnectionWithStatus {
     private final Random random = new Random();
     private final ChannelFactory factory;
     private final int buffer_size;
-    private Status status;
+    private  volatile boolean closing;
 
     private int messageBatchSize;
     private int reconnectRetryTimes;
@@ -73,7 +73,7 @@ public class Client extends ConnectionWithStatus {
         this.factory = factory;
         this.scheduler = scheduler;
         channelRef = new AtomicReference<Channel>(null);
-        status = Status.Connecting;
+        closing = false;
         pendings = new AtomicLong(0);
         flushCheckTimer = new AtomicLong(Long.MAX_VALUE);
 
@@ -115,7 +115,7 @@ public class Client extends ConnectionWithStatus {
             @Override
             public void run() {
 
-                if(status == Status.Ready) {
+                if(!closing) {
                     long flushCheckTime = flushCheckTimer.get();
                     long now = System.currentTimeMillis();
                     if (now > flushCheckTime) {
@@ -132,7 +132,7 @@ public class Client extends ConnectionWithStatus {
         connector = new Runnable() {
             @Override
             public void run() {
-                if (status == Status.Connecting) {
+                if (!closing) {
                     connect();
                 }
             }
@@ -153,7 +153,7 @@ public class Client extends ConnectionWithStatus {
                 return;
             }
 
-            if (reconnectRetryTimes <= max_retries && status != Status.Closed) {
+            if (reconnectRetryTimes <= max_retries && !closing) {
 
                 LOG.info("Reconnect started for {}... [{}]", name(), reconnectRetryTimes);
                 LOG.debug("connection started...");
@@ -170,7 +170,6 @@ public class Client extends ConnectionWithStatus {
                     reconnectRetryTimes++;
                 } else {
                     channel = current;
-                    status = Status.Ready;
                     reconnectRetryTimes = 0;
                 }
             }
@@ -178,7 +177,7 @@ public class Client extends ConnectionWithStatus {
             if (null != channel) {
                 LOG.info("connection established to a remote host " + name() + ", " + channel.toString());
                 channelRef.set(channel);
-            } else if (status == Status.Closed) {
+            } else if (closing) {
                 LOG.info("connection is closing, abort reconnecting...");
             } else if (reconnectRetryTimes > max_retries){
                 close();
@@ -191,8 +190,14 @@ public class Client extends ConnectionWithStatus {
 
   @Override
   public Status status() {
-        return status;
-    }
+      if (closing) {
+          return Status.Closed;
+      } else if (null == channelRef.get()) {
+          return Status.Connecting;
+      } else {
+          return Status.Ready;
+      }
+  }
 
     private int iteratorSize(Iterator<TaskMessage> msgs) {
         int size = 0;
@@ -227,7 +232,7 @@ public class Client extends ConnectionWithStatus {
     synchronized public void send(Iterator<TaskMessage> msgs) {
 
         // throw exception if the client is being closed
-        if (status == Status.Closed) {
+        if (closing) {
             LOG.info("Client is being closed, and does not take requests any more, drop the messages...");
             return;
         }
@@ -282,7 +287,7 @@ public class Client extends ConnectionWithStatus {
     }
 
     private synchronized void flush(Channel channel) {
-        if (status == Status.Ready) {
+        if (!closing) {
             if (null != messageBatch && !messageBatch.isEmpty()) {
                 MessageBatch toBeFlushed = messageBatch;
                 flushCheckTimer.set(Long.MAX_VALUE);
@@ -301,10 +306,10 @@ public class Client extends ConnectionWithStatus {
      * If the reconnection is ongoing when close() is called, we need to break that process.
      */
     public void close() {
-        if (status != Status.Closed) {
+        if (!closing) {
 
           //set closing to true so that we can interuppt the reconnecting
-          status = Status.Closed;
+          closing = true;
           LOG.info("Closing Netty Client " + name());
           doClose();
         }
@@ -386,7 +391,6 @@ public class Client extends ConnectionWithStatus {
                         channel.close();
                         if (channelRef.compareAndSet(channel, null)) {
                             // reconnect
-                            status = Status.Connecting;
                             scheduler.execute(connector);
                         }
                     }
