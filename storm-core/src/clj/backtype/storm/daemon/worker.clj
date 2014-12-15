@@ -232,7 +232,6 @@
       :task->component (HashMap. (storm-task-info topology storm-conf)) ; for optimized access when used in tasks later on
       :component->stream->fields (component->stream->fields (:system-topology <>))
       :component->sorted-tasks (->> (:task->component <>) reverse-map (map-val sort))
-      :endpoint-socket-lock (mk-rw-lock)
       :cached-node+port->socket (atom {})
       :cached-task->node+port (atom {})
       :transfer-queue transfer-queue
@@ -302,9 +301,8 @@
                            port)
                           ]
                          )))
-              (write-locked (:endpoint-socket-lock worker)
-                (reset! (:cached-task->node+port worker)
-                        (HashMap. my-assignment)))
+              (reset! (:cached-task->node+port worker)
+                (HashMap. my-assignment))
               (doseq [endpoint remove-connections]
                 (.close (get @(:cached-node+port->socket worker) endpoint)))
               (apply swap!
@@ -335,16 +333,14 @@
         drainer (TransferDrainer.)
         node+port->socket (:cached-node+port->socket worker)
         task->node+port (:cached-task->node+port worker)
-        endpoint-socket-lock (:endpoint-socket-lock worker)
         ]
     (disruptor/clojure-handler
       (fn [packets _ batch-end?]
         (.add drainer packets)
         
         (when batch-end?
-          (read-locked endpoint-socket-lock
-            (let [node+port->socket @node+port->socket]
-              (.send drainer node+port->socket)))
+          (let [node+port->socket @node+port->socket]
+            (.send drainer node+port->socket))
           (.clear drainer))))))
 
 (defn launch-receive-thread [worker]
