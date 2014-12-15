@@ -67,7 +67,7 @@
 (defrecord RollingWindowSet [updater extractor windows all-time])
 
 (defn rolling-window-set [updater merger extractor num-buckets & bucket-sizes]
-  (RollingWindowSet. updater extractor (dofor [s bucket-sizes] (rolling-window updater merger extractor s num-buckets)) nil)
+  (RollingWindowSet. updater extractor (dofor [s bucket-sizes] (rolling-window updater merger extractor num-buckets s)) nil)
   )
 
 (defn update-rolling-window-set
