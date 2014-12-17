@@ -104,6 +104,20 @@ def get_classpath(extrajars):
     ret.extend(extrajars)
     return normclasspath(":".join(ret))
 
+def native_lib_dir():
+    global CONFFILE
+    command = [
+        JAVA_CMD, "-client", get_config_opts(), "-Dstorm.conf.file=" + CONFFILE,
+        "-cp", get_classpath([CLUSTER_CONF_DIR]), "backtype.storm.utils.PlatformName"
+    ]
+    p = sub.Popen(command, stdout=sub.PIPE)
+    output, errors = p.communicate()
+    platform = output.decode('utf-8')
+    native_dir = STORM_DIR + "/lib/native"
+    if (os.path.exists(native_dir)):
+      return native_dir + "/" + platform
+    return ""
+
 def confvalue(name, extrapaths):
     global CONFFILE
     command = [
@@ -166,11 +180,18 @@ def exec_storm_class(klass, jvmtype="-server", jvmopts=[], extrajars=[], args=[]
     storm_log_dir = confvalue("storm.log.dir",[CLUSTER_CONF_DIR])
     if(storm_log_dir == None or storm_log_dir == "nil"):
         storm_log_dir = STORM_DIR+"/logs"
+
+    jlp = confvalue("java.library.path", extrajars)
+    if (jlp == None or jlp == "nil"):
+        jlp = native_lib_dir()
+    else:
+        jlp= jlp + ":" + native_lib_dir()
+
     all_args = [
         JAVA_CMD, jvmtype, get_config_opts(),
         "-Dstorm.home=" + STORM_DIR,
         "-Dstorm.log.dir=" + storm_log_dir, 
-        "-Djava.library.path=" + confvalue("java.library.path", extrajars),
+        "-Djava.library.path=" + jlp,
         "-Dstorm.conf.file=" + CONFFILE,
         "-cp", get_classpath(extrajars),
     ] + jvmopts + [klass] + list(args)

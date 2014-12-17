@@ -16,6 +16,7 @@
 (ns backtype.storm.daemon.supervisor
   (:import [java.io OutputStreamWriter BufferedWriter IOException])
   (:import [backtype.storm.scheduler ISupervisor]
+           [backtype.storm.utils PlatformName]
            [java.net JarURLConnection]
            [java.net URI])
   (:use [backtype.storm bootstrap])
@@ -571,9 +572,7 @@
 
 (defn jlp [stormroot conf]
   (let [resource-root (str stormroot File/separator RESOURCES-SUBDIR)
-        os (clojure.string/replace (System/getProperty "os.name") #"\s+" "_")
-        arch (System/getProperty "os.arch")
-        arch-resource-root (str resource-root File/separator os "-" arch)]
+        arch-resource-root (str resource-root File/separator PlatformName/getPlatformName)]
     (str arch-resource-root File/pathSeparator resource-root File/pathSeparator (conf JAVA-LIBRARY-PATH)))) 
 
 (defn substitute-childopts 
