@@ -26,6 +26,7 @@ import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.compress.CompressionCodecFactory;
 import org.apache.storm.hdfs.bolt.format.FileNameFormat;
 import org.apache.storm.hdfs.bolt.format.SequenceFormat;
+import org.apache.storm.hdfs.bolt.format.SerializableSequenceFormat;
 import org.apache.storm.hdfs.bolt.rotation.FileRotationPolicy;
 import org.apache.storm.hdfs.bolt.sync.SyncPolicy;
 import org.apache.storm.hdfs.common.rotation.RotationAction;
@@ -108,7 +109,11 @@ public class SequenceFileBolt extends AbstractHdfsBolt {
         try {
             long offset;
             synchronized (this.writeLock) {
-                this.writer.append(this.format.key(tuple), this.format.value(tuple));
+                if (this.format instanceof SerializableSequenceFormat) {
+                    this.writer.append( ((SerializableSequenceFormat)this.format).keyObject(tuple), ((SerializableSequenceFormat)this.format).valueObject(tuple));
+                } else {
+                    this.writer.append(this.format.key(tuple), this.format.value(tuple));
+                }
                 offset = this.writer.getLength();
 
                 if (this.syncPolicy.mark(tuple, offset)) {
