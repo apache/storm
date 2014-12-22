@@ -35,7 +35,7 @@ public class TestPartitionManager {
   @Test
   public void testPartitionManagerNoFail() {
     PartitionManagerCallerMock mock
-      = new PartitionManagerCallerMock("-1");
+      = new PartitionManagerCallerMock("1");
     String result = mock.execute("r,r,r,a0,a1,a2,r");
     assertEquals("0,1,2,3", result);
   }
@@ -43,7 +43,7 @@ public class TestPartitionManager {
   @Test
   public void testPartitionManagerResend() {
     PartitionManagerCallerMock mock
-      = new PartitionManagerCallerMock("-1");
+      = new PartitionManagerCallerMock("1");
     String result = mock.execute("r,a0,r,r,r,f3,r,f2,f1,r,r,a1,a2,a3,r");
     assertEquals("0,1,2,3,3,1,2,4", result);
   }
@@ -51,7 +51,7 @@ public class TestPartitionManager {
   @Test
   public void testPMCheckpointWithPending() {
     PartitionManagerCallerMock mock
-      = new PartitionManagerCallerMock("-1");
+      = new PartitionManagerCallerMock("1");
     mock.execute("r,r,r");
     //no ack, so return the first of pending list
     assertEquals("0", mock.checkpoint());
@@ -63,7 +63,7 @@ public class TestPartitionManager {
   @Test
   public void testPMCheckpointWithResend() {
     PartitionManagerCallerMock mock
-      = new PartitionManagerCallerMock("-1");
+      = new PartitionManagerCallerMock("1");
     mock.execute("r,r,r,f2,f1,f0");
     //pending is empty, return the smallest in toResend
     assertEquals("0", mock.checkpoint());
@@ -75,7 +75,7 @@ public class TestPartitionManager {
   @Test
   public void testPMCheckpointWithPendingAndResend() {
     PartitionManagerCallerMock mock
-      = new PartitionManagerCallerMock("-1");
+      = new PartitionManagerCallerMock("1");
     mock.execute("r,r,r,f2,f1");
     //return the smaller of pending and toResend
     assertEquals("0", mock.checkpoint());
@@ -87,7 +87,7 @@ public class TestPartitionManager {
   @Test
   public void testPMCheckpointWithNoPendingAndNoResend() {
     PartitionManagerCallerMock mock
-      = new PartitionManagerCallerMock("-1");
+      = new PartitionManagerCallerMock("1");
     //if no event sent, no checkpoint shall be created
     assertEquals(null, mock.checkpoint());
     mock.execute("r,r,r,f2,f1,r,r,a2,a1,a0");
@@ -98,12 +98,20 @@ public class TestPartitionManager {
   @Test
   public void testPartitionManagerMaxPendingMessages() {
     PartitionManagerCallerMock mock
-      = new PartitionManagerCallerMock("-1");
+      = new PartitionManagerCallerMock("1");
     String result = mock.execute("r1024");
     //any receive call after exceeding max pending messages results in null
     result = mock.execute("r2");
     assertEquals("null,null", result);
     result = mock.execute("a0,a1,r2");
     assertEquals("1024,1025", result);
+  }
+  
+  @Test
+  public void testPartitionManagerEnqueueTimeFilter() {
+    PartitionManagerCallerMock mock
+      = new PartitionManagerCallerMock("1", 123456);
+    String result = mock.execute("r2");
+    assertEquals("123457,123458", result);
   }
 }

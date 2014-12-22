@@ -28,7 +28,6 @@ import java.io.Serializable;
 public interface IPartitionManagerFactory extends Serializable {
   IPartitionManager create(EventHubSpoutConfig spoutConfig,
       String partitionId,
-      String startingOffset,
       IStateStore stateStore,
       IEventHubReceiver receiver);
 }

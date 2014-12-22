@@ -35,6 +35,7 @@ public class EventHubSpoutConfig implements Serializable {
   private final int checkpointIntervalInSeconds;
   private final int receiverCredits;
   private final int maxPendingMsgsPerPartition;
+  private final long enqueueTimeFilter; //timestamp in millisecond
 
   private String connectionString;
   private String targetFqnAddress;
@@ -44,7 +45,7 @@ public class EventHubSpoutConfig implements Serializable {
   public EventHubSpoutConfig(String username, String password, String namespace,
       String entityPath, int partitionCount, String zkConnectionString) {
     this(username, password, namespace, entityPath, partitionCount,
-        zkConnectionString, 10, 1024, 1024);
+        zkConnectionString, 10, 1024, 1024, 0);
   }
   
   //Keep this constructor for backward compatibility
@@ -52,12 +53,12 @@ public class EventHubSpoutConfig implements Serializable {
       String entityPath, int partitionCount, String zkConnectionString,
       int checkpointIntervalInSeconds, int receiverCredits) {
     this(username, password, namespace, entityPath, partitionCount,
-        zkConnectionString, checkpointIntervalInSeconds, receiverCredits, 1024);
+        zkConnectionString, checkpointIntervalInSeconds, receiverCredits, 1024, 0);
   }
       
   public EventHubSpoutConfig(String username, String password, String namespace,
     String entityPath, int partitionCount, String zkConnectionString,
-    int checkpointIntervalInSeconds, int receiverCredits, int maxPendingMsgsPerPartition) {
+    int checkpointIntervalInSeconds, int receiverCredits, int maxPendingMsgsPerPartition, long enqueueTimeFilter) {
     this.userName = username;
     this.password = password;
     this.connectionString = buildConnectionString(username, password, namespace);
@@ -68,6 +69,7 @@ public class EventHubSpoutConfig implements Serializable {
     this.checkpointIntervalInSeconds = checkpointIntervalInSeconds;
     this.receiverCredits = receiverCredits;
     this.maxPendingMsgsPerPartition = maxPendingMsgsPerPartition;
+    this.enqueueTimeFilter = enqueueTimeFilter;
     this.scheme = new EventDataScheme();
   }
 
@@ -101,6 +103,10 @@ public class EventHubSpoutConfig implements Serializable {
   
   public int getMaxPendingMsgsPerPartition() {
     return maxPendingMsgsPerPartition;
+  }
+  
+  public long getEnqueueTimeFilter() {
+    return enqueueTimeFilter;
   }
 
   public String getTopologyName() {

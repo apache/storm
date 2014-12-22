@@ -58,8 +58,17 @@ public class EventHubReceiverMock implements IEventHubReceiver {
   }
 
   @Override
-  public void open(String offset) throws EventHubException {
-    currentOffset = Long.parseLong(offset);
+  public void open(IEventHubReceiverFilter filter) throws EventHubException {
+    if(filter.getOffset() != null) {
+      currentOffset = Long.parseLong(filter.getOffset());
+    }
+    else if(filter.getEnqueueTime() != 0) {
+      //assume if it's time based filter the offset matches the enqueue time.
+      currentOffset = filter.getEnqueueTime();
+    }
+    else {
+      throw new EventHubException("Invalid IEventHubReceiverFilter");
+    }
     isOpen = true;
   }
 

@@ -69,9 +69,9 @@ public class EventHubSpout extends BaseRichSpout {
       this.pmFactory = new IPartitionManagerFactory() {
         @Override
         public IPartitionManager create(EventHubSpoutConfig spoutConfig,
-            String partitionId, String startingOffset, IStateStore stateStore,
+            String partitionId, IStateStore stateStore,
             IEventHubReceiver receiver) {
-          return new PartitionManager(spoutConfig, partitionId, startingOffset,
+          return new PartitionManager(spoutConfig, partitionId,
               stateStore, receiver);
         }
       };

@@ -35,9 +35,9 @@ public class AtMostOnceEventCount extends EventCount implements Serializable {
 
       @Override
       public IPartitionManager create(EventHubSpoutConfig spoutConfig,
-          String partitionId, String startingOffset, IStateStore stateStore,
+          String partitionId, IStateStore stateStore,
           IEventHubReceiver receiver) {
-        return new SimplePartitionManager(spoutConfig, partitionId, startingOffset,
+        return new SimplePartitionManager(spoutConfig, partitionId,
             stateStore, receiver);
       }
     };

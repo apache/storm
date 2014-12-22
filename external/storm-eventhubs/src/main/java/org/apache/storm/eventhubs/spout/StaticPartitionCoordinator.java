@@ -57,7 +57,7 @@ public class StaticPartitionCoordinator implements IPartitionCoordinator {
     for (String partitionId : partitionIds) {
       IEventHubReceiver receiver = recvFactory.create(config, partitionId);
       IPartitionManager partitionManager = pmFactory.create(
-          config, partitionId, Constants.DefaultStartingOffset, stateStore, receiver);
+          config, partitionId, stateStore, receiver);
       partitionManagerMap.put(partitionId, partitionManager);
       partitionManagers.add(partitionManager);
     }

@@ -36,11 +36,10 @@ public class PartitionManager extends SimplePartitionManager {
   public PartitionManager(
     EventHubSpoutConfig spoutConfig,
     String partitionId,
-    String startingOffset,
     IStateStore stateStore,
     IEventHubReceiver receiver) {
 
-    super(spoutConfig, partitionId, startingOffset, stateStore, receiver);
+    super(spoutConfig, partitionId, stateStore, receiver);
     
     this.pending = new LinkedHashMap<String, EventData>();
     this.toResend = new TreeSet<EventData>();

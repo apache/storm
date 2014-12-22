@@ -41,7 +41,6 @@ public final class EventHubReceiver {
   private final String consumerGroupName;
   private final String partitionId;
   private final String consumerAddress;
-  private final String offset;
   private final Map<Symbol, Filter> filters;
   private final int defaultCredits;
 
@@ -49,7 +48,7 @@ public final class EventHubReceiver {
   private boolean isClosed;
 
   public EventHubReceiver(Session session, String entityPath,
-      String consumerGroupName, String partitionId, String offset, int defaultCredits)
+      String consumerGroupName, String partitionId, String filterStr, int defaultCredits)
       throws EventHubException {
 
     this.session = session;
@@ -57,10 +56,10 @@ public final class EventHubReceiver {
     this.consumerGroupName = consumerGroupName;
     this.partitionId = partitionId;
     this.consumerAddress = this.getConsumerAddress();
-    this.offset = offset;
     this.filters = Collections.singletonMap(
         Symbol.valueOf(Constants.SelectorFilterName),
-        (Filter) getOffsetFilter(this.offset));
+        (Filter) new SelectorFilter(filterStr));
+    logger.info("receiver filter string: " + filterStr);
     this.defaultCredits = defaultCredits;
 
     this.ensureReceiverCreated();
@@ -136,10 +135,5 @@ public final class EventHubReceiver {
     if (this.isClosed) {
       throw new RuntimeException("receiver was closed.");
     }
-  }  
-  
-  private static SelectorFilter getOffsetFilter(String offset) {
-    return new SelectorFilter(String.format(Constants.OffsetFilterFormatString,
-        offset));
   }
 }

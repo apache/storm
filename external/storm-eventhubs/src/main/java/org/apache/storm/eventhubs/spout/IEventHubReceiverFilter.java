@@ -17,19 +17,19 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.spout;
 
-import java.util.Map;
-
-import org.apache.storm.eventhubs.client.EventHubException;
-
-public interface IEventHubReceiver {
-
-  void open(IEventHubReceiverFilter filter) throws EventHubException;
-
-  void close();
+/**
+ * The filter to create an EventHubs receiver
+ */
+public interface IEventHubReceiverFilter {
+  /**
+   * Get offset to filter events based on offset 
+   * @return null if offset not set
+   */
+  String getOffset();
   
-  boolean isOpen();
-
-  EventData receive(long timeoutInMilliseconds);
-  
-  Map getMetricsData();
+  /**
+   * Get timestamp to filter events based on enqueue time.
+   * @return 0 if enqueue time is not set
+   */
+  long getEnqueueTime();
 }

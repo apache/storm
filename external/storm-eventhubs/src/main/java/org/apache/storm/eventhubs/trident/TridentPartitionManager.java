@@ -26,22 +26,32 @@ import org.slf4j.LoggerFactory;
 import org.apache.storm.eventhubs.client.Constants;
 import org.apache.storm.eventhubs.client.EventHubException;
 import org.apache.storm.eventhubs.spout.EventData;
+import org.apache.storm.eventhubs.spout.EventHubReceiverFilter;
+import org.apache.storm.eventhubs.spout.EventHubSpoutConfig;
 import org.apache.storm.eventhubs.spout.IEventHubReceiver;
 
 public class TridentPartitionManager implements ITridentPartitionManager {
   private static final Logger logger = LoggerFactory.getLogger(TridentPartitionManager.class);
   private final int receiveTimeoutMs = 5000;
   private final IEventHubReceiver receiver;
+  private final EventHubSpoutConfig spoutConfig;
   private String lastOffset = Constants.DefaultStartingOffset;
   
-  public TridentPartitionManager(IEventHubReceiver receiver) {
+  public TridentPartitionManager(EventHubSpoutConfig spoutConfig, IEventHubReceiver receiver) {
     this.receiver = receiver;
+    this.spoutConfig = spoutConfig;
   }
   
   @Override
   public boolean open(String offset) {
     try {
-      receiver.open(offset);
+      if((offset == null || offset.equals(Constants.DefaultStartingOffset)) 
+        && spoutConfig.getEnqueueTimeFilter() != 0) {
+          receiver.open(new EventHubReceiverFilter(spoutConfig.getEnqueueTimeFilter()));
+      }
+      else {
+        receiver.open(new EventHubReceiverFilter(offset));
+      }
       lastOffset = offset;
       return true;
     }

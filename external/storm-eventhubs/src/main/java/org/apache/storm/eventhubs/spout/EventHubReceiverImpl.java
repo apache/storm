@@ -25,6 +25,7 @@ import backtype.storm.metric.api.CountMetric;
 import backtype.storm.metric.api.MeanReducer;
 import backtype.storm.metric.api.ReducedMetric;
 
+import org.apache.storm.eventhubs.client.Constants;
 import org.apache.storm.eventhubs.client.EventHubClient;
 import org.apache.storm.eventhubs.client.EventHubException;
 import org.apache.storm.eventhubs.client.EventHubReceiver;
@@ -63,11 +64,21 @@ public class EventHubReceiverImpl implements IEventHubReceiver {
   }
 
   @Override
-  public void open(String offset) throws EventHubException {
-    logger.info("creating eventhub receiver: partitionId=" + partitionId + ", offset=" + offset);
+  public void open(IEventHubReceiverFilter filter) throws EventHubException {
+    logger.info("creating eventhub receiver: partitionId=" + partitionId + ", offset=" + filter.getOffset()
+        + ", enqueueTime=" + filter.getEnqueueTime());
     long start = System.currentTimeMillis();
     EventHubClient eventHubClient = EventHubClient.create(connectionString, entityName);
-    receiver = eventHubClient.getDefaultConsumerGroup().createReceiver(partitionId, offset, defaultCredits);
+    if(filter.getOffset() != null) {
+      receiver = eventHubClient.getDefaultConsumerGroup().createReceiver(partitionId, filter.getOffset(), defaultCredits);
+    }
+    else if(filter.getEnqueueTime() != 0) {
+      receiver = eventHubClient.getDefaultConsumerGroup().createReceiver(partitionId, filter.getEnqueueTime(), defaultCredits);
+    }
+    else {
+      logger.error("Invalid IEventHubReceiverFilter, use default offset as filter");
+      receiver = eventHubClient.getDefaultConsumerGroup().createReceiver(partitionId, Constants.DefaultStartingOffset, defaultCredits);
+    }
     long end = System.currentTimeMillis();
     logger.info("created eventhub receiver, time taken(ms): " + (end-start));
   }

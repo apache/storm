@@ -51,7 +51,7 @@ public class TransactionalTridentEventHubEmitter
     this(spoutConfig, spoutConfig.getReceiverCredits(), null, null);
   }
       
-  public TransactionalTridentEventHubEmitter(EventHubSpoutConfig spoutConfig,
+  public TransactionalTridentEventHubEmitter(final EventHubSpoutConfig spoutConfig,
       int batchSize,
       ITridentPartitionManagerFactory pmFactory,
       IEventHubReceiverFactory recvFactory) {
@@ -64,7 +64,7 @@ public class TransactionalTridentEventHubEmitter
       this.pmFactory = new ITridentPartitionManagerFactory() {
         @Override
         public ITridentPartitionManager create(IEventHubReceiver receiver) {
-          return new TridentPartitionManager(receiver);
+          return new TridentPartitionManager(spoutConfig, receiver);
         }
       };
     }

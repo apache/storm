@@ -22,6 +22,7 @@ public class Constants {
   public static final String DefaultStartingOffset = "-1";
   public static final String SelectorFilterName = "apache.org:selector-filter:string";
   public static final String OffsetFilterFormatString = "amqp.annotation.x-opt-offset > '%s'";
+  public static final String EnqueueTimeFilterFormatString = "amqp.annotation.x-opt-enqueuedtimeutc > %d";
   public static final String ConsumerAddressFormatString = "%s/ConsumerGroups/%s/Partitions/%s";
   public static final String DestinationAddressFormatString = "%s/Partitions/%s";
 

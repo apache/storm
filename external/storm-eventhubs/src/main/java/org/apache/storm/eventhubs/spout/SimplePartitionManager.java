@@ -22,6 +22,8 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.storm.eventhubs.client.Constants;
+
 /**
  * A simple partition manager that does not re-send failed messages
  */
@@ -35,20 +37,17 @@ public class SimplePartitionManager implements IPartitionManager {
   
   protected final EventHubSpoutConfig config;
   private final String partitionId;
-  private final String startingOffset;
   private final IStateStore stateStore;
   private final String statePath;
   
   public SimplePartitionManager(
       EventHubSpoutConfig spoutConfig,
       String partitionId,
-      String startingOffset,
       IStateStore stateStore,
       IEventHubReceiver receiver) {
     this.receiver = receiver;
     this.config = spoutConfig;
     this.partitionId = partitionId;
-    this.startingOffset = startingOffset;
     this.statePath = this.getPartitionStatePath();
     this.stateStore = stateStore;
   }
@@ -59,13 +58,20 @@ public class SimplePartitionManager implements IPartitionManager {
     //read from state store, if not found, use startingOffset
     String offset = stateStore.readData(statePath);
     logger.info("read offset from state store: " + offset);
-
-    if (offset == null) {
-      offset = this.startingOffset;
+    if(offset == null) {
+      offset = Constants.DefaultStartingOffset;
     }
 
-    receiver.open(offset);
-    
+    EventHubReceiverFilter filter = new EventHubReceiverFilter();
+    if (offset.equals(Constants.DefaultStartingOffset)
+        && config.getEnqueueTimeFilter() != 0) {
+      filter.setEnqueueTime(config.getEnqueueTimeFilter());
+    }
+    else {
+      filter.setOffset(offset);
+    }
+
+    receiver.open(filter);
   }
   
   @Override

@@ -17,14 +17,9 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.client;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.storm.eventhubs.spout.EventHubSpoutConfig;
 
 public class EventHubSendClient {
-  
-  private static final Logger logger = LoggerFactory.getLogger(EventHubSendClient.class);
   
   public static void main(String[] args) throws Exception {
     
@@ -67,7 +62,7 @@ public class EventHubSendClient {
       }
       System.out.println("Total Number of messages sent: " + messageCount);
     } catch (Exception e) {
-      logger.error("Exception: " + e.getMessage());
+      System.out.println("Exception: " + e.getMessage());
     }
     
     System.out.println("done");

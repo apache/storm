@@ -42,9 +42,15 @@ public class EventHubConsumerGroup {
       startingOffset = Constants.DefaultStartingOffset;
     }
 
-    // ConnectionErrorException can happen temporarily.
-    // let's retry several times before giving up.
-    return new EventHubReceiver(this.session, this.entityPath, this.consumerGroupName, partitionId, startingOffset, defaultCredits);
+    String filterStr = String.format(Constants.OffsetFilterFormatString, startingOffset);
+    return new EventHubReceiver(this.session, this.entityPath, this.consumerGroupName, partitionId, filterStr, defaultCredits);
+  }
+  
+  public EventHubReceiver createReceiver(String partitionId, long timeAfter, int defaultCredits) throws EventHubException {
+    this.ensureSessionCreated();
+
+    String filterStr = String.format(Constants.EnqueueTimeFilterFormatString, timeAfter);
+    return new EventHubReceiver(this.session, this.entityPath, this.consumerGroupName, partitionId, filterStr, defaultCredits);
   }
 
   public void close() {

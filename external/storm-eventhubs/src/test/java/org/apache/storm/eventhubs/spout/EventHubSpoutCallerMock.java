@@ -32,7 +32,7 @@ public class EventHubSpoutCallerMock {
       int totalTasks, int taskIndex, int checkpointInterval) {
     stateStore = new StateStoreMock();
     EventHubSpoutConfig conf = new EventHubSpoutConfig("username", "password",
-        "namespace", "entityname", totalPartitions, "zookeeper", checkpointInterval, 1024, 1024);
+        "namespace", "entityname", totalPartitions, "zookeeper", checkpointInterval, 1024);
     conf.setTopologyName("TestTopo");
     
     IEventHubReceiverFactory recvFactory = new IEventHubReceiverFactory() {

@@ -29,13 +29,17 @@ public class PartitionManagerCallerMock {
   private IPartitionManager pm;
   private IStateStore stateStore;
 
-  public PartitionManagerCallerMock(String startOffset) {
-    EventHubReceiverMock receiver = new EventHubReceiverMock(startOffset);
+  public PartitionManagerCallerMock(String partitionId) {
+    this(partitionId, 0);
+  }
+  
+  public PartitionManagerCallerMock(String partitionId, long enqueueTimeFilter) {
+    EventHubReceiverMock receiver = new EventHubReceiverMock(partitionId);
     EventHubSpoutConfig conf = new EventHubSpoutConfig("username", "password",
-      "namespace", "entityname", 16, "zookeeper", 10, 1024, 1024);
+      "namespace", "entityname", 16, "zookeeper", 10, 1024, 1024, enqueueTimeFilter);
     conf.setTopologyName("TestTopo");
     stateStore = new StateStoreMock();
-    this.pm = new PartitionManager(conf, "1", startOffset, stateStore, receiver);
+    this.pm = new PartitionManager(conf, partitionId, stateStore, receiver);
     
     stateStore.open();
     try {
