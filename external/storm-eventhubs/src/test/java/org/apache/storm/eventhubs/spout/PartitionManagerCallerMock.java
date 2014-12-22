@@ -32,7 +32,7 @@ public class PartitionManagerCallerMock {
   public PartitionManagerCallerMock(String startOffset) {
     EventHubReceiverMock receiver = new EventHubReceiverMock(startOffset);
     EventHubSpoutConfig conf = new EventHubSpoutConfig("username", "password",
-      "namespace", "entityname", 16, "zookeeper", 10, 1000);
+      "namespace", "entityname", 16, "zookeeper", 10, 1024, 1024);
     conf.setTopologyName("TestTopo");
     stateStore = new StateStoreMock();
     this.pm = new PartitionManager(conf, "1", startOffset, stateStore, receiver);
@@ -68,8 +68,13 @@ public class PartitionManagerCallerMock {
         }
         for(int i=0; i<count; ++i) {
           EventData ed = pm.receive();
-          ret.append(ed.getMessageId().getOffset());
-          ret.append(",");
+          if(ed == null) {
+            ret.append("null,");
+          }
+          else {
+            ret.append(ed.getMessageId().getOffset());
+            ret.append(",");
+          }
         }
       }
       else if(cmd.startsWith("a")) {

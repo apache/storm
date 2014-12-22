@@ -39,7 +39,7 @@ public class TestTransactionalTridentEmitter {
   @Before
   public void setUp() throws Exception {
     EventHubSpoutConfig conf = new EventHubSpoutConfig("username", "password",
-        "namespace", "entityname", 16, "zookeeper", 10, 1000);
+        "namespace", "entityname", 16, "zookeeper", 10, 1024, 1024);
     conf.setTopologyName("TestTopo");
     IEventHubReceiverFactory recvFactory = new IEventHubReceiverFactory() {
       @Override

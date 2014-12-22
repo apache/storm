@@ -93,6 +93,17 @@ public class TestPartitionManager {
     mock.execute("r,r,r,f2,f1,r,r,a2,a1,a0");
     //all events are sent successfully, return last sent offset
     assertEquals("2", mock.checkpoint());
-    
+  }
+  
+  @Test
+  public void testPartitionManagerMaxPendingMessages() {
+    PartitionManagerCallerMock mock
+      = new PartitionManagerCallerMock("-1");
+    String result = mock.execute("r1024");
+    //any receive call after exceeding max pending messages results in null
+    result = mock.execute("r2");
+    assertEquals("null,null", result);
+    result = mock.execute("a0,a1,r2");
+    assertEquals("1024,1025", result);
   }
 }

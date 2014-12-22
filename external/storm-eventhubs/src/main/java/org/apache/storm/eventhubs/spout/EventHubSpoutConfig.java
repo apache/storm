@@ -34,6 +34,7 @@ public class EventHubSpoutConfig implements Serializable {
   private final int partitionCount;
   private final int checkpointIntervalInSeconds;
   private final int receiverCredits;
+  private final int maxPendingMsgsPerPartition;
 
   private String connectionString;
   private String targetFqnAddress;
@@ -43,12 +44,20 @@ public class EventHubSpoutConfig implements Serializable {
   public EventHubSpoutConfig(String username, String password, String namespace,
       String entityPath, int partitionCount, String zkConnectionString) {
     this(username, password, namespace, entityPath, partitionCount,
-        zkConnectionString, 10, 1000);
+        zkConnectionString, 10, 1024, 1024);
+  }
+  
+  //Keep this constructor for backward compatibility
+  public EventHubSpoutConfig(String username, String password, String namespace,
+      String entityPath, int partitionCount, String zkConnectionString,
+      int checkpointIntervalInSeconds, int receiverCredits) {
+    this(username, password, namespace, entityPath, partitionCount,
+        zkConnectionString, checkpointIntervalInSeconds, receiverCredits, 1024);
   }
       
   public EventHubSpoutConfig(String username, String password, String namespace,
     String entityPath, int partitionCount, String zkConnectionString,
-    int checkpointIntervalInSeconds, int receiverCredits) {
+    int checkpointIntervalInSeconds, int receiverCredits, int maxPendingMsgsPerPartition) {
     this.userName = username;
     this.password = password;
     this.connectionString = buildConnectionString(username, password, namespace);
@@ -58,6 +67,7 @@ public class EventHubSpoutConfig implements Serializable {
     this.zkConnectionString = zkConnectionString;
     this.checkpointIntervalInSeconds = checkpointIntervalInSeconds;
     this.receiverCredits = receiverCredits;
+    this.maxPendingMsgsPerPartition = maxPendingMsgsPerPartition;
     this.scheme = new EventDataScheme();
   }
 
@@ -87,6 +97,10 @@ public class EventHubSpoutConfig implements Serializable {
   
   public int getReceiverCredits() {
     return receiverCredits;
+  }
+  
+  public int getMaxPendingMsgsPerPartition() {
+    return maxPendingMsgsPerPartition;
   }
 
   public String getTopologyName() {

@@ -63,13 +63,14 @@ public class EventCount {
     int partitionCount = Integer.parseInt(properties.getProperty("eventhubspout.partitions.count"));
     int checkpointIntervalInSeconds = Integer.parseInt(properties.getProperty("eventhubspout.checkpoint.interval"));
     int receiverCredits = Integer.parseInt(properties.getProperty("eventhub.receiver.credits"));
+    int maxPendingMsgsPerPartition = Integer.parseInt(properties.getProperty("eventhubspout.max.pending.messages.per.partition"));
     System.out.println("Eventhub spout config: ");
     System.out.println("  partition count: " + partitionCount);
     System.out.println("  checkpoint interval: " + checkpointIntervalInSeconds);
     System.out.println("  receiver credits: " + receiverCredits);
     spoutConfig = new EventHubSpoutConfig(username, password,
       namespaceName, entityPath, partitionCount, zkEndpointAddress,
-      checkpointIntervalInSeconds, receiverCredits);
+      checkpointIntervalInSeconds, receiverCredits, maxPendingMsgsPerPartition);
 
     if(targetFqnAddress != null)
     {

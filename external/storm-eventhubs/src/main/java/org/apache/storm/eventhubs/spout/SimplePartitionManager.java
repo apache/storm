@@ -33,7 +33,7 @@ public class SimplePartitionManager implements IPartitionManager {
   protected String lastOffset = "-1";
   protected String committedOffset = "-1";
   
-  private final EventHubSpoutConfig config;
+  protected final EventHubSpoutConfig config;
   private final String partitionId;
   private final String startingOffset;
   private final IStateStore stateStore;
