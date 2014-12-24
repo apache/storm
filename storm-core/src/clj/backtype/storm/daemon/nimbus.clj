@@ -1252,11 +1252,11 @@
                                                                  set
                                                                  count)
                                                             (time-delta (:launch-time-secs base))
-                                                            (extract-status-str base))]
+                                                            (extract-status-str base)))]
                                                (when-let [owner (:owner base)] (.set_owner topo-summ owner))
                                                (when-let [sched-status (.get @(:id->sched-status nimbus) id)] (.set_sched_status topo-summ sched-status))
                                                topo-summ
-                                          )))]
+                                          ))]
           (ClusterSummary. supervisor-summaries
                            nimbus-uptime
                            topology-summaries)
