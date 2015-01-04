@@ -6,12 +6,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import kafka.utils.Utils;
-import scala.actors.threadpool.Arrays;
 
 import com.alibaba.jstorm.utils.JStormUtils;
 
-import backtype.storm.Config;
 import backtype.storm.spout.MultiScheme;
 import backtype.storm.spout.RawMultiScheme;
 
@@ -21,7 +18,6 @@ public class KafkaSpoutConfig implements Serializable {
 	
 	private static final long serialVersionUID = 1L;
 
-	public MultiScheme scheme = new RawMultiScheme();
 	public List<Host> brokers;
 	public int numPartitions;
 	public String topic;
@@ -29,7 +25,7 @@ public class KafkaSpoutConfig implements Serializable {
 	
 	public List<Host> zkServers;
 	
-	public int fetchMaxBytes = 1024*1024;
+	public int fetchMaxBytes = 256*1024;
 	public int fetchWaitMaxMs = 10000;
     public int socketTimeoutMs = 30 * 1000;
     public int socketReceiveBufferBytes = 64*1024;
@@ -37,9 +33,10 @@ public class KafkaSpoutConfig implements Serializable {
     public boolean fromBeginning = false;
     public String clientId;
     public boolean resetOffsetIfOutOfRange = false;
-    
+    public long offsetUpdateIntervalMs=2000;
     private Properties properties = null;
     private Map stormConf;
+    public int batchSendCount = 1;
     
     public KafkaSpoutConfig() {
     }
@@ -51,7 +48,7 @@ public class KafkaSpoutConfig implements Serializable {
     public void configure(Map conf) {
         this.stormConf = conf;
         topic = getConfig("kafka.topic", "jstorm");
-        zkRoot = getConfig("kafka.zookeeper.root", "/jstorm");
+        zkRoot = getConfig("storm.zookeeper.root", "/jstorm");
         
         String zkHosts = getConfig("kafka.zookeeper.hosts", "127.0.0.1:2181");
         zkServers = convertHosts(zkHosts, 2181);
@@ -59,13 +56,15 @@ public class KafkaSpoutConfig implements Serializable {
         brokers = convertHosts(brokerHosts, 9092);
         
         numPartitions = JStormUtils.parseInt(getConfig("kafka.broker.partitions"), 1);
-        fetchMaxBytes = JStormUtils.parseInt(getConfig("kafka.fetch.max.bytes"), 1024*1024);
+        fetchMaxBytes = JStormUtils.parseInt(getConfig("kafka.fetch.max.bytes"), 256*1024);
         fetchWaitMaxMs = JStormUtils.parseInt(getConfig("kafka.fetch.wait.max.ms"), 10000);
         socketTimeoutMs = JStormUtils.parseInt(getConfig("kafka.socket.timeout.ms"), 30 * 1000);
         socketReceiveBufferBytes = JStormUtils.parseInt(getConfig("kafka.socket.receive.buffer.bytes"), 64*1024);
         fromBeginning = JStormUtils.parseBoolean(getConfig("kafka.fetch.from.beginning"), false);
         startOffsetTime = JStormUtils.parseInt(getConfig("kafka.start.offset.time"), -1);
+        offsetUpdateIntervalMs = JStormUtils.parseInt(getConfig("kafka.offset.update.interval.ms"), 2000);
         clientId = getConfig("kafka.client.id", "jstorm");
+        batchSendCount = JStormUtils.parseInt(getConfig("kafka.spout.batch.send.count"), 1);
     }
     
     
@@ -102,14 +101,6 @@ public class KafkaSpoutConfig implements Serializable {
         return hostList;
     }
 	
-	
-	public MultiScheme getScheme() {
-		return scheme;
-	}
-
-	public void setScheme(MultiScheme scheme) {
-		this.scheme = scheme;
-	}
 
 	public List<Host> getHosts() {
 		return brokers;

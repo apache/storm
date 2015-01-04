@@ -7,6 +7,10 @@ import java.io.Serializable;
  *
  */
 public class Host implements Serializable {
+    /**
+     * 
+     */
+    private static final long serialVersionUID = -315213440689707962L;
     private String host;
     private int port;
 

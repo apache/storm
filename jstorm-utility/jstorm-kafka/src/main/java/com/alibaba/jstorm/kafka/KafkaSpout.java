@@ -1,16 +1,13 @@
 package com.alibaba.jstorm.kafka;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.alibaba.jstorm.kafka.PartitionConsumer.EmitState;
 
-import backtype.storm.spout.MultiScheme;
-import backtype.storm.spout.RawMultiScheme;
 import backtype.storm.spout.SpoutOutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.IRichSpout;
@@ -22,11 +19,11 @@ public class KafkaSpout implements IRichSpout {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	private static Logger LOG = Logger.getLogger(KafkaSpout.class);
+	private static Logger LOG = LoggerFactory.getLogger(KafkaSpout.class);
 
 	protected SpoutOutputCollector collector;
 	
-	
+	private long lastUpdateMs;
 	PartitionCoordinator coordinator;
 	
 	private KafkaSpoutConfig config;
@@ -48,6 +45,7 @@ public class KafkaSpout implements IRichSpout {
 		config.configure(conf);
 		zkState = new ZkState(conf, config);
 		coordinator = new PartitionCoordinator(conf, config, context, zkState);
+		lastUpdateMs = System.currentTimeMillis();
 	}
 
 	@Override
@@ -73,7 +71,7 @@ public class KafkaSpout implements IRichSpout {
 		Collection<PartitionConsumer> partitionConsumers = coordinator.getPartitionConsumers();
 		for(PartitionConsumer consumer: partitionConsumers) {
 			EmitState state = consumer.emit(collector);
-			LOG.debug("====== partition "+ consumer.getPartition().getPartition() + " emit message state is "+state);
+			LOG.debug("====== partition "+ consumer.getPartition() + " emit message state is "+state);
 //			if(state != EmitState.EMIT_MORE) {
 //				currentPartitionIndex  = (currentPartitionIndex+1) % consumerSize;
 //			}
@@ -81,13 +79,20 @@ public class KafkaSpout implements IRichSpout {
 //				break;
 //			}
 		}
-		commitState();
+		long now = System.currentTimeMillis();
+        if((now - lastUpdateMs) > config.offsetUpdateIntervalMs) {
+            commitState();
+        }
+        
+		
 	}
 	
 	public void commitState() {
+	    lastUpdateMs = System.currentTimeMillis();
 		for(PartitionConsumer consumer: coordinator.getPartitionConsumers()) {
 			consumer.commitState();
         }
+		
 	}
 
 	@Override

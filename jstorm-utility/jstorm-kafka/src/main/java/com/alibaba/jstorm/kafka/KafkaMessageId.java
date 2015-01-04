@@ -1,19 +1,19 @@
 package com.alibaba.jstorm.kafka;
 
 public class KafkaMessageId {
-	private Partition partition;
+	private int partition;
 	private long offset;
     
-    public KafkaMessageId(Partition partition, long offset) {
+    public KafkaMessageId(int partition, long offset) {
         this.setPartition(partition);
         this.setOffset(offset);
     }
 
-	public Partition getPartition() {
+	public int getPartition() {
 		return partition;
 	}
 
-	public void setPartition(Partition partition) {
+	public void setPartition(int partition) {
 		this.partition = partition;
 	}
 
