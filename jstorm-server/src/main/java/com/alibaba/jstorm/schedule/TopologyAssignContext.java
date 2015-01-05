@@ -6,10 +6,11 @@ import java.util.Set;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 
-import com.alibaba.jstorm.daemon.supervisor.SupervisorInfo;
-import com.alibaba.jstorm.task.Assignment;
-
 import backtype.storm.generated.StormTopology;
+
+import com.alibaba.jstorm.daemon.supervisor.SupervisorInfo;
+import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
+import com.alibaba.jstorm.task.Assignment;
 
 public class TopologyAssignContext {
 
@@ -39,6 +40,7 @@ public class TopologyAssignContext {
 	protected Set<Integer> deadTaskIds; // dead tasks
 	protected Set<Integer> unstoppedTaskIds; // the task is alive, but his
 												// supervisor is dead
+	protected Set<ResourceWorkerSlot> unstoppedWorkers;
 
 	public TopologyAssignContext() {
 
@@ -131,6 +133,14 @@ public class TopologyAssignContext {
 	public static boolean isAssignTypeValid(int type) {
 		return (type == ASSIGN_TYPE_NEW) || (type == ASSIGN_TYPE_REBALANCE)
 				|| (type == ASSIGN_TYPE_MONITOR);
+	}
+
+	public Set<ResourceWorkerSlot> getUnstoppedWorkers() {
+		return unstoppedWorkers;
+	}
+
+	public void setUnstoppedWorkers(Set<ResourceWorkerSlot> unstoppedWorkers) {
+		this.unstoppedWorkers = unstoppedWorkers;
 	}
 
 	@Override

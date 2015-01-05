@@ -18,6 +18,7 @@ import backtype.storm.Config;
 
 import com.alibaba.jstorm.client.WorkerAssignment;
 import com.alibaba.jstorm.daemon.supervisor.SupervisorInfo;
+import com.alibaba.jstorm.task.Assignment;
 import com.alibaba.jstorm.utils.FailedAssignTopologyException;
 import com.alibaba.jstorm.utils.JStromServerConfigExtension;
 
@@ -208,6 +209,10 @@ public class WorkerMaker {
 			return ret;
 		Map<String, List<Integer>> componentToTask = (HashMap<String, List<Integer>>) ((HashMap<String, List<Integer>>) context
 				.getComponentTasks()).clone();
+		if (context.getAssignType() != context.ASSIGN_TYPE_NEW) {
+			this.checkUserDefineWorkers(context, workers,
+					context.getTaskToComponent());
+		}
 		for (WorkerAssignment worker : workers) {
 			ResourceWorkerSlot workerSlot = new ResourceWorkerSlot(worker,
 					componentToTask);
@@ -216,6 +221,22 @@ public class WorkerMaker {
 			}
 		}
 		return ret;
+	}
+
+	private void checkUserDefineWorkers(DefaultTopologyAssignContext context,
+			List<WorkerAssignment> workers, Map<Integer, String> taskToComponent) {
+		Set<ResourceWorkerSlot> unstoppedWorkers = context
+				.getUnstoppedWorkers();
+		List<WorkerAssignment> re = new ArrayList<WorkerAssignment>();
+		for (WorkerAssignment worker : workers) {
+			for (ResourceWorkerSlot unstopped : unstoppedWorkers) {
+				if (unstopped
+						.compareToUserDefineWorker(worker, taskToComponent))
+					re.add(worker);
+			}
+		}
+		workers.removeAll(re);
+
 	}
 
 	private List<SupervisorInfo> getCanUseSupervisors(

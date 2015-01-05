@@ -2,6 +2,7 @@ package com.alibaba.jstorm.schedule.default_assign;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -28,9 +29,9 @@ public class ResourceWorkerSlot extends WorkerSlot implements Serializable {
 	private Set<Integer> tasks;
 
 	private String jvm;
-	
+
 	public ResourceWorkerSlot() {
-		
+
 	}
 
 	public ResourceWorkerSlot(String supervisorId, Integer port) {
@@ -97,10 +98,47 @@ public class ResourceWorkerSlot extends WorkerSlot implements Serializable {
 	public void setCpu(int cpu) {
 		this.cpu = cpu;
 	}
-	
+
 	@Override
 	public String toString() {
 		return ToStringBuilder.reflectionToString(this,
 				ToStringStyle.SHORT_PREFIX_STYLE);
+	}
+
+	public boolean compareToUserDefineWorker(WorkerAssignment worker,
+			Map<Integer, String> taskToComponent) {
+		int cpu = worker.getCpu();
+		if (cpu != 0 && this.cpu != cpu)
+			return false;
+		long mem = worker.getMem();
+		if (mem != 0 && this.memSize != mem)
+			return false;
+		String jvm = worker.getJvm();
+		if (jvm != null && !jvm.equals(this.jvm))
+			return false;
+		String hostName = worker.getHostName();
+		if (hostName != null && !hostName.equals(this.hostname))
+			return false;
+		int port = worker.getPort();
+		if (port != 0 && port != this.getPort())
+			return false;
+		Map<String, Integer> componentToNum = worker.getComponentToNum();
+		Map<String, Integer> myComponentToNum = new HashMap<String, Integer>();
+		for (Integer task : tasks) {
+			String component = taskToComponent.get(task);
+			Integer i = myComponentToNum.get(component);
+			if (i == null) {
+				i = 0;
+			}
+			myComponentToNum.put(component, ++i);
+		}
+		if (componentToNum.size() != myComponentToNum.size())
+			return false;
+		for (Entry<String, Integer> entry : componentToNum.entrySet()) {
+			if (myComponentToNum.get(entry.getKey()) == null
+					|| myComponentToNum.get(entry.getKey()) != entry.getValue())
+				return false;
+		}
+		return true;
 	}
 }

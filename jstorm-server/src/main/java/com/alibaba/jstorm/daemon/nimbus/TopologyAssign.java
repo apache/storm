@@ -138,7 +138,7 @@ public class TopologyAssign implements Runnable {
 		Assignment assignment = null;
 		try {
 			assignment = mkAssignment(event);
-			
+
 			setTopologyStatus(event);
 		} catch (Throwable e) {
 			LOG.error("Failed to assign topology " + event.getTopologyId(), e);
@@ -320,6 +320,7 @@ public class TopologyAssign implements Runnable {
 		// machine
 		Set<Integer> unstoppedTasks = new HashSet<Integer>();
 		Set<Integer> deadTasks = new HashSet<Integer>();
+		Set<ResourceWorkerSlot> unstoppedWorkers = new HashSet<ResourceWorkerSlot>();
 
 		Assignment existingAssignment = stormClusterState.assignment_info(
 				topologyId, null);
@@ -327,13 +328,15 @@ public class TopologyAssign implements Runnable {
 			aliveTasks = getAliveTasks(topologyId, allTaskIds);
 			unstoppedTasks = getUnstoppedSlots(aliveTasks, supInfos,
 					existingAssignment);
-
+			unstoppedWorkers = getUnstoppedWorkers(unstoppedTasks,
+					existingAssignment);
 			deadTasks.addAll(allTaskIds);
 			deadTasks.removeAll(aliveTasks);
 		}
 
 		ret.setDeadTaskIds(deadTasks);
 		ret.setUnstoppedTaskIds(unstoppedTasks);
+		ret.setUnstoppedWorkers(unstoppedWorkers);
 
 		// Step 2: get all slots resource, free slots/ alive slots/ unstopped
 		// slots
@@ -419,12 +422,12 @@ public class TopologyAssign implements Runnable {
 
 		// Update metrics information in ZK when rebalance or reassignment
 		// Only update metrics monitor status when creating topology
-		if (context.getAssignType() == TopologyAssignContext.ASSIGN_TYPE_REBALANCE 
+		if (context.getAssignType() == TopologyAssignContext.ASSIGN_TYPE_REBALANCE
 				|| context.getAssignType() == TopologyAssignContext.ASSIGN_TYPE_MONITOR)
 			NimbusUtils.updateMetricsInfo(nimbusData, topologyId, assignment);
 		else
 			metricsMonitor(event);
-		
+
 		LOG.info("Successfully make assignment for topology id " + topologyId
 				+ ": " + assignment);
 
@@ -664,6 +667,24 @@ public class TopologyAssign implements Runnable {
 
 	}
 
+	private Set<ResourceWorkerSlot> getUnstoppedWorkers(
+			Set<Integer> aliveTasks, Assignment existAssignment) {
+		Set<ResourceWorkerSlot> ret = new HashSet<ResourceWorkerSlot>();
+		for (ResourceWorkerSlot worker : existAssignment.getWorkers()) {
+			boolean alive = true;
+			for (Integer task : worker.getTasks()) {
+				if (!aliveTasks.contains(task)) {
+					alive = false;
+					break;
+				}
+			}
+			if (alive) {
+				ret.add(worker);
+			}
+		}
+		return ret;
+	}
+
 	/**
 	 * Get free resources
 	 * 
@@ -774,17 +795,20 @@ public class TopologyAssign implements Runnable {
 					+ assignment, e);
 		}
 	}
-	
+
 	public void metricsMonitor(TopologyAssignEvent event) {
 		String topologyId = event.getTopologyId();
 		try {
 			Map<Object, Object> conf = nimbusData.getConf();
-			boolean isEnable =  ConfigExtension.isEnablePerformanceMetrics(conf);
-			StormClusterState zkClusterState = nimbusData.getStormClusterState();
+			boolean isEnable = ConfigExtension.isEnablePerformanceMetrics(conf);
+			StormClusterState zkClusterState = nimbusData
+					.getStormClusterState();
 			StormMonitor monitor = new StormMonitor(isEnable);
 			zkClusterState.set_storm_monitor(topologyId, monitor);
 		} catch (Exception e) {
-			LOG.warn("Failed to update metrics monitor status of " + topologyId, e);
+			LOG.warn(
+					"Failed to update metrics monitor status of " + topologyId,
+					e);
 		}
 	}
 
