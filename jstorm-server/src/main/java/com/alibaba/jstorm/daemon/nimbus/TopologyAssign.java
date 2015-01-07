@@ -41,6 +41,7 @@ import com.alibaba.jstorm.utils.PathUtils;
 import com.alibaba.jstorm.utils.TimeUtils;
 
 public class TopologyAssign implements Runnable {
+
 	private final static Logger LOG = Logger.getLogger(TopologyAssign.class);
 
 	/**
@@ -328,15 +329,12 @@ public class TopologyAssign implements Runnable {
 			aliveTasks = getAliveTasks(topologyId, allTaskIds);
 			unstoppedTasks = getUnstoppedSlots(aliveTasks, supInfos,
 					existingAssignment);
-			unstoppedWorkers = getUnstoppedWorkers(unstoppedTasks,
-					existingAssignment);
 			deadTasks.addAll(allTaskIds);
 			deadTasks.removeAll(aliveTasks);
 		}
 
 		ret.setDeadTaskIds(deadTasks);
 		ret.setUnstoppedTaskIds(unstoppedTasks);
-		ret.setUnstoppedWorkers(unstoppedWorkers);
 
 		// Step 2: get all slots resource, free slots/ alive slots/ unstopped
 		// slots
@@ -359,8 +357,16 @@ public class TopologyAssign implements Runnable {
 			ret.setOldAssignment(existingAssignment);
 			if (event.isScratch()) {
 				ret.setAssignType(TopologyAssignContext.ASSIGN_TYPE_REBALANCE);
+				unstoppedWorkers = getUnstoppedWorkers(unstoppedTasks,
+						existingAssignment);
+				ret.setUnstoppedWorkers(unstoppedWorkers);
+
 			} else {
 				ret.setAssignType(TopologyAssignContext.ASSIGN_TYPE_MONITOR);
+				unstoppedWorkers = getUnstoppedWorkers(allTaskIds,
+						existingAssignment);
+				ret.setUnstoppedWorkers(unstoppedWorkers);
+
 			}
 		}
 
@@ -368,10 +374,8 @@ public class TopologyAssign implements Runnable {
 	}
 
 	/**
-	 * make assignments for a topology
-	 * 
-	 * The nimbus core function, this function has been totally rewrite
-	 * 
+	 * make assignments for a topology The nimbus core function, this function
+	 * has been totally rewrite
 	 * 
 	 * @param nimbusData
 	 *            NimbusData
@@ -455,7 +459,6 @@ public class TopologyAssign implements Runnable {
 	}
 
 	/**
-	 * 
 	 * @param existingAssignment
 	 * @param taskWorkerSlot
 	 * @return
@@ -569,7 +572,6 @@ public class TopologyAssign implements Runnable {
 	 * 
 	 * @param allSlots
 	 * @return List<WorkerSlot>
-	 * 
 	 */
 	public static List<WorkerSlot> sortSlots(Set<WorkerSlot> allSlots,
 			int needSlotNum) {
@@ -615,6 +617,7 @@ public class TopologyAssign implements Runnable {
 				nodeMap.values());
 
 		Collections.sort(splitup, new Comparator<List<WorkerSlot>>() {
+
 			public int compare(List<WorkerSlot> o1, List<WorkerSlot> o2) {
 				return o2.size() - o1.size();
 			}
@@ -720,12 +723,10 @@ public class TopologyAssign implements Runnable {
 	}
 
 	/**
-	 * find all alived taskid
-	 * 
-	 * Does not assume that clocks are synchronized. Task heartbeat is only used
-	 * so that nimbus knows when it's received a new heartbeat. All timing is
-	 * done by nimbus and tracked through task-heartbeat-cache
-	 * 
+	 * find all alived taskid Does not assume that clocks are synchronized. Task
+	 * heartbeat is only used so that nimbus knows when it's received a new
+	 * heartbeat. All timing is done by nimbus and tracked through
+	 * task-heartbeat-cache
 	 * 
 	 * @param conf
 	 * @param topologyId
@@ -760,7 +761,6 @@ public class TopologyAssign implements Runnable {
 	 * Backup the toplogy's Assignment to ZK
 	 * 
 	 * @@@ Question Do we need to do backup operation every time?
-	 * 
 	 * @param assignment
 	 * @param event
 	 */
