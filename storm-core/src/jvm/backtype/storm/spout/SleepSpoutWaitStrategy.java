@@ -33,7 +33,7 @@ public class SleepSpoutWaitStrategy implements ISpoutWaitStrategy {
     @Override
     public void emptyEmit(long streak) {
         try {
-            Thread.sleep(sleepMillis);
+            Thread.sleep(Math.abs(sleepMillis + streak));
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
