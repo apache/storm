@@ -31,6 +31,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.thrift.TException;
@@ -49,9 +51,10 @@ public class ReturnResults extends BaseRichBolt {
     Map<List, DRPCInvocationsClient> _clients = new HashMap<List, DRPCInvocationsClient>();
 
     @Override
-    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector, String codeDir) {
         _conf = stormConf;
         _collector = collector;
+        if(!StringUtils.isEmpty(codeDir)) { context.setCodeDir(codeDir); }
         local = stormConf.get(Config.STORM_CLUSTER_MODE).equals("local");
     }
 

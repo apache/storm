@@ -112,8 +112,9 @@ public class KafkaBoltTest {
         props.put("metadata.broker.list", broker.getBrokerConnectionString());
         props.put("request.required.acks", "1");
         props.put("serializer.class", "kafka.serializer.StringEncoder");
+        String codeDir = "";
         config.put(KafkaBolt.KAFKA_BROKER_PROPERTIES, props);
-        bolt.prepare(config, null, new OutputCollector(collector));
+        bolt.prepare(config, null, new OutputCollector(collector), codeDir);
         return bolt;
     }
 
@@ -122,8 +123,9 @@ public class KafkaBoltTest {
         Properties props = new Properties();
         props.put("metadata.broker.list", broker.getBrokerConnectionString());
         props.put("request.required.acks", "1");
+        String codeDir = "";
         config.put(KafkaBolt.KAFKA_BROKER_PROPERTIES, props);
-        bolt.prepare(config, null, new OutputCollector(collector));
+        bolt.prepare(config, null, new OutputCollector(collector), codeDir);
         return bolt;
     }
 

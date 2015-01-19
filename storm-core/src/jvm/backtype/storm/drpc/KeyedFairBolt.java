@@ -45,11 +45,11 @@ public class KeyedFairBolt implements IRichBolt, FinishedCallback {
     }
     
     
-    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector, String codeDir) {
         if(_delegate instanceof FinishedCallback) {
             _callback = (FinishedCallback) _delegate;
         }
-        _delegate.prepare(stormConf, context, collector);
+        _delegate.prepare(stormConf, context, collector, codeDir);
         _rrQueue = new KeyedRoundRobinQueue<Tuple>();
         _executor = new Thread(new Runnable() {
             public void run() {

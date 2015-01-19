@@ -27,6 +27,7 @@ import backtype.storm.tuple.Tuple;
 import clojure.lang.AFn;
 import clojure.lang.IFn;
 import clojure.lang.RT;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -90,7 +91,7 @@ public class SystemBolt implements IBolt {
     }
 
     @Override
-    public void prepare(final Map stormConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(final Map stormConf, TopologyContext context, OutputCollector collector, String codeDir) {
         if(_prepareWasCalled && !"local".equals(stormConf.get(Config.STORM_CLUSTER_MODE))) {
             throw new RuntimeException("A single worker should have 1 SystemBolt instance.");
         }
@@ -99,6 +100,8 @@ public class SystemBolt implements IBolt {
         int bucketSize = RT.intCast(stormConf.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS));
 
         final RuntimeMXBean jvmRT = ManagementFactory.getRuntimeMXBean();
+
+        if(!StringUtils.isEmpty(codeDir)) { context.setCodeDir(codeDir); }
 
         context.registerMetric("uptimeSecs", new IMetric() {
             @Override

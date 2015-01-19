@@ -22,6 +22,7 @@ import backtype.storm.topology.OutputFieldsDeclarer;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,9 +42,10 @@ public class TestEventOrderCheckBolt extends BaseRichBolt {
     OutputCollector _collector;
     Map<Integer, Long> recentEventId = new HashMap<Integer, Long>();
 
-    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector, String codeDir) {
         _collector = collector;
         _count = 0;
+        if(!StringUtils.isEmpty(codeDir)) { context.setCodeDir(codeDir); }
     }
 
     public void execute(Tuple input) {
