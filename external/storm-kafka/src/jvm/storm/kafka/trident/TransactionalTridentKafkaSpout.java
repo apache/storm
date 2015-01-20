@@ -19,7 +19,9 @@ package storm.kafka.trident;
 
 import backtype.storm.task.TopologyContext;
 import backtype.storm.tuple.Fields;
-import storm.kafka.Partition;
+import storm.kafka.spout.KafkaConfig;
+import storm.kafka.spout.partition.GlobalPartitionInformation;
+import storm.kafka.spout.partition.Partition;
 import storm.trident.spout.IPartitionedTridentSpout;
 
 import java.util.Map;
@@ -28,17 +30,25 @@ import java.util.UUID;
 
 public class TransactionalTridentKafkaSpout implements IPartitionedTridentSpout<GlobalPartitionInformation, Partition, Map> {
 
-    TridentKafkaConfig _config;
-    String _topologyInstanceId = UUID.randomUUID().toString();
+    private KafkaConfig _config;
+    private String _topologyInstanceId = UUID.randomUUID().toString();
+    private storm.kafka.trident.Coordinator coordinator;
 
-    public TransactionalTridentKafkaSpout(TridentKafkaConfig config) {
+    public TransactionalTridentKafkaSpout(KafkaConfig config) {
         _config = config;
     }
 
+    public TransactionalTridentKafkaSpout withCoordinator(storm.kafka.trident.Coordinator coordinator) {
+        this.coordinator = coordinator;
+        return this;
+    }
 
     @Override
     public IPartitionedTridentSpout.Coordinator getCoordinator(Map conf, TopologyContext context) {
-        return new storm.kafka.trident.Coordinator(conf, _config);
+        if(this.coordinator == null) {
+            this.coordinator = new storm.kafka.trident.Coordinator(conf, _config);
+        }
+        return this.coordinator;
     }
 
     @Override

@@ -17,7 +17,9 @@
  */
 package storm.kafka.trident;
 
-import storm.kafka.KafkaUtils;
+import storm.kafka.spout.KafkaConfig;
+import storm.kafka.spout.helper.KafkaUtils;
+import storm.kafka.spout.partition.GlobalPartitionInformation;
 import storm.trident.spout.IOpaquePartitionedTridentSpout;
 import storm.trident.spout.IPartitionedTridentSpout;
 
@@ -25,26 +27,23 @@ import java.util.Map;
 
 class Coordinator implements IPartitionedTridentSpout.Coordinator<GlobalPartitionInformation>, IOpaquePartitionedTridentSpout.Coordinator<GlobalPartitionInformation> {
 
-    private IBrokerReader reader;
-    private TridentKafkaConfig config;
+    private KafkaConfig config;
 
-    public Coordinator(Map conf, TridentKafkaConfig tridentKafkaConfig) {
+    public Coordinator(Map conf, KafkaConfig tridentKafkaConfig) {
         config = tridentKafkaConfig;
-        reader = KafkaUtils.makeBrokerReader(conf, config);
     }
 
     @Override
     public void close() {
-        config.coordinator.close();
     }
 
     @Override
     public boolean isReady(long txid) {
-        return config.coordinator.isReady(txid);
+        return true;
     }
 
     @Override
     public GlobalPartitionInformation getPartitionsForBatch() {
-        return reader.getCurrentBrokers();
+        return KafkaUtils.getTopicPartitionInfo(config.seedBrokers, config.topic);
     }
 }

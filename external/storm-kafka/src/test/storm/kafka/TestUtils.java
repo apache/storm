@@ -19,15 +19,21 @@ package storm.kafka;
 
 import backtype.storm.Config;
 import backtype.storm.utils.Utils;
+import com.google.common.collect.Lists;
 import kafka.api.OffsetRequest;
 import kafka.javaapi.consumer.SimpleConsumer;
 import kafka.javaapi.message.ByteBufferMessageSet;
 import kafka.message.Message;
 import kafka.message.MessageAndOffset;
 import storm.kafka.bolt.KafkaBolt;
-import storm.kafka.trident.GlobalPartitionInformation;
+import storm.kafka.spout.Broker;
+import storm.kafka.spout.KafkaConfig;
+import storm.kafka.spout.helper.KafkaUtils;
+import storm.kafka.spout.partition.Partition;
+import storm.kafka.spout.partition.GlobalPartitionInformation;
 
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
@@ -50,22 +56,18 @@ public class TestUtils {
     }
 
     public static SimpleConsumer getKafkaConsumer(KafkaTestBroker broker) {
-        BrokerHosts brokerHosts = getBrokerHosts(broker);
-        KafkaConfig kafkaConfig = new KafkaConfig(brokerHosts, TOPIC);
+        KafkaConfig kafkaConfig = new KafkaConfig(getBrokerHosts(broker), TOPIC);
         SimpleConsumer simpleConsumer = new SimpleConsumer("localhost", broker.getPort(), 60000, 1024, "testClient");
         return simpleConsumer;
     }
 
     public static KafkaConfig getKafkaConfig(KafkaTestBroker broker) {
-        BrokerHosts brokerHosts = getBrokerHosts(broker);
-        KafkaConfig kafkaConfig = new KafkaConfig(brokerHosts, TOPIC);
+        KafkaConfig kafkaConfig = new KafkaConfig(getBrokerHosts(broker), TOPIC);
         return kafkaConfig;
     }
 
-    private static BrokerHosts getBrokerHosts(KafkaTestBroker broker) {
-        GlobalPartitionInformation globalPartitionInformation = new GlobalPartitionInformation();
-        globalPartitionInformation.addPartition(0, Broker.fromString(broker.getBrokerConnectionString()));
-        return new StaticHosts(globalPartitionInformation);
+    private static List<Broker> getBrokerHosts(KafkaTestBroker broker) {
+        return Lists.newArrayList(Broker.fromString(broker.getBrokerConnectionString()));
     }
 
     public static Config getConfig(String brokerConnectionString) {

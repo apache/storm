@@ -20,6 +20,7 @@ package storm.kafka;
 import backtype.storm.spout.SchemeAsMultiScheme;
 import backtype.storm.utils.Utils;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import kafka.api.OffsetRequest;
 import kafka.javaapi.consumer.SimpleConsumer;
 import kafka.javaapi.message.ByteBufferMessageSet;
@@ -28,10 +29,21 @@ import kafka.message.MessageAndOffset;
 import kafka.producer.KeyedMessage;
 import kafka.producer.ProducerConfig;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import storm.kafka.trident.GlobalPartitionInformation;
+import storm.kafka.spout.Broker;
+import storm.kafka.spout.KafkaConfig;
+import storm.kafka.spout.exception.FailedFetchException;
+import storm.kafka.spout.exception.TopicOffsetOutOfRangeException;
+import storm.kafka.spout.helper.KafkaUtils;
+import storm.kafka.spout.partition.GlobalPartitionInformation;
+import storm.kafka.spout.partition.Partition;
+import storm.kafka.spout.scheme.KeyValueSchemeAsMultiScheme;
+import storm.kafka.spout.scheme.StringKeyValueScheme;
+import storm.kafka.spout.scheme.StringScheme;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
@@ -45,15 +57,11 @@ public class KafkaUtilsTest {
     private KafkaTestBroker broker;
     private SimpleConsumer simpleConsumer;
     private KafkaConfig config;
-    private BrokerHosts brokerHosts;
 
     @Before
     public void setup() {
         broker = new KafkaTestBroker();
-        GlobalPartitionInformation globalPartitionInformation = new GlobalPartitionInformation();
-        globalPartitionInformation.addPartition(0, Broker.fromString(broker.getBrokerConnectionString()));
-        brokerHosts = new StaticHosts(globalPartitionInformation);
-        config = new KafkaConfig(brokerHosts, "testTopic");
+        config = new KafkaConfig(Lists.newArrayList(Broker.fromString(broker.getBrokerConnectionString())), "testTopic");
         simpleConsumer = new SimpleConsumer("localhost", broker.getPort(), 60000, 1024, "testClient");
     }
 
@@ -92,6 +100,16 @@ public class KafkaUtilsTest {
         assertThat(message, is(equalTo(value)));
     }
 
+    @Test
+    public void getTopicPartitionInfo() throws Exception {
+        String value = "test";
+        createTopicAndSendMessage(value);
+        Broker kafkaBroker = Broker.fromString(this.broker.getBrokerConnectionString());
+        ArrayList<Broker> brokers = Lists.newArrayList(kafkaBroker);
+        GlobalPartitionInformation topicPartitionInfo = KafkaUtils.getTopicPartitionInfo(brokers, config.topic);
+        Assert.assertEquals(1, topicPartitionInfo.getOrderedPartitions().size());
+    }
+
     @Test(expected = FailedFetchException.class)
     public void fetchMessagesWithInvalidOffsetAndDefaultHandlingDisabled() throws Exception {
         config.useStartOffsetTimeIfOffsetOutOfRange = false;
@@ -101,7 +119,7 @@ public class KafkaUtilsTest {
 
     @Test(expected = TopicOffsetOutOfRangeException.class)
     public void fetchMessagesWithInvalidOffsetAndDefaultHandlingEnabled() throws Exception {
-        config = new KafkaConfig(brokerHosts, "newTopic");
+        config = new KafkaConfig(Lists.newArrayList(Broker.fromString(broker.getBrokerConnectionString())), "newTopic");
         String value = "test";
         createTopicAndSendMessage(value);
         KafkaUtils.fetchMessages(config, simpleConsumer,

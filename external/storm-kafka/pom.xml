@@ -29,6 +29,11 @@
     <artifactId>storm-kafka</artifactId>
     <name>storm-kafka</name>
     <description>Storm Spouts for Apache Kafka</description>
+
+    <properties>
+        <powermock.version>1.6.1</powermock.version>
+    </properties>
+
     <build>
         <plugins>
             <plugin>
@@ -66,6 +71,19 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.11</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-module-junit4</artifactId>
+            <version>1.4.11</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-api-mockito</artifactId>
+            <version>1.4.11</version>
             <scope>test</scope>
         </dependency>
         <dependency>

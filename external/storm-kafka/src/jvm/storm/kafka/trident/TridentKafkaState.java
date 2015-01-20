@@ -25,11 +25,11 @@ import kafka.producer.ProducerConfig;
 import org.apache.commons.lang.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import storm.kafka.trident.mapper.TridentTupleToKafkaMapper;
-import storm.kafka.trident.selector.KafkaTopicSelector;
 import storm.trident.operation.TridentCollector;
 import storm.trident.state.State;
 import storm.trident.tuple.TridentTuple;
+import storm.kafka.common.mapper.TupleToKafkaMapper;
+import storm.kafka.common.selector.KafkaTopicSelector;
 
 import java.util.List;
 import java.util.Map;
@@ -43,10 +43,10 @@ public class TridentKafkaState implements State {
     private Producer producer;
     private OutputCollector collector;
 
-    private TridentTupleToKafkaMapper mapper;
-    private KafkaTopicSelector topicSelector;
+    private storm.kafka.common.mapper.TupleToKafkaMapper mapper;
+    private storm.kafka.common.selector.KafkaTopicSelector topicSelector;
 
-    public TridentKafkaState withTridentTupleToKafkaMapper(TridentTupleToKafkaMapper mapper) {
+    public TridentKafkaState withTridentTupleToKafkaMapper(TupleToKafkaMapper mapper) {
         this.mapper = mapper;
         return this;
     }

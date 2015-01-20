@@ -20,6 +20,8 @@ package storm.kafka;
 import backtype.storm.tuple.Fields;
 import com.google.common.collect.ImmutableMap;
 import org.junit.Test;
+import storm.kafka.spout.scheme.StringKeyValueScheme;
+import storm.kafka.spout.scheme.StringScheme;
 
 import java.util.Arrays;
 
