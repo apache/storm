@@ -29,8 +29,14 @@ import kafka.message.Message;
 import kafka.message.MessageAndOffset;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import storm.kafka.*;
-import storm.kafka.TopicOffsetOutOfRangeException;
+import storm.kafka.spout.Broker;
+import storm.kafka.spout.KafkaConfig;
+import storm.kafka.spout.exception.TopicOffsetOutOfRangeException;
+import storm.kafka.spout.exception.FailedFetchException;
+import storm.kafka.spout.helper.ConsumerConnectionCache;
+import storm.kafka.spout.helper.KafkaUtils;
+import storm.kafka.spout.partition.GlobalPartitionInformation;
+import storm.kafka.spout.partition.Partition;
 import storm.trident.operation.TridentCollector;
 import storm.trident.spout.IOpaquePartitionedTridentSpout;
 import storm.trident.spout.IPartitionedTridentSpout;
@@ -45,20 +51,20 @@ public class TridentKafkaEmitter {
 
     public static final Logger LOG = LoggerFactory.getLogger(TridentKafkaEmitter.class);
 
-    private DynamicPartitionConnections _connections;
+    private ConsumerConnectionCache _connectionCache;
     private String _topologyName;
     private KafkaUtils.KafkaOffsetMetric _kafkaOffsetMetric;
     private ReducedMetric _kafkaMeanFetchLatencyMetric;
     private CombinedMetric _kafkaMaxFetchLatencyMetric;
-    private TridentKafkaConfig _config;
+    private KafkaConfig _config;
     private String _topologyInstanceId;
 
-    public TridentKafkaEmitter(Map conf, TopologyContext context, TridentKafkaConfig config, String topologyInstanceId) {
+    public TridentKafkaEmitter(Map conf, TopologyContext context, KafkaConfig config, String topologyInstanceId) {
         _config = config;
         _topologyInstanceId = topologyInstanceId;
-        _connections = new DynamicPartitionConnections(_config, KafkaUtils.makeBrokerReader(conf, _config));
+        _connectionCache = new ConsumerConnectionCache(_config);
         _topologyName = (String) conf.get(Config.TOPOLOGY_NAME);
-        _kafkaOffsetMetric = new KafkaUtils.KafkaOffsetMetric(_config.topic, _connections);
+        _kafkaOffsetMetric = new KafkaUtils.KafkaOffsetMetric(_config.topic, _connectionCache);
         context.registerMetric("kafkaOffset", _kafkaOffsetMetric, _config.metricsTimeBucketSizeInSecs);
         _kafkaMeanFetchLatencyMetric = context.registerMetric("kafkaFetchAvg", new MeanReducer(), _config.metricsTimeBucketSizeInSecs);
         _kafkaMaxFetchLatencyMetric = context.registerMetric("kafkaFetchMax", new MaxMetric(), _config.metricsTimeBucketSizeInSecs);
@@ -66,7 +72,13 @@ public class TridentKafkaEmitter {
 
 
     private Map failFastEmitNewPartitionBatch(TransactionAttempt attempt, TridentCollector collector, Partition partition, Map lastMeta) {
-        SimpleConsumer consumer = _connections.register(partition);
+        SimpleConsumer consumer = _connectionCache.getConnection(partition);
+        if(consumer == null) {
+            GlobalPartitionInformation topicPartitionInfo = KafkaUtils.getTopicPartitionInfo(_config.seedBrokers, _config.topic);
+            Broker broker = topicPartitionInfo.getBrokerFor(partition.partition);
+            consumer = _connectionCache.register(broker, partition.partition);
+        }
+
         Map ret = doEmitNewPartitionBatch(consumer, partition, collector, lastMeta);
         _kafkaOffsetMetric.setLatestEmittedOffset(partition, (Long) ret.get("offset"));
         return ret;
@@ -158,7 +170,12 @@ public class TridentKafkaEmitter {
         LOG.info("re-emitting batch, attempt " + attempt);
         String instanceId = (String) meta.get("instanceId");
         if (!_config.forceFromStart || instanceId.equals(_topologyInstanceId)) {
-            SimpleConsumer consumer = _connections.register(partition);
+            SimpleConsumer consumer = _connectionCache.getConnection(partition);
+            if(consumer == null) {
+                GlobalPartitionInformation topicPartitionInfo = KafkaUtils.getTopicPartitionInfo(_config.seedBrokers, _config.topic);
+                Broker broker = topicPartitionInfo.getBrokerFor(partition.partition);
+                consumer = _connectionCache.register(broker, partition.partition);
+            }
             long offset = (Long) meta.get("offset");
             long nextOffset = (Long) meta.get("nextOffset");
             ByteBufferMessageSet msgs = null;
@@ -189,7 +206,7 @@ public class TridentKafkaEmitter {
     }
 
     private void clear() {
-        _connections.clear();
+        _connectionCache.clear();
     }
 
     private List<Partition> orderPartitions(GlobalPartitionInformation partitions) {
@@ -197,7 +214,7 @@ public class TridentKafkaEmitter {
     }
 
     private void refresh(List<Partition> list) {
-        _connections.clear();
+        _connectionCache.clear();
         _kafkaOffsetMetric.refreshPartitions(new HashSet<Partition>(list));
     }
 

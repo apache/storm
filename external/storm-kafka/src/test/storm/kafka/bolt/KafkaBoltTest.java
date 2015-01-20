@@ -27,6 +27,7 @@ import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.TupleImpl;
 import backtype.storm.tuple.Values;
 import backtype.storm.utils.Utils;
+import com.google.common.collect.Lists;
 import kafka.api.OffsetRequest;
 import kafka.javaapi.consumer.SimpleConsumer;
 import kafka.javaapi.message.ByteBufferMessageSet;
@@ -38,7 +39,10 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import storm.kafka.*;
-import storm.kafka.trident.GlobalPartitionInformation;
+import storm.kafka.spout.Broker;
+import storm.kafka.spout.KafkaConfig;
+import storm.kafka.spout.helper.KafkaUtils;
+import storm.kafka.spout.partition.Partition;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -76,10 +80,7 @@ public class KafkaBoltTest {
 
 
     private void setupKafkaConsumer() {
-        GlobalPartitionInformation globalPartitionInformation = new GlobalPartitionInformation();
-        globalPartitionInformation.addPartition(0, Broker.fromString(broker.getBrokerConnectionString()));
-        BrokerHosts brokerHosts = new StaticHosts(globalPartitionInformation);
-        kafkaConfig = new KafkaConfig(brokerHosts, TEST_TOPIC);
+        kafkaConfig = new KafkaConfig(Lists.newArrayList(Broker.fromString(broker.getBrokerConnectionString())), TEST_TOPIC);
         simpleConsumer = new SimpleConsumer("localhost", broker.getPort(), 60000, 1024, "testClient");
     }
 

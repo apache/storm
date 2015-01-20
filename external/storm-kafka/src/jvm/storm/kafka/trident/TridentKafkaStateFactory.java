@@ -20,10 +20,10 @@ package storm.kafka.trident;
 import backtype.storm.task.IMetricsContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import storm.kafka.trident.mapper.TridentTupleToKafkaMapper;
-import storm.kafka.trident.selector.KafkaTopicSelector;
 import storm.trident.state.State;
 import storm.trident.state.StateFactory;
+import storm.kafka.common.selector.KafkaTopicSelector;
+import storm.kafka.common.mapper.TupleToKafkaMapper;
 
 import java.util.Map;
 
@@ -31,11 +31,11 @@ public class TridentKafkaStateFactory implements StateFactory {
 
     private static final Logger LOG = LoggerFactory.getLogger(TridentKafkaStateFactory.class);
 
-    private TridentTupleToKafkaMapper mapper;
+    private TupleToKafkaMapper mapper;
     private KafkaTopicSelector topicSelector;
 
 
-    public TridentKafkaStateFactory withTridentTupleToKafkaMapper(TridentTupleToKafkaMapper mapper) {
+    public TridentKafkaStateFactory withTridentTupleToKafkaMapper(TupleToKafkaMapper mapper) {
         this.mapper = mapper;
         return this;
     }

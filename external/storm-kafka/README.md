@@ -4,93 +4,37 @@ Storm Kafka
 Provides core storm and Trident spout implementations for consuming data from Apache Kafka 0.8.x.
 
 ##Spouts
-We support both trident and core storm spouts. For both spout implementation we use a BrokerHost interface that
-tracks kafka broker host to partition mapping and kafkaConfig that controls some kafka related parameters.
+We support both trident and core storm spouts.
  
-###BrokerHosts
-In order to initialize your kafka spout/emitter you need to construct an instance of the marker interface BrokerHosts. 
-Currently we support following two implementations:
-
-####ZkHosts
-ZkHosts is what you should use if you want to dynamically track kafka broker to partition mapping. This class uses 
-Kafka's zookeeper's entries to track brokerHost -> partition mapping. You can instantiate an object by calling
-```java
-    public ZkHosts(String brokerZkStr, String brokerZkPath) 
-    public ZkHosts(String brokerZkStr)
-```
-Where brokerZkStr is just ip:port e.g. localhost:9092. brokerZkPath is the root directory under which all the topics and
-partition information is stored. by Default this is /brokers which is what default kafka implementation uses.
-
-By default the broker-partition mapping is refreshed every 60 seconds from zookeeper. If you want to change it you
-should set host.refreshFreqSecs to your chosen value.
-
-####StaticHosts
-This is an alternative implementation where broker -> partition information is static. In order to construct an instance
-of this class you need to first construct an instance of GlobalPartitionInformation.
-
-```java
-    Broker brokerForPartition0 = new Broker("localhost");//localhost:9092
-    Broker brokerForPartition1 = new Broker("localhost", 9092);//localhost:9092 but we specified the port explicitly
-    Broker brokerForPartition2 = new Broker("localhost:9092");//localhost:9092 specified as one string.
-    GlobalPartitionInformation partitionInfo = new GlobalPartitionInformation();
-    partitionInfo.addPartition(0, brokerForPartition0);//mapping form partition 0 to brokerForPartition0
-    partitionInfo.addPartition(1, brokerForPartition1);//mapping form partition 1 to brokerForPartition1
-    partitionInfo.addPartition(2, brokerForPartition2);//mapping form partition 2 to brokerForPartition2
-    StaticHosts hosts = new StaticHosts(partitionInfo);
-```
-
 ###KafkaConfig
-The second thing needed for constructing a kafkaSpout is an instance of KafkaConfig. 
+To initialize the kafka spout you need to construct an instance of the kafka config.
+ 
 ```java
-    public KafkaConfig(BrokerHosts hosts, String topic)
-    public KafkaConfig(BrokerHosts hosts, String topic, String clientId)
+    public KafkaConfig(List<Broker> seedBrokerHosts, String topic)
 ```
 
-The BrokerHosts can be any implementation of BrokerHosts interface as described above. the Topic is name of kafka topic.
-The optional ClientId is used as a part of the zookeeper path where the spout's current consumption offset is stored.
+Following are the available configuration options:
+    
+| name | default | description | Applicable to Trident?
+|--- | --- | --- | --- |
+| seedBrokers | must be supplied | Partial list of kafka broker hosts that will be contacted to get topic partition information. | Yes |
+| topic | must be supplied | The topic from which this spout will consume messages. | Yes |
+| clientId | kafka.api.OffsetRequest.DefaultClientId() | Kafka simple consumer client Id. | Yes |
+| fetchSizeBytes | 1024 * 1024 | The number of byes of messages to attempt to fetch for each topic-partition in each fetch request. | Yes|
+| socketTimeoutMs | 10000 | Socket timeout for kafka network requests. | Yes |
+| fetchMaxWait | 10000 |  MaxTime to wait before considering a fetch request as failed. | Yes |
+| bufferSizeBytes | 1024 * 1024 | Kafka consumer buffer size in bytes. | Yes |
+| scheme | RawMultiScheme | An interface that dictates how to covert a kafka key-message into storm tuple. See below for more details. | Yes |
+| forceFromStart | false | flag to control if the consumer should consume messages from the beginning of a partition. | Yes |
+| startOffsetTime | kafka.api.OffsetRequest.EarliestTime() | when forceFromStart is true, this is configuration will be used to get the kafka offset from which the consumer will start consuming. | Yes |
+| maxOffsetBehind | Long.MAX_VALUE | Controls how far behind this spout is allowed to get. | No |
+| useStartOffsetTimeIfOffsetOutOfRange | true | If the spout receives an offset_out_of_range error, should it reset the consuming offset to startOffsetTime. | Yes |
+| metricsTimeBucketSizeInSecs | 60 | Number of seconds the each metrics bucket represents. | Yes |
+| stateUpdateIntervalMs | 2000 | setting for how often to save the current kafka offset to ZooKeeper. | No |
+| retryInitialDelayMs | 0 | how long should the spout wait before retrying a failed message for the firs time. | No |
+| retryDelayMultiplier | 1.0 | Exponential back-off retry setting, the multiplier to be used while calculating back off sleep time. | No |
+| retryDelayMaxMs | 60 * 1000 | Max exponential back-off sleep time. | No |
 
-There are 2 extensions of KafkaConfig currently in use.
-
-Spoutconfig is an extension of KafkaConfig that supports additional fields with ZooKeeper connection info and for controlling
-behavior specific to KafkaSpout. The Zkroot will be used as root to store your consumer's offset. The id should uniquely
-identify your spout.
-```java
-public SpoutConfig(BrokerHosts hosts, String topic, String zkRoot, String id);
-public SpoutConfig(BrokerHosts hosts, String topic, String id);
-```
-In addition to these parameters, SpoutConfig contains the following fields that control how KafkaSpout behaves:
-```java
-    // setting for how often to save the current kafka offset to ZooKeeper
-    public long stateUpdateIntervalMs = 2000;
-
-    // Exponential back-off retry settings.  These are used when retrying messages after a bolt
-    // calls OutputCollector.fail().
-    // Note: be sure to set backtype.storm.Config.MESSAGE_TIMEOUT_SECS appropriately to prevent
-    // resubmitting the message while still retrying.
-    public long retryInitialDelayMs = 0;
-    public double retryDelayMultiplier = 1.0;
-    public long retryDelayMaxMs = 60 * 1000;
-```
-Core KafkaSpout only accepts an instance of SpoutConfig.
-
-TridentKafkaConfig is another extension of KafkaConfig.
-TridentKafkaEmitter only accepts TridentKafkaConfig.
-
-The KafkaConfig class also has bunch of public variables that controls your application's behavior. Here are defaults:
-```java
-    public int fetchSizeBytes = 1024 * 1024;
-    public int socketTimeoutMs = 10000;
-    public int fetchMaxWait = 10000;
-    public int bufferSizeBytes = 1024 * 1024;
-    public MultiScheme scheme = new RawMultiScheme();
-    public boolean forceFromStart = false;
-    public long startOffsetTime = kafka.api.OffsetRequest.EarliestTime();
-    public long maxOffsetBehind = Long.MAX_VALUE;
-    public boolean useStartOffsetTimeIfOffsetOutOfRange = true;
-    public int metricsTimeBucketSizeInSecs = 60;
-```
-
-Most of them are self explanatory except MultiScheme.
 ###MultiScheme
 MultiScheme is an interface that dictates how the byte[] consumed from kafka gets transformed into a storm tuple. It
 also controls the naming of your output field.
@@ -106,17 +50,18 @@ the byte[] to String.
 ### Examples
 ####Core Spout
 ```java
-BrokerHosts hosts = new ZkHosts(zkConnString);
-SpoutConfig spoutConfig = new SpoutConfig(hosts, topicName, "/" + topicName, UUID.randomUUID().toString());
-spoutConf.scheme = new SchemeAsMultiScheme(new StringScheme());
+List<Broker> seedBrokers = Lists.newArrayList(new Broker("localhost", 9092));
+String topic = "test";
+KafkaConfig spoutConfig = new KafkaConfig(seedBrokers, topic);
+spoutConfig.scheme = new SchemeAsMultiScheme(new StringScheme());
 KafkaSpout kafkaSpout = new KafkaSpout(spoutConfig);
 ```
 ####Trident Spout
 ```java
-TridentTopology topology = new TridentTopology();
-BrokerHosts zk = new ZkHosts("localhost");
-TridentKafkaConfig spoutConf = new TridentKafkaConfig(zk, "test-topic");
-spoutConf.scheme = new SchemeAsMultiScheme(new StringScheme());
+List<Broker> seedBrokers = Lists.newArrayList(new Broker("localhost", 9092));
+String topic = "test";
+KafkaConfig spoutConfig = new KafkaConfig(seedBrokers, topic);
+spoutConfig.scheme = new SchemeAsMultiScheme(new StringScheme());
 OpaqueTridentKafkaSpout spout = new OpaqueTridentKafkaSpout(spoutConf);
 ```
 
@@ -155,27 +100,25 @@ storm.kafka.trident.TridentKafkaUpdater.
 
 You need to provide implementation of following 2 interfaces
 
-###TupleToKafkaMapper and TridentTupleToKafkaMapper
+###TupleToKafkaMapper
 These interfaces have 2 methods defined:
 
 ```java
-    K getKeyFromTuple(Tuple/TridentTuple tuple);
-    V getMessageFromTuple(Tuple/TridentTuple tuple);
+    K getKeyFromTuple(ITuple tuple);
+    V getMessageFromTuple(ITuple tuple);
 ```
 
 as the name suggests these methods are called to map a tuple to kafka key and kafka message. If you just want one field
 as key and one field as value then you can use the provided FieldNameBasedTupleToKafkaMapper.java 
-implementation. In the KafkaBolt, the implementation always looks for a field with field name "key" and "message" if you 
+implementation. By default the implementation always looks for a field with field name "key" and "message" if you 
 use the default constructor to construct FieldNameBasedTupleToKafkaMapper for backward compatibility 
 reasons. Alternatively you could also specify a different key and message field by using the non default constructor.
-In the TridentKafkaState you must specify what is the field name for key and message as there is no default constructor.
-These should be specified while constructing and instance of FieldNameBasedTupleToKafkaMapper.
 
-###KafkaTopicSelector and trident KafkaTopicSelector
+###KafkaTopicSelector
 This interface has only one method
 ```java
 public interface KafkaTopicSelector {
-    String getTopics(Tuple/TridentTuple tuple);
+    String getTopics(ITuple tuple);
 }
 ```
 The implementation of this interface should return topic to which the tuple's key/message mapping needs to be published 

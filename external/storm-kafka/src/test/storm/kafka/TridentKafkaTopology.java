@@ -25,11 +25,11 @@ import backtype.storm.tuple.Values;
 import storm.kafka.trident.TridentKafkaState;
 import storm.kafka.trident.TridentKafkaStateFactory;
 import storm.kafka.trident.TridentKafkaUpdater;
-import storm.kafka.trident.mapper.FieldNameBasedTupleToKafkaMapper;
-import storm.kafka.trident.selector.DefaultTopicSelector;
 import storm.trident.Stream;
 import storm.trident.TridentTopology;
 import storm.trident.testing.FixedBatchSpout;
+import storm.kafka.common.mapper.FieldNameBasedTupleToKafkaMapper;
+import storm.kafka.common.selector.DefaultTopicSelector;
 
 import java.util.HashMap;
 import java.util.Map;

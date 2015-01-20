@@ -18,6 +18,7 @@
 package storm.kafka;
 
 import org.junit.Test;
+import storm.kafka.spout.exception.KafkaError;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;

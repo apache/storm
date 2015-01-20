@@ -24,10 +24,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import storm.kafka.trident.TridentKafkaState;
-import storm.kafka.trident.mapper.FieldNameBasedTupleToKafkaMapper;
-import storm.kafka.trident.mapper.TridentTupleToKafkaMapper;
-import storm.kafka.trident.selector.DefaultTopicSelector;
-import storm.kafka.trident.selector.KafkaTopicSelector;
+import storm.kafka.common.mapper.FieldNameBasedTupleToKafkaMapper;
+import storm.kafka.common.mapper.TupleToKafkaMapper;
+import storm.kafka.common.selector.DefaultTopicSelector;
+import storm.kafka.common.selector.KafkaTopicSelector;
 import storm.trident.tuple.TridentTuple;
 import storm.trident.tuple.TridentTupleView;
 
@@ -39,7 +39,7 @@ public class TridentKafkaTest {
     private TridentKafkaState state;
     private Config config;
     private SimpleConsumer simpleConsumer;
-    private TridentTupleToKafkaMapper mapper;
+    private TupleToKafkaMapper mapper;
     private KafkaTopicSelector topicSelector;
 
     @Before

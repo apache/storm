@@ -27,10 +27,10 @@ import kafka.producer.KeyedMessage;
 import kafka.producer.ProducerConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import storm.kafka.bolt.mapper.FieldNameBasedTupleToKafkaMapper;
-import storm.kafka.bolt.mapper.TupleToKafkaMapper;
-import storm.kafka.bolt.selector.DefaultTopicSelector;
-import storm.kafka.bolt.selector.KafkaTopicSelector;
+import storm.kafka.common.mapper.FieldNameBasedTupleToKafkaMapper;
+import storm.kafka.common.mapper.TupleToKafkaMapper;
+import storm.kafka.common.selector.DefaultTopicSelector;
+import storm.kafka.common.selector.KafkaTopicSelector;
 
 import java.util.Map;
 import java.util.Properties;
