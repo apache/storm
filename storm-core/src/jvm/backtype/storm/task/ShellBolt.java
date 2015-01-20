@@ -31,6 +31,7 @@ import clojure.lang.RT;
 import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.commons.lang.StringUtils;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -108,6 +109,40 @@ public class ShellBolt implements IBolt {
         _collector = collector;
 
         _context = context;
+
+        workerTimeoutMills = 1000 * RT.intCast(stormConf.get(Config.SUPERVISOR_WORKER_TIMEOUT_SECS));
+
+        _process = new ShellProcess(_command);
+
+        //subprocesses must send their pid first thing
+        Number subpid = _process.launch(stormConf, context);
+        LOG.info("Launched subprocess with pid " + subpid);
+
+        // reader
+        _readerThread = new Thread(new BoltReaderRunnable());
+        _readerThread.start();
+
+        _writerThread = new Thread(new BoltWriterRunnable());
+        _writerThread.start();
+
+        heartBeatExecutorService = MoreExecutors.getExitingScheduledExecutorService(new ScheduledThreadPoolExecutor(1));
+        heartBeatExecutorService.scheduleAtFixedRate(new BoltHeartbeatTimerTask(this), 1, 1, TimeUnit.SECONDS);
+
+        LOG.info("Start checking heartbeat...");
+        setHeartbeat();
+    }
+
+    public void prepare(Map stormConf, TopologyContext context,
+                        final OutputCollector collector, String codeDir) {
+        Object maxPending = stormConf.get(Config.TOPOLOGY_SHELLBOLT_MAX_PENDING);
+        if (maxPending != null) {
+            this._pendingWrites = new LinkedBlockingQueue(((Number)maxPending).intValue());
+        }
+        _rand = new Random();
+        _collector = collector;
+
+        _context = context;
+        if(!StringUtils.isEmpty(codeDir)) { _context.setCodeDir(codeDir); }
 
         workerTimeoutMills = 1000 * RT.intCast(stormConf.get(Config.SUPERVISOR_WORKER_TIMEOUT_SECS));
 
