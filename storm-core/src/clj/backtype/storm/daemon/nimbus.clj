@@ -877,6 +877,13 @@
         (log-error "Cleaning inbox ... error deleting: " (.getName f))
         ))))
 
+(defn register-nimbus-host! [nimbus]
+  (let [storm-cluster-state (:storm-cluster-state nimbus)
+        nimbus-conf (:conf nimbus)
+        local-hostname (memoized-local-hostname)
+        port (nimbus-conf NIMBUS-THRIFT-PORT)]
+        (.register-nimbus-info storm-cluster-state (str local-hostname ":" port))))
+
 (defn cleanup-corrupt-topologies! [nimbus]
   (let [storm-cluster-state (:storm-cluster-state nimbus)
         code-ids (set (code-ids (:conf nimbus)))
@@ -982,6 +989,7 @@
   (log-message "Starting Nimbus with conf " conf)
   (let [nimbus (nimbus-data conf inimbus)
        principal-to-local (AuthUtils/GetPrincipalToLocalPlugin conf)]
+    (register-nimbus-host! nimbus)   
     (.prepare ^backtype.storm.nimbus.ITopologyValidator (:validator nimbus) conf)
     (cleanup-corrupt-topologies! nimbus)
     (doseq [storm-id (.active-storms (:storm-cluster-state nimbus))]
