@@ -1231,7 +1231,15 @@
               bases (topology-bases storm-cluster-state)
               topology-summaries (dofor [[id base] bases :when base]
 	                                  (let [assignment (.assignment-info storm-cluster-state id nil)
-                                                topo-summ (TopologySummary. id
+                                                topo-summ  (if (nil? assignment)
+                                                           (TopologySummary. id 
+                                                             (:storm-name base)
+                                                             0
+                                                             0
+                                                             0
+                                                             (time-delta (:launch-time-secs base))
+                                                             (extract-status-str base))
+                                                           (TopologySummary. id
                                                             (:storm-name base)
                                                             (->> (:executor->node+port assignment)
                                                                  keys
@@ -1245,7 +1253,7 @@
                                                                  set
                                                                  count)
                                                             (time-delta (:launch-time-secs base))
-                                                            (extract-status-str base))]
+                                                            (extract-status-str base)))]
                                                (when-let [owner (:owner base)] (.set_owner topo-summ owner))
                                                (when-let [sched-status (.get @(:id->sched-status nimbus) id)] (.set_sched_status topo-summ sched-status))
                                                topo-summ
