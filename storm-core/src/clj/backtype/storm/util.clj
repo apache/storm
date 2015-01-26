@@ -386,8 +386,7 @@
    [process-id]  
    (if on-windows?
        (exec-command! (str "cmd /c \"tasklist /FI \"PID eq "  process-id  "\" | findstr "  process-id  "\"" ))
-       (exec-command! (str "ps -p "  process-id))
-    )  
+       (exec-command! (str "ps -p "  process-id))))  
 
 (defn exec-command! [command]
   (let [[comm-str & args] (seq (.split command " "))
