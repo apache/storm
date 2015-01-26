@@ -164,7 +164,7 @@ struct ClusterSummary {
   1: required list<SupervisorSummary> supervisors;
   2: required i32 nimbus_uptime_secs;
   3: required list<TopologySummary> topologies;
-  4: optional ServerInfo server_info;
+  4: required ServerInfo server_info;
 }
 
 struct ErrorInfo {

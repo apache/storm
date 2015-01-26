@@ -1224,6 +1224,7 @@
       (^ClusterSummary getClusterInfo [this]
         (check-authorization! nimbus nil nil "getClusterInfo")
         (let [storm-cluster-state (:storm-cluster-state nimbus)
+              nimbus-info (.nimbus-info storm-cluster-state)
               supervisor-infos (all-supervisor-info storm-cluster-state)
               ;; TODO: need to get the port info about supervisors...
               ;; in standalone just look at metadata, otherwise just say N/A?
@@ -1261,7 +1262,8 @@
                                           ))]
           (ClusterSummary. supervisor-summaries
                            nimbus-uptime
-                           topology-summaries)
+                           topology-summaries
+                           nimbus-info)
           ))
       
       (^TopologyInfo getTopologyInfo [this ^String storm-id]

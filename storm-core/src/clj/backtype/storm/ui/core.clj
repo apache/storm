@@ -491,6 +491,7 @@
         (cluster-summary (.getClusterInfo ^Nimbus$Client nimbus) user)))
   ([^ClusterSummary summ user]
      (let [sups (.get_supervisors summ)
+        nimbus-info (.get_server_info summ)
         used-slots (reduce + (map #(.get_num_used_workers ^SupervisorSummary %) sups))
         total-slots (reduce + (map #(.get_num_workers ^SupervisorSummary %) sups))
         free-slots (- total-slots used-slots)
@@ -501,6 +502,8 @@
                              (map #(.get_num_executors ^TopologySummary %))
                              (reduce +))]
        {"user" user
+        "nimbusHost" (.get_host nimbus-info)
+        "nimbusPort" (.get_port nimbus-info)
         "stormVersion" (str (VersionInfo/getVersion))
         "nimbusUptime" (pretty-uptime-sec (.get_nimbus_uptime_secs summ))
         "supervisors" (count sups)
