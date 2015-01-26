@@ -385,8 +385,8 @@
 (defn exists-process?
    [process-id]  
    (if on-windows?
-       (exec-command! ( str "tasklist /v /fi \"PID eq "  process-id + "\"" " | find /i \"" process-id "\""))
-       (exists-file? (str "/proc/"  process-id))
+       (exec-command! (str "cmd /c \"tasklist /FI \"PID eq "  process-id  "\" | findstr "  process-id  "\"" ))
+       (exec-command! (str "ps -p "  process-id))
     )  
 
 (defn exec-command! [command]
