@@ -32,8 +32,10 @@ public class NimbusClient extends ThriftClient {
 
     public static NimbusClient getConfiguredClient(Map conf) {
         try {
-            String nimbusHost = (String) conf.get(Config.NIMBUS_HOST);
-            return new NimbusClient(conf, nimbusHost);
+            ServerInfo serverInfo = Utils.getServerInfo(conf, "nimbus");
+            conf.put(Config.NIMBUS_HOST, serverInfo.getHost());
+            conf.put(Config.NIMBUS_THRIFT_PORT, serverInfo.getPort());
+            return new NimbusClient(conf, serverInfo.getHost());
         } catch (TTransportException ex) {
             throw new RuntimeException(ex);
         }

@@ -49,6 +49,7 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.commons.lang.StringUtils;
 import org.apache.thrift.TException;
+import org.apache.thrift.transport.TTransportException;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Id;
@@ -533,4 +534,28 @@ public class Utils {
         delegate.prepare(stormConf);
         return delegate;
     }
+
+  public static ServerInfo getServerInfo(Map conf, String name) throws TTransportException {
+    List<String> servers =
+        (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS);
+    int port = Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_PORT), 2181);
+    String rootDir = (String) conf.get(Config.STORM_ZOOKEEPER_ROOT);
+    ZookeeperAuthInfo auth = new ZookeeperAuthInfo(conf);
+    CuratorFramework _curator =
+        Utils.newCuratorStarted(conf, servers, port, rootDir, auth);
+    try {
+      if (_curator.checkExists().forPath("/" + name) == null) {
+        throw new RuntimeException(name + " server is not alive ! ");
+      }
+      byte[] zk_data = _curator.getData().forPath("/" + name);
+      String jsonText = (String) Utils.deserialize(zk_data);
+      return ServerInfo.instance(jsonText);
+    } catch (Exception e) {
+      LOG.error(e.getMessage());
+      throw new TTransportException(e);
+    } finally {
+      _curator.close();
+      LOG.info("Closed Client Zookeeper Connection");
+    }
+  }
 }

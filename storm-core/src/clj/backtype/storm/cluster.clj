@@ -17,7 +17,7 @@
 (ns backtype.storm.cluster
   (:import [org.apache.zookeeper.data Stat ACL Id])
   (:import [org.apache.zookeeper KeeperException KeeperException$NoNodeException ZooDefs ZooDefs$Ids ZooDefs$Perms])
-  (:import [backtype.storm.utils Utils])
+  (:import [backtype.storm.utils Utils ServerInfo])
   (:import [java.security MessageDigest])
   (:import [org.apache.zookeeper.server.auth DigestAuthenticationProvider])
   (:use [backtype.storm util log config])
@@ -319,9 +319,9 @@
         
       (nimbus-info
         [this]
-        (-> cluster-state
+        (.instance ServerInfo (-> cluster-state
             (get-data NIMBUS-SUBTREE false)
-            maybe-deserialize))  
+            maybe-deserialize))) 
 
       (active-storms
         [this]
