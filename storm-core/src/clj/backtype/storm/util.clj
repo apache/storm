@@ -382,18 +382,18 @@
       (throw (RuntimeException. (str "Got unexpected process name: " name))))
     (first split)))
 
-(defn exists-process?
-   [process-id]  
-   (if on-windows?
-       (exec-command! (str "cmd /c \"tasklist /FI \"PID eq "  process-id  "\" | findstr "  process-id  "\"" ))
-       (exec-command! (str "ps -p "  process-id))))  
-
 (defn exec-command! [command]
   (let [[comm-str & args] (seq (.split command " "))
         command (CommandLine. comm-str)]
     (doseq [a args]
       (.addArgument command a))
     (.execute (DefaultExecutor.) command)))
+
+(defn exists-process?
+   [process-id]
+   (if on-windows?
+       (exec-command! (str "cmd /c \"tasklist /FI \"PID eq "  process-id  "\" | findstr "  process-id  "\"" ))
+       (exec-command! (str "ps -p "  process-id))))
 
 (defn extract-dir-from-jar [jarpath dir destdir]
   (try-cause
