@@ -22,8 +22,7 @@
   (:use [backtype.storm.scheduler.DefaultScheduler])
   (:import [backtype.storm.scheduler INimbus SupervisorDetails WorkerSlot TopologyDetails
             Cluster Topologies SchedulerAssignment SchedulerAssignmentImpl DefaultScheduler ExecutorDetails])
-  (:import [backtype.storm.generated AuthorizationException])
-  (:import [backtype.storm.utils ServerInfo])
+  (:import [backtype.storm.generated AuthorizationException ServerInfo])
   (:use [backtype.storm bootstrap util])
   (:use [backtype.storm.config :only [validate-configs-with-schemas]])
   (:use [backtype.storm.daemon common])
@@ -884,7 +883,7 @@
         local-hostname (memoized-local-hostname)
         port (nimbus-conf NIMBUS-THRIFT-PORT)
         server-info (ServerInfo. local-hostname port)]
-        (.register-nimbus-info storm-cluster-state (.toJsonString server-info))))
+        (.register-nimbus-info storm-cluster-state (Utils/toJsonString server-info))))
 
 (defn cleanup-corrupt-topologies! [nimbus]
   (let [storm-cluster-state (:storm-cluster-state nimbus)
