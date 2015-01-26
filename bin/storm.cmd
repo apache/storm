@@ -69,7 +69,16 @@
     set STORM_OPTS=%STORM_CLIENT_OPTS% %STORM_OPTS% -Dstorm.jar=%2
     set CLASSPATH=%CLASSPATH%;%2
     set CLASS=%3
-    set storm-command-arguments=%4 %5 %6 %7 %8 %9
+    set args=%4
+    shift
+    :start
+    if [%4] == [] goto done
+    set args=%args% %4
+    shift
+    goto start
+
+    :done
+    set storm-command-arguments=%args%
   )
   
   if not defined STORM_LOG_FILE (
@@ -80,7 +89,7 @@
     %JAVA% %JAVA_HEAP_MAX% %STORM_OPTS% %STORM_LOG_FILE% %CLASS% %storm-command-arguments%
   )
   set path=%PATH%;%STORM_BIN_DIR%;%STORM_SBIN_DIR%
-  call start /b %JAVA% %JAVA_HEAP_MAX% %STORM_OPTS% %STORM_LOG_FILE% %CLASS% %storm-command-arguments%
+  call start /b "%storm-command%" "%JAVA%" %JAVA_HEAP_MAX% %STORM_OPTS% %STORM_LOG_FILE% %CLASS% %storm-command-arguments%
   goto :eof
 
 
@@ -105,7 +114,7 @@
 
 :drpc
   set CLASS=backtype.storm.daemon.drpc
-  %JAVA% -client -Dstorm.options= -Dstorm.conf.file= -cp %CLASSPATH% backtype.storm.command.config_value drpc.childopts > temp.txt
+  "%JAVA%" -client -Dstorm.options= -Dstorm.conf.file= -cp "%CLASSPATH%" backtype.storm.command.config_value drpc.childopts > temp.txt
   FOR /F "delims=" %%i in (temp.txt) do (
      FOR /F "tokens=1,* delims= " %%a in ("%%i") do (
 	  if %%a == VALUE: (
@@ -131,7 +140,7 @@
 
 :logviewer
   set CLASS=backtype.storm.daemon.logviewer
-   %JAVA% -client -Dstorm.options= -Dstorm.conf.file= -cp %CLASSPATH% backtype.storm.command.config_value logviewer.childopts > temp.txt
+   "%JAVA%" -client -Dstorm.options= -Dstorm.conf.file= -cp "%CLASSPATH%" backtype.storm.command.config_value logviewer.childopts > temp.txt
   FOR /F "delims=" %%i in (temp.txt) do (
      FOR /F "tokens=1,* delims= " %%a in ("%%i") do (
 	  if %%a == VALUE: (
@@ -143,7 +152,7 @@
 
 :nimbus
   set CLASS=backtype.storm.daemon.nimbus
-  %JAVA% -client -Dstorm.options= -Dstorm.conf.file= -cp %CLASSPATH% backtype.storm.command.config_value nimbus.childopts > temp.txt
+  "%JAVA%" -client -Dstorm.options= -Dstorm.conf.file= -cp "%CLASSPATH%" backtype.storm.command.config_value nimbus.childopts > temp.txt
   FOR /F "delims=" %%i in (temp.txt) do (
      FOR /F "tokens=1,* delims= " %%a in ("%%i") do (
 	  if %%a == VALUE: (
@@ -175,7 +184,7 @@
   
 :supervisor
   set CLASS=backtype.storm.daemon.supervisor
-  %JAVA% -client -Dstorm.options= -Dstorm.conf.file= -cp %CLASSPATH% backtype.storm.command.config_value supervisor.childopts > temp.txt
+  "%JAVA%" -client -Dstorm.options= -Dstorm.conf.file= -cp "%CLASSPATH%" backtype.storm.command.config_value supervisor.childopts > temp.txt
   FOR /F "delims=" %%i in (temp.txt) do (
      FOR /F "tokens=1,* delims= " %%a in ("%%i") do (
 	  if %%a == VALUE: (
@@ -188,7 +197,7 @@
 :ui
   set CLASS=backtype.storm.ui.core
   set CLASSPATH=%CLASSPATH%;%STORM_HOME%
-  %JAVA% -client -Dstorm.options= -Dstorm.conf.file= -cp %CLASSPATH% backtype.storm.command.config_value ui.childopts > temp.txt
+  "%JAVA%" -client -Dstorm.options= -Dstorm.conf.file= -cp "%CLASSPATH%" backtype.storm.command.config_value ui.childopts > temp.txt
   FOR /F "delims=" %%i in (temp.txt) do (
      FOR /F "tokens=1,* delims= " %%a in ("%%i") do (
 	  if %%a == VALUE: (
@@ -199,7 +208,8 @@
   goto :eof
 
 :version
-  type %STORM_HOME%\RELEASE
+  set CLASS=backtype.storm.utils.VersionInfo
+  set STORM_OPTS=%STORM_CLIENT_OPTS% %STORM_OPTS%
   goto :eof
 
 :make_command_arguments

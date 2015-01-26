@@ -1,3 +1,53 @@
+## 0.10.0
+ * STORM-456: Storm UI: cannot navigate to topology page when name contains spaces.
+ * STORM-627: Storm-hbase configuration error.
+ * STORM-248: cluster.xml location is hardcoded for workers
+ * STORM-322: Windows script do not handle spaces in JAVA_HOME path
+ * STORM-586: Trident kafka spout fails instead of updating offset when kafka offset is out of range.
+ * STORM-595: storm-hdfs can only work with sequence files that use Writables.
+ * STORM-487: Remove storm.cmd, no need to duplicate work python runs on windows too.
+ * STORM-585: Performance issue in none grouping
+ * STORM-525: Add time sorting function to the 2nd col of bolt exec table
+ * STORM-548: Receive Thread Shutdown hook should connect to local hostname but not Localhost
+ * STORM-567: Move Storm Documentation/Website from SVN to git
+ * STORM-533: Add in client and server IConnection metrics.
+ * STORM-572: Storm UI 'favicon.ico'
+ * STORM-572: Allow Users to pass TEST-TIMEOUT-MS for java
+ * STORM-571: upgrade clj-time.
+ * STORM-569: Add Conf for bolt's outgoing overflow-buffer.
+ * STORM-565: Fix NPE when topology.groups is null.
+ * STORM-575: Ability to specify Jetty host to bind to
+ * STORM-577: long time launch worker will block supervisor heartbeat
+ * STORM-505: Fix debug string construction
+ * STORM-613: Fix wrong getOffset return value
+ * STORM-612: Update the contact address in configure.ac
+ * STORM-611: Remove extra "break"s
+ * STORM-610: Check the return value of fts_close()
+ * STORM-442: multilang ShellBolt/ShellSpout die() can be hang when Exception happened
+ * STORM-410: Add groups support to log-viewer
+ * STORM-444: Add AutoHDFS like credential fetching for HBase
+ * STORM-552: Add netty socket backlog config
+ * STORM-578: Calls to submit-mocked-assignment in supervisor-test use invalid executor-id format
+ * STORM-600: upgrade jacoco plugin to support jdk8
+ * STORM-495: KafkaSpout retries with exponential backoff
+ * STORM-620: Duplicate maven plugin declaration
+ * STORM-599: Use nimbus's cached heartbeats rather than fetching again from ZK
+ * STORM-559: ZkHosts in README should use 2181 as port.
+ * STORM-243: Record version and revision information in builds
+
+## 0.9.3-rc2
+ * STORM-558: change "swap!" to "reset!" to fix assignment-versions in supervisor
+ * STORM-555: Storm json response should set charset to UTF-8
+ * STORM-513: check heartbeat from multilang subprocess
+ * STORM-549: "topology.enable.message.timeouts" does nothing
+ * STORM-546: Local hostname configuration ignored by executor
+ * STORM-492: Test timeout should be configurable
+ * STORM-540: Change default time format in logs to ISO8601 in order to include timezone
+ * STORM-511: Storm-Kafka spout keeps sending fetch requests with invalid offset
+ * STORM-538: Guava com.google.thirdparty.publicsuffix is not shaded
+ * STORM-497: don't modify the netty server taskToQueueId mapping while the someone could be reading it.
+ * STORM-537: A worker reconnects infinitely to another dead worker (Sergey Tryuber)
+
 ## 0.9.3-rc1
  * STORM-519: add tuple as an input param to HBaseValueMapper 
  * STORM-488: Exit with 254 error code if storm CLI is run with unknown command
@@ -57,7 +107,6 @@
  * STORM-406: Fix for reconnect logic in netty client.
  * STORM-366: Add color span to most recent error and fix ui templates.
  * STORM-369: topology summary page displays wrong order.
- * STORM-350: LMAX Disruptor 3.2.1
  * STORM-239: Allow supervisor to operate in paths with spaces in them
  * STORM-87: fail fast on ShellBolt exception
  * STORM-417: Storm UI lost table sort style when tablesorter was updated

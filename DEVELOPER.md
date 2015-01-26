@@ -123,9 +123,10 @@ GitHub.
 
 ## Contribute documentation
 
-Documentation contributions are very welcome!  The best way to send contributions is as emails through the
-[Storm Developers](http://storm.apache.org/community.html) mailing list.
+Documentation contributions are very welcome!
 
+You can contribute documentation by pull request, as same as code contribution.
+Main directory is ```docs/```, and you can refer to docs/README.md for how to build / test website.
 
 <a name="pull-requests"></a>
 
@@ -227,6 +228,10 @@ To pull in a merge request you should generally follow the command line instruct
 The following commands must be run from the top-level directory.
 
     # Build the code and run the tests (requires nodejs, python and ruby installed) 
+    $ mvn clean install
+
+    # Build the code and run the tests, with specifying default test timeout (in millisecond)
+    $ export STORM_TEST_TIMEOUT_MS=10000
     $ mvn clean install
 
     # Build the code but skip the tests
