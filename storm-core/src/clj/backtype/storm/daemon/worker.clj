@@ -216,6 +216,7 @@
       :assignment-id assignment-id
       :port port
       :worker-id worker-id
+      :process-id process-id
       :cluster-state cluster-state
       :storm-cluster-state storm-cluster-state
       :storm-active-atom (atom false)
@@ -394,7 +395,8 @@
         subject (AuthUtils/populateSubject nil auto-creds initial-credentials)]
       (Subject/doAs subject (reify PrivilegedExceptionAction 
         (run [this]
-          (let [worker (worker-data conf shared-mq-context storm-id assignment-id port worker-id (process-pid) storm-conf cluster-state storm-cluster-state)
+          (let [process-id (process-pid)
+                worker (worker-data conf shared-mq-context storm-id assignment-id port worker-id process-id storm-conf cluster-state storm-cluster-state)
         heartbeat-fn #(do-heartbeat worker)
 
         ;; do this here so that the worker process dies if this fails
