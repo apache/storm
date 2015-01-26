@@ -18,7 +18,6 @@
   (:import [org.apache.zookeeper.data Stat ACL Id])
   (:import [org.apache.zookeeper KeeperException KeeperException$NoNodeException ZooDefs ZooDefs$Ids ZooDefs$Perms])
   (:import [backtype.storm.utils Utils])
-  (:import [backtype.storm.generated ServerInfo])
   (:import [java.security MessageDigest])
   (:import [org.apache.zookeeper.server.auth DigestAuthenticationProvider])
   (:use [backtype.storm util log config])

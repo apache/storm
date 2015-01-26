@@ -26,14 +26,17 @@ public class ServerInfo implements org.apache.thrift.TBase<ServerInfo, ServerInf
 
   private static final org.apache.thrift.protocol.TField HOST_FIELD_DESC = new org.apache.thrift.protocol.TField("host", org.apache.thrift.protocol.TType.STRING, (short)1);
   private static final org.apache.thrift.protocol.TField PORT_FIELD_DESC = new org.apache.thrift.protocol.TField("port", org.apache.thrift.protocol.TType.I32, (short)2);
+  private static final org.apache.thrift.protocol.TField VERSION_FIELD_DESC = new org.apache.thrift.protocol.TField("version", org.apache.thrift.protocol.TType.STRING, (short)3);
 
   private String host; // required
   private int port; // required
+  private String version; // required
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift.TFieldIdEnum {
     HOST((short)1, "host"),
-    PORT((short)2, "port");
+    PORT((short)2, "port"),
+    VERSION((short)3, "version");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -52,6 +55,8 @@ public class ServerInfo implements org.apache.thrift.TBase<ServerInfo, ServerInf
           return HOST;
         case 2: // PORT
           return PORT;
+        case 3: // VERSION
+          return VERSION;
         default:
           return null;
       }
@@ -102,6 +107,8 @@ public class ServerInfo implements org.apache.thrift.TBase<ServerInfo, ServerInf
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
     tmpMap.put(_Fields.PORT, new org.apache.thrift.meta_data.FieldMetaData("port", org.apache.thrift.TFieldRequirementType.REQUIRED, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
+    tmpMap.put(_Fields.VERSION, new org.apache.thrift.meta_data.FieldMetaData("version", org.apache.thrift.TFieldRequirementType.REQUIRED, 
+        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
     metaDataMap = Collections.unmodifiableMap(tmpMap);
     org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(ServerInfo.class, metaDataMap);
   }
@@ -111,12 +118,14 @@ public class ServerInfo implements org.apache.thrift.TBase<ServerInfo, ServerInf
 
   public ServerInfo(
     String host,
-    int port)
+    int port,
+    String version)
   {
     this();
     this.host = host;
     this.port = port;
     set_port_isSet(true);
+    this.version = version;
   }
 
   /**
@@ -129,6 +138,9 @@ public class ServerInfo implements org.apache.thrift.TBase<ServerInfo, ServerInf
       this.host = other.host;
     }
     this.port = other.port;
+    if (other.is_set_version()) {
+      this.version = other.version;
+    }
   }
 
   public ServerInfo deepCopy() {
@@ -140,6 +152,7 @@ public class ServerInfo implements org.apache.thrift.TBase<ServerInfo, ServerInf
     this.host = null;
     set_port_isSet(false);
     this.port = 0;
+    this.version = null;
   }
 
   public String get_host() {
@@ -187,6 +200,29 @@ public class ServerInfo implements org.apache.thrift.TBase<ServerInfo, ServerInf
     __isset_bit_vector.set(__PORT_ISSET_ID, value);
   }
 
+  public String get_version() {
+    return this.version;
+  }
+
+  public void set_version(String version) {
+    this.version = version;
+  }
+
+  public void unset_version() {
+    this.version = null;
+  }
+
+  /** Returns true if field version is set (has been assigned a value) and false otherwise */
+  public boolean is_set_version() {
+    return this.version != null;
+  }
+
+  public void set_version_isSet(boolean value) {
+    if (!value) {
+      this.version = null;
+    }
+  }
+
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case HOST:
@@ -205,6 +241,14 @@ public class ServerInfo implements org.apache.thrift.TBase<ServerInfo, ServerInf
       }
       break;
 
+    case VERSION:
+      if (value == null) {
+        unset_version();
+      } else {
+        set_version((String)value);
+      }
+      break;
+
     }
   }
 
@@ -215,6 +259,9 @@ public class ServerInfo implements org.apache.thrift.TBase<ServerInfo, ServerInf
 
     case PORT:
       return Integer.valueOf(get_port());
+
+    case VERSION:
+      return get_version();
 
     }
     throw new IllegalStateException();
@@ -231,6 +278,8 @@ public class ServerInfo implements org.apache.thrift.TBase<ServerInfo, ServerInf
       return is_set_host();
     case PORT:
       return is_set_port();
+    case VERSION:
+      return is_set_version();
     }
     throw new IllegalStateException();
   }
@@ -266,6 +315,15 @@ public class ServerInfo implements org.apache.thrift.TBase<ServerInfo, ServerInf
         return false;
     }
 
+    boolean this_present_version = true && this.is_set_version();
+    boolean that_present_version = true && that.is_set_version();
+    if (this_present_version || that_present_version) {
+      if (!(this_present_version && that_present_version))
+        return false;
+      if (!this.version.equals(that.version))
+        return false;
+    }
+
     return true;
   }
 
@@ -282,6 +340,11 @@ public class ServerInfo implements org.apache.thrift.TBase<ServerInfo, ServerInf
     builder.append(present_port);
     if (present_port)
       builder.append(port);
+
+    boolean present_version = true && (is_set_version());
+    builder.append(present_version);
+    if (present_version)
+      builder.append(version);
 
     return builder.toHashCode();
   }
@@ -310,6 +373,16 @@ public class ServerInfo implements org.apache.thrift.TBase<ServerInfo, ServerInf
     }
     if (is_set_port()) {
       lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.port, typedOther.port);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_version()).compareTo(typedOther.is_set_version());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_version()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.version, typedOther.version);
       if (lastComparison != 0) {
         return lastComparison;
       }
@@ -346,6 +419,13 @@ public class ServerInfo implements org.apache.thrift.TBase<ServerInfo, ServerInf
             org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
           }
           break;
+        case 3: // VERSION
+          if (field.type == org.apache.thrift.protocol.TType.STRING) {
+            this.version = iprot.readString();
+          } else { 
+            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
         default:
           org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
       }
@@ -367,6 +447,11 @@ public class ServerInfo implements org.apache.thrift.TBase<ServerInfo, ServerInf
     oprot.writeFieldBegin(PORT_FIELD_DESC);
     oprot.writeI32(this.port);
     oprot.writeFieldEnd();
+    if (this.version != null) {
+      oprot.writeFieldBegin(VERSION_FIELD_DESC);
+      oprot.writeString(this.version);
+      oprot.writeFieldEnd();
+    }
     oprot.writeFieldStop();
     oprot.writeStructEnd();
   }
@@ -387,6 +472,14 @@ public class ServerInfo implements org.apache.thrift.TBase<ServerInfo, ServerInf
     sb.append("port:");
     sb.append(this.port);
     first = false;
+    if (!first) sb.append(", ");
+    sb.append("version:");
+    if (this.version == null) {
+      sb.append("null");
+    } else {
+      sb.append(this.version);
+    }
+    first = false;
     sb.append(")");
     return sb.toString();
   }
@@ -399,6 +492,10 @@ public class ServerInfo implements org.apache.thrift.TBase<ServerInfo, ServerInf
 
     if (!is_set_port()) {
       throw new org.apache.thrift.protocol.TProtocolException("Required field 'port' is unset! Struct:" + toString());
+    }
+
+    if (!is_set_version()) {
+      throw new org.apache.thrift.protocol.TProtocolException("Required field 'version' is unset! Struct:" + toString());
     }
 
   }

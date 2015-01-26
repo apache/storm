@@ -504,7 +504,8 @@
        {"user" user
         "nimbusHost" (.get_host nimbus-info)
         "nimbusPort" (.get_port nimbus-info)
-        "stormVersion" (str (VersionInfo/getVersion))
+        "nimbusVersion" (.get_version nimbus-info)
+        "uiVersion" (str (VersionInfo/getBuildVersion))
         "nimbusUptime" (pretty-uptime-sec (.get_nimbus_uptime_secs summ))
         "supervisors" (count sups)
         "slotsTotal" total-slots

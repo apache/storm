@@ -18,6 +18,7 @@
            [java.util Collections])
   (:import [java.io FileNotFoundException])
   (:import [java.nio.channels Channels WritableByteChannel])
+  (:import [backtype.storm.utils VersionInfo])
   (:import [backtype.storm.security.auth ThriftServer ThriftConnectionType ReqContext AuthUtils])
   (:use [backtype.storm.scheduler.DefaultScheduler])
   (:import [backtype.storm.scheduler INimbus SupervisorDetails WorkerSlot TopologyDetails
@@ -882,7 +883,8 @@
         nimbus-conf (:conf nimbus)
         local-hostname (memoized-local-hostname)
         port (nimbus-conf NIMBUS-THRIFT-PORT)
-        server-info (ServerInfo. local-hostname port)]
+        version (str (VersionInfo/getBuildVersion))
+        server-info (ServerInfo. local-hostname port version)]
         (.register-nimbus-info storm-cluster-state (Utils/toJsonString server-info))))
 
 (defn cleanup-corrupt-topologies! [nimbus]

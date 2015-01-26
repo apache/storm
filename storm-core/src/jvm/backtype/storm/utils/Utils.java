@@ -544,13 +544,15 @@ public class Utils {
     JSONObject jsonObject = (JSONObject) parser.parse(jsonText);
     String host = (String) jsonObject.get("host");
     Long port = (Long) jsonObject.get("port");
-    return new ServerInfo(host, port.intValue());
+    String version = (String) jsonObject.get("version");
+    return new ServerInfo(host, port.intValue(), version);
   }
 
   public static String toJsonString(ServerInfo serverInfo) {
     JSONObject obj = new JSONObject();
     obj.put("host", serverInfo.get_host());
     obj.put("port", serverInfo.get_port());
+    obj.put("version", serverInfo.get_version());
     return obj.toJSONString();
   }
 
