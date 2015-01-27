@@ -22,6 +22,8 @@ import org.apache.qpid.amqp_1_0.client.LinkDetachedException;
 import org.apache.qpid.amqp_1_0.client.Message;
 import org.apache.qpid.amqp_1_0.client.Sender;
 import org.apache.qpid.amqp_1_0.client.Session;
+import org.apache.qpid.amqp_1_0.type.Binary;
+import org.apache.qpid.amqp_1_0.type.messaging.Data;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +51,9 @@ public class EventHubSender {
         this.ensureSenderCreated();
       }
 
-      Message message = new Message(data);
+      //For interop with other language, convert string to bytes
+      Binary bin = new Binary(data.getBytes());
+      Message message = new Message(new Data(bin));
       this.sender.send(message);
 
     } catch (LinkDetachedException e) {
