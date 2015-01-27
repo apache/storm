@@ -205,7 +205,8 @@ struct ExecutorSummary {
   2: required string component_id;
   3: required string host;
   4: required i32 port;
-  5: required i32 uptime_secs;
+  5: required i32 process_id;
+  6: required i32 uptime_secs;
   7: optional ExecutorStats stats;
 }
 

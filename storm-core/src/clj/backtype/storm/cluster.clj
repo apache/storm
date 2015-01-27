@@ -248,6 +248,7 @@
                 (if (contains? executor-stats t)
                   {t {:time-secs (:time-secs worker-hb)
                       :uptime (:uptime worker-hb)
+                      :process-id (:process-id worker-hb)
                       :stats (get executor-stats t)}})))
          (into {}))))
 

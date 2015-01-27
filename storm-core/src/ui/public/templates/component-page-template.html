@@ -178,6 +178,11 @@
           </span>
         </th>
         <th class="header">
+          <span data-original-title="The process id of the Worker to which an Executor is assigned." class="tip above">
+            ProcessId
+          </span>
+        </th>
+        <th class="header">
           <span data-original-title="The number of Tuples emitted." class="tip above">
             Emitted
           </span>
@@ -211,6 +216,7 @@
         <td>{{uptime}}</td>
         <td>{{host}}</td>
         <td><a href="{{workerLogLink}}">{{port}}</a></td>
+        <td>{{processId}}
         <td>{{emitted}}</td>
         <td>{{transferred}}</td>
         <td>{{completeLatency}}</td>
