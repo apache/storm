@@ -3,15 +3,18 @@ package storm.kafka;
 import kafka.message.MessageAndOffset;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import storm.kafka.failures.MassageFailureHandler;
+import storm.kafka.failures.IMassageFailureHandler;
 
 import java.util.SortedSet;
 import java.util.TreeSet;
 
 /**
  * Created by olgagorun on 1/28/15.
+ *
+ * Note: this class is not moved to failures package to be able to use package access level members of PartitionManager
+ *
  */
-public class DefaultFailureHandler implements MassageFailureHandler {
+public class DefaultFailureHandler implements IMassageFailureHandler {
     public static final Logger LOG = LoggerFactory.getLogger(DefaultFailureHandler.class);
 
     SortedSet<Long> failed;
@@ -63,4 +66,6 @@ public class DefaultFailureHandler implements MassageFailureHandler {
         }
 
     }
+
+    public void ack(Long offset) {}
 }

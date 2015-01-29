@@ -9,5 +9,5 @@ import java.util.Map;
  */
 public interface IMessageFailureHandlerFactory {
 
-    public MassageFailureHandler getHandler(PartitionManager pm, Map conf);
+    public IMassageFailureHandler getHandler(PartitionManager pm, Map conf);
 }

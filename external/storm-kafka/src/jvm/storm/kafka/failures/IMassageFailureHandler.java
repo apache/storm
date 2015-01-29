@@ -5,7 +5,7 @@ import kafka.message.MessageAndOffset;
 /**
  * Created by olgagorun on 1/28/15.
  */
-public interface MassageFailureHandler {
+public interface IMassageFailureHandler {
 
     long getOffset(Long expectedOffset);
 
@@ -14,4 +14,6 @@ public interface MassageFailureHandler {
     void startMessageProcessing(MessageAndOffset enrichedMessage);
 
     void fail(Long offset) throws RuntimeException;
+
+    void ack(Long offset);
 }

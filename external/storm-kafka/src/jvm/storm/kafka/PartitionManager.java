@@ -31,7 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import storm.kafka.KafkaSpout.EmitState;
 import storm.kafka.KafkaSpout.MessageAndRealOffset;
-import storm.kafka.failures.MassageFailureHandler;
+import storm.kafka.failures.IMassageFailureHandler;
 import storm.kafka.failures.MessageFailureHandlerFactoryRepository;
 import storm.kafka.trident.MaxMetric;
 
@@ -57,7 +57,7 @@ public class PartitionManager {
     Map _stormConf;
     //long numberFailed, numberAcked;
     long numberAcked;
-    MassageFailureHandler _failureHandler;
+    IMassageFailureHandler _failureHandler;
 
 
     public PartitionManager(DynamicPartitionConnections connections, String topologyInstanceId, ZkState state, Map stormConf, SpoutConfig spoutConfig, Partition id) {
@@ -201,6 +201,7 @@ public class PartitionManager {
         }
         _pending.remove(offset);
         numberAcked++;
+        _failureHandler.ack(offset);
     }
 
     public void fail(Long offset) {
@@ -246,6 +247,14 @@ public class PartitionManager {
 
     public void close() {
         _connections.unregister(_partition.host, _partition.partition);
+    }
+
+    public Map getStormConfig() {
+        return _stormConf;
+    }
+
+    public SpoutConfig getSpoutConfig() {
+        return _spoutConfig;
     }
 
     static class KafkaMessageId {

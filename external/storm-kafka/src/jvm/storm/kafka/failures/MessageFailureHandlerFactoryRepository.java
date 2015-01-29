@@ -15,7 +15,7 @@ public final class MessageFailureHandlerFactoryRepository {
 
     public static IMessageFailureHandlerFactory getFactory() {
         if (_factory == null) {
-            _factory = new MessageFailureHandlerDefaultFactory("DEFAULT");
+            _factory = new MessageFailureHandlerDefaultFactory("CONFIGURED_RETRY");
         }
         return _factory;
     }
