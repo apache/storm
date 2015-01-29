@@ -16,8 +16,9 @@
 (ns backtype.storm.grouping-test
   (:use [clojure test])
   (:import [backtype.storm.testing TestWordCounter TestWordSpout TestGlobalCount TestAggregatesCounter NGrouping])
+  (:import [backtype.storm.grouping LoadMapping])
   (:use [backtype.storm bootstrap testing])
-  (:use [backtype.storm.daemon common])
+  (:use [backtype.storm.daemon common executor])
   )
 
 (bootstrap)
@@ -47,9 +48,43 @@
                                                          ["a"] ["b"]
                                                        ]}
                                      )]
-      (is (ms= (apply concat (repeat 6 [[1] [2] [3] [4]]))
-               (read-tuples results "2")))
-      )))
+      (is (= (* 6 4) (.size (read-tuples results "2")))))))
+
+(deftest test-shuffle-load-even
+ (let [shuffle-fn (mk-shuffle-grouper [1 2] {})
+       num-messages 10000
+       min-prcnt (int (* num-messages 0.47))
+       max-prcnt (int (* num-messages 0.53))
+       load (LoadMapping.)
+       _ (.setLocal load {(int 1) 0.0 (int 2) 0.0})
+       data [1 2]
+       freq (frequencies (for [x (range 0 num-messages)] (shuffle-fn (int 1) data load)))
+       load1 (.get freq (int 1))
+       load2 (.get freq (int 2))]
+    (log-message "FREQ:" freq)
+    (is (>= load1 min-prcnt))
+    (is (<= load1 max-prcnt))
+    (is (>= load2 min-prcnt))
+    (is (<= load2 max-prcnt))))
+
+(deftest test-shuffle-load-uneven
+ (let [shuffle-fn (mk-shuffle-grouper [1 2] {})
+       num-messages 10000
+       min1-prcnt (int (* num-messages 0.30))
+       max1-prcnt (int (* num-messages 0.36))
+       min2-prcnt (int (* num-messages 0.63))
+       max2-prcnt (int (* num-messages 0.69))
+       load (LoadMapping.)
+       _ (.setLocal load {(int 1) 0.5 (int 2) 0.0})
+       data [1 2]
+       freq (frequencies (for [x (range 0 num-messages)] (shuffle-fn (int 1) data load)))
+       load1 (.get freq (int 1))
+       load2 (.get freq (int 2))]
+    (log-message "FREQ:" freq)
+    (is (>= load1 min1-prcnt))
+    (is (<= load1 max1-prcnt))
+    (is (>= load2 min2-prcnt))
+    (is (<= load2 max2-prcnt))))
 
 (defbolt id-bolt ["val"] [tuple collector]
   (emit-bolt! collector (.getValues tuple))

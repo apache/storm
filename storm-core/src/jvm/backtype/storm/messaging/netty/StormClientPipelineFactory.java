@@ -39,15 +39,16 @@ class StormClientPipelineFactory implements ChannelPipelineFactory {
         // Encoder
         pipeline.addLast("encoder", new MessageEncoder());
 
-        boolean isNettyAuth = (Boolean) this.client.storm_conf
+        Boolean isNettyAuth = (Boolean) this.client.storm_conf
                 .get(Config.STORM_MESSAGING_NETTY_AUTHENTICATION);
+        if (isNettyAuth == null) isNettyAuth = false;
         if (isNettyAuth) {
             // Authenticate: Removed after authentication completes
             pipeline.addLast("saslClientHandler", new SaslStormClientHandler(
                     client));
         }
         // business logic.
-        pipeline.addLast("handler", new StormClientErrorHandler(client.name()));
+        pipeline.addLast("handler", new StormClientHandler(client));
 
         return pipeline;
     }

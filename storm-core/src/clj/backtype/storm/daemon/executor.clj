@@ -24,6 +24,7 @@
             EmitInfo BoltFailInfo BoltAckInfo BoltExecuteInfo])
   (:import [backtype.storm.metric.api IMetric IMetricsConsumer$TaskInfo IMetricsConsumer$DataPoint])
   (:import [backtype.storm Config])
+  (:import [backtype.storm.grouping LoadAwareCustomStreamGrouping])
   (:import [java.util.concurrent ConcurrentLinkedQueue])
   (:require [backtype.storm [tuple :as tuple]])
   (:require [backtype.storm.daemon [task :as task]])
@@ -34,51 +35,64 @@
 (defn- mk-fields-grouper [^Fields out-fields ^Fields group-fields ^List target-tasks]
   (let [num-tasks (count target-tasks)
         task-getter (fn [i] (.get target-tasks i))]
-    (fn [task-id ^List values]
+    (fn [task-id ^List values load]
       (-> (.select out-fields group-fields values)
           tuple/list-hash-code
           (mod num-tasks)
           task-getter))))
 
-(defn- mk-shuffle-grouper [^List target-tasks]
-  (let [choices (rotating-random-range target-tasks)]
-    (fn [task-id tuple]
-      (acquire-random-range-id choices))))
+(defn mk-shuffle-grouper [^List target-tasks conf]
+  (if (or (.get conf TOPOLOGY-DISABLE-LOADAWARE) false)
+    (let [choices (rotating-random-range target-tasks)]
+      (fn [task-id tuple load]
+        (acquire-random-range-id choices)))
+    (let [rnd (Random.)]
+      (fn [task-id tuple load]
+        (let [loads (for [target target-tasks] (int (- 101 (* 100 (.get load target)))))
+              total (reduce + loads)
+              selected (.nextInt rnd total)]
+          (loop [index 0 sum 0]
+            (let [new-sum (+ sum (.get loads index))]
+              (if (< selected new-sum)
+                (.get target-tasks index)
+                (recur (inc index) new-sum)))))))))
 
 (defn- mk-custom-grouper [^CustomStreamGrouping grouping ^WorkerTopologyContext context ^String component-id ^String stream-id target-tasks]
   (.prepare grouping context (GlobalStreamId. component-id stream-id) target-tasks)
-  (fn [task-id ^List values]
-    (.chooseTasks grouping task-id values)
-    ))
+  (if (instance? LoadAwareCustomStreamGrouping grouping)
+    (fn [task-id ^List values load]
+        (.chooseTasks grouping task-id values load))
+    (fn [task-id ^List values load]
+      (.chooseTasks grouping task-id values))))
 
 (defn- mk-grouper
   "Returns a function that returns a vector of which task indices to send tuple to, or just a single task index."
-  [^WorkerTopologyContext context component-id stream-id ^Fields out-fields thrift-grouping ^List target-tasks]
+  [^WorkerTopologyContext context component-id stream-id ^Fields out-fields thrift-grouping ^List target-tasks conf]
   (let [num-tasks (count target-tasks)
         random (Random.)
         target-tasks (vec (sort target-tasks))]
     (condp = (thrift/grouping-type thrift-grouping)
       :fields
         (if (thrift/global-grouping? thrift-grouping)
-          (fn [task-id tuple]
+          (fn [task-id tuple load]
             ;; It's possible for target to have multiple tasks if it reads multiple sources
             (first target-tasks))
           (let [group-fields (Fields. (thrift/field-grouping thrift-grouping))]
             (mk-fields-grouper out-fields group-fields target-tasks)
             ))
       :all
-        (fn [task-id tuple] target-tasks)
+        (fn [task-id tuple load] target-tasks)
       :shuffle
-        (mk-shuffle-grouper target-tasks)
+        (mk-shuffle-grouper target-tasks conf)
       :local-or-shuffle
         (let [same-tasks (set/intersection
                            (set target-tasks)
                            (set (.getThisWorkerTasks context)))]
           (if-not (empty? same-tasks)
-            (mk-shuffle-grouper (vec same-tasks))
-            (mk-shuffle-grouper target-tasks)))
+            (mk-shuffle-grouper (vec same-tasks) conf)
+            (mk-shuffle-grouper target-tasks conf)))
       :none
-        (fn [task-id tuple]
+        (fn [task-id tuple load]
           (let [i (mod (.nextInt random) num-tasks)]
             (get target-tasks i)
             ))
@@ -92,7 +106,7 @@
         :direct
       )))
 
-(defn- outbound-groupings [^WorkerTopologyContext worker-context this-component-id stream-id out-fields component->grouping]
+(defn- outbound-groupings [^WorkerTopologyContext worker-context this-component-id stream-id out-fields component->grouping conf]
   (->> component->grouping
        (filter-key #(-> worker-context
                         (.getComponentTasks %)
@@ -106,13 +120,13 @@
                             out-fields
                             tgrouping
                             (.getComponentTasks worker-context component)
-                            )]))
+                            conf)]))
        (into {})
        (HashMap.)))
 
 (defn outbound-components
   "Returns map of stream id to component id to grouper"
-  [^WorkerTopologyContext worker-context component-id]
+  [^WorkerTopologyContext worker-context component-id conf]
   (->> (.getTargets worker-context component-id)
         clojurify-structure
         (map (fn [[stream-id component->grouping]]
@@ -122,7 +136,8 @@
                   component-id
                   stream-id
                   (.getComponentOutputFields worker-context component-id stream-id)
-                  component->grouping)]))
+                  component->grouping
+                  conf)]))
          (into {})
          (HashMap.)))
 
@@ -239,7 +254,7 @@
      :stats (mk-executor-stats <> (sampling-rate storm-conf))
      :interval->task->metric-registry (HashMap.)
      :task->component (:task->component worker)
-     :stream->component->grouper (outbound-components worker-context component-id)
+     :stream->component->grouper (outbound-components worker-context component-id (:conf worker))
      :report-error (throttled-report-error-fn <>)
      :report-error-and-die (fn [error]
                              ((:report-error <>) error)

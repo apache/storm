@@ -199,6 +199,12 @@ public class Config extends HashMap<String, Object> {
     public static final Object TOPOLOGY_TUPLE_SERIALIZER_SCHEMA = String.class;
 
     /**
+     * Disable load aware grouping support.
+     */
+    public static final String TOPOLOGY_DISABLE_LOADAWARE = "topology.disable.loadaware";
+    public static final Object TOPOLOGY_DISABLE_LOADAWARE_SCHEMA = Boolean.class;
+
+    /**
      * Try to serialize all tuples, even for local transfers.  This should only be used
      * for testing, as a sanity check that all of your tuples are setup properly.
      */
