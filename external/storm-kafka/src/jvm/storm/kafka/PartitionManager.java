@@ -23,16 +23,16 @@ import backtype.storm.metric.api.CountMetric;
 import backtype.storm.metric.api.MeanReducer;
 import backtype.storm.metric.api.ReducedMetric;
 import backtype.storm.spout.SpoutOutputCollector;
-import backtype.storm.utils.Utils;
 import com.google.common.collect.ImmutableMap;
 import kafka.javaapi.consumer.SimpleConsumer;
 import kafka.javaapi.message.ByteBufferMessageSet;
-import kafka.message.ByteBufferMessageSet$;
 import kafka.message.MessageAndOffset;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import storm.kafka.KafkaSpout.EmitState;
 import storm.kafka.KafkaSpout.MessageAndRealOffset;
+import storm.kafka.failures.MassageFailureHandler;
+import storm.kafka.failures.MessageFailureHandlerFactoryRepository;
 import storm.kafka.trident.MaxMetric;
 
 import java.util.*;
@@ -45,7 +45,7 @@ public class PartitionManager {
     private final CountMetric _fetchAPIMessageCount;
     Long _emittedToOffset;
     SortedSet<Long> _pending = new TreeSet<Long>();
-    SortedSet<Long> failed = new TreeSet<Long>();
+    //SortedSet<Long> failed = new TreeSet<Long>();
     Long _committedTo;
     LinkedList<MessageAndRealOffset> _waitingToEmit = new LinkedList<MessageAndRealOffset>();
     Partition _partition;
@@ -55,7 +55,11 @@ public class PartitionManager {
     DynamicPartitionConnections _connections;
     ZkState _state;
     Map _stormConf;
-    long numberFailed, numberAcked;
+    //long numberFailed, numberAcked;
+    long numberAcked;
+    MassageFailureHandler _failureHandler;
+
+
     public PartitionManager(DynamicPartitionConnections connections, String topologyInstanceId, ZkState state, Map stormConf, SpoutConfig spoutConfig, Partition id) {
         _partition = id;
         _connections = connections;
@@ -64,7 +68,8 @@ public class PartitionManager {
         _consumer = connections.register(id.host, id.partition);
         _state = state;
         _stormConf = stormConf;
-        numberAcked = numberFailed = 0;
+        _failureHandler = MessageFailureHandlerFactoryRepository.getFactory().getHandler(this, stormConf);
+        numberAcked = 0;
 
         String jsonTopologyId = null;
         Long jsonOffset = null;
@@ -148,14 +153,10 @@ public class PartitionManager {
     private void fill() {
         long start = System.nanoTime();
         long offset;
-        final boolean had_failed = !failed.isEmpty();
 
         // Are there failed tuples? If so, fetch those first.
-        if (had_failed) {
-            offset = failed.first();
-        } else {
-            offset = _emittedToOffset;
-        }
+        offset = _failureHandler.getOffset(_emittedToOffset);
+        boolean had_failed = offset != _emittedToOffset;
 
         ByteBufferMessageSet msgs = null;
         try {
@@ -175,19 +176,18 @@ public class PartitionManager {
             int numMessages = 0;
 
             for (MessageAndOffset msg : msgs) {
+                _failureHandler.startMessageProcessing(msg);
                 final Long cur_offset = msg.offset();
+
                 if (cur_offset < offset) {
                     // Skip any old offsets.
                     continue;
                 }
-                if (!had_failed || failed.contains(cur_offset)) {
+                if (!had_failed || _failureHandler.isOffsetFailed(cur_offset)) {
                     numMessages += 1;
                     _pending.add(cur_offset);
                     _waitingToEmit.add(new MessageAndRealOffset(msg.message(), cur_offset));
                     _emittedToOffset = Math.max(msg.nextOffset(), _emittedToOffset);
-                    if (had_failed) {
-                        failed.remove(cur_offset);
-                    }
                 }
             }
             _fetchAPIMessageCount.incrBy(numMessages);
@@ -204,20 +204,7 @@ public class PartitionManager {
     }
 
     public void fail(Long offset) {
-        if (offset < _emittedToOffset - _spoutConfig.maxOffsetBehind) {
-            LOG.info(
-                    "Skipping failed tuple at offset=" + offset +
-                            " because it's more than maxOffsetBehind=" + _spoutConfig.maxOffsetBehind +
-                            " behind _emittedToOffset=" + _emittedToOffset
-            );
-        } else {
-            LOG.debug("failing at offset=" + offset + " with _pending.size()=" + _pending.size() + " pending and _emittedToOffset=" + _emittedToOffset);
-            failed.add(offset);
-            numberFailed++;
-            if (numberAcked == 0 && numberFailed > _spoutConfig.maxOffsetBehind) {
-                throw new RuntimeException("Too many tuple failures");
-            }
-        }
+        _failureHandler.fail(offset);
     }
 
     public void commit() {
