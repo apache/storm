@@ -350,9 +350,11 @@
                         (keys keepers))
            (zipmap (vals new-worker-ids) (keys new-worker-ids))
            ))
+
     ;; check storm topology code dir exists before launching workers
     (doseq [[port assignment] reassign-executors]
-      (let [downloaded-storm-ids (set (read-downloaded-storm-ids conf))
+      (let [storm-cluster-state (:storm-cluster-state supervisor)
+            downloaded-storm-ids (set (read-downloaded-storm-ids conf))
             storm-id (:storm-id assignment)
             assignment-info (.assignment-info-with-version storm-cluster-state storm-id nil)
             storm-code-map (read-storm-code-locations assignment-info)
@@ -361,6 +363,7 @@
         (if-not (or (downloaded-storm-ids storm-id) (.exists (File. stormroot)))
           (download-storm-code conf storm-id master-code-dir))
         ))
+
     (wait-for-workers-launch
      conf
      (dofor [[port assignment] reassign-executors]
@@ -555,12 +558,15 @@
       (Utils/downloadFromMaster conf (master-stormcode-path master-code-dir) (supervisor-stormcode-path tmproot))
       (Utils/downloadFromMaster conf (master-stormconf-path master-code-dir) (supervisor-stormconf-path tmproot))
       (extract-dir-from-jar (supervisor-stormjar-path tmproot) RESOURCES-SUBDIR tmproot)
-      (FileUtils/moveDirectory (File. tmproot) (File. stormroot))
+      (if-not (.exists (File. stormroot))
+        (FileUtils/moveDirectory (File. tmproot) (File. stormroot))
+        (FileUtils/deleteDirectory (File. tmproot)))
       (setup-storm-code-dir conf (read-supervisor-storm-conf conf storm-id) stormroot)
       (log-message "Finished downloading code for storm id "
                    storm-id
                    " from "
-                   master-code-dir)))
+                   master-code-dir)
+    ))
 
 (defn write-log-metadata-to-yaml-file! [storm-id port data conf]
   (let [file (get-log-metadata-file storm-id port)]
