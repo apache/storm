@@ -345,7 +345,7 @@
                             (supervisor-stormdist-root (:conf worker) (:storm-id worker)))
                           (worker-pids-root (:conf worker) (:worker-id worker))
                           (:port worker)
-                          (:task-ids worker)
+                          (seq @(:task-ids worker))
                           (:default-shared-resources worker)
                           (:user-shared-resources worker)
                           ))

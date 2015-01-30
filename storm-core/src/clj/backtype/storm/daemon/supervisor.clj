@@ -97,7 +97,9 @@
 
 (defn read-worker-heartbeat [conf id]
   (let [local-state (worker-state conf id)]
-    (.get local-state LS-WORKER-HEARTBEAT)
+    (try
+      (.get local-state LS-WORKER-HEARTBEAT)
+      (catch Exception e nil))
     ))
 
 
@@ -117,9 +119,7 @@
 (defn matches-an-assignment? [worker-heartbeat assigned-executors]
   (let [local-assignment (assigned-executors (:port worker-heartbeat))]
     (and local-assignment
-         (= (:storm-id worker-heartbeat) (:storm-id local-assignment))
-         (= (disj (set (:executors worker-heartbeat)) Constants/SYSTEM_EXECUTOR_ID)
-            (set (:executors local-assignment))))))
+         (= (:storm-id worker-heartbeat) (:storm-id local-assignment)))))
 
 (let [dead-workers (atom #{})]
   (defn get-dead-workers []
