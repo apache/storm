@@ -56,7 +56,7 @@ public class TridentKafkaEmitter {
     public TridentKafkaEmitter(Map conf, TopologyContext context, TridentKafkaConfig config, String topologyInstanceId) {
         _config = config;
         _topologyInstanceId = topologyInstanceId;
-        _connections = new DynamicPartitionConnections(_config, KafkaUtils.makeBrokerReader(conf, _config));
+        _connections = new DynamicPartitionConnections(_config, _config.kafkaFactory.brokerReader(conf, _config));
         _topologyName = (String) conf.get(Config.TOPOLOGY_NAME);
         _kafkaOffsetMetric = new KafkaUtils.KafkaOffsetMetric(_config.topic, _connections);
         context.registerMetric("kafkaOffset", _kafkaOffsetMetric, _config.metricsTimeBucketSizeInSecs);
@@ -113,7 +113,7 @@ public class TridentKafkaEmitter {
         try {
             msgs = fetchMessages(consumer, partition, offset);
         } catch (TopicOffsetOutOfRangeException e) {
-            long newOffset = KafkaUtils.getOffset(consumer, _config.topic, partition.partition, kafka.api.OffsetRequest.EarliestTime());
+            long newOffset = KafkaUtils.getOffset(consumer, _config.topic, partition.partition, _config.startOffsetTime);
             LOG.warn("OffsetOutOfRange: Updating offset from offset = " + offset + " to offset = " + newOffset);
             offset = newOffset;
             msgs = KafkaUtils.fetchMessages(_config, consumer, partition, offset);

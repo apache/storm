@@ -49,13 +49,14 @@ public class ZkCoordinatorTest {
     private SpoutConfig spoutConfig;
     private ZkState state;
     private SimpleConsumer simpleConsumer;
+    private ZkHosts hosts;
 
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         server = new TestingServer();
         String connectionString = server.getConnectString();
-        ZkHosts hosts = new ZkHosts(connectionString);
+        hosts = new ZkHosts(connectionString);
         hosts.refreshFreqSecs = 1;
         spoutConfig = new SpoutConfig(hosts, "topic", "/test", "id");
         Map conf = buildZookeeperConfig(server);
@@ -131,13 +132,13 @@ public class ZkCoordinatorTest {
     }
 
     private void waitForRefresh() throws InterruptedException {
-        Thread.sleep(((ZkHosts) spoutConfig.hosts).refreshFreqSecs * 1000 + 1);
+        Thread.sleep(hosts.refreshFreqSecs * 1000 + 1);
     }
 
     private List<ZkCoordinator> buildCoordinators(int totalTasks) {
         List<ZkCoordinator> coordinatorList = new ArrayList<ZkCoordinator>();
         for (int i = 0; i < totalTasks; i++) {
-            ZkCoordinator coordinator = new ZkCoordinator(dynamicPartitionConnections, stormConf, spoutConfig, state, i, totalTasks, "test-id", reader);
+            ZkCoordinator coordinator = new ZkCoordinator(dynamicPartitionConnections, stormConf, spoutConfig, state, i, totalTasks, "test-id", reader, hosts);
             coordinatorList.add(coordinator);
         }
         return coordinatorList;

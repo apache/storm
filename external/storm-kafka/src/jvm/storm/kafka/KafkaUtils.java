@@ -32,9 +32,6 @@ import kafka.message.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import storm.kafka.trident.GlobalPartitionInformation;
-import storm.kafka.trident.IBrokerReader;
-import storm.kafka.trident.StaticBrokerReader;
-import storm.kafka.trident.ZkBrokerReader;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -48,16 +45,6 @@ public class KafkaUtils {
 
     public static final Logger LOG = LoggerFactory.getLogger(KafkaUtils.class);
     private static final int NO_OFFSET = -5;
-
-
-    public static IBrokerReader makeBrokerReader(Map stormConf, KafkaConfig conf) {
-        if (conf.hosts instanceof StaticHosts) {
-            return new StaticBrokerReader(((StaticHosts) conf.hosts).getPartitionInformation());
-        } else {
-            return new ZkBrokerReader(stormConf, conf.topic, (ZkHosts) conf.hosts);
-        }
-    }
-
 
     public static long getOffset(SimpleConsumer consumer, String topic, int partition, KafkaConfig config) {
         long startOffsetTime = kafka.api.OffsetRequest.LatestTime();

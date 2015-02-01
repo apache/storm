@@ -19,19 +19,30 @@ package storm.kafka.trident;
 
 import storm.kafka.BrokerHosts;
 import storm.kafka.KafkaConfig;
+import storm.kafka.KafkaFactory;
 
 
 public class TridentKafkaConfig extends KafkaConfig {
 
 
-    public final IBatchCoordinator coordinator = new DefaultCoordinator();
+    public IBatchCoordinator coordinator = new DefaultCoordinator();
 
+    @Deprecated
     public TridentKafkaConfig(BrokerHosts hosts, String topic) {
         super(hosts, topic);
     }
 
+    @Deprecated
     public TridentKafkaConfig(BrokerHosts hosts, String topic, String clientId) {
         super(hosts, topic, clientId);
+    }
+
+    public TridentKafkaConfig(String topic, String clientId, KafkaFactory kafkaFactory) {
+        super(topic, clientId, kafkaFactory);
+    }
+
+    public TridentKafkaConfig(String topic, KafkaFactory kafkaFactory) {
+        super(topic, kafkaFactory);
     }
 
 }

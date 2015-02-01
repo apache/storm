@@ -41,11 +41,11 @@ public class ZkCoordinator implements PartitionCoordinator {
     ZkState _state;
     Map _stormConf;
 
-    public ZkCoordinator(DynamicPartitionConnections connections, Map stormConf, SpoutConfig spoutConfig, ZkState state, int taskIndex, int totalTasks, String topologyInstanceId) {
-        this(connections, stormConf, spoutConfig, state, taskIndex, totalTasks, topologyInstanceId, buildReader(stormConf, spoutConfig));
+    public ZkCoordinator(DynamicPartitionConnections connections, Map stormConf, SpoutConfig spoutConfig, ZkState state, int taskIndex, int totalTasks, String topologyInstanceId, ZkHosts hosts) {
+        this(connections, stormConf, spoutConfig, state, taskIndex, totalTasks, topologyInstanceId, buildReader(stormConf, spoutConfig, hosts), hosts);
     }
 
-    public ZkCoordinator(DynamicPartitionConnections connections, Map stormConf, SpoutConfig spoutConfig, ZkState state, int taskIndex, int totalTasks, String topologyInstanceId, DynamicBrokersReader reader) {
+    public ZkCoordinator(DynamicPartitionConnections connections, Map stormConf, SpoutConfig spoutConfig, ZkState state, int taskIndex, int totalTasks, String topologyInstanceId, DynamicBrokersReader reader,ZkHosts hosts) {
         _spoutConfig = spoutConfig;
         _connections = connections;
         _taskIndex = taskIndex;
@@ -53,13 +53,11 @@ public class ZkCoordinator implements PartitionCoordinator {
         _topologyInstanceId = topologyInstanceId;
         _stormConf = stormConf;
         _state = state;
-        ZkHosts brokerConf = (ZkHosts) spoutConfig.hosts;
-        _refreshFreqMs = brokerConf.refreshFreqSecs * 1000;
+        _refreshFreqMs = hosts.refreshFreqSecs * 1000;
         _reader = reader;
     }
 
-    private static DynamicBrokersReader buildReader(Map stormConf, SpoutConfig spoutConfig) {
-        ZkHosts hosts = (ZkHosts) spoutConfig.hosts;
+    private static DynamicBrokersReader buildReader(Map stormConf, SpoutConfig spoutConfig, ZkHosts hosts) {
         return new DynamicBrokersReader(stormConf, hosts.brokerZkStr, hosts.brokerZkPath, spoutConfig.topic);
     }
 

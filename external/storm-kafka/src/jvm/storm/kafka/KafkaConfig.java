@@ -24,6 +24,7 @@ import java.io.Serializable;
 
 public class KafkaConfig implements Serializable {
 
+    @Deprecated // use kafkaFactory instead
     public final BrokerHosts hosts;
     public final String topic;
     public final String clientId;
@@ -38,15 +39,37 @@ public class KafkaConfig implements Serializable {
     public long maxOffsetBehind = Long.MAX_VALUE;
     public boolean useStartOffsetTimeIfOffsetOutOfRange = true;
     public int metricsTimeBucketSizeInSecs = 60;
+    public final KafkaFactory kafkaFactory;
 
+    @Deprecated // use kafkaFactory based construction instead
     public KafkaConfig(BrokerHosts hosts, String topic) {
         this(hosts, topic, kafka.api.OffsetRequest.DefaultClientId());
     }
 
+    @Deprecated // use kafkaFactory based construction instead
     public KafkaConfig(BrokerHosts hosts, String topic, String clientId) {
         this.hosts = hosts;
         this.topic = topic;
         this.clientId = clientId;
+        if (hosts instanceof StaticHosts) {
+            kafkaFactory = new StaticKafkaFactory((StaticHosts)hosts);
+        } else if (hosts instanceof ZkHosts) {
+            kafkaFactory = new ZkKafkaFactory((ZkHosts)hosts);
+        } else {
+            throw new RuntimeException("Invalid configuration for KafkaConfig#hosts. " +
+                    "The use of KafkaConfig.hosts is deprecated, please use KafkaFactory");
+        }
+    }
+
+    public KafkaConfig(String topic, String clientId, KafkaFactory kafkaFactory) {
+        this.topic = topic;
+        this.clientId = clientId;
+        this.hosts = null;
+        this.kafkaFactory = kafkaFactory;
+    }
+
+    public KafkaConfig(String topic, KafkaFactory kafkaFactory) {
+        this(topic, kafka.api.OffsetRequest.DefaultClientId(), kafkaFactory);
     }
 
 }
