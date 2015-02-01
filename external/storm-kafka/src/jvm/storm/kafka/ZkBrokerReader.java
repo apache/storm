@@ -26,21 +26,21 @@ import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import storm.kafka.trident.GlobalPartitionInformation;
+import storm.kafka.trident.IBrokerReader;
 
 import java.io.UnsupportedEncodingException;
-import java.net.SocketTimeoutException;
 import java.util.List;
 import java.util.Map;
 
-public class DynamicBrokersReader {
+public class ZkBrokerReader implements IBrokerReader{
 
-    public static final Logger LOG = LoggerFactory.getLogger(DynamicBrokersReader.class);
+    public static final Logger LOG = LoggerFactory.getLogger(ZkBrokerReader.class);
 
     private CuratorFramework _curator;
     private String _zkPath;
     private String _topic;
 
-    public DynamicBrokersReader(Map conf, String zkStr, String zkPath, String topic) {
+    public ZkBrokerReader(Map conf, String zkStr, String zkPath, String topic) {
         _zkPath = zkPath;
         _topic = topic;
         try {
@@ -59,7 +59,8 @@ public class DynamicBrokersReader {
     /**
      * Get all partitions with their current leaders
      */
-    public GlobalPartitionInformation getBrokerInfo() throws SocketTimeoutException {
+    @Override
+    public GlobalPartitionInformation getCurrentBrokers() {
       GlobalPartitionInformation globalPartitionInformation = new GlobalPartitionInformation();
         try {
             int numPartitionsForTopic = getNumPartitions();
@@ -75,8 +76,6 @@ public class DynamicBrokersReader {
                     LOG.error("Node {} does not exist ", path);
                 }
             }
-        } catch (SocketTimeoutException e) {
-					throw e;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

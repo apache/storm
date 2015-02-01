@@ -56,7 +56,7 @@ public class KafkaConfig implements Serializable {
         } else if (hosts instanceof ZkHosts) {
             kafkaFactory = new ZkKafkaFactory((ZkHosts)hosts);
         } else {
-            throw new RuntimeException("Invalid configuration for KafkaConfig#hosts. " +
+            throw new RuntimeException("Invalid configuration for KafkaConfig.hosts. " +
                     "The use of KafkaConfig.hosts is deprecated, please use KafkaFactory");
         }
     }

@@ -17,30 +17,32 @@
  */
 package storm.kafka;
 
+
 import backtype.storm.task.TopologyContext;
 import storm.kafka.trident.CachedBrokerReader;
 import storm.kafka.trident.IBrokerReader;
 
+import java.util.List;
 import java.util.Map;
 
-public class ZkKafkaFactory implements KafkaFactory {
+public class KafkaApiFactory implements KafkaFactory{
 
-    private final ZkHosts hosts;
+    private final List<Broker> seedBrokers;
+    private final int refreshFreqSecs;
 
-    public ZkKafkaFactory(ZkHosts hosts){
-        this.hosts = hosts;
+    public KafkaApiFactory(List<Broker> seedBrokers, int refreshFreqSecs) {
+        this.seedBrokers = seedBrokers;
+        this.refreshFreqSecs = refreshFreqSecs;
     }
 
     @Override
     public IBrokerReader brokerReader(Map stormConf, KafkaConfig conf) {
-        return new CachedBrokerReader(new ZkBrokerReader(stormConf, hosts.brokerZkStr, hosts.brokerZkPath, conf.topic), hosts.refreshFreqSecs);
+        return new CachedBrokerReader(new KafkaApiBrokerReader(seedBrokers, conf.topic), refreshFreqSecs);
     }
 
     @Override
-    public PartitionCoordinator partitionCoordinator(DynamicPartitionConnections connections, ZkState state, Map conf,
-                                                     TopologyContext context, int totalTasks,
-                                                     SpoutConfig kafkaConfig, String uuid) {
+    public PartitionCoordinator partitionCoordinator(DynamicPartitionConnections connections, ZkState state, Map conf, TopologyContext context, int totalTasks, SpoutConfig kafkaConfig, String uuid) {
         IBrokerReader brokerReader = kafkaConfig.kafkaFactory.brokerReader(conf, kafkaConfig);
-        return new CachedPartitionCoordinator(connections, conf, kafkaConfig, state, context.getThisTaskIndex(), totalTasks, uuid, brokerReader, hosts.refreshFreqSecs);
+        return new CachedPartitionCoordinator(connections, conf, kafkaConfig, state, context.getThisTaskIndex(), totalTasks, uuid, brokerReader, refreshFreqSecs);
     }
 }

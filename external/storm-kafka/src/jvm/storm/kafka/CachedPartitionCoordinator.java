@@ -20,13 +20,14 @@ package storm.kafka;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import storm.kafka.trident.GlobalPartitionInformation;
+import storm.kafka.trident.IBrokerReader;
 
 import java.util.*;
 
 import static storm.kafka.KafkaUtils.taskId;
 
-public class ZkCoordinator implements PartitionCoordinator {
-    public static final Logger LOG = LoggerFactory.getLogger(ZkCoordinator.class);
+public class CachedPartitionCoordinator implements PartitionCoordinator {
+    public static final Logger LOG = LoggerFactory.getLogger(CachedPartitionCoordinator.class);
 
     SpoutConfig _spoutConfig;
     int _taskIndex;
@@ -37,15 +38,11 @@ public class ZkCoordinator implements PartitionCoordinator {
     Long _lastRefreshTime = null;
     int _refreshFreqMs;
     DynamicPartitionConnections _connections;
-    DynamicBrokersReader _reader;
+    IBrokerReader _reader;
     ZkState _state;
     Map _stormConf;
 
-    public ZkCoordinator(DynamicPartitionConnections connections, Map stormConf, SpoutConfig spoutConfig, ZkState state, int taskIndex, int totalTasks, String topologyInstanceId, ZkHosts hosts) {
-        this(connections, stormConf, spoutConfig, state, taskIndex, totalTasks, topologyInstanceId, buildReader(stormConf, spoutConfig, hosts), hosts);
-    }
-
-    public ZkCoordinator(DynamicPartitionConnections connections, Map stormConf, SpoutConfig spoutConfig, ZkState state, int taskIndex, int totalTasks, String topologyInstanceId, DynamicBrokersReader reader,ZkHosts hosts) {
+    public CachedPartitionCoordinator(DynamicPartitionConnections connections, Map stormConf, SpoutConfig spoutConfig, ZkState state, int taskIndex, int totalTasks, String topologyInstanceId, IBrokerReader reader, int refreshFreqSecs) {
         _spoutConfig = spoutConfig;
         _connections = connections;
         _taskIndex = taskIndex;
@@ -53,12 +50,8 @@ public class ZkCoordinator implements PartitionCoordinator {
         _topologyInstanceId = topologyInstanceId;
         _stormConf = stormConf;
         _state = state;
-        _refreshFreqMs = hosts.refreshFreqSecs * 1000;
+        _refreshFreqMs = refreshFreqSecs * 1000;
         _reader = reader;
-    }
-
-    private static DynamicBrokersReader buildReader(Map stormConf, SpoutConfig spoutConfig, ZkHosts hosts) {
-        return new DynamicBrokersReader(stormConf, hosts.brokerZkStr, hosts.brokerZkPath, spoutConfig.topic);
     }
 
     @Override
@@ -74,7 +67,7 @@ public class ZkCoordinator implements PartitionCoordinator {
     public void refresh() {
         try {
             LOG.info(taskId(_taskIndex, _totalTasks) + "Refreshing partition manager connections");
-            GlobalPartitionInformation brokerInfo = _reader.getBrokerInfo();
+            GlobalPartitionInformation brokerInfo = _reader.getCurrentBrokers();
             List<Partition> mine = KafkaUtils.calculatePartitionsForTask(brokerInfo, _totalTasks, _taskIndex);
 
             Set<Partition> curr = _managers.keySet();

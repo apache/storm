@@ -36,9 +36,19 @@ public class SpoutConfig extends KafkaConfig implements Serializable {
     public double retryDelayMultiplier = 1.0;
     public long retryDelayMaxMs = 60 * 1000;
 
+    @Deprecated
     public SpoutConfig(BrokerHosts hosts, String topic, String zkRoot, String id) {
         super(hosts, topic);
         this.zkRoot = zkRoot;
         this.id = id;
     }
+
+    public SpoutConfig(String topic, String clientId, KafkaFactory kafkaFactory) {
+        super(topic, clientId, kafkaFactory);
+    }
+
+    public SpoutConfig(String topic, KafkaFactory kafkaFactory) {
+        super(topic, kafkaFactory);
+    }
+
 }

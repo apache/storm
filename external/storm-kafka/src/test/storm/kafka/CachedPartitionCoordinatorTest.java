@@ -25,6 +25,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import storm.kafka.trident.IBrokerReader;
 
 import java.util.*;
 
@@ -34,14 +35,17 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.when;
 
-public class ZkCoordinatorTest {
+public class CachedPartitionCoordinatorTest {
 
 
     @Mock
-    private DynamicBrokersReader reader;
+    private IBrokerReader reader;
 
     @Mock
     private DynamicPartitionConnections dynamicPartitionConnections;
+
+    @Mock
+    private KafkaFactory kafkaFactory;
 
     private KafkaTestBroker broker = new KafkaTestBroker();
     private TestingServer server;
@@ -49,18 +53,18 @@ public class ZkCoordinatorTest {
     private SpoutConfig spoutConfig;
     private ZkState state;
     private SimpleConsumer simpleConsumer;
-    private ZkHosts hosts;
+    private int refreshFreqSecs;
+
 
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         server = new TestingServer();
-        String connectionString = server.getConnectString();
-        hosts = new ZkHosts(connectionString);
-        hosts.refreshFreqSecs = 1;
-        spoutConfig = new SpoutConfig(hosts, "topic", "/test", "id");
-        Map conf = buildZookeeperConfig(server);
-        state = new ZkState(conf);
+        refreshFreqSecs = 1;
+        spoutConfig = new SpoutConfig("topic", kafkaFactory);
+        spoutConfig.zkRoot = "/testing";
+        stormConf = buildZookeeperConfig(server);
+        state = new ZkState(stormConf);
         simpleConsumer = new SimpleConsumer("localhost", broker.getPort(), 60000, 1024, "testClient");
         when(dynamicPartitionConnections.register(any(Broker.class), anyInt())).thenReturn(simpleConsumer);
     }
@@ -86,9 +90,9 @@ public class ZkCoordinatorTest {
     public void testOnePartitionPerTask() throws Exception {
         int totalTasks = 64;
         int partitionsPerTask = 1;
-        List<ZkCoordinator> coordinatorList = buildCoordinators(totalTasks / partitionsPerTask);
-        when(reader.getBrokerInfo()).thenReturn(TestUtils.buildPartitionInfo(totalTasks));
-        for (ZkCoordinator coordinator : coordinatorList) {
+        List<CachedPartitionCoordinator> coordinatorList = buildCoordinators(totalTasks / partitionsPerTask);
+        when(reader.getCurrentBrokers()).thenReturn(TestUtils.buildPartitionInfo(totalTasks));
+        for (CachedPartitionCoordinator coordinator : coordinatorList) {
             List<PartitionManager> myManagedPartitions = coordinator.getMyManagedPartitions();
             assertEquals(partitionsPerTask, myManagedPartitions.size());
             assertEquals(coordinator._taskIndex, myManagedPartitions.get(0).getPartition().partition);
@@ -100,11 +104,11 @@ public class ZkCoordinatorTest {
     public void testPartitionsChange() throws Exception {
         final int totalTasks = 64;
         int partitionsPerTask = 2;
-        List<ZkCoordinator> coordinatorList = buildCoordinators(totalTasks / partitionsPerTask);
-        when(reader.getBrokerInfo()).thenReturn(TestUtils.buildPartitionInfo(totalTasks, 9092));
+        List<CachedPartitionCoordinator> coordinatorList = buildCoordinators(totalTasks / partitionsPerTask);
+        when(reader.getCurrentBrokers()).thenReturn(TestUtils.buildPartitionInfo(totalTasks, 9092));
         List<List<PartitionManager>> partitionManagersBeforeRefresh = getPartitionManagers(coordinatorList);
         waitForRefresh();
-        when(reader.getBrokerInfo()).thenReturn(TestUtils.buildPartitionInfo(totalTasks, 9093));
+        when(reader.getCurrentBrokers()).thenReturn(TestUtils.buildPartitionInfo(totalTasks, 9093));
         List<List<PartitionManager>> partitionManagersAfterRefresh = getPartitionManagers(coordinatorList);
         assertEquals(partitionManagersAfterRefresh.size(), partitionManagersAfterRefresh.size());
         Iterator<List<PartitionManager>> iterator = partitionManagersAfterRefresh.iterator();
@@ -123,22 +127,22 @@ public class ZkCoordinatorTest {
 
     }
 
-    private List<List<PartitionManager>> getPartitionManagers(List<ZkCoordinator> coordinatorList) {
+    private List<List<PartitionManager>> getPartitionManagers(List<CachedPartitionCoordinator> coordinatorList) {
         List<List<PartitionManager>> partitions = new ArrayList();
-        for (ZkCoordinator coordinator : coordinatorList) {
+        for (CachedPartitionCoordinator coordinator : coordinatorList) {
             partitions.add(coordinator.getMyManagedPartitions());
         }
         return partitions;
     }
 
     private void waitForRefresh() throws InterruptedException {
-        Thread.sleep(hosts.refreshFreqSecs * 1000 + 1);
+        Thread.sleep(refreshFreqSecs * 1000 + 1);
     }
 
-    private List<ZkCoordinator> buildCoordinators(int totalTasks) {
-        List<ZkCoordinator> coordinatorList = new ArrayList<ZkCoordinator>();
+    private List<CachedPartitionCoordinator> buildCoordinators(int totalTasks) {
+        List<CachedPartitionCoordinator> coordinatorList = new ArrayList<CachedPartitionCoordinator>();
         for (int i = 0; i < totalTasks; i++) {
-            ZkCoordinator coordinator = new ZkCoordinator(dynamicPartitionConnections, stormConf, spoutConfig, state, i, totalTasks, "test-id", reader, hosts);
+            CachedPartitionCoordinator coordinator = new CachedPartitionCoordinator(dynamicPartitionConnections, stormConf, spoutConfig, state, i, totalTasks, "test-id", reader, refreshFreqSecs);
             coordinatorList.add(coordinator);
         }
         return coordinatorList;

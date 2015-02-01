@@ -37,8 +37,8 @@ import static org.junit.Assert.assertEquals;
  * Date: 16/05/2013
  * Time: 20:35
  */
-public class DynamicBrokersReaderTest {
-    private DynamicBrokersReader dynamicBrokersReader;
+public class ZkBrokerReaderTest {
+    private ZkBrokerReader zkBrokerReader;
     private String masterPath = "/brokers";
     private String topic = "testing";
     private CuratorFramework zookeeper;
@@ -55,13 +55,13 @@ public class DynamicBrokersReaderTest {
         conf.put(Config.STORM_ZOOKEEPER_RETRY_INTERVAL, 5);
         ExponentialBackoffRetry retryPolicy = new ExponentialBackoffRetry(1000, 3);
         zookeeper = CuratorFrameworkFactory.newClient(connectionString, retryPolicy);
-        dynamicBrokersReader = new DynamicBrokersReader(conf, connectionString, masterPath, topic);
+        zkBrokerReader = new ZkBrokerReader(conf, connectionString, masterPath, topic);
         zookeeper.start();
     }
 
     @After
     public void tearDown() throws Exception {
-        dynamicBrokersReader.close();
+        zkBrokerReader.close();
         zookeeper.close();
         server.close();
     }
@@ -79,7 +79,7 @@ public class DynamicBrokersReaderTest {
     }
 
     private void writePartitionId(int id) throws Exception {
-        String path = dynamicBrokersReader.partitionPath();
+        String path = zkBrokerReader.partitionPath();
         writeDataToPath(path, ("" + id));
     }
 
@@ -89,13 +89,13 @@ public class DynamicBrokersReaderTest {
     }
 
     private void writeLeader(int id, int leaderId) throws Exception {
-        String path = dynamicBrokersReader.partitionPath() + "/" + id + "/state";
+        String path = zkBrokerReader.partitionPath() + "/" + id + "/state";
         String value = " { \"controller_epoch\":4, \"isr\":[ 1, 0 ], \"leader\":" + leaderId + ", \"leader_epoch\":1, \"version\":1 }";
         writeDataToPath(path, value);
     }
 
     private void writeLeaderDetails(int leaderId, String host, int port) throws Exception {
-        String path = dynamicBrokersReader.brokerPath() + "/" + leaderId;
+        String path = zkBrokerReader.brokerPath() + "/" + leaderId;
         String value = "{ \"host\":\"" + host + "\", \"jmx_port\":9999, \"port\":" + port + ", \"version\":1 }";
         writeDataToPath(path, value);
     }
@@ -106,7 +106,7 @@ public class DynamicBrokersReaderTest {
         int port = 9092;
         int partition = 0;
         addPartition(partition, host, port);
-        GlobalPartitionInformation brokerInfo = dynamicBrokersReader.getBrokerInfo();
+        GlobalPartitionInformation brokerInfo = zkBrokerReader.getCurrentBrokers();
         assertEquals(1, brokerInfo.getOrderedPartitions().size());
         assertEquals(port, brokerInfo.getBrokerFor(partition).port);
         assertEquals(host, brokerInfo.getBrokerFor(partition).host);
@@ -123,7 +123,7 @@ public class DynamicBrokersReaderTest {
         addPartition(partition, 0, host, port);
         addPartition(secondPartition, 1, host, secondPort);
 
-        GlobalPartitionInformation brokerInfo = dynamicBrokersReader.getBrokerInfo();
+        GlobalPartitionInformation brokerInfo = zkBrokerReader.getCurrentBrokers();
         assertEquals(2, brokerInfo.getOrderedPartitions().size());
 
         assertEquals(port, brokerInfo.getBrokerFor(partition).port);
@@ -143,7 +143,7 @@ public class DynamicBrokersReaderTest {
         addPartition(partition, 0, host, port);
         addPartition(secondPartition, 0, host, port);
 
-        GlobalPartitionInformation brokerInfo = dynamicBrokersReader.getBrokerInfo();
+        GlobalPartitionInformation brokerInfo = zkBrokerReader.getCurrentBrokers();
         assertEquals(2, brokerInfo.getOrderedPartitions().size());
 
         assertEquals(port, brokerInfo.getBrokerFor(partition).port);
@@ -159,14 +159,14 @@ public class DynamicBrokersReaderTest {
         int port = 9092;
         int partition = 0;
         addPartition(partition, host, port);
-        GlobalPartitionInformation brokerInfo = dynamicBrokersReader.getBrokerInfo();
+        GlobalPartitionInformation brokerInfo = zkBrokerReader.getCurrentBrokers();
         assertEquals(port, brokerInfo.getBrokerFor(partition).port);
         assertEquals(host, brokerInfo.getBrokerFor(partition).host);
 
         String newHost = host + "switch";
         int newPort = port + 1;
         addPartition(partition, newHost, newPort);
-        brokerInfo = dynamicBrokersReader.getBrokerInfo();
+        brokerInfo = zkBrokerReader.getCurrentBrokers();
         assertEquals(newPort, brokerInfo.getBrokerFor(partition).port);
         assertEquals(newHost, brokerInfo.getBrokerFor(partition).host);
     }

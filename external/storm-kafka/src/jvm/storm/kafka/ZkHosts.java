@@ -18,6 +18,7 @@
 package storm.kafka;
 
 
+@Deprecated
 public class ZkHosts implements BrokerHosts {
     private static final String DEFAULT_ZK_PATH = "/brokers";
 
