@@ -73,6 +73,7 @@ public class KafkaApiBrokerReader implements IBrokerReader {
                         int port = partitionMetadata.leader().port();
                         int partitionId = partitionMetadata.partitionId();
                         globalPartitionInformation.addPartition(partitionId, new Broker(host, port));
+                        foundPartitionInfo = true;
                     }
                 }
                 simpleConsumer.close();
@@ -80,8 +81,12 @@ public class KafkaApiBrokerReader implements IBrokerReader {
                 LOG.warn("Error getting topic partition info from seed broker {}, will try another seed host.", brokerHost, e);
             }
         }
-        LOG.info("Read partition info from kafka: " + globalPartitionInformation);
-        return globalPartitionInformation;
+        if ( foundPartitionInfo ) {
+            LOG.info("Read partition info from kafka: {} ",  globalPartitionInformation);
+            return globalPartitionInformation;
+        } else {
+            throw new RuntimeException("Could not read partition information for topic '" + topic + "'  from any brokers in " + seedBrokers);
+        }
     }
 
     @Override
