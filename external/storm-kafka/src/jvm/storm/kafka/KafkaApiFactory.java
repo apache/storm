@@ -42,7 +42,6 @@ public class KafkaApiFactory implements KafkaFactory{
 
     @Override
     public PartitionCoordinator partitionCoordinator(DynamicPartitionConnections connections, ZkState state, Map conf, TopologyContext context, int totalTasks, SpoutConfig kafkaConfig, String uuid) {
-        IBrokerReader brokerReader = kafkaConfig.kafkaFactory.brokerReader(conf, kafkaConfig);
-        return new CachedPartitionCoordinator(connections, conf, kafkaConfig, state, context.getThisTaskIndex(), totalTasks, uuid, brokerReader, refreshFreqSecs);
+        return new CachedPartitionCoordinator(connections, conf, kafkaConfig, state, context.getThisTaskIndex(), totalTasks, uuid, brokerReader(conf, kafkaConfig), refreshFreqSecs);
     }
 }
