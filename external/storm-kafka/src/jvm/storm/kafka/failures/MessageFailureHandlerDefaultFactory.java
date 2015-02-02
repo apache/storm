@@ -41,10 +41,11 @@ public class MessageFailureHandlerDefaultFactory implements IMessageFailureHandl
         String key = "kafka.spout." + pm.getSpoutConfig().id + ".retries";
         Map stormConf = pm.getStormConfig();
         if (stormConf.containsKey(key)) {
-            retriesNumber = (Integer)stormConf.get(key);
+            //retriesNumber = Integer.parseInt((String)stormConf.get(key));
+            retriesNumber = ((Long)stormConf.get(key)).intValue();
         }
         else if (stormConf.containsKey("kafka.spout.retries")) {
-            retriesNumber = (Integer)stormConf.get("kafka.spout.retries");
+            retriesNumber = ((Long)stormConf.get("kafka.spout.retries")).intValue();
         }
 
         return retriesNumber;

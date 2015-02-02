@@ -31,7 +31,7 @@ public class DefaultFailureHandler implements IMassageFailureHandler {
 
     @Override
     public long getOffset(Long expectedOffset) {
-        return !failed.isEmpty() ? failed.first() : -1;
+        return !failed.isEmpty() ? failed.first() : expectedOffset;
     }
 
     @Override

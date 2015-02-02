@@ -36,7 +36,7 @@ public class ConfigurableRetriesFailureHandler implements IMassageFailureHandler
 
     @Override
     public long getOffset(Long expectedOffset) {
-        return !failed.isEmpty() ? failed.entrySet().iterator().next().getKey() : -1;
+        return !failed.isEmpty() ? failed.entrySet().iterator().next().getKey() : expectedOffset;
     }
 
     @Override
