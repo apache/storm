@@ -75,6 +75,7 @@ public class KafkaApiBrokerReader implements IBrokerReader {
                         globalPartitionInformation.addPartition(partitionId, new Broker(host, port));
                     }
                 }
+                simpleConsumer.close();
             } catch (Exception e) {
                 LOG.warn("Error getting topic partition info from seed broker {}, will try another seed host.", brokerHost, e);
             }

@@ -174,7 +174,7 @@ public class KafkaUtilsTest {
 
     private void runGetValueOnlyTuplesTest() {
         String value = "value";
-        createTopicAndSendMessage(null, value);
+        createTopicAndSendMessage(value);
         ByteBufferMessageSet messageAndOffsets = getLastMessage();
         for (MessageAndOffset msg : messageAndOffsets) {
             Iterable<List<Object>> lists = KafkaUtils.generateTuples(config, msg.message());
@@ -182,24 +182,17 @@ public class KafkaUtilsTest {
         }
     }
 
-
     private void createTopicAndSendMessage() {
-        createTopicAndSendMessage(null, "someValue");
+        TestUtils.createTopicAndSendMessage(broker, config.topic, null, "someValue");
     }
 
     private void createTopicAndSendMessage(String value) {
-        createTopicAndSendMessage(null, value);
+        TestUtils.createTopicAndSendMessage(broker, config.topic, null, value);
     }
 
     private void createTopicAndSendMessage(String key, String value) {
-        Properties p = new Properties();
-        p.setProperty("metadata.broker.list", broker.getBrokerConnectionString());
-        p.setProperty("serializer.class", "kafka.serializer.StringEncoder");
-        ProducerConfig producerConfig = new ProducerConfig(p);
-        Producer<String, String> producer = new Producer<String, String>(producerConfig);
-        producer.send(new KeyedMessage<String, String>(config.topic, key, value));
+        TestUtils.createTopicAndSendMessage(broker, config.topic, key, value);
     }
-
 
     @Test
     public void assignOnePartitionPerTask() {
