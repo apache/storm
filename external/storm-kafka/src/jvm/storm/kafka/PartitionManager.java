@@ -164,6 +164,12 @@ public class PartitionManager {
             _emittedToOffset = KafkaUtils.getOffset(_consumer, _spoutConfig.topic, _partition.partition, _spoutConfig);
             LOG.warn("Using new offset: {}", _emittedToOffset);
             // fetch failed, so don't update the metrics
+            
+            //fix bug [STORM-643] : remove this offset from failed list when it is OutOfRange
+            if (had_failed) {
+                failed.remove(offset);
+            }
+            
             return;
         }
         long end = System.nanoTime();
