@@ -27,11 +27,17 @@ public class TridentKafkaConfig extends KafkaConfig {
 
     public IBatchCoordinator coordinator = new DefaultCoordinator();
 
+    /**
+     * @deprecated  use kafkaFactory based construction instead
+     */
     @Deprecated
     public TridentKafkaConfig(BrokerHosts hosts, String topic) {
         super(hosts, topic);
     }
 
+    /**
+     * @deprecated  use kafkaFactory based construction instead
+     */
     @Deprecated
     public TridentKafkaConfig(BrokerHosts hosts, String topic, String clientId) {
         super(hosts, topic, clientId);

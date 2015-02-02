@@ -78,8 +78,8 @@ public class KafkaBoltTest {
     private void setupKafkaConsumer() {
         GlobalPartitionInformation globalPartitionInformation = new GlobalPartitionInformation();
         globalPartitionInformation.addPartition(0, Broker.fromString(broker.getBrokerConnectionString()));
-        BrokerHosts brokerHosts = new StaticHosts(globalPartitionInformation);
-        kafkaConfig = new KafkaConfig(brokerHosts, TEST_TOPIC);
+        StaticHosts brokerHosts = new StaticHosts(globalPartitionInformation);
+        kafkaConfig = new KafkaConfig(TEST_TOPIC, new StaticKafkaFactory(brokerHosts));
         simpleConsumer = new SimpleConsumer("localhost", broker.getPort(), 60000, 1024, "testClient");
     }
 

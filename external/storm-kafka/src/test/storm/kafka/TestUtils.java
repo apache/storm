@@ -50,19 +50,17 @@ public class TestUtils {
     }
 
     public static SimpleConsumer getKafkaConsumer(KafkaTestBroker broker) {
-        BrokerHosts brokerHosts = getBrokerHosts(broker);
-        KafkaConfig kafkaConfig = new KafkaConfig(brokerHosts, TOPIC);
         SimpleConsumer simpleConsumer = new SimpleConsumer("localhost", broker.getPort(), 60000, 1024, "testClient");
         return simpleConsumer;
     }
 
     public static KafkaConfig getKafkaConfig(KafkaTestBroker broker) {
-        BrokerHosts brokerHosts = getBrokerHosts(broker);
-        KafkaConfig kafkaConfig = new KafkaConfig(brokerHosts, TOPIC);
+        StaticHosts brokerHosts = getBrokerHosts(broker);
+        KafkaConfig kafkaConfig = new KafkaConfig(TOPIC, new StaticKafkaFactory(brokerHosts));
         return kafkaConfig;
     }
 
-    private static BrokerHosts getBrokerHosts(KafkaTestBroker broker) {
+    private static StaticHosts getBrokerHosts(KafkaTestBroker broker) {
         GlobalPartitionInformation globalPartitionInformation = new GlobalPartitionInformation();
         globalPartitionInformation.addPartition(0, Broker.fromString(broker.getBrokerConnectionString()));
         return new StaticHosts(globalPartitionInformation);

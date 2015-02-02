@@ -24,8 +24,12 @@ import java.io.Serializable;
 
 public class KafkaConfig implements Serializable {
 
-    @Deprecated // use kafkaFactory instead
+    /**
+     * @deprecated  use kafkaFactory based construction instead
+     */
+    @Deprecated
     public final BrokerHosts hosts;
+
     public final String topic;
     public final String clientId;
 
@@ -41,12 +45,18 @@ public class KafkaConfig implements Serializable {
     public int metricsTimeBucketSizeInSecs = 60;
     public final KafkaFactory kafkaFactory;
 
-    @Deprecated // use kafkaFactory based construction instead
+    /**
+     * @deprecated  use kafkaFactory based construction instead
+     */
+    @Deprecated
     public KafkaConfig(BrokerHosts hosts, String topic) {
         this(hosts, topic, kafka.api.OffsetRequest.DefaultClientId());
     }
 
-    @Deprecated // use kafkaFactory based construction instead
+    /**
+     * @deprecated  use kafkaFactory based construction instead
+     */
+    @Deprecated
     public KafkaConfig(BrokerHosts hosts, String topic, String clientId) {
         this.hosts = hosts;
         this.topic = topic;

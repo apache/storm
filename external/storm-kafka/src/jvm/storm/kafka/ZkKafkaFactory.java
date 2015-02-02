@@ -23,6 +23,10 @@ import storm.kafka.trident.IBrokerReader;
 
 import java.util.Map;
 
+/**
+ * @deprecated use KafkaApiFactory instead
+ */
+@Deprecated
 public class ZkKafkaFactory implements KafkaFactory {
 
     private final ZkHosts hosts;
