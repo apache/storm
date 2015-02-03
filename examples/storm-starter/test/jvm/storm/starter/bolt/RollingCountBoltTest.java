@@ -53,7 +53,7 @@ public class RollingCountBoltTest {
     Map conf = mock(Map.class);
     TopologyContext context = mock(TopologyContext.class);
     OutputCollector collector = mock(OutputCollector.class);
-    bolt.prepare(conf, context, collector);
+    bolt.prepare(conf, context, collector,"");
 
     // when
     bolt.execute(tickTuple);
@@ -73,7 +73,7 @@ public class RollingCountBoltTest {
     Map conf = mock(Map.class);
     TopologyContext context = mock(TopologyContext.class);
     OutputCollector collector = mock(OutputCollector.class);
-    bolt.prepare(conf, context, collector);
+    bolt.prepare(conf, context, collector, "");
 
     // when
     bolt.execute(normalTuple);

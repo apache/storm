@@ -39,7 +39,7 @@ public class BasicBoltExecutor implements IRichBolt {
     }
 
     
-    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector, String codeDir) {
         _bolt.prepare(stormConf, context);
         _collector = new BasicOutputCollector(collector);
     }

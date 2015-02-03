@@ -43,6 +43,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import storm.trident.spout.IBatchID;
 
@@ -193,11 +195,13 @@ public class TridentBoltExecutor implements IRichBolt {
     TopologyContext _context;
     
     @Override
-    public void prepare(Map conf, TopologyContext context, OutputCollector collector) {        
+    public void prepare(Map conf, TopologyContext context, OutputCollector collector, String codeDir) {
         _messageTimeoutMs = context.maxTopologyMessageTimeout() * 1000L;
         _lastRotate = System.currentTimeMillis();
         _batches = new RotatingMap(2);
         _context = context;
+        if(!StringUtils.isEmpty(codeDir)) { context.setCodeDir(codeDir); }
+
         _collector = collector;
         _coordCollector = new CoordinatedOutputCollector(collector);
         _coordOutputCollector = new BatchOutputCollectorImpl(new OutputCollector(_coordCollector));

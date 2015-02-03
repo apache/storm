@@ -24,6 +24,8 @@ import backtype.storm.task.IErrorReporter;
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.tuple.Tuple;
+import org.apache.commons.lang.StringUtils;
+
 import java.util.Collection;
 import java.util.Map;
 
@@ -39,13 +41,14 @@ public class MetricsConsumerBolt implements IBolt {
     }
 
     @Override
-    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector, String codeDir) {
         try {
             _metricsConsumer = (IMetricsConsumer)Class.forName(_consumerClassName).newInstance();
         } catch (Exception e) {
             throw new RuntimeException("Could not instantiate a class listed in config under section " +
                 Config.TOPOLOGY_METRICS_CONSUMER_REGISTER + " with fully qualified name " + _consumerClassName, e);
         }
+        if(!StringUtils.isEmpty(codeDir)) { context.setCodeDir(codeDir); }
         _metricsConsumer.prepare(stormConf, _registrationArgument, context, (IErrorReporter)collector);
         _collector = collector;
     }

@@ -25,6 +25,7 @@ import backtype.storm.tuple.Fields;
 import java.util.Map;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.tuple.Values;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,9 +36,10 @@ public class TestGlobalCount extends BaseRichBolt {
     private int _count;
     OutputCollector _collector;
 
-    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector, String codeDir) {
         _collector = collector;
         _count = 0;
+        if(!StringUtils.isEmpty(codeDir)) { context.setCodeDir(codeDir); }
     }
 
     public void execute(Tuple input) {

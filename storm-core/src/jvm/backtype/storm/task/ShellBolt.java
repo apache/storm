@@ -31,6 +31,7 @@ import clojure.lang.RT;
 import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.commons.lang.StringUtils;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -82,7 +83,7 @@ public class ShellBolt implements IBolt {
 
     private Thread _readerThread;
     private Thread _writerThread;
-    
+
     private TopologyContext _context;
 
     private int workerTimeoutMills;
@@ -98,16 +99,18 @@ public class ShellBolt implements IBolt {
         _command = command;
     }
 
+    @Override
     public void prepare(Map stormConf, TopologyContext context,
-                        final OutputCollector collector) {
+                        final OutputCollector collector, String codeDir) {
         Object maxPending = stormConf.get(Config.TOPOLOGY_SHELLBOLT_MAX_PENDING);
         if (maxPending != null) {
-           this._pendingWrites = new LinkedBlockingQueue(((Number)maxPending).intValue());
+            this._pendingWrites = new LinkedBlockingQueue(((Number)maxPending).intValue());
         }
         _rand = new Random();
         _collector = collector;
 
         _context = context;
+        if(!StringUtils.isEmpty(codeDir)) { _context.setCodeDir(codeDir); }
 
         workerTimeoutMills = 1000 * RT.intCast(stormConf.get(Config.SUPERVISOR_WORKER_TIMEOUT_SECS));
 

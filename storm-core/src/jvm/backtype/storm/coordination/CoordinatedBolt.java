@@ -204,14 +204,14 @@ public class CoordinatedBolt implements IRichBolt {
         _idStreamSpec = idStreamSpec;
     }
     
-    public void prepare(Map config, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map config, TopologyContext context, OutputCollector collector, String codeDir) {
         TimeCacheMap.ExpiredCallback<Object, TrackingInfo> callback = null;
         if(_delegate instanceof TimeoutCallback) {
             callback = new TimeoutItems();
         }
         _tracked = new TimeCacheMap<Object, TrackingInfo>(context.maxTopologyMessageTimeout(), callback);
         _collector = collector;
-        _delegate.prepare(config, context, new OutputCollector(new CoordinatedOutputCollector(collector)));
+        _delegate.prepare(config, context, new OutputCollector(new CoordinatedOutputCollector(collector)), codeDir);
         for(String component: Utils.get(context.getThisTargets(),
                                         Constants.COORDINATED_STREAM_ID,
                                         new HashMap<String, Grouping>())

@@ -33,8 +33,8 @@ public class PythonShellMetricsBolt extends ShellBolt implements IRichBolt {
 		super(command);
 	}
 
-	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
-		super.prepare(stormConf, context, collector);
+	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector, String codeDir) {
+		super.prepare(stormConf, context, collector, codeDir);
 		
 		CountShellMetric cMetric = new CountShellMetric();
 		context.registerMetric("my-custom-shell-metric", cMetric, 5);

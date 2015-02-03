@@ -27,6 +27,8 @@ import backtype.storm.tuple.Tuple;
 import java.math.BigInteger;
 import java.util.Map;
 import java.util.TreeMap;
+
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,8 +46,9 @@ public class TransactionalSpoutBatchExecutor implements IRichBolt {
     }
     
     @Override
-    public void prepare(Map conf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map conf, TopologyContext context, OutputCollector collector, String codeDir) {
         _collector = new BatchOutputCollectorImpl(collector);
+        if(!StringUtils.isEmpty(codeDir)) { context.setCodeDir(codeDir); }
         _emitter = _spout.getEmitter(conf, context);
     }
 

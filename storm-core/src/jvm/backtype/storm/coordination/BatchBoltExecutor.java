@@ -28,6 +28,8 @@ import backtype.storm.tuple.Tuple;
 import backtype.storm.utils.Utils;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,9 +47,11 @@ public class BatchBoltExecutor implements IRichBolt, FinishedCallback, TimeoutCa
     }
     
     @Override
-    public void prepare(Map conf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map conf, TopologyContext context, OutputCollector collector, String codeDir) {
         _conf = conf;
         _context = context;
+        if(!StringUtils.isEmpty(codeDir)) { context.setCodeDir(codeDir); }
+
         _collector = new BatchOutputCollectorImpl(collector);
         _openTransactions = new HashMap<Object, IBatchBolt>();
     }

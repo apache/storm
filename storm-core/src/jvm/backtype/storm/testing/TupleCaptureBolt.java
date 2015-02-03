@@ -40,7 +40,7 @@ public class TupleCaptureBolt implements IRichBolt {
         emitted_tuples.put(_name, new HashMap<String, List<FixedTuple>>());
     }
 
-    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector, String codeDir) {
         _collector = collector;
     }
 

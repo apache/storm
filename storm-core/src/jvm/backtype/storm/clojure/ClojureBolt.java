@@ -53,7 +53,7 @@ public class ClojureBolt implements IRichBolt, FinishedCallback {
     }
 
     @Override
-    public void prepare(final Map stormConf, final TopologyContext context, final OutputCollector collector) {
+    public void prepare(final Map stormConf, final TopologyContext context, final OutputCollector collector, final String codeDir) {
         IFn hof = Utils.loadClojureFn(_fnSpec.get(0), _fnSpec.get(1));
         try {
             IFn preparer = (IFn) hof.applyTo(RT.seq(_params));
@@ -69,7 +69,7 @@ public class ClojureBolt implements IRichBolt, FinishedCallback {
             _bolt = (IBolt) preparer.applyTo(RT.seq(args));
             //this is kind of unnecessary for clojure
             try {
-                _bolt.prepare(stormConf, context, collector);
+                _bolt.prepare(stormConf, context, collector, codeDir);
             } catch(AbstractMethodError ame) {
                 
             }

@@ -36,7 +36,7 @@ public class TestAggregatesCounter extends BaseRichBolt {
     Map<String, Integer> _counts;
     OutputCollector _collector;
 
-    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector, String codeDir) {
         _collector = collector;
         _counts = new HashMap<String, Integer>();
     }
