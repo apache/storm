@@ -907,7 +907,7 @@
          (json-response (component-page id component (:window m) (check-include-sys? (:sys m)) user) (:callback m))))
   (GET "/api/v1/token" [ & m]
        (json-response (format "{\"antiForgeryToken\": \"%s\"}" *anti-forgery-token*) (:callback m) :serialize-fn identity))
-  (POST "/api/v1/topology/:id/activate" [:as {:keys [cookies servlet-request]} id]
+  (POST "/api/v1/topology/:id/activate" [:as {:keys [cookies servlet-request]} id & m]
     (with-nimbus nimbus
       (let [tplg (->> (doto
                         (GetInfoOptions.)
@@ -917,8 +917,8 @@
         (assert-authorized-user servlet-request "activate" (topology-config id))
         (.activate nimbus name)
         (log-message "Activating topology '" name "'")))
-    (resp/redirect (str "/api/v1/topology/" id)))
-  (POST "/api/v1/topology/:id/deactivate" [:as {:keys [cookies servlet-request]} id]
+    (json-response (topology-op-response id "deactivate") (m "callback")))
+  (POST "/api/v1/topology/:id/deactivate" [:as {:keys [cookies servlet-request]} id & m]
     (with-nimbus nimbus
       (let [tplg (->> (doto
                         (GetInfoOptions.)
