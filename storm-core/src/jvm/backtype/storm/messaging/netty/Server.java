@@ -69,7 +69,7 @@ class Server extends ConnectionWithStatus implements IStatefulObject {
     private volatile HashMap<Integer, Integer> taskToQueueId = null;
     int roundRobinQueueId;
 	
-    boolean closing = false;
+    private volatile boolean closing = false;
     List<TaskMessage> closeMessage = Arrays.asList(new TaskMessage(-1, null));
     
     
@@ -182,7 +182,6 @@ class Server extends ConnectionWithStatus implements IStatefulObject {
 
     /**
      * enqueue a received message 
-     * @param message
      * @throws InterruptedException
      */
     protected void enqueue(List<TaskMessage> msgs, String from) throws InterruptedException {
@@ -205,35 +204,37 @@ class Server extends ConnectionWithStatus implements IStatefulObject {
         }
       }
     }
-    
-    public Iterator<TaskMessage> recv(int flags, int receiverId)  {
-      if (closing) {
-        return closeMessage.iterator();
-      }
-      
-      ArrayList<TaskMessage> ret = null; 
-      int queueId = receiverId % queueCount;
-      if ((flags & 0x01) == 0x01) { 
-            //non-blocking
-            ret = message_queue[queueId].poll();
-        } else {
-            try {
-                ArrayList<TaskMessage> request = message_queue[queueId].take();
-                LOG.debug("request to be processed: {}", request);
-                ret = request;
-            } catch (InterruptedException e) {
-                LOG.info("exception within msg receiving", e);
-                ret = null;
-            }
-        }
-      
-      if (null != ret) {
-        messagesDequeued.addAndGet(ret.size());
-        pendingMessages[queueId].addAndGet(0 - ret.size());
-        return ret.iterator();
-      }
-      return null;
+
+  public Iterator<TaskMessage> recv(int flags, int receiverId) {
+    if (closing) {
+      return closeMessage.iterator();
     }
+
+    ArrayList<TaskMessage> ret = null;
+    int queueId = receiverId % queueCount;
+    if ((flags & 0x01) == 0x01) {
+      //non-blocking
+      ret = message_queue[queueId].poll();
+    }
+    else {
+      try {
+        ArrayList<TaskMessage> request = message_queue[queueId].take();
+        LOG.debug("request to be processed: {}", request);
+        ret = request;
+      }
+      catch (InterruptedException e) {
+        LOG.info("exception within msg receiving", e);
+        ret = null;
+      }
+    }
+
+    if (null != ret) {
+      messagesDequeued.addAndGet(ret.size());
+      pendingMessages[queueId].addAndGet(0 - ret.size());
+      return ret.iterator();
+    }
+    return null;
+  }
    
     /**
      * register a newly created channel
@@ -264,11 +265,11 @@ class Server extends ConnectionWithStatus implements IStatefulObject {
     }
 
     public void send(int task, byte[] message) {
-        throw new RuntimeException("Server connection should not send any messages");
+        throw new UnsupportedOperationException("Server connection should not send any messages");
     }
     
     public void send(Iterator<TaskMessage> msgs) {
-      throw new RuntimeException("Server connection should not send any messages");
+      throw new UnsupportedOperationException("Server connection should not send any messages");
     }
 	
     public String name() {
@@ -277,12 +278,34 @@ class Server extends ConnectionWithStatus implements IStatefulObject {
 
     @Override
     public Status status() {
-        // The connection is binded in constructor
-        return Status.Ready;
+        if (closing) {
+          return Status.Closed;
+        }
+        else if (!connectionEstablished(allChannels)) {
+            return Status.Connecting;
+        }
+        else {
+            return Status.Ready;
+        }
+    }
+
+    private boolean connectionEstablished(Channel channel) {
+      return channel != null && channel.isBound();
+    }
+
+    private boolean connectionEstablished(ChannelGroup allChannels) {
+        boolean allEstablished = true;
+        for (Channel channel : allChannels) {
+            if (!(connectionEstablished(channel))) {
+                allEstablished = false;
+                break;
+            }
+        }
+        return allEstablished;
     }
 
     public Object getState() {
-        LOG.info("Getting metrics for server on " + port);
+        LOG.info("Getting metrics for server on port {}", port);
         HashMap<String, Object> ret = new HashMap<String, Object>();
         ret.put("dequeuedMessages", messagesDequeued.getAndSet(0));
         ArrayList<Integer> pending = new ArrayList<Integer>(pendingMessages.length);
@@ -305,4 +328,9 @@ class Server extends ConnectionWithStatus implements IStatefulObject {
         ret.put("enqueued", enqueued);
         return ret;
     }
+
+    @Override public String toString() {
+       return String.format("Netty server listening on port %s", port);
+    }
+
 }

@@ -375,7 +375,10 @@
       delay-secs
       (fn this []
         (if (all-connections-ready worker)
-          (reset! (:worker-active-flag worker) true)
+          (do
+            (log-message "All connections are ready for worker " (:assignment-id worker) ":" (:port worker)
+              " with id "(:worker-id worker))
+            (reset! (:worker-active-flag worker) true))
           (schedule timer recur-secs this :check-active false)
             )))))
 

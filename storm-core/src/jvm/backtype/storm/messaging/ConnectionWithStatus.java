@@ -1,7 +1,5 @@
 package backtype.storm.messaging;
 
-import backtype.storm.messaging.IConnection;
-
 public abstract class ConnectionWithStatus implements IConnection {
 
   public static enum Status {
@@ -30,5 +28,5 @@ public abstract class ConnectionWithStatus implements IConnection {
    * whether this connection is available to transfer data
    */
   public abstract Status status();
-}
 
+}
