@@ -23,12 +23,8 @@
   (:use [backtype.storm.scheduler.DefaultScheduler])
   (:import [backtype.storm.scheduler INimbus SupervisorDetails WorkerSlot TopologyDetails
             Cluster Topologies SchedulerAssignment SchedulerAssignmentImpl DefaultScheduler ExecutorDetails])
-<<<<<<< HEAD
-  (:import [backtype.storm.generated AuthorizationException ServerInfo])
-=======
-  (:import [backtype.storm.generated AuthorizationException GetInfoOptions
+  (:import [backtype.storm.generated AuthorizationException ServerInfo GetInfoOptions
                                      NumErrorsChoice])
->>>>>>> origin/master
   (:use [backtype.storm bootstrap util])
   (:use [backtype.storm.config :only [validate-configs-with-schemas]])
   (:use [backtype.storm.daemon common])
