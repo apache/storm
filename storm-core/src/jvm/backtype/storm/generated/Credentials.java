@@ -300,15 +300,15 @@ public class Credentials implements org.apache.thrift.TBase<Credentials, Credent
         case 1: // CREDS
           if (field.type == org.apache.thrift.protocol.TType.MAP) {
             {
-              org.apache.thrift.protocol.TMap _map163 = iprot.readMapBegin();
-              this.creds = new HashMap<String,String>(2*_map163.size);
-              for (int _i164 = 0; _i164 < _map163.size; ++_i164)
+              org.apache.thrift.protocol.TMap _map203 = iprot.readMapBegin();
+              this.creds = new HashMap<String,String>(2*_map203.size);
+              for (int _i204 = 0; _i204 < _map203.size; ++_i204)
               {
-                String _key165; // required
-                String _val166; // required
-                _key165 = iprot.readString();
-                _val166 = iprot.readString();
-                this.creds.put(_key165, _val166);
+                String _key205; // required
+                String _val206; // required
+                _key205 = iprot.readString();
+                _val206 = iprot.readString();
+                this.creds.put(_key205, _val206);
               }
               iprot.readMapEnd();
             }
@@ -333,10 +333,10 @@ public class Credentials implements org.apache.thrift.TBase<Credentials, Credent
       oprot.writeFieldBegin(CREDS_FIELD_DESC);
       {
         oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.STRING, this.creds.size()));
-        for (Map.Entry<String, String> _iter167 : this.creds.entrySet())
+        for (Map.Entry<String, String> _iter207 : this.creds.entrySet())
         {
-          oprot.writeString(_iter167.getKey());
-          oprot.writeString(_iter167.getValue());
+          oprot.writeString(_iter207.getKey());
+          oprot.writeString(_iter207.getValue());
         }
         oprot.writeMapEnd();
       }

@@ -430,8 +430,13 @@
           </span>
         </th>
         <th class="header">
-          <span class="tip right" title="The length of the executor's queue.">
-            Queue Length
+          <span class="tip right" title="The mean length of the executor's receive queue, sampled during executor heartbeats.">
+            Receive Queue Mean Length
+          </span>
+        </th>
+        <th class="header">
+          <span class="tip right" title="The mean length of the executor's transfer queue, sampled during executor heartbeats.">
+            Batch Transfer Queue Mean Length
           </span>
         </th>
         <th class="header">
@@ -459,7 +464,8 @@
         <td>{{executeLatency}}</td>
         <td>{{executed}}</td>
         <td>{{processLatency}}</td>
-        <td>{{queueLength}}</td>
+        <td>{{receiveQueueLength}}</td>
+        <td>{{batchTransferQueueLength}}</td>
         <td>{{acked}}</td>
         <td>{{failed}}</td>
       </tr>

@@ -174,14 +174,16 @@ struct BoltStats {
   3: required map<string, map<GlobalStreamId, double>> process_ms_avg;
   4: required map<string, map<GlobalStreamId, i64>> executed;  
   5: required map<string, map<GlobalStreamId, double>> execute_ms_avg;
-  6: optional map<string, map<string, double>> queue_length;
+  6: optional map<string, map<string, double>> receive_queue_length;
+  7: optional map<string, map<string, double>> batch_transfer_queue_length;
 }
 
 struct SpoutStats {
   1: required map<string, map<string, i64>> acked;
   2: required map<string, map<string, i64>> failed;
   3: required map<string, map<string, double>> complete_ms_avg;
-  4: optional map<string, map<string, double>> queue_length;
+  4: optional map<string, map<string, double>> receive_queue_length;
+  5: optional map<string, map<string, double>> batch_transfer_queue_length;
 }
 
 union ExecutorSpecificStats {

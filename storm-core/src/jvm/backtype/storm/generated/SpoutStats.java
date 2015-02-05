@@ -44,19 +44,22 @@ public class SpoutStats implements org.apache.thrift.TBase<SpoutStats, SpoutStat
   private static final org.apache.thrift.protocol.TField ACKED_FIELD_DESC = new org.apache.thrift.protocol.TField("acked", org.apache.thrift.protocol.TType.MAP, (short)1);
   private static final org.apache.thrift.protocol.TField FAILED_FIELD_DESC = new org.apache.thrift.protocol.TField("failed", org.apache.thrift.protocol.TType.MAP, (short)2);
   private static final org.apache.thrift.protocol.TField COMPLETE_MS_AVG_FIELD_DESC = new org.apache.thrift.protocol.TField("complete_ms_avg", org.apache.thrift.protocol.TType.MAP, (short)3);
-  private static final org.apache.thrift.protocol.TField QUEUE_LENGTH_FIELD_DESC = new org.apache.thrift.protocol.TField("queue_length", org.apache.thrift.protocol.TType.MAP, (short)4);
+  private static final org.apache.thrift.protocol.TField RECEIVE_QUEUE_LENGTH_FIELD_DESC = new org.apache.thrift.protocol.TField("receive_queue_length", org.apache.thrift.protocol.TType.MAP, (short)4);
+  private static final org.apache.thrift.protocol.TField BATCH_TRANSFER_QUEUE_LENGTH_FIELD_DESC = new org.apache.thrift.protocol.TField("batch_transfer_queue_length", org.apache.thrift.protocol.TType.MAP, (short)5);
 
   private Map<String,Map<String,Long>> acked; // required
   private Map<String,Map<String,Long>> failed; // required
   private Map<String,Map<String,Double>> complete_ms_avg; // required
-  private Map<String,Map<String,Double>> queue_length; // required
+  private Map<String,Map<String,Double>> receive_queue_length; // required
+  private Map<String,Map<String,Double>> batch_transfer_queue_length; // required
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift.TFieldIdEnum {
     ACKED((short)1, "acked"),
     FAILED((short)2, "failed"),
     COMPLETE_MS_AVG((short)3, "complete_ms_avg"),
-    QUEUE_LENGTH((short)4, "queue_length");
+    RECEIVE_QUEUE_LENGTH((short)4, "receive_queue_length"),
+    BATCH_TRANSFER_QUEUE_LENGTH((short)5, "batch_transfer_queue_length");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -77,8 +80,10 @@ public class SpoutStats implements org.apache.thrift.TBase<SpoutStats, SpoutStat
           return FAILED;
         case 3: // COMPLETE_MS_AVG
           return COMPLETE_MS_AVG;
-        case 4: // QUEUE_LENGTH
-          return QUEUE_LENGTH;
+        case 4: // RECEIVE_QUEUE_LENGTH
+          return RECEIVE_QUEUE_LENGTH;
+        case 5: // BATCH_TRANSFER_QUEUE_LENGTH
+          return BATCH_TRANSFER_QUEUE_LENGTH;
         default:
           return null;
       }
@@ -141,7 +146,13 @@ public class SpoutStats implements org.apache.thrift.TBase<SpoutStats, SpoutStat
             new org.apache.thrift.meta_data.MapMetaData(org.apache.thrift.protocol.TType.MAP, 
                 new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING), 
                 new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.DOUBLE)))));
-    tmpMap.put(_Fields.QUEUE_LENGTH, new org.apache.thrift.meta_data.FieldMetaData("queue_length", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
+    tmpMap.put(_Fields.RECEIVE_QUEUE_LENGTH, new org.apache.thrift.meta_data.FieldMetaData("receive_queue_length", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.thrift.meta_data.MapMetaData(org.apache.thrift.protocol.TType.MAP, 
+            new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING), 
+            new org.apache.thrift.meta_data.MapMetaData(org.apache.thrift.protocol.TType.MAP, 
+                new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING), 
+                new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.DOUBLE)))));
+    tmpMap.put(_Fields.BATCH_TRANSFER_QUEUE_LENGTH, new org.apache.thrift.meta_data.FieldMetaData("batch_transfer_queue_length", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
         new org.apache.thrift.meta_data.MapMetaData(org.apache.thrift.protocol.TType.MAP, 
             new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING), 
             new org.apache.thrift.meta_data.MapMetaData(org.apache.thrift.protocol.TType.MAP, 
@@ -247,31 +258,57 @@ public class SpoutStats implements org.apache.thrift.TBase<SpoutStats, SpoutStat
       }
       this.complete_ms_avg = __this__complete_ms_avg;
     }
-    if (other.is_set_queue_length()) {
-      Map<String,Map<String,Double>> __this__queue_length = new HashMap<String,Map<String,Double>>();
-      for (Map.Entry<String, Map<String,Double>> other_element : other.queue_length.entrySet()) {
+    if (other.is_set_receive_queue_length()) {
+      Map<String,Map<String,Double>> __this__receive_queue_length = new HashMap<String,Map<String,Double>>();
+      for (Map.Entry<String, Map<String,Double>> other_element : other.receive_queue_length.entrySet()) {
 
         String other_element_key = other_element.getKey();
         Map<String,Double> other_element_value = other_element.getValue();
 
-        String __this__queue_length_copy_key = other_element_key;
+        String __this__receive_queue_length_copy_key = other_element_key;
 
-        Map<String,Double> __this__queue_length_copy_value = new HashMap<String,Double>();
+        Map<String,Double> __this__receive_queue_length_copy_value = new HashMap<String,Double>();
         for (Map.Entry<String, Double> other_element_value_element : other_element_value.entrySet()) {
 
           String other_element_value_element_key = other_element_value_element.getKey();
           Double other_element_value_element_value = other_element_value_element.getValue();
 
-          String __this__queue_length_copy_value_copy_key = other_element_value_element_key;
+          String __this__receive_queue_length_copy_value_copy_key = other_element_value_element_key;
 
-          Double __this__queue_length_copy_value_copy_value = other_element_value_element_value;
+          Double __this__receive_queue_length_copy_value_copy_value = other_element_value_element_value;
 
-          __this__queue_length_copy_value.put(__this__queue_length_copy_value_copy_key, __this__queue_length_copy_value_copy_value);
+          __this__receive_queue_length_copy_value.put(__this__receive_queue_length_copy_value_copy_key, __this__receive_queue_length_copy_value_copy_value);
         }
 
-        __this__queue_length.put(__this__queue_length_copy_key, __this__queue_length_copy_value);
+        __this__receive_queue_length.put(__this__receive_queue_length_copy_key, __this__receive_queue_length_copy_value);
       }
-      this.queue_length = __this__queue_length;
+      this.receive_queue_length = __this__receive_queue_length;
+    }
+    if (other.is_set_batch_transfer_queue_length()) {
+      Map<String,Map<String,Double>> __this__batch_transfer_queue_length = new HashMap<String,Map<String,Double>>();
+      for (Map.Entry<String, Map<String,Double>> other_element : other.batch_transfer_queue_length.entrySet()) {
+
+        String other_element_key = other_element.getKey();
+        Map<String,Double> other_element_value = other_element.getValue();
+
+        String __this__batch_transfer_queue_length_copy_key = other_element_key;
+
+        Map<String,Double> __this__batch_transfer_queue_length_copy_value = new HashMap<String,Double>();
+        for (Map.Entry<String, Double> other_element_value_element : other_element_value.entrySet()) {
+
+          String other_element_value_element_key = other_element_value_element.getKey();
+          Double other_element_value_element_value = other_element_value_element.getValue();
+
+          String __this__batch_transfer_queue_length_copy_value_copy_key = other_element_value_element_key;
+
+          Double __this__batch_transfer_queue_length_copy_value_copy_value = other_element_value_element_value;
+
+          __this__batch_transfer_queue_length_copy_value.put(__this__batch_transfer_queue_length_copy_value_copy_key, __this__batch_transfer_queue_length_copy_value_copy_value);
+        }
+
+        __this__batch_transfer_queue_length.put(__this__batch_transfer_queue_length_copy_key, __this__batch_transfer_queue_length_copy_value);
+      }
+      this.batch_transfer_queue_length = __this__batch_transfer_queue_length;
     }
   }
 
@@ -284,7 +321,8 @@ public class SpoutStats implements org.apache.thrift.TBase<SpoutStats, SpoutStat
     this.acked = null;
     this.failed = null;
     this.complete_ms_avg = null;
-    this.queue_length = null;
+    this.receive_queue_length = null;
+    this.batch_transfer_queue_length = null;
   }
 
   public int get_acked_size() {
@@ -389,37 +427,71 @@ public class SpoutStats implements org.apache.thrift.TBase<SpoutStats, SpoutStat
     }
   }
 
-  public int get_queue_length_size() {
-    return (this.queue_length == null) ? 0 : this.queue_length.size();
+  public int get_receive_queue_length_size() {
+    return (this.receive_queue_length == null) ? 0 : this.receive_queue_length.size();
   }
 
-  public void put_to_queue_length(String key, Map<String,Double> val) {
-    if (this.queue_length == null) {
-      this.queue_length = new HashMap<String,Map<String,Double>>();
+  public void put_to_receive_queue_length(String key, Map<String,Double> val) {
+    if (this.receive_queue_length == null) {
+      this.receive_queue_length = new HashMap<String,Map<String,Double>>();
     }
-    this.queue_length.put(key, val);
+    this.receive_queue_length.put(key, val);
   }
 
-  public Map<String,Map<String,Double>> get_queue_length() {
-    return this.queue_length;
+  public Map<String,Map<String,Double>> get_receive_queue_length() {
+    return this.receive_queue_length;
   }
 
-  public void set_queue_length(Map<String,Map<String,Double>> queue_length) {
-    this.queue_length = queue_length;
+  public void set_receive_queue_length(Map<String,Map<String,Double>> receive_queue_length) {
+    this.receive_queue_length = receive_queue_length;
   }
 
-  public void unset_queue_length() {
-    this.queue_length = null;
+  public void unset_receive_queue_length() {
+    this.receive_queue_length = null;
   }
 
-  /** Returns true if field queue_length is set (has been assigned a value) and false otherwise */
-  public boolean is_set_queue_length() {
-    return this.queue_length != null;
+  /** Returns true if field receive_queue_length is set (has been assigned a value) and false otherwise */
+  public boolean is_set_receive_queue_length() {
+    return this.receive_queue_length != null;
   }
 
-  public void set_queue_length_isSet(boolean value) {
+  public void set_receive_queue_length_isSet(boolean value) {
     if (!value) {
-      this.queue_length = null;
+      this.receive_queue_length = null;
+    }
+  }
+
+  public int get_batch_transfer_queue_length_size() {
+    return (this.batch_transfer_queue_length == null) ? 0 : this.batch_transfer_queue_length.size();
+  }
+
+  public void put_to_batch_transfer_queue_length(String key, Map<String,Double> val) {
+    if (this.batch_transfer_queue_length == null) {
+      this.batch_transfer_queue_length = new HashMap<String,Map<String,Double>>();
+    }
+    this.batch_transfer_queue_length.put(key, val);
+  }
+
+  public Map<String,Map<String,Double>> get_batch_transfer_queue_length() {
+    return this.batch_transfer_queue_length;
+  }
+
+  public void set_batch_transfer_queue_length(Map<String,Map<String,Double>> batch_transfer_queue_length) {
+    this.batch_transfer_queue_length = batch_transfer_queue_length;
+  }
+
+  public void unset_batch_transfer_queue_length() {
+    this.batch_transfer_queue_length = null;
+  }
+
+  /** Returns true if field batch_transfer_queue_length is set (has been assigned a value) and false otherwise */
+  public boolean is_set_batch_transfer_queue_length() {
+    return this.batch_transfer_queue_length != null;
+  }
+
+  public void set_batch_transfer_queue_length_isSet(boolean value) {
+    if (!value) {
+      this.batch_transfer_queue_length = null;
     }
   }
 
@@ -449,11 +521,19 @@ public class SpoutStats implements org.apache.thrift.TBase<SpoutStats, SpoutStat
       }
       break;
 
-    case QUEUE_LENGTH:
+    case RECEIVE_QUEUE_LENGTH:
       if (value == null) {
-        unset_queue_length();
+        unset_receive_queue_length();
       } else {
-        set_queue_length((Map<String,Map<String,Double>>)value);
+        set_receive_queue_length((Map<String,Map<String,Double>>)value);
+      }
+      break;
+
+    case BATCH_TRANSFER_QUEUE_LENGTH:
+      if (value == null) {
+        unset_batch_transfer_queue_length();
+      } else {
+        set_batch_transfer_queue_length((Map<String,Map<String,Double>>)value);
       }
       break;
 
@@ -471,8 +551,11 @@ public class SpoutStats implements org.apache.thrift.TBase<SpoutStats, SpoutStat
     case COMPLETE_MS_AVG:
       return get_complete_ms_avg();
 
-    case QUEUE_LENGTH:
-      return get_queue_length();
+    case RECEIVE_QUEUE_LENGTH:
+      return get_receive_queue_length();
+
+    case BATCH_TRANSFER_QUEUE_LENGTH:
+      return get_batch_transfer_queue_length();
 
     }
     throw new IllegalStateException();
@@ -491,8 +574,10 @@ public class SpoutStats implements org.apache.thrift.TBase<SpoutStats, SpoutStat
       return is_set_failed();
     case COMPLETE_MS_AVG:
       return is_set_complete_ms_avg();
-    case QUEUE_LENGTH:
-      return is_set_queue_length();
+    case RECEIVE_QUEUE_LENGTH:
+      return is_set_receive_queue_length();
+    case BATCH_TRANSFER_QUEUE_LENGTH:
+      return is_set_batch_transfer_queue_length();
     }
     throw new IllegalStateException();
   }
@@ -537,12 +622,21 @@ public class SpoutStats implements org.apache.thrift.TBase<SpoutStats, SpoutStat
         return false;
     }
 
-    boolean this_present_queue_length = true && this.is_set_queue_length();
-    boolean that_present_queue_length = true && that.is_set_queue_length();
-    if (this_present_queue_length || that_present_queue_length) {
-      if (!(this_present_queue_length && that_present_queue_length))
+    boolean this_present_receive_queue_length = true && this.is_set_receive_queue_length();
+    boolean that_present_receive_queue_length = true && that.is_set_receive_queue_length();
+    if (this_present_receive_queue_length || that_present_receive_queue_length) {
+      if (!(this_present_receive_queue_length && that_present_receive_queue_length))
         return false;
-      if (!this.queue_length.equals(that.queue_length))
+      if (!this.receive_queue_length.equals(that.receive_queue_length))
+        return false;
+    }
+
+    boolean this_present_batch_transfer_queue_length = true && this.is_set_batch_transfer_queue_length();
+    boolean that_present_batch_transfer_queue_length = true && that.is_set_batch_transfer_queue_length();
+    if (this_present_batch_transfer_queue_length || that_present_batch_transfer_queue_length) {
+      if (!(this_present_batch_transfer_queue_length && that_present_batch_transfer_queue_length))
+        return false;
+      if (!this.batch_transfer_queue_length.equals(that.batch_transfer_queue_length))
         return false;
     }
 
@@ -568,10 +662,15 @@ public class SpoutStats implements org.apache.thrift.TBase<SpoutStats, SpoutStat
     if (present_complete_ms_avg)
       builder.append(complete_ms_avg);
 
-    boolean present_queue_length = true && (is_set_queue_length());
-    builder.append(present_queue_length);
-    if (present_queue_length)
-      builder.append(queue_length);
+    boolean present_receive_queue_length = true && (is_set_receive_queue_length());
+    builder.append(present_receive_queue_length);
+    if (present_receive_queue_length)
+      builder.append(receive_queue_length);
+
+    boolean present_batch_transfer_queue_length = true && (is_set_batch_transfer_queue_length());
+    builder.append(present_batch_transfer_queue_length);
+    if (present_batch_transfer_queue_length)
+      builder.append(batch_transfer_queue_length);
 
     return builder.toHashCode();
   }
@@ -614,12 +713,22 @@ public class SpoutStats implements org.apache.thrift.TBase<SpoutStats, SpoutStat
         return lastComparison;
       }
     }
-    lastComparison = Boolean.valueOf(is_set_queue_length()).compareTo(typedOther.is_set_queue_length());
+    lastComparison = Boolean.valueOf(is_set_receive_queue_length()).compareTo(typedOther.is_set_receive_queue_length());
     if (lastComparison != 0) {
       return lastComparison;
     }
-    if (is_set_queue_length()) {
-      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.queue_length, typedOther.queue_length);
+    if (is_set_receive_queue_length()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.receive_queue_length, typedOther.receive_queue_length);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_batch_transfer_queue_length()).compareTo(typedOther.is_set_batch_transfer_queue_length());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_batch_transfer_queue_length()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.batch_transfer_queue_length, typedOther.batch_transfer_queue_length);
       if (lastComparison != 0) {
         return lastComparison;
       }
@@ -644,27 +753,27 @@ public class SpoutStats implements org.apache.thrift.TBase<SpoutStats, SpoutStat
         case 1: // ACKED
           if (field.type == org.apache.thrift.protocol.TType.MAP) {
             {
-              org.apache.thrift.protocol.TMap _map105 = iprot.readMapBegin();
-              this.acked = new HashMap<String,Map<String,Long>>(2*_map105.size);
-              for (int _i106 = 0; _i106 < _map105.size; ++_i106)
+              org.apache.thrift.protocol.TMap _map115 = iprot.readMapBegin();
+              this.acked = new HashMap<String,Map<String,Long>>(2*_map115.size);
+              for (int _i116 = 0; _i116 < _map115.size; ++_i116)
               {
-                String _key107; // required
-                Map<String,Long> _val108; // required
-                _key107 = iprot.readString();
+                String _key117; // required
+                Map<String,Long> _val118; // required
+                _key117 = iprot.readString();
                 {
-                  org.apache.thrift.protocol.TMap _map109 = iprot.readMapBegin();
-                  _val108 = new HashMap<String,Long>(2*_map109.size);
-                  for (int _i110 = 0; _i110 < _map109.size; ++_i110)
+                  org.apache.thrift.protocol.TMap _map119 = iprot.readMapBegin();
+                  _val118 = new HashMap<String,Long>(2*_map119.size);
+                  for (int _i120 = 0; _i120 < _map119.size; ++_i120)
                   {
-                    String _key111; // required
-                    long _val112; // required
-                    _key111 = iprot.readString();
-                    _val112 = iprot.readI64();
-                    _val108.put(_key111, _val112);
+                    String _key121; // required
+                    long _val122; // required
+                    _key121 = iprot.readString();
+                    _val122 = iprot.readI64();
+                    _val118.put(_key121, _val122);
                   }
                   iprot.readMapEnd();
                 }
-                this.acked.put(_key107, _val108);
+                this.acked.put(_key117, _val118);
               }
               iprot.readMapEnd();
             }
@@ -675,27 +784,27 @@ public class SpoutStats implements org.apache.thrift.TBase<SpoutStats, SpoutStat
         case 2: // FAILED
           if (field.type == org.apache.thrift.protocol.TType.MAP) {
             {
-              org.apache.thrift.protocol.TMap _map113 = iprot.readMapBegin();
-              this.failed = new HashMap<String,Map<String,Long>>(2*_map113.size);
-              for (int _i114 = 0; _i114 < _map113.size; ++_i114)
+              org.apache.thrift.protocol.TMap _map123 = iprot.readMapBegin();
+              this.failed = new HashMap<String,Map<String,Long>>(2*_map123.size);
+              for (int _i124 = 0; _i124 < _map123.size; ++_i124)
               {
-                String _key115; // required
-                Map<String,Long> _val116; // required
-                _key115 = iprot.readString();
+                String _key125; // required
+                Map<String,Long> _val126; // required
+                _key125 = iprot.readString();
                 {
-                  org.apache.thrift.protocol.TMap _map117 = iprot.readMapBegin();
-                  _val116 = new HashMap<String,Long>(2*_map117.size);
-                  for (int _i118 = 0; _i118 < _map117.size; ++_i118)
+                  org.apache.thrift.protocol.TMap _map127 = iprot.readMapBegin();
+                  _val126 = new HashMap<String,Long>(2*_map127.size);
+                  for (int _i128 = 0; _i128 < _map127.size; ++_i128)
                   {
-                    String _key119; // required
-                    long _val120; // required
-                    _key119 = iprot.readString();
-                    _val120 = iprot.readI64();
-                    _val116.put(_key119, _val120);
+                    String _key129; // required
+                    long _val130; // required
+                    _key129 = iprot.readString();
+                    _val130 = iprot.readI64();
+                    _val126.put(_key129, _val130);
                   }
                   iprot.readMapEnd();
                 }
-                this.failed.put(_key115, _val116);
+                this.failed.put(_key125, _val126);
               }
               iprot.readMapEnd();
             }
@@ -706,27 +815,27 @@ public class SpoutStats implements org.apache.thrift.TBase<SpoutStats, SpoutStat
         case 3: // COMPLETE_MS_AVG
           if (field.type == org.apache.thrift.protocol.TType.MAP) {
             {
-              org.apache.thrift.protocol.TMap _map121 = iprot.readMapBegin();
-              this.complete_ms_avg = new HashMap<String,Map<String,Double>>(2*_map121.size);
-              for (int _i122 = 0; _i122 < _map121.size; ++_i122)
+              org.apache.thrift.protocol.TMap _map131 = iprot.readMapBegin();
+              this.complete_ms_avg = new HashMap<String,Map<String,Double>>(2*_map131.size);
+              for (int _i132 = 0; _i132 < _map131.size; ++_i132)
               {
-                String _key123; // required
-                Map<String,Double> _val124; // required
-                _key123 = iprot.readString();
+                String _key133; // required
+                Map<String,Double> _val134; // required
+                _key133 = iprot.readString();
                 {
-                  org.apache.thrift.protocol.TMap _map125 = iprot.readMapBegin();
-                  _val124 = new HashMap<String,Double>(2*_map125.size);
-                  for (int _i126 = 0; _i126 < _map125.size; ++_i126)
+                  org.apache.thrift.protocol.TMap _map135 = iprot.readMapBegin();
+                  _val134 = new HashMap<String,Double>(2*_map135.size);
+                  for (int _i136 = 0; _i136 < _map135.size; ++_i136)
                   {
-                    String _key127; // required
-                    double _val128; // required
-                    _key127 = iprot.readString();
-                    _val128 = iprot.readDouble();
-                    _val124.put(_key127, _val128);
+                    String _key137; // required
+                    double _val138; // required
+                    _key137 = iprot.readString();
+                    _val138 = iprot.readDouble();
+                    _val134.put(_key137, _val138);
                   }
                   iprot.readMapEnd();
                 }
-                this.complete_ms_avg.put(_key123, _val124);
+                this.complete_ms_avg.put(_key133, _val134);
               }
               iprot.readMapEnd();
             }
@@ -734,30 +843,61 @@ public class SpoutStats implements org.apache.thrift.TBase<SpoutStats, SpoutStat
             org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
           }
           break;
-        case 4: // QUEUE_LENGTH
+        case 4: // RECEIVE_QUEUE_LENGTH
           if (field.type == org.apache.thrift.protocol.TType.MAP) {
             {
-              org.apache.thrift.protocol.TMap _map129 = iprot.readMapBegin();
-              this.queue_length = new HashMap<String,Map<String,Double>>(2*_map129.size);
-              for (int _i130 = 0; _i130 < _map129.size; ++_i130)
+              org.apache.thrift.protocol.TMap _map139 = iprot.readMapBegin();
+              this.receive_queue_length = new HashMap<String,Map<String,Double>>(2*_map139.size);
+              for (int _i140 = 0; _i140 < _map139.size; ++_i140)
               {
-                String _key131; // required
-                Map<String,Double> _val132; // required
-                _key131 = iprot.readString();
+                String _key141; // required
+                Map<String,Double> _val142; // required
+                _key141 = iprot.readString();
                 {
-                  org.apache.thrift.protocol.TMap _map133 = iprot.readMapBegin();
-                  _val132 = new HashMap<String,Double>(2*_map133.size);
-                  for (int _i134 = 0; _i134 < _map133.size; ++_i134)
+                  org.apache.thrift.protocol.TMap _map143 = iprot.readMapBegin();
+                  _val142 = new HashMap<String,Double>(2*_map143.size);
+                  for (int _i144 = 0; _i144 < _map143.size; ++_i144)
                   {
-                    String _key135; // required
-                    double _val136; // required
-                    _key135 = iprot.readString();
-                    _val136 = iprot.readDouble();
-                    _val132.put(_key135, _val136);
+                    String _key145; // required
+                    double _val146; // required
+                    _key145 = iprot.readString();
+                    _val146 = iprot.readDouble();
+                    _val142.put(_key145, _val146);
                   }
                   iprot.readMapEnd();
                 }
-                this.queue_length.put(_key131, _val132);
+                this.receive_queue_length.put(_key141, _val142);
+              }
+              iprot.readMapEnd();
+            }
+          } else { 
+            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
+        case 5: // BATCH_TRANSFER_QUEUE_LENGTH
+          if (field.type == org.apache.thrift.protocol.TType.MAP) {
+            {
+              org.apache.thrift.protocol.TMap _map147 = iprot.readMapBegin();
+              this.batch_transfer_queue_length = new HashMap<String,Map<String,Double>>(2*_map147.size);
+              for (int _i148 = 0; _i148 < _map147.size; ++_i148)
+              {
+                String _key149; // required
+                Map<String,Double> _val150; // required
+                _key149 = iprot.readString();
+                {
+                  org.apache.thrift.protocol.TMap _map151 = iprot.readMapBegin();
+                  _val150 = new HashMap<String,Double>(2*_map151.size);
+                  for (int _i152 = 0; _i152 < _map151.size; ++_i152)
+                  {
+                    String _key153; // required
+                    double _val154; // required
+                    _key153 = iprot.readString();
+                    _val154 = iprot.readDouble();
+                    _val150.put(_key153, _val154);
+                  }
+                  iprot.readMapEnd();
+                }
+                this.batch_transfer_queue_length.put(_key149, _val150);
               }
               iprot.readMapEnd();
             }
@@ -782,15 +922,15 @@ public class SpoutStats implements org.apache.thrift.TBase<SpoutStats, SpoutStat
       oprot.writeFieldBegin(ACKED_FIELD_DESC);
       {
         oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.MAP, this.acked.size()));
-        for (Map.Entry<String, Map<String,Long>> _iter137 : this.acked.entrySet())
+        for (Map.Entry<String, Map<String,Long>> _iter155 : this.acked.entrySet())
         {
-          oprot.writeString(_iter137.getKey());
+          oprot.writeString(_iter155.getKey());
           {
-            oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.I64, _iter137.getValue().size()));
-            for (Map.Entry<String, Long> _iter138 : _iter137.getValue().entrySet())
+            oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.I64, _iter155.getValue().size()));
+            for (Map.Entry<String, Long> _iter156 : _iter155.getValue().entrySet())
             {
-              oprot.writeString(_iter138.getKey());
-              oprot.writeI64(_iter138.getValue());
+              oprot.writeString(_iter156.getKey());
+              oprot.writeI64(_iter156.getValue());
             }
             oprot.writeMapEnd();
           }
@@ -803,15 +943,15 @@ public class SpoutStats implements org.apache.thrift.TBase<SpoutStats, SpoutStat
       oprot.writeFieldBegin(FAILED_FIELD_DESC);
       {
         oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.MAP, this.failed.size()));
-        for (Map.Entry<String, Map<String,Long>> _iter139 : this.failed.entrySet())
+        for (Map.Entry<String, Map<String,Long>> _iter157 : this.failed.entrySet())
         {
-          oprot.writeString(_iter139.getKey());
+          oprot.writeString(_iter157.getKey());
           {
-            oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.I64, _iter139.getValue().size()));
-            for (Map.Entry<String, Long> _iter140 : _iter139.getValue().entrySet())
+            oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.I64, _iter157.getValue().size()));
+            for (Map.Entry<String, Long> _iter158 : _iter157.getValue().entrySet())
             {
-              oprot.writeString(_iter140.getKey());
-              oprot.writeI64(_iter140.getValue());
+              oprot.writeString(_iter158.getKey());
+              oprot.writeI64(_iter158.getValue());
             }
             oprot.writeMapEnd();
           }
@@ -824,15 +964,15 @@ public class SpoutStats implements org.apache.thrift.TBase<SpoutStats, SpoutStat
       oprot.writeFieldBegin(COMPLETE_MS_AVG_FIELD_DESC);
       {
         oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.MAP, this.complete_ms_avg.size()));
-        for (Map.Entry<String, Map<String,Double>> _iter141 : this.complete_ms_avg.entrySet())
+        for (Map.Entry<String, Map<String,Double>> _iter159 : this.complete_ms_avg.entrySet())
         {
-          oprot.writeString(_iter141.getKey());
+          oprot.writeString(_iter159.getKey());
           {
-            oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.DOUBLE, _iter141.getValue().size()));
-            for (Map.Entry<String, Double> _iter142 : _iter141.getValue().entrySet())
+            oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.DOUBLE, _iter159.getValue().size()));
+            for (Map.Entry<String, Double> _iter160 : _iter159.getValue().entrySet())
             {
-              oprot.writeString(_iter142.getKey());
-              oprot.writeDouble(_iter142.getValue());
+              oprot.writeString(_iter160.getKey());
+              oprot.writeDouble(_iter160.getValue());
             }
             oprot.writeMapEnd();
           }
@@ -841,20 +981,43 @@ public class SpoutStats implements org.apache.thrift.TBase<SpoutStats, SpoutStat
       }
       oprot.writeFieldEnd();
     }
-    if (this.queue_length != null) {
-      if (is_set_queue_length()) {
-        oprot.writeFieldBegin(QUEUE_LENGTH_FIELD_DESC);
+    if (this.receive_queue_length != null) {
+      if (is_set_receive_queue_length()) {
+        oprot.writeFieldBegin(RECEIVE_QUEUE_LENGTH_FIELD_DESC);
         {
-          oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.MAP, this.queue_length.size()));
-          for (Map.Entry<String, Map<String,Double>> _iter143 : this.queue_length.entrySet())
+          oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.MAP, this.receive_queue_length.size()));
+          for (Map.Entry<String, Map<String,Double>> _iter161 : this.receive_queue_length.entrySet())
           {
-            oprot.writeString(_iter143.getKey());
+            oprot.writeString(_iter161.getKey());
             {
-              oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.DOUBLE, _iter143.getValue().size()));
-              for (Map.Entry<String, Double> _iter144 : _iter143.getValue().entrySet())
+              oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.DOUBLE, _iter161.getValue().size()));
+              for (Map.Entry<String, Double> _iter162 : _iter161.getValue().entrySet())
               {
-                oprot.writeString(_iter144.getKey());
-                oprot.writeDouble(_iter144.getValue());
+                oprot.writeString(_iter162.getKey());
+                oprot.writeDouble(_iter162.getValue());
+              }
+              oprot.writeMapEnd();
+            }
+          }
+          oprot.writeMapEnd();
+        }
+        oprot.writeFieldEnd();
+      }
+    }
+    if (this.batch_transfer_queue_length != null) {
+      if (is_set_batch_transfer_queue_length()) {
+        oprot.writeFieldBegin(BATCH_TRANSFER_QUEUE_LENGTH_FIELD_DESC);
+        {
+          oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.MAP, this.batch_transfer_queue_length.size()));
+          for (Map.Entry<String, Map<String,Double>> _iter163 : this.batch_transfer_queue_length.entrySet())
+          {
+            oprot.writeString(_iter163.getKey());
+            {
+              oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.DOUBLE, _iter163.getValue().size()));
+              for (Map.Entry<String, Double> _iter164 : _iter163.getValue().entrySet())
+              {
+                oprot.writeString(_iter164.getKey());
+                oprot.writeDouble(_iter164.getValue());
               }
               oprot.writeMapEnd();
             }
@@ -896,13 +1059,23 @@ public class SpoutStats implements org.apache.thrift.TBase<SpoutStats, SpoutStat
       sb.append(this.complete_ms_avg);
     }
     first = false;
-    if (is_set_queue_length()) {
+    if (is_set_receive_queue_length()) {
       if (!first) sb.append(", ");
-      sb.append("queue_length:");
-      if (this.queue_length == null) {
+      sb.append("receive_queue_length:");
+      if (this.receive_queue_length == null) {
         sb.append("null");
       } else {
-        sb.append(this.queue_length);
+        sb.append(this.receive_queue_length);
+      }
+      first = false;
+    }
+    if (is_set_batch_transfer_queue_length()) {
+      if (!first) sb.append(", ");
+      sb.append("batch_transfer_queue_length:");
+      if (this.batch_transfer_queue_length == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.batch_transfer_queue_length);
       }
       first = false;
     }
