@@ -312,7 +312,7 @@
     ))
 
 (defn has-ackers? [storm-conf]
-  (or (nil? (storm-conf TOPOLOGY-ACKER-EXECUTORS)) (> (storm-conf TOPOLOGY-ACKER-EXECUTORS) 0)))
+  (and (not (nil? (storm-conf TOPOLOGY-ACKER-EXECUTORS))) (> (storm-conf TOPOLOGY-ACKER-EXECUTORS) 0)))
 
 
 (defn num-start-executors [component]
