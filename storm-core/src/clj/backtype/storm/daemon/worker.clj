@@ -271,15 +271,14 @@
     (fn this
       ([] 
         (let [^LoadMapping load-mapping (:load-mapping worker)
-              local-pop (into {} (for [[exec queue] short-executor-receive-queue-map] [exec (/ (double (.population queue)) (.capacity queue))]))
+              local-pop (map-val (fn [queue] (/ (double (.population queue)) (.capacity queue))) short-executor-receive-queue-map)
               remote-load (reduce merge (for [[np conn] @(:cached-node+port->socket worker)] (into {} (.getLoad conn remote-tasks))))
               now (System/currentTimeMillis)]
           (.setLocal load-mapping local-pop)
           (.setRemote load-mapping remote-load)
           (when (> now @next-update)
             (.sendLoadMetrics (:receiver worker) local-pop)
-            (reset! next-update (+ 5000 now)))
-          )))))
+            (reset! next-update (+ 5000 now))))))))
 
 (defn mk-refresh-connections [worker]
   (let [outbound-tasks (worker-outbound-tasks worker)
@@ -507,7 +506,7 @@
     (.credentials (:storm-cluster-state worker) storm-id (fn [args] (check-credentials-changed)))
     (schedule-recurring (:refresh-credentials-timer worker) 0 (conf TASK-CREDENTIALS-POLL-SECS) check-credentials-changed)
     ;; The jitter allows the clients to get the data at different times, and avoids thundering herd
-    (when-not (or (.get conf TOPOLOGY-DISABLE-LOADAWARE) false)
+    (when-not (.get conf TOPOLOGY-DISABLE-LOADAWARE)
       (schedule-recurring-with-jitter (:refresh-load-timer worker) 0 1 500 refresh-load))
     (schedule-recurring (:refresh-connections-timer worker) 0 (conf TASK-REFRESH-POLL-SECS) refresh-connections)
     (schedule-recurring (:refresh-active-timer worker) 0 (conf TASK-REFRESH-POLL-SECS) (partial refresh-storm-active worker))

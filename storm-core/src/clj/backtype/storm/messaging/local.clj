@@ -15,7 +15,7 @@
 ;; limitations under the License.
 (ns backtype.storm.messaging.local
   (:refer-clojure :exclude [send])
-  (:use [backtype.storm log])
+  (:use [backtype.storm log util])
   (:import [backtype.storm.messaging IContext IConnection TaskMessage])
   (:import [backtype.storm.grouping Load])
   (:import [java.util.concurrent LinkedBlockingQueue])
@@ -33,8 +33,6 @@
       (when-not (contains? @queues-map id)
         (swap! queues-map assoc id (LinkedBlockingQueue.))))
     (@queues-map id)))
-
-(def not-nil? (complement nil?))
 
 (deftype LocalConnection [storm-id port queues-map lock queue task->load]
   IConnection

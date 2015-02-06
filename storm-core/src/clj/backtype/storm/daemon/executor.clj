@@ -42,7 +42,7 @@
           task-getter))))
 
 (defn mk-shuffle-grouper [^List target-tasks conf]
-  (if (or (.get conf TOPOLOGY-DISABLE-LOADAWARE) false)
+  (if (.get conf TOPOLOGY-DISABLE-LOADAWARE)
     (let [choices (rotating-random-range target-tasks)]
       (fn [task-id tuple load]
         (acquire-random-range-id choices)))
