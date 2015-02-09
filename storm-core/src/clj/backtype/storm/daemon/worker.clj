@@ -44,7 +44,7 @@
               assignment)))))
 
 (defn update-queue-stats [executors]
-  (doseq [executor executors]
+  (doseq [^RunningExecutor executor executors]
     (executor/update-queue-stats executor)))
 
 (defnk do-executor-heartbeats [worker :executors nil]
