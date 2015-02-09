@@ -290,10 +290,14 @@
    :assignment-id (.getAssignmentId isupervisor)
    :my-hostname (hostname conf)
    :curr-assignment (atom nil) ;; used for reporting used ports when heartbeating
-   :timer (mk-timer :kill-fn (fn [t]
+   :heartbeat-timer (mk-timer :kill-fn (fn [t]
                                (log-error t "Error when processing event")
                                (exit-process! 20 "Error when processing an event")
                                ))
+   :event-timer (mk-timer :kill-fn (fn [t]
+                                         (log-error t "Error when processing event")
+                                         (exit-process! 20 "Error when processing an event")
+                                         ))
    :assignment-versions (atom {})
    :sync-retry (atom 0)
    })
@@ -482,15 +486,15 @@
                                                 ((:uptime supervisor)))))]
     (heartbeat-fn)
     ;; should synchronize supervisor so it doesn't launch anything after being down (optimization)
-    (schedule-recurring (:timer supervisor)
+    (schedule-recurring (:heartbeat-timer supervisor)
                         0
                         (conf SUPERVISOR-HEARTBEAT-FREQUENCY-SECS)
                         heartbeat-fn)
     (when (conf SUPERVISOR-ENABLE)
       ;; This isn't strictly necessary, but it doesn't hurt and ensures that the machine stays up
       ;; to date even if callbacks don't all work exactly right
-      (schedule-recurring (:timer supervisor) 0 10 (fn [] (.add event-manager synchronize-supervisor)))
-      (schedule-recurring (:timer supervisor)
+      (schedule-recurring (:event-timer supervisor) 0 10 (fn [] (.add event-manager synchronize-supervisor)))
+      (schedule-recurring (:event-timer supervisor)
                           0
                           (conf SUPERVISOR-MONITOR-FREQUENCY-SECS)
                           (fn [] (.add processes-event-manager sync-processes))))
@@ -500,7 +504,8 @@
      (shutdown [this]
                (log-message "Shutting down supervisor " (:supervisor-id supervisor))
                (reset! (:active supervisor) false)
-               (cancel-timer (:timer supervisor))
+               (cancel-timer (:heartbeat-timer supervisor))
+               (cancel-timer (:event-timer supervisor))
                (.shutdown event-manager)
                (.shutdown processes-event-manager)
                (.disconnect (:storm-cluster-state supervisor)))
@@ -518,7 +523,8 @@
      (waiting? [this]
        (or (not @(:active supervisor))
            (and
-            (timer-waiting? (:timer supervisor))
+            (timer-waiting? (:heartbeat-timer supervisor))
+            (timer-waiting? (:event-timer supervisor))
             (every? (memfn waiting?) managers)))
            ))))
 
@@ -563,6 +569,10 @@
 (defn write-log-metadata! [storm-conf user worker-id storm-id port conf]
   (let [data {TOPOLOGY-SUBMITTER-USER user
               "worker-id" worker-id
+              LOGS-GROUPS (sort (distinct (remove nil?
+                                           (concat
+                                             (storm-conf LOGS-GROUPS)
+                                             (storm-conf TOPOLOGY-GROUPS)))))
               LOGS-USERS (sort (distinct (remove nil?
                                            (concat
                                              (storm-conf LOGS-USERS)
@@ -608,6 +618,9 @@
           storm-options (System/getProperty "storm.options")
           storm-conf-file (System/getProperty "storm.conf.file")
           storm-log-dir (or (System/getProperty "storm.log.dir") (str storm-home file-path-separator "logs"))
+          storm-conf (read-storm-config)
+          storm-log-conf-dir (storm-conf "storm.logback.conf.dir")
+          storm-logback-conf-dir (or storm-log-conf-dir (str storm-home file-path-separator "logback"))
           stormroot (supervisor-stormdist-root conf storm-id)
           jlp (jlp stormroot conf)
           stormjar (supervisor-stormjar-path stormroot)
@@ -640,7 +653,7 @@
                      (str "-Dstorm.conf.file=" storm-conf-file)
                      (str "-Dstorm.options=" storm-options)
                      (str "-Dstorm.log.dir=" storm-log-dir)
-                     (str "-Dlogback.configurationFile=" storm-home file-path-separator "logback" file-path-separator "worker.xml")
+                     (str "-Dlogback.configurationFile=" storm-logback-conf-dir file-path-separator "worker.xml")
                      (str "-Dstorm.id=" storm-id)
                      (str "-Dworker.id=" worker-id)
                      (str "-Dworker.port=" port)
