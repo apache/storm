@@ -201,8 +201,8 @@ public class Config extends HashMap<String, Object> {
     /**
      * Disable load aware grouping support.
      */
-    public static final String TOPOLOGY_DISABLE_LOADAWARE = "topology.disable.loadaware";
-    public static final Object TOPOLOGY_DISABLE_LOADAWARE_SCHEMA = Boolean.class;
+    public static final String TOPOLOGY_DISABLE_LOADAWARE_MESSAGING = "topology.disable.loadaware.messaging";
+    public static final Object TOPOLOGY_DISABLE_LOADAWARE_MESSAGING_SCHEMA = Boolean.class;
 
     /**
      * Try to serialize all tuples, even for local transfers.  This should only be used
