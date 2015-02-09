@@ -141,6 +141,8 @@
   (assignment-info [this storm-id callback])
   (assignment-info-with-version [this storm-id callback])
   (assignment-version [this storm-id callback])
+  (register-nimbus-info [this nimbus-info])
+  (nimbus-info [this])
   (active-storms [this])
   (storm-base [this storm-id callback])
   (get-worker-heartbeat [this storm-id node port])
@@ -174,6 +176,7 @@
 (def WORKERBEATS-ROOT "workerbeats")
 (def ERRORS-ROOT "errors")
 (def CREDENTIALS-ROOT "credentials")
+(def NIMBUS-ROOT "nimbus")
 
 (def ASSIGNMENTS-SUBTREE (str "/" ASSIGNMENTS-ROOT))
 (def STORMS-SUBTREE (str "/" STORMS-ROOT))
@@ -181,6 +184,7 @@
 (def WORKERBEATS-SUBTREE (str "/" WORKERBEATS-ROOT))
 (def ERRORS-SUBTREE (str "/" ERRORS-ROOT))
 (def CREDENTIALS-SUBTREE (str "/" CREDENTIALS-ROOT))
+(def NIMBUS-SUBTREE (str "/" NIMBUS-ROOT))
 
 (defn supervisor-path
   [id]
@@ -288,7 +292,7 @@
                          CREDENTIALS-ROOT (issue-map-callback! credentials-callback (first args))
                          ;; this should never happen
                          (exit-process! 30 "Unknown callback for subtree " subtree args)))))]
-    (doseq [p [ASSIGNMENTS-SUBTREE STORMS-SUBTREE SUPERVISORS-SUBTREE WORKERBEATS-SUBTREE ERRORS-SUBTREE]]
+    (doseq [p [NIMBUS-SUBTREE ASSIGNMENTS-SUBTREE STORMS-SUBTREE SUPERVISORS-SUBTREE WORKERBEATS-SUBTREE ERRORS-SUBTREE]]
       (mkdirs cluster-state p acls))
     (reify
       StormClusterState
@@ -319,6 +323,16 @@
         (when callback
           (swap! assignment-version-callback assoc storm-id callback))
         (get-version cluster-state (assignment-path storm-id) (not-nil? callback)))
+        
+      (register-nimbus-info 
+        [this nimbus-info]
+        (set-data cluster-state NIMBUS-SUBTREE (Utils/serialize nimbus-info) acls)) 
+        
+      (nimbus-info
+        [this]
+        (Utils/instance  (-> cluster-state
+            (get-data NIMBUS-SUBTREE false)
+            maybe-deserialize))) 
 
       (active-storms
         [this]

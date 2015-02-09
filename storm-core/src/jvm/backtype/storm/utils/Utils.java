@@ -49,10 +49,14 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.commons.lang.StringUtils;
 import org.apache.thrift.TException;
+import org.apache.thrift.transport.TTransportException;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Id;
 import org.json.simple.JSONValue;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
@@ -61,6 +65,7 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
 import backtype.storm.Config;
 import backtype.storm.generated.ComponentCommon;
 import backtype.storm.generated.ComponentObject;
+import backtype.storm.generated.ServerInfo;
 import backtype.storm.generated.StormTopology;
 import backtype.storm.generated.AuthorizationException;
 
@@ -533,4 +538,45 @@ public class Utils {
         delegate.prepare(stormConf);
         return delegate;
     }
+
+  public static ServerInfo instance(String jsonText) throws ParseException {
+    JSONParser parser = new JSONParser();
+    JSONObject jsonObject = (JSONObject) parser.parse(jsonText);
+    String host = (String) jsonObject.get("host");
+    Long port = (Long) jsonObject.get("port");
+    String version = (String) jsonObject.get("version");
+    return new ServerInfo(host, port.intValue(), version);
+  }
+
+  public static String toJsonString(ServerInfo serverInfo) {
+    JSONObject obj = new JSONObject();
+    obj.put("host", serverInfo.get_host());
+    obj.put("port", serverInfo.get_port());
+    obj.put("version", serverInfo.get_version());
+    return obj.toJSONString();
+  }
+
+  public static ServerInfo getServerInfo(Map conf, String name) throws TTransportException {
+    List<String> servers =
+        (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS);
+    int port = Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_PORT), 2181);
+    String rootDir = (String) conf.get(Config.STORM_ZOOKEEPER_ROOT);
+    ZookeeperAuthInfo auth = new ZookeeperAuthInfo(conf);
+    CuratorFramework _curator =
+        Utils.newCuratorStarted(conf, servers, port, rootDir, auth);
+    try {
+      if (_curator.checkExists().forPath("/" + name) == null) {
+        throw new RuntimeException(name + " server is not alive ! ");
+      }
+      byte[] zk_data = _curator.getData().forPath("/" + name);
+      String jsonText = (String) Utils.deserialize(zk_data);
+      return Utils.instance(jsonText);
+    } catch (Exception e) {
+      LOG.error(e.getMessage());
+      throw new TTransportException(e);
+    } finally {
+      _curator.close();
+      LOG.info("Closed Client Zookeeper Connection");
+    }
+  }
 }

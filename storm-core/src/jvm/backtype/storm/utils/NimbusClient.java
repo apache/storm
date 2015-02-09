@@ -20,6 +20,7 @@ package backtype.storm.utils;
 import backtype.storm.Config;
 import backtype.storm.security.auth.ThriftClient;
 import backtype.storm.security.auth.ThriftConnectionType;
+import backtype.storm.generated.ServerInfo;
 import backtype.storm.generated.Nimbus;
 import java.util.Map;
 import org.apache.thrift.transport.TTransportException;
@@ -32,8 +33,10 @@ public class NimbusClient extends ThriftClient {
 
     public static NimbusClient getConfiguredClient(Map conf) {
         try {
-            String nimbusHost = (String) conf.get(Config.NIMBUS_HOST);
-            return new NimbusClient(conf, nimbusHost);
+            ServerInfo serverInfo = Utils.getServerInfo(conf, "nimbus");
+            conf.put(Config.NIMBUS_HOST, serverInfo.get_host());
+            conf.put(Config.NIMBUS_THRIFT_PORT, serverInfo.get_port());
+            return new NimbusClient(conf, serverInfo.get_host());
         } catch (TTransportException ex) {
             throw new RuntimeException(ex);
         }

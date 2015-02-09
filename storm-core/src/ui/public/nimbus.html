@@ -16,7 +16,7 @@
      limitations under the License.
     -->
 <meta charset="UTF-8">
-<title>Storm UI</title>
+<title>Nimbus Information</title>
 <link href="/css/bootstrap-1.4.0.css" rel="stylesheet" type="text/css">
 <link href="/css/style.css" rel="stylesheet" type="text/css">
 <script src="/js/jquery-1.6.2.min.js" type="text/javascript"></script>
@@ -28,20 +28,15 @@
 <script src="/js/script.js" type="text/javascript"></script>
 </head>
 <body>
-<div id="ui-user">
-</div>
 <h1><a href="/">Storm UI</a></h1>
-<h2>Cluster Summary</h2>
-<div id="cluster-summary">
+<h2>Overview</h2>
+<div id="nimbus-overview">
 </div>
-<h2>Topology summary</h2>
-<div id="topology-summary">
-</div>
-<h2>Supervisor summary</h2>
-<div id="supervisor-summary">
-</div>
+<h2>Nimbus Configuration</h2>
+<div id="nimbus-configuration"></div>
 <div id="json-response-error"></div>
 </body>
+</html>
 <script>
 $(document).ajaxStop($.unblockUI);
 $(document).ajaxStart(function(){
@@ -57,35 +52,26 @@ $(document).ready(function() {
         }
     });
     var uiUser = $("#ui-user");
-    var clusterSummary = $("#cluster-summary");
-    var topologySummary = $("#topology-summary");
-    var supervisorSummary = $("#supervisor-summary");
+    var clusterSummary = $("#nimbus-overview");
+    var config = $("#nimbus-configuration");
 
     $.getJSON("/api/v1/cluster/summary",function(response,status,jqXHR) {
-        $.get("/templates/user-template.html", function(template) {
+    $.get("/templates/user-template.html", function(template) {
             uiUser.append(Mustache.render($(template).filter("#user-template").html(),response));
         });
 
         $.get("/templates/index-page-template.html", function(template) {
-            clusterSummary.append(Mustache.render($(template).filter("#cluster-summary-template").html(),response));
+            clusterSummary.append(Mustache.render($(template).filter("#nimbus-overview-template").html(),response));
         });
     });
-    $.getJSON("/api/v1/topology/summary",function(response,status,jqXHR) {
+    $.getJSON("/api/v1/cluster/configuration",function(response,status,jqXHR) {
+      var formattedResponse = formatConfigData(response);
       $.get("/templates/index-page-template.html", function(template) {
-          topologySummary.append(Mustache.render($(template).filter("#topology-summary-template").html(),response));
-          if(response["topologies"].length > 0) {
-              $("#topology-summary-table").tablesorter({ sortList: [[0,0]], headers: {4: { sorter: "stormtimestr"}}});
-              }
-      });
-    });
-    $.getJSON("/api/v1/supervisor/summary",function(response,status,jqXHR) {
-      $.get("/templates/index-page-template.html", function(template) {
-          supervisorSummary.append(Mustache.render($(template).filter("#supervisor-summary-template").html(),response));
-          if(response["supervisors"].length > 0) {
-              $("#supervisor-summary-table").tablesorter({ sortList: [[0,0]], headers: {2: { sorter: "stormtimestr"}}});
-          }
+          config.append(Mustache.render($(template).filter("#configuration-template").html(),formattedResponse));
+          $("#nimbus-configuration-table").tablesorter({ sortList: [[0,0]], headers: {}});
       });
     });
   });
 </script>
-</html>
+
+

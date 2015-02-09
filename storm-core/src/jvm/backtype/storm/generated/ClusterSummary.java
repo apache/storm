@@ -44,16 +44,19 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
   private static final org.apache.thrift.protocol.TField SUPERVISORS_FIELD_DESC = new org.apache.thrift.protocol.TField("supervisors", org.apache.thrift.protocol.TType.LIST, (short)1);
   private static final org.apache.thrift.protocol.TField NIMBUS_UPTIME_SECS_FIELD_DESC = new org.apache.thrift.protocol.TField("nimbus_uptime_secs", org.apache.thrift.protocol.TType.I32, (short)2);
   private static final org.apache.thrift.protocol.TField TOPOLOGIES_FIELD_DESC = new org.apache.thrift.protocol.TField("topologies", org.apache.thrift.protocol.TType.LIST, (short)3);
+  private static final org.apache.thrift.protocol.TField SERVER_INFO_FIELD_DESC = new org.apache.thrift.protocol.TField("server_info", org.apache.thrift.protocol.TType.STRUCT, (short)4);
 
   private List<SupervisorSummary> supervisors; // required
   private int nimbus_uptime_secs; // required
   private List<TopologySummary> topologies; // required
+  private ServerInfo server_info; // required
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift.TFieldIdEnum {
     SUPERVISORS((short)1, "supervisors"),
     NIMBUS_UPTIME_SECS((short)2, "nimbus_uptime_secs"),
-    TOPOLOGIES((short)3, "topologies");
+    TOPOLOGIES((short)3, "topologies"),
+    SERVER_INFO((short)4, "server_info");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -74,6 +77,8 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
           return NIMBUS_UPTIME_SECS;
         case 3: // TOPOLOGIES
           return TOPOLOGIES;
+        case 4: // SERVER_INFO
+          return SERVER_INFO;
         default:
           return null;
       }
@@ -128,6 +133,8 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
     tmpMap.put(_Fields.TOPOLOGIES, new org.apache.thrift.meta_data.FieldMetaData("topologies", org.apache.thrift.TFieldRequirementType.REQUIRED, 
         new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST, 
             new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, TopologySummary.class))));
+    tmpMap.put(_Fields.SERVER_INFO, new org.apache.thrift.meta_data.FieldMetaData("server_info", org.apache.thrift.TFieldRequirementType.REQUIRED, 
+        new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, ServerInfo.class)));
     metaDataMap = Collections.unmodifiableMap(tmpMap);
     org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(ClusterSummary.class, metaDataMap);
   }
@@ -138,13 +145,15 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
   public ClusterSummary(
     List<SupervisorSummary> supervisors,
     int nimbus_uptime_secs,
-    List<TopologySummary> topologies)
+    List<TopologySummary> topologies,
+    ServerInfo server_info)
   {
     this();
     this.supervisors = supervisors;
     this.nimbus_uptime_secs = nimbus_uptime_secs;
     set_nimbus_uptime_secs_isSet(true);
     this.topologies = topologies;
+    this.server_info = server_info;
   }
 
   /**
@@ -168,6 +177,9 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
       }
       this.topologies = __this__topologies;
     }
+    if (other.is_set_server_info()) {
+      this.server_info = new ServerInfo(other.server_info);
+    }
   }
 
   public ClusterSummary deepCopy() {
@@ -180,6 +192,7 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
     set_nimbus_uptime_secs_isSet(false);
     this.nimbus_uptime_secs = 0;
     this.topologies = null;
+    this.server_info = null;
   }
 
   public int get_supervisors_size() {
@@ -280,6 +293,29 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
     }
   }
 
+  public ServerInfo get_server_info() {
+    return this.server_info;
+  }
+
+  public void set_server_info(ServerInfo server_info) {
+    this.server_info = server_info;
+  }
+
+  public void unset_server_info() {
+    this.server_info = null;
+  }
+
+  /** Returns true if field server_info is set (has been assigned a value) and false otherwise */
+  public boolean is_set_server_info() {
+    return this.server_info != null;
+  }
+
+  public void set_server_info_isSet(boolean value) {
+    if (!value) {
+      this.server_info = null;
+    }
+  }
+
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case SUPERVISORS:
@@ -306,6 +342,14 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
       }
       break;
 
+    case SERVER_INFO:
+      if (value == null) {
+        unset_server_info();
+      } else {
+        set_server_info((ServerInfo)value);
+      }
+      break;
+
     }
   }
 
@@ -319,6 +363,9 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
 
     case TOPOLOGIES:
       return get_topologies();
+
+    case SERVER_INFO:
+      return get_server_info();
 
     }
     throw new IllegalStateException();
@@ -337,6 +384,8 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
       return is_set_nimbus_uptime_secs();
     case TOPOLOGIES:
       return is_set_topologies();
+    case SERVER_INFO:
+      return is_set_server_info();
     }
     throw new IllegalStateException();
   }
@@ -381,6 +430,15 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
         return false;
     }
 
+    boolean this_present_server_info = true && this.is_set_server_info();
+    boolean that_present_server_info = true && that.is_set_server_info();
+    if (this_present_server_info || that_present_server_info) {
+      if (!(this_present_server_info && that_present_server_info))
+        return false;
+      if (!this.server_info.equals(that.server_info))
+        return false;
+    }
+
     return true;
   }
 
@@ -402,6 +460,11 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
     builder.append(present_topologies);
     if (present_topologies)
       builder.append(topologies);
+
+    boolean present_server_info = true && (is_set_server_info());
+    builder.append(present_server_info);
+    if (present_server_info)
+      builder.append(server_info);
 
     return builder.toHashCode();
   }
@@ -440,6 +503,16 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
     }
     if (is_set_topologies()) {
       lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.topologies, typedOther.topologies);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_server_info()).compareTo(typedOther.is_set_server_info());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_server_info()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.server_info, typedOther.server_info);
       if (lastComparison != 0) {
         return lastComparison;
       }
@@ -505,6 +578,14 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
             org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
           }
           break;
+        case 4: // SERVER_INFO
+          if (field.type == org.apache.thrift.protocol.TType.STRUCT) {
+            this.server_info = new ServerInfo();
+            this.server_info.read(iprot);
+          } else { 
+            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
         default:
           org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
       }
@@ -545,6 +626,11 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
       }
       oprot.writeFieldEnd();
     }
+    if (this.server_info != null) {
+      oprot.writeFieldBegin(SERVER_INFO_FIELD_DESC);
+      this.server_info.write(oprot);
+      oprot.writeFieldEnd();
+    }
     oprot.writeFieldStop();
     oprot.writeStructEnd();
   }
@@ -573,6 +659,14 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
       sb.append(this.topologies);
     }
     first = false;
+    if (!first) sb.append(", ");
+    sb.append("server_info:");
+    if (this.server_info == null) {
+      sb.append("null");
+    } else {
+      sb.append(this.server_info);
+    }
+    first = false;
     sb.append(")");
     return sb.toString();
   }
@@ -589,6 +683,10 @@ public class ClusterSummary implements org.apache.thrift.TBase<ClusterSummary, C
 
     if (!is_set_topologies()) {
       throw new org.apache.thrift.protocol.TProtocolException("Required field 'topologies' is unset! Struct:" + toString());
+    }
+
+    if (!is_set_server_info()) {
+      throw new org.apache.thrift.protocol.TProtocolException("Required field 'server_info' is unset! Struct:" + toString());
     }
 
   }

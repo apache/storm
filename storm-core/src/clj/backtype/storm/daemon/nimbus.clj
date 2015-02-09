@@ -18,11 +18,12 @@
            [java.util Collections])
   (:import [java.io FileNotFoundException])
   (:import [java.nio.channels Channels WritableByteChannel])
+  (:import [backtype.storm.utils VersionInfo])
   (:import [backtype.storm.security.auth ThriftServer ThriftConnectionType ReqContext AuthUtils])
   (:use [backtype.storm.scheduler.DefaultScheduler])
   (:import [backtype.storm.scheduler INimbus SupervisorDetails WorkerSlot TopologyDetails
             Cluster Topologies SchedulerAssignment SchedulerAssignmentImpl DefaultScheduler ExecutorDetails])
-  (:import [backtype.storm.generated AuthorizationException GetInfoOptions
+  (:import [backtype.storm.generated AuthorizationException ServerInfo GetInfoOptions
                                      NumErrorsChoice])
   (:use [backtype.storm bootstrap util])
   (:use [backtype.storm.config :only [validate-configs-with-schemas]])
@@ -878,6 +879,15 @@
         (log-error "Cleaning inbox ... error deleting: " (.getName f))
         ))))
 
+(defn register-nimbus-host! [nimbus]
+  (let [storm-cluster-state (:storm-cluster-state nimbus)
+        nimbus-conf (:conf nimbus)
+        local-hostname (memoized-local-hostname)
+        port (nimbus-conf NIMBUS-THRIFT-PORT)
+        version (str (VersionInfo/getBuildVersion))
+        server-info (ServerInfo. local-hostname port version)]
+        (.register-nimbus-info storm-cluster-state (Utils/toJsonString server-info))))
+
 (defn cleanup-corrupt-topologies! [nimbus]
   (let [storm-cluster-state (:storm-cluster-state nimbus)
         code-ids (set (code-ids (:conf nimbus)))
@@ -990,6 +1000,7 @@
   (log-message "Starting Nimbus with conf " conf)
   (let [nimbus (nimbus-data conf inimbus)
        principal-to-local (AuthUtils/GetPrincipalToLocalPlugin conf)]
+    (register-nimbus-host! nimbus)   
     (.prepare ^backtype.storm.nimbus.ITopologyValidator (:validator nimbus) conf)
     (cleanup-corrupt-topologies! nimbus)
     (doseq [storm-id (.active-storms (:storm-cluster-state nimbus))]
@@ -1223,6 +1234,7 @@
       (^ClusterSummary getClusterInfo [this]
         (check-authorization! nimbus nil nil "getClusterInfo")
         (let [storm-cluster-state (:storm-cluster-state nimbus)
+              nimbus-info (.nimbus-info storm-cluster-state)
               supervisor-infos (all-supervisor-info storm-cluster-state)
               ;; TODO: need to get the port info about supervisors...
               ;; in standalone just look at metadata, otherwise just say N/A?
@@ -1260,7 +1272,8 @@
                                           ))]
           (ClusterSummary. supervisor-summaries
                            nimbus-uptime
-                           topology-summaries)
+                           topology-summaries
+                           nimbus-info)
           ))
       
       (^TopologyInfo getTopologyInfoWithOpts [this ^String storm-id ^GetInfoOptions options]
