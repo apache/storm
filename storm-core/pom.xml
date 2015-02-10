@@ -24,14 +24,16 @@
     </parent>
     <groupId>org.apache.storm</groupId>
     <artifactId>storm-core</artifactId>
-    <packaging>jar</packaging>
     <name>Storm Core</name>
     <description>Storm Core Java API and Clojure implementation.</description>
 
     <properties>
+        <packaging.type>jar</packaging.type>
         <worker-launcher.conf.dir>/etc/storm</worker-launcher.conf.dir>
         <worker-launcher.additional_cflags></worker-launcher.additional_cflags>
     </properties>
+
+    <packaging>${packaging.type}</packaging>
 
     <dependencies>
         <!--clojure-->
@@ -531,10 +533,35 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>  
+                <groupId>org.apache.maven.plugins</groupId>  
+                <artifactId>maven-war-plugin</artifactId>  
+                <version>2.2</version>  
+                <configuration>  
+                    <webResources>  
+                      <resource>                      
+                          <directory>src/ui/public</directory>  
+                      </resource>  
+                   </webResources>  
+                </configuration>  
+           </plugin> 
         </plugins>
     </build>
 
     <profiles>
+        <profile>
+                <activation>
+                        <property>
+                                <name>war</name>
+                        </property>
+                </activation>
+                <properties>
+                        <packaging.type>war</packaging.type>
+                </properties>
+                <build>
+                        <finalName>storm-ui</finalName>
+                </build>
+        </profile>
         <profile>
             <id>coverage</id>
             <activation><activeByDefault>true</activeByDefault></activation>
