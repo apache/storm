@@ -197,7 +197,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
             @Override
             public void run() {
                 if(!closing && backgroundFlushingEnabled.get() && nowMillis() > nextBackgroundFlushTimeMs.get()) {
-                    LOG.info("flushing {} pending messages to {} in background", messageBatch.size(),
+                    LOG.debug("flushing {} pending messages to {} in background", messageBatch.size(),
                         dstAddressPrefixedName);
                     flushPendingMessages();
                 }
