@@ -264,7 +264,8 @@
             assignment-info (:data (@assignment-versions storm-id))
             new-executor-ids (set (read-worker-executors assignment-info assignment-id port))]
         (if (not= new-executor-ids old-executor-ids)
-          (let [executors-to-launch (set/difference new-executor-ids old-executor-ids)
+          (let [_ (log-message "Syncing executors " old-executor-ids " -> " new-executor-ids)
+                executors-to-launch (set/difference new-executor-ids old-executor-ids)
                 executors-to-kill (set/difference old-executor-ids new-executor-ids)
                 executor-receive-queue-map (merge
                                              (mk-receive-queue-map conf executors-to-launch)
