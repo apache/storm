@@ -569,6 +569,10 @@
 (defn write-log-metadata! [storm-conf user worker-id storm-id port conf]
   (let [data {TOPOLOGY-SUBMITTER-USER user
               "worker-id" worker-id
+              LOGS-GROUPS (sort (distinct (remove nil?
+                                           (concat
+                                             (storm-conf LOGS-GROUPS)
+                                             (storm-conf TOPOLOGY-GROUPS)))))
               LOGS-USERS (sort (distinct (remove nil?
                                            (concat
                                              (storm-conf LOGS-USERS)
@@ -614,6 +618,9 @@
           storm-options (System/getProperty "storm.options")
           storm-conf-file (System/getProperty "storm.conf.file")
           storm-log-dir (or (System/getProperty "storm.log.dir") (str storm-home file-path-separator "logs"))
+          storm-conf (read-storm-config)
+          storm-log-conf-dir (storm-conf "storm.logback.conf.dir")
+          storm-logback-conf-dir (or storm-log-conf-dir (str storm-home file-path-separator "logback"))
           stormroot (supervisor-stormdist-root conf storm-id)
           jlp (jlp stormroot conf)
           stormjar (supervisor-stormjar-path stormroot)
@@ -646,7 +653,7 @@
                      (str "-Dstorm.conf.file=" storm-conf-file)
                      (str "-Dstorm.options=" storm-options)
                      (str "-Dstorm.log.dir=" storm-log-dir)
-                     (str "-Dlogback.configurationFile=" storm-home file-path-separator "logback" file-path-separator "worker.xml")
+                     (str "-Dlogback.configurationFile=" storm-logback-conf-dir file-path-separator "worker.xml")
                      (str "-Dstorm.id=" storm-id)
                      (str "-Dworker.id=" worker-id)
                      (str "-Dworker.port=" port)

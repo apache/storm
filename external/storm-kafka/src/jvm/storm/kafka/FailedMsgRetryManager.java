@@ -1,4 +1,4 @@
-/*
+/**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -17,6 +17,10 @@
  */
 package storm.kafka;
 
-public class UpdateOffsetException extends RuntimeException {
-
+public interface FailedMsgRetryManager {
+    public void failed(Long offset);
+    public void acked(Long offset);
+    public void retryStarted(Long offset);
+    public Long nextFailedMessageToRetry();
+    public boolean shouldRetryMsg(Long offset);
 }
