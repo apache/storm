@@ -215,11 +215,24 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
 
     private synchronized void flushPendingMessages() {
         Channel channel = channelRef.get();
-        if (containsMessages(messageBatch) && connectionEstablished(channel) && channel.isWritable()) {
-            pauseBackgroundFlushing();
-            MessageBatch toBeFlushed = messageBatch;
-            flushMessages(channel, toBeFlushed);
-            messageBatch = null;
+        if (containsMessages(messageBatch)) {
+            if (connectionEstablished(channel)) {
+                if (channel.isWritable()) {
+                    pauseBackgroundFlushing();
+                    MessageBatch toBeFlushed = messageBatch;
+                    flushMessages(channel, toBeFlushed);
+                    messageBatch = null;
+                }
+                else if (closing) {
+                    // Ensure background flushing is enabled so that we definitely have a chance to re-try the flush
+                    // operation in case the client is being gracefully closed (where we have a brief time window where
+                    // the client will wait for pending messages to be sent).
+                    resumeBackgroundFlushing();
+                }
+            }
+            else {
+                closeChannelAndReconnect(channel);
+            }
         }
     }
 
