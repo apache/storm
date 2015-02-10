@@ -122,45 +122,45 @@ class Server extends ConnectionWithStatus implements IStatefulObject {
     }
     
     private ArrayList<TaskMessage>[] groupMessages(List<TaskMessage> msgs) {
-      ArrayList<TaskMessage> messageGroups[] = new ArrayList[queueCount];
-      
-      for (int i = 0; i < msgs.size(); i++) {
-        TaskMessage message = msgs.get(i);
-        int task = message.task();
-        
-        if (task == -1) {
-          closing = true;
-          return null;
+        ArrayList<TaskMessage> messageGroups[] = new ArrayList[queueCount];
+
+        for (int i = 0; i < msgs.size(); i++) {
+            TaskMessage message = msgs.get(i);
+            int task = message.task();
+
+            if (task == -1) {
+                closing = true;
+                return null;
+            }
+
+            Integer queueId = getMessageQueueId(task);
+
+            if (null == messageGroups[queueId]) {
+                messageGroups[queueId] = new ArrayList<TaskMessage>();
+            }
+            messageGroups[queueId].add(message);
         }
-        
-        Integer queueId = getMessageQueueId(task);
-        
-        if (null == messageGroups[queueId]) {
-          messageGroups[queueId] = new ArrayList<TaskMessage>();
-        }
-        messageGroups[queueId].add(message);
-      }
-      return messageGroups;
+        return messageGroups;
     }
     
     private Integer getMessageQueueId(int task) {
-      // try to construct the map from taskId -> queueId in round robin manner.
-      Integer queueId = taskToQueueId.get(task);
-      if (null == queueId) {
-        synchronized (this) {
-          queueId = taskToQueueId.get(task);
-          if (queueId == null) {
-            queueId = roundRobinQueueId++;
-            if (roundRobinQueueId == queueCount) {
-              roundRobinQueueId = 0;
+        // try to construct the map from taskId -> queueId in round robin manner.
+        Integer queueId = taskToQueueId.get(task);
+        if (null == queueId) {
+            synchronized (this) {
+                queueId = taskToQueueId.get(task);
+                if (queueId == null) {
+                    queueId = roundRobinQueueId++;
+                    if (roundRobinQueueId == queueCount) {
+                        roundRobinQueueId = 0;
+                    }
+                    HashMap<Integer, Integer> newRef = new HashMap<Integer, Integer>(taskToQueueId);
+                    newRef.put(task, queueId);
+                    taskToQueueId = newRef;
+                }
             }
-            HashMap<Integer, Integer> newRef = new HashMap<Integer, Integer>(taskToQueueId);
-            newRef.put(task, queueId);
-            taskToQueueId = newRef;
-          }
         }
-      }
-      return queueId;
+        return queueId;
     }
 
     private void addReceiveCount(String from, int amount) {
@@ -187,56 +187,55 @@ class Server extends ConnectionWithStatus implements IStatefulObject {
      * @throws InterruptedException
      */
     protected void enqueue(List<TaskMessage> msgs, String from) throws InterruptedException {
-      
-      if (null == msgs || msgs.size() == 0 || closing) {
-        return;
-      }
-      addReceiveCount(from, msgs.size());
-      ArrayList<TaskMessage> messageGroups[] = groupMessages(msgs);
-      
-      if (null == messageGroups || closing) {
-        return;
-      }
-      
-      for (int receiverId = 0; receiverId < messageGroups.length; receiverId++) {
-        ArrayList<TaskMessage> msgGroup = messageGroups[receiverId];
-        if (null != msgGroup) {
-          message_queue[receiverId].put(msgGroup);
-          pendingMessages[receiverId].addAndGet(msgGroup.size());
+        if (null == msgs || msgs.size() == 0 || closing) {
+            return;
         }
-      }
+        addReceiveCount(from, msgs.size());
+        ArrayList<TaskMessage> messageGroups[] = groupMessages(msgs);
+
+        if (null == messageGroups || closing) {
+            return;
+        }
+
+        for (int receiverId = 0; receiverId < messageGroups.length; receiverId++) {
+            ArrayList<TaskMessage> msgGroup = messageGroups[receiverId];
+            if (null != msgGroup) {
+                message_queue[receiverId].put(msgGroup);
+                pendingMessages[receiverId].addAndGet(msgGroup.size());
+            }
+        }
     }
 
-  public Iterator<TaskMessage> recv(int flags, int receiverId) {
-    if (closing) {
-      return closeMessage.iterator();
-    }
+    public Iterator<TaskMessage> recv(int flags, int receiverId) {
+        if (closing) {
+            return closeMessage.iterator();
+        }
 
-    ArrayList<TaskMessage> ret = null;
-    int queueId = receiverId % queueCount;
-    if ((flags & 0x01) == 0x01) {
-      //non-blocking
-      ret = message_queue[queueId].poll();
-    }
-    else {
-      try {
-        ArrayList<TaskMessage> request = message_queue[queueId].take();
-        LOG.debug("request to be processed: {}", request);
-        ret = request;
-      }
-      catch (InterruptedException e) {
-        LOG.info("exception within msg receiving", e);
-        ret = null;
-      }
-    }
+        ArrayList<TaskMessage> ret = null;
+        int queueId = receiverId % queueCount;
+        if ((flags & 0x01) == 0x01) {
+            //non-blocking
+            ret = message_queue[queueId].poll();
+        }
+        else {
+            try {
+                ArrayList<TaskMessage> request = message_queue[queueId].take();
+                LOG.debug("request to be processed: {}", request);
+                ret = request;
+            }
+            catch (InterruptedException e) {
+                LOG.info("exception within msg receiving", e);
+                ret = null;
+            }
+        }
 
-    if (null != ret) {
-      messagesDequeued.addAndGet(ret.size());
-      pendingMessages[queueId].addAndGet(0 - ret.size());
-      return ret.iterator();
+        if (null != ret) {
+            messagesDequeued.addAndGet(ret.size());
+            pendingMessages[queueId].addAndGet(0 - ret.size());
+            return ret.iterator();
+        }
+        return null;
     }
-    return null;
-  }
    
     /**
      * register a newly created channel
