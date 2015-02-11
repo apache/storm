@@ -383,7 +383,6 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
             }
 
             messageBatch.add(message);
-            // TODO: What shall we do if the channel is not writable?
             if (messageBatch.isFull()) {
                 MessageBatch toBeFlushed = messageBatch;
                 flushMessages(channel, toBeFlushed);
