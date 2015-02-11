@@ -362,7 +362,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
                 dstAddressPrefixedName);
             return;
         }
-        
+
         if (!hasMessages(msgs)) {
             return;
         }
@@ -496,10 +496,10 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
     private boolean containsMessages(MessageBatch batch) {
         return batch != null && !batch.isEmpty();
     }
-    
+
     /**
      * Gracefully close this client.
-     * 
+     *
      * We will attempt to send any pending messages (i.e. messages currently buffered in memory) before closing the
      * client.
      */
