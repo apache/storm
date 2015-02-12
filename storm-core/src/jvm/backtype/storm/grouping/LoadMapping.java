@@ -61,4 +61,8 @@ public class LoadMapping {
     public double get(int task) {
         return getLoad(task).getLoad();
     }
+
+    public String toString() {
+        return "LoadMapping: local: "+_local.get()+" remote: "+_remote.get();
+    }
 }
