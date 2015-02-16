@@ -57,6 +57,17 @@
 			
 			<p:column>
 				<f:facet name="header">
+					<h:outputText value="Conf" />
+				</f:facet>
+            	<h:outputLink value="conf.jsf" target="_blank">
+                    <h:outputText value="conf" />
+                    <f:param name="clusterName" value="#{param.clusterName}" />
+                    <f:param name="host" value="#{ssumm.ip}" />
+                </h:outputLink>
+			</p:column>
+			
+			<p:column>
+				<f:facet name="header">
 					<h:outputText value="Logs" />
 				</f:facet>
             	<h:outputLink value="listlog.jsf" target="_blank">

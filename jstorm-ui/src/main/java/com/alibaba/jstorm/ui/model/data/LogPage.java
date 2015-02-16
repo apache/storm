@@ -30,6 +30,7 @@ import com.alibaba.jstorm.ui.model.ComponentTask;
 import com.alibaba.jstorm.ui.model.LogPageIndex;
 import com.alibaba.jstorm.utils.HttpserverUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
+import com.alibaba.jstorm.utils.NetWorkUtils;
 
 /**
  * task log view page service. <br />
@@ -306,7 +307,7 @@ public class LogPage implements Serializable {
 	 */
 	private void queryLog(Map conf) {
 		// PROXY_URL = "http://%s:%s/logview?%s=%s&log=%s";
-		String baseUrl = String.format(PROXY_URL, host, port,
+		String baseUrl = String.format(PROXY_URL, NetWorkUtils.host2Ip(host), port,
 				HttpserverUtils.HTTPSERVER_LOGVIEW_PARAM_CMD,
 				HttpserverUtils.HTTPSERVER_LOGVIEW_PARAM_CMD_SHOW, logFileName);
 		String url = baseUrl;

@@ -13,13 +13,13 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import backtype.storm.Config;
 import backtype.storm.GenericOptionsParser;
 import backtype.storm.messaging.IContext;
 import backtype.storm.utils.LocalState;
-import backtype.storm.utils.Time;
 
 import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.cluster.Common;
@@ -32,6 +32,7 @@ import com.alibaba.jstorm.daemon.worker.WorkerShutdown;
 import com.alibaba.jstorm.message.zeroMq.MQContext;
 import com.alibaba.jstorm.task.LocalAssignment;
 import com.alibaba.jstorm.utils.JStormUtils;
+import com.alibaba.jstorm.utils.Pair;
 import com.alibaba.jstorm.utils.PathUtils;
 import com.alibaba.jstorm.utils.TimeFormat;
 import com.alibaba.jstorm.utils.TimeUtils;
@@ -55,6 +56,12 @@ class SyncProcessEvent extends ShutdownWork {
 	private CgroupManager cgroupManager;
 
 	private SandBoxMaker sandBoxMaker;
+
+	/**
+	 * Due to the worker startTime is put in Supervisor memory,
+	 * When supervisor restart, the starting worker is likely to be killed
+	 */
+	private Map<String, Pair<Integer, Integer>> workerIdToStartTimeAndPort;
 
 	// private Supervisor supervisor;
 
@@ -84,6 +91,8 @@ class SyncProcessEvent extends ShutdownWork {
 		this.sharedContext = sharedContext;
 
 		this.sandBoxMaker = new SandBoxMaker(conf);
+
+		this.workerIdToStartTimeAndPort = new HashMap<String, Pair<Integer, Integer>>();
 
 		if (ConfigExtension.isEnableCgroup(conf)) {
 			cgroupManager = new CgroupManager(conf);
@@ -141,6 +150,9 @@ class SyncProcessEvent extends ShutdownWork {
 			 */
 			Set<Integer> keepPorts = killUselessWorkers(localWorkerStats);
 
+			// check new workers
+			checkNewWorkers(conf);
+
 			// start new workers
 			startNewWorkers(keepPorts, localAssignments);
 
@@ -152,63 +164,57 @@ class SyncProcessEvent extends ShutdownWork {
 	}
 
 	/**
-	 * wait for all workers of the supervisor launch
+	 * mark all new Workers
 	 * 
-	 * @param conf
 	 * @param workerIds
-	 * @throws InterruptedException
-	 * @throws IOException
 	 * @pdOid 52b11418-7474-446d-bff5-0ecd68f4954f
 	 */
-	public void waitForWorkersLaunch(Map conf, Collection<String> workerIds)
-			throws IOException, InterruptedException {
+	public void markAllNewWorkers(Map<Integer, String> workerIds) {
 
 		int startTime = TimeUtils.current_time_secs();
 
-		for (String workerId : workerIds) {
+		for (Entry<Integer, String> entry : workerIds.entrySet()) {
 
-			waitForWorkerLaunch(conf, workerId, startTime);
+			workerIdToStartTimeAndPort.put(entry.getValue(),
+					new Pair<Integer, Integer>(startTime, entry.getKey()));
+
 		}
 	}
 
 	/**
-	 * wait for worker launch if the time is not > *
+	 * check new workers if the time is not > *
 	 * SUPERVISOR_WORKER_START_TIMEOUT_SECS, otherwise info failed
 	 * 
 	 * @param conf
-	 * @param workerId
-	 * @param startTime
-	 * @throws IOException
-	 * @throws InterruptedException
 	 * @pdOid f0a6ab43-8cd3-44e1-8fd3-015a2ec51c6a
 	 */
-	public void waitForWorkerLaunch(Map conf, String workerId, int startTime)
-			throws IOException, InterruptedException {
+	public void checkNewWorkers(Map conf) throws IOException,
+			InterruptedException {
 
-		LocalState ls = StormConfig.worker_state(conf, workerId);
-
-		while (true) {
-
+		Set<String> workers = new HashSet<String>();
+		for (Entry<String, Pair<Integer, Integer>> entry : workerIdToStartTimeAndPort
+				.entrySet()) {
+			String workerId = entry.getKey();
+			int startTime = entry.getValue().getFirst();
+			LocalState ls = StormConfig.worker_state(conf, workerId);
 			WorkerHeartbeat whb = (WorkerHeartbeat) ls
 					.get(Common.LS_WORKER_HEARTBEAT);
-			if (whb == null
-					&& ((TimeUtils.current_time_secs() - startTime) < JStormUtils
-							.parseInt(conf
-									.get(Config.SUPERVISOR_WORKER_START_TIMEOUT_SECS)))) {
-				LOG.info(workerId + " still hasn't started");
-				Time.sleep(500);
+			if (whb == null) {
+				if ((TimeUtils.current_time_secs() - startTime) < JStormUtils
+						.parseInt(conf
+								.get(Config.SUPERVISOR_WORKER_START_TIMEOUT_SECS))) {
+					LOG.info(workerId + " still hasn't started");
+				} else {
+					LOG.error("Failed to start Worker " + workerId);
+					workers.add(workerId);
+				}
 			} else {
-				// whb is valid or timeout
-				break;
+				LOG.info("Successfully start worker " + workerId);
+				workers.add(workerId);
 			}
 		}
-
-		WorkerHeartbeat whb = (WorkerHeartbeat) ls
-				.get(Common.LS_WORKER_HEARTBEAT);
-		if (whb == null) {
-			LOG.error("Failed to start Worker " + workerId);
-		} else {
-			LOG.info("Successfully start worker " + workerId);
+		for (String workerId : workers) {
+			this.workerIdToStartTimeAndPort.remove(workerId);
 		}
 	}
 
@@ -261,7 +267,11 @@ class SyncProcessEvent extends ShutdownWork {
 
 				state = State.timedOut;
 			} else {
-				state = State.valid;
+				if (isWorkerDead(workerid)) {
+					state = State.timedOut;
+				}else {
+					state = State.valid;
+				}
 			}
 
 			if (state != State.valid) {
@@ -397,7 +407,48 @@ class SyncProcessEvent extends ShutdownWork {
 		workerThreadPidsAtom.put(workerId, pid);
 
 	}
+	
+	// filter conflict jar
+	private Set<String> setFilterJars(Map totalConf) {
+		Set<String> filterJars = new HashSet<String>();
+		
+		boolean enableClassloader = ConfigExtension.isEnableTopologyClassLoader(totalConf);
+		if (enableClassloader == false) {
+			//avoid logback vs log4j conflict
+			boolean enableLogback = false;
+			String userDefLogbackConf = ConfigExtension.getUserDefinedLogbackConf(totalConf);
+			if (StringUtils.isBlank(userDefLogbackConf) == false) {
+				enableLogback = true;
+			}
+			
+			if (enableLogback == true) {
+				filterJars.add("slf4j-log4j");
+				filterJars.add("log4j");
+				
+			}else {
+				filterJars.add("log4j-over-slf4j");
+			}
+		}
 
+		LOG.info("Remove jars " + filterJars);
+		return filterJars;
+	}
+
+	public static boolean isKeyContain(Collection<String> collection, String jar) {
+		if (collection == null) {
+			return false;
+		}
+		File file = new File(jar);
+		String fileName = file.getName();
+		for(String item : collection) {
+			
+			if (fileName.startsWith(item)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	private String getClassPath(String stormjar, String stormHome, Map totalConf) {
 
 		// String classpath = JStormUtils.current_classpath() + ":" + stormjar;
@@ -410,6 +461,9 @@ class SyncProcessEvent extends ShutdownWork {
 		Set<String> classSet = new HashSet<String>();
 
 		for (String classJar : classpathes) {
+			if (StringUtils.isBlank(classJar) == true) {
+				continue;
+			}
 			classSet.add(classJar);
 		}
 
@@ -434,30 +488,15 @@ class SyncProcessEvent extends ShutdownWork {
 
 		}
 
-		// filter jeromq.jar/jzmq.jar to avoid ZMQ.class conflict
-		String filterJarKeyword = null;
-		String transport_plugin_klassName = (String) totalConf
-				.get(Config.STORM_MESSAGING_TRANSPORT);
-		if (transport_plugin_klassName.equals(MQContext.class
-				.getCanonicalName())) {
-			filterJarKeyword = "jeromq";
-		} else if (transport_plugin_klassName
-				.equals("com.alibaba.jstorm.message.jeroMq.JMQContext")) {
-			filterJarKeyword = "jzmq";
-		}
+		Set<String> filterJars = setFilterJars(totalConf);
 
 		StringBuilder sb = new StringBuilder();
-		if (filterJarKeyword != null) {
-			for (String jar : classSet) {
-				if (jar.contains(filterJarKeyword)) {
-					continue;
-				}
-				sb.append(jar + ":");
+		for (String jar : classSet) {
+			if (isKeyContain(filterJars, jar)) {
+				LOG.info("Remove " + jar);
+				continue;
 			}
-		} else {
-			for (String jar : classSet) {
-				sb.append(jar + ":");
-			}
+			sb.append(jar + ":");
 		}
 
 		if (ConfigExtension.isEnableTopologyClassLoader(totalConf)) {
@@ -481,6 +520,42 @@ class SyncProcessEvent extends ShutdownWork {
 
 		return childopts;
 	}
+	
+	public String getLogParameter(Map conf, String stormHome, String topologyName, int port) {
+		String logFileName = JStormUtils.genLogName(
+				topologyName, port);
+		// String logFileName = topologyId + "-worker-" + port + ".log";
+		
+		StringBuilder commandSB = new StringBuilder();
+		commandSB.append(" -Dlogfile.name=");
+		commandSB.append(logFileName);
+		// commandSB.append(" -Dlog4j.ignoreTCL=true");
+		
+		String userDefLogConf = ConfigExtension.getUserDefinedLog4jConf(conf);
+		
+		String logConf = System.getProperty("log4j.configuration");
+		
+		if (StringUtils.isBlank(userDefLogConf) == false) {
+			LOG.info("Use user fined log4j conf " + userDefLogConf);
+			commandSB.append(" -Dlog4j.configuration=").append(userDefLogConf);
+		}else if (StringUtils.isBlank(logConf) == false) {
+			commandSB.append(" -Dlog4j.configuration=").append(logConf);
+		}else if (StringUtils.isBlank(stormHome) == false){
+			commandSB.append(" -Dlog4j.configuration=File:")
+				.append(stormHome)
+				.append(File.separator).append("conf").append(File.separator)
+				.append("jstorm.log4j.properties");
+		}else {
+			commandSB.append(" -Dlog4j.configuration=File:jstorm.log4j.properties");
+		}
+		
+		String userDefLogbackConf = ConfigExtension.getUserDefinedLogbackConf(conf);
+		if (StringUtils.isBlank(userDefLogbackConf) == false) {
+			commandSB.append(" -Dlogback.configurationFile=").append(userDefLogbackConf);
+		}
+		
+		return commandSB.toString();
+	}
 
 	private String getGcDumpParam(Map totalConf) {
 		// String gcPath = ConfigExtension.getWorkerGcPath(totalConf);
@@ -497,7 +572,8 @@ class SyncProcessEvent extends ShutdownWork {
 		gc.append("%TOPOLOGYID%-worker-%ID%-");
 		gc.append(nowStr);
 		gc.append("-gc.log -verbose:gc -XX:HeapDumpPath=");
-		gc.append(gcPath);
+		gc.append(gcPath).append(File.separator).append("java-%TOPOLOGYID%-")
+			.append(nowStr).append(".hprof");
 		gc.append(" ");
 
 		return gc.toString();
@@ -550,13 +626,6 @@ class SyncProcessEvent extends ShutdownWork {
 
 		childopts += getGcDumpParam(totalConf);
 
-		childopts = childopts.replace("%ID%", port.toString());
-		childopts = childopts.replace("%TOPOLOGYID%", topologyId);
-		if (stormhome != null) {
-			childopts = childopts.replace("%JSTORM_HOME%", stormhome);
-		} else {
-			childopts = childopts.replace("%JSTORM_HOME%", "./");
-		}
 		Map<String, String> environment = new HashMap<String, String>();
 
 		if (ConfigExtension.getWorkerRedirectOutput(totalConf)) {
@@ -564,9 +633,6 @@ class SyncProcessEvent extends ShutdownWork {
 		} else {
 			environment.put("REDIRECT", "false");
 		}
-
-		 String logFileName = JStormUtils.genLogName(assignment.getTopologyName(), port);
-		//String logFileName = topologyId + "-worker-" + port + ".log";
 
 		environment.put("LD_LIBRARY_PATH",
 				(String) totalConf.get(Config.JAVA_LIBRARY_PATH));
@@ -597,23 +663,12 @@ class SyncProcessEvent extends ShutdownWork {
 		commandSB.append(" -Djava.library.path=");
 		commandSB.append((String) totalConf.get(Config.JAVA_LIBRARY_PATH));
 
-		commandSB.append(" -Dlogfile.name=");
-		commandSB.append(logFileName);
-
-		// commandSB.append(" -Dlog4j.ignoreTCL=true");
-
 		if (stormhome != null) {
-			// commandSB.append(" -Dlogback.configurationFile=" + stormhome +
-			// "/conf/cluster.xml");
-			commandSB.append(" -Dlog4j.configuration=File:" + stormhome
-					+ "/conf/jstorm.log4j.properties");
 			commandSB.append(" -Djstorm.home=");
 			commandSB.append(stormhome);
-		} else {
-			// commandSB.append(" -Dlogback.configurationFile=cluster.xml");
-			commandSB
-					.append(" -Dlog4j.configuration=File:jstorm.log4j.properties");
-		}
+		} 
+		
+		commandSB.append(getLogParameter(totalConf, stormhome, assignment.getTopologyName(), port));
 
 		String classpath = getClassPath(stormjar, stormhome, totalConf);
 		String workerClassPath = (String) totalConf
@@ -658,10 +713,19 @@ class SyncProcessEvent extends ShutdownWork {
 		commandSB.append(" ");
 		commandSB.append(workerClassPath + ":" + stormjar);
 
-		LOG.info("Launching worker with command: " + commandSB);
+		String cmd = commandSB.toString();
+		cmd = cmd.replace("%ID%", port.toString());
+		cmd = cmd.replace("%TOPOLOGYID%", topologyId);
+		if (stormhome != null) {
+			cmd = cmd.replace("%JSTORM_HOME%", stormhome);
+		} else {
+			cmd = cmd.replace("%JSTORM_HOME%", "./");
+		}
+		
+		LOG.info("Launching worker with command: " + cmd);
 		LOG.info("Environment:" + environment.toString());
 
-		JStormUtils.launch_process(commandSB.toString(), environment, true);
+		JStormUtils.launch_process(cmd, environment, true);
 	}
 
 	private Set<Integer> killUselessWorkers(
@@ -673,17 +737,20 @@ class SyncProcessEvent extends ShutdownWork {
 
 			String workerid = entry.getKey();
 			StateHeartbeat hbstate = entry.getValue();
+			if (workerIdToStartTimeAndPort.containsKey(workerid))
+				continue;
 
 			if (hbstate.getState().equals(State.valid)) {
 				// hbstate.getHeartbeat() won't be null
 				keepPorts.add(hbstate.getHeartbeat().getPort());
 			} else {
 				if (hbstate.getHeartbeat() != null) {
-					removed.put(workerid, hbstate.getHeartbeat().getTopologyId());
-				}else {
+					removed.put(workerid, hbstate.getHeartbeat()
+							.getTopologyId());
+				} else {
 					removed.put(workerid, null);
 				}
-				
+
 				StringBuilder sb = new StringBuilder();
 				sb.append("Shutting down and clearing state for id ");
 				sb.append(workerid);
@@ -693,12 +760,16 @@ class SyncProcessEvent extends ShutdownWork {
 				LOG.info(sb);
 			}
 		}
-		
-		shutWorker(conf, supervisorId, removed, workerThreadPids, cgroupManager);
 
+		shutWorker(conf, supervisorId, removed, workerThreadPids, cgroupManager);
 
 		for (String removedWorkerId : removed.keySet()) {
 			localWorkerStats.remove(removedWorkerId);
+		}
+		// new workers need be keep
+		for (Entry<String, Pair<Integer, Integer>> entry : workerIdToStartTimeAndPort
+				.entrySet()) {
+			keepPorts.add(entry.getValue().getSecond());
 		}
 
 		return keepPorts;
@@ -771,14 +842,41 @@ class SyncProcessEvent extends ShutdownWork {
 		 * FIXME, workerIds should be Set, not Collection, but here simplify the
 		 * logic
 		 */
-		Collection<String> workerIds = newWorkerIds.values();
+		markAllNewWorkers(newWorkerIds);
+		// try {
+		// waitForWorkersLaunch(conf, workerIds);
+		// } catch (IOException e) {
+		// LOG.error(e + " waitForWorkersLaunch failed");
+		// } catch (InterruptedException e) {
+		// LOG.error(e + " waitForWorkersLaunch failed");
+		// }
+	}
+	
+	boolean isWorkerDead(String workerId) {
+		
 		try {
-			waitForWorkersLaunch(conf, workerIds);
+			List<String> pids = getPid(conf, workerId);
+			if (pids == null || pids.size() == 0) {
+				//local mode doesn't exist pid
+				return false;
+			}
+			// if all pid in pids are dead, then the worker is dead
+			for (String pid : pids) {
+				boolean isDead = JStormUtils.isProcDead(pid);
+				if (isDead == true) {
+					LOG.info("Found " + workerId + " is dead " );
+				}else {
+					return false;
+				}
+			}
+			
+			return true;
 		} catch (IOException e) {
-			LOG.error(e + " waitForWorkersLaunch failed");
-		} catch (InterruptedException e) {
-			LOG.error(e + " waitForWorkersLaunch failed");
+			LOG.info("Failed to check whether worker is dead through /proc/pid", e);
+			return false;
 		}
+		
+		
 	}
 
 }

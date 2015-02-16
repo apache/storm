@@ -16,7 +16,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import org.apache.log4j.Logger;
 
 import backtype.storm.generated.StormTopology;
-import backtype.storm.generated.ThriftResourceType;
 import backtype.storm.scheduler.WorkerSlot;
 
 import com.alibaba.jstorm.client.ConfigExtension;
@@ -24,19 +23,17 @@ import com.alibaba.jstorm.cluster.Cluster;
 import com.alibaba.jstorm.cluster.StormBase;
 import com.alibaba.jstorm.cluster.StormClusterState;
 import com.alibaba.jstorm.cluster.StormConfig;
-import com.alibaba.jstorm.cluster.StormStatus;
 import com.alibaba.jstorm.cluster.StormMonitor;
+import com.alibaba.jstorm.cluster.StormStatus;
 import com.alibaba.jstorm.daemon.supervisor.SupervisorInfo;
 import com.alibaba.jstorm.schedule.IToplogyScheduler;
 import com.alibaba.jstorm.schedule.TopologyAssignContext;
 import com.alibaba.jstorm.schedule.default_assign.DefaultTopologyScheduler;
-import com.alibaba.jstorm.utils.JStromServerConfigExtension;
 import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
 import com.alibaba.jstorm.task.Assignment;
 import com.alibaba.jstorm.task.AssignmentBak;
 import com.alibaba.jstorm.utils.FailedAssignTopologyException;
 import com.alibaba.jstorm.utils.JStormUtils;
-import com.alibaba.jstorm.utils.JStromServerConfigExtension;
 import com.alibaba.jstorm.utils.PathUtils;
 import com.alibaba.jstorm.utils.TimeUtils;
 
@@ -172,12 +169,8 @@ public class TopologyAssign implements Runnable {
 		for (String topologyId : cleanupIds) {
 
 			LOG.info("Cleaning up " + topologyId);
-
-			// remove ZK nodes /taskbeats/topologyId and
-			// /taskerror/topologyId
-			clusterState.teardown_heartbeats(topologyId);
-			clusterState.teardown_task_errors(topologyId);
-
+			
+			clusterState.try_remove_storm(topologyId);
 			//
 			nimbusData.getTaskHeartbeatsCache().remove(topologyId);
 
@@ -188,7 +181,7 @@ public class TopologyAssign implements Runnable {
 				// delete topologyId local dir
 				PathUtils.rmr(master_stormdist_root);
 			} catch (IOException e) {
-				LOG.error("Failed to delete " + master_stormdist_root + ",", e);
+				LOG.warn("Failed to delete " + master_stormdist_root + ",", e);
 			}
 		}
 	}
@@ -203,9 +196,12 @@ public class TopologyAssign implements Runnable {
 	private Set<String> get_cleanup_ids(StormClusterState clusterState,
 			List<String> active_topologys) throws Exception {
 
-		// get ZK /taskbeats/topology list and /taskerror/topology list
+
+		List<String> task_ids = clusterState.task_storms();
 		List<String> heartbeat_ids = clusterState.heartbeat_storms();
 		List<String> error_ids = clusterState.task_error_storms();
+		List<String> assignment_ids = clusterState.assignments(null);
+		List<String> monitor_ids = clusterState.monitors();
 
 		String master_stormdist_root = StormConfig
 				.masterStormdistRoot(nimbusData.getConf());
@@ -216,15 +212,31 @@ public class TopologyAssign implements Runnable {
 		// Set<String> assigned_ids =
 		// JStormUtils.listToSet(clusterState.active_storms());
 		Set<String> to_cleanup_ids = new HashSet<String>();
+		
+		if (task_ids != null) {
+			to_cleanup_ids.addAll(task_ids);
+		}
+		
 		if (heartbeat_ids != null) {
 			to_cleanup_ids.addAll(heartbeat_ids);
 		}
+		
 		if (error_ids != null) {
 			to_cleanup_ids.addAll(error_ids);
 		}
+		
+		if (assignment_ids != null) {
+			to_cleanup_ids.addAll(assignment_ids);
+		}
+		
+		if (monitor_ids != null) {
+			to_cleanup_ids.addAll(monitor_ids);
+		}
+		
 		if (code_ids != null) {
 			to_cleanup_ids.addAll(code_ids);
 		}
+		
 		if (active_topologys != null) {
 			to_cleanup_ids.removeAll(active_topologys);
 		}
@@ -329,6 +341,7 @@ public class TopologyAssign implements Runnable {
 			aliveTasks = getAliveTasks(topologyId, allTaskIds);
 			unstoppedTasks = getUnstoppedSlots(aliveTasks, supInfos,
 					existingAssignment);
+
 			deadTasks.addAll(allTaskIds);
 			deadTasks.removeAll(aliveTasks);
 		}
@@ -360,13 +373,11 @@ public class TopologyAssign implements Runnable {
 				unstoppedWorkers = getUnstoppedWorkers(unstoppedTasks,
 						existingAssignment);
 				ret.setUnstoppedWorkers(unstoppedWorkers);
-
 			} else {
 				ret.setAssignType(TopologyAssignContext.ASSIGN_TYPE_MONITOR);
-				unstoppedWorkers = getUnstoppedWorkers(allTaskIds,
+				unstoppedWorkers = getUnstoppedWorkers(aliveTasks,
 						existingAssignment);
 				ret.setUnstoppedWorkers(unstoppedWorkers);
-
 			}
 		}
 

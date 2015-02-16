@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.UnknownHostException;
+import java.security.InvalidParameterException;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 /**
@@ -95,6 +97,24 @@ public class NetWorkUtils {
 			return ip;
 		}
 		return address.getHostName();
+	}
+	
+	public static boolean equals(String host1, String host2) {
+		
+		
+		if (StringUtils.equalsIgnoreCase(host1, host2) == true) {
+			return true;
+		}
+		
+		if (host1 == null || host2 == null) {
+			return false;
+		}
+		
+		String ip1 = host2Ip(host1);
+		String ip2 = host2Ip(host2);
+		
+		return StringUtils.equalsIgnoreCase(ip1, ip2);
+		
 	}
 	
 }

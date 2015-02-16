@@ -22,6 +22,7 @@ import com.alibaba.jstorm.daemon.worker.WorkerMetricInfo;
 import com.alibaba.jstorm.metric.MetricDef;
 import com.alibaba.jstorm.task.TaskMetricInfo;
 import com.alibaba.jstorm.task.Assignment;
+import com.alibaba.jstorm.utils.JStormUtils;
 
 public class UploadSupervMetric extends RunnableCallback {
 	private static Logger LOG = Logger.getLogger(UploadSupervMetric.class);
@@ -160,6 +161,8 @@ public class UploadSupervMetric extends RunnableCallback {
 			        taskKV.putAll(taskMetric.getHistogramData());
 			    }
 			    
+			    taskKV.put("Task_Error_Info", getTaskErrInfo(topologyId, taskId));
+			    
 			    jsonMsgTasks.add(taskKV);
 			} catch (Exception e) {
 				LOG.error("Failed to buildTaskJsonMsg, taskID=" + taskId + ", e=" + e);
@@ -197,6 +200,34 @@ public class UploadSupervMetric extends RunnableCallback {
 				LOG.error("Failed to buildWorkerJsonMsg, workerId=" + workerId + ", e=" + e);
 			}
 		}
+	}
+	
+	public String getTaskErrInfo(String topologyId, int taskId) {
+		String ret = null;
+		long currTime = System.currentTimeMillis()/1000;
+		
+		try {
+		    List<String> errorTimeStamps = cluster.task_error_time(topologyId, taskId);
+		    
+		    // Only send the errors which ocurr during last min
+		    for (String time : errorTimeStamps) {
+		    	long errTime = JStormUtils.parseLong(time);
+		    	if (currTime - errTime < ConfigExtension.getTaskErrorReportInterval(conf)) {
+		    		String errInfo = cluster.task_error_info(topologyId, taskId, errTime);
+		    		if (errInfo.indexOf("queue is full") == -1) {
+		    		    if (ret == null)
+		    		        ret = errInfo;
+		    		    else
+                            ret = ret + "; " + errInfo;
+		    		}
+		    	}
+		    }
+		} catch (Exception e) {
+			LOG.error("Failed to read task error info for topo=" + topologyId + ", taskId=" + taskId 
+					+ ". Cause is \"" + e.getMessage() + "\"");
+		}
+		
+		return ret;
 	}
 
 	public void clean() {

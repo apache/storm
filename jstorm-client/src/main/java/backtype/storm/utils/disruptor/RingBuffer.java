@@ -11,12 +11,13 @@ import com.lmax.disruptor.EventTranslatorThreeArg;
 import com.lmax.disruptor.EventTranslatorTwoArg;
 import com.lmax.disruptor.EventTranslatorVararg;
 import com.lmax.disruptor.InsufficientCapacityException;
-import com.lmax.disruptor.MultiProducerSequencer;
 import com.lmax.disruptor.Sequence;
 import com.lmax.disruptor.SequenceBarrier;
 import com.lmax.disruptor.Sequencer;
 import com.lmax.disruptor.WaitStrategy;
 import com.lmax.disruptor.dsl.ProducerType;
+import backtype.storm.utils.disruptor.MultiProducerSequencer;
+import backtype.storm.utils.disruptor.SingleProducerSequencer;
 
 /**
  * Ring based store of reusable entries containing the data representing

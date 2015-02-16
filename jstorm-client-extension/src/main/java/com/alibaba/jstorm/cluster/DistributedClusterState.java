@@ -18,6 +18,7 @@ import backtype.storm.Config;
 
 import com.alibaba.jstorm.callback.ClusterStateCallback;
 import com.alibaba.jstorm.callback.WatcherCallBack;
+import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.PathUtils;
 import com.alibaba.jstorm.zk.Zookeeper;
 
@@ -127,6 +128,8 @@ public class DistributedClusterState implements ClusterState {
 
 	@Override
 	public void set_data(String path, byte[] data) throws Exception {
+	    if (data.length > (JStormUtils.SIZE_1_K * 800))
+	        throw new Exception("Writing 800k+ data into ZK is not allowed!");
 		if (zkobj.exists(zk, path, false)) {
 			zkobj.setData(zk, path, data);
 		} else {

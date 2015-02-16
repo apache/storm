@@ -16,6 +16,7 @@ import org.apache.log4j.Logger;
 import backtype.storm.scheduler.WorkerSlot;
 
 import com.alibaba.jstorm.client.WorkerAssignment;
+import com.alibaba.jstorm.utils.NetWorkUtils;
 
 //one worker 's assignment
 public class ResourceWorkerSlot extends WorkerSlot implements Serializable {
@@ -117,7 +118,7 @@ public class ResourceWorkerSlot extends WorkerSlot implements Serializable {
 		if (jvm != null && !jvm.equals(this.jvm))
 			return false;
 		String hostName = worker.getHostName();
-		if (hostName != null && !hostName.equals(this.hostname))
+		if (NetWorkUtils.equals(hostname, hostName) == false)
 			return false;
 		int port = worker.getPort();
 		if (port != 0 && port != this.getPort())
@@ -132,13 +133,7 @@ public class ResourceWorkerSlot extends WorkerSlot implements Serializable {
 			}
 			myComponentToNum.put(component, ++i);
 		}
-		if (componentToNum.size() != myComponentToNum.size())
-			return false;
-		for (Entry<String, Integer> entry : componentToNum.entrySet()) {
-			if (myComponentToNum.get(entry.getKey()) == null
-					|| myComponentToNum.get(entry.getKey()) != entry.getValue())
-				return false;
-		}
-		return true;
+
+		return myComponentToNum.equals(componentToNum);
 	}
 }

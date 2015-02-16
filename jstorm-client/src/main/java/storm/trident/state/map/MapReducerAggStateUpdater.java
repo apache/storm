@@ -37,8 +37,8 @@ public class MapReducerAggStateUpdater implements StateUpdater<MapState> {
     public void updateState(MapState map, List<TridentTuple> tuples, TridentCollector collector) {
         Map<List<Object>, List<TridentTuple>> grouped = new HashMap();
         
-        List<List<Object>> groups = new ArrayList<List<Object>>(tuples.size());
-        List<Object> values = new ArrayList<Object>(tuples.size());
+        //List<List<Object>> groups = new ArrayList<List<Object>>(tuples.size());
+        //List<Object> values = new ArrayList<Object>(tuples.size());
         for(TridentTuple t: tuples) {
             List<Object> group = _groupFactory.create(t);
             List<TridentTuple> groupTuples = grouped.get(group);

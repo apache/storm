@@ -1,9 +1,11 @@
 package backtype.storm.transactional.state;
 
 import backtype.storm.transactional.TransactionalSpoutCoordinator;
+
 import java.math.BigInteger;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -114,8 +116,9 @@ public class RotatingTransactionalState {
 	}
 
 	public void cleanupBefore(BigInteger txid) {
-		SortedMap<BigInteger, Object> toDelete = _curr.headMap(txid);
-		for (BigInteger tx : new HashSet<BigInteger>(toDelete.keySet())) {
+		Set<BigInteger> toDelete = new HashSet<BigInteger>();
+		toDelete.addAll(_curr.headMap(txid).keySet());
+		for (BigInteger tx : toDelete) {
 			_curr.remove(tx);
 			_state.delete(txPath(tx));
 		}

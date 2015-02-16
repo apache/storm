@@ -12,6 +12,7 @@ import com.alibaba.jstorm.daemon.nimbus.StatusType;
 import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
 import com.alibaba.jstorm.task.Assignment;
 import com.alibaba.jstorm.utils.TimeFormat;
+import com.alibaba.jstorm.task.TaskInfo;
 
 /**
  * 

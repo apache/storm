@@ -199,6 +199,12 @@ struct WorkerSummary {
   3: required list<TaskSummary> tasks
 }
 
+struct UserDefMetric {
+  1: required string type;
+  2: required string name;
+  3: required double value;
+}
+
 struct TopologyInfo {
   1: required string id;
   2: required string name;
@@ -206,6 +212,7 @@ struct TopologyInfo {
   4: required list<WorkerSummary> workers;
   5: required string status;
   6: required list<TaskSummary> tasks;
+  7: optional list<UserDefMetric> userDefMetric;
 }
 
 struct SupervisorWorkers {
@@ -260,7 +267,6 @@ struct TopologyMetricInfo {
 service Nimbus {
   void submitTopology(1: string name, 2: string uploadedJarLocation, 3: string jsonConf, 4: StormTopology topology) throws (1: AlreadyAliveException e, 2: InvalidTopologyException ite, 3: TopologyAssignException tae);
   void submitTopologyWithOpts(1: string name, 2: string uploadedJarLocation, 3: string jsonConf, 4: StormTopology topology, 5: SubmitOptions options) throws (1: AlreadyAliveException e, 2: InvalidTopologyException ite, 3:TopologyAssignException tae);
-  void submitTopologyAfterRestart(1: string name, 2: string jsonConf) throws (1: InvalidTopologyException ite, 2:TopologyAssignException tae);
   void killTopology(1: string name) throws (1: NotAliveException e);
   void killTopologyWithOpts(1: string name, 2: KillOptions options) throws (1: NotAliveException e);
   void activate(1: string name) throws (1: NotAliveException e);
@@ -285,6 +291,7 @@ service Nimbus {
   // stats functions
   ClusterSummary getClusterInfo();
   TopologyInfo getTopologyInfo(1: string id) throws (1: NotAliveException e);
+  TopologyInfo getTopologyInfoByName(1: string topologyName) throws (1: NotAliveException e);
   SupervisorWorkers getSupervisorWorkers(1: string host) throws (1: NotAliveException e);
   //returns json
   string getTopologyConf(1: string id) throws (1: NotAliveException e);

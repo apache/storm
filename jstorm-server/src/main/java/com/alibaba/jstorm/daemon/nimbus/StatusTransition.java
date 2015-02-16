@@ -46,6 +46,12 @@ public class StatusTransition {
 			lock = new Object();
 			topologyLocks.put(topologyid, lock);
 		}
+		
+		if (data.getIsShutdown().get() == true) {
+			LOG.info("Nimbus is in shutdown, skip this event " +
+					topologyid + ":" +changeStatus);
+			return ;
+		}
 
 		synchronized (lock) {
 			transitionLock(topologyid, errorOnNoTransition, changeStatus, args);

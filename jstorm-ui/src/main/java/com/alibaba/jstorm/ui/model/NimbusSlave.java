@@ -19,10 +19,18 @@ public class NimbusSlave implements Serializable {
 	private String uptime;
 	
 	public NimbusSlave(String hostname, String uptime, int port) {
-		this.hostname = hostname;
+		
+		if (hostname.contains(":")) {
+			String firstPart = hostname.substring(0, hostname.indexOf(":") );
+			String lastPart = hostname.substring(hostname.indexOf(":"));
+			this.hostname = (NetWorkUtils.ip2Host(firstPart) + lastPart);
+			this.ip =  (NetWorkUtils.host2Ip(firstPart));
+		} else {
+			this.hostname = hostname;
+			this.ip = (NetWorkUtils.host2Ip(hostname));
+		}
+		
 		this.uptime = uptime;
-		String[] fields = StringUtils.split(hostname, ":");
-		this.ip = NetWorkUtils.host2Ip(fields[0]);
 		this.logviewPort = String.valueOf(port);
 	}
 	

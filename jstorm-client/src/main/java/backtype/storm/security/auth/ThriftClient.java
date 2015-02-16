@@ -24,9 +24,8 @@ public class ThriftClient {
 	private static final String MASTER_PATH = "/nimbus_master";
 	private TTransport _transport;
 	protected TProtocol _protocol;
-	private CuratorFramework zkobj;
 	private String masterHost;
-	private final String zkMasterDir;
+
 	private Map<Object, Object> conf;
 
 	public ThriftClient(Map storm_conf) throws Exception {
@@ -36,31 +35,47 @@ public class ThriftClient {
 	@SuppressWarnings("unchecked")
 	public ThriftClient(Map storm_conf, Integer timeout) throws Exception {
 		conf = storm_conf;
-		String root = String.valueOf(storm_conf
-				.get(Config.STORM_ZOOKEEPER_ROOT));
-		zkMasterDir = root + MASTER_PATH;
+		masterHost = getMaster(storm_conf, timeout);
+		connect(storm_conf, timeout);
+	}
+	
+	public static String getMaster(Map storm_conf, Integer timeout) throws Exception {
+		CuratorFramework zkobj = null;
+		String  masterHost = null;
+		
+		try {
+			String root = String.valueOf(storm_conf
+					.get(Config.STORM_ZOOKEEPER_ROOT));
+			String zkMasterDir = root + MASTER_PATH;
+	
+			
+			zkobj = Utils.newCurator(storm_conf,
+					(List<String>) storm_conf.get(Config.STORM_ZOOKEEPER_SERVERS),
+					storm_conf.get(Config.STORM_ZOOKEEPER_PORT), zkMasterDir);
+			zkobj.start();
+			if (zkobj.checkExists().forPath("/") == null) {
+				throw new RuntimeException("No alive nimbus ");
+			}
+			
+			masterHost = new String(zkobj.getData().forPath("/"));
 
-		LOG.info("zkServer:"
-				+ (List<String>) storm_conf.get(Config.STORM_ZOOKEEPER_SERVERS)
-				+ ", zkPort:"
-				+ Utils.getInt(storm_conf.get(Config.STORM_ZOOKEEPER_PORT)));
-		zkobj = Utils.newCurator(storm_conf,
-				(List<String>) storm_conf.get(Config.STORM_ZOOKEEPER_SERVERS),
-				storm_conf.get(Config.STORM_ZOOKEEPER_PORT), zkMasterDir);
-		zkobj.start();
-		if (zkobj.checkExists().forPath("/") == null)
-			throw new RuntimeException("No alive nimbus ");
-		flushClient(storm_conf, timeout);
+			LOG.info("masterHost:"  + masterHost);
+			return masterHost;
+		}finally {
+			if (zkobj != null) {
+				zkobj.close();
+				zkobj = null;
+			}
+		}
 	}
 
 	public TTransport transport() {
 		return _transport;
 	}
 
-	protected void flushClient(Map storm_conf, Integer timeout)
+	protected void connect(Map storm_conf, Integer timeout)
 			throws Exception {
 		try {
-			flushHost();
 			String[] host_port = masterHost.split(":");
 			if (host_port.length != 2) {
 				throw new InvalidParameterException("Host format error: "
@@ -84,11 +99,7 @@ public class ThriftClient {
 			if (port <= 0) {
 				throw new IllegalArgumentException("invalid port: " + port);
 			}
-//			/***************only test for daily *************/
-//			if (host.endsWith("bja")) {
-//				host += ".tbsite.net";
-//			}
-//			/***************only test for daily *************/
+
 			TSocket socket = new TSocket(host, port);
 			if (timeout != null) {
 				socket.setTimeout(timeout);
@@ -104,16 +115,13 @@ public class ThriftClient {
 		if (_transport != null)
 			_protocol = new TBinaryProtocol(_transport);
 	}
+	
+	
 
-	private void flushHost() throws Exception {
-		masterHost = new String(zkobj.getData().forPath("/"));
-	}
 
 	public void close() {
 		if (_transport != null)
 			_transport.close();
-		if (zkobj != null)
-			zkobj.close();
 	}
 
 	public String getMasterHost() {

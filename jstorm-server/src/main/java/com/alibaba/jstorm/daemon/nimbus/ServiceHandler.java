@@ -19,6 +19,7 @@ import java.util.TreeMap;
 import java.util.UUID;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.thrift7.TException;
 
@@ -30,8 +31,8 @@ import backtype.storm.generated.ClusterSummary;
 import backtype.storm.generated.ComponentCommon;
 import backtype.storm.generated.InvalidTopologyException;
 import backtype.storm.generated.KillOptions;
-import backtype.storm.generated.Nimbus.Iface;
 import backtype.storm.generated.MonitorOptions;
+import backtype.storm.generated.Nimbus.Iface;
 import backtype.storm.generated.NotAliveException;
 import backtype.storm.generated.RebalanceOptions;
 import backtype.storm.generated.SpoutSpec;
@@ -40,20 +41,21 @@ import backtype.storm.generated.StormTopology;
 import backtype.storm.generated.SubmitOptions;
 import backtype.storm.generated.SupervisorSummary;
 import backtype.storm.generated.SupervisorWorkers;
+import backtype.storm.generated.TaskMetricData;
 import backtype.storm.generated.TaskSummary;
 import backtype.storm.generated.TopologyAssignException;
 import backtype.storm.generated.TopologyInfo;
 import backtype.storm.generated.TopologyInitialStatus;
-import backtype.storm.generated.TopologySummary;
-import backtype.storm.generated.WorkerSummary;
 import backtype.storm.generated.TopologyMetricInfo;
-import backtype.storm.generated.TaskMetricData;
+import backtype.storm.generated.TopologySummary;
 import backtype.storm.generated.WorkerMetricData;
+import backtype.storm.generated.WorkerSummary;
+import backtype.storm.generated.UserDefMetric;
 import backtype.storm.utils.BufferFileInputStream;
 import backtype.storm.utils.TimeCacheMap;
 import backtype.storm.utils.Utils;
 
-import com.alibaba.jstorm.client.ConfigExtension;
+import com.alibaba.jstorm.callback.impl.RemoveTransitionCallback;
 import com.alibaba.jstorm.cluster.Cluster;
 import com.alibaba.jstorm.cluster.Common;
 import com.alibaba.jstorm.cluster.DaemonCommon;
@@ -62,15 +64,15 @@ import com.alibaba.jstorm.cluster.StormClusterState;
 import com.alibaba.jstorm.cluster.StormConfig;
 import com.alibaba.jstorm.daemon.supervisor.SupervisorInfo;
 import com.alibaba.jstorm.daemon.worker.WorkerMetricInfo;
-import com.alibaba.jstorm.utils.JStromServerConfigExtension;
+import com.alibaba.jstorm.daemon.worker.metrics.MetricKVMsg;
 import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
 import com.alibaba.jstorm.task.Assignment;
 import com.alibaba.jstorm.task.TaskInfo;
 import com.alibaba.jstorm.task.TaskMetricInfo;
 import com.alibaba.jstorm.utils.FailedAssignTopologyException;
 import com.alibaba.jstorm.utils.JStormUtils;
-import com.alibaba.jstorm.utils.JStromServerConfigExtension;
 import com.alibaba.jstorm.utils.NetWorkUtils;
+import com.alibaba.jstorm.utils.PathUtils;
 import com.alibaba.jstorm.utils.Thrift;
 import com.alibaba.jstorm.utils.TimeUtils;
 
@@ -177,13 +179,14 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 
 			stormConf = NimbusUtils.normalizeConf(conf, serializedConf,
 					topology);
+			LOG.info("Normalized configuration:" + stormConf);
 
 			Map<Object, Object> totalStormConf = new HashMap<Object, Object>(
 					conf);
 			totalStormConf.putAll(stormConf);
 
 			StormTopology normalizedTopology = NimbusUtils.normalizeTopology(
-					stormConf, topology, false);
+					stormConf, topology, true);
 
 			// this validates the structure of the topology
 			Common.validate_basic(normalizedTopology, totalStormConf,
@@ -247,112 +250,6 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 
 	}
 	
-	@ Override
-	public void submitTopologyAfterRestart(String topologyname,
-            String jsonConf)
-			throws InvalidTopologyException,TopologyAssignException, TException {
-		LOG.info("Restart " + topologyname);
-		// @@@ Move validate topologyname in client code
-		try {
-			checkTopologyActive(data, topologyname, false);
-		} catch (AlreadyAliveException e) {
-			LOG.info("Fail to kill " + topologyname + " before restarting");
-			return;
-		} catch (Throwable e) {
-			LOG.info("Failed to check whether topology is alive or not", e);
-			throw new TException(e);
-		}
-		
-		int counter = data.getSubmittedCount().incrementAndGet();
-		String topologyId = topologyname + "-" + counter + "-"
-				+ TimeUtils.current_time_secs();
-
-		String stormDistDir = null;
-	    String stormTmpDir = null;
-		try {
-			// For topology restart, when conf is changed, only stormconf.ser 
-			// and stormcode.ser will be updated. storm.jar will be kept the same.
-			
-			// Copy storm files back to stormdist dir from the tmp dir
-			stormDistDir = StormConfig.masterStormdistRoot(conf, topologyId);
-		    stormTmpDir = StormConfig.masterStormTmpRoot(conf, topologyname);
-		    FileUtils.copyDirectory(new File(stormTmpDir), new File(stormDistDir));
-		    StormTopology topology = StormConfig.read_nimbus_topology_code(conf, topologyId);
-    
-		    if (jsonConf != null) {
-		    	// Update stormconf.ser
-		    	Map serConf = StormConfig.read_nimbusTmp_topology_conf(conf, topologyname);
-			    Map<Object, Object> newSerConf = (Map<Object, Object>) JStormUtils
-					    .from_json(jsonConf);
-                serConf.putAll(newSerConf);
-		    
-                Map<Object, Object> stormConf = NimbusUtils.normalizeConf(conf, serConf,
-					    topology);
-
-                File stormConfFile = new File(StormConfig.stormconf_path(stormDistDir));
-                if (stormConfFile.exists()) stormConfFile.delete();
-                FileUtils.writeByteArrayToFile(stormConfFile, Utils.serialize(stormConf));
-
-                // Update stormcode.ser
-                StormTopology normalizedTopology = NimbusUtils.normalizeTopology(
-					    stormConf, topology, true);
-                File stormCodeFile = new File(StormConfig.stormcode_path(stormDistDir));
-                if (stormCodeFile.exists()) stormCodeFile.delete();
-                FileUtils.writeByteArrayToFile(stormCodeFile, Utils.serialize(normalizedTopology));
-		    }
-		    
-			// generate TaskInfo for every bolt or spout in ZK
-			// /ZK/tasks/topoologyId/xxx
-            StormClusterState stormClusterState = data.getStormClusterState();
-			setupZkTaskInfo(conf, topologyId, stormClusterState);
-
-			// make assignments for a topology
-			LOG.info("Submit for " + topologyname + " with conf " + jsonConf);
-            makeAssignment(topologyname, topologyId, TopologyInitialStatus.ACTIVE);
-		} catch (FailedAssignTopologyException e) {
-			StringBuilder sb = new StringBuilder();
-			sb.append("Fail to sumbit topology, Root cause:");
-			if (e.getMessage() == null) {
-				sb.append("submit timeout");
-			} else {
-				sb.append(e.getMessage());
-			}
-
-			sb.append("\n\n");
-			sb.append("topologyId:" + topologyId + "\n");
-			LOG.error(sb.toString(), e);
-			throw new TopologyAssignException(sb.toString());
-		} catch (InvalidParameterException e) {
-			StringBuilder sb = new StringBuilder();
-			sb.append("Fail to sumbit topology ");
-			sb.append(e.getMessage());
-			sb.append(", cause:" + e.getCause());
-			sb.append("\n\n");
-			sb.append("topologyId:" + topologyId + "\n");
-			LOG.error(sb.toString(), e);
-			throw new InvalidParameterException(sb.toString());
-		} catch (Throwable e) {
-			StringBuilder sb = new StringBuilder();
-			sb.append("Fail to sumbit topology ");
-			sb.append(e.getMessage());
-			sb.append(", cause:" + e.getCause());
-			sb.append("\n\n");
-			sb.append("topologyId:" + topologyId + "\n");
-			LOG.error(sb.toString(), e);
-			throw new TopologyAssignException(sb.toString());
-		} finally {
-			if (stormTmpDir != null) {
-				try {
-			        File dir = new File(stormTmpDir);
-			        if (dir.exists()) FileUtils.deleteDirectory(dir);
-				} catch (Exception e) {
-					LOG.error("Failed to delete stormTmpDir=" + stormTmpDir, e);
-				}
-			}
-		}
-
-	}
-
 	/**
 	 * kill topology
 	 * 
@@ -479,51 +376,106 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 	}
 	
 	@Override
-	public void restart(String name, String jsonConf) throws NotAliveException, 
-	    InvalidTopologyException, TopologyAssignException, org.apache.thrift7.TException {
+	public void restart(String name, String jsonConf) throws NotAliveException,
+			InvalidTopologyException, TopologyAssignException,
+			org.apache.thrift7.TException {
+		LOG.info("Begin to restart " + name + ", new configuration:" + jsonConf);
+
+		// 1. get topologyId 
+		StormClusterState stormClusterState = data.getStormClusterState();
 		String topologyId = null;
-		
-		// Copy topology files into a tmp dir and copy the new conf.ser to this dir
 		try {
-		    topologyId = NimbusUtils.findTopoFileInStormdist(data, name);
-		    if (topologyId != null) {
-		        String srcDir = StormConfig.masterStormdistRoot(conf, topologyId);
-		        String destDir = StormConfig.masterStormTmpRoot(conf, name);		    
-		        FileUtils.copyDirectory(new File(srcDir), new File(destDir));
-		    } else {
-		    	String errorInfo = "Topology=" + name + " is not exist!";
-		    	throw new InvalidTopologyException(errorInfo);
-		    }
-		} catch (Exception e) {
-			LOG.info("InvalidTopologyException: " + e.getMessage());
-			throw new InvalidTopologyException(e.getMessage());
+			topologyId = Cluster.get_topology_id(stormClusterState,
+					name);
+		} catch (Exception e2) {
+			topologyId = null;
 		}
-		
+		if (topologyId == null) {
+			LOG.info("No topology of " + name);
+			throw new NotAliveException("No topology of " + name);
+		}
+
 		// Restart the topology: Deactivate -> Kill -> Submit
-		// 1. Deactivate
+		// 2. Deactivate
 		deactivate(name);
 		JStormUtils.sleepMs(5000);
-		
-		// 2. Kill
-		KillOptions options = new KillOptions();
-		options.set_wait_secs(1);
-		killTopologyWithOpts(name, options);
-		// Wait for supervisors to kill the old topology
-		int delay = (JStormUtils.parseInt(conf.get(
-			Config.SUPERVISOR_MONITOR_FREQUENCY_SECS)))*1000 + 5000;
-		JStormUtils.sleepMs(delay);
-		
-		// 3. Submit
-		submitTopologyAfterRestart(name, jsonConf);
+		LOG.info("Deactivate " + name);
+
+		// 3. backup old jar/configuration/topology
+		StormTopology topology = null;
+
+		Map topologyConf = null;
+		String topologyCodeLocation = null;
+		try {
+			topology = StormConfig.read_nimbus_topology_code(conf, topologyId);
+
+			topologyConf = StormConfig.read_nimbus_topology_conf(conf,
+					topologyId);
+			if (jsonConf != null) {
+				Map<Object, Object> newConf = (Map<Object, Object>) JStormUtils
+						.from_json(jsonConf);
+				topologyConf.putAll(newConf);
+			}
+
+			// Copy storm files back to stormdist dir from the tmp dir
+			String oldDistDir = StormConfig.masterStormdistRoot(conf,
+					topologyId);
+			String parent = StormConfig.masterInbox(conf);
+			topologyCodeLocation = parent + PathUtils.SEPERATOR + topologyId;
+			FileUtils.forceMkdir(new File(topologyCodeLocation));
+			FileUtils.cleanDirectory(new File(topologyCodeLocation));
+			FileUtils.copyDirectory(new File(oldDistDir), new File(
+					topologyCodeLocation));
+			
+
+			LOG.info("Successfully read old jar/conf/topology " + name);
+		} catch (Exception e) {
+			LOG.error("Failed to read old jar/conf/topology", e);
+			if (topologyCodeLocation != null) {
+				try {
+					PathUtils.rmr(topologyCodeLocation);
+				} catch (IOException e1) {
+
+				}
+			}
+			throw new TException("Failed to read old jar/conf/topology ");
+
+		}
+
+		// 4. Kill
+		// directly use remove command to kill, more stable than issue kill cmd
+		RemoveTransitionCallback killCb = new RemoveTransitionCallback(data,
+				topologyId);
+		killCb.execute(new Object[0]);
+		LOG.info("Successfully kill the topology " + name);
+
+		// 5. submit
+		try {
+			submitTopology(name, topologyCodeLocation ,
+					JStormUtils.to_json(topologyConf), topology);
+
+		} catch (AlreadyAliveException e) {
+			LOG.info("Failed to kill the topology" + name);
+			throw new TException("Failed to kill the topology" + name);
+		} finally {
+			try {
+				PathUtils.rmr(topologyCodeLocation);
+			} catch (IOException e1) {
+
+			}
+		}
+
 	}
 
 	@Override
 	public void beginLibUpload(String libName) throws TException {
 		try {
+			String parent = PathUtils.parent_path(libName);
+			PathUtils.local_mkdirs(parent);
 			data.getUploaders().put(libName,
 					Channels.newChannel(new FileOutputStream(libName)));
 			LOG.info("Begin upload file from client to " + libName);
-		} catch (FileNotFoundException e) {
+		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			LOG.error("Fail to upload jar " + libName, e);
 			throw new TException(e);
@@ -873,6 +825,58 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 			throw new TException(e);
 		}
 	}
+	
+
+
+	/**
+	 * Get TopologyInfo, it contain all data of the topology running status
+	 * 
+	 * @return TopologyInfo
+	 */
+	public TopologyInfo getTopologyInfo(String topologyId, StormBase base)
+			throws Exception {
+		
+		StormClusterState stormClusterState = data.getStormClusterState();
+
+		TopologyInfo topologyInfo = new TopologyInfo();
+		
+		topologyInfo.set_id(topologyId);
+		topologyInfo.set_name(base.getStormName());
+		topologyInfo.set_uptime_secs(TimeUtils.time_delta(base
+				.getLanchTimeSecs()));
+		topologyInfo.set_status(base.getStatusString());
+
+		// get topology's Assignment
+		Assignment assignment = stormClusterState.assignment_info(
+				topologyId, null);
+		if (assignment == null) {
+			throw new TException("Failed to get StormBase from ZK of "
+					+ topologyId);
+		}
+
+		// get topology's map<taskId, componentId>
+		Map<Integer, String> taskInfo = Cluster.topology_task_info(
+				stormClusterState, topologyId);
+
+		Map<Integer, TaskSummary> tasks = NimbusUtils.mkTaskSummary(
+				stormClusterState, assignment, taskInfo, topologyId);
+		List<TaskSummary> taskSumms = new ArrayList<TaskSummary>();
+		for (Entry<Integer, TaskSummary> entry : tasks.entrySet()) {
+			taskSumms.add(entry.getValue());
+		}
+		topologyInfo.set_tasks(taskSumms);
+		List<WorkerSummary> workers = NimbusUtils.mkWorkerSummary(
+				topologyId, assignment, tasks);
+		topologyInfo.set_workers(workers);
+
+		// get user defined metrics data
+		List<UserDefMetric> udm = new ArrayList<UserDefMetric>();
+		udm = getUserDefMetrics(topologyId);
+		topologyInfo.set_userDefMetric(udm);
+		
+		return topologyInfo;
+
+	}
 
 	/**
 	 * Get TopologyInfo, it contain all data of the topology running status
@@ -883,8 +887,6 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 	public TopologyInfo getTopologyInfo(String topologyId)
 			throws NotAliveException, TException {
 
-		TopologyInfo topologyInfo = new TopologyInfo();
-
 		StormClusterState stormClusterState = data.getStormClusterState();
 
 		try {
@@ -894,36 +896,7 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 			if (base == null) {
 				throw new NotAliveException("No topology of " + topologyId);
 			}
-			topologyInfo.set_id(topologyId);
-			topologyInfo.set_name(base.getStormName());
-			topologyInfo.set_uptime_secs(TimeUtils.time_delta(base
-					.getLanchTimeSecs()));
-			topologyInfo.set_status(base.getStatusString());
-
-			// get topology's Assignment
-			Assignment assignment = stormClusterState.assignment_info(
-					topologyId, null);
-			if (assignment == null) {
-				throw new TException("Failed to get StormBase from ZK of "
-						+ topologyId);
-			}
-
-			// get topology's map<taskId, componentId>
-			Map<Integer, String> taskInfo = Cluster.topology_task_info(
-					stormClusterState, topologyId);
-
-			Map<Integer, TaskSummary> tasks = NimbusUtils.mkTaskSummary(
-					stormClusterState, assignment, taskInfo, topologyId);
-			List<TaskSummary> taskSumms = new ArrayList<TaskSummary>();
-			for (Entry<Integer, TaskSummary> entry : tasks.entrySet()) {
-				taskSumms.add(entry.getValue());
-			}
-			topologyInfo.set_tasks(taskSumms);
-			List<WorkerSummary> workers = NimbusUtils.mkWorkerSummary(
-					topologyId, assignment, tasks);
-			topologyInfo.set_workers(workers);
-
-			return topologyInfo;
+			return getTopologyInfo(topologyId, base);
 		} catch (TException e) {
 			LOG.info("Failed to get topologyInfo " + topologyId, e);
 			throw e;
@@ -932,6 +905,38 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 			throw new TException("Failed to get topologyInfo" + topologyId);
 		}
 
+	}
+	
+	@Override
+	public TopologyInfo getTopologyInfoByName(String topologyName)
+			throws NotAliveException, TException {
+
+		StormClusterState stormClusterState = data.getStormClusterState();
+
+		try {
+			// get all active topology's StormBase
+			Map<String, StormBase> bases = Cluster
+					.topology_bases(stormClusterState);
+			for (Entry<String, StormBase> entry : bases.entrySet()) {
+
+				String topologyId = entry.getKey();
+				StormBase base = entry.getValue();
+
+				if (StringUtils.equals(topologyName, base.getStormName()) == false) {
+					continue;
+				}
+
+				return getTopologyInfo(topologyId, base);
+			}
+		} catch (TException e) {
+			LOG.info("Failed to get topologyInfo " + topologyName, e);
+			throw e;
+		} catch (Exception e) {
+			LOG.info("Failed to get topologyInfo " + topologyName, e);
+			throw new TException("Failed to get topologyInfo" + topologyName);
+		}
+
+		throw new NotAliveException("No topology of " + topologyName);
 	}
 
 	/**
@@ -1077,6 +1082,25 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 				new File(StormConfig.stormconf_path(stormroot)),
 				Utils.serialize(stormConf));
 	}
+	
+	private boolean copyLibJars(String tmpJarLocation,
+			String stormroot) throws IOException {
+		String srcLibPath = StormConfig.stormlib_path(tmpJarLocation);
+		String destLibPath = StormConfig.stormlib_path(stormroot);
+		LOG.info("Begin to copy from " + srcLibPath + " to " + destLibPath);
+		
+		File srcFile = new File(srcLibPath);
+		if (srcFile.exists() == false) {
+			LOG.info("No lib jars " + srcLibPath);
+			return false;
+		}
+		File destFile = new File(destLibPath);
+		FileUtils.copyDirectory(srcFile, destFile);
+		
+		PathUtils.rmr(srcLibPath);
+		LOG.info("Successfully copy libs " + destLibPath);
+		return true;
+	}
 
 	/**
 	 * Copy jar to /local-dir/nimbus/topologyId/stormjar.jar
@@ -1089,26 +1113,38 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 	private void setupJar(Map<Object, Object> conf, String tmpJarLocation,
 			String stormroot) throws IOException {
 		if (!StormConfig.local_mode(conf)) {
-			String[] pathCache = tmpJarLocation.split("/");
-			String jarPath = tmpJarLocation + "/stormjar-"
-					+ pathCache[pathCache.length - 1] + ".jar";
+			boolean existLibs = copyLibJars(tmpJarLocation, stormroot);
+			
+			String jarPath = null;
+			List<String>  files = PathUtils.read_dir_contents(tmpJarLocation);
+			for (String file : files) {
+				if (file.endsWith(".jar")) {
+					jarPath = tmpJarLocation + PathUtils.SEPERATOR + file;
+					break;
+				}
+			}
+			
+			if (jarPath == null ) {
+				if ( existLibs == false) {
+					throw new IllegalArgumentException("No jar under " + tmpJarLocation);
+				}else {
+					LOG.info("No submit jar");
+					return ;
+				}
+			}
+			
 			File srcFile = new File(jarPath);
 			if (!srcFile.exists()) {
 				throw new IllegalArgumentException(jarPath + " to copy to "
 						+ stormroot + " does not exist!");
 			}
+
 			String path = StormConfig.stormjar_path(stormroot);
 			File destFile = new File(path);
 			FileUtils.copyFile(srcFile, destFile);
 			srcFile.delete();
-			String libPath = StormConfig.stormlib_path(stormroot);
-			srcFile = new File(tmpJarLocation);
-			if (!srcFile.exists()) {
-				throw new IllegalArgumentException(tmpJarLocation
-						+ " to copy to " + stormroot + " does not exist!");
-			}
-			destFile = new File(libPath);
-			FileUtils.copyDirectory(srcFile, destFile);
+			
+			return ;
 		}
 	}
 
@@ -1128,7 +1164,7 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 
 		Map<Integer, TaskInfo> taskToComponetId = mkTaskComponentAssignments(
 				conf, topologyId);
-		if (taskToComponetId == null) {
+		if (taskToComponetId == null || taskToComponetId.size() == 0) {
 			throw new InvalidTopologyException("Failed to generate TaskIDs map");
 		}
 
@@ -1296,5 +1332,22 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 		
 		return topologyMetricInfo;
 	}
-		
+	
+	private List<UserDefMetric> getUserDefMetrics(String topologyId) {
+	    List<UserDefMetric> userDefMetrics = null;
+	    
+	    StormClusterState clusterState = data.getStormClusterState();
+	    
+	    try {
+	        MetricKVMsg topologyMetricMsg = MetricKVMsg.getMetricKVMsg(topologyId, clusterState);
+	        userDefMetrics = topologyMetricMsg.convertToUserDefMetric();
+	    } catch (Exception e) {
+	        LOG.error("Failed to get user defined metrics for topology=" + topologyId);
+	    }
+	    
+	    return userDefMetrics;
+	    
+	}
+
+	
 }

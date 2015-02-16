@@ -73,7 +73,7 @@ public class DelayStatusTransitionCallback extends BaseCallback {
 			delaySecs = JStormUtils.parseInt(args[0]);
 		}
 
-		if (delaySecs == null || delaySecs <= 0) {
+		if (delaySecs == null || delaySecs < 0) {
 			delaySecs = DelayStatusTransitionCallback.DEFAULT_DELAY_SECONDS;
 		}
 		

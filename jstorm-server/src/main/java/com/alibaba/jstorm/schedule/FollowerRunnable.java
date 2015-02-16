@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.thrift7.TException;
 
@@ -76,27 +77,51 @@ public class FollowerRunnable implements Runnable {
 			}
 		};
 	}
+	
+	public boolean isLeader(String zkMaster) {
+		if (StringUtils.isBlank(zkMaster) == true) {
+			return false;
+		}
+		
+		if (hostPort.equalsIgnoreCase(zkMaster) == true) {
+			return true;
+		}
+		
+		String[] part = zkMaster.split(":");
+		return NetWorkUtils.equals(part[0], NetWorkUtils.ip()) ;
+	}
 
 	@Override
 	public void run() {
 		// TODO Auto-generated method stub
 		LOG.info("Follower Thread starts!");
 		while (state) {
+			StormClusterState zkClusterState = data.getStormClusterState();
 			try {
 				Thread.sleep(sleepTime);
-				if (data.isLeader()) {
-					data.getStormClusterState()
-							.unregister_nimbus_host(hostPort);
-					checkOwnMaster();
-					continue;
-				}
-				if (!data.getStormClusterState().leader_existed()) {
+				if (!zkClusterState.leader_existed()) {
 					this.tryToBeLeader(data.getConf());
 					continue;
 				}
+				
+				String master = zkClusterState.get_leader_host();
+				boolean isZkLeader = isLeader(master);
+				if (data.isLeader() == true ) {
+					if (isZkLeader == false) {
+						LOG.info("New ZK master is " + master);
+						JStormUtils.halt_process(1, "Lose ZK master node, halt process");
+						return ;
+					}
+				}
+				
+				if (isZkLeader == true) {
+					zkClusterState.unregister_nimbus_host(hostPort);
+					data.setLeader(true);
+					continue;
+				}
+				
 				check();
-				data.getStormClusterState().update_follower_hb(hostPort,
-						data.uptime());
+				zkClusterState.update_follower_hb(hostPort,	data.uptime());
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				continue;
@@ -206,8 +231,8 @@ public class FollowerRunnable implements Runnable {
 				}
 			}
 		};
-		data.setLeader(data.getStormClusterState().try_to_be_leader(
-				Cluster.MASTER_SUBTREE, hostPort, masterCallback));
+		data.getStormClusterState().try_to_be_leader(
+				Cluster.MASTER_SUBTREE, hostPort, masterCallback);
 	}
 
 	/**

@@ -18,13 +18,14 @@ public class ReconnectRunnable extends RunnableCallback{
 	}
 	
 	private boolean closed = false;
+	private Thread thread = null;
 	
 	
 	
 	@Override
 	public void run() {
 		LOG.info("Successfully start reconnect thread");
-		
+		thread = Thread.currentThread();
 		while(closed == false) {
 			NettyClient client = null;
 			try {
@@ -44,6 +45,7 @@ public class ReconnectRunnable extends RunnableCallback{
 	@Override
 	public void shutdown() {
 		closed = true;
+		thread.interrupt();
 	}
 	
 	@Override

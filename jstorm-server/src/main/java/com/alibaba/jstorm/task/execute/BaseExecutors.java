@@ -5,6 +5,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import backtype.storm.Config;
+import backtype.storm.Constants;
 import backtype.storm.serialization.KryoTupleDeserializer;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.tuple.Tuple;
@@ -15,6 +16,8 @@ import backtype.storm.utils.WorkerClassLoader;
 import com.alibaba.jstorm.callback.AsyncLoopThread;
 import com.alibaba.jstorm.callback.RunnableCallback;
 import com.alibaba.jstorm.client.ConfigExtension;
+import com.alibaba.jstorm.daemon.worker.timer.RotatingMapTrigger;
+import com.alibaba.jstorm.daemon.worker.timer.TickTupleTrigger;
 import com.alibaba.jstorm.metric.JStormTimer;
 import com.alibaba.jstorm.metric.MetricDef;
 import com.alibaba.jstorm.metric.Metrics;
@@ -118,6 +121,10 @@ public class BaseExecutors extends RunnableCallback {
 		deserializeTimer = Metrics.registerTimer(idStr, MetricDef.DESERIALIZE_TIME, String.valueOf(taskId), Metrics.MetricType.TASK);
 		Metrics.registerQueue(idStr, MetricDef.DESERIALIZE_QUEUE, deserializeQueue, String.valueOf(taskId), Metrics.MetricType.TASK);
 		Metrics.registerQueue(idStr, MetricDef.EXECUTE_QUEUE, exeQueue, String.valueOf(taskId), Metrics.MetricType.TASK);
+		
+		RotatingMapTrigger rotatingMapTrigger = new RotatingMapTrigger(storm_conf, idStr + "_rotating", exeQueue);
+		rotatingMapTrigger.register();
+		
 	}
 
 	@Override

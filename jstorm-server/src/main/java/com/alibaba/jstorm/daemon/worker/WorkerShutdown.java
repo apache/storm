@@ -2,6 +2,7 @@ package com.alibaba.jstorm.daemon.worker;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.log4j.Logger;
@@ -37,6 +38,7 @@ public class WorkerShutdown implements ShutdownableDameon {
 	private StormClusterState zkCluster;
 	private ClusterState cluster_state;
 	private MetricReporter metricReporter;
+	private ScheduledExecutorService threadPool;
 
 	// active nodeportSocket context zkCluster zkClusterstate
 	public WorkerShutdown(WorkerData workerData,
@@ -51,6 +53,7 @@ public class WorkerShutdown implements ShutdownableDameon {
 		this.context = workerData.getContext();
 		this.zkCluster = workerData.getZkCluster();
 		this.cluster_state = workerData.getZkClusterstate();
+		this.threadPool = workerData.getThreadPool();
 		this.metricReporter = metricReporter;
 
 		Runtime.getRuntime().addShutdownHook(new Thread(this));
@@ -64,8 +67,12 @@ public class WorkerShutdown implements ShutdownableDameon {
 	@Override
 	public void shutdown() {
 
-		active.set(false);
+		if (active.getAndSet(false) == false) {
+			LOG.info("Worker has been shutdown already");
+			return;
+		}
 
+		threadPool.shutdown();
 		metricReporter.shutdown();
 
 		// shutdown tasks

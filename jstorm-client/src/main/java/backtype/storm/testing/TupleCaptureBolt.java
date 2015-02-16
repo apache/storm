@@ -15,7 +15,7 @@ public class TupleCaptureBolt implements IRichBolt {
 	public static transient Map<String, Map<String, List<FixedTuple>>> emitted_tuples = new HashMap<String, Map<String, List<FixedTuple>>>();
 
 	private String _name;
-	private OutputCollector _collector;
+	private transient OutputCollector _collector;
 
 	public TupleCaptureBolt() {
 		_name = UUID.randomUUID().toString();

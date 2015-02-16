@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>com.alibaba.jstorm</groupId>
 		<artifactId>jstorm-all</artifactId>
-		<version>0.9.6.2</version>
+		<version>0.9.6.3</version>
 		<relativePath>..</relativePath>
 	</parent>
 

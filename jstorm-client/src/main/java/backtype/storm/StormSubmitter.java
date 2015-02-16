@@ -62,10 +62,12 @@ public class StormSubmitter {
 	public static void submitTopology(String name, Map stormConf,
 			StormTopology topology, SubmitOptions opts, List<File> jarFiles)
 			throws AlreadyAliveException, InvalidTopologyException {
+		if (jarFiles == null) {
+			jarFiles = new ArrayList<File>();
+		}
 		Map<String, String> jars = new HashMap<String, String>(jarFiles.size());
 		List<String> names = new ArrayList<String>(jarFiles.size());
-		if (jarFiles == null)
-			jarFiles = new ArrayList<File>();
+		
 		for (File f : jarFiles) {
 			if (!f.exists()) {
 				LOG.info(f.getName() + " is not existed: "
@@ -253,16 +255,24 @@ public class StormSubmitter {
 						.get(GenericOptionsParser.TOPOLOGY_LIB_PATH);
 				if (lib != null && lib.size() != 0) {
 					for (String libName : lib) {
-						String jarPath = path + "/" + libName;
+						String jarPath = path  + "/lib/" + libName;
 						client.getClient().beginLibUpload(jarPath);
 						submitJar(conf, libPath.get(libName), jarPath, client);
 					}
-					if (localJar != null)
-						submittedJar = submitJar(conf, localJar,
-								uploadLocation, client);
+					
 				} else {
-					submittedJar = submitJar(conf, localJar, uploadLocation,
-							client);
+					if (localJar == null) {
+						// no lib,  no client jar
+						throw new RuntimeException("No client app jar, please upload it");
+					}
+				}
+				
+				if (localJar != null) {
+					submittedJar = submitJar(conf, localJar,
+							uploadLocation, client);
+				}else {
+					// no client jar, but with lib jar
+					client.getClient().finishFileUpload(uploadLocation);
 				}
 			} catch (Exception e) {
 				throw new RuntimeException(e);

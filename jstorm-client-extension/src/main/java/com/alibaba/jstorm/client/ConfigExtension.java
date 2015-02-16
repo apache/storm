@@ -162,6 +162,10 @@ public class ConfigExtension {
 	public static void setUseOldAssignment(Map conf, boolean useOld) {
 		conf.put(USE_OLD_ASSIGNMENT, Boolean.valueOf(useOld));
 	}
+	
+	public static boolean isUseOldAssignment(Map conf) {
+		return JStormUtils.parseBoolean(conf.get(USE_OLD_ASSIGNMENT), false);
+	}
 
 	/**
 	 * The supervisor's hostname
@@ -194,6 +198,16 @@ public class ConfigExtension {
 
 	public static void setEnableTopologyClassLoader(Map conf, boolean enable) {
 		conf.put(TOPOLOGY_ENABLE_CLASSLOADER, Boolean.valueOf(enable));
+	}
+	
+	protected static String CLASSLOADER_DEBUG = "classloader.debug";
+	
+	public static boolean isEnableClassloaderDebug(Map conf) {
+		return JStormUtils.parseBoolean(conf.get(CLASSLOADER_DEBUG), false);
+	}
+	
+	public static void setEnableClassloaderDebug(Map conf, boolean enable) {
+		conf.put(CLASSLOADER_DEBUG, enable);
 	}
 
 	protected static final String CONTAINER_NIMBUS_HEARTBEAT = "container.nimbus.heartbeat";
@@ -313,6 +327,16 @@ public class ConfigExtension {
 		}
 		conf.put(USE_USERDEFINE_ASSIGNMENT, ret);
 	}
+	
+	public static List<WorkerAssignment> getUserDefineAssignment(Map conf) {
+		List<WorkerAssignment> ret = new ArrayList<WorkerAssignment>();
+		if (conf.get(USE_USERDEFINE_ASSIGNMENT) == null)
+			return ret;
+		for (String worker : (List<String>) conf.get(USE_USERDEFINE_ASSIGNMENT)) {
+			ret.add(WorkerAssignment.parseFromObj(Utils.from_json(worker)));
+		}
+		return ret;
+	}
 
 	protected static final String MEMSIZE_PER_WORKER = "worker.memory.size";
 
@@ -334,10 +358,22 @@ public class ConfigExtension {
         long size = memSize * 1024l;
         setMemSizePerWorkerByMB(conf, size);
     }
+    
+    public static long getMemSizePerWorker(Map conf) {
+		long size = JStormUtils.parseLong(conf.get(MEMSIZE_PER_WORKER),
+				JStormUtils.SIZE_1_G * 2);
+		return size > 0 ? size : JStormUtils.SIZE_1_G * 2;
+	}
+    
 	protected static final String CPU_SLOT_PER_WORKER = "worker.cpu.slot.num";
 
 	public static void setCpuSlotNumPerWorker(Map conf, int slotNum) {
 		conf.put(CPU_SLOT_PER_WORKER, slotNum);
+	}
+	
+	public static int getCpuSlotPerWorker(Map conf) {
+		int slot = JStormUtils.parseInt(conf.get(CPU_SLOT_PER_WORKER), 1);
+		return slot > 0 ? slot : 1;
 	}
 
 	protected static String TOPOLOGY_PERFORMANCE_METRICS = "topology.performance.metrics";
@@ -550,7 +586,57 @@ public class ConfigExtension {
     		return true;
     	}
     	
-    	return JStormUtils.parseBoolean(conf.get(TOPOLOGY_BUFFER_SIZE_LIMITED), false);
+    	return JStormUtils.parseBoolean(conf.get(TOPOLOGY_BUFFER_SIZE_LIMITED), true);
     	
+    }
+    
+    protected static String SUPERVISOR_SLOTS_PORTS_BASE = "supervisor.slots.ports.base";
+    
+    public static int getSupervisorSlotsPortsBase(Map conf) {
+    	return JStormUtils.parseInt(conf.get(SUPERVISOR_SLOTS_PORTS_BASE), 6800);
+    }
+    
+    // SUPERVISOR_SLOTS_PORTS_BASE don't provide setting function, it must be set by configuration
+    
+    protected static String SUPERVISOR_SLOTS_PORT_CPU_WEIGHT = "supervisor.slots.port.cpu.weight";
+    public static double getSupervisorSlotsPortCpuWeight(Map conf) {
+    	Object value = conf.get(SUPERVISOR_SLOTS_PORT_CPU_WEIGHT);
+    	Double ret = JStormUtils.convertToDouble(value);
+    	if (ret == null) {
+    		return 1.0;
+    	}else {
+    		return ret;
+    	}
+    }
+    // SUPERVISOR_SLOTS_PORT_CPU_WEIGHT don't provide setting function, it must be set by configuration
+    
+    protected static String USER_DEFINED_LOG4J_CONF = "user.defined.log4j.conf";
+    
+    public static String getUserDefinedLog4jConf(Map conf) {
+    	return (String)conf.get(USER_DEFINED_LOG4J_CONF);
+    }
+    
+    public static void setUserDefinedLog4jConf(Map conf, String fileName) {
+    	conf.put(USER_DEFINED_LOG4J_CONF, fileName);
+    }
+    
+    protected static String USER_DEFINED_LOGBACK_CONF = "user.defined.logback.conf";
+    
+    public static String getUserDefinedLogbackConf(Map conf) {
+    	return (String)conf.get(USER_DEFINED_LOGBACK_CONF);
+    }
+    
+    public static void setUserDefinedLogbackConf(Map conf, String fileName) {
+    	conf.put(USER_DEFINED_LOGBACK_CONF, fileName);
+    }
+    
+    protected static String TASK_ERROR_INFO_REPORT_INTERVAL = "topology.task.error.report.interval";
+    
+    public static Integer getTaskErrorReportInterval(Map conf) {
+        return JStormUtils.parseInt(conf.get(TASK_ERROR_INFO_REPORT_INTERVAL), 60);
+    }
+    
+    public static void setTaskErrorReportInterval(Map conf, Integer interval) {
+        conf.put(TASK_ERROR_INFO_REPORT_INTERVAL, interval);
     }
 }

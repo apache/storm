@@ -86,9 +86,7 @@ public class LRUMemoryMapState<T> implements Snapshottable<T>, ITupleCollection,
         Long currTx;
 
         public LRUMemoryMapStateBacking(int cacheSize, String id) {
-            if (!_dbs.containsKey(id)) {
-                _dbs.put(id, new LRUMap<List<Object>, Object>(cacheSize));
-            }
+        	_dbs.putIfAbsent(id, new LRUMap<List<Object>, Object>(cacheSize));
             this.db = (Map<List<Object>, T>) _dbs.get(id);
         }
 

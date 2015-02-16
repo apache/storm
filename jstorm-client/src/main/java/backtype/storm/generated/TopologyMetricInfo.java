@@ -447,14 +447,14 @@ public class TopologyMetricInfo implements org.apache.thrift7.TBase<TopologyMetr
         case 2: // TASK_METRIC_LIST
           if (field.type == org.apache.thrift7.protocol.TType.LIST) {
             {
-              org.apache.thrift7.protocol.TList _list255 = iprot.readListBegin();
-              this.task_metric_list = new ArrayList<TaskMetricData>(_list255.size);
-              for (int _i256 = 0; _i256 < _list255.size; ++_i256)
+              org.apache.thrift7.protocol.TList _list259 = iprot.readListBegin();
+              this.task_metric_list = new ArrayList<TaskMetricData>(_list259.size);
+              for (int _i260 = 0; _i260 < _list259.size; ++_i260)
               {
-                TaskMetricData _elem257; // required
-                _elem257 = new TaskMetricData();
-                _elem257.read(iprot);
-                this.task_metric_list.add(_elem257);
+                TaskMetricData _elem261; // required
+                _elem261 = new TaskMetricData();
+                _elem261.read(iprot);
+                this.task_metric_list.add(_elem261);
               }
               iprot.readListEnd();
             }
@@ -465,14 +465,14 @@ public class TopologyMetricInfo implements org.apache.thrift7.TBase<TopologyMetr
         case 3: // WORKER_METRIC_LIST
           if (field.type == org.apache.thrift7.protocol.TType.LIST) {
             {
-              org.apache.thrift7.protocol.TList _list258 = iprot.readListBegin();
-              this.worker_metric_list = new ArrayList<WorkerMetricData>(_list258.size);
-              for (int _i259 = 0; _i259 < _list258.size; ++_i259)
+              org.apache.thrift7.protocol.TList _list262 = iprot.readListBegin();
+              this.worker_metric_list = new ArrayList<WorkerMetricData>(_list262.size);
+              for (int _i263 = 0; _i263 < _list262.size; ++_i263)
               {
-                WorkerMetricData _elem260; // required
-                _elem260 = new WorkerMetricData();
-                _elem260.read(iprot);
-                this.worker_metric_list.add(_elem260);
+                WorkerMetricData _elem264; // required
+                _elem264 = new WorkerMetricData();
+                _elem264.read(iprot);
+                this.worker_metric_list.add(_elem264);
               }
               iprot.readListEnd();
             }
@@ -503,9 +503,9 @@ public class TopologyMetricInfo implements org.apache.thrift7.TBase<TopologyMetr
         oprot.writeFieldBegin(TASK_METRIC_LIST_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRUCT, this.task_metric_list.size()));
-          for (TaskMetricData _iter261 : this.task_metric_list)
+          for (TaskMetricData _iter265 : this.task_metric_list)
           {
-            _iter261.write(oprot);
+            _iter265.write(oprot);
           }
           oprot.writeListEnd();
         }
@@ -517,9 +517,9 @@ public class TopologyMetricInfo implements org.apache.thrift7.TBase<TopologyMetr
         oprot.writeFieldBegin(WORKER_METRIC_LIST_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRUCT, this.worker_metric_list.size()));
-          for (WorkerMetricData _iter262 : this.worker_metric_list)
+          for (WorkerMetricData _iter266 : this.worker_metric_list)
           {
-            _iter262.write(oprot);
+            _iter266.write(oprot);
           }
           oprot.writeListEnd();
         }

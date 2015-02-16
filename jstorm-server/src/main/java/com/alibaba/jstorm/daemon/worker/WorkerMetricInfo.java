@@ -1,22 +1,23 @@
 package com.alibaba.jstorm.daemon.worker;
 
-import java.util.Map;
-import java.util.HashMap;
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.log4j.Logger;
 
-import com.codahale.metrics.Metric;
-import com.codahale.metrics.Gauge;
-import com.codahale.metrics.Timer;
-import com.codahale.metrics.Counter;
-import com.codahale.metrics.Histogram;
-import com.codahale.metrics.Meter;
-import com.codahale.metrics.Snapshot;
-import com.esotericsoftware.minlog.Log;
 import com.alibaba.jstorm.metric.MetricInfo;
 import com.alibaba.jstorm.metric.Metrics.QueueGauge;
 import com.alibaba.jstorm.utils.JStormUtils;
+import com.codahale.metrics.Counter;
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.Histogram;
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.Metric;
+import com.codahale.metrics.Snapshot;
+import com.codahale.metrics.Timer;
 
 
 /**
@@ -145,5 +146,11 @@ public class WorkerMetricInfo implements Serializable {
 			value = value + currentValue;
 		value = JStormUtils.formatDoubleDecPoint4(value);
 		dataMap.put(name, value);
+    }
+    
+    @Override
+    public String toString() {
+    	return ToStringBuilder.reflectionToString(this,
+				ToStringStyle.SHORT_PREFIX_STYLE);
     }
 }

@@ -2,7 +2,7 @@ package com.alibaba.jstorm.cluster;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.*;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -11,13 +11,12 @@ import java.util.Map;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 
-import com.alibaba.jstorm.utils.EventSampler;
-import com.alibaba.jstorm.utils.PathUtils;
-
 import backtype.storm.Config;
 import backtype.storm.generated.StormTopology;
 import backtype.storm.utils.LocalState;
 import backtype.storm.utils.Utils;
+
+import com.alibaba.jstorm.utils.PathUtils;
 
 public class StormConfig {
 	private final static Logger LOG = Logger.getLogger(StormConfig.class);

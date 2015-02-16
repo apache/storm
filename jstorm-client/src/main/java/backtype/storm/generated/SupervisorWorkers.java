@@ -359,14 +359,14 @@ public class SupervisorWorkers implements org.apache.thrift7.TBase<SupervisorWor
         case 2: // WORKERS
           if (field.type == org.apache.thrift7.protocol.TType.LIST) {
             {
-              org.apache.thrift7.protocol.TList _list201 = iprot.readListBegin();
-              this.workers = new ArrayList<WorkerSummary>(_list201.size);
-              for (int _i202 = 0; _i202 < _list201.size; ++_i202)
+              org.apache.thrift7.protocol.TList _list205 = iprot.readListBegin();
+              this.workers = new ArrayList<WorkerSummary>(_list205.size);
+              for (int _i206 = 0; _i206 < _list205.size; ++_i206)
               {
-                WorkerSummary _elem203; // required
-                _elem203 = new WorkerSummary();
-                _elem203.read(iprot);
-                this.workers.add(_elem203);
+                WorkerSummary _elem207; // required
+                _elem207 = new WorkerSummary();
+                _elem207.read(iprot);
+                this.workers.add(_elem207);
               }
               iprot.readListEnd();
             }
@@ -396,9 +396,9 @@ public class SupervisorWorkers implements org.apache.thrift7.TBase<SupervisorWor
       oprot.writeFieldBegin(WORKERS_FIELD_DESC);
       {
         oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRUCT, this.workers.size()));
-        for (WorkerSummary _iter204 : this.workers)
+        for (WorkerSummary _iter208 : this.workers)
         {
-          _iter204.write(oprot);
+          _iter208.write(oprot);
         }
         oprot.writeListEnd();
       }

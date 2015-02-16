@@ -68,6 +68,17 @@
 
 			<p:column>
 				<f:facet name="header">
+					<h:outputText value="Conf" />
+				</f:facet>
+				<h:outputLink value="conf.jsf" target="_blank">
+					<h:outputText value="conf" />
+					<f:param name="clusterName" value="#{param.clusterName}" />
+					<f:param name="host" value="#{cls.nimbusIp}" />
+					<f:param name="port" value="#{cls.nimbusLogPort}" />
+				</h:outputLink>
+			</p:column>
+			<p:column>
+				<f:facet name="header">
 					<h:outputText value="Log" />
 				</f:facet>
 				<h:outputLink value="listlog.jsf" target="_blank">
@@ -98,6 +109,18 @@
 					<h:outputText value="Uptime" />
 				</f:facet>
 				<h:outputText value="#{sla.uptime}" />
+			</p:column>
+			
+			<p:column>
+				<f:facet name="header">
+					<h:outputText value="Conf" />
+				</f:facet>
+				<h:outputLink value="conf.jsf" target="_blank">
+					<h:outputText value="conf" />
+					<f:param name="clusterName" value="#{param.clusterName}" />
+					<f:param name="host" value="#{sla.ip}" />
+					<f:param name="port" value="#{sla.logviewPort}" />
+				</h:outputLink>
 			</p:column>
 
 			<p:column>

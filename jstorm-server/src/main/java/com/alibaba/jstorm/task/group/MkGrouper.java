@@ -42,6 +42,7 @@ public class MkGrouper {
 	// grouping method
 	private RandomRange randomrange;
 	private Random random;
+	private MkShuffer shuffer;
 	private MkCustomGrouper custom_grouper;
 	private MkFieldsGrouper fields_grouper;
 	private MkLocalShuffer local_shuffer_grouper;
@@ -100,8 +101,8 @@ public class MkGrouper {
 			// send to every task
 			grouperType = GrouperType.all;
 		} else if (Grouping._Fields.SHUFFLE.equals(fields)) {
-			this.randomrange = new RandomRange(out_tasks.size());
 			grouperType = GrouperType.shuffle;
+			shuffer = new MkShuffer(out_tasks, workerData);
 		} else if (Grouping._Fields.NONE.equals(fields)) {
 			// random send one task
 			this.random = new Random();
@@ -132,11 +133,9 @@ public class MkGrouper {
 			grouperType = GrouperType.direct;
 		} else if (Grouping._Fields.LOCAL_OR_SHUFFLE.equals(fields)) {
 			grouperType = GrouperType.local_or_shuffle;
-			local_shuffer_grouper = new MkLocalShuffer(local_tasks, out_tasks);
-
+			local_shuffer_grouper = new MkLocalShuffer(local_tasks, out_tasks, workerData);
 		}else if (Grouping._Fields.LOCAL_FIRST.equals(fields)) {
-			grouperType = GrouperType.localFirst;
-			
+			grouperType = GrouperType.localFirst;	
 			localFirst = new MkLocalFirst(local_tasks, out_tasks, workerData);
 		}
 		
@@ -162,8 +161,7 @@ public class MkGrouper {
 			return out_tasks;
 		} else if (GrouperType.shuffle.equals(grouptype)) {
 			// random, but the random is different from none
-			int rnd = randomrange.nextInt();
-			return JStormUtils.mk_list(out_tasks.get(rnd));
+			return shuffer.grouper(values);
 		} else if (GrouperType.none.equals(grouptype)) {
 			int rnd = Math.abs(random.nextInt() % out_tasks.size());
 			return JStormUtils.mk_list(out_tasks.get(rnd));

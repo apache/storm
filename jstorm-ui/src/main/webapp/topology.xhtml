@@ -301,6 +301,34 @@
 		</p:dataTable>
 
 	</h:form>
+
+        <h2>User Defined Metrics</h2>
+        <h:form>
+            <p:dataTable id="UserDefMetricTable" var="udm" value="#{topologypage.udm}">
+
+                <p:column>
+                    <f:facet name="header">
+                        <h:outputText value="Name" />
+                    </f:facet>
+                    <h:outputText value="#{udm._name}" />
+                </p:column>
+
+                <p:column>
+                    <f:facet name="header">
+                        <h:outputText value="Type" />
+                    </f:facet>
+                    <h:outputText value="#{udm._type}" />
+                </p:column>
+
+                <p:column>
+                    <f:facet name="header">
+                        <h:outputText value="Value" />
+                    </f:facet>
+                    <h:outputText value="#{udm._value}" />
+                </p:column>
+            </p:dataTable>
+
+        </h:form>
 </h:body>
 <script>
    var windowpara=document.getElementById("windowpara");

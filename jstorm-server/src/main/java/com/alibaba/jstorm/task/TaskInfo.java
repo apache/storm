@@ -9,7 +9,7 @@ import org.apache.commons.lang.builder.ToStringStyle;
  * /storm-zk-root/tasks/{topologyid}/{taskid} data
  */
 public class TaskInfo implements Serializable {
-
+    
 	private static final long serialVersionUID = 5625165079055837777L;
 	private String componentId;
 	private String componentType;

@@ -122,22 +122,7 @@ public class UploadMetricFromZK implements Runnable {
 		    Map<String, Object> totalMsg = new HashMap<String, Object>();
 		    
 		    for (String topologyId : active_topologys) {
-			    Map<String, Map<String, Metric>> compont_metrics = new HashMap<String, Map<String, Metric>>();
-			    List<String> workerIds = clusterState.monitor_user_workers(topologyId);
-			    if(workerIds == null)
-				    continue;	
-			    MetricKVMsg topologyMetricMsg = new MetricKVMsg();
-			    for(String workerId : workerIds)	{
-				    UserDefMetricData useWorkDefMetric = clusterState.get_userDef_metric(topologyId, workerId);
-				    //add metric based on worker to useWorkDefMetric
-				    topologyMetricMsg.countGangeMetric(useWorkDefMetric.getGaugeDataMap());
-			  	    topologyMetricMsg.countCounterMetric(useWorkDefMetric.getCounterDataMap());
-				    topologyMetricMsg.countHistogramMetric(useWorkDefMetric.getHistogramDataMap());
-				    topologyMetricMsg.countTimerMetric(useWorkDefMetric.getTimerDataMap());
-				    topologyMetricMsg.countMeterMetric(useWorkDefMetric.getMeterDataMap());
-			    }
-			    topologyMetricMsg.calcAvgTimer();
-			    topologyMetricMsg.emptyCountMap();   
+		        MetricKVMsg topologyMetricMsg = MetricKVMsg.getMetricKVMsg(topologyId, clusterState);
 			    Map<String, Object> ret = topologyMetricMsg.convertToKVMap();
 			    if(ret.size() >0) totalMsg.putAll(ret);
 		    }

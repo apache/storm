@@ -92,7 +92,7 @@ public class WorkerAssignment extends WorkerSlot implements Serializable,
 
 	@Override
 	public String toJSONString() {
-		StringBuilder sb = new StringBuilder();
+//		StringBuilder sb = new StringBuilder();
 
 //		sb.append("[");
 //		sb.append("\"" + this.getNodeId() + "\"");

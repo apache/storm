@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 
 import backtype.storm.Config;
@@ -29,9 +31,10 @@ import com.alipay.dw.jstorm.example.sequence.bolt.TotalCount;
 import com.alipay.dw.jstorm.example.sequence.spout.SequenceSpout;
 
 public class SequenceTopology {
+	private static Logger LOG = LoggerFactory.getLogger(SequenceTopology.class);
 
-	private final static String TOPOLOGY_SPOUT_PARALLELISM_HINT = "spout.parallel";
-	private final static String TOPOLOGY_BOLT_PARALLELISM_HINT = "bolt.parallel";
+	public final static String TOPOLOGY_SPOUT_PARALLELISM_HINT = "spout.parallel";
+	public final static String TOPOLOGY_BOLT_PARALLELISM_HINT = "bolt.parallel";
 
 	public static void SetBuilder(TopologyBuilder builder, Map conf) {
 
@@ -54,7 +57,8 @@ public class SequenceTopology {
 			// localFirstGrouping is only for jstorm
 			// boltDeclarer.localFirstGrouping(SequenceTopologyDef.SEQUENCE_SPOUT_NAME);
 			boltDeclarer
-					.localOrShuffleGrouping(SequenceTopologyDef.SEQUENCE_SPOUT_NAME);
+					.localOrShuffleGrouping(SequenceTopologyDef.SEQUENCE_SPOUT_NAME)
+					.addConfiguration(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, 3);
 		} else {
 
 			builder.setBolt(SequenceTopologyDef.SPLIT_BOLT_NAME,
@@ -115,15 +119,19 @@ public class SequenceTopology {
 
 	public static void SetLocalTopology() throws Exception {
 		TopologyBuilder builder = new TopologyBuilder();
-
+		
 		conf.put(TOPOLOGY_BOLT_PARALLELISM_HINT, Integer.valueOf(1));
 
 		SetBuilder(builder, conf);
 
+		LOG.debug("test");
+		LOG.info("Submit log");
 		LocalCluster cluster = new LocalCluster();
 		cluster.submitTopology("SplitMerge", conf, builder.createTopology());
 
 		Thread.sleep(60000);
+		
+		cluster.killTopology("SplitMerge");
 
 		cluster.shutdown();
 	}
@@ -165,7 +173,7 @@ public class SequenceTopology {
 
 	private static Map conf = new HashMap<Object, Object>();
 
-	private static void LoadProperty(String prop) {
+	public static void LoadProperty(String prop) {
 		Properties properties = new Properties();
 
 		try {
@@ -182,7 +190,7 @@ public class SequenceTopology {
 		conf.putAll(properties);
 	}
 
-	private static void LoadYaml(String confPath) {
+	public static void LoadYaml(String confPath) {
 
 		Yaml yaml = new Yaml();
 
@@ -205,7 +213,7 @@ public class SequenceTopology {
 		return;
 	}
 
-	private static void LoadConf(String arg) {
+	public static void LoadConf(String arg) {
 		if (arg.endsWith("yaml")) {
 			LoadYaml(arg);
 		} else {

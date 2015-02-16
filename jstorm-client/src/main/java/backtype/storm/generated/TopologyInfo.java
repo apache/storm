@@ -30,6 +30,7 @@ public class TopologyInfo implements org.apache.thrift7.TBase<TopologyInfo, Topo
   private static final org.apache.thrift7.protocol.TField WORKERS_FIELD_DESC = new org.apache.thrift7.protocol.TField("workers", org.apache.thrift7.protocol.TType.LIST, (short)4);
   private static final org.apache.thrift7.protocol.TField STATUS_FIELD_DESC = new org.apache.thrift7.protocol.TField("status", org.apache.thrift7.protocol.TType.STRING, (short)5);
   private static final org.apache.thrift7.protocol.TField TASKS_FIELD_DESC = new org.apache.thrift7.protocol.TField("tasks", org.apache.thrift7.protocol.TType.LIST, (short)6);
+  private static final org.apache.thrift7.protocol.TField USER_DEF_METRIC_FIELD_DESC = new org.apache.thrift7.protocol.TField("userDefMetric", org.apache.thrift7.protocol.TType.LIST, (short)7);
 
   private String id; // required
   private String name; // required
@@ -37,6 +38,7 @@ public class TopologyInfo implements org.apache.thrift7.TBase<TopologyInfo, Topo
   private List<WorkerSummary> workers; // required
   private String status; // required
   private List<TaskSummary> tasks; // required
+  private List<UserDefMetric> userDefMetric; // required
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift7.TFieldIdEnum {
@@ -45,7 +47,8 @@ public class TopologyInfo implements org.apache.thrift7.TBase<TopologyInfo, Topo
     UPTIME_SECS((short)3, "uptime_secs"),
     WORKERS((short)4, "workers"),
     STATUS((short)5, "status"),
-    TASKS((short)6, "tasks");
+    TASKS((short)6, "tasks"),
+    USER_DEF_METRIC((short)7, "userDefMetric");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -72,6 +75,8 @@ public class TopologyInfo implements org.apache.thrift7.TBase<TopologyInfo, Topo
           return STATUS;
         case 6: // TASKS
           return TASKS;
+        case 7: // USER_DEF_METRIC
+          return USER_DEF_METRIC;
         default:
           return null;
       }
@@ -132,6 +137,9 @@ public class TopologyInfo implements org.apache.thrift7.TBase<TopologyInfo, Topo
     tmpMap.put(_Fields.TASKS, new org.apache.thrift7.meta_data.FieldMetaData("tasks", org.apache.thrift7.TFieldRequirementType.REQUIRED, 
         new org.apache.thrift7.meta_data.ListMetaData(org.apache.thrift7.protocol.TType.LIST, 
             new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, TaskSummary.class))));
+    tmpMap.put(_Fields.USER_DEF_METRIC, new org.apache.thrift7.meta_data.FieldMetaData("userDefMetric", org.apache.thrift7.TFieldRequirementType.OPTIONAL, 
+        new org.apache.thrift7.meta_data.ListMetaData(org.apache.thrift7.protocol.TType.LIST, 
+            new org.apache.thrift7.meta_data.StructMetaData(org.apache.thrift7.protocol.TType.STRUCT, UserDefMetric.class))));
     metaDataMap = Collections.unmodifiableMap(tmpMap);
     org.apache.thrift7.meta_data.FieldMetaData.addStructMetaDataMap(TopologyInfo.class, metaDataMap);
   }
@@ -187,6 +195,13 @@ public class TopologyInfo implements org.apache.thrift7.TBase<TopologyInfo, Topo
       }
       this.tasks = __this__tasks;
     }
+    if (other.is_set_userDefMetric()) {
+      List<UserDefMetric> __this__userDefMetric = new ArrayList<UserDefMetric>();
+      for (UserDefMetric other_element : other.userDefMetric) {
+        __this__userDefMetric.add(new UserDefMetric(other_element));
+      }
+      this.userDefMetric = __this__userDefMetric;
+    }
   }
 
   public TopologyInfo deepCopy() {
@@ -202,6 +217,7 @@ public class TopologyInfo implements org.apache.thrift7.TBase<TopologyInfo, Topo
     this.workers = null;
     this.status = null;
     this.tasks = null;
+    this.userDefMetric = null;
   }
 
   public String get_id() {
@@ -371,6 +387,44 @@ public class TopologyInfo implements org.apache.thrift7.TBase<TopologyInfo, Topo
     }
   }
 
+  public int get_userDefMetric_size() {
+    return (this.userDefMetric == null) ? 0 : this.userDefMetric.size();
+  }
+
+  public java.util.Iterator<UserDefMetric> get_userDefMetric_iterator() {
+    return (this.userDefMetric == null) ? null : this.userDefMetric.iterator();
+  }
+
+  public void add_to_userDefMetric(UserDefMetric elem) {
+    if (this.userDefMetric == null) {
+      this.userDefMetric = new ArrayList<UserDefMetric>();
+    }
+    this.userDefMetric.add(elem);
+  }
+
+  public List<UserDefMetric> get_userDefMetric() {
+    return this.userDefMetric;
+  }
+
+  public void set_userDefMetric(List<UserDefMetric> userDefMetric) {
+    this.userDefMetric = userDefMetric;
+  }
+
+  public void unset_userDefMetric() {
+    this.userDefMetric = null;
+  }
+
+  /** Returns true if field userDefMetric is set (has been assigned a value) and false otherwise */
+  public boolean is_set_userDefMetric() {
+    return this.userDefMetric != null;
+  }
+
+  public void set_userDefMetric_isSet(boolean value) {
+    if (!value) {
+      this.userDefMetric = null;
+    }
+  }
+
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case ID:
@@ -421,6 +475,14 @@ public class TopologyInfo implements org.apache.thrift7.TBase<TopologyInfo, Topo
       }
       break;
 
+    case USER_DEF_METRIC:
+      if (value == null) {
+        unset_userDefMetric();
+      } else {
+        set_userDefMetric((List<UserDefMetric>)value);
+      }
+      break;
+
     }
   }
 
@@ -443,6 +505,9 @@ public class TopologyInfo implements org.apache.thrift7.TBase<TopologyInfo, Topo
 
     case TASKS:
       return get_tasks();
+
+    case USER_DEF_METRIC:
+      return get_userDefMetric();
 
     }
     throw new IllegalStateException();
@@ -467,6 +532,8 @@ public class TopologyInfo implements org.apache.thrift7.TBase<TopologyInfo, Topo
       return is_set_status();
     case TASKS:
       return is_set_tasks();
+    case USER_DEF_METRIC:
+      return is_set_userDefMetric();
     }
     throw new IllegalStateException();
   }
@@ -538,6 +605,15 @@ public class TopologyInfo implements org.apache.thrift7.TBase<TopologyInfo, Topo
         return false;
     }
 
+    boolean this_present_userDefMetric = true && this.is_set_userDefMetric();
+    boolean that_present_userDefMetric = true && that.is_set_userDefMetric();
+    if (this_present_userDefMetric || that_present_userDefMetric) {
+      if (!(this_present_userDefMetric && that_present_userDefMetric))
+        return false;
+      if (!this.userDefMetric.equals(that.userDefMetric))
+        return false;
+    }
+
     return true;
   }
 
@@ -574,6 +650,11 @@ public class TopologyInfo implements org.apache.thrift7.TBase<TopologyInfo, Topo
     builder.append(present_tasks);
     if (present_tasks)
       builder.append(tasks);
+
+    boolean present_userDefMetric = true && (is_set_userDefMetric());
+    builder.append(present_userDefMetric);
+    if (present_userDefMetric)
+      builder.append(userDefMetric);
 
     return builder.toHashCode();
   }
@@ -642,6 +723,16 @@ public class TopologyInfo implements org.apache.thrift7.TBase<TopologyInfo, Topo
     }
     if (is_set_tasks()) {
       lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.tasks, typedOther.tasks);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_userDefMetric()).compareTo(typedOther.is_set_userDefMetric());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_userDefMetric()) {
+      lastComparison = org.apache.thrift7.TBaseHelper.compareTo(this.userDefMetric, typedOther.userDefMetric);
       if (lastComparison != 0) {
         return lastComparison;
       }
@@ -728,6 +819,24 @@ public class TopologyInfo implements org.apache.thrift7.TBase<TopologyInfo, Topo
             org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
           }
           break;
+        case 7: // USER_DEF_METRIC
+          if (field.type == org.apache.thrift7.protocol.TType.LIST) {
+            {
+              org.apache.thrift7.protocol.TList _list199 = iprot.readListBegin();
+              this.userDefMetric = new ArrayList<UserDefMetric>(_list199.size);
+              for (int _i200 = 0; _i200 < _list199.size; ++_i200)
+              {
+                UserDefMetric _elem201; // required
+                _elem201 = new UserDefMetric();
+                _elem201.read(iprot);
+                this.userDefMetric.add(_elem201);
+              }
+              iprot.readListEnd();
+            }
+          } else { 
+            org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
         default:
           org.apache.thrift7.protocol.TProtocolUtil.skip(iprot, field.type);
       }
@@ -758,9 +867,9 @@ public class TopologyInfo implements org.apache.thrift7.TBase<TopologyInfo, Topo
       oprot.writeFieldBegin(WORKERS_FIELD_DESC);
       {
         oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRUCT, this.workers.size()));
-        for (WorkerSummary _iter199 : this.workers)
+        for (WorkerSummary _iter202 : this.workers)
         {
-          _iter199.write(oprot);
+          _iter202.write(oprot);
         }
         oprot.writeListEnd();
       }
@@ -775,13 +884,27 @@ public class TopologyInfo implements org.apache.thrift7.TBase<TopologyInfo, Topo
       oprot.writeFieldBegin(TASKS_FIELD_DESC);
       {
         oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRUCT, this.tasks.size()));
-        for (TaskSummary _iter200 : this.tasks)
+        for (TaskSummary _iter203 : this.tasks)
         {
-          _iter200.write(oprot);
+          _iter203.write(oprot);
         }
         oprot.writeListEnd();
       }
       oprot.writeFieldEnd();
+    }
+    if (this.userDefMetric != null) {
+      if (is_set_userDefMetric()) {
+        oprot.writeFieldBegin(USER_DEF_METRIC_FIELD_DESC);
+        {
+          oprot.writeListBegin(new org.apache.thrift7.protocol.TList(org.apache.thrift7.protocol.TType.STRUCT, this.userDefMetric.size()));
+          for (UserDefMetric _iter204 : this.userDefMetric)
+          {
+            _iter204.write(oprot);
+          }
+          oprot.writeListEnd();
+        }
+        oprot.writeFieldEnd();
+      }
     }
     oprot.writeFieldStop();
     oprot.writeStructEnd();
@@ -835,6 +958,16 @@ public class TopologyInfo implements org.apache.thrift7.TBase<TopologyInfo, Topo
       sb.append(this.tasks);
     }
     first = false;
+    if (is_set_userDefMetric()) {
+      if (!first) sb.append(", ");
+      sb.append("userDefMetric:");
+      if (this.userDefMetric == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.userDefMetric);
+      }
+      first = false;
+    }
     sb.append(")");
     return sb.toString();
   }

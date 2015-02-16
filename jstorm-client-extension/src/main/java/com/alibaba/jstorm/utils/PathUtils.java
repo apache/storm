@@ -110,5 +110,21 @@ public class PathUtils {
 		}
 		return rtn;
 	}
+	
+	public static String getCanonicalPath(String fileName) {
+		String ret = null;
+		File file = new File(fileName);
+		if (file.exists()) {
+			try {
+				ret = file.getCanonicalPath();
+			} catch (IOException e) {
+				LOG.error("", e);
+			}
+		}else {
+			LOG.warn(fileName  + " doesn't exist ");
+		}
+		
+		return ret;
+	}
 
 }

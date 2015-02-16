@@ -207,6 +207,11 @@ public class StormZkClusterState implements StormClusterState {
 	public List<String> monitor_user_workers(String topologyId) throws Exception {
 		return cluster_state.get_children(Cluster.monitor_userdir_path(topologyId), false);
 	}
+	
+	@Override
+	public List<String> monitors() throws Exception {
+		return cluster_state.get_children(Cluster.MONITOR_SUBTREE, false);
+	}
 
 	@Override
 	public List<String> heartbeat_storms() throws Exception {
@@ -228,6 +233,30 @@ public class StormZkClusterState implements StormClusterState {
 		cluster_state.delete_node(Cluster.storm_task_root(topologyId));
 		cluster_state.delete_node(Cluster.monitor_path(topologyId));
 		this.remove_storm_base(topologyId);
+	}
+	
+	@Override
+	public void try_remove_storm(String topologyId) {
+		teardown_heartbeats(topologyId);
+		teardown_task_errors(topologyId);
+		
+		try {
+			cluster_state.delete_node(Cluster.assignment_path(topologyId));
+		}catch(Exception e) {
+			LOG.warn("Failed to delete zk Assignment " + topologyId);
+		}
+		
+		try {
+			cluster_state.delete_node(Cluster.storm_task_root(topologyId));
+		}catch(Exception e) {
+			LOG.warn("Failed to delete zk taskInfo " + topologyId);
+		}
+		
+		try {
+			cluster_state.delete_node(Cluster.monitor_path(topologyId));
+		}catch(Exception e) {
+			LOG.warn("Failed to delete zk monitor " + topologyId);
+		}
 	}
 
 	@Override
@@ -405,6 +434,21 @@ public class StormZkClusterState implements StormClusterState {
 	@Override
 	public List<String> task_error_storms() throws Exception {
 		return cluster_state.get_children(Cluster.TASKERRORS_SUBTREE, false);
+	}
+	
+	@Override
+	public List<String> task_error_time(String topologyId, int taskId) throws Exception {	
+		String path = Cluster.taskerror_path(topologyId, taskId);
+		cluster_state.mkdirs(path);
+		return cluster_state.get_children(path, false);
+	}
+	
+	@Override
+	public String task_error_info(String topologyId, int taskId, long timeStamp) throws Exception {
+		String path = Cluster.taskerror_path(topologyId, taskId);
+		cluster_state.mkdirs(path);
+		path = path + "/" + timeStamp;
+		return new String(cluster_state.get_data(path, false));
 	}
 
 	@Override

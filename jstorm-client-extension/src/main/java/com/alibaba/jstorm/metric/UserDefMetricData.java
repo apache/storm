@@ -5,22 +5,24 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 import java.io.Serializable;
 
-import com.codahale.metrics.Metric;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.log4j.Logger;
+
 import com.codahale.metrics.Gauge;
-import com.codahale.metrics.Sampling;
-import com.codahale.metrics.Snapshot;
 import com.codahale.metrics.Timer;
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
-import com.alibaba.jstorm.client.metric.MetricCallback;
 import com.alibaba.jstorm.metric.metrdata.*;
+import com.alibaba.jstorm.utils.JStormUtils;
 
 
 /**
  * /storm-zk-root/Monitor/{topologyid}/user/{workerid} data
  */
 public class UserDefMetricData implements Serializable {
+	private static final Logger LOG = Logger.getLogger(UserDefMetricData.class);
 
 	private static final long serialVersionUID = 954727168057659270L;
 	
@@ -55,9 +57,13 @@ public class UserDefMetricData implements Serializable {
 	
 	public void updateFromGauge(Map<String, Gauge<?>> gaugeMap) {
 		for(Entry<String, Gauge<?>> entry : gaugeMap.entrySet()) {
-			GaugeData gaugeData = new GaugeData();
-			gaugeData.setValue((Double)(entry.getValue().getValue()));
-			gaugeDataMap.put(entry.getKey(), gaugeData);
+			try {
+			    GaugeData gaugeData = new GaugeData();
+			    gaugeData.setValue(JStormUtils.parseDouble(entry.getValue().getValue()));
+			    gaugeDataMap.put(entry.getKey(), gaugeData);
+			} catch (Throwable e) {
+				LOG.error("updateFromGauge exception ", e);
+			}
 		}
 	}
 	
@@ -123,4 +129,10 @@ public class UserDefMetricData implements Serializable {
 			timerDataMap.put(entry.getKey(), timerData);
 		}
 	}
+	
+	@Override
+    public String toString() {
+    	return ToStringBuilder.reflectionToString(this,
+				ToStringStyle.SHORT_PREFIX_STYLE);
+    }
 }

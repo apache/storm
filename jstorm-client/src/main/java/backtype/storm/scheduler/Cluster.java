@@ -262,9 +262,12 @@ public class Cluster {
 	 * @return
 	 */
 	public int getAssignedNumWorkers(TopologyDetails topology) {
+		if (topology == null) {
+			return 0;
+		}
 		SchedulerAssignment assignment = this.getAssignmentById(topology
 				.getId());
-		if (topology == null || assignment == null) {
+		if (assignment == null) {
 			return 0;
 		}
 

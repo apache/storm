@@ -3,12 +3,9 @@ package com.alibaba.jstorm.cluster;
 import java.util.List;
 import java.util.Map;
 
-import backtype.storm.utils.Utils;
-
 import com.alibaba.jstorm.callback.RunnableCallback;
 import com.alibaba.jstorm.daemon.supervisor.SupervisorInfo;
 import com.alibaba.jstorm.daemon.worker.WorkerMetricInfo;
-import com.alibaba.jstorm.metric.UserDefMetric;
 import com.alibaba.jstorm.metric.UserDefMetricData;
 import com.alibaba.jstorm.task.Assignment;
 import com.alibaba.jstorm.task.AssignmentBak;
@@ -48,6 +45,8 @@ public interface StormClusterState {
 	public void remove_storm_base(String topology_id) throws Exception;
 
 	public void remove_storm(String topology_id) throws Exception;
+	
+	public void try_remove_storm(String topology_id);
 
 	public List<Integer> task_ids(String topology_id) throws Exception;
 
@@ -149,7 +148,13 @@ public interface StormClusterState {
 	
 	public List<String> monitor_user_workers(String topologyId) throws Exception;
 	
+	public List<String> monitors() throws Exception;
+	
 	public TaskMetricInfo get_task_metric(String topologyId, int taskId) throws Exception;
 	
 	public WorkerMetricInfo get_worker_metric(String topologyId, String workerId) throws Exception;
+	
+	public List<String> task_error_time(String topologyId, int taskId) throws Exception;
+	
+	public String task_error_info(String topologyId, int taskId, long timeStamp) throws Exception;
 }

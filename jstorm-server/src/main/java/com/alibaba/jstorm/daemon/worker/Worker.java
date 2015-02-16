@@ -104,6 +104,8 @@ public class Worker {
 
 		// get output streams of every task
 		Set<Integer> outboundTasks = worker_output_tasks();
+		
+		workerData.initOutboundTaskStatus(outboundTasks);
 
 		RefreshConnections refresh_connections = new RefreshConnections(
 				workerData, outboundTasks);
@@ -168,10 +170,6 @@ public class Worker {
 		AsyncLoopThread refreshconn = new AsyncLoopThread(refreshConn, false,
 				Thread.MIN_PRIORITY, true);
 		threads.add(refreshconn);
-
-		TimeTick timeTick = new TimeTick(workerData);
-		AsyncLoopThread tick = new AsyncLoopThread(timeTick);
-		threads.add(tick);
 
 		// refresh ZK active status
 		RefreshActive refreshZkActive = new RefreshActive(workerData);
@@ -443,26 +441,26 @@ public class Worker {
 			System.exit(-1);
 		}
 
-		String topology_id = args[0];
-		String supervisor_id = args[1];
-		String port_str = args[2];
-		String worker_id = args[3];
-		String jar_path = args[4];
-
-		killOldWorker(port_str);
-
-		Map conf = Utils.readStormConfig();
-		StormConfig.validate_distributed_mode(conf);
-
-		JStormServerUtils.startTaobaoJvmMonitor();
-
 		StringBuilder sb = new StringBuilder();
-		sb.append("topologyId:" + topology_id + ", ");
-		sb.append("port:" + port_str + ", ");
-		sb.append("workerId:" + worker_id + ", ");
-		sb.append("jar_path:" + jar_path + "\n");
 
 		try {
+			String topology_id = args[0];
+			String supervisor_id = args[1];
+			String port_str = args[2];
+			String worker_id = args[3];
+			String jar_path = args[4];
+
+			killOldWorker(port_str);
+
+			Map conf = Utils.readStormConfig();
+			StormConfig.validate_distributed_mode(conf);
+
+			JStormServerUtils.startTaobaoJvmMonitor();
+			
+			sb.append("topologyId:" + topology_id + ", ");
+			sb.append("port:" + port_str + ", ");
+			sb.append("workerId:" + worker_id + ", ");
+			sb.append("jar_path:" + jar_path + "\n");
 			
 			WorkerShutdown sd = mk_worker(conf, null, topology_id,
 					supervisor_id, Integer.parseInt(port_str), worker_id,

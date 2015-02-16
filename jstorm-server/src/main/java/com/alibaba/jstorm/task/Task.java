@@ -105,9 +105,11 @@ public class Task {
 		this.stormConf = Common.component_conf(workerData.getStormConf(),
 				topologyContext, componentid);
 
+		WorkerClassLoader.switchThreadContext();
 		// get real task object -- spout/bolt/spoutspec
 		this.taskObj = Common.get_task_object(topologyContext.getRawTopology(),
 				componentid, WorkerClassLoader.getInstance());
+		WorkerClassLoader.restoreThreadContext();
 		int samplerate = StormConfig.sampling_rate(stormConf);
 		this.taskStats = new CommonStatsRolling(samplerate);
 

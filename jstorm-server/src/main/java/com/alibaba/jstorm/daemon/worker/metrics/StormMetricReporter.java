@@ -36,6 +36,7 @@ import com.alibaba.jstorm.metric.UserDefMetricData;
 import com.alibaba.jstorm.task.TaskMetricInfo;
 import com.alibaba.jstorm.utils.JStormServerUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
+import com.alibaba.jstorm.utils.NetWorkUtils;
 
 public class StormMetricReporter extends ScheduledReporter {
 	/**
@@ -312,10 +313,13 @@ public class StormMetricReporter extends ScheduledReporter {
     		List<MetricInfo> MetricList = entry.getValue();
     		
     		try {
-    			String component = clusterState.task_info(topologyId, Integer.valueOf(taskId)).getComponentId();
+    			String component = workerData.getTasksToComponent().get(Integer.valueOf(taskId));
         		TaskMetricInfo taskMetricInfo = new TaskMetricInfo(taskId, component);
         		
     	  	    for(MetricInfo metricInfo : MetricList) {
+    	  	        if(metricPerf == false && ((metricInfo.getMetric() instanceof Timer) || 
+    	  	                (metricInfo.getMetric() instanceof Histogram)))
+    	  	            continue;
     			    taskMetricInfo.updateMetricData(metricInfo);
     	  	    }
     	  	    
@@ -364,13 +368,16 @@ public class StormMetricReporter extends ScheduledReporter {
     	String topologyId = workerData.getTopologyId();
     	String hostName;
 
-    	hostName = JStormServerUtils.getHostName(workerData.getConf());
+    	hostName = NetWorkUtils.ip();
     	String workerId = hostName + ":" + workerData.getPort();
     	
     	WorkerMetricInfo workerMetricInfo = new WorkerMetricInfo(hostName, workerData.getPort());
     	try {
     		//Set metrics data
-    	    for(MetricInfo metricInfo : metricList) {		
+    	    for(MetricInfo metricInfo : metricList) {
+    	        if(metricPerf == false && ((metricInfo.getMetric() instanceof Timer) || 
+                        (metricInfo.getMetric() instanceof Histogram)))
+                    continue;
     			workerMetricInfo.updateMetricData(metricInfo);	
     		}
     	    
@@ -401,9 +408,9 @@ public class StormMetricReporter extends ScheduledReporter {
     	userDefMetricData.updateFromMeterData(userDefMetric.getMeter());
     	// If metrics performance is disable, Timer & Histogram metrics will not be monitored,
     	// and the corresponding metrics data will not be sent to ZK either.
-    	if (metricPerf == false) {
-    	   userDefMetricData.updateFromHistogramData(userDefMetric.getHistogram());
-    	   userDefMetricData.updateFromTimerData(userDefMetric.getTimer());
+    	if (metricPerf) {
+    	    userDefMetricData.updateFromHistogramData(userDefMetric.getHistogram());
+    	    userDefMetricData.updateFromTimerData(userDefMetric.getTimer());
     	}
 
     	try {
@@ -417,7 +424,7 @@ public class StormMetricReporter extends ScheduledReporter {
     	doCallback(userDefMetric.getGauge());
     	doCallback(userDefMetric.getCounter());
     	doCallback(userDefMetric.getMeter());
-    	if (metricPerf == false) {
+    	if (metricPerf) {
     	    doCallback(userDefMetric.getHistogram());
     	    doCallback(userDefMetric.getTimer());
     	}

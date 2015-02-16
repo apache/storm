@@ -22,9 +22,11 @@ import backtype.storm.generated.NotAliveException;
 import backtype.storm.generated.StormTopology;
 import backtype.storm.generated.TaskSummary;
 import backtype.storm.generated.TopologyInfo;
+import backtype.storm.generated.UserDefMetric;
 import backtype.storm.utils.NimbusClient;
 
 import com.alibaba.jstorm.common.stats.StatBuckets;
+import com.alibaba.jstorm.metric.UserDefMetricData;
 import com.alibaba.jstorm.ui.UIUtils;
 import com.alibaba.jstorm.ui.model.Components;
 import com.alibaba.jstorm.ui.model.TopologySumm;
@@ -50,6 +52,7 @@ public class TopologyPage implements Serializable {
 	private List<WinComponentStats> tstats = null;
 	private List<Components> scom = null;
 	private List<Components> bcom = null;
+	private List<UserDefMetric> udm = null;
 
 	public TopologyPage() throws Exception {
 
@@ -99,6 +102,8 @@ public class TopologyPage implements Serializable {
 			StormTopology topology = client.getClient().getTopology(topologyid);
 
 			List<TaskSummary> ts = summ.get_tasks();
+			
+			udm = summ.get_userDefMetric();
 
 			tsumm = UIUtils.topologySummary(summ);
 
@@ -219,6 +224,14 @@ public class TopologyPage implements Serializable {
 		List<WinComponentStats> tss = new ArrayList<WinComponentStats>();
 		tss.add(topologyStats);
 		return tss;
+	}
+	
+	public List<UserDefMetric> getUdm() {
+	    return udm;
+	}
+	
+	public void setUdm(List<UserDefMetric> udm) {
+	    this.udm = udm;
 	}
 
 	public String getTopologyid() {

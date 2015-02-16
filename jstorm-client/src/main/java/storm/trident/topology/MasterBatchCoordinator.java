@@ -147,7 +147,7 @@ public class MasterBatchCoordinator extends BaseRichSpout {
                 // Then those ones will be retried when nextTuple.
                 txid = attempt.getTransactionId();
                 status = _activeTx.remove(txid);
-                if(status!=null && status.attempt.equals(status.attempt)) {
+                if(status!=null && status.attempt.equals(attempt)) {
                     _activeTx.tailMap(txid).clear();
                 }
                 break;

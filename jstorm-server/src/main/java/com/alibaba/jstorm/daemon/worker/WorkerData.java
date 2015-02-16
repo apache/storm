@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.lang.StringUtils;
@@ -33,8 +35,10 @@ import com.alibaba.jstorm.cluster.StormClusterState;
 import com.alibaba.jstorm.cluster.StormConfig;
 import com.alibaba.jstorm.daemon.nimbus.StatusType;
 import com.alibaba.jstorm.daemon.worker.metrics.MetricReporter;
+import com.alibaba.jstorm.daemon.worker.timer.TimerTrigger;
 import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
 import com.alibaba.jstorm.task.Assignment;
+import com.alibaba.jstorm.task.TaskInfo;
 import com.alibaba.jstorm.task.TaskShutdownDameon;
 import com.alibaba.jstorm.utils.JStormServerUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
@@ -114,6 +118,11 @@ public class WorkerData {
 
 	private List<TaskShutdownDameon> shutdownTasks;
 	private MetricReporter metricReporter;
+	
+	private Map<Integer, Boolean> outTaskStatus; //true => active
+	
+	public static final int THREAD_POOL_NUM = 4;
+	private ScheduledExecutorService threadPool;
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public WorkerData(Map conf, IContext context, String topology_id,
@@ -148,6 +157,18 @@ public class WorkerData {
 		LOG.info("Worker Configuration " + stormConf);
 
 		try {
+
+			boolean enableClassloader = ConfigExtension
+					.isEnableTopologyClassLoader(stormConf);
+			boolean enableDebugClassloader = ConfigExtension
+					.isEnableClassloaderDebug(stormConf);
+
+			if (jar_path == null && enableClassloader == true) {
+				LOG.error("enable classloader, but not app jar");
+				throw new InvalidParameterException();
+			}
+
+			URL[] urlArray = new URL[0];
 			if (jar_path != null) {
 				String[] paths = jar_path.split(":");
 				Set<URL> urls = new HashSet<URL>();
@@ -157,16 +178,13 @@ public class WorkerData {
 					URL url = new URL("File:" + path);
 					urls.add(url);
 				}
-				WorkerClassLoader.mkInstance(urls.toArray(new URL[0]),
-						ClassLoader.getSystemClassLoader(), ClassLoader
-								.getSystemClassLoader().getParent(),
-						ConfigExtension.isEnableTopologyClassLoader(stormConf));
-			} else {
-				WorkerClassLoader.mkInstance(new URL[0], ClassLoader
-						.getSystemClassLoader(), ClassLoader
-						.getSystemClassLoader().getParent(), ConfigExtension
-						.isEnableTopologyClassLoader(stormConf));
+				urlArray = urls.toArray(new URL[0]);
+
 			}
+
+			WorkerClassLoader.mkInstance(urlArray, ClassLoader
+					.getSystemClassLoader(), ClassLoader.getSystemClassLoader()
+					.getParent(), enableClassloader, enableDebugClassloader);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			LOG.error("init jarClassLoader error!", e);
@@ -230,6 +248,11 @@ public class WorkerData {
 		contextMaker = new ContextMaker(this);
 		
 		metricReporter = new MetricReporter(this);
+		
+		outTaskStatus = new HashMap<Integer, Boolean>();
+		
+		threadPool = Executors.newScheduledThreadPool(THREAD_POOL_NUM);
+		TimerTrigger.setScheduledExecutorService(threadPool);
 
 		LOG.info("Successfully create WorkerData");
 
@@ -414,5 +437,23 @@ public class WorkerData {
 
 	public MetricReporter getMetricsReporter() {
 		return this.metricReporter;
+	}
+	
+	public void initOutboundTaskStatus(Set<Integer> outboundTasks) {
+	    for (Integer taskId : outboundTasks) {
+	        outTaskStatus.put(taskId, false);
+	    }
+	}
+	
+	public void updateOutboundTaskStatus(Integer taskId, boolean isActive) {
+	    outTaskStatus.put(taskId, isActive);
+	}
+	
+	public boolean isOutboundTaskActive(Integer taskId) {
+	    return outTaskStatus.get(taskId) != null ? outTaskStatus.get(taskId) : false;
+	}
+
+	public ScheduledExecutorService getThreadPool() {
+		return threadPool;
 	}
 }

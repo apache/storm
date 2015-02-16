@@ -135,7 +135,7 @@ public class Thrift {
 		return Grouping.direct(new NullStruct());
 	}
 
-	private static ComponentCommon mkAckerComponentcommon(
+	private static ComponentCommon mkComponentcommon(
 			Map<GlobalStreamId, Grouping> inputs,
 			HashMap<String, StreamInfo> output_spec, Integer parallelism_hint) {
 		ComponentCommon ret = new ComponentCommon(inputs, output_spec);
@@ -145,9 +145,9 @@ public class Thrift {
 		return ret;
 	}
 
-	public static Bolt mkAckerBolt(Map<GlobalStreamId, Grouping> inputs,
+	public static Bolt mkBolt(Map<GlobalStreamId, Grouping> inputs,
 			IBolt bolt, HashMap<String, StreamInfo> output, Integer p) {
-		ComponentCommon common = mkAckerComponentcommon(inputs, output, p);
+		ComponentCommon common = mkComponentcommon(inputs, output, p);
 		byte[] boltSer = Utils.serialize(bolt);
 		ComponentObject component = ComponentObject.serialized_java(boltSer);
 		return new Bolt(component, common);

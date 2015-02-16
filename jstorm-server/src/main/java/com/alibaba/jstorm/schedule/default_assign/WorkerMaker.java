@@ -16,11 +16,12 @@ import org.apache.log4j.Logger;
 
 import backtype.storm.Config;
 
+import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.client.WorkerAssignment;
 import com.alibaba.jstorm.daemon.supervisor.SupervisorInfo;
 import com.alibaba.jstorm.task.Assignment;
 import com.alibaba.jstorm.utils.FailedAssignTopologyException;
-import com.alibaba.jstorm.utils.JStromServerConfigExtension;
+import com.alibaba.jstorm.utils.NetWorkUtils;
 
 public class WorkerMaker {
 
@@ -54,11 +55,10 @@ public class WorkerMaker {
 				needAssign,
 				result,
 				workersNum,
-				getUserDefineWorkers(context, JStromServerConfigExtension
+				getUserDefineWorkers(context, ConfigExtension
 						.getUserDefineAssignment(context.getStormConf())));
 		// old assignments
-		if (JStromServerConfigExtension.isUseOldAssignment(context
-				.getStormConf())) {
+		if (ConfigExtension.isUseOldAssignment(context.getStormConf())) {
 			this.getRightWorkers(context, needAssign, result, workersNum,
 					context.getOldWorkers());
 		}
@@ -70,19 +70,22 @@ public class WorkerMaker {
 		for (int i = 0; i < defaultWorkerNum; i++) {
 			result.add(new ResourceWorkerSlot());
 		}
-
-		this.putAllWorkerToSupervisor(result,
-				this.getIsolationSupervisors(context));
-		this.putAllWorkerToSupervisor(result,
-				this.getCanUseSupervisors(context.getCluster()));
+		List<SupervisorInfo> isolationSupervisors = this
+				.getIsolationSupervisors(context);
+		if (isolationSupervisors.size() != 0) {
+			this.putAllWorkerToSupervisor(result,
+					this.getCanUseSupervisors(isolationSupervisors));
+		} else {
+			this.putAllWorkerToSupervisor(result,
+					this.getCanUseSupervisors(context.getCluster()));
+		}
 		this.setAllWorkerMemAndCpu(context.getStormConf(), result);
 		return result;
 	}
 
 	private void setAllWorkerMemAndCpu(Map conf, List<ResourceWorkerSlot> result) {
-		long defaultSize = JStromServerConfigExtension
-				.getMemSizePerWorker(conf);
-		int defaultCpu = JStromServerConfigExtension.getCpuSlotPerWorker(conf);
+		long defaultSize = ConfigExtension.getMemSizePerWorker(conf);
+		int defaultCpu = ConfigExtension.getCpuSlotPerWorker(conf);
 		for (ResourceWorkerSlot worker : result) {
 			if (worker.getMemSize() <= 0)
 				worker.setMemSize(defaultSize);
@@ -98,7 +101,7 @@ public class WorkerMaker {
 				continue;
 			if (worker.getHostname() != null) {
 				for (SupervisorInfo supervisor : supervisors) {
-					if (supervisor.getHostName().equals(worker.getHostname())
+					if (NetWorkUtils.equals(supervisor.getHostName(), worker.getHostname())
 							&& supervisor.getWorkerPorts().size() > 0) {
 						this.putWorkerToSupervisor(supervisor, worker);
 						break;
@@ -190,7 +193,16 @@ public class WorkerMaker {
 	private int getWorkersNum(DefaultTopologyAssignContext context,
 			int workersNum) {
 		Map<String, SupervisorInfo> supervisors = context.getCluster();
+		List<SupervisorInfo> isolationSupervisors = this
+				.getIsolationSupervisors(context);
 		int slotNum = 0;
+
+		if (isolationSupervisors.size() != 0) {
+			for (SupervisorInfo superivsor : isolationSupervisors) {
+				slotNum = slotNum + superivsor.getWorkerPorts().size();
+			}
+			return Math.min(slotNum, workersNum);
+		}
 		for (Entry<String, SupervisorInfo> entry : supervisors.entrySet()) {
 			slotNum = slotNum + entry.getValue().getWorkerPorts().size();
 		}
@@ -268,12 +280,21 @@ public class WorkerMaker {
 		if (isolationHosts == null)
 			return new ArrayList<SupervisorInfo>();
 		List<SupervisorInfo> isolationSupervisors = new ArrayList<SupervisorInfo>();
-		for (SupervisorInfo supervisor : this.getCanUseSupervisors(context
-				.getCluster())) {
-			if (isolationHosts.contains(supervisor.getHostName())) {
-				isolationSupervisors.add(supervisor);
+		for (Entry<String, SupervisorInfo> entry : context.getCluster()
+				.entrySet()) {
+			if (containTargetHost(isolationHosts, entry.getValue().getHostName())) {
+				isolationSupervisors.add(entry.getValue());
 			}
 		}
 		return isolationSupervisors;
+	}
+	
+	private boolean containTargetHost(Collection<String> hosts, String target) {
+		for (String host : hosts) {
+			if (NetWorkUtils.equals(host, target) == true) {
+				return true;
+			}
+		}
+		return false;
 	}
 }

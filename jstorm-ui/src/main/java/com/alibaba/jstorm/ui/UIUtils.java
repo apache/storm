@@ -467,11 +467,14 @@ public class UIUtils {
 
 		ClusterSumm clusterSumm = new ClusterSumm();
 		String master = client.getMasterHost();
-		clusterSumm.setNimbusHostname(master);
+		
 		if (master.contains(":")) {
-			clusterSumm.setNimbusIp(NetWorkUtils.host2Ip(master.substring(0,
-					master.indexOf(":"))));
+			String firstPart = master.substring(0, master.indexOf(":") );
+			String lastPart = master.substring(master.indexOf(":"));
+			clusterSumm.setNimbusHostname(NetWorkUtils.ip2Host(firstPart) + lastPart);
+			clusterSumm.setNimbusIp(NetWorkUtils.host2Ip(firstPart));
 		} else {
+			clusterSumm.setNimbusHostname(master);
 			clusterSumm.setNimbusIp(NetWorkUtils.host2Ip(master));
 		}
 		int port = ConfigExtension.getNimbusDeamonHttpserverPort(conf);

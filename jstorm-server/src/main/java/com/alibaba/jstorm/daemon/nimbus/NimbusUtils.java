@@ -1,9 +1,10 @@
 package com.alibaba.jstorm.daemon.nimbus;
 
-import java.io.File;
-import java.io.FileReader;
 import java.io.BufferedReader;
 import java.io.Closeable;
+import java.io.File;
+import java.io.FileReader;
+import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -41,8 +42,8 @@ import com.alibaba.jstorm.cluster.StormConfig;
 import com.alibaba.jstorm.cluster.StormMonitor;
 import com.alibaba.jstorm.daemon.supervisor.SupervisorInfo;
 import com.alibaba.jstorm.daemon.worker.WorkerMetricInfo;
-import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
 import com.alibaba.jstorm.metric.MetricDef;
+import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
 import com.alibaba.jstorm.task.Assignment;
 import com.alibaba.jstorm.task.TaskMetricInfo;
 import com.alibaba.jstorm.task.TkHbCacheTime;
@@ -219,6 +220,7 @@ public class NimbusUtils {
 		}
 
 	}
+	
 
 	/**
 	 * finalize component's task paralism
@@ -229,10 +231,21 @@ public class NimbusUtils {
 	 * @return
 	 */
 	public static StormTopology normalizeTopology(Map stormConf,
-			StormTopology topology, boolean fromConf) {
+			StormTopology topology, boolean fromConf){
 		StormTopology ret = topology.deepCopy();
+		
+		Map<String, Object> rawComponents = ThriftTopologyUtils.getComponents(topology);
 
 		Map<String, Object> components = ThriftTopologyUtils.getComponents(ret);
+		
+		if (rawComponents.keySet().equals(components.keySet()) == false) {
+			String errMsg = "Failed to normalize topology binary, maybe due to wrong dependency";
+			LOG.info(errMsg + " raw components:" + rawComponents.keySet() + 
+					", normalized " + components.keySet());
+			
+			throw new InvalidParameterException(errMsg);
+		}
+		
 		for (Entry<String, Object> entry : components.entrySet()) {
 			Object component = entry.getValue();
 			String componentName = entry.getKey();
@@ -242,21 +255,30 @@ public class NimbusUtils {
 				common = ((Bolt) component).get_common();
 				if (fromConf) {
 					Integer paraNum = ConfigExtension.getBoltParallelism(stormConf, componentName);
-					if (paraNum != null) common.set_parallelism_hint(paraNum);
+					if (paraNum != null) {
+						LOG.info("Set " + componentName + " as " + paraNum);
+						common.set_parallelism_hint(paraNum);
+					}
 				}
 			}
 			if (component instanceof SpoutSpec) {
 				common = ((SpoutSpec) component).get_common();
 				if (fromConf) {
 					Integer paraNum = ConfigExtension.getSpoutParallelism(stormConf, componentName);
-					if (paraNum != null) common.set_parallelism_hint(paraNum);
+					if (paraNum != null) {
+						LOG.info("Set " + componentName + " as " + paraNum);
+						common.set_parallelism_hint(paraNum);
+					}
 				}
 			}
 			if (component instanceof StateSpoutSpec) {
 				common = ((StateSpoutSpec) component).get_common();
 				if (fromConf) {
 					Integer paraNum = ConfigExtension.getSpoutParallelism(stormConf, componentName);
-					if (paraNum != null) common.set_parallelism_hint(paraNum);
+					if (paraNum != null) {
+						LOG.info("Set " + componentName + " as " + paraNum);
+						common.set_parallelism_hint(paraNum);
+					}
 				}
 			}
 
@@ -325,33 +347,6 @@ public class NimbusUtils {
 
 	}
 
-	public static List<String> listStormdistFiles(NimbusData data)
-			throws Exception {
-		// get /local-storm-dir/nimbus/stormdist path
-		String master_stormdist_root = StormConfig.masterStormdistRoot(data
-				.getConf());
-
-		// listdir /local-storm-dir/nimbus/stormdist
-		List<String> files = PathUtils
-				.read_dir_contents(master_stormdist_root);
-		
-		return files;
-	}
-	
-	public static String findTopoFileInStormdist(NimbusData data, String name) throws Exception {
-		String ret = null;
-		
-		List<String> files = listStormdistFiles(data);
-		
-		for (String file : files) {
-			if (file.indexOf(name) != -1) {
-				ret = file;
-				break;
-			}
-		}
-		
-		return ret;
-	}
 	
 	public static boolean isTaskDead(NimbusData data, String topologyId,
 			Integer taskId) {

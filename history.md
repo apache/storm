@@ -1,6 +1,44 @@
 [JStorm English introduction](http://42.121.19.155/jstorm/JStorm-introduce-en.pptx)
 [JStorm Chinese introduction](http://42.121.19.155/jstorm/JStorm-introduce.pptx)
 
+#Release 0.9.6.3
+## New features
+1. Implement tick tuple
+2. Support logback
+3. Support to load the user defined configuration file of log4j
+4. Enable the display of user defined metrics in web UI
+5. Add "topologyName" parameter for "jstorm list" command
+6. Support the use of ip and hostname at the same for user defined schedule
+7. Support junit test for local mode
+8. Enable client command(e.g. jstorm jar) to load self-defined storm.yaml
+## Bug fix
+1. Add activate and deactivate api of spout, which are used in nextTuple prepare phase
+2. Update the support of multi language
+3. Check the worker's heartbeat asynchronously to speed up the lunch of worker
+4. Add the check of worker's pid to speed up the detect of dead worker
+5. Fix the high cpu load of disruptor producer when disruptor queue is full
+6. Remove the confused exception reported by disruptor queue when killing worker
+7. Fix the failure problem of "jstorm restart" client command
+8. Report error when user submits the jar built on a incompatible jstorm release
+9. Fix the problem that one log will printed twice when user define a configuration of log4j or logback on local mode
+10. Fix the potential exception when killing topology on local mode
+11. Forbid user to change the log level of jstorm log
+12. Add a configuration template of logback
+13. Fix the problem that process the upload of lib jar as application jar
+14. Makesure the clean of ZK node for a topology which is removed
+15. Add the information of topology name when java core dump
+16. Fix the incorrect value of -XX:MaxTenuringThreshold. Currently, the default value of jstorm is 20, but the max value in JDK8 is 15.
+17. Fix the potential reading failure of cpu core number, which may cause the supervisor slot to be set to 0
+18. Fix the "Address family not supported by protocol family" error on local mode
+19. Do not start logview http server on local mode
+20. Add the creation of log dir in supervisor alive checking scription
+21. Check the correctness of ip specified in configuration file before starting nimbus
+22. Check the correctness of env variable $JAVA_HOME/$JSTORM_HOME/$JSTORM_CONF_DIR before starting jstorm service
+23. Specify the log dir for rpm installation
+24. Add reading permission of /home/admin/jstorm and /home/admin/logs for all users after rpm installation
+25. Config local temporay ports when rpm installation
+26. Add noarch rpm package
+
 #Release 0.9.6.2
 1. Add option to switch between BlockingQueue and Disruptor
 2. Fix the bug which under sync netty mode, client failed to send message to server 

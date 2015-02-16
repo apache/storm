@@ -4,19 +4,13 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import backtype.storm.Config;
-import backtype.storm.spout.ISpoutOutputCollector;
-import backtype.storm.spout.SpoutOutputCollector;
 import backtype.storm.task.TopologyContext;
-import backtype.storm.tuple.Tuple;
 import backtype.storm.utils.DisruptorQueue;
 import backtype.storm.utils.WorkerClassLoader;
 
 import com.alibaba.jstorm.callback.AsyncLoopThread;
 import com.alibaba.jstorm.callback.RunnableCallback;
-import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.metric.MetricDef;
-import com.alibaba.jstorm.metric.JStormTimer;
 import com.alibaba.jstorm.metric.Metrics;
 import com.alibaba.jstorm.stats.CommonStatsRolling;
 import com.alibaba.jstorm.task.TaskStatus;
@@ -25,9 +19,7 @@ import com.alibaba.jstorm.task.acker.Acker;
 import com.alibaba.jstorm.task.comm.TaskSendTargets;
 import com.alibaba.jstorm.task.comm.TupleInfo;
 import com.alibaba.jstorm.task.error.ITaskReportErr;
-import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.RotatingMap;
-import com.alibaba.jstorm.utils.TimeCacheMap;
 import com.codahale.metrics.Gauge;
 
 /**

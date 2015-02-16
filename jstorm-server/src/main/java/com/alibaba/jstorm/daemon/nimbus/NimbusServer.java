@@ -5,7 +5,6 @@ import java.nio.channels.Channel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -29,15 +28,14 @@ import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.cluster.StormConfig;
 import com.alibaba.jstorm.daemon.supervisor.Httpserver;
 import com.alibaba.jstorm.daemon.worker.hearbeat.SyncContainerHb;
-import com.alibaba.jstorm.daemon.worker.metrics.UploadMetricFromZK;
-import com.alibaba.jstorm.daemon.worker.metrics.MetricSendClient;
 import com.alibaba.jstorm.daemon.worker.metrics.AlimonitorClient;
+import com.alibaba.jstorm.daemon.worker.metrics.MetricSendClient;
+import com.alibaba.jstorm.daemon.worker.metrics.UploadMetricFromZK;
 import com.alibaba.jstorm.schedule.CleanRunnable;
 import com.alibaba.jstorm.schedule.FollowerRunnable;
 import com.alibaba.jstorm.schedule.MonitorRunnable;
 import com.alibaba.jstorm.utils.JStormServerUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
-import com.alibaba.jstorm.utils.SmartThread;
 
 /**
  * 
@@ -73,9 +71,7 @@ public class NimbusServer {
 	
 	private UploadMetricFromZK uploadMetric;
 
-	private List<SmartThread> smartThreads = new ArrayList<SmartThread>();
-
-	private AtomicBoolean isShutdown = new AtomicBoolean(false);
+	private List<AsyncLoopThread> smartThreads = new ArrayList<AsyncLoopThread>();
 
 	public static void main(String[] args) throws Exception {
 		// read configuration files
@@ -346,22 +342,24 @@ public class NimbusServer {
 	}
 
 	public void cleanup() {
-		if (isShutdown.compareAndSet(false, true) == false) {
+		if (data.getIsShutdown().getAndSet(true) == true) {
 			LOG.info("Notify to quit nimbus");
 			return;
 		}
 
 		LOG.info("Begin to shutdown nimbus");
 
-		for (SmartThread t : smartThreads) {
+		for (AsyncLoopThread t : smartThreads) {
+			
 			t.cleanup();
 			JStormUtils.sleepMs(10);
 			t.interrupt();
-			try {
-				t.join();
-			} catch (InterruptedException e) {
-				LOG.error("join thread", e);
-			}
+//			try {
+//				t.join();
+//			} catch (InterruptedException e) {
+//				LOG.error("join thread", e);
+//			}
+			LOG.info("Successfully cleanup " + t.getThread().getName());
 		}
 
 		if (serviceHandler != null) {

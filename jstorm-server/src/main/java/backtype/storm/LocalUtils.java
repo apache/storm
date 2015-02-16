@@ -13,6 +13,7 @@ import backtype.storm.Config;
 import backtype.storm.messaging.IContext;
 import backtype.storm.utils.Utils;
 
+import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.daemon.nimbus.DefaultInimbus;
 import com.alibaba.jstorm.daemon.nimbus.NimbusServer;
 import com.alibaba.jstorm.daemon.supervisor.Supervisor;
@@ -93,6 +94,8 @@ public class LocalUtils {
 		conf.put(Config.ZMQ_LINGER_MILLIS, 0);
 		conf.put(Config.TOPOLOGY_ENABLE_MESSAGE_TIMEOUTS, false);
 		conf.put(Config.TOPOLOGY_TRIDENT_BATCH_EMIT_INTERVAL_MILLIS, 50);
+		ConfigExtension.setSpoutDelayRunSeconds(conf, 0);
+		ConfigExtension.setTaskCleanupTimeoutSec(conf, 0);
 		return conf;
 	}
 

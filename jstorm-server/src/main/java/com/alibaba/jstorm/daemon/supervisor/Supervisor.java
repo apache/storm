@@ -1,14 +1,10 @@
 package com.alibaba.jstorm.daemon.supervisor;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Map;
 import java.util.UUID;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.io.FileUtils;
@@ -34,8 +30,6 @@ import com.alibaba.jstorm.event.EventManagerImp;
 import com.alibaba.jstorm.event.EventManagerPusher;
 import com.alibaba.jstorm.utils.JStormServerUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
-import com.alibaba.jstorm.utils.NetWorkUtils;
-import com.alibaba.jstorm.utils.SmartThread;
 
 /**
  * 
@@ -104,7 +98,7 @@ public class Supervisor {
 			localState.put(Common.LS_ID, supervisorId);
 		}
 
-		Vector<SmartThread> threads = new Vector<SmartThread>();
+		Vector<AsyncLoopThread> threads = new Vector<AsyncLoopThread>();
 
 		// Step 5 create HeartBeat
 		// every supervisor.heartbeat.frequency.secs, write SupervisorInfo to ZK
@@ -156,23 +150,27 @@ public class Supervisor {
 		// threads.add(syncProcessThread);
 
 
-		//Step 7 start httpserver
-		int port = ConfigExtension.getSupervisorDeamonHttpserverPort(conf);
-		Httpserver httpserver = new Httpserver(port, conf);
-		httpserver.start();
-		
-		//Step 8 start uploading every 60 secs
-		MetricSendClient client;
-		if (ConfigExtension.isAlimonitorMetricsPost(conf)) {
-			client = new AlimonitorClient(AlimonitorClient.DEFAUT_ADDR, 
-					AlimonitorClient.DEFAULT_PORT, true);
-		} else {
-		    client = new MetricSendClient();
+		Httpserver httpserver = null;
+		if (StormConfig.local_mode(conf) == false) {
+			//Step 7 start httpserver
+			int port = ConfigExtension.getSupervisorDeamonHttpserverPort(conf);
+			httpserver = new Httpserver(port, conf);
+			httpserver.start();
+			
+			//Step 8 start uploading every 60 secs
+			MetricSendClient client;
+			if (ConfigExtension.isAlimonitorMetricsPost(conf)) {
+				client = new AlimonitorClient(AlimonitorClient.DEFAUT_ADDR, 
+						AlimonitorClient.DEFAULT_PORT, true);
+			} else {
+			    client = new MetricSendClient();
+			}
+			UploadSupervMetric uploadMetric = new UploadSupervMetric(conf, stormClusterState, 
+					supervisorId, active, 60, client);
+			AsyncLoopThread uploadMetricThread = new AsyncLoopThread(uploadMetric);
+			threads.add(uploadMetricThread);
 		}
-		UploadSupervMetric uploadMetric = new UploadSupervMetric(conf, stormClusterState, 
-				supervisorId, active, 60, client);
-		AsyncLoopThread uploadMetricThread = new AsyncLoopThread(uploadMetric);
-		threads.add(uploadMetricThread);
+		
 		
 		// SupervisorManger which can shutdown all supervisor and workers
 		return new SupervisorManger(conf, supervisorId, active, threads,
@@ -188,6 +186,10 @@ public class Supervisor {
 	 */
 	public void killSupervisor(SupervisorManger supervisor) {
 		supervisor.shutdown();
+	}
+	
+	private void initShutdownHook(SupervisorManger supervisor) {
+		Runtime.getRuntime().addShutdownHook(new Thread(supervisor));
 	}
 	
 	private void createPid(Map conf) throws Exception {
@@ -212,6 +214,8 @@ public class Supervisor {
 			supervisorManager = mkSupervisor(conf, null);
 			
 			JStormUtils.redirectOutput("/dev/null");
+			
+			initShutdownHook(supervisorManager);
 
 		} catch (Exception e) {
 			LOG.error("Failed to start supervisor\n", e);

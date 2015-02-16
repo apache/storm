@@ -1,21 +1,22 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	 
+	
+	
 	<parent>
 		<groupId>com.alibaba.jstorm</groupId>
 		<artifactId>jstorm-all</artifactId>
-		<version>0.9.6.2</version>
+		<version>0.9.6.3</version>
 		<relativePath>..</relativePath>
 	</parent>
- 	<!--<parent>
+ 	<!-- <parent>
  		<groupId>com.taobao</groupId> 
  		<artifactId>parent</artifactId> 
  		<version>1.0.2</version> 
- 	</parent> --> 
+ 	</parent>  -->
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.alibaba.jstorm</groupId>
 	<artifactId>jstorm-client-extension</artifactId>
-	<version>0.9.6.2</version>
+	<version>0.9.6.3</version>
 	<packaging>jar</packaging>
 	<name>${project.artifactId}-${project.version}</name>
 

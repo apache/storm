@@ -12,13 +12,13 @@ import org.apache.log4j.Logger;
 
 import backtype.storm.daemon.Shutdownable;
 
+import com.alibaba.jstorm.callback.AsyncLoopThread;
 import com.alibaba.jstorm.cluster.DaemonCommon;
 import com.alibaba.jstorm.cluster.StormClusterState;
 import com.alibaba.jstorm.cluster.StormConfig;
 import com.alibaba.jstorm.event.EventManager;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.PathUtils;
-import com.alibaba.jstorm.utils.SmartThread;
 
 /**
  * supervisor shutdown manager which can shutdown supervisor
@@ -36,7 +36,7 @@ public class SupervisorManger extends ShutdownWork implements Shutdownable,
 
 	private AtomicBoolean active;
 
-	private Vector<SmartThread> threads;
+	private Vector<AsyncLoopThread> threads;
 
 	private EventManager processesEventManager;
 
@@ -51,7 +51,7 @@ public class SupervisorManger extends ShutdownWork implements Shutdownable,
 	private volatile boolean isFinishShutdown = false;
 
 	public SupervisorManger(Map conf, String supervisorId,
-			AtomicBoolean active, Vector<SmartThread> threads,
+			AtomicBoolean active, Vector<AsyncLoopThread> threads,
 			EventManager processesEventManager, EventManager eventManager,
 			Httpserver httpserver, StormClusterState stormClusterState,
 			ConcurrentHashMap<String, String> workerThreadPidsAtom) {
@@ -70,21 +70,23 @@ public class SupervisorManger extends ShutdownWork implements Shutdownable,
 
 	@Override
 	public void shutdown() {
+		if (active.getAndSet(false) == false) {
+			LOG.info("Supervisor has been shutdown before " + supervisorId);
+			return ;
+		}
 		LOG.info("Shutting down supervisor " + supervisorId);
 
-		active.set(false);
-
 		int size = threads.size();
-		for (int i = 0; i < size; i++) {
-			SmartThread thread = threads.elementAt(i);
+		for (AsyncLoopThread thread : threads) {
 			thread.cleanup();
 			JStormUtils.sleepMs(10);
 			thread.interrupt();
-			try {
-				thread.join();
-			} catch (InterruptedException e) {
-				LOG.error(e.getMessage(), e);
-			}
+//			try {
+//				thread.join();
+//			} catch (InterruptedException e) {
+//				LOG.error(e.getMessage(), e);
+//			}
+			LOG.info("Successfully shutdown thread:" + thread.getThread().getName());
 		}
 		eventManager.shutdown();
 		processesEventManager.shutdown();
@@ -94,7 +96,10 @@ public class SupervisorManger extends ShutdownWork implements Shutdownable,
 			// TODO Auto-generated catch block
 			LOG.error("Failed to shutdown ZK client", e);
 		}
-		httpserver.shutdown();
+		if (httpserver != null) {
+			httpserver.shutdown();
+		}
+		
 		
 		// if (this.cgroupManager != null)
 		// try {

@@ -839,15 +839,15 @@ public class TaskMetricData implements org.apache.thrift7.TBase<TaskMetricData, 
         case 3: // GAUGE
           if (field.type == org.apache.thrift7.protocol.TType.MAP) {
             {
-              org.apache.thrift7.protocol.TMap _map205 = iprot.readMapBegin();
-              this.gauge = new HashMap<String,Double>(2*_map205.size);
-              for (int _i206 = 0; _i206 < _map205.size; ++_i206)
+              org.apache.thrift7.protocol.TMap _map209 = iprot.readMapBegin();
+              this.gauge = new HashMap<String,Double>(2*_map209.size);
+              for (int _i210 = 0; _i210 < _map209.size; ++_i210)
               {
-                String _key207; // required
-                double _val208; // required
-                _key207 = iprot.readString();
-                _val208 = iprot.readDouble();
-                this.gauge.put(_key207, _val208);
+                String _key211; // required
+                double _val212; // required
+                _key211 = iprot.readString();
+                _val212 = iprot.readDouble();
+                this.gauge.put(_key211, _val212);
               }
               iprot.readMapEnd();
             }
@@ -858,15 +858,15 @@ public class TaskMetricData implements org.apache.thrift7.TBase<TaskMetricData, 
         case 4: // COUNTER
           if (field.type == org.apache.thrift7.protocol.TType.MAP) {
             {
-              org.apache.thrift7.protocol.TMap _map209 = iprot.readMapBegin();
-              this.counter = new HashMap<String,Double>(2*_map209.size);
-              for (int _i210 = 0; _i210 < _map209.size; ++_i210)
+              org.apache.thrift7.protocol.TMap _map213 = iprot.readMapBegin();
+              this.counter = new HashMap<String,Double>(2*_map213.size);
+              for (int _i214 = 0; _i214 < _map213.size; ++_i214)
               {
-                String _key211; // required
-                double _val212; // required
-                _key211 = iprot.readString();
-                _val212 = iprot.readDouble();
-                this.counter.put(_key211, _val212);
+                String _key215; // required
+                double _val216; // required
+                _key215 = iprot.readString();
+                _val216 = iprot.readDouble();
+                this.counter.put(_key215, _val216);
               }
               iprot.readMapEnd();
             }
@@ -877,15 +877,15 @@ public class TaskMetricData implements org.apache.thrift7.TBase<TaskMetricData, 
         case 5: // METER
           if (field.type == org.apache.thrift7.protocol.TType.MAP) {
             {
-              org.apache.thrift7.protocol.TMap _map213 = iprot.readMapBegin();
-              this.meter = new HashMap<String,Double>(2*_map213.size);
-              for (int _i214 = 0; _i214 < _map213.size; ++_i214)
+              org.apache.thrift7.protocol.TMap _map217 = iprot.readMapBegin();
+              this.meter = new HashMap<String,Double>(2*_map217.size);
+              for (int _i218 = 0; _i218 < _map217.size; ++_i218)
               {
-                String _key215; // required
-                double _val216; // required
-                _key215 = iprot.readString();
-                _val216 = iprot.readDouble();
-                this.meter.put(_key215, _val216);
+                String _key219; // required
+                double _val220; // required
+                _key219 = iprot.readString();
+                _val220 = iprot.readDouble();
+                this.meter.put(_key219, _val220);
               }
               iprot.readMapEnd();
             }
@@ -896,15 +896,15 @@ public class TaskMetricData implements org.apache.thrift7.TBase<TaskMetricData, 
         case 6: // TIMER
           if (field.type == org.apache.thrift7.protocol.TType.MAP) {
             {
-              org.apache.thrift7.protocol.TMap _map217 = iprot.readMapBegin();
-              this.timer = new HashMap<String,Double>(2*_map217.size);
-              for (int _i218 = 0; _i218 < _map217.size; ++_i218)
+              org.apache.thrift7.protocol.TMap _map221 = iprot.readMapBegin();
+              this.timer = new HashMap<String,Double>(2*_map221.size);
+              for (int _i222 = 0; _i222 < _map221.size; ++_i222)
               {
-                String _key219; // required
-                double _val220; // required
-                _key219 = iprot.readString();
-                _val220 = iprot.readDouble();
-                this.timer.put(_key219, _val220);
+                String _key223; // required
+                double _val224; // required
+                _key223 = iprot.readString();
+                _val224 = iprot.readDouble();
+                this.timer.put(_key223, _val224);
               }
               iprot.readMapEnd();
             }
@@ -915,15 +915,15 @@ public class TaskMetricData implements org.apache.thrift7.TBase<TaskMetricData, 
         case 7: // HISTOGRAM
           if (field.type == org.apache.thrift7.protocol.TType.MAP) {
             {
-              org.apache.thrift7.protocol.TMap _map221 = iprot.readMapBegin();
-              this.histogram = new HashMap<String,Double>(2*_map221.size);
-              for (int _i222 = 0; _i222 < _map221.size; ++_i222)
+              org.apache.thrift7.protocol.TMap _map225 = iprot.readMapBegin();
+              this.histogram = new HashMap<String,Double>(2*_map225.size);
+              for (int _i226 = 0; _i226 < _map225.size; ++_i226)
               {
-                String _key223; // required
-                double _val224; // required
-                _key223 = iprot.readString();
-                _val224 = iprot.readDouble();
-                this.histogram.put(_key223, _val224);
+                String _key227; // required
+                double _val228; // required
+                _key227 = iprot.readString();
+                _val228 = iprot.readDouble();
+                this.histogram.put(_key227, _val228);
               }
               iprot.readMapEnd();
             }
@@ -956,10 +956,10 @@ public class TaskMetricData implements org.apache.thrift7.TBase<TaskMetricData, 
       oprot.writeFieldBegin(GAUGE_FIELD_DESC);
       {
         oprot.writeMapBegin(new org.apache.thrift7.protocol.TMap(org.apache.thrift7.protocol.TType.STRING, org.apache.thrift7.protocol.TType.DOUBLE, this.gauge.size()));
-        for (Map.Entry<String, Double> _iter225 : this.gauge.entrySet())
+        for (Map.Entry<String, Double> _iter229 : this.gauge.entrySet())
         {
-          oprot.writeString(_iter225.getKey());
-          oprot.writeDouble(_iter225.getValue());
+          oprot.writeString(_iter229.getKey());
+          oprot.writeDouble(_iter229.getValue());
         }
         oprot.writeMapEnd();
       }
@@ -969,10 +969,10 @@ public class TaskMetricData implements org.apache.thrift7.TBase<TaskMetricData, 
       oprot.writeFieldBegin(COUNTER_FIELD_DESC);
       {
         oprot.writeMapBegin(new org.apache.thrift7.protocol.TMap(org.apache.thrift7.protocol.TType.STRING, org.apache.thrift7.protocol.TType.DOUBLE, this.counter.size()));
-        for (Map.Entry<String, Double> _iter226 : this.counter.entrySet())
+        for (Map.Entry<String, Double> _iter230 : this.counter.entrySet())
         {
-          oprot.writeString(_iter226.getKey());
-          oprot.writeDouble(_iter226.getValue());
+          oprot.writeString(_iter230.getKey());
+          oprot.writeDouble(_iter230.getValue());
         }
         oprot.writeMapEnd();
       }
@@ -982,10 +982,10 @@ public class TaskMetricData implements org.apache.thrift7.TBase<TaskMetricData, 
       oprot.writeFieldBegin(METER_FIELD_DESC);
       {
         oprot.writeMapBegin(new org.apache.thrift7.protocol.TMap(org.apache.thrift7.protocol.TType.STRING, org.apache.thrift7.protocol.TType.DOUBLE, this.meter.size()));
-        for (Map.Entry<String, Double> _iter227 : this.meter.entrySet())
+        for (Map.Entry<String, Double> _iter231 : this.meter.entrySet())
         {
-          oprot.writeString(_iter227.getKey());
-          oprot.writeDouble(_iter227.getValue());
+          oprot.writeString(_iter231.getKey());
+          oprot.writeDouble(_iter231.getValue());
         }
         oprot.writeMapEnd();
       }
@@ -995,10 +995,10 @@ public class TaskMetricData implements org.apache.thrift7.TBase<TaskMetricData, 
       oprot.writeFieldBegin(TIMER_FIELD_DESC);
       {
         oprot.writeMapBegin(new org.apache.thrift7.protocol.TMap(org.apache.thrift7.protocol.TType.STRING, org.apache.thrift7.protocol.TType.DOUBLE, this.timer.size()));
-        for (Map.Entry<String, Double> _iter228 : this.timer.entrySet())
+        for (Map.Entry<String, Double> _iter232 : this.timer.entrySet())
         {
-          oprot.writeString(_iter228.getKey());
-          oprot.writeDouble(_iter228.getValue());
+          oprot.writeString(_iter232.getKey());
+          oprot.writeDouble(_iter232.getValue());
         }
         oprot.writeMapEnd();
       }
@@ -1008,10 +1008,10 @@ public class TaskMetricData implements org.apache.thrift7.TBase<TaskMetricData, 
       oprot.writeFieldBegin(HISTOGRAM_FIELD_DESC);
       {
         oprot.writeMapBegin(new org.apache.thrift7.protocol.TMap(org.apache.thrift7.protocol.TType.STRING, org.apache.thrift7.protocol.TType.DOUBLE, this.histogram.size()));
-        for (Map.Entry<String, Double> _iter229 : this.histogram.entrySet())
+        for (Map.Entry<String, Double> _iter233 : this.histogram.entrySet())
         {
-          oprot.writeString(_iter229.getKey());
-          oprot.writeDouble(_iter229.getValue());
+          oprot.writeString(_iter233.getKey());
+          oprot.writeDouble(_iter233.getValue());
         }
         oprot.writeMapEnd();
       }

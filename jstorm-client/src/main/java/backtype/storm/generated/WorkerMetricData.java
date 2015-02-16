@@ -839,15 +839,15 @@ public class WorkerMetricData implements org.apache.thrift7.TBase<WorkerMetricDa
         case 3: // GAUGE
           if (field.type == org.apache.thrift7.protocol.TType.MAP) {
             {
-              org.apache.thrift7.protocol.TMap _map230 = iprot.readMapBegin();
-              this.gauge = new HashMap<String,Double>(2*_map230.size);
-              for (int _i231 = 0; _i231 < _map230.size; ++_i231)
+              org.apache.thrift7.protocol.TMap _map234 = iprot.readMapBegin();
+              this.gauge = new HashMap<String,Double>(2*_map234.size);
+              for (int _i235 = 0; _i235 < _map234.size; ++_i235)
               {
-                String _key232; // required
-                double _val233; // required
-                _key232 = iprot.readString();
-                _val233 = iprot.readDouble();
-                this.gauge.put(_key232, _val233);
+                String _key236; // required
+                double _val237; // required
+                _key236 = iprot.readString();
+                _val237 = iprot.readDouble();
+                this.gauge.put(_key236, _val237);
               }
               iprot.readMapEnd();
             }
@@ -858,15 +858,15 @@ public class WorkerMetricData implements org.apache.thrift7.TBase<WorkerMetricDa
         case 4: // COUNTER
           if (field.type == org.apache.thrift7.protocol.TType.MAP) {
             {
-              org.apache.thrift7.protocol.TMap _map234 = iprot.readMapBegin();
-              this.counter = new HashMap<String,Double>(2*_map234.size);
-              for (int _i235 = 0; _i235 < _map234.size; ++_i235)
+              org.apache.thrift7.protocol.TMap _map238 = iprot.readMapBegin();
+              this.counter = new HashMap<String,Double>(2*_map238.size);
+              for (int _i239 = 0; _i239 < _map238.size; ++_i239)
               {
-                String _key236; // required
-                double _val237; // required
-                _key236 = iprot.readString();
-                _val237 = iprot.readDouble();
-                this.counter.put(_key236, _val237);
+                String _key240; // required
+                double _val241; // required
+                _key240 = iprot.readString();
+                _val241 = iprot.readDouble();
+                this.counter.put(_key240, _val241);
               }
               iprot.readMapEnd();
             }
@@ -877,15 +877,15 @@ public class WorkerMetricData implements org.apache.thrift7.TBase<WorkerMetricDa
         case 5: // METER
           if (field.type == org.apache.thrift7.protocol.TType.MAP) {
             {
-              org.apache.thrift7.protocol.TMap _map238 = iprot.readMapBegin();
-              this.meter = new HashMap<String,Double>(2*_map238.size);
-              for (int _i239 = 0; _i239 < _map238.size; ++_i239)
+              org.apache.thrift7.protocol.TMap _map242 = iprot.readMapBegin();
+              this.meter = new HashMap<String,Double>(2*_map242.size);
+              for (int _i243 = 0; _i243 < _map242.size; ++_i243)
               {
-                String _key240; // required
-                double _val241; // required
-                _key240 = iprot.readString();
-                _val241 = iprot.readDouble();
-                this.meter.put(_key240, _val241);
+                String _key244; // required
+                double _val245; // required
+                _key244 = iprot.readString();
+                _val245 = iprot.readDouble();
+                this.meter.put(_key244, _val245);
               }
               iprot.readMapEnd();
             }
@@ -896,15 +896,15 @@ public class WorkerMetricData implements org.apache.thrift7.TBase<WorkerMetricDa
         case 6: // TIMER
           if (field.type == org.apache.thrift7.protocol.TType.MAP) {
             {
-              org.apache.thrift7.protocol.TMap _map242 = iprot.readMapBegin();
-              this.timer = new HashMap<String,Double>(2*_map242.size);
-              for (int _i243 = 0; _i243 < _map242.size; ++_i243)
+              org.apache.thrift7.protocol.TMap _map246 = iprot.readMapBegin();
+              this.timer = new HashMap<String,Double>(2*_map246.size);
+              for (int _i247 = 0; _i247 < _map246.size; ++_i247)
               {
-                String _key244; // required
-                double _val245; // required
-                _key244 = iprot.readString();
-                _val245 = iprot.readDouble();
-                this.timer.put(_key244, _val245);
+                String _key248; // required
+                double _val249; // required
+                _key248 = iprot.readString();
+                _val249 = iprot.readDouble();
+                this.timer.put(_key248, _val249);
               }
               iprot.readMapEnd();
             }
@@ -915,15 +915,15 @@ public class WorkerMetricData implements org.apache.thrift7.TBase<WorkerMetricDa
         case 7: // HISTOGRAM
           if (field.type == org.apache.thrift7.protocol.TType.MAP) {
             {
-              org.apache.thrift7.protocol.TMap _map246 = iprot.readMapBegin();
-              this.histogram = new HashMap<String,Double>(2*_map246.size);
-              for (int _i247 = 0; _i247 < _map246.size; ++_i247)
+              org.apache.thrift7.protocol.TMap _map250 = iprot.readMapBegin();
+              this.histogram = new HashMap<String,Double>(2*_map250.size);
+              for (int _i251 = 0; _i251 < _map250.size; ++_i251)
               {
-                String _key248; // required
-                double _val249; // required
-                _key248 = iprot.readString();
-                _val249 = iprot.readDouble();
-                this.histogram.put(_key248, _val249);
+                String _key252; // required
+                double _val253; // required
+                _key252 = iprot.readString();
+                _val253 = iprot.readDouble();
+                this.histogram.put(_key252, _val253);
               }
               iprot.readMapEnd();
             }
@@ -956,10 +956,10 @@ public class WorkerMetricData implements org.apache.thrift7.TBase<WorkerMetricDa
       oprot.writeFieldBegin(GAUGE_FIELD_DESC);
       {
         oprot.writeMapBegin(new org.apache.thrift7.protocol.TMap(org.apache.thrift7.protocol.TType.STRING, org.apache.thrift7.protocol.TType.DOUBLE, this.gauge.size()));
-        for (Map.Entry<String, Double> _iter250 : this.gauge.entrySet())
+        for (Map.Entry<String, Double> _iter254 : this.gauge.entrySet())
         {
-          oprot.writeString(_iter250.getKey());
-          oprot.writeDouble(_iter250.getValue());
+          oprot.writeString(_iter254.getKey());
+          oprot.writeDouble(_iter254.getValue());
         }
         oprot.writeMapEnd();
       }
@@ -969,10 +969,10 @@ public class WorkerMetricData implements org.apache.thrift7.TBase<WorkerMetricDa
       oprot.writeFieldBegin(COUNTER_FIELD_DESC);
       {
         oprot.writeMapBegin(new org.apache.thrift7.protocol.TMap(org.apache.thrift7.protocol.TType.STRING, org.apache.thrift7.protocol.TType.DOUBLE, this.counter.size()));
-        for (Map.Entry<String, Double> _iter251 : this.counter.entrySet())
+        for (Map.Entry<String, Double> _iter255 : this.counter.entrySet())
         {
-          oprot.writeString(_iter251.getKey());
-          oprot.writeDouble(_iter251.getValue());
+          oprot.writeString(_iter255.getKey());
+          oprot.writeDouble(_iter255.getValue());
         }
         oprot.writeMapEnd();
       }
@@ -982,10 +982,10 @@ public class WorkerMetricData implements org.apache.thrift7.TBase<WorkerMetricDa
       oprot.writeFieldBegin(METER_FIELD_DESC);
       {
         oprot.writeMapBegin(new org.apache.thrift7.protocol.TMap(org.apache.thrift7.protocol.TType.STRING, org.apache.thrift7.protocol.TType.DOUBLE, this.meter.size()));
-        for (Map.Entry<String, Double> _iter252 : this.meter.entrySet())
+        for (Map.Entry<String, Double> _iter256 : this.meter.entrySet())
         {
-          oprot.writeString(_iter252.getKey());
-          oprot.writeDouble(_iter252.getValue());
+          oprot.writeString(_iter256.getKey());
+          oprot.writeDouble(_iter256.getValue());
         }
         oprot.writeMapEnd();
       }
@@ -995,10 +995,10 @@ public class WorkerMetricData implements org.apache.thrift7.TBase<WorkerMetricDa
       oprot.writeFieldBegin(TIMER_FIELD_DESC);
       {
         oprot.writeMapBegin(new org.apache.thrift7.protocol.TMap(org.apache.thrift7.protocol.TType.STRING, org.apache.thrift7.protocol.TType.DOUBLE, this.timer.size()));
-        for (Map.Entry<String, Double> _iter253 : this.timer.entrySet())
+        for (Map.Entry<String, Double> _iter257 : this.timer.entrySet())
         {
-          oprot.writeString(_iter253.getKey());
-          oprot.writeDouble(_iter253.getValue());
+          oprot.writeString(_iter257.getKey());
+          oprot.writeDouble(_iter257.getValue());
         }
         oprot.writeMapEnd();
       }
@@ -1008,10 +1008,10 @@ public class WorkerMetricData implements org.apache.thrift7.TBase<WorkerMetricDa
       oprot.writeFieldBegin(HISTOGRAM_FIELD_DESC);
       {
         oprot.writeMapBegin(new org.apache.thrift7.protocol.TMap(org.apache.thrift7.protocol.TType.STRING, org.apache.thrift7.protocol.TType.DOUBLE, this.histogram.size()));
-        for (Map.Entry<String, Double> _iter254 : this.histogram.entrySet())
+        for (Map.Entry<String, Double> _iter258 : this.histogram.entrySet())
         {
-          oprot.writeString(_iter254.getKey());
-          oprot.writeDouble(_iter254.getValue());
+          oprot.writeString(_iter258.getKey());
+          oprot.writeDouble(_iter258.getValue());
         }
         oprot.writeMapEnd();
       }

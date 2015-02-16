@@ -14,9 +14,9 @@ import backtype.storm.utils.WorkerClassLoader;
 
 import com.alibaba.jstorm.callback.AsyncLoopThread;
 import com.alibaba.jstorm.client.ConfigExtension;
-import com.alibaba.jstorm.daemon.worker.TimeTick;
-import com.alibaba.jstorm.metric.MetricDef;
+import com.alibaba.jstorm.daemon.worker.timer.RotatingMapTrigger;
 import com.alibaba.jstorm.metric.JStormTimer;
+import com.alibaba.jstorm.metric.MetricDef;
 import com.alibaba.jstorm.metric.Metrics;
 import com.alibaba.jstorm.stats.CommonStatsRolling;
 import com.alibaba.jstorm.task.TaskStatus;
@@ -82,12 +82,11 @@ public class SpoutExecutors extends BaseExecutors implements EventHandler {
 		Metrics.register(idStr, MetricDef.EMPTY_CPU_RATIO, emptyCpuCounter, 
 				String.valueOf(taskId), Metrics.MetricType.TASK);
 
-		TimeTick.registerTimer(idStr+ "-acker-tick", exeQueue);
-		
 		isSpoutFullSleep = ConfigExtension.isSpoutPendFullSleep(storm_conf);
 		LOG.info("isSpoutFullSleep:" + isSpoutFullSleep);
 
 	}
+	
 
 	public void prepare(TaskSendTargets sendTargets, TaskTransfer transferFn,
 			TopologyContext topologyContext) {
@@ -116,14 +115,21 @@ public class SpoutExecutors extends BaseExecutors implements EventHandler {
 
 	public void nextTuple() {
 		if (firstTime == true) {
+			
 			int delayRun = ConfigExtension.getSpoutDelayRunSeconds(storm_conf);
 
 			// wait other bolt is ready
 			JStormUtils.sleepMs(delayRun * 1000);
+			
+			emptyCpuCounter.init();
+			
+			if (taskStatus.isRun() == true) {
+				spout.activate();
+			}else {
+				spout.deactivate();
+			}
 
 			firstTime = false;
-
-			emptyCpuCounter.init();
 			LOG.info(idStr + " is ready ");
 		}
 
@@ -212,7 +218,7 @@ public class SpoutExecutors extends BaseExecutors implements EventHandler {
 				task_stats.recv_tuple(tuple.getSourceComponent(),
 						tuple.getSourceStreamId());
 
-			} else if (event instanceof TimeTick.Tick) {
+			} else if (event instanceof RotatingMapTrigger.Tick) {
 
 				Map<Long, TupleInfo> timeoutMap = pending.rotate();
 				for (java.util.Map.Entry<Long, TupleInfo> entry : timeoutMap

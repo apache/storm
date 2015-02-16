@@ -34,10 +34,12 @@ import org.apache.log4j.Appender;
 import org.apache.log4j.FileAppender;
 import org.apache.log4j.Logger;
 
+import backtype.storm.Config;
 import backtype.storm.utils.Utils;
 
 import com.alibaba.jstorm.callback.AsyncLoopDefaultKill;
 import com.alibaba.jstorm.callback.RunnableCallback;
+import com.alibaba.jstorm.client.ConfigExtension;
 
 /**
  * JStorm utility
@@ -58,6 +60,8 @@ public class JStormUtils {
 	public static final int MIN_30 = MIN_1 * 30;
 	public static final int HOUR_1 = MIN_30 * 2;
 	public static final int DAY_1  = HOUR_1 * 24;
+	
+	public static final String osName = System.getProperty("os.name");
 
 	public static String getErrorInfo(String baseInfo, Exception e) {
 		try {
@@ -140,15 +144,35 @@ public class JStormUtils {
 
 		return iOutcome;
 	}
+	
+	/**
+	 * LocalMode variable isn't clean, it make the JStormUtils ugly
+	 */
+	public static boolean localMode = false;
+	
+	public static boolean isLocalMode() {
+		return localMode;
+	}
+
+	public static void setLocalMode(boolean localMode) {
+		JStormUtils.localMode = localMode;
+	}
+	
+	public static void haltProcess(int val) {
+		Runtime.getRuntime().halt(val);
+	}
 
 	public static void halt_process(int val, String msg) {
 		LOG.info("Halting process: " + msg);
 		try {
 			Thread.sleep(1000);
 		} catch (InterruptedException e) {
-			LOG.error("halt_process", e);
 		}
-		Runtime.getRuntime().halt(val);
+		if (localMode && val == 0) {
+			//throw new RuntimeException(msg);
+		}else {
+			haltProcess(val);
+		}
 	}
 
 	/**
@@ -218,7 +242,7 @@ public class JStormUtils {
 		try {
 			exec_command(cmd);
 		} catch (Exception e) {
-			LOG.warn("No " + dir + " from " + jarpath + "by cmd:" + cmd + "!"
+			LOG.warn("No " + dir + " from " + jarpath + " by cmd:" + cmd + "!\n"
 					+ e.getMessage());
 		}
 
@@ -271,6 +295,28 @@ public class JStormUtils {
 		} catch (Exception e) {
 			LOG.info("Error when run " + cmd + ". Exception ", e);
 		}
+	}
+	
+	/**
+	 * This function is only for linux
+	 * 
+	 * @param pid
+	 * @return
+	 */
+	public static boolean isProcDead(String pid) {
+		if (osName.equalsIgnoreCase("Linux") == false) {
+			return false;
+		}
+		
+		String path = "/proc/" + pid;
+		File file = new File(path);
+		
+		if (file.exists() == false) {
+			LOG.info("Process " + pid + " is dead");
+			return true;
+		}
+		
+		return false;
 	}
 	
 	/**
@@ -371,7 +417,7 @@ public class JStormUtils {
 					try {
 						launchProcess(cmdlist, environment);
 					} catch (IOException e) {
-						LOG.error("Failed to run " + cmdlist + ":" + e.getCause(), e);
+						LOG.error("Failed to run " + command + ":" + e.getCause(), e);
 					}
 				}
 			}).start();
@@ -547,6 +593,27 @@ public class JStormUtils {
 			return Long.valueOf((Integer) value);
 		} else if (o instanceof Long) {
 			return (Long) o;
+		} else {
+			throw new RuntimeException("Invalid value "
+					+ o.getClass().getName() + " " + o);
+		}
+	}
+	
+	public static Double parseDouble(Object o) {
+		if (o == null) {
+			return null;
+		}
+
+		if (o instanceof String) {
+			return Double.valueOf(String.valueOf(o));
+		} else if (o instanceof Integer) {
+			Number value = (Integer) o;
+			return value.doubleValue();
+		} else if (o instanceof Long) {
+			Number value = (Long) o;
+			return value.doubleValue();
+		} else if (o instanceof Double) {
+			return (Double) o;
 		} else {
 			throw new RuntimeException("Invalid value "
 					+ o.getClass().getName() + " " + o);
@@ -949,5 +1016,61 @@ public class JStormUtils {
 			}
 		}
 		return rtn;
+	}
+	
+	public static List<Integer> getSupervisorPortList(Map conf) {
+		List<Integer> portList = (List<Integer>) conf
+				.get(Config.SUPERVISOR_SLOTS_PORTS);
+		if (portList != null && portList.size() > 0) {
+			return portList;
+		}
+		
+		LOG.info("Generate port list through CPU cores and system memory size");
+		
+		double cpuWeight = ConfigExtension.getSupervisorSlotsPortCpuWeight(conf);
+		int sysCpuNum = 4;
+		try {
+			sysCpuNum = Runtime.getRuntime().availableProcessors();
+		}catch(Exception e) {
+			LOG.info("Failed to get CPU cores, set cpu cores as 4");
+			sysCpuNum = 4;
+		}
+		int cpuPortNum = (int)(sysCpuNum/cpuWeight);
+		if (cpuPortNum < 1) {
+			
+			LOG.info("Invalid supervisor.slots.port.cpu.weight setting :"  
+					+ cpuWeight + ", cpu cores:" + sysCpuNum);
+			cpuPortNum = 1;
+		}
+		
+		int memPortNum = Integer.MAX_VALUE;
+		Long physicalMemSize = JStormUtils.getPhysicMemorySize();
+		if (physicalMemSize == null) {
+			LOG.info("Failed to get memory size");
+		}else {
+			LOG.info("Get system memory size :" + physicalMemSize);
+			long workerMemSize = ConfigExtension.getMemSizePerWorker(conf);
+			memPortNum = (int)(physicalMemSize/workerMemSize);
+			if (memPortNum < 1) {
+				LOG.info("Invalide worker.memory.size setting:" + workerMemSize );
+				memPortNum = 4;
+			}else if (memPortNum < 4){
+				LOG.info("System memory is too small for jstorm");
+				memPortNum = 4;
+			}
+		}
+		
+		int portNum = Math.min(cpuPortNum, memPortNum);
+		if (portNum < 1) {
+			portNum = 1;
+		}
+		
+		int portBase = ConfigExtension.getSupervisorSlotsPortsBase(conf);
+		portList = new ArrayList<Integer>();
+		for(int i = 0; i < portNum; i++) {
+			portList.add(portBase + i);
+		}
+		
+		return portList;
 	}
 }

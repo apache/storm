@@ -47,11 +47,7 @@ public class ShutdownWork extends RunnableCallback {
 			LOG.info("Begin to shut down " + topologyId + ":" + workerId);
 			try {
 
-				// STORM-LOCAL-DIR/workers/workerId/pids
-				String workerPidPath = StormConfig.worker_pids_root(conf,
-						workerId);
-
-				List<String> pids = PathUtils.read_dir_contents(workerPidPath);
+				List<String> pids = getPid(conf, workerId);
 				workerId2Pids.put(workerId, pids);
 
 				String threadPid = workerThreadPids.get(workerId);
@@ -122,5 +118,23 @@ public class ShutdownWork extends RunnableCallback {
 			LOG.warn(e + "Failed to cleanup worker " + workerId
 					+ ". Will retry later");
 		}
+	}
+	
+	/**
+	 * When worker has been started by manually and supervisor, 
+	 * it will return multiple pid
+	 * 
+	 * @param conf
+	 * @param workerId
+	 * @return
+	 * @throws IOException
+	 */
+	public List<String> getPid(Map conf, String workerId) throws IOException {
+		String workerPidPath = StormConfig.worker_pids_root(conf,
+				workerId);
+
+		List<String> pids = PathUtils.read_dir_contents(workerPidPath);
+		
+		return pids;
 	}
 }

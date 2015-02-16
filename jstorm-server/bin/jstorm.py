@@ -21,16 +21,34 @@ if sys.platform == "cygwin":
 else:
     normclasspath = identity
 
-CONF_DIR = os.path.expanduser("~/.jstorm")
+CLIENT_CONF_FILE = ""
 JSTORM_DIR = "/".join(os.path.realpath( __file__ ).split("/")[:-2])
 JSTORM_CONF_DIR = os.getenv("JSTORM_CONF_DIR", JSTORM_DIR + "/conf" )
 LOG4J_CONF = JSTORM_CONF_DIR + "/jstorm.log4j.properties"
-#LOG4J_CONF = JSTORM_CONF_DIR + "/cluster.xml"
 CONFIG_OPTS = []
+STATUS = 0
+
+
+def check_java():
+    check_java_cmd = 'which java'
+    ret = os.system(check_java_cmd)
+    if ret != 0:
+        print("Failed to find java, please add java to PATH")
+        sys.exit(-1)
 
 def get_config_opts():
     global CONFIG_OPTS
     return "-Dstorm.options=" + (','.join(CONFIG_OPTS)).replace(' ', "%%%%")
+
+def get_client_childopts():
+    ret = (" -Dstorm.root.logger=INFO,stdout -Dlog4j.configuration=File:%s/conf/aloha_log4j.properties "  %JSTORM_DIR)
+    if CLIENT_CONF_FILE != "":
+        ret += (" -Dstorm.conf.file=" + CLIENT_CONF_FILE)
+    return ret
+
+def get_server_childopts(log_name):
+    ret = (" -Dlogfile.name=%s -Dlog4j.configuration=File:%s"  %(log_name, LOG4J_CONF))
+    return ret
 
 if not os.path.exists(JSTORM_DIR + "/RELEASE"):
     print "******************************************"
@@ -76,7 +94,7 @@ def print_localconfvalue(name):
     The local JStorm configs are the ones in ~/.jstorm/storm.yaml merged 
     in with the configs in defaults.yaml.
     """
-    print name + ": " + confvalue(name, [CONF_DIR])
+    print name + ": " + confvalue(name, [JSTORM_CONF_DIR])
 
 def print_remoteconfvalue(name):
     """Syntax: [jstorm remoteconfvalue conf-name]
@@ -94,8 +112,8 @@ def exec_storm_class(klass, jvmtype="-server", childopts="", extrajars=[], args=
     args_str = " ".join(map(lambda s: "\"" + s + "\"", args))
     command = "java " + jvmtype + " -Djstorm.home=" + JSTORM_DIR + " " + get_config_opts() + " -Djava.library.path=" + nativepath + " " + childopts + " -cp " + get_classpath(extrajars) + " " + klass + " " + args_str
     print "Running: " + command    
-    ret = os.system(command)
-    sys.exit(ret)
+    global STATUS
+    STATUS = os.system(command)
 
 def jar(jarfile, klass, *args):
     """Syntax: [jstorm jar topology-jar-path class ...]
@@ -106,13 +124,11 @@ def jar(jarfile, klass, *args):
     (https://github.com/alibaba/jstorm/wiki/JStorm-Chinese-Documentation)
     will upload the jar at topology-jar-path when the topology is submitted.
     """
-    childopts = "-Dstorm.jar=" + jarfile + (" -Dstorm.root.logger=INFO,stdout -Dlog4j.configuration=File:%s/conf/aloha_log4j.properties"  %JSTORM_DIR)
-    #childopts = "-Dstorm.jar=" + jarfile + (" -Dstorm.root.logger=INFO,stdout -Dlogback.configurationFile=%s/conf/aloha_logback.xml"  %JSTORM_DIR)
-    #childopts = "-Dstorm.jar=" + jarfile
+    childopts = "-Dstorm.jar=" + jarfile + get_client_childopts()
     exec_storm_class(
         klass,
         jvmtype="-client -Xms256m -Xmx256m",
-        extrajars=[jarfile, CONF_DIR, JSTORM_DIR + "/bin", LOG4J_CONF],
+        extrajars=[jarfile, JSTORM_CONF_DIR, JSTORM_DIR + "/bin", CLIENT_CONF_FILE],
         args=args,
         childopts=childopts)
 
@@ -125,13 +141,11 @@ def zktool(*args):
     (https://github.com/alibaba/jstorm/wiki/JStorm-Chinese-Documentation)
     will upload the jar at topology-jar-path when the topology is submitted.
     """
-    childopts = (" -Dstorm.root.logger=INFO,stdout -Dlog4j.configuration=File:%s/conf/aloha_log4j.properties"  %JSTORM_DIR)
-    #childopts = (" -Dstorm.root.logger=INFO,stdout -Dlogback.configurationFile=%s/conf/aloha_logback.xml"  %JSTORM_DIR)
-    #childopts = " "
+    childopts = get_client_childopts()
     exec_storm_class(
         "com.alibaba.jstorm.zk.ZkTool",
         jvmtype="-client -Xms256m -Xmx256m",
-        extrajars=[ JSTORM_CONF_DIR],
+        extrajars=[ JSTORM_CONF_DIR, CLIENT_CONF_FILE],
         args=args,
         childopts=childopts)
 
@@ -145,14 +159,12 @@ def kill(*args):
     the workers and clean up their state. You can override the length 
     of time JStorm waits between deactivation and shutdown.
     """
-    childopts = (" -Dstorm.root.logger=INFO,stdout -Dlog4j.configuration=File:%s/conf/aloha_log4j.properties"  %JSTORM_DIR)
-    #childopts = (" -Dstorm.root.logger=INFO,stdout -Dlogback.configurationFile=%s/conf/aloha_logback.xml"  %JSTORM_DIR)
-    #childopts = " "
+    childopts = get_client_childopts()
     exec_storm_class(
         "backtype.storm.command.kill_topology", 
         args=args, 
         jvmtype="-client -Xms256m -Xmx256m", 
-        extrajars=[CONF_DIR, JSTORM_DIR + "/bin", LOG4J_CONF],
+        extrajars=[JSTORM_CONF_DIR, JSTORM_DIR + "/bin", CLIENT_CONF_FILE],
         childopts=childopts)
 
 def activate(*args):
@@ -160,14 +172,12 @@ def activate(*args):
 
     Activates the specified topology's spouts.
     """
-    childopts = (" -Dstorm.root.logger=INFO,stdout -Dlog4j.configuration=File:%s/conf/aloha_log4j.properties"  %JSTORM_DIR)
-    #childopts = (" -Dstorm.root.logger=INFO,stdout -Dlogback.configurationFile=%s/conf/aloha_logback.xml"  %JSTORM_DIR)
-    #childopts = " "
+    childopts = get_client_childopts()
     exec_storm_class(
         "backtype.storm.command.activate", 
         args=args, 
         jvmtype="-client -Xms256m -Xmx256m", 
-        extrajars=[CONF_DIR, JSTORM_DIR + "/bin", LOG4J_CONF],
+        extrajars=[JSTORM_CONF_DIR, JSTORM_DIR + "/bin", CLIENT_CONF_FILE],
         childopts=childopts)
 
 def deactivate(*args):
@@ -175,14 +185,12 @@ def deactivate(*args):
 
     Deactivates the specified topology's spouts.
     """
-    childopts = (" -Dstorm.root.logger=INFO,stdout -Dlog4j.configuration=File:%s/conf/aloha_log4j.properties"  %JSTORM_DIR)
-    #childopts = (" -Dstorm.root.logger=INFO,stdout -Dlogback.configurationFile=%s/conf/aloha_logback.xml"  %JSTORM_DIR)
-    #childopts = " "
+    childopts = get_client_childopts()
     exec_storm_class(
         "backtype.storm.command.deactivate", 
         args=args, 
         jvmtype="-client -Xms256m -Xmx256m", 
-        extrajars=[CONF_DIR, JSTORM_DIR + "/bin", LOG4J_CONF],
+        extrajars=[JSTORM_CONF_DIR, JSTORM_DIR + "/bin", CLIENT_CONF_FILE],
         childopts=childopts)
 
 def rebalance(*args):
@@ -202,27 +210,23 @@ def rebalance(*args):
     its previous state of activation (so a deactivated topology will still 
     be deactivated and an activated topology will go back to being activated).
     """
-    childopts = (" -Dstorm.root.logger=INFO,stdout -Dlog4j.configuration=File:%s/conf/aloha_log4j.properties"  %JSTORM_DIR)
-    #childopts = (" -Dstorm.root.logger=INFO,stdout -Dlogback.configurationFile=%s/conf/aloha_logback.xml"  %JSTORM_DIR)
-    #childopts = " "
+    childopts = get_client_childopts()
     exec_storm_class(
         "backtype.storm.command.rebalance", 
         args=args, 
         jvmtype="-client -Xms256m -Xmx256m", 
-        extrajars=[CONF_DIR, JSTORM_DIR + "/bin", LOG4J_CONF],
+        extrajars=[JSTORM_CONF_DIR, JSTORM_DIR + "/bin", CLIENT_CONF_FILE],
         childopts=childopts)
 
 def restart(*args):
     """Syntax: [jstorm restart topology-name [conf]]
     """
-    childopts = (" -Dstorm.root.logger=INFO,stdout -Dlog4j.configuration=File:%s/conf/aloha_log4j.properties"  %JSTORM_DIR)
-    #childopts = (" -Dstorm.root.logger=INFO,stdout -Dlogback.configurationFile=%s/conf/aloha_logback.xml"  %JSTORM_DIR)
-    #childopts = " "
+    childopts = get_client_childopts()
     exec_storm_class(
         "backtype.storm.command.restart", 
         args=args, 
         jvmtype="-client -Xms256m -Xmx256m", 
-        extrajars=[CONF_DIR, JSTORM_DIR + "/bin", LOG4J_CONF],
+        extrajars=[JSTORM_CONF_DIR, JSTORM_DIR + "/bin", CLIENT_CONF_FILE],
         childopts=childopts)
 
 def nimbus():
@@ -236,8 +240,7 @@ def nimbus():
     """
     cppaths = [JSTORM_CONF_DIR]
     nimbus_classpath = confvalue("nimbus.classpath", cppaths)
-    childopts = confvalue("nimbus.childopts", cppaths) + (" -Dlogfile.name=nimbus.log -Dlog4j.configuration=File:%s/conf/jstorm.log4j.properties "  %JSTORM_DIR)
-    #childopts = confvalue("nimbus.childopts", cppaths) + (" -Dlogfile.name=nimbus.log -Dlogback.configurationFile=%s/conf/cluster.xml "  %JSTORM_DIR)
+    childopts = confvalue("nimbus.childopts", cppaths) + get_server_childopts("nimbus.log")
     exec_storm_class(
         "com.alibaba.jstorm.daemon.nimbus.NimbusServer", 
         jvmtype="-server", 
@@ -254,8 +257,7 @@ def supervisor():
     (https://github.com/alibaba/jstorm/wiki/JStorm-Chinese-Documentation)
     """
     cppaths = [JSTORM_CONF_DIR]
-    childopts = confvalue("supervisor.childopts", cppaths) + (" -Dlogfile.name=supervisor.log -Dlog4j.configuration=File:%s/conf/jstorm.log4j.properties "  %JSTORM_DIR)
-    #childopts = confvalue("supervisor.childopts", cppaths) + (" -Dlogfile.name=supervisor.log -Dlogback.configurationFile=%s/conf/cluster.xml "  %JSTORM_DIR)
+    childopts = confvalue("supervisor.childopts", cppaths) + get_server_childopts("supervisor.log")
     exec_storm_class(
         "com.alibaba.jstorm.daemon.supervisor.Supervisor", 
         jvmtype="-server", 
@@ -273,8 +275,7 @@ def drpc():
     (https://github.com/alibaba/jstorm/wiki/JStorm-Chinese-Documentation)
     """
     cppaths = [JSTORM_CONF_DIR]
-    childopts = confvalue("drpc.childopts", cppaths) + (" -Dlogfile.name=drpc.log -Dlog4j.configuration=File:%s/conf/jstorm.log4j.properties "  %JSTORM_DIR)
-    #childopts = confvalue("supervisor.childopts", cppaths) + (" -Dlogfile.name=drpc.log -Dlogback.configurationFile=%s/conf/cluster.xml "  %JSTORM_DIR)
+    childopts = confvalue("drpc.childopts", cppaths) + get_server_childopts("drpc.log")
     exec_storm_class(
         "com.alibaba.jstorm.drpc.Drpc", 
         jvmtype="-server", 
@@ -290,7 +291,9 @@ def print_classpath():
 
 def print_commands():
     """Print all client commands and link to documentation"""
+    print "jstorm command [--config client_storm.yaml] [command parameter]"
     print "Commands:\n\t",  "\n\t".join(sorted(COMMANDS.keys()))
+    print "\n\t[--config client_storm.yaml]\t\t optional, setting client's storm.yaml"
     print "\nHelp:", "\n\thelp", "\n\thelp <command>"
     print "\nDocumentation for the jstorm client can be found at https://github.com/alibaba/jstorm/wiki/JStorm-Chinese-Documentation\n"
 
@@ -313,12 +316,12 @@ def metrics_Monitor(*args):
     """Syntax: [jstorm metricsMonitor topologyname bool]
     Enable or disable the metrics monitor of one topology.
     """
-    childopts = (" -Dstorm.root.logger=INFO,stdout -Dlog4j.configuration=File:%s/conf/aloha_log4j.properties"  %JSTORM_DIR)
+    childopts = get_client_childopts()
     exec_storm_class(
         "backtype.storm.command.metrics_monitor", 
         args=args, 
         jvmtype="-client -Xms256m -Xmx256m", 
-        extrajars=[CONF_DIR, JSTORM_DIR + "/bin", LOG4J_CONF],
+        extrajars=[JSTORM_CONF_DIR, JSTORM_DIR + "/bin", CLIENT_CONF_FILE],
         childopts=childopts)
 
 def list(*args):
@@ -326,12 +329,12 @@ def list(*args):
 
     List cluster information
     """
-    childopts = (" -Dstorm.root.logger=INFO,stdout -Dlog4j.configuration=File:%s/conf/aloha_log4j.properties"  %JSTORM_DIR)
+    childopts = get_client_childopts()
     exec_storm_class(
         "backtype.storm.command.list", 
         args=args, 
         jvmtype="-client -Xms256m -Xmx256m", 
-        extrajars=[CONF_DIR, JSTORM_DIR + "/bin", LOG4J_CONF],
+        extrajars=[JSTORM_CONF_DIR, JSTORM_DIR + "/bin", CLIENT_CONF_FILE],
         childopts=childopts)
 
 COMMANDS = {"jar": jar, "kill": kill, "nimbus": nimbus, "zktool": zktool,
@@ -356,6 +359,9 @@ def parse_config_opts(args):
     token = curr.pop()
     if token == "-c":
       config_list.append(curr.pop())
+    elif token == "--config":
+      global CLIENT_CONF_FILE
+      CLIENT_CONF_FILE = curr.pop()
     else:
       args_list.append(token)
   
@@ -373,8 +379,18 @@ def main():
     if COMMANDS.get(COMMAND) == None:
         unknown_command(COMMAND)
         sys.exit(-1)
-    (COMMANDS.get(COMMAND, "help"))(*ARGS)
-    
+    if len(ARGS) != 0 and ARGS[0] == "help":
+        print_usage(COMMAND)
+        sys.exit(0)
+    try:
+        (COMMANDS.get(COMMAND, "help"))(*ARGS)
+    except Exception, msg:
+        print(msg)
+        print_usage(COMMAND)
+        sys.exit(-1)
+    sys.exit(STATUS)
+
 if __name__ == "__main__":
+    check_java()
     main()
 

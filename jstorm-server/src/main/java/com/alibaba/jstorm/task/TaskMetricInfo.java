@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.log4j.Logger;
 
 import com.codahale.metrics.Metric;
@@ -141,4 +143,10 @@ public class TaskMetricInfo implements Serializable {
 	    }
 	    return ret;
 	}
+	
+	@Override
+    public String toString() {
+    	return ToStringBuilder.reflectionToString(this,
+				ToStringStyle.SHORT_PREFIX_STYLE);
+    }
 }
