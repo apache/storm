@@ -20,7 +20,6 @@
 
 (bootstrap)
 
-(def port 6700)
 (def task 1)
 
 (deftest test-basic
@@ -35,11 +34,41 @@
                     STORM-MESSAGING-NETTY-CLIENT-WORKER-THREADS 1
                     }
         context (TransportFactory/makeContext storm-conf)
+        port (available-port 6700)
         server (.bind context nil port)
         client (.connect context nil "localhost" port)
         _ (.send client task (.getBytes req_msg))
         iter (.recv server 0 0)
         resp (.next iter)]
+    (is (= task (.task resp)))
+    (is (= req_msg (String. (.message resp))))
+    (.close client)
+    (.close server)
+    (.term context)))
+
+(deftest test-load
+  (let [req_msg (String. "0123456789abcdefghijklmnopqrstuvwxyz")
+        storm-conf {STORM-MESSAGING-TRANSPORT "backtype.storm.messaging.netty.Context"
+                    STORM-MESSAGING-NETTY-AUTHENTICATION false
+                    STORM-MESSAGING-NETTY-BUFFER-SIZE 1024
+                    STORM-MESSAGING-NETTY-MAX-RETRIES 10
+                    STORM-MESSAGING-NETTY-MIN-SLEEP-MS 1000
+                    STORM-MESSAGING-NETTY-MAX-SLEEP-MS 5000
+                    STORM-MESSAGING-NETTY-SERVER-WORKER-THREADS 1
+                    STORM-MESSAGING-NETTY-CLIENT-WORKER-THREADS 1
+                    }
+        context (TransportFactory/makeContext storm-conf)
+        port (available-port 6700)
+        server (.bind context nil port)
+        client (.connect context nil "localhost" port)
+        _ (.send client task (.getBytes req_msg))
+        iter (.recv server 0 0)
+        resp (.next iter)
+        _ (.sendLoadMetrics server {(int 1) 0.0 (int 2) 1.0})
+        _ (while-timeout 5000 (empty? (.getLoad client [(int 1) (int 2)])) (Thread/sleep 10))
+        load (.getLoad client [(int 1) (int 2)])]
+    (is (= 0.0 (.getBoltLoad (.get load (int 1)))))
+    (is (= 1.0 (.getBoltLoad (.get load (int 2)))))
     (is (= task (.task resp)))
     (is (= req_msg (String. (.message resp))))
     (.close client)
@@ -58,6 +87,7 @@
                     STORM-MESSAGING-NETTY-CLIENT-WORKER-THREADS 1
                     }
         context (TransportFactory/makeContext storm-conf)
+        port (available-port 6700)
         server (.bind context nil port)
         client (.connect context nil "localhost" port)
         _ (.send client task (.getBytes req_msg))
@@ -81,6 +111,7 @@
                     STORM-MESSAGING-NETTY-CLIENT-WORKER-THREADS 1
                     }
         context (TransportFactory/makeContext storm-conf)
+        port (available-port 6700)
         client (.connect context nil "localhost" port)
 
         server (Thread.
@@ -111,6 +142,7 @@
                     STORM-MESSAGING-NETTY-CLIENT-WORKER-THREADS 1
                     }
         context (TransportFactory/makeContext storm-conf)
+        port (available-port 6700)
         server (.bind context nil port)
         client (.connect context nil "localhost" port)]
     (doseq [num  (range 1 100000)]

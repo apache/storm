@@ -22,6 +22,7 @@ import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Collection;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Timer;
@@ -42,6 +43,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import backtype.storm.Config;
+import backtype.storm.grouping.Load;
 import backtype.storm.metric.api.IStatefulObject;
 import backtype.storm.messaging.IConnection;
 import backtype.storm.messaging.TaskMessage;
@@ -77,6 +79,7 @@ public class Client implements IConnection, IStatefulObject{
     private AtomicLong flushCheckTimer;
     private int flushCheckInterval;
     private ScheduledExecutorService scheduler;
+    private volatile Map<Integer, Double> serverLoad = null;
 
     @SuppressWarnings("rawtypes")
     Client(Map storm_conf, ChannelFactory factory, 
@@ -320,6 +323,26 @@ public class Client implements IConnection, IStatefulObject{
         }
     }
 
+    void setLoadMetrics(Map<Integer, Double> taskToLoad) {
+        this.serverLoad = taskToLoad;
+    }
+
+    @Override
+    public Map<Integer, Load> getLoad(Collection<Integer> tasks) {
+        Map<Integer, Double> loadCache = serverLoad;
+        Map<Integer, Load> ret = new HashMap<Integer, Load>();
+        if (loadCache != null) {
+            double clientLoad = Math.min(pendings.get(), 1024)/1024.0;
+            for (Integer task : tasks) {
+                Double found = loadCache.get(task);
+                if (found != null) {
+                    ret.put(task, new Load(true, found, clientLoad));
+                }
+            }
+        }
+        return ret;
+    }
+
     @Override
     public Iterator<TaskMessage> recv(int flags, int clientId) {
         throw new RuntimeException("Client connection should not receive any messages");
@@ -361,6 +384,10 @@ public class Client implements IConnection, IStatefulObject{
                 }
             }
         });
+    }
+
+    public void sendLoadMetrics(Map<Integer, Double> taskToLoad) {
+        throw new RuntimeException("Client connection should not send load metrics");
     }
 
     @Override

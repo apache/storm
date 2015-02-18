@@ -15,27 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package backtype.storm.messaging.netty;
+package backtype.storm.grouping;
 
-import java.net.ConnectException;
+import java.util.List;
 
-import org.jboss.netty.channel.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-public class StormClientErrorHandler extends SimpleChannelUpstreamHandler  {
-    private static final Logger LOG = LoggerFactory.getLogger(StormClientErrorHandler.class);
-    private String name;
-    
-    StormClientErrorHandler(String name) {
-        this.name = name;
-    }
-
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent event) {
-        Throwable cause = event.getCause();
-        if (!(cause instanceof ConnectException)) {
-            LOG.info("Connection failed " + name, cause);
-        } 
-    }
+public interface LoadAwareCustomStreamGrouping extends CustomStreamGrouping {
+   List<Integer> chooseTasks(int taskId, List<Object> values, LoadMapping load); 
 }

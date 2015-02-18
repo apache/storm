@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -40,6 +41,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import backtype.storm.Config;
+import backtype.storm.grouping.Load;
 import backtype.storm.messaging.IConnection;
 import backtype.storm.messaging.TaskMessage;
 import backtype.storm.metric.api.IStatefulObject;
@@ -263,10 +265,24 @@ class Server implements IConnection, IStatefulObject {
         }
     }
 
+    @Override
+    public void sendLoadMetrics(Map<Integer, Double> taskToLoad) {
+        MessageBatch mb = new MessageBatch(1);
+        mb.add(new TaskMessage(-1, Utils.serialize(taskToLoad)));
+        allChannels.write(mb);
+    }
+
+    @Override
+    public Map<Integer, Load> getLoad(Collection<Integer> tasks) {
+        throw new RuntimeException("Server connection cannot get load");
+    }
+
+    @Override
     public void send(int task, byte[] message) {
         throw new RuntimeException("Server connection should not send any messages");
     }
     
+    @Override
     public void send(Iterator<TaskMessage> msgs) {
       throw new RuntimeException("Server connection should not send any messages");
     }
