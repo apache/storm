@@ -40,12 +40,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import backtype.storm.Config;
+import backtype.storm.messaging.ConnectionWithStatus;
 import backtype.storm.messaging.IConnection;
 import backtype.storm.messaging.TaskMessage;
 import backtype.storm.metric.api.IStatefulObject;
 import backtype.storm.utils.Utils;
 
-class Server implements IConnection, IStatefulObject {
+class Server extends ConnectionWithStatus implements IStatefulObject {
+
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
     @SuppressWarnings("rawtypes")
     Map storm_conf;
@@ -276,6 +278,11 @@ class Server implements IConnection, IStatefulObject {
     }
 
     @Override
+    public Status status() {
+        // The connection is binded in constructor
+        return Status.Ready;
+    }
+
     public Object getState() {
         LOG.info("Getting metrics for server on " + port);
         HashMap<String, Object> ret = new HashMap<String, Object>();

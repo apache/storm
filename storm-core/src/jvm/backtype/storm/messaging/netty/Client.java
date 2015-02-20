@@ -17,6 +17,7 @@
  */
 package backtype.storm.messaging.netty;
 
+
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.ArrayList;
@@ -42,13 +43,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import backtype.storm.Config;
+import backtype.storm.messaging.ConnectionWithStatus;
 import backtype.storm.metric.api.IStatefulObject;
 import backtype.storm.messaging.IConnection;
 import backtype.storm.messaging.TaskMessage;
 import backtype.storm.utils.StormBoundedExponentialBackoffRetry;
 import backtype.storm.utils.Utils;
 
-public class Client implements IConnection, IStatefulObject{
+public class Client extends ConnectionWithStatus implements IStatefulObject{
     private static final Logger LOG = LoggerFactory.getLogger(Client.class);
     private static final String PREFIX = "Netty-Client-";
     private final int max_retries;
@@ -65,9 +67,11 @@ public class Client implements IConnection, IStatefulObject{
     private final Random random = new Random();
     private final ChannelFactory factory;
     private final int buffer_size;
-    private boolean closing;
+    private  volatile boolean closing;
 
     private int messageBatchSize;
+    private int reconnectRetryTimes;
+    Runnable connector;
     
     private AtomicLong pendings;
     
@@ -79,7 +83,7 @@ public class Client implements IConnection, IStatefulObject{
     private ScheduledExecutorService scheduler;
 
     @SuppressWarnings("rawtypes")
-    Client(Map storm_conf, ChannelFactory factory, 
+    Client(Map storm_conf, ChannelFactory factory,
             ScheduledExecutorService scheduler, String host, int port) {
     	this.storm_conf = storm_conf;
         this.factory = factory;
@@ -100,6 +104,7 @@ public class Client implements IConnection, IStatefulObject{
         retryPolicy = new StormBoundedExponentialBackoffRetry(base_sleep_ms, max_sleep_ms, max_retries);
 
         this.messageBatchSize = Utils.getInt(storm_conf.get(Config.STORM_NETTY_MESSAGE_BATCH_SIZE), 262144);
+        reconnectRetryTimes = 0;
         
         flushCheckInterval = Utils.getInt(storm_conf.get(Config.STORM_NETTY_FLUSH_CHECK_INTERVAL_MS), 10); // default 10 ms
 
@@ -142,6 +147,15 @@ public class Client implements IConnection, IStatefulObject{
                 
             }
         };
+
+        connector = new Runnable() {
+            @Override
+            public void run() {
+                if (!closing) {
+                    connect();
+                }
+            }
+        };
         
         long initialDelay = Math.min(30L * 1000, max_sleep_ms * max_retries); //max wait for 30s
         scheduler.scheduleWithFixedDelay(flusher, initialDelay, flushCheckInterval, TimeUnit.MILLISECONDS);
@@ -158,39 +172,78 @@ public class Client implements IConnection, IStatefulObject{
                 return;
             }
 
-            int tried = 0;
-            //setting channel to null to make sure we throw an exception when reconnection fails
-            channel = null;
-            while (tried <= max_retries) {
+            if (reconnectRetryTimes <= max_retries && !closing) {
 
-                LOG.info("Reconnect started for {}... [{}]", name(), tried);
+                LOG.info("Reconnect started for {}... [{}]", name(), reconnectRetryTimes);
                 LOG.debug("connection started...");
 
                 totalReconnects.getAndIncrement();
                 ChannelFuture future = bootstrap.connect(remote_addr);
                 future.awaitUninterruptibly();
                 Channel current = future.getChannel();
+
                 if (!future.isSuccess()) {
                     if (null != current) {
                         current.close();
                     }
+                    scheduler.schedule(connector, retryPolicy.getSleepTimeMs(reconnectRetryTimes, 0), TimeUnit.MILLISECONDS);
+                    reconnectRetryTimes++;
                 } else {
                     channel = current;
-                    break;
+                    reconnectRetryTimes = 0;
                 }
-                Thread.sleep(retryPolicy.getSleepTimeMs(tried, 0));
-                tried++;  
             }
+
             if (null != channel) {
                 LOG.info("connection established to a remote host " + name() + ", " + channel.toString());
                 channelRef.set(channel);
-            } else {
+            } else if (closing) {
+                LOG.info("connection is closing, abort reconnecting...");
+            } else if (reconnectRetryTimes > max_retries){
                 close();
                 throw new RuntimeException("Remote address is not reachable. We will close this client " + name());
             }
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
             throw new RuntimeException("connection failed " + name(), e);
         }
+    }
+
+  @Override
+  public Status status() {
+      if (closing) {
+          return Status.Closed;
+      } else if (null == channelRef.get()) {
+          return Status.Connecting;
+      } else {
+          return Status.Ready;
+      }
+  }
+
+    private int iteratorSize(Iterator<TaskMessage> msgs) {
+        int size = 0;
+        while(msgs.hasNext()) {
+          size++;
+          msgs.next();
+        }
+        return size;
+    }
+
+    private void handleMessageWhenConnectionNotAvailable(Iterator<TaskMessage> msgs) {
+      // we will drop pending messages and let at-least-once message replay kicks in
+      //
+      // Another option is to buffer the message in memory. For this option, it has the risk
+      // of OOM, especially for unacked topology. Because we don't know whether the connection
+      // recovery will succeed or not and how long it will take.
+      dropPendingMessages(msgs);
+    }
+
+    private void dropPendingMessages(Iterator<TaskMessage> msgs) {
+      // msgs iterator is invalid after this call, we cannot use it further
+      int msgCount = iteratorSize(msgs);
+
+      // the connection is down, drop pending messages
+      LOG.error("The Connection channel currently is not available, dropping pending " + msgCount + " messages...");
+      return;
     }
 
     /**
@@ -200,7 +253,8 @@ public class Client implements IConnection, IStatefulObject{
 
         // throw exception if the client is being closed
         if (closing) {
-            throw new RuntimeException("Client is being closed, and does not take requests any more");
+            LOG.info("Client is being closed, and does not take requests any more, drop the messages...");
+            return;
         }
         
         if (null == msgs || !msgs.hasNext()) {
@@ -209,15 +263,11 @@ public class Client implements IConnection, IStatefulObject{
 
         Channel channel = channelRef.get();
         if (null == channel) {
-            connect();
-            channel = channelRef.get();
+            handleMessageWhenConnectionNotAvailable(msgs);
+            return;
         }
 
         while (msgs.hasNext()) {
-            if (!channel.isConnected()) {
-                connect();
-                channel = channelRef.get();
-            }
             TaskMessage message = msgs.next();
             if (null == messageBatch) {
                 messageBatch = new MessageBatch(messageBatchSize);
@@ -232,7 +282,7 @@ public class Client implements IConnection, IStatefulObject{
         }
 
         if (null != messageBatch && !messageBatch.isEmpty()) {
-            if (channel.isWritable()) {
+            if (channel.isConnected() && channel.isWritable()) {
                 flushCheckTimer.set(Long.MAX_VALUE);
                 
                 // Flush as fast as we can to reduce the latency
@@ -272,42 +322,49 @@ public class Client implements IConnection, IStatefulObject{
      * 
      * We will send all existing requests, and then invoke close_n_release()
      * method
+     *
+     * If the reconnection is ongoing when close() is called, we need to break that process.
      */
-    public synchronized void close() {
+    public void close() {
         if (!closing) {
-            closing = true;
-            LOG.info("Closing Netty Client " + name());
-            
-            if (null != messageBatch && !messageBatch.isEmpty()) {
-                MessageBatch toBeFlushed = messageBatch;
-                Channel channel = channelRef.get();
-                if (channel != null) {
-                    flushRequest(channel, toBeFlushed);
-                }
-                messageBatch = null;
-            }
-        
-            //wait for pendings to exit
-            final long timeoutMilliSeconds = 600 * 1000; //600 seconds
-            final long start = System.currentTimeMillis();
-            
-            LOG.info("Waiting for pending batchs to be sent with "+ name() + "..., timeout: {}ms, pendings: {}", timeoutMilliSeconds, pendings.get());
-            
-            while(pendings.get() != 0) {
-                try {
-                    long delta = System.currentTimeMillis() - start;
-                    if (delta > timeoutMilliSeconds) {
-                        LOG.error("Timeout when sending pending batchs with {}..., there are still {} pending batchs not sent", name(), pendings.get());
-                        break;
-                    }
-                    Thread.sleep(1000); //sleep 1s
-                } catch (InterruptedException e) {
-                    break;
-                } 
-            }
-            
-            close_n_release();
+
+          //set closing to true so that we can interuppt the reconnecting
+          closing = true;
+          LOG.info("Closing Netty Client " + name());
+          doClose();
         }
+    }
+
+    private synchronized void doClose() {
+        if (null != messageBatch && !messageBatch.isEmpty()) {
+            MessageBatch toBeFlushed = messageBatch;
+            Channel channel = channelRef.get();
+            if (channel != null) {
+                flushRequest(channel, toBeFlushed);
+            }
+            messageBatch = null;
+        }
+
+        //wait for pendings to exit
+        final long timeoutMilliSeconds = 600 * 1000; //600 seconds
+        final long start = System.currentTimeMillis();
+
+        LOG.info("Waiting for pending batchs to be sent with "+ name() + "..., timeout: {}ms, pendings: {}", timeoutMilliSeconds, pendings.get());
+
+        while(pendings.get() != 0) {
+            try {
+                long delta = System.currentTimeMillis() - start;
+                if (delta > timeoutMilliSeconds) {
+                    LOG.error("Timeout when sending pending batchs with {}..., there are still {} pending batchs not sent", name(), pendings.get());
+                    break;
+                }
+                Thread.sleep(1000); //sleep 1s
+            } catch (InterruptedException e) {
+                break;
+            }
+        }
+
+        close_n_release();
     }
 
     /**
@@ -352,7 +409,10 @@ public class Client implements IConnection, IStatefulObject{
 
                     if (null != channel) {
                         channel.close();
-                        channelRef.compareAndSet(channel, null);
+                        if (channelRef.compareAndSet(channel, null)) {
+                            // reconnect
+                            scheduler.execute(connector);
+                        }
                     }
                     messagesLostReconnect.getAndAdd(requests.size());
                 } else {
