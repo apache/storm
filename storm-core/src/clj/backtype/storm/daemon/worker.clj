@@ -21,7 +21,7 @@
   (:import [java.util ArrayList HashMap])
   (:import [backtype.storm.utils TransferDrainer])
   (:import [backtype.storm.messaging TransportFactory])
-  (:import [backtype.storm.messaging TaskMessage IContext IConnection])
+  (:import [backtype.storm.messaging TaskMessage IContext IConnection ConnectionWithStatus ConnectionWithStatus$Status])
   (:gen-class))
 
 (bootstrap)
@@ -201,6 +201,10 @@
       :worker-id worker-id
       :cluster-state cluster-state
       :storm-cluster-state storm-cluster-state
+      ;; when worker bootup, worker will start to setup initial connections to
+      ;; other workers. When all connection is ready, we will enable this flag
+      ;; and spout and bolt will be activated.
+      :worker-active-flag (atom false)
       :storm-active-atom (atom false)
       :executors executors
       :task-ids (->> receive-queue-map keys (map int) sort)
@@ -308,7 +312,7 @@
     (let [base (.storm-base (:storm-cluster-state worker) (:storm-id worker) callback)]
      (reset!
       (:storm-active-atom worker)
-      (= :active (-> base :status :type))
+       (and (= :active (-> base :status :type)) @(:worker-active-flag worker))
       ))
      ))
 
@@ -329,6 +333,37 @@
             (let [node+port->socket @node+port->socket]
               (.send drainer node+port->socket)))
           (.clear drainer))))))
+
+;; Check whether this messaging connection is ready to send data
+(defn is-connection-ready [^IConnection connection]
+  (if (instance?  ConnectionWithStatus connection)
+    (let [^ConnectionWithStatus connection connection
+          status (.status connection)]
+      (= status ConnectionWithStatus$Status/Ready))
+    true))
+
+;; all connections are ready
+(defn all-connections-ready [worker]
+    (let [connections (vals @(:cached-node+port->socket worker))]
+      (every? is-connection-ready connections)))
+
+;; we will wait all connections to be ready and then activate the spout/bolt
+;; when the worker bootup
+(defn activate-worker-when-all-connections-ready
+  [worker]
+  (let [timer (:refresh-active-timer worker)
+        delay-secs 0
+        recur-secs 1]
+    (schedule timer
+      delay-secs
+      (fn this []
+        (if (all-connections-ready worker)
+          (do
+            (log-message "All connections are ready for worker " (:assignment-id worker) ":" (:port worker)
+              " with id "(:worker-id worker))
+            (reset! (:worker-active-flag worker) true))
+          (schedule timer recur-secs this :check-active false)
+            )))))
 
 (defn launch-receive-thread [worker]
   (log-message "Launching receive-thread for " (:assignment-id worker) ":" (:port worker))
@@ -373,14 +408,18 @@
         _ (schedule-recurring (:heartbeat-timer worker) 0 (conf WORKER-HEARTBEAT-FREQUENCY-SECS) heartbeat-fn)
         _ (schedule-recurring (:executor-heartbeat-timer worker) 0 (conf TASK-HEARTBEAT-FREQUENCY-SECS) #(do-executor-heartbeats worker :executors @executors))
 
+        receive-thread-shutdown (launch-receive-thread worker)
         
         refresh-connections (mk-refresh-connections worker)
 
         _ (refresh-connections nil)
+
+        _ (activate-worker-when-all-connections-ready worker)
+
         _ (refresh-storm-active worker nil)
+
  
         _ (reset! executors (dofor [e (:executors worker)] (executor/mk-executor worker e)))
-        receive-thread-shutdown (launch-receive-thread worker)
         
         transfer-tuples (mk-transfer-tuples-handler worker)
         
