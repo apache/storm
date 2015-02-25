@@ -28,9 +28,17 @@ import java.io.Serializable;
  * @see KafkaSpout
  */
 public class KafkaConfig implements Serializable {
-
+	/**
+	 * Any implementation of the BrokerHosts interface, currently either ZkHosts or StaticHosts.
+	 */
 	public final BrokerHosts hosts;
+	/**
+	 * Name of the Kafka topic.
+	 */
     public final String topic;
+    /**
+     * Optional parameter used as part of the ZooKeeper path where the spout's current offset is stored.
+     */
     public final String clientId;
 
     public int fetchSizeBytes = 1024 * 1024;

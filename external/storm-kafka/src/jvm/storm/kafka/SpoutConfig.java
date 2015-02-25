@@ -17,7 +17,6 @@
  */
 package storm.kafka;
 
-import java.io.Serializable;
 import java.util.List;
 
 
@@ -41,6 +40,14 @@ public class SpoutConfig extends KafkaConfig {
     public double retryDelayMultiplier = 1.0;
     public long retryDelayMaxMs = 60 * 1000;
 
+    /**
+     * Construct configuration for use with KafkaSpout
+     * 
+     * @param hosts Any implementation of the BrokerHosts interface, currently either ZkHosts or StaticHosts.
+     * @param topic Name of the Kafka topic.
+     * @param zkRoot Root directory in Zookeeper where all topics and partition information is stored. By default, this is /brokers.
+     * @param id Unique identifier for this spout.
+     */
     public SpoutConfig(BrokerHosts hosts, String topic, String zkRoot, String id) {
         super(hosts, topic);
         this.zkRoot = zkRoot;
