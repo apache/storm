@@ -20,7 +20,9 @@ package storm.kafka.trident;
 import storm.kafka.BrokerHosts;
 import storm.kafka.KafkaConfig;
 
-
+/**
+ * Configuration settings used by Trident Kafka Spouts
+ */
 public class TridentKafkaConfig extends KafkaConfig {
 
 
