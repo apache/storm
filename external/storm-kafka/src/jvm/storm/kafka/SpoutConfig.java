@@ -27,10 +27,10 @@ import java.util.List;
  * @see KafkaSpout
  */
 public class SpoutConfig extends KafkaConfig {
-    public List<String> zkServers = null;
-    public Integer zkPort = null;
-    public String zkRoot = null;
-    public String id = null;
+    public List<String> zkServers;
+    public Integer zkPort;
+    public String zkRoot;
+    public String id;
 
     // setting for how often to save the current kafka offset to ZooKeeper
     public long stateUpdateIntervalMs = 2000;
