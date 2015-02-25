@@ -21,6 +21,11 @@ import java.io.Serializable;
 import java.util.List;
 
 
+/**
+ * Configuration settings used by KafkaSpout
+ * 
+ * @see KafkaSpout
+ */
 public class SpoutConfig extends KafkaConfig implements Serializable {
     public List<String> zkServers = null;
     public Integer zkPort = null;

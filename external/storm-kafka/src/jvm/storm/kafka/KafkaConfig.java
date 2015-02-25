@@ -22,9 +22,14 @@ import backtype.storm.spout.RawMultiScheme;
 
 import java.io.Serializable;
 
+/**
+ * Base configuration class used by KafkaSpout and Trident variants
+ * 
+ * @see KafkaSpout
+ */
 public class KafkaConfig implements Serializable {
 
-    public final BrokerHosts hosts;
+	public final BrokerHosts hosts;
     public final String topic;
     public final String clientId;
 
