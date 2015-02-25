@@ -410,7 +410,11 @@
     (disruptor/clojure-handler
       (fn [tuple-batch sequence-id end-of-batch?]
         (fast-list-iter [[task-id msg] tuple-batch]
-          (let [^TupleImpl tuple (if (instance? Tuple msg) msg (.deserialize deserializer msg))]
+          (let [[deserialize-time ^TupleImpl tuple] (if (instance? Tuple msg) [0.0 msg] (with-time (.deserialize deserializer msg)))]
+            (stats/bolt-deserialize-time! (:stats executor-data)
+              (.getSourceComponent tuple)
+              (.getSourceStreamId tuple)
+              deserialize-time)
             (when debug? (log-message "Processing received message FOR " task-id " TUPLE: " tuple))
             (if task-id
               (tuple-action-fn task-id tuple)

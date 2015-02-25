@@ -76,6 +76,11 @@
           </span>
         </th>
         <th class="header">
+          <span data-original-title="The average time it takes to deserialize each tuple in bolt" class="tip above">
+            Deserialize Time (ms)
+          </span>
+        </th>
+        <th class="header">
           <span class="tip above" title="The number of Tuple &quot;trees&quot; successfully processed. A value of 0 is expected if no acking is done.">
             Acked
           </span>
@@ -94,6 +99,7 @@
         <td>{{transferred}}</td>
         <td>{{emitted}}</td>
         <td>{{completeLatency}}</td>
+        <td>{{deserializeTime}}</td>
         <td>{{acked}}</td>
         <td>{{failed}}</td>
       </tr>
@@ -193,6 +199,11 @@
           </span>
         </th>
         <th class="header">
+          <span data-original-title="The average time it takes to deserialize each tuple in bolt" class="tip above">
+            Deserialize Time (ms)
+          </span>
+        </th>
+        <th class="header">
           <span class="tip above" title="The number of Tuple &quot;trees&quot; successfully processed. A value of 0 is expected if no acking is done.">
             Acked
           </span>
@@ -214,6 +225,7 @@
         <td>{{emitted}}</td>
         <td>{{transferred}}</td>
         <td>{{completeLatency}}</td>
+        <td>{{deserializeTime}}</td>
         <td>{{acked}}</td>
         <td>{{failed}}</td>
       </tr>
@@ -257,6 +269,11 @@
           </span>
         </th>
         <th class="header">
+          <span data-original-title="The average time it takes to deserialize each tuple in bolt" class="tip above">
+            Deserialize Time (ms)
+          </span>
+        </th>
+        <th class="header">
           <span data-original-title="The number of Tuples acknowledged by this Bolt." class="tip above">
             Acked
           </span>
@@ -277,6 +294,7 @@
         <td>{{executeLatency}}</td>
         <td>{{executed}}</td>
         <td>{{processLatency}}</td>
+        <td>{{deserializeTime}}</td>
         <td>{{acked}}</td>
         <td>{{failed}}</td>
       </tr>
@@ -430,6 +448,11 @@
           </span>
         </th>
         <th class="header">
+          <span data-original-title="The average time it takes to deserialize each tuple in bolt" class="tip above">
+            Deserialize Time (ms)
+          </span>
+        </th>
+        <th class="header">
           <span data-original-title="The number of Tuples acknowledged by this Bolt." class="tip above">
             Acked
           </span>
@@ -454,6 +477,7 @@
         <td>{{executeLatency}}</td>
         <td>{{executed}}</td>
         <td>{{processLatency}}</td>
+        <td>{{deserializeTime}}</td>
         <td>{{acked}}</td>
         <td>{{failed}}</td>
       </tr>
