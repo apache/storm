@@ -17,9 +17,7 @@
  */
 package storm.kafka;
 
-import java.io.Serializable;
 import java.util.List;
-
 
 public class SpoutConfig extends KafkaConfig {
     public List<String> zkServers;
