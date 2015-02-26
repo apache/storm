@@ -21,7 +21,7 @@ import java.io.Serializable;
 import java.util.List;
 
 
-public class SpoutConfig extends KafkaConfig implements Serializable {
+public class SpoutConfig extends KafkaConfig {
     public List<String> zkServers = null;
     public Integer zkPort = null;
     public String zkRoot = null;
