@@ -15,6 +15,7 @@
 ;; limitations under the License.
 (ns backtype.storm.daemon.supervisor
   (:import [java.io OutputStreamWriter BufferedWriter IOException])
+  (:require [backtype.storm.daemon.common :as common])
   (:import [backtype.storm.scheduler ISupervisor]
            [backtype.storm.utils LocalState Time Utils]
            [backtype.storm.daemon Shutdownable]
