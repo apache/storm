@@ -252,6 +252,10 @@
   (update-executor-stat! stats :failed stream (stats-rate stats))
   )
 
+(defn spout-deserialize-time!
+  [^SpoutExecutorStats stats stream deserialize-time]
+  (update-executor-stat! stats :deserialize-time stream deserialize-time))
+
 (defn- cleanup-stat! [stat]
   (swap! stat cleanup-rolling-window-set))
 

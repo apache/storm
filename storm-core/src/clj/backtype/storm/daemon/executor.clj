@@ -402,7 +402,7 @@
       (builtin-metrics/spout-acked-tuple! (:builtin-metrics task-data) (:stats executor-data) (:stream tuple-info) time-delta)
       (stats/spout-acked-tuple! (:stats executor-data) (:stream tuple-info) time-delta))))
 
-(defn mk-task-receiver [executor-data tuple-action-fn]
+(defn mk-task-receiver [executor-data task-datas tuple-action-fn]
   (let [^KryoTupleDeserializer deserializer (:deserializer executor-data)
         task-ids (:task-ids executor-data)
         debug? (= true (-> executor-data :storm-conf (get TOPOLOGY-DEBUG)))
@@ -410,11 +410,28 @@
     (disruptor/clojure-handler
       (fn [tuple-batch sequence-id end-of-batch?]
         (fast-list-iter [[task-id msg] tuple-batch]
-          (let [[deserialize-time ^TupleImpl tuple] (if (instance? Tuple msg) [0.0 msg] (with-time (.deserialize deserializer msg)))]
-            (stats/bolt-deserialize-time! (:stats executor-data)
-              (.getSourceComponent tuple)
-              (.getSourceStreamId tuple)
-              deserialize-time)
+          (let [[deserialize-time ^TupleImpl tuple] (if (instance? Tuple msg) [0.0 msg] (with-time (.deserialize deserializer msg)))
+                task-data (get task-datas task-id)]
+            (cond
+              (= (:type executor-data) :bolt)
+              (do (stats/bolt-deserialize-time! (:stats executor-data)
+                (.getSourceComponent tuple)
+                (.getSourceStreamId tuple)
+                deserialize-time)
+                (if (:builtin-metrics task-data)
+                  (builtin-metrics/bolt-deserialize-time! (:builtin-metrics task-data)
+                  (.getSourceComponent tuple)
+                  (.getSourceStreamId tuple)
+                  deserialize-time)))
+              (= (:type executor-data) :spout)
+              (do (stats/spout-deserialize-time! (:stats executor-data)
+                (.getSourceStreamId tuple)
+                deserialize-time)
+                (if (:builtin-metrics task-data)
+                  (builtin-metrics/spout-deserialize-time! (:builtin-metrics task-data)
+                  (.getSourceStreamId tuple)
+                  deserialize-time)))
+              )
             (when debug? (log-message "Processing received message FOR " task-id " TUPLE: " tuple))
             (if task-id
               (tuple-action-fn task-id tuple)
@@ -475,7 +492,7 @@
                                 ;; TODO: on failure, emit tuple to failure stream
                                 ))))
         receive-queue (:receive-queue executor-data)
-        event-handler (mk-task-receiver executor-data tuple-action-fn)
+        event-handler (mk-task-receiver executor-data task-datas tuple-action-fn)
         has-ackers? (has-ackers? storm-conf)
         emitted-count (MutableLong. 0)
         empty-emit-streak (MutableLong. 0)
@@ -796,7 +813,7 @@
         (setup-metrics! executor-data)
 
         (let [receive-queue (:receive-queue executor-data)
-              event-handler (mk-task-receiver executor-data tuple-action-fn)]
+              event-handler (mk-task-receiver executor-data task-datas tuple-action-fn)]
           (disruptor/consumer-started! receive-queue)
           (fn []            
             (disruptor/consume-batch-when-available receive-queue event-handler)
