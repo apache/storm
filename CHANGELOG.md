@@ -1,3 +1,7 @@
+## 0.9.4
+ * STORM-329: fix cascading Storm failure by improving reconnection strategy and buffering messages
+ * STORM-130: Supervisor getting killed due to java.io.FileNotFoundException: File '../stormconf.ser' does not exist.
+
 ## 0.9.3-rc2
  * STORM-558: change "swap!" to "reset!" to fix assignment-versions in supervisor
  * STORM-555: Storm json response should set charset to UTF-8
