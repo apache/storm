@@ -31,7 +31,7 @@
 	</repositories>
 	<properties>
 		<spring.version>2.5.6</spring.version>
-		<storm.version>0.9.2-incubating</storm.version>
+		<storm.version>0.9.3</storm.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -130,7 +130,7 @@
 					<executable>java</executable>
 					<includeProjectDependencies>true</includeProjectDependencies>
 					<includePluginDependencies>true</includePluginDependencies>
-					<mainClass>backtype.storm.contrib.jms.example.ExampleJmsTopology</mainClass>
+					<mainClass>org.apache.storm.jms.example.ExampleJmsTopology</mainClass>
 					<systemProperties>
 						<systemProperty>
 							<key>log4j.configuration</key>
