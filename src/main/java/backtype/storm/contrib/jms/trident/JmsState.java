@@ -18,10 +18,7 @@
 package backtype.storm.contrib.jms.trident;
 
 import backtype.storm.contrib.jms.JmsProvider;
-import backtype.storm.contrib.jms.trident.TridentJmsMessageProducer;
 import backtype.storm.topology.FailedException;
-import backtype.storm.tuple.Values;
-import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import storm.trident.operation.TridentCollector;
