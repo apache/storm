@@ -118,10 +118,12 @@ public class GetInfoOptions implements org.apache.thrift.TBase<GetInfoOptions, G
       _fieldName = fieldName;
     }
 
+    @Override
     public short getThriftFieldId() {
       return _thriftId;
     }
 
+    @Override
     public String getFieldName() {
       return _fieldName;
     }
@@ -150,6 +152,7 @@ public class GetInfoOptions implements org.apache.thrift.TBase<GetInfoOptions, G
     }
   }
 
+  @Override
   public GetInfoOptions deepCopy() {
     return new GetInfoOptions(this);
   }
@@ -190,6 +193,7 @@ public class GetInfoOptions implements org.apache.thrift.TBase<GetInfoOptions, G
     }
   }
 
+  @Override
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case NUM_ERR_CHOICE:
@@ -203,6 +207,7 @@ public class GetInfoOptions implements org.apache.thrift.TBase<GetInfoOptions, G
     }
   }
 
+  @Override
   public Object getFieldValue(_Fields field) {
     switch (field) {
     case NUM_ERR_CHOICE:
@@ -213,6 +218,7 @@ public class GetInfoOptions implements org.apache.thrift.TBase<GetInfoOptions, G
   }
 
   /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+  @Override
   public boolean isSet(_Fields field) {
     if (field == null) {
       throw new IllegalArgumentException();
@@ -283,14 +289,17 @@ public class GetInfoOptions implements org.apache.thrift.TBase<GetInfoOptions, G
     return 0;
   }
 
+  @Override
   public _Fields fieldForId(int fieldId) {
     return _Fields.findByThriftId(fieldId);
   }
 
+  @Override
   public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
     schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
   }
 
+  @Override
   public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
     schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
   }
@@ -335,6 +344,7 @@ public class GetInfoOptions implements org.apache.thrift.TBase<GetInfoOptions, G
   }
 
   private static class GetInfoOptionsStandardSchemeFactory implements SchemeFactory {
+    @Override
     public GetInfoOptionsStandardScheme getScheme() {
       return new GetInfoOptionsStandardScheme();
     }
@@ -342,6 +352,7 @@ public class GetInfoOptions implements org.apache.thrift.TBase<GetInfoOptions, G
 
   private static class GetInfoOptionsStandardScheme extends StandardScheme<GetInfoOptions> {
 
+    @Override
     public void read(org.apache.thrift.protocol.TProtocol iprot, GetInfoOptions struct) throws org.apache.thrift.TException {
       org.apache.thrift.protocol.TField schemeField;
       iprot.readStructBegin();
@@ -369,6 +380,7 @@ public class GetInfoOptions implements org.apache.thrift.TBase<GetInfoOptions, G
       struct.validate();
     }
 
+    @Override
     public void write(org.apache.thrift.protocol.TProtocol oprot, GetInfoOptions struct) throws org.apache.thrift.TException {
       struct.validate();
 
@@ -387,6 +399,7 @@ public class GetInfoOptions implements org.apache.thrift.TBase<GetInfoOptions, G
   }
 
   private static class GetInfoOptionsTupleSchemeFactory implements SchemeFactory {
+    @Override
     public GetInfoOptionsTupleScheme getScheme() {
       return new GetInfoOptionsTupleScheme();
     }

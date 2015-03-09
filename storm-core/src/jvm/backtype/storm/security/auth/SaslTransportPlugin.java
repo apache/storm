@@ -109,6 +109,7 @@ public abstract class SaslTransportPlugin implements ITransportPlugin {
             this.wrapped = wrapped;
         }
 
+        @Override
         public boolean process(final TProtocol inProt, final TProtocol outProt) throws TException {
             //populating request context 
             ReqContext req_context = ReqContext.context();
@@ -144,6 +145,7 @@ public abstract class SaslTransportPlugin implements ITransportPlugin {
         /**                                                                                                                                                                                
          * Get the full name of the user.                                                                                                                                                  
          */
+        @Override
         public String getName() {
             return name;
         }

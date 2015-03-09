@@ -132,10 +132,12 @@ public class Grouping extends org.apache.thrift.TUnion<Grouping, Grouping._Field
       _fieldName = fieldName;
     }
 
+    @Override
     public short getThriftFieldId() {
       return _thriftId;
     }
 
+    @Override
     public String getFieldName() {
       return _fieldName;
     }
@@ -176,6 +178,7 @@ public class Grouping extends org.apache.thrift.TUnion<Grouping, Grouping._Field
   public Grouping(Grouping other) {
     super(other);
   }
+  @Override
   public Grouping deepCopy() {
     return new Grouping(this);
   }
@@ -574,6 +577,7 @@ public class Grouping extends org.apache.thrift.TUnion<Grouping, Grouping._Field
     return _Fields.findByThriftIdOrThrow(id);
   }
 
+  @Override
   public _Fields fieldForId(int fieldId) {
     return _Fields.findByThriftId(fieldId);
   }
@@ -741,6 +745,7 @@ public class Grouping extends org.apache.thrift.TUnion<Grouping, Grouping._Field
   }
 
 
+  @Override
   public boolean equals(Object other) {
     if (other instanceof Grouping) {
       return equals((Grouping)other);

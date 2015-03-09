@@ -124,10 +124,12 @@ public class JavaObjectArg extends org.apache.thrift.TUnion<JavaObjectArg, JavaO
       _fieldName = fieldName;
     }
 
+    @Override
     public short getThriftFieldId() {
       return _thriftId;
     }
 
+    @Override
     public String getFieldName() {
       return _fieldName;
     }
@@ -163,6 +165,7 @@ public class JavaObjectArg extends org.apache.thrift.TUnion<JavaObjectArg, JavaO
   public JavaObjectArg(JavaObjectArg other) {
     super(other);
   }
+  @Override
   public JavaObjectArg deepCopy() {
     return new JavaObjectArg(this);
   }
@@ -447,6 +450,7 @@ public class JavaObjectArg extends org.apache.thrift.TUnion<JavaObjectArg, JavaO
     return _Fields.findByThriftIdOrThrow(id);
   }
 
+  @Override
   public _Fields fieldForId(int fieldId) {
     return _Fields.findByThriftId(fieldId);
   }
@@ -572,6 +576,7 @@ public class JavaObjectArg extends org.apache.thrift.TUnion<JavaObjectArg, JavaO
   }
 
 
+  @Override
   public boolean equals(Object other) {
     if (other instanceof JavaObjectArg) {
       return equals((JavaObjectArg)other);

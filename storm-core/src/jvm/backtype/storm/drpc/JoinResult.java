@@ -44,10 +44,12 @@ public class JoinResult extends BaseRichBolt {
         this.returnComponent = returnComponent;
     }
  
+    @Override
     public void prepare(Map map, TopologyContext context, OutputCollector collector) {
         _collector = collector;
     }
 
+    @Override
     public void execute(Tuple tuple) {
         Object requestId = tuple.getValue(0);
         if(tuple.getSourceComponent().equals(returnComponent)) {
@@ -69,6 +71,7 @@ public class JoinResult extends BaseRichBolt {
         }
     }
 
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(new Fields("result", "return-info"));
     }

@@ -134,10 +134,12 @@ public class BoltStats implements org.apache.thrift.TBase<BoltStats, BoltStats._
       _fieldName = fieldName;
     }
 
+    @Override
     public short getThriftFieldId() {
       return _thriftId;
     }
 
+    @Override
     public String getFieldName() {
       return _fieldName;
     }
@@ -335,6 +337,7 @@ public class BoltStats implements org.apache.thrift.TBase<BoltStats, BoltStats._
     }
   }
 
+  @Override
   public BoltStats deepCopy() {
     return new BoltStats(this);
   }
@@ -518,6 +521,7 @@ public class BoltStats implements org.apache.thrift.TBase<BoltStats, BoltStats._
     }
   }
 
+  @Override
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case ACKED:
@@ -563,6 +567,7 @@ public class BoltStats implements org.apache.thrift.TBase<BoltStats, BoltStats._
     }
   }
 
+  @Override
   public Object getFieldValue(_Fields field) {
     switch (field) {
     case ACKED:
@@ -585,6 +590,7 @@ public class BoltStats implements org.apache.thrift.TBase<BoltStats, BoltStats._
   }
 
   /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+  @Override
   public boolean isSet(_Fields field) {
     if (field == null) {
       throw new IllegalArgumentException();
@@ -759,14 +765,17 @@ public class BoltStats implements org.apache.thrift.TBase<BoltStats, BoltStats._
     return 0;
   }
 
+  @Override
   public _Fields fieldForId(int fieldId) {
     return _Fields.findByThriftId(fieldId);
   }
 
+  @Override
   public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
     schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
   }
 
+  @Override
   public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
     schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
   }
@@ -861,6 +870,7 @@ public class BoltStats implements org.apache.thrift.TBase<BoltStats, BoltStats._
   }
 
   private static class BoltStatsStandardSchemeFactory implements SchemeFactory {
+    @Override
     public BoltStatsStandardScheme getScheme() {
       return new BoltStatsStandardScheme();
     }
@@ -868,6 +878,7 @@ public class BoltStats implements org.apache.thrift.TBase<BoltStats, BoltStats._
 
   private static class BoltStatsStandardScheme extends StandardScheme<BoltStats> {
 
+    @Override
     public void read(org.apache.thrift.protocol.TProtocol iprot, BoltStats struct) throws org.apache.thrift.TException {
       org.apache.thrift.protocol.TField schemeField;
       iprot.readStructBegin();
@@ -1052,6 +1063,7 @@ public class BoltStats implements org.apache.thrift.TBase<BoltStats, BoltStats._
       struct.validate();
     }
 
+    @Override
     public void write(org.apache.thrift.protocol.TProtocol oprot, BoltStats struct) throws org.apache.thrift.TException {
       struct.validate();
 
@@ -1168,6 +1180,7 @@ public class BoltStats implements org.apache.thrift.TBase<BoltStats, BoltStats._
   }
 
   private static class BoltStatsTupleSchemeFactory implements SchemeFactory {
+    @Override
     public BoltStatsTupleScheme getScheme() {
       return new BoltStatsTupleScheme();
     }

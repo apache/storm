@@ -33,6 +33,7 @@ public class CountMetric implements IMetric {
         _value += incrementBy;
     }
 
+    @Override
     public Object getValueAndReset() {
         long ret = _value;
         _value = 0;

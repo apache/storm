@@ -23,6 +23,7 @@ import org.jboss.netty.channel.ChannelLocal;
 final class SaslNettyServerState {
 
 	public static final ChannelLocal<SaslNettyServer> getSaslNettyServer = new ChannelLocal<SaslNettyServer>() {
+                @Override
 		protected SaslNettyServer initialValue(Channel channel) {
 			return null;
 		}

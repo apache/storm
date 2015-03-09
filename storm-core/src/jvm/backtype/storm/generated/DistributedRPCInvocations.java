@@ -77,9 +77,11 @@ public class DistributedRPCInvocations {
   public static class Client extends org.apache.thrift.TServiceClient implements Iface {
     public static class Factory implements org.apache.thrift.TServiceClientFactory<Client> {
       public Factory() {}
+      @Override
       public Client getClient(org.apache.thrift.protocol.TProtocol prot) {
         return new Client(prot);
       }
+      @Override
       public Client getClient(org.apache.thrift.protocol.TProtocol iprot, org.apache.thrift.protocol.TProtocol oprot) {
         return new Client(iprot, oprot);
       }
@@ -94,6 +96,7 @@ public class DistributedRPCInvocations {
       super(iprot, oprot);
     }
 
+    @Override
     public void result(String id, String result) throws AuthorizationException, org.apache.thrift.TException
     {
       send_result(id, result);
@@ -118,6 +121,7 @@ public class DistributedRPCInvocations {
       return;
     }
 
+    @Override
     public DRPCRequest fetchRequest(String functionName) throws AuthorizationException, org.apache.thrift.TException
     {
       send_fetchRequest(functionName);
@@ -144,6 +148,7 @@ public class DistributedRPCInvocations {
       throw new org.apache.thrift.TApplicationException(org.apache.thrift.TApplicationException.MISSING_RESULT, "fetchRequest failed: unknown result");
     }
 
+    @Override
     public void failRequest(String id) throws AuthorizationException, org.apache.thrift.TException
     {
       send_failRequest(id);
@@ -176,6 +181,7 @@ public class DistributedRPCInvocations {
         this.clientManager = clientManager;
         this.protocolFactory = protocolFactory;
       }
+      @Override
       public AsyncClient getAsyncClient(org.apache.thrift.transport.TNonblockingTransport transport) {
         return new AsyncClient(protocolFactory, clientManager, transport);
       }
@@ -185,6 +191,7 @@ public class DistributedRPCInvocations {
       super(protocolFactory, clientManager, transport);
     }
 
+    @Override
     public void result(String id, String result, org.apache.thrift.async.AsyncMethodCallback resultHandler) throws org.apache.thrift.TException {
       checkReady();
       result_call method_call = new result_call(id, result, resultHandler, this, ___protocolFactory, ___transport);
@@ -201,6 +208,7 @@ public class DistributedRPCInvocations {
         this.result = result;
       }
 
+      @Override
       public void write_args(org.apache.thrift.protocol.TProtocol prot) throws org.apache.thrift.TException {
         prot.writeMessageBegin(new org.apache.thrift.protocol.TMessage("result", org.apache.thrift.protocol.TMessageType.CALL, 0));
         result_args args = new result_args();
@@ -220,6 +228,7 @@ public class DistributedRPCInvocations {
       }
     }
 
+    @Override
     public void fetchRequest(String functionName, org.apache.thrift.async.AsyncMethodCallback resultHandler) throws org.apache.thrift.TException {
       checkReady();
       fetchRequest_call method_call = new fetchRequest_call(functionName, resultHandler, this, ___protocolFactory, ___transport);
@@ -234,6 +243,7 @@ public class DistributedRPCInvocations {
         this.functionName = functionName;
       }
 
+      @Override
       public void write_args(org.apache.thrift.protocol.TProtocol prot) throws org.apache.thrift.TException {
         prot.writeMessageBegin(new org.apache.thrift.protocol.TMessage("fetchRequest", org.apache.thrift.protocol.TMessageType.CALL, 0));
         fetchRequest_args args = new fetchRequest_args();
@@ -252,6 +262,7 @@ public class DistributedRPCInvocations {
       }
     }
 
+    @Override
     public void failRequest(String id, org.apache.thrift.async.AsyncMethodCallback resultHandler) throws org.apache.thrift.TException {
       checkReady();
       failRequest_call method_call = new failRequest_call(id, resultHandler, this, ___protocolFactory, ___transport);
@@ -266,6 +277,7 @@ public class DistributedRPCInvocations {
         this.id = id;
       }
 
+      @Override
       public void write_args(org.apache.thrift.protocol.TProtocol prot) throws org.apache.thrift.TException {
         prot.writeMessageBegin(new org.apache.thrift.protocol.TMessage("failRequest", org.apache.thrift.protocol.TMessageType.CALL, 0));
         failRequest_args args = new failRequest_args();
@@ -308,14 +320,17 @@ public class DistributedRPCInvocations {
         super("result");
       }
 
+      @Override
       public result_args getEmptyArgsInstance() {
         return new result_args();
       }
 
+      @Override
       protected boolean isOneway() {
         return false;
       }
 
+      @Override
       public result_result getResult(I iface, result_args args) throws org.apache.thrift.TException {
         result_result result = new result_result();
         try {
@@ -332,14 +347,17 @@ public class DistributedRPCInvocations {
         super("fetchRequest");
       }
 
+      @Override
       public fetchRequest_args getEmptyArgsInstance() {
         return new fetchRequest_args();
       }
 
+      @Override
       protected boolean isOneway() {
         return false;
       }
 
+      @Override
       public fetchRequest_result getResult(I iface, fetchRequest_args args) throws org.apache.thrift.TException {
         fetchRequest_result result = new fetchRequest_result();
         try {
@@ -356,14 +374,17 @@ public class DistributedRPCInvocations {
         super("failRequest");
       }
 
+      @Override
       public failRequest_args getEmptyArgsInstance() {
         return new failRequest_args();
       }
 
+      @Override
       protected boolean isOneway() {
         return false;
       }
 
+      @Override
       public failRequest_result getResult(I iface, failRequest_args args) throws org.apache.thrift.TException {
         failRequest_result result = new failRequest_result();
         try {
@@ -399,13 +420,16 @@ public class DistributedRPCInvocations {
         super("result");
       }
 
+      @Override
       public result_args getEmptyArgsInstance() {
         return new result_args();
       }
 
+      @Override
       public AsyncMethodCallback<Void> getResultHandler(final AsyncFrameBuffer fb, final int seqid) {
         final org.apache.thrift.AsyncProcessFunction fcall = this;
         return new AsyncMethodCallback<Void>() { 
+                      @Override
           public void onComplete(Void o) {
             result_result result = new result_result();
             try {
@@ -416,6 +440,7 @@ public class DistributedRPCInvocations {
             }
             fb.close();
           }
+                      @Override
           public void onError(Exception e) {
             byte msgType = org.apache.thrift.protocol.TMessageType.REPLY;
             org.apache.thrift.TBase msg;
@@ -441,10 +466,12 @@ public class DistributedRPCInvocations {
         };
       }
 
+      @Override
       protected boolean isOneway() {
         return false;
       }
 
+      @Override
       public void start(I iface, result_args args, org.apache.thrift.async.AsyncMethodCallback<Void> resultHandler) throws TException {
         iface.result(args.id, args.result,resultHandler);
       }
@@ -455,13 +482,16 @@ public class DistributedRPCInvocations {
         super("fetchRequest");
       }
 
+      @Override
       public fetchRequest_args getEmptyArgsInstance() {
         return new fetchRequest_args();
       }
 
+      @Override
       public AsyncMethodCallback<DRPCRequest> getResultHandler(final AsyncFrameBuffer fb, final int seqid) {
         final org.apache.thrift.AsyncProcessFunction fcall = this;
         return new AsyncMethodCallback<DRPCRequest>() { 
+                      @Override
           public void onComplete(DRPCRequest o) {
             fetchRequest_result result = new fetchRequest_result();
             result.success = o;
@@ -473,6 +503,7 @@ public class DistributedRPCInvocations {
             }
             fb.close();
           }
+                      @Override
           public void onError(Exception e) {
             byte msgType = org.apache.thrift.protocol.TMessageType.REPLY;
             org.apache.thrift.TBase msg;
@@ -498,10 +529,12 @@ public class DistributedRPCInvocations {
         };
       }
 
+      @Override
       protected boolean isOneway() {
         return false;
       }
 
+      @Override
       public void start(I iface, fetchRequest_args args, org.apache.thrift.async.AsyncMethodCallback<DRPCRequest> resultHandler) throws TException {
         iface.fetchRequest(args.functionName,resultHandler);
       }
@@ -512,13 +545,16 @@ public class DistributedRPCInvocations {
         super("failRequest");
       }
 
+      @Override
       public failRequest_args getEmptyArgsInstance() {
         return new failRequest_args();
       }
 
+      @Override
       public AsyncMethodCallback<Void> getResultHandler(final AsyncFrameBuffer fb, final int seqid) {
         final org.apache.thrift.AsyncProcessFunction fcall = this;
         return new AsyncMethodCallback<Void>() { 
+                      @Override
           public void onComplete(Void o) {
             failRequest_result result = new failRequest_result();
             try {
@@ -529,6 +565,7 @@ public class DistributedRPCInvocations {
             }
             fb.close();
           }
+                      @Override
           public void onError(Exception e) {
             byte msgType = org.apache.thrift.protocol.TMessageType.REPLY;
             org.apache.thrift.TBase msg;
@@ -554,10 +591,12 @@ public class DistributedRPCInvocations {
         };
       }
 
+      @Override
       protected boolean isOneway() {
         return false;
       }
 
+      @Override
       public void start(I iface, failRequest_args args, org.apache.thrift.async.AsyncMethodCallback<Void> resultHandler) throws TException {
         iface.failRequest(args.id,resultHandler);
       }
@@ -632,10 +671,12 @@ public class DistributedRPCInvocations {
         _fieldName = fieldName;
       }
 
+      @Override
       public short getThriftFieldId() {
         return _thriftId;
       }
 
+      @Override
       public String getFieldName() {
         return _fieldName;
       }
@@ -677,6 +718,7 @@ public class DistributedRPCInvocations {
       }
     }
 
+    @Override
     public result_args deepCopy() {
       return new result_args(this);
     }
@@ -733,6 +775,7 @@ public class DistributedRPCInvocations {
       }
     }
 
+    @Override
     public void setFieldValue(_Fields field, Object value) {
       switch (field) {
       case ID:
@@ -754,6 +797,7 @@ public class DistributedRPCInvocations {
       }
     }
 
+    @Override
     public Object getFieldValue(_Fields field) {
       switch (field) {
       case ID:
@@ -767,6 +811,7 @@ public class DistributedRPCInvocations {
     }
 
     /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    @Override
     public boolean isSet(_Fields field) {
       if (field == null) {
         throw new IllegalArgumentException();
@@ -863,14 +908,17 @@ public class DistributedRPCInvocations {
       return 0;
     }
 
+    @Override
     public _Fields fieldForId(int fieldId) {
       return _Fields.findByThriftId(fieldId);
     }
 
+    @Override
     public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
       schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
     }
 
+    @Override
     public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
       schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
     }
@@ -921,6 +969,7 @@ public class DistributedRPCInvocations {
     }
 
     private static class result_argsStandardSchemeFactory implements SchemeFactory {
+      @Override
       public result_argsStandardScheme getScheme() {
         return new result_argsStandardScheme();
       }
@@ -928,6 +977,7 @@ public class DistributedRPCInvocations {
 
     private static class result_argsStandardScheme extends StandardScheme<result_args> {
 
+      @Override
       public void read(org.apache.thrift.protocol.TProtocol iprot, result_args struct) throws org.apache.thrift.TException {
         org.apache.thrift.protocol.TField schemeField;
         iprot.readStructBegin();
@@ -963,6 +1013,7 @@ public class DistributedRPCInvocations {
         struct.validate();
       }
 
+      @Override
       public void write(org.apache.thrift.protocol.TProtocol oprot, result_args struct) throws org.apache.thrift.TException {
         struct.validate();
 
@@ -984,6 +1035,7 @@ public class DistributedRPCInvocations {
     }
 
     private static class result_argsTupleSchemeFactory implements SchemeFactory {
+      @Override
       public result_argsTupleScheme getScheme() {
         return new result_argsTupleScheme();
       }
@@ -1089,10 +1141,12 @@ public class DistributedRPCInvocations {
         _fieldName = fieldName;
       }
 
+      @Override
       public short getThriftFieldId() {
         return _thriftId;
       }
 
+      @Override
       public String getFieldName() {
         return _fieldName;
       }
@@ -1127,6 +1181,7 @@ public class DistributedRPCInvocations {
       }
     }
 
+    @Override
     public result_result deepCopy() {
       return new result_result(this);
     }
@@ -1159,6 +1214,7 @@ public class DistributedRPCInvocations {
       }
     }
 
+    @Override
     public void setFieldValue(_Fields field, Object value) {
       switch (field) {
       case AZE:
@@ -1172,6 +1228,7 @@ public class DistributedRPCInvocations {
       }
     }
 
+    @Override
     public Object getFieldValue(_Fields field) {
       switch (field) {
       case AZE:
@@ -1182,6 +1239,7 @@ public class DistributedRPCInvocations {
     }
 
     /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    @Override
     public boolean isSet(_Fields field) {
       if (field == null) {
         throw new IllegalArgumentException();
@@ -1252,14 +1310,17 @@ public class DistributedRPCInvocations {
       return 0;
     }
 
+    @Override
     public _Fields fieldForId(int fieldId) {
       return _Fields.findByThriftId(fieldId);
     }
 
+    @Override
     public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
       schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
     }
 
+    @Override
     public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
       schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
       }
@@ -1302,6 +1363,7 @@ public class DistributedRPCInvocations {
     }
 
     private static class result_resultStandardSchemeFactory implements SchemeFactory {
+      @Override
       public result_resultStandardScheme getScheme() {
         return new result_resultStandardScheme();
       }
@@ -1309,6 +1371,7 @@ public class DistributedRPCInvocations {
 
     private static class result_resultStandardScheme extends StandardScheme<result_result> {
 
+      @Override
       public void read(org.apache.thrift.protocol.TProtocol iprot, result_result struct) throws org.apache.thrift.TException {
         org.apache.thrift.protocol.TField schemeField;
         iprot.readStructBegin();
@@ -1337,6 +1400,7 @@ public class DistributedRPCInvocations {
         struct.validate();
       }
 
+      @Override
       public void write(org.apache.thrift.protocol.TProtocol oprot, result_result struct) throws org.apache.thrift.TException {
         struct.validate();
 
@@ -1353,6 +1417,7 @@ public class DistributedRPCInvocations {
     }
 
     private static class result_resultTupleSchemeFactory implements SchemeFactory {
+      @Override
       public result_resultTupleScheme getScheme() {
         return new result_resultTupleScheme();
       }
@@ -1449,10 +1514,12 @@ public class DistributedRPCInvocations {
         _fieldName = fieldName;
       }
 
+      @Override
       public short getThriftFieldId() {
         return _thriftId;
       }
 
+      @Override
       public String getFieldName() {
         return _fieldName;
       }
@@ -1487,6 +1554,7 @@ public class DistributedRPCInvocations {
       }
     }
 
+    @Override
     public fetchRequest_args deepCopy() {
       return new fetchRequest_args(this);
     }
@@ -1519,6 +1587,7 @@ public class DistributedRPCInvocations {
       }
     }
 
+    @Override
     public void setFieldValue(_Fields field, Object value) {
       switch (field) {
       case FUNCTION_NAME:
@@ -1532,6 +1601,7 @@ public class DistributedRPCInvocations {
       }
     }
 
+    @Override
     public Object getFieldValue(_Fields field) {
       switch (field) {
       case FUNCTION_NAME:
@@ -1542,6 +1612,7 @@ public class DistributedRPCInvocations {
     }
 
     /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    @Override
     public boolean isSet(_Fields field) {
       if (field == null) {
         throw new IllegalArgumentException();
@@ -1612,14 +1683,17 @@ public class DistributedRPCInvocations {
       return 0;
     }
 
+    @Override
     public _Fields fieldForId(int fieldId) {
       return _Fields.findByThriftId(fieldId);
     }
 
+    @Override
     public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
       schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
     }
 
+    @Override
     public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
       schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
     }
@@ -1662,6 +1736,7 @@ public class DistributedRPCInvocations {
     }
 
     private static class fetchRequest_argsStandardSchemeFactory implements SchemeFactory {
+      @Override
       public fetchRequest_argsStandardScheme getScheme() {
         return new fetchRequest_argsStandardScheme();
       }
@@ -1669,6 +1744,7 @@ public class DistributedRPCInvocations {
 
     private static class fetchRequest_argsStandardScheme extends StandardScheme<fetchRequest_args> {
 
+      @Override
       public void read(org.apache.thrift.protocol.TProtocol iprot, fetchRequest_args struct) throws org.apache.thrift.TException {
         org.apache.thrift.protocol.TField schemeField;
         iprot.readStructBegin();
@@ -1696,6 +1772,7 @@ public class DistributedRPCInvocations {
         struct.validate();
       }
 
+      @Override
       public void write(org.apache.thrift.protocol.TProtocol oprot, fetchRequest_args struct) throws org.apache.thrift.TException {
         struct.validate();
 
@@ -1712,6 +1789,7 @@ public class DistributedRPCInvocations {
     }
 
     private static class fetchRequest_argsTupleSchemeFactory implements SchemeFactory {
+      @Override
       public fetchRequest_argsTupleScheme getScheme() {
         return new fetchRequest_argsTupleScheme();
       }
@@ -1812,10 +1890,12 @@ public class DistributedRPCInvocations {
         _fieldName = fieldName;
       }
 
+      @Override
       public short getThriftFieldId() {
         return _thriftId;
       }
 
+      @Override
       public String getFieldName() {
         return _fieldName;
       }
@@ -1857,6 +1937,7 @@ public class DistributedRPCInvocations {
       }
     }
 
+    @Override
     public fetchRequest_result deepCopy() {
       return new fetchRequest_result(this);
     }
@@ -1913,6 +1994,7 @@ public class DistributedRPCInvocations {
       }
     }
 
+    @Override
     public void setFieldValue(_Fields field, Object value) {
       switch (field) {
       case SUCCESS:
@@ -1934,6 +2016,7 @@ public class DistributedRPCInvocations {
       }
     }
 
+    @Override
     public Object getFieldValue(_Fields field) {
       switch (field) {
       case SUCCESS:
@@ -1947,6 +2030,7 @@ public class DistributedRPCInvocations {
     }
 
     /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    @Override
     public boolean isSet(_Fields field) {
       if (field == null) {
         throw new IllegalArgumentException();
@@ -2043,14 +2127,17 @@ public class DistributedRPCInvocations {
       return 0;
     }
 
+    @Override
     public _Fields fieldForId(int fieldId) {
       return _Fields.findByThriftId(fieldId);
     }
 
+    @Override
     public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
       schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
     }
 
+    @Override
     public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
       schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
       }
@@ -2104,6 +2191,7 @@ public class DistributedRPCInvocations {
     }
 
     private static class fetchRequest_resultStandardSchemeFactory implements SchemeFactory {
+      @Override
       public fetchRequest_resultStandardScheme getScheme() {
         return new fetchRequest_resultStandardScheme();
       }
@@ -2111,6 +2199,7 @@ public class DistributedRPCInvocations {
 
     private static class fetchRequest_resultStandardScheme extends StandardScheme<fetchRequest_result> {
 
+      @Override
       public void read(org.apache.thrift.protocol.TProtocol iprot, fetchRequest_result struct) throws org.apache.thrift.TException {
         org.apache.thrift.protocol.TField schemeField;
         iprot.readStructBegin();
@@ -2148,6 +2237,7 @@ public class DistributedRPCInvocations {
         struct.validate();
       }
 
+      @Override
       public void write(org.apache.thrift.protocol.TProtocol oprot, fetchRequest_result struct) throws org.apache.thrift.TException {
         struct.validate();
 
@@ -2169,6 +2259,7 @@ public class DistributedRPCInvocations {
     }
 
     private static class fetchRequest_resultTupleSchemeFactory implements SchemeFactory {
+      @Override
       public fetchRequest_resultTupleScheme getScheme() {
         return new fetchRequest_resultTupleScheme();
       }
@@ -2276,10 +2367,12 @@ public class DistributedRPCInvocations {
         _fieldName = fieldName;
       }
 
+      @Override
       public short getThriftFieldId() {
         return _thriftId;
       }
 
+      @Override
       public String getFieldName() {
         return _fieldName;
       }
@@ -2314,6 +2407,7 @@ public class DistributedRPCInvocations {
       }
     }
 
+    @Override
     public failRequest_args deepCopy() {
       return new failRequest_args(this);
     }
@@ -2346,6 +2440,7 @@ public class DistributedRPCInvocations {
       }
     }
 
+    @Override
     public void setFieldValue(_Fields field, Object value) {
       switch (field) {
       case ID:
@@ -2359,6 +2454,7 @@ public class DistributedRPCInvocations {
       }
     }
 
+    @Override
     public Object getFieldValue(_Fields field) {
       switch (field) {
       case ID:
@@ -2369,6 +2465,7 @@ public class DistributedRPCInvocations {
     }
 
     /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    @Override
     public boolean isSet(_Fields field) {
       if (field == null) {
         throw new IllegalArgumentException();
@@ -2439,14 +2536,17 @@ public class DistributedRPCInvocations {
       return 0;
     }
 
+    @Override
     public _Fields fieldForId(int fieldId) {
       return _Fields.findByThriftId(fieldId);
     }
 
+    @Override
     public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
       schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
     }
 
+    @Override
     public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
       schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
     }
@@ -2489,6 +2589,7 @@ public class DistributedRPCInvocations {
     }
 
     private static class failRequest_argsStandardSchemeFactory implements SchemeFactory {
+      @Override
       public failRequest_argsStandardScheme getScheme() {
         return new failRequest_argsStandardScheme();
       }
@@ -2496,6 +2597,7 @@ public class DistributedRPCInvocations {
 
     private static class failRequest_argsStandardScheme extends StandardScheme<failRequest_args> {
 
+      @Override
       public void read(org.apache.thrift.protocol.TProtocol iprot, failRequest_args struct) throws org.apache.thrift.TException {
         org.apache.thrift.protocol.TField schemeField;
         iprot.readStructBegin();
@@ -2523,6 +2625,7 @@ public class DistributedRPCInvocations {
         struct.validate();
       }
 
+      @Override
       public void write(org.apache.thrift.protocol.TProtocol oprot, failRequest_args struct) throws org.apache.thrift.TException {
         struct.validate();
 
@@ -2539,6 +2642,7 @@ public class DistributedRPCInvocations {
     }
 
     private static class failRequest_argsTupleSchemeFactory implements SchemeFactory {
+      @Override
       public failRequest_argsTupleScheme getScheme() {
         return new failRequest_argsTupleScheme();
       }
@@ -2634,10 +2738,12 @@ public class DistributedRPCInvocations {
         _fieldName = fieldName;
       }
 
+      @Override
       public short getThriftFieldId() {
         return _thriftId;
       }
 
+      @Override
       public String getFieldName() {
         return _fieldName;
       }
@@ -2672,6 +2778,7 @@ public class DistributedRPCInvocations {
       }
     }
 
+    @Override
     public failRequest_result deepCopy() {
       return new failRequest_result(this);
     }
@@ -2704,6 +2811,7 @@ public class DistributedRPCInvocations {
       }
     }
 
+    @Override
     public void setFieldValue(_Fields field, Object value) {
       switch (field) {
       case AZE:
@@ -2717,6 +2825,7 @@ public class DistributedRPCInvocations {
       }
     }
 
+    @Override
     public Object getFieldValue(_Fields field) {
       switch (field) {
       case AZE:
@@ -2727,6 +2836,7 @@ public class DistributedRPCInvocations {
     }
 
     /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    @Override
     public boolean isSet(_Fields field) {
       if (field == null) {
         throw new IllegalArgumentException();
@@ -2797,14 +2907,17 @@ public class DistributedRPCInvocations {
       return 0;
     }
 
+    @Override
     public _Fields fieldForId(int fieldId) {
       return _Fields.findByThriftId(fieldId);
     }
 
+    @Override
     public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
       schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
     }
 
+    @Override
     public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
       schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
       }
@@ -2847,6 +2960,7 @@ public class DistributedRPCInvocations {
     }
 
     private static class failRequest_resultStandardSchemeFactory implements SchemeFactory {
+      @Override
       public failRequest_resultStandardScheme getScheme() {
         return new failRequest_resultStandardScheme();
       }
@@ -2854,6 +2968,7 @@ public class DistributedRPCInvocations {
 
     private static class failRequest_resultStandardScheme extends StandardScheme<failRequest_result> {
 
+      @Override
       public void read(org.apache.thrift.protocol.TProtocol iprot, failRequest_result struct) throws org.apache.thrift.TException {
         org.apache.thrift.protocol.TField schemeField;
         iprot.readStructBegin();
@@ -2882,6 +2997,7 @@ public class DistributedRPCInvocations {
         struct.validate();
       }
 
+      @Override
       public void write(org.apache.thrift.protocol.TProtocol oprot, failRequest_result struct) throws org.apache.thrift.TException {
         struct.validate();
 
@@ -2898,6 +3014,7 @@ public class DistributedRPCInvocations {
     }
 
     private static class failRequest_resultTupleSchemeFactory implements SchemeFactory {
+      @Override
       public failRequest_resultTupleScheme getScheme() {
         return new failRequest_resultTupleScheme();
       }

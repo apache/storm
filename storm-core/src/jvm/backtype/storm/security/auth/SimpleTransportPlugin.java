@@ -91,6 +91,7 @@ public class SimpleTransportPlugin implements ITransportPlugin {
      * Connect to the specified server via framed transport 
      * @param transport The underlying Thrift transport.
      */
+    @Override
     public TTransport connect(TTransport transport, String serverHost) throws TTransportException {
         //create a framed transport
         TTransport conn = new TFramedTransport(transport);
@@ -119,6 +120,7 @@ public class SimpleTransportPlugin implements ITransportPlugin {
             this.wrapped = wrapped;
         }
 
+        @Override
         public boolean process(final TProtocol inProt, final TProtocol outProt) throws TException {
             //populating request context 
             ReqContext req_context = ReqContext.context();
@@ -144,7 +146,9 @@ public class SimpleTransportPlugin implements ITransportPlugin {
               if (user != null) {
                 HashSet<Principal> principals = new HashSet<Principal>();
                 principals.add(new Principal() {
+                                        @Override
                   public String getName() { return user; }
+                                        @Override
                   public String toString() { return user; }
                 });
                 s = new Subject(true, principals, new HashSet<Object>(), new HashSet<Object>());

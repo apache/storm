@@ -119,10 +119,12 @@ public class JavaObject implements org.apache.thrift.TBase<JavaObject, JavaObjec
       _fieldName = fieldName;
     }
 
+    @Override
     public short getThriftFieldId() {
       return _thriftId;
     }
 
+    @Override
     public String getFieldName() {
       return _fieldName;
     }
@@ -169,6 +171,7 @@ public class JavaObject implements org.apache.thrift.TBase<JavaObject, JavaObjec
     }
   }
 
+  @Override
   public JavaObject deepCopy() {
     return new JavaObject(this);
   }
@@ -240,6 +243,7 @@ public class JavaObject implements org.apache.thrift.TBase<JavaObject, JavaObjec
     }
   }
 
+  @Override
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case FULL_CLASS_NAME:
@@ -261,6 +265,7 @@ public class JavaObject implements org.apache.thrift.TBase<JavaObject, JavaObjec
     }
   }
 
+  @Override
   public Object getFieldValue(_Fields field) {
     switch (field) {
     case FULL_CLASS_NAME:
@@ -274,6 +279,7 @@ public class JavaObject implements org.apache.thrift.TBase<JavaObject, JavaObjec
   }
 
   /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+  @Override
   public boolean isSet(_Fields field) {
     if (field == null) {
       throw new IllegalArgumentException();
@@ -370,14 +376,17 @@ public class JavaObject implements org.apache.thrift.TBase<JavaObject, JavaObjec
     return 0;
   }
 
+  @Override
   public _Fields fieldForId(int fieldId) {
     return _Fields.findByThriftId(fieldId);
   }
 
+  @Override
   public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
     schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
   }
 
+  @Override
   public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
     schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
   }
@@ -436,6 +445,7 @@ public class JavaObject implements org.apache.thrift.TBase<JavaObject, JavaObjec
   }
 
   private static class JavaObjectStandardSchemeFactory implements SchemeFactory {
+    @Override
     public JavaObjectStandardScheme getScheme() {
       return new JavaObjectStandardScheme();
     }
@@ -443,6 +453,7 @@ public class JavaObject implements org.apache.thrift.TBase<JavaObject, JavaObjec
 
   private static class JavaObjectStandardScheme extends StandardScheme<JavaObject> {
 
+    @Override
     public void read(org.apache.thrift.protocol.TProtocol iprot, JavaObject struct) throws org.apache.thrift.TException {
       org.apache.thrift.protocol.TField schemeField;
       iprot.readStructBegin();
@@ -489,6 +500,7 @@ public class JavaObject implements org.apache.thrift.TBase<JavaObject, JavaObjec
       struct.validate();
     }
 
+    @Override
     public void write(org.apache.thrift.protocol.TProtocol oprot, JavaObject struct) throws org.apache.thrift.TException {
       struct.validate();
 
@@ -517,6 +529,7 @@ public class JavaObject implements org.apache.thrift.TBase<JavaObject, JavaObjec
   }
 
   private static class JavaObjectTupleSchemeFactory implements SchemeFactory {
+    @Override
     public JavaObjectTupleScheme getScheme() {
       return new JavaObjectTupleScheme();
     }

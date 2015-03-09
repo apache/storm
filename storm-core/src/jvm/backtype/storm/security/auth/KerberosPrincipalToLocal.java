@@ -30,6 +30,7 @@ public class KerberosPrincipalToLocal implements IPrincipalToLocal {
      * Invoked once immediately after construction
      * @param conf Storm configuration 
      */
+    @Override
     public void prepare(Map storm_conf) {}
     
     /**
@@ -37,6 +38,7 @@ public class KerberosPrincipalToLocal implements IPrincipalToLocal {
      * @param principal the principal to convert
      * @return The local user name.
      */
+    @Override
     public String toLocal(Principal principal) {
       //This technically does not conform with rfc1964, but should work so
       // long as you don't have any really odd names in your KDC.

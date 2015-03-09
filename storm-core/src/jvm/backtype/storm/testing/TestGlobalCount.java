@@ -35,17 +35,20 @@ public class TestGlobalCount extends BaseRichBolt {
     private int _count;
     OutputCollector _collector;
 
+    @Override
     public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
         _collector = collector;
         _count = 0;
     }
 
+    @Override
     public void execute(Tuple input) {
         _count++;
         _collector.emit(input, new Values(_count));
         _collector.ack(input);
     }
 
+    @Override
     public void cleanup() {
 
     }
@@ -54,6 +57,7 @@ public class TestGlobalCount extends BaseRichBolt {
         return new Fields("global-count");
     }
 
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(new Fields("global-count"));
     }

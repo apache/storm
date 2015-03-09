@@ -45,6 +45,7 @@ public class SpoutOutputCollector implements ISpoutOutputCollector {
      *
      * @return the list of task ids that this tuple was sent to
      */
+    @Override
     public List<Integer> emit(String streamId, List<Object> tuple, Object messageId) {
         return _delegate.emit(streamId, tuple, messageId);
     }
@@ -87,6 +88,7 @@ public class SpoutOutputCollector implements ISpoutOutputCollector {
      * use a direct grouping on this stream to receive the message. The emitted values must be 
      * immutable.
      */
+    @Override
     public void emitDirect(int taskId, String streamId, List<Object> tuple, Object messageId) {
         _delegate.emitDirect(taskId, streamId, tuple, messageId);
     }

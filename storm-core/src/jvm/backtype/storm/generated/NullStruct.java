@@ -110,10 +110,12 @@ public class NullStruct implements org.apache.thrift.TBase<NullStruct, NullStruc
       _fieldName = fieldName;
     }
 
+    @Override
     public short getThriftFieldId() {
       return _thriftId;
     }
 
+    @Override
     public String getFieldName() {
       return _fieldName;
     }
@@ -134,6 +136,7 @@ public class NullStruct implements org.apache.thrift.TBase<NullStruct, NullStruc
   public NullStruct(NullStruct other) {
   }
 
+  @Override
   public NullStruct deepCopy() {
     return new NullStruct(this);
   }
@@ -142,11 +145,13 @@ public class NullStruct implements org.apache.thrift.TBase<NullStruct, NullStruc
   public void clear() {
   }
 
+  @Override
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     }
   }
 
+  @Override
   public Object getFieldValue(_Fields field) {
     switch (field) {
     }
@@ -154,6 +159,7 @@ public class NullStruct implements org.apache.thrift.TBase<NullStruct, NullStruc
   }
 
   /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+  @Override
   public boolean isSet(_Fields field) {
     if (field == null) {
       throw new IllegalArgumentException();
@@ -198,14 +204,17 @@ public class NullStruct implements org.apache.thrift.TBase<NullStruct, NullStruc
     return 0;
   }
 
+  @Override
   public _Fields fieldForId(int fieldId) {
     return _Fields.findByThriftId(fieldId);
   }
 
+  @Override
   public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
     schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
   }
 
+  @Override
   public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
     schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
   }
@@ -241,6 +250,7 @@ public class NullStruct implements org.apache.thrift.TBase<NullStruct, NullStruc
   }
 
   private static class NullStructStandardSchemeFactory implements SchemeFactory {
+    @Override
     public NullStructStandardScheme getScheme() {
       return new NullStructStandardScheme();
     }
@@ -248,6 +258,7 @@ public class NullStruct implements org.apache.thrift.TBase<NullStruct, NullStruc
 
   private static class NullStructStandardScheme extends StandardScheme<NullStruct> {
 
+    @Override
     public void read(org.apache.thrift.protocol.TProtocol iprot, NullStruct struct) throws org.apache.thrift.TException {
       org.apache.thrift.protocol.TField schemeField;
       iprot.readStructBegin();
@@ -267,6 +278,7 @@ public class NullStruct implements org.apache.thrift.TBase<NullStruct, NullStruc
       struct.validate();
     }
 
+    @Override
     public void write(org.apache.thrift.protocol.TProtocol oprot, NullStruct struct) throws org.apache.thrift.TException {
       struct.validate();
 
@@ -278,6 +290,7 @@ public class NullStruct implements org.apache.thrift.TBase<NullStruct, NullStruc
   }
 
   private static class NullStructTupleSchemeFactory implements SchemeFactory {
+    @Override
     public NullStructTupleScheme getScheme() {
       return new NullStructTupleScheme();
     }

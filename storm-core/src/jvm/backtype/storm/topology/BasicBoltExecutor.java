@@ -34,16 +34,19 @@ public class BasicBoltExecutor implements IRichBolt {
         _bolt = bolt;
     }
 
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         _bolt.declareOutputFields(declarer);
     }
 
     
+    @Override
     public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
         _bolt.prepare(stormConf, context);
         _collector = new BasicOutputCollector(collector);
     }
 
+    @Override
     public void execute(Tuple input) {
         _collector.setContext(input);
         try {
@@ -57,10 +60,12 @@ public class BasicBoltExecutor implements IRichBolt {
         }
     }
 
+    @Override
     public void cleanup() {
         _bolt.cleanup();
     }
 
+    @Override
     public Map<String, Object> getComponentConfiguration() {
         return _bolt.getComponentConfiguration();
     }

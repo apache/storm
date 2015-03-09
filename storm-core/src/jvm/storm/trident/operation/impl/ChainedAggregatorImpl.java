@@ -45,6 +45,7 @@ public class ChainedAggregatorImpl implements Aggregator<ChainedResult> {
         }
     }
     
+    @Override
     public void prepare(Map conf, TridentOperationContext context) {
         _inputFactories = new ProjectionFactory[_inputFields.length];
         for(int i=0; i<_inputFields.length; i++) {
@@ -53,6 +54,7 @@ public class ChainedAggregatorImpl implements Aggregator<ChainedResult> {
         }
     }
     
+    @Override
     public ChainedResult init(Object batchId, TridentCollector collector) {
         ChainedResult initted = new ChainedResult(collector, _aggs.length);
         for(int i=0; i<_aggs.length; i++) {
@@ -61,6 +63,7 @@ public class ChainedAggregatorImpl implements Aggregator<ChainedResult> {
         return initted;
     }
     
+    @Override
     public void aggregate(ChainedResult val, TridentTuple tuple, TridentCollector collector) {
         val.setFollowThroughCollector(collector);
         for(int i=0; i<_aggs.length; i++) {
@@ -69,6 +72,7 @@ public class ChainedAggregatorImpl implements Aggregator<ChainedResult> {
         }
     }
     
+    @Override
     public void complete(ChainedResult val, TridentCollector collector) {
         val.setFollowThroughCollector(collector);
         for(int i=0; i<_aggs.length; i++) {
@@ -105,6 +109,7 @@ public class ChainedAggregatorImpl implements Aggregator<ChainedResult> {
         return true;
     }
     
+    @Override
     public void cleanup() {
        for(Aggregator a: _aggs) {
            a.cleanup();

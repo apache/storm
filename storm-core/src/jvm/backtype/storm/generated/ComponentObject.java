@@ -112,10 +112,12 @@ public class ComponentObject extends org.apache.thrift.TUnion<ComponentObject, C
       _fieldName = fieldName;
     }
 
+    @Override
     public short getThriftFieldId() {
       return _thriftId;
     }
 
+    @Override
     public String getFieldName() {
       return _fieldName;
     }
@@ -145,6 +147,7 @@ public class ComponentObject extends org.apache.thrift.TUnion<ComponentObject, C
   public ComponentObject(ComponentObject other) {
     super(other);
   }
+  @Override
   public ComponentObject deepCopy() {
     return new ComponentObject(this);
   }
@@ -331,6 +334,7 @@ public class ComponentObject extends org.apache.thrift.TUnion<ComponentObject, C
     return _Fields.findByThriftIdOrThrow(id);
   }
 
+  @Override
   public _Fields fieldForId(int fieldId) {
     return _Fields.findByThriftId(fieldId);
   }
@@ -403,6 +407,7 @@ public class ComponentObject extends org.apache.thrift.TUnion<ComponentObject, C
   }
 
 
+  @Override
   public boolean equals(Object other) {
     if (other instanceof ComponentObject) {
       return equals((ComponentObject)other);

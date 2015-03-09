@@ -43,18 +43,22 @@ public class MemoryMapState<T> implements Snapshottable<T>, ITupleCollection, Ma
         _delegate = new SnapshottableMap(OpaqueMap.build(_backing), new Values("$MEMORY-MAP-STATE-GLOBAL$"));
     }
 
+    @Override
     public T update(ValueUpdater updater) {
         return _delegate.update(updater);
     }
 
+    @Override
     public void set(T o) {
         _delegate.set(o);
     }
 
+    @Override
     public T get() {
         return _delegate.get();
     }
 
+    @Override
     public void beginCommit(Long txid) {
         _delegate.beginCommit(txid);
         if(txid==null || !txid.equals(_currTx)) {
@@ -64,22 +68,27 @@ public class MemoryMapState<T> implements Snapshottable<T>, ITupleCollection, Ma
         _currTx = txid;
     }
 
+    @Override
     public void commit(Long txid) {
         _delegate.commit(txid);
     }
 
+    @Override
     public Iterator<List<Object>> getTuples() {
         return _backing.getTuples();
     }
 
+    @Override
     public List<T> multiUpdate(List<List<Object>> keys, List<ValueUpdater> updaters) {
         return _delegate.multiUpdate(keys, updaters);
     }
 
+    @Override
     public void multiPut(List<List<Object>> keys, List<T> vals) {
         _delegate.multiPut(keys, vals);
     }
 
+    @Override
     public List<T> multiGet(List<List<Object>> keys) {
         return _delegate.multiGet(keys);
     }
@@ -155,10 +164,12 @@ public class MemoryMapState<T> implements Snapshottable<T>, ITupleCollection, Ma
 
                 private Iterator<Map.Entry<List<Object>, T>> it = db.entrySet().iterator();
 
+                @Override
                 public boolean hasNext() {
                     return it.hasNext();
                 }
 
+                @Override
                 public List<Object> next() {
                     Map.Entry<List<Object>, T> e = it.next();
                     List<Object> ret = new ArrayList<Object>();
@@ -167,6 +178,7 @@ public class MemoryMapState<T> implements Snapshottable<T>, ITupleCollection, Ma
                     return ret;
                 }
 
+                @Override
                 public void remove() {
                     throw new UnsupportedOperationException("Not supported yet.");
                 }

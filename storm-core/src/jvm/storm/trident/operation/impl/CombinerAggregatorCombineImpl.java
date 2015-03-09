@@ -32,16 +32,19 @@ public class CombinerAggregatorCombineImpl implements Aggregator<Result> {
         _agg = agg;
     }
     
+    @Override
     public void prepare(Map conf, TridentOperationContext context) {
         
     }
     
+    @Override
     public Result init(Object batchId, TridentCollector collector) {
         Result ret = new Result();
         ret.obj = _agg.zero();
         return ret;
     }
     
+    @Override
     public void aggregate(Result val, TridentTuple tuple, TridentCollector collector) {
         Object v = tuple.getValue(0);
         if(val.obj==null) {
@@ -51,10 +54,12 @@ public class CombinerAggregatorCombineImpl implements Aggregator<Result> {
         }
     }
     
+    @Override
     public void complete(Result val, TridentCollector collector) {
         collector.emit(new Values(val.obj));        
     }
     
+    @Override
     public void cleanup() {
         
     }

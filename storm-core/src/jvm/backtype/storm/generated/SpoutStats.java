@@ -124,10 +124,12 @@ public class SpoutStats implements org.apache.thrift.TBase<SpoutStats, SpoutStat
       _fieldName = fieldName;
     }
 
+    @Override
     public short getThriftFieldId() {
       return _thriftId;
     }
 
+    @Override
     public String getFieldName() {
       return _fieldName;
     }
@@ -224,6 +226,7 @@ public class SpoutStats implements org.apache.thrift.TBase<SpoutStats, SpoutStat
     }
   }
 
+  @Override
   public SpoutStats deepCopy() {
     return new SpoutStats(this);
   }
@@ -337,6 +340,7 @@ public class SpoutStats implements org.apache.thrift.TBase<SpoutStats, SpoutStat
     }
   }
 
+  @Override
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case ACKED:
@@ -366,6 +370,7 @@ public class SpoutStats implements org.apache.thrift.TBase<SpoutStats, SpoutStat
     }
   }
 
+  @Override
   public Object getFieldValue(_Fields field) {
     switch (field) {
     case ACKED:
@@ -382,6 +387,7 @@ public class SpoutStats implements org.apache.thrift.TBase<SpoutStats, SpoutStat
   }
 
   /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+  @Override
   public boolean isSet(_Fields field) {
     if (field == null) {
       throw new IllegalArgumentException();
@@ -504,14 +510,17 @@ public class SpoutStats implements org.apache.thrift.TBase<SpoutStats, SpoutStat
     return 0;
   }
 
+  @Override
   public _Fields fieldForId(int fieldId) {
     return _Fields.findByThriftId(fieldId);
   }
 
+  @Override
   public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
     schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
   }
 
+  @Override
   public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
     schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
   }
@@ -582,6 +591,7 @@ public class SpoutStats implements org.apache.thrift.TBase<SpoutStats, SpoutStat
   }
 
   private static class SpoutStatsStandardSchemeFactory implements SchemeFactory {
+    @Override
     public SpoutStatsStandardScheme getScheme() {
       return new SpoutStatsStandardScheme();
     }
@@ -589,6 +599,7 @@ public class SpoutStats implements org.apache.thrift.TBase<SpoutStats, SpoutStat
 
   private static class SpoutStatsStandardScheme extends StandardScheme<SpoutStats> {
 
+    @Override
     public void read(org.apache.thrift.protocol.TProtocol iprot, SpoutStats struct) throws org.apache.thrift.TException {
       org.apache.thrift.protocol.TField schemeField;
       iprot.readStructBegin();
@@ -704,6 +715,7 @@ public class SpoutStats implements org.apache.thrift.TBase<SpoutStats, SpoutStat
       struct.validate();
     }
 
+    @Override
     public void write(org.apache.thrift.protocol.TProtocol oprot, SpoutStats struct) throws org.apache.thrift.TException {
       struct.validate();
 
@@ -778,6 +790,7 @@ public class SpoutStats implements org.apache.thrift.TBase<SpoutStats, SpoutStat
   }
 
   private static class SpoutStatsTupleSchemeFactory implements SchemeFactory {
+    @Override
     public SpoutStatsTupleScheme getScheme() {
       return new SpoutStatsTupleScheme();
     }

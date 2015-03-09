@@ -30,6 +30,7 @@ public class CombinedMetric implements IMetric {
         _value = _combiner.combine(_value, value);
     }
 
+    @Override
     public Object getValueAndReset() {
         Object ret = _value;
         _value = _combiner.identity();

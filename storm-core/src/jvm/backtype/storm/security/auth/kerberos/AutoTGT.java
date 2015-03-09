@@ -57,6 +57,7 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer {
     protected static AtomicReference<KerberosTicket> kerbTicket = new AtomicReference<KerberosTicket>();
     private Map conf;
 
+    @Override
     public void prepare(Map conf) {
         this.conf = conf;
     }

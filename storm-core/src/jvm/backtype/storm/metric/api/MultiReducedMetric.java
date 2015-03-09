@@ -37,6 +37,7 @@ public class MultiReducedMetric implements IMetric {
         return val;
     }
 
+    @Override
     public Object getValueAndReset() {
         Map ret = new HashMap();
         for(Map.Entry<String, ReducedMetric> e : _value.entrySet()) {

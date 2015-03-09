@@ -22,10 +22,12 @@ import java.util.List;
 import static backtype.storm.utils.Utils.tuple;
 
 public class RawScheme implements Scheme {
+    @Override
     public List<Object> deserialize(byte[] ser) {
         return tuple(ser);
     }
 
+    @Override
     public Fields getOutputFields() {
         return new Fields("bytes");
     }

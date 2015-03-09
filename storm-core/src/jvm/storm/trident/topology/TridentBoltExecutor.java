@@ -152,25 +152,30 @@ public class TridentBoltExecutor implements IRichBolt {
             _delegate = delegate;
         }
 
+        @Override
         public List<Integer> emit(String stream, Collection<Tuple> anchors, List<Object> tuple) {
             List<Integer> tasks = _delegate.emit(stream, anchors, tuple);
             updateTaskCounts(tasks);
             return tasks;
         }
 
+        @Override
         public void emitDirect(int task, String stream, Collection<Tuple> anchors, List<Object> tuple) {
             updateTaskCounts(Arrays.asList(task));
             _delegate.emitDirect(task, stream, anchors, tuple);
         }
 
+        @Override
         public void ack(Tuple tuple) {
             throw new IllegalStateException("Method should never be called");
         }
 
+        @Override
         public void fail(Tuple tuple) {
             throw new IllegalStateException("Method should never be called");
         }
         
+        @Override
         public void reportError(Throwable error) {
             _delegate.reportError(error);
         }

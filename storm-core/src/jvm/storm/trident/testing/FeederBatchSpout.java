@@ -50,6 +50,7 @@ public class FeederBatchSpout implements ITridentSpout, IFeeder {
         _waitToEmit = trueIfWait;
     }
     
+    @Override
     public void feed(Object tuples) {
         Semaphore sem = new Semaphore(0);
         ((List)RegisteredGlobalState.getState(_semaphoreId)).add(sem);
