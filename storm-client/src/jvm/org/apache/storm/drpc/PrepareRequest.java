@@ -46,6 +46,7 @@ public class PrepareRequest extends BaseBasicBolt {
         collector.emit(ID_STREAM, new Values(requestId));
     }
 
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declareStream(ARGS_STREAM, new Fields("request", "args"));
         declarer.declareStream(RETURN_STREAM, new Fields("request", "return"));

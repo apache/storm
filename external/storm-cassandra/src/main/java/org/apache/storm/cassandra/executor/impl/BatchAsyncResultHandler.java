@@ -41,6 +41,7 @@ public class BatchAsyncResultHandler implements AsyncResultHandler<List<Tuple>> 
      *
      * The default method does no-operation.
      */
+    @Override
     public void failure(Throwable t, List<Tuple> input) {
         completed.offer(new ExecutionResultCollector.FailedCollector(input, t));
     }
@@ -50,6 +51,7 @@ public class BatchAsyncResultHandler implements AsyncResultHandler<List<Tuple>> 
      *
      * The default method does no-operation.
      */
+    @Override
     public void success(List<Tuple> input) {
         completed.offer(new ExecutionResultCollector.SucceedCollector(input));
     }

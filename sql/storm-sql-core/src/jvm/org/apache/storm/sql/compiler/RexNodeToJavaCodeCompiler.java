@@ -158,6 +158,7 @@ public class RexNodeToJavaCodeCompiler {
                                         JavaRowFormat.ARRAY, false))));
         final Function1<String, RexToLixTranslator.InputGetter> correlates =
             new Function1<String, RexToLixTranslator.InputGetter>() {
+                @Override
                 public RexToLixTranslator.InputGetter apply(String a0) {
                     throw new UnsupportedOperationException();
                 }

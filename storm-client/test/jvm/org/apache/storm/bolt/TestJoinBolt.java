@@ -331,10 +331,12 @@ public class TestJoinBolt {
             this.fields = new Fields(fieldNames);
         }
 
+        @Override
         public String getComponentId(int taskId) {
             return "component";
         }
 
+        @Override
         public Fields getComponentOutputFields(String componentId, String streamId) {
             return fields;
         }

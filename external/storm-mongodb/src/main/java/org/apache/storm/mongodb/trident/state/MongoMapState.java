@@ -147,6 +147,7 @@ public class MongoMapState<T> implements IBackingMap<T> {
         }
 
         @SuppressWarnings({"rawtypes", "unchecked"})
+        @Override
         public State makeState(Map<String, Object> conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
             IBackingMap state = new MongoMapState(conf, options);
 

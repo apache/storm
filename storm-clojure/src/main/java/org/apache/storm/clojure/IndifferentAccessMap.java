@@ -48,14 +48,17 @@ public class IndifferentAccessMap  implements ILookup, IPersistentMap, Map {
         return _map;
     }
 
+    @Override
     public int size() {
         return ((Map) getMap()).size();
     }
 
+    @Override
     public int count() {
         return size();
     }
 
+    @Override
     public ISeq seq() {
         return getMap().seq();
     }
@@ -77,86 +80,105 @@ public class IndifferentAccessMap  implements ILookup, IPersistentMap, Map {
 
     /* IPersistentMap */
     /* Naive implementation, but it might be good enough */
+    @Override
     public IPersistentMap assoc(Object k, Object v) {
         if(k instanceof Keyword) return assoc(((Keyword) k).getName(), v);
         
         return new IndifferentAccessMap(getMap().assoc(k, v));
     }
 
+    @Override
     public IPersistentMap assocEx(Object k, Object v) {
         if(k instanceof Keyword) return assocEx(((Keyword) k).getName(), v);
 
         return new IndifferentAccessMap(getMap().assocEx(k, v));
     }
 
+    @Override
     public IPersistentMap without(Object k) {
         if(k instanceof Keyword) return without(((Keyword) k).getName());
 
         return new IndifferentAccessMap(getMap().without(k));
     }
 
+    @Override
     public boolean containsKey(Object k) {
         if(k instanceof Keyword) return containsKey(((Keyword) k).getName());
         return getMap().containsKey(k);
     }
 
+    @Override
     public IMapEntry entryAt(Object k) {
         if(k instanceof Keyword) return entryAt(((Keyword) k).getName());
 
         return getMap().entryAt(k);
     }
 
+    @Override
     public IPersistentCollection cons(Object o) {
         return getMap().cons(o);
     }
 
+    @Override
     public IPersistentCollection empty() {
         return new IndifferentAccessMap(PersistentArrayMap.EMPTY);
     }
 
+    @Override
     public boolean equiv(Object o) {
         return getMap().equiv(o);
     }
 
+    @Override
     public Iterator iterator() {
         return getMap().iterator();
     }
 
     /* Map */
+    @Override
     public boolean containsValue(Object v) {
         return ((Map) getMap()).containsValue(v);
     }
 
+    @Override
     public Set entrySet() {
         return ((Map) getMap()).entrySet();
     }
 
+    @Override
     public Object get(Object k) {
         return valAt(k);
     }
 
+    @Override
     public boolean isEmpty() {
         return ((Map) getMap()).isEmpty();
     }
 
+    @Override
     public Set keySet() {
         return ((Map) getMap()).keySet();
     }
 
+    @Override
     public Collection values() {
         return ((Map) getMap()).values();
     }
     
     /* Not implemented */
+    @Override
     public void clear() {
         throw new UnsupportedOperationException();
     }
+    @Override
     public Object put(Object k, Object v) {
         throw new UnsupportedOperationException();
     }
+    @Override
     public void putAll(Map m) {
         throw new UnsupportedOperationException();
     }
+    @Override
     public Object remove(Object k) {
         throw new UnsupportedOperationException();
     }

@@ -82,6 +82,7 @@ public class RandomSentenceSpout extends BaseRichSpout {
             this.prefix = prefix;
         }
 
+        @Override
         protected String sentence(String input) {
             return prefix + currentDate() + " " + input;
         }

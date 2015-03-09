@@ -170,6 +170,7 @@ public class RocksDbStore implements MetricStore, AutoCloseable {
      * @param metric  Metric to store
      * @throws MetricException  if database write fails
      */
+    @Override
     public void insert(Metric metric) throws MetricException {
         try {
             // don't bother blocking on a full queue, just drop metrics in case we can't keep up
@@ -341,6 +342,7 @@ public class RocksDbStore implements MetricStore, AutoCloseable {
      * @param scanCallback  callback for each Metric found
      * @throws MetricException  on error
      */
+    @Override
     public void scan(FilterOptions filter, ScanCallback scanCallback) throws MetricException {
         scanInternal(filter, scanCallback, null);
     }

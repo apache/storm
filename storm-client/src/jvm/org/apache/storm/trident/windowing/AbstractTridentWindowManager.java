@@ -138,10 +138,12 @@ public abstract class AbstractTridentWindowManager<T> implements ITridentWindowM
      */
     protected abstract List<TridentTuple> getTridentTuples(List<T> tupleEvents);
 
+    @Override
     public Queue<TriggerResult> getPendingTriggers() {
         return pendingTriggers;
     }
 
+    @Override
     public void shutdown() {
         try {
             LOG.info("window manager [{}] is being shutdown", windowManager);

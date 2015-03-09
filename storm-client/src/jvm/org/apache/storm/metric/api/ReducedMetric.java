@@ -25,6 +25,7 @@ public class ReducedMetric implements IMetric {
         _accumulator = _reducer.reduce(_accumulator, value);
     }
 
+    @Override
     public Object getValueAndReset() {
         Object ret = _reducer.extractResult(_accumulator);
         _accumulator = _reducer.init();

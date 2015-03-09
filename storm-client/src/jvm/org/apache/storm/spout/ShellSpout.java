@@ -87,6 +87,7 @@ public class ShellSpout implements ISpout {
         this.changeDirectory = changeDirectory;
     }
 
+    @Override
     public void open(Map<String, Object> topoConf, TopologyContext context,
                      SpoutOutputCollector collector) {
         _collector = collector;
@@ -112,20 +113,24 @@ public class ShellSpout implements ISpout {
         heartBeatExecutorService = MoreExecutors.getExitingScheduledExecutorService(new ScheduledThreadPoolExecutor(1));
     }
 
+    @Override
     public void close() {
         heartBeatExecutorService.shutdownNow();
         _process.destroy();
         _running = false;
     }
 
+    @Override
     public void nextTuple() {
         this.sendSyncCommand("next", "");
     }
 
+    @Override
     public void ack(Object msgId) {
         this.sendSyncCommand("ack", msgId);
     }
 
+    @Override
     public void fail(Object msgId) {
         this.sendSyncCommand("fail", msgId);
     }

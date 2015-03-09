@@ -52,6 +52,7 @@ public class StoreBasedTridentWindowManager extends AbstractTridentWindowManager
         windowTupleTaskId = TUPLE_PREFIX + windowTaskId;
     }
 
+    @Override
     protected void initialize() {
 
         // get existing tuples and pending/unsuccessful triggers for this operator-component/task and add them to WindowManager
@@ -119,6 +120,7 @@ public class StoreBasedTridentWindowManager extends AbstractTridentWindowManager
         return key.substring(secondLastSepIndex + 1, lastSepIndex);
     }
 
+    @Override
     public void addTuplesBatch(Object batchId, List<TridentTuple> tuples) {
         LOG.debug("Adding tuples to window-manager for batch: [{}]", batchId);
         List<WindowsStore.Entry> entries = new ArrayList<>();
@@ -159,6 +161,7 @@ public class StoreBasedTridentWindowManager extends AbstractTridentWindowManager
         return windowTupleTaskId + getBatchTxnId(batchId) + WindowsStore.KEY_SEPARATOR;
     }
 
+    @Override
     public List<TridentTuple> getTridentTuples(List<TridentBatchTuple> tridentBatchTuples) {
         List<TridentTuple> resultTuples = new ArrayList<>();
         List<String> keys = new ArrayList<>();
@@ -188,6 +191,7 @@ public class StoreBasedTridentWindowManager extends AbstractTridentWindowManager
         return null;
     }
 
+    @Override
     public void onTuplesExpired(List<TridentBatchTuple> expiredTuples) {
         if (maxCachedTuplesSize != null) {
             currentCachedTuplesSize.addAndGet(-expiredTuples.size());

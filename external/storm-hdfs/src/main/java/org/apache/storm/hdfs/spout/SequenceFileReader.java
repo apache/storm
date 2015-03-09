@@ -69,6 +69,7 @@ public class SequenceFileReader<Key extends Writable, Value extends Writable>
         }
     }
 
+    @Override
     public List<Object> next() throws IOException, ParseException {
         if (reader.next(key, value)) {
             ArrayList<Object> result = new ArrayList<Object>(2);
@@ -88,6 +89,7 @@ public class SequenceFileReader<Key extends Writable, Value extends Writable>
         }
     }
 
+    @Override
     public Offset getFileOffset() {
         return offset;
     }

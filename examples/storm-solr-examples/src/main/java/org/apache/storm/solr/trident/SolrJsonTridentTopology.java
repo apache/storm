@@ -34,6 +34,7 @@ public class SolrJsonTridentTopology extends SolrJsonTopology {
         solrJsonTridentTopology.run(args);
     }
 
+    @Override
     protected StormTopology getTopology() throws IOException {
         final TridentTopology topology = new TridentTopology();
         final SolrJsonSpout spout = new SolrJsonSpout();

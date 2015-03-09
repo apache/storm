@@ -45,26 +45,32 @@ public class TestPlannerSpout extends BaseRichSpout {
     }
 
 
+    @Override
     public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
 
     }
 
+    @Override
     public void close() {
 
     }
 
+    @Override
     public void nextTuple() {
         Utils.sleep(100);
     }
 
+    @Override
     public void ack(Object msgId) {
 
     }
 
+    @Override
     public void fail(Object msgId) {
 
     }
 
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(getOutputFields());
     }

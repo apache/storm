@@ -34,6 +34,7 @@ public abstract class BaseWindowConfig implements WindowConfig {
         return slideLength;
     }
 
+    @Override
     public void validate() {
         if (slideLength > windowLength) {
             throw new IllegalArgumentException(

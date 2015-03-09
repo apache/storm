@@ -34,6 +34,7 @@ public class NotAliveExceptionMapper implements ExceptionMapper<NotAliveExceptio
     @Inject
     public javax.inject.Provider<HttpServletRequest> request;
 
+    @Override
     public Response toResponse(NotAliveException ex) {
         return getResponse(ex, request);
     }

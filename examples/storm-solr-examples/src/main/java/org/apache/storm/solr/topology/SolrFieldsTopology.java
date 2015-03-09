@@ -43,10 +43,12 @@ public class SolrFieldsTopology extends SolrTopology {
                     .setMultiValueFieldToken("%").build();
     }
 
+    @Override
     protected SolrCommitStrategy getSolrCommitStgy() {
         return new CountBasedCommit(2);         // To Commit to Solr and Ack according to the commit strategy
     }
 
+    @Override
     protected StormTopology getTopology() throws IOException {
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout("SolrFieldsSpout", new SolrFieldsSpout());

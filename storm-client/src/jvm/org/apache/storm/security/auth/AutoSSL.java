@@ -83,6 +83,7 @@ public class AutoSSL implements IAutoCredentials {
         }
     }
 
+    @Override
     public void prepare(Map<String, Object> conf) {
         this.conf = conf;
         writeDir = getSSLWriteDirFromConf(this.conf);

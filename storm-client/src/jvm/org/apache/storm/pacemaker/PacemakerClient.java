@@ -145,10 +145,12 @@ public class PacemakerClient implements ISaslClient {
         this.notifyAll();
     }
 
+    @Override
     public String name() {
         return client_name;
     }
 
+    @Override
     public String secretKey() {
         return secret;
     }
@@ -231,6 +233,7 @@ public class PacemakerClient implements ISaslClient {
     public void reconnect() {
         final PacemakerClient client = this;
         timer.schedule(new TimerTask() {
+            @Override
             public void run() {
                 client.doReconnect();
             }

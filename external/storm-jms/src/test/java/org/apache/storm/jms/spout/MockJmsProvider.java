@@ -46,6 +46,7 @@ public class MockJmsProvider implements JmsProvider {
      *
      * @throws Exception
      */
+    @Override
     public ConnectionFactory connectionFactory() throws Exception {
         return this.connectionFactory;
     }
@@ -58,6 +59,7 @@ public class MockJmsProvider implements JmsProvider {
      *
      * @throws Exception
      */
+    @Override
     public Destination destination() throws Exception {
         return this.destination;
     }

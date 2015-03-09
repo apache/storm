@@ -24,6 +24,7 @@ public class KerberosPrincipalToLocal implements IPrincipalToLocal {
      *
      * @param topoConf Storm configuration
      */
+    @Override
     public void prepare(Map<String, Object> topoConf) {
     }
 

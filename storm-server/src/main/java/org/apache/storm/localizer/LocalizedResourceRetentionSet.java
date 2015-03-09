@@ -135,6 +135,7 @@ public class LocalizedResourceRetentionSet {
     }
 
     static class LRUComparator implements Comparator<LocallyCachedBlob> {
+        @Override
         public int compare(LocallyCachedBlob r1, LocallyCachedBlob r2) {
             long ret = r1.getLastUsed() - r2.getLastUsed();
             if (0 == ret) {

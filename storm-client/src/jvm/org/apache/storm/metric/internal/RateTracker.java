@@ -130,6 +130,7 @@ public class RateTracker implements Closeable {
     }
 
     private class Fresher extends TimerTask {
+        @Override
         public void run() {
             rotateBuckets(System.currentTimeMillis());
         }

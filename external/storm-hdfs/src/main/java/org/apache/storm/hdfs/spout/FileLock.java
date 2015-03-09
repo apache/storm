@@ -302,6 +302,7 @@ public class FileLock {
             return new LogEntry(Long.parseLong(fields[0]), fields[1], fields[2]);
         }
 
+        @Override
         public String toString() {
             return eventTime + "," + componentID + "," + fileOffset;
         }

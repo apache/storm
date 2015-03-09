@@ -23,6 +23,7 @@ public class AssignableMetric implements IMetric {
         _value = value;
     }
 
+    @Override
     public Object getValueAndReset() {
         return _value;
     }

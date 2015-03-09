@@ -42,6 +42,7 @@ import org.apache.storm.tuple.Values;
 @SuppressWarnings("serial")
 public class JsonTupleProducer implements JmsTupleProducer {
 
+    @Override
 	public Values toTuple(Message msg) throws JMSException {
 		if(msg instanceof TextMessage){
 			String json = ((TextMessage) msg).getText();
@@ -51,6 +52,7 @@ public class JsonTupleProducer implements JmsTupleProducer {
 		}
 	}
 
+    @Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
 		declarer.declare(new Fields("json"));
 	}

@@ -135,6 +135,7 @@ public class Rankings implements Serializable {
         }
     }
 
+    @Override
     public String toString() {
         return rankedItems.toString();
     }

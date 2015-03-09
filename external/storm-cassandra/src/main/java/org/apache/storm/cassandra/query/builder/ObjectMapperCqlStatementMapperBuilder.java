@@ -47,6 +47,7 @@ public class ObjectMapperCqlStatementMapperBuilder implements CQLStatementBuilde
     /**
      * Builds an ObjectMapperCqlStatementMapper.
      */
+    @Override
     public ObjectMapperCqlStatementMapper build() {
         List<TypeCodec<?>> codecs = codecProducers.stream().map(codecProducer -> {
             try {

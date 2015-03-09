@@ -31,6 +31,7 @@ abstract public class AbstractHDFSWriter implements Writer {
         this.filePath = path;
     }
 
+    @Override
     final public long write(Tuple tuple) throws IOException {
         doWrite(tuple);
         this.needsRotation = rotationPolicy.mark(tuple, offset);
@@ -38,18 +39,22 @@ abstract public class AbstractHDFSWriter implements Writer {
         return this.offset;
     }
 
+    @Override
     final public void sync() throws IOException {
         doSync();
     }
 
+    @Override
     final public void close() throws IOException {
         doClose();
     }
 
+    @Override
     public boolean needsRotation() {
         return needsRotation;
     }
 
+    @Override
     public Path getFilePath() {
         return this.filePath;
     }

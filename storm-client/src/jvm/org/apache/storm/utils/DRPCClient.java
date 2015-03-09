@@ -119,6 +119,7 @@ public class DRPCClient extends ThriftClient implements DistributedRPC.Iface {
         return port;
     }
 
+    @Override
     public String execute(String func, String args) throws TException, DRPCExecutionException, AuthorizationException {
         if (func == null) {
             throw new IllegalArgumentException("DRPC Function cannot be null");

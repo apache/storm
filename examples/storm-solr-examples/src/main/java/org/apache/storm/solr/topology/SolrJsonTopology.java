@@ -38,6 +38,7 @@ public class SolrJsonTopology extends SolrTopology {
         return new SolrJsonMapper.Builder(COLLECTION, jsonTupleField).build();
     }
 
+    @Override
     protected StormTopology getTopology() throws IOException {
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout("SolrJsonSpout", new SolrJsonSpout());

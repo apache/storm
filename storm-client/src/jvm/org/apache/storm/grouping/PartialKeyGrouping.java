@@ -156,6 +156,7 @@ public class PartialKeyGrouping implements CustomStreamGrouping, Serializable {
         /**
          * Creates a two task assignment by selecting random tasks.
          */
+        @Override
         public int[] createAssignment(List<Integer> tasks, byte[] key) {
             // It is necessary that this produce a deterministic assignment based on the key, so seed the Random from the key
             final long seedForRandom = Arrays.hashCode(key);
@@ -178,6 +179,7 @@ public class PartialKeyGrouping implements CustomStreamGrouping, Serializable {
         /**
          * Chooses one of the incoming tasks and selects the one that has been selected the fewest times so far.
          */
+        @Override
         public Integer chooseTask(int[] assignedTasks) {
             Integer taskIdWithMinLoad = null;
             Long minTaskLoad = Long.MAX_VALUE;

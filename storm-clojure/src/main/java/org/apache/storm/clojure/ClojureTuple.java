@@ -152,6 +152,7 @@ public class ClojureTuple extends TupleImpl implements Seqable, Indexed, IMeta, 
     }
 
     /* Indexed */
+    @Override
     public Object nth(int i) {
         if (i < size()) {
             return getValue(i);
@@ -160,6 +161,7 @@ public class ClojureTuple extends TupleImpl implements Seqable, Indexed, IMeta, 
         }
     }
 
+    @Override
     public Object nth(int i, Object notfound) {
         Object ret = nth(i);
         if (ret==null) ret = notfound;
@@ -167,11 +169,13 @@ public class ClojureTuple extends TupleImpl implements Seqable, Indexed, IMeta, 
     }
 
     /* Counted */
+    @Override
     public int count() {
         return size();
     }
 
     /* IMeta */
+    @Override
     public IPersistentMap meta() {
         if(_meta==null) {
             _meta = new PersistentArrayMap( new Object[] {

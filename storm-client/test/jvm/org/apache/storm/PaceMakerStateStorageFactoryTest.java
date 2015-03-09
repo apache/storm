@@ -147,10 +147,12 @@ public class PaceMakerStateStorageFactoryTest {
             return clientMock;
         }
 
+        @Override
         public HBMessage send(HBMessage m) throws PacemakerConnectionException, InterruptedException {
             return clientMock.send(m);
         }
 
+        @Override
         public List<HBMessage> sendAll(HBMessage m) throws PacemakerConnectionException, InterruptedException {
             List<HBMessage> response = new ArrayList<>();
             response.add(clientMock.send(m));

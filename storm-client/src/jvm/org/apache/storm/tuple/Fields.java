@@ -81,6 +81,7 @@ public class Fields implements Iterable<String>, Serializable {
         return _fields.get(index);
     }
 
+    @Override
     public Iterator<String> iterator() {
         return _fields.iterator();
     }

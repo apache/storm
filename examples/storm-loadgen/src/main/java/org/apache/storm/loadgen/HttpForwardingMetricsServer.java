@@ -54,6 +54,7 @@ public abstract class HttpForwardingMetricsServer {
     };
 
     private class MetricsCollectionServlet extends HttpServlet {
+        @Override
         protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
             Input in = new Input(request.getInputStream());
             List<Object> metrics = des.get().deserializeFrom(in);

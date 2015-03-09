@@ -74,6 +74,7 @@ public class DefaultFileNameFormat implements FileNameFormat {
         return this.prefix + this.componentId + "-" + this.taskId + "-" + rotation + "-" + timeStamp + this.extension;
     }
 
+    @Override
     public String getPath() {
         return this.path;
     }

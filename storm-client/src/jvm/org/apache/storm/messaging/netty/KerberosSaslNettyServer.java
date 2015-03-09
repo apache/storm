@@ -97,6 +97,7 @@ class KerberosSaslNettyServer {
             LOG.debug("Server with host: {}", fHost);
             saslServer =
                 Subject.doAs(subject, new PrivilegedExceptionAction<SaslServer>() {
+                    @Override
                     public SaslServer run() {
                         try {
                             Map<String, String> props = new TreeMap<String, String>();
@@ -136,6 +137,7 @@ class KerberosSaslNettyServer {
     public byte[] response(final byte[] token) {
         try {
             byte[] retval = Subject.doAs(subject, new PrivilegedExceptionAction<byte[]>() {
+                @Override
                 public byte[] run() {
                     try {
                         LOG.debug("response: Responding to input token of length: {}",

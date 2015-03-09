@@ -67,6 +67,7 @@ public class CheckpointTupleForwarder extends BaseStatefulBoltExecutor {
      * @param action          the action (prepare, commit, rollback or initstate)
      * @param txid            the transaction id.
      */
+    @Override
     protected void handleCheckpoint(Tuple checkpointTuple, Action action, long txid) {
         collector.emit(CHECKPOINT_STREAM_ID, checkpointTuple, new Values(txid, action));
         collector.ack(checkpointTuple);
@@ -82,6 +83,7 @@ public class CheckpointTupleForwarder extends BaseStatefulBoltExecutor {
      *
      * @param input the input tuple
      */
+    @Override
     protected void handleTuple(Tuple input) {
         bolt.execute(input);
     }

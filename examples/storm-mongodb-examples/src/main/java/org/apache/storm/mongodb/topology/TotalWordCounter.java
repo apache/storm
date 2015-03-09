@@ -37,12 +37,14 @@ public class TotalWordCounter implements IBasicBolt {
     private BigInteger total = BigInteger.ZERO;
     private static final Logger LOG = LoggerFactory.getLogger(TotalWordCounter.class);
     private static final Random RANDOM = new Random();
+    @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context) {
     }
 
     /*
      * Just output the word value with a count of 1.
      */
+    @Override
     public void execute(Tuple input, BasicOutputCollector collector) {
         total = total.add(new BigInteger(input.getValues().get(1).toString()));
         collector.emit(tuple(total.toString()));
@@ -52,10 +54,12 @@ public class TotalWordCounter implements IBasicBolt {
         }
     }
 
+    @Override
     public void cleanup() {
         LOG.info("Final total = " + total);
     }
 
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(new Fields("total"));
     }

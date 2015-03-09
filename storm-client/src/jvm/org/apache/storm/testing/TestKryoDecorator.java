@@ -17,6 +17,7 @@ import org.apache.storm.serialization.IKryoDecorator;
 
 public class TestKryoDecorator implements IKryoDecorator {
 
+    @Override
     public void decorate(Kryo k) {
         k.register(TestSerObject.class);
     }

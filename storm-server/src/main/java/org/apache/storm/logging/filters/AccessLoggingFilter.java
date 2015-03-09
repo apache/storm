@@ -28,10 +28,12 @@ public class AccessLoggingFilter implements Filter {
 
     private static final Logger LOG = LoggerFactory.getLogger(AccessLoggingFilter.class);
 
+    @Override
     public void init(FilterConfig config) throws ServletException {
         //NOOP
     }
 
+    @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         handle((HttpServletRequest) request, (HttpServletResponse) response, chain);
     }
@@ -44,6 +46,7 @@ public class AccessLoggingFilter implements Filter {
         chain.doFilter(request, response);
     }
 
+    @Override
     public void destroy() {
         //NOOP
     }

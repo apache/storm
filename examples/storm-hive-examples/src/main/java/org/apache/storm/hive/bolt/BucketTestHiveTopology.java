@@ -119,10 +119,12 @@ public class BucketTestHiveTopology {
             return this;
         }
 
+        @Override
         public void declareOutputFields(OutputFieldsDeclarer declarer) {
             declarer.declare(new Fields(this.outputFields));
         }
 
+        @Override
         public void open(Map<String, Object> config, TopologyContext context,
                          SpoutOutputCollector collector) {
             this.collector = collector;
@@ -135,6 +137,7 @@ public class BucketTestHiveTopology {
             }
         }
 
+        @Override
         public void nextTuple() {
             String line;
             try {
@@ -161,10 +164,12 @@ public class BucketTestHiveTopology {
             }
         }
 
+        @Override
         public void ack(Object msgId) {
             this.pending.remove(msgId);
         }
 
+        @Override
         public void fail(Object msgId) {
             System.out.println("**** RESENDING FAILED TUPLE");
             this.collector.emit(this.pending.get(msgId), msgId);

@@ -86,6 +86,7 @@ public final class TupleOpenTsdbDatapointMapper implements ITupleOpenTsdbDatapoi
         return tagsField;
     }
 
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof TupleOpenTsdbDatapointMapper)) return false;

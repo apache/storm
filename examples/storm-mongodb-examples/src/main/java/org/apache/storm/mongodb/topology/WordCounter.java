@@ -31,10 +31,12 @@ import java.util.Map;
 public class WordCounter implements IBasicBolt {
     private Map<String, Integer> wordCounter = Maps.newHashMap();
 
+    @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context) {
         
     }
 
+    @Override
     public void execute(Tuple input, BasicOutputCollector collector) {
         String word = input.getStringByField("word");
         int count;
@@ -49,10 +51,12 @@ public class WordCounter implements IBasicBolt {
         collector.emit(new Values(word, String.valueOf(count)));
     }
 
+    @Override
     public void cleanup() {
 
     }
 
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(new Fields("word", "count"));
     }

@@ -83,6 +83,7 @@ public class Metric implements Comparable<Metric> {
     /**
      *  Check if a Metric matches another object.
      */
+    @Override
     public boolean equals(Object other) {
 
         if (!(other instanceof Metric)) {

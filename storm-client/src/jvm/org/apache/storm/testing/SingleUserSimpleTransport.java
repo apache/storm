@@ -23,10 +23,12 @@ public class SingleUserSimpleTransport extends SimpleTransportPlugin {
     protected Subject getDefaultSubject() {
         HashSet<Principal> principals = new HashSet<Principal>();
         principals.add(new Principal() {
+            @Override
             public String getName() {
                 return "user";
             }
 
+            @Override
             public String toString() {
                 return "user";
             }

@@ -24,10 +24,12 @@ class MeanReducerState {
 }
 
 public class MeanReducer implements IReducer<MeanReducerState> {
+    @Override
     public MeanReducerState init() {
         return new MeanReducerState();
     }
 
+    @Override
     public MeanReducerState reduce(MeanReducerState acc, Object input) {
         acc.count++;
         if (input instanceof Double) {
@@ -44,6 +46,7 @@ public class MeanReducer implements IReducer<MeanReducerState> {
         return acc;
     }
 
+    @Override
     public Object extractResult(MeanReducerState acc) {
         if (acc.count > 0) {
             return acc.sum / (double) acc.count;

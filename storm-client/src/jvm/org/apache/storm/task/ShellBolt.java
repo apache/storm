@@ -122,6 +122,7 @@ public class ShellBolt implements IBolt {
         this.changeDirectory = changeDirectory;
     }
 
+    @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context,
                         final OutputCollector collector) {
         if (ConfigUtils.isLocalMode(topoConf)) {
@@ -169,6 +170,7 @@ public class ShellBolt implements IBolt {
         heartBeatExecutorService.scheduleAtFixedRate(new BoltHeartbeatTimerTask(this), 1, 1, TimeUnit.SECONDS);
     }
 
+    @Override
     public void execute(Tuple input) {
         if (_exception != null) {
             throw new RuntimeException(_exception);
@@ -197,6 +199,7 @@ public class ShellBolt implements IBolt {
         return boltMsg;
     }
 
+    @Override
     public void cleanup() {
         _running = false;
         heartBeatExecutorService.shutdownNow();
@@ -323,6 +326,7 @@ public class ShellBolt implements IBolt {
     }
 
     private class BoltReaderRunnable implements Runnable {
+        @Override
         public void run() {
             while (_running) {
                 try {
@@ -367,6 +371,7 @@ public class ShellBolt implements IBolt {
     }
 
     private class BoltWriterRunnable implements Runnable {
+        @Override
         public void run() {
             while (_running) {
                 try {

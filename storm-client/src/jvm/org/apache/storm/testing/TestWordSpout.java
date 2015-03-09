@@ -40,14 +40,17 @@ public class TestWordSpout extends BaseRichSpout {
         _isDistributed = isDistributed;
     }
 
+    @Override
     public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
         _collector = collector;
     }
 
+    @Override
     public void close() {
 
     }
 
+    @Override
     public void nextTuple() {
         Utils.sleep(100);
         final String[] words = new String[]{ "nathan", "mike", "jackson", "golda", "bertels" };
@@ -56,14 +59,17 @@ public class TestWordSpout extends BaseRichSpout {
         _collector.emit(new Values(word));
     }
 
+    @Override
     public void ack(Object msgId) {
 
     }
 
+    @Override
     public void fail(Object msgId) {
 
     }
 
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(new Fields("word"));
     }

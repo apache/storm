@@ -76,14 +76,17 @@ public class MqttSpout implements IRichSpout, Listener {
         return this.sequence;
     }
 
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(this.type.outputFields());
     }
 
+    @Override
     public Map<String, Object> getComponentConfiguration() {
         return null;
     }
 
+    @Override
     public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
         this.topologyName = (String) conf.get(Config.TOPOLOGY_NAME);
 
@@ -129,13 +132,16 @@ public class MqttSpout implements IRichSpout, Listener {
     }
 
 
+    @Override
     public void close() {
         this.connection.disconnect(new DisconnectCallback());
     }
 
+    @Override
     public void activate() {
     }
 
+    @Override
     public void deactivate() {
     }
 
@@ -147,6 +153,7 @@ public class MqttSpout implements IRichSpout, Listener {
      * to have nextTuple sleep for a short amount of time (like a single millisecond)
      * so as not to waste too much CPU.
      */
+    @Override
     public void nextTuple() {
         AckableMessage tm = this.incoming.poll();
         if (tm != null) {
@@ -166,6 +173,7 @@ public class MqttSpout implements IRichSpout, Listener {
      *
      * @param msgId
      */
+    @Override
     public void ack(Object msgId) {
         AckableMessage msg = this.pending.remove(msgId);
         this.connection.getDispatchQueue().execute(msg.ack());
@@ -178,6 +186,7 @@ public class MqttSpout implements IRichSpout, Listener {
      *
      * @param msgId
      */
+    @Override
     public void fail(Object msgId) {
         try {
             this.incoming.put(this.pending.remove(msgId));
@@ -188,14 +197,17 @@ public class MqttSpout implements IRichSpout, Listener {
 
 
     // ################# Listener Implementation ######################
+    @Override
     public void onConnected() {
         // this gets called repeatedly for no apparent reason, don't do anything
     }
 
+    @Override
     public void onDisconnected() {
         // this gets called repeatedly for no apparent reason, don't do anything
     }
 
+    @Override
     public void onPublish(UTF8Buffer topic, Buffer payload, Runnable ack) {
         LOG.debug("Received message: topic={}, payload={}", topic.toString(), new String(payload.toByteArray()));
         try {
@@ -205,6 +217,7 @@ public class MqttSpout implements IRichSpout, Listener {
         }
     }
 
+    @Override
     public void onFailure(Throwable throwable) {
         LOG.error("MQTT Connection Failure.", throwable);
         MqttSpout.this.connection.disconnect(new DisconnectCallback());
@@ -213,11 +226,13 @@ public class MqttSpout implements IRichSpout, Listener {
 
     // ################# Connect Callback Implementation ######################
     private class ConnectCallback implements Callback<Void> {
+        @Override
         public void onSuccess(Void v) {
             LOG.info("MQTT Connected. Subscribing to topic...");
             MqttSpout.this.mqttConnected = true;
         }
 
+        @Override
         public void onFailure(Throwable throwable) {
             LOG.info("MQTT Connection failed.");
             MqttSpout.this.mqttConnectFailed = true;
@@ -226,10 +241,12 @@ public class MqttSpout implements IRichSpout, Listener {
 
     // ################# Subscribe Callback Implementation ######################
     private class SubscribeCallback implements Callback<byte[]> {
+        @Override
         public void onSuccess(byte[] qos) {
             LOG.info("Subscripton sucessful.");
         }
 
+        @Override
         public void onFailure(Throwable throwable) {
             LOG.error("MQTT Subscripton failed.", throwable);
             throw new RuntimeException("MQTT Subscribe failed.", throwable);
@@ -238,10 +255,12 @@ public class MqttSpout implements IRichSpout, Listener {
 
     // ################# Subscribe Callback Implementation ######################
     private class DisconnectCallback implements Callback<Void> {
+        @Override
         public void onSuccess(Void aVoid) {
             LOG.info("MQTT Disconnect successful.");
         }
 
+        @Override
         public void onFailure(Throwable throwable) {
             // Disconnects don't fail.
         }

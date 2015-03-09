@@ -21,18 +21,22 @@ import org.apache.storm.utils.Utils;
 public class OutputFieldsGetter implements OutputFieldsDeclarer {
     private Map<String, StreamInfo> _fields = new HashMap<>();
 
+    @Override
     public void declare(Fields fields) {
         declare(false, fields);
     }
 
+    @Override
     public void declare(boolean direct, Fields fields) {
         declareStream(Utils.DEFAULT_STREAM_ID, direct, fields);
     }
 
+    @Override
     public void declareStream(String streamId, Fields fields) {
         declareStream(streamId, false, fields);
     }
 
+    @Override
     public void declareStream(String streamId, boolean direct, Fields fields) {
         if (null == streamId) {
             throw new IllegalArgumentException("streamId can't be null");

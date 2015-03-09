@@ -34,6 +34,7 @@ public class HBaseWindowsStoreFactory implements WindowsStoreFactory {
         this.qualifier = qualifier;
     }
 
+    @Override
     public WindowsStore create(Map<String, Object> topoConf) {
         Configuration configuration = HBaseConfiguration.create();
         for (Map.Entry<String, Object> entry : config.entrySet()) {

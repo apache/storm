@@ -74,6 +74,7 @@ public class CoordinatedBolt implements IRichBolt {
         return ret;
     }
 
+    @Override
     public void prepare(Map<String, Object> config, TopologyContext context, OutputCollector collector) {
         TimeCacheMap.ExpiredCallback<Object, TrackingInfo> callback = null;
         if (_delegate instanceof TimeoutCallback) {
@@ -167,6 +168,7 @@ public class CoordinatedBolt implements IRichBolt {
         return failed;
     }
 
+    @Override
     public void execute(Tuple tuple) {
         Object id = tuple.getValue(0);
         TrackingInfo track;
@@ -201,11 +203,13 @@ public class CoordinatedBolt implements IRichBolt {
         }
     }
 
+    @Override
     public void cleanup() {
         _delegate.cleanup();
         _tracked.cleanup();
     }
 
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         _delegate.declareOutputFields(declarer);
         declarer.declareStream(Constants.COORDINATED_STREAM_ID, true, new Fields("id", "count"));
@@ -306,17 +310,20 @@ public class CoordinatedBolt implements IRichBolt {
             _delegate = delegate;
         }
 
+        @Override
         public List<Integer> emit(String stream, Collection<Tuple> anchors, List<Object> tuple) {
             List<Integer> tasks = _delegate.emit(stream, anchors, tuple);
             updateTaskCounts(tuple.get(0), tasks);
             return tasks;
         }
 
+        @Override
         public void emitDirect(int task, String stream, Collection<Tuple> anchors, List<Object> tuple) {
             updateTaskCounts(tuple.get(0), Arrays.asList(task));
             _delegate.emitDirect(task, stream, anchors, tuple);
         }
 
+        @Override
         public void ack(Tuple tuple) {
             Object id = tuple.getValue(0);
             synchronized (_tracked) {
@@ -333,6 +340,7 @@ public class CoordinatedBolt implements IRichBolt {
             }
         }
 
+        @Override
         public void fail(Tuple tuple) {
             Object id = tuple.getValue(0);
             synchronized (_tracked) {
@@ -345,14 +353,17 @@ public class CoordinatedBolt implements IRichBolt {
             _delegate.fail(tuple);
         }
 
+        @Override
         public void flush() {
             _delegate.flush();
         }
 
+        @Override
         public void resetTimeout(Tuple tuple) {
             _delegate.resetTimeout(tuple);
         }
 
+        @Override
         public void reportError(Throwable error) {
             _delegate.reportError(error);
         }

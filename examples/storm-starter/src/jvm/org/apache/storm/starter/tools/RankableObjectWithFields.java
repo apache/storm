@@ -63,10 +63,12 @@ public class RankableObjectWithFields implements Rankable, Serializable {
         return new RankableObjectWithFields(obj, count, otherFields.toArray());
     }
 
+    @Override
     public Object getObject() {
         return obj;
     }
 
+    @Override
     public long getCount() {
         return count;
     }
@@ -111,6 +113,7 @@ public class RankableObjectWithFields implements Rankable, Serializable {
         return result;
     }
 
+    @Override
     public String toString() {
         StringBuffer buf = new StringBuffer();
         buf.append("[");

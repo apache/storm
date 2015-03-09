@@ -22,10 +22,12 @@ import org.apache.storm.tuple.Values;
  * "topic" and "message", both of which are Strings.
  */
 public class StringMessageMapper implements MqttMessageMapper {
+    @Override
     public Values toValues(MqttMessage message) {
         return new Values(message.getTopic(), new String(message.getMessage()));
     }
 
+    @Override
     public Fields outputFields() {
         return new Fields("topic", "message");
     }

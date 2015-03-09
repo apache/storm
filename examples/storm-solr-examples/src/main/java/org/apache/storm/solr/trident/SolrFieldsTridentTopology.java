@@ -35,6 +35,7 @@ public class SolrFieldsTridentTopology extends SolrFieldsTopology {
         solrFieldsTridentTopology.run(args);
     }
 
+    @Override
     protected StormTopology getTopology() throws IOException {
         final TridentTopology tridentTopology = new TridentTopology();
         final SolrFieldsSpout spout = new SolrFieldsSpout();
