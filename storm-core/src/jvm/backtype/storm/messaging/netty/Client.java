@@ -147,10 +147,13 @@ public class Client implements IConnection, IStatefulObject{
         scheduler.scheduleWithFixedDelay(flusher, initialDelay, flushCheckInterval, TimeUnit.MILLISECONDS);
     }
 
+    private synchronized void connect() {
+      connect(max_retries);
+    }
     /**
      * We will retry connection with exponential back-off policy
      */
-    private synchronized void connect() {
+    private synchronized void connect(int max_retries) {
         try {
 
             Channel channel = channelRef.get();
@@ -184,7 +187,7 @@ public class Client implements IConnection, IStatefulObject{
             if (null != channel) {
                 LOG.info("connection established to a remote host " + name() + ", " + channel.toString());
                 channelRef.set(channel);
-            } else {
+            } else if (max_retries > 0) {
                 close();
                 throw new RuntimeException("Remote address is not reachable. We will close this client " + name());
             }
@@ -209,13 +212,13 @@ public class Client implements IConnection, IStatefulObject{
 
         Channel channel = channelRef.get();
         if (null == channel) {
-            connect();
+            connect(0);
             channel = channelRef.get();
         }
 
         while (msgs.hasNext()) {
-            if (!channel.isConnected()) {
-                connect();
+            if (channel == null || !channel.isConnected()) {
+                connect(0);
                 channel = channelRef.get();
             }
             TaskMessage message = msgs.next();
@@ -224,7 +227,7 @@ public class Client implements IConnection, IStatefulObject{
             }
 
             messageBatch.add(message);
-            if (messageBatch.isFull()) {
+            if (channel != null && messageBatch.isFull()) {
                 MessageBatch toBeFlushed = messageBatch;
                 flushRequest(channel, toBeFlushed);
                 messageBatch = null;
@@ -232,7 +235,7 @@ public class Client implements IConnection, IStatefulObject{
         }
 
         if (null != messageBatch && !messageBatch.isEmpty()) {
-            if (channel.isWritable()) {
+            if (channel != null && channel.isWritable()) {
                 flushCheckTimer.set(Long.MAX_VALUE);
                 
                 // Flush as fast as we can to reduce the latency
