@@ -333,7 +333,7 @@
                current-connections (set (keys @(:cached-node+port->socket worker)))
                new-connections (set/difference needed-connections current-connections)
                remove-connections (set/difference current-connections needed-connections)]
-           (log-message "refresh-connections " needed-connections)
+           (log-message "refresh-connections " current-connections " -> " needed-connections)
            (swap! (:cached-node+port->socket worker)
              #(HashMap. (merge (into {} %1) %2))
              (into {}
