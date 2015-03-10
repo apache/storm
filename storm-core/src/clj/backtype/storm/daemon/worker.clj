@@ -228,7 +228,7 @@
       :component->stream->fields (component->stream->fields (:system-topology <>))
       :component->sorted-tasks (->> (:task->component <>) reverse-map (map-val sort))
       :endpoint-socket-lock (mk-rw-lock)
-      :cached-node+port->socket (atom {})
+      :cached-node+port->socket (atom (HashMap.))
       :cached-task->node+port (atom {})
       :transfer-queue transfer-queue
       :executor-receive-queue-map (atom {})
