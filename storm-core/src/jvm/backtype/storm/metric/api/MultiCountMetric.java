@@ -35,6 +35,7 @@ public class MultiCountMetric implements IMetric {
         return val;
     }
 
+    @Override
     public Object getValueAndReset() {
         Map ret = new HashMap();
         for(Map.Entry<String, CountMetric> e : _value.entrySet()) {

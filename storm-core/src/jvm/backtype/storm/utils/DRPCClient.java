@@ -55,6 +55,7 @@ public class DRPCClient extends ThriftClient implements DistributedRPC.Iface {
         return port;
     }
     
+    @Override
     public String execute(String func, String args) throws TException, DRPCExecutionException, AuthorizationException {
         return client.execute(func, args);
     }

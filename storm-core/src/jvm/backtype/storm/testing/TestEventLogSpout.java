@@ -73,6 +73,7 @@ public class TestEventLogSpout extends BaseRichSpout {
         this.totalCount = totalCount;
     }
         
+    @Override
     public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
         _collector = collector;
         this.source = context.getThisTaskId();
@@ -80,6 +81,7 @@ public class TestEventLogSpout extends BaseRichSpout {
         myCount = totalCount / taskCount;
     }
     
+    @Override
     public void close() {
         
     }
@@ -112,6 +114,7 @@ public class TestEventLogSpout extends BaseRichSpout {
         return false;
     }
         
+    @Override
     public void nextTuple() {
         if (eventId < myCount) { 
             eventId++;
@@ -119,6 +122,7 @@ public class TestEventLogSpout extends BaseRichSpout {
         }        
     }
     
+    @Override
     public void ack(Object msgId) {
         synchronized(acked) {
             int curr = get(acked, uid, 0);
@@ -126,6 +130,7 @@ public class TestEventLogSpout extends BaseRichSpout {
         }
     }
 
+    @Override
     public void fail(Object msgId) {
         synchronized(failed) {
             int curr = get(failed, uid, 0);
@@ -133,6 +138,7 @@ public class TestEventLogSpout extends BaseRichSpout {
         }
     }
     
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(new Fields("source", "eventId"));
     }

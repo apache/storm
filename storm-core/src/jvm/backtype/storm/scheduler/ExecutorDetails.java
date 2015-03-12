@@ -34,6 +34,7 @@ public class ExecutorDetails {
         return endTask;
     }
 
+    @Override
     public boolean equals(Object other) {
         if (other == null || !(other instanceof ExecutorDetails)) {
             return false;
@@ -43,6 +44,7 @@ public class ExecutorDetails {
         return (this.startTask == executor.startTask) && (this.endTask == executor.endTask);
     }
     
+    @Override
     public int hashCode() {
         return this.startTask + 13 * this.endTask;
     }

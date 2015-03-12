@@ -236,6 +236,7 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
      * You must call this during IBolt::prepare or ISpout::open.
      * @return The IMetric argument unchanged.
      */
+    @Override
     public <T extends IMetric> T registerMetric(String name, T metric, int timeBucketSizeInSecs) {
         if((Boolean)_openOrPrepareWasCalled.deref() == true) {
             throw new RuntimeException("TopologyContext.registerMetric can only be called from within overridden " + 
@@ -302,12 +303,14 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
     /*
      * Convinience method for registering ReducedMetric.
      */
+    @Override
     public ReducedMetric registerMetric(String name, IReducer reducer, int timeBucketSizeInSecs) {
         return registerMetric(name, new ReducedMetric(reducer), timeBucketSizeInSecs);
     }
     /*
      * Convinience method for registering CombinedMetric.
      */
+    @Override
     public CombinedMetric registerMetric(String name, ICombiner combiner, int timeBucketSizeInSecs) {
         return registerMetric(name, new CombinedMetric(combiner), timeBucketSizeInSecs);
     }

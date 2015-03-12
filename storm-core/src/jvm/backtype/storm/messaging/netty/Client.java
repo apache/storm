@@ -468,6 +468,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
         ChannelFuture future = channel.write(batch);
         future.addListener(new ChannelFutureListener() {
 
+            @Override
             public void operationComplete(ChannelFuture future) throws Exception {
                 pendingMessages.getAndAdd(0 - numMessages);
                 if (future.isSuccess()) {

@@ -114,10 +114,12 @@ public class AuthorizationException extends TException implements org.apache.thr
       _fieldName = fieldName;
     }
 
+    @Override
     public short getThriftFieldId() {
       return _thriftId;
     }
 
+    @Override
     public String getFieldName() {
       return _fieldName;
     }
@@ -152,6 +154,7 @@ public class AuthorizationException extends TException implements org.apache.thr
     }
   }
 
+  @Override
   public AuthorizationException deepCopy() {
     return new AuthorizationException(this);
   }
@@ -184,6 +187,7 @@ public class AuthorizationException extends TException implements org.apache.thr
     }
   }
 
+  @Override
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case MSG:
@@ -197,6 +201,7 @@ public class AuthorizationException extends TException implements org.apache.thr
     }
   }
 
+  @Override
   public Object getFieldValue(_Fields field) {
     switch (field) {
     case MSG:
@@ -207,6 +212,7 @@ public class AuthorizationException extends TException implements org.apache.thr
   }
 
   /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+  @Override
   public boolean isSet(_Fields field) {
     if (field == null) {
       throw new IllegalArgumentException();
@@ -277,14 +283,17 @@ public class AuthorizationException extends TException implements org.apache.thr
     return 0;
   }
 
+  @Override
   public _Fields fieldForId(int fieldId) {
     return _Fields.findByThriftId(fieldId);
   }
 
+  @Override
   public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
     schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
   }
 
+  @Override
   public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
     schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
   }
@@ -331,6 +340,7 @@ public class AuthorizationException extends TException implements org.apache.thr
   }
 
   private static class AuthorizationExceptionStandardSchemeFactory implements SchemeFactory {
+    @Override
     public AuthorizationExceptionStandardScheme getScheme() {
       return new AuthorizationExceptionStandardScheme();
     }
@@ -338,6 +348,7 @@ public class AuthorizationException extends TException implements org.apache.thr
 
   private static class AuthorizationExceptionStandardScheme extends StandardScheme<AuthorizationException> {
 
+    @Override
     public void read(org.apache.thrift.protocol.TProtocol iprot, AuthorizationException struct) throws org.apache.thrift.TException {
       org.apache.thrift.protocol.TField schemeField;
       iprot.readStructBegin();
@@ -365,6 +376,7 @@ public class AuthorizationException extends TException implements org.apache.thr
       struct.validate();
     }
 
+    @Override
     public void write(org.apache.thrift.protocol.TProtocol oprot, AuthorizationException struct) throws org.apache.thrift.TException {
       struct.validate();
 
@@ -381,6 +393,7 @@ public class AuthorizationException extends TException implements org.apache.thr
   }
 
   private static class AuthorizationExceptionTupleSchemeFactory implements SchemeFactory {
+    @Override
     public AuthorizationExceptionTupleScheme getScheme() {
       return new AuthorizationExceptionTupleScheme();
     }

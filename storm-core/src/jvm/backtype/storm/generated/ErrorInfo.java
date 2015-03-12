@@ -129,10 +129,12 @@ public class ErrorInfo implements org.apache.thrift.TBase<ErrorInfo, ErrorInfo._
       _fieldName = fieldName;
     }
 
+    @Override
     public short getThriftFieldId() {
       return _thriftId;
     }
 
+    @Override
     public String getFieldName() {
       return _fieldName;
     }
@@ -186,6 +188,7 @@ public class ErrorInfo implements org.apache.thrift.TBase<ErrorInfo, ErrorInfo._
     this.port = other.port;
   }
 
+  @Override
   public ErrorInfo deepCopy() {
     return new ErrorInfo(this);
   }
@@ -290,6 +293,7 @@ public class ErrorInfo implements org.apache.thrift.TBase<ErrorInfo, ErrorInfo._
     __isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __PORT_ISSET_ID, value);
   }
 
+  @Override
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case ERROR:
@@ -327,6 +331,7 @@ public class ErrorInfo implements org.apache.thrift.TBase<ErrorInfo, ErrorInfo._
     }
   }
 
+  @Override
   public Object getFieldValue(_Fields field) {
     switch (field) {
     case ERROR:
@@ -346,6 +351,7 @@ public class ErrorInfo implements org.apache.thrift.TBase<ErrorInfo, ErrorInfo._
   }
 
   /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+  @Override
   public boolean isSet(_Fields field) {
     if (field == null) {
       throw new IllegalArgumentException();
@@ -494,14 +500,17 @@ public class ErrorInfo implements org.apache.thrift.TBase<ErrorInfo, ErrorInfo._
     return 0;
   }
 
+  @Override
   public _Fields fieldForId(int fieldId) {
     return _Fields.findByThriftId(fieldId);
   }
 
+  @Override
   public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
     schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
   }
 
+  @Override
   public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
     schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
   }
@@ -574,6 +583,7 @@ public class ErrorInfo implements org.apache.thrift.TBase<ErrorInfo, ErrorInfo._
   }
 
   private static class ErrorInfoStandardSchemeFactory implements SchemeFactory {
+    @Override
     public ErrorInfoStandardScheme getScheme() {
       return new ErrorInfoStandardScheme();
     }
@@ -581,6 +591,7 @@ public class ErrorInfo implements org.apache.thrift.TBase<ErrorInfo, ErrorInfo._
 
   private static class ErrorInfoStandardScheme extends StandardScheme<ErrorInfo> {
 
+    @Override
     public void read(org.apache.thrift.protocol.TProtocol iprot, ErrorInfo struct) throws org.apache.thrift.TException {
       org.apache.thrift.protocol.TField schemeField;
       iprot.readStructBegin();
@@ -632,6 +643,7 @@ public class ErrorInfo implements org.apache.thrift.TBase<ErrorInfo, ErrorInfo._
       struct.validate();
     }
 
+    @Override
     public void write(org.apache.thrift.protocol.TProtocol oprot, ErrorInfo struct) throws org.apache.thrift.TException {
       struct.validate();
 
@@ -663,6 +675,7 @@ public class ErrorInfo implements org.apache.thrift.TBase<ErrorInfo, ErrorInfo._
   }
 
   private static class ErrorInfoTupleSchemeFactory implements SchemeFactory {
+    @Override
     public ErrorInfoTupleScheme getScheme() {
       return new ErrorInfoTupleScheme();
     }

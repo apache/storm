@@ -119,10 +119,12 @@ public class StreamInfo implements org.apache.thrift.TBase<StreamInfo, StreamInf
       _fieldName = fieldName;
     }
 
+    @Override
     public short getThriftFieldId() {
       return _thriftId;
     }
 
+    @Override
     public String getFieldName() {
       return _fieldName;
     }
@@ -168,6 +170,7 @@ public class StreamInfo implements org.apache.thrift.TBase<StreamInfo, StreamInf
     this.direct = other.direct;
   }
 
+  @Override
   public StreamInfo deepCopy() {
     return new StreamInfo(this);
   }
@@ -239,6 +242,7 @@ public class StreamInfo implements org.apache.thrift.TBase<StreamInfo, StreamInf
     __isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __DIRECT_ISSET_ID, value);
   }
 
+  @Override
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case OUTPUT_FIELDS:
@@ -260,6 +264,7 @@ public class StreamInfo implements org.apache.thrift.TBase<StreamInfo, StreamInf
     }
   }
 
+  @Override
   public Object getFieldValue(_Fields field) {
     switch (field) {
     case OUTPUT_FIELDS:
@@ -273,6 +278,7 @@ public class StreamInfo implements org.apache.thrift.TBase<StreamInfo, StreamInf
   }
 
   /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+  @Override
   public boolean isSet(_Fields field) {
     if (field == null) {
       throw new IllegalArgumentException();
@@ -369,14 +375,17 @@ public class StreamInfo implements org.apache.thrift.TBase<StreamInfo, StreamInf
     return 0;
   }
 
+  @Override
   public _Fields fieldForId(int fieldId) {
     return _Fields.findByThriftId(fieldId);
   }
 
+  @Override
   public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
     schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
   }
 
+  @Override
   public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
     schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
   }
@@ -433,6 +442,7 @@ public class StreamInfo implements org.apache.thrift.TBase<StreamInfo, StreamInf
   }
 
   private static class StreamInfoStandardSchemeFactory implements SchemeFactory {
+    @Override
     public StreamInfoStandardScheme getScheme() {
       return new StreamInfoStandardScheme();
     }
@@ -440,6 +450,7 @@ public class StreamInfo implements org.apache.thrift.TBase<StreamInfo, StreamInf
 
   private static class StreamInfoStandardScheme extends StandardScheme<StreamInfo> {
 
+    @Override
     public void read(org.apache.thrift.protocol.TProtocol iprot, StreamInfo struct) throws org.apache.thrift.TException {
       org.apache.thrift.protocol.TField schemeField;
       iprot.readStructBegin();
@@ -485,6 +496,7 @@ public class StreamInfo implements org.apache.thrift.TBase<StreamInfo, StreamInf
       struct.validate();
     }
 
+    @Override
     public void write(org.apache.thrift.protocol.TProtocol oprot, StreamInfo struct) throws org.apache.thrift.TException {
       struct.validate();
 
@@ -511,6 +523,7 @@ public class StreamInfo implements org.apache.thrift.TBase<StreamInfo, StreamInf
   }
 
   private static class StreamInfoTupleSchemeFactory implements SchemeFactory {
+    @Override
     public StreamInfoTupleScheme getScheme() {
       return new StreamInfoTupleScheme();
     }

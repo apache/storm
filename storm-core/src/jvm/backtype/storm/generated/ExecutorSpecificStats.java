@@ -108,10 +108,12 @@ public class ExecutorSpecificStats extends org.apache.thrift.TUnion<ExecutorSpec
       _fieldName = fieldName;
     }
 
+    @Override
     public short getThriftFieldId() {
       return _thriftId;
     }
 
+    @Override
     public String getFieldName() {
       return _fieldName;
     }
@@ -139,6 +141,7 @@ public class ExecutorSpecificStats extends org.apache.thrift.TUnion<ExecutorSpec
   public ExecutorSpecificStats(ExecutorSpecificStats other) {
     super(other);
   }
+  @Override
   public ExecutorSpecificStats deepCopy() {
     return new ExecutorSpecificStats(this);
   }
@@ -285,6 +288,7 @@ public class ExecutorSpecificStats extends org.apache.thrift.TUnion<ExecutorSpec
     return _Fields.findByThriftIdOrThrow(id);
   }
 
+  @Override
   public _Fields fieldForId(int fieldId) {
     return _Fields.findByThriftId(fieldId);
   }
@@ -328,6 +332,7 @@ public class ExecutorSpecificStats extends org.apache.thrift.TUnion<ExecutorSpec
   }
 
 
+  @Override
   public boolean equals(Object other) {
     if (other instanceof ExecutorSpecificStats) {
       return equals((ExecutorSpecificStats)other);

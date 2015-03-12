@@ -84,18 +84,22 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
      * @param slot
      * @return
      */
+    @Override
     public boolean isSlotOccupied(WorkerSlot slot) {
         return this.executorToSlot.containsValue(slot);
     }
 
+    @Override
     public boolean isExecutorAssigned(ExecutorDetails executor) {
         return this.executorToSlot.containsKey(executor);
     }
     
+    @Override
     public String getTopologyId() {
         return this.topologyId;
     }
 
+    @Override
     public Map<ExecutorDetails, WorkerSlot> getExecutorToSlot() {
         return this.executorToSlot;
     }
@@ -104,6 +108,7 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
      * Return the executors covered by this assignments
      * @return
      */
+    @Override
     public Set<ExecutorDetails> getExecutors() {
         return this.executorToSlot.keySet();
     }

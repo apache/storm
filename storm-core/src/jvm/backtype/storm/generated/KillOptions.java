@@ -114,10 +114,12 @@ public class KillOptions implements org.apache.thrift.TBase<KillOptions, KillOpt
       _fieldName = fieldName;
     }
 
+    @Override
     public short getThriftFieldId() {
       return _thriftId;
     }
 
+    @Override
     public String getFieldName() {
       return _fieldName;
     }
@@ -147,6 +149,7 @@ public class KillOptions implements org.apache.thrift.TBase<KillOptions, KillOpt
     this.wait_secs = other.wait_secs;
   }
 
+  @Override
   public KillOptions deepCopy() {
     return new KillOptions(this);
   }
@@ -179,6 +182,7 @@ public class KillOptions implements org.apache.thrift.TBase<KillOptions, KillOpt
     __isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __WAIT_SECS_ISSET_ID, value);
   }
 
+  @Override
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case WAIT_SECS:
@@ -192,6 +196,7 @@ public class KillOptions implements org.apache.thrift.TBase<KillOptions, KillOpt
     }
   }
 
+  @Override
   public Object getFieldValue(_Fields field) {
     switch (field) {
     case WAIT_SECS:
@@ -202,6 +207,7 @@ public class KillOptions implements org.apache.thrift.TBase<KillOptions, KillOpt
   }
 
   /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+  @Override
   public boolean isSet(_Fields field) {
     if (field == null) {
       throw new IllegalArgumentException();
@@ -272,14 +278,17 @@ public class KillOptions implements org.apache.thrift.TBase<KillOptions, KillOpt
     return 0;
   }
 
+  @Override
   public _Fields fieldForId(int fieldId) {
     return _Fields.findByThriftId(fieldId);
   }
 
+  @Override
   public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
     schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
   }
 
+  @Override
   public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
     schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
   }
@@ -322,6 +331,7 @@ public class KillOptions implements org.apache.thrift.TBase<KillOptions, KillOpt
   }
 
   private static class KillOptionsStandardSchemeFactory implements SchemeFactory {
+    @Override
     public KillOptionsStandardScheme getScheme() {
       return new KillOptionsStandardScheme();
     }
@@ -329,6 +339,7 @@ public class KillOptions implements org.apache.thrift.TBase<KillOptions, KillOpt
 
   private static class KillOptionsStandardScheme extends StandardScheme<KillOptions> {
 
+    @Override
     public void read(org.apache.thrift.protocol.TProtocol iprot, KillOptions struct) throws org.apache.thrift.TException {
       org.apache.thrift.protocol.TField schemeField;
       iprot.readStructBegin();
@@ -356,6 +367,7 @@ public class KillOptions implements org.apache.thrift.TBase<KillOptions, KillOpt
       struct.validate();
     }
 
+    @Override
     public void write(org.apache.thrift.protocol.TProtocol oprot, KillOptions struct) throws org.apache.thrift.TException {
       struct.validate();
 
@@ -372,6 +384,7 @@ public class KillOptions implements org.apache.thrift.TBase<KillOptions, KillOpt
   }
 
   private static class KillOptionsTupleSchemeFactory implements SchemeFactory {
+    @Override
     public KillOptionsTupleScheme getScheme() {
       return new KillOptionsTupleScheme();
     }

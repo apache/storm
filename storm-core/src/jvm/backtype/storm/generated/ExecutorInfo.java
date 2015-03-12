@@ -119,10 +119,12 @@ public class ExecutorInfo implements org.apache.thrift.TBase<ExecutorInfo, Execu
       _fieldName = fieldName;
     }
 
+    @Override
     public short getThriftFieldId() {
       return _thriftId;
     }
 
+    @Override
     public String getFieldName() {
       return _fieldName;
     }
@@ -166,6 +168,7 @@ public class ExecutorInfo implements org.apache.thrift.TBase<ExecutorInfo, Execu
     this.task_end = other.task_end;
   }
 
+  @Override
   public ExecutorInfo deepCopy() {
     return new ExecutorInfo(this);
   }
@@ -222,6 +225,7 @@ public class ExecutorInfo implements org.apache.thrift.TBase<ExecutorInfo, Execu
     __isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __TASK_END_ISSET_ID, value);
   }
 
+  @Override
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case TASK_START:
@@ -243,6 +247,7 @@ public class ExecutorInfo implements org.apache.thrift.TBase<ExecutorInfo, Execu
     }
   }
 
+  @Override
   public Object getFieldValue(_Fields field) {
     switch (field) {
     case TASK_START:
@@ -256,6 +261,7 @@ public class ExecutorInfo implements org.apache.thrift.TBase<ExecutorInfo, Execu
   }
 
   /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+  @Override
   public boolean isSet(_Fields field) {
     if (field == null) {
       throw new IllegalArgumentException();
@@ -352,14 +358,17 @@ public class ExecutorInfo implements org.apache.thrift.TBase<ExecutorInfo, Execu
     return 0;
   }
 
+  @Override
   public _Fields fieldForId(int fieldId) {
     return _Fields.findByThriftId(fieldId);
   }
 
+  @Override
   public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
     schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
   }
 
+  @Override
   public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
     schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
   }
@@ -412,6 +421,7 @@ public class ExecutorInfo implements org.apache.thrift.TBase<ExecutorInfo, Execu
   }
 
   private static class ExecutorInfoStandardSchemeFactory implements SchemeFactory {
+    @Override
     public ExecutorInfoStandardScheme getScheme() {
       return new ExecutorInfoStandardScheme();
     }
@@ -419,6 +429,7 @@ public class ExecutorInfo implements org.apache.thrift.TBase<ExecutorInfo, Execu
 
   private static class ExecutorInfoStandardScheme extends StandardScheme<ExecutorInfo> {
 
+    @Override
     public void read(org.apache.thrift.protocol.TProtocol iprot, ExecutorInfo struct) throws org.apache.thrift.TException {
       org.apache.thrift.protocol.TField schemeField;
       iprot.readStructBegin();
@@ -454,6 +465,7 @@ public class ExecutorInfo implements org.apache.thrift.TBase<ExecutorInfo, Execu
       struct.validate();
     }
 
+    @Override
     public void write(org.apache.thrift.protocol.TProtocol oprot, ExecutorInfo struct) throws org.apache.thrift.TException {
       struct.validate();
 
@@ -471,6 +483,7 @@ public class ExecutorInfo implements org.apache.thrift.TBase<ExecutorInfo, Execu
   }
 
   private static class ExecutorInfoTupleSchemeFactory implements SchemeFactory {
+    @Override
     public ExecutorInfoTupleScheme getScheme() {
       return new ExecutorInfoTupleScheme();
     }

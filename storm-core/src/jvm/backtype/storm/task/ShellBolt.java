@@ -98,6 +98,7 @@ public class ShellBolt implements IBolt {
         _command = command;
     }
 
+    @Override
     public void prepare(Map stormConf, TopologyContext context,
                         final OutputCollector collector) {
         Object maxPending = stormConf.get(Config.TOPOLOGY_SHELLBOLT_MAX_PENDING);
@@ -131,6 +132,7 @@ public class ShellBolt implements IBolt {
         setHeartbeat();
     }
 
+    @Override
     public void execute(Tuple input) {
         if (_exception != null) {
             throw new RuntimeException(_exception);
@@ -159,6 +161,7 @@ public class ShellBolt implements IBolt {
         return boltMsg;
     }
 
+    @Override
     public void cleanup() {
         _running = false;
         heartBeatExecutorService.shutdownNow();
@@ -312,6 +315,7 @@ public class ShellBolt implements IBolt {
     }
 
     private class BoltReaderRunnable implements Runnable {
+        @Override
         public void run() {
             while (_running) {
                 try {
@@ -345,6 +349,7 @@ public class ShellBolt implements IBolt {
     }
 
     private class BoltWriterRunnable implements Runnable {
+        @Override
         public void run() {
             while (_running) {
                 try {

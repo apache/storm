@@ -206,6 +206,7 @@ class Server extends ConnectionWithStatus implements IStatefulObject {
         }
     }
 
+    @Override
     public Iterator<TaskMessage> recv(int flags, int receiverId) {
         if (closing) {
             return closeMessage.iterator();
@@ -257,6 +258,7 @@ class Server extends ConnectionWithStatus implements IStatefulObject {
     /**
      * close all channels, and release resources
      */
+    @Override
     public synchronized void close() {
         if (allChannels != null) {
             allChannels.close().awaitUninterruptibly();
@@ -265,10 +267,12 @@ class Server extends ConnectionWithStatus implements IStatefulObject {
         }
     }
 
+    @Override
     public void send(int task, byte[] message) {
         throw new UnsupportedOperationException("Server connection should not send any messages");
     }
     
+    @Override
     public void send(Iterator<TaskMessage> msgs) {
       throw new UnsupportedOperationException("Server connection should not send any messages");
     }
@@ -305,6 +309,7 @@ class Server extends ConnectionWithStatus implements IStatefulObject {
         return allEstablished;
     }
 
+    @Override
     public Object getState() {
         LOG.info("Getting metrics for server on port {}", port);
         HashMap<String, Object> ret = new HashMap<String, Object>();

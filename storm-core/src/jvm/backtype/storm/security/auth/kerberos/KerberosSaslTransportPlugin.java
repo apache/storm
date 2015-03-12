@@ -49,6 +49,7 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
     public static final String KERBEROS = "GSSAPI"; 
     private static final Logger LOG = LoggerFactory.getLogger(KerberosSaslTransportPlugin.class);
 
+    @Override
     public TTransportFactory getServerTransportFactory() throws IOException {
         //create an authentication callback handler
         CallbackHandler server_callback_handler = new ServerCallbackHandler(login_conf);
@@ -92,6 +93,7 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
         return wrapFactory;
     }
 
+    @Override
     public TTransport connect(TTransport transport, String serverHost) throws TTransportException, IOException {
         //create an authentication callback handler
         ClientCallbackHandler client_callback_handler = new ClientCallbackHandler(login_conf);
@@ -136,6 +138,7 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
         try {
             Subject.doAs(subject,
                     new PrivilegedExceptionAction<Void>() {
+                            @Override
                 public Void run() {
                     try {
                         LOG.debug("do as:"+ principal);
@@ -187,6 +190,7 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
             try {
                 return Subject.doAs(subject,
                         new PrivilegedExceptionAction<TTransport>() {
+                    @Override
                     public TTransport run() {
                         try {
                             return wrapped.getTransport(trans);

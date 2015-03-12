@@ -62,6 +62,7 @@ public class ShellSpout implements ISpout {
         _command = command;
     }
 
+    @Override
     public void open(Map stormConf, TopologyContext context,
                      SpoutOutputCollector collector) {
         _collector = collector;
@@ -77,11 +78,13 @@ public class ShellSpout implements ISpout {
         heartBeatExecutorService = MoreExecutors.getExitingScheduledExecutorService(new ScheduledThreadPoolExecutor(1));
     }
 
+    @Override
     public void close() {
         heartBeatExecutorService.shutdownNow();
         _process.destroy();
     }
 
+    @Override
     public void nextTuple() {
         if (_spoutMsg == null) {
             _spoutMsg = new SpoutMsg();
@@ -91,6 +94,7 @@ public class ShellSpout implements ISpout {
         querySubprocess();
     }
 
+    @Override
     public void ack(Object msgId) {
         if (_spoutMsg == null) {
             _spoutMsg = new SpoutMsg();
@@ -100,6 +104,7 @@ public class ShellSpout implements ISpout {
         querySubprocess();
     }
 
+    @Override
     public void fail(Object msgId) {
         if (_spoutMsg == null) {
             _spoutMsg = new SpoutMsg();

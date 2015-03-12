@@ -33,6 +33,7 @@ public class PythonShellMetricsBolt extends ShellBolt implements IRichBolt {
 		super(command);
 	}
 
+        @Override
 	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
 		super.prepare(stormConf, context, collector);
 		
@@ -40,9 +41,11 @@ public class PythonShellMetricsBolt extends ShellBolt implements IRichBolt {
 		context.registerMetric("my-custom-shell-metric", cMetric, 5);
 	}
 	
+        @Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
 	}
 
+        @Override
 	public Map<String, Object> getComponentConfiguration() {
 		return null;
 	}

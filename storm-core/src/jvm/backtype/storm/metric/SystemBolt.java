@@ -129,11 +129,13 @@ public class SystemBolt implements IBolt {
         final MemoryMXBean jvmMemRT = ManagementFactory.getMemoryMXBean();
 
         context.registerMetric("memory/heap", new MemoryUsageMetric(new AFn() {
+            @Override
             public Object invoke() {
                 return jvmMemRT.getHeapMemoryUsage();
             }
         }), bucketSize);
         context.registerMetric("memory/nonHeap", new MemoryUsageMetric(new AFn() {
+            @Override
             public Object invoke() {
                 return jvmMemRT.getNonHeapMemoryUsage();
             }

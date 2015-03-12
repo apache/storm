@@ -69,9 +69,11 @@ public class DistributedRPC {
   public static class Client extends org.apache.thrift.TServiceClient implements Iface {
     public static class Factory implements org.apache.thrift.TServiceClientFactory<Client> {
       public Factory() {}
+      @Override
       public Client getClient(org.apache.thrift.protocol.TProtocol prot) {
         return new Client(prot);
       }
+      @Override
       public Client getClient(org.apache.thrift.protocol.TProtocol iprot, org.apache.thrift.protocol.TProtocol oprot) {
         return new Client(iprot, oprot);
       }
@@ -86,6 +88,7 @@ public class DistributedRPC {
       super(iprot, oprot);
     }
 
+    @Override
     public String execute(String functionName, String funcArgs) throws DRPCExecutionException, AuthorizationException, org.apache.thrift.TException
     {
       send_execute(functionName, funcArgs);
@@ -125,6 +128,7 @@ public class DistributedRPC {
         this.clientManager = clientManager;
         this.protocolFactory = protocolFactory;
       }
+      @Override
       public AsyncClient getAsyncClient(org.apache.thrift.transport.TNonblockingTransport transport) {
         return new AsyncClient(protocolFactory, clientManager, transport);
       }
@@ -134,6 +138,7 @@ public class DistributedRPC {
       super(protocolFactory, clientManager, transport);
     }
 
+    @Override
     public void execute(String functionName, String funcArgs, org.apache.thrift.async.AsyncMethodCallback resultHandler) throws org.apache.thrift.TException {
       checkReady();
       execute_call method_call = new execute_call(functionName, funcArgs, resultHandler, this, ___protocolFactory, ___transport);
@@ -150,6 +155,7 @@ public class DistributedRPC {
         this.funcArgs = funcArgs;
       }
 
+      @Override
       public void write_args(org.apache.thrift.protocol.TProtocol prot) throws org.apache.thrift.TException {
         prot.writeMessageBegin(new org.apache.thrift.protocol.TMessage("execute", org.apache.thrift.protocol.TMessageType.CALL, 0));
         execute_args args = new execute_args();
@@ -191,14 +197,17 @@ public class DistributedRPC {
         super("execute");
       }
 
+      @Override
       public execute_args getEmptyArgsInstance() {
         return new execute_args();
       }
 
+      @Override
       protected boolean isOneway() {
         return false;
       }
 
+      @Override
       public execute_result getResult(I iface, execute_args args) throws org.apache.thrift.TException {
         execute_result result = new execute_result();
         try {
@@ -234,13 +243,16 @@ public class DistributedRPC {
         super("execute");
       }
 
+      @Override
       public execute_args getEmptyArgsInstance() {
         return new execute_args();
       }
 
+      @Override
       public AsyncMethodCallback<String> getResultHandler(final AsyncFrameBuffer fb, final int seqid) {
         final org.apache.thrift.AsyncProcessFunction fcall = this;
         return new AsyncMethodCallback<String>() { 
+                      @Override
           public void onComplete(String o) {
             execute_result result = new execute_result();
             result.success = o;
@@ -252,6 +264,7 @@ public class DistributedRPC {
             }
             fb.close();
           }
+                      @Override
           public void onError(Exception e) {
             byte msgType = org.apache.thrift.protocol.TMessageType.REPLY;
             org.apache.thrift.TBase msg;
@@ -282,10 +295,12 @@ public class DistributedRPC {
         };
       }
 
+      @Override
       protected boolean isOneway() {
         return false;
       }
 
+      @Override
       public void start(I iface, execute_args args, org.apache.thrift.async.AsyncMethodCallback<String> resultHandler) throws TException {
         iface.execute(args.functionName, args.funcArgs,resultHandler);
       }
@@ -360,10 +375,12 @@ public class DistributedRPC {
         _fieldName = fieldName;
       }
 
+      @Override
       public short getThriftFieldId() {
         return _thriftId;
       }
 
+      @Override
       public String getFieldName() {
         return _fieldName;
       }
@@ -405,6 +422,7 @@ public class DistributedRPC {
       }
     }
 
+    @Override
     public execute_args deepCopy() {
       return new execute_args(this);
     }
@@ -461,6 +479,7 @@ public class DistributedRPC {
       }
     }
 
+    @Override
     public void setFieldValue(_Fields field, Object value) {
       switch (field) {
       case FUNCTION_NAME:
@@ -482,6 +501,7 @@ public class DistributedRPC {
       }
     }
 
+    @Override
     public Object getFieldValue(_Fields field) {
       switch (field) {
       case FUNCTION_NAME:
@@ -495,6 +515,7 @@ public class DistributedRPC {
     }
 
     /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    @Override
     public boolean isSet(_Fields field) {
       if (field == null) {
         throw new IllegalArgumentException();
@@ -591,14 +612,17 @@ public class DistributedRPC {
       return 0;
     }
 
+    @Override
     public _Fields fieldForId(int fieldId) {
       return _Fields.findByThriftId(fieldId);
     }
 
+    @Override
     public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
       schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
     }
 
+    @Override
     public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
       schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
     }
@@ -649,6 +673,7 @@ public class DistributedRPC {
     }
 
     private static class execute_argsStandardSchemeFactory implements SchemeFactory {
+      @Override
       public execute_argsStandardScheme getScheme() {
         return new execute_argsStandardScheme();
       }
@@ -656,6 +681,7 @@ public class DistributedRPC {
 
     private static class execute_argsStandardScheme extends StandardScheme<execute_args> {
 
+      @Override
       public void read(org.apache.thrift.protocol.TProtocol iprot, execute_args struct) throws org.apache.thrift.TException {
         org.apache.thrift.protocol.TField schemeField;
         iprot.readStructBegin();
@@ -691,6 +717,7 @@ public class DistributedRPC {
         struct.validate();
       }
 
+      @Override
       public void write(org.apache.thrift.protocol.TProtocol oprot, execute_args struct) throws org.apache.thrift.TException {
         struct.validate();
 
@@ -712,6 +739,7 @@ public class DistributedRPC {
     }
 
     private static class execute_argsTupleSchemeFactory implements SchemeFactory {
+      @Override
       public execute_argsTupleScheme getScheme() {
         return new execute_argsTupleScheme();
       }
@@ -827,10 +855,12 @@ public class DistributedRPC {
         _fieldName = fieldName;
       }
 
+      @Override
       public short getThriftFieldId() {
         return _thriftId;
       }
 
+      @Override
       public String getFieldName() {
         return _fieldName;
       }
@@ -879,6 +909,7 @@ public class DistributedRPC {
       }
     }
 
+    @Override
     public execute_result deepCopy() {
       return new execute_result(this);
     }
@@ -959,6 +990,7 @@ public class DistributedRPC {
       }
     }
 
+    @Override
     public void setFieldValue(_Fields field, Object value) {
       switch (field) {
       case SUCCESS:
@@ -988,6 +1020,7 @@ public class DistributedRPC {
       }
     }
 
+    @Override
     public Object getFieldValue(_Fields field) {
       switch (field) {
       case SUCCESS:
@@ -1004,6 +1037,7 @@ public class DistributedRPC {
     }
 
     /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    @Override
     public boolean isSet(_Fields field) {
       if (field == null) {
         throw new IllegalArgumentException();
@@ -1126,14 +1160,17 @@ public class DistributedRPC {
       return 0;
     }
 
+    @Override
     public _Fields fieldForId(int fieldId) {
       return _Fields.findByThriftId(fieldId);
     }
 
+    @Override
     public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
       schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
     }
 
+    @Override
     public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
       schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
       }
@@ -1192,6 +1229,7 @@ public class DistributedRPC {
     }
 
     private static class execute_resultStandardSchemeFactory implements SchemeFactory {
+      @Override
       public execute_resultStandardScheme getScheme() {
         return new execute_resultStandardScheme();
       }
@@ -1199,6 +1237,7 @@ public class DistributedRPC {
 
     private static class execute_resultStandardScheme extends StandardScheme<execute_result> {
 
+      @Override
       public void read(org.apache.thrift.protocol.TProtocol iprot, execute_result struct) throws org.apache.thrift.TException {
         org.apache.thrift.protocol.TField schemeField;
         iprot.readStructBegin();
@@ -1244,6 +1283,7 @@ public class DistributedRPC {
         struct.validate();
       }
 
+      @Override
       public void write(org.apache.thrift.protocol.TProtocol oprot, execute_result struct) throws org.apache.thrift.TException {
         struct.validate();
 
@@ -1270,6 +1310,7 @@ public class DistributedRPC {
     }
 
     private static class execute_resultTupleSchemeFactory implements SchemeFactory {
+      @Override
       public execute_resultTupleScheme getScheme() {
         return new execute_resultTupleScheme();
       }

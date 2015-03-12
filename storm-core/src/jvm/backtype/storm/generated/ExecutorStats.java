@@ -124,10 +124,12 @@ public class ExecutorStats implements org.apache.thrift.TBase<ExecutorStats, Exe
       _fieldName = fieldName;
     }
 
+    @Override
     public short getThriftFieldId() {
       return _thriftId;
     }
 
+    @Override
     public String getFieldName() {
       return _fieldName;
     }
@@ -208,6 +210,7 @@ public class ExecutorStats implements org.apache.thrift.TBase<ExecutorStats, Exe
     }
   }
 
+  @Override
   public ExecutorStats deepCopy() {
     return new ExecutorStats(this);
   }
@@ -310,6 +313,7 @@ public class ExecutorStats implements org.apache.thrift.TBase<ExecutorStats, Exe
     }
   }
 
+  @Override
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case EMITTED:
@@ -339,6 +343,7 @@ public class ExecutorStats implements org.apache.thrift.TBase<ExecutorStats, Exe
     }
   }
 
+  @Override
   public Object getFieldValue(_Fields field) {
     switch (field) {
     case EMITTED:
@@ -355,6 +360,7 @@ public class ExecutorStats implements org.apache.thrift.TBase<ExecutorStats, Exe
   }
 
   /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+  @Override
   public boolean isSet(_Fields field) {
     if (field == null) {
       throw new IllegalArgumentException();
@@ -477,14 +483,17 @@ public class ExecutorStats implements org.apache.thrift.TBase<ExecutorStats, Exe
     return 0;
   }
 
+  @Override
   public _Fields fieldForId(int fieldId) {
     return _Fields.findByThriftId(fieldId);
   }
 
+  @Override
   public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
     schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
   }
 
+  @Override
   public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
     schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
   }
@@ -555,6 +564,7 @@ public class ExecutorStats implements org.apache.thrift.TBase<ExecutorStats, Exe
   }
 
   private static class ExecutorStatsStandardSchemeFactory implements SchemeFactory {
+    @Override
     public ExecutorStatsStandardScheme getScheme() {
       return new ExecutorStatsStandardScheme();
     }
@@ -562,6 +572,7 @@ public class ExecutorStats implements org.apache.thrift.TBase<ExecutorStats, Exe
 
   private static class ExecutorStatsStandardScheme extends StandardScheme<ExecutorStats> {
 
+    @Override
     public void read(org.apache.thrift.protocol.TProtocol iprot, ExecutorStats struct) throws org.apache.thrift.TException {
       org.apache.thrift.protocol.TField schemeField;
       iprot.readStructBegin();
@@ -654,6 +665,7 @@ public class ExecutorStats implements org.apache.thrift.TBase<ExecutorStats, Exe
       struct.validate();
     }
 
+    @Override
     public void write(org.apache.thrift.protocol.TProtocol oprot, ExecutorStats struct) throws org.apache.thrift.TException {
       struct.validate();
 
@@ -712,6 +724,7 @@ public class ExecutorStats implements org.apache.thrift.TBase<ExecutorStats, Exe
   }
 
   private static class ExecutorStatsTupleSchemeFactory implements SchemeFactory {
+    @Override
     public ExecutorStatsTupleScheme getScheme() {
       return new ExecutorStatsTupleScheme();
     }

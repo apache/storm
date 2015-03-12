@@ -41,6 +41,7 @@ public class AutoTGTKrb5LoginModule implements LoginModule {
 
     protected KerberosTicket kerbTicket = null;
 
+    @Override
     public void initialize(Subject subject,
                            CallbackHandler callbackHandler,
                            Map<String, ?> sharedState,
@@ -49,6 +50,7 @@ public class AutoTGTKrb5LoginModule implements LoginModule {
         this.subject = subject;
     }
 
+    @Override
     public boolean login() throws LoginException {
         LOG.debug("Acquire TGT from Cache");
         getKerbTicketFromCache();
@@ -70,6 +72,7 @@ public class AutoTGTKrb5LoginModule implements LoginModule {
         return null;
     }
 
+    @Override
     public boolean commit() throws LoginException {
         if (isSucceeded() == false) {
             return false;
@@ -85,6 +88,7 @@ public class AutoTGTKrb5LoginModule implements LoginModule {
         return true;
     }
 
+    @Override
     public boolean abort() throws LoginException {
         if (isSucceeded() == false) {
             return false;
@@ -93,6 +97,7 @@ public class AutoTGTKrb5LoginModule implements LoginModule {
         }
     }
 
+    @Override
     public boolean logout() throws LoginException {
         if (subject != null && !subject.isReadOnly() && kerbTicket != null) {
             subject.getPrincipals().remove(kerbTicket.getClient());

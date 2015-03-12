@@ -32,6 +32,7 @@ public class BasicOutputCollector implements IBasicOutputCollector {
         this.out = out;
     }
 
+    @Override
     public List<Integer> emit(String streamId, List<Object> tuple) {
         return out.emit(streamId, inputTuple, tuple);
     }
@@ -44,6 +45,7 @@ public class BasicOutputCollector implements IBasicOutputCollector {
         this.inputTuple = inputTuple;
     }
 
+    @Override
     public void emitDirect(int taskId, String streamId, List<Object> tuple) {
         out.emitDirect(taskId, streamId, inputTuple, tuple);
     }
@@ -56,6 +58,7 @@ public class BasicOutputCollector implements IBasicOutputCollector {
         return out;
     }
 
+    @Override
     public void reportError(Throwable t) {
         out.reportError(t);
     }

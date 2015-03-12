@@ -27,10 +27,12 @@ import backtype.storm.topology.base.BaseRichBolt;
 
 
 public class TestPlannerBolt extends BaseRichBolt {
+    @Override
     public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
 
     }
     
+    @Override
     public void execute(Tuple input) {
 
     }
@@ -39,6 +41,7 @@ public class TestPlannerBolt extends BaseRichBolt {
         return new Fields("field1", "field2");
     }
 
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(getOutputFields());
     }

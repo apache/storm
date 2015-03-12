@@ -112,6 +112,7 @@ public class FixedTupleSpout implements IRichSpout {
         }
     }
 
+    @Override
     public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
         _context = context;
         List<Integer> tasks = context.getComponentTasks(context.getThisComponentId());
@@ -129,9 +130,11 @@ public class FixedTupleSpout implements IRichSpout {
         }
     }
 
+    @Override
     public void close() {
     }
 
+    @Override
     public void nextTuple() {
         if(_serveTuples.size()>0) {
             FixedTuple ft = _serveTuples.remove(0);
@@ -143,6 +146,7 @@ public class FixedTupleSpout implements IRichSpout {
         }
     }
 
+    @Override
     public void ack(Object msgId) {
         synchronized(acked) {
             int curr = get(acked, _id, 0);
@@ -150,6 +154,7 @@ public class FixedTupleSpout implements IRichSpout {
         }
     }
 
+    @Override
     public void fail(Object msgId) {
         synchronized(failed) {
             int curr = get(failed, _id, 0);

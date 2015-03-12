@@ -35,6 +35,7 @@ public class MessageDecoder extends FrameDecoder {
      *  len ... int(4)
      *  payload ... byte[]     *  
      */
+    @Override
     protected Object decode(ChannelHandlerContext ctx, Channel channel, ChannelBuffer buf) throws Exception {
         // Make sure that we have received at least a short 
         long available = buf.readableBytes();

@@ -30,6 +30,7 @@ public class DefaultPrincipalToLocal implements IPrincipalToLocal {
      * Invoked once immediately after construction
      * @param conf Storm configuration 
      */
+    @Override
     public void prepare(Map storm_conf) {}
     
     /**
@@ -37,6 +38,7 @@ public class DefaultPrincipalToLocal implements IPrincipalToLocal {
      * @param principal the principal to convert
      * @return The local user name.
      */
+    @Override
     public String toLocal(Principal principal) {
       return principal == null ? null : principal.getName();
     }

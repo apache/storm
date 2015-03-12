@@ -119,10 +119,12 @@ public class Bolt implements org.apache.thrift.TBase<Bolt, Bolt._Fields>, java.i
       _fieldName = fieldName;
     }
 
+    @Override
     public short getThriftFieldId() {
       return _thriftId;
     }
 
+    @Override
     public String getFieldName() {
       return _fieldName;
     }
@@ -164,6 +166,7 @@ public class Bolt implements org.apache.thrift.TBase<Bolt, Bolt._Fields>, java.i
     }
   }
 
+  @Override
   public Bolt deepCopy() {
     return new Bolt(this);
   }
@@ -220,6 +223,7 @@ public class Bolt implements org.apache.thrift.TBase<Bolt, Bolt._Fields>, java.i
     }
   }
 
+  @Override
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case BOLT_OBJECT:
@@ -241,6 +245,7 @@ public class Bolt implements org.apache.thrift.TBase<Bolt, Bolt._Fields>, java.i
     }
   }
 
+  @Override
   public Object getFieldValue(_Fields field) {
     switch (field) {
     case BOLT_OBJECT:
@@ -254,6 +259,7 @@ public class Bolt implements org.apache.thrift.TBase<Bolt, Bolt._Fields>, java.i
   }
 
   /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+  @Override
   public boolean isSet(_Fields field) {
     if (field == null) {
       throw new IllegalArgumentException();
@@ -350,14 +356,17 @@ public class Bolt implements org.apache.thrift.TBase<Bolt, Bolt._Fields>, java.i
     return 0;
   }
 
+  @Override
   public _Fields fieldForId(int fieldId) {
     return _Fields.findByThriftId(fieldId);
   }
 
+  @Override
   public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
     schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
   }
 
+  @Override
   public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
     schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
   }
@@ -419,6 +428,7 @@ public class Bolt implements org.apache.thrift.TBase<Bolt, Bolt._Fields>, java.i
   }
 
   private static class BoltStandardSchemeFactory implements SchemeFactory {
+    @Override
     public BoltStandardScheme getScheme() {
       return new BoltStandardScheme();
     }
@@ -426,6 +436,7 @@ public class Bolt implements org.apache.thrift.TBase<Bolt, Bolt._Fields>, java.i
 
   private static class BoltStandardScheme extends StandardScheme<Bolt> {
 
+    @Override
     public void read(org.apache.thrift.protocol.TProtocol iprot, Bolt struct) throws org.apache.thrift.TException {
       org.apache.thrift.protocol.TField schemeField;
       iprot.readStructBegin();
@@ -463,6 +474,7 @@ public class Bolt implements org.apache.thrift.TBase<Bolt, Bolt._Fields>, java.i
       struct.validate();
     }
 
+    @Override
     public void write(org.apache.thrift.protocol.TProtocol oprot, Bolt struct) throws org.apache.thrift.TException {
       struct.validate();
 
@@ -484,6 +496,7 @@ public class Bolt implements org.apache.thrift.TBase<Bolt, Bolt._Fields>, java.i
   }
 
   private static class BoltTupleSchemeFactory implements SchemeFactory {
+    @Override
     public BoltTupleScheme getScheme() {
       return new BoltTupleScheme();
     }

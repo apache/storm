@@ -35,10 +35,12 @@ public class TestWordCounter extends BaseBasicBolt {
 
     Map<String, Integer> _counts;
     
+    @Override
     public void prepare(Map stormConf, TopologyContext context) {
         _counts = new HashMap<String, Integer>();
     }
     
+    @Override
     public void execute(Tuple input, BasicOutputCollector collector) {
         String word = (String) input.getValues().get(0);
         int count = 0;
@@ -50,10 +52,12 @@ public class TestWordCounter extends BaseBasicBolt {
         collector.emit(tuple(word, count));
     }
     
+    @Override
     public void cleanup() {
         
     }
 
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(new Fields("word", "count"));
     }

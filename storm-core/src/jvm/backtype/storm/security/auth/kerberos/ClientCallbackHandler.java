@@ -63,6 +63,7 @@ public class ClientCallbackHandler implements CallbackHandler {
      * This method is invoked by SASL for authentication challenges
      * @param callbacks a collection of challenge callbacks 
      */
+    @Override
     public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
         for (Callback c : callbacks) {
             if (c instanceof NameCallback) {

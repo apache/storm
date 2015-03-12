@@ -41,11 +41,13 @@ public class TestEventOrderCheckBolt extends BaseRichBolt {
     OutputCollector _collector;
     Map<Integer, Long> recentEventId = new HashMap<Integer, Long>();
 
+    @Override
     public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
         _collector = collector;
         _count = 0;
     }
 
+    @Override
     public void execute(Tuple input) {
         Integer sourceId = input.getInteger(0);
         Long eventId = input.getLong(1);
@@ -62,6 +64,7 @@ public class TestEventOrderCheckBolt extends BaseRichBolt {
         _collector.ack(input);
     }
 
+    @Override
     public void cleanup() {
 
     }
@@ -70,6 +73,7 @@ public class TestEventOrderCheckBolt extends BaseRichBolt {
         return new Fields("error");
     }
 
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(new Fields("error"));
     }

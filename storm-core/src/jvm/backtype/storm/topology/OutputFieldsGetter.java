@@ -26,18 +26,22 @@ import java.util.Map;
 public class OutputFieldsGetter implements OutputFieldsDeclarer {
     private Map<String, StreamInfo> _fields = new HashMap<String, StreamInfo>();
 
+    @Override
     public void declare(Fields fields) {
         declare(false, fields);
     }
 
+    @Override
     public void declare(boolean direct, Fields fields) {
         declareStream(Utils.DEFAULT_STREAM_ID, direct, fields);
     }
 
+    @Override
     public void declareStream(String streamId, Fields fields) {
         declareStream(streamId, false, fields);
     }
 
+    @Override
     public void declareStream(String streamId, boolean direct, Fields fields) {
         if(_fields.containsKey(streamId)) {
             throw new IllegalArgumentException("Fields for " + streamId + " already set");

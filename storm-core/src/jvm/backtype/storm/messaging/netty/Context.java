@@ -47,6 +47,7 @@ public class Context implements IContext {
      * initialization per Storm configuration 
      */
     @SuppressWarnings("rawtypes")
+    @Override
     public void prepare(Map storm_conf) {
         this.storm_conf = storm_conf;
         connections = new Vector<IConnection>();
@@ -71,6 +72,7 @@ public class Context implements IContext {
     /**
      * establish a server with a binding port
      */
+    @Override
     public IConnection bind(String storm_id, int port) {
         IConnection server = new Server(storm_conf, port);
         connections.add(server);
@@ -80,6 +82,7 @@ public class Context implements IContext {
     /**
      * establish a connection to a remote server
      */
+    @Override
     public IConnection connect(String storm_id, String host, int port) {        
         IConnection client =  new Client(storm_conf, clientChannelFactory, 
                 clientScheduleService, host, port);
@@ -90,6 +93,7 @@ public class Context implements IContext {
     /**
      * terminate this context
      */
+    @Override
     public void term() {
         clientScheduleService.shutdown();        
         
