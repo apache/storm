@@ -307,7 +307,9 @@
         sync-executors (mk-sync-executors worker executors credentials)]
     (fn this
       ([]
-        (this (fn [& ignored] (schedule (:refresh-connections-timer worker) 0 this))))
+        (this (fn [& ignored]
+                (log-message "refresh-connections callback fired")
+                (schedule (:refresh-connections-timer worker) 0 this))))
       ([callback]
          (let [version (.assignment-version storm-cluster-state storm-id callback)
                old-version (:version (get @assignment-versions storm-id))
@@ -384,6 +386,7 @@
         endpoint-socket-lock (:endpoint-socket-lock worker)]
     (disruptor/clojure-handler
       (fn [packets _ batch-end?]
+        (log-message "transfering outbound " packets)
         (.add drainer packets)
         
         (when batch-end?
