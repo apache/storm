@@ -45,17 +45,17 @@ public class ExecutorSummary implements org.apache.thrift.TBase<ExecutorSummary,
   private static final org.apache.thrift.protocol.TField COMPONENT_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("component_id", org.apache.thrift.protocol.TType.STRING, (short)2);
   private static final org.apache.thrift.protocol.TField HOST_FIELD_DESC = new org.apache.thrift.protocol.TField("host", org.apache.thrift.protocol.TType.STRING, (short)3);
   private static final org.apache.thrift.protocol.TField PORT_FIELD_DESC = new org.apache.thrift.protocol.TField("port", org.apache.thrift.protocol.TType.I32, (short)4);
-  private static final org.apache.thrift.protocol.TField PROCESS_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("process_id", org.apache.thrift.protocol.TType.I32, (short)5);
-  private static final org.apache.thrift.protocol.TField UPTIME_SECS_FIELD_DESC = new org.apache.thrift.protocol.TField("uptime_secs", org.apache.thrift.protocol.TType.I32, (short)6);
+  private static final org.apache.thrift.protocol.TField UPTIME_SECS_FIELD_DESC = new org.apache.thrift.protocol.TField("uptime_secs", org.apache.thrift.protocol.TType.I32, (short)5);
   private static final org.apache.thrift.protocol.TField STATS_FIELD_DESC = new org.apache.thrift.protocol.TField("stats", org.apache.thrift.protocol.TType.STRUCT, (short)7);
+  private static final org.apache.thrift.protocol.TField PROCESS_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("process_id", org.apache.thrift.protocol.TType.I32, (short)8);
 
   private ExecutorInfo executor_info; // required
   private String component_id; // required
   private String host; // required
   private int port; // required
-  private int process_id; // required
   private int uptime_secs; // required
   private ExecutorStats stats; // required
+  private int process_id; // required
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift.TFieldIdEnum {
@@ -63,9 +63,9 @@ public class ExecutorSummary implements org.apache.thrift.TBase<ExecutorSummary,
     COMPONENT_ID((short)2, "component_id"),
     HOST((short)3, "host"),
     PORT((short)4, "port"),
-    PROCESS_ID((short)5, "process_id"),
-    UPTIME_SECS((short)6, "uptime_secs"),
-    STATS((short)7, "stats");
+    UPTIME_SECS((short)5, "uptime_secs"),
+    STATS((short)7, "stats"),
+    PROCESS_ID((short)8, "process_id");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -88,12 +88,12 @@ public class ExecutorSummary implements org.apache.thrift.TBase<ExecutorSummary,
           return HOST;
         case 4: // PORT
           return PORT;
-        case 5: // PROCESS_ID
-          return PROCESS_ID;
-        case 6: // UPTIME_SECS
+        case 5: // UPTIME_SECS
           return UPTIME_SECS;
         case 7: // STATS
           return STATS;
+        case 8: // PROCESS_ID
+          return PROCESS_ID;
         default:
           return null;
       }
@@ -135,8 +135,8 @@ public class ExecutorSummary implements org.apache.thrift.TBase<ExecutorSummary,
 
   // isset id assignments
   private static final int __PORT_ISSET_ID = 0;
-  private static final int __PROCESS_ID_ISSET_ID = 1;
-  private static final int __UPTIME_SECS_ISSET_ID = 2;
+  private static final int __UPTIME_SECS_ISSET_ID = 1;
+  private static final int __PROCESS_ID_ISSET_ID = 2;
   private BitSet __isset_bit_vector = new BitSet(3);
 
   public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
@@ -150,12 +150,12 @@ public class ExecutorSummary implements org.apache.thrift.TBase<ExecutorSummary,
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
     tmpMap.put(_Fields.PORT, new org.apache.thrift.meta_data.FieldMetaData("port", org.apache.thrift.TFieldRequirementType.REQUIRED, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
-    tmpMap.put(_Fields.PROCESS_ID, new org.apache.thrift.meta_data.FieldMetaData("process_id", org.apache.thrift.TFieldRequirementType.REQUIRED, 
-        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
     tmpMap.put(_Fields.UPTIME_SECS, new org.apache.thrift.meta_data.FieldMetaData("uptime_secs", org.apache.thrift.TFieldRequirementType.REQUIRED, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
     tmpMap.put(_Fields.STATS, new org.apache.thrift.meta_data.FieldMetaData("stats", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
         new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, ExecutorStats.class)));
+    tmpMap.put(_Fields.PROCESS_ID, new org.apache.thrift.meta_data.FieldMetaData("process_id", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
     metaDataMap = Collections.unmodifiableMap(tmpMap);
     org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(ExecutorSummary.class, metaDataMap);
   }
@@ -168,7 +168,6 @@ public class ExecutorSummary implements org.apache.thrift.TBase<ExecutorSummary,
     String component_id,
     String host,
     int port,
-    int process_id,
     int uptime_secs)
   {
     this();
@@ -177,8 +176,6 @@ public class ExecutorSummary implements org.apache.thrift.TBase<ExecutorSummary,
     this.host = host;
     this.port = port;
     set_port_isSet(true);
-    this.process_id = process_id;
-    set_process_id_isSet(true);
     this.uptime_secs = uptime_secs;
     set_uptime_secs_isSet(true);
   }
@@ -199,11 +196,11 @@ public class ExecutorSummary implements org.apache.thrift.TBase<ExecutorSummary,
       this.host = other.host;
     }
     this.port = other.port;
-    this.process_id = other.process_id;
     this.uptime_secs = other.uptime_secs;
     if (other.is_set_stats()) {
       this.stats = new ExecutorStats(other.stats);
     }
+    this.process_id = other.process_id;
   }
 
   public ExecutorSummary deepCopy() {
@@ -217,11 +214,11 @@ public class ExecutorSummary implements org.apache.thrift.TBase<ExecutorSummary,
     this.host = null;
     set_port_isSet(false);
     this.port = 0;
-    set_process_id_isSet(false);
-    this.process_id = 0;
     set_uptime_secs_isSet(false);
     this.uptime_secs = 0;
     this.stats = null;
+    set_process_id_isSet(false);
+    this.process_id = 0;
   }
 
   public ExecutorInfo get_executor_info() {
@@ -315,28 +312,6 @@ public class ExecutorSummary implements org.apache.thrift.TBase<ExecutorSummary,
     __isset_bit_vector.set(__PORT_ISSET_ID, value);
   }
 
-  public int get_process_id() {
-    return this.process_id;
-  }
-
-  public void set_process_id(int process_id) {
-    this.process_id = process_id;
-    set_process_id_isSet(true);
-  }
-
-  public void unset_process_id() {
-    __isset_bit_vector.clear(__PROCESS_ID_ISSET_ID);
-  }
-
-  /** Returns true if field process_id is set (has been assigned a value) and false otherwise */
-  public boolean is_set_process_id() {
-    return __isset_bit_vector.get(__PROCESS_ID_ISSET_ID);
-  }
-
-  public void set_process_id_isSet(boolean value) {
-    __isset_bit_vector.set(__PROCESS_ID_ISSET_ID, value);
-  }
-
   public int get_uptime_secs() {
     return this.uptime_secs;
   }
@@ -382,6 +357,28 @@ public class ExecutorSummary implements org.apache.thrift.TBase<ExecutorSummary,
     }
   }
 
+  public int get_process_id() {
+    return this.process_id;
+  }
+
+  public void set_process_id(int process_id) {
+    this.process_id = process_id;
+    set_process_id_isSet(true);
+  }
+
+  public void unset_process_id() {
+    __isset_bit_vector.clear(__PROCESS_ID_ISSET_ID);
+  }
+
+  /** Returns true if field process_id is set (has been assigned a value) and false otherwise */
+  public boolean is_set_process_id() {
+    return __isset_bit_vector.get(__PROCESS_ID_ISSET_ID);
+  }
+
+  public void set_process_id_isSet(boolean value) {
+    __isset_bit_vector.set(__PROCESS_ID_ISSET_ID, value);
+  }
+
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case EXECUTOR_INFO:
@@ -416,14 +413,6 @@ public class ExecutorSummary implements org.apache.thrift.TBase<ExecutorSummary,
       }
       break;
 
-    case PROCESS_ID:
-      if (value == null) {
-        unset_process_id();
-      } else {
-        set_process_id((Integer)value);
-      }
-      break;
-
     case UPTIME_SECS:
       if (value == null) {
         unset_uptime_secs();
@@ -437,6 +426,14 @@ public class ExecutorSummary implements org.apache.thrift.TBase<ExecutorSummary,
         unset_stats();
       } else {
         set_stats((ExecutorStats)value);
+      }
+      break;
+
+    case PROCESS_ID:
+      if (value == null) {
+        unset_process_id();
+      } else {
+        set_process_id((Integer)value);
       }
       break;
 
@@ -457,14 +454,14 @@ public class ExecutorSummary implements org.apache.thrift.TBase<ExecutorSummary,
     case PORT:
       return Integer.valueOf(get_port());
 
-    case PROCESS_ID:
-      return Integer.valueOf(get_process_id());
-
     case UPTIME_SECS:
       return Integer.valueOf(get_uptime_secs());
 
     case STATS:
       return get_stats();
+
+    case PROCESS_ID:
+      return Integer.valueOf(get_process_id());
 
     }
     throw new IllegalStateException();
@@ -485,12 +482,12 @@ public class ExecutorSummary implements org.apache.thrift.TBase<ExecutorSummary,
       return is_set_host();
     case PORT:
       return is_set_port();
-    case PROCESS_ID:
-      return is_set_process_id();
     case UPTIME_SECS:
       return is_set_uptime_secs();
     case STATS:
       return is_set_stats();
+    case PROCESS_ID:
+      return is_set_process_id();
     }
     throw new IllegalStateException();
   }
@@ -544,15 +541,6 @@ public class ExecutorSummary implements org.apache.thrift.TBase<ExecutorSummary,
         return false;
     }
 
-    boolean this_present_process_id = true;
-    boolean that_present_process_id = true;
-    if (this_present_process_id || that_present_process_id) {
-      if (!(this_present_process_id && that_present_process_id))
-        return false;
-      if (this.process_id != that.process_id)
-        return false;
-    }
-
     boolean this_present_uptime_secs = true;
     boolean that_present_uptime_secs = true;
     if (this_present_uptime_secs || that_present_uptime_secs) {
@@ -568,6 +556,15 @@ public class ExecutorSummary implements org.apache.thrift.TBase<ExecutorSummary,
       if (!(this_present_stats && that_present_stats))
         return false;
       if (!this.stats.equals(that.stats))
+        return false;
+    }
+
+    boolean this_present_process_id = true && this.is_set_process_id();
+    boolean that_present_process_id = true && that.is_set_process_id();
+    if (this_present_process_id || that_present_process_id) {
+      if (!(this_present_process_id && that_present_process_id))
+        return false;
+      if (this.process_id != that.process_id)
         return false;
     }
 
@@ -598,11 +595,6 @@ public class ExecutorSummary implements org.apache.thrift.TBase<ExecutorSummary,
     if (present_port)
       builder.append(port);
 
-    boolean present_process_id = true;
-    builder.append(present_process_id);
-    if (present_process_id)
-      builder.append(process_id);
-
     boolean present_uptime_secs = true;
     builder.append(present_uptime_secs);
     if (present_uptime_secs)
@@ -612,6 +604,11 @@ public class ExecutorSummary implements org.apache.thrift.TBase<ExecutorSummary,
     builder.append(present_stats);
     if (present_stats)
       builder.append(stats);
+
+    boolean present_process_id = true && (is_set_process_id());
+    builder.append(present_process_id);
+    if (present_process_id)
+      builder.append(process_id);
 
     return builder.toHashCode();
   }
@@ -664,16 +661,6 @@ public class ExecutorSummary implements org.apache.thrift.TBase<ExecutorSummary,
         return lastComparison;
       }
     }
-    lastComparison = Boolean.valueOf(is_set_process_id()).compareTo(typedOther.is_set_process_id());
-    if (lastComparison != 0) {
-      return lastComparison;
-    }
-    if (is_set_process_id()) {
-      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.process_id, typedOther.process_id);
-      if (lastComparison != 0) {
-        return lastComparison;
-      }
-    }
     lastComparison = Boolean.valueOf(is_set_uptime_secs()).compareTo(typedOther.is_set_uptime_secs());
     if (lastComparison != 0) {
       return lastComparison;
@@ -690,6 +677,16 @@ public class ExecutorSummary implements org.apache.thrift.TBase<ExecutorSummary,
     }
     if (is_set_stats()) {
       lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.stats, typedOther.stats);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_process_id()).compareTo(typedOther.is_set_process_id());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_process_id()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.process_id, typedOther.process_id);
       if (lastComparison != 0) {
         return lastComparison;
       }
@@ -741,15 +738,7 @@ public class ExecutorSummary implements org.apache.thrift.TBase<ExecutorSummary,
             org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
           }
           break;
-        case 5: // PROCESS_ID
-          if (field.type == org.apache.thrift.protocol.TType.I32) {
-            this.process_id = iprot.readI32();
-            set_process_id_isSet(true);
-          } else { 
-            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
-          }
-          break;
-        case 6: // UPTIME_SECS
+        case 5: // UPTIME_SECS
           if (field.type == org.apache.thrift.protocol.TType.I32) {
             this.uptime_secs = iprot.readI32();
             set_uptime_secs_isSet(true);
@@ -761,6 +750,14 @@ public class ExecutorSummary implements org.apache.thrift.TBase<ExecutorSummary,
           if (field.type == org.apache.thrift.protocol.TType.STRUCT) {
             this.stats = new ExecutorStats();
             this.stats.read(iprot);
+          } else { 
+            org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
+          }
+          break;
+        case 8: // PROCESS_ID
+          if (field.type == org.apache.thrift.protocol.TType.I32) {
+            this.process_id = iprot.readI32();
+            set_process_id_isSet(true);
           } else { 
             org.apache.thrift.protocol.TProtocolUtil.skip(iprot, field.type);
           }
@@ -796,9 +793,6 @@ public class ExecutorSummary implements org.apache.thrift.TBase<ExecutorSummary,
     oprot.writeFieldBegin(PORT_FIELD_DESC);
     oprot.writeI32(this.port);
     oprot.writeFieldEnd();
-    oprot.writeFieldBegin(PROCESS_ID_FIELD_DESC);
-    oprot.writeI32(this.process_id);
-    oprot.writeFieldEnd();
     oprot.writeFieldBegin(UPTIME_SECS_FIELD_DESC);
     oprot.writeI32(this.uptime_secs);
     oprot.writeFieldEnd();
@@ -808,6 +802,11 @@ public class ExecutorSummary implements org.apache.thrift.TBase<ExecutorSummary,
         this.stats.write(oprot);
         oprot.writeFieldEnd();
       }
+    }
+    if (is_set_process_id()) {
+      oprot.writeFieldBegin(PROCESS_ID_FIELD_DESC);
+      oprot.writeI32(this.process_id);
+      oprot.writeFieldEnd();
     }
     oprot.writeFieldStop();
     oprot.writeStructEnd();
@@ -846,10 +845,6 @@ public class ExecutorSummary implements org.apache.thrift.TBase<ExecutorSummary,
     sb.append(this.port);
     first = false;
     if (!first) sb.append(", ");
-    sb.append("process_id:");
-    sb.append(this.process_id);
-    first = false;
-    if (!first) sb.append(", ");
     sb.append("uptime_secs:");
     sb.append(this.uptime_secs);
     first = false;
@@ -861,6 +856,12 @@ public class ExecutorSummary implements org.apache.thrift.TBase<ExecutorSummary,
       } else {
         sb.append(this.stats);
       }
+      first = false;
+    }
+    if (is_set_process_id()) {
+      if (!first) sb.append(", ");
+      sb.append("process_id:");
+      sb.append(this.process_id);
       first = false;
     }
     sb.append(")");
@@ -883,10 +884,6 @@ public class ExecutorSummary implements org.apache.thrift.TBase<ExecutorSummary,
 
     if (!is_set_port()) {
       throw new org.apache.thrift.protocol.TProtocolException("Required field 'port' is unset! Struct:" + toString());
-    }
-
-    if (!is_set_process_id()) {
-      throw new org.apache.thrift.protocol.TProtocolException("Required field 'process_id' is unset! Struct:" + toString());
     }
 
     if (!is_set_uptime_secs()) {

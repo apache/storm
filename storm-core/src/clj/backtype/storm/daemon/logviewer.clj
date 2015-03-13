@@ -258,8 +258,9 @@ Note that if anything goes wrong, this will throw an Error and exit."
     (let [file (.getCanonicalFile (File. root-dir fname))
           file-length (.length file)
           path (.getCanonicalPath file)]
-      (if (= (File. root-dir)
-             (.getParentFile file))
+      (if (and (= (.getCanonicalFile (File. root-dir))
+                  (.getParentFile file))
+               (.exists file))
         (let [default-length 51200
               length (if length
                        (min 10485760 length)
@@ -272,8 +273,9 @@ Note that if anything goes wrong, this will throw an Error and exit."
           (if grep
             (html [:pre#logContent
                    (if grep
-                     (filter #(.contains % grep)
-                             (.split log-string "\n"))
+                     (->> (.split log-string "\n")
+                          (filter #(.contains % grep))
+                          (string/join "\n"))
                      log-string)])
             (let [pager-data (pager-links fname start length file-length)]
               (html (concat pager-data

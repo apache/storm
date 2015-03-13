@@ -18,19 +18,17 @@
   (:require [conjure.core])
   (:use [conjure core])
   (:require [clojure.contrib [string :as contrib-str]])
-  (:require [clojure [string :as string]])
-  (:import [backtype.storm.testing TestWordCounter TestWordSpout TestGlobalCount TestAggregatesCounter])
+  (:require [clojure [string :as string] [set :as set]])
+  (:import [backtype.storm.testing TestWordCounter TestWordSpout TestGlobalCount TestAggregatesCounter TestPlannerSpout])
   (:import [backtype.storm.scheduler ISupervisor])
+  (:import [backtype.storm.generated RebalanceOptions])
   (:import [java.util UUID])
-  (:use [backtype.storm bootstrap config testing])
+  (:use [backtype.storm config testing util timer])
   (:use [backtype.storm.daemon common])
-  (:require [backtype.storm.daemon [worker :as worker] [supervisor :as supervisor]])
+  (:require [backtype.storm.daemon [worker :as worker] [supervisor :as supervisor]]
+            [backtype.storm [thrift :as thrift] [cluster :as cluster]])
   (:use [conjure core])
-  (:require [clojure.java.io :as io])
-  )
-
-(bootstrap)
-
+  (:require [clojure.java.io :as io]))
 
 (defn worker-assignment
   "Return [storm-id executors]"
@@ -358,7 +356,7 @@
 (defn rm-r [f]
   (if (.isDirectory f)
     (for [sub (.listFiles f)] (rm-r sub))
-    (.delete f) 
+    (.delete f)
   ))
 
 (deftest test-worker-launch-command-run-as-user
@@ -521,7 +519,7 @@
 (defn found? [sub-str input-str]
   (if (string? input-str)
     (contrib-str/substring? sub-str (str input-str))
-    (some? #(contrib-str/substring? sub-str %) input-str)))
+    (boolean (some #(contrib-str/substring? sub-str %) input-str))))
 
 (defn not-found? [sub-str input-str]
     (complement (found? sub-str input-str)))

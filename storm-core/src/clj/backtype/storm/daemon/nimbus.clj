@@ -14,23 +14,34 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.daemon.nimbus
+  (:import [org.apache.thrift.server THsHaServer THsHaServer$Args])
+  (:import [org.apache.thrift.protocol TBinaryProtocol TBinaryProtocol$Factory])
+  (:import [org.apache.thrift.exception])
+  (:import [org.apache.thrift.transport TNonblockingServerTransport TNonblockingServerSocket])
+  (:import [org.apache.commons.io FileUtils])
   (:import [java.nio ByteBuffer]
-           [java.util Collections])
-  (:import [java.io FileNotFoundException])
+           [java.util Collections HashMap])
+  (:import [java.io FileNotFoundException File FileOutputStream])
   (:import [java.nio.channels Channels WritableByteChannel])
   (:import [backtype.storm.security.auth ThriftServer ThriftConnectionType ReqContext AuthUtils])
   (:use [backtype.storm.scheduler.DefaultScheduler])
   (:import [backtype.storm.scheduler INimbus SupervisorDetails WorkerSlot TopologyDetails
             Cluster Topologies SchedulerAssignment SchedulerAssignmentImpl DefaultScheduler ExecutorDetails])
-  (:import [backtype.storm.generated AuthorizationException])
-  (:use [backtype.storm bootstrap util])
-  (:use [backtype.storm.config :only [validate-configs-with-schemas]])
+  (:import [backtype.storm.utils TimeCacheMap TimeCacheMap$ExpiredCallback Utils ThriftTopologyUtils
+            BufferFileInputStream])
+  (:import [backtype.storm.generated NotAliveException AlreadyAliveException StormTopology ErrorInfo
+            ExecutorInfo InvalidTopologyException Nimbus$Iface Nimbus$Processor SubmitOptions TopologyInitialStatus
+            KillOptions RebalanceOptions ClusterSummary SupervisorSummary TopologySummary TopologyInfo
+            ExecutorSummary AuthorizationException GetInfoOptions NumErrorsChoice])
+  (:import [backtype.storm.daemon Shutdownable])
+  (:use [backtype.storm util config log timer])
+  (:require [backtype.storm [cluster :as cluster] [stats :as stats]])
+  (:require [clojure.set :as set])
+  (:import [backtype.storm.daemon.common StormBase Assignment])
   (:use [backtype.storm.daemon common])
   (:import [org.apache.zookeeper data.ACL ZooDefs$Ids ZooDefs$Perms])
   (:gen-class
     :methods [^{:static true} [launch [backtype.storm.scheduler.INimbus] void]]))
-
-(bootstrap)
 
 (defn file-cache-map [conf]
   (TimeCacheMap.
@@ -68,6 +79,7 @@
     {:conf conf
      :inimbus inimbus
      :authorization-handler (mk-authorization-handler (conf NIMBUS-AUTHORIZER) conf)
+     :impersonation-authorization-handler (mk-authorization-handler (conf NIMBUS-IMPERSONATION-AUTHORIZER) conf)
      :submitted-count (atom 0)
      :storm-cluster-state (cluster/mk-storm-cluster-state conf :acls (when
                                                                        (Utils/isZkAuthenticationConfiguredStormServer
@@ -767,9 +779,22 @@
 (defn check-authorization! 
   ([nimbus storm-name storm-conf operation context]
      (let [aclHandler (:authorization-handler nimbus)
+           impersonation-authorizer (:impersonation-authorization-handler nimbus)
            ctx (or context (ReqContext/context))
            check-conf (if storm-conf storm-conf (if storm-name {TOPOLOGY-NAME storm-name}))]
        (log-message "[req " (.requestID ctx) "] Access from: " (.remoteAddress ctx) " principal:" (.principal ctx) " op:" operation)
+
+       (if (.isImpersonating ctx)
+         (do
+          (log-warn "principal: " (.realPrincipal ctx) " is trying to impersonate principal: " (.principal ctx))
+          (if impersonation-authorizer
+           (if-not (.permit impersonation-authorizer ctx operation check-conf)
+             (throw (AuthorizationException. (str "principal " (.realPrincipal ctx) " is not authorized to impersonate
+                        principal " (.principal ctx) " from host " (.remoteAddress ctx) " Please see SECURITY.MD to learn
+                        how to configure impersonation acls."))))
+           (log-warn "impersonation attempt but " NIMBUS-IMPERSONATION-AUTHORIZER " has no authorizer configured. potential
+                      security risk, please see SECURITY.MD to learn how to configure impersonation authorizer."))))
+
        (if aclHandler
          (if-not (.permit aclHandler ctx operation check-conf)
            (throw (AuthorizationException. (str operation (if storm-name (str " on topology " storm-name)) " is not authorized")))
@@ -892,6 +917,13 @@
        (map #(doto (ErrorInfo. (:error %) (:time-secs %))
                    (.set_host (:host %))
                    (.set_port (:port %))))))
+
+(defn- get-last-error
+  [storm-cluster-state storm-id component-id]
+  (if-let [e (.last-error storm-cluster-state storm-id component-id)]
+    (doto (ErrorInfo. (:error e) (:time-secs e))
+                      (.set_host (:host e))
+                      (.set_port (:port e)))))
 
 (defn- thriftify-executor-id [[first-task-id last-task-id]]
   (ExecutorInfo. (int first-task-id) (int last-task-id)))
@@ -1255,7 +1287,7 @@
                            topology-summaries)
           ))
       
-      (^TopologyInfo getTopologyInfo [this ^String storm-id]
+      (^TopologyInfo getTopologyInfoWithOpts [this ^String storm-id ^GetInfoOptions options]
         (let [storm-cluster-state (:storm-cluster-state nimbus)
               topology-conf (try-read-storm-conf conf storm-id)
               storm-name (topology-conf TOPOLOGY-NAME)
@@ -1266,8 +1298,22 @@
               assignment (.assignment-info storm-cluster-state storm-id nil)
               beats (map-val :heartbeat (get @(:heartbeats-cache nimbus) storm-id))
               all-components (-> task->component reverse-map keys)
+              num-err-choice (or (.get_num_err_choice options)
+                                 NumErrorsChoice/ALL)
+              errors-fn (condp = num-err-choice
+                          NumErrorsChoice/NONE (fn [& _] ()) ;; empty list only
+                          NumErrorsChoice/ONE (comp #(remove nil? %)
+                                                    list
+                                                    get-last-error)
+                          NumErrorsChoice/ALL get-errors
+                          ;; Default
+                          (do
+                            (log-warn "Got invalid NumErrorsChoice '"
+                                      num-err-choice
+                                      "'")
+                            get-errors))
               errors (->> all-components
-                          (map (fn [c] [c (get-errors storm-cluster-state storm-id c)]))
+                          (map (fn [c] [c (errors-fn storm-cluster-state storm-id c)]))
                           (into {}))
               executor-summaries (dofor [[executor [node port]] (:executor->node+port assignment)]
                                         (let [host (-> assignment :node->host (get node))
@@ -1295,7 +1341,12 @@
             (when-let [sched-status (.get @(:id->sched-status nimbus) storm-id)] (.set_sched_status topo-info sched-status))
             topo-info
           ))
-      
+
+      (^TopologyInfo getTopologyInfo [this ^String storm-id]
+        (.getTopologyInfoWithOpts this
+                                  storm-id
+                                  (doto (GetInfoOptions.) (.set_num_err_choice NumErrorsChoice/ALL))))
+
       Shutdownable
       (shutdown [this]
         (log-message "Shutting down master")

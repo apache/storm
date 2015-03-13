@@ -205,9 +205,9 @@ struct ExecutorSummary {
   2: required string component_id;
   3: required string host;
   4: required i32 port;
-  5: required i32 process_id;
-  6: required i32 uptime_secs;
+  5: required i32 uptime_secs;
   7: optional ExecutorStats stats;
+  8: optional i32 process_id;
 }
 
 struct TopologyInfo {
@@ -244,6 +244,16 @@ struct SubmitOptions {
   2: optional Credentials creds;
 }
 
+enum NumErrorsChoice {
+  ALL,
+  NONE,
+  ONE
+}
+
+struct GetInfoOptions {
+  1: optional NumErrorsChoice num_err_choice;
+}
+
 service Nimbus {
   void submitTopology(1: string name, 2: string uploadedJarLocation, 3: string jsonConf, 4: StormTopology topology) throws (1: AlreadyAliveException e, 2: InvalidTopologyException ite, 3: AuthorizationException aze);
   void submitTopologyWithOpts(1: string name, 2: string uploadedJarLocation, 3: string jsonConf, 4: StormTopology topology, 5: SubmitOptions options) throws (1: AlreadyAliveException e, 2: InvalidTopologyException ite, 3: AuthorizationException aze);
@@ -269,6 +279,7 @@ service Nimbus {
   // stats functions
   ClusterSummary getClusterInfo() throws (1: AuthorizationException aze);
   TopologyInfo getTopologyInfo(1: string id) throws (1: NotAliveException e, 2: AuthorizationException aze);
+  TopologyInfo getTopologyInfoWithOpts(1: string id, 2: GetInfoOptions options) throws (1: NotAliveException e, 2: AuthorizationException aze);
   //returns json
   string getTopologyConf(1: string id) throws (1: NotAliveException e, 2: AuthorizationException aze);
   StormTopology getTopology(1: string id) throws (1: NotAliveException e, 2: AuthorizationException aze);

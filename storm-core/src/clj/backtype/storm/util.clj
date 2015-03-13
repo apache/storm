@@ -247,6 +247,9 @@
   (prewalk (fn [x]
              (cond (instance? Map x) (into {} x)
                    (instance? List x) (vec x)
+                   ;; (Boolean. false) does not evaluate to false in an if.
+                   ;; This fixes that.
+                   (instance? Boolean x) (boolean x)
                    true x))
            s))
 
@@ -617,10 +620,6 @@
   (while (not (apredicate))
     (Time/sleep 100)))
 
-(defn some?
-  [pred aseq]
-  ((complement nil?) (some pred aseq)))
-
 (defn time-delta
   [time-secs]
   (- (current-time-secs) time-secs))
@@ -854,7 +853,7 @@
 (defn zip-contains-dir?
   [zipfile target]
   (let [entries (->> zipfile (ZipFile.) .entries enumeration-seq (map (memfn getName)))]
-    (some? #(.startsWith % (str target "/")) entries)))
+    (boolean (some #(.startsWith % (str target "/")) entries))))
 
 (defn url-encode
   [s]
