@@ -164,13 +164,14 @@
 (def COMMON-FIELDS [:emitted :transferred])
 (defrecord CommonStats [emitted transferred rate])
 
-(def BOLT-FIELDS [:acked :failed :process-latencies :executed :execute-latencies])
+(def BOLT-FIELDS [:acked :failed :process-latencies :executed :execute-latencies :receive-queue-length :batch-transfer-queue-length])
 ;;acked and failed count individual tuples
-(defrecord BoltExecutorStats [common acked failed process-latencies executed execute-latencies])
+(defrecord BoltExecutorStats [common acked failed process-latencies executed execute-latencies
+                              receive-queue-length batch-transfer-queue-length])
 
-(def SPOUT-FIELDS [:acked :failed :complete-latencies])
+(def SPOUT-FIELDS [:acked :failed :complete-latencies :receive-queue-length :batch-transfer-queue-length])
 ;;acked and failed count tuple completion
-(defrecord SpoutExecutorStats [common acked failed complete-latencies])
+(defrecord SpoutExecutorStats [common acked failed complete-latencies receive-queue-length batch-transfer-queue-length])
 
 (def NUM-STAT-BUCKETS 20)
 ;; 10 minutes, 3 hours, 1 day
@@ -191,6 +192,8 @@
     (atom (apply keyed-counter-rolling-window-set NUM-STAT-BUCKETS STAT-BUCKETS))
     (atom (apply keyed-avg-rolling-window-set NUM-STAT-BUCKETS STAT-BUCKETS))
     (atom (apply keyed-counter-rolling-window-set NUM-STAT-BUCKETS STAT-BUCKETS))
+    (atom (apply keyed-avg-rolling-window-set NUM-STAT-BUCKETS STAT-BUCKETS))
+    (atom (apply keyed-avg-rolling-window-set NUM-STAT-BUCKETS STAT-BUCKETS))
     (atom (apply keyed-avg-rolling-window-set NUM-STAT-BUCKETS STAT-BUCKETS))))
 
 (defn mk-spout-stats
@@ -199,6 +202,8 @@
     (mk-common-stats rate)
     (atom (apply keyed-counter-rolling-window-set NUM-STAT-BUCKETS STAT-BUCKETS))
     (atom (apply keyed-counter-rolling-window-set NUM-STAT-BUCKETS STAT-BUCKETS))
+    (atom (apply keyed-avg-rolling-window-set NUM-STAT-BUCKETS STAT-BUCKETS))
+    (atom (apply keyed-avg-rolling-window-set NUM-STAT-BUCKETS STAT-BUCKETS))
     (atom (apply keyed-avg-rolling-window-set NUM-STAT-BUCKETS STAT-BUCKETS))))
 
 (defmacro update-executor-stat!
@@ -217,6 +222,16 @@
 (defn transferred-tuples!
   [stats stream amt]
   (update-executor-stat! stats [:common :transferred] stream (* (stats-rate stats) amt)))
+
+(defn update-receive-queue!
+  [stats component queue-length]
+  (when (and stats component queue-length)
+    (update-executor-stat! stats :receive-queue-length component queue-length)))
+
+(defn update-batch-transfer-queue!
+  [stats component queue-length]
+  (when (and stats component queue-length)
+    (update-executor-stat! stats :batch-transfer-queue-length component queue-length)))
 
 (defn bolt-execute-tuple!
   [^BoltExecutorStats stats component stream latency-ms]
@@ -320,19 +335,25 @@
 (defmethod thriftify-specific-stats :bolt
   [stats]
   (ExecutorSpecificStats/bolt
-    (BoltStats.
-      (window-set-converter (:acked stats) to-global-stream-id)
-      (window-set-converter (:failed stats) to-global-stream-id)
-      (window-set-converter (:process-latencies stats) to-global-stream-id)
-      (window-set-converter (:executed stats) to-global-stream-id)
-      (window-set-converter (:execute-latencies stats) to-global-stream-id))))
+   (doto
+       (BoltStats.
+        (window-set-converter (:acked stats) to-global-stream-id)
+        (window-set-converter (:failed stats) to-global-stream-id)
+        (window-set-converter (:process-latencies stats) to-global-stream-id)
+        (window-set-converter (:executed stats) to-global-stream-id)
+        (window-set-converter (:execute-latencies stats) to-global-stream-id))
+     (.set_receive_queue_length (window-set-converter (:receive-queue-length stats)))
+     (.set_batch_transfer_queue_length (window-set-converter (:batch-transfer-queue-length stats))))))
 
 (defmethod thriftify-specific-stats :spout
   [stats]
   (ExecutorSpecificStats/spout
-    (SpoutStats. (window-set-converter (:acked stats))
-                 (window-set-converter (:failed stats))
-                 (window-set-converter (:complete-latencies stats)))))
+   (doto
+       (SpoutStats. (window-set-converter (:acked stats))
+                    (window-set-converter (:failed stats))
+                    (window-set-converter (:complete-latencies stats)))
+     (.set_receive_queue_length (window-set-converter (:receive-queue-length stats)))
+     (.set_batch_transfer_queue_length (window-set-converter (:batch-transfer-queue-length stats))))))
 
 (defn thriftify-executor-stats
   [stats]

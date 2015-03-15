@@ -51,8 +51,13 @@
                   ))
               assignment)))))
 
+(defn update-queue-stats [executors]
+  (doseq [^RunningExecutor executor executors]
+    (executor/update-queue-stats executor)))
+
 (defnk do-executor-heartbeats [worker :executors nil]
   ;; stats is how we know what executors are assigned to this worker 
+  (update-queue-stats (or executors []))
   (let [stats (if-not executors
                   (into {} (map (fn [e] {e nil}) (:executors worker)))
                   (->> executors

@@ -168,7 +168,8 @@
 (defprotocol RunningExecutor
   (render-stats [this])
   (get-executor-id [this])
-  (credentials-changed [this creds]))
+  (credentials-changed [this creds])
+  (update-queue-stats [this]))
 
 (defn throttled-report-error-fn [executor]
   (let [storm-conf (:storm-conf executor)
@@ -364,7 +365,14 @@
           (disruptor/publish
             receive-queue
             [[nil (TupleImpl. context [creds] Constants/SYSTEM_TASK_ID Constants/CREDENTIALS_CHANGED_STREAM_ID)]]
-              )))
+            )))
+      (update-queue-stats [this]
+        (stats/update-receive-queue! (:stats executor-data)
+                                     (:component-id executor-data)
+                                     (.population (:receive-queue executor-data)))
+        (stats/update-batch-transfer-queue! (:stats executor-data)
+                                            (:component-id executor-data)
+                                            (.population (:batch-transfer-queue executor-data))))
       Shutdownable
       (shutdown
         [this]
