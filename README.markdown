@@ -176,6 +176,7 @@ under the License.
 * Dane Hammer ([@danehammer](https://github.com/danehammer))
 * Christophe Carre' ([@chrisz](https://github.com/chrisz))
 * Anya Tchernishov ([@anyatch](https://github.com/anyatch))
+* Xin Wang ([@vesense](https://github.com/vesense))
 
 ## Acknowledgements
 

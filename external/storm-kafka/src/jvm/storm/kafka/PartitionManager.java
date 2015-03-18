@@ -164,6 +164,31 @@ public class PartitionManager {
             _emittedToOffset = KafkaUtils.getOffset(_consumer, _spoutConfig.topic, _partition.partition, _spoutConfig);
             LOG.warn("Using new offset: {}", _emittedToOffset);
             // fetch failed, so don't update the metrics
+            
+            //fix bug [STORM-643] : remove this offset from failed list when it is OutOfRange
+            if (had_failed) {
+                // For the case of EarliestTime it would be better to discard
+                // all the failed offsets, that are earlier than actual EarliestTime
+                // offset, since they are anyway not there.
+                // These calls to broker API will be then saved.
+
+                // In case of LatestTime - it is a question, if we still need to try out and
+                // reach those that are failed (they still may be available).
+                // But, by moving to LatestTime we are discarding messages in kafka queue.
+                // Since it is configured so, assume that it is ok for user to loose information
+                // and user cares about newest messages first.
+                // It makes sense not to do exceptions for those that are failed and discard them as well.
+
+                SortedSet<Long> omitted = failed.headSet(_emittedToOffset);
+
+                // Use tail, since sortedSet maintains its elements in ascending order
+                // Using tailSet will set a 'range' on original implementation
+                // so we couldn't then add objects that are out of range.
+                // For that reason we copy tail into new Set, where range is not set.
+                failed = new TreeSet<Long>(failed.tailSet(_emittedToOffset));
+                LOG.warn("Removing the failed offsets that are out of range: {}", omitted);
+            }
+            
             return;
         }
         long end = System.nanoTime();
