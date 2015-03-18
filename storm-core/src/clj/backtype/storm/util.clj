@@ -392,6 +392,15 @@
       (.addArgument command a))
     (.execute (DefaultExecutor.) command)))
 
+(defn exists-process?
+   [process-id]
+   (let [line (if on-windows? (str "cmd /c \"tasklist /FI \"PID eq "  process-id  "\" | findstr "  process-id  "\"" )
+                              (str "ps -p "  process-id))]
+        (try-cause
+           (exec-command! line)
+         (catch ExecuteException e
+            (log-message "Error when trying to check " process-id ".")))))
+
 (defn extract-dir-from-jar [jarpath dir destdir]
   (try-cause
     (with-open [jarpath (ZipFile. jarpath)]

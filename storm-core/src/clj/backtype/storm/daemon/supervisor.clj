@@ -158,7 +158,9 @@
                          (or (not (contains? approved-ids id))
                              (not (matches-an-assignment? hb assigned-executors)))
                            :disallowed
-                         (or
+                         (or (or (nil? (:process-id hb)) (not (exists-process? (:process-id hb)))))
+                           :process-not-exists
+                         (or 
                           (when (get (get-dead-workers) id)
                             (log-message "Worker Process " id " has died!")
                             true)

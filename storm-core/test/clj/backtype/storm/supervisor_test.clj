@@ -47,19 +47,21 @@
     ret
     ))
 
-(defn heartbeat-worker [supervisor port storm-id executors]
+(defn heartbeat-worker [supervisor port storm-id process-id executors]
   (let [conf (.get-conf supervisor)]
     (worker/do-heartbeat {:conf conf
                           :port port
                           :storm-id storm-id
+                          :process-id process-id
                           :executors executors
                           :worker-id (find-worker-id conf port)})))
 
 (defn heartbeat-workers [cluster supervisor-id ports]
-  (let [sup (get-supervisor cluster supervisor-id)]
+  (let [sup (get-supervisor cluster supervisor-id)
+        process-id (process-pid)]
     (doseq [p ports]
       (let [[storm-id executors] (worker-assignment cluster supervisor-id p)]
-        (heartbeat-worker sup p storm-id executors)
+        (heartbeat-worker sup p storm-id process-id executors)
         ))))
 
 (defn validate-launched-once [launched supervisor->ports storm-id]
