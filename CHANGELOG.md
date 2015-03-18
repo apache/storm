@@ -1,4 +1,5 @@
 ## 0.9.4
+ * STORM-559: ZkHosts in README should use 2181 as port.
  * STORM-682: supervisor should handle worker state corruption gracefully.
  * STORM-693: when kafka bolt fails to write tuple, it should report error instead of silently acking.
  * STORM-329: fix cascading Storm failure by improving reconnection strategy and buffering messages
