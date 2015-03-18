@@ -1,4 +1,5 @@
 ## 0.9.4
+ * STORM-693: when kafka bolt fails to write tuple, it should report error instead of silently acking.
  * STORM-329: fix cascading Storm failure by improving reconnection strategy and buffering messages
  * STORM-130: Supervisor getting killed due to java.io.FileNotFoundException: File '../stormconf.ser' does not exist.
 
