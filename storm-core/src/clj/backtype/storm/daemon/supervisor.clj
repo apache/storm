@@ -15,7 +15,7 @@
 ;; limitations under the License.
 (ns backtype.storm.daemon.supervisor
   (:import [backtype.storm.scheduler ISupervisor]
-           [java.net JarURLConnection]
+           [java.io IOException]
            [java.net URI])
   (:use [backtype.storm bootstrap])
   (:use [backtype.storm.daemon common])
