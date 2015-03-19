@@ -208,6 +208,7 @@ struct ExecutorSummary {
   4: required i32 port;
   5: required i32 uptime_secs;
   7: optional ExecutorStats stats;
+  8: optional i32 process_id;
 }
 
 struct TopologyInfo {

@@ -61,6 +61,7 @@
                :executor-stats stats
                :uptime ((:uptime worker))
                :time-secs (current-time-secs)
+               :process-id (:process-id worker)
                }]
     ;; do the zookeeper heartbeat
     (.worker-heartbeat! (:storm-cluster-state worker) (:storm-id worker) (:assignment-id worker) (:port worker) zk-hb)    
@@ -198,7 +199,7 @@
                        )
             :timer-name timer-name))
 
-(defn worker-data [conf mq-context storm-id assignment-id port worker-id storm-conf cluster-state storm-cluster-state]
+(defn worker-data [conf mq-context storm-id assignment-id port worker-id process-id storm-conf cluster-state storm-cluster-state]
   (let [assignment-versions (atom {})
         executors (set (read-worker-executors storm-conf storm-cluster-state storm-id assignment-id port assignment-versions))
         transfer-queue (disruptor/disruptor-queue "worker-transfer-queue" (storm-conf TOPOLOGY-TRANSFER-BUFFER-SIZE)
@@ -222,6 +223,7 @@
       :assignment-id assignment-id
       :port port
       :worker-id worker-id
+      :process-id process-id
       :cluster-state cluster-state
       :storm-cluster-state storm-cluster-state
       ;; when worker bootup, worker will start to setup initial connections to
@@ -431,7 +433,8 @@
         subject (AuthUtils/populateSubject nil auto-creds initial-credentials)]
       (Subject/doAs subject (reify PrivilegedExceptionAction 
         (run [this]
-          (let [worker (worker-data conf shared-mq-context storm-id assignment-id port worker-id storm-conf cluster-state storm-cluster-state)
+          (let [process-id (process-pid)
+                worker (worker-data conf shared-mq-context storm-id assignment-id port worker-id process-id storm-conf cluster-state storm-cluster-state)
         heartbeat-fn #(do-heartbeat worker)
 
         ;; do this here so that the worker process dies if this fails

@@ -1320,6 +1320,7 @@
                                                                 (-> executor first task->component)
                                                                 host
                                                                 port
+                                                                (Integer. (:process-id heartbeat))
                                                                 (nil-to-zero (:uptime heartbeat)))
                                             (.set_stats stats))
                                           ))
