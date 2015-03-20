@@ -46,6 +46,7 @@ public class HBaseSecurityUtil {
         if (conf.get(TOPOLOGY_AUTO_CREDENTIALS) == null ||
                 !(((List) conf.get(TOPOLOGY_AUTO_CREDENTIALS)).contains(AutoHBase.class.getName()))) {
             LOG.info("Logging in using keytab as AutoHBase is not specified for " + TOPOLOGY_AUTO_CREDENTIALS);
+            UserGroupInformation.setConfiguration(hbaseConfig); // need krb5.conf configuration
             if (UserGroupInformation.isSecurityEnabled()) {
                 String keytab = (String) conf.get(STORM_KEYTAB_FILE_KEY);
                 if (keytab != null) {
