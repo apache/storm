@@ -59,7 +59,8 @@ public class TransactionalState {
                               .get(Config.TOPOLOGY_KRYO_REGISTER));
             }
             String transactionalRoot = (String)conf.get(Config.TRANSACTIONAL_ZOOKEEPER_ROOT);
-            String rootDir = transactionalRoot + "/" + id + "/" + subroot;
+            String topologyName = (String)conf.get(Config.TOPOLOGY_NAME);
+            String rootDir = transactionalRoot + "/" + topologyName + "/" + id + "/" + subroot;
             List<String> servers = (List<String>) getWithBackup(conf, Config.TRANSACTIONAL_ZOOKEEPER_SERVERS, Config.STORM_ZOOKEEPER_SERVERS);
             Object port = getWithBackup(conf, Config.TRANSACTIONAL_ZOOKEEPER_PORT, Config.STORM_ZOOKEEPER_PORT);
             ZookeeperAuthInfo auth = new ZookeeperAuthInfo(conf);

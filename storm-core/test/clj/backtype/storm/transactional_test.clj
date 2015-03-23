@@ -603,7 +603,8 @@
      
      (bind results (complete-topology cluster
                                       (.buildTopology builder)
-                                      :cleanup-state false))
+                                      :cleanup-state false
+                                      :topology-name "transactional-topology"))
 
      (is (ms= [[5] [0] [1] [0]] (->> (read-tuples results "count")
                                      (take 4)
@@ -615,7 +616,7 @@
                                  ["b"]]
                               })
      
-     (bind results (complete-topology cluster (.buildTopology builder)))
+     (bind results (complete-topology cluster (.buildTopology builder) :topology-name "transactional-topology"))
 
      ;; need to do it this way (check for nothing transaction) because there is one transaction already saved up before that emits nothing (because of how memorytransctionalspout detects partition completion)
      (is (ms= [[0] [0] [2] [0]] (->> (read-tuples results "count")
