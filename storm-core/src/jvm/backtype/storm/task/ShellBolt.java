@@ -282,7 +282,7 @@ public class ShellBolt implements IBolt {
         LOG.error("Halting process: ShellBolt died.", exception);
         _collector.reportError(exception);
         if (_running || (exception instanceof Error)) { //don't exit if not running, unless it is an Error
-            System.exit(11);
+            Runtime.getRuntime().halt(11);
         }
     }
 

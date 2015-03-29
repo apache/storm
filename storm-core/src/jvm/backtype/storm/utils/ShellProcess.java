@@ -18,21 +18,17 @@
 package backtype.storm.utils;
 
 import backtype.storm.Config;
-import backtype.storm.multilang.ISerializer;
-import backtype.storm.multilang.BoltMsg;
-import backtype.storm.multilang.NoOutputException;
-import backtype.storm.multilang.ShellMsg;
-import backtype.storm.multilang.SpoutMsg;
+import backtype.storm.multilang.*;
 import backtype.storm.task.TopologyContext;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Serializable;
+import com.google.common.base.Optional;
+
+import java.io.*;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
+import static com.google.common.base.Optional.of;
 
 public class ShellProcess implements Serializable {
     public static Logger LOG = Logger.getLogger(ShellProcess.class);
@@ -121,34 +117,15 @@ public class ShellProcess implements Serializable {
     }
 
     public void logErrorStream() {
-        try {
-            while (processErrorStream.available() > 0) {
-                int bufferSize = processErrorStream.available();
-                byte[] errorReadingBuffer = new byte[bufferSize];
-                processErrorStream.read(errorReadingBuffer, 0, bufferSize);
-                ShellLogger.info(new String(errorReadingBuffer));
-            }
-        } catch (Exception e) {
+        final Optional<String> errorsString = getErrorStreamMessage();
+        if (errorsString.isPresent()) {
+            ShellLogger.info(errorsString.get());
         }
     }
 
     public String getErrorsString() {
-        if (processErrorStream != null) {
-            try {
-                StringBuilder sb = new StringBuilder();
-                while (processErrorStream.available() > 0) {
-                    int bufferSize = processErrorStream.available();
-                    byte[] errorReadingBuffer = new byte[bufferSize];
-                    processErrorStream.read(errorReadingBuffer, 0, bufferSize);
-                    sb.append(new String(errorReadingBuffer));
-                }
-                return sb.toString();
-            } catch (IOException e) {
-                return "(Unable to capture error stream)";
-            }
-        } else {
-            return "";
-        }
+        final Optional<String> message = getErrorStreamMessage();
+        return message.isPresent() ? message.get() : "";
     }
 
     /**
@@ -185,5 +162,36 @@ public class ShellProcess implements Serializable {
 
     public String getProcessTerminationInfoString() {
         return String.format(" exitCode:%s, errorString:%s ", getExitCode(), getErrorsString());
+    }
+
+    private Optional<String> getErrorStreamMessage() {
+        int offset = 0;
+        if (processErrorStream != null) {
+            ByteArrayOutputStream out = null;
+            try {
+                do {
+                    int bufferSize = processErrorStream.available();
+                    if (bufferSize > 0) {
+                        if (out == null) {
+                            out = new ByteArrayOutputStream();
+                        }
+                        byte[] errorReadingBuffer = new byte[bufferSize];
+                        final int read = processErrorStream.read(errorReadingBuffer, 0, bufferSize);
+                        out.write(errorReadingBuffer, offset, bufferSize);
+                        offset += read;
+                    }
+                } while (processErrorStream.available() > 0);
+
+                if (offset > 0)
+                    return of(new String(out.toByteArray()));
+            } catch (Exception e) {
+                return of("(Unable to capture error stream)");
+            } finally {
+                if (out != null) {
+                    IOUtils.closeQuietly(out);
+                }
+            }
+        }
+        return Optional.absent();
     }
 }
