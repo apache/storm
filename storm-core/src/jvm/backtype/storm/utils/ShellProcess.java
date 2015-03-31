@@ -18,17 +18,22 @@
 package backtype.storm.utils;
 
 import backtype.storm.Config;
-import backtype.storm.multilang.*;
+import backtype.storm.multilang.ISerializer;
+import backtype.storm.multilang.BoltMsg;
+import backtype.storm.multilang.NoOutputException;
+import backtype.storm.multilang.ShellMsg;
+import backtype.storm.multilang.SpoutMsg;
 import backtype.storm.task.TopologyContext;
-import com.google.common.base.Optional;
-
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
-import static com.google.common.base.Optional.of;
 
 public class ShellProcess implements Serializable {
     public static Logger LOG = Logger.getLogger(ShellProcess.class);
@@ -117,15 +122,15 @@ public class ShellProcess implements Serializable {
     }
 
     public void logErrorStream() {
-        final Optional<String> errorsString = getErrorStreamMessage();
-        if (errorsString.isPresent()) {
-            ShellLogger.info(errorsString.get());
+        final String errorsString = getErrorStreamMessage();
+        if (errorsString != null) {
+            ShellLogger.info(errorsString);
         }
     }
 
     public String getErrorsString() {
-        final Optional<String> message = getErrorStreamMessage();
-        return message.isPresent() ? message.get() : "";
+        final String message = getErrorStreamMessage();
+        return message != null ? message : "";
     }
 
     /**
@@ -164,34 +169,35 @@ public class ShellProcess implements Serializable {
         return String.format(" exitCode:%s, errorString:%s ", getExitCode(), getErrorsString());
     }
 
-    private Optional<String> getErrorStreamMessage() {
-        int offset = 0;
+    /**
+     * Must never block since part of critical shutdown sequence
+     * @return error message or null if not currently available
+     */
+    private String getErrorStreamMessage() {
         if (processErrorStream != null) {
             ByteArrayOutputStream out = null;
             try {
-                do {
-                    int bufferSize = processErrorStream.available();
-                    if (bufferSize > 0) {
-                        if (out == null) {
-                            out = new ByteArrayOutputStream();
-                        }
-                        byte[] errorReadingBuffer = new byte[bufferSize];
-                        final int read = processErrorStream.read(errorReadingBuffer, 0, bufferSize);
-                        out.write(errorReadingBuffer, offset, bufferSize);
-                        offset += read;
+                int bufferSize, offset = 0;
+                while ((bufferSize = processErrorStream.available()) > 0){
+                    if (out == null) {
+                        out = new ByteArrayOutputStream();
                     }
-                } while (processErrorStream.available() > 0);
+                    final byte[] buffer = new byte[bufferSize];
+                    final int read = processErrorStream.read(buffer, 0, bufferSize);
+                    out.write(buffer, offset, bufferSize);
+                    offset += read;
+                }
 
                 if (offset > 0)
-                    return of(new String(out.toByteArray()));
+                    return new String(out.toByteArray());
             } catch (Exception e) {
-                return of("(Unable to capture error stream)");
+                return "(Unable to capture error stream, error: [" + e.getMessage() + "])";
             } finally {
                 if (out != null) {
                     IOUtils.closeQuietly(out);
                 }
             }
         }
-        return Optional.absent();
+        return null;
     }
 }
