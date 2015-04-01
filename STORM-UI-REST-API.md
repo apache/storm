@@ -613,7 +613,6 @@ error response:
 
 uploads a topology.
 
-Caution: This api doesn't work in security mode.
 
 |Parameter |Value   |Description  |
 |----------|--------|-------------|
