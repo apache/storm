@@ -23,7 +23,3 @@
     text-align: right;
     padding: 0.5em;
 }
-
-.anti-forgery-token {
-    visibility:hidden;
-}
