@@ -81,6 +81,7 @@ under the License.
 * Sriharsha Chintalapani([@harshach](https://github.com/harshach))
 * Sean Zhong ([@clockfly] (http://github.com/clockfly))
 * Kyle Nusbaum ([@knusbaum](https://github.com/knusbaum))
+* Parth Brahmbhatt ([@Parth-Brahmbhatt](https://github.com/Parth-Brahmbhatt))
 
 ## Contributors
 
@@ -190,7 +191,11 @@ under the License.
 * Paul DelRe ([@pdelre](https://github.com/pdelre))
 * Zhihui Jiao ([@onlychoice](https://github.com/onlychoice))
 * Hari Sekhon ([@harisekhon](https://github.com/harisekhon))
+* iBuddha ([@iBuddha](https://github.com/iBuddha))
+* Rekha Joshi ([@rekhajoshm](https://github.com/rekhajoshm))
+* Dave Katten ([@dkatten](https://github.com/dkatten))
 
 ## Acknowledgements
 
 YourKit is kindly supporting open source projects with its full-featured Java Profiler. YourKit, LLC is the creator of innovative and intelligent tools for profiling Java and .NET applications. Take a look at YourKit's leading software products: [YourKit Java Profiler](http://www.yourkit.com/java/profiler/index.jsp) and [YourKit .NET Profiler](http://www.yourkit.com/.net/profiler/index.jsp).
+

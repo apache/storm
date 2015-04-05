@@ -23,10 +23,13 @@
   (:use [backtype.storm.util :only [clojurify-structure uuid defnk url-encode]])
   (:use [clj-time coerce format])
   (:import [backtype.storm.generated ExecutorInfo ExecutorSummary])
+  (:import [java.util EnumSet])
   (:import [org.eclipse.jetty.server Server]
            [org.eclipse.jetty.server.nio SelectChannelConnector]
            [org.eclipse.jetty.server.ssl SslSocketConnector]
-           [org.eclipse.jetty.servlet ServletHolder FilterMapping])
+           [org.eclipse.jetty.servlet ServletHolder FilterMapping]
+           [org.eclipse.jetty.server DispatcherType]
+           [org.eclipse.jetty.servlets CrossOriginFilter])
   (:require [ring.util servlet])
   (:require [compojure.route :as route]
             [compojure.handler :as handler]))
@@ -92,17 +95,6 @@
       )]
    ])
 
-(defnk sort-table [id :sort-list "[[0,0]]" :time-cols []]
-  (let [strs (for [c time-cols] (format "%s: { sorter: 'stormtimestr'}" c))
-        sorters (join ", " strs)]
-    [:script
-     (format  "$(document).ready(function() {
-$(\"table#%s\").each(function(i) { $(this).tablesorter({ sortList: %s, headers: {%s}}); });
-});"
-              id
-              sort-list
-              sorters)]))
-
 (defn float-str [n]
   (if n
     (format "%.3f" (float n))
@@ -120,16 +112,6 @@ $(\"table#%s\").each(function(i) { $(this).tablesorter({ sortList: %s, headers: 
               ))
        (apply merge-with merge)
        ))
-
-(defn sorted-table [headers data & args]
-  (let [id (uuid)]
-    (concat
-     [(table {:class "zebra-striped" :id id}
-             headers
-             data)]
-     (if-not (empty? data)
-       [(apply sort-table id args)])
-     )))
 
 (defn url-format [fmt & args]
   (String/format fmt
@@ -168,12 +150,22 @@ $(\"table#%s\").each(function(i) { $(this).tablesorter({ sortList: %s, headers: 
   (when (> port 0)
     (.addConnector server (mk-ssl-connector port ks-path ks-password ks-type))))
 
+(defn cors-filter-handler
+  []
+  (doto (org.eclipse.jetty.servlet.FilterHolder. (CrossOriginFilter.))
+    (.setInitParameter CrossOriginFilter/ALLOWED_ORIGINS_PARAM "*")
+    (.setInitParameter CrossOriginFilter/ALLOWED_METHODS_PARAM "GET, POST, PUT")
+    (.setInitParameter CrossOriginFilter/ALLOWED_HEADERS_PARAM "X-Requested-With, X-Requested-By, Access-Control-Allow-Origin, Content-Type, Content-Length, Accept, Origin")
+    (.setInitParameter CrossOriginFilter/ACCESS_CONTROL_ALLOW_ORIGIN_HEADER "*")
+    ))
+
 (defn config-filter [server handler filters-confs]
   (if filters-confs
     (let [servlet-holder (ServletHolder.
                            (ring.util.servlet/servlet handler))
           context (doto (org.eclipse.jetty.servlet.ServletContextHandler. server "/")
                     (.addServlet servlet-holder "/"))]
+      (.addFilter context (cors-filter-handler) "/*" (EnumSet/allOf DispatcherType))
       (doseq [{:keys [filter-name filter-class filter-params]} filters-confs]
         (if filter-class
           (let [filter-holder (doto (org.eclipse.jetty.servlet.FilterHolder.)
