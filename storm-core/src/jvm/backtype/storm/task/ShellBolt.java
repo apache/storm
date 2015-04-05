@@ -29,12 +29,14 @@ import backtype.storm.tuple.Tuple;
 import backtype.storm.utils.ShellProcess;
 import clojure.lang.RT;
 import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.Uninterruptibles;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -89,6 +91,7 @@ public class ShellBolt implements IBolt {
     private ScheduledExecutorService heartBeatExecutorService;
     private AtomicLong lastHeartbeatTimestamp = new AtomicLong();
     private AtomicBoolean sendHeartbeatFlag = new AtomicBoolean(false);
+    private AtomicInteger delaySeconds = new AtomicInteger(0);
 
     public ShellBolt(ShellComponent component) {
         this(component.get_execution_command(), component.get_script());
@@ -268,6 +271,16 @@ public class ShellBolt implements IBolt {
         }       
     }
 
+    private void handleDelay(ShellMsg shellMsg) {
+        try {
+            Integer seconds = Integer.valueOf(shellMsg.getMsg());
+            int newDelaySeconds = delaySeconds.addAndGet(seconds);
+            LOG.info("Delay requested from subprocess, new delay seconds : " + newDelaySeconds);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private void setHeartbeat() {
         lastHeartbeatTimestamp.set(System.currentTimeMillis());
     }
@@ -307,8 +320,6 @@ public class ShellBolt implements IBolt {
 
             sendHeartbeatFlag.compareAndSet(false, true);
         }
-
-
     }
 
     private class BoltReaderRunnable implements Runnable {
@@ -335,6 +346,8 @@ public class ShellBolt implements IBolt {
                         handleEmit(shellMsg);
                     } else if (command.equals("metrics")) {
                         handleMetrics(shellMsg);
+                    } else if (command.equals("delay")) {
+                        handleDelay(shellMsg);
                     }
                 } catch (InterruptedException e) {
                 } catch (Throwable t) {
@@ -342,6 +355,7 @@ public class ShellBolt implements IBolt {
                 }
             }
         }
+
     }
 
     private class BoltWriterRunnable implements Runnable {
@@ -354,6 +368,15 @@ public class ShellBolt implements IBolt {
                         String genId = Long.toString(_rand.nextLong());
                         _process.writeBoltMsg(createHeartbeatBoltMessage(genId));
                         sendHeartbeatFlag.compareAndSet(true, false);
+                    }
+
+                    // If any delayed seconds left, sleep 1 sec and decrement
+                    // We cannot sleep more than 1 sec because of heartbeat
+                    int delay = delaySeconds.get();
+                    if (delay > 0) {
+                        LOG.debug("delay seconds left, sleep... sec: " + delay);
+                        Uninterruptibles.sleepUninterruptibly(1, TimeUnit.SECONDS);
+                        delaySeconds.decrementAndGet();
                     }
 
                     Object write = _pendingWrites.poll(1, SECONDS);

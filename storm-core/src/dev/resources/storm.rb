@@ -63,6 +63,10 @@ module Storm
           end
     end
 
+    def get_pending_queue_size
+      Storm::Protocol.pending_commands.length
+    end
+
     def send_msg_to_parent(msg)
       puts msg.to_json
       puts "end"
@@ -118,6 +122,10 @@ module Storm
 
     def fail(tup)
       send_msg_to_parent :command => :fail, :id => tup.id
+    end
+
+    def delay(sec)
+      send_msg_to_parent :command => :delay, :msg => sec.to_s
     end
 
     def reportError(msg)

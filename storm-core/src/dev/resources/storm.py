@@ -70,6 +70,9 @@ def readCommand():
             msg = readMsg()
         return msg
 
+def getPendingQueueSize():
+    return len(pending_commands)
+
 def readTuple():
     cmd = readCommand()
     return Tuple(cmd["id"], cmd["comp"], cmd["stream"], cmd["task"], cmd["tuple"])
@@ -155,6 +158,9 @@ def logError(msg):
 
 def rpcMetrics(name, params):
     sendMsgToParent({"command": "metrics", "name": name, "params": params})
+
+def delay(sec):
+    sendMsgToParent({"command": "delay", "msg": sec})
 
 def initComponent():
     setupInfo = readMsg()
