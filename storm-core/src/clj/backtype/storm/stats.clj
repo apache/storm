@@ -366,12 +366,12 @@
   [stats]
   (ExecutorSpecificStats/bolt
     (BoltStats.
-      (window-set-converter (:acked stats) to-global-stream-id)
-      (window-set-converter (:failed stats) to-global-stream-id)
-      (window-set-converter (:process-latencies stats) to-global-stream-id)
-      (window-set-converter (:executed stats) to-global-stream-id)
-      (window-set-converter (:execute-latencies stats) to-global-stream-id)
-      (window-set-converter (:deserialize-time stats) to-global-stream-id))))
+      (window-set-converter (:acked stats) to-global-stream-id str)
+      (window-set-converter (:failed stats) to-global-stream-id str)
+      (window-set-converter (:process-latencies stats) to-global-stream-id str)
+      (window-set-converter (:executed stats) to-global-stream-id str)
+      (window-set-converter (:execute-latencies stats) to-global-stream-id str)
+      (window-set-converter (:deserialize-time stats) to-global-stream-id str))))
 
 (defmethod thriftify-specific-stats :spout
   [stats]
