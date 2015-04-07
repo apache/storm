@@ -83,6 +83,7 @@ init_storm_env()
 CONFIG_OPTS = []
 CONFFILE = ""
 JAR_JVM_OPTS = shlex.split(os.getenv('STORM_JAR_JVM_OPTS', ''))
+JAR_DEBUG_JVM_OPTS = '-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005'
 JAVA_HOME = os.getenv('JAVA_HOME', None)
 JAVA_CMD = 'java' if not JAVA_HOME else os.path.join(JAVA_HOME, 'bin', 'java')
 
@@ -205,6 +206,27 @@ def jar(jarfile, klass, *args):
         extrajars=[jarfile, USER_CONF_DIR, STORM_BIN_DIR],
         args=args,
         jvmopts=JAR_JVM_OPTS + ["-Dstorm.jar=" + jarfile])
+
+def jardebug(jarfile, klass, *args):
+    """Syntax: [storm jardebug topology-jar-path class ...]
+
+    Will start the main method of class with specified arguments, and then
+    suspend the JVM, waiting for a remote debugger to connect.
+    Convenient for debugging your storm topologies.
+
+    Otherwise works as the jar target.
+
+    The storm jars and configs in ~/.storm are put on the classpath.
+    The process is configured so that StormSubmitter
+    (http://storm.incubator.apache.org/apidocs/backtype/storm/StormSubmitter.html)
+    will upload the jar at topology-jar-path when the topology is submitted.
+    """
+    exec_storm_class(
+        klass,
+        jvmtype="-client",
+        extrajars=[jarfile, USER_CONF_DIR, STORM_BIN_DIR],
+        args=args,
+        jvmopts=JAR_JVM_OPTS + ["-Dstorm.jar=" + jarfile] + [JAR_DEBUG_JVM_OPTS])
 
 def kill(*args):
     """Syntax: [storm kill topology-name [-w wait-time-secs]]
@@ -497,7 +519,7 @@ def unknown_command(*args):
     print_usage()
     sys.exit(254)
 
-COMMANDS = {"jar": jar, "kill": kill, "shell": shell, "nimbus": nimbus, "ui": ui, "logviewer": logviewer,
+COMMANDS = {"jar": jar, "jardebug": jardebug, "kill": kill, "shell": shell, "nimbus": nimbus, "ui": ui, "logviewer": logviewer,
             "drpc": drpc, "supervisor": supervisor, "localconfvalue": print_localconfvalue,
             "remoteconfvalue": print_remoteconfvalue, "repl": repl, "classpath": print_classpath,
             "activate": activate, "deactivate": deactivate, "rebalance": rebalance, "help": print_usage,
