@@ -333,18 +333,22 @@
   [(.get_componentId global-stream-id) (.get_streamId global-stream-id)])
 
 (defmethod clojurify-specific-stats BoltStats [^BoltStats stats]
-  [(window-set-converter (.get_acked stats) from-global-stream-id symbol)
-   (window-set-converter (.get_failed stats) from-global-stream-id symbol)
-   (window-set-converter (.get_process_ms_avg stats) from-global-stream-id symbol)
-   (window-set-converter (.get_executed stats) from-global-stream-id symbol)
-   (window-set-converter (.get_execute_ms_avg stats) from-global-stream-id symbol)
-   (window-set-converter (.get_deserialize_time stats) from-global-stream-id symbol)])
+  (let [required-fields [(window-set-converter (.get_acked stats) from-global-stream-id symbol)
+                         (window-set-converter (.get_failed stats) from-global-stream-id symbol)
+                         (window-set-converter (.get_process_ms_avg stats) from-global-stream-id symbol)
+                         (window-set-converter (.get_executed stats) from-global-stream-id symbol)
+                         (window-set-converter (.get_execute_ms_avg stats) from-global-stream-id symbol)]]
+    (if (nil? (.get_deserialize_time stats)) required-fields
+      (conj required-fields (window-set-converter (.get_deserialize_time stats) from-global-stream-id symbol))
+      )))
 
 (defmethod clojurify-specific-stats SpoutStats [^SpoutStats stats]
-  [(window-set-converter (.get_acked stats) symbol)
-   (window-set-converter (.get_failed stats) symbol)
-   (window-set-converter (.get_complete_ms_avg stats) symbol)
-   (window-set-converter (.get_deserialize_time stats) symbol)])
+  (let [required-fields [(window-set-converter (.get_acked stats) symbol)
+                         (window-set-converter (.get_failed stats) symbol)
+                         (window-set-converter (.get_complete_ms_avg stats) symbol)]]
+    (if (nil? (.get_deserialize_time stats)) required-fields
+      (conj required-fields (window-set-converter (.get_deserialize_time stats) symbol))
+      )))
 
 
 (defn clojurify-executor-stats
@@ -364,22 +368,27 @@
 
 (defmethod thriftify-specific-stats :bolt
   [stats]
-  (ExecutorSpecificStats/bolt
-    (BoltStats.
-      (window-set-converter (:acked stats) to-global-stream-id str)
-      (window-set-converter (:failed stats) to-global-stream-id str)
-      (window-set-converter (:process-latencies stats) to-global-stream-id str)
-      (window-set-converter (:executed stats) to-global-stream-id str)
-      (window-set-converter (:execute-latencies stats) to-global-stream-id str)
-      (window-set-converter (:deserialize-time stats) to-global-stream-id str))))
+  (let [bolt-stats (BoltStats.
+                     (window-set-converter (:acked stats) to-global-stream-id str)
+                     (window-set-converter (:failed stats) to-global-stream-id str)
+                     (window-set-converter (:process-latencies stats) to-global-stream-id str)
+                     (window-set-converter (:executed stats) to-global-stream-id str)
+                     (window-set-converter (:execute-latencies stats) to-global-stream-id str))
+        _ (if-not (nil? (:deserialize-time stats))
+            (.set_deserialize_time bolt-stats
+              (window-set-converter (:deserialize-time stats) to-global-stream-id str)))]
+  (ExecutorSpecificStats/bolt bolt-stats)))
 
 (defmethod thriftify-specific-stats :spout
   [stats]
-  (ExecutorSpecificStats/spout
-    (SpoutStats. (window-set-converter (:acked stats) str)
-                 (window-set-converter (:failed stats) str)
-                 (window-set-converter (:complete-latencies stats) str)
-                 (window-set-converter (:deserialize-time stats) str))))
+  (let [spout-stats (SpoutStats.
+                      (window-set-converter (:acked stats) str)
+                      (window-set-converter (:failed stats) str)
+                      (window-set-converter (:complete-latencies stats) str))
+        _ (if-not (nil? (:deserialize-time stats))
+            (.set_deserialize_time spout-stats
+              (window-set-converter (:deserialize-time stats) str)))]
+    (ExecutorSpecificStats/spout spout-stats)))
 
 (defn thriftify-executor-stats
   [stats]
