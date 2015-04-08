@@ -2,7 +2,9 @@
 /classes
 /lib
 deploy/lib
+deploy/logs
 .emacs-project
+*.jar
 bin/jzmq
 .DS_Store
 deploy/classes
