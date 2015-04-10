@@ -22,14 +22,16 @@
                                 ^MultiReducedMetric complete-latency
                                 ^MultiCountMetric fail-count
                                 ^MultiCountMetric emit-count
-                                ^MultiCountMetric transfer-count])
+                                ^MultiCountMetric transfer-count
+                                ^MultiReducedMetric deserialize-time])
 (defrecord BuiltinBoltMetrics [^MultiCountMetric ack-count
                                ^MultiReducedMetric process-latency
                                ^MultiCountMetric fail-count
                                ^MultiCountMetric execute-count
                                ^MultiReducedMetric execute-latency
                                ^MultiCountMetric emit-count
-                               ^MultiCountMetric transfer-count])
+                               ^MultiCountMetric transfer-count
+                               ^MultiReducedMetric deserialize-time])
 
 (defn make-data [executor-type]
   (condp = executor-type
@@ -37,14 +39,16 @@
                                  (MultiReducedMetric. (MeanReducer.))
                                  (MultiCountMetric.)
                                  (MultiCountMetric.)
-                                 (MultiCountMetric.))
+                                 (MultiCountMetric.)
+                                 (MultiReducedMetric. (MeanReducer.)))
     :bolt (BuiltinBoltMetrics. (MultiCountMetric.)
                                (MultiReducedMetric. (MeanReducer.))
                                (MultiCountMetric.)
                                (MultiCountMetric.)
                                (MultiReducedMetric. (MeanReducer.))
                                (MultiCountMetric.)
-                               (MultiCountMetric.))))
+                               (MultiCountMetric.)
+                               (MultiReducedMetric. (MeanReducer.)))))
 
 (defn register-all [builtin-metrics  storm-conf topology-context]
   (doseq [[kw imetric] builtin-metrics]
@@ -80,6 +84,9 @@
 (defn spout-failed-tuple! [^BuiltinSpoutMetrics m stats stream]  
   (-> m .fail-count (.scope stream) (.incrBy (stats-rate stats))))
 
+(defn spout-deserialize-time! [^BuiltinSpoutMetrics m stream deserialize-time]
+  (-> m .deserialize-time (.scope stream) (.update deserialize-time)))
+
 (defn bolt-execute-tuple! [^BuiltinBoltMetrics m stats comp-id stream latency-ms]
   (let [scope (str comp-id ":" stream)]    
     (-> m .execute-count (.scope scope) (.incrBy (stats-rate stats)))
@@ -94,8 +101,13 @@
   (let [scope (str comp-id ":" stream)]    
     (-> m .fail-count (.scope scope) (.incrBy (stats-rate stats)))))
 
+(defn bolt-deserialize-time! [^BuiltinBoltMetrics m comp-id stream deserialize-time]
+  (let [scope (str comp-id ":" stream)]
+    (-> m .deserialize-time (.scope scope) (.update deserialize-time))))
+
 (defn emitted-tuple! [m stats stream]
   (-> m :emit-count (.scope stream) (.incrBy (stats-rate stats))))
 
 (defn transferred-tuple! [m stats stream num-out-tasks]
   (-> m :transfer-count (.scope stream) (.incrBy (* num-out-tasks (stats-rate stats)))))
+

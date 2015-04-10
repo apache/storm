@@ -1031,3 +1031,10 @@
 
 (defn hashmap-to-persistent [^HashMap m]
   (zipmap (.keySet m) (.values m)))
+
+(defmacro with-time
+  [expr]
+  `(let [start# (. System (nanoTime))
+         ret# ~expr
+         elapsed# (/ (double (- (. System (nanoTime)) start#)) 1000000.0)]
+     [elapsed# ret#]))

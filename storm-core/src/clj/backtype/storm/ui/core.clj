@@ -218,6 +218,11 @@
             (aggregate-averages (map #(.. ^ExecutorStats % get_specific get_bolt get_execute_ms_avg)
                                      stats-seq)
                                 (map #(.. ^ExecutorStats % get_specific get_bolt get_executed)
+                                     stats-seq))
+            :deserialize-time
+            (aggregate-averages (map #(.. ^ExecutorStats % get_specific get_bolt get_deserialize_time)
+                                     stats-seq)
+                                (map #(.. ^ExecutorStats % get_specific get_bolt get_executed)
                                      stats-seq))})))
 
 (defn aggregate-spout-stats
@@ -234,6 +239,11 @@
             (aggregate-averages (map #(.. ^ExecutorStats % get_specific get_spout get_complete_ms_avg)
                                      stats-seq)
                                 (map #(.. ^ExecutorStats % get_specific get_spout get_acked)
+                                     stats-seq))
+            :deserialize-time
+            (aggregate-averages (map #(.. ^ExecutorStats % get_specific get_spout get_deserialize_time)
+                                  stats-seq)
+                                (map #(.. ^ExecutorStats % get_specific get_spout get_acked)
                                      stats-seq))})))
 
 (defn aggregate-bolt-streams
@@ -246,7 +256,10 @@
                                              (:acked stats))
    :executed (aggregate-count-streams (:executed stats))
    :execute-latencies (aggregate-avg-streams (:execute-latencies stats)
-                                             (:executed stats))})
+                                             (:executed stats))
+   :deserialize-time (aggregate-avg-streams (:deserialize-time stats)
+                                             (:executed stats))
+   })
 
 (defn aggregate-spout-streams
   [stats]
@@ -255,7 +268,10 @@
    :emitted (aggregate-count-streams (:emitted stats))
    :transferred (aggregate-count-streams (:transferred stats))
    :complete-latencies (aggregate-avg-streams (:complete-latencies stats)
-                                              (:acked stats))})
+                                              (:acked stats))
+   :deserialize-time (aggregate-avg-streams (:deserialize-time stats)
+                                            (:executed stats))
+   })
 
 (defn spout-summary?
   [topology s]
@@ -694,6 +710,7 @@
         "emitted" (get-in stats [:emitted k])
         "transferred" (get-in stats [:transferred k])
         "completeLatency" (float-str (get-in stats [:complete-latencies k]))
+        "deserializeTime" (float-str (get-in stats [:deserialize-time k]))
         "acked" (get-in stats [:acked k])
         "failed" (get-in stats [:failed k])})))
 
@@ -764,6 +781,7 @@
      "emitted" (nil-to-zero (:emitted stats))
      "transferred" (nil-to-zero (:transferred stats))
      "completeLatency" (float-str (:complete-latencies stats))
+     "deserializeTime" (float-str (:deserialize-time stats))
      "acked" (nil-to-zero (:acked stats))
      "failed" (nil-to-zero (:failed stats))
      "workerLogLink" (worker-log-link (.get_host e) (.get_port e) topology-id)}))
@@ -808,6 +826,7 @@
        "executeLatency" (float-str (get-in stats [:execute-latencies k]))
        "executed" (get-in stats [:executed k])
        "processLatency" (float-str (get-in stats [:process-latencies k]))
+       "deserializeTime" (float-str (get-in stats [:deserialize-time k]))
        "acked" (get-in stats [:acked k])
        "failed" (get-in stats [:failed k])})))
 
@@ -863,6 +882,7 @@
      "executeLatency" (float-str (:execute-latencies stats))
      "executed" (nil-to-zero (:executed stats))
      "processLatency" (float-str (:process-latencies stats))
+     "deserializeTime" (float-str (:deserialize-time stats))
      "acked" (nil-to-zero (:acked stats))
      "failed" (nil-to-zero (:failed stats))
      "workerLogLink" (worker-log-link (.get_host e) (.get_port e) topology-id)}))
