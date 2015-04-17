@@ -25,6 +25,7 @@
            [org.apache.commons.io FileUtils]
            [java.io File])
   (:use [backtype.storm config util log timer local-state])
+  (:import [backtype.storm.utils VersionInfo])
   (:use [backtype.storm.daemon common])
   (:require [backtype.storm.daemon [worker :as worker]]
             [backtype.storm [process-simulator :as psim] [cluster :as cluster] [event :as event]]
@@ -289,6 +290,7 @@
    :isupervisor isupervisor
    :active (atom true)
    :uptime (uptime-computer)
+   :version (str (VersionInfo/getVersion))
    :worker-thread-pids-atom (atom {})
    :storm-cluster-state (cluster/mk-storm-cluster-state conf :acls (when
                                                                      (Utils/isZkAuthenticationConfiguredStormServer
@@ -502,15 +504,18 @@
         heartbeat-fn (fn [] (.supervisor-heartbeat!
                                (:storm-cluster-state supervisor)
                                (:supervisor-id supervisor)
-                               (SupervisorInfo. (current-time-secs)
-                                                (:my-hostname supervisor)
-                                                (:assignment-id supervisor)
-                                                (keys @(:curr-assignment supervisor))
-                                                ;; used ports
-                                                (.getMetadata isupervisor)
-                                                (conf SUPERVISOR-SCHEDULER-META)
-                                                ((:uptime supervisor)))))]
+                               (->SupervisorInfo (current-time-secs)
+                                                 (:my-hostname supervisor)
+                                                 (:assignment-id supervisor)
+                                                 (keys @(:curr-assignment supervisor))
+                                                 ;; used ports
+                                                 (.getMetadata isupervisor)
+                                                 (conf SUPERVISOR-SCHEDULER-META)
+                                                 ((:uptime supervisor))
+						 ((:version supervisor))))]
+                                
     (heartbeat-fn)
+
     ;; should synchronize supervisor so it doesn't launch anything after being down (optimization)
     (schedule-recurring (:heartbeat-timer supervisor)
                         0
