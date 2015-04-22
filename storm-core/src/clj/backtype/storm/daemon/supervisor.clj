@@ -668,9 +668,9 @@
           topo-classpath (if-let [cp (storm-conf TOPOLOGY-CLASSPATH)]
                            [cp]
                            [])
-          classpath (-> (current-classpath)
-                        (add-to-classpath [stormjar])
-                        (add-to-classpath topo-classpath))
+          classpath (-> stormjar 
+                        (add-to-classpath [(current-classpath)])
+                        (add-to-classpath topo-classpath) )
           top-gc-opts (storm-conf TOPOLOGY-WORKER-GC-CHILDOPTS)
           gc-opts (substitute-childopts (if top-gc-opts top-gc-opts (conf WORKER-GC-CHILDOPTS)) worker-id storm-id port)
           user (storm-conf TOPOLOGY-SUBMITTER-USER)

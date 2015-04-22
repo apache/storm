@@ -251,7 +251,7 @@
     (let [mock-port "42"
           mock-storm-id "fake-storm-id"
           mock-worker-id "fake-worker-id"
-          mock-cp (str file-path-separator "base" class-path-separator file-path-separator "stormjar.jar")
+          mock-cp (str file-path-separator "stormjar.jar" class-path-separator file-path-separator "base")
           exp-args-fn (fn [opts topo-opts classpath]
                        (concat [(supervisor/java-cmd) "-server"]
                                opts
