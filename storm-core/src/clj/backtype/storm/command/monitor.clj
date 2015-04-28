@@ -14,11 +14,10 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.command.monitor
-  (:use [clojure.tools.cli :only [cli]])
-  (:use [backtype.storm.thrift :only [with-configured-nimbus-connection]])
+  (:require [clojure.tools.cli :refer [cli]]
+            [backtype.storm.thrift :as thrift])
   (:import [backtype.storm.utils Monitor])
-  (:gen-class)
- )
+  (:gen-class))
 
 (defn -main [& args]
   (let [[{interval :interval component :component stream :stream watch :watch} [name] _]
@@ -32,6 +31,5 @@
     (if component (.set_component mon component))
     (if stream (.set_stream mon stream))
     (if watch (.set_watch mon watch))
-    (with-configured-nimbus-connection nimbus
-      (.metrics mon nimbus)
-      )))
+    (thrift/with-configured-nimbus-connection nimbus
+      (.metrics mon nimbus))))

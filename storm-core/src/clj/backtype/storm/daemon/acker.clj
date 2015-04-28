@@ -14,17 +14,17 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.daemon.acker
-  (:import [backtype.storm.task OutputCollector TopologyContext IBolt])
-  (:import [backtype.storm.tuple Tuple Fields])
-  (:import [backtype.storm.utils RotatingMap MutableObject])
-  (:import [java.util List Map])
-  (:import [backtype.storm Constants])
-  (:use [backtype.storm config util log])
+  (:require [backtype.storm.util :as util])
+  (:import [backtype.storm.task OutputCollector TopologyContext IBolt]
+           [backtype.storm.tuple Tuple Fields]
+           [backtype.storm.utils RotatingMap MutableObject]
+           [java.util List Map]
+           [backtype.storm Constants])
   (:gen-class
-   :init init
-   :implements [backtype.storm.task.IBolt]
-   :constructors {[] []}
-   :state state ))
+    :init init
+    :implements [backtype.storm.task.IBolt]
+    :constructors {[] []}
+    :state state))
 
 (def ACKER-COMPONENT-ID "__acker")
 (def ACKER-INIT-STREAM-ID "__ack_init")
@@ -33,12 +33,10 @@
 
 (defn- update-ack [curr-entry val]
   (let [old (get curr-entry :val 0)]
-    (assoc curr-entry :val (bit-xor old val))
-    ))
+    (assoc curr-entry :val (bit-xor old val))))
 
 (defn- acker-emit-direct [^OutputCollector collector ^Integer task ^String stream ^List values]
-  (.emitDirect collector task stream values)
-  )
+  (.emitDirect collector task stream values))
 
 (defn mk-acker-bolt []
   (let [output-collector (MutableObject.)
@@ -46,8 +44,7 @@
     (reify IBolt
       (^void prepare [this ^Map storm-conf ^TopologyContext context ^OutputCollector collector]
                (.setObject output-collector collector)
-               (.setObject pending (RotatingMap. 2))
-               )
+               (.setObject pending (RotatingMap. 2)))
       (^void execute [this ^Tuple tuple]
              (let [^RotatingMap pending (.getObject pending)
                    stream-id (.getSourceStreamId tuple)]
@@ -70,38 +67,29 @@
                              (acker-emit-direct output-collector
                                                 (:spout-task curr)
                                                 ACKER-ACK-STREAM-ID
-                                                [id]
-                                                ))
+                                                [id]))
                            (:failed curr)
                            (do
                              (.remove pending id)
                              (acker-emit-direct output-collector
                                                 (:spout-task curr)
                                                 ACKER-FAIL-STREAM-ID
-                                                [id]
-                                                ))
-                           ))
-                   (.ack output-collector tuple)
-                   ))))
-      (^void cleanup [this]
-        )
-      )))
+                                                [id]))))
+                   (.ack output-collector tuple)))))
+      (^void cleanup [this]))))
 
 (defn -init []
-  [[] (container)])
+  [[] (util/container)])
 
 (defn -prepare [this conf context collector]
   (let [^IBolt ret (mk-acker-bolt)]
-    (container-set! (.state ^backtype.storm.daemon.acker this) ret)
-    (.prepare ret conf context collector)
-    ))
+    (util/container-set! (.state ^backtype.storm.daemon.acker this) ret)
+    (.prepare ret conf context collector)))
 
 (defn -execute [this tuple]
-  (let [^IBolt delegate (container-get (.state ^backtype.storm.daemon.acker this))]
-    (.execute delegate tuple)
-    ))
+  (let [^IBolt delegate (util/container-get (.state ^backtype.storm.daemon.acker this))]
+    (.execute delegate tuple)))
 
 (defn -cleanup [this]
-  (let [^IBolt delegate (container-get (.state ^backtype.storm.daemon.acker this))]
-    (.cleanup delegate)
-    ))
+  (let [^IBolt delegate (util/container-get (.state ^backtype.storm.daemon.acker this))]
+    (.cleanup delegate)))

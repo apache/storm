@@ -14,23 +14,22 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.daemon.task
-  (:use [backtype.storm.daemon common])
-  (:use [backtype.storm config util log])
-  (:import [backtype.storm.hooks ITaskHook])
-  (:import [backtype.storm.tuple Tuple TupleImpl])
-  (:import [backtype.storm.generated SpoutSpec Bolt StateSpoutSpec StormTopology])
-  (:import [backtype.storm.hooks.info SpoutAckInfo SpoutFailInfo
-            EmitInfo BoltFailInfo BoltAckInfo])
-  (:import [backtype.storm.task TopologyContext ShellBolt WorkerTopologyContext])
-  (:import [backtype.storm.utils Utils])
-  (:import [backtype.storm.generated ShellComponent JavaObject])
-  (:import [backtype.storm.spout ShellSpout])
-  (:import [java.util Collection List ArrayList])
+  (:use [backtype.storm.daemon common]
+        [backtype.storm config util log])
+  (:import [backtype.storm.tuple Tuple TupleImpl]
+           [backtype.storm.generated SpoutSpec Bolt StateSpoutSpec StormTopology]
+           [backtype.storm.hooks.info SpoutAckInfo SpoutFailInfo
+                                      EmitInfo BoltFailInfo BoltAckInfo]
+           [backtype.storm.task TopologyContext ShellBolt WorkerTopologyContext]
+           [backtype.storm.utils Utils]
+           [backtype.storm.generated ShellComponent JavaObject]
+           [backtype.storm.spout ShellSpout]
+           [java.util Collection List ArrayList])
   (:require [backtype.storm
              [tuple :as tuple]
              [thrift :as thrift]
-             [stats :as stats]])
-  (:require [backtype.storm.daemon.builtin-metrics :as builtin-metrics]))
+             [stats :as stats]]
+            [backtype.storm.daemon.builtin-metrics :as builtin-metrics]))
 
 (defn mk-topology-context-builder [worker executor-data topology]
   (let [conf (:conf worker)]
@@ -134,7 +133,7 @@
         user-context (:user-context task-data)
         executor-stats (:stats executor-data)
         debug? (= true (storm-conf TOPOLOGY-DEBUG))]
-        
+
     (fn ([^Integer out-task-id ^String stream ^List values]
           (when debug?
             (log-message "Emitting direct: " out-task-id "; " component-id " " stream " " values))
@@ -143,7 +142,7 @@
                 grouping (get component->grouping target-component)
                 out-task-id (if grouping out-task-id)]
             (when (and (not-nil? grouping) (not= :direct grouping))
-              (throw (IllegalArgumentException. "Cannot emitDirect to a task expecting a regular grouping")))                          
+              (throw (IllegalArgumentException. "Cannot emitDirect to a task expecting a regular grouping")))
             (apply-hooks user-context .emit (EmitInfo. values stream task-id [out-task-id]))
             (when (emit-sampler)
               (builtin-metrics/emitted-tuple! (:builtin-metrics task-data) executor-stats stream)
@@ -169,7 +168,7 @@
              (apply-hooks user-context .emit (EmitInfo. values stream task-id out-tasks))
              (when (emit-sampler)
                (stats/emitted-tuple! executor-stats stream)
-               (builtin-metrics/emitted-tuple! (:builtin-metrics task-data) executor-stats stream)              
+               (builtin-metrics/emitted-tuple! (:builtin-metrics task-data) executor-stats stream)
                (stats/transferred-tuples! executor-stats stream (count out-tasks))
                (builtin-metrics/transferred-tuple! (:builtin-metrics task-data) executor-stats stream (count out-tasks)))
              out-tasks)))

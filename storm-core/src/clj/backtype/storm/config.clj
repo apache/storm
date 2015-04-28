@@ -20,7 +20,8 @@
   (:import [backtype.storm Config ConfigValidation$FieldValidator])
   (:import [backtype.storm.utils Utils LocalState])
   (:import [org.apache.commons.io FileUtils])
-  (:require [clojure [string :as str]])
+  (:require [clojure.string :as str]
+            [backtype.storm.util :as util])
   (:use [backtype.storm log util]))
 
 (def RESOURCES-SUBDIR "resources")
@@ -36,7 +37,7 @@
       `(def ~(symbol new-name) (. Config ~(symbol name))))))
 
 (def ALL-CONFIGS
-  (dofor [f (seq (.getFields Config))]
+  (util/dofor [f (seq (.getFields Config))]
          (.get f nil)))
 
 (defmulti get-FieldValidator class-selector)
@@ -236,7 +237,7 @@
     nil
     )))
 
-  
+
 (defn set-worker-user! [conf worker-id user]
   (log-message "SET worker-user " worker-id " " user)
   (let [file (worker-user-file conf worker-id)]

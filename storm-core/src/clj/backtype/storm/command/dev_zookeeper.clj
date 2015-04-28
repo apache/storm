@@ -14,13 +14,15 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.command.dev-zookeeper
-  (:use [backtype.storm zookeeper util config])
+  (:require [backtype.storm.zookeeper :as zoo]
+            [backtype.storm.config :as config])
+  (:use [backtype.storm util ])
   (:gen-class))
 
 (defn -main [& args]
-  (let [conf (read-storm-config)
-        port (conf STORM-ZOOKEEPER-PORT)
-        localpath (conf DEV-ZOOKEEPER-PATH)]
+  (let [conf (config/read-storm-config)
+        port (conf config/STORM-ZOOKEEPER-PORT)
+        localpath (conf config/DEV-ZOOKEEPER-PATH)]
     (rmr localpath)
-    (mk-inprocess-zookeeper localpath :port port)
+    (zoo/mk-inprocess-zookeeper localpath :port port)
     ))

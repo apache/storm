@@ -14,8 +14,9 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.command.kill-topology
-  (:use [clojure.tools.cli :only [cli]])
-  (:use [backtype.storm thrift config log])
+  (:require [backtype.storm.thrift :as thrift]
+            [clojure.tools.cli :refer [cli]]
+            [backtype.storm.log :as log])
   (:import [backtype.storm.generated KillOptions])
   (:gen-class))
 
@@ -23,7 +24,6 @@
   (let [[{wait :wait} [name] _] (cli args ["-w" "--wait" :default nil :parse-fn #(Integer/parseInt %)])
         opts (KillOptions.)]
     (if wait (.set_wait_secs opts wait))
-    (with-configured-nimbus-connection nimbus
+    (thrift/with-configured-nimbus-connection nimbus
       (.killTopologyWithOpts nimbus name opts)
-      (log-message "Killed topology: " name)
-      )))
+      (log/log-message "Killed topology: " name))))

@@ -14,30 +14,28 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.daemon.logviewer
-  (:use compojure.core)
-  (:use [clojure.set :only [difference intersection]])
-  (:use [clojure.string :only [blank?]])
-  (:use [hiccup core page-helpers])
-  (:use [backtype.storm config util log timer])
-  (:use [backtype.storm.ui helpers])
-  (:import [org.slf4j LoggerFactory])
-  (:import [ch.qos.logback.classic Logger])
-  (:import [ch.qos.logback.core FileAppender])
-  (:import [java.io File FileFilter FileInputStream])
-  (:import [org.yaml.snakeyaml Yaml]
-           [org.yaml.snakeyaml.constructor SafeConstructor])
-  (:import [backtype.storm.ui InvalidRequestException]
-           [backtype.storm.security.auth AuthUtils])
+  (:use [hiccup core page-helpers]
+        [backtype.storm config util log timer]
+        [backtype.storm.ui helpers])
   (:require [compojure.route :as route]
             [compojure.handler :as handler]
             [ring.middleware.keyword-params]
-            [ring.util.response :as resp])
-  (:require [backtype.storm.daemon common [supervisor :as supervisor]])
-  (:import [java.io File FileFilter])
-  (:require [compojure.route :as route]
+            [ring.util.response :as resp]
+            [backtype.storm.daemon common [supervisor :as supervisor]]
+            [compojure.route :as route]
             [compojure.handler :as handler]
             [ring.util.response :as resp]
-            [clojure.string :as string])
+            [clojure.string :as string]
+            [clojure.set :refer [difference intersection]]
+            [clojure.string :refer [blank?]]
+            [compojure.core :refer [defroutes GET POST]])
+  (:import [org.slf4j LoggerFactory]
+           [ch.qos.logback.classic Logger]
+           [ch.qos.logback.core FileAppender]
+           [java.io File FileFilter FileInputStream]
+           [java.io File FileFilter]
+           [backtype.storm.ui InvalidRequestException]
+           [backtype.storm.security.auth AuthUtils])
   (:gen-class))
 
 (def ^:dynamic *STORM-CONF* (read-storm-config))
@@ -219,7 +217,7 @@ Note that if anything goes wrong, this will throw an Error and exit."
 (defnk to-btn-link
   "Create a link that is formatted like a button"
   [url text :enabled true]
-  [:a {:href (java.net.URI. url) 
+  [:a {:href (java.net.URI. url)
        :class (str "btn btn-default " (if enabled "enabled" "disabled"))} text])
 
 (defn pager-links [fname start length file-size]
@@ -247,7 +245,7 @@ Note that if anything goes wrong, this will throw an Error and exit."
                            :start (min (max 0 (- file-size length))
                                        (+ start length))
                            :length length})
-                        "Next" :enabled (> next-start start))])]])) 
+                        "Next" :enabled (> next-start start))])]]))
 
 (defn- download-link [fname]
   [[:p (link-to (url-format "/download/%s" fname) "Download Full Log")]])

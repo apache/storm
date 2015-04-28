@@ -14,12 +14,13 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.command.list
-  (:use [backtype.storm thrift log])
+  (:require [backtype.storm.thrift :as thrift])
   (:import [backtype.storm.generated TopologySummary])
   (:gen-class))
 
+;; TODO: replace with logging, replace with a table generator?
 (defn -main []
-  (with-configured-nimbus-connection nimbus
+  (thrift/with-configured-nimbus-connection nimbus
     (let [cluster-info (.getClusterInfo nimbus)
           topologies (.get_topologies cluster-info)
           msg-format "%-20s %-10s %-10s %-12s %-10s"]

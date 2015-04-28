@@ -250,7 +250,7 @@
                    ;; (Boolean. false) does not evaluate to false in an if.
                    ;; This fixes that.
                    (instance? Boolean x) (boolean x)
-                   true x))
+                   true x))                                 ;; TODO: :else x
            s))
 
 (defmacro with-file-lock
@@ -537,9 +537,9 @@
                (catch InterruptedException e
                  (log-message log-prefix " interrupted.")))
              (exit-code-callback (.exitValue process)))
-           nil)))                    
+           nil)))
       process)))
-   
+
 (defn exists-file?
   [path]
   (.exists (File. path)))
@@ -1014,7 +1014,7 @@
   ([x form & more] `(-<> (-<> ~x ~form) ~@more)))
 
 (def LOG-DIR
-  (.getCanonicalPath 
+  (.getCanonicalPath
                 (clojure.java.io/file (System/getProperty "storm.home") "logs")))
 
 (defn- logs-rootname [storm-id port]
