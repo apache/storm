@@ -45,7 +45,7 @@ public class KafkaUtilsTest {
     private KafkaTestBroker broker;
     private SimpleConsumer simpleConsumer;
     private KafkaConfig config;
-    private BrokerHosts brokerHosts;
+    private StaticHosts brokerHosts;
 
     @Before
     public void setup() {
@@ -53,7 +53,7 @@ public class KafkaUtilsTest {
         GlobalPartitionInformation globalPartitionInformation = new GlobalPartitionInformation();
         globalPartitionInformation.addPartition(0, Broker.fromString(broker.getBrokerConnectionString()));
         brokerHosts = new StaticHosts(globalPartitionInformation);
-        config = new KafkaConfig(brokerHosts, "testTopic");
+        config = new KafkaConfig("testTopic", new StaticKafkaFactory(brokerHosts));
         simpleConsumer = new SimpleConsumer("localhost", broker.getPort(), 60000, 1024, "testClient");
     }
 
@@ -101,7 +101,7 @@ public class KafkaUtilsTest {
 
     @Test(expected = TopicOffsetOutOfRangeException.class)
     public void fetchMessagesWithInvalidOffsetAndDefaultHandlingEnabled() throws Exception {
-        config = new KafkaConfig(brokerHosts, "newTopic");
+        config = new KafkaConfig("newTopic", new StaticKafkaFactory(brokerHosts));
         String value = "test";
         createTopicAndSendMessage(value);
         KafkaUtils.fetchMessages(config, simpleConsumer,
@@ -174,7 +174,7 @@ public class KafkaUtilsTest {
 
     private void runGetValueOnlyTuplesTest() {
         String value = "value";
-        createTopicAndSendMessage(null, value);
+        createTopicAndSendMessage(value);
         ByteBufferMessageSet messageAndOffsets = getLastMessage();
         for (MessageAndOffset msg : messageAndOffsets) {
             Iterable<List<Object>> lists = KafkaUtils.generateTuples(config, msg.message());
@@ -182,24 +182,17 @@ public class KafkaUtilsTest {
         }
     }
 
-
     private void createTopicAndSendMessage() {
-        createTopicAndSendMessage(null, "someValue");
+        TestUtils.createTopicAndSendMessage(broker, config.topic, null, "someValue");
     }
 
     private void createTopicAndSendMessage(String value) {
-        createTopicAndSendMessage(null, value);
+        TestUtils.createTopicAndSendMessage(broker, config.topic, null, value);
     }
 
     private void createTopicAndSendMessage(String key, String value) {
-        Properties p = new Properties();
-        p.setProperty("metadata.broker.list", broker.getBrokerConnectionString());
-        p.setProperty("serializer.class", "kafka.serializer.StringEncoder");
-        ProducerConfig producerConfig = new ProducerConfig(p);
-        Producer<String, String> producer = new Producer<String, String>(producerConfig);
-        producer.send(new KeyedMessage<String, String>(config.topic, key, value));
+        TestUtils.createTopicAndSendMessage(broker, config.topic, key, value);
     }
-
 
     @Test
     public void assignOnePartitionPerTask() {

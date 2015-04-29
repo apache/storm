@@ -19,7 +19,11 @@ package storm.kafka;
 
 import java.io.Serializable;
 
-
+/**
+ * @deprecated the use of this interface for construction
+ * of a KafkaConfig is deprecated, use KafkaFactory instead
+ */
+@Deprecated
 public interface BrokerHosts extends Serializable {
 
 }

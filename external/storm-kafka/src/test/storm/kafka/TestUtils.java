@@ -22,8 +22,11 @@ import backtype.storm.utils.Utils;
 import kafka.api.OffsetRequest;
 import kafka.javaapi.consumer.SimpleConsumer;
 import kafka.javaapi.message.ByteBufferMessageSet;
+import kafka.javaapi.producer.Producer;
 import kafka.message.Message;
 import kafka.message.MessageAndOffset;
+import kafka.producer.KeyedMessage;
+import kafka.producer.ProducerConfig;
 import storm.kafka.bolt.KafkaBolt;
 import storm.kafka.trident.GlobalPartitionInformation;
 
@@ -50,19 +53,17 @@ public class TestUtils {
     }
 
     public static SimpleConsumer getKafkaConsumer(KafkaTestBroker broker) {
-        BrokerHosts brokerHosts = getBrokerHosts(broker);
-        KafkaConfig kafkaConfig = new KafkaConfig(brokerHosts, TOPIC);
         SimpleConsumer simpleConsumer = new SimpleConsumer("localhost", broker.getPort(), 60000, 1024, "testClient");
         return simpleConsumer;
     }
 
     public static KafkaConfig getKafkaConfig(KafkaTestBroker broker) {
-        BrokerHosts brokerHosts = getBrokerHosts(broker);
-        KafkaConfig kafkaConfig = new KafkaConfig(brokerHosts, TOPIC);
+        StaticHosts brokerHosts = getBrokerHosts(broker);
+        KafkaConfig kafkaConfig = new KafkaConfig(TOPIC, new StaticKafkaFactory(brokerHosts));
         return kafkaConfig;
     }
 
-    private static BrokerHosts getBrokerHosts(KafkaTestBroker broker) {
+    private static StaticHosts getBrokerHosts(KafkaTestBroker broker) {
         GlobalPartitionInformation globalPartitionInformation = new GlobalPartitionInformation();
         globalPartitionInformation.addPartition(0, Broker.fromString(broker.getBrokerConnectionString()));
         return new StaticHosts(globalPartitionInformation);
@@ -95,5 +96,14 @@ public class TestUtils {
         assertEquals(key, keyString);
         assertEquals(message, messageString);
         return true;
+    }
+
+    public static void createTopicAndSendMessage(KafkaTestBroker broker, String topic, String key, String value) {
+        Properties p = new Properties();
+        p.setProperty("metadata.broker.list", broker.getBrokerConnectionString());
+        p.setProperty("serializer.class", "kafka.serializer.StringEncoder");
+        ProducerConfig producerConfig = new ProducerConfig(p);
+        Producer<String, String> producer = new Producer<String, String>(producerConfig);
+        producer.send(new KeyedMessage<String, String>(topic, key, value));
     }
 }

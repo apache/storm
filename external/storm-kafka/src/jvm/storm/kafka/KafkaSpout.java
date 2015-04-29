@@ -84,15 +84,11 @@ public class KafkaSpout extends BaseRichSpout {
         stateConf.put(Config.TRANSACTIONAL_ZOOKEEPER_ROOT, _spoutConfig.zkRoot);
         _state = new ZkState(stateConf);
 
-        _connections = new DynamicPartitionConnections(_spoutConfig, KafkaUtils.makeBrokerReader(conf, _spoutConfig));
-
+        KafkaFactory kafkaFactory = _spoutConfig.kafkaFactory;
+        _connections = new DynamicPartitionConnections(_spoutConfig, kafkaFactory.brokerReader(conf, _spoutConfig));
         // using TransactionalState like this is a hack
         int totalTasks = context.getComponentTasks(context.getThisComponentId()).size();
-        if (_spoutConfig.hosts instanceof StaticHosts) {
-            _coordinator = new StaticCoordinator(_connections, conf, _spoutConfig, _state, context.getThisTaskIndex(), totalTasks, _uuid);
-        } else {
-            _coordinator = new ZkCoordinator(_connections, conf, _spoutConfig, _state, context.getThisTaskIndex(), totalTasks, _uuid);
-        }
+        _coordinator = kafkaFactory.partitionCoordinator(_connections, _state, conf, context, totalTasks, _spoutConfig, _uuid);
 
         context.registerMetric("kafkaOffset", new IMetric() {
             KafkaUtils.KafkaOffsetMetric _kafkaOffsetMetric = new KafkaUtils.KafkaOffsetMetric(_spoutConfig.topic, _connections);

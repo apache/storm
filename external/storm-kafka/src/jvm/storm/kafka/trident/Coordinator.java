@@ -17,7 +17,6 @@
  */
 package storm.kafka.trident;
 
-import storm.kafka.KafkaUtils;
 import storm.trident.spout.IOpaquePartitionedTridentSpout;
 import storm.trident.spout.IPartitionedTridentSpout;
 
@@ -30,7 +29,7 @@ class Coordinator implements IPartitionedTridentSpout.Coordinator<GlobalPartitio
 
     public Coordinator(Map conf, TridentKafkaConfig tridentKafkaConfig) {
         config = tridentKafkaConfig;
-        reader = KafkaUtils.makeBrokerReader(conf, config);
+        reader = config.kafkaFactory.brokerReader(conf, tridentKafkaConfig);
     }
 
     @Override
