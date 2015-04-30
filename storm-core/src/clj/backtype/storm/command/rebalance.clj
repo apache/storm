@@ -16,10 +16,9 @@
 (ns backtype.storm.command.rebalance
   (:require [clojure.tools.cli :refer [cli]]
             [backtype.storm.thrift :as thrift]
-            [backtype.storm.log :as log])
+            [backtype.storm.log :refer [log-message]])
   (:import [backtype.storm.generated RebalanceOptions])
   (:gen-class))
-;; TODO: do we need all these gen-class's?
 
 (defn- parse-executor [^String s]
   (let [eq-pos (.lastIndexOf s "=")
@@ -43,4 +42,4 @@
     (if num-workers (.set_num_workers opts num-workers))
     (thrift/with-configured-nimbus-connection nimbus
       (.rebalance nimbus name opts)
-      (log/log-message "Topology " name " is rebalancing"))))
+      (log-message "Topology " name " is rebalancing"))))

@@ -20,8 +20,7 @@
             [backtype.storm.config :as config]
             [backtype.storm.log :refer [log-error log-debug]]
             [backtype.storm.util :as util])
-  (:import [backtype.storm.generated StormTopology
-                                     InvalidTopologyException GlobalStreamId]
+  (:import [backtype.storm.generated StormTopology InvalidTopologyException GlobalStreamId]
            [backtype.storm.utils Utils]
            [backtype.storm.task WorkerTopologyContext]
            [backtype.storm Constants]

@@ -15,10 +15,10 @@
 ;; limitations under the License.
 (ns backtype.storm.command.deactivate
   (:require [backtype.storm.thrift :as thrift]
-            [backtype.storm.log :as log])
+            [backtype.storm.log :refer [log-message]])
   (:gen-class))
 
 (defn -main [name]
   (thrift/with-configured-nimbus-connection nimbus
     (.deactivate nimbus name)
-    (log/log-message "Deactivated topology: " name)))
+    (log-message "Deactivated topology: " name)))

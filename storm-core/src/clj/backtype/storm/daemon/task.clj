@@ -18,8 +18,7 @@
         [backtype.storm config util log])
   (:import [backtype.storm.tuple Tuple TupleImpl]
            [backtype.storm.generated SpoutSpec Bolt StateSpoutSpec StormTopology]
-           [backtype.storm.hooks.info SpoutAckInfo SpoutFailInfo
-                                      EmitInfo BoltFailInfo BoltAckInfo]
+           [backtype.storm.hooks.info EmitInfo]
            [backtype.storm.task TopologyContext ShellBolt WorkerTopologyContext]
            [backtype.storm.utils Utils]
            [backtype.storm.generated ShellComponent JavaObject]

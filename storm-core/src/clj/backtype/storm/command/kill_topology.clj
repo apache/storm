@@ -16,7 +16,7 @@
 (ns backtype.storm.command.kill-topology
   (:require [backtype.storm.thrift :as thrift]
             [clojure.tools.cli :refer [cli]]
-            [backtype.storm.log :as log])
+            [backtype.storm.log :refer [log-message]])
   (:import [backtype.storm.generated KillOptions])
   (:gen-class))
 
@@ -26,4 +26,4 @@
     (if wait (.set_wait_secs opts wait))
     (thrift/with-configured-nimbus-connection nimbus
       (.killTopologyWithOpts nimbus name opts)
-      (log/log-message "Killed topology: " name))))
+      (log-message "Killed topology: " name))))

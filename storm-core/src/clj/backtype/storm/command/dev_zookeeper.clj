@@ -15,8 +15,8 @@
 ;; limitations under the License.
 (ns backtype.storm.command.dev-zookeeper
   (:require [backtype.storm.zookeeper :as zoo]
-            [backtype.storm.config :as config])
-  (:use [backtype.storm util ])
+            [backtype.storm.config :as config]
+            [backtype.storm.util :refer [rmr]])
   (:gen-class))
 
 (defn -main [& args]

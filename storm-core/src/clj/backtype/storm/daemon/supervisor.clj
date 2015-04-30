@@ -14,8 +14,6 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.daemon.supervisor
-  (:use
-        [backtype.storm.daemon common])
   (:require [backtype.storm.daemon [worker :as worker]]
             [backtype.storm [process-simulator :as psim] [cluster :as cluster] [event :as event]]
             [clojure.set :as set]
@@ -24,6 +22,7 @@
             [backtype.storm.log :refer [log-debug log-warn log-message log-warn-error log-error]]
             [backtype.storm.local-state :as ls]
             [backtype.storm.config :as c]
+            [backtype.storm.daemon.common :as common :refer [defserverfn]]
             [clojure.string :as string])
   (:import [java.io IOException]
            [backtype.storm.scheduler ISupervisor]
@@ -507,7 +506,7 @@
         heartbeat-fn (fn [] (.supervisor-heartbeat!
                                (:storm-cluster-state supervisor)
                                (:supervisor-id supervisor)
-                               (->SupervisorInfo (util/current-time-secs)
+                               (common/->SupervisorInfo (util/current-time-secs)
                                                  (:my-hostname supervisor)
                                                  (:assignment-id supervisor)
                                                  (keys @(:curr-assignment supervisor))
@@ -552,7 +551,7 @@
          (doseq [id ids]
            (shutdown-worker supervisor id)
            )))
-     DaemonCommon
+     common/DaemonCommon
      (waiting? [this]
        (or (not @(:active supervisor))
            (and
@@ -772,7 +771,7 @@
 
 (defn -launch [supervisor]
   (let [conf (c/read-storm-config)]
-    (validate-distributed-mode! conf)
+    (common/validate-distributed-mode! conf)
     (let [supervisor (mk-supervisor conf nil supervisor)]
       (util/add-shutdown-hook-with-force-kill-in-1-sec #(.shutdown supervisor)))))
 

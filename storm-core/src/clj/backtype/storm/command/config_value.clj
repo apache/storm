@@ -15,9 +15,9 @@
 ;; limitations under the License.
 (ns backtype.storm.command.config-value
   (:require [backtype.storm.config :as config]
-            [backtype.storm.log :as log])
+            [backtype.storm.log :refer [log-message]])
   (:gen-class))
 
 (defn -main [^String name]
   (let [conf (config/read-storm-config)]
-    (log/log-message "VALUE:" (conf name))))
+    (log-message "VALUE:" (conf name))))

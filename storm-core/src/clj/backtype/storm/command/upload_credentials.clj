@@ -16,7 +16,7 @@
 (ns backtype.storm.command.upload-credentials
   (:require [clojure.tools.cli :refer [cli]]
             [backtype.storm.util :as util]
-            [backtype.storm.log :as log])
+            [backtype.storm.log :refer [log-message]])
   (:import [backtype.storm StormSubmitter]
            [java.util Properties]
            [java.io FileReader])
@@ -34,4 +34,4 @@
         mapping (if rawCreds (apply assoc {} rawCreds) {})
         file-mapping (if (nil? cred-file) {} (read-map cred-file))]
       (StormSubmitter/pushCredentials name {} (merge file-mapping mapping))
-      (log/log-message "Uploaded new creds to topology: " name)))
+      (log-message "Uploaded new creds to topology: " name)))
