@@ -14,12 +14,11 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.config-test
-  (:import [backtype.storm Config ConfigValidation])
-  (:import [backtype.storm.scheduler TopologyDetails])
-  (:import [backtype.storm.utils Utils])
-  (:use [clojure test])
-  (:use [backtype.storm config util])
-  )
+  (:use [clojure test]
+        [backtype.storm config util])
+  (:import [backtype.storm Config ConfigValidation]
+           [backtype.storm.scheduler TopologyDetails]
+           [backtype.storm.utils Utils]))
 
 (deftest test-validity
   (is (Utils/isValidConf {TOPOLOGY-DEBUG true "q" "asasdasd" "aaa" (Integer. "123") "bbb" (Long. "456") "eee" [1 2 (Integer. "3") (Long. "4")]}))
@@ -33,7 +32,7 @@
         (.validateField validator "test" x))))
 
     (doseq [x [64 4294967296 1 nil]]
-      (is (nil? (try 
+      (is (nil? (try
                   (.validateField validator "test" x)
                   (catch Exception e e)))))))
 
@@ -61,7 +60,7 @@
                ["42" "64"]
                nil
               ]]
-    (is (nil? (try 
+    (is (nil? (try
                 (.validateField validator "test" x)
                 (catch Exception e e)))))))
 
@@ -108,11 +107,11 @@
 
 (deftest test-isolation-scheduler-machines-is-map
   (let [validator (CONFIG-SCHEMA-MAP ISOLATION-SCHEDULER-MACHINES)]
-    (is (nil? (try 
-                (.validateField validator "test" {}) 
+    (is (nil? (try
+                (.validateField validator "test" {})
                 (catch Exception e e))))
-    (is (nil? (try 
-                (.validateField validator "test" {"host0" 1 "host1" 2}) 
+    (is (nil? (try
+                (.validateField validator "test" {"host0" 1 "host1" 2})
                 (catch Exception e e))))
     (is (thrown-cause? java.lang.IllegalArgumentException
       (.validateField validator "test" 42)))))

@@ -15,34 +15,34 @@
 ;; limitations under the License.
 
 (ns backtype.storm.testing
+  (:use [backtype.storm cluster util thrift config log local-state])
   (:require [backtype.storm.daemon
              [nimbus :as nimbus]
              [supervisor :as supervisor]
              [common :as common]
              [worker :as worker]
-             [executor :as executor]])
-  (:require [backtype.storm [process-simulator :as psim]])
-  (:import [org.apache.commons.io FileUtils])
-  (:import [java.io File])
-  (:import [java.util HashMap ArrayList])
-  (:import [java.util.concurrent.atomic AtomicInteger])
-  (:import [java.util.concurrent ConcurrentHashMap])
-  (:import [backtype.storm.utils Time Utils RegisteredGlobalState])
-  (:import [backtype.storm.tuple Fields Tuple TupleImpl])
-  (:import [backtype.storm.task TopologyContext])
-  (:import [backtype.storm.generated GlobalStreamId Bolt KillOptions])
-  (:import [backtype.storm.testing FeederSpout FixedTupleSpout FixedTuple
-            TupleCaptureBolt SpoutTracker BoltTracker NonRichBoltTracker
-            TestWordSpout MemoryTransactionalSpout])
-  (:import [backtype.storm.transactional TransactionalSpoutCoordinator])
-  (:import [backtype.storm.transactional.partitioned PartitionedTransactionalSpoutExecutor])
-  (:import [backtype.storm.tuple Tuple])
-  (:import [backtype.storm.generated StormTopology])
-  (:import [backtype.storm.task TopologyContext])
-  (:require [backtype.storm [zookeeper :as zk]])
-  (:require [backtype.storm.messaging.loader :as msg-loader])
-  (:require [backtype.storm.daemon.acker :as acker])
-  (:use [backtype.storm cluster util thrift config log local-state]))
+             [executor :as executor]]
+            [backtype.storm [process-simulator :as psim]]
+            [backtype.storm [zookeeper :as zk]]
+            [backtype.storm.messaging.loader :as msg-loader]
+            [backtype.storm.daemon.acker :as acker])
+  (:import [org.apache.commons.io FileUtils]
+           [java.io File]
+           [java.util HashMap ArrayList]
+           [java.util.concurrent.atomic AtomicInteger]
+           [java.util.concurrent ConcurrentHashMap]
+           [backtype.storm.utils Time Utils RegisteredGlobalState]
+           [backtype.storm.tuple Fields Tuple TupleImpl]
+           [backtype.storm.task TopologyContext]
+           [backtype.storm.generated GlobalStreamId Bolt KillOptions]
+           [backtype.storm.testing FeederSpout FixedTupleSpout FixedTuple
+                                   TupleCaptureBolt SpoutTracker BoltTracker NonRichBoltTracker
+                                   TestWordSpout MemoryTransactionalSpout]
+           [backtype.storm.transactional TransactionalSpoutCoordinator]
+           [backtype.storm.transactional.partitioned PartitionedTransactionalSpoutExecutor]
+           [backtype.storm.tuple Tuple]
+           [backtype.storm.generated StormTopology]
+           [backtype.storm.task TopologyContext]))
 
 (defn feeder-spout
   [fields]
@@ -610,7 +610,7 @@
           track-id (-> tracked-topology :cluster ::track-id)
           waiting? (fn []
                      (or (not= target (global-amt track-id "spout-emitted"))
-                         (not= (global-amt track-id "transferred")                                 
+                         (not= (global-amt track-id "transferred")
                                (global-amt track-id "processed"))))]
       (while-timeout timeout-ms (waiting?)
                      ;; (println "Spout emitted: " (global-amt track-id "spout-emitted"))

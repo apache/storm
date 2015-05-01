@@ -15,11 +15,11 @@
 ;; limitations under the License.
 (ns backtype.storm.messaging.loader
   (:use [backtype.storm util log])
-  (:import [java.util ArrayList Iterator])
-  (:import [backtype.storm.messaging IContext IConnection TaskMessage])
-  (:import [backtype.storm.utils DisruptorQueue MutableObject])
-  (:require [backtype.storm.messaging [local :as local]])
-  (:require [backtype.storm [disruptor :as disruptor]]))
+  (:require [backtype.storm.messaging [local :as local]]
+            [backtype.storm [disruptor :as disruptor]])
+  (:import [java.util ArrayList Iterator]
+           [backtype.storm.messaging IContext IConnection TaskMessage]
+           [backtype.storm.utils DisruptorQueue MutableObject]))
 
 (defn mk-local-context []
   (local/mk-context))
@@ -33,7 +33,7 @@
                  ^Iterator iter (.recv ^IConnection socket 0 thread-id)
                  closed (atom false)]
              (when iter
-               (while (and (not @closed) (.hasNext iter)) 
+               (while (and (not @closed) (.hasNext iter))
                   (let [packet (.next iter)
                         task (if packet (.task ^TaskMessage packet))
                         message (if packet (.message ^TaskMessage packet))]
@@ -42,7 +42,7 @@
                            (.close socket)
                            (reset! closed  true))
                          (when packet (.add batched [task message]))))))
-             
+
              (when (not @closed)
                (do
                  (if (> (.size batched) 0)
@@ -55,7 +55,7 @@
          :thread-name (str "worker-receiver-thread-" thread-id)))
 
 (defn- mk-receive-threads [storm-id port transfer-local-fn  daemon kill-fn priority socket max-buffer-size thread-count]
-  (into [] (for [thread-id (range thread-count)] 
+  (into [] (for [thread-id (range thread-count)]
              (mk-receive-thread storm-id port transfer-local-fn  daemon kill-fn priority socket max-buffer-size thread-id))))
 
 
@@ -73,13 +73,13 @@
         (log-message "Shutting down receiving-thread: [" storm-id ", " port "]")
         (.send ^IConnection kill-socket
                   -1 (byte-array []))
-        
+
         (.close ^IConnection kill-socket)
-        
+
         (log-message "Waiting for receiving-thread:[" storm-id ", " port "] to die")
-        
-        (for [thread-id (range thread-count)] 
+
+        (for [thread-id (range thread-count)]
              (.join (vthreads thread-id)))
-        
+
         (log-message "Shutdown receiving-thread: [" storm-id ", " port "]")
         ))))

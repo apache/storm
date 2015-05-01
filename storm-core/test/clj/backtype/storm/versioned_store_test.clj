@@ -14,8 +14,8 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.versioned-store-test
-  (:use [clojure test])
-  (:use [backtype.storm testing])
+  (:use [clojure test]
+        [backtype.storm testing])
   (:import [backtype.storm.utils VersionedStore]))
 
 (defmacro defvstest [name [vs-sym] & body]
@@ -39,7 +39,7 @@
     (.succeedVersion vs v)
     (is (= 2 (count (.getAllVersions vs))))
     (is (= v (.mostRecentVersionPath vs)))
-    
+
     (.createVersion vs)
     (is (= v (.mostRecentVersionPath vs)))
     ))

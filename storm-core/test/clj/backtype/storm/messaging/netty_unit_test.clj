@@ -14,11 +14,11 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.messaging.netty-unit-test
-  (:use [clojure test])
-  (:import [backtype.storm.messaging TransportFactory])
-  (:use [backtype.storm testing util config log])
-  (:use [backtype.storm.daemon.worker :only [is-connection-ready]])
-  (:import [java.util ArrayList]))
+  (:use [clojure test]
+        [backtype.storm testing util config log]
+        [backtype.storm.daemon.worker :only [is-connection-ready]])
+  (:import [java.util ArrayList]
+           [backtype.storm.messaging TransportFactory]))
 
 (def port 6700)
 (def task 1)

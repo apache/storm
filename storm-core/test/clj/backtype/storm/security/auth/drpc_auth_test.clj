@@ -14,20 +14,19 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.security.auth.drpc-auth-test
-  (:use [clojure test])
+  (:use [clojure test]
+        [backtype.storm util config log]
+        [backtype.storm.daemon common]
+        [backtype.storm testing])
   (:require [backtype.storm.daemon [drpc :as drpc]])
-  (:import [backtype.storm.generated AuthorizationException
-            DRPCExecutionException DistributedRPC$Processor
-            DistributedRPCInvocations$Processor])
-  (:import [backtype.storm Config])
-  (:import [backtype.storm.security.auth ReqContext SingleUserPrincipal ThriftServer ThriftConnectionType])
-  (:import [backtype.storm.utils DRPCClient])
-  (:import [backtype.storm.drpc DRPCInvocationsClient])
-  (:import [java.util.concurrent TimeUnit])
-  (:import [javax.security.auth Subject])
-  (:use [backtype.storm util config log])
-  (:use [backtype.storm.daemon common])
-  (:use [backtype.storm testing]))
+  (:import [backtype.storm.generated AuthorizationException DRPCExecutionException DistributedRPC$Processor
+                                     DistributedRPCInvocations$Processor]
+           [backtype.storm Config]
+           [backtype.storm.security.auth ReqContext SingleUserPrincipal ThriftServer ThriftConnectionType]
+           [backtype.storm.utils DRPCClient]
+           [backtype.storm.drpc DRPCInvocationsClient]
+           [java.util.concurrent TimeUnit]
+           [javax.security.auth Subject]))
 
 (def drpc-timeout (Integer. 30))
 

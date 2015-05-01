@@ -15,32 +15,32 @@
 ;; limitations under the License.
 
 (ns backtype.storm.util
-  (:import [java.net InetAddress])
-  (:import [java.util Map Map$Entry List ArrayList Collection Iterator HashMap])
-  (:import [java.io FileReader FileNotFoundException])
-  (:import [backtype.storm Config])
-  (:import [backtype.storm.utils Time Container ClojureTimerTask Utils
-            MutableObject MutableInt])
-  (:import [java.util UUID Random ArrayList List Collections])
-  (:import [java.util.zip ZipFile])
-  (:import [java.util.concurrent.locks ReentrantReadWriteLock])
-  (:import [java.util.concurrent Semaphore])
-  (:import [java.io File FileOutputStream RandomAccessFile StringWriter
-            PrintWriter BufferedReader InputStreamReader IOException])
-  (:import [java.lang.management ManagementFactory])
-  (:import [org.apache.commons.exec DefaultExecutor CommandLine])
-  (:import [org.apache.commons.io FileUtils])
-  (:import [org.apache.commons.exec ExecuteException])
-  (:import [org.json.simple JSONValue])
-  (:import [org.yaml.snakeyaml Yaml]
-           [org.yaml.snakeyaml.constructor SafeConstructor])
-  (:require [clojure [string :as str]])
-  (:import [clojure.lang RT])
-  (:require [clojure [set :as set]])
-  (:require [clojure.java.io :as io])
-  (:use [clojure walk])
-  (:require [ring.util.codec :as codec])
-  (:use [backtype.storm log]))
+  (:use [clojure walk]
+        [backtype.storm log])
+  (:require [clojure [string :as str]]
+            [clojure [set :as set]]
+            [clojure.java.io :as io]
+            [ring.util.codec :as codec])
+  (:import [java.net InetAddress]
+           [java.util Map Map$Entry List ArrayList Collection Iterator HashMap]
+           [java.io FileReader FileNotFoundException]
+           [backtype.storm Config]
+           [backtype.storm.utils Time Container ClojureTimerTask Utils
+                                 MutableObject MutableInt]
+           [java.util UUID Random ArrayList List Collections]
+           [java.util.zip ZipFile]
+           [java.util.concurrent.locks ReentrantReadWriteLock]
+           [java.util.concurrent Semaphore]
+           [java.io File FileOutputStream RandomAccessFile StringWriter
+                    PrintWriter BufferedReader InputStreamReader IOException]
+           [java.lang.management ManagementFactory]
+           [org.apache.commons.exec DefaultExecutor CommandLine]
+           [org.apache.commons.io FileUtils]
+           [org.apache.commons.exec ExecuteException]
+           [org.json.simple JSONValue]
+           [org.yaml.snakeyaml Yaml]
+           [org.yaml.snakeyaml.constructor SafeConstructor]
+           [clojure.lang RT]))
 
 (defn wrap-in-runtime
   "Wraps an exception in a RuntimeException if needed"
@@ -598,11 +598,11 @@
   (let [storm-dir (System/getProperty "storm.home")
         storm-lib-dir (str storm-dir file-path-separator "lib")
         storm-conf-dir (if-let [confdir (System/getenv "STORM_CONF_DIR")]
-                         confdir 
+                         confdir
                          (str storm-dir file-path-separator "conf"))
         storm-extlib-dir (str storm-dir file-path-separator "extlib")
         extcp (System/getenv "STORM_EXT_CLASSPATH")]
-    (if (nil? storm-dir) 
+    (if (nil? storm-dir)
       (current-classpath)
       (str/join class-path-separator
                 (concat (get-full-jars storm-lib-dir) (get-full-jars storm-extlib-dir) [extcp] [storm-conf-dir])))))

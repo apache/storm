@@ -14,9 +14,9 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.tuple-test
-  (:use [clojure test])
-  (:import [backtype.storm.tuple Tuple])
-  (:use [backtype.storm testing]))
+  (:use [clojure test]
+        [backtype.storm testing])
+  (:import [backtype.storm.tuple Tuple]))
 
 (deftest test-lookup
   (let [ tuple (test-tuple [12 "hello"] :fields ["foo" "bar"]) ]
@@ -25,7 +25,7 @@
     (is (= 12 (:foo tuple)))
 
     (is (= "hello" (:bar tuple)))
-    
+
     (is (= :notfound (tuple "404" :notfound)))))
 
 (deftest test-indexed
@@ -45,7 +45,7 @@
       (is (= {"bar" "hello"} (.getMap (dissoc tuple "foo"))))
       (is (= {"bar" "hello"} (.getMap (dissoc tuple :foo))))
 
-      (is (= {"foo" 42 "bar" "world"} (.getMap (assoc 
+      (is (= {"foo" 42 "bar" "world"} (.getMap (assoc
                                         (assoc tuple "foo" 42)
                                         :bar "world"))))))
 

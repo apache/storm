@@ -15,14 +15,14 @@
 ;; limitations under the License.
 
 (ns backtype.storm.config
-  (:import [java.io FileReader File IOException]
-           [backtype.storm.generated StormTopology])
-  (:import [backtype.storm Config ConfigValidation$FieldValidator])
-  (:import [backtype.storm.utils Utils LocalState])
-  (:import [org.apache.commons.io FileUtils])
+  (:use [backtype.storm log util])
   (:require [clojure.string :as str]
             [backtype.storm.util :as util])
-  (:use [backtype.storm log util]))
+  (:import [java.io FileReader File IOException]
+           [backtype.storm.generated StormTopology]
+           [backtype.storm Config ConfigValidation$FieldValidator]
+           [backtype.storm.utils Utils LocalState]
+           [org.apache.commons.io FileUtils]))
 
 (def RESOURCES-SUBDIR "resources")
 

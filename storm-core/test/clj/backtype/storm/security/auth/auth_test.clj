@@ -14,27 +14,27 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.security.auth.auth-test
-  (:use [clojure test])
+  (:use [clojure test]
+        [backtype.storm util config]
+        [backtype.storm.daemon common]
+        [backtype.storm testing])
   (:require [backtype.storm.daemon [nimbus :as nimbus]])
   (:import [org.apache.thrift TException]
            [backtype.storm.security.auth.authorizer ImpersonationAuthorizer]
-           [java.net Inet4Address])
-  (:import [org.apache.thrift.transport TTransportException])
-  (:import [java.nio ByteBuffer])
-  (:import [java.security Principal AccessController])
-  (:import [javax.security.auth Subject])
-  (:import [java.net InetAddress])
-  (:import [backtype.storm Config])
-  (:import [backtype.storm.generated AuthorizationException])
-  (:import [backtype.storm.utils NimbusClient])
-  (:import [backtype.storm.security.auth.authorizer SimpleWhitelistAuthorizer SimpleACLAuthorizer])
-  (:import [backtype.storm.security.auth AuthUtils ThriftServer ThriftClient ShellBasedGroupsMapping 
-            ReqContext SimpleTransportPlugin KerberosPrincipalToLocal ThriftConnectionType])
-  (:use [backtype.storm util config])
-  (:use [backtype.storm.daemon common])
-  (:use [backtype.storm testing])
-  (:import [backtype.storm.generated Nimbus Nimbus$Client Nimbus$Iface StormTopology SubmitOptions
-            KillOptions RebalanceOptions ClusterSummary TopologyInfo Nimbus$Processor]))
+           [java.net Inet4Address]
+           [org.apache.thrift.transport TTransportException]
+           [java.nio ByteBuffer]
+           [java.security Principal AccessController]
+           [javax.security.auth Subject]
+           [java.net InetAddress]
+           [backtype.storm Config]
+           [backtype.storm.generated AuthorizationException]
+           [backtype.storm.utils NimbusClient]
+           [backtype.storm.security.auth.authorizer SimpleWhitelistAuthorizer SimpleACLAuthorizer]
+           [backtype.storm.security.auth AuthUtils ThriftServer ThriftClient ShellBasedGroupsMapping
+                                         ReqContext SimpleTransportPlugin KerberosPrincipalToLocal ThriftConnectionType]
+           [backtype.storm.generated Nimbus Nimbus$Client Nimbus$Iface StormTopology SubmitOptions
+                                     KillOptions RebalanceOptions ClusterSummary TopologyInfo Nimbus$Processor]))
 
 (defn mk-principal [name]
   (reify Principal

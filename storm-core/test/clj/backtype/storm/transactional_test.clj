@@ -14,29 +14,29 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.transactional-test
-  (:use [clojure test])
-  (:import [backtype.storm Constants])
-  (:import [backtype.storm.topology TopologyBuilder])
-  (:import [backtype.storm.transactional TransactionalSpoutCoordinator ITransactionalSpout ITransactionalSpout$Coordinator TransactionAttempt
-            TransactionalTopologyBuilder])
-  (:import [backtype.storm.transactional.state TransactionalState TestTransactionalState RotatingTransactionalState RotatingTransactionalState$StateInitializer])
-  (:import [backtype.storm.spout SpoutOutputCollector ISpoutOutputCollector])
-  (:import [backtype.storm.task OutputCollector IOutputCollector])
-  (:import [backtype.storm.coordination BatchBoltExecutor])
-  (:import [backtype.storm.utils RegisteredGlobalState])
-  (:import [backtype.storm.tuple Fields])
-  (:import [backtype.storm.testing CountingBatchBolt MemoryTransactionalSpout
-            KeyedCountingBatchBolt KeyedCountingCommitterBolt KeyedSummingBatchBolt
-            IdentityBolt CountingCommitBolt OpaqueMemoryTransactionalSpout])
-  (:import [backtype.storm.utils ZookeeperAuthInfo])
-  (:import [org.apache.curator.framework CuratorFramework])
-  (:import [org.apache.curator.framework.api CreateBuilder ProtectACLCreateModePathAndBytesable])
-  (:import [org.apache.zookeeper CreateMode ZooDefs ZooDefs$Ids])
-  (:import [org.mockito Matchers Mockito])
-  (:import [org.mockito.exceptions.base MockitoAssertionError])
-  (:import [java.util HashMap Collections ArrayList])
-  (:use [backtype.storm testing util config clojure])
-  (:use [backtype.storm.daemon common]))
+  (:use [clojure test]
+        [backtype.storm testing util config clojure]
+        [backtype.storm.daemon common])
+  (:import [backtype.storm Constants]
+           [backtype.storm.topology TopologyBuilder]
+           [backtype.storm.transactional TransactionalSpoutCoordinator ITransactionalSpout
+                                         ITransactionalSpout$Coordinator TransactionAttempt TransactionalTopologyBuilder]
+           [backtype.storm.transactional.state TransactionalState TestTransactionalState RotatingTransactionalState RotatingTransactionalState$StateInitializer]
+           [backtype.storm.spout SpoutOutputCollector ISpoutOutputCollector]
+           [backtype.storm.task OutputCollector IOutputCollector]
+           [backtype.storm.coordination BatchBoltExecutor]
+           [backtype.storm.utils RegisteredGlobalState]
+           [backtype.storm.tuple Fields]
+           [backtype.storm.testing CountingBatchBolt MemoryTransactionalSpout
+                                   KeyedCountingBatchBolt KeyedCountingCommitterBolt KeyedSummingBatchBolt
+                                   IdentityBolt CountingCommitBolt OpaqueMemoryTransactionalSpout]
+           [backtype.storm.utils ZookeeperAuthInfo]
+           [org.apache.curator.framework CuratorFramework]
+           [org.apache.curator.framework.api CreateBuilder ProtectACLCreateModePathAndBytesable]
+           [org.apache.zookeeper CreateMode ZooDefs ZooDefs$Ids]
+           [org.mockito Matchers Mockito]
+           [org.mockito.exceptions.base MockitoAssertionError]
+           [java.util HashMap Collections ArrayList]))
 
 ;; Testing TODO:
 ;; * Test that it repeats the meta for a partitioned state (test partitioned emitter on its own)
@@ -123,7 +123,7 @@
 
         (.nextTuple coordinator)
         (verify-and-reset! {} emit-capture)
-        
+
         (.fail coordinator (second attempts))
         (bind attempts (get-attempts emit-capture BATCH-STREAM))
         (bind new-second-attempt (first attempts))
@@ -169,7 +169,7 @@
         (.ack coordinator (second attempts))
         (.nextTuple coordinator)
         (verify-and-reset! {} emit-capture)
-        
+
         (.ack coordinator commit-id)
         (verify-and-reset! {COMMIT-STREAM [[4]] BATCH-STREAM [[7 12]]} emit-capture)
 
@@ -222,13 +222,13 @@
 
 
     ;; test that transactions are independent
-    
+
     (.execute bolt (test-tuple [attempt1-1]))
     (.execute bolt (test-tuple [attempt1-1]))
     (.execute bolt (test-tuple [attempt1-2]))
     (.execute bolt (test-tuple [attempt2-1]))
     (.execute bolt (test-tuple [attempt1-1]))
-    
+
     (finish! bolt attempt1-1)
 
     (verify-bolt-and-reset! {:ack [[attempt1-1] [attempt1-1] [attempt1-2]
@@ -244,7 +244,7 @@
 
     (finish! bolt attempt1-2)
     (verify-bolt-and-reset! {"default" [[attempt1-2 2]]}
-                            capture-atom)  
+                            capture-atom)
     ))
 
 (defn mk-state-initializer [atom]
@@ -292,7 +292,7 @@
 
       (is (nil? (get-state-or-create strict-rotating 5 initializer)))
       (is (= 20 (get-state-or-create strict-rotating 5 initializer)))
-      (is (nil? (get-state-or-create strict-rotating 6 initializer)))        
+      (is (nil? (get-state-or-create strict-rotating 6 initializer)))
       (cleanup-before strict-rotating 6)
       (is (= 1 (count (.list state "strict"))))
 
@@ -372,7 +372,7 @@
        (-> builder
            (.setBolt "gcommit" (CountingCommitBolt.) 1)
            (.globalGrouping "spout"))
-       
+
        (-> builder
            (.setBolt "sum" (KeyedSummingBatchBolt.) 2)
            (.fieldsGrouping "id1" (Fields. ["word"])))
@@ -387,7 +387,7 @@
            (.fieldsGrouping "count" (Fields. ["key"])))
 
        (bind builder (.buildTopologyBuilder builder))
-       
+
        (-> builder
            (.setBolt "controller" controller 1)
            (.directGrouping "count2" Constants/COORDINATED_STREAM_ID)
@@ -403,7 +403,7 @@
                                 2 [["happy" 11]
                                    ["mango" 2]
                                    ["zebra" 1]]})
-       
+
        (bind topo-info (tracked-captured-topology
                         cluster
                         (.createTopology builder)))
@@ -483,7 +483,7 @@
                                    ["e" 7]
                                    ["c" 11]]
                                 3 [["a" 2]]})
-       
+
        (ack-tx! 1)
        (tracked-wait topo-info 1)
        (verify! {"sum" [[3 "a" 5]
@@ -526,7 +526,7 @@
                  "gcommit" []})
        (ack-tx! 2)
        (tracked-wait topo-info 1)
-       
+
        (verify! {"sum" []
                  "count" [[2 "apple" 1]
                           [2 "dog" 1]
@@ -536,10 +536,10 @@
                            [2 "zebra" 2]]
                  "global" []
                  "gcommit" [[2 3]]})
-       
+
        (ack-tx! 2)
        (ack-tx! 3)
-       
+
        (tracked-wait topo-info 2)
        (verify! {"sum" [[4 "c" 14]]
                  "count" [[3 "a" 3]
@@ -554,7 +554,7 @@
                            [3 "e" 2]]
                  "global" [[4 2]]
                  "gcommit" [[3 7]]})
-       
+
        (ack-tx! 4)
        (ack-tx! 3)
        (tracked-wait topo-info 2)
@@ -563,7 +563,7 @@
                  "count2" [[4 "c" 2]]
                  "global" [[5 0]]
                  "gcommit" [[4 2]]})
-       
+
        (ack-tx! 5)
        (ack-tx! 4)
        (tracked-wait topo-info 2)
@@ -572,7 +572,7 @@
                  "count2" []
                  "global" [[6 0]]
                  "gcommit" [[5 0]]})
-       
+
        (-> topo-info :capturer .getAndClearResults)
        ))))
 
@@ -600,7 +600,7 @@
                               1 [["d"]
                                  ["c"]]
                               })
-     
+
      (bind results (complete-topology cluster
                                       (.buildTopology builder)
                                       :storm-conf {TOPOLOGY-DEBUG true
@@ -616,7 +616,7 @@
                              {0 [["a"]
                                  ["b"]]
                               })
-     
+
      (bind results (complete-topology cluster (.buildTopology builder)
                                       :storm-conf {TOPOLOGY-DEBUG true
                                                    TOPOLOGY-MESSAGE-TIMEOUT-SECS 300}))
@@ -646,7 +646,7 @@
            (.fieldsGrouping "spout" (Fields. ["word"])))
 
        (bind builder (.buildTopologyBuilder builder))
-       
+
        (-> builder
            (.setBolt "controller" controller 1)
            (.directGrouping "spout" Constants/COORDINATED_STREAM_ID)
@@ -657,7 +657,7 @@
                                    ["cat"]
                                    ["apple"]
                                    ["dog"]]})
-       
+
        (bind topo-info (tracked-captured-topology
                         cluster
                         (.createTopology builder)))
@@ -707,7 +707,7 @@
        (tracked-wait topo-info 1)
 
        (verify! {"count" [[1 "dog" 1]
-                          [1 "cat" 1]]})       
+                          [1 "cat" 1]]})
        (ack-tx! 2)
        (ack-tx! 1)
        (tracked-wait topo-info 2)

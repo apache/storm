@@ -14,14 +14,12 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.worker-test
-  (:use [clojure test])
-  (:import [backtype.storm.messaging TaskMessage IContext IConnection ConnectionWithStatus ConnectionWithStatus$Status])
-  (:import [org.mockito Mockito])
-  (:use [backtype.storm testing])
-  (:use [backtype.storm.daemon common])
-
+  (:use [clojure test]
+        [backtype.storm testing]
+        [backtype.storm.daemon common])
   (:require [backtype.storm.daemon [worker :as worker]])
-  )
+  (:import [backtype.storm.messaging TaskMessage IContext IConnection ConnectionWithStatus ConnectionWithStatus$Status]
+           [org.mockito Mockito]))
 
 
 (deftest test-worker-is-connection-ready

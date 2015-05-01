@@ -14,14 +14,13 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.security.auth.auto-login-module-test
-  (:use [clojure test])
-  (:use [backtype.storm util])
+  (:use [clojure test]
+        [backtype.storm util])
   (:import [backtype.storm.security.auth.kerberos AutoTGT
-            AutoTGTKrb5LoginModule AutoTGTKrb5LoginModuleTest])
-  (:import [javax.security.auth Subject Subject])
-  (:import [javax.security.auth.kerberos KerberosTicket])
-  (:import [org.mockito Mockito])
-  )
+                                                  AutoTGTKrb5LoginModule AutoTGTKrb5LoginModuleTest]
+           [javax.security.auth Subject Subject]
+           [javax.security.auth.kerberos KerberosTicket]
+           [org.mockito Mockito]))
 
 (deftest login-module-no-subj-no-tgt-test
   (testing "Behavior is correct when there is no Subject or TGT"

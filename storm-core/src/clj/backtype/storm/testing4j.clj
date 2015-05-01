@@ -14,15 +14,15 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.testing4j
-  (:import [java.util Map List Collection ArrayList])
-  (:require [backtype.storm [LocalCluster :as LocalCluster]])
-  (:import [backtype.storm Config ILocalCluster LocalCluster])
-  (:import [backtype.storm.generated StormTopology])
-  (:import [backtype.storm.daemon nimbus])
-  (:import [backtype.storm.testing TestJob MockedSources TrackedTopology
-            MkClusterParam CompleteTopologyParam MkTupleParam])
-  (:import [backtype.storm.utils Utils])
   (:use [backtype.storm testing util log])
+  (:require [backtype.storm [LocalCluster :as LocalCluster]])
+  (:import [java.util Map List Collection ArrayList]
+           [backtype.storm Config ILocalCluster LocalCluster]
+           [backtype.storm.generated StormTopology]
+           [backtype.storm.daemon nimbus]
+           [backtype.storm.testing TestJob MockedSources TrackedTopology
+                                   MkClusterParam CompleteTopologyParam MkTupleParam]
+           [backtype.storm.utils Utils])
   (:gen-class
    :name backtype.storm.Testing
    :methods [^:static [completeTopology

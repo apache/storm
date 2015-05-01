@@ -14,14 +14,14 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns storm.trident.testing
-    (:require [backtype.storm.LocalDRPC :as LocalDRPC]
-      [backtype.storm [testing :as t]]
-      [backtype.storm [LocalDRPC]])
-    (:import [storm.trident.testing FeederBatchSpout FeederCommitterBatchSpout MemoryMapState MemoryMapState$Factory TuplifyArgs]
-      [backtype.storm LocalDRPC]
-      [backtype.storm.tuple Fields]
-      [backtype.storm.generated KillOptions])
-    (:use [backtype.storm util]))
+  (:use [backtype.storm util])
+  (:require [backtype.storm.LocalDRPC :as LocalDRPC]
+            [backtype.storm [testing :as t]]
+            [backtype.storm [LocalDRPC]])
+  (:import [storm.trident.testing FeederBatchSpout FeederCommitterBatchSpout MemoryMapState MemoryMapState$Factory TuplifyArgs]
+           [backtype.storm LocalDRPC]
+           [backtype.storm.tuple Fields]
+           [backtype.storm.generated KillOptions]))
 
 (defn local-drpc []
   (LocalDRPC.))

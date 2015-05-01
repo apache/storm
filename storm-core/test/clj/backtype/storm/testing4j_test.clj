@@ -14,16 +14,16 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.testing4j-test
-  (:use [clojure.test])
-  (:use [backtype.storm config clojure testing util])
-  (:require [backtype.storm.integration-test :as it])
-  (:require [backtype.storm.thrift :as thrift])
-  (:import [backtype.storm Testing Config ILocalCluster])
-  (:import [backtype.storm.tuple Values Tuple])
-  (:import [backtype.storm.utils Time Utils])
-  (:import [backtype.storm.testing MkClusterParam TestJob MockedSources TestWordSpout
-            TestWordCounter TestGlobalCount TestAggregatesCounter CompleteTopologyParam
-            AckFailMapTracker MkTupleParam]))
+  (:use [clojure.test]
+        [backtype.storm config clojure testing util])
+  (:require [backtype.storm.integration-test :as it]
+            [backtype.storm.thrift :as thrift])
+  (:import [backtype.storm Testing Config ILocalCluster]
+           [backtype.storm.tuple Values Tuple]
+           [backtype.storm.utils Time Utils]
+           [backtype.storm.testing MkClusterParam TestJob MockedSources TestWordSpout
+                                   TestWordCounter TestGlobalCount TestAggregatesCounter CompleteTopologyParam
+                                   AckFailMapTracker MkTupleParam]))
 
 (deftest test-with-simulated-time
   (is (= false (Time/isSimulating)))

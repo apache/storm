@@ -14,12 +14,12 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.clojure-test
-  (:use [clojure test])
+  (:use [clojure test]
+        [backtype.storm testing clojure config]
+        [backtype.storm.daemon common])
+  (:require [backtype.storm.thrift :as thrift])
   (:import [backtype.storm.testing TestWordSpout TestPlannerSpout]
-           [backtype.storm.tuple Fields])
-  (:use [backtype.storm testing clojure config])
-  (:use [backtype.storm.daemon common])
-  (:require [backtype.storm [thrift :as thrift]]))
+           [backtype.storm.tuple Fields]))
 
 
 (defbolt lalala-bolt1 ["word"] [[val :as tuple] collector]
@@ -39,7 +39,7 @@
                 (ack! collector tuple)
                 ))
       )))
-      
+
 (defbolt lalala-bolt3 ["word"] {:prepare true :params [prefix]}
   [conf context collector]
   (let [state (atom nil)]
@@ -79,7 +79,7 @@
 (defbolt punctuator-bolt ["word" "period" "question" "exclamation"]
   [tuple collector]
   (if (= (:word tuple) "bar")
-    (do 
+    (do
       (emit-bolt! collector {:word "bar" :period "bar" :question "bar"
                             "exclamation" "bar"})
       (ack! collector tuple))

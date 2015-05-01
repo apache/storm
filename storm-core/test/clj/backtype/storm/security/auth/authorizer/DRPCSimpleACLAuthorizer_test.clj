@@ -1,11 +1,10 @@
 (ns backtype.storm.security.auth.authorizer.DRPCSimpleACLAuthorizer-test
-  (:use [clojure test])
-  (:import [org.mockito Mockito])
-  (:import [backtype.storm Config])
-  (:import [backtype.storm.security.auth ReqContext SingleUserPrincipal])
-  (:import [backtype.storm.security.auth.authorizer DRPCSimpleACLAuthorizer])
-  (:use [backtype.storm config util])
-  )
+  (:use [clojure test]
+        [backtype.storm config util])
+  (:import [org.mockito Mockito]
+           [backtype.storm Config]
+           [backtype.storm.security.auth ReqContext SingleUserPrincipal]
+           [backtype.storm.security.auth.authorizer DRPCSimpleACLAuthorizer]))
 
 (defn- mk-mock-context [user]
   (let [mock-context (Mockito/mock ReqContext)]

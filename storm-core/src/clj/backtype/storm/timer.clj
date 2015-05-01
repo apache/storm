@@ -15,10 +15,10 @@
 ;; limitations under the License.
 
 (ns backtype.storm.timer
-  (:import [backtype.storm.utils Time])
-  (:import [java.util PriorityQueue Comparator])
-  (:import [java.util.concurrent Semaphore])
-  (:use [backtype.storm util log]))
+  (:use [backtype.storm util log])
+  (:import [backtype.storm.utils Time]
+           [java.util PriorityQueue Comparator]
+           [java.util.concurrent Semaphore]))
 
 ;; The timer defined in this file is very similar to java.util.Timer, except
 ;; it integrates with Storm's time simulation capabilities. This lets us test

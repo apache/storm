@@ -14,9 +14,9 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.multilang-test
-  (:use [clojure test])
-  (:use [backtype.storm testing config])
-  (:use [backtype.storm.daemon common])
+  (:use [clojure test]
+        [backtype.storm testing config]
+        [backtype.storm.daemon common])
   (:require [backtype.storm [thrift :as thrift]]))
 
 ;; (deftest test-multilang-fy

@@ -15,14 +15,12 @@
 ;; limitations under the License.
 
 (ns backtype.storm.disruptor
-  (:import [backtype.storm.utils DisruptorQueue])
-  (:import [com.lmax.disruptor MultiThreadedClaimStrategy SingleThreadedClaimStrategy
-            BlockingWaitStrategy SleepingWaitStrategy YieldingWaitStrategy
-            BusySpinWaitStrategy])
-  (:require [clojure [string :as str]])
-  (:require [clojure [set :as set]])
-  (:use [clojure walk])
-  (:use [backtype.storm util log]))
+  (:use [clojure walk]
+        [backtype.storm util log])
+  (:import [backtype.storm.utils DisruptorQueue]
+           [com.lmax.disruptor MultiThreadedClaimStrategy SingleThreadedClaimStrategy
+                               BlockingWaitStrategy SleepingWaitStrategy YieldingWaitStrategy
+                               BusySpinWaitStrategy]))
 
 (def CLAIM-STRATEGY
   {:multi-threaded (fn [size] (MultiThreadedClaimStrategy. (int size)))

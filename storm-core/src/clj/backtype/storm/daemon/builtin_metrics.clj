@@ -14,9 +14,9 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.daemon.builtin-metrics
+  (:require [backtype.storm.stats :refer [stats-rate]])
   (:import [backtype.storm.metric.api MultiCountMetric MultiReducedMetric MeanReducer StateMetric IMetric IStatefulObject]
-           [backtype.storm Config])
-  (:require [backtype.storm.stats :refer [stats-rate]]))
+           [backtype.storm Config]))
 
 (defrecord BuiltinSpoutMetrics [^MultiCountMetric ack-count
                                 ^MultiReducedMetric complete-latency

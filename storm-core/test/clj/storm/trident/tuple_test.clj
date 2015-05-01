@@ -14,13 +14,13 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns storm.trident.tuple-test
-  (:use [clojure test])
+  (:use [clojure test]
+        [storm.trident testing]
+        [backtype.storm util])
   (:require [backtype.storm [testing :as t]])
   (:import [storm.trident.tuple TridentTupleView TridentTupleView$ProjectionFactory
             TridentTupleView$FreshOutputFactory TridentTupleView$OperationOutputFactory
-            TridentTupleView$RootFactory])
-  (:use [storm.trident testing])
-  (:use [backtype.storm util]))
+            TridentTupleView$RootFactory]))
 
 (deftest test-fresh
   (letlocals

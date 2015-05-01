@@ -1,8 +1,9 @@
 (ns backtype.storm.converter
-  (:import [backtype.storm.generated SupervisorInfo NodeInfo Assignment
-            StormBase TopologyStatus ClusterWorkerHeartbeat ExecutorInfo ErrorInfo Credentials RebalanceOptions KillOptions TopologyActionOptions])
   (:use [backtype.storm util stats log])
-  (:require [backtype.storm.daemon.common :as common]))
+  (:require [backtype.storm.daemon.common :as common])
+  (:import [backtype.storm.generated SupervisorInfo NodeInfo Assignment
+                                     StormBase TopologyStatus ClusterWorkerHeartbeat ExecutorInfo ErrorInfo
+                                     Credentials RebalanceOptions KillOptions TopologyActionOptions]))
 
 (defn thriftify-supervisor-info [supervisor-info]
   (doto (SupervisorInfo.)

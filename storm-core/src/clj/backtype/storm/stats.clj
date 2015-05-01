@@ -15,12 +15,12 @@
 ;; limitations under the License.
 
 (ns backtype.storm.stats
+  (:use [backtype.storm util log]
+        [clojure.math.numeric-tower :only [ceil]])
   (:import [backtype.storm.generated Nimbus Nimbus$Processor Nimbus$Iface StormTopology ShellComponent
             NotAliveException AlreadyAliveException InvalidTopologyException GlobalStreamId
             ClusterSummary TopologyInfo TopologySummary ExecutorSummary ExecutorStats ExecutorSpecificStats
-            SpoutStats BoltStats ErrorInfo SupervisorSummary])
-  (:use [backtype.storm util log])
-  (:use [clojure.math.numeric-tower :only [ceil]]))
+            SpoutStats BoltStats ErrorInfo SupervisorSummary]))
 
 ;;TODO: consider replacing this with some sort of RRD
 

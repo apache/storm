@@ -16,9 +16,9 @@
 
 (ns backtype.storm.event
   (:use [backtype.storm log util])
-  (:import [backtype.storm.utils Time Utils])
-  (:import [java.io InterruptedIOException])
-  (:import [java.util.concurrent LinkedBlockingQueue TimeUnit]))
+  (:import [backtype.storm.utils Time Utils]
+           [java.io InterruptedIOException]
+           [java.util.concurrent LinkedBlockingQueue TimeUnit]))
 
 (defprotocol EventManager
   (add [this event-fn])

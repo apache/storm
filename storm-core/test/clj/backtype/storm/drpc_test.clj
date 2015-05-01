@@ -14,18 +14,17 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.drpc-test
-  (:use [clojure test])
-  (:import [backtype.storm.drpc ReturnResults DRPCSpout
-            LinearDRPCTopologyBuilder])
-  (:import [backtype.storm.topology FailedException])
-  (:import [backtype.storm.coordination CoordinatedBolt$FinishedCallback])
-  (:import [backtype.storm LocalDRPC LocalCluster])
-  (:import [backtype.storm.tuple Fields])
-  (:import [backtype.storm.generated DRPCExecutionException])
-  (:import [java.util.concurrent ConcurrentLinkedQueue])
-  (:use [backtype.storm config testing clojure])
-  (:use [backtype.storm.daemon common drpc])
-  (:use [conjure core]))
+  (:use [clojure test]
+        [backtype.storm config testing clojure]
+        [backtype.storm.daemon common drpc]
+        [conjure core])
+  (:import [backtype.storm.drpc ReturnResults DRPCSpout LinearDRPCTopologyBuilder]
+           [backtype.storm.topology FailedException]
+           [backtype.storm.coordination CoordinatedBolt$FinishedCallback]
+           [backtype.storm LocalDRPC LocalCluster]
+           [backtype.storm.tuple Fields]
+           [backtype.storm.generated DRPCExecutionException]
+           [java.util.concurrent ConcurrentLinkedQueue]))
 
 (defbolt exclamation-bolt ["result" "return-info"] [tuple collector]
   (emit-bolt! collector
@@ -49,8 +48,8 @@
     (is (= "aaa!!!" (.execute drpc "test" "aaa")))
     (is (= "b!!!" (.execute drpc "test" "b")))
     (is (= "c!!!" (.execute drpc "test" "c")))
-    
-    
+
+
     (.shutdown cluster)
     (.shutdown drpc)
     ))
@@ -74,8 +73,8 @@
                      (.createLocalTopology builder drpc))
     (is (= "aaa!!!" (.execute drpc "test" "aaa")))
     (is (= "b!!!" (.execute drpc "test" "b")))
-    (is (= "c!!!" (.execute drpc "test" "c")))  
-    
+    (is (= "c!!!" (.execute drpc "test" "c")))
+
     (.shutdown cluster)
     (.shutdown drpc)
     ))
@@ -144,8 +143,8 @@
     (is (= "100" (.execute drpc "square" "10")))
     (is (= "1" (.execute drpc "square" "1")))
     (is (= "0" (.execute drpc "square" "0")))
-    
-    
+
+
     (.shutdown cluster)
     (.shutdown drpc)
     ))
@@ -210,7 +209,7 @@
                      "fail2"
                      {}
                      (.createLocalTopology builder drpc))
-    
+
     (is (thrown? DRPCExecutionException (.execute drpc "fail2" "2")))
 
     (.shutdown cluster)
@@ -228,7 +227,7 @@
           (.execute drpc-handler "ArbitraryDRPCFunctionName" "")))
         (is (= 0 (.size queue)))))))
 
-(deftest test-drpc-timeout-cleanup 
+(deftest test-drpc-timeout-cleanup
   (let [queue (ConcurrentLinkedQueue.)
         delay-seconds 1
         conf {DRPC-REQUEST-TIMEOUT-SECS delay-seconds}]
@@ -236,6 +235,6 @@
                read-storm-config conf
                timeout-check-secs delay-seconds]
               (let [drpc-handler (service-handler conf)]
-                (is (thrown? DRPCExecutionException 
+                (is (thrown? DRPCExecutionException
                              (.execute drpc-handler "ArbitraryDRPCFunctionName" "no-args")))))))
 

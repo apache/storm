@@ -14,14 +14,14 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.scheduler.multitenant-scheduler-test
-  (:use [clojure test])
-  (:use [backtype.storm config testing log])
+  (:use [clojure test]
+        [backtype.storm config testing log])
   (:require [backtype.storm.daemon [nimbus :as nimbus]])
-  (:import [backtype.storm.generated StormTopology])
-  (:import [backtype.storm.scheduler Cluster SupervisorDetails WorkerSlot ExecutorDetails
-            SchedulerAssignmentImpl Topologies TopologyDetails])
-  (:import [backtype.storm.scheduler.multitenant Node NodePool FreePool DefaultPool
-            IsolatedPool MultitenantScheduler]))
+  (:import [backtype.storm.generated StormTopology]
+           [backtype.storm.scheduler Cluster SupervisorDetails WorkerSlot ExecutorDetails
+                                     SchedulerAssignmentImpl Topologies TopologyDetails]
+           [backtype.storm.scheduler.multitenant Node NodePool FreePool DefaultPool
+                                                 IsolatedPool MultitenantScheduler]))
 
 (defn gen-supervisors [count]
   (into {} (for [id (range count)
@@ -132,7 +132,7 @@
        executor1 (ed 1)
        executor2 (ed 2)
        executor3 (ed 3)
-       topology1 (TopologyDetails. "topology1" 
+       topology1 (TopologyDetails. "topology1"
                    {TOPOLOGY-NAME "topology-name-1"}
                    (StormTopology.)
                    2
@@ -169,7 +169,7 @@
        executor1 (ed 1)
        executor2 (ed 2)
        executor3 (ed 3)
-       topology1 (TopologyDetails. "topology1" 
+       topology1 (TopologyDetails. "topology1"
                    {TOPOLOGY-NAME "topology-name-1"}
                    (StormTopology.)
                    5
@@ -208,7 +208,7 @@
        executor3 (ed 3)
        executor4 (ed 4)
        executor5 (ed 5)
-       topology1 (TopologyDetails. "topology1" 
+       topology1 (TopologyDetails. "topology1"
                    {TOPOLOGY-NAME "topology-name-1"}
                    (StormTopology.)
                    5
@@ -247,7 +247,7 @@
        executor3 (ed 3)
        executor4 (ed 4)
        executor5 (ed 5)
-       topology1 (TopologyDetails. "topology1" 
+       topology1 (TopologyDetails. "topology1"
                    {TOPOLOGY-NAME "topology-name-1"}
                    (StormTopology.)
                    5
@@ -296,7 +296,7 @@
        executor12 (ed 12)
        executor13 (ed 13)
        executor14 (ed 14)
-       topology1 (TopologyDetails. "topology1" 
+       topology1 (TopologyDetails. "topology1"
                    {TOPOLOGY-NAME "topology-name-1"}
                    (StormTopology.)
                    2
@@ -375,7 +375,7 @@
        executor2 (ed 2)
        executor3 (ed 3)
        executor4 (ed 4)
-       topology1 (TopologyDetails. "topology1" 
+       topology1 (TopologyDetails. "topology1"
                    {TOPOLOGY-NAME "topology-name-1"
                     TOPOLOGY-ISOLATED-MACHINES 4}
                    (StormTopology.)
@@ -419,7 +419,7 @@
        executor2 (ed 2)
        executor3 (ed 3)
        executor4 (ed 4)
-       topology1 (TopologyDetails. "topology1" 
+       topology1 (TopologyDetails. "topology1"
                    {TOPOLOGY-NAME "topology-name-1"
                     TOPOLOGY-ISOLATED-MACHINES 4}
                    (StormTopology.)
@@ -467,7 +467,7 @@
        executor12 (ed 12)
        executor13 (ed 13)
        executor14 (ed 14)
-       topology1 (TopologyDetails. "topology1" 
+       topology1 (TopologyDetails. "topology1"
                    {TOPOLOGY-NAME "topology-name-1"}
                    (StormTopology.)
                    4
@@ -572,7 +572,7 @@
        executor12 (ed 12)
        executor13 (ed 13)
        executor14 (ed 14)
-       topology1 (TopologyDetails. "topology1" 
+       topology1 (TopologyDetails. "topology1"
                    {TOPOLOGY-NAME "topology-name-1"}
                    (StormTopology.)
                    4
@@ -628,7 +628,7 @@
 
 (deftest test-multitenant-scheduler
   (let [supers (gen-supervisors 10)
-       topology1 (TopologyDetails. "topology1" 
+       topology1 (TopologyDetails. "topology1"
                    {TOPOLOGY-NAME "topology-name-1"
                     TOPOLOGY-SUBMITTER-USER "userC"}
                    (StormTopology.)

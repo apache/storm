@@ -1,12 +1,11 @@
 (ns backtype.storm.security.auth.DefaultHttpCredentialsPlugin-test
   (:use [clojure test])
-  (:import [javax.security.auth Subject])
-  (:import [javax.servlet.http HttpServletRequest])
-  (:import [backtype.storm.security.auth SingleUserPrincipal])
-  (:import [org.mockito Mockito])
-  (:import [backtype.storm.security.auth DefaultHttpCredentialsPlugin
-            ReqContext SingleUserPrincipal])
-  )
+  (:import [javax.security.auth Subject]
+           [javax.servlet.http HttpServletRequest]
+           [backtype.storm.security.auth SingleUserPrincipal]
+           [org.mockito Mockito]
+           [backtype.storm.security.auth DefaultHttpCredentialsPlugin
+                                         ReqContext SingleUserPrincipal]))
 
 (deftest test-getUserName
   (let [handler (doto (DefaultHttpCredentialsPlugin.) (.prepare {}))]

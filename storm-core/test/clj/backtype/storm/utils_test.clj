@@ -14,13 +14,12 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.utils-test
-  (:import [backtype.storm Config])
-  (:import [backtype.storm.utils NimbusClient Utils])
-  (:import [org.apache.curator.retry ExponentialBackoffRetry])
-  (:import [org.apache.thrift.transport TTransportException])
-  (:use [backtype.storm config util])
-  (:use [clojure test])
-)
+  (:use [backtype.storm config util]
+        [clojure test])
+  (:import [backtype.storm Config]
+           [backtype.storm.utils NimbusClient Utils]
+           [org.apache.curator.retry ExponentialBackoffRetry]
+           [org.apache.thrift.transport TTransportException]))
 
 (deftest test-new-curator-uses-exponential-backoff
   (let [expected_interval 2400
@@ -105,8 +104,8 @@
         (do
           (System/setProperty k "anything")
           (is (Utils/isZkAuthenticationConfiguredStormServer {}))))
-    (finally 
-      (if (not-nil? oldprop) 
+    (finally
+      (if (not-nil? oldprop)
         (System/setProperty k oldprop)
         (.remove (System/getProperties) k))))))
 

@@ -15,8 +15,8 @@
 ;; limitations under the License.
 
 (ns backtype.storm.LocalDRPC
-  (:require [backtype.storm.daemon [drpc :as drpc]])
   (:use [backtype.storm config util])
+  (:require [backtype.storm.daemon [drpc :as drpc]])
   (:import [backtype.storm.utils InprocMessaging ServiceRegistry])
   (:gen-class
    :init init

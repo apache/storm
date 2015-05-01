@@ -14,26 +14,26 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.ui.helpers
-  (:use compojure.core)
-  (:use [hiccup core page-helpers])
-  (:use [clojure
+  (:use compojure.core
+        [hiccup core page-helpers]
+        [clojure
          [string :only [blank? join]]
-         [walk :only [keywordize-keys]]])
-  (:use [backtype.storm config log])
-  (:use [backtype.storm.util :only [clojurify-structure uuid defnk url-encode not-nil?]])
-  (:use [clj-time coerce format])
-  (:import [backtype.storm.generated ExecutorInfo ExecutorSummary])
-  (:import [java.util EnumSet])
-  (:import [org.eclipse.jetty.server Server]
+         [walk :only [keywordize-keys]]]
+        [backtype.storm config log]
+        [backtype.storm.util :only [clojurify-structure uuid defnk url-encode not-nil?]]
+        [clj-time coerce format])
+  (:require [ring.util servlet]
+            [compojure.route :as route]
+            [compojure.handler :as handler])
+  (:import [backtype.storm.generated ExecutorInfo ExecutorSummary]
+           [java.util EnumSet]
+           [org.eclipse.jetty.server Server]
            [org.eclipse.jetty.server.nio SelectChannelConnector]
            [org.eclipse.jetty.server.ssl SslSocketConnector]
            [org.eclipse.jetty.servlet ServletHolder FilterMapping]
-	   [org.eclipse.jetty.util.ssl SslContextFactory]
+           [org.eclipse.jetty.util.ssl SslContextFactory]
            [org.eclipse.jetty.server DispatcherType]
-           [org.eclipse.jetty.servlets CrossOriginFilter])
-  (:require [ring.util servlet])
-  (:require [compojure.route :as route]
-            [compojure.handler :as handler]))
+           [org.eclipse.jetty.servlets CrossOriginFilter]))
 
 (defn split-divide [val divider]
   [(Integer. (int (/ val divider))) (mod val divider)]

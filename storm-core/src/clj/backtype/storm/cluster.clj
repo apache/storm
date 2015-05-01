@@ -15,16 +15,16 @@
 ;; limitations under the License.
 
 (ns backtype.storm.cluster
+  (:use [backtype.storm util log config converter])
+  (:require [backtype.storm [zookeeper :as zk]]
+            [backtype.storm.daemon [common :as common]])
   (:import [org.apache.zookeeper.data Stat ACL Id]
            [backtype.storm.generated SupervisorInfo Assignment StormBase ClusterWorkerHeartbeat ErrorInfo Credentials]
-           [java.io Serializable])
-  (:import [org.apache.zookeeper KeeperException KeeperException$NoNodeException ZooDefs ZooDefs$Ids ZooDefs$Perms])
-  (:import [backtype.storm.utils Utils])
-  (:import [java.security MessageDigest])
-  (:import [org.apache.zookeeper.server.auth DigestAuthenticationProvider])
-  (:use [backtype.storm util log config converter])
-  (:require [backtype.storm [zookeeper :as zk]])
-  (:require [backtype.storm.daemon [common :as common]]))
+           [java.io Serializable]
+           [org.apache.zookeeper KeeperException KeeperException$NoNodeException ZooDefs ZooDefs$Ids ZooDefs$Perms]
+           [backtype.storm.utils Utils]
+           [java.security MessageDigest]
+           [org.apache.zookeeper.server.auth DigestAuthenticationProvider]))
 
 (defprotocol ClusterState
   (set-ephemeral-node [this path data acls])
@@ -117,7 +117,7 @@
        [this path watch?]
        (zk/get-data-with-version zk path watch?))
 
-     (get-version 
+     (get-version
        [this path watch?]
        (zk/get-version zk path watch?))
 
@@ -310,16 +310,16 @@
           (swap! assignment-info-callback assoc storm-id callback))
         (clojurify-assignment (maybe-deserialize (get-data cluster-state (assignment-path storm-id) (not-nil? callback)) Assignment)))
 
-      (assignment-info-with-version 
+      (assignment-info-with-version
         [this storm-id callback]
         (when callback
           (swap! assignment-info-with-version-callback assoc storm-id callback))
-        (let [{data :data version :version} 
+        (let [{data :data version :version}
               (get-data-with-version cluster-state (assignment-path storm-id) (not-nil? callback))]
         {:data (clojurify-assignment (maybe-deserialize data Assignment))
          :version version}))
 
-      (assignment-version 
+      (assignment-version
         [this storm-id callback]
         (when callback
           (swap! assignment-version-callback assoc storm-id callback))
@@ -493,7 +493,7 @@
                               (maybe-deserialize ErrorInfo)
                               clojurify-error)]
               (map->TaskError data)))))
-      
+
       (disconnect
          [this]
         (unregister cluster-state state-id)

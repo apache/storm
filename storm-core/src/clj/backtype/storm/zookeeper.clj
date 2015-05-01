@@ -15,18 +15,18 @@
 ;; limitations under the License.
 
 (ns backtype.storm.zookeeper
-  (:import [org.apache.curator.retry RetryNTimes])
-  (:import [org.apache.curator.framework.api CuratorEvent CuratorEventType CuratorListener UnhandledErrorListener])
-  (:import [org.apache.curator.framework CuratorFramework CuratorFrameworkFactory])
-  (:import [org.apache.zookeeper ZooKeeper Watcher KeeperException$NoNodeException
-            ZooDefs ZooDefs$Ids CreateMode WatchedEvent Watcher$Event Watcher$Event$KeeperState
-            Watcher$Event$EventType KeeperException$NodeExistsException])
-  (:import [org.apache.zookeeper.data Stat])
-  (:import [org.apache.zookeeper.server ZooKeeperServer NIOServerCnxnFactory])
-  (:import [java.net InetSocketAddress BindException])
-  (:import [java.io File])
-  (:import [backtype.storm.utils Utils ZookeeperAuthInfo])
-  (:use [backtype.storm util log config]))
+  (:use [backtype.storm util log config])
+  (:import [org.apache.curator.retry RetryNTimes]
+           [org.apache.curator.framework.api CuratorEvent CuratorEventType CuratorListener UnhandledErrorListener]
+           [org.apache.curator.framework CuratorFramework CuratorFrameworkFactory]
+           [org.apache.zookeeper ZooKeeper Watcher KeeperException$NoNodeException
+                                 ZooDefs ZooDefs$Ids CreateMode WatchedEvent Watcher$Event Watcher$Event$KeeperState
+                                 Watcher$Event$EventType KeeperException$NodeExistsException]
+           [org.apache.zookeeper.data Stat]
+           [org.apache.zookeeper.server ZooKeeperServer NIOServerCnxnFactory]
+           [java.net InetSocketAddress BindException]
+           [java.io File]
+           [backtype.storm.utils Utils ZookeeperAuthInfo]))
 
 (def zk-keeper-states
   {Watcher$Event$KeeperState/Disconnected :disconnected
@@ -134,12 +134,12 @@
         nil )
       (catch Exception e (throw (wrap-in-runtime e))))))
 
-(defn get-data-with-version 
+(defn get-data-with-version
   [^CuratorFramework zk ^String path watch?]
   (let [stats (org.apache.zookeeper.data.Stat. )
         path (normalize-path path)]
     (try-cause
-     (if-let [data 
+     (if-let [data
               (if (exists-node? zk path watch?)
                 (if watch?
                   (.. zk (getData) (watched) (storingStatIn stats) (forPath path))
@@ -150,7 +150,7 @@
        ;; this is fine b/c we still have a watch from the successful exists call
        nil ))))
 
-(defn get-version 
+(defn get-version
 [^CuratorFramework zk ^String path watch?]
   (if-let [stats
            (if watch?

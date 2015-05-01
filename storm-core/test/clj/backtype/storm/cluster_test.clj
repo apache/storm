@@ -14,18 +14,18 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.cluster-test
-  (:import [java.util Arrays])
-  (:import [backtype.storm.daemon.common Assignment StormBase SupervisorInfo])
-  (:import [org.apache.zookeeper ZooDefs ZooDefs$Ids])
-  (:import [org.mockito Mockito])
-  (:import [org.mockito.exceptions.base MockitoAssertionError])
-  (:import [org.apache.curator.framework CuratorFramework CuratorFrameworkFactory CuratorFrameworkFactory$Builder])
-  (:import [backtype.storm.utils Utils TestUtils ZookeeperAuthInfo])
-  (:require [backtype.storm [zookeeper :as zk]])
-  (:require [conjure.core])
-  (:use [conjure core])
-  (:use [clojure test])
-  (:use [backtype.storm cluster config util testing thrift log]))
+  (:use [conjure core]
+        [clojure test]
+        [backtype.storm cluster config util testing thrift log])
+  (:require [backtype.storm [zookeeper :as zk]]
+            [conjure.core])
+  (:import [java.util Arrays]
+           [backtype.storm.daemon.common Assignment StormBase SupervisorInfo]
+           [org.apache.zookeeper ZooDefs ZooDefs$Ids]
+           [org.mockito Mockito]
+           [org.mockito.exceptions.base MockitoAssertionError]
+           [org.apache.curator.framework CuratorFramework CuratorFrameworkFactory CuratorFrameworkFactory$Builder]
+           [backtype.storm.utils Utils TestUtils ZookeeperAuthInfo]))
 
 (defn mk-config [zk-port]
   (merge (read-storm-config)
@@ -181,7 +181,7 @@
       (is (= #{"storm1" "storm3"} (set (.assignments state nil))))
       (is (= assignment2 (.assignment-info state "storm1" nil)))
       (is (= assignment1 (.assignment-info state "storm3" nil)))
-      
+
       (is (= [] (.active-storms state)))
       (.activate-storm! state "storm1" base1)
       (is (= ["storm1"] (.active-storms state)))

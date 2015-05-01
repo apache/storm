@@ -14,12 +14,13 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.logviewer-test
-  (:use [backtype.storm config util])
-  (:require [backtype.storm.daemon [logviewer :as logviewer]
-                                   [supervisor :as supervisor]])
-  (:require [conjure.core])
-  (:use [clojure test])
-  (:use [conjure core])
+  (:use [backtype.storm config util]
+        [clojure.test]
+        [conjure.core])
+  (:require [backtype.storm.daemon
+             [logviewer :as logviewer]
+             [supervisor :as supervisor]]
+            [conjure.core])
   (:import [org.mockito Mockito]))
 
 (defmulti mk-mock-File #(:type %))

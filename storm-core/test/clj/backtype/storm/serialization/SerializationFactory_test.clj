@@ -14,13 +14,12 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.serialization.SerializationFactory-test
-  (:import [backtype.storm Config])
-  (:import [backtype.storm.security.serialization BlowfishTupleSerializer])
-  (:import [backtype.storm.serialization SerializationFactory])
-  (:import [backtype.storm.utils ListDelegate])
-  (:use [backtype.storm config])
-  (:use [clojure test])
-)
+  (:use [backtype.storm config]
+        [clojure test])
+  (:import [backtype.storm Config]
+           [backtype.storm.security.serialization BlowfishTupleSerializer]
+           [backtype.storm.serialization SerializationFactory]
+           [backtype.storm.utils ListDelegate]))
 
 
 (deftest test-registers-default-when-not-in-conf

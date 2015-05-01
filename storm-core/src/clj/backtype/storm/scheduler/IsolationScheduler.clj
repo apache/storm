@@ -16,14 +16,14 @@
 (ns backtype.storm.scheduler.IsolationScheduler
   (:use [backtype.storm util config log])
   (:require [backtype.storm.scheduler.DefaultScheduler :as DefaultScheduler])
-  (:import [java.util HashSet Set List LinkedList ArrayList Map HashMap])
-  (:import [backtype.storm.scheduler IScheduler Topologies
-            Cluster TopologyDetails WorkerSlot SchedulerAssignment
-            EvenScheduler ExecutorDetails])
+  (:import [java.util HashSet Set List LinkedList ArrayList Map HashMap]
+           [backtype.storm.scheduler IScheduler Topologies
+                                     Cluster TopologyDetails WorkerSlot SchedulerAssignment
+                                     EvenScheduler ExecutorDetails])
   (:gen-class
     :init init
     :constructors {[] []}
-    :state state 
+    :state state
     :implements [backtype.storm.scheduler.IScheduler]))
 
 (defn -init []
@@ -155,7 +155,7 @@
 ;; run default scheduler on isolated topologies that didn't have enough slots + non-isolated topologies on remaining machines
 ;; set blacklist to what it was initially
 (defn -schedule [this ^Topologies topologies ^Cluster cluster]
-  (let [conf (container-get (.state this))        
+  (let [conf (container-get (.state this))
         orig-blacklist (HashSet. (.getBlacklistedHosts cluster))
         iso-topologies (isolated-topologies conf (.getTopologies topologies))
         iso-ids-set (->> iso-topologies (map #(.getId ^TopologyDetails %)) set)
@@ -180,7 +180,7 @@
               (.freeSlot cluster slot)
               ))
           )))
-    
+
     (let [host->used-slots (host->used-slots cluster)
           ^LinkedList sorted-assignable-hosts (host-assignable-slots cluster)]
       ;; TODO: can improve things further by ordering topologies in terms of who needs the least workers
@@ -196,7 +196,7 @@
               (.assign cluster slot top-id executors-set))
             (.blacklistHost cluster host))
           )))
-    
+
     (let [failed-iso-topologies (->> topology-worker-specs
                                   (mapcat (fn [[top-id worker-specs]]
                                     (if-not (empty? worker-specs) [top-id])

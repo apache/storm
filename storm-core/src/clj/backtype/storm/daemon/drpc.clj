@@ -17,7 +17,7 @@
 (ns backtype.storm.daemon.drpc
   (:require [backtype.storm.util :as util]
             [backtype.storm.ui.helpers :as helpers]
-            [backtype.storm.config :as config]
+            [backtype.storm.config :as c]
             [backtype.storm.daemon.common :as common]
             [backtype.storm.log :refer [log-debug log-warn log-message]]
             [ring.middleware.reload :as reload]
@@ -58,7 +58,7 @@
 
 ;; TODO: change this to use TimeCacheMap
 (defn service-handler [conf]
-  (let [drpc-acl-handler (common/mk-authorization-handler (conf config/DRPC-AUTHORIZER) conf)
+  (let [drpc-acl-handler (common/mk-authorization-handler (conf c/DRPC-AUTHORIZER) conf)
         ctr (atom 0)
         id->sem (atom {})
         id->result (atom {})
@@ -75,7 +75,7 @@
         clear-thread (util/async-loop
                        (fn []
                          (doseq [[id start] @id->start]
-                           (when (> (util/time-delta start) (conf config/DRPC-REQUEST-TIMEOUT-SECS))
+                           (when (> (util/time-delta start) (conf c/DRPC-REQUEST-TIMEOUT-SECS))
                              (when-let [sem (@id->sem id)]
                                (.remove (acquire-queue request-queues (@id->function id)) (@id->request id))
                                (log-warn "Timeout DRPC request id: " id " start at " start)
@@ -193,11 +193,11 @@
 
 (defn launch-server!
   ([]
-    (let [conf (config/read-storm-config)
-          worker-threads (int (conf config/DRPC-WORKER-THREADS))
-          queue-size (int (conf config/DRPC-QUEUE-SIZE))
-          drpc-http-port (int (conf config/DRPC-HTTP-PORT))
-          drpc-port (int (conf config/DRPC-PORT))
+    (let [conf (c/read-storm-config)
+          worker-threads (int (conf c/DRPC-WORKER-THREADS))
+          queue-size (int (conf c/DRPC-QUEUE-SIZE))
+          drpc-http-port (int (conf c/DRPC-HTTP-PORT))
+          drpc-port (int (conf c/DRPC-PORT))
           drpc-service-handler (service-handler conf)
           ;; requests and returns need to be on separate thread pools, since calls to
           ;; "execute" don't unblock until other thrift methods are called. So if
@@ -218,20 +218,20 @@
       (future (.serve invoke-server))
       (when (> drpc-http-port 0)
         (let [app (webapp drpc-service-handler http-creds-handler)
-              filter-class (conf config/DRPC-HTTP-FILTER)
-              filter-params (conf config/DRPC-HTTP-FILTER-PARAMS)
+              filter-class (conf c/DRPC-HTTP-FILTER)
+              filter-params (conf c/DRPC-HTTP-FILTER-PARAMS)
               filters-confs [{:filter-class filter-class
                               :filter-params filter-params}]
-              https-port (int (conf config/DRPC-HTTPS-PORT))
-              https-ks-path (conf config/DRPC-HTTPS-KEYSTORE-PATH)
-              https-ks-password (conf config/DRPC-HTTPS-KEYSTORE-PASSWORD)
-              https-ks-type (conf config/DRPC-HTTPS-KEYSTORE-TYPE)
-              https-key-password (conf config/DRPC-HTTPS-KEY-PASSWORD)
-              https-ts-path (conf config/DRPC-HTTPS-TRUSTSTORE-PATH)
-              https-ts-password (conf config/DRPC-HTTPS-TRUSTSTORE-PASSWORD)
-              https-ts-type (conf config/DRPC-HTTPS-TRUSTSTORE-TYPE)
-              https-want-client-auth (conf config/DRPC-HTTPS-WANT-CLIENT-AUTH)
-              https-need-client-auth (conf config/DRPC-HTTPS-NEED-CLIENT-AUTH)]
+              https-port (int (conf c/DRPC-HTTPS-PORT))
+              https-ks-path (conf c/DRPC-HTTPS-KEYSTORE-PATH)
+              https-ks-password (conf c/DRPC-HTTPS-KEYSTORE-PASSWORD)
+              https-ks-type (conf c/DRPC-HTTPS-KEYSTORE-TYPE)
+              https-key-password (conf c/DRPC-HTTPS-KEY-PASSWORD)
+              https-ts-path (conf c/DRPC-HTTPS-TRUSTSTORE-PATH)
+              https-ts-password (conf c/DRPC-HTTPS-TRUSTSTORE-PASSWORD)
+              https-ts-type (conf c/DRPC-HTTPS-TRUSTSTORE-TYPE)
+              https-want-client-auth (conf c/DRPC-HTTPS-WANT-CLIENT-AUTH)
+              https-need-client-auth (conf c/DRPC-HTTPS-NEED-CLIENT-AUTH)]
 
           (helpers/storm-run-jetty
            {:port drpc-http-port

@@ -14,12 +14,12 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.grouping-test
-  (:use [clojure test])
+  (:use [clojure test]
+        [backtype.storm testing clojure]
+        [backtype.storm.daemon common])
+  (:require [backtype.storm [thrift :as thrift]])
   (:import [backtype.storm.testing TestWordCounter TestWordSpout TestGlobalCount TestAggregatesCounter NGrouping]
-           [backtype.storm.generated JavaObject JavaObjectArg])
-  (:use [backtype.storm testing clojure])
-  (:use [backtype.storm.daemon common])
-  (:require [backtype.storm [thrift :as thrift]]))
+           [backtype.storm.generated JavaObject JavaObjectArg]))
 
 (deftest test-shuffle
   (with-simulated-time-local-cluster [cluster :supervisors 4]

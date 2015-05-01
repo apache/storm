@@ -14,9 +14,9 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.tick-tuple-test
-  (:use [clojure test])
-  (:use [backtype.storm testing clojure config])
-  (:use [backtype.storm.daemon common])
+  (:use [clojure test]
+        [backtype.storm testing clojure config]
+        [backtype.storm.daemon common])
   (:require [backtype.storm [thrift :as thrift]]))
 
 (defbolt noop-bolt ["tuple"] {:prepare true}

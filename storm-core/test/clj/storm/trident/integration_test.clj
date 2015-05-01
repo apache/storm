@@ -14,15 +14,15 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns storm.trident.integration-test
-  (:use [clojure test])
+  (:use [clojure test]
+        [storm.trident testing]
+        [backtype.storm util])
   (:require [backtype.storm [testing :as t]])
   (:import [storm.trident.testing Split CountAsAggregator StringLength TrueFilter
-            MemoryMapState$Factory])
-  (:import [storm.trident.state StateSpec])
-  (:import [storm.trident.operation.impl CombinerAggStateUpdater])
-  (:use [storm.trident testing])
-  (:use [backtype.storm util]))
-  
+                                  MemoryMapState$Factory]
+           [storm.trident.state StateSpec]
+           [storm.trident.operation.impl CombinerAggStateUpdater]))
+
 (bootstrap-imports)
 
 (deftest test-memory-map-get-tuples
@@ -38,7 +38,7 @@
               (.groupBy (fields "word"))
               (.persistentAggregate (memory-map-state) (Count.) (fields "count"))
               (.parallelismHint 6)
-              ))       
+              ))
         (-> topo
             (.newDRPCStream "all-tuples" drpc)
             (.broadcast)
@@ -83,7 +83,7 @@
           (is (= [[8]] (exec-drpc drpc "words" "man where you the")))
           )))))
 
-;; this test reproduces a bug where committer spouts freeze processing when 
+;; this test reproduces a bug where committer spouts freeze processing when
 ;; there's at least one repartitioning after the spout
 (deftest test-word-count-committer-spout
   (t/with-local-cluster [cluster]
@@ -141,7 +141,7 @@
           (is (= [[0]] (exec-drpc drpc "numwords" "")))
           (is (= [[8]] (exec-drpc drpc "numwords" "1 2 3 4 5 6 7 8")))
           )))))
-          
+
 (deftest test-split-merge
   (t/with-local-cluster [cluster]
     (with-drpc [drpc]
@@ -184,7 +184,7 @@
           (is (t/ms= [["the" 1] ["the" 1]] (exec-drpc drpc "tester" "the")))
           (is (t/ms= [["aaaaa" 1] ["aaaaa" 1]] (exec-drpc drpc "tester" "aaaaa")))
           )))))
-          
+
 (deftest test-multi-repartition
   (t/with-local-cluster [cluster]
     (with-drpc [drpc]
@@ -284,7 +284,7 @@
 ;;           (-> drpc-stream
 ;;               (.each (fields "args") (StringLength.) (fields "len"))
 ;;               (.project (fields "len"))))
-;; 
+;;
 ;;         (.merge topo [s1 s2])
 ;;         (with-topology [cluster topo]
 ;;           (is (t/ms= [[7] ["the"] ["man"]] (exec-drpc drpc "splitter" "the man")))

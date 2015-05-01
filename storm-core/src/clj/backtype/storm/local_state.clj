@@ -16,11 +16,11 @@
 (ns backtype.storm.local-state
   (:use [backtype.storm log util])
   (:import [backtype.storm.generated StormTopology
-            InvalidTopologyException GlobalStreamId
-            LSSupervisorId LSApprovedWorkers
-            LSSupervisorAssignments LocalAssignment
-            ExecutorInfo LSWorkerHeartbeat])
-  (:import [backtype.storm.utils LocalState]))
+                                     InvalidTopologyException GlobalStreamId
+                                     LSSupervisorId LSApprovedWorkers
+                                     LSSupervisorAssignments LocalAssignment
+                                     ExecutorInfo LSWorkerHeartbeat]
+           [backtype.storm.utils LocalState]))
 
 (def LS-WORKER-HEARTBEAT "worker-heartbeat")
 (def LS-ID "supervisor-id")
@@ -54,8 +54,8 @@
 
 (defn ->executor-list
   [executors]
-  (into [] 
-    (for [exec-info executors] 
+  (into []
+    (for [exec-info executors]
       [(.get_task_start exec-info) (.get_task_end exec-info)])))
 
 (defn ->LocalAssignment
@@ -75,7 +75,7 @@
 (defn ls-local-assignments!
   [^LocalState local-state assignments]
     (let [local-assignment-map (map-val ->LocalAssignment assignments)]
-    (.put local-state LS-LOCAL-ASSIGNMENTS 
+    (.put local-state LS-LOCAL-ASSIGNMENTS
           (LSSupervisorAssignments. local-assignment-map))))
 
 (defn ls-local-assignments
@@ -89,7 +89,7 @@
   [^LocalState local-state time-secs storm-id executors port]
   (.put local-state LS-WORKER-HEARTBEAT (LSWorkerHeartbeat. time-secs storm-id (->ExecutorInfo-list executors) port) false))
 
-(defn ls-worker-heartbeat 
+(defn ls-worker-heartbeat
   [^LocalState local-state]
   (if-let [worker-hb (.get local-state LS-WORKER-HEARTBEAT)]
     {:time-secs (.get_time_secs worker-hb)

@@ -16,10 +16,10 @@
 (ns backtype.storm.messaging.local
   (:refer-clojure :exclude [send])
   (:use [backtype.storm log])
-  (:import [backtype.storm.messaging IContext IConnection TaskMessage])
-  (:import [java.util.concurrent LinkedBlockingQueue])
-  (:import [java.util Map Iterator])
-  (:import [java.util Iterator ArrayList])
+  (:import [backtype.storm.messaging IContext IConnection TaskMessage]
+           [java.util.concurrent LinkedBlockingQueue]
+           [java.util Map Iterator]
+           [java.util Iterator ArrayList])
   (:gen-class))
 
 (defn add-queue! [queues-map lock storm-id port]
@@ -37,7 +37,7 @@
     (let [ret (ArrayList.)
           msg (if (= flags 1) (.poll queue) (.take queue))]
       (if msg
-        (do 
+        (do
           (.add ret msg)
           (.iterator ret))
         nil)))
@@ -47,7 +47,7 @@
       ))
   (^void send [this ^Iterator iter]
     (let [send-queue (add-queue! queues-map lock storm-id port)]
-      (while (.hasNext iter) 
+      (while (.hasNext iter)
          (.put send-queue (.next iter)))
       ))
   (^void close [this]
@@ -67,7 +67,7 @@
   (^void term [this]
     ))
 
-(defn mk-context [] 
+(defn mk-context []
   (let [context  (LocalContext. nil nil)]
     (.prepare ^IContext context nil)
     context))

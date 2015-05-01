@@ -14,11 +14,10 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.security.auth.ThriftClient-test
-  (:use [backtype.storm config util])
-  (:use [clojure test])
-  (:import [backtype.storm.security.auth ThriftClient ThriftConnectionType])
-  (:import [org.apache.thrift.transport TTransportException])
-)
+  (:use [backtype.storm config util]
+        [clojure test])
+  (:import [backtype.storm.security.auth ThriftClient ThriftConnectionType]
+           [org.apache.thrift.transport TTransportException]))
 
 (deftest test-ctor-throws-if-port-invalid
   (let [conf (merge

@@ -14,13 +14,12 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.serialization-test
-  (:use [clojure test])
+  (:use [clojure test]
+        [backtype.storm util config])
   (:import [backtype.storm.serialization KryoTupleSerializer KryoTupleDeserializer
-            KryoValuesSerializer KryoValuesDeserializer])
-  (:import [backtype.storm.testing TestSerObject TestKryoDecorator])
-  (:import [backtype.storm ConfigValidation])
-  (:use [backtype.storm util config])
-  )
+                                         KryoValuesSerializer KryoValuesDeserializer]
+           [backtype.storm.testing TestSerObject TestKryoDecorator]
+           [backtype.storm ConfigValidation]))
 
 
 (defn mk-conf [extra]
@@ -72,7 +71,7 @@
    (bind obj (TestSerObject. 1 2))
    (is (thrown? Exception
                 (roundtrip [obj] {TOPOLOGY-FALL-BACK-ON-JAVA-SERIALIZATION false})))
-   
+
    (is (= [obj] (roundtrip [obj] {TOPOLOGY-KRYO-DECORATORS ["backtype.storm.testing.TestKryoDecorator"]
                                   TOPOLOGY-FALL-BACK-ON-JAVA-SERIALIZATION false})))))
 

@@ -14,27 +14,27 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.security.auth.nimbus-auth-test
-  (:use [clojure test])
-  (:require [backtype.storm [testing :as testing]])
-  (:require [backtype.storm.daemon [nimbus :as nimbus]])
-  (:require [backtype.storm [zookeeper :as zk]])
-  (:import [java.nio ByteBuffer])
-  (:import [backtype.storm Config])
-  (:import [backtype.storm.utils NimbusClient])
-  (:import [backtype.storm.generated NotAliveException])
-  (:import [backtype.storm.security.auth AuthUtils ThriftServer ThriftClient 
-                                         ReqContext ThriftConnectionType])
-  (:use [backtype.storm cluster util config log])
-  (:use [backtype.storm.daemon common nimbus])
-  (:import [backtype.storm.generated Nimbus Nimbus$Client Nimbus$Processor 
-            AuthorizationException SubmitOptions TopologyInitialStatus KillOptions])
-  (:require [conjure.core])
-  (:use [conjure core]))
+  (:use [clojure test]
+        [backtype.storm cluster util config log]
+        [backtype.storm.daemon common nimbus]
+        [conjure core])
+  (:require [backtype.storm [testing :as testing]]
+            [conjure.core]
+            [backtype.storm.daemon [nimbus :as nimbus]]
+            [backtype.storm [zookeeper :as zk]])
+  (:import [java.nio ByteBuffer]
+           [backtype.storm Config]
+           [backtype.storm.utils NimbusClient]
+           [backtype.storm.generated NotAliveException]
+           [backtype.storm.security.auth AuthUtils ThriftServer ThriftClient
+                                         ReqContext ThriftConnectionType]
+           [backtype.storm.generated Nimbus Nimbus$Client Nimbus$Processor
+                                     AuthorizationException SubmitOptions TopologyInitialStatus KillOptions]))
 
 (def nimbus-timeout (Integer. 30))
 
-(defn launch-test-cluster [nimbus-port login-cfg aznClass transportPluginClass] 
-  (let [conf {NIMBUS-AUTHORIZER aznClass 
+(defn launch-test-cluster [nimbus-port login-cfg aznClass transportPluginClass]
+  (let [conf {NIMBUS-AUTHORIZER aznClass
               NIMBUS-THRIFT-PORT nimbus-port
               STORM-THRIFT-TRANSPORT-PLUGIN transportPluginClass }
         conf (if login-cfg (merge conf {"java.security.auth.login.config" login-cfg}) conf)
@@ -42,7 +42,7 @@
                                             :ports-per-supervisor 0
                                             :daemon-conf conf)
         nimbus-server (ThriftServer. (:daemon-conf cluster-map)
-                                     (Nimbus$Processor. (:nimbus cluster-map)) 
+                                     (Nimbus$Processor. (:nimbus cluster-map))
                                      ThriftConnectionType/NIMBUS)]
     (.addShutdownHook (Runtime/getRuntime) (Thread. (fn [] (.stop nimbus-server))))
     (.start (Thread. #(.serve nimbus-server)))
@@ -56,7 +56,7 @@
       (testing/kill-local-storm-cluster cluster-map#)
       (.stop nimbus-server#)))
 
-(deftest Simple-authentication-test 
+(deftest Simple-authentication-test
   (let [port (available-port)]
     (with-test-cluster [port nil nil "backtype.storm.security.auth.SimpleTransportPlugin"]
       (let [storm-conf (merge (read-storm-config)
@@ -68,7 +68,7 @@
                  (is (thrown-cause? NotAliveException
                               (.activate nimbus_client "topo-name"))))
         (.close client)))))
-  
+
 (deftest test-noop-authorization-w-simple-transport
   (let [port (available-port)]
     (with-test-cluster [port nil

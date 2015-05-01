@@ -14,8 +14,8 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.local-state-test
-  (:use [clojure test])
-  (:use [backtype.storm testing])
+  (:use [clojure test]
+        [backtype.storm testing])
   (:import [backtype.storm.utils LocalState]
            [backtype.storm.generated GlobalStreamId]
            [org.apache.commons.io FileUtils]
