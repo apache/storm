@@ -14,9 +14,10 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.messaging.loader
-  (:use [backtype.storm util log])
   (:require [backtype.storm.messaging [local :as local]]
-            [backtype.storm [disruptor :as disruptor]])
+            [backtype.storm [disruptor :as disruptor]]
+            [backtype.storm.log :refer [log-message]]
+            [backtype.storm.util :as util :refer [defnk]])
   (:import [java.util ArrayList Iterator]
            [backtype.storm.messaging IContext IConnection TaskMessage]
            [backtype.storm.utils DisruptorQueue MutableObject]))
@@ -25,7 +26,7 @@
   (local/mk-context))
 
 (defn- mk-receive-thread [storm-id port transfer-local-fn  daemon kill-fn priority socket max-buffer-size thread-id]
-    (async-loop
+    (util/async-loop
        (fn []
          (log-message "Starting receive-thread: [stormId: " storm-id ", port: " port ", thread-id: " thread-id  " ]")
          (fn []
@@ -65,7 +66,7 @@
    :kill-fn (fn [t] (System/exit 1))
    :priority Thread/NORM_PRIORITY]
   (let [max-buffer-size (int max-buffer-size)
-        local-hostname (memoized-local-hostname)
+        local-hostname (util/memoized-local-hostname)
         thread-count (if receiver-thread-count receiver-thread-count 1)
         vthreads (mk-receive-threads storm-id port transfer-local-fn daemon kill-fn priority socket max-buffer-size thread-count)]
     (fn []

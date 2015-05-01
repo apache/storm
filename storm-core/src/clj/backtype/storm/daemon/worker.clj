@@ -14,16 +14,16 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.daemon.worker
-  (:use [backtype.storm.daemon common]
-        [backtype.storm local-state])
-  (:require [backtype.storm.daemon [executor :as executor]]
+  (:require [backtype.storm.daemon.executor :as executor]
             [backtype.storm [disruptor :as disruptor] [cluster :as cluster]]
             [clojure.set :as set]
+            [backtype.storm.daemon.common :as common :refer [defserverfn]]
             [backtype.storm.messaging.loader :as msg-loader]
             [backtype.storm.log :refer [log-message log-warn log-error]]
             [backtype.storm.timer :as t]
             [backtype.storm.util :as util :refer [defnk]]
-            [backtype.storm.config :as c])
+            [backtype.storm.config :as c]
+            [backtype.storm.local-state :as ls])
   (:import [java.util.concurrent Executors]
            [java.util ArrayList HashMap]
            [backtype.storm.utils Utils TransferDrainer ThriftTopologyUtils]
@@ -74,7 +74,7 @@
   (let [conf (:conf worker)
         state (c/worker-state conf (:worker-id worker))]
     ;; do the local-file-system heartbeat.
-    (ls-worker-heartbeat! state (util/current-time-secs) (:storm-id worker) (:executors worker) (:port worker))
+    (ls/ls-worker-heartbeat! state (util/current-time-secs) (:storm-id worker) (:executors worker) (:port worker))
     (.cleanup state 60) ; this is just in case supervisor is down so that disk doesn't fill up.
                          ; it shouldn't take supervisor 120 seconds between listing dir and reading it
 
@@ -83,7 +83,7 @@
 (defn worker-outbound-tasks
   "Returns seq of task-ids that receive messages from this worker"
   [worker]
-  (let [context (worker-context worker)
+  (let [context (common/worker-context worker)
         components (mapcat
                      (fn [task-id]
                        (->> (.getComponentId context (int task-id))
@@ -200,7 +200,7 @@
         executor-receive-queue-map (mk-receive-queue-map storm-conf executors)
 
         receive-queue-map (->> executor-receive-queue-map
-                               (mapcat (fn [[e queue]] (for [t (executor-id->tasks e)] [t queue])))
+                               (mapcat (fn [[e queue]] (for [t (common/executor-id->tasks e)] [t queue])))
                                (into {}))
 
         topology (c/read-supervisor-topology conf storm-id)
@@ -227,14 +227,14 @@
       :task-ids (->> receive-queue-map keys (map int) sort)
       :storm-conf storm-conf
       :topology topology
-      :system-topology (system-topology! storm-conf topology)
+      :system-topology (common/system-topology! storm-conf topology)
       :heartbeat-timer (mk-halting-timer "heartbeat-timer")
       :refresh-connections-timer (mk-halting-timer "refresh-connections-timer")
       :refresh-credentials-timer (mk-halting-timer "refresh-credentials-timer")
       :refresh-active-timer (mk-halting-timer "refresh-active-timer")
       :executor-heartbeat-timer (mk-halting-timer "executor-heartbeat-timer")
       :user-timer (mk-halting-timer "user-timer")
-      :task->component (HashMap. (storm-task-info topology storm-conf)) ; for optimized access when used in tasks later on
+      :task->component (HashMap. (common/storm-task-info topology storm-conf)) ; for optimized access when used in tasks later on
       :component->stream->fields (component->stream->fields (:system-topology <>))
       :component->sorted-tasks (->> (:task->component <>) util/reverse-map (util/map-val sort))
       :endpoint-socket-lock (util/mk-rw-lock)
@@ -244,7 +244,7 @@
       :executor-receive-queue-map executor-receive-queue-map
       :short-executor-receive-queue-map (util/map-key first executor-receive-queue-map)
       :task->short-executor (->> executors
-                                 (mapcat (fn [e] (for [t (executor-id->tasks e)] [t (first e)])))
+                                 (mapcat (fn [e] (for [t (common/executor-id->tasks e)] [t (first e)])))
                                  (into {})
                                  (HashMap.))
       :suicide-fn (mk-suicide-fn conf)
@@ -282,7 +282,7 @@
                               (:data new-assignment)))
               my-assignment (-> assignment
                                 :executor->node+port
-                                to-task->node+port
+                                common/to-task->node+port
                                 (select-keys outbound-tasks)
                                 (#(util/map-val endpoint->string %)))
               ;; we dont need a connection for the local tasks anymore
@@ -498,7 +498,7 @@
              (shutdown
               [this]
               (shutdown*))
-             DaemonCommon
+             common/DaemonCommon
              (waiting? [this]
                (and
                  (t/timer-waiting? (:heartbeat-timer worker))
@@ -538,6 +538,6 @@
 (defn -main [storm-id assignment-id port-str worker-id]
   (let [conf (c/read-storm-config)]
     (util/setup-default-uncaught-exception-handler)
-    (validate-distributed-mode! conf)
+    (common/validate-distributed-mode! conf)
     (let [worker (mk-worker conf nil storm-id assignment-id (Integer/parseInt port-str) worker-id)]
       (util/add-shutdown-hook-with-force-kill-in-1-sec #(.shutdown worker)))))

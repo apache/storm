@@ -15,8 +15,8 @@
 ;; limitations under the License.
 
 (ns backtype.storm.clojure
-  (:use [backtype.storm util])
-  (:require [backtype.storm [thrift :as thrift]])
+  (:require [backtype.storm [thrift :as thrift]]
+            [backtype.storm.util :as util :refer [defnk defalias]])
   (:import [backtype.storm StormSubmitter]
            [backtype.storm.generated StreamInfo]
            [backtype.storm.tuple Tuple]
@@ -155,14 +155,14 @@
 
 (defnk emit-bolt! [collector values
                    :stream Utils/DEFAULT_STREAM_ID :anchor []]
-  (let [^List anchor (collectify anchor)
+  (let [^List anchor (util/collectify anchor)
         values (tuple-values values collector stream) ]
     (.emit ^OutputCollector (:output-collector collector) stream anchor values)
     ))
 
 (defnk emit-direct-bolt! [collector task values
                           :stream Utils/DEFAULT_STREAM_ID :anchor []]
-  (let [^List anchor (collectify anchor)
+  (let [^List anchor (util/collectify anchor)
         values (tuple-values values collector stream) ]
     (.emitDirect ^OutputCollector (:output-collector collector) task stream anchor values)
     ))

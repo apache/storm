@@ -16,7 +16,7 @@
 
 (ns backtype.storm.ui.core
   (:use compojure.core
-        [clojure.java.shell :only [sh]]
+
         ring.middleware.reload
         ring.middleware.multipart-params
         [ring.middleware.json :only [wrap-json-params]]
@@ -27,9 +27,11 @@
                                               ACKER-FAIL-STREAM-ID system-id? mk-authorization-handler]]]
         [clojure.string :only [blank? lower-case trim]])
   (:require [compojure.route :as route]
+            [clojure.java.shell :refer [sh]]
             [compojure.handler :as handler]
             [ring.util.response :as resp]
-            [backtype.storm [thrift :as thrift]])
+            [backtype.storm [thrift :as thrift]]
+            [backtype.storm.util :as util])
   (:import [backtype.storm.utils Utils]
            [backtype.storm.generated ExecutorSpecificStats
                                      ExecutorStats ExecutorSummary TopologyInfo SpoutStats BoltStats
@@ -188,17 +190,17 @@
   (let [filter-fn (mk-include-sys-fn include-sys?)
         emitted (:emitted stream-summary)
         emitted (into {} (for [[window stat] emitted]
-                           {window (filter-key filter-fn stat)}))
+                           {window (util/filter-key filter-fn stat)}))
         transferred (:transferred stream-summary)
         transferred (into {} (for [[window stat] transferred]
-                               {window (filter-key filter-fn stat)}))
+                               {window (util/filter-key filter-fn stat)}))
         stream-summary (-> stream-summary (dissoc :emitted) (assoc :emitted emitted))
         stream-summary (-> stream-summary (dissoc :transferred) (assoc :transferred transferred))]
     stream-summary))
 
 (defn aggregate-bolt-stats
   [stats-seq include-sys?]
-  (let [stats-seq (collectify stats-seq)]
+  (let [stats-seq (util/collectify stats-seq)]
     (merge (pre-process (aggregate-common-stats stats-seq) include-sys?)
            {:acked
             (aggregate-counts (map #(.. ^ExecutorStats % get_specific get_bolt get_acked)
@@ -495,7 +497,7 @@
           bolt-summs (filter (partial bolt-summary? topology) execs)
           spout-comp-summs (group-by-comp spout-summs)
           bolt-comp-summs (group-by-comp bolt-summs)
-          bolt-comp-summs (filter-key (mk-include-sys-fn include-sys?)
+          bolt-comp-summs (util/filter-key (mk-include-sys-fn include-sys?)
                                       bolt-comp-summs)
           topology-conf (from-json
                           (.getTopologyConf ^Nimbus$Client nimbus id))]
@@ -712,7 +714,7 @@
           bolt-summs (filter (partial bolt-summary? topology) (.get_executors summ))
           spout-comp-summs (group-by-comp spout-summs)
           bolt-comp-summs (group-by-comp bolt-summs)
-          bolt-comp-summs (filter-key (mk-include-sys-fn include-sys?) bolt-comp-summs)
+          bolt-comp-summs (util/filter-key (mk-include-sys-fn include-sys?) bolt-comp-summs)
           name (.get_name summ)
           status (.get_status summ)
           msg-timeout (topology-conf TOPOLOGY-MESSAGE-TIMEOUT-SECS)

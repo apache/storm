@@ -15,8 +15,7 @@
 ;; limitations under the License.
 
 (ns backtype.storm.disruptor
-  (:use [clojure walk]
-        [backtype.storm util log])
+  (:require [backtype.storm.util :as util :refer [defnk]])
   (:import [backtype.storm.utils DisruptorQueue]
            [com.lmax.disruptor MultiThreadedClaimStrategy SingleThreadedClaimStrategy
                                BlockingWaitStrategy SleepingWaitStrategy YieldingWaitStrategy
@@ -36,7 +35,7 @@
   [spec]
   (if (keyword? spec)
     ((WAIT-STRATEGY spec))
-    (-> (str spec) new-instance)))
+    (-> (str spec) util/new-instance)))
 
 ;; :block strategy requires using a timeout on waitFor (implemented in DisruptorQueue), as sometimes the consumer stays blocked even when there's an item on the queue.
 ;; This would manifest itself in Trident when doing 1 batch at a time processing, and the ack_init message
@@ -87,8 +86,8 @@
 
 (defnk consume-loop*
   [^DisruptorQueue queue handler
-   :kill-fn (fn [error] (exit-process! 1 "Async loop died!"))]
-  (let [ret (async-loop
+   :kill-fn (fn [error] (util/exit-process! 1 "Async loop died!"))]
+  (let [ret (util/async-loop
               (fn [] (consume-batch-when-available queue handler) 0)
               :kill-fn kill-fn
               :thread-name (.getName queue))]

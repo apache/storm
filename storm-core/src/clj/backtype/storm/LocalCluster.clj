@@ -15,7 +15,8 @@
 ;; limitations under the License.
 
 (ns backtype.storm.LocalCluster
-  (:use [backtype.storm testing config])
+  (:require [backtype.storm.testing :as testing]
+            [backtype.storm.config :as c])
   (:import [java.util Map])
   (:gen-class
     :init init
@@ -25,26 +26,26 @@
 
 (defn -init
   ([]
-   (let [ret (mk-local-storm-cluster
+   (let [ret (testing/mk-local-storm-cluster
                :daemon-conf
-               {TOPOLOGY-ENABLE-MESSAGE-TIMEOUTS true})]
+               {c/TOPOLOGY-ENABLE-MESSAGE-TIMEOUTS true})]
      [[] ret]))
   ([^String zk-host ^Long zk-port]
-   (let [ret (mk-local-storm-cluster :daemon-conf {TOPOLOGY-ENABLE-MESSAGE-TIMEOUTS true
-                                                     STORM-ZOOKEEPER-SERVERS (list zk-host)
-                                                     STORM-ZOOKEEPER-PORT zk-port})]
+   (let [ret (testing/mk-local-storm-cluster :daemon-conf {c/TOPOLOGY-ENABLE-MESSAGE-TIMEOUTS true
+                                                     c/STORM-ZOOKEEPER-SERVERS (list zk-host)
+                                                     c/STORM-ZOOKEEPER-PORT zk-port})]
      [[] ret]))
   ([^Map stateMap]
    [[] stateMap]))
 
 (defn -submitTopology
   [this name conf topology]
-  (submit-local-topology
+  (testing/submit-local-topology
     (:nimbus (. this state)) name conf topology))
 
 (defn -submitTopologyWithOpts
   [this name conf topology submit-opts]
-  (submit-local-topology-with-opts
+  (testing/submit-local-topology-with-opts
     (:nimbus (. this state)) name conf topology submit-opts))
 
 (defn -uploadNewCredentials
@@ -53,7 +54,7 @@
 
 (defn -shutdown
   [this]
-  (kill-local-storm-cluster (. this state)))
+  (testing/kill-local-storm-cluster (. this state)))
 
 (defn -killTopology
   [this name]

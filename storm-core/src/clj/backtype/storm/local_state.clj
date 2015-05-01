@@ -14,10 +14,8 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.local-state
-  (:use [backtype.storm log util])
-  (:import [backtype.storm.generated StormTopology
-                                     InvalidTopologyException GlobalStreamId
-                                     LSSupervisorId LSApprovedWorkers
+  (:require [backtype.storm.util :as util])
+  (:import [backtype.storm.generated LSSupervisorId LSApprovedWorkers
                                      LSSupervisorAssignments LocalAssignment
                                      ExecutorInfo LSWorkerHeartbeat]
            [backtype.storm.utils LocalState]))
@@ -74,14 +72,14 @@
 
 (defn ls-local-assignments!
   [^LocalState local-state assignments]
-    (let [local-assignment-map (map-val ->LocalAssignment assignments)]
+    (let [local-assignment-map (util/map-val ->LocalAssignment assignments)]
     (.put local-state LS-LOCAL-ASSIGNMENTS
           (LSSupervisorAssignments. local-assignment-map))))
 
 (defn ls-local-assignments
   [^LocalState local-state]
     (if-let [thrift-local-assignments (.get local-state LS-LOCAL-ASSIGNMENTS)]
-      (map-val
+      (util/map-val
         ->local-assignment
         (.get_assignments thrift-local-assignments))))
 

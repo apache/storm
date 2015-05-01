@@ -15,23 +15,20 @@
 ;; limitations under the License.
 
 (ns backtype.storm.util
-  (:use [clojure walk]
-        [backtype.storm log])
-  (:require [clojure [string :as str]]
-            [clojure [set :as set]]
+  (:require [clojure.string :as str]
+            [clojure.set :as set]
+            [clojure.walk :as walk]
             [clojure.java.io :as io]
-            [ring.util.codec :as codec])
-  (:import [java.net InetAddress]
+            [ring.util.codec :as codec]
+            [backtype.storm.log :as log :refer [log-debug log-message log-error log-warn]])
+  (:import [backtype.storm Config]
+           [backtype.storm.utils Time Container Utils MutableInt]
+           [java.net InetAddress]
            [java.util Map Map$Entry List ArrayList Collection Iterator HashMap]
-           [java.io FileReader FileNotFoundException]
-           [backtype.storm Config]
-           [backtype.storm.utils Time Container ClojureTimerTask Utils
-                                 MutableObject MutableInt]
            [java.util UUID Random ArrayList List Collections]
            [java.util.zip ZipFile]
            [java.util.concurrent.locks ReentrantReadWriteLock]
-           [java.util.concurrent Semaphore]
-           [java.io File FileOutputStream RandomAccessFile StringWriter
+           [java.io File FileOutputStream FileNotFoundException RandomAccessFile StringWriter
                     PrintWriter BufferedReader InputStreamReader IOException]
            [java.lang.management ManagementFactory]
            [org.apache.commons.exec DefaultExecutor CommandLine]
@@ -244,7 +241,7 @@
 
 (defn clojurify-structure
   [s]
-  (prewalk (fn [x]
+  (walk/prewalk (fn [x]
              (cond (instance? Map x) (into {} x)
                    (instance? List x) (vec x)
                    ;; (Boolean. false) does not evaluate to false in an if.
@@ -856,7 +853,7 @@
   ;;         (java.io.OutputStreamWriter.
   ;;           (log-stream :error "STDIO"))
   ;;         true))
-  (log-capture! "STDIO"))
+  (log/log-capture! "STDIO"))
 
 (defn spy
   [prefix val]

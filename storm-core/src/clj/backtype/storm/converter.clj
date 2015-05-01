@@ -1,6 +1,23 @@
+;; Licensed to the Apache Software Foundation (ASF) under one
+;; or more contributor license agreements.  See the NOTICE file
+;; distributed with this work for additional information
+;; regarding copyright ownership.  The ASF licenses this file
+;; to you under the Apache License, Version 2.0 (the
+;; "License"); you may not use this file except in compliance
+;; with the License.  You may obtain a copy of the License at
+;;
+;; http://www.apache.org/licenses/LICENSE-2.0
+;;
+;; Unless required by applicable law or agreed to in writing, software
+;; distributed under the License is distributed on an "AS IS" BASIS,
+;; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+;; See the License for the specific language governing permissions and
+;; limitations under the License.
+
 (ns backtype.storm.converter
-  (:use [backtype.storm util stats log])
-  (:require [backtype.storm.daemon.common :as common])
+  (:require [backtype.storm.util :as util]
+            [backtype.storm.stats :as stats]
+            [backtype.storm.daemon.common :as common])
   (:import [backtype.storm.generated SupervisorInfo NodeInfo Assignment
                                      StormBase TopologyStatus ClusterWorkerHeartbeat ExecutorInfo ErrorInfo
                                      Credentials RebalanceOptions KillOptions TopologyActionOptions]))
@@ -33,23 +50,23 @@
   (doto (Assignment.)
     (.set_master_code_dir (:master-code-dir assignment))
     (.set_node_host (:node->host assignment))
-    (.set_executor_node_port (map-val
+    (.set_executor_node_port (util/map-val
                                (fn [node+port]
                                  (NodeInfo. (first node+port) (set (map long (rest node+port)))))
-                               (map-key #(map long %)
+                               (util/map-key #(map long %)
                                  (:executor->node+port assignment))))
     (.set_executor_start_time_secs
-      (map-val
+      (util/map-val
         long
-        (map-key #(map long %)
+        (util/map-key #(map long %)
           (:executor->start-time-secs assignment))))))
 
 (defn clojurify-executor->node_port [executor->node_port]
   (into {}
-    (map-val
+    (util/map-val
       (fn [nodeInfo]
         (concat [(.get_node nodeInfo)] (.get_port nodeInfo))) ;nodeInfo should be converted to [node,port1,port2..]
-      (map-key
+      (util/map-key
         (fn [list-of-executors]
           (into [] list-of-executors)) ; list of executors must be coverted to clojure vector to ensure it is sortable.
         executor->node_port))))
@@ -60,7 +77,7 @@
       (.get_master_code_dir assignment)
       (into {} (.get_node_host assignment))
       (clojurify-executor->node_port (into {} (.get_executor_node_port assignment)))
-      (map-key (fn [executor] (into [] executor))
+      (util/map-key (fn [executor] (into [] executor))
         (into {} (.get_executor_start_time_secs assignment))))))
 
 (defn convert-to-symbol-from-status [status]
@@ -82,9 +99,9 @@
 
 (defn clojurify-rebalance-options [^RebalanceOptions rebalance-options]
   (-> {:action :rebalance}
-    (assoc-non-nil :delay-secs (if (.is_set_wait_secs rebalance-options) (.get_wait_secs rebalance-options)))
-    (assoc-non-nil :num-workers (if (.is_set_num_workers rebalance-options) (.get_num_workers rebalance-options)))
-    (assoc-non-nil :component->executors (if (.is_set_num_executors rebalance-options) (into {} (.get_num_executors rebalance-options))))))
+    (util/assoc-non-nil :delay-secs (if (.is_set_wait_secs rebalance-options) (.get_wait_secs rebalance-options)))
+    (util/assoc-non-nil :num-workers (if (.is_set_num_workers rebalance-options) (.get_num_workers rebalance-options)))
+    (util/assoc-non-nil :component->executors (if (.is_set_num_executors rebalance-options) (into {} (.get_num_executors rebalance-options))))))
 
 (defn thriftify-rebalance-options [rebalance-options]
   (if rebalance-options
@@ -94,12 +111,12 @@
       (if (:num-workers rebalance-options)
         (.set_num_workers thrift-rebalance-options (int (:num-workers rebalance-options))))
       (if (:component->executors rebalance-options)
-        (.set_num_executors thrift-rebalance-options (map-val int (:component->executors rebalance-options))))
+        (.set_num_executors thrift-rebalance-options (util/map-val int (:component->executors rebalance-options))))
       thrift-rebalance-options)))
 
 (defn clojurify-kill-options [^KillOptions kill-options]
   (-> {:action :kill}
-    (assoc-non-nil :delay-secs (if (.is_set_wait_secs kill-options) (.get_wait_secs kill-options)))))
+    (util/assoc-non-nil :delay-secs (if (.is_set_wait_secs kill-options) (.get_wait_secs kill-options)))))
 
 (defn thriftify-kill-options [kill-options]
   (if kill-options
@@ -131,7 +148,7 @@
     (.set_launch_time_secs (int (:launch-time-secs storm-base)))
     (.set_status (convert-to-status-from-symbol (:status storm-base)))
     (.set_num_workers (int (:num-workers storm-base)))
-    (.set_component_executors (map-val int (:component->executors storm-base)))
+    (.set_component_executors (util/map-val int (:component->executors storm-base)))
     (.set_owner (:owner storm-base))
     (.set_topology_action_options (thriftify-topology-action-options storm-base))
     (.set_prev_status (convert-to-status-from-symbol (:prev-status storm-base)))))
@@ -150,15 +167,15 @@
 
 (defn thriftify-stats [stats]
   (if stats
-    (map-val thriftify-executor-stats
-      (map-key #(ExecutorInfo. (int (first %1)) (int (last %1)))
+    (util/map-val stats/thriftify-executor-stats
+      (util/map-key #(ExecutorInfo. (int (first %1)) (int (last %1)))
         stats))
     {}))
 
 (defn clojurify-stats [stats]
   (if stats
-    (map-val clojurify-executor-stats
-      (map-key (fn [x] (list (.get_task_start x) (.get_task_end x)))
+    (util/map-val stats/clojurify-executor-stats
+      (util/map-key (fn [x] (list (.get_task_start x) (.get_task_end x)))
         stats))
     {}))
 

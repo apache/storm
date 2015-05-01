@@ -15,7 +15,7 @@
 ;; limitations under the License.
 
 (ns backtype.storm.timer
-  (:use [backtype.storm util log])
+  (:require [backtype.storm.util :as util :refer [defnk]])
   (:import [backtype.storm.utils Time]
            [java.util PriorityQueue Comparator]
            [java.util.concurrent Semaphore]))
@@ -41,7 +41,7 @@
                          (while @active
                            (try
                              (let [[time-millis _ _ :as elem] (locking lock (.peek queue))]
-                               (if (and elem (>= (current-time-millis) time-millis))
+                               (if (and elem (>= (util/current-time-millis) time-millis))
                                  ;; It is imperative to not run the function
                                  ;; inside the timer lock. Otherwise, it is
                                  ;; possible to deadlock if the fn deals with
@@ -54,7 +54,7 @@
                                    ;; are scheduled then we will always go
                                    ;; through this branch, sleeping only the
                                    ;; exact necessary amount of time.
-                                   (Time/sleep (- time-millis (current-time-millis)))
+                                   (Time/sleep (- time-millis (util/current-time-millis)))
                                    ;; Otherwise poll to see if any new event
                                    ;; was scheduled. This is, in essence, the
                                    ;; response time for detecting any new event
@@ -64,7 +64,7 @@
                              (catch Throwable t
                                ;; Because the interrupted exception can be
                                ;; wrapped in a RuntimeException.
-                               (when-not (exception-cause? InterruptedException t)
+                               (when-not (util/exception-cause? InterruptedException t)
                                  (kill-fn t)
                                  (reset! active false)
                                  (throw t)))))
@@ -86,10 +86,10 @@
 (defnk schedule
   [timer delay-secs afn :check-active true]
   (when check-active (check-active! timer))
-  (let [id (uuid)
+  (let [id (util/uuid)
         ^PriorityQueue queue (:queue timer)]
     (locking (:lock timer)
-      (.add queue [(+ (current-time-millis) (secs-to-millis-long delay-secs)) afn id]))))
+      (.add queue [(+ (util/current-time-millis) (util/secs-to-millis-long delay-secs)) afn id]))))
 
 (defn schedule-recurring
   [timer delay-secs recur-secs afn]

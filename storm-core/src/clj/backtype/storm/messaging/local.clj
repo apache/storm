@@ -15,7 +15,6 @@
 ;; limitations under the License.
 (ns backtype.storm.messaging.local
   (:refer-clojure :exclude [send])
-  (:use [backtype.storm log])
   (:import [backtype.storm.messaging IContext IConnection TaskMessage]
            [java.util.concurrent LinkedBlockingQueue]
            [java.util Map Iterator]
