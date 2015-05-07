@@ -1,5 +1,5 @@
 (ns backtype.storm.security.auth.DefaultHttpCredentialsPlugin-test
-  (:use [clojure test])
+  (:require [clojure.test :refer :all])
   (:import [javax.security.auth Subject]
            [javax.servlet.http HttpServletRequest]
            [backtype.storm.security.auth SingleUserPrincipal]

@@ -15,26 +15,23 @@
 ;; limitations under the License.
 
 (ns backtype.storm.ui.core
-  (:use compojure.core
-
-        ring.middleware.reload
-        ring.middleware.multipart-params
-        [ring.middleware.json :only [wrap-json-params]]
-        [hiccup core page-helpers]
-        [backtype.storm config util log]
-        [backtype.storm.ui helpers]
-        [backtype.storm.daemon [common :only [ACKER-COMPONENT-ID ACKER-INIT-STREAM-ID ACKER-ACK-STREAM-ID
-                                              ACKER-FAIL-STREAM-ID system-id? mk-authorization-handler]]]
-        [clojure.string :only [blank? lower-case trim]])
-  (:require [compojure.route :as route]
+  (:require [compojure.core :refer [defroutes GET POST]]
+            [compojure.route :as route]
             [clojure.java.shell :refer [sh]]
+            [clojure.string :refer [blank? lower-case trim]]
             [compojure.handler :as handler]
             [ring.util.response :as resp]
+            [ring.middleware.reload :as reload]
+            [ring.middleware.json :refer [wrap-json-params]]
+            [ring.middleware.multipart-params :as multipart]
             [backtype.storm [thrift :as thrift]]
-            [backtype.storm.util :as util])
-  (:import [backtype.storm.utils Utils]
-           [backtype.storm.generated ExecutorSpecificStats
-                                     ExecutorStats ExecutorSummary TopologyInfo SpoutStats BoltStats
+            [backtype.storm.util :as util :refer [defnk]]
+            [backtype.storm.config :as c]
+            [backtype.storm.log :refer [log-message log-warn log-error]]
+            [backtype.storm.daemon.common :refer [ACKER-COMPONENT-ID ACKER-INIT-STREAM-ID ACKER-ACK-STREAM-ID
+                                                  ACKER-FAIL-STREAM-ID system-id? mk-authorization-handler]]
+            [backtype.storm.ui.helpers :as ui-helpers])
+  (:import [backtype.storm.generated ExecutorStats ExecutorSummary TopologyInfo
                                      ErrorInfo ClusterSummary SupervisorSummary TopologySummary
                                      Nimbus$Client StormTopology GlobalStreamId RebalanceOptions
                                      KillOptions GetInfoOptions NumErrorsChoice]
@@ -46,9 +43,9 @@
            [org.apache.commons.lang StringEscapeUtils])
   (:gen-class))
 
-(def ^:dynamic *STORM-CONF* (read-storm-config))
-(def ^:dynamic *UI-ACL-HANDLER* (mk-authorization-handler (*STORM-CONF* NIMBUS-AUTHORIZER) *STORM-CONF*))
-(def ^:dynamic *UI-IMPERSONATION-HANDLER* (mk-authorization-handler (*STORM-CONF* NIMBUS-IMPERSONATION-AUTHORIZER) *STORM-CONF*))
+(def ^:dynamic *STORM-CONF* (c/read-storm-config))
+(def ^:dynamic *UI-ACL-HANDLER* (mk-authorization-handler (*STORM-CONF* c/NIMBUS-AUTHORIZER) *STORM-CONF*))
+(def ^:dynamic *UI-IMPERSONATION-HANDLER* (mk-authorization-handler (*STORM-CONF* c/NIMBUS-IMPERSONATION-AUTHORIZER) *STORM-CONF*))
 
 (def http-creds-handler (AuthUtils/GetUiHttpCredentialsPlugin *STORM-CONF*))
 
@@ -57,7 +54,7 @@
   `(let [context# (ReqContext/context)
          user# (if (.principal context#) (.getName (.principal context#)))]
     (thrift/with-nimbus-connection-as-user
-       [~nimbus-sym (*STORM-CONF* NIMBUS-HOST) (*STORM-CONF* NIMBUS-THRIFT-PORT) user#]
+       [~nimbus-sym (*STORM-CONF* c/NIMBUS-HOST) (*STORM-CONF* c/NIMBUS-THRIFT-PORT) user#]
        ~@body)))
 
 (defn assert-authorized-user
@@ -79,7 +76,7 @@
                          (str "user '" real-user "' is not authorized to impersonate user '" user "' from host '" remote-address "'. Please
                          see SECURITY.MD to learn how to configure impersonation ACL.")))))
           (log-warn " principal " (.realPrincipal context) " is trying to impersonate " (.principal context) " but "
-            NIMBUS-IMPERSONATION-AUTHORIZER " has no authorizer configured. This is a potential security hole.
+            c/NIMBUS-IMPERSONATION-AUTHORIZER " has no authorizer configured. This is a potential security hole.
             Please see SECURITY.MD to learn how to configure an impersonation authorizer.")))
 
       (if *UI-ACL-HANDLER*
@@ -93,7 +90,7 @@
   [summs]
   (->> summs
        (map #(.get_stats ^ExecutorSummary %))
-       (filter not-nil?)))
+       (filter util/not-nil?)))
 
 (defn component-type
   "Returns the component type (either :bolt or :spout) for a given
@@ -116,8 +113,8 @@
 
 (defn expand-averages
   [avg counts]
-  (let [avg (clojurify-structure avg)
-        counts (clojurify-structure counts)]
+  (let [avg (util/clojurify-structure avg)
+        counts (util/clojurify-structure counts)]
     (into {}
           (for [[slice streams] counts]
             [slice
@@ -142,14 +139,14 @@
 (defn aggregate-averages
   [average-seq counts-seq]
   (->> (expand-averages-seq average-seq counts-seq)
-       (map-val
+       (util/map-val
          (fn [s]
-           (map-val val-avg s)))))
+           (util/map-val val-avg s)))))
 
 (defn aggregate-counts
   [counts-seq]
   (->> counts-seq
-       (map clojurify-structure)
+       (map util/clojurify-structure)
        (apply merge-with
               (fn [s1 s2]
                 (merge-with + s1 s2)))))
@@ -158,13 +155,13 @@
   [avg counts]
   (let [expanded (expand-averages avg counts)]
     (->> expanded
-         (map-val #(reduce add-pairs (vals %)))
-         (map-val val-avg))))
+         (util/map-val #(reduce add-pairs (vals %)))
+         (util/map-val val-avg))))
 
 (defn aggregate-count-streams
   [stats]
   (->> stats
-       (map-val #(reduce + (vals %)))))
+       (util/map-val #(reduce + (vals %)))))
 
 (defn aggregate-common-stats
   [stats-seq]
@@ -224,7 +221,7 @@
 
 (defn aggregate-spout-stats
   [stats-seq include-sys?]
-  (let [stats-seq (collectify stats-seq)]
+  (let [stats-seq (util/collectify stats-seq)]
     (merge (pre-process (aggregate-common-stats stats-seq) include-sys?)
            {:acked
             (aggregate-counts (map #(.. ^ExecutorStats % get_specific get_spout get_acked)
@@ -296,9 +293,9 @@
     (sort-by #(-> ^ExecutorSummary % .get_executor_info .get_task_start) ret)))
 
 (defn worker-log-link [host port topology-id]
-  (let [fname (logs-filename topology-id port)]
-    (url-format (str "http://%s:%s/log?file=%s")
-          host (*STORM-CONF* LOGVIEWER-PORT) fname)))
+  (let [fname (util/logs-filename topology-id port)]
+    (ui-helpers/url-format (str "http://%s:%s/log?file=%s")
+          host (*STORM-CONF* c/LOGVIEWER-PORT) fname)))
 
 (defn compute-executor-capacity
   [^ExecutorSummary e]
@@ -307,26 +304,26 @@
                 (-> stats
                     (aggregate-bolt-stats true)
                     (aggregate-bolt-streams)
-                    swap-map-order
+                    ui-helpers/swap-map-order
                     (get "600")))
-        uptime (nil-to-zero (.get_uptime_secs e))
+        uptime (util/nil-to-zero (.get_uptime_secs e))
         window (if (< uptime 600) uptime 600)
-        executed (-> stats :executed nil-to-zero)
-        latency (-> stats :execute-latencies nil-to-zero)]
+        executed (-> stats :executed util/nil-to-zero)
+        latency (-> stats :execute-latencies util/nil-to-zero)]
     (if (> window 0)
-      (div (* executed latency) (* 1000 window)))))
+      (util/div (* executed latency) (* 1000 window)))))
 
 (defn compute-bolt-capacity
   [executors]
   (->> executors
        (map compute-executor-capacity)
-       (map nil-to-zero)
+       (map util/nil-to-zero)
        (apply max)))
 
 (defn get-error-time
   [error]
   (if error
-    (time-delta (.get_error_time_secs ^ErrorInfo error))))
+    (util/time-delta (.get_error_time_secs ^ErrorInfo error))))
 
 (defn get-error-data
   [error]
@@ -385,7 +382,7 @@
   [stats-map]
   (sort-by #(Integer/parseInt %)
            (-> stats-map
-               clojurify-structure
+               util/clojurify-structure
                (dissoc ":all-time")
                keys)))
 
@@ -393,7 +390,7 @@
   [window]
   (if (= window ":all-time")
     "All time"
-    (pretty-uptime-sec window)))
+    (ui-helpers/pretty-uptime-sec window)))
 
 (defn topology-action-button
   [id name action command is-wait default-wait enabled]
@@ -459,7 +456,7 @@
                          (if bolt-summs
                            (mapfn bolt-summs)
                            (mapfn spout-summs)))
-                :link (url-format "/component.html?id=%s&topology_id=%s" id storm-id)
+                :link (ui-helpers/url-format "/component.html?id=%s&topology_id=%s" id storm-id)
                 :inputs (for [[global-stream-id group] inputs]
                           {:component (.get_componentId global-stream-id)
                            :stream (.get_streamId global-stream-id)
@@ -499,16 +496,16 @@
           bolt-comp-summs (group-by-comp bolt-summs)
           bolt-comp-summs (util/filter-key (mk-include-sys-fn include-sys?)
                                       bolt-comp-summs)
-          topology-conf (from-json
+          topology-conf (util/from-json
                           (.getTopologyConf ^Nimbus$Client nimbus id))]
       (visualization-data
-       (merge (hashmap-to-persistent spouts)
-              (hashmap-to-persistent bolts))
+       (merge (util/hashmap-to-persistent spouts)
+              (util/hashmap-to-persistent bolts))
        spout-comp-summs bolt-comp-summs window id))))
 
 (defn validate-tplg-submit-params [params]
   (let [tplg-jar-file (params :topologyJar)
-        tplg-config (if (not-nil? (params :topologyConfig)) (from-json (params :topologyConfig)))]
+        tplg-config (if (util/not-nil? (params :topologyConfig)) (util/from-json (params :topologyConfig)))]
     (cond
      (nil? tplg-jar-file) {:valid false :error "missing topology jar file"}
      (nil? tplg-config) {:valid false :error "missing topology config"}
@@ -516,16 +513,16 @@
      :else {:valid true})))
 
 (defn run-tplg-submit-cmd [tplg-jar-file tplg-config user]
-  (let [tplg-main-class (if (not-nil? tplg-config) (trim (tplg-config "topologyMainClass")))
-        tplg-main-class-args (if (not-nil? tplg-config) (clojure.string/join " " (tplg-config "topologyMainClassArgs")))
-        tplg-jvm-opts (if (not-nil? tplg-config) (clojure.string/join " " (tplg-config "topologyJvmOpts")))
+  (let [tplg-main-class (if (util/not-nil? tplg-config) (trim (tplg-config "topologyMainClass")))
+        tplg-main-class-args (if (util/not-nil? tplg-config) (clojure.string/join " " (tplg-config "topologyMainClassArgs")))
+        tplg-jvm-opts (if (util/not-nil? tplg-config) (clojure.string/join " " (tplg-config "topologyJvmOpts")))
         storm-home (System/getProperty "storm.home")
-        storm-conf-dir (str storm-home file-path-separator "conf")
-        storm-log-dir (if (not-nil? (*STORM-CONF* "storm.log.dir")) (*STORM-CONF* "storm.log.dir")
-                          (str storm-home file-path-separator "logs"))
-        storm-libs (str storm-home file-path-separator "lib" file-path-separator "*")
-        java-cmd (str (System/getProperty "java.home") file-path-separator "bin" file-path-separator "java")
-        storm-cmd (str storm-home file-path-separator "bin" file-path-separator "storm")
+        storm-conf-dir (str storm-home util/file-path-separator "conf")
+        storm-log-dir (if (util/not-nil? (*STORM-CONF* "storm.log.dir")) (*STORM-CONF* "storm.log.dir")
+                          (str storm-home util/file-path-separator "logs"))
+        storm-libs (str storm-home util/file-path-separator "lib" util/file-path-separator "*")
+        java-cmd (str (System/getProperty "java.home") util/file-path-separator "bin" util/file-path-separator "java")
+        storm-cmd (str storm-home util/file-path-separator "bin" util/file-path-separator "storm")
         tplg-cmd-response (sh storm-cmd "jar" tplg-jar-file
                               tplg-main-class
                               tplg-main-class-args
@@ -534,7 +531,7 @@
     (cond
      (= (tplg-cmd-response :exit) 0) {"status" "success"}
      (and (not= (tplg-cmd-response :exit) 0)
-          (not-nil? (re-find #"already exists on cluster" (tplg-cmd-response :err)))) {"status" "failed" "error" "Topology with the same name exists in cluster"}
+          (util/not-nil? (re-find #"already exists on cluster" (tplg-cmd-response :err)))) {"status" "failed" "error" "Topology with the same name exists in cluster"}
           (not= (tplg-cmd-response :exit) 0) {"status" "failed" "error" (clojure.string/trim-newline (tplg-cmd-response :err))}
           :else {"status" "success" "response" "topology deployed"}
           )))
@@ -561,7 +558,7 @@
                                 (reduce +))]
        {"user" user
         "stormVersion" (str (VersionInfo/getVersion))
-        "nimbusUptime" (pretty-uptime-sec (.get_nimbus_uptime_secs summ))
+        "nimbusUptime" (ui-helpers/pretty-uptime-sec (.get_nimbus_uptime_secs summ))
         "supervisors" (count sups)
         "topologies" topologies
         "slotsTotal" total-slots
@@ -580,7 +577,7 @@
     (for [^SupervisorSummary s summs]
       {"id" (.get_supervisor_id s)
        "host" (.get_host s)
-       "uptime" (pretty-uptime-sec (.get_uptime_secs s))
+       "uptime" (ui-helpers/pretty-uptime-sec (.get_uptime_secs s))
        "slotsTotal" (.get_num_workers s)
        "slotsUsed" (.get_num_used_workers s)
        "version" (.get_version s)})}))
@@ -596,11 +593,11 @@
     (for [^TopologySummary t summs]
       {
        "id" (.get_id t)
-       "encodedId" (url-encode (.get_id t))
+       "encodedId" (util/url-encode (.get_id t))
        "owner" (.get_owner t)
        "name" (.get_name t)
        "status" (.get_status t)
-       "uptime" (pretty-uptime-sec (.get_uptime_secs t))
+       "uptime" (ui-helpers/pretty-uptime-sec (.get_uptime_secs t))
        "tasksTotal" (.get_num_tasks t)
        "workersTotal" (.get_num_workers t)
        "executorsTotal" (.get_num_executors t)
@@ -608,7 +605,7 @@
 
 (defn topology-stats [id window stats]
   (let [times (stats-times (:emitted stats))
-        display-map (into {} (for [t times] [t pretty-uptime-sec]))
+        display-map (into {} (for [t times] [t ui-helpers/pretty-uptime-sec]))
         display-map (assoc display-map ":all-time" (fn [_] "All time"))]
     (for [k (concat times [":all-time"])
           :let [disp ((display-map k) k)]]
@@ -616,7 +613,7 @@
        "window" k
        "emitted" (get-in stats [:emitted k])
        "transferred" (get-in stats [:transferred k])
-       "completeLatency" (float-str (get-in stats [:complete-latencies k]))
+       "completeLatency" (ui-helpers/float-str (get-in stats [:complete-latencies k]))
        "acked" (get-in stats [:acked k])
        "failed" (get-in stats [:failed k])})))
 
@@ -630,12 +627,12 @@
               error-host (get-error-host last-error)
               error-port (get-error-port last-error error-host top-id)]]
     {"spoutId" id
-     "encodedSpoutId" (url-encode id)
+     "encodedSpoutId" (util/url-encode id)
      "executors" (count summs)
-     "tasks" (sum-tasks summs)
+     "tasks" (ui-helpers/sum-tasks summs)
      "emitted" (get-in stats [:emitted window])
      "transferred" (get-in stats [:transferred window])
-     "completeLatency" (float-str (get-in stats [:complete-latencies window]))
+     "completeLatency" (ui-helpers/float-str (get-in stats [:complete-latencies window]))
      "acked" (get-in stats [:acked window])
      "failed" (get-in stats [:failed window])
      "errorHost" error-host
@@ -654,15 +651,15 @@
               error-host (get-error-host last-error)
               error-port (get-error-port last-error error-host top-id)]]
     {"boltId" id
-     "encodedBoltId" (url-encode id)
+     "encodedBoltId" (util/url-encode id)
      "executors" (count summs)
-     "tasks" (sum-tasks summs)
+     "tasks" (ui-helpers/sum-tasks summs)
      "emitted" (get-in stats [:emitted window])
      "transferred" (get-in stats [:transferred window])
-     "capacity" (float-str (nil-to-zero (compute-bolt-capacity summs)))
-     "executeLatency" (float-str (get-in stats [:execute-latencies window]))
+     "capacity" (ui-helpers/float-str (util/nil-to-zero (compute-bolt-capacity summs)))
+     "executeLatency" (ui-helpers/float-str (get-in stats [:execute-latencies window]))
      "executed" (get-in stats [:executed window])
-     "processLatency" (float-str (get-in stats [:process-latencies window]))
+     "processLatency" (ui-helpers/float-str (get-in stats [:process-latencies window]))
      "acked" (get-in stats [:acked window])
      "failed" (get-in stats [:failed window])
      "errorHost" error-host
@@ -676,19 +673,19 @@
         workers (set (for [^ExecutorSummary e executors]
                        [(.get_host e) (.get_port e)]))]
       {"id" (.get_id summ)
-       "encodedId" (url-encode (.get_id summ))
+       "encodedId" (util/url-encode (.get_id summ))
        "owner" (.get_owner summ)
        "name" (.get_name summ)
        "status" (.get_status summ)
-       "uptime" (pretty-uptime-sec (.get_uptime_secs summ))
-       "tasksTotal" (sum-tasks executors)
+       "uptime" (ui-helpers/pretty-uptime-sec (.get_uptime_secs summ))
+       "tasksTotal" (ui-helpers/sum-tasks executors)
        "workersTotal" (count workers)
        "executorsTotal" (count executors)
        "schedulerInfo" (.get_sched_status summ)}))
 
 (defn spout-summary-json [topology-id id stats window]
   (let [times (stats-times (:emitted stats))
-        display-map (into {} (for [t times] [t pretty-uptime-sec]))
+        display-map (into {} (for [t times] [t ui-helpers/pretty-uptime-sec]))
         display-map (assoc display-map ":all-time" (fn [_] "All time"))]
      (for [k (concat times [":all-time"])
            :let [disp ((display-map k) k)]]
@@ -696,7 +693,7 @@
         "window" k
         "emitted" (get-in stats [:emitted k])
         "transferred" (get-in stats [:transferred k])
-        "completeLatency" (float-str (get-in stats [:complete-latencies k]))
+        "completeLatency" (ui-helpers/float-str (get-in stats [:complete-latencies k]))
         "acked" (get-in stats [:acked k])
         "failed" (get-in stats [:failed k])})))
 
@@ -709,7 +706,7 @@
                       (.set_num_err_choice NumErrorsChoice/ONE))
                     (.getTopologyInfoWithOpts ^Nimbus$Client nimbus id))
           topology (.getTopology ^Nimbus$Client nimbus id)
-          topology-conf (from-json (.getTopologyConf ^Nimbus$Client nimbus id))
+          topology-conf (util/from-json (.getTopologyConf ^Nimbus$Client nimbus id))
           spout-summs (filter (partial spout-summary? topology) (.get_executors summ))
           bolt-summs (filter (partial bolt-summary? topology) (.get_executors summ))
           spout-comp-summs (group-by-comp spout-summs)
@@ -717,11 +714,11 @@
           bolt-comp-summs (util/filter-key (mk-include-sys-fn include-sys?) bolt-comp-summs)
           name (.get_name summ)
           status (.get_status summ)
-          msg-timeout (topology-conf TOPOLOGY-MESSAGE-TIMEOUT-SECS)
+          msg-timeout (topology-conf c/TOPOLOGY-MESSAGE-TIMEOUT-SECS)
           spouts (.get_spouts topology)
           bolts (.get_bolts topology)
-          visualizer-data (visualization-data (merge (hashmap-to-persistent spouts)
-                                                     (hashmap-to-persistent bolts))
+          visualizer-data (visualization-data (merge (util/hashmap-to-persistent spouts)
+                                                     (util/hashmap-to-persistent bolts))
                                               spout-comp-summs
                                               bolt-comp-summs
                                               window
@@ -740,14 +737,14 @@
 
 (defn spout-output-stats
   [stream-summary window]
-  (let [stream-summary (map-val swap-map-order (swap-map-order stream-summary))]
+  (let [stream-summary (util/map-val ui-helpers/swap-map-order (ui-helpers/swap-map-order stream-summary))]
     (for [[s stats] (stream-summary window)]
       {"stream" s
-       "emitted" (nil-to-zero (:emitted stats))
-       "transferred" (nil-to-zero (:transferred stats))
-       "completeLatency" (float-str (:complete-latencies stats))
-       "acked" (nil-to-zero (:acked stats))
-       "failed" (nil-to-zero (:failed stats))})))
+       "emitted" (util/nil-to-zero (:emitted stats))
+       "transferred" (util/nil-to-zero (:transferred stats))
+       "completeLatency" (ui-helpers/float-str (:complete-latencies stats))
+       "acked" (util/nil-to-zero (:acked stats))
+       "failed" (util/nil-to-zero (:failed stats))})))
 
 (defn spout-executor-stats
   [topology-id executors window include-sys?]
@@ -757,18 +754,18 @@
                       (-> stats
                           (aggregate-spout-stats include-sys?)
                           aggregate-spout-streams
-                          swap-map-order
+                          ui-helpers/swap-map-order
                           (get window)))]]
-    {"id" (pretty-executor-info (.get_executor_info e))
-     "encodedId" (url-encode (pretty-executor-info (.get_executor_info e)))
-     "uptime" (pretty-uptime-sec (.get_uptime_secs e))
+    {"id" (ui-helpers/pretty-executor-info (.get_executor_info e))
+     "encodedId" (util/url-encode (ui-helpers/pretty-executor-info (.get_executor_info e)))
+     "uptime" (ui-helpers/pretty-uptime-sec (.get_uptime_secs e))
      "host" (.get_host e)
      "port" (.get_port e)
-     "emitted" (nil-to-zero (:emitted stats))
-     "transferred" (nil-to-zero (:transferred stats))
-     "completeLatency" (float-str (:complete-latencies stats))
-     "acked" (nil-to-zero (:acked stats))
-     "failed" (nil-to-zero (:failed stats))
+     "emitted" (util/nil-to-zero (:emitted stats))
+     "transferred" (util/nil-to-zero (:transferred stats))
+     "completeLatency" (ui-helpers/float-str (:complete-latencies stats))
+     "acked" (util/nil-to-zero (:acked stats))
+     "failed" (util/nil-to-zero (:failed stats))
      "workerLogLink" (worker-log-link (.get_host e) (.get_port e) topology-id)}))
 
 (defn component-errors
@@ -800,7 +797,7 @@
 (defn bolt-summary
   [topology-id id stats window]
   (let [times (stats-times (:emitted stats))
-        display-map (into {} (for [t times] [t pretty-uptime-sec]))
+        display-map (into {} (for [t times] [t ui-helpers/pretty-uptime-sec]))
         display-map (assoc display-map ":all-time" (fn [_] "All time"))]
     (for [k (concat times [":all-time"])
           :let [disp ((display-map k) k)]]
@@ -808,42 +805,42 @@
        "windowPretty" disp
        "emitted" (get-in stats [:emitted k])
        "transferred" (get-in stats [:transferred k])
-       "executeLatency" (float-str (get-in stats [:execute-latencies k]))
+       "executeLatency" (ui-helpers/float-str (get-in stats [:execute-latencies k]))
        "executed" (get-in stats [:executed k])
-       "processLatency" (float-str (get-in stats [:process-latencies k]))
+       "processLatency" (ui-helpers/float-str (get-in stats [:process-latencies k]))
        "acked" (get-in stats [:acked k])
        "failed" (get-in stats [:failed k])})))
 
 (defn bolt-output-stats
   [stream-summary window]
   (let [stream-summary (-> stream-summary
-                           swap-map-order
+                           ui-helpers/swap-map-order
                            (get window)
                            (select-keys [:emitted :transferred])
-                           swap-map-order)]
+                           ui-helpers/swap-map-order)]
     (for [[s stats] stream-summary]
       {"stream" s
-        "emitted" (nil-to-zero (:emitted stats))
-        "transferred" (nil-to-zero (:transferred stats))})))
+        "emitted" (util/nil-to-zero (:emitted stats))
+        "transferred" (util/nil-to-zero (:transferred stats))})))
 
 (defn bolt-input-stats
   [stream-summary window]
   (let [stream-summary
         (-> stream-summary
-            swap-map-order
+            ui-helpers/swap-map-order
             (get window)
             (select-keys [:acked :failed :process-latencies
                           :executed :execute-latencies])
-            swap-map-order)]
+            ui-helpers/swap-map-order)]
     (for [[^GlobalStreamId s stats] stream-summary]
       {"component" (.get_componentId s)
-       "encodedComponent" (url-encode (.get_componentId s))
+       "encodedComponent" (util/url-encode (.get_componentId s))
        "stream" (.get_streamId s)
-       "executeLatency" (float-str (:execute-latencies stats))
-       "processLatency" (float-str (:process-latencies stats))
-       "executed" (nil-to-zero (:executed stats))
-       "acked" (nil-to-zero (:acked stats))
-       "failed" (nil-to-zero (:failed stats))})))
+       "executeLatency" (ui-helpers/float-str (:execute-latencies stats))
+       "processLatency" (ui-helpers/float-str (:process-latencies stats))
+       "executed" (util/nil-to-zero (:executed stats))
+       "acked" (util/nil-to-zero (:acked stats))
+       "failed" (util/nil-to-zero (:failed stats))})))
 
 (defn bolt-executor-stats
   [topology-id executors window include-sys?]
@@ -853,21 +850,21 @@
                       (-> stats
                           (aggregate-bolt-stats include-sys?)
                           (aggregate-bolt-streams)
-                          swap-map-order
+                          ui-helpers/swap-map-order
                           (get window)))]]
-    {"id" (pretty-executor-info (.get_executor_info e))
-     "encodedId" (url-encode (pretty-executor-info (.get_executor_info e)))
-     "uptime" (pretty-uptime-sec (.get_uptime_secs e))
+    {"id" (ui-helpers/pretty-executor-info (.get_executor_info e))
+     "encodedId" (util/url-encode (ui-helpers/pretty-executor-info (.get_executor_info e)))
+     "uptime" (ui-helpers/pretty-uptime-sec (.get_uptime_secs e))
      "host" (.get_host e)
      "port" (.get_port e)
-     "emitted" (nil-to-zero (:emitted stats))
-     "transferred" (nil-to-zero (:transferred stats))
-     "capacity" (float-str (nil-to-zero (compute-executor-capacity e)))
-     "executeLatency" (float-str (:execute-latencies stats))
-     "executed" (nil-to-zero (:executed stats))
-     "processLatency" (float-str (:process-latencies stats))
-     "acked" (nil-to-zero (:acked stats))
-     "failed" (nil-to-zero (:failed stats))
+     "emitted" (util/nil-to-zero (:emitted stats))
+     "transferred" (util/nil-to-zero (:transferred stats))
+     "capacity" (ui-helpers/float-str (util/nil-to-zero (compute-executor-capacity e)))
+     "executeLatency" (ui-helpers/float-str (:execute-latencies stats))
+     "executed" (util/nil-to-zero (:executed stats))
+     "processLatency" (ui-helpers/float-str (:process-latencies stats))
+     "acked" (util/nil-to-zero (:acked stats))
+     "failed" (util/nil-to-zero (:failed stats))
      "workerLogLink" (worker-log-link (.get_host e) (.get_port e) topology-id)}))
 
 (defn bolt-stats
@@ -888,7 +885,7 @@
     (let [window (if window window ":all-time")
           summ (.getTopologyInfo ^Nimbus$Client nimbus topology-id)
           topology (.getTopology ^Nimbus$Client nimbus topology-id)
-          topology-conf (from-json (.getTopologyConf ^Nimbus$Client nimbus topology-id))
+          topology-conf (util/from-json (.getTopologyConf ^Nimbus$Client nimbus topology-id))
           type (component-type topology component)
           summs (component-task-summs summ topology component)
           spec (cond (= type :spout) (spout-stats window summ component summs include-sys?)
@@ -897,12 +894,12 @@
       (merge
         {"user" user
          "id" component
-         "encodedId" (url-encode component)
+         "encodedId" (util/url-encode component)
          "name" (.get_name summ)
          "executors" (count summs)
-         "tasks" (sum-tasks summs)
+         "tasks" (ui-helpers/sum-tasks summs)
          "topologyId" topology-id
-         "encodedTopologyId" (url-encode topology-id)
+         "encodedTopologyId" (util/url-encode topology-id)
          "window" window
          "componentType" (name type)
          "windowHint" (window-hint window)}
@@ -910,7 +907,7 @@
 
 (defn topology-config [topology-id]
   (with-nimbus nimbus
-    (from-json (.getTopologyConf ^Nimbus$Client nimbus topology-id))))
+    (util/from-json (.getTopologyConf ^Nimbus$Client nimbus topology-id))))
 
 (defn topology-op-response [topology-id op]
   {"topologyOperation" op,
@@ -926,14 +923,14 @@
   (str callback "(" response ");"))
 
 (defnk json-response
-  [data callback :serialize-fn to-json :status 200]
+  [data callback :serialize-fn util/to-json :status 200]
      {:status status
       :headers (merge {"Cache-Control" "no-cache, no-store"
                        "Access-Control-Allow-Origin" "*"
                        "Access-Control-Allow-Headers" "Content-Type, Access-Control-Allow-Headers, Access-Controler-Allow-Origin, X-Requested-By, X-Csrf-Token, Authorization, X-Requested-With"}
-                      (if (not-nil? callback) {"Content-Type" "application/javascript;charset=utf-8"}
+                      (if (util/not-nil? callback) {"Content-Type" "application/javascript;charset=utf-8"}
                           {"Content-Type" "application/json;charset=utf-8"}))
-      :body (if (not-nil? callback)
+      :body (if (util/not-nil? callback)
               (wrap-json-in-callback callback (serialize-fn data))
               (serialize-fn data))})
 
@@ -997,9 +994,9 @@
             rebalance-options (m "rebalanceOptions")
             options (RebalanceOptions.)]
         (.set_wait_secs options (Integer/parseInt wait-time))
-        (if (and (not-nil? rebalance-options) (contains? rebalance-options "numWorkers"))
+        (if (and (util/not-nil? rebalance-options) (contains? rebalance-options "numWorkers"))
           (.set_num_workers options (Integer/parseInt (.toString (rebalance-options "numWorkers")))))
-        (if (and (not-nil? rebalance-options) (contains? rebalance-options "executors"))
+        (if (and (util/not-nil? rebalance-options) (contains? rebalance-options "executors"))
           (doseq [keyval (rebalance-options "executors")]
             (.put_to_num_executors options (key keyval) (Integer/parseInt (.toString (val keyval))))))
         (.rebalance nimbus name options)
@@ -1028,8 +1025,8 @@
             (let [tplg-file-data (params :topologyJar)
                   tplg-temp-file (tplg-file-data :tempfile)
                   tplg-file-name (tplg-file-data :filename)
-                  tplg-jar-file (clojure.string/join [(.getParent tplg-temp-file) file-path-separator tplg-file-name])
-                  tplg-config (if (not-nil? (params :topologyConfig)) (from-json (params :topologyConfig)))
+                  tplg-jar-file (clojure.string/join [(.getParent tplg-temp-file) util/file-path-separator tplg-file-name])
+                  tplg-config (if (util/not-nil? (params :topologyConfig)) (util/from-json (params :topologyConfig)))
                   principal (if (.isImpersonating context) (.realPrincipal context) (.principal context))
                   user (if principal (.getName principal) "unknown")]
               (.renameTo tplg-temp-file (File. tplg-jar-file))
@@ -1062,32 +1059,32 @@
 (def app
   (handler/site (-> main-routes
                     (wrap-json-params)
-                    (wrap-multipart-params)
-                    (wrap-reload '[backtype.storm.ui.core])
+                    (multipart/wrap-multipart-params)
+                    (reload/wrap-reload '[backtype.storm.ui.core])
                     catch-errors)))
 
 (defn start-server!
   []
   (try
     (let [conf *STORM-CONF*
-          header-buffer-size (int (.get conf UI-HEADER-BUFFER-BYTES))
-          filters-confs [{:filter-class (conf UI-FILTER)
-                          :filter-params (conf UI-FILTER-PARAMS)}]
-          https-port (if (not-nil? (conf UI-HTTPS-PORT)) (conf UI-HTTPS-PORT) 0)
-          https-ks-path (conf UI-HTTPS-KEYSTORE-PATH)
-          https-ks-password (conf UI-HTTPS-KEYSTORE-PASSWORD)
-          https-ks-type (conf UI-HTTPS-KEYSTORE-TYPE)
-          https-key-password (conf UI-HTTPS-KEY-PASSWORD)
-          https-ts-path (conf UI-HTTPS-TRUSTSTORE-PATH)
-          https-ts-password (conf UI-HTTPS-TRUSTSTORE-PASSWORD)
-          https-ts-type (conf UI-HTTPS-TRUSTSTORE-TYPE)
-          https-want-client-auth (conf UI-HTTPS-WANT-CLIENT-AUTH)
-          https-need-client-auth (conf UI-HTTPS-NEED-CLIENT-AUTH)]
-      (storm-run-jetty {:port (conf UI-PORT)
-                        :host (conf UI-HOST)
+          header-buffer-size (int (.get conf c/UI-HEADER-BUFFER-BYTES))
+          filters-confs [{:filter-class (conf c/UI-FILTER)
+                          :filter-params (conf c/UI-FILTER-PARAMS)}]
+          https-port (if (util/not-nil? (conf c/UI-HTTPS-PORT)) (conf c/UI-HTTPS-PORT) 0)
+          https-ks-path (conf c/UI-HTTPS-KEYSTORE-PATH)
+          https-ks-password (conf c/UI-HTTPS-KEYSTORE-PASSWORD)
+          https-ks-type (conf c/UI-HTTPS-KEYSTORE-TYPE)
+          https-key-password (conf c/UI-HTTPS-KEY-PASSWORD)
+          https-ts-path (conf c/UI-HTTPS-TRUSTSTORE-PATH)
+          https-ts-password (conf c/UI-HTTPS-TRUSTSTORE-PASSWORD)
+          https-ts-type (conf c/UI-HTTPS-TRUSTSTORE-TYPE)
+          https-want-client-auth (conf c/UI-HTTPS-WANT-CLIENT-AUTH)
+          https-need-client-auth (conf c/UI-HTTPS-NEED-CLIENT-AUTH)]
+      (ui-helpers/storm-run-jetty {:port (conf c/UI-PORT)
+                        :host (conf c/UI-HOST)
                         :https-port https-port
                         :configurator (fn [server]
-                                        (config-ssl server
+                                        (ui-helpers/config-ssl server
                                                     https-port
                                                     https-ks-path
                                                     https-ks-password
@@ -1100,7 +1097,7 @@
                                                     https-want-client-auth)
                                         (doseq [connector (.getConnectors server)]
                                           (.setRequestHeaderSize connector header-buffer-size))
-                                        (config-filter server app filters-confs))}))
+                                        (ui-helpers/config-filter server app filters-confs))}))
    (catch Exception ex
      (log-error ex))))
 

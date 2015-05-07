@@ -14,10 +14,11 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.drpc-test
-  (:use [clojure test]
-        [backtype.storm config testing clojure]
-        [backtype.storm.daemon common drpc]
-        [conjure core])
+  (:require [conjure.core :as conjure]
+            [backtype.storm.config :as c]
+            [backtype.storm.daemon.drpc :refer :all]
+            [backtype.storm.clojure :refer :all]
+            [clojure.test :refer :all])
   (:import [backtype.storm.drpc ReturnResults DRPCSpout LinearDRPCTopologyBuilder]
            [backtype.storm.topology FailedException]
            [backtype.storm.coordination CoordinatedBolt$FinishedCallback]
@@ -219,9 +220,9 @@
 (deftest test-dequeue-req-after-timeout
   (let [queue (ConcurrentLinkedQueue.)
         delay-seconds 2
-        conf {DRPC-REQUEST-TIMEOUT-SECS delay-seconds}]
-    (stubbing [acquire-queue queue
-               read-storm-config conf]
+        conf {c/DRPC-REQUEST-TIMEOUT-SECS delay-seconds}]
+    (conjure/stubbing [acquire-queue queue
+               c/read-storm-config conf]
       (let [drpc-handler (service-handler conf)]
         (is (thrown? DRPCExecutionException
           (.execute drpc-handler "ArbitraryDRPCFunctionName" "")))
@@ -230,9 +231,9 @@
 (deftest test-drpc-timeout-cleanup
   (let [queue (ConcurrentLinkedQueue.)
         delay-seconds 1
-        conf {DRPC-REQUEST-TIMEOUT-SECS delay-seconds}]
-    (stubbing [acquire-queue queue
-               read-storm-config conf
+        conf {c/DRPC-REQUEST-TIMEOUT-SECS delay-seconds}]
+    (conjure/stubbing [acquire-queue queue
+               c/read-storm-config conf
                timeout-check-secs delay-seconds]
               (let [drpc-handler (service-handler conf)]
                 (is (thrown? DRPCExecutionException

@@ -14,10 +14,10 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.multilang-test
-  (:use [clojure test]
-        [backtype.storm testing config]
-        [backtype.storm.daemon common])
-  (:require [backtype.storm [thrift :as thrift]]))
+  (:require [backtype.storm.thrift :as thrift]
+            [backtype.storm.testing :as testing]
+            [backtype.storm.config :as c]
+            [clojure.test :refer :all]))
 
 ;; (deftest test-multilang-fy
 ;;   (with-local-cluster [cluster :supervisors 4]
@@ -38,14 +38,14 @@
 
  (defn test-multilang
        [executor file-extension]
-       (with-local-cluster [cluster :supervisors 4]
+       (testing/with-local-cluster [cluster :supervisors 4]
          (let [nimbus (:nimbus cluster)
                topology (thrift/mk-topology
                   {"1" (thrift/mk-shell-spout-spec [executor (str "tester_spout." file-extension)] ["word"])}
                   {"2" (thrift/mk-shell-bolt-spec {"1" :shuffle} [executor (str "tester_bolt." file-extension)] ["word"] :parallelism-hint 1)})]
-         (submit-local-topology nimbus
+         (testing/submit-local-topology nimbus
                "test"
-               {TOPOLOGY-WORKERS 20 TOPOLOGY-MESSAGE-TIMEOUT-SECS 3 TOPOLOGY-DEBUG true}
+               {c/TOPOLOGY-WORKERS 20 c/TOPOLOGY-MESSAGE-TIMEOUT-SECS 3 c/TOPOLOGY-DEBUG true}
                topology)
        (Thread/sleep 10000)
        (.killTopology nimbus "test")

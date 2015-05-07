@@ -14,10 +14,12 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.clojure-test
-  (:use [clojure test]
-        [backtype.storm testing clojure config]
-        [backtype.storm.daemon common])
-  (:require [backtype.storm.thrift :as thrift])
+  (:require [backtype.storm.thrift :as thrift]
+            [backtype.storm.daemon.common]
+            [backtype.storm.config :as c]
+            [backtype.storm.testing :as t]
+            [backtype.storm.clojure :refer :all]
+            [clojure.test :refer :all])
   (:import [backtype.storm.testing TestWordSpout TestPlannerSpout]
            [backtype.storm.tuple Fields]))
 
@@ -54,7 +56,7 @@
     ))
 
 (deftest test-clojure-bolt
-  (with-simulated-time-local-cluster [cluster :supervisors 4]
+  (t/with-simulated-time-local-cluster [cluster :supervisors 4]
     (let [nimbus (:nimbus cluster)
           topology (thrift/mk-topology
                       {"1" (thrift/mk-spout-spec (TestWordSpout. false))}
@@ -65,15 +67,15 @@
                        "4" (thrift/mk-bolt-spec {"1" :shuffle}
                                               (lalala-bolt3 "_nathan_"))}
                       )
-          results (complete-topology cluster
+          results (t/complete-topology cluster
                                      topology
                                      :mock-sources {"1" [["david"]
                                                        ["adam"]
                                                        ]}
                                      )]
-      (is (ms= [["davidlalala"] ["adamlalala"]] (read-tuples results "2")))
-      (is (ms= [["davidlalala"] ["adamlalala"]] (read-tuples results "3")))
-      (is (ms= [["david_nathan_lalala"] ["adam_nathan_lalala"]] (read-tuples results "4")))
+      (is (t/ms= [["davidlalala"] ["adamlalala"]] (t/read-tuples results "2")))
+      (is (t/ms= [["davidlalala"] ["adamlalala"]] (t/read-tuples results "3")))
+      (is (t/ms= [["david_nathan_lalala"] ["adam_nathan_lalala"]] (t/read-tuples results "4")))
       )))
 
 (defbolt punctuator-bolt ["word" "period" "question" "exclamation"]
@@ -90,18 +92,18 @@
       (ack! collector tuple))))
 
 (deftest test-map-emit
-  (with-simulated-time-local-cluster [cluster :supervisors 4]
+  (t/with-simulated-time-local-cluster [cluster :supervisors 4]
     (let [topology (thrift/mk-topology
                       {"words" (thrift/mk-spout-spec (TestWordSpout. false))}
                       {"out" (thrift/mk-bolt-spec {"words" :shuffle}
                                               punctuator-bolt)}
                       )
-          results (complete-topology cluster
+          results (t/complete-topology cluster
                                      topology
                                      :mock-sources {"words" [["foo"] ["bar"]]}
                                      )]
-      (is (ms= [["foo" "foo." "foo?" "foo!"]
-                ["bar" "bar" "bar" "bar"]] (read-tuples results "out"))))))
+      (is (t/ms= [["foo" "foo." "foo?" "foo!"]
+                ["bar" "bar" "bar" "bar"]] (t/read-tuples results "out"))))))
 
 (defbolt conf-query-bolt ["conf" "val"] {:prepare true :params [conf] :conf conf}
   [conf context collector]
@@ -114,32 +116,32 @@
             )))
 
 (deftest test-component-specific-config-clojure
-  (with-simulated-time-local-cluster [cluster]
-    (let [topology (topology {"1" (spout-spec (TestPlannerSpout. (Fields. ["conf"])) :conf {TOPOLOGY-MESSAGE-TIMEOUT-SECS 40})
+  (t/with-simulated-time-local-cluster [cluster]
+    (let [topology (topology {"1" (spout-spec (TestPlannerSpout. (Fields. ["conf"])) :conf {c/TOPOLOGY-MESSAGE-TIMEOUT-SECS 40})
                               }
                              {"2" (bolt-spec {"1" :shuffle}
                                              (conf-query-bolt {"fake.config" 1
-                                                               TOPOLOGY-MAX-TASK-PARALLELISM 2
-                                                               TOPOLOGY-MAX-SPOUT-PENDING 10})
-                                             :conf {TOPOLOGY-MAX-SPOUT-PENDING 3})
+                                                               c/TOPOLOGY-MAX-TASK-PARALLELISM 2
+                                                               c/TOPOLOGY-MAX-SPOUT-PENDING 10})
+                                             :conf {c/TOPOLOGY-MAX-SPOUT-PENDING 3})
                               })
-          results (complete-topology cluster
+          results (t/complete-topology cluster
                                      topology
                                      :topology-name "test123"
-                                     :storm-conf {TOPOLOGY-MAX-TASK-PARALLELISM 10
-                                                  TOPOLOGY-MESSAGE-TIMEOUT-SECS 30}
+                                     :storm-conf {c/TOPOLOGY-MAX-TASK-PARALLELISM 10
+                                                  c/TOPOLOGY-MESSAGE-TIMEOUT-SECS 30}
                                      :mock-sources {"1" [["fake.config"]
-                                                         [TOPOLOGY-MAX-TASK-PARALLELISM]
-                                                         [TOPOLOGY-MAX-SPOUT-PENDING]
+                                                         [c/TOPOLOGY-MAX-TASK-PARALLELISM]
+                                                         [c/TOPOLOGY-MAX-SPOUT-PENDING]
                                                          ["!MAX_MSG_TIMEOUT"]
-                                                         [TOPOLOGY-NAME]
+                                                         [c/TOPOLOGY-NAME]
                                                          ]})]
       (is (= {"fake.config" 1
-              TOPOLOGY-MAX-TASK-PARALLELISM 2
-              TOPOLOGY-MAX-SPOUT-PENDING 3
+              c/TOPOLOGY-MAX-TASK-PARALLELISM 2
+              c/TOPOLOGY-MAX-SPOUT-PENDING 3
               "!MAX_MSG_TIMEOUT" 40
-              TOPOLOGY-NAME "test123"}
-             (->> (read-tuples results "2")
+              c/TOPOLOGY-NAME "test123"}
+             (->> (t/read-tuples results "2")
                   (apply concat)
                   (apply hash-map))
              )))))

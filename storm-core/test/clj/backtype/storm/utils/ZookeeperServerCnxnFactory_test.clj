@@ -14,7 +14,7 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.utils.ZookeeperServerCnxnFactory-test
-  (:use [clojure test])
+  (:require [clojure.test :refer :all])
   (:import [backtype.storm.utils ZookeeperServerCnxnFactory]))
 
 (deftest test-constructor-throws-runtimeexception-if-port-too-large

@@ -14,8 +14,8 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.submitter-test
-  (:use [clojure test]
-        [backtype.storm config testing])
+  (:use [backtype.storm config testing])
+  (:require [clojure.test :refer :all])
   (:import [backtype.storm StormSubmitter]))
 
 (deftest test-md5-digest-secret-generation

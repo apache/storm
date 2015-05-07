@@ -14,9 +14,9 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.subtopology-test
-  (:use [clojure test]
-        [backtype.storm testing]
+  (:use [backtype.storm testing]
         [backtype.storm.daemon common])
+  (:require [clojure.test :refer :all])
   (:import [backtype.storm.topology TopologyBuilder]
            [backtype.storm.testing TestWordSpout PrepareBatchBolt BatchRepeatA BatchProcessWord BatchNumberList]
            [backtype.storm.coordination BatchSubtopologyBuilder]))

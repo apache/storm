@@ -14,13 +14,13 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.versioned-store-test
-  (:use [clojure test]
-        [backtype.storm testing])
+  (:require [backtype.storm.testing :as testing]
+            [clojure.test :refer :all])
   (:import [backtype.storm.utils VersionedStore]))
 
 (defmacro defvstest [name [vs-sym] & body]
   `(deftest ~name
-    (with-local-tmp [dir#]
+    (testing/with-local-tmp [dir#]
       (let [~vs-sym (VersionedStore. dir#)]
         ~@body
         ))))

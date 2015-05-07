@@ -14,13 +14,12 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.logviewer-test
-  (:use [backtype.storm config util]
-        [clojure.test]
-        [conjure.core])
-  (:require [backtype.storm.daemon
-             [logviewer :as logviewer]
-             [supervisor :as supervisor]]
-            [conjure.core])
+  (:require [backtype.storm.daemon.logviewer :as logviewer]
+            [backtype.storm.daemon.supervisor :as supervisor]
+            [backtype.storm.config :as c]
+            [backtype.storm.util :as util]
+            [conjure.core :as conjure]
+            [clojure.test :refer :all])
   (:import [org.mockito Mockito]))
 
 (defmulti mk-mock-File #(:type %))
@@ -45,9 +44,9 @@
 
 (deftest test-mk-FileFilter-for-log-cleanup
   (testing "log file filter selects the correct log files for purge"
-    (let [now-millis (current-time-millis)
-          conf {LOGVIEWER-CLEANUP-AGE-MINS 60
-                LOGVIEWER-CLEANUP-INTERVAL-SECS 300}
+    (let [now-millis (util/current-time-millis)
+          conf {c/LOGVIEWER-CLEANUP-AGE-MINS 60
+                c/LOGVIEWER-CLEANUP-INTERVAL-SECS 300}
           cutoff-millis (logviewer/cleanup-cutoff-age-millis conf now-millis)
           old-mtime-millis (- cutoff-millis 500)
           new-mtime-millis (+ cutoff-millis 500)
@@ -115,21 +114,21 @@
           exp-user "alice"
           expected {exp-id {:owner exp-user
                             :files #{old-logFile}}}]
-      (stubbing [supervisor/read-worker-heartbeats nil
+      (conjure/stubbing [supervisor/read-worker-heartbeats nil
                 logviewer/get-metadata-file-for-log-root-name mock-metaFile
-                read-dir-contents [(.getName old-logFile) (.getName new-logFile)]
+                util/read-dir-contents [(.getName old-logFile) (.getName new-logFile)]
                 logviewer/get-worker-id-from-metadata-file exp-id
                 logviewer/get-topo-owner-from-metadata-file exp-user]
         (is (= expected (logviewer/identify-worker-log-files [old-logFile] "/tmp/")))))))
 
 (deftest test-get-dead-worker-files-and-owners
   (testing "removes any files of workers that are still alive"
-    (let [conf {SUPERVISOR-WORKER-TIMEOUT-SECS 5}
+    (let [conf {c/SUPERVISOR-WORKER-TIMEOUT-SECS 5}
           id->hb {"42" {:time-secs 1}}
           now-secs 2
           log-files #{:expected-file :unexpected-file}
           exp-owner "alice"]
-      (stubbing [logviewer/identify-worker-log-files {"42" {:owner exp-owner
+      (conjure/stubbing [logviewer/identify-worker-log-files {"42" {:owner exp-owner
                                                             :files #{:unexpected-file}}
                                                       "007" {:owner exp-owner
                                                              :files #{:expected-file}}}
@@ -146,66 +145,66 @@
           mockfile3 (mk-mock-File {:name "file3" :type :file})
           mockyaml  (mk-mock-File {:name "foo.yaml" :type :file})
           exp-cmd (str "rmr /mock/canonical/path/to/" (.getName mockfile3))]
-      (stubbing [logviewer/select-files-for-cleanup
+      (conjure/stubbing [logviewer/select-files-for-cleanup
                    [(mk-mock-File {:name "throwaway" :type :file})]
                  logviewer/get-dead-worker-files-and-owners
                    [{:owner nil :files #{mockfile1}}
                     {:files #{mockfile2}}
                     {:owner exp-user :files #{mockfile3 mockyaml}}]
                  supervisor/worker-launcher nil
-                 rmr nil]
+                 util/rmr nil]
         (logviewer/cleanup-fn! "/tmp/")
-        (verify-call-times-for supervisor/worker-launcher 1)
-        (verify-first-call-args-for-indices supervisor/worker-launcher
+        (conjure/verify-call-times-for supervisor/worker-launcher 1)
+        (conjure/verify-first-call-args-for-indices supervisor/worker-launcher
                                             [1 2] exp-user exp-cmd)
-        (verify-call-times-for rmr 3)
-        (verify-nth-call-args-for 1 rmr (.getCanonicalPath mockfile1))
-        (verify-nth-call-args-for 2 rmr (.getCanonicalPath mockfile2))
-        (verify-nth-call-args-for 3 rmr (.getCanonicalPath mockyaml))))))
+        (conjure/verify-call-times-for util/rmr 3)
+        (conjure/verify-nth-call-args-for 1 util/rmr (.getCanonicalPath mockfile1))
+        (conjure/verify-nth-call-args-for 2 util/rmr (.getCanonicalPath mockfile2))
+        (conjure/verify-nth-call-args-for 3 util/rmr (.getCanonicalPath mockyaml))))))
 
 (deftest test-authorized-log-user
   (testing "allow cluster admin"
-    (let [conf {NIMBUS-ADMINS ["alice"]}]
-      (stubbing [logviewer/get-log-user-group-whitelist [[] []]
+    (let [conf {c/NIMBUS-ADMINS ["alice"]}]
+      (conjure/stubbing [logviewer/get-log-user-group-whitelist [[] []]
                  logviewer/user-groups []]
         (is (logviewer/authorized-log-user? "alice" "non-blank-fname" conf))
-        (verify-first-call-args-for logviewer/get-log-user-group-whitelist "non-blank-fname")
-        (verify-first-call-args-for logviewer/user-groups "alice"))))
+        (conjure/verify-first-call-args-for logviewer/get-log-user-group-whitelist "non-blank-fname")
+        (conjure/verify-first-call-args-for logviewer/user-groups "alice"))))
 
   (testing "ignore any cluster-set topology.users topology.groups"
-    (let [conf {TOPOLOGY-USERS ["alice"]
-                TOPOLOGY-GROUPS ["alice-group"]}]
-      (stubbing [logviewer/get-log-user-group-whitelist [[] []]
+    (let [conf {c/TOPOLOGY-USERS ["alice"]
+                c/TOPOLOGY-GROUPS ["alice-group"]}]
+      (conjure/stubbing [logviewer/get-log-user-group-whitelist [[] []]
                  logviewer/user-groups ["alice-group"]]
         (is (not (logviewer/authorized-log-user? "alice" "non-blank-fname" conf)))
-        (verify-first-call-args-for logviewer/get-log-user-group-whitelist "non-blank-fname")
-        (verify-first-call-args-for logviewer/user-groups "alice"))))
+        (conjure/verify-first-call-args-for logviewer/get-log-user-group-whitelist "non-blank-fname")
+        (conjure/verify-first-call-args-for logviewer/user-groups "alice"))))
 
   (testing "allow cluster logs user"
-    (let [conf {LOGS-USERS ["alice"]}]
-      (stubbing [logviewer/get-log-user-group-whitelist [[] []]
+    (let [conf {c/LOGS-USERS ["alice"]}]
+      (conjure/stubbing [logviewer/get-log-user-group-whitelist [[] []]
                  logviewer/user-groups []]
         (is (logviewer/authorized-log-user? "alice" "non-blank-fname" conf))
-        (verify-first-call-args-for logviewer/get-log-user-group-whitelist "non-blank-fname")
-        (verify-first-call-args-for logviewer/user-groups "alice"))))
+        (conjure/verify-first-call-args-for logviewer/get-log-user-group-whitelist "non-blank-fname")
+        (conjure/verify-first-call-args-for logviewer/user-groups "alice"))))
 
   (testing "allow whitelisted topology user"
-    (stubbing [logviewer/get-log-user-group-whitelist [["alice"] []]
+    (conjure/stubbing [logviewer/get-log-user-group-whitelist [["alice"] []]
                logviewer/user-groups []]
       (is (logviewer/authorized-log-user? "alice" "non-blank-fname" {}))
-      (verify-first-call-args-for logviewer/get-log-user-group-whitelist "non-blank-fname")
-      (verify-first-call-args-for logviewer/user-groups "alice")))
+      (conjure/verify-first-call-args-for logviewer/get-log-user-group-whitelist "non-blank-fname")
+      (conjure/verify-first-call-args-for logviewer/user-groups "alice")))
 
   (testing "allow whitelisted topology group"
-    (stubbing [logviewer/get-log-user-group-whitelist [[] ["alice-group"]]
+    (conjure/stubbing [logviewer/get-log-user-group-whitelist [[] ["alice-group"]]
                logviewer/user-groups ["alice-group"]]
       (is (logviewer/authorized-log-user? "alice" "non-blank-fname" {}))
-      (verify-first-call-args-for logviewer/get-log-user-group-whitelist "non-blank-fname")
-      (verify-first-call-args-for logviewer/user-groups "alice")))
+      (conjure/verify-first-call-args-for logviewer/get-log-user-group-whitelist "non-blank-fname")
+      (conjure/verify-first-call-args-for logviewer/user-groups "alice")))
 
   (testing "disallow user not in nimbus admin, topo user, logs user, or whitelist"
-    (stubbing [logviewer/get-log-user-group-whitelist [[] []]
+    (conjure/stubbing [logviewer/get-log-user-group-whitelist [[] []]
                logviewer/user-groups []]
       (is (not (logviewer/authorized-log-user? "alice" "non-blank-fname" {})))
-      (verify-first-call-args-for logviewer/get-log-user-group-whitelist "non-blank-fname")
-      (verify-first-call-args-for logviewer/user-groups "alice"))))
+      (conjure/verify-first-call-args-for logviewer/get-log-user-group-whitelist "non-blank-fname")
+      (conjure/verify-first-call-args-for logviewer/user-groups "alice"))))

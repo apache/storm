@@ -14,9 +14,9 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.transactional-test
-  (:use [clojure test]
-        [backtype.storm testing util config clojure]
+  (:use [backtype.storm testing util config clojure]
         [backtype.storm.daemon common])
+  (:require [clojure.test :refer :all])
   (:import [backtype.storm Constants]
            [backtype.storm.topology TopologyBuilder]
            [backtype.storm.transactional TransactionalSpoutCoordinator ITransactionalSpout

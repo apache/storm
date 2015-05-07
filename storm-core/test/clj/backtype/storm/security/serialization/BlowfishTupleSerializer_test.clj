@@ -14,9 +14,9 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.security.serialization.BlowfishTupleSerializer-test
-  (:use [clojure test]
-        [backtype.storm.util :only (exception-cause?)]
-        [clojure.string :only (join split)])
+  (:require [backtype.storm.util :refer [exception-cause?]]
+            [clojure.string :refer [join split]]
+            [clojure.test :refer :all])
   (:import [backtype.storm.security.serialization BlowfishTupleSerializer]
            [backtype.storm.utils ListDelegate]
            [com.esotericsoftware.kryo Kryo]

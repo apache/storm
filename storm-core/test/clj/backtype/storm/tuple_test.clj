@@ -14,8 +14,8 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.tuple-test
-  (:use [clojure test]
-        [backtype.storm testing])
+  (:use [backtype.storm testing])
+  (:require [clojure.test :refer :all])
   (:import [backtype.storm.tuple Tuple]))
 
 (deftest test-lookup

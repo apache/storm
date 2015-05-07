@@ -14,7 +14,7 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.security.auth.AuthUtils-test
-  (:use [clojure test])
+  (:require [clojure.test :refer :all])
   (:import [backtype.storm.security.auth AuthUtils IAutoCredentials]
            [java.io IOException]
            [javax.security.auth.login AppConfigurationEntry Configuration]

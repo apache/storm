@@ -14,17 +14,17 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.security.auth.ThriftServer-test
-  (:use [backtype.storm config]
-        [clojure test])
+  (:require [backtype.storm.config :as c]
+            [clojure.test :refer :all])
   (:import [backtype.storm.security.auth ThriftServer ThriftConnectionType]
            [org.apache.thrift.transport TTransportException]))
 
 (deftest test-stop-checks-for-null
-  (let [server (ThriftServer. (read-default-config) nil
+  (let [server (ThriftServer. (c/read-default-config) nil
                               ThriftConnectionType/DRPC)]
     (.stop server)))
 
 (deftest test-isServing-checks-for-null
-  (let [server (ThriftServer. (read-default-config) nil
+  (let [server (ThriftServer. (c/read-default-config) nil
                               ThriftConnectionType/DRPC)]
     (is (not (.isServing server)))))

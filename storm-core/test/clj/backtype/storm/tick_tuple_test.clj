@@ -14,10 +14,10 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.tick-tuple-test
-  (:use [clojure test]
-        [backtype.storm testing clojure config]
+  (:use [backtype.storm testing clojure config]
         [backtype.storm.daemon common])
-  (:require [backtype.storm [thrift :as thrift]]))
+  (:require [backtype.storm [thrift :as thrift]]
+            [clojure.test :refer :all]))
 
 (defbolt noop-bolt ["tuple"] {:prepare true}
   [conf context collector]

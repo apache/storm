@@ -239,7 +239,7 @@ The following commands must be run from the top-level directory.
     # Build the code but skip the tests
     $ mvn clean install -DskipTests=true
 
-In case you modified `storm.thrift`, you have to regenerate thrift code as java and python code before compiling whole project.
+In case you modified `storm.thrift`, you have to regenerate thrift code as java and python code before compiling whole project. You will need to install thrift 7 from http://archive.apache.org/dist/thrift/ before running this code.
 
 ```sh
 cd storm-core/src

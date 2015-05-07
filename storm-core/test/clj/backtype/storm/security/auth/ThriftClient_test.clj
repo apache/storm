@@ -14,31 +14,32 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.security.auth.ThriftClient-test
-  (:use [backtype.storm config util]
-        [clojure test])
+  (:require [backtype.storm.util :as util]
+            [backtype.storm.config :as c]
+            [clojure.test :refer :all])
   (:import [backtype.storm.security.auth ThriftClient ThriftConnectionType]
            [org.apache.thrift.transport TTransportException]))
 
 (deftest test-ctor-throws-if-port-invalid
   (let [conf (merge
-              (read-default-config)
-              {STORM-NIMBUS-RETRY-TIMES 0})
+              (c/read-default-config)
+              {c/STORM-NIMBUS-RETRY-TIMES 0})
         timeout (Integer. 30)]
-    (is (thrown-cause? java.lang.IllegalArgumentException
+    (is (util/thrown-cause? java.lang.IllegalArgumentException
       (ThriftClient. conf ThriftConnectionType/DRPC "bogushost" (int -1) timeout)))
-    (is (thrown-cause? java.lang.IllegalArgumentException
+    (is (util/thrown-cause? java.lang.IllegalArgumentException
         (ThriftClient. conf ThriftConnectionType/DRPC "bogushost" (int 0) timeout)))
   )
 )
 
 (deftest test-ctor-throws-if-host-not-set
   (let [conf (merge
-              (read-default-config)
-              {STORM-NIMBUS-RETRY-TIMES 0})
+              (c/read-default-config)
+              {c/STORM-NIMBUS-RETRY-TIMES 0})
         timeout (Integer. 60)]
-    (is (thrown-cause? TTransportException
+    (is (util/thrown-cause? TTransportException
          (ThriftClient. conf ThriftConnectionType/DRPC "" (int 4242) timeout)))
-    (is (thrown-cause? IllegalArgumentException
+    (is (util/thrown-cause? IllegalArgumentException
         (ThriftClient. conf ThriftConnectionType/DRPC nil (int 4242) timeout)))
   )
 )

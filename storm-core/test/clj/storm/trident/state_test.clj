@@ -14,10 +14,10 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns storm.trident.state-test
-  (:use [clojure test]
-        [storm.trident testing]
-        [backtype.storm config util])
-  (:require [backtype.storm [testing :as t]])
+  (:use [storm.trident testing])
+  (:require [backtype.storm.testing :as t]
+            [backtype.storm.util :as util]
+            [clojure.test :refer :all])
   (:import [storm.trident.operation.builtin Count]
            [storm.trident.state OpaqueValue]
            [storm.trident.state CombinerValueUpdater]
@@ -128,7 +128,7 @@
           e)))))))
 
 (deftest test-memory-map-state-remove
-  (let [map (MemoryMapState. (uuid))]
+  (let [map (MemoryMapState. (util/uuid))]
     (.beginCommit map 1)
     (single-put map "a" 1)
     (single-put map "b" 2)

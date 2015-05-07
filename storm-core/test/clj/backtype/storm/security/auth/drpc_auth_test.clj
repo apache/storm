@@ -14,28 +14,27 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.security.auth.drpc-auth-test
-  (:use [clojure test]
-        [backtype.storm util config log]
-        [backtype.storm.daemon common]
-        [backtype.storm testing])
-  (:require [backtype.storm.daemon [drpc :as drpc]])
+  (:require [backtype.storm.daemon.drpc :as drpc]
+            [backtype.storm.config :as c]
+            [backtype.storm.util :as util]
+            [backtype.storm.testing :as t]
+            [backtype.storm.log :refer [log-message]]
+            [clojure.test :refer :all])
   (:import [backtype.storm.generated AuthorizationException DRPCExecutionException DistributedRPC$Processor
                                      DistributedRPCInvocations$Processor]
-           [backtype.storm Config]
-           [backtype.storm.security.auth ReqContext SingleUserPrincipal ThriftServer ThriftConnectionType]
+           [backtype.storm.security.auth ThriftServer ThriftConnectionType]
            [backtype.storm.utils DRPCClient]
            [backtype.storm.drpc DRPCInvocationsClient]
-           [java.util.concurrent TimeUnit]
-           [javax.security.auth Subject]))
+           [java.util.concurrent TimeUnit]))
 
 (def drpc-timeout (Integer. 30))
 
 (defn launch-server [conf drpcAznClass transportPluginClass login-cfg client-port invocations-port]
-  (let [conf (if drpcAznClass (assoc conf DRPC-AUTHORIZER drpcAznClass) conf)
-        conf (if transportPluginClass (assoc conf STORM-THRIFT-TRANSPORT-PLUGIN transportPluginClass) conf)
+  (let [conf (if drpcAznClass (assoc conf c/DRPC-AUTHORIZER drpcAznClass) conf)
+        conf (if transportPluginClass (assoc conf c/STORM-THRIFT-TRANSPORT-PLUGIN transportPluginClass) conf)
         conf (if login-cfg (assoc conf "java.security.auth.login.config" login-cfg) conf)
-        conf (assoc conf DRPC-PORT client-port)
-        conf (assoc conf DRPC-INVOCATIONS-PORT invocations-port)
+        conf (assoc conf c/DRPC-PORT client-port)
+        conf (assoc conf c/DRPC-INVOCATIONS-PORT invocations-port)
         service-handler (drpc/service-handler conf)
         handler-server (ThriftServer. conf
                                       (DistributedRPC$Processor. service-handler)
@@ -47,10 +46,10 @@
     (log-message "storm conf:" conf)
     (log-message "Starting DRPC invocation server ...")
     (.start (Thread. #(.serve invoke-server)))
-    (wait-for-condition #(.isServing invoke-server))
+    (t/wait-for-condition #(.isServing invoke-server))
     (log-message "Starting DRPC handler server ...")
     (.start (Thread. #(.serve handler-server)))
-    (wait-for-condition #(.isServing handler-server))
+    (t/wait-for-condition #(.isServing handler-server))
     [handler-server invoke-server]))
 
 (defmacro with-server [args & body]
@@ -62,9 +61,9 @@
       ))
 
 (deftest deny-drpc-test
-  (let [client-port (available-port)
-        invocations-port (available-port (inc client-port))
-        storm-conf (read-storm-config)]
+  (let [client-port (util/available-port)
+        invocations-port (util/available-port (inc client-port))
+        storm-conf (c/read-storm-config)]
     (with-server [storm-conf "backtype.storm.security.auth.authorizer.DenyAuthorizer"
                   nil nil client-port invocations-port]
       (let [drpc (DRPCClient. storm-conf "localhost" client-port)
@@ -77,14 +76,14 @@
         (.close invocations)))))
 
 (deftest deny-drpc-digest-test
-  (let [client-port (available-port)
-        invocations-port (available-port (inc client-port))
-        storm-conf (read-storm-config)]
+  (let [client-port (util/available-port)
+        invocations-port (util/available-port (inc client-port))
+        storm-conf (c/read-storm-config)]
     (with-server [storm-conf "backtype.storm.security.auth.authorizer.DenyAuthorizer"
                   "backtype.storm.security.auth.digest.DigestSaslTransportPlugin"
                   "test/clj/backtype/storm/security/auth/jaas_digest.conf"
                   client-port invocations-port]
-      (let [conf (merge storm-conf {STORM-THRIFT-TRANSPORT-PLUGIN "backtype.storm.security.auth.digest.DigestSaslTransportPlugin"
+      (let [conf (merge storm-conf {c/STORM-THRIFT-TRANSPORT-PLUGIN "backtype.storm.security.auth.digest.DigestSaslTransportPlugin"
                              "java.security.auth.login.config" "test/clj/backtype/storm/security/auth/jaas_digest.conf"})
             drpc (DRPCClient. conf "localhost" client-port)
             drpc_client (.getClient drpc)
@@ -97,12 +96,12 @@
 
 (defmacro with-simple-drpc-test-scenario
   [[strict? alice-client bob-client charlie-client alice-invok charlie-invok] & body]
-  (let [client-port (available-port)
-        invocations-port (available-port (inc client-port))
-        storm-conf (merge (read-storm-config)
-                          {DRPC-AUTHORIZER-ACL-STRICT strict?
-                           DRPC-AUTHORIZER-ACL-FILENAME "drpc-simple-acl-test-scenario.yaml"
-                           STORM-THRIFT-TRANSPORT-PLUGIN "backtype.storm.security.auth.digest.DigestSaslTransportPlugin"})]
+  (let [client-port (util/available-port)
+        invocations-port (util/available-port (inc client-port))
+        storm-conf (merge (c/read-storm-config)
+                          {c/DRPC-AUTHORIZER-ACL-STRICT strict?
+                           c/DRPC-AUTHORIZER-ACL-FILENAME "drpc-simple-acl-test-scenario.yaml"
+                           c/STORM-THRIFT-TRANSPORT-PLUGIN "backtype.storm.security.auth.digest.DigestSaslTransportPlugin"})]
     `(with-server [~storm-conf
                    "backtype.storm.security.auth.authorizer.DRPCSimpleACLAuthorizer"
                    "backtype.storm.security.auth.digest.DigestSaslTransportPlugin"
@@ -150,7 +149,7 @@
               exec-ftr (future (.execute alice-client func "some args"))
               id (atom "")
               expected "Authorized DRPC"]
-          (with-timeout drpc-timeout-seconds TimeUnit/SECONDS
+          (t/with-timeout drpc-timeout-seconds TimeUnit/SECONDS
             (while (empty? @id)
               (reset! id
                       (-> charlie-invok (.fetchRequest func) .get_request_id)))
@@ -158,23 +157,23 @@
           (is (= expected (.get exec-ftr drpc-timeout-seconds TimeUnit/SECONDS))))))
 
       (testing "execute fails when function is not in ACL"
-        (is (thrown-cause? AuthorizationException
+        (is (util/thrown-cause? AuthorizationException
           (.execute alice-client "jog" "some args"))))
 
       (testing "fetchRequest fails when function is not in ACL"
-        (is (thrown-cause? AuthorizationException
+        (is (util/thrown-cause? AuthorizationException
           (.fetchRequest charlie-invok "jog"))))
 
       (testing "authorized user can fail a request"
         (let [func "jump"
               exec-ftr (future (.execute alice-client func "some args"))
               id (atom "")]
-          (with-timeout drpc-timeout-seconds TimeUnit/SECONDS
+          (t/with-timeout drpc-timeout-seconds TimeUnit/SECONDS
             (while (empty? @id)
               (reset! id
                       (-> charlie-invok (.fetchRequest func) .get_request_id)))
           (.failRequest charlie-invok @id)
-          (is (thrown-cause? DRPCExecutionException
+          (is (util/thrown-cause? DRPCExecutionException
                              (.get exec-ftr drpc-timeout-seconds TimeUnit/SECONDS))))))
 
       (testing "unauthorized invocation user is denied returning a result"
@@ -182,11 +181,11 @@
               exec-ftr (future (.execute bob-client func "some args"))
               id (atom "")
               expected "Only Authorized User can populate the result"]
-          (with-timeout drpc-timeout-seconds TimeUnit/SECONDS
+          (t/with-timeout drpc-timeout-seconds TimeUnit/SECONDS
             (while (empty? @id)
               (reset! id
                       (-> charlie-invok (.fetchRequest func) .get_request_id)))
-          (is (thrown-cause? AuthorizationException
+          (is (util/thrown-cause? AuthorizationException
             (.result alice-invok @id "not the expected result")))
           (.result charlie-invok @id expected)
           (is (= expected (.get exec-ftr drpc-timeout-seconds TimeUnit/SECONDS))))))
@@ -195,11 +194,11 @@
         (let [func "jump"
               exec-ftr (future (.execute alice-client func "some args"))
               id (atom "")]
-          (with-timeout drpc-timeout-seconds TimeUnit/SECONDS
+          (t/with-timeout drpc-timeout-seconds TimeUnit/SECONDS
             (while (empty? @id)
               (reset! id
                       (-> charlie-invok (.fetchRequest func) .get_request_id)))
-          (is (thrown-cause? AuthorizationException
+          (is (util/thrown-cause? AuthorizationException
             (.failRequest alice-invok @id)))
           (.failRequest charlie-invok @id))))
 
@@ -209,9 +208,9 @@
               id (atom "")
               expected "Only authorized users can fetchRequest"]
           (Thread/sleep 1000)
-          (is (thrown-cause? AuthorizationException
+          (is (util/thrown-cause? AuthorizationException
             (-> alice-invok (.fetchRequest func) .get_request_id)))
-          (with-timeout drpc-timeout-seconds TimeUnit/SECONDS
+          (t/with-timeout drpc-timeout-seconds TimeUnit/SECONDS
             (while (empty? @id)
               (reset! id
                       (-> charlie-invok (.fetchRequest func) .get_request_id)))
@@ -226,7 +225,7 @@
               exec-ftr (future (.execute alice-client func "some args"))
               id (atom "")
               expected "Authorized DRPC"]
-          (with-timeout drpc-timeout-seconds TimeUnit/SECONDS
+          (t/with-timeout drpc-timeout-seconds TimeUnit/SECONDS
             (while (empty? @id)
               (reset! id
                       (-> charlie-invok (.fetchRequest func) .get_request_id)))
@@ -238,7 +237,7 @@
               exec-ftr (future (.execute charlie-client func "some args"))
               id (atom "")
               expected "Permissive/No ACL Entry"]
-          (with-timeout drpc-timeout-seconds TimeUnit/SECONDS
+          (t/with-timeout drpc-timeout-seconds TimeUnit/SECONDS
             (while (empty? @id)
               (reset! id
                       (-> alice-invok (.fetchRequest func) .get_request_id)))
@@ -249,24 +248,24 @@
         (let [func "jog"
               exec-ftr (future (.execute charlie-client func "some args"))
               id (atom "")]
-          (with-timeout drpc-timeout-seconds TimeUnit/SECONDS
+          (t/with-timeout drpc-timeout-seconds TimeUnit/SECONDS
             (while (empty? @id)
               (reset! id
                       (-> alice-invok (.fetchRequest func) .get_request_id)))
           (.failRequest alice-invok @id)
-          (is (thrown-cause? DRPCExecutionException
+          (is (util/thrown-cause? DRPCExecutionException
                              (.get exec-ftr drpc-timeout-seconds TimeUnit/SECONDS))))))
 
       (testing "authorized user can fail a request"
         (let [func "jump"
               exec-ftr (future (.execute alice-client func "some args"))
               id (atom "")]
-          (with-timeout drpc-timeout-seconds TimeUnit/SECONDS
+          (t/with-timeout drpc-timeout-seconds TimeUnit/SECONDS
             (while (empty? @id)
               (reset! id
                       (-> charlie-invok (.fetchRequest func) .get_request_id)))
           (.failRequest charlie-invok @id)
-          (is (thrown-cause? DRPCExecutionException
+          (is (util/thrown-cause? DRPCExecutionException
                              (.get exec-ftr drpc-timeout-seconds TimeUnit/SECONDS))))))
 
       (testing "unauthorized invocation user is denied returning a result"
@@ -274,11 +273,11 @@
               exec-ftr (future (.execute bob-client func "some args"))
               id (atom "")
               expected "Only Authorized User can populate the result"]
-          (with-timeout drpc-timeout-seconds TimeUnit/SECONDS
+          (t/with-timeout drpc-timeout-seconds TimeUnit/SECONDS
             (while (empty? @id)
               (reset! id
                       (-> charlie-invok (.fetchRequest func) .get_request_id)))
-          (is (thrown-cause? AuthorizationException
+          (is (util/thrown-cause? AuthorizationException
             (.result alice-invok @id "not the expected result")))
           (.result charlie-invok @id expected)
           (is (= expected (.get exec-ftr drpc-timeout-seconds TimeUnit/SECONDS))))))
@@ -287,11 +286,11 @@
         (let [func "jump"
               exec-ftr (future (.execute alice-client func "some args"))
               id (atom "")]
-          (with-timeout drpc-timeout-seconds TimeUnit/SECONDS
+          (t/with-timeout drpc-timeout-seconds TimeUnit/SECONDS
             (while (empty? @id)
               (reset! id
                       (-> charlie-invok (.fetchRequest func) .get_request_id)))
-          (is (thrown-cause? AuthorizationException
+          (is (util/thrown-cause? AuthorizationException
             (.failRequest alice-invok @id)))
           (.failRequest charlie-invok @id))))
 
@@ -301,9 +300,9 @@
               id (atom "")
               expected "Only authorized users can fetchRequest"]
           (Thread/sleep 1000)
-          (is (thrown-cause? AuthorizationException
+          (is (util/thrown-cause? AuthorizationException
             (-> alice-invok (.fetchRequest func) .get_request_id)))
-          (with-timeout drpc-timeout-seconds TimeUnit/SECONDS
+          (t/with-timeout drpc-timeout-seconds TimeUnit/SECONDS
             (while (empty? @id)
               (reset! id
                       (-> charlie-invok (.fetchRequest func) .get_request_id)))

@@ -14,7 +14,7 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.security.auth.ReqContext-test
-  (:use [clojure test])
+  (:require [clojure.test :refer :all])
   (:import [backtype.storm.security.auth ReqContext]
            [java.net InetAddress]
            [java.security AccessControlContext Principal]

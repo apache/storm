@@ -14,10 +14,13 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.testing4j-test
-  (:use [clojure.test]
-        [backtype.storm config clojure testing util])
   (:require [backtype.storm.integration-test :as it]
-            [backtype.storm.thrift :as thrift])
+            [backtype.storm.thrift :as thrift]
+            [backtype.storm.util :as util]
+            [backtype.storm.config :as c]
+            [backtype.storm.testing :as testing]
+            [backtype.storm.clojure :refer :all]
+            [clojure.test :refer :all])
   (:import [backtype.storm Testing Config ILocalCluster]
            [backtype.storm.tuple Values Tuple]
            [backtype.storm.utils Time Utils]
@@ -36,8 +39,8 @@
                            (.setSupervisors (int 2))
                            (.setPortsPerSupervisor (int 5)))
         daemon-conf (doto (Config.)
-                      (.put SUPERVISOR-ENABLE false)
-                      (.put TOPOLOGY-ACKER-EXECUTORS 0))]
+                      (.put c/SUPERVISOR-ENABLE false)
+                      (.put c/TOPOLOGY-ACKER-EXECUTORS 0))]
     (Testing/withLocalCluster mk-cluster-param (reify TestJob
                                                  (^void run [this ^ILocalCluster cluster]
                                                    (is (not (nil? cluster)))
@@ -48,8 +51,8 @@
   (let [mk-cluster-param (doto (MkClusterParam.)
                            (.setSupervisors (int 2)))
         daemon-conf (doto (Config.)
-                      (.put SUPERVISOR-ENABLE false)
-                      (.put TOPOLOGY-ACKER-EXECUTORS 0))]
+                      (.put c/SUPERVISOR-ENABLE false)
+                      (.put c/TOPOLOGY-ACKER-EXECUTORS 0))]
     (is (not (Time/isSimulating)))
     (Testing/withSimulatedTimeLocalCluster mk-cluster-param (reify TestJob
                                                               (^void run [this ^ILocalCluster cluster]
@@ -62,7 +65,7 @@
 (deftest test-complete-topology
   (doseq [zmq-on? [true false]
           :let [daemon-conf (doto (Config.)
-                              (.put STORM-LOCAL-MODE-ZMQ zmq-on?))
+                              (.put c/STORM-LOCAL-MODE-ZMQ zmq-on?))
                 mk-cluster-param (doto (MkClusterParam.)
                                    (.setSupervisors (int 4))
                                    (.setDaemonConf daemon-conf))]]
@@ -92,7 +95,7 @@
            (is (Testing/multiseteq [["nathan"] ["bob"] ["joey"] ["nathan"]]
                            (Testing/readTuples results "1")))
            (is (Testing/multiseteq [["nathan" 1] ["nathan" 2] ["bob" 1] ["joey" 1]]
-                           (read-tuples results "2")))
+                           (testing/read-tuples results "2")))
            (is (= [[1] [2] [3] [4]]
                   (Testing/readTuples results "3")))
            (is (= [[1] [2] [3] [4]]
@@ -128,21 +131,21 @@
 
 (deftest test-advance-cluster-time
   (let [daemon-conf (doto (Config.)
-                      (.put TOPOLOGY-ENABLE-MESSAGE-TIMEOUTS true))
+                      (.put c/TOPOLOGY-ENABLE-MESSAGE-TIMEOUTS true))
         mk-cluster-param (doto (MkClusterParam.)
                            (.setDaemonConf daemon-conf))]
     (Testing/withSimulatedTimeLocalCluster
      mk-cluster-param
      (reify TestJob
        (^void run [this ^ILocalCluster cluster]
-         (let [feeder (feeder-spout ["field1"])
+         (let [feeder (testing/feeder-spout ["field1"])
                tracker (AckFailMapTracker.)
                _ (.setAckFailDelegate feeder tracker)
                topology (thrift/mk-topology
                          {"1" (thrift/mk-spout-spec feeder)}
                          {"2" (thrift/mk-bolt-spec {"1" :global} it/ack-every-other)})
                storm-conf (doto (Config.)
-                            (.put TOPOLOGY-MESSAGE-TIMEOUT-SECS 10))]
+                            (.put c/TOPOLOGY-MESSAGE-TIMEOUT-SECS 10))]
            (.submitTopology cluster
                             "timeout-tester"
                             storm-conf
@@ -159,22 +162,22 @@
 
 (deftest test-disable-tuple-timeout
   (let [daemon-conf (doto (Config.)
-                      (.put TOPOLOGY-ENABLE-MESSAGE-TIMEOUTS false))
+                      (.put c/TOPOLOGY-ENABLE-MESSAGE-TIMEOUTS false))
         mk-cluster-param (doto (MkClusterParam.)
                            (.setDaemonConf daemon-conf))]
     (Testing/withSimulatedTimeLocalCluster
       mk-cluster-param
       (reify TestJob
         (^void run [this ^ILocalCluster cluster]
-          (let [feeder (feeder-spout ["field1"])
+          (let [feeder (testing/feeder-spout ["field1"])
                 tracker (AckFailMapTracker.)
                 _ (.setAckFailDelegate feeder tracker)
                 topology (thrift/mk-topology
                            {"1" (thrift/mk-spout-spec feeder)}
                            {"2" (thrift/mk-bolt-spec {"1" :global} it/ack-every-other)})
                 storm-conf (doto (Config.)
-                             (.put TOPOLOGY-MESSAGE-TIMEOUT-SECS 10)
-                             (.put TOPOLOGY-ENABLE-MESSAGE-TIMEOUTS false))]
+                             (.put c/TOPOLOGY-MESSAGE-TIMEOUT-SECS 10)
+                             (.put c/TOPOLOGY-ENABLE-MESSAGE-TIMEOUTS false))]
             (.submitTopology cluster
               "disable-timeout-tester"
               storm-conf
@@ -190,7 +193,7 @@
             ))))))
 
 (deftest test-test-tuple
-  (letlocals
+  (util/letlocals
    ;; test the one-param signature
    (bind ^Tuple tuple (Testing/testTuple ["james" "bond"]))
    (is (= ["james" "bond"] (.getValues tuple)))

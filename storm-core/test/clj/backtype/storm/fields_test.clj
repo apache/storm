@@ -14,7 +14,7 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.fields-test
-  (:use [clojure test])
+  (:require [clojure.test :refer :all])
   (:import [backtype.storm.tuple Fields]
            [java.util List]
            [java.util Iterator]))

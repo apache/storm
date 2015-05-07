@@ -14,10 +14,10 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.scheduler-test
-  (:use [clojure test]
-        [backtype.storm config testing]
+  (:use [backtype.storm config testing]
         [backtype.storm.scheduler EvenScheduler])
-  (:require [backtype.storm.daemon [nimbus :as nimbus]])
+  (:require [backtype.storm.daemon [nimbus :as nimbus]]
+            [clojure.test :refer :all])
   (:import [backtype.storm.generated StormTopology]
            [backtype.storm.scheduler Cluster SupervisorDetails WorkerSlot ExecutorDetails
                                      SchedulerAssignmentImpl Topologies TopologyDetails]))

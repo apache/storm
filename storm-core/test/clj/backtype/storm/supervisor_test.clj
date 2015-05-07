@@ -14,8 +14,7 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.supervisor-test
-  (:use [clojure test]
-        [conjure core]
+  (:use [conjure core]
         [backtype.storm config testing util timer]
         [backtype.storm.daemon common])
   (:require [clojure.java.io :as io]
@@ -23,7 +22,8 @@
             [clojure.contrib [string :as contrib-str]]
             [clojure [string :as string] [set :as set]]
             [backtype.storm.daemon [worker :as worker] [supervisor :as supervisor]]
-            [backtype.storm [thrift :as thrift] [cluster :as cluster]])
+            [backtype.storm [thrift :as thrift] [cluster :as cluster]]
+            [clojure.test :refer :all])
   (:import [backtype.storm.testing TestWordCounter TestWordSpout TestGlobalCount TestAggregatesCounter TestPlannerSpout]
            [backtype.storm.scheduler ISupervisor]
            [backtype.storm.generated RebalanceOptions]

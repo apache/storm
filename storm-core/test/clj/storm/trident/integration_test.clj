@@ -14,10 +14,10 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns storm.trident.integration-test
-  (:use [clojure test]
-        [storm.trident testing]
-        [backtype.storm util])
-  (:require [backtype.storm [testing :as t]])
+  (:use [storm.trident testing])
+  (:require [backtype.storm [testing :as t]]
+            [backtype.storm.util :as util]
+            [clojure.test :refer :all])
   (:import [storm.trident.testing Split CountAsAggregator StringLength TrueFilter
                                   MemoryMapState$Factory]
            [storm.trident.state StateSpec]
@@ -28,7 +28,7 @@
 (deftest test-memory-map-get-tuples
   (t/with-local-cluster [cluster]
     (with-drpc [drpc]
-      (letlocals
+      (util/letlocals
         (bind topo (TridentTopology.))
         (bind feeder (feeder-spout ["sentence"]))
         (bind word-counts
@@ -55,7 +55,7 @@
 (deftest test-word-count
   (t/with-local-cluster [cluster]
     (with-drpc [drpc]
-      (letlocals
+      (util/letlocals
         (bind topo (TridentTopology.))
         (bind feeder (feeder-spout ["sentence"]))
         (bind word-counts
@@ -88,7 +88,7 @@
 (deftest test-word-count-committer-spout
   (t/with-local-cluster [cluster]
     (with-drpc [drpc]
-      (letlocals
+      (util/letlocals
         (bind topo (TridentTopology.))
         (bind feeder (feeder-committer-spout ["sentence"]))
         (.setWaitToEmit feeder false) ;;this causes lots of empty batches
@@ -127,7 +127,7 @@
 (deftest test-count-agg
   (t/with-local-cluster [cluster]
     (with-drpc [drpc]
-      (letlocals
+      (util/letlocals
         (bind topo (TridentTopology.))
         (-> topo
             (.newDRPCStream "numwords" drpc)
@@ -145,7 +145,7 @@
 (deftest test-split-merge
   (t/with-local-cluster [cluster]
     (with-drpc [drpc]
-      (letlocals
+      (util/letlocals
         (bind topo (TridentTopology.))
         (bind drpc-stream (-> topo (.newDRPCStream "splitter" drpc)))
         (bind s1
@@ -166,7 +166,7 @@
 (deftest test-multiple-groupings-same-stream
   (t/with-local-cluster [cluster]
     (with-drpc [drpc]
-      (letlocals
+      (util/letlocals
         (bind topo (TridentTopology.))
         (bind drpc-stream (-> topo (.newDRPCStream "tester" drpc)
                                    (.each (fields "args") (TrueFilter.))))
@@ -188,7 +188,7 @@
 (deftest test-multi-repartition
   (t/with-local-cluster [cluster]
     (with-drpc [drpc]
-      (letlocals
+      (util/letlocals
         (bind topo (TridentTopology.))
         (bind drpc-stream (-> topo (.newDRPCStream "tester" drpc)
                                    (.each (fields "args") (Split.) (fields "word"))
@@ -203,7 +203,7 @@
 
 (deftest test-stream-projection-validation
   (t/with-local-cluster [cluster]
-    (letlocals
+    (util/letlocals
      (bind feeder (feeder-committer-spout ["sentence"]))
      (bind topo (TridentTopology.))
      ;; valid projection fields will not throw exceptions
