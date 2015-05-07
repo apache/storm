@@ -1,4 +1,5 @@
 ## 0.10.0
+ * STORM-714: Make CSS more consistent with self, prev release
  * STORM-796: Add support for "error" command in ShellSpout
  * STORM-745: fix storm.cmd to evaluate 'shift' correctly with 'storm jar'
  * STORM-681: Auto insert license header with genthrift.sh
