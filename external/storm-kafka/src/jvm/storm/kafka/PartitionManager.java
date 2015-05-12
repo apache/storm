@@ -138,6 +138,8 @@ public class PartitionManager {
             Iterable<List<Object>> tups = KafkaUtils.generateTuples(_spoutConfig, toEmit.msg);
             if (tups != null) {
                 for (List<Object> tup : tups) {
+                    tup.add(toEmit.offset);
+                    tup.add(_partition.partition);
                     collector.emit(tup, new KafkaMessageId(_partition, toEmit.offset));
                 }
                 break;
