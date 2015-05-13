@@ -26,88 +26,47 @@ import backtype.storm.messaging.TaskMessage;
 
 public class TransferDrainer {
 
-  private HashMap<String, ArrayList<ArrayList<TaskMessage>>> bundles = new HashMap();
-  
-  public void add(HashMap<String, ArrayList<TaskMessage>> workerTupleSetMap) {
-    for (String key : workerTupleSetMap.keySet()) {
-      
-      ArrayList<ArrayList<TaskMessage>> bundle = bundles.get(key);
-      if (null == bundle) {
-        bundle = new ArrayList<ArrayList<TaskMessage>>();
-        bundles.put(key, bundle);
-      }
-      
-      ArrayList tupleSet = workerTupleSetMap.get(key);
-      if (null != tupleSet && tupleSet.size() > 0) {
-        bundle.add(tupleSet);
-      }
-    } 
+  private ArrayList<TaskMessage> buffer = new ArrayList<TaskMessage>();
+
+  public void addAll(ArrayList<TaskMessage> tuples) {
+    buffer.addAll(tuples);
   }
   
-  public void send(HashMap<String, IConnection> connections) {
-    for (String hostPort : bundles.keySet()) {
+  public void send(HashMap<Integer, String> taskToHostPort, HashMap<String, IConnection> connections) {
+    HashMap<String, ArrayList<TaskMessage>> messageGroupedByDest = groupMessageByDestination(taskToHostPort);
+    for (String hostPort : messageGroupedByDest.keySet()) {
       IConnection connection = connections.get(hostPort);
       if (null != connection) { 
-        ArrayList<ArrayList<TaskMessage>> bundle = bundles.get(hostPort);
-        Iterator<TaskMessage> iter = getBundleIterator(bundle);
+        ArrayList<TaskMessage> bundle = messageGroupedByDest.get(hostPort);
+        Iterator<TaskMessage> iter = bundle.iterator();
         if (null != iter && iter.hasNext()) {
           connection.send(iter);
         }
       }
     } 
   }
-  
-  private Iterator<TaskMessage> getBundleIterator(final ArrayList<ArrayList<TaskMessage>> bundle) {
-    
-    if (null == bundle) {
-      return null;
+
+  private HashMap<String, ArrayList<TaskMessage>> groupMessageByDestination(HashMap<Integer, String> taskToHostPort) {
+    HashMap<String, ArrayList<TaskMessage>> groupedMessage = new HashMap<String, ArrayList<TaskMessage>>();
+    for (TaskMessage message : buffer) {
+      int taskId = message.task();
+
+      String hostAndPort = taskToHostPort.get(taskId);
+      if (null != hostAndPort) {
+        ArrayList<TaskMessage> messages = groupedMessage.get(hostAndPort);
+
+        if (null == messages) {
+          messages = new ArrayList<TaskMessage>();
+          groupedMessage.put(hostAndPort, messages);
+        }
+
+        messages.add(message);
+      }
     }
-    
-    return new Iterator<TaskMessage> () {
-      
-      private int offset = 0;
-      private int size = 0;
-      {
-        for (ArrayList<TaskMessage> list : bundle) {
-            size += list.size();
-        }
-      }
-      
-      private int bundleOffset = 0;
-      private Iterator<TaskMessage> iter = bundle.get(bundleOffset).iterator();
-      
-      @Override
-      public boolean hasNext() {
-        if (offset < size) {
-          return true;
-        }
-        return false;
-      }
-
-      @Override
-      public TaskMessage next() {
-        TaskMessage msg = null;
-        if (iter.hasNext()) {
-          msg = iter.next(); 
-        } else {
-          bundleOffset++;
-          iter = bundle.get(bundleOffset).iterator();
-          msg = iter.next();
-        }
-        if (null != msg) {
-          offset++;
-        }
-        return msg;
-      }
-
-      @Override
-      public void remove() {
-        throw new RuntimeException("not supported");
-      }
-    };
+    return groupedMessage;
   }
-  
+
   public void clear() {
-    bundles.clear();
+    buffer.clear();
   }
 }
