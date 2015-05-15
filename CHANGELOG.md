@@ -1,4 +1,5 @@
 ## 0.10.0
+ * STORM-563. Kafka Spout doesn't pick up from the beginning of the queue unless forceFromStart specified.
  * STORM-615: Add REST API to upload topology.
  * STORM-807: quote args correctly in /bin/storm
  * STORM-686: Add worker-launcher to storm-dist.
