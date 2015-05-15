@@ -24,6 +24,7 @@ import com.google.common.collect.Lists;
 import org.apache.commons.lang.Validate;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.storm.jdbc.common.Column;
+import org.apache.storm.jdbc.common.ConnectionPrvoider;
 import org.apache.storm.jdbc.common.JdbcClient;
 import org.apache.storm.jdbc.mapper.JdbcMapper;
 import org.apache.storm.jdbc.mapper.JdbcLookupMapper;
@@ -54,14 +55,14 @@ public class JdbcState implements State {
     public static class Options implements Serializable {
         private JdbcMapper mapper;
         private JdbcLookupMapper jdbcLookupMapper;
-        private String configKey;
+        private ConnectionPrvoider connectionPrvoider;
         private String tableName;
         private String insertQuery;
         private String selectQuery;
         private Integer queryTimeoutSecs;
 
-        public Options withConfigKey(String configKey) {
-            this.configKey = configKey;
+        public Options withConnectionPrvoider(ConnectionPrvoider connectionPrvoider) {
+            this.connectionPrvoider = connectionPrvoider;
             return this;
         }
 
@@ -97,8 +98,7 @@ public class JdbcState implements State {
     }
 
     protected void prepare() {
-        Map<String, Object> conf = (Map<String, Object>) map.get(options.configKey);
-        Validate.notEmpty(conf, "Hikari configuration not found using key '" + options.configKey + "'");
+        options.connectionPrvoider.prepare();
 
         if(StringUtils.isBlank(options.insertQuery) && StringUtils.isBlank(options.tableName) && StringUtils.isBlank(options.selectQuery)) {
             throw new IllegalArgumentException("If you are trying to insert into DB you must supply either insertQuery or tableName." +
@@ -109,7 +109,7 @@ public class JdbcState implements State {
             options.queryTimeoutSecs = Integer.parseInt(map.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS).toString());
         }
 
-        this.jdbcClient = new JdbcClient(conf, options.queryTimeoutSecs);
+        this.jdbcClient = new JdbcClient(options.connectionPrvoider, options.queryTimeoutSecs);
     }
 
     @Override
