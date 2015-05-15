@@ -1,11 +1,12 @@
 ## 0.10.0
+ * STORM-748: Package Multi-Lang scripts so they don't have to be duplicated
  * STORM-563. Kafka Spout doesn't pick up from the beginning of the queue unless forceFromStart specified.
  * STORM-615: Add REST API to upload topology.
  * STORM-807: quote args correctly in /bin/storm
  * STORM-686: Add worker-launcher to storm-dist.
  * STORM-789: Send more topology context to Multi-Lang components via initial handshake
  * STORM-764: Have option to compress thrift heartbeat
- * JIRA STORM-766 (Include version info in the service page)
+ * STORM-766 (Include version info in the service page)
  * STORM-765: Thrift serialization for local state. 
  * STORM-762: uptime for worker heartbeats is lost when converted to thrift
  * STORM-750: Set Config serialVersionUID
