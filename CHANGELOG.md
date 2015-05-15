@@ -1,4 +1,6 @@
 ## 0.10.0
+ * STORM-786: KafkaBolt should ack tick tuples
+ * STORM-512: KafkaBolt doesn't handle ticks properly
  * STORM-788: Fix key for process latencies
  * STORM-748: Package Multi-Lang scripts so they don't have to be duplicated
  * STORM-563. Kafka Spout doesn't pick up from the beginning of the queue unless forceFromStart specified.
