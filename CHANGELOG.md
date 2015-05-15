@@ -1,4 +1,5 @@
 ## 0.10.0
+ * STORM-788: Fix key for process latencies
  * STORM-748: Package Multi-Lang scripts so they don't have to be duplicated
  * STORM-563. Kafka Spout doesn't pick up from the beginning of the queue unless forceFromStart specified.
  * STORM-615: Add REST API to upload topology.
