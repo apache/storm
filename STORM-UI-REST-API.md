@@ -573,41 +573,7 @@ Sample response:
 }
 ```
 
-### /api/v1/token (GET)
-
-Returns a anti forgery token to use in POST calls
-
-Response fields:
-
-|Field  |Value |Description|
-|antiForgeryToken| String | CSRF token|
-
-Sample response:
-
-```json
-{
-    "antiForgeryToken": "Dygf1UHQF7qL0syKLTKEGSX5y0rZhhQTxS2f/WWwI2PhN1zmRdh8MQ1KTd5CXRmjMVmAJ43eklqYmvD5"
-}
-```
-
 ## POST Operations
-
-### Cross site request forgery (CSRF) prevention in POST requests
-
-In order to prevent CSRF vulnerability, the REST API uses a CSRF token. This is primarily done for the UI, however we
-do not have alternative APIs/paths for UI and non-UI clients.
-
-The token is generated during the `/api/v1/topology/:id` (GET) request. The JSON response for this GET request contains
-a field called "antiForgeryToken". All the post requests below must include a header "x-csrf-token" with the value of
-"antiForgeryToken" from the GET response. In absence of this header with the right token value you will get following
-error response:
-
-```
-{
-    "error" : "Forbidden action.",
-    "errorMessage" : "missing CSRF token."
-}
-```
 
 ### /api/v1/uploadTopology (POST)
 
@@ -628,7 +594,6 @@ Examples:
 
 ```no-highlight
 curl  -i -b ~/cookiejar.txt -c ~/cookiejar.txt -X POST  
--H 'x-csrf-token: ycit8Wi89ZdAOo9KKaka/Pvd0vnx8TZzP8xSDDSw8J8bTfyn4jz38VN4Xcb7CF6xigRzDLaGVHbrSj80'  
 -F topologyConfig='{"topologyMainClass": "storm.starter.WordCountTopology", "topologyMainClassArgs": ["wordcount1"]}' 
 -F topologyJar=@examples/storm-starter/storm-starter-topologies-0.10.0-SNAPSHOT.jar 
 http://localhost:8080/api/v1/uploadTopology
