@@ -1,4 +1,9 @@
 ## 0.10.0
+ * STORM-764: Have option to compress thrift heartbeat
+ * JIRA STORM-766 (Include version info in the service page)
+ * STORM-765: Thrift serialization for local state. 
+ * STORM-762: uptime for worker heartbeats is lost when converted to thrift
+ * STORM-750: Set Config serialVersionUID
  * STORM-714: Make CSS more consistent with self, prev release
  * STORM-796: Add support for "error" command in ShellSpout
  * STORM-745: fix storm.cmd to evaluate 'shift' correctly with 'storm jar'
