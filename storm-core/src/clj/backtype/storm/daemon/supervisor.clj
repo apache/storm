@@ -512,7 +512,7 @@
                                                  (.getMetadata isupervisor)
                                                  (conf SUPERVISOR-SCHEDULER-META)
                                                  ((:uptime supervisor))
-						 ((:version supervisor))))]
+                                                 (:version supervisor))))]
                                 
     (heartbeat-fn)
 
