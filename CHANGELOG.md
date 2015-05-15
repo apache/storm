@@ -1,6 +1,7 @@
 ## 0.10.0
+ * STORM-615: Add REST API to upload topology.
  * STORM-807: quote args correctly in /bin/storm
- * STORM-686. Add worker-launcher to storm-dist.
+ * STORM-686: Add worker-launcher to storm-dist.
  * STORM-789: Send more topology context to Multi-Lang components via initial handshake
  * STORM-764: Have option to compress thrift heartbeat
  * JIRA STORM-766 (Include version info in the service page)
