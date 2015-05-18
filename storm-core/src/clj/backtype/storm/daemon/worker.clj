@@ -118,26 +118,17 @@
   (let [local-tasks (-> worker :task-ids set)
         local-transfer (:transfer-local-fn worker)
         ^DisruptorQueue transfer-queue (:transfer-queue worker)
-        task->node+port (:cached-task->node+port worker)
         try-serialize-local ((:storm-conf worker) TOPOLOGY-TESTING-ALWAYS-TRY-SERIALIZE)
         transfer-fn
           (fn [^KryoTupleSerializer serializer tuple-batch]
             (let [local (ArrayList.)
-                  remoteMap (HashMap.)]
+                  remote (ArrayList.)]
               (fast-list-iter [[task tuple :as pair] tuple-batch]
                 (if (local-tasks task)
-                  (.add local pair) 
-
-                  ;;Using java objects directly to avoid performance issues in java code
-                  (let [node+port (get @task->node+port task)]
-                    (when (not (.get remoteMap node+port))
-                      (.put remoteMap node+port (ArrayList.)))
-                    (let [remote (.get remoteMap node+port)]
-                      (.add remote (TaskMessage. task (.serialize serializer tuple)))
-                     )))) 
-                (local-transfer local)
-                (disruptor/publish transfer-queue remoteMap)
-              ))]
+                  (.add local pair)
+                  (.add remote (TaskMessage. task (.serialize serializer tuple)))))
+              (local-transfer local)
+              (disruptor/publish transfer-queue remote)))]
     (if try-serialize-local
       (do 
         (log-warn "WILL TRY TO SERIALIZE ALL TUPLES (Turn off " TOPOLOGY-TESTING-ALWAYS-TRY-SERIALIZE " for production)")
@@ -329,6 +320,7 @@
 ;; TODO: consider having a max batch size besides what disruptor does automagically to prevent latency issues
 (defn mk-transfer-tuples-handler [worker]
   (let [^DisruptorQueue transfer-queue (:transfer-queue worker)
+        buffer (ArrayList.)
         drainer (TransferDrainer.)
         node+port->socket (:cached-node+port->socket worker)
         task->node+port (:cached-task->node+port worker)
@@ -336,13 +328,14 @@
         ]
     (disruptor/clojure-handler
       (fn [packets _ batch-end?]
-        (.add drainer packets)
-        
+        (.addAll buffer packets)
+
         (when batch-end?
           (read-locked endpoint-socket-lock
-            (let [node+port->socket @node+port->socket]
-              (.send drainer node+port->socket)))
-          (.clear drainer))))))
+            (let [node+port->socket @node+port->socket
+                  task->node+port @task->node+port]
+              (.send drainer task->node+port node+port->socket buffer)))
+          (.clear buffer))))))
 
 ;; Check whether this messaging connection is ready to send data
 (defn is-connection-ready [^IConnection connection]
