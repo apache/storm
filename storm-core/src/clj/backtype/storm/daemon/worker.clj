@@ -320,6 +320,7 @@
 ;; TODO: consider having a max batch size besides what disruptor does automagically to prevent latency issues
 (defn mk-transfer-tuples-handler [worker]
   (let [^DisruptorQueue transfer-queue (:transfer-queue worker)
+        buffer (ArrayList.)
         drainer (TransferDrainer.)
         node+port->socket (:cached-node+port->socket worker)
         task->node+port (:cached-task->node+port worker)
@@ -327,14 +328,14 @@
         ]
     (disruptor/clojure-handler
       (fn [packets _ batch-end?]
-        (.addAll drainer packets)
+        (.addAll buffer packets)
 
         (when batch-end?
           (read-locked endpoint-socket-lock
             (let [node+port->socket @node+port->socket
                   task->node+port @task->node+port]
-              (.send drainer task->node+port node+port->socket)))
-          (.clear drainer))))))
+              (.send drainer task->node+port node+port->socket buffer)))
+          (.clear buffer))))))
 
 ;; Check whether this messaging connection is ready to send data
 (defn is-connection-ready [^IConnection connection]

@@ -17,27 +17,19 @@
  */
 package backtype.storm.utils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.*;
 
 import backtype.storm.messaging.IConnection;
 import backtype.storm.messaging.TaskMessage;
 
 public class TransferDrainer {
-
-  private ArrayList<TaskMessage> buffer = new ArrayList<TaskMessage>();
-
-  public void addAll(ArrayList<TaskMessage> tuples) {
-    buffer.addAll(tuples);
-  }
-  
-  public void send(HashMap<Integer, String> taskToHostPort, HashMap<String, IConnection> connections) {
-    HashMap<String, ArrayList<TaskMessage>> messageGroupedByDest = groupMessageByDestination(taskToHostPort);
+  public void send(HashMap<Integer, String> taskToHostPort, HashMap<String, IConnection> connections,
+                   List<TaskMessage> buffer) {
+    Map<String, List<TaskMessage>> messageGroupedByDest = groupMessageByDestination(taskToHostPort, buffer);
     for (String hostPort : messageGroupedByDest.keySet()) {
       IConnection connection = connections.get(hostPort);
       if (null != connection) { 
-        ArrayList<TaskMessage> bundle = messageGroupedByDest.get(hostPort);
+        List<TaskMessage> bundle = messageGroupedByDest.get(hostPort);
         Iterator<TaskMessage> iter = bundle.iterator();
         if (null != iter && iter.hasNext()) {
           connection.send(iter);
@@ -46,14 +38,15 @@ public class TransferDrainer {
     } 
   }
 
-  private HashMap<String, ArrayList<TaskMessage>> groupMessageByDestination(HashMap<Integer, String> taskToHostPort) {
-    HashMap<String, ArrayList<TaskMessage>> groupedMessage = new HashMap<String, ArrayList<TaskMessage>>();
+  private HashMap<String, List<TaskMessage>> groupMessageByDestination(HashMap<Integer, String> taskToHostPort,
+                                                                            List<TaskMessage> buffer) {
+    HashMap<String, List<TaskMessage>> groupedMessage = new HashMap<String, List<TaskMessage>>();
     for (TaskMessage message : buffer) {
       int taskId = message.task();
 
       String hostAndPort = taskToHostPort.get(taskId);
       if (null != hostAndPort) {
-        ArrayList<TaskMessage> messages = groupedMessage.get(hostAndPort);
+        List<TaskMessage> messages = groupedMessage.get(hostAndPort);
 
         if (null == messages) {
           messages = new ArrayList<TaskMessage>();
@@ -64,9 +57,5 @@ public class TransferDrainer {
       }
     }
     return groupedMessage;
-  }
-
-  public void clear() {
-    buffer.clear();
   }
 }
