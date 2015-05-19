@@ -14,12 +14,12 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.subtopology-test
-  (:use [clojure test])
-  (:import [backtype.storm.topology TopologyBuilder])
-  (:import [backtype.storm.testing TestWordSpout PrepareBatchBolt BatchRepeatA BatchProcessWord BatchNumberList])
-  (:import [backtype.storm.coordination BatchSubtopologyBuilder])
-  (:use [backtype.storm testing])
-  (:use [backtype.storm.daemon common]))
+  (:use [backtype.storm testing]
+        [backtype.storm.daemon common])
+  (:require [clojure.test :refer :all])
+  (:import [backtype.storm.topology TopologyBuilder]
+           [backtype.storm.testing TestWordSpout PrepareBatchBolt BatchRepeatA BatchProcessWord BatchNumberList]
+           [backtype.storm.coordination BatchSubtopologyBuilder]))
 
 ;; todo: need to configure coordinatedbolt with streams that aren't subscribed to, should auto-anchor those to the final
 ;; coordination tuple... find all streams that aren't subscribed to
@@ -34,16 +34,16 @@
 ;;           )
 ;;       (bind batch-builder (BatchSubtopologyBuilder. "for-a" (BatchRepeatA.) 2))
 ;;       (-> (.getMasterDeclarer batch-builder)
-;;           (.shuffleGrouping "identity"))  
+;;           (.shuffleGrouping "identity"))
 ;;       (-> (.setBolt batch-builder "process" (BatchProcessWord.) 2)
 ;;           (.fieldsGrouping "for-a" "multi" (Fields. ["id"])))
 ;;       (-> (.setBolt batch-builder "joiner" (BatchNumberList. "for-a") 2)
 ;;           (.fieldsGrouping "process" (Fields. ["id"]))
 ;;           (.fieldsGrouping "for-a" "single" (Fields. ["id"]))
 ;;           )
-;;       
+;;
 ;;       (.extendTopology batch-builder builder)
-;;       
+;;
 ;;       (bind results (complete-topology cluster
 ;;                                        (.createTopology builder)
 ;;                                        :storm-conf {TOPOLOGY-DEBUG true}

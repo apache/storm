@@ -16,7 +16,6 @@
 
 ;;mock implementation of INimbusCredentialPlugin,IAutoCredentials and ICredentialsRenewer for testing only.
 (ns backtype.storm.MockAutoCred
-  (:use [backtype.storm testing config])
   (:import [backtype.storm.security.INimbusCredentialPlugin]
            [backtype.storm.security.auth   ICredentialsRenewer])
   (:gen-class

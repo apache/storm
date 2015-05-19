@@ -14,20 +14,17 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.security.auth.auto-login-module-test
-  (:use [clojure test])
-  (:use [backtype.storm util])
-  (:import [backtype.storm.security.auth.kerberos AutoTGT
-            AutoTGTKrb5LoginModule AutoTGTKrb5LoginModuleTest])
-  (:import [javax.security.auth Subject Subject])
-  (:import [javax.security.auth.kerberos KerberosTicket])
-  (:import [org.mockito Mockito])
-  )
+  (:require [backtype.storm.util :as util]
+            [clojure.test :refer :all])
+  (:import [backtype.storm.security.auth.kerberos AutoTGTKrb5LoginModule AutoTGTKrb5LoginModuleTest]
+           [javax.security.auth Subject Subject]
+           [javax.security.auth.kerberos KerberosTicket]
+           [org.mockito Mockito]))
 
 (deftest login-module-no-subj-no-tgt-test
   (testing "Behavior is correct when there is no Subject or TGT"
     (let [login-module (AutoTGTKrb5LoginModule.)]
-
-      (is (thrown-cause? javax.security.auth.login.LoginException
+      (is (util/thrown-cause? javax.security.auth.login.LoginException
                          (.login login-module)))
       (is (not (.commit login-module)))
       (is (not (.abort login-module)))
@@ -45,7 +42,7 @@
   (testing "Behavior is correct when there is a Subject and no TGT"
     (let [login-module (AutoTGTKrb5LoginModule.)]
       (.initialize login-module (Subject.) nil nil nil)
-      (is (thrown-cause? javax.security.auth.login.LoginException
+      (is (util/thrown-cause? javax.security.auth.login.LoginException
                          (.login login-module)))
       (is (not (.commit login-module)))
       (is (not (.abort login-module)))
@@ -56,7 +53,7 @@
     (let [login-module (AutoTGTKrb5LoginModuleTest.)]
       (.setKerbTicket login-module (Mockito/mock KerberosTicket))
       (is (.login login-module))
-      (is (thrown-cause? javax.security.auth.login.LoginException
+      (is (util/thrown-cause? javax.security.auth.login.LoginException
                          (.commit login-module)))
 
       (.setKerbTicket login-module (Mockito/mock KerberosTicket))
@@ -70,7 +67,7 @@
       (.initialize login-module readonly-subj nil nil nil)
       (.setKerbTicket login-module (Mockito/mock KerberosTicket))
       (is (.login login-module))
-      (is (thrown-cause? javax.security.auth.login.LoginException
+      (is (util/thrown-cause? javax.security.auth.login.LoginException
                          (.commit login-module)))
 
       (.setKerbTicket login-module (Mockito/mock KerberosTicket))

@@ -14,12 +14,11 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.security.auth.ReqContext-test
-  (:import [backtype.storm.security.auth ReqContext])
-  (:import [java.net InetAddress])
-  (:import [java.security AccessControlContext Principal])
-  (:import [javax.security.auth Subject])
-  (:use [clojure test])
-)
+  (:require [clojure.test :refer :all])
+  (:import [backtype.storm.security.auth ReqContext]
+           [java.net InetAddress]
+           [java.security AccessControlContext Principal]
+           [javax.security.auth Subject]))
 
 (def test-subject
   (let [rc (ReqContext/context)

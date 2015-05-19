@@ -14,18 +14,19 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.messaging.loader
-  (:use [backtype.storm util log])
-  (:import [java.util ArrayList Iterator])
-  (:import [backtype.storm.messaging IContext IConnection TaskMessage])
-  (:import [backtype.storm.utils DisruptorQueue MutableObject])
-  (:require [backtype.storm.messaging [local :as local]])
-  (:require [backtype.storm [disruptor :as disruptor]]))
+  (:require [backtype.storm.messaging [local :as local]]
+            [backtype.storm [disruptor :as disruptor]]
+            [backtype.storm.log :refer [log-message]]
+            [backtype.storm.util :as util :refer [defnk]])
+  (:import [java.util ArrayList Iterator]
+           [backtype.storm.messaging IContext IConnection TaskMessage]
+           [backtype.storm.utils DisruptorQueue MutableObject]))
 
 (defn mk-local-context []
   (local/mk-context))
 
 (defn- mk-receive-thread [storm-id port transfer-local-fn  daemon kill-fn priority socket max-buffer-size thread-id]
-    (async-loop
+    (util/async-loop
        (fn []
          (log-message "Starting receive-thread: [stormId: " storm-id ", port: " port ", thread-id: " thread-id  " ]")
          (fn []
@@ -33,7 +34,7 @@
                  ^Iterator iter (.recv ^IConnection socket 0 thread-id)
                  closed (atom false)]
              (when iter
-               (while (and (not @closed) (.hasNext iter)) 
+               (while (and (not @closed) (.hasNext iter))
                   (let [packet (.next iter)
                         task (if packet (.task ^TaskMessage packet))
                         message (if packet (.message ^TaskMessage packet))]
@@ -42,7 +43,7 @@
                            (.close socket)
                            (reset! closed  true))
                          (when packet (.add batched [task message]))))))
-             
+
              (when (not @closed)
                (do
                  (if (> (.size batched) 0)
@@ -55,7 +56,7 @@
          :thread-name (str "worker-receiver-thread-" thread-id)))
 
 (defn- mk-receive-threads [storm-id port transfer-local-fn  daemon kill-fn priority socket max-buffer-size thread-count]
-  (into [] (for [thread-id (range thread-count)] 
+  (into [] (for [thread-id (range thread-count)]
              (mk-receive-thread storm-id port transfer-local-fn  daemon kill-fn priority socket max-buffer-size thread-id))))
 
 
@@ -65,7 +66,7 @@
    :kill-fn (fn [t] (System/exit 1))
    :priority Thread/NORM_PRIORITY]
   (let [max-buffer-size (int max-buffer-size)
-        local-hostname (memoized-local-hostname)
+        local-hostname (util/memoized-local-hostname)
         thread-count (if receiver-thread-count receiver-thread-count 1)
         vthreads (mk-receive-threads storm-id port transfer-local-fn daemon kill-fn priority socket max-buffer-size thread-count)]
     (fn []
@@ -73,13 +74,13 @@
         (log-message "Shutting down receiving-thread: [" storm-id ", " port "]")
         (.send ^IConnection kill-socket
                   -1 (byte-array []))
-        
+
         (.close ^IConnection kill-socket)
-        
+
         (log-message "Waiting for receiving-thread:[" storm-id ", " port "] to die")
-        
-        (for [thread-id (range thread-count)] 
+
+        (for [thread-id (range thread-count)]
              (.join (vthreads thread-id)))
-        
+
         (log-message "Shutdown receiving-thread: [" storm-id ", " port "]")
         ))))

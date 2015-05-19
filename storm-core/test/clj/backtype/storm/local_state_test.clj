@@ -14,15 +14,15 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.local-state-test
-  (:use [clojure test])
-  (:use [backtype.storm testing])
+  (:require [backtype.storm.testing :as testing]
+            [clojure.test :refer :all])
   (:import [backtype.storm.utils LocalState]
            [backtype.storm.generated GlobalStreamId]
            [org.apache.commons.io FileUtils]
            [java.io File]))
 
 (deftest test-local-state
-  (with-local-tmp [dir1 dir2]
+  (testing/with-local-tmp [dir1 dir2]
     (let [gs-a (GlobalStreamId. "a" "a")
           gs-b (GlobalStreamId. "b" "b")
           gs-c (GlobalStreamId. "c" "c")
@@ -45,7 +45,7 @@
       (is (= gs-d (.get ls2 "b"))))))
 
 (deftest empty-state
-  (with-local-tmp [dir]
+  (testing/with-local-tmp [dir]
     (let [ls (LocalState. dir)
           gs-a (GlobalStreamId. "a" "a")
           data (FileUtils/openOutputStream (File. dir "12345"))

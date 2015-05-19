@@ -15,18 +15,20 @@
 ;; limitations under the License.
 
 (ns backtype.storm.zookeeper
-  (:import [org.apache.curator.retry RetryNTimes])
-  (:import [org.apache.curator.framework.api CuratorEvent CuratorEventType CuratorListener UnhandledErrorListener])
-  (:import [org.apache.curator.framework CuratorFramework CuratorFrameworkFactory])
-  (:import [org.apache.zookeeper ZooKeeper Watcher KeeperException$NoNodeException
-            ZooDefs ZooDefs$Ids CreateMode WatchedEvent Watcher$Event Watcher$Event$KeeperState
-            Watcher$Event$EventType KeeperException$NodeExistsException])
-  (:import [org.apache.zookeeper.data Stat])
-  (:import [org.apache.zookeeper.server ZooKeeperServer NIOServerCnxnFactory])
-  (:import [java.net InetSocketAddress BindException])
-  (:import [java.io File])
-  (:import [backtype.storm.utils Utils ZookeeperAuthInfo])
-  (:use [backtype.storm util log config]))
+  (:require [backtype.storm.util :as util :refer [defnk]]
+            [backtype.storm.log :refer [log-message log-warn-error log-error]]
+            [backtype.storm.config :as c])
+  (:import [org.apache.curator.retry RetryNTimes]
+           [org.apache.curator.framework.api CuratorEvent CuratorEventType CuratorListener UnhandledErrorListener]
+           [org.apache.curator.framework CuratorFramework CuratorFrameworkFactory]
+           [org.apache.zookeeper ZooKeeper Watcher KeeperException$NoNodeException
+                                 ZooDefs ZooDefs$Ids CreateMode WatchedEvent Watcher$Event Watcher$Event$KeeperState
+                                 Watcher$Event$EventType KeeperException$NodeExistsException]
+           [org.apache.zookeeper.data Stat]
+           [org.apache.zookeeper.server ZooKeeperServer NIOServerCnxnFactory]
+           [java.net InetSocketAddress BindException]
+           [java.io File]
+           [backtype.storm.utils Utils ZookeeperAuthInfo]))
 
 (def zk-keeper-states
   {Watcher$Event$KeeperState/Disconnected :disconnected
@@ -88,8 +90,8 @@
   ([^CuratorFramework zk ^String path ^bytes data mode acls]
     (let [mode  (zk-create-modes mode)]
       (try
-        (.. zk (create) (withMode mode) (withACL acls) (forPath (normalize-path path) data))
-        (catch Exception e (throw (wrap-in-runtime e))))))
+        (.. zk (create) (withMode mode) (withACL acls) (forPath (util/normalize-path path) data))
+        (catch Exception e (throw (util/wrap-in-runtime e))))))
   ([^CuratorFramework zk ^String path ^bytes data acls]
     (create-node zk path data :persistent acls)))
 
@@ -98,24 +100,24 @@
   ((complement nil?)
    (try
      (if watch?
-       (.. zk (checkExists) (watched) (forPath (normalize-path path)))
-       (.. zk (checkExists) (forPath (normalize-path path))))
-     (catch Exception e (throw (wrap-in-runtime e))))))
+       (.. zk (checkExists) (watched) (forPath (util/normalize-path path)))
+       (.. zk (checkExists) (forPath (util/normalize-path path))))
+     (catch Exception e (throw (util/wrap-in-runtime e))))))
 
 (defnk delete-node
   [^CuratorFramework zk ^String path :force false]
-  (try-cause  (.. zk (delete) (forPath (normalize-path path)))
+  (util/try-cause  (.. zk (delete) (forPath (util/normalize-path path)))
              (catch KeeperException$NoNodeException e
                (when-not force (throw e)))
-             (catch Exception e (throw (wrap-in-runtime e)))))
+             (catch Exception e (throw (util/wrap-in-runtime e)))))
 
 (defn mkdirs
   [^CuratorFramework zk ^String path acls]
-  (let [path (normalize-path path)]
+  (let [path (util/normalize-path path)]
     (when-not (or (= path "/") (exists-node? zk path false))
-      (mkdirs zk (parent-path path) acls)
-      (try-cause
-        (create-node zk path (barr 7) :persistent acls)
+      (mkdirs zk (util/parent-path path) acls)
+      (util/try-cause
+        (create-node zk path (util/barr 7) :persistent acls)
         (catch KeeperException$NodeExistsException e
           ;; this can happen when multiple clients doing mkdir at same time
           ))
@@ -123,8 +125,8 @@
 
 (defn get-data
   [^CuratorFramework zk ^String path watch?]
-  (let [path (normalize-path path)]
-    (try-cause
+  (let [path (util/normalize-path path)]
+    (util/try-cause
       (if (exists-node? zk path watch?)
         (if watch?
           (.. zk (getData) (watched) (forPath path))
@@ -132,14 +134,14 @@
       (catch KeeperException$NoNodeException e
         ;; this is fine b/c we still have a watch from the successful exists call
         nil )
-      (catch Exception e (throw (wrap-in-runtime e))))))
+      (catch Exception e (throw (util/wrap-in-runtime e))))))
 
-(defn get-data-with-version 
+(defn get-data-with-version
   [^CuratorFramework zk ^String path watch?]
   (let [stats (org.apache.zookeeper.data.Stat. )
-        path (normalize-path path)]
-    (try-cause
-     (if-let [data 
+        path (util/normalize-path path)]
+    (util/try-cause
+     (if-let [data
               (if (exists-node? zk path watch?)
                 (if watch?
                   (.. zk (getData) (watched) (storingStatIn stats) (forPath path))
@@ -150,12 +152,12 @@
        ;; this is fine b/c we still have a watch from the successful exists call
        nil ))))
 
-(defn get-version 
+(defn get-version
 [^CuratorFramework zk ^String path watch?]
   (if-let [stats
            (if watch?
-             (.. zk (checkExists) (watched) (forPath (normalize-path path)))
-             (.. zk (checkExists) (forPath (normalize-path path))))]
+             (.. zk (checkExists) (watched) (forPath (util/normalize-path path)))
+             (.. zk (checkExists) (forPath (util/normalize-path path))))]
     (.getVersion stats)
     nil))
 
@@ -163,15 +165,15 @@
   [^CuratorFramework zk ^String path watch?]
   (try
     (if watch?
-      (.. zk (getChildren) (watched) (forPath (normalize-path path)))
-      (.. zk (getChildren) (forPath (normalize-path path))))
-    (catch Exception e (throw (wrap-in-runtime e)))))
+      (.. zk (getChildren) (watched) (forPath (util/normalize-path path)))
+      (.. zk (getChildren) (forPath (util/normalize-path path))))
+    (catch Exception e (throw (util/wrap-in-runtime e)))))
 
 (defn set-data
   [^CuratorFramework zk ^String path ^bytes data]
   (try
-    (.. zk (setData) (forPath (normalize-path path) data))
-    (catch Exception e (throw (wrap-in-runtime e)))))
+    (.. zk (setData) (forPath (util/normalize-path path) data))
+    (catch Exception e (throw (util/wrap-in-runtime e)))))
 
 (defn exists
   [^CuratorFramework zk ^String path watch?]
@@ -179,13 +181,13 @@
 
 (defn delete-recursive
   [^CuratorFramework zk ^String path]
-  (let [path (normalize-path path)]
+  (let [path (util/normalize-path path)]
     (when (exists-node? zk path false)
-      (let [children (try-cause
+      (let [children (util/try-cause
                        (get-children zk path false)
                        (catch KeeperException$NoNodeException e []))]
         (doseq [c children]
-          (delete-recursive zk (full-path path c)))
+          (delete-recursive zk (util/full-path path c)))
         (delete-node zk path :force true)))))
 
 (defnk mk-inprocess-zookeeper
@@ -195,7 +197,7 @@
         [retport factory]
         (loop [retport (if port port 2000)]
           (if-let [factory-tmp
-                   (try-cause
+                   (util/try-cause
                      (doto (NIOServerCnxnFactory.)
                        (.configure (InetSocketAddress. retport) 0))
                      (catch BindException e

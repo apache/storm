@@ -15,22 +15,22 @@
 ;; limitations under the License.
 
 (ns backtype.storm.daemon.drpc
-  (:import [backtype.storm.security.auth AuthUtils ThriftServer ThriftConnectionType ReqContext])
-  (:import [backtype.storm.security.auth.authorizer DRPCAuthorizerBase])
-  (:import [backtype.storm.generated DistributedRPC DistributedRPC$Iface DistributedRPC$Processor
-            DRPCRequest DRPCExecutionException DistributedRPCInvocations DistributedRPCInvocations$Iface
-            DistributedRPCInvocations$Processor])
-  (:import [java.util.concurrent Semaphore ConcurrentLinkedQueue
-            ThreadPoolExecutor ArrayBlockingQueue TimeUnit])
-  (:import [backtype.storm.daemon Shutdownable])
-  (:import [java.net InetAddress])
-  (:import [backtype.storm.generated AuthorizationException])
-  (:use [backtype.storm config log util])
-  (:use [backtype.storm.daemon common])
-  (:use [backtype.storm.ui helpers])
-  (:use compojure.core)
-  (:use ring.middleware.reload)
-  (:require [compojure.handler :as handler])
+  (:require [backtype.storm.util :as util]
+            [backtype.storm.ui.helpers :as helpers]
+            [backtype.storm.config :as c]
+            [backtype.storm.daemon.common :as common]
+            [backtype.storm.log :refer [log-debug log-warn log-message]]
+            [ring.middleware.reload :as reload]
+            [compojure.core :refer [routes POST GET]])
+  (:import [backtype.storm.security.auth AuthUtils ThriftServer ThriftConnectionType ReqContext]
+           [backtype.storm.security.auth.authorizer DRPCAuthorizerBase]
+           [backtype.storm.generated DistributedRPC$Iface DistributedRPC$Processor
+                                     DRPCRequest DRPCExecutionException DistributedRPCInvocations$Iface
+                                     DistributedRPCInvocations$Processor]
+           [java.util.concurrent Semaphore ConcurrentLinkedQueue]
+           [backtype.storm.daemon Shutdownable]
+           [java.net InetAddress]
+           [backtype.storm.generated AuthorizationException])
   (:gen-class))
 
 (defn timeout-check-secs [] 5)
@@ -58,7 +58,7 @@
 
 ;; TODO: change this to use TimeCacheMap
 (defn service-handler [conf]
-  (let [drpc-acl-handler (mk-authorization-handler (conf DRPC-AUTHORIZER) conf)
+  (let [drpc-acl-handler (common/mk-authorization-handler (conf c/DRPC-AUTHORIZER) conf)
         ctr (atom 0)
         id->sem (atom {})
         id->result (atom {})
@@ -71,11 +71,11 @@
                   (swap! id->function dissoc id)
                   (swap! id->request dissoc id)
                   (swap! id->start dissoc id))
-        my-ip (.getHostAddress (InetAddress/getLocalHost))
-        clear-thread (async-loop
+        my-ip (.getHostAddress (InetAddress/getLocalHost))  ;; TODO: is this needed?
+        clear-thread (util/async-loop
                        (fn []
                          (doseq [[id start] @id->start]
-                           (when (> (time-delta start) (conf DRPC-REQUEST-TIMEOUT-SECS))
+                           (when (> (util/time-delta start) (conf c/DRPC-REQUEST-TIMEOUT-SECS))
                              (when-let [sem (@id->sem id)]
                                (.remove (acquire-queue request-queues (@id->function id)) (@id->request id))
                                (log-warn "Timeout DRPC request id: " id " start at " start)
@@ -93,7 +93,7 @@
               ^Semaphore sem (Semaphore. 0)
               req (DRPCRequest. args id)
               ^ConcurrentLinkedQueue queue (acquire-queue request-queues function)]
-          (swap! id->start assoc id (current-time-secs))
+          (swap! id->start assoc id (util/current-time-secs))
           (swap! id->sem assoc id sem)
           (swap! id->function assoc id function)
           (swap! id->request assoc id req)
@@ -188,16 +188,16 @@
             (.populateContext http-creds-handler (ReqContext/context)
                               servlet-request))
           (.execute handler func "")))
-    (wrap-reload '[backtype.storm.daemon.drpc])
+    (reload/wrap-reload '[backtype.storm.daemon.drpc])
     handle-request))
 
 (defn launch-server!
   ([]
-    (let [conf (read-storm-config)
-          worker-threads (int (conf DRPC-WORKER-THREADS))
-          queue-size (int (conf DRPC-QUEUE-SIZE))
-          drpc-http-port (int (conf DRPC-HTTP-PORT))
-          drpc-port (int (conf DRPC-PORT))
+    (let [conf (c/read-storm-config)
+          worker-threads (int (conf c/DRPC-WORKER-THREADS))
+          queue-size (int (conf c/DRPC-QUEUE-SIZE))
+          drpc-http-port (int (conf c/DRPC-HTTP-PORT))
+          drpc-port (int (conf c/DRPC-PORT))
           drpc-service-handler (service-handler conf)
           ;; requests and returns need to be on separate thread pools, since calls to
           ;; "execute" don't unblock until other thrift methods are called. So if
@@ -211,32 +211,32 @@
                           (DistributedRPCInvocations$Processor. drpc-service-handler)
                           ThriftConnectionType/DRPC_INVOCATIONS)
           http-creds-handler (AuthUtils/GetDrpcHttpCredentialsPlugin conf)]
-      (add-shutdown-hook-with-force-kill-in-1-sec (fn []
+      (util/add-shutdown-hook-with-force-kill-in-1-sec (fn []
                                                     (if handler-server (.stop handler-server))
                                                     (.stop invoke-server)))
       (log-message "Starting Distributed RPC servers...")
       (future (.serve invoke-server))
       (when (> drpc-http-port 0)
         (let [app (webapp drpc-service-handler http-creds-handler)
-              filter-class (conf DRPC-HTTP-FILTER)
-              filter-params (conf DRPC-HTTP-FILTER-PARAMS)
+              filter-class (conf c/DRPC-HTTP-FILTER)
+              filter-params (conf c/DRPC-HTTP-FILTER-PARAMS)
               filters-confs [{:filter-class filter-class
                               :filter-params filter-params}]
-              https-port (int (conf DRPC-HTTPS-PORT))
-              https-ks-path (conf DRPC-HTTPS-KEYSTORE-PATH)
-              https-ks-password (conf DRPC-HTTPS-KEYSTORE-PASSWORD)
-              https-ks-type (conf DRPC-HTTPS-KEYSTORE-TYPE)
-              https-key-password (conf DRPC-HTTPS-KEY-PASSWORD)
-              https-ts-path (conf DRPC-HTTPS-TRUSTSTORE-PATH)
-              https-ts-password (conf DRPC-HTTPS-TRUSTSTORE-PASSWORD)
-              https-ts-type (conf DRPC-HTTPS-TRUSTSTORE-TYPE)
-              https-want-client-auth (conf DRPC-HTTPS-WANT-CLIENT-AUTH)
-              https-need-client-auth (conf DRPC-HTTPS-NEED-CLIENT-AUTH)]
+              https-port (int (conf c/DRPC-HTTPS-PORT))
+              https-ks-path (conf c/DRPC-HTTPS-KEYSTORE-PATH)
+              https-ks-password (conf c/DRPC-HTTPS-KEYSTORE-PASSWORD)
+              https-ks-type (conf c/DRPC-HTTPS-KEYSTORE-TYPE)
+              https-key-password (conf c/DRPC-HTTPS-KEY-PASSWORD)
+              https-ts-path (conf c/DRPC-HTTPS-TRUSTSTORE-PATH)
+              https-ts-password (conf c/DRPC-HTTPS-TRUSTSTORE-PASSWORD)
+              https-ts-type (conf c/DRPC-HTTPS-TRUSTSTORE-TYPE)
+              https-want-client-auth (conf c/DRPC-HTTPS-WANT-CLIENT-AUTH)
+              https-need-client-auth (conf c/DRPC-HTTPS-NEED-CLIENT-AUTH)]
 
-          (storm-run-jetty
+          (helpers/storm-run-jetty
            {:port drpc-http-port
             :configurator (fn [server]
-                            (config-ssl server
+                            (helpers/config-ssl server
                                         https-port
                                         https-ks-path
                                         https-ks-password
@@ -247,10 +247,10 @@
                                         https-ts-type
                                         https-need-client-auth
                                         https-want-client-auth)
-                            (config-filter server app filters-confs))})))
+                            (helpers/config-filter server app filters-confs))})))
       (when handler-server
         (.serve handler-server)))))
 
 (defn -main []
-  (setup-default-uncaught-exception-handler)
+  (util/setup-default-uncaught-exception-handler)
   (launch-server!))

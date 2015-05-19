@@ -14,11 +14,11 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.command.activate
-  (:use [backtype.storm thrift log])
+  (:require [backtype.storm.thrift :as thrift]
+            [backtype.storm.log :refer [log-message]])
   (:gen-class))
 
-(defn -main [name] 
-  (with-configured-nimbus-connection nimbus
+(defn -main [name]
+  (thrift/with-configured-nimbus-connection nimbus
     (.activate nimbus name)
-    (log-message "Activated topology: " name)
-    ))
+    (log-message "Activated topology: " name)))

@@ -14,8 +14,9 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns storm.starter.clj.word-count
+  (:require [backtype.storm.clojure :refer :all]
+        [backtype.storm.config :refer :all])
   (:import [backtype.storm StormSubmitter LocalCluster])
-  (:use [backtype.storm clojure config])
   (:gen-class))
 
 (defspout sentence-spout ["sentence"]
@@ -27,7 +28,7 @@
     (spout
      (nextTuple []
        (Thread/sleep 100)
-       (emit-spout! collector [(rand-nth sentences)])         
+       (emit-spout! collector [(rand-nth sentences)])
        )
      (ack [id]
         ;; You only need to define this method for reliable spouts

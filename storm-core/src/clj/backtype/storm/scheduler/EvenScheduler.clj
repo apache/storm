@@ -14,8 +14,9 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.scheduler.EvenScheduler
-  (:use [backtype.storm util log config])
-  (:require [clojure.set :as set])
+  (:require [clojure.set :as set]
+            [backtype.storm.log :refer [log-message]]
+            [backtype.storm.util :as util])
   (:import [backtype.storm.scheduler IScheduler Topologies
             Cluster TopologyDetails WorkerSlot ExecutorDetails])
   (:gen-class
@@ -23,19 +24,19 @@
 
 (defn sort-slots [all-slots]
   (let [split-up (sort-by count > (vals (group-by first all-slots)))]
-    (apply interleave-all split-up)
+    (apply util/interleave-all split-up)
     ))
 
 (defn get-alive-assigned-node+port->executors [cluster topology-id]
   (let [existing-assignment (.getAssignmentById cluster topology-id)
         executor->slot (if existing-assignment
                          (.getExecutorToSlot existing-assignment)
-                         {}) 
+                         {})
         executor->node+port (into {} (for [[^ExecutorDetails executor ^WorkerSlot slot] executor->slot
                                            :let [executor [(.getStartTask executor) (.getEndTask executor)]
                                                  node+port [(.getNodeId slot) (.getPort slot)]]]
                                        {executor node+port}))
-        alive-assigned (reverse-map executor->node+port)]
+        alive-assigned (util/reverse-map executor->node+port)]
     alive-assigned))
 
 (defn- schedule-topology [^TopologyDetails topology ^Cluster cluster]
@@ -56,7 +57,7 @@
                            (map vector
                                 reassign-executors
                                 ;; for some reason it goes into infinite loop without limiting the repeat-seq
-                                (repeat-seq (count reassign-executors) reassign-slots)))]
+                                (util/repeat-seq (count reassign-executors) reassign-slots)))]
     (when-not (empty? reassignment)
       (log-message "Available slots: " (pr-str available-slots))
       )
@@ -67,7 +68,7 @@
     (doseq [^TopologyDetails topology needs-scheduling-topologies
             :let [topology-id (.getId topology)
                   new-assignment (schedule-topology topology cluster)
-                  node+port->executors (reverse-map new-assignment)]]
+                  node+port->executors (util/reverse-map new-assignment)]]
       (doseq [[node+port executors] node+port->executors
               :let [^WorkerSlot slot (WorkerSlot. (first node+port) (last node+port))
                     executors (for [[start-task end-task] executors]

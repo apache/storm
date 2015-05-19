@@ -14,11 +14,11 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.security.auth.AuthUtils-test
-  (:import [backtype.storm.security.auth AuthUtils IAutoCredentials])
-  (:import [java.io IOException])
-  (:import [javax.security.auth.login AppConfigurationEntry Configuration])
-  (:import [org.mockito Mockito])
-  (:use [clojure test]))
+  (:require [clojure.test :refer :all])
+  (:import [backtype.storm.security.auth AuthUtils IAutoCredentials]
+           [java.io IOException]
+           [javax.security.auth.login AppConfigurationEntry Configuration]
+           [org.mockito Mockito]))
 
 (deftest test-throws-on-missing-section
   (is (thrown? IOException

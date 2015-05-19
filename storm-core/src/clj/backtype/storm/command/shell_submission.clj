@@ -14,17 +14,17 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.command.shell-submission
+  (:require [clojure.string :as str]
+            [backtype.storm.config :as config]
+            [backtype.storm.util :as util])
   (:import [backtype.storm StormSubmitter])
-  (:use [backtype.storm thrift util config log])
-  (:require [clojure.string :as str])
   (:gen-class))
 
 
 (defn -main [^String tmpjarpath & args]
-  (let [conf (read-storm-config)
-        host (conf NIMBUS-HOST)
-        port (conf NIMBUS-THRIFT-PORT)
+  (let [conf (config/read-storm-config)
+        host (conf config/NIMBUS-HOST)
+        port (conf config/NIMBUS-THRIFT-PORT)
         jarpath (StormSubmitter/submitJar conf tmpjarpath)
         args (concat args [host port jarpath])]
-    (exec-command! (str/join " " args))
-    ))
+    (util/exec-command! (str/join " " args))))

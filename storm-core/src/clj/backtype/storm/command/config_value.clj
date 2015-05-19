@@ -14,11 +14,10 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.command.config-value
-  (:use [backtype.storm config log])
+  (:require [backtype.storm.config :as config]
+            [backtype.storm.log :refer [log-message]])
   (:gen-class))
 
-
 (defn -main [^String name]
-  (let [conf (read-storm-config)]
-    (println "VALUE:" (conf name))
-    ))
+  (let [conf (config/read-storm-config)]
+    (log-message "VALUE:" (conf name))))

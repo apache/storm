@@ -14,15 +14,15 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.testing4j
-  (:import [java.util Map List Collection ArrayList])
-  (:require [backtype.storm [LocalCluster :as LocalCluster]])
-  (:import [backtype.storm Config ILocalCluster LocalCluster])
-  (:import [backtype.storm.generated StormTopology])
-  (:import [backtype.storm.daemon nimbus])
-  (:import [backtype.storm.testing TestJob MockedSources TrackedTopology
-            MkClusterParam CompleteTopologyParam MkTupleParam])
-  (:import [backtype.storm.utils Utils])
-  (:use [backtype.storm testing util log])
+  (:require [backtype.storm.LocalCluster :as LocalCluster]
+            [backtype.storm.util :as util]
+            [backtype.storm.testing :as testing])
+  (:import [java.util Map List Collection ArrayList]
+           [backtype.storm ILocalCluster LocalCluster]
+           [backtype.storm.generated StormTopology]
+           [backtype.storm.testing TestJob TrackedTopology
+                                   MkClusterParam CompleteTopologyParam MkTupleParam]
+           [backtype.storm.utils Utils])
   (:gen-class
    :name backtype.storm.Testing
    :methods [^:static [completeTopology
@@ -58,8 +58,8 @@
           storm-conf (or (.getStormConf completeTopologyParam) {})
           cleanup-state (or (.getCleanupState completeTopologyParam) true)
           topology-name (.getTopologyName completeTopologyParam)
-          timeout-ms (or (.getTimeoutMs completeTopologyParam) TEST-TIMEOUT-MS)]
-      (complete-topology (.getState cluster) topology
+          timeout-ms (or (.getTimeoutMs completeTopologyParam) testing/TEST-TIMEOUT-MS)]
+      (testing/complete-topology (.getState cluster) topology
         :mock-sources mocked-sources
         :storm-conf storm-conf
         :cleanup-state cleanup-state
@@ -71,7 +71,7 @@
 
 (defn -withSimulatedTime
   [^Runnable code]
-  (with-simulated-time
+  (testing/with-simulated-time
     (.run code)))
 
 (defmacro with-cluster
@@ -87,19 +87,19 @@
 
 (defn -withLocalCluster
   ([^MkClusterParam mkClusterParam ^TestJob code]
-     (with-cluster with-local-cluster mkClusterParam code))
+     (with-cluster testing/with-local-cluster mkClusterParam code))
   ([^TestJob code]
      (-withLocalCluster (MkClusterParam.) code)))
 
 (defn -withSimulatedTimeLocalCluster
   ([^MkClusterParam mkClusterParam ^TestJob code]
-     (with-cluster with-simulated-time-local-cluster mkClusterParam code))
+     (with-cluster testing/with-simulated-time-local-cluster mkClusterParam code))
   ([^TestJob code]
      (-withSimulatedTimeLocalCluster (MkClusterParam.) code)))
 
 (defn -withTrackedCluster
   ([^MkClusterParam mkClusterParam ^TestJob code]
-     (with-cluster with-tracked-cluster mkClusterParam code))
+     (with-cluster testing/with-tracked-cluster mkClusterParam code))
   ([^TestJob code]
      (-withTrackedCluster (MkClusterParam.) code)))
 
@@ -123,28 +123,28 @@
 
 (defn -mkTrackedTopology
   [^ILocalCluster trackedCluster ^StormTopology topology]
-  (-> (mk-tracked-topology (.getState trackedCluster) topology)
+  (-> (testing/mk-tracked-topology (.getState trackedCluster) topology)
       (TrackedTopology.)))
 
 (defn -trackedWait
   ([^TrackedTopology trackedTopology ^Integer amt ^Integer timeout-ms]
-   (tracked-wait trackedTopology amt timeout-ms))
+   (testing/tracked-wait trackedTopology amt timeout-ms))
   ([^TrackedTopology trackedTopology ^Integer amt]
-   (tracked-wait trackedTopology amt))
+   (testing/tracked-wait trackedTopology amt))
   ([^TrackedTopology trackedTopology]
    (-trackedWait trackedTopology 1)))
 
 (defn -advanceClusterTime
   ([^ILocalCluster cluster ^Integer secs ^Integer step]
-   (advance-cluster-time (.getState cluster) secs step))
+   (testing/advance-cluster-time (.getState cluster) secs step))
   ([^ILocalCluster cluster ^Integer secs]
    (-advanceClusterTime cluster secs 1)))
 
 (defn- multiseteq
   [^Object obj1 ^Object obj2]
-  (let [obj1 (clojurify-structure obj1)
-        obj2 (clojurify-structure obj2)]
-    (ms= obj1 obj2)))
+  (let [obj1 (util/clojurify-structure obj1)
+        obj2 (util/clojurify-structure obj2)]
+    (testing/ms= obj1 obj2)))
 
 (defn -multiseteq
   [^Collection coll1 ^Collection coll2]
@@ -159,8 +159,8 @@
    (-testTuple values nil))
   ([^List values ^MkTupleParam param]
    (if (nil? param)
-     (test-tuple values)
+     (testing/test-tuple values)
      (let [stream (or (.getStream param) Utils/DEFAULT_STREAM_ID)
            component (or (.getComponent param) "component")
            fields (.getFields param)]
-       (test-tuple values :stream stream :component component :fields fields)))))
+       (testing/test-tuple values :stream stream :component component :fields fields)))))

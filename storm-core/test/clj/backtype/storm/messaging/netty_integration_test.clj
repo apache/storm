@@ -14,32 +14,33 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.messaging.netty-integration-test
-  (:use [clojure test])
-  (:import [backtype.storm.messaging TransportFactory])
-  (:import [backtype.storm.testing TestWordSpout TestGlobalCount])
-  (:use [backtype.storm testing util config])
-  (:require [backtype.storm [thrift :as thrift]]))
+  (:require [backtype.storm [thrift :as thrift]]
+            [backtype.storm.testing :as t]
+            [backtype.storm.config :as c]
+            [clojure.test :refer :all])
+  (:import [backtype.storm.messaging TransportFactory]
+           [backtype.storm.testing TestWordSpout TestGlobalCount]))
 
 (deftest test-integration
-  (with-simulated-time-local-cluster [cluster :supervisors 4 :supervisor-slot-port-min 6710
-                                      :daemon-conf {STORM-LOCAL-MODE-ZMQ true 
-                                                    STORM-MESSAGING-TRANSPORT  "backtype.storm.messaging.netty.Context"
-                                                    STORM-MESSAGING-NETTY-AUTHENTICATION false
-                                                    STORM-MESSAGING-NETTY-BUFFER-SIZE 1024000
-                                                    STORM-MESSAGING-NETTY-MAX-RETRIES 10
-                                                    STORM-MESSAGING-NETTY-MIN-SLEEP-MS 1000 
-                                                    STORM-MESSAGING-NETTY-MAX-SLEEP-MS 5000
-                                                    STORM-MESSAGING-NETTY-CLIENT-WORKER-THREADS 1
-                                                    STORM-MESSAGING-NETTY-SERVER-WORKER-THREADS 1}]
+  (t/with-simulated-time-local-cluster [cluster :supervisors 4 :supervisor-slot-port-min 6710
+                                      :daemon-conf {c/STORM-LOCAL-MODE-ZMQ true
+                                                    c/STORM-MESSAGING-TRANSPORT  "backtype.storm.messaging.netty.Context"
+                                                    c/STORM-MESSAGING-NETTY-AUTHENTICATION false
+                                                    c/STORM-MESSAGING-NETTY-BUFFER-SIZE 1024000
+                                                    c/STORM-MESSAGING-NETTY-MAX-RETRIES 10
+                                                    c/STORM-MESSAGING-NETTY-MIN-SLEEP-MS 1000
+                                                    c/STORM-MESSAGING-NETTY-MAX-SLEEP-MS 5000
+                                                    c/STORM-MESSAGING-NETTY-CLIENT-WORKER-THREADS 1
+                                                    c/STORM-MESSAGING-NETTY-SERVER-WORKER-THREADS 1}]
     (let [topology (thrift/mk-topology
                      {"1" (thrift/mk-spout-spec (TestWordSpout. true) :parallelism-hint 4)}
                      {"2" (thrift/mk-bolt-spec {"1" :shuffle} (TestGlobalCount.)
                                                :parallelism-hint 6)})
-          results (complete-topology cluster
+          results (t/complete-topology cluster
                                      topology
                                      ;; important for test that
                                      ;; #tuples = multiple of 4 and 6
-                                     :storm-conf {TOPOLOGY-WORKERS 3}
+                                     :storm-conf {c/TOPOLOGY-WORKERS 3}
                                      :mock-sources {"1" [["a"] ["b"]
                                                          ["a"] ["b"]
                                                          ["a"] ["b"]
@@ -54,5 +55,5 @@
                                                          ["a"] ["b"]
                                                          ]}
                                      )]
-      (is (ms= (apply concat (repeat 6 [[1] [2] [3] [4]]))
-               (read-tuples results "2"))))))
+      (is (t/ms= (apply concat (repeat 6 [[1] [2] [3] [4]]))
+               (t/read-tuples results "2"))))))

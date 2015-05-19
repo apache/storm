@@ -14,8 +14,8 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.scheduler.DefaultScheduler
-  (:use [backtype.storm util config])
-  (:require [backtype.storm.scheduler.EvenScheduler :as EvenScheduler])
+  (:require [backtype.storm.scheduler.EvenScheduler :as EvenScheduler]
+            [backtype.storm.util :as util])
   (:import [backtype.storm.scheduler IScheduler Topologies
             Cluster TopologyDetails WorkerSlot SchedulerAssignment
             EvenScheduler ExecutorDetails])
@@ -25,7 +25,7 @@
 (defn- bad-slots [existing-slots num-executors num-workers]
   (if (= 0 num-workers)
     '()
-    (let [distribution (atom (integer-divided num-executors num-workers))
+    (let [distribution (atom (util/integer-divided num-executors num-workers))
           keepers (atom {})]
       (doseq [[node+port executor-list] existing-slots :let [executor-count (count executor-list)]]
         (when (pos? (get @distribution executor-count 0))
@@ -66,7 +66,7 @@
                   can-reassign-slots (slots-can-reassign cluster (keys alive-assigned))
                   total-slots-to-use (min (.getNumWorkers topology)
                                           (+ (count can-reassign-slots) (count available-slots)))
-                  bad-slots (if (or (> total-slots-to-use (count alive-assigned)) 
+                  bad-slots (if (or (> total-slots-to-use (count alive-assigned))
                                     (not= alive-executors all-executors))
                                 (bad-slots alive-assigned (count all-executors) total-slots-to-use)
                                 [])]]

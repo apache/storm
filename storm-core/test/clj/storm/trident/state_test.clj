@@ -14,22 +14,22 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns storm.trident.state-test
-  (:use [clojure test])
-  (:require [backtype.storm [testing :as t]])
-  (:import [storm.trident.operation.builtin Count])
-  (:import [storm.trident.state OpaqueValue])
-  (:import [storm.trident.state CombinerValueUpdater])
-  (:import [storm.trident.topology.state TransactionalState TestTransactionalState])
-  (:import [storm.trident.state.map TransactionalMap OpaqueMap])
-  (:import [storm.trident.testing MemoryBackingMap MemoryMapState])
-  (:import [backtype.storm.utils ZookeeperAuthInfo])
-  (:import [org.apache.curator.framework CuratorFramework])
-  (:import [org.apache.curator.framework.api CreateBuilder ProtectACLCreateModePathAndBytesable])
-  (:import [org.apache.zookeeper CreateMode ZooDefs ZooDefs$Ids])
-  (:import [org.mockito Matchers Mockito])
-  (:import [org.mockito.exceptions.base MockitoAssertionError])
   (:use [storm.trident testing])
-  (:use [backtype.storm config util]))
+  (:require [backtype.storm.testing :as t]
+            [backtype.storm.util :as util]
+            [clojure.test :refer :all])
+  (:import [storm.trident.operation.builtin Count]
+           [storm.trident.state OpaqueValue]
+           [storm.trident.state CombinerValueUpdater]
+           [storm.trident.topology.state TransactionalState TestTransactionalState]
+           [storm.trident.state.map TransactionalMap OpaqueMap]
+           [storm.trident.testing MemoryBackingMap MemoryMapState]
+           [backtype.storm.utils ZookeeperAuthInfo]
+           [org.apache.curator.framework CuratorFramework]
+           [org.apache.curator.framework.api CreateBuilder ProtectACLCreateModePathAndBytesable]
+           [org.apache.zookeeper CreateMode ZooDefs ZooDefs$Ids]
+           [org.mockito Matchers Mockito]
+           [org.mockito.exceptions.base MockitoAssertionError]))
 
 (defn single-remove [map key]
   (-> map (.multiRemove [[key]])))
@@ -128,7 +128,7 @@
           e)))))))
 
 (deftest test-memory-map-state-remove
-  (let [map (MemoryMapState. (uuid))]
+  (let [map (MemoryMapState. (util/uuid))]
     (.beginCommit map 1)
     (single-put map "a" 1)
     (single-put map "b" 2)
@@ -145,6 +145,6 @@
     (.commit map 2)
     (.beginCommit map 3)
     (is (nil? (single-get map "a")))
-    (is (= 2 (single-get map "b")))    
+    (is (= 2 (single-get map "b")))
     (.commit map 3)
     ))

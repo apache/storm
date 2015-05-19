@@ -14,25 +14,23 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns storm.trident.testing
-  (:require [backtype.storm.LocalDRPC :as LocalDRPC])
-  (:import [storm.trident.testing FeederBatchSpout FeederCommitterBatchSpout MemoryMapState MemoryMapState$Factory TuplifyArgs])
-  (:require [backtype.storm [LocalDRPC]])
-  (:import [backtype.storm LocalDRPC])
-  (:import [backtype.storm.tuple Fields])
-  (:import [backtype.storm.generated KillOptions])
-  (:require [backtype.storm [testing :as t]])
-  (:use [backtype.storm util])
-  )
+  (:require [backtype.storm.LocalDRPC :as LocalDRPC]
+            [backtype.storm.testing :as t]
+            [backtype.storm.util :as util])
+  (:import [storm.trident.testing FeederBatchSpout FeederCommitterBatchSpout MemoryMapState MemoryMapState$Factory TuplifyArgs]
+           [backtype.storm LocalDRPC]
+           [backtype.storm.tuple Fields]
+           [backtype.storm.generated KillOptions]))
 
 (defn local-drpc []
   (LocalDRPC.))
 
 (defn exec-drpc [^LocalDRPC drpc function-name args]
   (let [res (.execute drpc function-name args)]
-    (from-json res)))
+    (util/from-json res)))
 
 (defn exec-drpc-tuples [^LocalDRPC drpc function-name tuples]
-  (exec-drpc drpc function-name (to-json tuples)))
+  (exec-drpc drpc function-name (util/to-json tuples)))
 
 (defn feeder-spout [fields]
   (FeederBatchSpout. fields))

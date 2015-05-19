@@ -15,10 +15,11 @@
 ;; limitations under the License.
 
 (ns backtype.storm.event
-  (:use [backtype.storm log util])
-  (:import [backtype.storm.utils Time Utils])
-  (:import [java.io InterruptedIOException])
-  (:import [java.util.concurrent LinkedBlockingQueue TimeUnit]))
+  (:require [backtype.storm.log :refer [log-message log-error]]
+            [backtype.storm.util :as util])
+  (:import [backtype.storm.utils Time]
+           [java.io InterruptedIOException]
+           [java.util.concurrent LinkedBlockingQueue]))
 
 (defprotocol EventManager
   (add [this event-fn])
@@ -34,7 +35,7 @@
         running (atom true)
         runner (Thread.
                  (fn []
-                   (try-cause
+                   (util/try-cause
                      (while @running
                        (let [r (.take queue)]
                          (r)
@@ -45,7 +46,7 @@
                        (log-message "Event manager interrupted"))
                      (catch Throwable t
                        (log-error t "Error when processing event")
-                       (exit-process! 20 "Error when processing an event")))))]
+                       (util/exit-process! 20 "Error when processing an event")))))]
     (.setDaemon runner daemon?)
     (.start runner)
     (reify

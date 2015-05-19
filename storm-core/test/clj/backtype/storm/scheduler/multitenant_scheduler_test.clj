@@ -14,14 +14,15 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.scheduler.multitenant-scheduler-test
-  (:use [clojure test])
-  (:use [backtype.storm config testing log])
-  (:require [backtype.storm.daemon [nimbus :as nimbus]])
-  (:import [backtype.storm.generated StormTopology])
-  (:import [backtype.storm.scheduler Cluster SupervisorDetails WorkerSlot ExecutorDetails
-            SchedulerAssignmentImpl Topologies TopologyDetails])
-  (:import [backtype.storm.scheduler.multitenant Node NodePool FreePool DefaultPool
-            IsolatedPool MultitenantScheduler]))
+  (:require [backtype.storm.daemon.nimbus :as nimbus]
+            [backtype.storm.log :refer [log-message]]
+            [backtype.storm.config :as c]
+            [clojure.test :refer :all])
+  (:import [backtype.storm.generated StormTopology]
+           [backtype.storm.scheduler Cluster SupervisorDetails WorkerSlot ExecutorDetails
+                                     SchedulerAssignmentImpl Topologies TopologyDetails]
+           [backtype.storm.scheduler.multitenant Node NodePool FreePool DefaultPool
+                                                 IsolatedPool MultitenantScheduler]))
 
 (defn gen-supervisors [count]
   (into {} (for [id (range count)
@@ -132,8 +133,8 @@
        executor1 (ed 1)
        executor2 (ed 2)
        executor3 (ed 3)
-       topology1 (TopologyDetails. "topology1" 
-                   {TOPOLOGY-NAME "topology-name-1"}
+       topology1 (TopologyDetails. "topology1"
+                   {c/TOPOLOGY-NAME "topology-name-1"}
                    (StormTopology.)
                    2
                    {executor1 "spout1"
@@ -169,8 +170,8 @@
        executor1 (ed 1)
        executor2 (ed 2)
        executor3 (ed 3)
-       topology1 (TopologyDetails. "topology1" 
-                   {TOPOLOGY-NAME "topology-name-1"}
+       topology1 (TopologyDetails. "topology1"
+                   {c/TOPOLOGY-NAME "topology-name-1"}
                    (StormTopology.)
                    5
                    {executor1 "spout1"
@@ -208,8 +209,8 @@
        executor3 (ed 3)
        executor4 (ed 4)
        executor5 (ed 5)
-       topology1 (TopologyDetails. "topology1" 
-                   {TOPOLOGY-NAME "topology-name-1"}
+       topology1 (TopologyDetails. "topology1"
+                   {c/TOPOLOGY-NAME "topology-name-1"}
                    (StormTopology.)
                    5
                    {executor1 "spout1"
@@ -247,8 +248,8 @@
        executor3 (ed 3)
        executor4 (ed 4)
        executor5 (ed 5)
-       topology1 (TopologyDetails. "topology1" 
-                   {TOPOLOGY-NAME "topology-name-1"}
+       topology1 (TopologyDetails. "topology1"
+                   {c/TOPOLOGY-NAME "topology-name-1"}
                    (StormTopology.)
                    5
                    {executor1 "spout1"
@@ -296,15 +297,15 @@
        executor12 (ed 12)
        executor13 (ed 13)
        executor14 (ed 14)
-       topology1 (TopologyDetails. "topology1" 
-                   {TOPOLOGY-NAME "topology-name-1"}
+       topology1 (TopologyDetails. "topology1"
+                   {c/TOPOLOGY-NAME "topology-name-1"}
                    (StormTopology.)
                    2
                    {executor1 "spout1"
                     executor2 "bolt1"
                     executor3 "bolt2"})
        topology2 (TopologyDetails. "topology2"
-                    {TOPOLOGY-NAME "topology-name-2"}
+                    {c/TOPOLOGY-NAME "topology-name-2"}
                     (StormTopology.)
                     4
                     {executor11 "spout11"
@@ -375,9 +376,9 @@
        executor2 (ed 2)
        executor3 (ed 3)
        executor4 (ed 4)
-       topology1 (TopologyDetails. "topology1" 
-                   {TOPOLOGY-NAME "topology-name-1"
-                    TOPOLOGY-ISOLATED-MACHINES 4}
+       topology1 (TopologyDetails. "topology1"
+                   {c/TOPOLOGY-NAME "topology-name-1"
+                    c/TOPOLOGY-ISOLATED-MACHINES 4}
                    (StormTopology.)
                    4
                    {executor1 "spout1"
@@ -419,9 +420,9 @@
        executor2 (ed 2)
        executor3 (ed 3)
        executor4 (ed 4)
-       topology1 (TopologyDetails. "topology1" 
-                   {TOPOLOGY-NAME "topology-name-1"
-                    TOPOLOGY-ISOLATED-MACHINES 4}
+       topology1 (TopologyDetails. "topology1"
+                   {c/TOPOLOGY-NAME "topology-name-1"
+                    c/TOPOLOGY-ISOLATED-MACHINES 4}
                    (StormTopology.)
                    10
                    {executor1 "spout1"
@@ -467,8 +468,8 @@
        executor12 (ed 12)
        executor13 (ed 13)
        executor14 (ed 14)
-       topology1 (TopologyDetails. "topology1" 
-                   {TOPOLOGY-NAME "topology-name-1"}
+       topology1 (TopologyDetails. "topology1"
+                   {c/TOPOLOGY-NAME "topology-name-1"}
                    (StormTopology.)
                    4
                    {executor1 "spout1"
@@ -476,8 +477,8 @@
                     executor3 "bolt2"
                     executor4 "bolt4"})
        topology2 (TopologyDetails. "topology2"
-                    {TOPOLOGY-NAME "topology-name-2"
-                     TOPOLOGY-ISOLATED-MACHINES 2}
+                    {c/TOPOLOGY-NAME "topology-name-2"
+                     c/TOPOLOGY-ISOLATED-MACHINES 2}
                     (StormTopology.)
                     4
                     {executor11 "spout11"
@@ -572,8 +573,8 @@
        executor12 (ed 12)
        executor13 (ed 13)
        executor14 (ed 14)
-       topology1 (TopologyDetails. "topology1" 
-                   {TOPOLOGY-NAME "topology-name-1"}
+       topology1 (TopologyDetails. "topology1"
+                   {c/TOPOLOGY-NAME "topology-name-1"}
                    (StormTopology.)
                    4
                    {executor1 "spout1"
@@ -581,8 +582,8 @@
                     executor3 "bolt2"
                     executor4 "bolt4"})
        topology2 (TopologyDetails. "topology2"
-                    {TOPOLOGY-NAME "topology-name-2"
-                     TOPOLOGY-ISOLATED-MACHINES 2}
+                    {c/TOPOLOGY-NAME "topology-name-2"
+                     c/TOPOLOGY-ISOLATED-MACHINES 2}
                     (StormTopology.)
                     4
                     {executor11 "spout11"
@@ -628,9 +629,9 @@
 
 (deftest test-multitenant-scheduler
   (let [supers (gen-supervisors 10)
-       topology1 (TopologyDetails. "topology1" 
-                   {TOPOLOGY-NAME "topology-name-1"
-                    TOPOLOGY-SUBMITTER-USER "userC"}
+       topology1 (TopologyDetails. "topology1"
+                   {c/TOPOLOGY-NAME "topology-name-1"
+                    c/TOPOLOGY-SUBMITTER-USER "userC"}
                    (StormTopology.)
                    4
                    (mk-ed-map [["spout1" 0 5]
@@ -638,9 +639,9 @@
                                ["bolt2" 10 15]
                                ["bolt3" 15 20]]))
        topology2 (TopologyDetails. "topology2"
-                    {TOPOLOGY-NAME "topology-name-2"
-                     TOPOLOGY-ISOLATED-MACHINES 2
-                     TOPOLOGY-SUBMITTER-USER "userA"}
+                    {c/TOPOLOGY-NAME "topology-name-2"
+                     c/TOPOLOGY-ISOLATED-MACHINES 2
+                     c/TOPOLOGY-SUBMITTER-USER "userA"}
                     (StormTopology.)
                     4
                     (mk-ed-map [["spout11" 0 5]
@@ -648,9 +649,9 @@
                                 ["bolt13" 6 7]
                                 ["bolt14" 7 10]]))
        topology3 (TopologyDetails. "topology3"
-                    {TOPOLOGY-NAME "topology-name-3"
-                     TOPOLOGY-ISOLATED-MACHINES 5
-                     TOPOLOGY-SUBMITTER-USER "userB"}
+                    {c/TOPOLOGY-NAME "topology-name-3"
+                     c/TOPOLOGY-ISOLATED-MACHINES 5
+                     c/TOPOLOGY-SUBMITTER-USER "userB"}
                     (StormTopology.)
                     10
                     (mk-ed-map [["spout21" 0 10]
@@ -660,7 +661,7 @@
        cluster (Cluster. (nimbus/standalone-nimbus) supers {})
        node-map (Node/getAllNodesFrom cluster)
        topologies (Topologies. (to-top-map [topology1 topology2 topology3]))
-       conf {MULTITENANT-SCHEDULER-USER-POOLS {"userA" 5 "userB" 5}}
+       conf {c/MULTITENANT-SCHEDULER-USER-POOLS {"userA" 5 "userB" 5}}
        scheduler (MultitenantScheduler.)]
     (.assign (.get node-map "super0") "topology1" (list (ed 1)) cluster)
     (.assign (.get node-map "super1") "topology2" (list (ed 5)) cluster)
@@ -682,8 +683,8 @@
 (deftest test-force-free-slot-in-bad-state
   (let [supers (gen-supervisors 1)
         topology1 (TopologyDetails. "topology1"
-                                    {TOPOLOGY-NAME "topology-name-1"
-                                     TOPOLOGY-SUBMITTER-USER "userC"}
+                                    {c/TOPOLOGY-NAME "topology-name-1"
+                                     c/TOPOLOGY-SUBMITTER-USER "userC"}
                                     (StormTopology.)
                                     4
                                     (mk-ed-map [["spout1" 0 5]
@@ -699,7 +700,7 @@
         cluster (Cluster. (nimbus/standalone-nimbus) supers existing-assignments)
         node-map (Node/getAllNodesFrom cluster)
         topologies (Topologies. (to-top-map [topology1]))
-        conf {MULTITENANT-SCHEDULER-USER-POOLS {"userA" 5 "userB" 5}}
+        conf {c/MULTITENANT-SCHEDULER-USER-POOLS {"userA" 5 "userB" 5}}
         scheduler (MultitenantScheduler.)]
     (.assign (.get node-map "super0") "topology1" (list (ed 1)) cluster)
     (.prepare scheduler conf)
@@ -719,22 +720,22 @@
   (testing "Assiging same worker slot to different topologies is bad state"
     (let [supers (gen-supervisors 5)
           topology1 (TopologyDetails. "topology1"
-                      {TOPOLOGY-NAME "topology-name-1"
-                       TOPOLOGY-SUBMITTER-USER "userC"}
+                      {c/TOPOLOGY-NAME "topology-name-1"
+                       c/TOPOLOGY-SUBMITTER-USER "userC"}
                       (StormTopology.)
                       1
                       (mk-ed-map [["spout1" 0 1]]))
           topology2 (TopologyDetails. "topology2"
-                      {TOPOLOGY-NAME "topology-name-2"
-                       TOPOLOGY-ISOLATED-MACHINES 2
-                       TOPOLOGY-SUBMITTER-USER "userA"}
+                      {c/TOPOLOGY-NAME "topology-name-2"
+                       c/TOPOLOGY-ISOLATED-MACHINES 2
+                       c/TOPOLOGY-SUBMITTER-USER "userA"}
                       (StormTopology.)
                       1
                       (mk-ed-map [["spout11" 1 2]]))
           topology3 (TopologyDetails. "topology3"
-                      {TOPOLOGY-NAME "topology-name-3"
-                       TOPOLOGY-ISOLATED-MACHINES 1
-                       TOPOLOGY-SUBMITTER-USER "userB"}
+                      {c/TOPOLOGY-NAME "topology-name-3"
+                       c/TOPOLOGY-ISOLATED-MACHINES 1
+                       c/TOPOLOGY-SUBMITTER-USER "userB"}
                       (StormTopology.)
                       1
                       (mk-ed-map [["spout21" 2 3]]))
@@ -743,7 +744,7 @@
                                 "topology3" (SchedulerAssignmentImpl. "topology3" {(ExecutorDetails. 2 2) worker-slot-with-multiple-assignments})}
           cluster (Cluster. (nimbus/standalone-nimbus) supers existing-assignments)
           topologies (Topologies. (to-top-map [topology1 topology2 topology3]))
-          conf {MULTITENANT-SCHEDULER-USER-POOLS {"userA" 2 "userB" 1}}
+          conf {c/MULTITENANT-SCHEDULER-USER-POOLS {"userA" 2 "userB" 1}}
           scheduler (MultitenantScheduler.)]
       (.prepare scheduler conf)
       (.schedule scheduler topologies cluster)
@@ -761,8 +762,8 @@
     (let [supers (gen-supervisors 1)
           port-not-reported-by-supervisor 6
           topology1 (TopologyDetails. "topology1"
-                      {TOPOLOGY-NAME "topology-name-1"
-                       TOPOLOGY-SUBMITTER-USER "userA"}
+                      {c/TOPOLOGY-NAME "topology-name-1"
+                       c/TOPOLOGY-SUBMITTER-USER "userA"}
                       (StormTopology.)
                       1
                       (mk-ed-map [["spout11" 0 1]]))
@@ -787,15 +788,15 @@
           dead-supervisor "super1"
           port-not-reported-by-supervisor 6
           topology1 (TopologyDetails. "topology1"
-                      {TOPOLOGY-NAME "topology-name-1"
-                       TOPOLOGY-SUBMITTER-USER "userA"}
+                      {c/TOPOLOGY-NAME "topology-name-1"
+                       c/TOPOLOGY-SUBMITTER-USER "userA"}
                       (StormTopology.)
                       2
                       (mk-ed-map [["spout11" 0 1]
                                   ["bolt12" 1 2]]))
           topology2 (TopologyDetails. "topology2"
-                      {TOPOLOGY-NAME "topology-name-2"
-                       TOPOLOGY-SUBMITTER-USER "userA"}
+                      {c/TOPOLOGY-NAME "topology-name-2"
+                       c/TOPOLOGY-SUBMITTER-USER "userA"}
                       (StormTopology.)
                       2
                       (mk-ed-map [["spout21" 4 5]

@@ -15,16 +15,16 @@
 ;; limitations under the License.
 
 (ns backtype.storm.clojure
-  (:use [backtype.storm util])
-  (:import [backtype.storm StormSubmitter])
-  (:import [backtype.storm.generated StreamInfo])
-  (:import [backtype.storm.tuple Tuple])
-  (:import [backtype.storm.task OutputCollector IBolt TopologyContext])
-  (:import [backtype.storm.spout SpoutOutputCollector ISpout])
-  (:import [backtype.storm.utils Utils])
-  (:import [backtype.storm.clojure ClojureBolt ClojureSpout])
-  (:import [java.util List])
-  (:require [backtype.storm [thrift :as thrift]]))
+  (:require [backtype.storm [thrift :as thrift]]
+            [backtype.storm.util :as util :refer [defnk defalias]])
+  (:import [backtype.storm StormSubmitter]
+           [backtype.storm.generated StreamInfo]
+           [backtype.storm.tuple Tuple]
+           [backtype.storm.task OutputCollector IBolt TopologyContext]
+           [backtype.storm.spout SpoutOutputCollector ISpout]
+           [backtype.storm.utils Utils]
+           [backtype.storm.clojure ClojureBolt ClojureSpout]
+           [java.util List]))
 
 (defn direct-stream [fields]
   (StreamInfo. fields true))
@@ -155,14 +155,14 @@
 
 (defnk emit-bolt! [collector values
                    :stream Utils/DEFAULT_STREAM_ID :anchor []]
-  (let [^List anchor (collectify anchor)
+  (let [^List anchor (util/collectify anchor)
         values (tuple-values values collector stream) ]
     (.emit ^OutputCollector (:output-collector collector) stream anchor values)
     ))
 
 (defnk emit-direct-bolt! [collector task values
                           :stream Utils/DEFAULT_STREAM_ID :anchor []]
-  (let [^List anchor (collectify anchor)
+  (let [^List anchor (util/collectify anchor)
         values (tuple-values values collector stream) ]
     (.emitDirect ^OutputCollector (:output-collector collector) task stream anchor values)
     ))

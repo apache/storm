@@ -14,16 +14,13 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.security.serialization.BlowfishTupleSerializer-test
-  (:use [clojure test]
-        [backtype.storm.util :only (exception-cause?)]
-        [clojure.string :only (join split)]
-  )
+  (:require [backtype.storm.util :refer [exception-cause?]]
+            [clojure.string :refer [join split]]
+            [clojure.test :refer :all])
   (:import [backtype.storm.security.serialization BlowfishTupleSerializer]
            [backtype.storm.utils ListDelegate]
            [com.esotericsoftware.kryo Kryo]
-           [com.esotericsoftware.kryo.io Input Output]
-  )
-)
+           [com.esotericsoftware.kryo.io Input Output]) )
 
 (deftest test-constructor-throws-on-null-key
   (is (thrown? RuntimeException (new BlowfishTupleSerializer nil {}))
@@ -66,10 +63,10 @@
     (-> delegate (.addAll strlist))
     (-> writer-bts (.write kryo output delegate))
     (.setBuffer input (.getBuffer output))
-    (is 
+    (is
       (=
         test-text
-        (join " " (map (fn [e] (str e)) 
+        (join " " (map (fn [e] (str e))
           (-> reader-bts (.read kryo input ListDelegate) (.toArray))))
       )
       "Reads a string encrypted by another instance with a shared key"

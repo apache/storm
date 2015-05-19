@@ -15,12 +15,9 @@
 ;; limitations under the License.
 
 (ns backtype.storm.stats
-  (:import [backtype.storm.generated Nimbus Nimbus$Processor Nimbus$Iface StormTopology ShellComponent
-            NotAliveException AlreadyAliveException InvalidTopologyException GlobalStreamId
-            ClusterSummary TopologyInfo TopologySummary ExecutorSummary ExecutorStats ExecutorSpecificStats
-            SpoutStats BoltStats ErrorInfo SupervisorSummary])
-  (:use [backtype.storm util log])
-  (:use [clojure.math.numeric-tower :only [ceil]]))
+  (:require [backtype.storm.util :as util]
+            [clojure.math.numeric-tower :refer [ceil]])
+  (:import [backtype.storm.generated GlobalStreamId ExecutorStats ExecutorSpecificStats SpoutStats BoltStats]))
 
 ;;TODO: consider replacing this with some sort of RRD
 
@@ -53,7 +50,7 @@
 (defn cleanup-rolling-window
   [^RollingWindow rw]
   (let [buckets (:buckets rw)
-        cutoff (- (current-time-secs)
+        cutoff (- (util/current-time-secs)
                   (* (:num-buckets rw)
                      (:bucket-size-secs rw)))
         to-remove (filter #(< % cutoff) (keys buckets))
@@ -67,13 +64,13 @@
 (defrecord RollingWindowSet [updater extractor windows all-time])
 
 (defn rolling-window-set [updater merger extractor num-buckets & bucket-sizes]
-  (RollingWindowSet. updater extractor (dofor [s bucket-sizes] (rolling-window updater merger extractor s num-buckets)) nil)
+  (RollingWindowSet. updater extractor (util/dofor [s bucket-sizes] (rolling-window updater merger extractor s num-buckets)) nil)
   )
 
 (defn update-rolling-window-set
   ([^RollingWindowSet rws & args]
-   (let [now (current-time-secs)
-         new-windows (dofor [w (:windows rws)]
+   (let [now (util/current-time-secs)
+         new-windows (util/dofor [w (:windows rws)]
                             (apply update-rolling-window w now args))]
      (assoc rws
        :windows new-windows
@@ -124,7 +121,7 @@
   (apply merge-with merge-avg vals))
 
 (defn- extract-keyed-avg [vals]
-  (map-val extract-avg vals))
+  (util/map-val extract-avg vals))
 
 (defn- counter-extract [v]
   (if v v {}))
@@ -203,7 +200,7 @@
 
 (defmacro update-executor-stat!
   [stats path & args]
-  (let [path (collectify path)]
+  (let [path (util/collectify path)]
     `(swap! (-> ~stats ~@path) update-rolling-window-set ~@args)))
 
 (defmacro stats-rate
@@ -267,7 +264,7 @@
 
 (defn- value-stats
   [stats fields]
-  (into {} (dofor [f fields]
+  (into {} (util/dofor [f fields]
                   [f (value-rolling-window-set @(f stats))])))
 
 (defn- value-common-stats
@@ -290,7 +287,7 @@
          (value-stats stats SPOUT-FIELDS)
          {:type :spout}))
 
-(defmulti render-stats! class-selector)
+(defmulti render-stats! util/class-selector)
 
 (defmethod render-stats! SpoutExecutorStats
   [stats]
@@ -301,7 +298,7 @@
   (value-bolt-stats! stats))
 
 (defmulti thriftify-specific-stats :type)
-(defmulti clojurify-specific-stats class-selector)
+(defmulti clojurify-specific-stats util/class-selector)
 
 (defn window-set-converter
   ([stats key-fn first-key-fun]

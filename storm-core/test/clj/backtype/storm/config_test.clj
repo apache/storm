@@ -14,26 +14,25 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.config-test
-  (:import [backtype.storm Config ConfigValidation])
-  (:import [backtype.storm.scheduler TopologyDetails])
-  (:import [backtype.storm.utils Utils])
-  (:use [clojure test])
-  (:use [backtype.storm config util])
-  )
+  (:require [backtype.storm.config :as c]
+            [backtype.storm.util :as util]
+            [clojure.test :refer :all])
+  (:import [backtype.storm ConfigValidation]
+           [backtype.storm.utils Utils]))
 
 (deftest test-validity
-  (is (Utils/isValidConf {TOPOLOGY-DEBUG true "q" "asasdasd" "aaa" (Integer. "123") "bbb" (Long. "456") "eee" [1 2 (Integer. "3") (Long. "4")]}))
+  (is (Utils/isValidConf {c/TOPOLOGY-DEBUG true "q" "asasdasd" "aaa" (Integer. "123") "bbb" (Long. "456") "eee" [1 2 (Integer. "3") (Long. "4")]}))
   (is (not (Utils/isValidConf {"qqq" (backtype.storm.utils.Utils.)})))
   )
 
 (deftest test-power-of-2-validator
   (let [validator ConfigValidation/PowerOf2Validator]
     (doseq [x [42.42 42 23423423423 -33 -32 -1 -0.00001 0 -0 "Forty-two"]]
-      (is (thrown-cause? java.lang.IllegalArgumentException
+      (is (util/thrown-cause? java.lang.IllegalArgumentException
         (.validateField validator "test" x))))
 
     (doseq [x [64 4294967296 1 nil]]
-      (is (nil? (try 
+      (is (nil? (try
                   (.validateField validator "test" x)
                   (catch Exception e e)))))))
 
@@ -46,12 +45,12 @@
                [nil]
                [nil "nil"]
               ]]
-      (is (thrown-cause-with-msg?
+      (is (util/thrown-cause-with-msg?
             java.lang.IllegalArgumentException #"(?i).*each element.*"
         (.validateField validator "test" x))))
 
     (doseq [x ["not a list at all"]]
-      (is (thrown-cause-with-msg?
+      (is (util/thrown-cause-with-msg?
             java.lang.IllegalArgumentException #"(?i).*must be an iterable.*"
         (.validateField validator "test" x))))
 
@@ -61,7 +60,7 @@
                ["42" "64"]
                nil
               ]]
-    (is (nil? (try 
+    (is (nil? (try
                 (.validateField validator "test" x)
                 (catch Exception e e)))))))
 
@@ -69,20 +68,20 @@
   (let [validator ConfigValidation/IntegerValidator]
     (.validateField validator "test" nil)
     (.validateField validator "test" 1000)
-    (is (thrown-cause? java.lang.IllegalArgumentException
+    (is (util/thrown-cause? java.lang.IllegalArgumentException
           (.validateField validator "test" 1.34)))
-    (is (thrown-cause? java.lang.IllegalArgumentException
+    (is (util/thrown-cause? java.lang.IllegalArgumentException
           (.validateField validator "test" (inc Integer/MAX_VALUE))))))
 
 (deftest test-integers-validator
   (let [validator ConfigValidation/IntegersValidator]
     (.validateField validator "test" nil)
     (.validateField validator "test" [1000 0 -1000])
-    (is (thrown-cause? java.lang.IllegalArgumentException
+    (is (util/thrown-cause? java.lang.IllegalArgumentException
           (.validateField validator "test" [0 10 1.34])))
-    (is (thrown-cause? java.lang.IllegalArgumentException
+    (is (util/thrown-cause? java.lang.IllegalArgumentException
           (.validateField validator "test" [0 nil])))
-    (is (thrown-cause? java.lang.IllegalArgumentException
+    (is (util/thrown-cause? java.lang.IllegalArgumentException
           (.validateField validator "test" [-100 (inc Integer/MAX_VALUE)])))))
 
 (deftest test-double-validator
@@ -95,32 +94,32 @@
     (.validateField validator "test" Double/MAX_VALUE)))
 
 (deftest test-topology-workers-is-integer
-  (let [validator (CONFIG-SCHEMA-MAP TOPOLOGY-WORKERS)]
+  (let [validator (c/CONFIG-SCHEMA-MAP c/TOPOLOGY-WORKERS)]
     (.validateField validator "test" 42)
-    (is (thrown-cause? java.lang.IllegalArgumentException
+    (is (util/thrown-cause? java.lang.IllegalArgumentException
       (.validateField validator "test" 3.14159)))))
 
 (deftest test-topology-stats-sample-rate-is-float
-  (let [validator (CONFIG-SCHEMA-MAP TOPOLOGY-STATS-SAMPLE-RATE)]
+  (let [validator (c/CONFIG-SCHEMA-MAP c/TOPOLOGY-STATS-SAMPLE-RATE)]
     (.validateField validator "test" 0.5)
     (.validateField validator "test" 10)
     (.validateField validator "test" Double/MAX_VALUE)))
 
 (deftest test-isolation-scheduler-machines-is-map
-  (let [validator (CONFIG-SCHEMA-MAP ISOLATION-SCHEDULER-MACHINES)]
-    (is (nil? (try 
-                (.validateField validator "test" {}) 
+  (let [validator (c/CONFIG-SCHEMA-MAP c/ISOLATION-SCHEDULER-MACHINES)]
+    (is (nil? (try
+                (.validateField validator "test" {})
                 (catch Exception e e))))
-    (is (nil? (try 
-                (.validateField validator "test" {"host0" 1 "host1" 2}) 
+    (is (nil? (try
+                (.validateField validator "test" {"host0" 1 "host1" 2})
                 (catch Exception e e))))
-    (is (thrown-cause? java.lang.IllegalArgumentException
+    (is (util/thrown-cause? java.lang.IllegalArgumentException
       (.validateField validator "test" 42)))))
 
 (deftest test-positive-integer-validator
   (let [validator ConfigValidation/PositiveIntegerValidator]
     (doseq [x [42.42 -32 0 -0 "Forty-two"]]
-      (is (thrown-cause? java.lang.IllegalArgumentException
+      (is (util/thrown-cause? java.lang.IllegalArgumentException
         (.validateField validator "test" x))))
 
     (doseq [x [42 4294967296 1 nil]]
@@ -131,19 +130,19 @@
 (deftest test-worker-childopts-is-string-or-string-list
   (let [pass-cases [nil "some string" ["some" "string" "list"]]]
     (testing "worker.childopts validates"
-      (let [validator (CONFIG-SCHEMA-MAP WORKER-CHILDOPTS)]
+      (let [validator (c/CONFIG-SCHEMA-MAP c/WORKER-CHILDOPTS)]
         (doseq [value pass-cases]
           (is (nil? (try
                       (.validateField validator "test" value)
                       (catch Exception e e)))))
-        (is (thrown-cause? java.lang.IllegalArgumentException
+        (is (util/thrown-cause? java.lang.IllegalArgumentException
           (.validateField validator "test" 42)))))
 
     (testing "topology.worker.childopts validates"
-      (let [validator (CONFIG-SCHEMA-MAP TOPOLOGY-WORKER-CHILDOPTS)]
+      (let [validator (c/CONFIG-SCHEMA-MAP c/TOPOLOGY-WORKER-CHILDOPTS)]
         (doseq [value pass-cases]
           (is (nil? (try
                       (.validateField validator "test" value)
                       (catch Exception e e)))))
-        (is (thrown-cause? java.lang.IllegalArgumentException
+        (is (util/thrown-cause? java.lang.IllegalArgumentException
           (.validateField validator "test" 42)))))))

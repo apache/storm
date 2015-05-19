@@ -14,13 +14,13 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.scheduler-test
-  (:use [clojure test])
-  (:use [backtype.storm config testing])
-  (:use [backtype.storm.scheduler EvenScheduler])
-  (:require [backtype.storm.daemon [nimbus :as nimbus]])
-  (:import [backtype.storm.generated StormTopology])
-  (:import [backtype.storm.scheduler Cluster SupervisorDetails WorkerSlot ExecutorDetails
-            SchedulerAssignmentImpl Topologies TopologyDetails]))
+  (:use [backtype.storm config testing]
+        [backtype.storm.scheduler EvenScheduler])
+  (:require [backtype.storm.daemon [nimbus :as nimbus]]
+            [clojure.test :refer :all])
+  (:import [backtype.storm.generated StormTopology]
+           [backtype.storm.scheduler Cluster SupervisorDetails WorkerSlot ExecutorDetails
+                                     SchedulerAssignmentImpl Topologies TopologyDetails]))
 
 (defn clojurify-executor->slot [executorToSlot]
   (into {} (for [[executor slot] executorToSlot]
@@ -180,7 +180,7 @@
     (is (= #{1 3 5} (set (.getUsedPorts cluster supervisor1))))
     (is (= #{2 4} (set (.getUsedPorts cluster supervisor2))))
     (is (= #{1 3 5} (set (.getUsedPorts cluster supervisor1))))
-    
+
     ;; test Cluster.getAvailablePorts
     (is (= #{7 9} (set (.getAvailablePorts cluster supervisor1))))
     (is (= #{6 8 10} (set (.getAvailablePorts cluster supervisor2))))

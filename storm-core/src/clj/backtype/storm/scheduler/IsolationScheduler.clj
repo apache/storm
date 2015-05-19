@@ -14,40 +14,42 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.scheduler.IsolationScheduler
-  (:use [backtype.storm util config log])
-  (:require [backtype.storm.scheduler.DefaultScheduler :as DefaultScheduler])
-  (:import [java.util HashSet Set List LinkedList ArrayList Map HashMap])
-  (:import [backtype.storm.scheduler IScheduler Topologies
-            Cluster TopologyDetails WorkerSlot SchedulerAssignment
-            EvenScheduler ExecutorDetails])
+  (:require [backtype.storm.scheduler.DefaultScheduler :as DefaultScheduler]
+            [backtype.storm.log :refer [log-warn]]
+            [backtype.storm.util :as util]
+            [backtype.storm.config :as c])
+  (:import [java.util HashSet Set List LinkedList ArrayList Map HashMap]
+           [backtype.storm.scheduler IScheduler Topologies
+                                     Cluster TopologyDetails WorkerSlot SchedulerAssignment
+                                     EvenScheduler ExecutorDetails])
   (:gen-class
     :init init
     :constructors {[] []}
-    :state state 
+    :state state
     :implements [backtype.storm.scheduler.IScheduler]))
 
 (defn -init []
-  [[] (container)])
+  [[] (util/container)])
 
 (defn -prepare [this conf]
-  (container-set! (.state this) conf))
+  (util/container-set! (.state this) conf))
 
 (defn- compute-worker-specs "Returns mutable set of sets of executors"
   [^TopologyDetails details]
   (->> (.getExecutorToComponent details)
-       reverse-map
+       util/reverse-map
        (map second)
        (apply concat)
-       (map vector (repeat-seq (range (.getNumWorkers details))))
+       (map vector (util/repeat-seq (range (.getNumWorkers details))))
        (group-by first)
-       (map-val #(map second %))
+       (util/map-val #(map second %))
        vals
        (map set)
        (HashSet.)
        ))
 
 (defn isolated-topologies [conf topologies]
-  (let [tset (-> conf (get ISOLATION-SCHEDULER-MACHINES) keys set)]
+  (let [tset (-> conf (get c/ISOLATION-SCHEDULER-MACHINES) keys set)]
     (filter (fn [^TopologyDetails t] (contains? tset (.getName t))) topologies)
     ))
 
@@ -58,10 +60,10 @@
        (apply merge)))
 
 (defn machine-distribution [conf ^TopologyDetails topology]
-  (let [name->machines (get conf ISOLATION-SCHEDULER-MACHINES)
+  (let [name->machines (get conf c/ISOLATION-SCHEDULER-MACHINES)
         machines (get name->machines (.getName topology))
         workers (.getNumWorkers topology)]
-    (-> (integer-divided workers machines)
+    (-> (util/integer-divided workers machines)
         (dissoc 0)
         (HashMap.)
         )))
@@ -75,7 +77,7 @@
   (letfn [(to-slot-specs [^SchedulerAssignment ass]
             (->> ass
                  .getExecutorToSlot
-                 reverse-map
+                 util/reverse-map
                  (map (fn [[slot executors]]
                         [slot (.getTopologyId ass) (set executors)]))))]
   (->> cluster
@@ -93,7 +95,7 @@
 
 ;; returns list of list of slots, reverse sorted by number of slots
 (defn- host-assignable-slots [^Cluster cluster]
-  (-<> cluster
+  (util/-<> cluster
        .getAssignableSlots
        (group-by #(.getHost cluster (.getNodeId ^WorkerSlot %)) <>)
        (dissoc <> nil)
@@ -155,7 +157,7 @@
 ;; run default scheduler on isolated topologies that didn't have enough slots + non-isolated topologies on remaining machines
 ;; set blacklist to what it was initially
 (defn -schedule [this ^Topologies topologies ^Cluster cluster]
-  (let [conf (container-get (.state this))        
+  (let [conf (util/container-get (.state this))
         orig-blacklist (HashSet. (.getBlacklistedHosts cluster))
         iso-topologies (isolated-topologies conf (.getTopologies topologies))
         iso-ids-set (->> iso-topologies (map #(.getId ^TopologyDetails %)) set)
@@ -180,7 +182,7 @@
               (.freeSlot cluster slot)
               ))
           )))
-    
+
     (let [host->used-slots (host->used-slots cluster)
           ^LinkedList sorted-assignable-hosts (host-assignable-slots cluster)]
       ;; TODO: can improve things further by ordering topologies in terms of who needs the least workers
@@ -196,14 +198,14 @@
               (.assign cluster slot top-id executors-set))
             (.blacklistHost cluster host))
           )))
-    
+
     (let [failed-iso-topologies (->> topology-worker-specs
                                   (mapcat (fn [[top-id worker-specs]]
                                     (if-not (empty? worker-specs) [top-id])
                                     )))]
       (if (empty? failed-iso-topologies)
         ;; run default scheduler on non-isolated topologies
-        (-<> topology-worker-specs
+        (util/-<> topology-worker-specs
              allocated-topologies
              (leftover-topologies topologies <>)
              (DefaultScheduler/default-schedule <> cluster))

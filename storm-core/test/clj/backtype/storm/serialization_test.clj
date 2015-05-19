@@ -14,17 +14,17 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.serialization-test
-  (:use [clojure test])
+  (:require [backtype.storm.util :as util]
+            [backtype.storm.config :as c]
+            [clojure.test :refer :all])
   (:import [backtype.storm.serialization KryoTupleSerializer KryoTupleDeserializer
-            KryoValuesSerializer KryoValuesDeserializer])
-  (:import [backtype.storm.testing TestSerObject TestKryoDecorator])
-  (:import [backtype.storm ConfigValidation])
-  (:use [backtype.storm util config])
-  )
+                                         KryoValuesSerializer KryoValuesDeserializer]
+           [backtype.storm.testing TestSerObject TestKryoDecorator]
+           [backtype.storm ConfigValidation]))
 
 
 (defn mk-conf [extra]
-  (merge (read-default-config) extra))
+  (merge (c/read-default-config) extra))
 
 (defn serialize [vals conf]
   (let [serializer (KryoValuesSerializer. (mk-conf conf))]
@@ -60,21 +60,21 @@
 )
 
 (deftest test-java-serialization
-  (letlocals
+  (util/letlocals
    (bind obj (TestSerObject. 1 2))
    (is (thrown? Exception
-     (roundtrip [obj] {TOPOLOGY-KRYO-REGISTER {"backtype.storm.testing.TestSerObject" nil}
-                       TOPOLOGY-FALL-BACK-ON-JAVA-SERIALIZATION false})))
-   (is (= [obj] (roundtrip [obj] {TOPOLOGY-FALL-BACK-ON-JAVA-SERIALIZATION true})))))
+     (roundtrip [obj] {c/TOPOLOGY-KRYO-REGISTER {"backtype.storm.testing.TestSerObject" nil}
+                       c/TOPOLOGY-FALL-BACK-ON-JAVA-SERIALIZATION false})))
+   (is (= [obj] (roundtrip [obj] {c/TOPOLOGY-FALL-BACK-ON-JAVA-SERIALIZATION true})))))
 
 (deftest test-kryo-decorator
-  (letlocals
+  (util/letlocals
    (bind obj (TestSerObject. 1 2))
    (is (thrown? Exception
-                (roundtrip [obj] {TOPOLOGY-FALL-BACK-ON-JAVA-SERIALIZATION false})))
-   
-   (is (= [obj] (roundtrip [obj] {TOPOLOGY-KRYO-DECORATORS ["backtype.storm.testing.TestKryoDecorator"]
-                                  TOPOLOGY-FALL-BACK-ON-JAVA-SERIALIZATION false})))))
+                (roundtrip [obj] {c/TOPOLOGY-FALL-BACK-ON-JAVA-SERIALIZATION false})))
+
+   (is (= [obj] (roundtrip [obj] {c/TOPOLOGY-KRYO-DECORATORS ["backtype.storm.testing.TestKryoDecorator"]
+                                  c/TOPOLOGY-FALL-BACK-ON-JAVA-SERIALIZATION false})))))
 
 (defn mk-string [size]
   (let [builder (StringBuilder.)]

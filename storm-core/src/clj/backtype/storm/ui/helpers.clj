@@ -14,26 +14,19 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.ui.helpers
-  (:use compojure.core)
-  (:use [hiccup core page-helpers])
-  (:use [clojure
-         [string :only [blank? join]]
-         [walk :only [keywordize-keys]]])
-  (:use [backtype.storm config log])
-  (:use [backtype.storm.util :only [clojurify-structure uuid defnk url-encode not-nil?]])
-  (:use [clj-time coerce format])
-  (:import [backtype.storm.generated ExecutorInfo ExecutorSummary])
-  (:import [java.util EnumSet])
-  (:import [org.eclipse.jetty.server Server]
+  (:require [clojure.string :as str]
+            [backtype.storm.util :as util :refer [defnk]]
+            [hiccup.core :as core :refer [defelem]]
+            [ring.util.servlet])
+  (:import [backtype.storm.generated ExecutorInfo ExecutorSummary]
+           [java.util EnumSet]
+           [org.eclipse.jetty.server Server]
            [org.eclipse.jetty.server.nio SelectChannelConnector]
            [org.eclipse.jetty.server.ssl SslSocketConnector]
            [org.eclipse.jetty.servlet ServletHolder FilterMapping]
-	   [org.eclipse.jetty.util.ssl SslContextFactory]
+           [org.eclipse.jetty.util.ssl SslContextFactory]
            [org.eclipse.jetty.server DispatcherType]
-           [org.eclipse.jetty.servlets CrossOriginFilter])
-  (:require [ring.util servlet])
-  (:require [compojure.route :as route]
-            [compojure.handler :as handler]))
+           [org.eclipse.jetty.servlets CrossOriginFilter]))
 
 (defn split-divide [val divider]
   [(Integer. (int (/ val divider))) (mod val divider)]
@@ -70,7 +63,7 @@
                  (str val suffix))
                dividers
                ))]
-    (join " " (reverse strs))
+    (str/join " " (reverse strs))
     ))
 
 (defn pretty-uptime-sec [secs]
@@ -116,7 +109,7 @@
 
 (defn url-format [fmt & args]
   (String/format fmt
-    (to-array (map #(url-encode (str %)) args))))
+    (to-array (map #(util/url-encode (str %)) args))))
 
 (defn to-tasks [^ExecutorInfo e]
   (let [start (.get_task_start e)
@@ -134,7 +127,7 @@
   (str "[" (.get_task_start e) "-" (.get_task_end e) "]"))
 
 (defn unauthorized-user-html [user]
-  [[:h2 "User '" (escape-html user) "' is not authorized."]])
+  [[:h2 "User '" (core/escape-html user) "' is not authorized."]])
 
 (defn- mk-ssl-connector [port ks-path ks-password ks-type key-password
                          ts-path ts-password ts-type need-client-auth want-client-auth]
@@ -146,7 +139,7 @@
                             (.setKeyStoreType ks-type)
                             (.setKeyStorePassword ks-password)
                             (.setKeyManagerPassword key-password))]
-    (if (and (not-nil? ts-path) (not-nil? ts-password) (not-nil? ts-type))
+    (if (and (util/not-nil? ts-path) (util/not-nil? ts-password) (util/not-nil? ts-type))
       ((.setTrustStore sslContextFactory ts-path)
        (.setTrustStoreType sslContextFactory ts-type)
        (.setTrustStoreType sslContextFactory ts-password)))
@@ -211,7 +204,7 @@
                     (.addConnector connector)
                     (.setSendDateHeader true))
         https-port (options :https-port)]
-    (if (and (not-nil? https-port) (> https-port 0)) (remove-non-ssl-connectors server))
+    (if (and (util/not-nil? https-port) (> https-port 0)) (remove-non-ssl-connectors server))
     server))
 
 (defn storm-run-jetty

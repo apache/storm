@@ -14,26 +14,26 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.messaging-test
-  (:use [clojure test])
-  (:import [backtype.storm.testing TestWordCounter TestWordSpout TestGlobalCount TestEventLogSpout TestEventOrderCheckBolt])
-  (:use [backtype.storm testing config])
-  (:use [backtype.storm.daemon common])
-  (:require [backtype.storm [thrift :as thrift]]))
+  (:require [backtype.storm.thrift :as thrift]
+            [backtype.storm.config :as c]
+            [backtype.storm.testing :as testing]
+            [clojure.test :refer :all])
+  (:import [backtype.storm.testing TestWordCounter TestWordSpout TestGlobalCount TestEventLogSpout TestEventOrderCheckBolt]))
 
 (deftest test-local-transport
-  (doseq [transport-on? [false true]] 
-    (with-simulated-time-local-cluster [cluster :supervisors 1 :ports-per-supervisor 2
-                                        :daemon-conf {TOPOLOGY-WORKERS 2
-                                                      STORM-LOCAL-MODE-ZMQ 
-                                                      (if transport-on? true false) 
-                                                      STORM-MESSAGING-TRANSPORT 
+  (doseq [transport-on? [false true]]
+    (testing/with-simulated-time-local-cluster [cluster :supervisors 1 :ports-per-supervisor 2
+                                        :daemon-conf {c/TOPOLOGY-WORKERS 2
+                                                      c/STORM-LOCAL-MODE-ZMQ
+                                                      (if transport-on? true false)
+                                                      c/STORM-MESSAGING-TRANSPORT
                                                       "backtype.storm.messaging.netty.Context"}]
       (let [topology (thrift/mk-topology
                        {"1" (thrift/mk-spout-spec (TestWordSpout. true) :parallelism-hint 2)}
                        {"2" (thrift/mk-bolt-spec {"1" :shuffle} (TestGlobalCount.)
                                                  :parallelism-hint 6)
                         })
-            results (complete-topology cluster
+            results (testing/complete-topology cluster
                                        topology
                                        ;; important for test that
                                        ;; #tuples = multiple of 4 and 6
@@ -51,11 +51,11 @@
                                                            ["a"] ["b"]
                                                            ]}
                                        )]
-        (is (ms= (apply concat (repeat 6 [[1] [2] [3] [4]]))
-                 (read-tuples results "2")))))))
+        (is (testing/ms= (apply concat (repeat 6 [[1] [2] [3] [4]]))
+                 (testing/read-tuples results "2")))))))
 
 (extend-type TestEventLogSpout
-  CompletableSpout
+  testing/CompletableSpout
   (exhausted? [this]
     (-> this .completed))
   (cleanup [this]
@@ -64,26 +64,26 @@
     ))
 
 ;; Test Adding more receiver threads won't violate the message delivery order gurantee
-(deftest test-receiver-message-order 
-  (with-simulated-time-local-cluster [cluster :supervisors 1 :ports-per-supervisor 2
-                                        :daemon-conf {TOPOLOGY-WORKERS 2
-                                                      ;; Configure multiple receiver threads per worker 
-                                                      WORKER-RECEIVER-THREAD-COUNT 2
-                                                      STORM-LOCAL-MODE-ZMQ  true 
-                                                      STORM-MESSAGING-TRANSPORT 
+(deftest test-receiver-message-order
+  (testing/with-simulated-time-local-cluster [cluster :supervisors 1 :ports-per-supervisor 2
+                                        :daemon-conf {c/TOPOLOGY-WORKERS 2
+                                                      ;; Configure multiple receiver threads per worker
+                                                      c/WORKER-RECEIVER-THREAD-COUNT 2
+                                                      c/STORM-LOCAL-MODE-ZMQ  true
+                                                      c/STORM-MESSAGING-TRANSPORT
                                                       "backtype.storm.messaging.netty.Context"}]
       (let [topology (thrift/mk-topology
-                       
+
                        ;; TestEventLogSpout output(sourceId, eventId), eventId is Monotonically increasing
                        {"1" (thrift/mk-spout-spec (TestEventLogSpout. 4000) :parallelism-hint 8)}
-                       
+
                        ;; field grouping, message from same "source" task will be delivered to same bolt task
-                       ;; When received message order is not kept, Emit an error Tuple 
+                       ;; When received message order is not kept, Emit an error Tuple
                        {"2" (thrift/mk-bolt-spec {"1" ["source"]} (TestEventOrderCheckBolt.)
                                                  :parallelism-hint 4)
                         })
-            results (complete-topology cluster
+            results (testing/complete-topology cluster
                                        topology)]
-        
+
         ;; No error Tuple from Bolt TestEventOrderCheckBolt
-        (is (empty? (read-tuples results "2"))))))
+        (is (empty? (testing/read-tuples results "2"))))))

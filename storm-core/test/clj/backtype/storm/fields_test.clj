@@ -14,10 +14,10 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.fields-test
-  (:use [clojure test])
-  (:import [backtype.storm.tuple Fields])
-  (:import [java.util List])
-  (:import [java.util Iterator]))
+  (:require [clojure.test :refer :all])
+  (:import [backtype.storm.tuple Fields]
+           [java.util List]
+           [java.util Iterator]))
 
 (deftest test-fields-constructor
   (testing "constructor"

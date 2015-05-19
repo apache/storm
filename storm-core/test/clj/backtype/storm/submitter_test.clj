@@ -14,10 +14,9 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.submitter-test
-  (:use [clojure test])
   (:use [backtype.storm config testing])
-  (:import [backtype.storm StormSubmitter])
-  )
+  (:require [clojure.test :refer :all])
+  (:import [backtype.storm StormSubmitter]))
 
 (deftest test-md5-digest-secret-generation
   (testing "No payload or scheme are generated when already present"

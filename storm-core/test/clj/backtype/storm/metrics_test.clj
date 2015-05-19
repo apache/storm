@@ -14,24 +14,20 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.metrics-test
-  (:use [clojure test])
-  (:import [backtype.storm.topology TopologyBuilder])
-  (:import [backtype.storm.generated InvalidTopologyException SubmitOptions TopologyInitialStatus])
-  (:import [backtype.storm.testing TestWordCounter TestWordSpout TestGlobalCount
-            TestAggregatesCounter TestConfBolt AckFailMapTracker PythonShellMetricsBolt PythonShellMetricsSpout])
-  (:import [backtype.storm.task ShellBolt])
-  (:import [backtype.storm.spout ShellSpout])
-  (:import [backtype.storm.metric.api CountMetric IMetricsConsumer$DataPoint IMetricsConsumer$TaskInfo])
-  (:import [backtype.storm.metric.api.rpc CountShellMetric])
-  (:import [backtype.storm.utils Utils])
-  
-  (:use [backtype.storm testing clojure config])
-  (:use [backtype.storm.daemon common])
-  (:use [backtype.storm.metric testing])
-  (:require [backtype.storm [thrift :as thrift]]))
+  (:use [clojure.test]
+        [backtype.storm testing clojure config]
+        [backtype.storm.daemon common])
+  (:require [backtype.storm.thrift :as thrift]
+            [backtype.storm.testing :as testing]
+            [backtype.storm.metric.testing :as metric-testing]
+            [backtype.storm.config :as c]
+            [backtype.storm.clojure :refer :all]
+            [clojure.test :refer :all])
+  (:import [backtype.storm.testing AckFailMapTracker PythonShellMetricsBolt PythonShellMetricsSpout]
+           [backtype.storm.metric.api CountMetric]))
 
 (defbolt acking-bolt {} {:prepare true}
-  [conf context collector]  
+  [conf context collector]
   (bolt
    (execute [tuple]
             (ack! collector tuple))))
@@ -59,26 +55,26 @@
 (defbolt count-acks {} {:prepare true}
   [conf context collector]
 
-  (let [mycustommetric (CountMetric.)]   
+  (let [mycustommetric (CountMetric.)]
     (.registerMetric context "my-custom-metric" mycustommetric 5)
     (bolt
      (execute [tuple]
               (.incr mycustommetric)
               (ack! collector tuple)))))
 
-(def metrics-data backtype.storm.metric.testing/buffer)
+(def metrics-data metric-testing/buffer)
 
 (defn wait-for-atleast-N-buckets! [N comp-id metric-name cluster]
-  (while-timeout TEST-TIMEOUT-MS
+  (testing/while-timeout TEST-TIMEOUT-MS
       (let [taskid->buckets (-> @metrics-data (get comp-id) (get metric-name))]
         (or
          (and (not= N 0) (nil? taskid->buckets))
          (not-every? #(<= N %) (map (comp count second) taskid->buckets))))
       ;;(log-message "Waiting for at least " N " timebuckets to appear in FakeMetricsConsumer for component id " comp-id " and metric name " metric-name " metrics " (-> @metrics-data (get comp-id) (get metric-name)))
     (if cluster
-      (advance-cluster-time cluster 1)
+      (testing/advance-cluster-time cluster 1)
       (Thread/sleep 10))))
-    
+
 
 (defn lookup-bucket-by-comp-id-&-metric-name! [comp-id metric-name]
   (-> @metrics-data
@@ -98,7 +94,7 @@
   `(is (not-empty (lookup-bucket-by-comp-id-&-metric-name! ~comp-id ~metric-name))))
 
 (deftest test-custom-metric
-  (with-simulated-time-local-cluster
+  (testing/with-simulated-time-local-cluster
     [cluster :daemon-conf {TOPOLOGY-METRICS-CONSUMER-REGISTER
                            [{"class" "clojure.storm.metric.testing.FakeMetricConsumer"}]
                            "storm.zookeeper.connection.timeout" 30000
@@ -107,50 +103,50 @@
     (let [feeder (feeder-spout ["field1"])
           topology (thrift/mk-topology
                     {"1" (thrift/mk-spout-spec feeder)}
-                    {"2" (thrift/mk-bolt-spec {"1" :global} count-acks)})]      
-      (submit-local-topology (:nimbus cluster) "metrics-tester" {} topology)
+                    {"2" (thrift/mk-bolt-spec {"1" :global} count-acks)})]
+      (testing/submit-local-topology (:nimbus cluster) "metrics-tester" {} topology)
 
       (.feed feeder ["a"] 1)
-      (advance-cluster-time cluster 6)
-      (assert-buckets! "2" "my-custom-metric" [1] cluster)
-            
-      (advance-cluster-time cluster 5)
-      (assert-buckets! "2" "my-custom-metric" [1 0] cluster)
-
-      (advance-cluster-time cluster 20)
-      (assert-buckets! "2" "my-custom-metric" [1 0 0 0 0 0] cluster)
-      
-      (.feed feeder ["b"] 2)
-      (.feed feeder ["c"] 3)               
-      (advance-cluster-time cluster 5)
-      (assert-buckets! "2" "my-custom-metric" [1 0 0 0 0 0 2] cluster))))
-
-(deftest test-custom-metric-with-multi-tasks
-  (with-simulated-time-local-cluster
-    [cluster :daemon-conf {TOPOLOGY-METRICS-CONSUMER-REGISTER
-                           [{"class" "clojure.storm.metric.testing.FakeMetricConsumer"}]
-                           "storm.zookeeper.connection.timeout" 30000
-                           "storm.zookeeper.session.timeout" 60000
-                           }]
-    (let [feeder (feeder-spout ["field1"])
-          topology (thrift/mk-topology
-                     {"1" (thrift/mk-spout-spec feeder)}
-                     {"2" (thrift/mk-bolt-spec {"1" :all} count-acks :p 1 :conf {TOPOLOGY-TASKS 2})})]
-      (submit-local-topology (:nimbus cluster) "metrics-tester-with-multitasks" {} topology)
-
-      (.feed feeder ["a"] 1)
-      (advance-cluster-time cluster 6)
+      (testing/advance-cluster-time cluster 6)
       (assert-buckets! "2" "my-custom-metric" [1] cluster)
 
-      (advance-cluster-time cluster 5)
+      (testing/advance-cluster-time cluster 5)
       (assert-buckets! "2" "my-custom-metric" [1 0] cluster)
 
-      (advance-cluster-time cluster 20)
+      (testing/advance-cluster-time cluster 20)
       (assert-buckets! "2" "my-custom-metric" [1 0 0 0 0 0] cluster)
 
       (.feed feeder ["b"] 2)
       (.feed feeder ["c"] 3)
-      (advance-cluster-time cluster 5)
+      (testing/advance-cluster-time cluster 5)
+      (assert-buckets! "2" "my-custom-metric" [1 0 0 0 0 0 2] cluster))))
+
+(deftest test-custom-metric-with-multi-tasks
+  (testing/with-simulated-time-local-cluster
+    [cluster :daemon-conf {c/TOPOLOGY-METRICS-CONSUMER-REGISTER
+                           [{"class" "clojure.storm.metric.testing.FakeMetricConsumer"}]
+                           "storm.zookeeper.connection.timeout" 30000
+                           "storm.zookeeper.session.timeout" 60000
+                           }]
+    (let [feeder (testing/feeder-spout ["field1"])
+          topology (thrift/mk-topology
+                     {"1" (thrift/mk-spout-spec feeder)}
+                     {"2" (thrift/mk-bolt-spec {"1" :all} count-acks :p 1 :conf {c/TOPOLOGY-TASKS 2})})]
+      (testing/submit-local-topology (:nimbus cluster) "metrics-tester-with-multitasks" {} topology)
+
+      (.feed feeder ["a"] 1)
+      (testing/advance-cluster-time cluster 6)
+      (assert-buckets! "2" "my-custom-metric" [1] cluster)
+
+      (testing/advance-cluster-time cluster 5)
+      (assert-buckets! "2" "my-custom-metric" [1 0] cluster)
+
+      (testing/advance-cluster-time cluster 20)
+      (assert-buckets! "2" "my-custom-metric" [1 0 0 0 0 0] cluster)
+
+      (.feed feeder ["b"] 2)
+      (.feed feeder ["c"] 3)
+      (testing/advance-cluster-time cluster 5)
       (assert-buckets! "2" "my-custom-metric" [1 0 0 0 0 0 2] cluster))))
 
 (defn mk-shell-bolt-with-metrics-spec
@@ -160,31 +156,31 @@
          (PythonShellMetricsBolt. command) kwargs)))
 
 (deftest test-custom-metric-with-multilang-py
-  (with-simulated-time-local-cluster 
-    [cluster :daemon-conf {TOPOLOGY-METRICS-CONSUMER-REGISTER
+  (testing/with-simulated-time-local-cluster
+    [cluster :daemon-conf {c/TOPOLOGY-METRICS-CONSUMER-REGISTER
                        [{"class" "clojure.storm.metric.testing.FakeMetricConsumer"}]
                        "storm.zookeeper.connection.timeout" 30000
                        "storm.zookeeper.session.timeout" 60000
                        }]
-    (let [feeder (feeder-spout ["field1"])
+    (let [feeder (testing/feeder-spout ["field1"])
           topology (thrift/mk-topology
                      {"1" (thrift/mk-spout-spec feeder)}
                      {"2" (mk-shell-bolt-with-metrics-spec {"1" :global} ["python" "tester_bolt_metrics.py"])})]
-      (submit-local-topology (:nimbus cluster) "shell-metrics-tester" {} topology)
+      (testing/submit-local-topology (:nimbus cluster) "shell-metrics-tester" {} topology)
 
       (.feed feeder ["a"] 1)
-      (advance-cluster-time cluster 6)
+      (testing/advance-cluster-time cluster 6)
       (assert-buckets! "2" "my-custom-shell-metric" [1] cluster)
-            
-      (advance-cluster-time cluster 5)
+
+      (testing/advance-cluster-time cluster 5)
       (assert-buckets! "2" "my-custom-shell-metric" [1 0] cluster)
 
-      (advance-cluster-time cluster 20)
+      (testing/advance-cluster-time cluster 20)
       (assert-buckets! "2" "my-custom-shell-metric" [1 0 0 0 0 0] cluster)
-      
+
       (.feed feeder ["b"] 2)
-      (.feed feeder ["c"] 3)               
-      (advance-cluster-time cluster 5)
+      (.feed feeder ["c"] 3)
+      (testing/advance-cluster-time cluster 5)
       (assert-buckets! "2" "my-custom-shell-metric" [1 0 0 0 0 0 2] cluster)
       )))
 
@@ -194,42 +190,42 @@
     (apply thrift/mk-spout-spec (PythonShellMetricsSpout. command) kwargs)))
 
 (deftest test-custom-metric-with-spout-multilang-py
-  (with-simulated-time-local-cluster 
-    [cluster :daemon-conf {TOPOLOGY-METRICS-CONSUMER-REGISTER
+  (testing/with-simulated-time-local-cluster
+    [cluster :daemon-conf {c/TOPOLOGY-METRICS-CONSUMER-REGISTER
                        [{"class" "clojure.storm.metric.testing.FakeMetricConsumer"}]
                        "storm.zookeeper.connection.timeout" 30000
                        "storm.zookeeper.session.timeout" 60000}]
     (let [topology (thrift/mk-topology
                      {"1" (mk-shell-spout-with-metrics-spec ["python" "tester_spout_metrics.py"])}
                      {"2" (thrift/mk-bolt-spec {"1" :all} count-acks)})]
-      (submit-local-topology (:nimbus cluster) "shell-spout-metrics-tester" {} topology)
+      (testing/submit-local-topology (:nimbus cluster) "shell-spout-metrics-tester" {} topology)
 
-      (advance-cluster-time cluster 7)
+      (testing/advance-cluster-time cluster 7)
       (assert-buckets! "1" "my-custom-shellspout-metric" [2] cluster)
       )))
 
 
 (deftest test-builtin-metrics-1
-  (with-simulated-time-local-cluster
-    [cluster :daemon-conf {TOPOLOGY-METRICS-CONSUMER-REGISTER                    
+  (testing/with-simulated-time-local-cluster
+    [cluster :daemon-conf {c/TOPOLOGY-METRICS-CONSUMER-REGISTER
                            [{"class" "clojure.storm.metric.testing.FakeMetricConsumer"}]
-                           TOPOLOGY-STATS-SAMPLE-RATE 1.0
-                           TOPOLOGY-BUILTIN-METRICS-BUCKET-SIZE-SECS 60}]
-    (let [feeder (feeder-spout ["field1"])
+                           c/TOPOLOGY-STATS-SAMPLE-RATE 1.0
+                           c/TOPOLOGY-BUILTIN-METRICS-BUCKET-SIZE-SECS 60}]
+    (let [feeder (testing/feeder-spout ["field1"])
           topology (thrift/mk-topology
                     {"myspout" (thrift/mk-spout-spec feeder)}
-                    {"mybolt" (thrift/mk-bolt-spec {"myspout" :shuffle} acking-bolt)})]      
-      (submit-local-topology (:nimbus cluster) "metrics-tester" {} topology)
-      
+                    {"mybolt" (thrift/mk-bolt-spec {"myspout" :shuffle} acking-bolt)})]
+      (testing/submit-local-topology (:nimbus cluster) "metrics-tester" {} topology)
+
       (.feed feeder ["a"] 1)
-      (advance-cluster-time cluster 61)
+      (testing/advance-cluster-time cluster 61)
       (assert-buckets! "myspout" "__ack-count/default" [1] cluster)
       (assert-buckets! "myspout" "__emit-count/default" [1] cluster)
-      (assert-buckets! "myspout" "__transfer-count/default" [1] cluster)            
+      (assert-buckets! "myspout" "__transfer-count/default" [1] cluster)
       (assert-buckets! "mybolt" "__ack-count/myspout:default" [1] cluster)
       (assert-buckets! "mybolt" "__execute-count/myspout:default" [1] cluster)
 
-      (advance-cluster-time cluster 120)
+      (testing/advance-cluster-time cluster 120)
       (assert-buckets! "myspout" "__ack-count/default" [1 0 0] cluster)
       (assert-buckets! "myspout" "__emit-count/default" [1 0 0] cluster)
       (assert-buckets! "myspout" "__transfer-count/default" [1 0 0] cluster)
@@ -238,59 +234,59 @@
 
       (.feed feeder ["b"] 1)
       (.feed feeder ["c"] 1)
-      (advance-cluster-time cluster 60)
+      (testing/advance-cluster-time cluster 60)
       (assert-buckets! "myspout" "__ack-count/default" [1 0 0 2] cluster)
       (assert-buckets! "myspout" "__emit-count/default" [1 0 0 2] cluster)
-      (assert-buckets! "myspout" "__transfer-count/default" [1 0 0 2] cluster)      
+      (assert-buckets! "myspout" "__transfer-count/default" [1 0 0 2] cluster)
       (assert-buckets! "mybolt" "__ack-count/myspout:default" [1 0 0 2] cluster)
       (assert-buckets! "mybolt" "__execute-count/myspout:default" [1 0 0 2] cluster))))
 
 
 (deftest test-builtin-metrics-2
-  (with-simulated-time-local-cluster
-    [cluster :daemon-conf {TOPOLOGY-METRICS-CONSUMER-REGISTER
+  (testing/with-simulated-time-local-cluster
+    [cluster :daemon-conf {c/TOPOLOGY-METRICS-CONSUMER-REGISTER
                            [{"class" "clojure.storm.metric.testing.FakeMetricConsumer"}]
-                           TOPOLOGY-STATS-SAMPLE-RATE 1.0
-                           TOPOLOGY-BUILTIN-METRICS-BUCKET-SIZE-SECS 5}]
-    (let [feeder (feeder-spout ["field1"])
+                           c/TOPOLOGY-STATS-SAMPLE-RATE 1.0
+                           c/TOPOLOGY-BUILTIN-METRICS-BUCKET-SIZE-SECS 5}]
+    (let [feeder (testing/feeder-spout ["field1"])
           tracker (AckFailMapTracker.)
           _ (.setAckFailDelegate feeder tracker)
           topology (thrift/mk-topology
                     {"myspout" (thrift/mk-spout-spec feeder)}
-                    {"mybolt" (thrift/mk-bolt-spec {"myspout" :shuffle} ack-every-other)})]      
-      (submit-local-topology (:nimbus cluster)
+                    {"mybolt" (thrift/mk-bolt-spec {"myspout" :shuffle} ack-every-other)})]
+      (testing/submit-local-topology (:nimbus cluster)
                              "metrics-tester"
                              {}
                              topology)
-      
+
       (.feed feeder ["a"] 1)
-      (advance-cluster-time cluster 6)
+      (testing/advance-cluster-time cluster 6)
       (assert-acked tracker 1)
       (assert-buckets! "myspout" "__fail-count/default" [] cluster)
       (assert-buckets! "myspout" "__ack-count/default" [1] cluster)
       (assert-buckets! "myspout" "__emit-count/default" [1] cluster)
-      (assert-buckets! "myspout" "__transfer-count/default" [1] cluster)            
-      (assert-buckets! "mybolt" "__ack-count/myspout:default" [1] cluster)     
+      (assert-buckets! "myspout" "__transfer-count/default" [1] cluster)
+      (assert-buckets! "mybolt" "__ack-count/myspout:default" [1] cluster)
       (assert-buckets! "mybolt" "__execute-count/myspout:default" [1] cluster)
 
-      (.feed feeder ["b"] 2)      
-      (advance-cluster-time cluster 5)
+      (.feed feeder ["b"] 2)
+      (testing/advance-cluster-time cluster 5)
       (assert-buckets! "myspout" "__fail-count/default" [] cluster)
       (assert-buckets! "myspout" "__ack-count/default" [1 0] cluster)
       (assert-buckets! "myspout" "__emit-count/default" [1 1] cluster)
-      (assert-buckets! "myspout" "__transfer-count/default" [1 1] cluster)                  
+      (assert-buckets! "myspout" "__transfer-count/default" [1 1] cluster)
       (assert-buckets! "mybolt" "__ack-count/myspout:default" [1 0] cluster)
       (assert-buckets! "mybolt" "__execute-count/myspout:default" [1 1] cluster)
 
-      (advance-cluster-time cluster 15)      
+      (testing/advance-cluster-time cluster 15)
       (assert-buckets! "myspout" "__ack-count/default" [1 0 0 0 0] cluster)
       (assert-buckets! "myspout" "__emit-count/default" [1 1 0 0 0] cluster)
       (assert-buckets! "myspout" "__transfer-count/default" [1 1 0 0 0] cluster)
       (assert-buckets! "mybolt" "__ack-count/myspout:default" [1 0 0 0 0] cluster)
       (assert-buckets! "mybolt" "__execute-count/myspout:default" [1 1 0 0 0] cluster)
-      
-      (.feed feeder ["c"] 3)            
-      (advance-cluster-time cluster 15)      
+
+      (.feed feeder ["c"] 3)
+      (testing/advance-cluster-time cluster 15)
       (assert-buckets! "myspout" "__ack-count/default" [1 0 0 0 0 1 0 0] cluster)
       (assert-buckets! "myspout" "__emit-count/default" [1 1 0 0 0 1 0 0] cluster)
       (assert-buckets! "myspout" "__transfer-count/default" [1 1 0 0 0 1 0 0] cluster)
@@ -298,35 +294,35 @@
       (assert-buckets! "mybolt" "__execute-count/myspout:default" [1 1 0 0 0 1 0 0] cluster))))
 
 (deftest test-builtin-metrics-3
-  (with-simulated-time-local-cluster
-    [cluster :daemon-conf {TOPOLOGY-METRICS-CONSUMER-REGISTER
+  (testing/with-simulated-time-local-cluster
+    [cluster :daemon-conf {c/TOPOLOGY-METRICS-CONSUMER-REGISTER
                            [{"class" "clojure.storm.metric.testing.FakeMetricConsumer"}]
-                           TOPOLOGY-STATS-SAMPLE-RATE 1.0
-                           TOPOLOGY-BUILTIN-METRICS-BUCKET-SIZE-SECS 5
-                           TOPOLOGY-ENABLE-MESSAGE-TIMEOUTS true}]
-    (let [feeder (feeder-spout ["field1"])
+                           c/TOPOLOGY-STATS-SAMPLE-RATE 1.0
+                           c/TOPOLOGY-BUILTIN-METRICS-BUCKET-SIZE-SECS 5
+                           c/TOPOLOGY-ENABLE-MESSAGE-TIMEOUTS true}]
+    (let [feeder (testing/feeder-spout ["field1"])
           tracker (AckFailMapTracker.)
           _ (.setAckFailDelegate feeder tracker)
           topology (thrift/mk-topology
                     {"myspout" (thrift/mk-spout-spec feeder)}
-                    {"mybolt" (thrift/mk-bolt-spec {"myspout" :global} ack-every-other)})]      
-      (submit-local-topology (:nimbus cluster)
+                    {"mybolt" (thrift/mk-bolt-spec {"myspout" :global} ack-every-other)})]
+      (testing/submit-local-topology (:nimbus cluster)
                              "timeout-tester"
-                             {TOPOLOGY-MESSAGE-TIMEOUT-SECS 10}
+                             {c/TOPOLOGY-MESSAGE-TIMEOUT-SECS 10}
                              topology)
       (.feed feeder ["a"] 1)
       (.feed feeder ["b"] 2)
       (.feed feeder ["c"] 3)
-      (advance-cluster-time cluster 9)
+      (testing/advance-cluster-time cluster 9)
       (assert-acked tracker 1 3)
       (assert-buckets! "myspout" "__ack-count/default" [2] cluster)
       (assert-buckets! "myspout" "__emit-count/default" [3] cluster)
       (assert-buckets! "myspout" "__transfer-count/default" [3] cluster)
       (assert-buckets! "mybolt" "__ack-count/myspout:default" [2] cluster)
       (assert-buckets! "mybolt" "__execute-count/myspout:default" [3] cluster)
-      
+
       (is (not (.isFailed tracker 2)))
-      (advance-cluster-time cluster 30)
+      (testing/advance-cluster-time cluster 30)
       (assert-failed tracker 2)
       (assert-buckets! "myspout" "__fail-count/default" [1] cluster)
       (assert-buckets! "myspout" "__ack-count/default" [2 0 0 0] cluster)
@@ -336,23 +332,23 @@
       (assert-buckets! "mybolt" "__execute-count/myspout:default" [3 0 0 0] cluster))))
 
 (deftest test-system-bolt
-  (with-simulated-time-local-cluster
-    [cluster :daemon-conf {TOPOLOGY-METRICS-CONSUMER-REGISTER
+  (testing/with-simulated-time-local-cluster
+    [cluster :daemon-conf {c/TOPOLOGY-METRICS-CONSUMER-REGISTER
                            [{"class" "clojure.storm.metric.testing.FakeMetricConsumer"}]
-                           TOPOLOGY-BUILTIN-METRICS-BUCKET-SIZE-SECS 60}]
-    (let [feeder (feeder-spout ["field1"])
+                           c/TOPOLOGY-BUILTIN-METRICS-BUCKET-SIZE-SECS 60}]
+    (let [feeder (testing/feeder-spout ["field1"])
           topology (thrift/mk-topology
                     {"1" (thrift/mk-spout-spec feeder)}
-                    {})]      
-      (submit-local-topology (:nimbus cluster) "metrics-tester" {} topology)
+                    {})]
+      (testing/submit-local-topology (:nimbus cluster) "metrics-tester" {} topology)
 
       (.feed feeder ["a"] 1)
-      (advance-cluster-time cluster 70)
+      (testing/advance-cluster-time cluster 70)
       (assert-buckets! "__system" "newWorkerEvent" [1] cluster)
       (assert-metric-data-exists! "__system" "uptimeSecs")
       (assert-metric-data-exists! "__system" "startTimeSecs")
 
-      (advance-cluster-time cluster 180)
+      (testing/advance-cluster-time cluster 180)
       (assert-buckets! "__system" "newWorkerEvent" [1 0 0 0] cluster)
       )))
 

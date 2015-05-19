@@ -14,9 +14,8 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.security.auth.SaslTransportPlugin-test
-  (:use [clojure test])
-  (import [backtype.storm.security.auth SaslTransportPlugin$User])
-)
+  (:require [clojure.test :refer :all])
+  (:import [backtype.storm.security.auth SaslTransportPlugin$User]) )
 
 (deftest test-User-name
   (let [nam "Andy"

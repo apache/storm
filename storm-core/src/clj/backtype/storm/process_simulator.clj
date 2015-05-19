@@ -15,9 +15,10 @@
 ;; limitations under the License.
 
 (ns backtype.storm.process-simulator
-  (:use [backtype.storm log util]))
+  (:require [backtype.storm.log :refer [log-message]]
+            [backtype.storm.util :as util]))
 
-(def pid-counter (mk-counter))
+(def pid-counter (util/mk-counter))
 
 (def process-map (atom {}))
 

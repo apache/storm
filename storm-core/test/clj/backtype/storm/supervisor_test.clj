@@ -14,21 +14,20 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.supervisor-test
-  (:use [clojure test])
-  (:require [conjure.core])
-  (:use [conjure core])
-  (:require [clojure.contrib [string :as contrib-str]])
-  (:require [clojure [string :as string] [set :as set]])
-  (:import [backtype.storm.testing TestWordCounter TestWordSpout TestGlobalCount TestAggregatesCounter TestPlannerSpout])
-  (:import [backtype.storm.scheduler ISupervisor])
-  (:import [backtype.storm.generated RebalanceOptions])
-  (:import [java.util UUID])
-  (:use [backtype.storm config testing util timer])
-  (:use [backtype.storm.daemon common])
-  (:require [backtype.storm.daemon [worker :as worker] [supervisor :as supervisor]]
-            [backtype.storm [thrift :as thrift] [cluster :as cluster]])
-  (:use [conjure core])
-  (:require [clojure.java.io :as io]))
+  (:use [conjure core]
+        [backtype.storm config testing util timer]
+        [backtype.storm.daemon common])
+  (:require [clojure.java.io :as io]
+            [conjure.core]
+            [clojure.contrib [string :as contrib-str]]
+            [clojure [string :as string] [set :as set]]
+            [backtype.storm.daemon [worker :as worker] [supervisor :as supervisor]]
+            [backtype.storm [thrift :as thrift] [cluster :as cluster]]
+            [clojure.test :refer :all])
+  (:import [backtype.storm.testing TestWordCounter TestWordSpout TestGlobalCount TestAggregatesCounter TestPlannerSpout]
+           [backtype.storm.scheduler ISupervisor]
+           [backtype.storm.generated RebalanceOptions]
+           [java.util UUID]))
 
 (defn worker-assignment
   "Return [storm-id executors]"

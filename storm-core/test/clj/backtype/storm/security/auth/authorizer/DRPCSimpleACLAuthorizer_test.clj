@@ -1,11 +1,9 @@
 (ns backtype.storm.security.auth.authorizer.DRPCSimpleACLAuthorizer-test
-  (:use [clojure test])
-  (:import [org.mockito Mockito])
-  (:import [backtype.storm Config])
-  (:import [backtype.storm.security.auth ReqContext SingleUserPrincipal])
-  (:import [backtype.storm.security.auth.authorizer DRPCSimpleACLAuthorizer])
-  (:use [backtype.storm config util])
-  )
+  (:require [backtype.storm.config :as c]
+            [clojure.test :refer :all])
+  (:import [org.mockito Mockito]
+           [backtype.storm.security.auth ReqContext SingleUserPrincipal]
+           [backtype.storm.security.auth.authorizer DRPCSimpleACLAuthorizer]))
 
 (defn- mk-mock-context [user]
   (let [mock-context (Mockito/mock ReqContext)]
@@ -21,13 +19,13 @@
       charlie-context (mk-mock-context "charlie")
       acl-file "drpc-simple-acl-test-scenario.yaml"
       strict-handler (doto (DRPCSimpleACLAuthorizer.)
-                           (.prepare {DRPC-AUTHORIZER-ACL-STRICT true
-                                      DRPC-AUTHORIZER-ACL-FILENAME acl-file
-                                      STORM-PRINCIPAL-TO-LOCAL-PLUGIN "backtype.storm.security.auth.KerberosPrincipalToLocal"}))
+                           (.prepare {c/DRPC-AUTHORIZER-ACL-STRICT true
+                                      c/DRPC-AUTHORIZER-ACL-FILENAME acl-file
+                                      c/STORM-PRINCIPAL-TO-LOCAL-PLUGIN "backtype.storm.security.auth.KerberosPrincipalToLocal"}))
       permissive-handler (doto (DRPCSimpleACLAuthorizer.)
-                               (.prepare {DRPC-AUTHORIZER-ACL-STRICT false
-                                          DRPC-AUTHORIZER-ACL-FILENAME acl-file
-                                          STORM-PRINCIPAL-TO-LOCAL-PLUGIN "backtype.storm.security.auth.KerberosPrincipalToLocal"}))]
+                               (.prepare {c/DRPC-AUTHORIZER-ACL-STRICT false
+                                          c/DRPC-AUTHORIZER-ACL-FILENAME acl-file
+                                          c/STORM-PRINCIPAL-TO-LOCAL-PLUGIN "backtype.storm.security.auth.KerberosPrincipalToLocal"}))]
 
   (deftest test-partial-authorization
     (testing "deny execute to unauthorized user"

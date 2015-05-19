@@ -14,32 +14,32 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.daemon.executor
-  (:use [backtype.storm.daemon common])
-  (:import [backtype.storm.generated Grouping]
-           [java.io Serializable])
-  (:use [backtype.storm util config log timer stats])
-  (:import [java.util List Random HashMap ArrayList LinkedList Map])
-  (:import [backtype.storm ICredentialsListener])
-  (:import [backtype.storm.hooks ITaskHook])
-  (:import [backtype.storm.tuple Tuple Fields TupleImpl MessageId])
-  (:import [backtype.storm.spout ISpoutWaitStrategy ISpout SpoutOutputCollector ISpoutOutputCollector])
-  (:import [backtype.storm.hooks.info SpoutAckInfo SpoutFailInfo
-            EmitInfo BoltFailInfo BoltAckInfo BoltExecuteInfo])
-  (:import [backtype.storm.grouping CustomStreamGrouping])
-  (:import [backtype.storm.task WorkerTopologyContext IBolt OutputCollector IOutputCollector])
-  (:import [backtype.storm.generated GlobalStreamId])
-  (:import [backtype.storm.utils Utils MutableObject RotatingMap RotatingMap$ExpiredCallback MutableLong Time])
-  (:import [com.lmax.disruptor InsufficientCapacityException])
-  (:import [backtype.storm.serialization KryoTupleSerializer KryoTupleDeserializer])
-  (:import [backtype.storm.daemon Shutdownable])
-  (:import [backtype.storm.metric.api IMetric IMetricsConsumer$TaskInfo IMetricsConsumer$DataPoint StateMetric])
-  (:import [backtype.storm Config Constants])
-  (:import [java.util.concurrent ConcurrentLinkedQueue])
   (:require [backtype.storm [tuple :as tuple] [thrift :as thrift]
-             [cluster :as cluster] [disruptor :as disruptor] [stats :as stats]])
-  (:require [backtype.storm.daemon [task :as task]])
-  (:require [backtype.storm.daemon.builtin-metrics :as builtin-metrics])
-  (:require [clojure.set :as set]))
+             [cluster :as cluster] [disruptor :as disruptor] [stats :as stats]]
+            [backtype.storm.daemon.task :as task]
+            [backtype.storm.daemon.builtin-metrics :as builtin-metrics]
+            [clojure.set :as set]
+            [backtype.storm.util :as util]
+            [backtype.storm.daemon.common :as common]
+            [backtype.storm.log :refer [log-message log-error]]
+            [backtype.storm.config :as c]
+            [backtype.storm.timer :as timer])
+  (:import [java.io Serializable]
+           [java.util List Random HashMap ArrayList Map]
+           [backtype.storm ICredentialsListener]
+           [backtype.storm.tuple Tuple Fields TupleImpl MessageId]
+           [backtype.storm.spout ISpoutWaitStrategy ISpout SpoutOutputCollector ISpoutOutputCollector]
+           [backtype.storm.hooks.info SpoutAckInfo SpoutFailInfo BoltFailInfo BoltAckInfo BoltExecuteInfo]
+           [backtype.storm.grouping CustomStreamGrouping]
+           [backtype.storm.task WorkerTopologyContext IBolt OutputCollector IOutputCollector]
+           [backtype.storm.generated GlobalStreamId]
+           [backtype.storm.utils Utils MutableObject RotatingMap RotatingMap$ExpiredCallback MutableLong Time]
+           [com.lmax.disruptor InsufficientCapacityException]
+           [backtype.storm.serialization KryoTupleSerializer KryoTupleDeserializer]
+           [backtype.storm.daemon Shutdownable]
+           [backtype.storm.metric.api IMetric IMetricsConsumer$TaskInfo IMetricsConsumer$DataPoint]
+           [backtype.storm Constants]
+           [java.util.concurrent ConcurrentLinkedQueue]))
 
 (defn- mk-fields-grouper [^Fields out-fields ^Fields group-fields ^List target-tasks]
   (let [num-tasks (count target-tasks)
@@ -51,9 +51,9 @@
           task-getter))))
 
 (defn- mk-shuffle-grouper [^List target-tasks]
-  (let [choices (rotating-random-range target-tasks)]
+  (let [choices (util/rotating-random-range target-tasks)]
     (fn [task-id tuple]
-      (acquire-random-range-id choices))))
+      (util/acquire-random-range-id choices))))
 
 (defn- mk-custom-grouper [^CustomStreamGrouping grouping ^WorkerTopologyContext context ^String component-id ^String stream-id target-tasks]
   (.prepare grouping context (GlobalStreamId. component-id stream-id) target-tasks)
@@ -104,7 +104,7 @@
 
 (defn- outbound-groupings [^WorkerTopologyContext worker-context this-component-id stream-id out-fields component->grouping]
   (->> component->grouping
-       (filter-key #(-> worker-context
+       (util/filter-key #(-> worker-context
                         (.getComponentTasks %)
                         count
                         pos?))
@@ -124,7 +124,7 @@
   "Returns map of stream id to component id to grouper"
   [^WorkerTopologyContext worker-context component-id]
   (->> (.getTargets worker-context component-id)
-        clojurify-structure
+        util/clojurify-structure
         (map (fn [[stream-id component->grouping]]
                [stream-id
                 (outbound-groupings
@@ -142,7 +142,7 @@
         bolts (.get_bolts topology)]
     (cond (contains? spouts component-id) :spout
           (contains? bolts component-id) :bolt
-          :else (throw-runtime "Could not find " component-id " in topology " topology))))
+          :else (util/throw-runtime "Could not find " component-id " in topology " topology))))
 
 (defn executor-selector [executor-data & _] (:type executor-data))
 
@@ -151,19 +151,19 @@
 (defmulti close-component executor-selector)
 
 (defn- normalized-component-conf [storm-conf general-context component-id]
-  (let [to-remove (disj (set ALL-CONFIGS)
-                        TOPOLOGY-DEBUG
-                        TOPOLOGY-MAX-SPOUT-PENDING
-                        TOPOLOGY-MAX-TASK-PARALLELISM
-                        TOPOLOGY-TRANSACTIONAL-ID
-                        TOPOLOGY-TICK-TUPLE-FREQ-SECS
-                        TOPOLOGY-SLEEP-SPOUT-WAIT-STRATEGY-TIME-MS
-                        TOPOLOGY-SPOUT-WAIT-STRATEGY
+  (let [to-remove (disj (set c/ALL-CONFIGS)
+                        c/TOPOLOGY-DEBUG
+                        c/TOPOLOGY-MAX-SPOUT-PENDING
+                        c/TOPOLOGY-MAX-TASK-PARALLELISM
+                        c/TOPOLOGY-TRANSACTIONAL-ID
+                        c/TOPOLOGY-TICK-TUPLE-FREQ-SECS
+                        c/TOPOLOGY-SLEEP-SPOUT-WAIT-STRATEGY-TIME-MS
+                        c/TOPOLOGY-SPOUT-WAIT-STRATEGY
                         )
         spec-conf (-> general-context
                       (.getComponentCommon component-id)
                       .get_json_conf
-                      from-json)]
+                      util/from-json)]
     (merge storm-conf (apply dissoc spec-conf to-remove))
     ))
 
@@ -174,34 +174,35 @@
 
 (defn throttled-report-error-fn [executor]
   (let [storm-conf (:storm-conf executor)
-        error-interval-secs (storm-conf TOPOLOGY-ERROR-THROTTLE-INTERVAL-SECS)
-        max-per-interval (storm-conf TOPOLOGY-MAX-ERROR-REPORT-PER-INTERVAL)
-        interval-start-time (atom (current-time-secs))
+        error-interval-secs (storm-conf c/TOPOLOGY-ERROR-THROTTLE-INTERVAL-SECS)
+        max-per-interval (storm-conf c/TOPOLOGY-MAX-ERROR-REPORT-PER-INTERVAL)
+        interval-start-time (atom (util/current-time-secs))
         interval-errors (atom 0)
         ]
     (fn [error]
       (log-error error)
-      (when (> (time-delta @interval-start-time)
+      (when (> (util/time-delta @interval-start-time)
                error-interval-secs)
         (reset! interval-errors 0)
-        (reset! interval-start-time (current-time-secs)))
+        (reset! interval-start-time (util/current-time-secs)))
       (swap! interval-errors inc)
 
       (when (<= @interval-errors max-per-interval)
         (cluster/report-error (:storm-cluster-state executor) (:storm-id executor) (:component-id executor)
-                              (hostname storm-conf)
+                              (util/hostname storm-conf)
                               (.getThisWorkerPort (:worker-context executor)) error)
         ))))
 
+;; TODO: replace (= true with (true?
 ;; in its own function so that it can be mocked out by tracked topologies
 (defn mk-executor-transfer-fn [batch-transfer->worker storm-conf]
   (fn this
     ([task tuple block? ^ConcurrentLinkedQueue overflow-buffer]
-      (when (= true (storm-conf TOPOLOGY-DEBUG))
+      (when (= true (storm-conf c/TOPOLOGY-DEBUG))
         (log-message "TRANSFERING tuple TASK: " task " TUPLE: " tuple))
       (if (and overflow-buffer (not (.isEmpty overflow-buffer)))
         (.add overflow-buffer [task tuple])
-        (try-cause
+        (util/try-cause
           (disruptor/publish batch-transfer->worker [task tuple] block?)
         (catch InsufficientCapacityException e
           (if overflow-buffer
@@ -215,18 +216,18 @@
       )))
 
 (defn mk-executor-data [worker executor-id]
-  (let [worker-context (worker-context worker)
-        task-ids (executor-id->tasks executor-id)
+  (let [worker-context (common/worker-context worker)
+        task-ids (common/executor-id->tasks executor-id)
         component-id (.getComponentId worker-context (first task-ids))
         storm-conf (normalized-component-conf (:storm-conf worker) worker-context component-id)
         executor-type (executor-type worker-context component-id)
         batch-transfer->worker (disruptor/disruptor-queue
                                   (str "executor"  executor-id "-send-queue")
-                                  (storm-conf TOPOLOGY-EXECUTOR-SEND-BUFFER-SIZE)
+                                  (storm-conf c/TOPOLOGY-EXECUTOR-SEND-BUFFER-SIZE)
                                   :claim-strategy :single-threaded
-                                  :wait-strategy (storm-conf TOPOLOGY-DISRUPTOR-WAIT-STRATEGY))
+                                  :wait-strategy (storm-conf c/TOPOLOGY-DISRUPTOR-WAIT-STRATEGY))
         ]
-    (recursive-map
+    (util/recursive-map
      :worker worker
      :worker-context worker-context
      :executor-id executor-id
@@ -242,11 +243,11 @@
      :batch-transfer-queue batch-transfer->worker
      :transfer-fn (mk-executor-transfer-fn batch-transfer->worker storm-conf)
      :suicide-fn (:suicide-fn worker)
-     :storm-cluster-state (cluster/mk-storm-cluster-state (:cluster-state worker) 
+     :storm-cluster-state (cluster/mk-storm-cluster-state (:cluster-state worker)
                                                           :acls (Utils/getWorkerACL storm-conf))
      :type executor-type
      ;; TODO: should refactor this to be part of the executor specific map (spout or bolt with :common field)
-     :stats (mk-executor-stats <> (sampling-rate storm-conf))
+     :stats (mk-executor-stats <> (c/sampling-rate storm-conf))
      :interval->task->metric-registry (HashMap.)
      :task->component (:task->component worker)
      :stream->component->grouper (outbound-components worker-context component-id)
@@ -254,12 +255,12 @@
      :report-error-and-die (fn [error]
                              ((:report-error <>) error)
                              (if (or
-                                    (exception-cause? InterruptedException error)
-                                    (exception-cause? java.io.InterruptedIOException error))
+                                    (util/exception-cause? InterruptedException error)
+                                    (util/exception-cause? java.io.InterruptedIOException error))
                                (log-message "Got interrupted excpetion shutting thread down...")
                                ((:suicide-fn <>))))
      :deserializer (KryoTupleDeserializer. storm-conf worker-context)
-     :sampler (mk-stats-sampler storm-conf)
+     :sampler (c/mk-stats-sampler storm-conf)
      ;; TODO: add in the executor-specific stuff in a :specific... or make a spout-data, bolt-data function?
      )))
 
@@ -284,8 +285,8 @@
   (let [{:keys [storm-conf receive-queue worker-context interval->task->metric-registry]} executor-data
         distinct-time-bucket-intervals (keys interval->task->metric-registry)]
     (doseq [interval distinct-time-bucket-intervals]
-      (schedule-recurring 
-       (:user-timer (:worker executor-data)) 
+      (timer/schedule-recurring
+       (:user-timer (:worker executor-data))
        interval
        interval
        (fn []
@@ -299,7 +300,7 @@
         task-id (:task-id task-data)
         name->imetric (-> interval->task->metric-registry (get interval) (get task-id))
         task-info (IMetricsConsumer$TaskInfo.
-                    (hostname (:storm-conf executor-data))
+                    (util/hostname (:storm-conf executor-data))
                     (.getThisWorkerPort worker-context)
                     (:component-id executor-data)
                     task-id
@@ -317,15 +318,15 @@
 
 (defn setup-ticks! [worker executor-data]
   (let [storm-conf (:storm-conf executor-data)
-        tick-time-secs (storm-conf TOPOLOGY-TICK-TUPLE-FREQ-SECS)
+        tick-time-secs (storm-conf c/TOPOLOGY-TICK-TUPLE-FREQ-SECS)
         receive-queue (:receive-queue executor-data)
         context (:worker-context executor-data)]
     (when tick-time-secs
-      (if (or (system-id? (:component-id executor-data))
-              (and (= false (storm-conf TOPOLOGY-ENABLE-MESSAGE-TIMEOUTS))
+      (if (or (common/system-id? (:component-id executor-data))
+              (and (= false (storm-conf c/TOPOLOGY-ENABLE-MESSAGE-TIMEOUTS))
                    (= :spout (:type executor-data))))
         (log-message "Timeouts disabled for executor " (:component-id executor-data) ":" (:executor-id executor-data))
-        (schedule-recurring
+        (timer/schedule-recurring
           (:user-timer worker)
           tick-time-secs
           tick-time-secs
@@ -347,13 +348,13 @@
         report-error-and-die (:report-error-and-die executor-data)
         component-id (:component-id executor-data)
 
-        ;; starting the batch-transfer->worker ensures that anything publishing to that queue 
+        ;; starting the batch-transfer->worker ensures that anything publishing to that queue
         ;; doesn't block (because it's a single threaded queue and the caching/consumer started
         ;; trick isn't thread-safe)
         system-threads [(start-batch-transfer->worker-handler! worker executor-data)]
-        handlers (with-error-reaction report-error-and-die
+        handlers (util/with-error-reaction report-error-and-die
                    (mk-threads executor-data task-datas initial-credentials))
-        threads (concat handlers system-threads)]    
+        threads (concat handlers system-threads)]
     (setup-ticks! worker executor-data)
 
     (log-message "Finished loading executor " component-id ":" (pr-str executor-id))
@@ -380,7 +381,7 @@
         (doseq [t threads]
           (.interrupt t)
           (.join t))
-        
+
         (doseq [user-context (map :user-context (vals task-datas))]
           (doseq [hook (.getHooks user-context)]
             (.cleanup hook)))
@@ -396,19 +397,19 @@
         storm-conf (:storm-conf executor-data)
         task-id (:task-id task-data)]
     ;;TODO: need to throttle these when there's lots of failures
-    (when (= true (storm-conf TOPOLOGY-DEBUG))
+    (when (= true (storm-conf c/TOPOLOGY-DEBUG))
       (log-message "SPOUT Failing " id ": " tuple-info " REASON: " reason " MSG-ID: " msg-id))
     (.fail spout msg-id)
     (task/apply-hooks (:user-context task-data) .spoutFail (SpoutFailInfo. msg-id task-id time-delta))
     (when time-delta
-      (builtin-metrics/spout-failed-tuple! (:builtin-metrics task-data) (:stats executor-data) (:stream tuple-info))      
+      (builtin-metrics/spout-failed-tuple! (:builtin-metrics task-data) (:stats executor-data) (:stream tuple-info))
       (stats/spout-failed-tuple! (:stats executor-data) (:stream tuple-info) time-delta))))
 
 (defn- ack-spout-msg [executor-data task-data msg-id tuple-info time-delta id]
   (let [storm-conf (:storm-conf executor-data)
         ^ISpout spout (:object task-data)
         task-id (:task-id task-data)]
-    (when (= true (storm-conf TOPOLOGY-DEBUG))
+    (when (= true (storm-conf c/TOPOLOGY-DEBUG))
       (log-message "SPOUT Acking message " id " " msg-id))
     (.ack spout msg-id)
     (task/apply-hooks (:user-context task-data) .spoutAck (SpoutAckInfo. msg-id task-id time-delta))
@@ -419,27 +420,27 @@
 (defn mk-task-receiver [executor-data tuple-action-fn]
   (let [^KryoTupleDeserializer deserializer (:deserializer executor-data)
         task-ids (:task-ids executor-data)
-        debug? (= true (-> executor-data :storm-conf (get TOPOLOGY-DEBUG)))
+        debug? (= true (-> executor-data :storm-conf (get c/TOPOLOGY-DEBUG)))
         ]
     (disruptor/clojure-handler
       (fn [tuple-batch sequence-id end-of-batch?]
-        (fast-list-iter [[task-id msg] tuple-batch]
+        (util/fast-list-iter [[task-id msg] tuple-batch]
           (let [^TupleImpl tuple (if (instance? Tuple msg) msg (.deserialize deserializer msg))]
             (when debug? (log-message "Processing received message FOR " task-id " TUPLE: " tuple))
             (if task-id
               (tuple-action-fn task-id tuple)
               ;; null task ids are broadcast tuples
-              (fast-list-iter [task-id task-ids]
+              (util/fast-list-iter [task-id task-ids]
                 (tuple-action-fn task-id tuple)
                 ))
             ))))))
 
 (defn executor-max-spout-pending [storm-conf num-tasks]
-  (let [p (storm-conf TOPOLOGY-MAX-SPOUT-PENDING)]
+  (let [p (storm-conf c/TOPOLOGY-MAX-SPOUT-PENDING)]
     (if p (* p num-tasks))))
 
 (defn init-spout-wait-strategy [storm-conf]
-  (let [ret (-> storm-conf (get TOPOLOGY-SPOUT-WAIT-STRATEGY) new-instance)]
+  (let [ret (-> storm-conf (get c/TOPOLOGY-SPOUT-WAIT-STRATEGY) util/new-instance)]
     (.prepare ret storm-conf)
     ret
     ))
@@ -448,16 +449,16 @@
   (let [{:keys [storm-conf component-id worker-context transfer-fn report-error sampler open-or-prepare-was-called?]} executor-data
         ^ISpoutWaitStrategy spout-wait-strategy (init-spout-wait-strategy storm-conf)
         max-spout-pending (executor-max-spout-pending storm-conf (count task-datas))
-        ^Integer max-spout-pending (if max-spout-pending (int max-spout-pending))        
-        last-active (atom false)        
+        ^Integer max-spout-pending (if max-spout-pending (int max-spout-pending))
+        last-active (atom false)
         spouts (ArrayList. (map :object (vals task-datas)))
         rand (Random. (Utils/secureRandomLong))
-        
+
         pending (RotatingMap.
                  2 ;; microoptimize for performance of .size method
                  (reify RotatingMap$ExpiredCallback
                    (expire [this id [task-id spout-id tuple-info start-time-ms]]
-                     (let [time-delta (if start-time-ms (time-delta-ms start-time-ms))]
+                     (let [time-delta (if start-time-ms (util/time-delta-ms start-time-ms))]
                        (fail-spout-msg executor-data (get task-datas task-id) spout-id tuple-info time-delta "TIMEOUT" id)
                        ))))
         tuple-action-fn (fn [task-id ^TupleImpl tuple]
@@ -465,7 +466,7 @@
                             (condp = stream-id
                               Constants/SYSTEM_TICK_STREAM_ID (.rotate pending)
                               Constants/METRICS_TICK_STREAM_ID (metrics-tick executor-data (get task-datas task-id) tuple)
-                              Constants/CREDENTIALS_CHANGED_STREAM_ID 
+                              Constants/CREDENTIALS_CHANGED_STREAM_ID
                                 (let [task-data (get task-datas task-id)
                                       spout-obj (:object task-data)]
                                   (when (instance? ICredentialsListener spout-obj)
@@ -474,37 +475,37 @@
                                     [stored-task-id spout-id tuple-finished-info start-time-ms] (.remove pending id)]
                                 (when spout-id
                                   (when-not (= stored-task-id task-id)
-                                    (throw-runtime "Fatal error, mismatched task ids: " task-id " " stored-task-id))
-                                  (let [time-delta (if start-time-ms (time-delta-ms start-time-ms))]
+                                    (util/throw-runtime "Fatal error, mismatched task ids: " task-id " " stored-task-id))
+                                  (let [time-delta (if start-time-ms (util/time-delta-ms start-time-ms))]
                                     (condp = stream-id
-                                      ACKER-ACK-STREAM-ID (ack-spout-msg executor-data (get task-datas task-id)
+                                      common/ACKER-ACK-STREAM-ID (ack-spout-msg executor-data (get task-datas task-id)
                                                                          spout-id tuple-finished-info time-delta id)
-                                      ACKER-FAIL-STREAM-ID (fail-spout-msg executor-data (get task-datas task-id)
+                                      common/ACKER-FAIL-STREAM-ID (fail-spout-msg executor-data (get task-datas task-id)
                                                                            spout-id tuple-finished-info time-delta "FAIL-STREAM" id)
                                       )))
                                 ;; TODO: on failure, emit tuple to failure stream
                                 ))))
         receive-queue (:receive-queue executor-data)
         event-handler (mk-task-receiver executor-data tuple-action-fn)
-        has-ackers? (has-ackers? storm-conf)
+        has-ackers? (common/has-ackers? storm-conf)
         emitted-count (MutableLong. 0)
         empty-emit-streak (MutableLong. 0)
-        
+
         ;; the overflow buffer is used to ensure that spouts never block when emitting
         ;; this ensures that the spout can always clear the incoming buffer (acks and fails), which
         ;; prevents deadlock from occuring across the topology (e.g. Spout -> Bolt -> Acker -> Spout, and all
         ;; buffers filled up)
         ;; when the overflow buffer is full, spouts stop calling nextTuple until it's able to clear the overflow buffer
-        ;; this limits the size of the overflow buffer to however many tuples a spout emits in one call of nextTuple, 
+        ;; this limits the size of the overflow buffer to however many tuples a spout emits in one call of nextTuple,
         ;; preventing memory issues
         overflow-buffer (ConcurrentLinkedQueue.)]
-   
-    [(async-loop
+
+    [(util/async-loop
       (fn []
         ;; If topology was started in inactive state, don't call (.open spout) until it's activated first.
         (while (not @(:storm-active-atom executor-data))
           (Thread/sleep 100))
-        
+
         (log-message "Opening spout " component-id ":" (keys task-datas))
         (doseq [[task-id task-data] task-datas
                 :let [^ISpout spout-obj (:object task-data)
@@ -516,8 +517,8 @@
                                                          (tasks-fn out-stream-id values))
                                              rooted? (and message-id has-ackers?)
                                              root-id (if rooted? (MessageId/generateId rand))
-                                             out-ids (fast-list-for [t out-tasks] (if rooted? (MessageId/generateId rand)))]
-                                         (fast-list-iter [out-task out-tasks id out-ids]
+                                             out-ids (util/fast-list-for [t out-tasks] (if rooted? (MessageId/generateId rand)))]
+                                         (util/fast-list-iter [out-task out-tasks id out-ids]
                                                          (let [tuple-id (if rooted?
                                                                           (MessageId/makeRootId root-id id)
                                                                           (MessageId/makeUnanchored))
@@ -538,8 +539,8 @@
                                                                     {:stream out-stream-id :values values}
                                                                     (if (sampler) (System/currentTimeMillis))])
                                              (task/send-unanchored task-data
-                                                                   ACKER-INIT-STREAM-ID
-                                                                   [root-id (bit-xor-vals out-ids) task-id]
+                                                                   common/ACKER-INIT-STREAM-ID
+                                                                   [root-id (util/bit-xor-vals out-ids) task-id]
                                                                    overflow-buffer))
                                            (when message-id
                                              (ack-spout-msg executor-data task-data message-id
@@ -568,24 +569,24 @@
                     (reportError [this error]
                       (report-error error)
                       )))))
-        (reset! open-or-prepare-was-called? true) 
+        (reset! open-or-prepare-was-called? true)
         (log-message "Opened spout " component-id ":" (keys task-datas))
         (setup-metrics! executor-data)
-        
+
         (disruptor/consumer-started! (:receive-queue executor-data))
         (fn []
           ;; This design requires that spouts be non-blocking
           (disruptor/consume-batch receive-queue event-handler)
-          
+
           ;; try to clear the overflow-buffer
-          (try-cause
+          (util/try-cause
             (while (not (.isEmpty overflow-buffer))
               (let [[out-task out-tuple] (.peek overflow-buffer)]
                 (transfer-fn out-task out-tuple false nil)
                 (.poll overflow-buffer)))
           (catch InsufficientCapacityException e
             ))
-          
+
           (let [active? @(:storm-active-atom executor-data)
                 curr-count (.get emitted-count)]
             (if (and (.isEmpty overflow-buffer)
@@ -596,21 +597,21 @@
                   (when-not @last-active
                     (reset! last-active true)
                     (log-message "Activating spout " component-id ":" (keys task-datas))
-                    (fast-list-iter [^ISpout spout spouts] (.activate spout)))
-               
-                  (fast-list-iter [^ISpout spout spouts] (.nextTuple spout)))
+                    (util/fast-list-iter [^ISpout spout spouts] (.activate spout)))
+
+                  (util/fast-list-iter [^ISpout spout spouts] (.nextTuple spout)))
                 (do
                   (when @last-active
                     (reset! last-active false)
                     (log-message "Deactivating spout " component-id ":" (keys task-datas))
-                    (fast-list-iter [^ISpout spout spouts] (.deactivate spout)))
+                    (util/fast-list-iter [^ISpout spout spouts] (.deactivate spout)))
                   ;; TODO: log that it's getting throttled
                   (Time/sleep 100))))
             (if (and (= curr-count (.get emitted-count)) active?)
               (do (.increment empty-emit-streak)
                   (.emptyEmit spout-wait-strategy (.get empty-emit-streak)))
               (.set empty-emit-streak 0)
-              ))           
+              ))
           0))
       :kill-fn (:report-error-and-die executor-data)
       :factory? true
@@ -619,12 +620,12 @@
 (defn- tuple-time-delta! [^TupleImpl tuple]
   (let [ms (.getProcessSampleStartTime tuple)]
     (if ms
-      (time-delta-ms ms))))
-      
+      (util/time-delta-ms ms))))
+
 (defn- tuple-execute-time-delta! [^TupleImpl tuple]
   (let [ms (.getExecuteSampleStartTime tuple)]
     (if ms
-      (time-delta-ms ms))))
+      (util/time-delta-ms ms))))
 
 (defn put-xor! [^Map pending key id]
   (let [curr (or (.get pending key) (long 0))]
@@ -632,7 +633,7 @@
 
 (defmethod mk-threads :bolt [executor-data task-datas initial-credentials]
   (let [storm-conf (:storm-conf executor-data)
-        execute-sampler (mk-stats-sampler storm-conf)
+        execute-sampler (c/mk-stats-sampler storm-conf)
         executor-stats (:stats executor-data)
         {:keys [storm-conf component-id worker-context transfer-fn report-error sampler
                 open-or-prepare-was-called?]} executor-data
@@ -651,12 +652,12 @@
                           ;; TODO: for state sync, need to check if tuple comes from state spout. if so, update state
                           ;; TODO: how to handle incremental updates as well as synchronizations at same time
                           ;; TODO: need to version tuples somehow
-                          
+
                           ;;(log-debug "Received tuple " tuple " at task " task-id)
                           ;; need to do it this way to avoid reflection
                           (let [stream-id (.getSourceStreamId tuple)]
                             (condp = stream-id
-                              Constants/CREDENTIALS_CHANGED_STREAM_ID 
+                              Constants/CREDENTIALS_CHANGED_STREAM_ID
                                 (let [task-data (get task-datas task-id)
                                       bolt-obj (:object task-data)]
                                   (when (instance? ICredentialsListener bolt-obj)
@@ -674,14 +675,14 @@
                                   (.setExecuteSampleStartTime tuple now))
                                 (.execute bolt-obj tuple)
                                 (let [delta (tuple-execute-time-delta! tuple)]
-                                  (when (= true (storm-conf TOPOLOGY-DEBUG))
+                                  (when (= true (storm-conf c/TOPOLOGY-DEBUG))
                                     (log-message "Execute done TUPLE " tuple " TASK: " task-id " DELTA: " delta))
- 
+
                                   (task/apply-hooks user-context .boltExecute (BoltExecuteInfo. tuple task-id delta))
                                   (when delta
                                     (builtin-metrics/bolt-execute-tuple! (:builtin-metrics task-data)
                                                                          executor-stats
-                                                                         (.getSourceComponent tuple)                                                      
+                                                                         (.getSourceComponent tuple)
                                                                          (.getSourceStreamId tuple)
                                                                          delta)
                                     (stats/bolt-execute-tuple! executor-stats
@@ -696,16 +697,16 @@
         ;; buffers filled up)
         ;; the overflow buffer is might gradually fill degrading the performance gradually
         ;; eventually running out of memory, but at least prevent live-locks/deadlocks.
-        overflow-buffer (if (storm-conf TOPOLOGY-BOLTS-OUTGOING-OVERFLOW-BUFFER-ENABLE) (ConcurrentLinkedQueue.) nil)]
-    
+        overflow-buffer (if (storm-conf c/TOPOLOGY-BOLTS-OUTGOING-OVERFLOW-BUFFER-ENABLE) (ConcurrentLinkedQueue.) nil)]
+
     ;; TODO: can get any SubscribedState objects out of the context now
 
-    [(async-loop
+    [(util/async-loop
       (fn []
         ;; If topology was started in inactive state, don't call prepare bolt until it's activated first.
-        (while (not @(:storm-active-atom executor-data))          
+        (while (not @(:storm-active-atom executor-data))
           (Thread/sleep 100))
-        
+
         (log-message "Preparing bolt " component-id ":" (keys task-datas))
         (doseq [[task-id task-data] task-datas
                 :let [^IBolt bolt-obj (:object task-data)
@@ -715,14 +716,14 @@
                                   (let [out-tasks (if task
                                                     (tasks-fn task stream values)
                                                     (tasks-fn stream values))]
-                                    (fast-list-iter [t out-tasks]
+                                    (util/fast-list-iter [t out-tasks]
                                                     (let [anchors-to-ids (HashMap.)]
-                                                      (fast-list-iter [^TupleImpl a anchors]
+                                                      (util/fast-list-iter [^TupleImpl a anchors]
                                                                       (let [root-ids (-> a .getMessageId .getAnchorsToIds .keySet)]
                                                                         (when (pos? (count root-ids))
                                                                           (let [edge-id (MessageId/generateId rand)]
                                                                             (.updateAckVal a edge-id)
-                                                                            (fast-list-iter [root-id root-ids]
+                                                                            (util/fast-list-iter [root-id root-ids]
                                                                                             (put-xor! anchors-to-ids root-id edge-id))
                                                                             ))))
                                                       (transfer-fn t
@@ -734,7 +735,7 @@
                                                                    overflow-buffer)))
                                     (or out-tasks [])))]]
           (builtin-metrics/register-all (:builtin-metrics task-data) storm-conf user-context)
-          (when (instance? ICredentialsListener bolt-obj) (.setCredentials bolt-obj initial-credentials)) 
+          (when (instance? ICredentialsListener bolt-obj) (.setCredentials bolt-obj initial-credentials))
           (if (= component-id Constants/SYSTEM_COMPONENT_ID)
             (do
               (builtin-metrics/register-queue-metrics {:sendqueue (:batch-transfer-queue executor-data)
@@ -760,20 +761,20 @@
                        (^void ack [this ^Tuple tuple]
                          (let [^TupleImpl tuple tuple
                                ack-val (.getAckVal tuple)]
-                           (fast-map-iter [[root id] (.. tuple getMessageId getAnchorsToIds)]
+                           (util/fast-map-iter [[root id] (.. tuple getMessageId getAnchorsToIds)]
                                           (task/send-unanchored task-data
-                                                                ACKER-ACK-STREAM-ID
+                                                                common/ACKER-ACK-STREAM-ID
                                                                 [root (bit-xor id ack-val)] overflow-buffer)
                                           ))
                          (let [delta (tuple-time-delta! tuple)
-                               debug? (= true (storm-conf TOPOLOGY-DEBUG))]
-                           (when debug? 
+                               debug? (= true (storm-conf c/TOPOLOGY-DEBUG))]
+                           (when debug?
                              (log-message "BOLT ack TASK: " task-id " TIME: " delta " TUPLE: " tuple))
                            (task/apply-hooks user-context .boltAck (BoltAckInfo. tuple task-id delta))
                            (when delta
                              (builtin-metrics/bolt-acked-tuple! (:builtin-metrics task-data)
                                                                 executor-stats
-                                                                (.getSourceComponent tuple)                                                      
+                                                                (.getSourceComponent tuple)
                                                                 (.getSourceStreamId tuple)
                                                                 delta)
                              (stats/bolt-acked-tuple! executor-stats
@@ -781,19 +782,19 @@
                                                       (.getSourceStreamId tuple)
                                                       delta))))
                        (^void fail [this ^Tuple tuple]
-                         (fast-list-iter [root (.. tuple getMessageId getAnchors)]
+                         (util/fast-list-iter [root (.. tuple getMessageId getAnchors)]
                                          (task/send-unanchored task-data
-                                                               ACKER-FAIL-STREAM-ID
+                                                               common/ACKER-FAIL-STREAM-ID
                                                                [root] overflow-buffer))
                          (let [delta (tuple-time-delta! tuple)
-                               debug? (= true (storm-conf TOPOLOGY-DEBUG))]
-                           (when debug? 
+                               debug? (= true (storm-conf c/TOPOLOGY-DEBUG))]
+                           (when debug?
                              (log-message "BOLT fail TASK: " task-id " TIME: " delta " TUPLE: " tuple))
                            (task/apply-hooks user-context .boltFail (BoltFailInfo. tuple task-id delta))
                            (when delta
                              (builtin-metrics/bolt-failed-tuple! (:builtin-metrics task-data)
                                                                  executor-stats
-                                                                 (.getSourceComponent tuple)                                                      
+                                                                 (.getSourceComponent tuple)
                                                                  (.getSourceStreamId tuple))
                              (stats/bolt-failed-tuple! executor-stats
                                                        (.getSourceComponent tuple)
@@ -802,23 +803,23 @@
                        (reportError [this error]
                          (report-error error)
                          )))))
-        (reset! open-or-prepare-was-called? true)        
+        (reset! open-or-prepare-was-called? true)
         (log-message "Prepared bolt " component-id ":" (keys task-datas))
         (setup-metrics! executor-data)
 
         (let [receive-queue (:receive-queue executor-data)
               event-handler (mk-task-receiver executor-data tuple-action-fn)]
           (disruptor/consumer-started! receive-queue)
-          (fn []            
+          (fn []
             (disruptor/consume-batch-when-available receive-queue event-handler)
             ;; try to clear the overflow-buffer
-            (try-cause
+            (util/try-cause
               (while (and overflow-buffer (not (.isEmpty overflow-buffer)))
                 (let [[out-task out-tuple] (.peek overflow-buffer)]
                   (transfer-fn out-task out-tuple false nil)
                   (.poll overflow-buffer)))
               (catch InsufficientCapacityException e
-                (when (= true (storm-conf TOPOLOGY-DEBUG))
+                (when (= true (storm-conf c/TOPOLOGY-DEBUG))
                   (log-message "Insufficient Capacity on queue to emit by bolt " component-id ":" (keys task-datas) ))
                 ))
             0)))

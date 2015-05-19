@@ -14,11 +14,12 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.messaging.netty-unit-test
-  (:use [clojure test])
-  (:import [backtype.storm.messaging TransportFactory])
-  (:use [backtype.storm testing util config log])
-  (:use [backtype.storm.daemon.worker :only [is-connection-ready]])
-  (:import [java.util ArrayList]))
+  (:require [backtype.storm.daemon.worker :refer [is-connection-ready]]
+            [backtype.storm.log :refer [log-message]]
+            [backtype.storm.config :as c]
+            [clojure.test :refer :all])
+  (:import [java.util ArrayList]
+           [backtype.storm.messaging TransportFactory]))
 
 (def port 6700)
 (def task 1)
@@ -46,14 +47,14 @@
 (deftest test-basic
   (log-message "Should send and receive a basic message")
   (let [req_msg (String. "0123456789abcdefghijklmnopqrstuvwxyz")
-        storm-conf {STORM-MESSAGING-TRANSPORT "backtype.storm.messaging.netty.Context"
-                    STORM-MESSAGING-NETTY-AUTHENTICATION false
-                    STORM-MESSAGING-NETTY-BUFFER-SIZE 1024
-                    STORM-MESSAGING-NETTY-MAX-RETRIES 10
-                    STORM-MESSAGING-NETTY-MIN-SLEEP-MS 1000
-                    STORM-MESSAGING-NETTY-MAX-SLEEP-MS 5000
-                    STORM-MESSAGING-NETTY-SERVER-WORKER-THREADS 1
-                    STORM-MESSAGING-NETTY-CLIENT-WORKER-THREADS 1
+        storm-conf {c/STORM-MESSAGING-TRANSPORT "backtype.storm.messaging.netty.Context"
+                    c/STORM-MESSAGING-NETTY-AUTHENTICATION false
+                    c/STORM-MESSAGING-NETTY-BUFFER-SIZE 1024
+                    c/STORM-MESSAGING-NETTY-MAX-RETRIES 10
+                    c/STORM-MESSAGING-NETTY-MIN-SLEEP-MS 1000
+                    c/STORM-MESSAGING-NETTY-MAX-SLEEP-MS 5000
+                    c/STORM-MESSAGING-NETTY-SERVER-WORKER-THREADS 1
+                    c/STORM-MESSAGING-NETTY-CLIENT-WORKER-THREADS 1
                     }
         context (TransportFactory/makeContext storm-conf)
         server (.bind context nil port)
@@ -71,14 +72,14 @@
 (deftest test-large-msg
   (log-message "Should send and receive a large message")
   (let [req_msg (apply str (repeat 2048000 'c'))
-        storm-conf {STORM-MESSAGING-TRANSPORT "backtype.storm.messaging.netty.Context"
-                    STORM-MESSAGING-NETTY-AUTHENTICATION false
-                    STORM-MESSAGING-NETTY-BUFFER-SIZE 102400
-                    STORM-MESSAGING-NETTY-MAX-RETRIES 10
-                    STORM-MESSAGING-NETTY-MIN-SLEEP-MS 1000
-                    STORM-MESSAGING-NETTY-MAX-SLEEP-MS 5000
-                    STORM-MESSAGING-NETTY-SERVER-WORKER-THREADS 1
-                    STORM-MESSAGING-NETTY-CLIENT-WORKER-THREADS 1
+        storm-conf {c/STORM-MESSAGING-TRANSPORT "backtype.storm.messaging.netty.Context"
+                    c/STORM-MESSAGING-NETTY-AUTHENTICATION false
+                    c/STORM-MESSAGING-NETTY-BUFFER-SIZE 102400
+                    c/STORM-MESSAGING-NETTY-MAX-RETRIES 10
+                    c/STORM-MESSAGING-NETTY-MIN-SLEEP-MS 1000
+                    c/STORM-MESSAGING-NETTY-MAX-SLEEP-MS 5000
+                    c/STORM-MESSAGING-NETTY-SERVER-WORKER-THREADS 1
+                    c/STORM-MESSAGING-NETTY-CLIENT-WORKER-THREADS 1
                     }
         context (TransportFactory/makeContext storm-conf)
         server (.bind context nil port)
@@ -96,14 +97,14 @@
 
 (deftest test-batch
   (let [num-messages 100000
-        storm-conf {STORM-MESSAGING-TRANSPORT "backtype.storm.messaging.netty.Context"
-                    STORM-MESSAGING-NETTY-AUTHENTICATION false
-                    STORM-MESSAGING-NETTY-BUFFER-SIZE 1024000
-                    STORM-MESSAGING-NETTY-MAX-RETRIES 10
-                    STORM-MESSAGING-NETTY-MIN-SLEEP-MS 1000
-                    STORM-MESSAGING-NETTY-MAX-SLEEP-MS 5000
-                    STORM-MESSAGING-NETTY-SERVER-WORKER-THREADS 1
-                    STORM-MESSAGING-NETTY-CLIENT-WORKER-THREADS 1
+        storm-conf {c/STORM-MESSAGING-TRANSPORT "backtype.storm.messaging.netty.Context"
+                    c/STORM-MESSAGING-NETTY-AUTHENTICATION false
+                    c/STORM-MESSAGING-NETTY-BUFFER-SIZE 1024000
+                    c/STORM-MESSAGING-NETTY-MAX-RETRIES 10
+                    c/STORM-MESSAGING-NETTY-MIN-SLEEP-MS 1000
+                    c/STORM-MESSAGING-NETTY-MAX-SLEEP-MS 5000
+                    c/STORM-MESSAGING-NETTY-SERVER-WORKER-THREADS 1
+                    c/STORM-MESSAGING-NETTY-CLIENT-WORKER-THREADS 1
                     }
         _ (log-message "Should send and receive many messages (testing with " num-messages " messages)")
         context (TransportFactory/makeContext storm-conf)

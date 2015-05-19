@@ -14,23 +14,21 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.daemon.task
-  (:use [backtype.storm.daemon common])
-  (:use [backtype.storm config util log])
-  (:import [backtype.storm.hooks ITaskHook])
-  (:import [backtype.storm.tuple Tuple TupleImpl])
-  (:import [backtype.storm.generated SpoutSpec Bolt StateSpoutSpec StormTopology])
-  (:import [backtype.storm.hooks.info SpoutAckInfo SpoutFailInfo
-            EmitInfo BoltFailInfo BoltAckInfo])
-  (:import [backtype.storm.task TopologyContext ShellBolt WorkerTopologyContext])
-  (:import [backtype.storm.utils Utils])
-  (:import [backtype.storm.generated ShellComponent JavaObject])
-  (:import [backtype.storm.spout ShellSpout])
-  (:import [java.util Collection List ArrayList])
-  (:require [backtype.storm
-             [tuple :as tuple]
-             [thrift :as thrift]
-             [stats :as stats]])
-  (:require [backtype.storm.daemon.builtin-metrics :as builtin-metrics]))
+  (:require [backtype.storm.thrift :as thrift]
+            [backtype.storm.stats :as stats]
+            [backtype.storm.daemon.common :as common]
+            [backtype.storm.daemon.builtin-metrics :as builtin-metrics]
+            [backtype.storm.util :as util]
+            [backtype.storm.config :as c]
+            [backtype.storm.log :refer [log-message]])
+  (:import [backtype.storm.tuple TupleImpl]
+           [backtype.storm.generated SpoutSpec Bolt StateSpoutSpec StormTopology]
+           [backtype.storm.hooks.info EmitInfo]
+           [backtype.storm.task TopologyContext ShellBolt WorkerTopologyContext]
+           [backtype.storm.utils Utils]
+           [backtype.storm.generated ShellComponent JavaObject]
+           [backtype.storm.spout ShellSpout]
+           [java.util Collection List ArrayList]))
 
 (defn mk-topology-context-builder [worker executor-data topology]
   (let [conf (:conf worker)]
@@ -41,9 +39,9 @@
       (:component->sorted-tasks worker)
       (:component->stream->fields worker)
       (:storm-id worker)
-      (supervisor-storm-resources-path
-        (supervisor-stormdist-root conf (:storm-id worker)))
-      (worker-pids-root conf (:worker-id worker))
+      (c/supervisor-storm-resources-path
+        (c/supervisor-stormdist-root conf (:storm-id worker)))
+      (c/worker-pids-root conf (:worker-id worker))
       (int %)
       (:port worker)
       (:task-ids worker)
@@ -76,7 +74,7 @@
               (contains? spouts component-id) (.get_spout_object ^SpoutSpec (get spouts component-id))
               (contains? bolts component-id) (.get_bolt_object ^Bolt (get bolts component-id))
               (contains? state-spouts component-id) (.get_state_spout_object ^StateSpoutSpec (get state-spouts component-id))
-              true (throw-runtime "Could not find " component-id " in " topology)))
+              true (util/throw-runtime "Could not find " component-id " in " topology)))
         obj (if (instance? ShellComponent obj)
               (if (contains? spouts component-id)
                 (ShellSpout. obj)
@@ -99,7 +97,7 @@
     `(let [hooks# (get-context-hooks ~topology-context)]
        (when-not (hooks-empty? hooks#)
          (let [info# ~info-form]
-           (fast-list-iter [~hook-sym hooks#]
+           (util/fast-list-iter [~hook-sym hooks#]
              (~method-sym ~hook-sym info#)
              ))))))
 
@@ -114,7 +112,7 @@
                                  values
                                  (.getThisTaskId topology-context)
                                  stream)]
-      (fast-list-iter [t (tasks-fn stream values)]
+      (util/fast-list-iter [t (tasks-fn stream values)]
         (transfer-fn t
                      out-tuple
                      overflow-buffer)
@@ -129,12 +127,12 @@
         component-id (:component-id executor-data)
         ^WorkerTopologyContext worker-context (:worker-context executor-data)
         storm-conf (:storm-conf executor-data)
-        emit-sampler (mk-stats-sampler storm-conf)
+        emit-sampler (c/mk-stats-sampler storm-conf)
         stream->component->grouper (:stream->component->grouper executor-data)
         user-context (:user-context task-data)
         executor-stats (:stats executor-data)
-        debug? (= true (storm-conf TOPOLOGY-DEBUG))]
-        
+        debug? (= true (storm-conf c/TOPOLOGY-DEBUG))]
+
     (fn ([^Integer out-task-id ^String stream ^List values]
           (when debug?
             (log-message "Emitting direct: " out-task-id "; " component-id " " stream " " values))
@@ -142,8 +140,8 @@
                 component->grouping (get stream->component->grouper stream)
                 grouping (get component->grouping target-component)
                 out-task-id (if grouping out-task-id)]
-            (when (and (not-nil? grouping) (not= :direct grouping))
-              (throw (IllegalArgumentException. "Cannot emitDirect to a task expecting a regular grouping")))                          
+            (when (and (util/not-nil? grouping) (not= :direct grouping))
+              (throw (IllegalArgumentException. "Cannot emitDirect to a task expecting a regular grouping")))
             (apply-hooks user-context .emit (EmitInfo. values stream task-id [out-task-id]))
             (when (emit-sampler)
               (builtin-metrics/emitted-tuple! (:builtin-metrics task-data) executor-stats stream)
@@ -157,7 +155,7 @@
            (when debug?
              (log-message "Emitting: " component-id " " stream " " values))
            (let [out-tasks (ArrayList.)]
-             (fast-map-iter [[out-component grouper] (get stream->component->grouper stream)]
+             (util/fast-map-iter [[out-component grouper] (get stream->component->grouper stream)]
                (when (= :direct grouper)
                   ;;  TODO: this is wrong, need to check how the stream was declared
                   (throw (IllegalArgumentException. "Cannot do regular emit to direct stream")))
@@ -169,14 +167,14 @@
              (apply-hooks user-context .emit (EmitInfo. values stream task-id out-tasks))
              (when (emit-sampler)
                (stats/emitted-tuple! executor-stats stream)
-               (builtin-metrics/emitted-tuple! (:builtin-metrics task-data) executor-stats stream)              
+               (builtin-metrics/emitted-tuple! (:builtin-metrics task-data) executor-stats stream)
                (stats/transferred-tuples! executor-stats stream (count out-tasks))
                (builtin-metrics/transferred-tuple! (:builtin-metrics task-data) executor-stats stream (count out-tasks)))
              out-tasks)))
     ))
 
 (defn mk-task-data [executor-data task-id]
-  (recursive-map
+  (util/recursive-map
     :executor-data executor-data
     :task-id task-id
     :system-context (system-topology-context (:worker executor-data) executor-data task-id)
@@ -189,10 +187,10 @@
 (defn mk-task [executor-data task-id]
   (let [task-data (mk-task-data executor-data task-id)
         storm-conf (:storm-conf executor-data)]
-    (doseq [klass (storm-conf TOPOLOGY-AUTO-TASK-HOOKS)]
+    (doseq [klass (storm-conf c/TOPOLOGY-AUTO-TASK-HOOKS)]
       (.addTaskHook ^TopologyContext (:user-context task-data) (-> klass Class/forName .newInstance)))
     ;; when this is called, the threads for the executor haven't been started yet,
     ;; so we won't be risking trampling on the single-threaded claim strategy disruptor queue
-    (send-unanchored task-data SYSTEM-STREAM-ID ["startup"])
+    (send-unanchored task-data common/SYSTEM-STREAM-ID ["startup"])
     task-data
     ))

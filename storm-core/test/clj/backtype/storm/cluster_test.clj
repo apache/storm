@@ -14,23 +14,25 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.cluster-test
-  (:import [java.util Arrays])
-  (:import [backtype.storm.daemon.common Assignment StormBase SupervisorInfo])
-  (:import [org.apache.zookeeper ZooDefs ZooDefs$Ids])
-  (:import [org.mockito Mockito])
-  (:import [org.mockito.exceptions.base MockitoAssertionError])
-  (:import [org.apache.curator.framework CuratorFramework CuratorFrameworkFactory CuratorFrameworkFactory$Builder])
-  (:import [backtype.storm.utils Utils TestUtils ZookeeperAuthInfo])
-  (:require [backtype.storm [zookeeper :as zk]])
-  (:require [conjure.core])
-  (:use [conjure core])
-  (:use [clojure test])
-  (:use [backtype.storm cluster config util testing thrift log]))
+  (:require [backtype.storm.zookeeper :as zk]
+            [backtype.storm.config :as c]
+            [backtype.storm.cluster :refer :all]
+            [backtype.storm.testing :as testing]
+            [backtype.storm.util :as util :refer [barr]]
+            [conjure.core :as conjure]
+            [clojure.test :refer :all])
+  (:import [java.util Arrays]
+           [backtype.storm.daemon.common Assignment StormBase SupervisorInfo]
+           [org.apache.zookeeper ZooDefs ZooDefs$Ids]
+           [org.mockito Mockito]
+           [org.mockito.exceptions.base MockitoAssertionError]
+           [org.apache.curator.framework CuratorFramework CuratorFrameworkFactory CuratorFrameworkFactory$Builder]
+           [backtype.storm.utils Utils TestUtils ZookeeperAuthInfo]))
 
 (defn mk-config [zk-port]
-  (merge (read-storm-config)
-         {STORM-ZOOKEEPER-PORT zk-port
-          STORM-ZOOKEEPER-SERVERS ["localhost"]}))
+  (merge (c/read-storm-config)
+         {c/STORM-ZOOKEEPER-PORT zk-port
+          c/STORM-ZOOKEEPER-SERVERS ["localhost"]}))
 
 (defn mk-state
   ([zk-port] (let [conf (mk-config zk-port)]
@@ -43,7 +45,7 @@
 (defn mk-storm-state [zk-port] (mk-storm-cluster-state (mk-config zk-port)))
 
 (deftest test-basics
-  (with-inprocess-zookeeper zk-port
+  (testing/with-inprocess-zookeeper zk-port
     (let [state (mk-state zk-port)]
       (.set-data state "/root" (barr 1 2 3) ZooDefs$Ids/OPEN_ACL_UNSAFE)
       (is (Arrays/equals (barr 1 2 3) (.get-data state "/root" false)))
@@ -64,7 +66,7 @@
       )))
 
 (deftest test-multi-state
-  (with-inprocess-zookeeper zk-port
+  (testing/with-inprocess-zookeeper zk-port
     (let [state1 (mk-state zk-port)
           state2 (mk-state zk-port)]
       (.set-data state1 "/root" (barr 1) ZooDefs$Ids/OPEN_ACL_UNSAFE)
@@ -78,7 +80,7 @@
       )))
 
 (deftest test-ephemeral
-  (with-inprocess-zookeeper zk-port
+  (testing/with-inprocess-zookeeper zk-port
     (let [state1 (mk-state zk-port)
           state2 (mk-state zk-port)
           state3 (mk-state zk-port)]
@@ -115,7 +117,7 @@
       ))))
 
 (deftest test-callbacks
-  (with-inprocess-zookeeper zk-port
+  (testing/with-inprocess-zookeeper zk-port
     (let [[state1-last-cb state1-cb] (mk-callback-tester)
           state1 (mk-state zk-port state1-cb)
           [state2-last-cb state2-cb] (mk-callback-tester)
@@ -166,7 +168,7 @@
 
 
 (deftest test-storm-cluster-state-basics
-  (with-inprocess-zookeeper zk-port
+  (testing/with-inprocess-zookeeper zk-port
     (let [state (mk-storm-state zk-port)
           assignment1 (Assignment. "/aaa" {} {[1] ["1" 1001 1]} {})
           assignment2 (Assignment. "/aaa" {} {[2] ["2" 2002]} {})
@@ -181,7 +183,7 @@
       (is (= #{"storm1" "storm3"} (set (.assignments state nil))))
       (is (= assignment2 (.assignment-info state "storm1" nil)))
       (is (= assignment1 (.assignment-info state "storm3" nil)))
-      
+
       (is (= [] (.active-storms state)))
       (.activate-storm! state "storm1" base1)
       (is (= ["storm1"] (.active-storms state)))
@@ -217,21 +219,21 @@
 
 
 (deftest test-storm-cluster-state-errors
-  (with-inprocess-zookeeper zk-port
-    (with-simulated-time
+  (testing/with-inprocess-zookeeper zk-port
+    (testing/with-simulated-time
       (let [state (mk-storm-state zk-port)]
-        (.report-error state "a" "1" (local-hostname) 6700 (RuntimeException.))
+        (.report-error state "a" "1" (util/local-hostname) 6700 (RuntimeException.))
         (validate-errors! state "a" "1" ["RuntimeException"])
-        (advance-time-secs! 1)
-        (.report-error state "a" "1" (local-hostname) 6700 (IllegalArgumentException.))
+        (testing/advance-time-secs! 1)
+        (.report-error state "a" "1" (util/local-hostname) 6700 (IllegalArgumentException.))
         (validate-errors! state "a" "1" ["IllegalArgumentException" "RuntimeException"])
         (doseq [i (range 10)]
-          (.report-error state "a" "2" (local-hostname) 6700 (RuntimeException.))
-          (advance-time-secs! 2))
+          (.report-error state "a" "2" (util/local-hostname) 6700 (RuntimeException.))
+          (testing/advance-time-secs! 2))
         (validate-errors! state "a" "2" (repeat 10 "RuntimeException"))
         (doseq [i (range 5)]
-          (.report-error state "a" "2" (local-hostname) 6700 (IllegalArgumentException.))
-          (advance-time-secs! 2))
+          (.report-error state "a" "2" (util/local-hostname) 6700 (IllegalArgumentException.))
+          (testing/advance-time-secs! 2))
         (validate-errors! state "a" "2" (concat (repeat 5 "IllegalArgumentException")
                                                 (repeat 5 "RuntimeException")
                                                 ))
@@ -240,7 +242,7 @@
 
 
 (deftest test-supervisor-state
-  (with-inprocess-zookeeper zk-port
+  (testing/with-inprocess-zookeeper zk-port
     (let [state1 (mk-storm-state zk-port)
           state2 (mk-storm-state zk-port)
           supervisor-info1 (SupervisorInfo. 10 "hostname-1" "id1" [1 2] [] {} 1000 "0.9.2")
@@ -259,24 +261,24 @@
       )))
 
 (deftest test-cluster-authentication
-  (with-inprocess-zookeeper zk-port
+  (testing/with-inprocess-zookeeper zk-port
     (let [builder (Mockito/mock CuratorFrameworkFactory$Builder)
           conf (merge
                 (mk-config zk-port)
-                {STORM-ZOOKEEPER-CONNECTION-TIMEOUT 10
-                 STORM-ZOOKEEPER-SESSION-TIMEOUT 10
-                 STORM-ZOOKEEPER-RETRY-INTERVAL 5
-                 STORM-ZOOKEEPER-RETRY-TIMES 2
-                 STORM-ZOOKEEPER-RETRY-INTERVAL-CEILING 15
-                 STORM-ZOOKEEPER-AUTH-SCHEME "digest"
-                 STORM-ZOOKEEPER-AUTH-PAYLOAD "storm:thisisapoorpassword"})]
+                {c/STORM-ZOOKEEPER-CONNECTION-TIMEOUT 10
+                 c/STORM-ZOOKEEPER-SESSION-TIMEOUT 10
+                 c/STORM-ZOOKEEPER-RETRY-INTERVAL 5
+                 c/STORM-ZOOKEEPER-RETRY-TIMES 2
+                 c/STORM-ZOOKEEPER-RETRY-INTERVAL-CEILING 15
+                 c/STORM-ZOOKEEPER-AUTH-SCHEME "digest"
+                 c/STORM-ZOOKEEPER-AUTH-PAYLOAD "storm:thisisapoorpassword"})]
       (. (Mockito/when (.connectString builder (Mockito/anyString))) (thenReturn builder))
       (. (Mockito/when (.connectionTimeoutMs builder (Mockito/anyInt))) (thenReturn builder))
       (. (Mockito/when (.sessionTimeoutMs builder (Mockito/anyInt))) (thenReturn builder))
       (TestUtils/testSetupBuilder builder (str zk-port "/") conf (ZookeeperAuthInfo. conf))
       (is (nil?
            (try
-             (. (Mockito/verify builder) (authorization "digest" (.getBytes (conf STORM-ZOOKEEPER-AUTH-PAYLOAD))))
+             (. (Mockito/verify builder) (authorization "digest" (.getBytes (conf c/STORM-ZOOKEEPER-AUTH-PAYLOAD))))
              (catch MockitoAssertionError e
                e)))))))
 
@@ -286,14 +288,14 @@
 
 (deftest test-cluster-state-default-acls
   (testing "The default ACLs are empty."
-    (stubbing [zk/mkdirs nil
+    (conjure/stubbing [zk/mkdirs nil
                zk/mk-client (reify CuratorFramework (^void close [this] nil))]
       (mk-distributed-cluster-state {})
-      (verify-call-times-for zk/mkdirs 1)
-      (verify-first-call-args-for-indices zk/mkdirs [2] nil))
-    (stubbing [mk-distributed-cluster-state nil
+      (conjure/verify-call-times-for zk/mkdirs 1)
+      (conjure/verify-first-call-args-for-indices zk/mkdirs [2] nil))
+    (conjure/stubbing [mk-distributed-cluster-state nil
                register nil
                mkdirs nil]
       (mk-storm-cluster-state {})
-      (verify-call-times-for mk-distributed-cluster-state 1)
-      (verify-first-call-args-for-indices mk-distributed-cluster-state [4] nil))))
+      (conjure/verify-call-times-for mk-distributed-cluster-state 1)
+      (conjure/verify-first-call-args-for-indices mk-distributed-cluster-state [4] nil))))

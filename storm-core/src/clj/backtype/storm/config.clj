@@ -13,15 +13,15 @@
 ;; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
-
 (ns backtype.storm.config
-  (:import [java.io FileReader File IOException]
-           [backtype.storm.generated StormTopology])
-  (:import [backtype.storm Config ConfigValidation$FieldValidator])
-  (:import [backtype.storm.utils Utils LocalState])
-  (:import [org.apache.commons.io FileUtils])
-  (:require [clojure [string :as str]])
-  (:use [backtype.storm log util]))
+  (:require [clojure.string :as str]
+            [backtype.storm.util :as util :refer [file-path-separator]]
+            [backtype.storm.log :refer [log-message log-warn-error]])
+  (:import [java.io File IOException]
+           [backtype.storm.generated StormTopology]
+           [backtype.storm Config ConfigValidation$FieldValidator]
+           [backtype.storm.utils Utils LocalState]
+           [org.apache.commons.io FileUtils]))
 
 (def RESOURCES-SUBDIR "resources")
 
@@ -36,10 +36,10 @@
       `(def ~(symbol new-name) (. Config ~(symbol name))))))
 
 (def ALL-CONFIGS
-  (dofor [f (seq (.getFields Config))]
+  (util/dofor [f (seq (.getFields Config))]
          (.get f nil)))
 
-(defmulti get-FieldValidator class-selector)
+(defmulti get-FieldValidator util/class-selector)
 
 (defmethod get-FieldValidator nil [_]
   (throw (IllegalArgumentException. "Cannot validate a nil field.")))
@@ -90,7 +90,7 @@
 
 (defn mk-stats-sampler
   [conf]
-  (even-sampler (sampling-rate conf)))
+  (util/even-sampler (sampling-rate conf)))
 
 ; storm.zookeeper.servers:
 ;     - "server1"
@@ -108,7 +108,7 @@
 
 (defn read-default-config
   []
-  (clojurify-structure (Utils/readDefaultConfig)))
+  (util/clojurify-structure (Utils/readDefaultConfig)))
 
 (defn validate-configs-with-schemas
   [conf]
@@ -119,13 +119,13 @@
 
 (defn read-storm-config
   []
-  (let [conf (clojurify-structure (Utils/readStormConfig))]
+  (let [conf (util/clojurify-structure (Utils/readStormConfig))]
     (validate-configs-with-schemas conf)
     conf))
 
 (defn read-yaml-config
   ([name must-exist]
-     (let [conf (clojurify-structure (Utils/findAndReadConfigFile name must-exist))]
+     (let [conf (util/clojurify-structure (Utils/findAndReadConfigFile name must-exist))]
        (validate-configs-with-schemas conf)
        conf))
   ([name]
@@ -179,7 +179,7 @@
   ([conf]
    (str (supervisor-local-dir conf) file-path-separator "stormdist"))
   ([conf storm-id]
-   (str (supervisor-stormdist-root conf) file-path-separator (url-encode storm-id))))
+   (str (supervisor-stormdist-root conf) file-path-separator (util/url-encode storm-id))))
 
 (defn supervisor-stormjar-path
   [stormroot]
@@ -212,7 +212,7 @@
   (let [stormroot (supervisor-stormdist-root conf storm-id)
         conf-path (supervisor-stormconf-path stormroot)
         topology-path (supervisor-stormcode-path stormroot)]
-    (merge conf (clojurify-structure (Utils/javaDeserialize (FileUtils/readFileToByteArray (File. conf-path)) java.util.Map)))))
+    (merge conf (util/clojurify-structure (Utils/javaDeserialize (FileUtils/readFileToByteArray (File. conf-path)) java.util.Map)))))
 
 (defn read-supervisor-topology
   [conf storm-id]
@@ -236,7 +236,7 @@
     nil
     )))
 
-  
+
 (defn set-worker-user! [conf worker-id user]
   (log-message "SET worker-user " worker-id " " user)
   (let [file (worker-user-file conf worker-id)]
