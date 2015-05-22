@@ -111,9 +111,9 @@ outputField is "bytes".  There are alternative implementation like `SchemeAsMult
 
 ```java
 BrokerHosts hosts = new ZkHosts(zkConnString);
-SpoutConfig spoutConfig = new SpoutConfig(hosts, topicName, "/" + topicName, UUID.randomUUID().toString());
+SpoutConfig spoutConf = new SpoutConfig(hosts, topicName, "/" + topicName, UUID.randomUUID().toString());
 spoutConf.scheme = new SchemeAsMultiScheme(new StringScheme());
-KafkaSpout kafkaSpout = new KafkaSpout(spoutConfig);
+KafkaSpout kafkaSpout = new KafkaSpout(spoutConf);
 ```
 
 #### Trident Spout
