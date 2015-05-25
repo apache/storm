@@ -1,4 +1,13 @@
 ## 0.11.0
+ * STORM-596: remove config topology.receiver.buffer.size
+ * STORM-808: allow null to be parsed as null
+ * STORM-816: maven-gpg-plugin does not work with gpg 2.1
+ * STORM-827: Allow AutoTGT to work with storm-hdfs too.
+ * STORM-811: remove old metastor_db before running tests again.
+ * STORM-807: quote args to storm.py correctly
+ * STORM-796: Add support for "error" command in ShellSpout
+ * STORM-745: fix storm.cmd to evaluate 'shift' correctly with 'storm jar'
+ * STORM-603: Log errors when required kafka params are missing
  * STORM-607: storm-hbase HBaseMapState should support user to customize the hbase-key & hbase-qualifier
  * STORM-795: Update the user document for the extlib issue
  * STORM-801: Add Travis CI badge to README
@@ -44,6 +53,7 @@
  * STORM-749: Remove CSRF check from the REST API.
 
 ## 0.10.0
+ * STORM-752: [storm-redis] Clarify Redis*StateUpdater's expire is optional
  * STORM-681: Auto insert license header with genthrift.sh
  * STORM-707: Client (Netty): improve logging to help troubleshooting connection woes
  * STORM-699: storm-jdbc should support custom insert queries. 
@@ -119,7 +129,6 @@
  * STORM-687: Storm UI does not display up to date information despite refreshes in IE
  * STORM-557: High Quality Images for presentations
  * STORM-554: the type of first param "topology" should be ^StormTopology not ^TopologyContext
- * STORM-469: Storm UI Last Error Detail Insufficient for debugging
  * STORM-656: Document "external" modules and "Committer Sponsors"
  * STORM-657: make the shutdown-worker sleep time before kill -9 configurable
  * STORM-663: Create javadocs for BoltDeclarer
