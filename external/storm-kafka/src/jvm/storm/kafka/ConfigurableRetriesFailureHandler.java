@@ -78,7 +78,8 @@ public class ConfigurableRetriesFailureHandler implements IMassageFailureHandler
 
         if (number >= _retriesNumber) {
             LOG.debug(String.format("failing at offset=%s %s of times. Configured limit: %s", offset, number, _retriesNumber));
-            failed.remove(offset);
+            // failed.remove(offset);
+            _pm.ack(offset);
         }
         else {
             failed.put(offset, number);

@@ -39,13 +39,17 @@ import java.util.*;
 
 public class PartitionManager {
     public static final Logger LOG = LoggerFactory.getLogger(PartitionManager.class);
+
     private final CombinedMetric _fetchAPILatencyMax;
     private final ReducedMetric _fetchAPILatencyMean;
     private final CountMetric _fetchAPICallCount;
     private final CountMetric _fetchAPIMessageCount;
     Long _emittedToOffset;
-    SortedSet<Long> _pending = new TreeSet<Long>();
-    //SortedSet<Long> failed = new TreeSet<Long>();
+    // _pending key = Kafka offset, value = time at which the message was first submitted to the topology
+    SortedMap<Long,Long> _pending = new TreeMap<Long,Long>();
+    private final FailedMsgRetryManager _failedMsgRetryManager;
+
+    // retryRecords key = Kafka offset, value = retry info for the given message
     Long _committedTo;
     LinkedList<MessageAndRealOffset> _waitingToEmit = new LinkedList<MessageAndRealOffset>();
     Partition _partition;
@@ -55,11 +59,7 @@ public class PartitionManager {
     DynamicPartitionConnections _connections;
     ZkState _state;
     Map _stormConf;
-    //long numberFailed, numberAcked;
-    long numberAcked;
-    IMassageFailureHandler _failureHandler;
-
-
+    long numberFailed, numberAcked;
     public PartitionManager(DynamicPartitionConnections connections, String topologyInstanceId, ZkState state, Map stormConf, SpoutConfig spoutConfig, Partition id) {
         _partition = id;
         _connections = connections;
@@ -68,8 +68,13 @@ public class PartitionManager {
         _consumer = connections.register(id.host, id.partition);
         _state = state;
         _stormConf = stormConf;
-        _failureHandler = MessageFailureHandlerFactoryRepository.getFactory().getHandler(this, stormConf);
-        numberAcked = 0;
+        numberAcked = numberFailed = 0;
+
+//        _failedMsgRetryManager = MessageFailureHandlerFactoryRepository.getFactory().getHandler(this, stormConf);
+        _failedMsgRetryManager = new ExponentialBackoffMsgRetryManager(_spoutConfig.retryInitialDelayMs,
+                                                                           _spoutConfig.retryDelayMultiplier,
+                                                                           _spoutConfig.retryDelayMaxMs,
+                                                                           getRetriesConfiguration());
 
         String jsonTopologyId = null;
         Long jsonOffset = null;
@@ -90,9 +95,9 @@ public class PartitionManager {
         if (jsonTopologyId == null || jsonOffset == null) { // failed to parse JSON?
             _committedTo = currentOffset;
             LOG.info("No partition information found, using configuration to determine offset");
-        } else if (!topologyInstanceId.equals(jsonTopologyId) && spoutConfig.forceFromStart) {
+        } else if (!topologyInstanceId.equals(jsonTopologyId) && spoutConfig.ignoreZkOffsets) {
             _committedTo = KafkaUtils.getOffset(_consumer, spoutConfig.topic, id.partition, spoutConfig.startOffsetTime);
-            LOG.info("Topology change detected and reset from start forced, using configuration to determine offset");
+            LOG.info("Topology change detected and ignore zookeeper offsets set to true, using configuration to determine offset");
         } else {
             _committedTo = jsonOffset;
             LOG.info("Read last commit offset from zookeeper: " + _committedTo + "; old topology_id: " + jsonTopologyId + " - new topology_id: " + topologyInstanceId );
@@ -100,9 +105,10 @@ public class PartitionManager {
 
         if (currentOffset - _committedTo > spoutConfig.maxOffsetBehind || _committedTo <= 0) {
             LOG.info("Last commit offset from zookeeper: " + _committedTo);
+            Long lastCommittedOffset = _committedTo;
             _committedTo = currentOffset;
-            LOG.info("Commit offset " + _committedTo + " is more than " +
-                    spoutConfig.maxOffsetBehind + " behind, resetting to startOffsetTime=" + spoutConfig.startOffsetTime);
+            LOG.info("Commit offset " + lastCommittedOffset + " is more than " +
+                    spoutConfig.maxOffsetBehind + " behind latest offset " + currentOffset + ", resetting to startOffsetTime=" + spoutConfig.startOffsetTime);
         }
 
         LOG.info("Starting Kafka " + _consumer.host() + ":" + id.partition + " from offset " + _committedTo);
@@ -150,19 +156,23 @@ public class PartitionManager {
         }
     }
 
+
     private void fill() {
         long start = System.nanoTime();
-        long offset;
+        Long offset;
 
         // Are there failed tuples? If so, fetch those first.
-        offset = _failureHandler.getOffset(_emittedToOffset);
-        boolean had_failed = offset != _emittedToOffset;
+        offset = this._failedMsgRetryManager.nextFailedMessageToRetry();
+        final boolean processingNewTuples = (offset == null);
+        if (processingNewTuples) {
+            offset = _emittedToOffset;
+        }
 
         ByteBufferMessageSet msgs = null;
         try {
             msgs = KafkaUtils.fetchMessages(_spoutConfig, _consumer, _partition, offset);
-        } catch (UpdateOffsetException e) {
-            _emittedToOffset = KafkaUtils.getOffset(_consumer, _spoutConfig.topic, _partition.partition, _spoutConfig);
+        } catch (TopicOffsetOutOfRangeException e) {
+            _emittedToOffset = KafkaUtils.getOffset(_consumer, _spoutConfig.topic, _partition.partition, kafka.api.OffsetRequest.EarliestTime());
             LOG.warn("Using new offset: {}", _emittedToOffset);
             // fetch failed, so don't update the metrics
             return;
@@ -176,18 +186,21 @@ public class PartitionManager {
             int numMessages = 0;
 
             for (MessageAndOffset msg : msgs) {
-                _failureHandler.startMessageProcessing(msg);
                 final Long cur_offset = msg.offset();
-
                 if (cur_offset < offset) {
                     // Skip any old offsets.
                     continue;
                 }
-                if (!had_failed || _failureHandler.isOffsetFailed(cur_offset)) {
+                if (processingNewTuples || this._failedMsgRetryManager.shouldRetryMsg(cur_offset)) {
                     numMessages += 1;
-                    _pending.add(cur_offset);
+                    if (!_pending.containsKey(cur_offset)) {
+                        _pending.put(cur_offset, System.currentTimeMillis());
+                    }
                     _waitingToEmit.add(new MessageAndRealOffset(msg.message(), cur_offset));
                     _emittedToOffset = Math.max(msg.nextOffset(), _emittedToOffset);
+                    if (_failedMsgRetryManager.shouldRetryMsg(cur_offset)) {
+                        this._failedMsgRetryManager.retryStarted(cur_offset);
+                    }
                 }
             }
             _fetchAPIMessageCount.incrBy(numMessages);
@@ -195,17 +208,31 @@ public class PartitionManager {
     }
 
     public void ack(Long offset) {
-        if (!_pending.isEmpty() && _pending.first() < offset - _spoutConfig.maxOffsetBehind) {
+        if (!_pending.isEmpty() && _pending.firstKey() < offset - _spoutConfig.maxOffsetBehind) {
             // Too many things pending!
-            _pending.headSet(offset - _spoutConfig.maxOffsetBehind).clear();
+            _pending.headMap(offset - _spoutConfig.maxOffsetBehind).clear();
         }
         _pending.remove(offset);
+        this._failedMsgRetryManager.acked(offset);
         numberAcked++;
-        _failureHandler.ack(offset);
     }
 
     public void fail(Long offset) {
-        _failureHandler.fail(offset);
+        if (offset < _emittedToOffset - _spoutConfig.maxOffsetBehind) {
+            LOG.info(
+                    "Skipping failed tuple at offset=" + offset +
+                            " because it's more than maxOffsetBehind=" + _spoutConfig.maxOffsetBehind +
+                            " behind _emittedToOffset=" + _emittedToOffset
+            );
+        } else {
+            LOG.debug("failing at offset=" + offset + " with _pending.size()=" + _pending.size() + " pending and _emittedToOffset=" + _emittedToOffset);
+            numberFailed++;
+            if (numberAcked == 0 && numberFailed > _spoutConfig.maxOffsetBehind) {
+                throw new RuntimeException("Too many tuple failures");
+            }
+
+            this._failedMsgRetryManager.failed(offset);
+        }
     }
 
     public void commit() {
@@ -237,7 +264,7 @@ public class PartitionManager {
         if (_pending.isEmpty()) {
             return _emittedToOffset;
         } else {
-            return _pending.first();
+            return _pending.firstKey();
         }
     }
 
@@ -265,5 +292,19 @@ public class PartitionManager {
             this.partition = partition;
             this.offset = offset;
         }
+    }
+
+    private int getRetriesConfiguration() {
+        int retriesNumber = 3;
+        String key = "kafka.spout." + _spoutConfig.id + ".retries";
+        if (_stormConf.containsKey(key)) {
+            //retriesNumber = Integer.parseInt((String)stormConf.get(key));
+            retriesNumber = ((Long)_stormConf.get(key)).intValue();
+        }
+        else if (_stormConf.containsKey("kafka.spout.retries")) {
+            retriesNumber = ((Long)_stormConf.get("kafka.spout.retries")).intValue();
+        }
+
+        return retriesNumber;
     }
 }

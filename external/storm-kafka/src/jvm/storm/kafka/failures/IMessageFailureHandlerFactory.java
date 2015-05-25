@@ -1,5 +1,6 @@
 package storm.kafka.failures;
 
+import storm.kafka.FailedMsgRetryManager;
 import storm.kafka.PartitionManager;
 
 import java.util.Map;
@@ -9,5 +10,5 @@ import java.util.Map;
  */
 public interface IMessageFailureHandlerFactory {
 
-    public IMassageFailureHandler getHandler(PartitionManager pm, Map conf);
+    public FailedMsgRetryManager getHandler(PartitionManager pm, Map conf);
 }

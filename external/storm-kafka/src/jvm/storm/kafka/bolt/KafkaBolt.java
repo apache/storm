@@ -17,6 +17,7 @@
  */
 package storm.kafka.bolt;
 
+import backtype.storm.Constants;
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.OutputFieldsDeclarer;
@@ -89,6 +90,11 @@ public class KafkaBolt<K, V> extends BaseRichBolt {
 
     @Override
     public void execute(Tuple input) {
+        if (isTick(input)) {
+            collector.ack(input);
+            return; // Do not try to send ticks to Kafka
+        }
+
         K key = null;
         V message = null;
         String topic = null;
@@ -101,16 +107,21 @@ public class KafkaBolt<K, V> extends BaseRichBolt {
             } else {
                 LOG.warn("skipping key = " + key + ", topic selector returned null.");
             }
-        } catch (Exception ex) {
-            LOG.error("Could not send message with key = " + key
-                    + " and value = " + message + " to topic = " + topic, ex);
-        } finally {
             collector.ack(input);
+        } catch (Exception ex) {
+            collector.reportError(ex);
+            collector.fail(input);
         }
     }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
 
+    }
+
+    public static boolean isTick(Tuple tuple) {
+        return tuple != null
+                && Constants.SYSTEM_COMPONENT_ID  .equals(tuple.getSourceComponent())
+                && Constants.SYSTEM_TICK_STREAM_ID.equals(tuple.getSourceStreamId());
     }
 }

@@ -1,8 +1,6 @@
 package storm.kafka.failures;
 
-import storm.kafka.ConfigurableRetriesFailureHandler;
-import storm.kafka.DefaultFailureHandler;
-import storm.kafka.PartitionManager;
+import storm.kafka.*;
 
 import java.util.Map;
 
@@ -20,19 +18,20 @@ public class MessageFailureHandlerDefaultFactory implements IMessageFailureHandl
     }
 
     @Override
-    public IMassageFailureHandler getHandler(PartitionManager pm, Map conf) {
-        IMassageFailureHandler handler = null;
-        switch (_factoryType) {
-            case DEFAULT:
-                handler = new DefaultFailureHandler(pm);
-                break;
-            case CONFIGURED_RETRY:
-                handler = new ConfigurableRetriesFailureHandler(pm, getRetriesConfiguration(pm));
-                break;
-            default:
-                throw new RuntimeException("Unsupported factory type: " + _factoryType);
-
-        }
+    public FailedMsgRetryManager getHandler(PartitionManager pm, Map conf) {
+        FailedMsgRetryManager handler = null;
+//        switch (_factoryType) {
+//            case DEFAULT:
+//                handler = new DefaultFailureHandler(pm);
+//                break;
+//            case CONFIGURED_RETRY:
+//                handler = new ConfigurableRetriesFailureHandler(pm, getRetriesConfiguration(pm));
+//                break;
+//            default:
+//                throw new RuntimeException("Unsupported factory type: " + _factoryType);
+//
+//        }
+        handler = new ExponentialBackoffMsgRetryManager(1, 1, 1, 1);
         return handler;
     }
 
