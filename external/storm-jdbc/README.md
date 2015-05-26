@@ -49,7 +49,7 @@ to be used by some non-standard sql frameworks like Pheonix which only supports 
 
 ### JdbcInsertBolt
 To use the `JdbcInsertBolt`, you construct an instance of it by specifying a `ConnectionProvider` implementation
-and a `JdbcMapper` implementation that coverts storm tuple to DB row. In addition, you must either supply
+and a `JdbcMapper` implementation that converts storm tuple to DB row. In addition, you must either supply
 a table name  using `withTableName` method or an insert query using `withInsertQuery`. 
 If you specify a insert query you should ensure that your `JdbcMapper` implementation will return a list of columns in the same order as in your insert query.
 You can optionally specify a query timeout seconds param that specifies max seconds an insert query can take. 
