@@ -59,7 +59,7 @@ public class ZkCoordinatorTest {
         hosts.refreshFreqSecs = 1;
         spoutConfig = new SpoutConfig(hosts, "topic", "/test", "id");
         Map conf = buildZookeeperConfig(server);
-        state = new ZkState(conf);
+        state = new ZkState("storm", conf);
         simpleConsumer = new SimpleConsumer("localhost", broker.getPort(), 60000, 1024, "testClient");
         when(dynamicPartitionConnections.register(any(Broker.class), anyInt())).thenReturn(simpleConsumer);
     }

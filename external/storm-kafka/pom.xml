@@ -28,7 +28,7 @@
     <packaging>jar</packaging>
     <artifactId>storm-kafka</artifactId>
     <name>storm-kafka</name>
-    <version>0.9.4.0-PHEED</version>
+    <version>0.9.4.1-PHEED</version>
     <description>Storm Spouts for Apache Kafka</description>
     <build>
         <plugins>
@@ -135,5 +135,10 @@
             <version>0.9.4</version>
             <scope>provided</scope>
         </dependency>
+      <dependency>
+        <groupId>com.datastax.cassandra</groupId>
+        <artifactId>cassandra-driver-core</artifactId>
+        <version>2.1.6</version>
+      </dependency>
     </dependencies>
 </project>

@@ -32,9 +32,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ZkState {
+public class ZkState implements IOffsetInfoStorage{
     public static final Logger LOG = LoggerFactory.getLogger(ZkState.class);
     CuratorFramework _curator;
+    private String zkRoot;
+
 
     private CuratorFramework newCurator(Map stateConf) throws Exception {
         Integer port = (Integer) stateConf.get(Config.TRANSACTIONAL_ZOOKEEPER_PORT);
@@ -54,8 +56,9 @@ public class ZkState {
         return _curator;
     }
 
-    public ZkState(Map stateConf) {
+    public ZkState(String zkRoot, Map stateConf) {
         stateConf = new HashMap(stateConf);
+        this.zkRoot = zkRoot;
 
         try {
             _curator = newCurator(stateConf);
@@ -109,8 +112,23 @@ public class ZkState {
         }
     }
 
+    @Override
+    public void set(String spoutId, String partitionId, Map<Object, Object> data) {
+        writeJSON(committedPath(spoutId, partitionId), data);
+    }
+
+    @Override
+    public Map<Object, Object> get(String spoutId, String partitionId) {
+        return readJSON(committedPath(spoutId, partitionId));
+    }
+
+    @Override
     public void close() {
         _curator.close();
         _curator = null;
+    }
+
+    private String committedPath(String spoutId, String partitionId) {
+        return zkRoot + "/" + spoutId + "/" + partitionId;
     }
 }

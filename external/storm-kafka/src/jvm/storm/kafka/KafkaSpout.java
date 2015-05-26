@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import storm.kafka.PartitionManager.KafkaMessageId;
 
+import java.net.UnknownHostException;
 import java.util.*;
 
 // TODO: need to add blacklisting
@@ -56,7 +57,7 @@ public class KafkaSpout extends BaseRichSpout {
     SpoutOutputCollector _collector;
     PartitionCoordinator _coordinator;
     DynamicPartitionConnections _connections;
-    ZkState _state;
+    IOffsetInfoStorage _state;
 
     long _lastUpdateMs = 0;
 
@@ -82,7 +83,20 @@ public class KafkaSpout extends BaseRichSpout {
         stateConf.put(Config.TRANSACTIONAL_ZOOKEEPER_SERVERS, zkServers);
         stateConf.put(Config.TRANSACTIONAL_ZOOKEEPER_PORT, zkPort);
         stateConf.put(Config.TRANSACTIONAL_ZOOKEEPER_ROOT, _spoutConfig.zkRoot);
-        _state = new ZkState(stateConf);
+        _state = OffsetStorageFactory.getStorage(stateConf);
+//        if (stateConf.get(STORAGE_TYPE) == "CASSANDRA") {
+//            try {
+//                _state = new CassandraOffsetInfoStorage((List<String>)stateConf.get("cassandra_storage_addresses"), (String)stateConf.get("cassandra_storage_keyspace"));
+//            } catch (UnknownHostException e) {
+//                throw new RuntimeException("Unhandled cassandra hosts");
+//            }
+//        }
+//        else {
+//            stateConf.put(Config.TRANSACTIONAL_ZOOKEEPER_SERVERS, zkServers);
+//            stateConf.put(Config.TRANSACTIONAL_ZOOKEEPER_PORT, zkPort);
+//            stateConf.put(Config.TRANSACTIONAL_ZOOKEEPER_ROOT, _spoutConfig.zkRoot);
+//            _state =  new ZkState(_spoutConfig.zkRoot, stateConf);
+//        }
 
         _connections = new DynamicPartitionConnections(_spoutConfig, KafkaUtils.makeBrokerReader(conf, _spoutConfig));
 

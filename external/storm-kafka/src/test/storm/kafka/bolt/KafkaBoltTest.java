@@ -27,7 +27,7 @@ import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.TupleImpl;
 import backtype.storm.tuple.Values;
-import backtype.storm.utils.TupleUtils;
+//import backtype.storm.utils.TupleUtils;
 import backtype.storm.utils.Utils;
 import kafka.api.OffsetRequest;
 import kafka.javaapi.consumer.SimpleConsumer;
@@ -208,8 +208,12 @@ public class KafkaBoltTest {
         when(tuple.getSourceComponent()).thenReturn(Constants.SYSTEM_COMPONENT_ID);
         when(tuple.getSourceStreamId()).thenReturn(Constants.SYSTEM_TICK_STREAM_ID);
         // Sanity check
-        assertTrue(TupleUtils.isTick(tuple));
+        assertTrue(isTickTuple(tuple));
         return tuple;
+    }
+
+    private boolean isTickTuple(Tuple tuple) {
+        return tuple.getSourceComponent().equals(Constants.SYSTEM_COMPONENT_ID) && tuple.getSourceStreamId().equals(Constants.SYSTEM_TICK_STREAM_ID);
     }
 
 }

@@ -57,10 +57,10 @@ public class PartitionManager {
     String _topologyInstanceId;
     SimpleConsumer _consumer;
     DynamicPartitionConnections _connections;
-    ZkState _state;
+    IOffsetInfoStorage _state;
     Map _stormConf;
     long numberFailed, numberAcked;
-    public PartitionManager(DynamicPartitionConnections connections, String topologyInstanceId, ZkState state, Map stormConf, SpoutConfig spoutConfig, Partition id) {
+    public PartitionManager(DynamicPartitionConnections connections, String topologyInstanceId, IOffsetInfoStorage state, Map stormConf, SpoutConfig spoutConfig, Partition id) {
         _partition = id;
         _connections = connections;
         _spoutConfig = spoutConfig;
@@ -78,16 +78,14 @@ public class PartitionManager {
 
         String jsonTopologyId = null;
         Long jsonOffset = null;
-        String path = committedPath();
         try {
-            Map<Object, Object> json = _state.readJSON(path);
-            LOG.info("Read partition information from: " + path +  "  --> " + json );
+            Map<Object, Object> json = _state.get(_spoutConfig.id, _partition.getId());
             if (json != null) {
                 jsonTopologyId = (String) ((Map<Object, Object>) json.get("topology")).get("id");
                 jsonOffset = (Long) json.get("offset");
             }
         } catch (Throwable e) {
-            LOG.warn("Error reading and/or parsing at ZkNode: " + path, e);
+            LOG.warn("Error reading and/or parsing at state: " + _spoutConfig.id + " " + _partition.getId(), e);
         }
 
         Long currentOffset = KafkaUtils.getOffset(_consumer, spoutConfig.topic, id.partition, spoutConfig);
@@ -247,18 +245,18 @@ public class PartitionManager {
                     .put("broker", ImmutableMap.of("host", _partition.host.host,
                             "port", _partition.host.port))
                     .put("topic", _spoutConfig.topic).build();
-            _state.writeJSON(committedPath(), data);
+            _state.set(_spoutConfig.id,_partition.getId(), data);
 
             _committedTo = lastCompletedOffset;
-            LOG.debug("Wrote last completed offset (" + lastCompletedOffset + ") to ZK for " + _partition + " for topology: " + _topologyInstanceId);
+            LOG.debug("Wrote last completed offset (" + lastCompletedOffset + ") to storage for " + _partition + " for topology: " + _topologyInstanceId);
         } else {
             LOG.debug("No new offset for " + _partition + " for topology: " + _topologyInstanceId);
         }
     }
 
-    private String committedPath() {
-        return _spoutConfig.zkRoot + "/" + _spoutConfig.id + "/" + _partition.getId();
-    }
+//    private String committedPath() {
+//        return _spoutConfig.zkRoot + "/" + _spoutConfig.id + "/" + _partition.getId();
+//    }
 
     public long lastCompletedOffset() {
         if (_pending.isEmpty()) {
