@@ -88,7 +88,7 @@ public class Column<T> implements Serializable {
 
         if (sqlType != column.sqlType) return false;
         if (!columnName.equals(column.columnName)) return false;
-        return !(val != null ? !val.equals(column.val) : column.val != null);
+        return val != null ? val.equals(column.val) : column.val == null;
 
     }
 
