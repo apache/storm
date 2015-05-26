@@ -98,7 +98,7 @@ hikariConfigMap.put("dataSource.user","root");
 hikariConfigMap.put("dataSource.password","password");
 ConnectionProvider connectionProvider = new HikariCPConnectionProvider(map);
 String tableName = "user_details";
-JdbcMapper simpleJdbcMapper = new SimpleJdbcMapper(tableName, map);
+JdbcMapper simpleJdbcMapper = new SimpleJdbcMapper(tableName, connectionProvider);
 ```
 The mapper initialized in the example above assumes a storm tuple has value for all the columns of the table you intend to insert data into and its `getColumn`
 method will return the columns in the order in which Jdbc connection instance's `connection.getMetaData().getColumns();` method returns them.
