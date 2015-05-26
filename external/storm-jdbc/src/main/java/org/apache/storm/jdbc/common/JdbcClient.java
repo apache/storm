@@ -32,11 +32,11 @@ import java.util.*;
 public class JdbcClient {
     private static final Logger LOG = LoggerFactory.getLogger(JdbcClient.class);
 
-    private ConnectionPrvoider connectionPrvoider;
+    private ConnectionProvider connectionProvider;
     private int queryTimeoutSecs;
 
-    public JdbcClient(ConnectionPrvoider  connectionPrvoider, int queryTimeoutSecs) {
-        this.connectionPrvoider = connectionPrvoider;
+    public JdbcClient(ConnectionProvider connectionProvider, int queryTimeoutSecs) {
+        this.connectionProvider = connectionProvider;
         this.queryTimeoutSecs = queryTimeoutSecs;
     }
 
@@ -48,7 +48,7 @@ public class JdbcClient {
     public void executeInsertQuery(String query, List<List<Column>> columnLists) {
         Connection connection = null;
         try {
-            connection = connectionPrvoider.getConnection();
+            connection = connectionProvider.getConnection();
             boolean autoCommit = connection.getAutoCommit();
             if(autoCommit) {
                 connection.setAutoCommit(false);
@@ -105,7 +105,7 @@ public class JdbcClient {
     public List<List<Column>> select(String sqlQuery, List<Column> queryParams) {
         Connection connection = null;
         try {
-            connection = connectionPrvoider.getConnection();
+            connection = connectionProvider.getConnection();
             PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery);
             if(queryTimeoutSecs > 0) {
                 preparedStatement.setQueryTimeout(queryTimeoutSecs);
@@ -161,7 +161,7 @@ public class JdbcClient {
         Connection connection = null;
         List<Column> columns = new ArrayList<Column>();
         try {
-            connection = connectionPrvoider.getConnection();
+            connection = connectionProvider.getConnection();
             DatabaseMetaData metaData = connection.getMetaData();
             ResultSet resultSet = metaData.getColumns(null, null, tableName, null);
             while (resultSet.next()) {
@@ -178,7 +178,7 @@ public class JdbcClient {
     public void executeSql(String sql) {
         Connection connection = null;
         try {
-            connection = connectionPrvoider.getConnection();
+            connection = connectionProvider.getConnection();
             Statement statement = connection.createStatement();
             statement.execute(sql);
         } catch (SQLException e) {

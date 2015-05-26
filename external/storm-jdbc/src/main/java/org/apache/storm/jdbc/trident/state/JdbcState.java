@@ -21,10 +21,9 @@ import backtype.storm.Config;
 import backtype.storm.topology.FailedException;
 import backtype.storm.tuple.Values;
 import com.google.common.collect.Lists;
-import org.apache.commons.lang.Validate;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.storm.jdbc.common.Column;
-import org.apache.storm.jdbc.common.ConnectionPrvoider;
+import org.apache.storm.jdbc.common.ConnectionProvider;
 import org.apache.storm.jdbc.common.JdbcClient;
 import org.apache.storm.jdbc.mapper.JdbcMapper;
 import org.apache.storm.jdbc.mapper.JdbcLookupMapper;
@@ -55,14 +54,14 @@ public class JdbcState implements State {
     public static class Options implements Serializable {
         private JdbcMapper mapper;
         private JdbcLookupMapper jdbcLookupMapper;
-        private ConnectionPrvoider connectionPrvoider;
+        private ConnectionProvider connectionProvider;
         private String tableName;
         private String insertQuery;
         private String selectQuery;
         private Integer queryTimeoutSecs;
 
-        public Options withConnectionPrvoider(ConnectionPrvoider connectionPrvoider) {
-            this.connectionPrvoider = connectionPrvoider;
+        public Options withConnectionPrvoider(ConnectionProvider connectionProvider) {
+            this.connectionProvider = connectionProvider;
             return this;
         }
 
@@ -98,7 +97,7 @@ public class JdbcState implements State {
     }
 
     protected void prepare() {
-        options.connectionPrvoider.prepare();
+        options.connectionProvider.prepare();
 
         if(StringUtils.isBlank(options.insertQuery) && StringUtils.isBlank(options.tableName) && StringUtils.isBlank(options.selectQuery)) {
             throw new IllegalArgumentException("If you are trying to insert into DB you must supply either insertQuery or tableName." +
@@ -109,7 +108,7 @@ public class JdbcState implements State {
             options.queryTimeoutSecs = Integer.parseInt(map.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS).toString());
         }
 
-        this.jdbcClient = new JdbcClient(options.connectionPrvoider, options.queryTimeoutSecs);
+        this.jdbcClient = new JdbcClient(options.connectionProvider, options.queryTimeoutSecs);
     }
 
     @Override

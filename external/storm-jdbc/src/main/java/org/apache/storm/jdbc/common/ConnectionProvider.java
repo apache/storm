@@ -7,7 +7,7 @@ import java.util.Map;
 /**
  * Provides a database connection.
  */
-public interface ConnectionPrvoider extends Serializable {
+public interface ConnectionProvider extends Serializable {
     /**
      * method must be idempotent.
      */

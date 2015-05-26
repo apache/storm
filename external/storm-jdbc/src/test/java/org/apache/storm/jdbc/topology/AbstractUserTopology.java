@@ -24,7 +24,7 @@ import backtype.storm.tuple.Fields;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.storm.jdbc.common.Column;
-import org.apache.storm.jdbc.common.ConnectionPrvoider;
+import org.apache.storm.jdbc.common.ConnectionProvider;
 import org.apache.storm.jdbc.common.HikariCPConnectionProvider;
 import org.apache.storm.jdbc.common.JdbcClient;
 import org.apache.storm.jdbc.mapper.JdbcMapper;
@@ -58,7 +58,7 @@ public abstract class AbstractUserTopology {
     protected UserSpout userSpout;
     protected JdbcMapper jdbcMapper;
     protected JdbcLookupMapper jdbcLookupMapper;
-    protected ConnectionPrvoider connectionPrvoider;
+    protected ConnectionProvider connectionProvider;
 
     protected static final String TABLE_NAME = "user";
     protected static final String JDBC_CONF = "jdbc.conf";
@@ -83,21 +83,21 @@ public abstract class AbstractUserTopology {
         Config config = new Config();
         config.put(JDBC_CONF, map);
 
-        ConnectionPrvoider connectionPrvoider = new HikariCPConnectionProvider(map);
-        connectionPrvoider.prepare();
+        ConnectionProvider connectionProvider = new HikariCPConnectionProvider(map);
+        connectionProvider.prepare();
         int queryTimeoutSecs = 60;
-        JdbcClient jdbcClient = new JdbcClient(connectionPrvoider, queryTimeoutSecs);
+        JdbcClient jdbcClient = new JdbcClient(connectionProvider, queryTimeoutSecs);
         for (String sql : setupSqls) {
             jdbcClient.executeSql(sql);
         }
 
         this.userSpout = new UserSpout();
-        this.jdbcMapper = new SimpleJdbcMapper(TABLE_NAME, map, connectionPrvoider);
-        connectionPrvoider.cleanup();
+        this.jdbcMapper = new SimpleJdbcMapper(TABLE_NAME, map, connectionProvider);
+        connectionProvider.cleanup();
         Fields outputFields = new Fields("user_id", "user_name", "dept_name", "create_date");
         List<Column> queryParamColumns = Lists.newArrayList(new Column("user_id", Types.INTEGER));
         this.jdbcLookupMapper = new SimpleJdbcLookupMapper(outputFields, queryParamColumns);
-        this.connectionPrvoider = new HikariCPConnectionProvider(map);
+        this.connectionProvider = new HikariCPConnectionProvider(map);
         if (args.length == 4) {
             LocalCluster cluster = new LocalCluster();
             cluster.submitTopology("test", config, getTopology());

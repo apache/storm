@@ -8,7 +8,7 @@ import java.sql.SQLException;
 import java.util.Map;
 import java.util.Properties;
 
-public class HikariCPConnectionProvider implements ConnectionPrvoider {
+public class HikariCPConnectionProvider implements ConnectionProvider {
 
     private Map<String, Object> configMap;
     private transient HikariDataSource dataSource;

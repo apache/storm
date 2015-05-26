@@ -19,7 +19,7 @@ package org.apache.storm.jdbc.mapper;
 
 import backtype.storm.tuple.ITuple;
 import org.apache.storm.jdbc.common.Column;
-import org.apache.storm.jdbc.common.ConnectionPrvoider;
+import org.apache.storm.jdbc.common.ConnectionProvider;
 import org.apache.storm.jdbc.common.JdbcClient;
 import org.apache.storm.jdbc.common.Util;
 
@@ -34,10 +34,10 @@ public class SimpleJdbcMapper implements JdbcMapper {
 
     private List<Column> schemaColumns;
 
-    public SimpleJdbcMapper(String tableName, Map<String, Object> connectionProvideConfig, ConnectionPrvoider connectionPrvoider) {
+    public SimpleJdbcMapper(String tableName, Map<String, Object> connectionProvideConfig, ConnectionProvider connectionProvider) {
         int queryTimeoutSecs = 30;
-        connectionPrvoider.prepare();
-        JdbcClient client = new JdbcClient(connectionPrvoider, queryTimeoutSecs);
+        connectionProvider.prepare();
+        JdbcClient client = new JdbcClient(connectionProvider, queryTimeoutSecs);
         this.schemaColumns = client.getColumnSchema(tableName);
     }
 

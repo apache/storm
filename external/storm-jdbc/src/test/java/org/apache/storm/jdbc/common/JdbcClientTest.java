@@ -25,7 +25,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.sql.Timestamp;
-import java.util.Date;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,11 +42,11 @@ public class JdbcClientTest {
         map.put("dataSource.url", "jdbc:hsqldb:mem:test");//jdbc:mysql://localhost/test
         map.put("dataSource.user","SA");//root
         map.put("dataSource.password","");//password
-        ConnectionPrvoider connectionPrvoider = new HikariCPConnectionProvider(map);
-        connectionPrvoider.prepare();
+        ConnectionProvider connectionProvider = new HikariCPConnectionProvider(map);
+        connectionProvider.prepare();
 
         int queryTimeoutSecs = 60;
-        this.client = new JdbcClient(connectionPrvoider, queryTimeoutSecs);
+        this.client = new JdbcClient(connectionProvider, queryTimeoutSecs);
         client.executeSql("create table user_details (id integer, user_name varchar(100), created_timestamp TIMESTAMP)");
     }
 
