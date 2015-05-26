@@ -92,7 +92,7 @@ public abstract class AbstractUserTopology {
         }
 
         this.userSpout = new UserSpout();
-        this.jdbcMapper = new SimpleJdbcMapper(TABLE_NAME, map, connectionProvider);
+        this.jdbcMapper = new SimpleJdbcMapper(TABLE_NAME, connectionProvider);
         connectionProvider.cleanup();
         Fields outputFields = new Fields("user_id", "user_name", "dept_name", "create_date");
         List<Column> queryParamColumns = Lists.newArrayList(new Column("user_id", Types.INTEGER));

@@ -65,7 +65,7 @@ hikariConfigMap.put("dataSource.password","password");
 ConnectionProvider connectionProvider = new HikariCPConnectionProvider(map);
 
 String tableName = "user_details";
-JdbcMapper simpleJdbcMapper = new SimpleJdbcMapper(tableName, map);
+JdbcMapper simpleJdbcMapper = new SimpleJdbcMapper(tableName, connectionProvider);
 
 JdbcInsertBolt userPersistanceBolt = new JdbcInsertBolt(connectionProvider, simpleJdbcMapper)
                                     .withTableName("user")
