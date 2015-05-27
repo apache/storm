@@ -47,10 +47,6 @@
             <artifactId>clojure</artifactId>
         </dependency>
         <dependency>
-            <groupId>clj-time</groupId>
-            <artifactId>clj-time</artifactId>
-        </dependency>
-        <dependency>
             <groupId>compojure</groupId>
             <artifactId>compojure</artifactId>
         </dependency>

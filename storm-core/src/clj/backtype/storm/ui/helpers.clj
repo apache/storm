@@ -21,7 +21,6 @@
          [walk :only [keywordize-keys]]])
   (:use [backtype.storm config log])
   (:use [backtype.storm.util :only [clojurify-structure uuid defnk url-encode not-nil?]])
-  (:use [clj-time coerce format])
   (:import [backtype.storm.generated ExecutorInfo ExecutorSummary])
   (:import [java.util EnumSet])
   (:import [org.eclipse.jetty.server Server]
