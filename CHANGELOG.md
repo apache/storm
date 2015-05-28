@@ -1,4 +1,5 @@
 ## 0.9.5
+ * STORM-790: Log "task is null" instead of let worker died when task is null in transfer-fn
  * STORM-796: Add support for "error" command in ShellSpout
  * STORM-745: fix storm.cmd to evaluate 'shift' correctly with 'storm jar'
 
