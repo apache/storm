@@ -479,14 +479,15 @@
                    storm-id
                    " from "
                    master-code-dir)
-
       (FileUtils/forceMkdir (File. tmproot))
 
       (Utils/downloadFromMaster conf (master-stormjar-path master-code-dir) (supervisor-stormjar-path tmproot))
       (Utils/downloadFromMaster conf (master-stormcode-path master-code-dir) (supervisor-stormcode-path tmproot))
       (Utils/downloadFromMaster conf (master-stormconf-path master-code-dir) (supervisor-stormconf-path tmproot))
       (extract-dir-from-jar (supervisor-stormjar-path tmproot) RESOURCES-SUBDIR tmproot)
-      (FileUtils/moveDirectory (File. tmproot) (File. stormroot))
+      (if-not (.exists (File. stormroot))
+        (FileUtils/moveDirectory (File. tmproot) (File. stormroot))
+        (FileUtils/deleteDirectory (File. tmproot)))
       (log-message "Finished downloading code for storm id "
                    storm-id
                    " from "
