@@ -128,8 +128,6 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
     private final ListeningScheduledExecutorService scheduler;
     protected final Map stormConf;
 
-    private AtomicReference<MessageBatch> pendingMessageBatch;
-
     @SuppressWarnings("rawtypes")
     Client(Map stormConf, ChannelFactory factory, ScheduledExecutorService scheduler, String host, int port) {
         closing = false;
@@ -145,8 +143,6 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
         int maxWaitMs = Utils.getInt(stormConf.get(Config.STORM_MESSAGING_NETTY_MAX_SLEEP_MS));
         retryPolicy = new StormBoundedExponentialBackoffRetry(minWaitMs, maxWaitMs, maxReconnectionAttempts);
 
-        pendingMessageBatch = new AtomicReference<MessageBatch>(new MessageBatch(messageBatchSize));
-
         // Initiate connection to remote destination
         bootstrap = createClientBootstrap(factory, bufferSize);
         dstAddress = new InetSocketAddress(host, port);
@@ -155,8 +151,6 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
 
         // Launch background flushing thread
         long initialDelayMs = Math.min(MINIMUM_INITIAL_DELAY_MS, maxWaitMs * maxReconnectionAttempts);
-        scheduler.scheduleWithFixedDelay(createBackgroundFlusher(), initialDelayMs, flushCheckIntervalMs,
-                TimeUnit.MILLISECONDS);
     }
 
     private ClientBootstrap createClientBootstrap(ChannelFactory factory, int bufferSize) {
@@ -173,28 +167,6 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
             return PREFIX + dstAddress.toString();
         }
         return "";
-    }
-
-    private Runnable createBackgroundFlusher() {
-        return new Runnable() {
-            @Override
-            public void run() {
-                if (!closing) {
-                    LOG.debug("flushing pending messages to {} in background", dstAddressPrefixedName);
-                    flushPendingMessages();
-                }
-            }
-        };
-    }
-
-    private void flushPendingMessages() {
-        Channel channel = channelRef.get();
-        if (connectionEstablished(channel)) {
-            MessageBatch toFlush = pendingMessageBatch.getAndSet(new MessageBatch(messageBatchSize));
-            flushMessages(channel, toFlush);
-        } else {
-            closeChannelAndReconnect(channel);
-        }
     }
 
     /**
@@ -276,7 +248,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
             return;
         }
 
-        MessageBatch toSend = pendingMessageBatch.getAndSet(new MessageBatch(messageBatchSize));
+        MessageBatch toSend = new MessageBatch(messageBatchSize);
 
         // Collect messages into batches (to optimize network throughput), then flush them.
         while (msgs.hasNext()) {
@@ -381,7 +353,6 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
             LOG.info("closing Netty Client {}", dstAddressPrefixedName);
             // Set closing to true to prevent any further reconnection attempts.
             closing = true;
-            flushPendingMessages();
             closeChannel();
         }
     }
