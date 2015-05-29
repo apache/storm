@@ -1,4 +1,6 @@
 ## 0.10.0
+ * STORM-835 Netty Client hold batch object until io operation complete
+ * STORM-827: Allow AutoTGT to work with storm-hdfs too.
  * STORM-728: Put emitted and transferred stats under correct columns
  * STORM-790: Log "task is null" instead of let worker died when task is null in transfer-fn
  * STORM-752: [storm-redis] Clarify Redis*StateUpdater's expire is optional
