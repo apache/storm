@@ -1,4 +1,5 @@
 ## 0.10.0
+ * STORM-821: Adding connection provider interface to decouple jdbc connector from a single connection pooling implementation.
  * STORM-737] Check task->node+port with read lock to prevent sending to closed connection
  * STORM-835 Netty Client hold batch object until io operation complete
  * STORM-827: Allow AutoTGT to work with storm-hdfs too.
