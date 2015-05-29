@@ -60,16 +60,12 @@ import static com.google.common.base.Preconditions.checkState;
  * - Connecting and reconnecting are performed asynchronously.
  *     - Note: The current implementation drops any messages that are being enqueued for sending if the connection to
  *       the remote destination is currently unavailable.
- * - A background flusher thread is run in the background.  It will, at fixed intervals, check for any pending messages
- *   (i.e. messages buffered in memory) and flush them to the remote destination iff background flushing is currently
- *   enabled.
  */
 public class Client extends ConnectionWithStatus implements IStatefulObject {
 
     private static final Logger LOG = LoggerFactory.getLogger(Client.class);
     private static final String PREFIX = "Netty-Client-";
     private static final long NO_DELAY_MS = 0L;
-    private static final long MINIMUM_INITIAL_DELAY_MS = 30000L;
 
     private final StormBoundedExponentialBackoffRetry retryPolicy;
     private final ClientBootstrap bootstrap;
@@ -126,17 +122,14 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
     private final int messageBatchSize;
 
     private final ListeningScheduledExecutorService scheduler;
-    protected final Map stormConf;
 
     @SuppressWarnings("rawtypes")
     Client(Map stormConf, ChannelFactory factory, ScheduledExecutorService scheduler, String host, int port) {
         closing = false;
-        this.stormConf = stormConf;
         this.scheduler = MoreExecutors.listeningDecorator(scheduler);
         int bufferSize = Utils.getInt(stormConf.get(Config.STORM_MESSAGING_NETTY_BUFFER_SIZE));
         LOG.info("creating Netty Client, connecting to {}:{}, bufferSize: {}", host, port, bufferSize);
         messageBatchSize = Utils.getInt(stormConf.get(Config.STORM_NETTY_MESSAGE_BATCH_SIZE), 262144);
-        int flushCheckIntervalMs = Utils.getInt(stormConf.get(Config.STORM_NETTY_FLUSH_CHECK_INTERVAL_MS), 10);
 
         maxReconnectionAttempts = Utils.getInt(stormConf.get(Config.STORM_MESSAGING_NETTY_MAX_RETRIES));
         int minWaitMs = Utils.getInt(stormConf.get(Config.STORM_MESSAGING_NETTY_MIN_SLEEP_MS));
@@ -148,9 +141,6 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
         dstAddress = new InetSocketAddress(host, port);
         dstAddressPrefixedName = prefixedName(dstAddress);
         scheduleConnect(NO_DELAY_MS);
-
-        // Launch background flushing thread
-        long initialDelayMs = Math.min(MINIMUM_INITIAL_DELAY_MS, maxWaitMs * maxReconnectionAttempts);
     }
 
     private ClientBootstrap createClientBootstrap(ChannelFactory factory, int bufferSize) {
