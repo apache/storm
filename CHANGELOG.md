@@ -1,4 +1,5 @@
 ## 0.10.0
+ * STORM-737] Check task->node+port with read lock to prevent sending to closed connection
  * STORM-835 Netty Client hold batch object until io operation complete
  * STORM-827: Allow AutoTGT to work with storm-hdfs too.
  * STORM-728: Put emitted and transferred stats under correct columns
