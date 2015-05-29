@@ -91,7 +91,6 @@ public class Config extends HashMap<String, Object> {
     public static final Object STORM_NETTY_MESSAGE_BATCH_SIZE_SCHEMA = ConfigValidation.IntegerValidator;
 
     /**
-    /**
      * The delegate for serializing metadata, should be used for serialized objects stored in zookeeper and on disk.
      * This is NOT used for compressing serialized tuples sent between topologies.
      */
