@@ -1,3 +1,7 @@
+## 0.9.5
+ * STORM-796: Add support for "error" command in ShellSpout
+ * STORM-745: fix storm.cmd to evaluate 'shift' correctly with 'storm jar'
+
 ## 0.9.4
  * STORM-559: ZkHosts in README should use 2181 as port.
  * STORM-682: supervisor should handle worker state corruption gracefully.
