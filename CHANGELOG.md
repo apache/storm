@@ -1,5 +1,7 @@
 ## 0.10.0
+ * STORM-728: Put emitted and transferred stats under correct columns
  * STORM-790: Log "task is null" instead of let worker died when task is null in transfer-fn
+ * STORM-752: [storm-redis] Clarify Redis*StateUpdater's expire is optional
  * STORM-786: KafkaBolt should ack tick tuples
  * STORM-512: KafkaBolt doesn't handle ticks properly
  * STORM-788: Fix key for process latencies

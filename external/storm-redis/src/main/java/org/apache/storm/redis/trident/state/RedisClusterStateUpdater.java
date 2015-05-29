@@ -32,16 +32,21 @@ public class RedisClusterStateUpdater extends BaseStateUpdater<RedisClusterState
 
     private final String redisKeyPrefix;
     private final TridentTupleMapper tupleMapper;
-    private final int expireIntervalSec;
+    private int expireIntervalSec = 0;
 
-    public RedisClusterStateUpdater(String redisKeyPrefix, TridentTupleMapper tupleMapper, int expireIntervalSec) {
+    public RedisClusterStateUpdater(String redisKeyPrefix, TridentTupleMapper tupleMapper) {
         this.redisKeyPrefix = redisKeyPrefix;
         this.tupleMapper = tupleMapper;
+    }
+
+    public RedisClusterStateUpdater withExpire(int expireIntervalSec) {
         if (expireIntervalSec > 0) {
             this.expireIntervalSec = expireIntervalSec;
         } else {
             this.expireIntervalSec = 0;
         }
+
+        return this;
     }
 
     @Override
