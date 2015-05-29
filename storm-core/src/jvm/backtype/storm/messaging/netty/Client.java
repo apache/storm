@@ -390,6 +390,8 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
 
     /**
      * Asynchronously establishes a Netty connection to the remote address
+     * This task runs on a single (by default) thread shared among all clients, and thus
+     * should not perform operations that block.
      */
     private class Connector implements Runnable {
 
@@ -399,7 +401,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
             this.address = address;
         }
 
-        private void reconnectAgain(Throwable t) {
+        private void reschedule(Throwable t) {
             String baseMsg = String.format("connection attempt %s to %s failed", connectionAttempts,
                     dstAddressPrefixedName);
             String failureMsg = (t == null) ? baseMsg : baseMsg + ": " + t.toString();
@@ -413,26 +415,31 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
         public void run() {
             try {
                 if (reconnectingAllowed()) {
-                    int connectionAttempt = connectionAttempts.getAndIncrement();
+                    final int connectionAttempt = connectionAttempts.getAndIncrement();
                     totalConnectionAttempts.getAndIncrement();
 
                     LOG.debug("connecting to {} [attempt {}]", address.toString(), connectionAttempt);
                     ChannelFuture future = bootstrap.connect(address);
-                    future.awaitUninterruptibly();
-                    Channel newChannel = future.getChannel();
+                    future.addListener(new ChannelFutureListener() {
+                        @Override
+                        public void operationComplete(ChannelFuture future) throws Exception {
+                            // This call returns immediately
+                            Channel newChannel = future.getChannel();
 
-                    if (future.isSuccess() && connectionEstablished(newChannel)) {
-                        boolean setChannel = channelRef.compareAndSet(null, newChannel);
-                        checkState(setChannel);
-                        LOG.debug("successfully connected to {}, {} [attempt {}]", address.toString(), newChannel.toString(),
-                                connectionAttempt);
-                    } else {
-                        Throwable cause = future.getCause();
-                        reconnectAgain(cause);
-                        if (newChannel != null) {
-                            newChannel.close();
+                            if (future.isSuccess() && connectionEstablished(newChannel)) {
+                                boolean setChannel = channelRef.compareAndSet(null, newChannel);
+                                checkState(setChannel);
+                                LOG.debug("successfully connected to {}, {} [attempt {}]", address.toString(), newChannel.toString(),
+                                        connectionAttempt);
+                            } else {
+                                Throwable cause = future.getCause();
+                                reschedule(cause);
+                                if (newChannel != null) {
+                                    newChannel.close();
+                                }
+                            }
                         }
-                    }
+                    });
                 } else {
                     close();
                     throw new RuntimeException("Giving up to scheduleConnect to " + dstAddressPrefixedName + " after " +
