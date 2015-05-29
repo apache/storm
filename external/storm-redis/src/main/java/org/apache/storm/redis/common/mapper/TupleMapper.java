@@ -15,33 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.redis.util.container;
+package org.apache.storm.redis.common.mapper;
 
-import redis.clients.jedis.JedisCluster;
-import redis.clients.jedis.JedisCommands;
+import backtype.storm.tuple.ITuple;
 
-import java.io.Closeable;
+import java.io.Serializable;
 
-public class JedisClusterContainer implements JedisCommandsInstanceContainer, Closeable {
-
-    private JedisCluster jedisCluster;
-
-    public JedisClusterContainer(JedisCluster jedisCluster) {
-        this.jedisCluster = jedisCluster;
-    }
-
-    @Override
-    public JedisCommands getInstance() {
-        return this.jedisCluster;
-    }
-
-    @Override
-    public void returnInstance(JedisCommands jedisCommands) {
-        // do nothing
-    }
-
-    @Override
-    public void close() {
-        this.jedisCluster.close();
-    }
+public interface TupleMapper extends Serializable {
+    public String getKeyFromTuple(ITuple tuple);
+    public String getValueFromTuple(ITuple tuple);
 }

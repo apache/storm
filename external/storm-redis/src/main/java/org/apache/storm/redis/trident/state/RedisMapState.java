@@ -22,7 +22,7 @@ import backtype.storm.tuple.Values;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
-import org.apache.storm.redis.util.config.JedisPoolConfig;
+import org.apache.storm.redis.common.config.JedisPoolConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
@@ -223,8 +223,10 @@ public class RedisMapState<T> implements IBackingMap<T> {
         if (keys.size() == 0) {
             return Collections.emptyList();
         }
+
+        String[] stringKeys = buildKeys(keys);
+
         if (Strings.isNullOrEmpty(this.options.hkey)) {
-            String[] stringKeys = buildKeys(keys);
             Jedis jedis = null;
             try {
                 jedis = jedisPool.getResource();
@@ -232,32 +234,21 @@ public class RedisMapState<T> implements IBackingMap<T> {
                 return deserializeValues(keys, values);
             } finally {
                 if (jedis != null) {
-                    jedisPool.returnResource(jedis);
+                    jedis.close();
                 }
             }
         } else {
             Jedis jedis = null;
             try {
                 jedis = jedisPool.getResource();
-                Map<String, String> keyValue = jedis.hgetAll(this.options.hkey);
-                List<String> values = buildValuesFromMap(keys, keyValue);
+                List<String> values = jedis.hmget(this.options.hkey, stringKeys);
                 return deserializeValues(keys, values);
             } finally {
                 if (jedis != null) {
-                    jedisPool.returnResource(jedis);
+                    jedis.close();
                 }
             }
         }
-    }
-
-    private List<String> buildValuesFromMap(List<List<Object>> keys, Map<String, String> keyValue) {
-        List<String> values = new ArrayList<String>(keys.size());
-        for (List<Object> key : keys) {
-            String strKey = keyFactory.build(key);
-            String value = keyValue.get(strKey);
-            values.add(value);
-        }
-        return values;
     }
 
     private List<T> deserializeValues(List<List<Object>> keys, List<String> values) {
@@ -293,7 +284,7 @@ public class RedisMapState<T> implements IBackingMap<T> {
                 jedis.mset(keyValue);
             } finally {
                 if (jedis != null) {
-                    jedisPool.returnResource(jedis);
+                    jedis.close();
                 }
             }
         } else {
@@ -303,11 +294,13 @@ public class RedisMapState<T> implements IBackingMap<T> {
                 for (int i = 0; i < keys.size(); i++) {
                     String val = new String(serializer.serialize(vals.get(i)));
                     keyValues.put(keyFactory.build(keys.get(i)), val);
-                }               
+                }
                 jedis.hmset(this.options.hkey, keyValues);
 
             } finally {
-                jedisPool.returnResource(jedis);
+                if (jedis != null) {
+                    jedis.close();
+                }
             }
         }
     }
