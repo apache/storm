@@ -133,8 +133,4 @@ class MessageBatch {
         if (payload_len >0)
             bout.write(message.message());
     }
-
-    public ArrayList<TaskMessage> getMsgs() {
-        return msgs;
-    }
 }
