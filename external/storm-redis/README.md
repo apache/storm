@@ -184,7 +184,8 @@ RedisState
         JedisPoolConfig poolConfig = new JedisPoolConfig.Builder()
                                         .setHost(redisHost).setPort(redisPort)
                                         .build();
-        TridentTupleMapper tupleMapper = new WordCountTupleMapper();
+        RedisStoreMapper storeMapper = new WordCountStoreMapper();
+        RedisLookupMapper lookupMapper = new WordCountLookupMapper();
         RedisState.Factory factory = new RedisState.Factory(poolConfig);
 
         TridentTopology topology = new TridentTopology();
@@ -194,6 +195,11 @@ RedisState
                                 fields,
                                 new RedisStateUpdater("test_", tupleMapper).withExpire(86400000),
                                 new Fields());
+
+        TridentState state = topology.newStaticState(factory);
+        stream = stream.stateQuery(state, new Fields("word"),
+                                new RedisStateQuerier(lookupMapper),
+                                new Fields("columnName","columnValue"));
 ```
 
 RedisClusterState
@@ -205,7 +211,8 @@ RedisClusterState
         }
         JedisClusterConfig clusterConfig = new JedisClusterConfig.Builder().setNodes(nodes)
                                         .build();
-        TridentTupleMapper tupleMapper = new WordCountTupleMapper();
+        RedisStoreMapper storeMapper = new WordCountStoreMapper();
+        RedisLookupMapper lookupMapper = new WordCountLookupMapper();
         RedisClusterState.Factory factory = new RedisClusterState.Factory(clusterConfig);
 
         TridentTopology topology = new TridentTopology();
@@ -215,6 +222,11 @@ RedisClusterState
                                 fields,
                                 new RedisClusterStateUpdater("test_", tupleMapper).withExpire(86400000),
                                 new Fields());
+
+        TridentState state = topology.newStaticState(factory);
+        stream = stream.stateQuery(state, new Fields("word"),
+                                new RedisClusterStateQuerier(lookupMapper),
+                                new Fields("columnName","columnValue"));
 ```
 
 ## License
