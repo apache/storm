@@ -104,12 +104,6 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
     private final AtomicInteger messagesLost = new AtomicInteger(0);
 
     /**
-     * Number of messages buffered in memory.
-     */
-    private final AtomicLong pendingMessages = new AtomicLong(0);
-
-
-    /**
      * This flag is set to true if and only if a client instance is being closed.
      */
     private volatile boolean closing = false;
@@ -371,7 +365,6 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
         HashMap<String, Object> ret = new HashMap<String, Object>();
         ret.put("reconnects", totalConnectionAttempts.getAndSet(0));
         ret.put("sent", messagesSent.getAndSet(0));
-        ret.put("pending", pendingMessages.get());
         ret.put("lostOnSend", messagesLost.getAndSet(0));
         ret.put("dest", dstAddress.toString());
         String src = srcAddressName();
