@@ -1,4 +1,10 @@
 ## 0.11.0
+ * STORM-821: Adding connection provider interface to decouple jdbc connector from a single connection pooling implementation.
+ * STORM-737: Check task->node+port with read lock to prevent sending to closed connection
+ * STORM-715: Add a link to AssignableMetric.java in Metrics.md
+ * STORM-729: Include Executors (Window Hint) if the component is of Bolt type
+ * STORM-835: Netty Client hold batch object until io operation complete
+ * STORM-790: Log "task is null" instead of let worker died when task is null in transfer-fn
  * STORM-596: remove config topology.receiver.buffer.size
  * STORM-808: allow null to be parsed as null
  * STORM-816: maven-gpg-plugin does not work with gpg 2.1
@@ -53,6 +59,7 @@
  * STORM-749: Remove CSRF check from the REST API.
 
 ## 0.10.0
+ * STORM-728: Put emitted and transferred stats under correct columns
  * STORM-752: [storm-redis] Clarify Redis*StateUpdater's expire is optional
  * STORM-681: Auto insert license header with genthrift.sh
  * STORM-707: Client (Netty): improve logging to help troubleshooting connection woes
