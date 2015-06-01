@@ -18,7 +18,6 @@
   (:import [backtype.storm.scheduler ISupervisor]
            [backtype.storm.utils LocalState Time Utils]
            [backtype.storm.daemon Shutdownable]
-           [backtype.storm.daemon.common SupervisorInfo]
            [backtype.storm Constants]
            [java.net JarURLConnection]
            [java.net URI]
@@ -513,7 +512,6 @@
                                                  (conf SUPERVISOR-SCHEDULER-META)
                                                  ((:uptime supervisor))
                                                  (:version supervisor))))]
-                                
     (heartbeat-fn)
 
     ;; should synchronize supervisor so it doesn't launch anything after being down (optimization)
@@ -670,7 +668,7 @@
           topo-classpath (if-let [cp (storm-conf TOPOLOGY-CLASSPATH)]
                            [cp]
                            [])
-          classpath (-> (current-classpath)
+          classpath (-> (worker-classpath)
                         (add-to-classpath [stormjar])
                         (add-to-classpath topo-classpath))
           top-gc-opts (storm-conf TOPOLOGY-WORKER-GC-CHILDOPTS)
@@ -801,4 +799,5 @@
         ))))
 
 (defn -main []
+  (setup-default-uncaught-exception-handler)
   (-launch (standalone-supervisor)))

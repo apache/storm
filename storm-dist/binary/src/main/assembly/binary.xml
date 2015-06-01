@@ -137,6 +137,45 @@
                 <include>README.*</include>
             </includes>
         </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-eventhubs/target</directory>
+            <outputDirectory>external/storm-eventhubs</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-eventhubs</directory>
+            <outputDirectory>external/storm-eventhubs</outputDirectory>
+            <includes>
+                <include>README.*</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-eventhubs/src/main/resources</directory>
+            <outputDirectory>external/storm-eventhubs</outputDirectory>
+            <includes>
+                <include>Config.properties</include>
+            </includes>
+        </fileSet>
+
+        <!-- $STORM_HOME/extlib -->
+        <fileSet>
+            <directory></directory>
+            <outputDirectory>extlib</outputDirectory>
+            <includes>
+                <include></include>
+            </includes>
+        </fileSet>
+        <!-- $STORM_HOME/extlib-daemon, for daemons only -->
+        <fileSet>
+            <directory></directory>
+            <outputDirectory>extlib-daemon</outputDirectory>
+            <includes>
+                <include></include>
+            </includes>
+        </fileSet>
+
     </fileSets>
 
     <files>
