@@ -17,6 +17,9 @@
  */
 package storm.kafka;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,6 +27,8 @@ import java.util.PriorityQueue;
 import java.util.Queue;
 
 public class ExponentialBackoffMsgRetryManager implements FailedMsgRetryManager {
+
+    public static final Logger LOG = LoggerFactory.getLogger(PartitionManager.class);
 
     private final long retryInitialDelayMs;
     private final double retryDelayMultiplier;
@@ -42,6 +47,7 @@ public class ExponentialBackoffMsgRetryManager implements FailedMsgRetryManager 
 
     @Override
     public void failed(Long offset) {
+        LOG.error("Message failed, offset " + offset.toString());
         MessageRetryRecord oldRecord = this.records.get(offset);
         MessageRetryRecord newRecord = oldRecord == null ?
                                        new MessageRetryRecord(offset) :
@@ -52,6 +58,7 @@ public class ExponentialBackoffMsgRetryManager implements FailedMsgRetryManager 
 
     @Override
     public void acked(Long offset) {
+        LOG.info("Message acked, offset " + offset.toString());
         MessageRetryRecord record = this.records.remove(offset);
         if (record != null) {
             this.waiting.remove(record);
@@ -74,6 +81,7 @@ public class ExponentialBackoffMsgRetryManager implements FailedMsgRetryManager 
             MessageRetryRecord first = this.waiting.peek();
             if (System.currentTimeMillis() >= first.retryTimeUTC) {
                 if (this.records.containsKey(first.offset)) {
+                    LOG.info("Previously failed offset found: " + first.offset);
                     return first.offset;
                 } else {
                     // defensive programming - should be impossible
