@@ -1,4 +1,5 @@
 ## 0.10.0
+ * STORM-753: Improve RedisStateQuerier to convert List<Values> from Redis value
  * STORM-835: Netty Client hold batch object until io operation complete
  * STORM-827: Allow AutoTGT to work with storm-hdfs too.
  * STORM-821: Adding connection provider interface to decouple jdbc connector from a single connection pooling implementation.
@@ -118,7 +119,6 @@
  * STORM-567: Move Storm Documentation/Website from SVN to git
  * STORM-565: Fix NPE when topology.groups is null.
  * STORM-563: Kafka Spout doesn't pick up from the beginning of the queue unless forceFromStart specified.
- * STORM-559: ZkHosts in README should use 2181 as port.
  * STORM-557: High Quality Images for presentations
  * STORM-554: the type of first param "topology" should be ^StormTopology not ^TopologyContext
  * STORM-552: Add netty socket backlog config
