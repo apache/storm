@@ -23,6 +23,7 @@ import backtype.storm.messaging.TaskMessage;
 import backtype.storm.metric.api.IStatefulObject;
 import backtype.storm.utils.StormBoundedExponentialBackoffRetry;
 import backtype.storm.utils.Utils;
+import com.google.common.base.Throwables;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
@@ -41,6 +42,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -120,14 +122,14 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
      */
     private final int messageBatchSize;
 
-    private final HashedWheelTimer scheduler;
+    private final ScheduledExecutorService scheduler;
 
     private final Object pendingMessageLock = new Object();
     private MessageBatch pendingMessage;
     private Timeout pendingFlush;
 
     @SuppressWarnings("rawtypes")
-    Client(Map stormConf, ChannelFactory factory, HashedWheelTimer scheduler, String host, int port) {
+    Client(Map stormConf, ChannelFactory factory, ScheduledExecutorService scheduler, String host, int port) {
         closing = false;
         this.scheduler = scheduler;
         int bufferSize = Utils.getInt(stormConf.get(Config.STORM_MESSAGING_NETTY_BUFFER_SIZE));
@@ -147,7 +149,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
 
         // Dummy values to avoid null checks
         pendingMessage = new MessageBatch(messageBatchSize);
-        pendingFlush = scheduler.newTimeout(new Flush(pendingMessage), 10, TimeUnit.MILLISECONDS);
+        scheduler.scheduleWithFixedDelay(new Flush(pendingMessage), 10, TimeUnit.MILLISECONDS);
     }
 
     private ClientBootstrap createClientBootstrap(ChannelFactory factory, int bufferSize) {
@@ -489,37 +491,33 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
      * This task runs on a single thread shared among all clients, and thus
      * should not perform operations that block or are expensive.
      */
-    private class Flush implements TimerTask {
-        private final MessageBatch instructor;
-
-        private Flush(MessageBatch instructor) {
-            this.instructor = instructor;
-        }
-
+    private class Flush implements Runnable {
         @Override
-        public void run(Timeout timeout) throws Exception {
-            MessageBatch toSend;
-            MessageBatch replacement = new MessageBatch(messageBatchSize);
-            synchronized (pendingMessageLock){
-                if(instructor == pendingMessage){
-                    // It's still the batch which scheduled this timeout
-                    toSend = pendingMessage;
-                    pendingMessage = replacement;
-                    checkState(!toSend.isFull(), "Only unfilled batches should get timeouts scheduled");
-                } else {
-                    // It's no longer the batch which scheduled this timeout
-                    // No need to work on this one
-                    toSend = null;
-                }
-            }
-
-            if(toSend!=null){
+        public void run() {
+            try {
                 Channel channel = getConnectedChannel();
-                if(channel == null) {
-                    dropMessages(toSend);
+                if (channel == null || !channel.isWritable()) {
+                    // Connection not available or buffer is full, no point in flushing
+                    return;
                 } else {
+                    // Connection is available and there is room in Netty's buffer
+                    MessageBatch toSend;
+                    synchronized (pendingMessageLock) {
+                        if(pendingMessage.isEmpty()){
+                            // Nothing to flush
+                            return;
+                        } else {
+                            toSend = pendingMessage;
+                            pendingMessage = new MessageBatch(messageBatchSize);
+                        }
+                    }
+                    checkState(!toSend.isFull(), "Filled batches should never be in pendingMessage field");
+
                     flushMessages(channel, toSend);
                 }
+            }catch (Throwable e){
+                LOG.error("Uncaught throwable", e);
+                throw Throwables.propagate(e);
             }
         }
     }
@@ -529,7 +527,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
      * This task runs on a single thread shared among all clients, and thus
      * should not perform operations that block.
      */
-    private class Connect implements TimerTask {
+    private class Connect implements Runnable {
 
         private final InetSocketAddress address;
 
@@ -548,41 +546,46 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
 
 
         @Override
-        public void run(Timeout timeout) throws Exception {
-            if (reconnectingAllowed()) {
-                final int connectionAttempt = connectionAttempts.getAndIncrement();
-                totalConnectionAttempts.getAndIncrement();
+        public void run() {
+            try {
+                if (reconnectingAllowed()) {
+                    final int connectionAttempt = connectionAttempts.getAndIncrement();
+                    totalConnectionAttempts.getAndIncrement();
 
-                LOG.debug("connecting to {} [attempt {}]", address.toString(), connectionAttempt);
-                ChannelFuture future = bootstrap.connect(address);
-                future.addListener(new ChannelFutureListener() {
-                    @Override
-                    public void operationComplete(ChannelFuture future) throws Exception {
-                        // This call returns immediately
-                        Channel newChannel = future.getChannel();
+                    LOG.debug("connecting to {} [attempt {}]", address.toString(), connectionAttempt);
+                    ChannelFuture future = bootstrap.connect(address);
+                    future.addListener(new ChannelFutureListener() {
+                        @Override
+                        public void operationComplete(ChannelFuture future) throws Exception {
+                            // This call returns immediately
+                            Channel newChannel = future.getChannel();
 
-                        if (future.isSuccess() && connectionEstablished(newChannel)) {
-                            boolean setChannel = channelRef.compareAndSet(null, newChannel);
-                            checkState(setChannel);
-                            LOG.debug("successfully connected to {}, {} [attempt {}]", address.toString(), newChannel.toString(),
-                                    connectionAttempt);
-                            if (messagesLost.get() > 0) {
-                                LOG.warn("Re-connection to {} was successful but {} messages has been lost so far", address.toString(), messagesLost.get());
-                            }
-                        } else {
-                            Throwable cause = future.getCause();
-                            reschedule(cause);
-                            if (newChannel != null) {
-                                newChannel.close();
+                            if (future.isSuccess() && connectionEstablished(newChannel)) {
+                                boolean setChannel = channelRef.compareAndSet(null, newChannel);
+                                checkState(setChannel);
+                                LOG.debug("successfully connected to {}, {} [attempt {}]", address.toString(), newChannel.toString(),
+                                        connectionAttempt);
+                                if (messagesLost.get() > 0) {
+                                    LOG.warn("Re-connection to {} was successful but {} messages has been lost so far", address.toString(), messagesLost.get());
+                                }
+                            } else {
+                                Throwable cause = future.getCause();
+                                reschedule(cause);
+                                if (newChannel != null) {
+                                    newChannel.close();
+                                }
                             }
                         }
-                    }
-                });
-            } else {
-                close();
-                throw new RuntimeException("Giving up to scheduleConnect to " + dstAddressPrefixedName + " after " +
-                        connectionAttempts + " failed attempts. " + messagesLost.get() + " messages were lost");
+                    });
+                } else {
+                    close();
+                    throw new RuntimeException("Giving up to scheduleConnect to " + dstAddressPrefixedName + " after " +
+                            connectionAttempts + " failed attempts. " + messagesLost.get() + " messages were lost");
 
+                }
+            }catch (Throwable e){
+                LOG.error("Uncaught throwable", e);
+                throw Throwables.propagate(e);
             }
         }
     }
