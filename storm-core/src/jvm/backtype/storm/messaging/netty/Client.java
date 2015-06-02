@@ -149,7 +149,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
 
         // Dummy values to avoid null checks
         pendingMessage = new MessageBatch(messageBatchSize);
-        scheduler.scheduleWithFixedDelay(new Flush(pendingMessage), 10, TimeUnit.MILLISECONDS);
+        scheduler.scheduleWithFixedDelay(new Flush(), 10, 10, TimeUnit.MILLISECONDS);
     }
 
     private ClientBootstrap createClientBootstrap(ChannelFactory factory, int bufferSize) {
@@ -172,7 +172,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
      * We will retry connection with exponential back-off policy
      */
     private void scheduleConnect(long delayMs) {
-        scheduler.newTimeout(new Connect(dstAddress), delayMs, TimeUnit.MILLISECONDS);
+        scheduler.schedule(new Connect(dstAddress), delayMs, TimeUnit.MILLISECONDS);
     }
 
     private boolean reconnectingAllowed() {
@@ -290,20 +290,8 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
         Batches batches;
         synchronized (pendingMessageLock) {
             batches = createBatches(pendingMessage, unfilled.getMsgs().iterator());
+            // We have a MessageBatch that isn't full yet, so we will wait for more messages.
             pendingMessage = batches.unfilled;
-
-            if(!pendingMessage.isEmpty()) {
-                // We have a MessageBatch that isn't full yet, so we will wait for more messages.
-                // However, we don't want to wait indefinitely so we schedule a timeout which flushes
-                // this batch if it's still not flushed after a delay
-
-                // First, cancel the currently pending flush, because we just saw that Netty's
-                // buffer is full and thus we know we can wait longer
-                pendingFlush.cancel();
-
-                // Schedule the new flush
-                pendingFlush = scheduler.newTimeout(new Flush(pendingMessage), 10, TimeUnit.MILLISECONDS);
-            }
         }
 
         // MessageBatches that were filled are immediately handed to Netty
