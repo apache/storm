@@ -24,14 +24,13 @@ import backtype.storm.metric.api.IStatefulObject;
 import backtype.storm.utils.StormBoundedExponentialBackoffRetry;
 import backtype.storm.utils.Utils;
 import com.google.common.base.Throwables;
+import com.google.common.util.concurrent.ListeningScheduledExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
-import org.jboss.netty.util.HashedWheelTimer;
-import org.jboss.netty.util.Timeout;
-import org.jboss.netty.util.TimerTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -122,16 +121,12 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
      */
     private final int messageBatchSize;
 
-    private final ScheduledExecutorService scheduler;
-
-    private final Object pendingMessageLock = new Object();
-    private MessageBatch pendingMessage;
-    private Timeout pendingFlush;
+    private final ListeningScheduledExecutorService scheduler;
 
     @SuppressWarnings("rawtypes")
     Client(Map stormConf, ChannelFactory factory, ScheduledExecutorService scheduler, String host, int port) {
         closing = false;
-        this.scheduler = scheduler;
+        this.scheduler = MoreExecutors.listeningDecorator(scheduler);
         int bufferSize = Utils.getInt(stormConf.get(Config.STORM_MESSAGING_NETTY_BUFFER_SIZE));
         LOG.info("creating Netty Client, connecting to {}:{}, bufferSize: {}", host, port, bufferSize);
         messageBatchSize = Utils.getInt(stormConf.get(Config.STORM_NETTY_MESSAGE_BATCH_SIZE), 262144);
@@ -146,10 +141,6 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
         dstAddress = new InetSocketAddress(host, port);
         dstAddressPrefixedName = prefixedName(dstAddress);
         scheduleConnect(NO_DELAY_MS);
-
-        // Dummy values to avoid null checks
-        pendingMessage = new MessageBatch(messageBatchSize);
-        scheduler.scheduleWithFixedDelay(new Flush(), 10, 10, TimeUnit.MILLISECONDS);
     }
 
     private ClientBootstrap createClientBootstrap(ChannelFactory factory, int bufferSize) {
@@ -172,7 +163,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
      * We will retry connection with exponential back-off policy
      */
     private void scheduleConnect(long delayMs) {
-        scheduler.schedule(new Connect(dstAddress), delayMs, TimeUnit.MILLISECONDS);
+        scheduler.schedule(new Connector(dstAddress), delayMs, TimeUnit.MILLISECONDS);
     }
 
     private boolean reconnectingAllowed() {
@@ -239,119 +230,54 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
             return;
         }
 
-        Channel channel = getConnectedChannel();
-        if (channel == null) {
-            /*
-             * Connection is unavailable. We will drop pending messages and let at-least-once message replay kick in.
-             *
-             * Another option would be to buffer the messages in memory.  But this option has the risk of causing OOM errors,
-             * especially for topologies that disable message acking because we don't know whether the connection recovery will
-             * succeed  or not, and how long the recovery will take.
-             */
-            dropMessages(msgs);
-            return;
-        }
-
-        MessageBatch replacement = new MessageBatch(messageBatchSize);
-        MessageBatch previous;
-        synchronized (pendingMessageLock) {
-            // pendingMessage is never null
-            previous = pendingMessage;
-            pendingMessage = replacement;
-
-            // We are flushing the pending messages, therefore we can cancel the current pending flush
-            // The cancel is idempotent
-            pendingFlush.cancel();
-        }
-
-        // Collect messages into batches (to optimize network throughput)
-        Batches batches = createBatches(previous, msgs);
-
-        // Then flush the batches that are full
-        flushMessages(channel, batches.fullBatches);
-
-        if (batches.unfilled.isEmpty()) {
-            // All messages ended up neatly into batches; there are no unfilled MessageBatch
-            return;
-        }
-
-        if (channel.isWritable()) {
-            // Netty's internal buffer is not full. We should write the unfilled MessageBatch immediately
-            // to reduce latency
-            flushMessages(channel, batches.unfilled);
-        } else {
-            // We have an unfilled MessageBatch, but Netty's internal buffer is full, meaning that we have time.
-            // In this situation, waiting for more messages before handing it to Netty yields better throughput
-            queueUp(channel, batches.unfilled);
-        }
-    }
-
-    private void queueUp(Channel channel, MessageBatch unfilled) {
-        Batches batches;
-        synchronized (pendingMessageLock) {
-            batches = createBatches(pendingMessage, unfilled.getMsgs().iterator());
-            // We have a MessageBatch that isn't full yet, so we will wait for more messages.
-            pendingMessage = batches.unfilled;
-        }
-
-        // MessageBatches that were filled are immediately handed to Netty
-        flushMessages(channel, batches.fullBatches);
-
-    }
-
-
-    private static class Batches {
-        final List<MessageBatch> fullBatches;
-        final MessageBatch unfilled;
-
-        private Batches(List<MessageBatch> fullBatches, MessageBatch unfilled) {
-            this.fullBatches = fullBatches;
-            this.unfilled = unfilled;
-        }
-    }
-
-    private Batches createBatches(MessageBatch previous, Iterator<TaskMessage> msgs){
-        List<MessageBatch> ret = new ArrayList<MessageBatch>();
-        while (msgs.hasNext()) {
-            TaskMessage message = msgs.next();
-            previous.add(message);
-            if (previous.isFull()) {
-                ret.add(previous);
-                previous = new MessageBatch(messageBatchSize);
-            }
-        }
-
-        return new Batches(ret, previous);
-    }
-
-    private Channel getConnectedChannel() {
         Channel channel = channelRef.get();
-        if (connectionEstablished(channel)) {
-            return channel;
-        } else {
+        if (!connectionEstablished(channel)) {
             // Closing the channel and reconnecting should be done before handling the messages.
             boolean reconnectScheduled = closeChannelAndReconnect(channel);
-            if (reconnectScheduled) {
+            if(reconnectScheduled){
                 // Log the connection error only once
                 LOG.error("connection to {} is unavailable", dstAddressPrefixedName);
             }
-            return null;
+            handleMessagesWhenConnectionIsUnavailable(msgs);
+            return;
         }
+
+        MessageBatch toSend = new MessageBatch(messageBatchSize);
+
+        // Collect messages into batches (to optimize network throughput), then flush them.
+        while (msgs.hasNext()) {
+            TaskMessage message = msgs.next();
+            toSend.add(message);
+            if (toSend.isFull()) {
+                flushMessages(channel, toSend);
+                toSend = new MessageBatch(messageBatchSize);
+            }
+        }
+
+        // Handle any remaining messages in case the "last" batch was not full.
+        flushMessages(channel, toSend);
+
     }
 
     private boolean hasMessages(Iterator<TaskMessage> msgs) {
         return msgs != null && msgs.hasNext();
     }
 
+    /**
+     * We will drop pending messages and let at-least-once message replay kick in.
+     *
+     * Another option would be to buffer the messages in memory.  But this option has the risk of causing OOM errors,
+     * especially for topologies that disable message acking because we don't know whether the connection recovery will
+     * succeed  or not, and how long the recovery will take.
+     */
+    private void handleMessagesWhenConnectionIsUnavailable(Iterator<TaskMessage> msgs) {
+        dropMessages(msgs);
+    }
 
     private void dropMessages(Iterator<TaskMessage> msgs) {
         // We consume the iterator by traversing and thus "emptying" it.
         int msgCount = iteratorSize(msgs);
         messagesLost.getAndAdd(msgCount);
-    }
-
-    private void dropMessages(MessageBatch msgs) {
-        messagesLost.getAndAdd(msgs.size());
     }
 
     private int iteratorSize(Iterator<TaskMessage> msgs) {
@@ -365,23 +291,20 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
         return size;
     }
 
-    private void flushMessages(Channel channel, List<MessageBatch> batches) {
-        for (MessageBatch batch : batches) {
-            flushMessages(channel, batch);
-        }
-    }
-
-
     /**
      * Asynchronously writes the message batch to the channel.
      *
      * If the write operation fails, then we will close the channel and trigger a reconnect.
      */
     private void flushMessages(Channel channel, final MessageBatch batch) {
+        if (!containsMessages(batch)) {
+            return;
+        }
+
+
         final int numMessages = batch.size();
         LOG.debug("writing {} messages to channel {}", batch.size(), channel.toString());
         pendingMessages.addAndGet(numMessages);
-
         ChannelFuture future = channel.write(batch);
         future.addListener(new ChannelFutureListener() {
             public void operationComplete(ChannelFuture future) throws Exception {
@@ -402,7 +325,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
 
     /**
      * Schedule a reconnect if we closed a non-null channel, and acquired the right to
-     * provide a replacement by successfully setting a null to the channel field
+     * provide a replacement
      * @param channel
      * @return if the call scheduled a re-connect task
      */
@@ -417,8 +340,15 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
         return false;
     }
 
+    private boolean containsMessages(MessageBatch batch) {
+        return batch != null && !batch.isEmpty();
+    }
+
     /**
      * Gracefully close this client.
+     *
+     * We will attempt to send any pending messages (i.e. messages currently buffered in memory) before closing the
+     * client.
      */
     @Override
     public void close() {
@@ -426,11 +356,9 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
             LOG.info("closing Netty Client {}", dstAddressPrefixedName);
             // Set closing to true to prevent any further reconnection attempts.
             closing = true;
-
             closeChannel();
         }
     }
-
 
     private void closeChannel() {
         Channel channel = channelRef.get();
@@ -474,52 +402,15 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
     }
 
     /**
-     * Asynchronously flushes pending messages to the remote address, if they have not been
-     * flushed by other means.
-     * This task runs on a single thread shared among all clients, and thus
-     * should not perform operations that block or are expensive.
-     */
-    private class Flush implements Runnable {
-        @Override
-        public void run() {
-            try {
-                Channel channel = getConnectedChannel();
-                if (channel == null || !channel.isWritable()) {
-                    // Connection not available or buffer is full, no point in flushing
-                    return;
-                } else {
-                    // Connection is available and there is room in Netty's buffer
-                    MessageBatch toSend;
-                    synchronized (pendingMessageLock) {
-                        if(pendingMessage.isEmpty()){
-                            // Nothing to flush
-                            return;
-                        } else {
-                            toSend = pendingMessage;
-                            pendingMessage = new MessageBatch(messageBatchSize);
-                        }
-                    }
-                    checkState(!toSend.isFull(), "Filled batches should never be in pendingMessage field");
-
-                    flushMessages(channel, toSend);
-                }
-            }catch (Throwable e){
-                LOG.error("Uncaught throwable", e);
-                throw Throwables.propagate(e);
-            }
-        }
-    }
-
-    /**
      * Asynchronously establishes a Netty connection to the remote address
-     * This task runs on a single thread shared among all clients, and thus
+     * This task runs on a single (by default) thread shared among all clients, and thus
      * should not perform operations that block.
      */
-    private class Connect implements Runnable {
+    private class Connector implements Runnable {
 
         private final InetSocketAddress address;
 
-        public Connect(InetSocketAddress address) {
+        public Connector(InetSocketAddress address) {
             this.address = address;
         }
 
@@ -553,7 +444,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
                                 checkState(setChannel);
                                 LOG.debug("successfully connected to {}, {} [attempt {}]", address.toString(), newChannel.toString(),
                                         connectionAttempt);
-                                if (messagesLost.get() > 0) {
+                                if(messagesLost.get() > 0){
                                     LOG.warn("Re-connection to {} was successful but {} messages has been lost so far", address.toString(), messagesLost.get());
                                 }
                             } else {
@@ -571,7 +462,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
                             connectionAttempts + " failed attempts. " + messagesLost.get() + " messages were lost");
 
                 }
-            }catch (Throwable e){
+            } catch (Throwable e) {
                 LOG.error("Uncaught throwable", e);
                 throw Throwables.propagate(e);
             }
