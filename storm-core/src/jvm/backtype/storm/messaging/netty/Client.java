@@ -61,6 +61,8 @@ import static com.google.common.base.Preconditions.checkState;
  *       the remote destination is currently unavailable.
  */
 public class Client extends ConnectionWithStatus implements IStatefulObject {
+    private static final long PENDING_MESSAGES_FLUSH_TIMEOUT_MS = 600000L;
+    private static final long PENDING_MESSAGES_FLUSH_INTERVAL_MS = 1000L;
 
     private static final Logger LOG = LoggerFactory.getLogger(Client.class);
     private static final String PREFIX = "Netty-Client-";
@@ -357,9 +359,31 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
             LOG.info("closing Netty Client {}", dstAddressPrefixedName);
             // Set closing to true to prevent any further reconnection attempts.
             closing = true;
-
+            waitForPendingMessagesToBeSent();
             closeChannel();
         }
+    }
+
+    private void waitForPendingMessagesToBeSent() {
+        LOG.info("waiting up to {} ms to send {} pending messages to {}",
+                PENDING_MESSAGES_FLUSH_TIMEOUT_MS, pendingMessages.get(), dstAddressPrefixedName);
+        long totalPendingMsgs = pendingMessages.get();
+        long startMs = System.currentTimeMillis();
+        while (pendingMessages.get() != 0) {
+            try {
+                long deltaMs = System.currentTimeMillis() - startMs;
+                if (deltaMs > PENDING_MESSAGES_FLUSH_TIMEOUT_MS) {
+                    LOG.error("failed to send all pending messages to {} within timeout, {} of {} messages were not " +
+                            "sent", dstAddressPrefixedName, pendingMessages.get(), totalPendingMsgs);
+                    break;
+                }
+                Thread.sleep(PENDING_MESSAGES_FLUSH_INTERVAL_MS);
+            }
+            catch (InterruptedException e) {
+                break;
+            }
+        }
+
     }
 
 
