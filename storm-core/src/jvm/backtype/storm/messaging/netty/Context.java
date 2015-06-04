@@ -62,8 +62,8 @@ public class Context implements IContext {
             clientChannelFactory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(bossFactory),
                     Executors.newCachedThreadPool(workerFactory));
         }
-        
-        clientScheduleService = new HashedWheelTimer(new NettyRenameThreadFactory("client-schedule-timer"), 10, TimeUnit.MILLISECONDS);
+
+        clientScheduleService = new HashedWheelTimer(new NettyRenameThreadFactory("client-schedule-timer"));
     }
 
     /**

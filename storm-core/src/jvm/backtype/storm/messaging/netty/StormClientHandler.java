@@ -33,8 +33,7 @@ public class StormClientHandler extends SimpleChannelUpstreamHandler  {
 
     @Override
     public void channelInterestChanged(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
-
-        client.channelInterestChanged(e.getChannel());
+        client.notifyInterestChanged(e.getChannel());
     }
 
     @Override

@@ -65,7 +65,6 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
     private static final Logger LOG = LoggerFactory.getLogger(Client.class);
     private static final String PREFIX = "Netty-Client-";
     private static final long NO_DELAY_MS = 0L;
-    private static final long MINIMUM_INITIAL_DELAY_MS = 30000L;
 
     private final StormBoundedExponentialBackoffRetry retryPolicy;
     private final ClientBootstrap bootstrap;
@@ -116,7 +115,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
 
     private final HashedWheelTimer scheduler;
 
-    private final MessageBatcher batcher;
+    private final MessageBuffer batcher;
 
     @SuppressWarnings("rawtypes")
     Client(Map stormConf, ChannelFactory factory, HashedWheelTimer scheduler, String host, int port) {
@@ -136,8 +135,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
         dstAddress = new InetSocketAddress(host, port);
         dstAddressPrefixedName = prefixedName(dstAddress);
         scheduleConnect(NO_DELAY_MS);
-
-        batcher = new MessageBatcher(messageBatchSize);
+        batcher = new MessageBuffer(messageBatchSize);
     }
 
     private ClientBootstrap createClientBootstrap(ChannelFactory factory, int bufferSize) {
@@ -249,16 +247,18 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
             }
         }
 
-        if (!batcher.isEmpty() && channel.isWritable()) {
-            // Netty's internal buffer is not full and we still have message left in the batcher.
+        if(channel.isWritable()){
+            // Netty's internal buffer is not full and we still have message left in the buffer.
             // We should write the unfilled MessageBatch immediately to reduce latency
             MessageBatch batch = batcher.drain();
-            flushMessages(channel, batch);
+            if(batch != null) {
+                flushMessages(channel, batch);
+            }
         } else {
-            // We have an unfilled MessageBatch, but Netty's internal buffer is full, meaning that we have time.
-            // In this situation, waiting for more messages before handing it to Netty yields better throughput
-            // The messages are already in the buffer, and we know that the writability was false at that point
-            // Therefore we can rely on Netty's writability change.
+            // Channel's buffer is full, meaning that we have time to wait other messages to arrive, and create a bigger
+            // batch. This yields better throughput.
+            // We can rely on `notifyInterestChanged` to push these messages as soon as there is spece in Netty's buffer
+            // because we know `Channel.isWritable` was false after the messages were already in the buffer.
         }
     }
 
@@ -286,10 +286,6 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
         // We consume the iterator by traversing and thus "emptying" it.
         int msgCount = iteratorSize(msgs);
         messagesLost.getAndAdd(msgCount);
-    }
-
-    private void dropMessages(MessageBatch msgs) {
-        messagesLost.getAndAdd(msgs.size());
     }
 
     private int iteratorSize(Iterator<TaskMessage> msgs) {
@@ -409,32 +405,12 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
     }
 
     /**
-     * Asynchronously flushes pending messages to the remote address, if they have not been
-     * flushed by other means.
-     * This task runs on a single thread shared among all clients, and thus
-     * should not perform operations that block or are expensive.
-     */
-    private final TimerTask FLUSH = new TimerTask() {
-        @Override
-        public void run(Timeout timeout) throws Exception {
-            MessageBatch toSend = batcher.drain();
-
-            Channel channel = getConnectedChannel();
-            if(channel == null) {
-                dropMessages(toSend);
-            } else {
-                flushMessages(channel, toSend);
-            }
-        }
-    };
-
-    /**
      * Called by Netty thread on change in channel interest
      * @param channel
      */
-    public void channelInterestChanged(Channel channel) {
+    public void notifyInterestChanged(Channel channel) {
         if(channel.isWritable()){
-            // Channel is writable again
+            // Channel is writable again, write if there are any messages pending
             MessageBatch pending = batcher.drain();
             flushMessages(channel, pending);
         }
