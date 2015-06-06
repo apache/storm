@@ -178,6 +178,8 @@ topology.multilang.serializer: "backtype.storm.multilang.JsonSerializer"
 topology.skip.missing.kryo.registrations: false
 topology.max.task.parallelism: null
 topology.max.spout.pending: null
+topology.max.spout.pending.update.auto: false
+topology.max.spout.pending.update.interval: 120
 topology.state.synchronization.timeout.secs: 60
 topology.stats.sample.rate: 0.05
 topology.builtin.metrics.bucket.size.secs: 60
