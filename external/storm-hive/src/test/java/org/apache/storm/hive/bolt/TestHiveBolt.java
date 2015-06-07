@@ -20,7 +20,6 @@ package org.apache.storm.hive.bolt;
 
 import backtype.storm.Config;
 import backtype.storm.task.GeneralTopologyContext;
-import backtype.storm.task.IOutputCollector;
 import backtype.storm.task.OutputCollector;
 import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.tuple.Fields;
@@ -90,7 +89,7 @@ public class TestHiveBolt {
     public TemporaryFolder dbFolder = new TemporaryFolder();
 
     @Mock
-    private IOutputCollector collector;
+    private OutputCollector collector;
 
 
     private static final Logger LOG = LoggerFactory.getLogger(HiveBolt.class);
@@ -146,7 +145,7 @@ public class TestHiveBolt {
             .withTxnsPerBatch(2)
             .withBatchSize(2);
         bolt = new HiveBolt(hiveOptions);
-        bolt.prepare(config,null,new OutputCollector(collector));
+        bolt.prepare(config,null,collector);
         Integer id = 100;
         String msg = "test-123";
         String city = "sunnyvale";
@@ -175,7 +174,7 @@ public class TestHiveBolt {
             .withBatchSize(2)
             .withAutoCreatePartitions(false);
         bolt = new HiveBolt(hiveOptions);
-        bolt.prepare(config,null,new OutputCollector(collector));
+        bolt.prepare(config,null,collector);
         Integer id = 100;
         String msg = "test-123";
         String city = "sunnyvale";
@@ -205,7 +204,7 @@ public class TestHiveBolt {
             .withTxnsPerBatch(2)
             .withBatchSize(1);
         bolt = new HiveBolt(hiveOptions);
-        bolt.prepare(config,null,new OutputCollector(collector));
+        bolt.prepare(config,null,collector);
         Integer id = 100;
         String msg = "test-123";
         Date d = new Date();
@@ -231,7 +230,7 @@ public class TestHiveBolt {
             .withTxnsPerBatch(2)
             .withBatchSize(1);
         bolt = new HiveBolt(hiveOptions);
-        bolt.prepare(config,null,new OutputCollector(collector));
+        bolt.prepare(config,null,collector);
         Tuple tuple1 = generateTestTuple(1,"SJC","Sunnyvale","CA");
         //Tuple tuple2 = generateTestTuple(2,"SFO","San Jose","CA");
         bolt.execute(tuple1);
@@ -254,7 +253,7 @@ public class TestHiveBolt {
             .withTxnsPerBatch(2)
             .withBatchSize(1);
         bolt = new HiveBolt(hiveOptions);
-        bolt.prepare(config,null,new OutputCollector(collector));
+        bolt.prepare(config,null,collector);
         Tuple tuple1 = generateTestTuple(1,"SJC","Sunnyvale","CA");
         //Tuple tuple2 = generateTestTuple(2,"SFO","San Jose","CA");
         bolt.execute(tuple1);
