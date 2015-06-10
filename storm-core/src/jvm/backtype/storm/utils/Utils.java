@@ -299,6 +299,11 @@ public class Utils {
         }
         ret.putAll(storm);
         ret.putAll(readCommandLineOpts());
+
+        String loginConfig = System.getProperty("java.security.auth.login.config");
+        if (loginConfig != null) {
+            ret.put("java.security.auth.login.config", loginConfig);
+        }
         return ret;
     }
 
