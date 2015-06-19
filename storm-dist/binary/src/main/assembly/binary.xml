@@ -50,7 +50,6 @@
                 <exclude>org.apache.commons:commons-compress</exclude>
                 <exclude>org.apache.commons:commons-exec</exclude>
                 <exclude>commons-io:commons-io</exclude>
-                <exclude>commons-codec:commons-codec</exclude>
                 <exclude>commons-fileupload:commons-fileupload</exclude>
                 <exclude>commons-lang:commons-lang</exclude>
                 <exclude>com.googlecode.json-simple:json-simple</exclude>
