@@ -1,4 +1,7 @@
-## 0.10.0
+## 0.10.0-beta1
+ * STORM-873: Flux does not handle diamond topologies
+ 
+## 0.10.0-beta
  * STORM-856: use serialized value of delay secs for topo actions
  * STORM-852: Replaced Apache Log4j Logger with SLF4J API
  * STORM-813: Change storm-starter's README so that it explains mvn exec:java cannot run multilang topology
