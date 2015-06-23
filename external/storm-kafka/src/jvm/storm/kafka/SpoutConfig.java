@@ -29,6 +29,7 @@ public class SpoutConfig extends KafkaConfig implements Serializable {
 
     // setting for how often to save the current kafka offset to ZooKeeper
     public long stateUpdateIntervalMs = 2000;
+    public String emitStreamId;
 
     // Exponential back-off retry settings.  These are used when retrying messages after a bolt
     // calls OutputCollector.fail().

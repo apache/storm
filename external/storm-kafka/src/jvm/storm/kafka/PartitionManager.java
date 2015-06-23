@@ -23,6 +23,7 @@ import backtype.storm.metric.api.CountMetric;
 import backtype.storm.metric.api.MeanReducer;
 import backtype.storm.metric.api.ReducedMetric;
 import backtype.storm.spout.SpoutOutputCollector;
+import backtype.storm.utils.Utils;
 import com.google.common.collect.ImmutableMap;
 import kafka.javaapi.consumer.SimpleConsumer;
 import kafka.javaapi.message.ByteBufferMessageSet;
@@ -125,8 +126,12 @@ public class PartitionManager {
         return ret;
     }
 
-    //returns false if it's reached the end of current batch
     public EmitState next(SpoutOutputCollector collector) {
+        return this.next(collector, Utils.DEFAULT_STREAM_ID);
+    }
+
+    //returns false if it's reached the end of current batch
+    public EmitState next(SpoutOutputCollector collector, String emitStreamId) {
         if (_waitingToEmit.isEmpty()) {
             fill();
         }
@@ -138,7 +143,7 @@ public class PartitionManager {
             Iterable<List<Object>> tups = KafkaUtils.generateTuples(_spoutConfig, toEmit.msg);
             if (tups != null) {
                 for (List<Object> tup : tups) {
-                    collector.emit(tup, new KafkaMessageId(_partition, toEmit.offset));
+                    collector.emit(emitStreamId, tup, new KafkaMessageId(_partition, toEmit.offset));
                 }
                 break;
             } else {
