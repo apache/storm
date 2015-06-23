@@ -18,7 +18,7 @@
 package storm.kafka;
 
 public interface FailedMsgRetryManager {
-    public void failed(Long offset);
+    public boolean failed(Long offset);
     public void acked(Long offset);
     public void retryStarted(Long offset);
     public Long nextFailedMessageToRetry();

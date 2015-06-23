@@ -84,20 +84,6 @@ public class KafkaSpout extends BaseRichSpout {
         stateConf.put(Config.TRANSACTIONAL_ZOOKEEPER_PORT, zkPort);
         stateConf.put(Config.TRANSACTIONAL_ZOOKEEPER_ROOT, _spoutConfig.zkRoot);
         _state = OffsetStorageFactory.getStorage(stateConf);
-//        if (stateConf.get(STORAGE_TYPE) == "CASSANDRA") {
-//            try {
-//                _state = new CassandraOffsetInfoStorage((List<String>)stateConf.get("cassandra_storage_addresses"), (String)stateConf.get("cassandra_storage_keyspace"));
-//            } catch (UnknownHostException e) {
-//                throw new RuntimeException("Unhandled cassandra hosts");
-//            }
-//        }
-//        else {
-//            stateConf.put(Config.TRANSACTIONAL_ZOOKEEPER_SERVERS, zkServers);
-//            stateConf.put(Config.TRANSACTIONAL_ZOOKEEPER_PORT, zkPort);
-//            stateConf.put(Config.TRANSACTIONAL_ZOOKEEPER_ROOT, _spoutConfig.zkRoot);
-//            _state =  new ZkState(_spoutConfig.zkRoot, stateConf);
-//        }
-
         _connections = new DynamicPartitionConnections(_spoutConfig, KafkaUtils.makeBrokerReader(conf, _spoutConfig));
 
         // using TransactionalState like this is a hack

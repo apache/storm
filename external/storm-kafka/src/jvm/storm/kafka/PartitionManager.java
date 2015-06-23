@@ -229,7 +229,9 @@ public class PartitionManager {
                 throw new RuntimeException("Too many tuple failures");
             }
 
-            this._failedMsgRetryManager.failed(offset);
+            if (!this._failedMsgRetryManager.failed(offset)) {
+                _pending.remove(offset);
+            }
         }
     }
 

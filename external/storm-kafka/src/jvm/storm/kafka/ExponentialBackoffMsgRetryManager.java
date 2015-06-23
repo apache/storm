@@ -46,14 +46,17 @@ public class ExponentialBackoffMsgRetryManager implements FailedMsgRetryManager 
     }
 
     @Override
-    public void failed(Long offset) {
+    public boolean failed(Long offset) {
         LOG.error("Message failed, offset " + offset.toString());
         MessageRetryRecord oldRecord = this.records.get(offset);
         MessageRetryRecord newRecord = oldRecord == null ?
                                        new MessageRetryRecord(offset) :
                                        oldRecord.createNextRetryRecord();
-        this.records.put(offset, newRecord);
-        this.waiting.add(newRecord);
+        if (newRecord.retryNum <= maxRetriesNumber) {
+            this.records.put(offset, newRecord);
+            this.waiting.add(newRecord);
+        }
+        return newRecord.retryNum <= maxRetriesNumber;
     }
 
     @Override
@@ -116,8 +119,8 @@ public class ExponentialBackoffMsgRetryManager implements FailedMsgRetryManager 
      */
     class MessageRetryRecord {
         private final long offset;
-        private final int retryNum;
-        private final long retryTimeUTC;
+        public final int retryNum;
+        public final long retryTimeUTC;
 
         public MessageRetryRecord(long offset) {
             this(offset, 1);
