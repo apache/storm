@@ -27,6 +27,7 @@ import com.google.common.collect.ImmutableMap;
 import kafka.javaapi.consumer.SimpleConsumer;
 import kafka.javaapi.message.ByteBufferMessageSet;
 import kafka.message.MessageAndOffset;
+import kafka.message.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import storm.kafka.KafkaSpout.EmitState;
@@ -35,6 +36,8 @@ import storm.kafka.failures.IMassageFailureHandler;
 import storm.kafka.failures.MessageFailureHandlerFactoryRepository;
 import storm.kafka.trident.MaxMetric;
 
+import java.text.Format;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class PartitionManager {
@@ -46,7 +49,7 @@ public class PartitionManager {
     private final CountMetric _fetchAPIMessageCount;
     Long _emittedToOffset;
     // _pending key = Kafka offset, value = time at which the message was first submitted to the topology
-    SortedMap<Long,Long> _pending = new TreeMap<Long,Long>();
+    SortedMap<Long,MessageAndTime> _pending = new TreeMap<Long,MessageAndTime>();
     private final FailedMsgRetryManager _failedMsgRetryManager;
 
     // retryRecords key = Kafka offset, value = retry info for the given message
@@ -192,7 +195,7 @@ public class PartitionManager {
                 if (processingNewTuples || this._failedMsgRetryManager.shouldRetryMsg(cur_offset)) {
                     numMessages += 1;
                     if (!_pending.containsKey(cur_offset)) {
-                        _pending.put(cur_offset, System.currentTimeMillis());
+                        _pending.put(cur_offset, new MessageAndTime(msg.message()));
                     }
                     _waitingToEmit.add(new MessageAndRealOffset(msg.message(), cur_offset));
                     _emittedToOffset = Math.max(msg.nextOffset(), _emittedToOffset);
@@ -216,6 +219,16 @@ public class PartitionManager {
     }
 
     public void fail(Long offset) {
+        if (_pending.containsKey(offset)) {
+            MessageAndTime record = _pending.get(offset);
+            Iterable<List<Object>> tuples = KafkaUtils.generateTuples(_spoutConfig, record.getMessage());
+            String tuplesStr = "";
+            for (Object tup : tuples) {
+              tuplesStr += tup.toString();
+            }
+            LOG.info(String.format("Failed message with offset %s from timestamp %s: %s", offset, convertTime(record.getTimestamp()), tuplesStr));
+        }
+
         if (offset < _emittedToOffset - _spoutConfig.maxOffsetBehind) {
             LOG.info(
                     "Skipping failed tuple at offset=" + offset +
@@ -306,5 +319,31 @@ public class PartitionManager {
         }
 
         return retriesNumber;
+    }
+
+    private String convertTime(long time){
+        Date date = new Date(time);
+        Format format = new SimpleDateFormat("yyyy MM dd HH:mm:ss");
+        return format.format(date);
+    }
+
+    private class MessageAndTime {
+
+        private Message message;
+        private long timestamp;
+
+        public MessageAndTime(Message message) {
+            this.message = message;
+            this.timestamp = System.currentTimeMillis();
+        }
+
+        public Message getMessage() {
+            return message;
+        }
+
+        public long getTimestamp() {
+            return timestamp;
+        }
+
     }
 }

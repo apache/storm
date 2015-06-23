@@ -28,7 +28,7 @@
     <packaging>jar</packaging>
     <artifactId>storm-kafka</artifactId>
     <name>storm-kafka</name>
-    <version>0.9.4.4-PHEED</version>
+    <version>0.9.4.5-PHEED</version>
     <description>Storm Spouts for Apache Kafka</description>
     <build>
         <plugins>
