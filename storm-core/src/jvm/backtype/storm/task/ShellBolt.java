@@ -67,7 +67,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * </pre>
  */
 public class ShellBolt implements IBolt {
-    public static final String HEARTBEAT_STREAM_ID = "__heartbeat";
     public static Logger LOG = LoggerFactory.getLogger(ShellBolt.class);
     Process _subprocess;
     OutputCollector _collector;
@@ -87,8 +86,6 @@ public class ShellBolt implements IBolt {
 
     private int workerTimeoutMills;
     private ScheduledExecutorService heartBeatExecutorService;
-    private AtomicLong lastHeartbeatTimestamp = new AtomicLong();
-    private AtomicBoolean sendHeartbeatFlag = new AtomicBoolean(false);
 
     public ShellBolt(ShellComponent component) {
         this(component.get_execution_command(), component.get_script());
@@ -124,11 +121,9 @@ public class ShellBolt implements IBolt {
         _writerThread = new Thread(new BoltWriterRunnable());
         _writerThread.start();
 
+        LOG.info("Start checking heartbeat...");
         heartBeatExecutorService = MoreExecutors.getExitingScheduledExecutorService(new ScheduledThreadPoolExecutor(1));
         heartBeatExecutorService.scheduleAtFixedRate(new BoltHeartbeatTimerTask(this), 1, 1, TimeUnit.SECONDS);
-
-        LOG.info("Start checking heartbeat...");
-        setHeartbeat();
     }
 
     public void execute(Tuple input) {
@@ -268,15 +263,9 @@ public class ShellBolt implements IBolt {
         }       
     }
 
-    private void setHeartbeat() {
-        lastHeartbeatTimestamp.set(System.currentTimeMillis());
-    }
-
-    private long getLastHeartbeat() {
-        return lastHeartbeatTimestamp.get();
-    }
-
     private void die(Throwable exception) {
+        heartBeatExecutorService.shutdownNow();
+
         String processInfo = _process.getProcessInfoString() + _process.getProcessTerminationInfoString();
         _exception = new RuntimeException(processInfo, exception);
         String message = String.format("Halting process: ShellBolt died. Command: %s, ProcessInfo %s",
@@ -284,6 +273,7 @@ public class ShellBolt implements IBolt {
                 processInfo);
         LOG.error(message, exception);
         _collector.reportError(exception);
+        _process.destroy();
         if (_running || (exception instanceof Error)) { //don't exit if not running, unless it is an Error
             System.exit(11);
         }
@@ -299,7 +289,7 @@ public class ShellBolt implements IBolt {
         @Override
         public void run() {
             long currentTimeMillis = System.currentTimeMillis();
-            long lastHeartbeat = getLastHeartbeat();
+            long lastHeartbeat = _process.getLastHeartbeatTimestamp();
 
             LOG.debug("BOLT - current time : {}, last heartbeat : {}, worker timeout (ms) : {}",
                     currentTimeMillis, lastHeartbeat, workerTimeoutMills);
@@ -307,11 +297,7 @@ public class ShellBolt implements IBolt {
             if (currentTimeMillis - lastHeartbeat > workerTimeoutMills) {
                 bolt.die(new RuntimeException("subprocess heartbeat timeout"));
             }
-
-            sendHeartbeatFlag.compareAndSet(false, true);
         }
-
-
     }
 
     private class BoltReaderRunnable implements Runnable {
@@ -324,9 +310,8 @@ public class ShellBolt implements IBolt {
                     if (command == null) {
                         throw new IllegalArgumentException("Command not found in bolt message: " + shellMsg);
                     }
-                    if (command.equals("sync")) {
-                        setHeartbeat();
-                    } else if(command.equals("ack")) {
+
+                    if(command.equals("ack")) {
                         handleAck(shellMsg.getId());
                     } else if (command.equals("fail")) {
                         handleFail(shellMsg.getId());
@@ -351,14 +336,6 @@ public class ShellBolt implements IBolt {
         public void run() {
             while (_running) {
                 try {
-                    if (sendHeartbeatFlag.get()) {
-                        LOG.debug("BOLT - sending heartbeat request to subprocess");
-
-                        String genId = Long.toString(_rand.nextLong());
-                        _process.writeBoltMsg(createHeartbeatBoltMessage(genId));
-                        sendHeartbeatFlag.compareAndSet(true, false);
-                    }
-
                     Object write = _pendingWrites.poll(1, SECONDS);
                     if (write instanceof BoltMsg) {
                         _process.writeBoltMsg((BoltMsg) write);
@@ -372,15 +349,6 @@ public class ShellBolt implements IBolt {
                     die(t);
                 }
             }
-        }
-
-        private BoltMsg createHeartbeatBoltMessage(String genId) {
-            BoltMsg msg = new BoltMsg();
-            msg.setId(genId);
-            msg.setTask(Constants.SYSTEM_TASK_ID);
-            msg.setStream(HEARTBEAT_STREAM_ID);
-            msg.setTuple(new ArrayList<Object>());
-            return msg;
         }
     }
 }

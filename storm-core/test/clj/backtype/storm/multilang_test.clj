@@ -45,9 +45,9 @@
                   {"2" (thrift/mk-shell-bolt-spec {"1" :shuffle} [executor (str "tester_bolt." file-extension)] ["word"] :parallelism-hint 1)})]
          (submit-local-topology nimbus
                "test"
-               {TOPOLOGY-WORKERS 20 TOPOLOGY-MESSAGE-TIMEOUT-SECS 3 TOPOLOGY-DEBUG true}
+               {TOPOLOGY-WORKERS 20 TOPOLOGY-MESSAGE-TIMEOUT-SECS 3 TOPOLOGY-DEBUG true SUPERVISOR-WORKER-TIMEOUT-SECS 3}
                topology)
-       (Thread/sleep 10000)
+       (Thread/sleep 20000)
        (.killTopology nimbus "test")
        (Thread/sleep 10000)
        )))

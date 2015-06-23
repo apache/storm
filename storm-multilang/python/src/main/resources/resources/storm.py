@@ -20,6 +20,7 @@ import sys
 import os
 import traceback
 from collections import deque
+import threading
 
 try:
     import simplejson as json
@@ -28,6 +29,26 @@ except ImportError:
 
 json_encode = lambda x: json.dumps(x)
 json_decode = lambda x: json.loads(x)
+
+# scheduled timer running job at fixed rate (note: GIL!)
+def repeatEvery(n, func, *args, **kwargs):
+    def and_again():
+        func(*args, **kwargs)
+        t = threading.Timer(n, and_again)
+        t.daemon = True
+        t.start()
+    t = threading.Timer(n, and_again)
+    t.daemon = True
+    t.start()
+
+def getHeartbeatFilePath(heartbeatdir, pid):
+    return os.path.join(heartbeatdir, str(pid))
+
+def updateHeartbeatFile(*args, **kwargs):
+    heartbeatdir = kwargs['pidDir']
+    pid = kwargs['pid']
+    fpath = getHeartbeatFilePath(heartbeatdir, pid)
+    open(fpath, "w").close()
 
 #reads lines and reconstructs newlines appropriately
 def readMsg():
@@ -85,7 +106,7 @@ def sync():
 def sendpid(heartbeatdir):
     pid = os.getpid()
     sendMsgToParent({'pid':pid})
-    open(heartbeatdir + "/" + str(pid), "w").close()
+    updateHeartbeatFile(pidDir=heartbeatdir, pid=pid)
 
 def emit(*args, **kwargs):
     __emit(*args, **kwargs)
@@ -159,6 +180,7 @@ def rpcMetrics(name, params):
 def initComponent():
     setupInfo = readMsg()
     sendpid(setupInfo['pidDir'])
+    repeatEvery(1, updateHeartbeatFile, pidDir=setupInfo['pidDir'], pid=os.getpid())
     return [setupInfo['conf'], setupInfo['context']]
 
 class Tuple(object):
@@ -173,9 +195,6 @@ class Tuple(object):
         return '<%s%s>' % (
             self.__class__.__name__,
             ''.join(' %s=%r' % (k, self.__dict__[k]) for k in sorted(self.__dict__.keys())))
-
-    def is_heartbeat_tuple(self):
-        return self.task == -1 and self.stream == "__heartbeat"
 
 class Bolt(object):
     def initialize(self, stormconf, context):
@@ -192,10 +211,7 @@ class Bolt(object):
             self.initialize(conf, context)
             while True:
                 tup = readTuple()
-                if tup.is_heartbeat_tuple():
-                    sync()
-                else:
-                    self.process(tup)
+                self.process(tup)
         except Exception, e:
             reportError(traceback.format_exc(e))
 
@@ -215,16 +231,13 @@ class BasicBolt(object):
             self.initialize(conf, context)
             while True:
                 tup = readTuple()
-                if tup.is_heartbeat_tuple():
-                    sync()
-                else:
-                    ANCHOR_TUPLE = tup
-                    try:
-                        self.process(tup)
-                        ack(tup)
-                    except Exception, e:
-                        reportError(traceback.format_exc(e))
-                        fail(tup)
+                ANCHOR_TUPLE = tup
+                try:
+                    self.process(tup)
+                    ack(tup)
+                except Exception, e:
+                    reportError(traceback.format_exc(e))
+                    fail(tup)
         except Exception, e:
             reportError(traceback.format_exc(e))
 

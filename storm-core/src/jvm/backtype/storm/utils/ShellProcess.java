@@ -43,6 +43,7 @@ public class ShellProcess implements Serializable {
     public ISerializer   serializer;
     public Number pid;
     public String componentName;
+    public String pidHeartbeatFilePath;
 
     public ShellProcess(String[] command) {
         this.command = command;
@@ -62,6 +63,8 @@ public class ShellProcess implements Serializable {
             processErrorStream = _subprocess.getErrorStream();
             serializer.initialize(_subprocess.getOutputStream(), _subprocess.getInputStream());
             this.pid = serializer.connect(conf, context);
+            this.pidHeartbeatFilePath = buildPIDHeartbeatFilePath(context);
+            LOG.info("pid heartbeat file path - " + this.pidHeartbeatFilePath);
         } catch (IOException e) {
             throw new RuntimeException(
                     "Error when launching multilang subprocess\n"
@@ -70,6 +73,10 @@ public class ShellProcess implements Serializable {
             throw new RuntimeException(e + getErrorsString() + "\n");
         }
         return this.pid;
+    }
+
+    private String buildPIDHeartbeatFilePath(TopologyContext context) {
+        return context.getPIDDir() + File.separator + this.pid;
     }
 
     private ISerializer getSerializer(Map conf) {
@@ -185,5 +192,11 @@ public class ShellProcess implements Serializable {
 
     public String getProcessTerminationInfoString() {
         return String.format(" exitCode:%s, errorString:%s ", getExitCode(), getErrorsString());
+    }
+
+    public long getLastHeartbeatTimestamp() {
+        File f = new File(this.pidHeartbeatFilePath);
+        // it returns 0 if file is not accessible (not found or IO exception)
+        return f.lastModified();
     }
 }
