@@ -112,8 +112,8 @@ public class SimpleACLAuthorizer implements IAuthorizer {
             return true;
         }
 
-        if (_supervisors.contains(principal) || _supervisors.contains(user)) {
-            return _supervisorCommands.contains(operation);
+        if (_supervisorCommands.contains(operation)) {
+            return _supervisors.contains(principal) || _supervisors.contains(user);
         }
 
         if (_userCommands.contains(operation)) {
