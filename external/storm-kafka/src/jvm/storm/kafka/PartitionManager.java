@@ -227,6 +227,10 @@ public class PartitionManager {
               tuplesStr += tup.toString();
             }
             LOG.info(String.format("Failed message with offset %s from timestamp %s: %s", offset, convertTime(record.getTimestamp()), tuplesStr));
+            if (!this._failedMsgRetryManager.failed(offset)) {
+                LOG.error(String.format("Message failed finally: offset %s from timestamp %s: %s", offset, convertTime(record.getTimestamp()), tuplesStr));
+                _pending.remove(offset);
+            }
         }
 
         if (offset < _emittedToOffset - _spoutConfig.maxOffsetBehind) {
@@ -240,10 +244,6 @@ public class PartitionManager {
             numberFailed++;
             if (numberAcked == 0 && numberFailed > _spoutConfig.maxOffsetBehind) {
                 throw new RuntimeException("Too many tuple failures");
-            }
-
-            if (!this._failedMsgRetryManager.failed(offset)) {
-                _pending.remove(offset);
             }
         }
     }
