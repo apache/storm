@@ -29,7 +29,9 @@ import org.apache.storm.hdfs.bolt.rotation.FileRotationPolicy;
 import org.apache.storm.hdfs.bolt.rotation.TimedRotationPolicy;
 import org.apache.storm.hdfs.bolt.sync.SyncPolicy;
 import org.apache.storm.hdfs.common.rotation.RotationAction;
+import org.apache.storm.hdfs.common.security.AutoHDFS;
 import org.apache.storm.hdfs.common.security.HdfsSecurityUtil;
+import org.apache.storm.hdfs.common.security.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,13 +94,10 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
         this.collector = collector;
         this.fileNameFormat.prepare(conf, topologyContext);
         this.hdfsConfig = new Configuration();
-        Map<String, Object> map = (Map<String, Object>)conf.get(this.configKey);
-        if(map != null){
-            for(String key : map.keySet()){
-                this.hdfsConfig.set(key, String.valueOf(map.get(key)));
-            }
+        if (this.configKey == null) {
+            this.configKey = AutoHDFS.TOPOLOGY_HDFS_CONFIG_KEY;
         }
-
+        Utils.addConfigToHdfsConfiguration(this.hdfsConfig, conf, this.configKey);
 
         try{
             HdfsSecurityUtil.login(conf, hdfsConfig);

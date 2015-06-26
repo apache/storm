@@ -27,7 +27,9 @@ import org.apache.hadoop.hdfs.client.HdfsDataOutputStream;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.compress.CompressionCodecFactory;
 import org.apache.storm.hdfs.common.rotation.RotationAction;
+import org.apache.storm.hdfs.common.security.AutoHDFS;
 import org.apache.storm.hdfs.common.security.HdfsSecurityUtil;
+import org.apache.storm.hdfs.common.security.Utils;
 import org.apache.storm.hdfs.trident.format.FileNameFormat;
 import org.apache.storm.hdfs.trident.format.RecordFormat;
 import org.apache.storm.hdfs.trident.format.SequenceFormat;
@@ -97,12 +99,10 @@ public class HdfsState implements State {
             }
             this.fileNameFormat.prepare(conf, partitionIndex, numPartitions);
             this.hdfsConfig = new Configuration();
-            Map<String, Object> map = (Map<String, Object>)conf.get(this.configKey);
-            if(map != null){
-                for(String key : map.keySet()){
-                    this.hdfsConfig.set(key, String.valueOf(map.get(key)));
-                }
-            }
+            if (this.configKey == null) {
+                this.configKey = AutoHDFS.TOPOLOGY_HDFS_CONFIG_KEY;
+             }
+            Utils.addConfigToHdfsConfiguration(this.hdfsConfig, conf, this.configKey);
             try{
                 HdfsSecurityUtil.login(conf, hdfsConfig);
                 doPrepare(conf, partitionIndex, numPartitions);

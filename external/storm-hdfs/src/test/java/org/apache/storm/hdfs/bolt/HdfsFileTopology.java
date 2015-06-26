@@ -41,6 +41,7 @@ import org.apache.storm.hdfs.bolt.rotation.TimedRotationPolicy;
 import org.apache.storm.hdfs.bolt.sync.CountSyncPolicy;
 import org.apache.storm.hdfs.bolt.sync.SyncPolicy;
 import org.apache.storm.hdfs.common.rotation.MoveFileAction;
+import org.apache.storm.hdfs.common.security.AutoHDFS;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.FileInputStream;
@@ -79,10 +80,10 @@ public class HdfsFileTopology {
         InputStream in = new FileInputStream(args[1]);
         Map<String, Object> yamlConf = (Map<String, Object>) yaml.load(in);
         in.close();
-        config.put("hdfs.config", yamlConf);
+        config.put(AutoHDFS.TOPOLOGY_HDFS_CONFIG_KEY, yamlConf);
 
         HdfsBolt bolt = new HdfsBolt()
-                .withConfigKey("hdfs.config")
+                .withConfigKey(AutoHDFS.TOPOLOGY_HDFS_CONFIG_KEY)
                 .withFsUrl(args[0])
                 .withFileNameFormat(fileNameFormat)
                 .withRecordFormat(format)

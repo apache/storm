@@ -53,6 +53,7 @@ public class AutoHDFS implements IAutoCredentials, ICredentialsRenewer, INimbusC
     private static final Logger LOG = LoggerFactory.getLogger(AutoHDFS.class);
     public static final String HDFS_CREDENTIALS = "HDFS_CREDENTIALS";
     public static final String TOPOLOGY_HDFS_URI = "topology.hdfs.uri";
+    public static final String TOPOLOGY_HDFS_CONFIG_KEY = "topology.hdfs.config";
 
     private String hdfsKeyTab;
     private String hdfsPrincipal;
@@ -172,6 +173,7 @@ public class AutoHDFS implements IAutoCredentials, ICredentialsRenewer, INimbusC
             Credentials credential = getCredentials(credentials);
             if (credential != null) {
                 Configuration configuration = new Configuration();
+                Utils.addConfigToHdfsConfiguration(configuration, topologyConf, TOPOLOGY_HDFS_CONFIG_KEY);
                 Collection<Token<? extends TokenIdentifier>> tokens = credential.getAllTokens();
 
                 if(tokens != null && tokens.isEmpty() == false) {
@@ -198,6 +200,7 @@ public class AutoHDFS implements IAutoCredentials, ICredentialsRenewer, INimbusC
         try {
             if(UserGroupInformation.isSecurityEnabled()) {
                 final Configuration configuration = new Configuration();
+                Utils.addConfigToHdfsConfiguration(configuration, conf, TOPOLOGY_HDFS_CONFIG_KEY);
 
                 login(configuration);
 

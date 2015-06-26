@@ -24,6 +24,7 @@ import backtype.storm.generated.StormTopology;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Values;
 import org.apache.storm.hdfs.common.rotation.MoveFileAction;
+import org.apache.storm.hdfs.common.security.AutoHDFS;
 import org.apache.storm.hdfs.trident.format.*;
 import org.apache.storm.hdfs.trident.rotation.FileRotationPolicy;
 import org.apache.storm.hdfs.trident.rotation.FileSizeRotationPolicy;
@@ -60,7 +61,7 @@ public class TridentSequenceTopology {
                 .withSequenceFormat(new DefaultSequenceFormat("key", "sentence"))
                 .withRotationPolicy(rotationPolicy)
                 .withFsUrl(hdfsUrl)
-                .withConfigKey("hdfs.config")
+                .withConfigKey(AutoHDFS.TOPOLOGY_HDFS_CONFIG_KEY)
                 .addRotationAction(new MoveFileAction().toDestination("/tmp/dest2/"));
         StateFactory factory = new HdfsStateFactory().withOptions(seqOpts);
 
