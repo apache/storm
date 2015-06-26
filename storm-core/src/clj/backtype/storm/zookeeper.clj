@@ -88,7 +88,7 @@
   ([^CuratorFramework zk ^String path ^bytes data mode acls]
     (let [mode  (zk-create-modes mode)]
       (try
-        (.. zk (create) (withMode mode) (withACL acls) (forPath (normalize-path path) data))
+        (.. zk (create) (creatingParentsIfNeeded) (withMode mode) (withACL acls) (forPath (normalize-path path) data))
         (catch Exception e (throw (wrap-in-runtime e))))))
   ([^CuratorFramework zk ^String path ^bytes data acls]
     (create-node zk path data :persistent acls)))
