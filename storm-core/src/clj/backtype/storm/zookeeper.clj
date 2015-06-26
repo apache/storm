@@ -108,7 +108,7 @@
     (when (exists-node? zk path false)
       (try-cause  (.. zk (delete) (deletingChildrenIfNeeded) (forPath (normalize-path path)))
                  (catch KeeperException$NoNodeException e
-                   (throw e))
+                   ;; do nothing)
                  (catch Exception e (throw (wrap-in-runtime e)))))))
 
 (defn mkdirs
