@@ -126,10 +126,6 @@ public class PartitionManager {
         return ret;
     }
 
-    public EmitState next(SpoutOutputCollector collector) {
-        return this.next(collector, Utils.DEFAULT_STREAM_ID);
-    }
-
     //returns false if it's reached the end of current batch
     public EmitState next(SpoutOutputCollector collector, String emitStreamId) {
         if (_waitingToEmit.isEmpty()) {

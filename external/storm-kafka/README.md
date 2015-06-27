@@ -70,6 +70,8 @@ In addition to these parameters, SpoutConfig contains the following fields that 
     public long retryInitialDelayMs = 0;
     public double retryDelayMultiplier = 1.0;
     public long retryDelayMaxMs = 60 * 1000;
+    // by default the spout emits to the default storm stream. Provide a different stream id to change it.
+    public String emitStreamId = Utils.DEFAULT_STREAM_ID;
 ```
 Core KafkaSpout only accepts an instance of SpoutConfig.
 
