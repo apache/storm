@@ -40,7 +40,19 @@ import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Serializable;
+import java.lang.management.ManagementFactory;
+import java.lang.management.OperatingSystemMXBean;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.ByteBuffer;
@@ -48,7 +60,15 @@ import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
 import java.io.File;
 import java.io.FileInputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.UUID;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -649,6 +669,16 @@ public class Utils {
         //Running in daemon mode, we would pass Error to calling thread.
         throw (Error) t;
       }
+    }
+  }
+
+  public static double getCpuUtil() {
+    OperatingSystemMXBean osBean = ManagementFactory.getOperatingSystemMXBean();
+    if (osBean instanceof com.sun.management.OperatingSystemMXBean) {
+        com.sun.management.OperatingSystemMXBean osMxBean = (com.sun.management.OperatingSystemMXBean) osBean;
+        return osMxBean.getProcessCpuLoad();
+    } else {
+        return -1;
     }
   }
 }

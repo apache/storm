@@ -34,6 +34,8 @@
   (:import [backtype.storm.security.auth AuthUtils])
   (:import [javax.security.auth Subject])
   (:import [java.security PrivilegedExceptionAction])
+  (:use [backtype.storm.util])
+
   (:gen-class))
 
 (defmulti mk-suicide-fn cluster-mode)
@@ -61,6 +63,7 @@
                :executor-stats stats
                :uptime ((:uptime worker))
                :time-secs (current-time-secs)
+               :system-stats ((:system-stats-fn worker))
                }]
     ;; do the zookeeper heartbeat
     (.worker-heartbeat! (:storm-cluster-state worker) (:storm-id worker) (:assignment-id worker) (:port worker) zk-hb)    
@@ -253,6 +256,7 @@
       :receiver-thread-count (get storm-conf WORKER-RECEIVER-THREAD-COUNT)
       :transfer-fn (mk-transfer-fn <>)
       :assignment-versions assignment-versions
+      :system-stats-fn (mk-system-stats-fn)
       )))
 
 (defn- endpoint->string [[node port]]

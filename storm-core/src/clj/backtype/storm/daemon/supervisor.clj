@@ -295,6 +295,7 @@
                                                                      (Utils/isZkAuthenticationConfiguredStormServer
                                                                        conf)
                                                                      SUPERVISOR-ZK-ACLS))
+   :system-stats-fn (mk-system-stats-fn)
    :local-state (supervisor-state conf)
    :supervisor-id (.getSupervisorId isupervisor)
    :assignment-id (.getAssignmentId isupervisor)
@@ -511,7 +512,8 @@
                                                  (.getMetadata isupervisor)
                                                  (conf SUPERVISOR-SCHEDULER-META)
                                                  ((:uptime supervisor))
-                                                 (:version supervisor))))]
+                                                 (:version supervisor)
+                                                 ((:system-stats-fn supervisor)))))]
     (heartbeat-fn)
 
     ;; should synchronize supervisor so it doesn't launch anything after being down (optimization)

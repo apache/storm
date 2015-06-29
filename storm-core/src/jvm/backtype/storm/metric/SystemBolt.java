@@ -62,6 +62,25 @@ public class SystemBolt implements IBolt {
         }
     }
 
+    private static class CPUUsageMetric implements IMetric {
+
+        IFn _getUsage;
+
+        public CPUUsageMetric(IFn getUsage) { _getUsage = getUsage; }
+
+        private double getProcessCpuLoad(){
+            OperatingSystemMXBean osBean = ManagementFactory.getPlatformMXBean(
+                    OperatingSystemMXBean.class);
+            com.sun.management.OperatingSystemMXBean _osBean = (com.sun.management.OperatingSystemMXBean) osBean;
+            return _osBean.getProcessCpuLoad();
+        }
+        @Override
+        public Object getValueAndReset() {
+            OperatingSystemMXBean osBean = (OperatingSystemMXBean)_getUsage.invoke();
+            return getProcessCpuLoad();
+        }
+    }
+
     // canonically the metrics data exported is time bucketed when doing counts.
     // convert the absolute values here into time buckets.
     private static class GarbageCollectorMetric implements IMetric {
@@ -142,6 +161,15 @@ public class SystemBolt implements IBolt {
         for(GarbageCollectorMXBean b : ManagementFactory.getGarbageCollectorMXBeans()) {
             context.registerMetric("GC/" + b.getName().replaceAll("\\W", ""), new GarbageCollectorMetric(b), bucketSize);
         }
+
+        final OperatingSystemMXBean osBean = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
+        context.registerMetric("cpu/Util", new CPUUsageMetric(new AFn() {
+            @Override
+            public Object invoke() {
+                return osBean;
+            }
+        }), bucketSize);
+
     }
 
     @Override

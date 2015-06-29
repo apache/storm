@@ -1260,6 +1260,7 @@
                                                                 (count (:used-ports info))
                                                                 id) ]
                                             (when-let [version (:version info)] (.set_version sup-sum version))
+                                            (when-let [system-stats (:system-stats info)]  (.set_system_stats sup-sum system-stats))
                                             sup-sum
                                             ))
               nimbus-uptime ((:uptime nimbus))

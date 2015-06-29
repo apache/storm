@@ -29,6 +29,7 @@
     (.set_scheduler_meta (:scheduler-meta supervisor-info))
     (.set_uptime_secs (long (:uptime-secs supervisor-info)))
     (.set_version (:version supervisor-info))
+    (.set_system_stats (:system-stats supervisor-info))
     ))
 
 (defn clojurify-supervisor-info [^SupervisorInfo supervisor-info]
@@ -41,7 +42,8 @@
       (if (.get_meta supervisor-info) (into [] (.get_meta supervisor-info)))
       (if (.get_scheduler_meta supervisor-info) (into {} (.get_scheduler_meta supervisor-info)))
       (.get_uptime_secs supervisor-info)
-      (.get_version supervisor-info))))
+      (.get_version supervisor-info)
+      (if-let [system_stats (.get_system_stats supervisor-info)] (into {} system_stats)))))
 
 (defn thriftify-assignment [assignment]
   (doto (Assignment.)
@@ -185,6 +187,7 @@
      :executor-stats (clojurify-stats (into {} (.get_executor_stats worker-hb)))
      :uptime (.get_uptime_secs worker-hb)
      :time-secs (.get_time_secs worker-hb)
+     :system-stats (.get_system_stats worker-hb)
      }
     {}))
 
@@ -194,7 +197,8 @@
       (.set_uptime_secs (:uptime worker-hb))
       (.set_storm_id (:storm-id worker-hb))
       (.set_executor_stats (thriftify-stats (filter second (:executor-stats worker-hb))))
-      (.set_time_secs (:time-secs worker-hb)))))
+      (.set_time_secs (:time-secs worker-hb))
+      (.set_system_stats (:system-stats worker-hb)))))
 
 (defn clojurify-error [^ErrorInfo error]
   (if error
