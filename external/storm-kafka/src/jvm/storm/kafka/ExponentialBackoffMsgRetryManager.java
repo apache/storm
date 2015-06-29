@@ -28,7 +28,7 @@ import java.util.Queue;
 
 public class ExponentialBackoffMsgRetryManager implements FailedMsgRetryManager {
 
-    public static final Logger LOG = LoggerFactory.getLogger(PartitionManager.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ExponentialBackoffMsgRetryManager.class);
 
     private final long retryInitialDelayMs;
     private final double retryDelayMultiplier;

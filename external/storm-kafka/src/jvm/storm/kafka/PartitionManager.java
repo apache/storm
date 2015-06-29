@@ -18,10 +18,7 @@
 package storm.kafka;
 
 import backtype.storm.Config;
-import backtype.storm.metric.api.CombinedMetric;
-import backtype.storm.metric.api.CountMetric;
-import backtype.storm.metric.api.MeanReducer;
-import backtype.storm.metric.api.ReducedMetric;
+import backtype.storm.metric.api.*;
 import backtype.storm.spout.SpoutOutputCollector;
 import com.google.common.collect.ImmutableMap;
 import kafka.javaapi.consumer.SimpleConsumer;
@@ -32,8 +29,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import storm.kafka.KafkaSpout.EmitState;
 import storm.kafka.KafkaSpout.MessageAndRealOffset;
-import storm.kafka.failures.IMassageFailureHandler;
-import storm.kafka.failures.MessageFailureHandlerFactoryRepository;
 import storm.kafka.trident.MaxMetric;
 
 import java.text.Format;
@@ -41,16 +36,20 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class PartitionManager {
-    public static final Logger LOG = LoggerFactory.getLogger(PartitionManager.class);
+    private static final Logger LOG = LoggerFactory.getLogger(PartitionManager.class);
 
     private final CombinedMetric _fetchAPILatencyMax;
     private final ReducedMetric _fetchAPILatencyMean;
     private final CountMetric _fetchAPICallCount;
     private final CountMetric _fetchAPIMessageCount;
+    private final CountMetric _finalFailureCountMetric;
+    //private final MultiCountMetric _finalFailurePerEventCountMetric;
+
     Long _emittedToOffset;
     // _pending key = Kafka offset, value = time at which the message was first submitted to the topology
     SortedMap<Long,MessageAndTime> _pending = new TreeMap<Long,MessageAndTime>();
     private final FailedMsgRetryManager _failedMsgRetryManager;
+    private IFailureRepository failuresRepository; // = new LoggingFailuresRepository();
 
     // retryRecords key = Kafka offset, value = retry info for the given message
     Long _committedTo;
@@ -78,6 +77,9 @@ public class PartitionManager {
                                                                            _spoutConfig.retryDelayMultiplier,
                                                                            _spoutConfig.retryDelayMaxMs,
                                                                            getRetriesConfiguration());
+
+        IFailureRepositoryFactory failureRepositoryFactory = FailureRepositoryFactoryContainer.get();
+        failuresRepository = failureRepositoryFactory != null ? failureRepositoryFactory.getRepository() : new LoggingFailuresRepository();
 
         String jsonTopologyId = null;
         Long jsonOffset = null;
@@ -119,6 +121,8 @@ public class PartitionManager {
         _fetchAPILatencyMean = new ReducedMetric(new MeanReducer());
         _fetchAPICallCount = new CountMetric();
         _fetchAPIMessageCount = new CountMetric();
+        _finalFailureCountMetric = new CountMetric();
+        //_finalFailurePerEventCountMetric = new MultiCountMetric();
     }
 
     public Map getMetricsDataMap() {
@@ -127,6 +131,8 @@ public class PartitionManager {
         ret.put(_partition + "/fetchAPILatencyMean", _fetchAPILatencyMean.getValueAndReset());
         ret.put(_partition + "/fetchAPICallCount", _fetchAPICallCount.getValueAndReset());
         ret.put(_partition + "/fetchAPIMessageCount", _fetchAPIMessageCount.getValueAndReset());
+        ret.put(_partition + "/finalFailureCountMetric", _finalFailureCountMetric.getValueAndReset());
+        //ret.put(_partition + "/finalFailurePerEventCountMetric", _finalFailurePerEventCountMetric.getValueAndReset());
         return ret;
     }
 
@@ -226,10 +232,16 @@ public class PartitionManager {
             for (Object tup : tuples) {
               tuplesStr += tup.toString();
             }
-            LOG.info(String.format("Failed message with offset %s from timestamp %s: %s", offset, convertTime(record.getTimestamp()), tuplesStr));
             if (!this._failedMsgRetryManager.failed(offset)) {
                 LOG.error(String.format("Message failed finally: offset %s from timestamp %s: %s", offset, convertTime(record.getTimestamp()), tuplesStr));
                 _pending.remove(offset);
+                _finalFailureCountMetric.incr();
+                //_finalFailurePerEventCountMetric.scope(tuplesStr).incr();
+                 failuresRepository.putTuple(tuples.iterator().next(), offset);
+
+            }
+            else {
+                LOG.info(String.format("Failed message with offset %s from timestamp %s: %s", offset, convertTime(record.getTimestamp()), tuplesStr));
             }
         }
 

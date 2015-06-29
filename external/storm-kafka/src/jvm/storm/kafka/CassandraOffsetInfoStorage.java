@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
  */
 public class CassandraOffsetInfoStorage implements IOffsetInfoStorage {
 
-    public static final Logger LOG = LoggerFactory.getLogger(PartitionManager.class);
+    private static final Logger LOG = LoggerFactory.getLogger(CassandraOffsetInfoStorage.class);
     final private String TABLE = "storm_kafka_offsets";
 
     private Session session;
