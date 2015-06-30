@@ -52,7 +52,6 @@ public class HiveBolt extends  BaseRichBolt {
     private Integer currentBatchSize;
     private ExecutorService callTimeoutPool;
     private transient Timer heartBeatTimer;
-    private Boolean kerberosEnabled = false;
     private AtomicBoolean timeToSendHeartBeat = new AtomicBoolean(false);
     private UserGroupInformation ugi = null;
     HashMap<HiveEndPoint, HiveWriter> allWriters;
@@ -65,6 +64,7 @@ public class HiveBolt extends  BaseRichBolt {
     @Override
     public void prepare(Map conf, TopologyContext topologyContext, OutputCollector collector)  {
         try {
+            boolean kerberosEnabled;
             if(options.getKerberosPrincipal() == null && options.getKerberosKeytab() == null) {
                 kerberosEnabled = false;
             } else if(options.getKerberosPrincipal() != null && options.getKerberosKeytab() != null) {
@@ -83,7 +83,7 @@ public class HiveBolt extends  BaseRichBolt {
                 }
             }
             this.collector = collector;
-            allWriters = new HashMap<HiveEndPoint,HiveWriter>();
+            allWriters = new HashMap<>();
             String timeoutName = "hive-bolt-%d";
             this.callTimeoutPool = Executors.newFixedThreadPool(1,
                                 new ThreadFactoryBuilder().setNameFormat(timeoutName).build());
@@ -179,7 +179,6 @@ public class HiveBolt extends  BaseRichBolt {
 
     /**
      * Closes all writers and remove them from cache
-     * @return number of writers retired
      */
     private void closeAllWriters() {
         try {
@@ -262,7 +261,7 @@ public class HiveBolt extends  BaseRichBolt {
     private int retireIdleWriters() {
         int count = 0;
         long now = System.currentTimeMillis();
-        ArrayList<HiveEndPoint> retirees = new ArrayList<HiveEndPoint>();
+        ArrayList<HiveEndPoint> retirees = new ArrayList<>();
 
         //1) Find retirement candidates
         for (Entry<HiveEndPoint,HiveWriter> entry : allWriters.entrySet()) {

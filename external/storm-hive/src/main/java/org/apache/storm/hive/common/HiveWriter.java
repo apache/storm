@@ -20,11 +20,9 @@ package org.apache.storm.hive.common;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -54,7 +52,6 @@ public class HiveWriter {
     protected boolean closed; // flag indicating HiveWriter was closed
     private boolean autoCreatePartitions;
     private boolean heartBeatNeeded = false;
-    private UserGroupInformation ugi;
 
     public HiveWriter(HiveEndPoint endPoint, int txnsPerBatch,
                       boolean autoCreatePartitions, long callTimeout,
@@ -65,16 +62,13 @@ public class HiveWriter {
             this.callTimeout = callTimeout;
             this.callTimeoutPool = callTimeoutPool;
             this.endPoint = endPoint;
-            this.ugi = ugi;
             this.connection = newConnection(ugi);
             this.txnsPerBatch = txnsPerBatch;
             this.recordWriter = mapper.createRecordWriter(endPoint);
             this.txnBatch = nextTxnBatch(recordWriter);
             this.closed = false;
             this.lastUsed = System.currentTimeMillis();
-        } catch(InterruptedException e) {
-            throw e;
-        } catch(RuntimeException e) {
+        } catch(InterruptedException | RuntimeException e) {
             throw e;
         } catch(Exception e) {
             throw new ConnectFailure(endPoint, e);
@@ -112,9 +106,7 @@ public class HiveWriter {
                         return null;
                     }
                 });
-        } catch(StreamingException e) {
-            throw new WriteFailure(endPoint, txnBatch.getCurrentTxnId(), e);
-        } catch(TimeoutException e) {
+        } catch(StreamingException | TimeoutException e) {
             throw new WriteFailure(endPoint, txnBatch.getCurrentTxnId(), e);
         }
     }
@@ -213,9 +205,7 @@ public class HiveWriter {
                         return null;
                     }
                 });
-        } catch (StreamingException e) {
-            throw new CommitFailure(endPoint, txnBatch.getCurrentTxnId(), e);
-        } catch (TimeoutException e) {
+        } catch (StreamingException | TimeoutException e) {
             throw new CommitFailure(endPoint, txnBatch.getCurrentTxnId(), e);
         }
     }
@@ -229,9 +219,7 @@ public class HiveWriter {
                         return endPoint.newConnection(autoCreatePartitions, null, ugi); // could block
                     }
                 });
-        } catch(StreamingException e) {
-            throw new ConnectFailure(endPoint, e);
-        } catch(TimeoutException e) {
+        } catch(StreamingException |TimeoutException e) {
             throw new ConnectFailure(endPoint, e);
         }
     }
@@ -249,9 +237,7 @@ public class HiveWriter {
             });
         LOG.debug("Acquired {}. Switching to first txn", batch);
         batch.beginNextTransaction();
-        } catch(TimeoutException e) {
-            throw new TxnBatchFailure(endPoint, e);
-        } catch(StreamingException e) {
+        } catch(TimeoutException | StreamingException e) {
             throw new TxnBatchFailure(endPoint, e);
         }
         return batch;

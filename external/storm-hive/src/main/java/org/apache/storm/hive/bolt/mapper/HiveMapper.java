@@ -38,7 +38,7 @@ public interface HiveMapper extends Serializable {
     /**
      * Given a endPoint, returns a RecordWriter with columnNames.
      *
-     * @param tuple
+     * @param endPoint
      * @return
      */
 
@@ -66,7 +66,7 @@ public interface HiveMapper extends Serializable {
     /**
      * Given a TridetnTuple, return a hive partition values list.
      *
-     * @param TridentTuple
+     * @param tuple
      * @return List<String>
      */
     List<String> mapPartitions(TridentTuple tuple);
