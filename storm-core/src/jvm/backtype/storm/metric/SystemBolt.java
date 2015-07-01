@@ -68,16 +68,17 @@ public class SystemBolt implements IBolt {
 
         public CPUUsageMetric(IFn getUsage) { _getUsage = getUsage; }
 
-        private double getProcessCpuLoad(){
-            OperatingSystemMXBean osBean = ManagementFactory.getPlatformMXBean(
-                    OperatingSystemMXBean.class);
-            com.sun.management.OperatingSystemMXBean _osBean = (com.sun.management.OperatingSystemMXBean) osBean;
-            return _osBean.getProcessCpuLoad();
-        }
         @Override
         public Object getValueAndReset() {
-            OperatingSystemMXBean osBean = (OperatingSystemMXBean)_getUsage.invoke();
-            return getProcessCpuLoad();
+            double cpuUtil = -1;
+            try {
+                com.sun.management.OperatingSystemMXBean osBean;
+                osBean = (com.sun.management.OperatingSystemMXBean)(OperatingSystemMXBean)_getUsage.invoke();
+                cpuUtil = osBean.getProcessCpuLoad();
+            } catch (Exception e) {
+                LOG.error("Unable to load com.sun.management: Returning -1 for CPU Util value", e);
+            }
+            return cpuUtil;
         }
     }
 
