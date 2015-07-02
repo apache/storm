@@ -21,7 +21,7 @@
     <parent>
         <artifactId>storm</artifactId>
         <groupId>org.apache.storm</groupId>
-        <version>0.10.0-SNAPSHOT</version>
+        <version>0.10.0-beta2-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -74,6 +74,10 @@
             <version>2.3.1</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>commons-lang</groupId>
+            <artifactId>commons-lang</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
@@ -111,7 +115,7 @@
                             <driver>org.hsqldb.jdbcDriver</driver>
                             <url>jdbc:hsqldb:mem:test;shutdown=false</url>
                             <username>SA</username>
-                            <password></password>
+                            <password />
                             <autocommit>true</autocommit>
                             <srcFiles>
                                 <srcFile>src/test/sql/test.sql</srcFile>

@@ -18,7 +18,6 @@
   (:import [backtype.storm.scheduler ISupervisor]
            [backtype.storm.utils LocalState Time Utils]
            [backtype.storm.daemon Shutdownable]
-           [backtype.storm.daemon.common SupervisorInfo]
            [backtype.storm Constants]
            [java.net JarURLConnection]
            [java.net URI]
@@ -513,7 +512,6 @@
                                                  (conf SUPERVISOR-SCHEDULER-META)
                                                  ((:uptime supervisor))
                                                  (:version supervisor))))]
-                                
     (heartbeat-fn)
 
     ;; should synchronize supervisor so it doesn't launch anything after being down (optimization)
@@ -662,7 +660,7 @@
           storm-log-dir (or (System/getProperty "storm.log.dir") (str storm-home file-path-separator "logs"))
           storm-conf (read-storm-config)
           storm-log-conf-dir (storm-conf "storm.logback.conf.dir")
-          storm-logback-conf-dir (or storm-log-conf-dir (str storm-home file-path-separator "logback"))
+          storm-logback-conf-dir (or storm-log-conf-dir (str storm-home file-path-separator "log4j2"))
           stormroot (supervisor-stormdist-root conf storm-id)
           jlp (jlp stormroot conf)
           stormjar (supervisor-stormjar-path stormroot)
@@ -670,12 +668,13 @@
           topo-classpath (if-let [cp (storm-conf TOPOLOGY-CLASSPATH)]
                            [cp]
                            [])
-          classpath (-> (current-classpath)
+          classpath (-> (worker-classpath)
                         (add-to-classpath [stormjar])
                         (add-to-classpath topo-classpath))
           top-gc-opts (storm-conf TOPOLOGY-WORKER-GC-CHILDOPTS)
           gc-opts (substitute-childopts (if top-gc-opts top-gc-opts (conf WORKER-GC-CHILDOPTS)) worker-id storm-id port)
           user (storm-conf TOPOLOGY-SUBMITTER-USER)
+          logging-sensitivity (storm-conf TOPOLOGY-LOGGING-SENSITIVITY "S3")
           logfilename (logs-filename storm-id port)
           worker-childopts (when-let [s (conf WORKER-CHILDOPTS)]
                              (substitute-childopts s worker-id storm-id port))
@@ -685,6 +684,14 @@
                                         (merge env {"LD_LIBRARY_PATH" jlp})
                                         {"LD_LIBRARY_PATH" jlp})
           command (concat
+                    [(java-cmd) "-cp" classpath 
+                     (str "-Dlogfile.name=" logfilename)
+                     (str "-Dstorm.home=" storm-home)
+                     (str "-Dstorm.id=" storm-id)
+                     (str "-Dworker.id=" worker-id)
+                     (str "-Dworker.port=" port)
+                     (str "-Dlog4j.configurationFile=" storm-logback-conf-dir file-path-separator "worker.xml")
+                     "backtype.storm.LogWriter"]
                     [(java-cmd) "-server"]
                     worker-childopts
                     topo-worker-childopts
@@ -695,7 +702,8 @@
                      (str "-Dstorm.conf.file=" storm-conf-file)
                      (str "-Dstorm.options=" storm-options)
                      (str "-Dstorm.log.dir=" storm-log-dir)
-                     (str "-Dlogback.configurationFile=" storm-logback-conf-dir file-path-separator "worker.xml")
+                     (str "-Dlogging.sensitivity=" logging-sensitivity)
+                     (str "-Dlog4j.configurationFile=" storm-logback-conf-dir file-path-separator "worker.xml")
                      (str "-Dstorm.id=" storm-id)
                      (str "-Dworker.id=" worker-id)
                      (str "-Dworker.port=" port)
@@ -801,4 +809,5 @@
         ))))
 
 (defn -main []
+  (setup-default-uncaught-exception-handler)
   (-launch (standalone-supervisor)))
