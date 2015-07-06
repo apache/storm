@@ -237,7 +237,7 @@ public class PartitionManager {
                 _pending.remove(offset);
                 _finalFailureCountMetric.incr();
                 //_finalFailurePerEventCountMetric.scope(tuplesStr).incr();
-                 failuresRepository.putTuple(tuples.iterator().next(), offset);
+                 failuresRepository.putTuple(tuples.iterator().next(), offset, _spoutConfig.topic, _partition.getId());
 
             }
             else {

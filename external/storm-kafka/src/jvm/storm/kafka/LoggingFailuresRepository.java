@@ -9,8 +9,8 @@ import org.slf4j.LoggerFactory;
 public class LoggingFailuresRepository implements IFailureRepository{
     private static final Logger LOG = LoggerFactory.getLogger(LoggingFailuresRepository.class);
 
-    public void putTuple(Object tuple, long offset) {
-      LOG.info("putTuple(" + tuple.toString() + ", " + offset + ")");
+    public void putTuple(Object tuple, long offset, String topic, String partition) {
+      LOG.info("putTuple(" + tuple.toString() + ", " + offset + ", " + topic + ", " + partition + ")");
 
     }
 
