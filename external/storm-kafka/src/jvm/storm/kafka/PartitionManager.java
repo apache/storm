@@ -127,11 +127,11 @@ public class PartitionManager {
 
     public Map getMetricsDataMap() {
         Map ret = new HashMap();
-        ret.put(_partition + "/fetchAPILatencyMax", _fetchAPILatencyMax.getValueAndReset());
-        ret.put(_partition + "/fetchAPILatencyMean", _fetchAPILatencyMean.getValueAndReset());
-        ret.put(_partition + "/fetchAPICallCount", _fetchAPICallCount.getValueAndReset());
-        ret.put(_partition + "/fetchAPIMessageCount", _fetchAPIMessageCount.getValueAndReset());
-        ret.put(_partition + "/finalFailureCountMetric", _finalFailureCountMetric.getValueAndReset());
+        ret.put(_partition.getId() + "/fetchAPILatencyMax", _fetchAPILatencyMax.getValueAndReset());
+        ret.put(_partition.getId() + "/fetchAPILatencyMean", _fetchAPILatencyMean.getValueAndReset());
+        ret.put(_partition.getId() + "/fetchAPICallCount", _fetchAPICallCount.getValueAndReset());
+        ret.put(_partition.getId() + "/fetchAPIMessageCount", _fetchAPIMessageCount.getValueAndReset());
+        ret.put(_partition.getId() + "/finalFailureCountMetric", _finalFailureCountMetric.getValueAndReset());
         //ret.put(_partition + "/finalFailurePerEventCountMetric", _finalFailurePerEventCountMetric.getValueAndReset());
         return ret;
     }
