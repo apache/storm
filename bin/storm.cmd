@@ -79,6 +79,7 @@
 
     :done
     set storm-command-arguments=%args%
+    set STORM_DEBUG=1
   )
   
   if not defined STORM_LOG_FILE (
@@ -86,7 +87,8 @@
   )
 
   if defined STORM_DEBUG ( 
-    %JAVA% %JAVA_HEAP_MAX% %STORM_OPTS% %STORM_LOG_FILE% %CLASS% %storm-command-arguments%
+    "%JAVA%" %JAVA_HEAP_MAX% %STORM_OPTS% %STORM_LOG_FILE% %CLASS% %storm-command-arguments%
+    goto :eof
   )
   set path=%PATH%;%STORM_BIN_DIR%;%STORM_SBIN_DIR%
   call start /b "%storm-command%" "%JAVA%" %JAVA_HEAP_MAX% %STORM_OPTS% %STORM_LOG_FILE% %CLASS% %storm-command-arguments%
