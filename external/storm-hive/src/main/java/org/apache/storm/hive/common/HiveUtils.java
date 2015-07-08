@@ -18,8 +18,6 @@
 
 package org.apache.storm.hive.common;
 
-import org.apache.storm.hive.common.HiveWriter;
-import org.apache.storm.hive.bolt.mapper.HiveMapper;
 import org.apache.hive.hcatalog.streaming.*;
 
 import org.apache.hadoop.security.SecurityUtil;

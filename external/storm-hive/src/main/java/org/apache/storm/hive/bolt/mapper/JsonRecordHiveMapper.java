@@ -90,11 +90,12 @@ public class JsonRecordHiveMapper implements HiveMapper {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public byte[] mapRecord(Tuple tuple) {
         JSONObject obj = new JSONObject();
         if(this.columnFields != null) {
             for(String field: this.columnFields) {
-                obj.put(field,tuple.getValueByField(field));
+                        obj.put(field,tuple.getValueByField(field));
             }
         }
         return obj.toJSONString().getBytes();
@@ -115,6 +116,7 @@ public class JsonRecordHiveMapper implements HiveMapper {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public byte[] mapRecord(TridentTuple tuple) {
         JSONObject obj = new JSONObject();
         if(this.columnFields != null) {
