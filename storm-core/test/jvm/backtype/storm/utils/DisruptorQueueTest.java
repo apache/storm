@@ -148,6 +148,6 @@ public class DisruptorQueueTest extends TestCase {
 
     private static DisruptorQueue createQueue(String name, int queueSize) {
         return new DisruptorQueue(name, new MultiThreadedClaimStrategy(
-                queueSize), new BlockingWaitStrategy());
+                queueSize), new BlockingWaitStrategy(), 10L);
     }
 }
