@@ -1,0 +1,32 @@
+
+#Meta Client Configuration
+# Please refer MetaClientConfig for every setting's details
+meta.topic: "bbl_user"
+meta.consumer.group: "bbl_user"
+meta.subexpress: "*"
+#meta.nameserver: ""
+#meta.pull.interval.ms: 0
+#meta.max.fail.times: 5
+#meta.internal.queue.size: 256
+#meta.batch.send.msg.size: 16
+#meta.batch.pull.msg.size: 32
+#meta.pull.thread.num: 4
+#meta.spout.auto.ack: false
+#meta.spout.flow.contro: true
+#yyyyMMddHHmmss
+meta.consumer.start.timestamp: "20141011000000"
+#meta.extra.properties: 
+
+topology.name: test_meta_spout
+topology.version: 1.0.0
+topology.workers: 5
+topology.max.spout.pending: 10
+topology.acker.executors: 1
+
+topology.debug: false
+topology.debug.recv.tuple: false
+storm.cluster.mode: local
+
+topology.spout.parallel: 2
+topology.writer.parallel: 1
+

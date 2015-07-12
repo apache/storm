@@ -1,0 +1,49 @@
+#############################################################
+###################### ONS Setting Begin ####################
+Topic: "longdatest"
+SubExpress: "*"
+AccessKey: null
+SecretKey: null
+
+ConsumerId: "CID-LONGDA-123"
+ConsumeThreadNums: 4
+ProducerId: "PID_25770293805-101"
+
+#SendMsgTimeoutMillis: 
+#MessageModel:
+#ONSAddr:
+#NAMESRV_ADDR:
+
+###################### ONS Setting End ######################
+#############################################################
+
+
+#############################################################
+############### JStorm Topology Setting Begin ###############
+
+#ons spout enable flow control setting
+# all message will be sent in Spout.nextTuple
+OnsSpoutFlowControl: true
+
+# spout consume one with autoAck mode
+# if disable, consumer offset won't move on until do spout.ack 
+OnsSpoutAutoAck: false
+
+# if one message fail times is bigger than the OnsMsgMaxFailTimes
+# it will be thrown
+OnsMsgMaxFailTimes: 5
+
+topology.name: "ons_test"
+topology.consumer.parallel: 1
+topology.producer.parallel: 1
+worker.memory.size: 2147483648
+topology.workers: 1
+topology.acker.executors: 0
+storm.cluster.mode: "local"
+
+############### JStorm Topology Setting End ###############
+#############################################################
+
+
+    
+ 
