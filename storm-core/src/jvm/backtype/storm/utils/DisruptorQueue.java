@@ -98,7 +98,7 @@ public class DisruptorQueue implements IStatefulObject {
     public void consumeBatchWhenAvailable(EventHandler<Object> handler) {
         try {
             final long nextSequence = _consumer.get() + 1;
-            final long availableSequence = _barrier.waitFor(nextSequence, _waitTimeout, TimeUnit.MILLISECONDS);
+            final long availableSequence = _barrier.waitFor(nextSequence);
             if(availableSequence >= nextSequence) {
                 consumeBatchToCursor(availableSequence, handler);
             }
