@@ -76,6 +76,10 @@ module Storm
     def send_pid(heartbeat_dir)
       pid = Process.pid
       send_msg_to_parent({'pid' => pid})
+      update_heartbeat(heartbeat_dir, pid)
+    end
+
+    def update_heartbeat(heartbeat_dir, pid)
       File.open("#{heartbeat_dir}/#{pid}", "w").close
     end
 
@@ -148,9 +152,19 @@ module Storm
       log(msg, 4)
     end
 
+    def launch_heartbeat_thread(heartbeat_dir, pid)
+      Thread.new do
+        while true do
+          update_heartbeat(heartbeat_dir, pid)
+          sleep 1
+        end
+      end
+    end
+
     def handshake
       setup_info = read_message
       send_pid setup_info['pidDir']
+      launch_heartbeat_thread(setup_info['pidDir'], Process.pid)
       [setup_info['conf'], setup_info['context']]
     end
   end
@@ -169,10 +183,6 @@ module Storm
     def self.from_hash(hash)
       Tuple.new(*hash.values_at("id", "comp", "stream", "task", "tuple"))
     end
-
-    def is_heartbeat
-      task == -1 and stream == '__heartbeat'
-    end
   end
 
   class Bolt
@@ -188,11 +198,7 @@ module Storm
       begin
         while true
           tuple = Tuple.from_hash(read_command)
-          if tuple.is_heartbeat
-            sync
-          else
-            process tuple
-          end
+          process tuple
         end
       rescue Exception => e
         reportError 'Exception in bolt: ' + e.message + ' - ' + e.backtrace.join('\n')

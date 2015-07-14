@@ -23,6 +23,7 @@
 
 
 var fs = require('fs');
+var path = require('path');
 
 function Storm() {
     this.messagePart = "";
@@ -40,9 +41,13 @@ Storm.prototype.sync = function() {
     this.sendMsgToParent({"command":"sync"});
 }
 
+Storm.prototype.updateHeartbeatFile = function(heartbeatdir, pid) {
+    fs.closeSync(fs.openSync(path.join(heartbeatdir, String(pid)), "w"));
+}
+
 Storm.prototype.sendPid = function(heartbeatdir) {
     var pid = process.pid;
-    fs.closeSync(fs.openSync(heartbeatdir + "/" + pid, "w"));
+    this.updateHeartbeatFile(heartbeatdir, pid)
     this.sendMsgToParent({"pid": pid})
 }
 
@@ -55,6 +60,9 @@ Storm.prototype.initSetupInfo = function(setupInfo) {
     var callback = function() {
         self.sendPid(setupInfo['pidDir']);
     }
+
+    // update heartbeat for every 1 sec
+    setInterval(self.updateHeartbeatFile, 1 * 1000, setupInfo['pidDir'], process.pid);
     this.initialize(setupInfo['conf'], setupInfo['context'], callback);
 }
 
@@ -261,11 +269,6 @@ BasicBolt.prototype.__emit = function(commandDetails) {
 BasicBolt.prototype.handleNewCommand = function(command) {
     var self = this;
     var tup = new Tuple(command["id"], command["comp"], command["stream"], command["task"], command["tuple"]);
-
-    if (tup.task === -1 && tup.stream === "__heartbeat") {
-        self.sync();
-        return;
-    }
 
     var callback = function(err) {
         if (err) {
