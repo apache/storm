@@ -37,7 +37,7 @@ class StormClientPipelineFactory implements ChannelPipelineFactory {
         // Encoder
         pipeline.addLast("encoder", new MessageEncoder());
         // business logic.
-        pipeline.addLast("handler", new StormClientErrorHandler(client.dstAddressPrefixedName));
+        pipeline.addLast("handler", new StormClientHandler(client));
 
         return pipeline;
     }

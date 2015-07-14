@@ -91,12 +91,6 @@ public class Config extends HashMap<String, Object> {
     public static final Object STORM_NETTY_MESSAGE_BATCH_SIZE_SCHEMA = ConfigValidation.IntegerValidator;
 
     /**
-     * We check with this interval that whether the Netty channel is writable and try to write pending messages
-     */
-    public static final String STORM_NETTY_FLUSH_CHECK_INTERVAL_MS = "storm.messaging.netty.flush.check.interval.ms";
-    public static final Object STORM_NETTY_FLUSH_CHECK_INTERVAL_MS_SCHEMA = ConfigValidation.IntegerValidator;
-    
-    /**
      * The delegate for serializing metadata, should be used for serialized objects stored in zookeeper and on disk.
      * This is NOT used for compressing serialized tuples sent between topologies.
      */
