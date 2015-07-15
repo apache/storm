@@ -556,6 +556,27 @@
                 <clojure.test.declared.namespace.only>true</clojure.test.declared.namespace.only>
             </properties>
         </profile>
+        <!-- Addning the hwx-common profile to bundle the hadoop-aws and hadoop-azure jars.-->
+        <profile>
+        <id>hwx-common</id>
+      	<activation>
+        <activeByDefault>true</activeByDefault>
+      	</activation>
+      	<dependencyManagement>
+        	<dependencies>
+          		<dependency>
+            		<groupId>org.apache.hadoop</groupId>
+            		<artifactId>hadoop-aws</artifactId>
+            		<version>${hadoop.version}</version>
+          		</dependency>
+          		<dependency>
+            		<groupId>org.apache.hadoop</groupId>
+            		<artifactId>hadoop-azure</artifactId>
+            		<version>${hadoop.version}</version>
+          		</dependency>
+        	</dependencies>
+      	</dependencyManagement>
+    	</profile>
     </profiles>
 
     <distributionManagement>
