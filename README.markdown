@@ -4,7 +4,7 @@ Storm is a distributed realtime computation system. Similar to how Hadoop provid
 
 The [Rationale page](http://storm-project.net/documentation/Rationale.html) explains what Storm is and why it was built. [This presentation](http://vimeo.com/40972420) is also a good introduction to the project.
 
-Storm has a website at [storm-project.net](http://storm-project.net). Follow [@stormprocessor](https://twitter.com/stormprocessor) on Twitter for updates on the project.
+Storm has a website at [storm.apache.org](http://storm.apache.org). Follow [@stormprocessor](https://twitter.com/stormprocessor) on Twitter for updates on the project.
 
 ## Documentation
 
@@ -84,6 +84,7 @@ under the License.
 * Sean Zhong ([@clockfly] (http://github.com/clockfly))
 * Kyle Nusbaum ([@knusbaum](https://github.com/knusbaum))
 * Parth Brahmbhatt ([@Parth-Brahmbhatt](https://github.com/Parth-Brahmbhatt))
+* Jungtaek Lim ([@HeartSaVioR](https://github.com/HeartSaVioR))
 
 ## Contributors
 
@@ -154,7 +155,6 @@ under the License.
 * Parth-Brahmbhatt ([@Parth-Brahmbhatt](https://github.com/Parth-Brahmbhatt))
 * Adrian Petrescu ([@apetresc](https://github.com/apetresc))
 * DashengJu ([@dashengju](https://github.com/dashengju))
-* Jungtaek Lim ([@HeartSaVioR](https://github.com/HeartSaVioR))
 * Li Jiahong ([@Gvain](https://github.com/Gvain))
 * Aaron Levin ([@aaronlevin](https://github.com/aaronlevin))
 * Masatake Iwasaki ([@iwasakims](https://github.com/iwasakims))
@@ -200,6 +200,14 @@ under the License.
 * jangie ([@jangie](https://github.com/jangie))
 * Hailei Zhang ([@Hailei](https://github.com/Hailei))
 * Nikhil Singh ([@snikhil5](https://github.com/snikhil5))
+* Paul Poulosky ([@ppoulosk](https://github.com/ppoulosk))
+* Brendan W. Lyon ([@lyonbrw](https://github.com/lyonbrw))
+* Shyam Rajendran ([@bourneagain](https://github.com/bourneagain))
+* Reza Farivar ([@rfarivar](https://github.com/rfarivar))
+* Hugo Louro ([@hmcl](https://github.com/hmcl))
+* Xin Wang ([@vesense](https://github.com/vesense))
+* Aaron Dossett ([@dossett](https://github.com/dossett))
+* Charles Chan ([@charleswhchan](https://github.com/charleswhchan))
 
 ## Acknowledgements
 
