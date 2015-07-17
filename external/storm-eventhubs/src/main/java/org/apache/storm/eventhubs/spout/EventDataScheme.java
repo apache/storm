@@ -22,8 +22,10 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.qpid.amqp_1_0.client.Message;
 import org.apache.qpid.amqp_1_0.type.Section;
+import org.apache.qpid.amqp_1_0.type.Symbol;
 import org.apache.qpid.amqp_1_0.type.messaging.AmqpValue;
 import org.apache.qpid.amqp_1_0.type.messaging.Data;
+import org.apache.qpid.amqp_1_0.type.messaging.MessageAnnotations;
 
 public class EventDataScheme implements IEventDataScheme {
 
@@ -42,6 +44,9 @@ public class EventDataScheme implements IEventDataScheme {
         AmqpValue amqpValue = (AmqpValue) section;
         fieldContents.add(amqpValue.getValue().toString());
         return fieldContents;
+      }else if (section instanceof MessageAnnotations) {
+        MessageAnnotations messageAnnotations = (MessageAnnotations) section;
+        fieldContents.add(messageAnnotations.getValue().get(Symbol.getSymbol("x-opt-sequence-number")));
       }
     }
 
@@ -50,6 +55,6 @@ public class EventDataScheme implements IEventDataScheme {
 
   @Override
   public Fields getOutputFields() {
-    return new Fields(FieldConstants.Message);
+    return new Fields(FieldConstants.sequenceNumber, FieldConstants.Message, FieldConstants.Partition);
   }
 }

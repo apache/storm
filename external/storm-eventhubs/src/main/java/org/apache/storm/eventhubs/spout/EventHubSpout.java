@@ -199,6 +199,7 @@ public class EventHubSpout extends BaseRichSpout {
       List<Object> tuples = scheme.deserialize(message);
 
       if (tuples != null) {
+        tuples.add(messageId.getPartitionId());
         collector.emit(tuples, messageId);
       }
     }
