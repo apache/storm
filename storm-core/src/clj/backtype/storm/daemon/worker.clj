@@ -290,7 +290,7 @@
               needed-tasks (-> needed-assignment keys)
 
               closed-connections (into [] (for [[node+port socket] @(:cached-node+port->socket worker)]
-                                            (if (.isClosed socket) node+port)))
+                                            (if (= ConnectionWithStatus$Status/Closed (.status socket)) node+port)))
               ;; If the node+port->scoket have closed Client, we must remove the closed Client first, else:
               ;; 1. This will result in Client object leak;
               ;; 2. If this worker will reconnect to this node+port, as the client is closed, we will never send message success;
