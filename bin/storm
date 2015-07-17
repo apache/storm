@@ -30,24 +30,6 @@ while [ -h "${PRG}" ]; do
   fi
 done
 
-# find python >= 2.6
-if [ -a /usr/bin/python2.6 ]; then
-  PYTHON=/usr/bin/python2.6
-fi
-
-if [ -z "$PYTHON" ]; then
-  PYTHON=/usr/bin/python
-fi
-
-# check for version
-majversion=`$PYTHON -V 2>&1 | awk '{print $2}' | cut -d'.' -f1`
-minversion=`$PYTHON -V 2>&1 | awk '{print $2}' | cut -d'.' -f2`
-numversion=$(( 10 * $majversion + $minversion))
-if (( $numversion < 26 )); then
-  echo "Need python version > 2.6"
-  exit 1
-fi
-
 STORM_BIN_DIR=`dirname ${PRG}`
 export STORM_BASE_DIR=`cd ${STORM_BIN_DIR}/..;pwd`
 
@@ -73,4 +55,5 @@ if [ -f "${STORM_CONF_DIR}/storm-env.sh" ]; then
   . "${STORM_CONF_DIR}/storm-env.sh"
 fi
 
-exec "$PYTHON" "${STORM_BIN_DIR}/storm.py" "$@"
+JAR_DIR="${STORM_BASE_DIR}/lib"
+"${JAVA_HOME}/bin/java" -cp "${JAR_DIR}/*" backtype.storm.utils.StormCommands "$@"
