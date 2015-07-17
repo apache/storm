@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import backtype.storm.generated.ExecutorInfo;
+
 public class Cluster {
 
     /**
@@ -137,12 +139,12 @@ public class Cluster {
      * @param topology
      * @return
      */
-    public Map<ExecutorDetails, String> getNeedsSchedulingExecutorToComponents(TopologyDetails topology) {
-        Collection<ExecutorDetails> allExecutors = new HashSet(topology.getExecutors());
+    public Map<ExecutorInfo, String> getNeedsSchedulingExecutorToComponents(TopologyDetails topology) {
+        Collection<ExecutorInfo> allExecutors = new HashSet(topology.getExecutors());
         
         SchedulerAssignment assignment = this.assignments.get(topology.getId());
         if (assignment != null) {
-            Collection<ExecutorDetails> assignedExecutors = assignment.getExecutors();
+            Collection<ExecutorInfo> assignedExecutors = assignment.getExecutors();
             allExecutors.removeAll(assignedExecutors);
         }
 
@@ -155,13 +157,13 @@ public class Cluster {
      * @param topology
      * @return
      */
-    public Map<String, List<ExecutorDetails>> getNeedsSchedulingComponentToExecutors(TopologyDetails topology) {
-        Map<ExecutorDetails, String> executorToComponents = this.getNeedsSchedulingExecutorToComponents(topology);
-        Map<String, List<ExecutorDetails>> componentToExecutors = new HashMap<String, List<ExecutorDetails>>();
-        for (ExecutorDetails executor : executorToComponents.keySet()) {
+    public Map<String, List<ExecutorInfo>> getNeedsSchedulingComponentToExecutors(TopologyDetails topology) {
+        Map<ExecutorInfo, String> executorToComponents = this.getNeedsSchedulingExecutorToComponents(topology);
+        Map<String, List<ExecutorInfo>> componentToExecutors = new HashMap<String, List<ExecutorInfo>>();
+        for (ExecutorInfo executor : executorToComponents.keySet()) {
             String component = executorToComponents.get(executor);
             if (!componentToExecutors.containsKey(component)) {
-                componentToExecutors.put(component, new ArrayList<ExecutorDetails>());
+                componentToExecutors.put(component, new ArrayList<ExecutorInfo>());
             }
             
             componentToExecutors.get(component).add(executor);
@@ -244,16 +246,16 @@ public class Cluster {
     /**
      * get the unassigned executors of the topology.
      */
-    public Collection<ExecutorDetails> getUnassignedExecutors(TopologyDetails topology) {
+    public Collection<ExecutorInfo> getUnassignedExecutors(TopologyDetails topology) {
         if (topology == null) {
-            return new ArrayList<ExecutorDetails>(0);
+            return new ArrayList<ExecutorInfo>(0);
         }
 
-        Collection<ExecutorDetails> ret = new HashSet(topology.getExecutors());
+        Collection<ExecutorInfo> ret = new HashSet(topology.getExecutors());
         
         SchedulerAssignment assignment = this.getAssignmentById(topology.getId());
         if (assignment != null) {
-            Set<ExecutorDetails> assignedExecutors = assignment.getExecutors();
+            Set<ExecutorInfo> assignedExecutors = assignment.getExecutors();
             ret.removeAll(assignedExecutors);
         }
         
@@ -283,17 +285,17 @@ public class Cluster {
      * 
      * @throws RuntimeException if the specified slot is already occupied.
      */
-    public void assign(WorkerSlot slot, String topologyId, Collection<ExecutorDetails> executors) {
+    public void assign(WorkerSlot slot, String topologyId, Collection<ExecutorInfo> executors) {
         if (this.isSlotOccupied(slot)) {
             throw new RuntimeException("slot: [" + slot.getNodeId() + ", " + slot.getPort() + "] is already occupied.");
         }
         
         SchedulerAssignmentImpl assignment = (SchedulerAssignmentImpl)this.getAssignmentById(topologyId);
         if (assignment == null) {
-            assignment = new SchedulerAssignmentImpl(topologyId, new HashMap<ExecutorDetails, WorkerSlot>());
+            assignment = new SchedulerAssignmentImpl(topologyId, new HashMap<ExecutorInfo, WorkerSlot>());
             this.assignments.put(topologyId, assignment);
         } else {
-            for (ExecutorDetails executor : executors) {
+            for (ExecutorInfo executor : executors) {
                  if (assignment.isExecutorAssigned(executor)) {
                      throw new RuntimeException("the executor is already assigned, you should unassign it before assign it to another slot.");
                  }

@@ -18,7 +18,7 @@
   (:require [backtype.storm.scheduler.EvenScheduler :as EvenScheduler])
   (:import [backtype.storm.scheduler IScheduler Topologies
             Cluster TopologyDetails WorkerSlot SchedulerAssignment
-            EvenScheduler ExecutorDetails])
+            EvenScheduler])
   (:gen-class
     :implements [backtype.storm.scheduler.IScheduler]))
 

@@ -29,8 +29,8 @@ import java.util.Map.Entry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import backtype.storm.generated.ExecutorInfo;
 import backtype.storm.scheduler.Cluster;
-import backtype.storm.scheduler.ExecutorDetails;
 import backtype.storm.scheduler.SchedulerAssignment;
 import backtype.storm.scheduler.SupervisorDetails;
 import backtype.storm.scheduler.WorkerSlot;
@@ -223,7 +223,7 @@ public class Node {
    * @param executors the executors to run in that slot.
    * @param cluster the cluster to be updated
    */
-  public void assign(String topId, Collection<ExecutorDetails> executors, 
+  public void assign(String topId, Collection<ExecutorInfo> executors, 
       Cluster cluster) {
     if (!_isAlive) {
       throw new IllegalStateException("Trying to adding to a dead node " + _nodeId);

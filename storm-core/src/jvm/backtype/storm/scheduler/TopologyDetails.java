@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import backtype.storm.Config;
+import backtype.storm.generated.ExecutorInfo;
 import backtype.storm.generated.StormTopology;
 
 
@@ -29,7 +30,7 @@ public class TopologyDetails {
     String topologyId;
     Map topologyConf;
     StormTopology topology;
-    Map<ExecutorDetails, String> executorToComponent;
+    Map<ExecutorInfo, String> executorToComponent;
     int numWorkers;
  
     public TopologyDetails(String topologyId, Map topologyConf, StormTopology topology, int numWorkers) {
@@ -39,9 +40,9 @@ public class TopologyDetails {
         this.numWorkers = numWorkers;
     }
     
-    public TopologyDetails(String topologyId, Map topologyConf, StormTopology topology, int numWorkers, Map<ExecutorDetails, String> executorToComponents) {
+    public TopologyDetails(String topologyId, Map topologyConf, StormTopology topology, int numWorkers, Map<ExecutorInfo, String> executorToComponents) {
         this(topologyId, topologyConf, topology, numWorkers);
-        this.executorToComponent = new HashMap<ExecutorDetails, String>(0);
+        this.executorToComponent = new HashMap<ExecutorInfo, String>(0);
         if (executorToComponents != null) {
             this.executorToComponent.putAll(executorToComponents);
         }
@@ -67,13 +68,13 @@ public class TopologyDetails {
         return topology;
     }
 
-    public Map<ExecutorDetails, String> getExecutorToComponent() {
+    public Map<ExecutorInfo, String> getExecutorToComponent() {
         return this.executorToComponent;
     }
 
-    public Map<ExecutorDetails, String> selectExecutorToComponent(Collection<ExecutorDetails> executors) {
-        Map<ExecutorDetails, String> ret = new HashMap<ExecutorDetails, String>(executors.size());
-        for (ExecutorDetails executor : executors) {
+    public Map<ExecutorInfo, String> selectExecutorToComponent(Collection<ExecutorInfo> executors) {
+        Map<ExecutorInfo, String> ret = new HashMap<ExecutorInfo, String>(executors.size());
+        for (ExecutorInfo executor : executors) {
             String compId = this.executorToComponent.get(executor);
             if (compId != null) {
                 ret.put(executor, compId);
@@ -83,7 +84,7 @@ public class TopologyDetails {
         return ret;
     }
     
-    public Collection<ExecutorDetails> getExecutors() {
+    public Collection<ExecutorInfo> getExecutors() {
         return this.executorToComponent.keySet();
     }
 }

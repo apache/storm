@@ -20,6 +20,8 @@ package backtype.storm.scheduler;
 import java.util.Map;
 import java.util.Set;
 
+import backtype.storm.generated.ExecutorInfo;
+
 public interface SchedulerAssignment {
     /**
      * Does this slot occupied by this assignment?
@@ -34,7 +36,7 @@ public interface SchedulerAssignment {
      * @param executor
      * @return
      */
-    public boolean isExecutorAssigned(ExecutorDetails executor);
+    public boolean isExecutorAssigned(ExecutorInfo executor);
     
     /**
      * get the topology-id this assignment is for.
@@ -46,13 +48,13 @@ public interface SchedulerAssignment {
      * get the executor -> slot map.
      * @return
      */
-    public Map<ExecutorDetails, WorkerSlot> getExecutorToSlot();
+    public Map<ExecutorInfo, WorkerSlot> getExecutorToSlot();
 
     /**
      * Return the executors covered by this assignments
      * @return
      */
-    public Set<ExecutorDetails> getExecutors();
+    public Set<ExecutorInfo> getExecutors();
     
     public Set<WorkerSlot> getSlots();
 }

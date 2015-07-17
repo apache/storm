@@ -17,7 +17,8 @@
   (:use [backtype.storm util log config])
   (:require [clojure.set :as set])
   (:import [backtype.storm.scheduler IScheduler Topologies
-            Cluster TopologyDetails WorkerSlot ExecutorDetails])
+            Cluster TopologyDetails WorkerSlot])
+  (:import [backtype.storm.generated ExecutorInfo])
   (:gen-class
     :implements [backtype.storm.scheduler.IScheduler]))
 
@@ -31,7 +32,7 @@
         executor->slot (if existing-assignment
                          (.getExecutorToSlot existing-assignment)
                          {}) 
-        executor->node+port (into {} (for [[^ExecutorDetails executor ^WorkerSlot slot] executor->slot
+        executor->node+port (into {} (for [[^ExecutorInfo executor ^WorkerSlot slot] executor->slot
                                            :let [executor [(.getStartTask executor) (.getEndTask executor)]
                                                  node+port [(.getNodeId slot) (.getPort slot)]]]
                                        {executor node+port}))
@@ -71,7 +72,7 @@
       (doseq [[node+port executors] node+port->executors
               :let [^WorkerSlot slot (WorkerSlot. (first node+port) (last node+port))
                     executors (for [[start-task end-task] executors]
-                                (ExecutorDetails. start-task end-task))]]
+                                (ExecutorInfo. start-task end-task))]]
         (.assign cluster slot topology-id executors)))))
 
 (defn -prepare [this conf]

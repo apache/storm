@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import backtype.storm.generated.ExecutorInfo;
+
 //TODO: improve this by maintaining slot -> executors as well for more efficient operations
 public class SchedulerAssignmentImpl implements SchedulerAssignment {
     /**
@@ -34,11 +36,11 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
     /**
      * assignment detail, a mapping from executor to <code>WorkerSlot</code>
      */
-    Map<ExecutorDetails, WorkerSlot> executorToSlot;
+    Map<ExecutorInfo, WorkerSlot> executorToSlot;
     
-    public SchedulerAssignmentImpl(String topologyId, Map<ExecutorDetails, WorkerSlot> executorToSlots) {
+    public SchedulerAssignmentImpl(String topologyId, Map<ExecutorInfo, WorkerSlot> executorToSlots) {
         this.topologyId = topologyId;
-        this.executorToSlot = new HashMap<ExecutorDetails, WorkerSlot>(0);
+        this.executorToSlot = new HashMap<ExecutorInfo, WorkerSlot>(0);
         if (executorToSlots != null) {
             this.executorToSlot.putAll(executorToSlots);
         }
@@ -54,8 +56,8 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
      * @param slot
      * @param executors
      */
-    public void assign(WorkerSlot slot, Collection<ExecutorDetails> executors) {
-        for (ExecutorDetails executor : executors) {
+    public void assign(WorkerSlot slot, Collection<ExecutorInfo> executors) {
+        for (ExecutorInfo executor : executors) {
             this.executorToSlot.put(executor, slot);
         }
     }
@@ -65,8 +67,8 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
      * @param slot
      */
     public void unassignBySlot(WorkerSlot slot) {
-        List<ExecutorDetails> executors = new ArrayList<ExecutorDetails>();
-        for (ExecutorDetails executor : this.executorToSlot.keySet()) {
+        List<ExecutorInfo> executors = new ArrayList<ExecutorInfo>();
+        for (ExecutorInfo executor : this.executorToSlot.keySet()) {
             WorkerSlot ws = this.executorToSlot.get(executor);
             if (ws.equals(slot)) {
                 executors.add(executor);
@@ -74,7 +76,7 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
         }
         
         // remove
-        for (ExecutorDetails executor : executors) {
+        for (ExecutorInfo executor : executors) {
             this.executorToSlot.remove(executor);
         }
     }
@@ -88,7 +90,7 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
         return this.executorToSlot.containsValue(slot);
     }
 
-    public boolean isExecutorAssigned(ExecutorDetails executor) {
+    public boolean isExecutorAssigned(ExecutorInfo executor) {
         return this.executorToSlot.containsKey(executor);
     }
     
@@ -96,7 +98,7 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
         return this.topologyId;
     }
 
-    public Map<ExecutorDetails, WorkerSlot> getExecutorToSlot() {
+    public Map<ExecutorInfo, WorkerSlot> getExecutorToSlot() {
         return this.executorToSlot;
     }
 
@@ -104,7 +106,7 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
      * Return the executors covered by this assignments
      * @return
      */
-    public Set<ExecutorDetails> getExecutors() {
+    public Set<ExecutorInfo> getExecutors() {
         return this.executorToSlot.keySet();
     }
 }

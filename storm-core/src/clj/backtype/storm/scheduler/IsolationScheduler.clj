@@ -19,7 +19,7 @@
   (:import [java.util HashSet Set List LinkedList ArrayList Map HashMap])
   (:import [backtype.storm.scheduler IScheduler Topologies
             Cluster TopologyDetails WorkerSlot SchedulerAssignment
-            EvenScheduler ExecutorDetails])
+            EvenScheduler])
   (:gen-class
     :init init
     :constructors {[] []}

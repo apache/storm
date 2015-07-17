@@ -26,13 +26,13 @@
   (:import [backtype.storm.security.auth ThriftServer ThriftConnectionType ReqContext AuthUtils])
   (:use [backtype.storm.scheduler.DefaultScheduler])
   (:import [backtype.storm.scheduler INimbus SupervisorDetails WorkerSlot TopologyDetails
-            Cluster Topologies SchedulerAssignment SchedulerAssignmentImpl DefaultScheduler ExecutorDetails])
+            Cluster Topologies SchedulerAssignment SchedulerAssignmentImpl DefaultScheduler])
   (:import [backtype.storm.utils TimeCacheMap TimeCacheMap$ExpiredCallback Utils ThriftTopologyUtils
             BufferFileInputStream])
   (:import [backtype.storm.generated NotAliveException AlreadyAliveException StormTopology ErrorInfo
             ExecutorInfo InvalidTopologyException Nimbus$Iface Nimbus$Processor SubmitOptions TopologyInitialStatus
             KillOptions RebalanceOptions ClusterSummary SupervisorSummary TopologySummary TopologyInfo
-            ExecutorSummary AuthorizationException GetInfoOptions NumErrorsChoice])
+            ExecutorSummary AuthorizationException GetInfoOptions NumErrorsChoice ExecutorInfo])
   (:import [backtype.storm.daemon Shutdownable])
   (:use [backtype.storm util config log timer])
   (:require [backtype.storm [cluster :as cluster] [stats :as stats]])
@@ -346,7 +346,7 @@
         topology (read-storm-topology conf storm-id)
         executor->component (->> (compute-executor->component nimbus storm-id)
                                  (map-key (fn [[start-task end-task]]
-                                            (ExecutorDetails. (int start-task) (int end-task)))))]
+                                            (ExecutorInfo. (int start-task) (int end-task)))))]
     (TopologyDetails. storm-id
                       topology-conf
                       topology
@@ -500,7 +500,7 @@
                        executor->slot (into {} (for [[executor [node port]] executor->node+port]
                                                  ;; filter out the dead executors
                                                  (if (contains? alive-executors executor)
-                                                   {(ExecutorDetails. (first executor)
+                                                   {(ExecutorInfo. (first executor)
                                                                       (second executor))
                                                     (WorkerSlot. node port)}
                                                    {})))]]
@@ -534,7 +534,7 @@
   (map-val (fn [^SchedulerAssignment assignment]
              (->> assignment
                   .getExecutorToSlot
-                  (#(into {} (for [[^ExecutorDetails executor ^WorkerSlot slot] %]
+                  (#(into {} (for [[^ExecutorInfo executor ^WorkerSlot slot] %]
                               {[(.getStartTask executor) (.getEndTask executor)]
                                [(.getNodeId slot) (.getPort slot)]})))))
            scheduler-assignments))

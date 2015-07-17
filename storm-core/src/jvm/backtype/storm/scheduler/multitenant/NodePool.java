@@ -32,8 +32,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import backtype.storm.Config;
+import backtype.storm.generated.ExecutorInfo;
 import backtype.storm.scheduler.Cluster;
-import backtype.storm.scheduler.ExecutorDetails;
 import backtype.storm.scheduler.SchedulerAssignment;
 import backtype.storm.scheduler.TopologyDetails;
 import backtype.storm.scheduler.WorkerSlot;
@@ -61,9 +61,9 @@ public abstract class NodePool {
    */
   public static class RoundRobinSlotScheduler {
     private Map<String,Set<String>> _nodeToComps;
-    private HashMap<String, List<ExecutorDetails>> _spreadToSchedule;
-    private LinkedList<Set<ExecutorDetails>> _slots;
-    private Set<ExecutorDetails> _lastSlot;
+    private HashMap<String, List<ExecutorInfo>> _spreadToSchedule;
+    private LinkedList<Set<ExecutorInfo>> _slots;
+    private Set<ExecutorInfo> _lastSlot;
     private Cluster _cluster;
     private String _topId;
     
@@ -79,14 +79,14 @@ public abstract class NodePool {
       _topId = td.getId();
       _cluster = cluster;
       
-      Map<ExecutorDetails, String> execToComp = td.getExecutorToComponent();
+      Map<ExecutorInfo, String> execToComp = td.getExecutorToComponent();
       SchedulerAssignment assignment = _cluster.getAssignmentById(_topId);
       _nodeToComps = new HashMap<String, Set<String>>();
 
       if (assignment != null) {
-        Map<ExecutorDetails, WorkerSlot> execToSlot = assignment.getExecutorToSlot();
+        Map<ExecutorInfo, WorkerSlot> execToSlot = assignment.getExecutorToSlot();
         
-        for (Entry<ExecutorDetails, WorkerSlot> entry: execToSlot.entrySet()) {
+        for (Entry<ExecutorInfo, WorkerSlot> entry: execToSlot.entrySet()) {
           String nodeId = entry.getValue().getNodeId();
           Set<String> comps = _nodeToComps.get(nodeId);
           if (comps == null) {
@@ -97,27 +97,27 @@ public abstract class NodePool {
         }
       }
       
-      _spreadToSchedule = new HashMap<String, List<ExecutorDetails>>();
+      _spreadToSchedule = new HashMap<String, List<ExecutorInfo>>();
       List<String> spreadComps = (List<String>)td.getConf().get(Config.TOPOLOGY_SPREAD_COMPONENTS);
       if (spreadComps != null) {
         for (String comp: spreadComps) {
-          _spreadToSchedule.put(comp, new ArrayList<ExecutorDetails>());
+          _spreadToSchedule.put(comp, new ArrayList<ExecutorInfo>());
         }
       }
       
-      _slots = new LinkedList<Set<ExecutorDetails>>();
+      _slots = new LinkedList<Set<ExecutorInfo>>();
       for (int i = 0; i < slotsToUse; i++) {
-        _slots.add(new HashSet<ExecutorDetails>());
+        _slots.add(new HashSet<ExecutorInfo>());
       }
 
       int at = 0;
-      for (Entry<String, List<ExecutorDetails>> entry: _cluster.getNeedsSchedulingComponentToExecutors(td).entrySet()) {
+      for (Entry<String, List<ExecutorInfo>> entry: _cluster.getNeedsSchedulingComponentToExecutors(td).entrySet()) {
         LOG.debug("Scheduling for {}", entry.getKey());
         if (_spreadToSchedule.containsKey(entry.getKey())) {
           LOG.debug("Saving {} for spread...",entry.getKey());
           _spreadToSchedule.get(entry.getKey()).addAll(entry.getValue());
         } else {
-          for (ExecutorDetails ed: entry.getValue()) {
+          for (ExecutorInfo ed: entry.getValue()) {
             LOG.debug("Assigning {} {} to slot {}", new Object[]{entry.getKey(), ed, at});
             _slots.get(at).add(ed);
             at++;
@@ -139,10 +139,10 @@ public abstract class NodePool {
       if (_slots.isEmpty()) {
         return false;
       }
-      Set<ExecutorDetails> slot = _slots.pop();
+      Set<ExecutorInfo> slot = _slots.pop();
       if (slot == _lastSlot) {
         //The last slot fill it up
-        for (Entry<String, List<ExecutorDetails>> entry: _spreadToSchedule.entrySet()) {
+        for (Entry<String, List<ExecutorInfo>> entry: _spreadToSchedule.entrySet()) {
           if (entry.getValue().size() > 0) {
             slot.addAll(entry.getValue());
           }
@@ -154,7 +154,7 @@ public abstract class NodePool {
           nodeComps = new HashSet<String>();
           _nodeToComps.put(nodeId, nodeComps);
         }
-        for (Entry<String, List<ExecutorDetails>> entry: _spreadToSchedule.entrySet()) {
+        for (Entry<String, List<ExecutorInfo>> entry: _spreadToSchedule.entrySet()) {
           if (entry.getValue().size() > 0) {
             String comp = entry.getKey();
             if (!nodeComps.contains(comp)) {

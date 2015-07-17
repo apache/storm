@@ -18,8 +18,8 @@
   (:use [backtype.storm config testing])
   (:use [backtype.storm.scheduler EvenScheduler])
   (:require [backtype.storm.daemon [nimbus :as nimbus]])
-  (:import [backtype.storm.generated StormTopology])
-  (:import [backtype.storm.scheduler Cluster SupervisorDetails WorkerSlot ExecutorDetails
+  (:import [backtype.storm.generated StormTopology ExecutorInfo])
+  (:import [backtype.storm.scheduler Cluster SupervisorDetails WorkerSlot 
             SchedulerAssignmentImpl Topologies TopologyDetails]))
 
 (defn clojurify-executor->slot [executorToSlot]
@@ -37,13 +37,13 @@
              {component new-executors})))
 
 (deftest test-supervisor-details
-  (let [executor->slot {(ExecutorDetails. (int 1) (int 5)) (WorkerSlot. "supervisor1" (int 1))
-                        (ExecutorDetails. (int 6) (int 10)) (WorkerSlot. "supervisor2" (int 2))}
+  (let [executor->slot {(ExecutorInfo. (int 1) (int 5)) (WorkerSlot. "supervisor1" (int 1))
+                        (ExecutorInfo. (int 6) (int 10)) (WorkerSlot. "supervisor2" (int 2))}
         topology-id "topology1"
         assignment (SchedulerAssignmentImpl. topology-id executor->slot)]
     ;; test assign
     (.assign assignment (WorkerSlot. "supervisor1" 1)
-             (list (ExecutorDetails. (int 11) (int 15)) (ExecutorDetails. (int 16) (int 20))))
+             (list (ExecutorInfo. (int 11) (int 15)) (ExecutorInfo. (int 16) (int 20))))
     (is (= {[1 5] ["supervisor1" 1]
             [6 10] ["supervisor2" 2]
             [11 15] ["supervisor1" 1]
@@ -54,8 +54,8 @@
     (is (= true (.isSlotOccupied assignment (WorkerSlot. "supervisor1" (int 1)))))
 
     ;; test isExecutorAssigned
-    (is (= true (.isExecutorAssigned assignment (ExecutorDetails. (int 1) (int 5)))))
-    (is (= false (.isExecutorAssigned assignment (ExecutorDetails. (int 21) (int 25)))))
+    (is (= true (.isExecutorAssigned assignment (ExecutorInfo. (int 1) (int 5)))))
+    (is (= false (.isExecutorAssigned assignment (ExecutorInfo. (int 21) (int 25)))))
 
     ;; test unassignBySlot
     (.unassignBySlot assignment (WorkerSlot. "supervisor1" (int 1)))
@@ -65,8 +65,8 @@
     ))
 
 (deftest test-topologies
-  (let [executor1 (ExecutorDetails. (int 1) (int 5))
-        executor2 (ExecutorDetails. (int 6) (int 10))
+  (let [executor1 (ExecutorInfo. (int 1) (int 5))
+        executor2 (ExecutorInfo. (int 6) (int 10))
         topology1 (TopologyDetails. "topology1" {TOPOLOGY-NAME "topology-name-1"} (StormTopology.) 1
                                    {executor1 "spout1"
                                     executor2 "bolt1"})
@@ -91,13 +91,13 @@
 (deftest test-cluster
   (let [supervisor1 (SupervisorDetails. "supervisor1" "192.168.0.1" (list ) (map int (list 1 3 5 7 9)))
         supervisor2 (SupervisorDetails. "supervisor2" "192.168.0.2" (list ) (map int (list 2 4 6 8 10)))
-        executor1 (ExecutorDetails. (int 1) (int 5))
-        executor2 (ExecutorDetails. (int 6) (int 10))
-        executor3 (ExecutorDetails. (int 11) (int 15))
-        executor11 (ExecutorDetails. (int 100) (int 105))
-        executor12 (ExecutorDetails. (int 106) (int 110))
-        executor21 (ExecutorDetails. (int 201) (int 205))
-        executor22 (ExecutorDetails. (int 206) (int 210))
+        executor1 (ExecutorInfo. (int 1) (int 5))
+        executor2 (ExecutorInfo. (int 6) (int 10))
+        executor3 (ExecutorInfo. (int 11) (int 15))
+        executor11 (ExecutorInfo. (int 100) (int 105))
+        executor12 (ExecutorInfo. (int 106) (int 110))
+        executor21 (ExecutorInfo. (int 201) (int 205))
+        executor22 (ExecutorInfo. (int 206) (int 210))
         ;; topology1 needs scheduling: executor3 is NOT assigned a slot.
         topology1 (TopologyDetails. "topology1" {TOPOLOGY-NAME "topology-name-1"}
                                     (StormTopology.)

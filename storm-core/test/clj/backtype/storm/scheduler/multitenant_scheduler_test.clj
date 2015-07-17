@@ -17,8 +17,8 @@
   (:use [clojure test])
   (:use [backtype.storm config testing log])
   (:require [backtype.storm.daemon [nimbus :as nimbus]])
-  (:import [backtype.storm.generated StormTopology])
-  (:import [backtype.storm.scheduler Cluster SupervisorDetails WorkerSlot ExecutorDetails
+  (:import [backtype.storm.generated StormTopology ExecutorInfo])
+  (:import [backtype.storm.scheduler Cluster SupervisorDetails WorkerSlot 
             SchedulerAssignmentImpl Topologies TopologyDetails])
   (:import [backtype.storm.scheduler.multitenant Node NodePool FreePool DefaultPool
             IsolatedPool MultitenantScheduler]))
@@ -31,7 +31,7 @@
 (defn to-top-map [topologies]
   (into {} (for [top topologies] {(.getId top) top})))
 
-(defn ed [id] (ExecutorDetails. (int id) (int id)))
+(defn ed [id] (ExecutorInfo. (int id) (int id)))
 
 (defn mk-ed-map [arg]
   (into {}
@@ -53,25 +53,25 @@
       (is (= 4 (.totalSlotsFree node)))
       (is (= 0 (.totalSlotsUsed node)))
       (is (= 4 (.totalSlots node)))
-      (.assign node "topology1" (list (ExecutorDetails. 1 1)) cluster)
+      (.assign node "topology1" (list (ExecutorInfo. 1 1)) cluster)
       (is (= 1 (.size (.getRunningTopologies node))))
       (is (= false (.isTotallyFree node)))
       (is (= 3 (.totalSlotsFree node)))
       (is (= 1 (.totalSlotsUsed node)))
       (is (= 4 (.totalSlots node)))
-      (.assign node "topology1" (list (ExecutorDetails. 2 2)) cluster)
+      (.assign node "topology1" (list (ExecutorInfo. 2 2)) cluster)
       (is (= 1 (.size (.getRunningTopologies node))))
       (is (= false (.isTotallyFree node)))
       (is (= 2 (.totalSlotsFree node)))
       (is (= 2 (.totalSlotsUsed node)))
       (is (= 4 (.totalSlots node)))
-      (.assign node "topology2" (list (ExecutorDetails. 1 1)) cluster)
+      (.assign node "topology2" (list (ExecutorInfo. 1 1)) cluster)
       (is (= 2 (.size (.getRunningTopologies node))))
       (is (= false (.isTotallyFree node)))
       (is (= 1 (.totalSlotsFree node)))
       (is (= 3 (.totalSlotsUsed node)))
       (is (= 4 (.totalSlots node)))
-      (.assign node "topology2" (list (ExecutorDetails. 2 2)) cluster)
+      (.assign node "topology2" (list (ExecutorInfo. 2 2)) cluster)
       (is (= 2 (.size (.getRunningTopologies node))))
       (is (= false (.isTotallyFree node)))
       (is (= 0 (.totalSlotsFree node)))
@@ -91,7 +91,7 @@
        node-map (Node/getAllNodesFrom cluster)
        free-pool (FreePool. )]
     ;; assign one node so it is not in the pool
-    (.assign (.get node-map "super0") "topology1" (list (ExecutorDetails. 1 1)) cluster)
+    (.assign (.get node-map "super0") "topology1" (list (ExecutorInfo. 1 1)) cluster)
     (.init free-pool cluster node-map)
     (is (= 4 (.nodesAvailable free-pool)))
     (is (= (* 4 4) (.slotsAvailable free-pool)))
@@ -691,10 +691,10 @@
                                                 ["bolt2" 10 15]
                                                 ["bolt3" 15 20]]))
         existing-assignments {
-                               "topology1" (SchedulerAssignmentImpl. "topology1" {(ExecutorDetails. 0 5) (WorkerSlot. "super0" 1)
-                                                                                  (ExecutorDetails. 5 10) (WorkerSlot. "super0" 20)
-                                                                                  (ExecutorDetails. 10 15) (WorkerSlot. "super0" 1)
-                                                                                  (ExecutorDetails. 15 20) (WorkerSlot. "super0" 1)})
+                               "topology1" (SchedulerAssignmentImpl. "topology1" {(ExecutorInfo. 0 5) (WorkerSlot. "super0" 1)
+                                                                                  (ExecutorInfo. 5 10) (WorkerSlot. "super0" 20)
+                                                                                  (ExecutorInfo. 10 15) (WorkerSlot. "super0" 1)
+                                                                                  (ExecutorInfo. 15 20) (WorkerSlot. "super0" 1)})
                                }
         cluster (Cluster. (nimbus/standalone-nimbus) supers existing-assignments)
         node-map (Node/getAllNodesFrom cluster)
@@ -739,8 +739,8 @@
                       1
                       (mk-ed-map [["spout21" 2 3]]))
           worker-slot-with-multiple-assignments (WorkerSlot. "super1" 1)
-          existing-assignments {"topology2" (SchedulerAssignmentImpl. "topology2" {(ExecutorDetails. 1 1) worker-slot-with-multiple-assignments})
-                                "topology3" (SchedulerAssignmentImpl. "topology3" {(ExecutorDetails. 2 2) worker-slot-with-multiple-assignments})}
+          existing-assignments {"topology2" (SchedulerAssignmentImpl. "topology2" {(ExecutorInfo. 1 1) worker-slot-with-multiple-assignments})
+                                "topology3" (SchedulerAssignmentImpl. "topology3" {(ExecutorInfo. 2 2) worker-slot-with-multiple-assignments})}
           cluster (Cluster. (nimbus/standalone-nimbus) supers existing-assignments)
           topologies (Topologies. (to-top-map [topology1 topology2 topology3]))
           conf {MULTITENANT-SCHEDULER-USER-POOLS {"userA" 2 "userB" 1}}
@@ -768,7 +768,7 @@
                       (mk-ed-map [["spout11" 0 1]]))
           existing-assignments {"topology1"
                                 (SchedulerAssignmentImpl. "topology1"
-                                  {(ExecutorDetails. 0 0) (WorkerSlot. "super0" port-not-reported-by-supervisor)})}
+                                  {(ExecutorInfo. 0 0) (WorkerSlot. "super0" port-not-reported-by-supervisor)})}
           cluster (Cluster. (nimbus/standalone-nimbus) supers existing-assignments)
           topologies (Topologies. (to-top-map [topology1]))
           conf {}
@@ -803,12 +803,12 @@
           worker-slot-with-multiple-assignments (WorkerSlot. dead-supervisor 1)
           existing-assignments {"topology1"
                                 (SchedulerAssignmentImpl. "topology1"
-                                  {(ExecutorDetails. 0 0) worker-slot-with-multiple-assignments
-                                   (ExecutorDetails. 1 1) (WorkerSlot. dead-supervisor 3)})
+                                  {(ExecutorInfo. 0 0) worker-slot-with-multiple-assignments
+                                   (ExecutorInfo. 1 1) (WorkerSlot. dead-supervisor 3)})
                                 "topology2"
                                 (SchedulerAssignmentImpl. "topology2"
-                                  {(ExecutorDetails. 4 4) worker-slot-with-multiple-assignments
-                                   (ExecutorDetails. 5 5) (WorkerSlot. dead-supervisor port-not-reported-by-supervisor)})}
+                                  {(ExecutorInfo. 4 4) worker-slot-with-multiple-assignments
+                                   (ExecutorInfo. 5 5) (WorkerSlot. dead-supervisor port-not-reported-by-supervisor)})}
           cluster (Cluster. (nimbus/standalone-nimbus) supers existing-assignments)
           topologies (Topologies. (to-top-map [topology1 topology2]))
           conf {}
