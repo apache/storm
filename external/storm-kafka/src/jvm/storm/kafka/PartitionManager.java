@@ -172,15 +172,15 @@ public class PartitionManager {
             LOG.warn("Using new offset: {}", _emittedToOffset);
             // fetch failed, so don't update the metrics
             
-			//fix bug [STORM-643] : remove outdated failed offsets
-			if (!processingNewTuples) {
-				// For the case of EarliestTime it would be better to discard
+            //fix bug [STORM-643] : remove outdated failed offsets
+            if (!processingNewTuples) {
+                // For the case of EarliestTime it would be better to discard
                 // the failed offset, it is earlier than actual EarliestTime
                 // offset, since it is anyway not there.
-				this._failedMsgRetryManager.acked(offset);
-				
-				LOG.warn("Removing the failed offset it is out of range: {}", offset);
-			}
+                this._failedMsgRetryManager.acked(offset);
+                
+                LOG.warn("Removing the failed offset it is out of range: {}", offset);
+            }
             
             return;
         }
