@@ -210,7 +210,7 @@ public class ExponentialBackoffMsgRetryManagerTest {
         assertEquals("expect test offset next available for retry", TEST_OFFSET, next);
         assertTrue("message should be ready for retry", manager.shouldRetryMsg(TEST_OFFSET));
     }
-
+    
     @Test
     public void testClearInvalidMessages() throws Exception {
         ExponentialBackoffMsgRetryManager manager = new ExponentialBackoffMsgRetryManager(0, 0d, 0);
