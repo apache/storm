@@ -19,9 +19,11 @@ package storm.kafka;
 
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Queue;
+import java.util.Set;
 
 public class ExponentialBackoffMsgRetryManager implements FailedMsgRetryManager {
 
