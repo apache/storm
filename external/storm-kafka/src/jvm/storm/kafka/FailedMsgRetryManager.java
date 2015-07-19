@@ -17,6 +17,8 @@
  */
 package storm.kafka;
 
+import java.util.Set;
+
 public interface FailedMsgRetryManager {
     public void failed(Long offset);
     public void acked(Long offset);
