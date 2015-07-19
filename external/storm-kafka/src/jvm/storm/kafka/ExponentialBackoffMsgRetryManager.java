@@ -91,6 +91,21 @@ public class ExponentialBackoffMsgRetryManager implements FailedMsgRetryManager 
                 System.currentTimeMillis() >= record.retryTimeUTC;
     }
 
+    @Override
+    public Set<Long> clearInvalidMessages(Long kafkaOffset) {
+        Set<Long> invalidOffsets = new HashSet<Long>(); 
+        for(Long offset : records.keySet()){
+            if(offset < kafkaOffset){
+                MessageRetryRecord record = this.records.remove(offset);
+                if (record != null) {
+                    this.waiting.remove(record);
+                    invalidOffsets.add(offset);
+                }
+            }
+        }
+        return invalidOffsets;
+    }
+
     /**
      * A MessageRetryRecord holds the data of how many times a message has
      * failed and been retried, and when the last failure occurred.  It can
