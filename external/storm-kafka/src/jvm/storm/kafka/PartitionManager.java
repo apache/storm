@@ -175,11 +175,12 @@ public class PartitionManager {
             //fix bug [STORM-643] : remove outdated failed offsets
             if (!processingNewTuples) {
                 // For the case of EarliestTime it would be better to discard
-                // the failed offset, it is earlier than actual EarliestTime
-                // offset, since it is anyway not there.
-                this._failedMsgRetryManager.acked(offset);
+                // all the failed offsets, that are earlier than actual EarliestTime
+                // offset, since they are anyway not there.
+                // These calls to broker API will be then saved.
+                Set<Long> omitted = this._failedMsgRetryManager.clearInvalidMessages(_emittedToOffset);
                 
-                LOG.warn("Removing the failed offset it is out of range: {}", offset);
+                LOG.warn("Removing the failed offsets that are out of range: {}", omitted);
             }
             
             return;
