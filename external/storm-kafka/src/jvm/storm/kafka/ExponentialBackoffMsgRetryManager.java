@@ -18,12 +18,12 @@
 package storm.kafka;
 
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ExponentialBackoffMsgRetryManager implements FailedMsgRetryManager {
 
@@ -32,7 +32,7 @@ public class ExponentialBackoffMsgRetryManager implements FailedMsgRetryManager 
     private final long retryDelayMaxMs;
 
     private Queue<MessageRetryRecord> waiting = new PriorityQueue<MessageRetryRecord>(11, new RetryTimeComparator());
-    private Map<Long,MessageRetryRecord> records = new HashMap<Long,MessageRetryRecord>();
+    private Map<Long,MessageRetryRecord> records = new ConcurrentHashMap<Long,MessageRetryRecord>();
 
     public ExponentialBackoffMsgRetryManager(long retryInitialDelayMs, double retryDelayMultiplier, long retryDelayMaxMs) {
         this.retryInitialDelayMs = retryInitialDelayMs;
