@@ -59,7 +59,7 @@
                                        (map #(vector (.getNodeId %) (.getPort %))))
                   all-executors (->> topology
                                      .getExecutors
-                                     (map #(vector (.getStartTask %) (.getEndTask %)))
+                                     (map #(vector (.get_task_start %) (.get_task_end %)))
                                      set)
                   alive-assigned (EvenScheduler/get-alive-assigned-node+port->executors cluster topology-id)
                   alive-executors (->> alive-assigned vals (apply concat) set)

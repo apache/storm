@@ -33,7 +33,7 @@
                          (.getExecutorToSlot existing-assignment)
                          {}) 
         executor->node+port (into {} (for [[^ExecutorInfo executor ^WorkerSlot slot] executor->slot
-                                           :let [executor [(.getStartTask executor) (.getEndTask executor)]
+                                           :let [executor [(.get_task_start executor) (.get_task_end executor)]
                                                  node+port [(.getNodeId slot) (.getPort slot)]]]
                                        {executor node+port}))
         alive-assigned (reverse-map executor->node+port)]
@@ -45,7 +45,7 @@
                              (map #(vector (.getNodeId %) (.getPort %))))
         all-executors (->> topology
                           .getExecutors
-                          (map #(vector (.getStartTask %) (.getEndTask %)))
+                          (map #(vector (.get_task_start %) (.get_task_end %)))
                           set)
         alive-assigned (get-alive-assigned-node+port->executors cluster topology-id)
         total-slots-to-use (min (.getNumWorkers topology)

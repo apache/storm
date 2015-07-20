@@ -24,16 +24,16 @@
 
 (defn clojurify-executor->slot [executorToSlot]
   (into {} (for [[executor slot] executorToSlot]
-             {[(.getStartTask executor) (.getEndTask executor)]
+             {[(.get_task_start executor) (.get_task_end executor)]
               [(.getNodeId slot) (.getPort slot)]})))
 
 (defn clojurify-executor->comp [executorToComp]
   (into {} (for [[executor component] executorToComp]
-             {[(.getStartTask executor) (.getEndTask executor)] component})))
+             {[(.get_task_start executor) (.get_task_end executor)] component})))
 
 (defn clojurify-component->executors [compToExecutor]
   (into {} (for [[component executors] compToExecutor
-                 :let [new-executors (set (map #(vector (.getStartTask %) (.getEndTask %)) executors))]]
+                 :let [new-executors (set (map #(vector (.get_task_start %) (.get_task_end %)) executors))]]
              {component new-executors})))
 
 (deftest test-supervisor-details
@@ -169,7 +169,7 @@
            (empty? (.getNeedsSchedulingExecutorToComponents cluster topology3))))
 
     ;; test Cluster.getNeedsSchedulingComponentToExecutors
-    (is (= {"bolt2" #{[(.getStartTask executor3) (.getEndTask executor3)]}}
+    (is (= {"bolt2" #{[(.get_task_start executor3) (.get_task_end executor3)]}}
            (clojurify-component->executors (.getNeedsSchedulingComponentToExecutors cluster topology1))))
     (is (= true
            (empty? (.getNeedsSchedulingComponentToExecutors cluster topology2))))

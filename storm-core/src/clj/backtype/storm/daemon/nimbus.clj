@@ -535,7 +535,7 @@
              (->> assignment
                   .getExecutorToSlot
                   (#(into {} (for [[^ExecutorInfo executor ^WorkerSlot slot] %]
-                              {[(.getStartTask executor) (.getEndTask executor)]
+                              {[(.get_task_start executor) (.get_task_end executor)]
                                [(.getNodeId slot) (.getPort slot)]})))))
            scheduler-assignments))
 
