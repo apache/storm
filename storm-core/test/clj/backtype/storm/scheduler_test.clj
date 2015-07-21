@@ -98,6 +98,7 @@
         executor12 (ExecutorInfo. (int 106) (int 110))
         executor21 (ExecutorInfo. (int 201) (int 205))
         executor22 (ExecutorInfo. (int 206) (int 210))
+
         ;; topology1 needs scheduling: executor3 is NOT assigned a slot.
         topology1 (TopologyDetails. "topology1" {TOPOLOGY-NAME "topology-name-1"}
                                     (StormTopology.)
