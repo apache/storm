@@ -170,7 +170,9 @@
               }
    :killed {:startup (fn [] (delay-event nimbus
                                          storm-id
-                                         (:delay-secs storm-base)
+                                         (-> storm-base
+                                             :topology-action-options
+                                             :delay-secs)
                                          :remove)
                              nil)
             :kill (kill-transition nimbus storm-id)
@@ -182,7 +184,9 @@
             }
    :rebalancing {:startup (fn [] (delay-event nimbus
                                               storm-id
-                                              (:delay-secs storm-base)
+                                              (-> storm-base
+                                                  :topology-action-options
+                                                  :delay-secs)
                                               :do-rebalance)
                                  nil)
                  :kill (kill-transition nimbus storm-id)
@@ -503,7 +507,7 @@
              {tid (SchedulerAssignmentImpl. tid executor->slot)})))
 
 (defn- read-all-supervisor-details [nimbus all-scheduling-slots supervisor->dead-ports]
-  "return a map: {topology-id SupervisorDetails}"
+  "return a map: {supervisor-id SupervisorDetails}"
   (let [storm-cluster-state (:storm-cluster-state nimbus)
         supervisor-infos (all-supervisor-info storm-cluster-state)
         nonexistent-supervisor-slots (apply dissoc all-scheduling-slots (keys supervisor-infos))
