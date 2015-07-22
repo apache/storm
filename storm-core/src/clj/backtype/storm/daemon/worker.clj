@@ -68,13 +68,17 @@
 
 (defn do-heartbeat [worker]
   (let [conf (:conf worker)
-        state (worker-state conf (:worker-id worker))]
+        state (worker-state conf (:worker-id worker))
+        hang-time-limit (:worker-hangtime-limit-secs conf)
+        last-active-time (->> (:executors worker)
+                              (map executor/last-active-time)
+                              min)]
     ;; do the local-file-system heartbeat.
-    (ls-worker-heartbeat! state (current-time-secs) (:storm-id worker) (:executors worker) (:port worker))
-    (.cleanup state 60) ; this is just in case supervisor is down so that disk doesn't fill up.
-                         ; it shouldn't take supervisor 120 seconds between listing dir and reading it
-
-    ))
+    (when (< (- (System/currentTimeMillis) last-active-time) (* hang-time-limit 1000))
+      (ls-worker-heartbeat! state (current-time-secs) (:storm-id worker) (:executors worker) (:port worker))
+      (.cleanup state 60) ; this is just in case supervisor is down so that disk doesn't fill up.
+      ; it shouldn't take supervisor 120 seconds between listing dir and reading it
+      )))
 
 (defn worker-outbound-tasks
   "Returns seq of task-ids that receive messages from this worker"

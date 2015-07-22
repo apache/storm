@@ -999,6 +999,12 @@ public class Config extends HashMap<String, Object> {
     public static final Object WORKER_HEARTBEAT_FREQUENCY_SECS_SCHEMA = ConfigValidation.IntegerValidator;
 
     /**
+     * The limit the worker can bear the threads hang on.
+     */
+    public static final String WORKER_HANGTIME_LIMIT_SECS = "worker.hangon.limit.secs";
+    public static final Object WORKER_HANGTIME_LIMIT_SECS_SCHEMA = ConfigValidation.IntegersValidator;
+
+    /**
      * How often a task should heartbeat its status to the master.
      */
     public static final String TASK_HEARTBEAT_FREQUENCY_SECS = "task.heartbeat.frequency.secs";
@@ -1285,6 +1291,12 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_TICK_TUPLE_FREQ_SECS="topology.tick.tuple.freq.secs";
     public static final Object TOPOLOGY_TICK_TUPLE_FREQ_SECS_SCHEMA = ConfigValidation.IntegerValidator;
 
+   /**
+    * How often a chek tick tuple from the "__system" component and "__check_tick" stream should
+    * be sent to task. Meant to be used as component-specific configuration.
+    */
+    public static final String TOPOLOGY_CHECK_TICK_FREQ_SECS="toplogy.check.tick.freq.secs";
+    public static final Object TOPOLOGY_CHECK_TICK_FREQ_SECS_SCHEMA = ConfigValidation.IntegersValidator;
 
    /**
     * Configure the wait strategy used for internal queuing. Can be used to tradeoff latency

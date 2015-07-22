@@ -170,6 +170,7 @@
 (defprotocol RunningExecutor
   (render-stats [this])
   (get-executor-id [this])
+  (last-active-time [this])
   (credentials-changed [this creds]))
 
 (defn throttled-report-error-fn [executor]
@@ -261,6 +262,7 @@
                                ((:suicide-fn <>))))
      :deserializer (KryoTupleDeserializer. storm-conf worker-context)
      :sampler (mk-stats-sampler storm-conf)
+     :last-active-time (System/currentTimeMillis)
      ;; TODO: add in the executor-specific stuff in a :specific... or make a spout-data, bolt-data function?
      )))
 
@@ -293,6 +295,20 @@
          (disruptor/publish
           receive-queue
           [[nil (TupleImpl. worker-context [interval] Constants/SYSTEM_TASK_ID Constants/METRICS_TICK_STREAM_ID)]]))))))
+
+(defn setup-check-tick! [executor-data]
+  (let [{:keys [storm-conf receive-queue worker-context worker]} executor-data
+        tick-interval-secs (storm-conf TOPOLOGY-CHECK-TICK-FREQ-SECS)]
+    (when tick-interval-secs
+      (schedule-recurring
+        (:user-timer worker)
+        tick-interval-secs
+        tick-interval-secs
+        (fn []
+          (disruptor/publish
+            receive-queue
+            [[nil (TupleImpl. worker-context [tick-interval-secs] Constants/SYSTEM_TASK_ID Constants/CHECK_TICK_STREAM_ID)]]))
+        ))))
 
 (defn metrics-tick [executor-data task-data ^TupleImpl tuple]
   (let [{:keys [interval->task->metric-registry ^WorkerTopologyContext worker-context]} executor-data
@@ -365,6 +381,8 @@
         (stats/render-stats! (:stats executor-data)))
       (get-executor-id [this]
         executor-id )
+      (last-active-time [this]
+        @(:last-active-time executor-data))
       (credentials-changed [this creds]
         (let [receive-queue (:receive-queue executor-data)
               context (:worker-context executor-data)]
@@ -466,6 +484,7 @@
                             (condp = stream-id
                               Constants/SYSTEM_TICK_STREAM_ID (.rotate pending)
                               Constants/METRICS_TICK_STREAM_ID (metrics-tick executor-data (get task-datas task-id) tuple)
+                              Constants/CHECK_TICK_STREAM_ID (reset! (:last-active-time executor-data) (System/currentTimeMillis))
                               Constants/CREDENTIALS_CHANGED_STREAM_ID 
                                 (let [task-data (get task-datas task-id)
                                       spout-obj (:object task-data)]
@@ -666,6 +685,7 @@
                                   (when (instance? ICredentialsListener bolt-obj)
                                     (.setCredentials bolt-obj (.getValue tuple 0))))
                               Constants/METRICS_TICK_STREAM_ID (metrics-tick executor-data (get task-datas task-id) tuple)
+                              Constants/CHECK_TICK_STREAM_ID (reset! (:last-active-time executor-data) (System/currentTimeMillis))
                               (let [task-data (get task-datas task-id)
                                     ^IBolt bolt-obj (:object task-data)
                                     user-context (:user-context task-data)
