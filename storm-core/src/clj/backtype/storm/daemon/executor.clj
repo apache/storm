@@ -594,6 +594,7 @@
         (reset! open-or-prepare-was-called? true) 
         (log-message "Opened spout " component-id ":" (keys task-datas))
         (setup-metrics! executor-data)
+        (setup-check-tick! executor-data)
         
         (disruptor/consumer-started! (:receive-queue executor-data))
         (fn []
@@ -829,6 +830,7 @@
         (reset! open-or-prepare-was-called? true)        
         (log-message "Prepared bolt " component-id ":" (keys task-datas))
         (setup-metrics! executor-data)
+        (setup-check-tick! executor-data)
 
         (let [receive-queue (:receive-queue executor-data)
               event-handler (mk-task-receiver executor-data tuple-action-fn)]

@@ -69,7 +69,7 @@
 (defn do-heartbeat [worker]
   (let [conf (:conf worker)
         state (worker-state conf (:worker-id worker))
-        hang-time-limit (:worker-hangtime-limit-secs conf)
+        hang-time-limit (conf WORKER-HANGTIME-LIMIT-SECS)
         last-active-time (->> (:executors worker)
                               (map executor/last-active-time)
                               min)]
