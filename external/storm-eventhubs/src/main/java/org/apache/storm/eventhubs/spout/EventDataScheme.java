@@ -55,6 +55,6 @@ public class EventDataScheme implements IEventDataScheme {
 
   @Override
   public Fields getOutputFields() {
-    return new Fields(FieldConstants.sequenceNumber, FieldConstants.Message, FieldConstants.Partition);
+    return new Fields(FieldConstants.SequenceNumber, FieldConstants.Message, FieldConstants.Partition);
   }
 }

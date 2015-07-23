@@ -23,5 +23,5 @@ public class FieldConstants {
   public static final String Offset = "offset";
   public static final String Message = "message";
   public static final String Partition = "partition";
-  public static final String sequenceNumber = "seq-number";
+  public static final String SequenceNumber = "sequenceNumber";
 }
