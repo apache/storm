@@ -8,71 +8,83 @@ import org.apache.commons.lang.SystemUtils;
 /**
  * Created by pshah on 7/17/15.
  */
-public class StormCommandExecutor {
+abstract class StormCommandExecutor {
 
-    //boolean isWindows;
-    //String pathSeparator;
-    private String stormHomeDirectory;
-    private String userConfDirectory;
-    private String stormConfDirectory;
-    private String clusterConfDirectory;
-    private String stormLibDirectory;
-    private String stormBinDirectory;
-    private String stormLog4jConfDirectory;
-    private String configFile;
-    private String javaCommand;
-    private List<String> configOptions = new ArrayList<String>();
-    private String stormExternalClasspath;
-    private String stormExternalClasspathDaemon;
-    private final String[] COMMANDS = {"jar", "kill", "shell", "nimbus", "ui",
+    String stormHomeDirectory;
+    String userConfDirectory;
+    String stormConfDirectory;
+    String clusterConfDirectory;
+    String stormLibDirectory;
+    String stormBinDirectory;
+    String stormLog4jConfDirectory;
+    String configFile;
+    String javaCommand;
+    List<String> configOptions = new ArrayList<String>();
+    String stormExternalClasspath;
+    String stormExternalClasspathDaemon;
+    String fileSeparator;
+    final String[] COMMANDS = {"jar", "kill", "shell", "nimbus", "ui",
             "logviewer",
             "drpc", "supervisor", "localconfvalue",
             "remoteconfvalue", "repl", "classpath",
             "activate", "deactivate", "rebalance", "help",
             "list", "dev-zookeeper", "version", "monitor",
-            "upload-credentials", "get-errors" };
+            "upload-credentials", "get-errors"};
 
-    public static void main (String[] args) {
+    public static void main(String[] args) {
         System.out.println("Executing StormCommandExecutor main method");
-        StormCommandExecutor stormCommandExecutor = new StormCommandExecutor();
-        if (args.length == 0) {
-            System.exit(-1);
-        }
-        //stormCommandExecutor.initialize();
-        for (String arg: args) {
+        for (String arg : args) {
             System.out.println("Argument ++ is " + arg);
         }
+        StormCommandExecutor stormCommandExecutor;
+        if (System.getProperty("os.name").startsWith("Windows")) {
+            stormCommandExecutor = new WindowsStormCommandExecutor();
+        } else {
+            stormCommandExecutor = new UnixStormCommandExecutor();
+        }
+        stormCommandExecutor.initialize();
+        stormCommandExecutor.execute(args);
     }
 
     StormCommandExecutor() {
 
     }
-    private void initialize() {
-        //this.isWindows = System.getProperty("os.name").startsWith("Windows");
-        //this.pathSeparator = System.getProperty("path.separator");
-        String fileSeparator = System .getProperty("fileSeparator");
+
+    abstract void initialize();
+    abstract void execute(String[] args);
+}
+
+class UnixStormCommandExecutor extends StormCommandExecutor {
+
+    UnixStormCommandExecutor() {
+
+    }
+
+    void initialize() {
+        this.fileSeparator = System .getProperty ("fileSeparator");
         this.stormHomeDirectory = System.getenv("STORM_BASE_DIR");
         this.userConfDirectory = System.getProperty("user.home") +
-                fileSeparator + "" +
+                this.fileSeparator + "" +
                 ".storm";
         this.stormConfDirectory = System.getenv("STORM_CONF_DIR");
         this.clusterConfDirectory = this.stormConfDirectory == null ?  (this
-                .stormHomeDirectory + fileSeparator + "conf") : this
+                .stormHomeDirectory + this.fileSeparator + "conf") : this
                 .stormConfDirectory;
-        File f = new File(this.userConfDirectory + fileSeparator + "storm" +
+        File f = new File(this.userConfDirectory + this.fileSeparator +
+                "storm" +
                 ".yaml");
         if (!f.isFile()) {
             this.userConfDirectory = this.clusterConfDirectory;
         }
-        this.stormLibDirectory = this.stormHomeDirectory + fileSeparator +
+        this.stormLibDirectory = this.stormHomeDirectory + this.fileSeparator +
                 "lib";
-        this.stormBinDirectory = this.stormHomeDirectory + fileSeparator +
+        this.stormBinDirectory = this.stormHomeDirectory + this.fileSeparator +
                 "bin";
         this.stormLog4jConfDirectory = this.stormHomeDirectory +
-                fileSeparator + "log4j2";
+                this.fileSeparator + "log4j2";
         if (System.getenv("JAVA_HOME") != null) {
-            this.javaCommand = System.getenv("JAVA_HOME") + fileSeparator +
-                    "bin" + fileSeparator + "java";
+            this.javaCommand = System.getenv("JAVA_HOME") + this.fileSeparator +
+                    "bin" + this.fileSeparator + "java";
             if (!(new File(this.javaCommand).exists())) {
                 System.out.println("ERROR:  JAVA_HOME is invalid.  Could not " +
                         "find " + this.javaCommand);
@@ -102,4 +114,33 @@ public class StormCommandExecutor {
                 .stormConfDirectory);
         //System.getProperties().list(System.out);
     }
+
+    void execute (String[] args) {
+        if (args.length == 0) {
+            this.executeHelpCommand();
+            System.exit(-1);
+        }
+        return;
+    }
+
+    private void executeHelpCommand() {
+        System.out.println("Print storm help here");
+    }
+
+}
+
+class WindowsStormCommandExecutor extends StormCommandExecutor {
+
+    WindowsStormCommandExecutor() {
+
+    }
+
+    void initialize() {
+        return;
+    }
+
+    void execute (String[] args) {
+        return;
+    }
+
 }
