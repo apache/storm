@@ -59,7 +59,7 @@ abstract class StormCommandExecutor {
 
     void callMethod(String command, List<String> args) {
         Class implementation = this.getClass();
-        String methodName = command + "Command";
+        String methodName = command.replace("-", "") + "Command";
         try {
             Method method = implementation.getDeclaredMethod(methodName, List
                     .class);
@@ -166,6 +166,195 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
 
     void jarCommand(List<String> args) {
         System.out.println("Called jarCommand using reflection");
+        System.out.println("Arguments are : ");
+        for (String s: args) {
+            System.out.println(s);
+        }
+        return;
+    }
+
+    void killCommand(List<String> args) {
+        System.out.println("Called killCommand using reflection");
+        System.out.println("Arguments are : ");
+        for (String s: args) {
+            System.out.println(s);
+        }
+        return;
+    }
+
+    void shellCommand(List<String> args) {
+        System.out.println("Called shellCommand using reflection");
+        System.out.println("Arguments are : ");
+        for (String s: args) {
+            System.out.println(s);
+        }
+        return;
+    }
+
+    void nimbusCommand(List<String> args) {
+        System.out.println("Called nimbusCommand using reflection");
+        System.out.println("Arguments are : ");
+        for (String s: args) {
+            System.out.println(s);
+        }
+        return;
+    }
+
+    void uiCommand(List<String> args) {
+        System.out.println("Called uiCommand using reflection");
+        System.out.println("Arguments are : ");
+        for (String s: args) {
+            System.out.println(s);
+        }
+        return;
+    }
+
+    void logviewerCommand(List<String> args) {
+        System.out.println("Called logviewerCommand using reflection");
+        System.out.println("Arguments are : ");
+        for (String s: args) {
+            System.out.println(s);
+        }
+        return;
+    }
+
+    void drpcCommand(List<String> args) {
+        System.out.println("Called drpcCommand using reflection");
+        System.out.println("Arguments are : ");
+        for (String s: args) {
+            System.out.println(s);
+        }
+        return;
+    }
+
+    void supervisorCommand(List<String> args) {
+        System.out.println("Called supervisorCommand using reflection");
+        System.out.println("Arguments are : ");
+        for (String s: args) {
+            System.out.println(s);
+        }
+        return;
+    }
+
+    void localconfvalueCommand(List<String> args) {
+        System.out.println("Called localconfvalueCommand using reflection");
+        System.out.println("Arguments are : ");
+        for (String s: args) {
+            System.out.println(s);
+        }
+        return;
+    }
+
+    void remoteconfvalueCommand(List<String> args) {
+        System.out.println("Called remoteconfvalueCommand using reflection");
+        System.out.println("Arguments are : ");
+        for (String s: args) {
+            System.out.println(s);
+        }
+        return;
+    }
+
+    void replCommand(List<String> args) {
+        System.out.println("Called replCommand using reflection");
+        System.out.println("Arguments are : ");
+        for (String s: args) {
+            System.out.println(s);
+        }
+        return;
+    }
+
+    void classpathCommand(List<String> args) {
+        System.out.println("Called classpathCommand using reflection");
+        System.out.println("Arguments are : ");
+        for (String s: args) {
+            System.out.println(s);
+        }
+        return;
+    }
+
+    void activateCommand(List<String> args) {
+        System.out.println("Called activateCommand using reflection");
+        System.out.println("Arguments are : ");
+        for (String s: args) {
+            System.out.println(s);
+        }
+        return;
+    }
+
+    void deactivateCommand(List<String> args) {
+        System.out.println("Called deactivateCommand using reflection");
+        System.out.println("Arguments are : ");
+        for (String s: args) {
+            System.out.println(s);
+        }
+        return;
+    }
+
+    void rebalanceCommand(List<String> args) {
+        System.out.println("Called rebalanceCommand using reflection");
+        System.out.println("Arguments are : ");
+        for (String s: args) {
+            System.out.println(s);
+        }
+        return;
+    }
+
+    void helpCommand(List<String> args) {
+        System.out.println("Called helpCommand using reflection");
+        System.out.println("Arguments are : ");
+        for (String s: args) {
+            System.out.println(s);
+        }
+        return;
+    }
+
+    void listCommand(List<String> args) {
+        System.out.println("Called listCommand using reflection");
+        System.out.println("Arguments are : ");
+        for (String s: args) {
+            System.out.println(s);
+        }
+        return;
+    }
+
+    void devzookeeperCommand(List<String> args) {
+        System.out.println("Called devzookeeperCommand using reflection");
+        System.out.println("Arguments are : ");
+        for (String s: args) {
+            System.out.println(s);
+        }
+        return;
+    }
+
+    void versionCommand(List<String> args) {
+        System.out.println("Called versionCommand using reflection");
+        System.out.println("Arguments are : ");
+        for (String s: args) {
+            System.out.println(s);
+        }
+        return;
+    }
+
+    void monitorCommand(List<String> args) {
+        System.out.println("Called monitorCommand using reflection");
+        System.out.println("Arguments are : ");
+        for (String s: args) {
+            System.out.println(s);
+        }
+        return;
+    }
+
+    void uploadcredentialsCommand(List<String> args) {
+        System.out.println("Called uploadcredentialsCommand using reflection");
+        System.out.println("Arguments are : ");
+        for (String s: args) {
+            System.out.println(s);
+        }
+        return;
+    }
+
+    void geterrorsCommand(List<String> args) {
+        System.out.println("Called geterrorsCommand using reflection");
         System.out.println("Arguments are : ");
         for (String s: args) {
             System.out.println(s);
