@@ -1,6 +1,8 @@
 package backtype.storm.utils;
 
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;
@@ -52,7 +54,30 @@ abstract class StormCommandExecutor {
     }
 
     abstract void initialize();
+
     abstract void execute(String[] args);
+
+    void callMethod(String command, List<String> args) {
+        Class implementation = this.getClass();
+        String methodName = command + "Command";
+        try {
+            Method method = implementation.getDeclaredMethod(methodName, List
+                    .class);
+            method.invoke(this, args);
+        } catch (NoSuchMethodException ex) {
+            System.out.println("No such method exception occured while trying" +
+                    " to run storm method " + command);
+        } catch (IllegalAccessException ex) {
+            System.out.println("Illegal access exception occured while trying" +
+                    " to run storm method " + command);
+        } catch (IllegalArgumentException ex) {
+            System.out.println("Illegal argument exception occured while " +
+                    "trying" + " to run storm method " + command);
+        } catch (InvocationTargetException ex) {
+            System.out.println("Invocation target exception occured while " +
+                    "trying" + " to run storm method " + command);
+        }
+    }
 }
 
 class UnixStormCommandExecutor extends StormCommandExecutor {
@@ -134,7 +159,18 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
             System.exit(254);
 
         }
+        this.callMethod(commandArgs.get(0), commandArgs.subList(1,
+                commandArgs.size()));
 
+    }
+
+    void jarCommand(List<String> args) {
+        System.out.println("Called jarCommand using reflection");
+        System.out.println("Arguments are : ");
+        for (String s: args) {
+            System.out.println(s);
+        }
+        return;
     }
 
     private void printUsage() {
