@@ -164,12 +164,30 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
 
     }
 
+    void executeStormClass() {
+        ProcessBuilder processBuilder = new ProcessBuilder(this.javaCommand,
+                "-cp", this.stormLibDirectory + this.fileSeparator + "*",
+                "backtype.storm.utils.StormCommandExecutor", "kill" );
+        processBuilder.inheritIO();
+        try {
+            Process process = processBuilder.start();
+            System.out.println("Waiting for subprocess to finish");
+            process.waitFor();
+            System.out.println("subprocess finished");
+            System.out.println("Exit value from subprocess is :" + process
+                    .exitValue());
+        } catch (Exception ex) {
+            System.out.println("Exception occured while starting process via " +
+                    "processbuilder " + ex.getMessage());
+        }
+    }
     void jarCommand(List<String> args) {
         System.out.println("Called jarCommand using reflection");
         System.out.println("Arguments are : ");
         for (String s: args) {
             System.out.println(s);
         }
+        this.executeStormClass();
         return;
     }
 
