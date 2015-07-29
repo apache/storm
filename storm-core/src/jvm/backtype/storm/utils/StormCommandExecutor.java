@@ -26,7 +26,7 @@ abstract class StormCommandExecutor {
     String stormLibDirectory;
     String stormBinDirectory;
     String stormLog4jConfDirectory;
-    String configFile;
+    String configFile = "";
     String javaCommand;
     List<String> configOptions = new ArrayList<String>();
     String stormExternalClasspath;
