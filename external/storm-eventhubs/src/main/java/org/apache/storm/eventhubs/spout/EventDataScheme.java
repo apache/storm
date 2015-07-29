@@ -44,7 +44,7 @@ public class EventDataScheme implements IEventDataScheme {
         AmqpValue amqpValue = (AmqpValue) section;
         fieldContents.add(amqpValue.getValue().toString());
         return fieldContents;
-      }else if (section instanceof MessageAnnotations) {
+      } else if (section instanceof MessageAnnotations) {
         MessageAnnotations messageAnnotations = (MessageAnnotations) section;
         fieldContents.add(messageAnnotations.getValue().get(Symbol.getSymbol("x-opt-sequence-number")));
       }
