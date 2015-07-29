@@ -1,8 +1,12 @@
 package backtype.storm.utils;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;
@@ -14,7 +18,7 @@ import org.apache.commons.lang.SystemUtils;
  * Created by pshah on 7/17/15.
  */
 abstract class StormCommandExecutor {
-
+    final String NIMBUS_CLASS = "backtype.storm.daemon.nimbus";
     String stormHomeDirectory;
     String userConfDirectory;
     String stormConfDirectory;
@@ -35,7 +39,7 @@ abstract class StormCommandExecutor {
             "dev-zookeeper", "version", "monitor", "upload-credentials",
             "get-errors");
 
-    public static void main(String[] args) {
+    public static void main (String[] args) {
         for (String arg : args) {
             System.out.println("Argument ++ is " + arg);
         }
@@ -49,15 +53,15 @@ abstract class StormCommandExecutor {
         stormCommandExecutor.execute(args);
     }
 
-    StormCommandExecutor() {
+    StormCommandExecutor () {
 
     }
 
-    abstract void initialize();
+    abstract void initialize ();
 
-    abstract void execute(String[] args);
+    abstract void execute (String[] args);
 
-    void callMethod(String command, List<String> args) {
+    void callMethod (String command, List<String> args) {
         Class implementation = this.getClass();
         String methodName = command.replace("-", "") + "Command";
         try {
@@ -86,7 +90,7 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
 
     }
 
-    void initialize() {
+    void initialize () {
         Collections.sort(this.COMMANDS);
         this.fileSeparator = System .getProperty ("file.separator");
         this.stormHomeDirectory = System.getenv("STORM_BASE_DIR");
@@ -98,8 +102,7 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
                 .stormHomeDirectory + this.fileSeparator + "conf") : this
                 .stormConfDirectory;
         File f = new File(this.userConfDirectory + this.fileSeparator +
-                "storm" +
-                ".yaml");
+                "storm.yaml");
         if (!f.isFile()) {
             this.userConfDirectory = this.clusterConfDirectory;
         }
@@ -164,10 +167,105 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
 
     }
 
-    void executeStormClass() {
+    String getConfigOptions() {
+        String configOptions = "-Dstorm.options=";
+        //TODO  - do urlencode here. python does quote_plus to each configoption
+        return configOptions + StringUtils.join(this.configOptions, ',');
+
+    }
+
+    List<String> getJarsFull (String directory) {
+        List<String> fullJarFiles = new ArrayList<String>();
+        File file = new File(directory);
+        File[] files = file.listFiles();
+        if (files != null) {
+            for (File f : files) {
+                if (f.getName().endsWith(".jar")) {
+                    fullJarFiles.add(f.getPath());
+                }
+            }
+        }
+        return fullJarFiles;
+    }
+
+    String getClassPath (List<String> extraJars, boolean daemon) {
+        List<String> classPaths = this.getJarsFull(this.stormHomeDirectory);
+        classPaths.addAll(this.getJarsFull(this.stormLibDirectory));
+        classPaths.addAll(this.getJarsFull(this.stormHomeDirectory + this
+                .fileSeparator + "extlib"));
+        if (daemon == true) {
+            classPaths.addAll(this.getJarsFull(this.stormHomeDirectory + this
+                    .fileSeparator + "extlib-daemon"));
+        }
+        if (this.stormExternalClasspath != null) {
+            classPaths.add(this.stormExternalClasspath);
+        }
+        if (this.stormExternalClasspathDaemon != null) {
+            classPaths.add(this.stormExternalClasspathDaemon);
+        }
+        classPaths.addAll(extraJars);
+        return StringUtils.join(classPaths, System.getProperty("path" +
+                ".separator"));
+    }
+
+    String confValue (String name, List<String> extraPaths, boolean daemon) {
+        String confValue = "";
         ProcessBuilder processBuilder = new ProcessBuilder(this.javaCommand,
-                "-cp", this.stormLibDirectory + this.fileSeparator + "*",
-                "backtype.storm.utils.StormCommandExecutor", "kill" );
+                "-client", this.getConfigOptions(), "-Dstorm.conf.file=" +
+                this.configFile, "-cp", this.getClassPath(extraPaths, daemon),
+                "backtype.storm.command.config_value", name);
+        BufferedReader br;
+        try {
+            Process process = processBuilder.start();
+            br = new BufferedReader(new InputStreamReader(process.getInputStream
+                (), StandardCharsets.UTF_8));
+            process.waitFor();
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] tokens = line.split(" ");
+                if ("VALUE:".equals(tokens[0])) {
+                    confValue = StringUtils.join(Arrays.copyOfRange(tokens, 1,
+                            tokens
+                            .length), " ");
+                    break;
+                }
+            }
+            br.close();
+        } catch (Exception ex) {
+            System.out.println("Exception occured while starting process via " +
+                    "processbuilder " + ex.getMessage());
+        }
+        return confValue;
+    }
+
+    void executeStormClass (String className, String jvmType, List<String>
+            jvmOptions, List<String> extraJars, List<String> args, boolean
+            fork, boolean daemon, String daemonName) {
+        List<String> extraPaths = new ArrayList<>();
+        extraPaths.add(this.clusterConfDirectory);
+        String stormLogDirectory = this.confValue("storm.log.dir",
+                extraPaths, daemon);
+        if ((stormLogDirectory == null) || ("".equals(stormLogDirectory))) {
+            stormLogDirectory = this.stormHomeDirectory + this.fileSeparator
+                    + "logs";
+        }
+        List<String> commandList = new ArrayList<String>();
+        commandList.add(this.javaCommand);
+        commandList.add(jvmType);
+        commandList.add("-Ddaemon.name=" + daemonName);
+        commandList.add(this.getConfigOptions());
+        commandList.add("-Dstorm.home=" + this.stormHomeDirectory);
+        commandList.add("-Dstorm.log.dir=" + stormLogDirectory);
+        commandList.add("-Djava.library.path=" + this
+                .confValue("java.library.path", extraJars, daemon));
+        commandList.add("-Dstorm.conf.file=" + this.configFile);
+        commandList.add("-cp");
+        System.out.println("classpath is " + this.getClassPath(extraJars, daemon));
+        commandList.add(this.getClassPath(extraJars, daemon));
+        commandList.addAll(jvmOptions);
+        commandList.add(className);
+        commandList.addAll(args);
+        ProcessBuilder processBuilder = new ProcessBuilder(commandList);
         processBuilder.inheritIO();
         try {
             Process process = processBuilder.start();
@@ -181,17 +279,17 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
                     "processbuilder " + ex.getMessage());
         }
     }
-    void jarCommand(List<String> args) {
+
+    void jarCommand (List<String> args) {
         System.out.println("Called jarCommand using reflection");
         System.out.println("Arguments are : ");
         for (String s: args) {
             System.out.println(s);
         }
-        this.executeStormClass();
         return;
     }
 
-    void killCommand(List<String> args) {
+    void killCommand (List<String> args) {
         System.out.println("Called killCommand using reflection");
         System.out.println("Arguments are : ");
         for (String s: args) {
@@ -200,7 +298,7 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         return;
     }
 
-    void shellCommand(List<String> args) {
+    void shellCommand (List<String> args) {
         System.out.println("Called shellCommand using reflection");
         System.out.println("Arguments are : ");
         for (String s: args) {
@@ -209,16 +307,28 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         return;
     }
 
-    void nimbusCommand(List<String> args) {
+    void nimbusCommand (List<String> args) {
         System.out.println("Called nimbusCommand using reflection");
         System.out.println("Arguments are : ");
         for (String s: args) {
             System.out.println(s);
         }
+        List<String> jvmOptions = new ArrayList<String>();
+        jvmOptions.add("-Dlogfile.name=nimbus.log");
+        jvmOptions.add("-Dlog4j.configurationFile=" + this
+                .getLog4jConfigDirectory() + this.fileSeparator + "cluster" +
+                ".xml");
+        List<String> extraPaths = new ArrayList<String>();
+        extraPaths.add(this.clusterConfDirectory);
+        String nimbusOptions = this.confValue("nimbus.childopts", extraPaths,
+                true);
+        jvmOptions.add(nimbusOptions);
+        this.executeStormClass(this.NIMBUS_CLASS, "-server", jvmOptions,
+                extraPaths, new ArrayList<String>(), false, true, "nimbus");
         return;
     }
 
-    void uiCommand(List<String> args) {
+    void uiCommand (List<String> args) {
         System.out.println("Called uiCommand using reflection");
         System.out.println("Arguments are : ");
         for (String s: args) {
@@ -227,7 +337,7 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         return;
     }
 
-    void logviewerCommand(List<String> args) {
+    void logviewerCommand (List<String> args) {
         System.out.println("Called logviewerCommand using reflection");
         System.out.println("Arguments are : ");
         for (String s: args) {
@@ -236,7 +346,7 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         return;
     }
 
-    void drpcCommand(List<String> args) {
+    void drpcCommand (List<String> args) {
         System.out.println("Called drpcCommand using reflection");
         System.out.println("Arguments are : ");
         for (String s: args) {
@@ -245,7 +355,7 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         return;
     }
 
-    void supervisorCommand(List<String> args) {
+    void supervisorCommand (List<String> args) {
         System.out.println("Called supervisorCommand using reflection");
         System.out.println("Arguments are : ");
         for (String s: args) {
@@ -254,7 +364,7 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         return;
     }
 
-    void localconfvalueCommand(List<String> args) {
+    void localconfvalueCommand (List<String> args) {
         System.out.println("Called localconfvalueCommand using reflection");
         System.out.println("Arguments are : ");
         for (String s: args) {
@@ -263,7 +373,7 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         return;
     }
 
-    void remoteconfvalueCommand(List<String> args) {
+    void remoteconfvalueCommand (List<String> args) {
         System.out.println("Called remoteconfvalueCommand using reflection");
         System.out.println("Arguments are : ");
         for (String s: args) {
@@ -272,7 +382,7 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         return;
     }
 
-    void replCommand(List<String> args) {
+    void replCommand (List<String> args) {
         System.out.println("Called replCommand using reflection");
         System.out.println("Arguments are : ");
         for (String s: args) {
@@ -281,7 +391,7 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         return;
     }
 
-    void classpathCommand(List<String> args) {
+    void classpathCommand (List<String> args) {
         System.out.println("Called classpathCommand using reflection");
         System.out.println("Arguments are : ");
         for (String s: args) {
@@ -290,7 +400,7 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         return;
     }
 
-    void activateCommand(List<String> args) {
+    void activateCommand (List<String> args) {
         System.out.println("Called activateCommand using reflection");
         System.out.println("Arguments are : ");
         for (String s: args) {
@@ -299,7 +409,7 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         return;
     }
 
-    void deactivateCommand(List<String> args) {
+    void deactivateCommand (List<String> args) {
         System.out.println("Called deactivateCommand using reflection");
         System.out.println("Arguments are : ");
         for (String s: args) {
@@ -308,7 +418,7 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         return;
     }
 
-    void rebalanceCommand(List<String> args) {
+    void rebalanceCommand (List<String> args) {
         System.out.println("Called rebalanceCommand using reflection");
         System.out.println("Arguments are : ");
         for (String s: args) {
@@ -317,7 +427,7 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         return;
     }
 
-    void helpCommand(List<String> args) {
+    void helpCommand (List<String> args) {
         System.out.println("Called helpCommand using reflection");
         System.out.println("Arguments are : ");
         for (String s: args) {
@@ -326,7 +436,7 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         return;
     }
 
-    void listCommand(List<String> args) {
+    void listCommand (List<String> args) {
         System.out.println("Called listCommand using reflection");
         System.out.println("Arguments are : ");
         for (String s: args) {
@@ -335,7 +445,7 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         return;
     }
 
-    void devzookeeperCommand(List<String> args) {
+    void devzookeeperCommand (List<String> args) {
         System.out.println("Called devzookeeperCommand using reflection");
         System.out.println("Arguments are : ");
         for (String s: args) {
@@ -344,7 +454,7 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         return;
     }
 
-    void versionCommand(List<String> args) {
+    void versionCommand (List<String> args) {
         System.out.println("Called versionCommand using reflection");
         System.out.println("Arguments are : ");
         for (String s: args) {
@@ -353,7 +463,7 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         return;
     }
 
-    void monitorCommand(List<String> args) {
+    void monitorCommand (List<String> args) {
         System.out.println("Called monitorCommand using reflection");
         System.out.println("Arguments are : ");
         for (String s: args) {
@@ -362,7 +472,7 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         return;
     }
 
-    void uploadcredentialsCommand(List<String> args) {
+    void uploadcredentialsCommand (List<String> args) {
         System.out.println("Called uploadcredentialsCommand using reflection");
         System.out.println("Arguments are : ");
         for (String s: args) {
@@ -371,7 +481,7 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         return;
     }
 
-    void geterrorsCommand(List<String> args) {
+    void geterrorsCommand (List<String> args) {
         System.out.println("Called geterrorsCommand using reflection");
         System.out.println("Arguments are : ");
         for (String s: args) {
@@ -380,7 +490,18 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         return;
     }
 
-    private void printUsage() {
+    String getLog4jConfigDirectory () {
+        List<String> extraPaths = new ArrayList<String>();
+        extraPaths.add(this.clusterConfDirectory);
+        String log4jDirectory = this.confValue("storm.logback.conf.dir",
+                extraPaths, true);
+        if ("".equals(log4jDirectory)) {
+            log4jDirectory = this.stormLog4jConfDirectory;
+        }
+        return log4jDirectory;
+    }
+
+    private void printUsage () {
         String commands = StringUtils.join(this.COMMANDS, "\n\t");
         System.out.println("Commands:\n\t" + commands);
         System.out.println("\nHelp: \n\thelp \n\thelp <command>\n");
@@ -393,7 +514,7 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
                 "\"storm list -c nimbus.host=nimbus.mycompany.com\"\n");
     }
 
-    private void executeHelpCommand() {
+    private void executeHelpCommand () {
         System.out.println("Print storm help here");
     }
 
@@ -405,7 +526,7 @@ class WindowsStormCommandExecutor extends StormCommandExecutor {
 
     }
 
-    void initialize() {
+    void initialize () {
         return;
     }
 
@@ -414,3 +535,4 @@ class WindowsStormCommandExecutor extends StormCommandExecutor {
     }
 
 }
+
