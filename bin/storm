@@ -56,4 +56,5 @@ if [ -f "${STORM_CONF_DIR}/storm-env.sh" ]; then
 fi
 
 JAR_DIR="${STORM_BASE_DIR}/lib"
-"${JAVA_HOME}/bin/java" -cp "${JAR_DIR}/*" backtype.storm.utils.StormCommandExecutor "$@"
+# exec "${JAVA_HOME}/bin/java" -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005 -cp "${JAR_DIR}/*" backtype.storm.utils.StormCommandExecutor "$@"
+exec "${JAVA_HOME}/bin/java" -cp "${JAR_DIR}/*" backtype.storm.utils.StormCommandExecutor "$@"
