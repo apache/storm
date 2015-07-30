@@ -7,10 +7,9 @@ import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.*;
+
+import clojure.lang.IFn;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.SystemUtils;
 
@@ -209,6 +208,25 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
     }
 
     String confValue (String name, List<String> extraPaths, boolean daemon) {
+        // The original code from python started a process that started a jvm
+        // with backtype.storm.command.config_value main method that would
+        // read the conf value and print it out to an output stream. python
+        // tapped on to the output stream of that subprocess and returned the
+        // confvalue for the name. Because the pythong code has been shipped
+        // to java now it should not spawn a new process which is a jvm since
+        // we are already in jvm. Instead it should just be doing as the code
+        // commeneted below.
+        // However looking at the pythong code it was
+        // starting a jvm with -cp argument that had classpaths which might
+        // not be available to this java process. Hence there is a chance
+        // that the below code might break existing scripts. As a result I
+        // have decided to still spawn a new process from java just like
+        // python with similar classpaths being constructed for the jvm
+        // execution
+        /*IFn fn = Utils.loadClojureFn("backtype.storm.config",
+                "read-storm-config");
+        Object o = fn.invoke();
+        return ((Map) o).get(name).toString();*/
         String confValue = "";
         ProcessBuilder processBuilder = new ProcessBuilder(this.javaCommand,
                 "-client", this.getConfigOptions(), "-Dstorm.conf.file=" +
@@ -217,16 +235,15 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         BufferedReader br;
         try {
             Process process = processBuilder.start();
-            br = new BufferedReader(new InputStreamReader(process.getInputStream
-                (), StandardCharsets.UTF_8));
+            br = new BufferedReader(new InputStreamReader(process
+                    .getInputStream(), StandardCharsets.UTF_8));
             process.waitFor();
             String line;
             while ((line = br.readLine()) != null) {
                 String[] tokens = line.split(" ");
                 if ("VALUE:".equals(tokens[0])) {
                     confValue = StringUtils.join(Arrays.copyOfRange(tokens, 1,
-                            tokens
-                            .length), " ");
+                            tokens.length), " ");
                     break;
                 }
             }
