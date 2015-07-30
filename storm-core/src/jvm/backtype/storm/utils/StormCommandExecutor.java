@@ -282,6 +282,8 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         commandList.addAll(jvmOptions);
         commandList.add(className);
         commandList.addAll(args);
+        System.out.println("Executing the command: ");
+        System.out.println(StringUtils.join(commandList, " "));
         ProcessBuilder processBuilder = new ProcessBuilder(commandList);
         processBuilder.inheritIO();
         try {
@@ -331,15 +333,20 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
             System.out.println(s);
         }
         List<String> jvmOptions = new ArrayList<String>();
-        jvmOptions.add("-Dlogfile.name=nimbus.log");
-        jvmOptions.add("-Dlog4j.configurationFile=" + this
-                .getLog4jConfigDirectory() + this.fileSeparator + "cluster" +
-                ".xml");
         List<String> extraPaths = new ArrayList<String>();
         extraPaths.add(this.clusterConfDirectory);
         String nimbusOptions = this.confValue("nimbus.childopts", extraPaths,
                 true);
-        jvmOptions.add(nimbusOptions);
+        // below line is different from original python script storm.py where
+        // it called parse_args method on nimbusOptions. Now we just call a
+        // split with a space.  Hence this will have different behavior and
+        // a buggy one if the nimbusOptions string in the config file has a
+        // space. TODO need to fix this
+        jvmOptions.addAll(Arrays.asList(nimbusOptions.split(" ")));
+        jvmOptions.add("-Dlogfile.name=nimbus.log");
+        jvmOptions.add("-Dlog4j.configurationFile=" + this
+                .getLog4jConfigDirectory() + this.fileSeparator + "cluster" +
+                ".xml");
         this.executeStormClass(this.NIMBUS_CLASS, "-server", jvmOptions,
                 extraPaths, new ArrayList<String>(), false, true, "nimbus");
         return;
