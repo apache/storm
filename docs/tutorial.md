@@ -1,0 +1,240 @@
+---
+layout: default
+title: Tutorial
+---
+<!--Content Begin-->
+<div class="content">
+	<div class="container-fluid">
+    	<div class="row">
+        	<div class="col-md-12">
+            	<h1 class="page-title">Tutorial</h1>
+                <p>In this tutorial, you'll learn how to create Storm topologies and deploy them to a Storm cluster. Java will be the main language used, but a few examples will use Python to illustrate Storm's multi-language capabilities.</p>
+                <h3>Preliminaries</h3>
+                <p>This tutorial uses examples from the <a href="https://github.com/apache/storm/blob/master/examples/storm-starter" target="_blank">storm-starter</a> project. It's recommended that you clone the project and follow along with the examples. Read <a href="/setting-up.html">Setting up a development environment</a> and <a href="/creating-project.html">Creating a new Storm project</a> to get your machine set up.</p>
+                <h3>Components of a Storm cluster</h3>
+                <p>A Storm cluster is superficially similar to a Hadoop cluster. Whereas on Hadoop you run "MapReduce jobs", on Storm you run "topologies". "Jobs" and "topologies" themselves are very different -- one key difference is that a MapReduce job eventually finishes, whereas a topology processes messages forever (or until you kill it).</p>
+                <p>There are two kinds of nodes on a Storm cluster: the master node and the worker nodes. The master node runs a daemon called "Nimbus" that is similar to Hadoop's "JobTracker". Nimbus is responsible for distributing code around the cluster, assigning tasks to machines, and monitoring for failures.</p>
+                <p>Each worker node runs a daemon called the "Supervisor". The supervisor listens for work assigned to its machine and starts and stops worker processes as necessary based on what Nimbus has assigned to it. Each worker process executes a subset of a topology; a running topology consists of many worker processes spread across many machines.</p>
+                <p><img src="images/storm-cluster.png" alt="Storm cluster" class="img-responsive"></p>
+                <p>All coordination between Nimbus and the Supervisors is done through a <a href="http://zookeeper.apache.org/" target="_blank">Zookeeper</a> cluster. Additionally, the Nimbus daemon and Supervisor daemons are fail-fast and stateless; all state is kept in Zookeeper or on local disk. This means you can kill -9 Nimbus or the Supervisors and they'll start back up like nothing happened. This design leads to Storm clusters being incredibly stable.</p>
+                <h3>Topologies</h3>
+                <p>To do realtime computation on Storm, you create what are called "topologies". A topology is a graph of computation. Each node in a topology contains processing logic, and links between nodes indicate how data should be passed around between nodes.</p>
+                <p>Running a topology is straightforward. First, you package all your code and dependencies into a single jar. Then, you run a command like the following:</p>
+                <pre>storm jar all-my-code.jar backtype.storm.MyTopology arg1 arg2</pre>
+                <p>This runs the class <code>backtype.storm.MyTopology</code> with the arguments <code>arg1</code> and <code>arg2</code>. The main function of the class defines the topology and submits it to Nimbus. The <code>storm jar</code> part takes care of connecting to Nimbus and uploading the jar.</p>
+                <p>Since topology definitions are just Thrift structs, and Nimbus is a Thrift service, you can create and submit topologies using any programming language. The above example is the easiest way to do it from a JVM-based language. See <a href="/documentation/running-topologies-on-production-cluster.html">Running topologies on a production cluster</a>] for more information on starting and stopping topologies.</p>
+                <h3>Streams</h3>
+                <p>The core abstraction in Storm is the "stream". A stream is an unbounded sequence of tuples. Storm provides the primitives for transforming a stream into a new stream in a distributed and reliable way. For example, you may transform a stream of tweets into a stream of trending topics.</p>
+                <p>The basic primitives Storm provides for doing stream transformations are "spouts" and "bolts". Spouts and bolts have interfaces that you implement to run your application-specific logic.</p>
+                <p>A spout is a source of streams. For example, a spout may read tuples off of a <a href="http://github.com/nathanmarz/storm-kestrel" target="_blank">Kestrel</a> queue and emit them as a stream. Or a spout may connect to the Twitter API and emit a stream of tweets.</p>
+                <p>A bolt consumes any number of input streams, does some processing, and possibly emits new streams. Complex stream transformations, like computing a stream of trending topics from a stream of tweets, require multiple steps and thus multiple bolts. Bolts can do anything from run functions, filter tuples, do streaming aggregations, do streaming joins, talk to databases, and more.</p>
+                <p>Networks of spouts and bolts are packaged into a "topology" which is the top-level abstraction that you submit to Storm clusters for execution. A topology is a graph of stream transformations where each node is a spout or bolt. Edges in the graph indicate which bolts are subscribing to which streams. When a spout or bolt emits a tuple to a stream, it sends the tuple to every bolt that subscribed to that stream.</p>
+                <p><img src="images/topology.png" alt="A Storm topology" class="img-responsive"></p>
+                <p>Links between nodes in your topology indicate how tuples should be passed around. For example, if there is a link between Spout A and Bolt B, a link from Spout A to Bolt C, and a link from Bolt B to Bolt C, then everytime Spout A emits a tuple, it will send the tuple to both Bolt B and Bolt C. All of Bolt B's output tuples will go to Bolt C as well.</p>
+                <p>Each node in a Storm topology executes in parallel. In your topology, you can specify how much parallelism you want for each node, and then Storm will spawn that number of threads across the cluster to do the execution.</p>
+                <p>A topology runs forever, or until you kill it. Storm will automatically reassign any failed tasks. Additionally, Storm guarantees that there will be no data loss, even if machines go down and messages are dropped.</p>
+                <h3>Data model</h3>
+                <p>Storm uses tuples as its data model. A tuple is a named list of values, and a field in a tuple can be an object of any type. Out of the box, Storm supports all the primitive types, strings, and byte arrays as tuple field values. To use an object of another type, you just need to implement <a href="/documentation/serialization.html">a serializer</a> for the type.</p>
+                <p>Every node in a topology must declare the output fields for the tuples it emits. For example, this bolt declares that it emits 2-tuples with the fields "double" and "triple":</p>
+
+                <div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">DoubleAndTripleBolt</span> <span class="kd">extends</span> <span class="n">BaseRichBolt</span> <span class="o">{</span>
+    <span class="kd">private</span> <span class="n">OutputCollectorBase</span> <span class="n">_collector</span><span class="o">;</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">prepare</span><span class="o">(</span><span class="n">Map</span> <span class="n">conf</span><span class="o">,</span> <span class="n">TopologyContext</span> <span class="n">context</span><span class="o">,</span> <span class="n">OutputCollectorBase</span> <span class="n">collector</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">_collector</span> <span class="o">=</span> <span class="n">collector</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">execute</span><span class="o">(</span><span class="n">Tuple</span> <span class="n">input</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kt">int</span> <span class="n">val</span> <span class="o">=</span> <span class="n">input</span><span class="o">.</span><span class="na">getInteger</span><span class="o">(</span><span class="mi">0</span><span class="o">);</span>        
+        <span class="n">_collector</span><span class="o">.</span><span class="na">emit</span><span class="o">(</span><span class="n">input</span><span class="o">,</span> <span class="k">new</span> <span class="nf">Values</span><span class="o">(</span><span class="n">val</span><span class="o">*</span><span class="mi">2</span><span class="o">,</span> <span class="n">val</span><span class="o">*</span><span class="mi">3</span><span class="o">));</span>
+        <span class="n">_collector</span><span class="o">.</span><span class="na">ack</span><span class="o">(</span><span class="n">input</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">declareOutputFields</span><span class="o">(</span><span class="n">OutputFieldsDeclarer</span> <span class="n">declarer</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">declarer</span><span class="o">.</span><span class="na">declare</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">"double"</span><span class="o">,</span> <span class="s">"triple"</span><span class="o">));</span>
+    <span class="o">}</span>    
+<span class="o">}</span>
+</code></pre></div>
+
+                <p>The <code>declareOutputFields</code> function declares the output fields <code>["double", "triple"]</code> for the component. The rest of the bolt will be explained in the upcoming sections.</p>
+                <h3>A simple topology</h3>
+                <p>Let's take a look at a simple topology to explore the concepts more and see how the code shapes up. Let's look at the <code>ExclamationTopology</code> definition from storm-starter:</p>
+
+                <div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">TopologyBuilder</span> <span class="n">builder</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">TopologyBuilder</span><span class="o">();</span>        
+<span class="n">builder</span><span class="o">.</span><span class="na">setSpout</span><span class="o">(</span><span class="s">"words"</span><span class="o">,</span> <span class="k">new</span> <span class="nf">TestWordSpout</span><span class="o">(),</span> <span class="mi">10</span><span class="o">);</span>        
+<span class="n">builder</span><span class="o">.</span><span class="na">setBolt</span><span class="o">(</span><span class="s">"exclaim1"</span><span class="o">,</span> <span class="k">new</span> <span class="nf">ExclamationBolt</span><span class="o">(),</span> <span class="mi">3</span><span class="o">)</span>
+        <span class="o">.</span><span class="na">shuffleGrouping</span><span class="o">(</span><span class="s">"words"</span><span class="o">);</span>
+<span class="n">builder</span><span class="o">.</span><span class="na">setBolt</span><span class="o">(</span><span class="s">"exclaim2"</span><span class="o">,</span> <span class="k">new</span> <span class="nf">ExclamationBolt</span><span class="o">(),</span> <span class="mi">2</span><span class="o">)</span>
+        <span class="o">.</span><span class="na">shuffleGrouping</span><span class="o">(</span><span class="s">"exclaim1"</span><span class="o">);</span>
+</code></pre></div>
+
+                <p>This topology contains a spout and two bolts. The spout emits words, and each bolt appends the string "!!!" to its input. The nodes are arranged in a line: the spout emits to the first bolt which then emits to the second bolt. If the spout emits the tuples ["bob"] and ["john"], then the second bolt will emit the words ["bob!!!!!!"] and ["john!!!!!!"].</p>
+                <p>This code defines the nodes using the <code>setSpout</code> and <code>setBolt</code> methods. These methods take as input a user-specified id, an object containing the processing logic, and the amount of parallelism you want for the node. In this example, the spout is given id "words" and the bolts are given ids "exclaim1" and "exclaim2". </p>
+                <p>The object containing the processing logic implements the <a href="https://storm.apache.org/javadoc/apidocs/backtype/storm/topology/IRichSpout.html">IRichSpout</a> interface for spouts and the <a href="https://storm.apache.org/javadoc/apidocs/backtype/storm/topology/IRichBolt.html">IRichBolt</a> interface for bolts.</p>
+                <p>The last parameter, how much parallelism you want for the node, is optional. It indicates how many threads should execute that component across the cluster. If you omit it, Storm will only allocate one thread for that node.</p>
+                <p><code>setBolt</code> returns an <a href="https://storm.apache.org/javadoc/apidocs/backtype/storm/topology/InputDeclarer.html">InputDeclarer</a> object that is used to define the inputs to the Bolt. Here, component "exclaim1" declares that it wants to read all the tuples emitted by component "words" using a shuffle grouping, and component "exclaim2" declares that it wants to read all the tuples emitted by component "exclaim1" using a shuffle grouping. "shuffle grouping" means that tuples should be randomly distributed from the input tasks to the bolt's tasks. There are many ways to group data between components. These will be explained in a few sections.</p>
+                <p>If you wanted component "exclaim2" to read all the tuples emitted by both component "words" and component "exclaim1", you would write component "exclaim2"'s definition like this:</p>
+
+                <div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">builder</span><span class="o">.</span><span class="na">setBolt</span><span class="o">(</span><span class="s">"exclaim2"</span><span class="o">,</span> <span class="k">new</span> <span class="nf">ExclamationBolt</span><span class="o">(),</span> <span class="mi">5</span><span class="o">)</span>
+            <span class="o">.</span><span class="na">shuffleGrouping</span><span class="o">(</span><span class="s">"words"</span><span class="o">)</span>
+            <span class="o">.</span><span class="na">shuffleGrouping</span><span class="o">(</span><span class="s">"exclaim1"</span><span class="o">);</span>
+</code></pre></div>
+
+                <p>As you can see, input declarations can be chained to specify multiple sources for the Bolt.</p>
+                <p>Let's dig into the implementations of the spouts and bolts in this topology. Spouts are responsible for emitting new messages into the topology. <code>TestWordSpout</code> in this topology emits a random word from the list ["nathan", "mike", "jackson", "golda", "bertels"] as a 1-tuple every 100ms. The implementation of <code>nextTuple()</code> in TestWordSpout looks like this:</p>
+
+                <div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kt">void</span> <span class="nf">nextTuple</span><span class="o">()</span> <span class="o">{</span>
+    <span class="n">Utils</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="mi">100</span><span class="o">);</span>
+    <span class="kd">final</span> <span class="n">String</span><span class="o">[]</span> <span class="n">words</span> <span class="o">=</span> <span class="k">new</span> <span class="n">String</span><span class="o">[]</span> <span class="o">{</span><span class="s">"nathan"</span><span class="o">,</span> <span class="s">"mike"</span><span class="o">,</span> <span class="s">"jackson"</span><span class="o">,</span> <span class="s">"golda"</span><span class="o">,</span> <span class="s">"bertels"</span><span class="o">};</span>
+    <span class="kd">final</span> <span class="n">Random</span> <span class="n">rand</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">Random</span><span class="o">();</span>
+    <span class="kd">final</span> <span class="n">String</span> <span class="n">word</span> <span class="o">=</span> <span class="n">words</span><span class="o">[</span><span class="n">rand</span><span class="o">.</span><span class="na">nextInt</span><span class="o">(</span><span class="n">words</span><span class="o">.</span><span class="na">length</span><span class="o">)];</span>
+    <span class="n">_collector</span><span class="o">.</span><span class="na">emit</span><span class="o">(</span><span class="k">new</span> <span class="nf">Values</span><span class="o">(</span><span class="n">word</span><span class="o">));</span>
+<span class="o">}</span>
+</code></pre></div>
+
+                <p>As you can see, the implementation is very straightforward.</p>
+                <p><code>ExclamationBolt</code> appends the string "!!!" to its input. Let's take a look at the full implementation for <code>ExclamationBolt</code>:</p>
+
+                <div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">static</span> <span class="kd">class</span> <span class="nc">ExclamationBolt</span> <span class="kd">implements</span> <span class="n">IRichBolt</span> <span class="o">{</span>
+    <span class="n">OutputCollector</span> <span class="n">_collector</span><span class="o">;</span>
+
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">prepare</span><span class="o">(</span><span class="n">Map</span> <span class="n">conf</span><span class="o">,</span> <span class="n">TopologyContext</span> <span class="n">context</span><span class="o">,</span> <span class="n">OutputCollector</span> <span class="n">collector</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">_collector</span> <span class="o">=</span> <span class="n">collector</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">execute</span><span class="o">(</span><span class="n">Tuple</span> <span class="n">tuple</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">_collector</span><span class="o">.</span><span class="na">emit</span><span class="o">(</span><span class="n">tuple</span><span class="o">,</span> <span class="k">new</span> <span class="nf">Values</span><span class="o">(</span><span class="n">tuple</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="mi">0</span><span class="o">)</span> <span class="o">+</span> <span class="s">"!!!"</span><span class="o">));</span>
+        <span class="n">_collector</span><span class="o">.</span><span class="na">ack</span><span class="o">(</span><span class="n">tuple</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">cleanup</span><span class="o">()</span> <span class="o">{</span>
+    <span class="o">}</span>
+
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">declareOutputFields</span><span class="o">(</span><span class="n">OutputFieldsDeclarer</span> <span class="n">declarer</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">declarer</span><span class="o">.</span><span class="na">declare</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">"word"</span><span class="o">));</span>
+    <span class="o">}</span>
+
+    <span class="kd">public</span> <span class="n">Map</span> <span class="nf">getComponentConfiguration</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div>
+
+                <p>The <code>prepare</code> method provides the bolt with an <code>OutputCollector</code> that is used for emitting tuples from this bolt. Tuples can be emitted at anytime from the bolt -- in the <code>prepare</code>, <code>execute</code>, or <code>cleanup</code> methods, or even asynchronously in another thread. This <code>prepare</code> implementation simply saves the <code>OutputCollector</code> as an instance variable to be used later on in the <code>execute</code> method.</p>
+                <p>The <code>execute</code> method receives a tuple from one of the bolt's inputs. The <code>ExclamationBolt</code> grabs the first field from the tuple and emits a new tuple with the string "!!!" appended to it. If you implement a bolt that subscribes to multiple input sources, you can find out which component the <a href="https://storm.apache.org/javadoc/apidocs/backtype/storm/tuple/Tuple.html">Tuple</a> came from by using the <code>Tuple#getSourceComponent</code> method.</p>
+                <p>There's a few other things going in in the <code>execute</code> method, namely that the input tuple is passed as the first argument to <code>emit</code> and the input tuple is acked on the final line. These are part of Storm's reliability API for guaranteeing no data loss and will be explained later in this tutorial. </p>
+                <p>The <code>cleanup</code> method is called when a Bolt is being shutdown and should cleanup any resources that were opened. There's no guarantee that this method will be called on the cluster: for example, if the machine the task is running on blows up, there's no way to invoke the method. The <code>cleanup</code> method is intended for when you run topologies in <a href="/documentation/local-mode.html">local mode</a> (where a Storm cluster is simulated in process), and you want to be able to run and kill many topologies without suffering any resource leaks.</p>
+                <p>The <code>declareOutputFields</code> method declares that the <code>ExclamationBolt</code> emits 1-tuples with one field called "word".</p>
+                <p>The <code>getComponentConfiguration</code> method allows you to configure various aspects of how this component runs. This is a more advanced topic that is explained further on <a href="/documentation/configuration.html">Configuration</a>.</p>
+                <p>Methods like <code>cleanup</code> and <code>getComponentConfiguration</code> are often not needed in a bolt implementation. You can define bolts more succinctly by using a base class that provides default implementations where appropriate. <code>ExclamationBolt</code> can be written more succinctly by extending <code>BaseRichBolt</code>, like so:</p>
+
+                <div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">static</span> <span class="kd">class</span> <span class="nc">ExclamationBolt</span> <span class="kd">extends</span> <span class="n">BaseRichBolt</span> <span class="o">{</span>
+    <span class="n">OutputCollector</span> <span class="n">_collector</span><span class="o">;</span>
+
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">prepare</span><span class="o">(</span><span class="n">Map</span> <span class="n">conf</span><span class="o">,</span> <span class="n">TopologyContext</span> <span class="n">context</span><span class="o">,</span> <span class="n">OutputCollector</span> <span class="n">collector</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">_collector</span> <span class="o">=</span> <span class="n">collector</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">execute</span><span class="o">(</span><span class="n">Tuple</span> <span class="n">tuple</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">_collector</span><span class="o">.</span><span class="na">emit</span><span class="o">(</span><span class="n">tuple</span><span class="o">,</span> <span class="k">new</span> <span class="nf">Values</span><span class="o">(</span><span class="n">tuple</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="mi">0</span><span class="o">)</span> <span class="o">+</span> <span class="s">"!!!"</span><span class="o">));</span>
+        <span class="n">_collector</span><span class="o">.</span><span class="na">ack</span><span class="o">(</span><span class="n">tuple</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">declareOutputFields</span><span class="o">(</span><span class="n">OutputFieldsDeclarer</span> <span class="n">declarer</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">declarer</span><span class="o">.</span><span class="na">declare</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">"word"</span><span class="o">));</span>
+    <span class="o">}</span>    
+<span class="o">}</span>
+</code></pre></div>
+
+                <h3>Running ExclamationTopology in local mode</h3>
+                <p>Let's see how to run the <code>ExclamationTopology</code> in local mode and see that it's working.</p>
+                <p>Storm has two modes of operation: local mode and distributed mode. In local mode, Storm executes completely in process by simulating worker nodes with threads. Local mode is useful for testing and development of topologies. When you run the topologies in storm-starter, they'll run in local mode and you'll be able to see what messages each component is emitting. You can read more about running topologies in local mode on <a href="/documentation/local-mode.html">Local mode</a>.</p>
+                <p>In distributed mode, Storm operates as a cluster of machines. When you submit a topology to the master, you also submit all the code necessary to run the topology. The master will take care of distributing your code and allocating workers to run your topology. If workers go down, the master will reassign them somewhere else. You can read more about running topologies on a cluster on <a href="/documentation/running-topologies-on-production-cluster.html">Running topologies on a production cluster</a>]. </p>
+                <p>Here's the code that runs <code>ExclamationTopology</code> in local mode:</p>
+
+                <div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">Config</span> <span class="n">conf</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">Config</span><span class="o">();</span>
+<span class="n">conf</span><span class="o">.</span><span class="na">setDebug</span><span class="o">(</span><span class="kc">true</span><span class="o">);</span>
+<span class="n">conf</span><span class="o">.</span><span class="na">setNumWorkers</span><span class="o">(</span><span class="mi">2</span><span class="o">);</span>
+
+<span class="n">LocalCluster</span> <span class="n">cluster</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">LocalCluster</span><span class="o">();</span>
+<span class="n">cluster</span><span class="o">.</span><span class="na">submitTopology</span><span class="o">(</span><span class="s">"test"</span><span class="o">,</span> <span class="n">conf</span><span class="o">,</span> <span class="n">builder</span><span class="o">.</span><span class="na">createTopology</span><span class="o">());</span>
+<span class="n">Utils</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="mi">10000</span><span class="o">);</span>
+<span class="n">cluster</span><span class="o">.</span><span class="na">killTopology</span><span class="o">(</span><span class="s">"test"</span><span class="o">);</span>
+<span class="n">cluster</span><span class="o">.</span><span class="na">shutdown</span><span class="o">();</span>
+</code></pre></div>
+
+                <p>First, the code defines an in-process cluster by creating a <code>LocalCluster</code> object. Submitting topologies to this virtual cluster is identical to submitting topologies to distributed clusters. It submits a topology to the <code>LocalCluster</code> by calling <code>submitTopology</code>, which takes as arguments a name for the running topology, a configuration for the topology, and then the topology itself.</p>
+                <p>The name is used to identify the topology so that you can kill it later on. A topology will run indefinitely until you kill it.</p>
+                <p>The configuration is used to tune various aspects of the running topology. The two configurations specified here are very common:</p>
+                <ol>
+                    <li><strong>TOPOLOGY_WORKERS</strong> (set with <code>setNumWorkers</code>) specifies how many <em>processes</em> you want allocated around the cluster to execute the topology. Each component in the topology will execute as many <em>threads</em>. The number of threads allocated to a given component is configured through the <code>setBolt</code> and <code>setSpout</code> methods. Those <em>threads</em> exist within worker <em>processes</em>. Each worker <em>process</em> contains within it some number of <em>threads</em> for some number of components. For instance, you may have 300 threads specified across all your components and 50 worker processes specified in your config. Each worker process will execute 6 threads, each of which of could belong to a different component. You tune the performance of Storm topologies by tweaking the parallelism for each component and the number of worker processes those threads should run within.</li>
+                    <li><strong>TOPOLOGY_DEBUG</strong> (set with <code>setDebug</code>), when set to true, tells Storm to log every message every emitted by a component. This is useful in local mode when testing topologies, but you probably want to keep this turned off when running topologies on the cluster.</li>
+                </ol>
+                <p>There's many other configurations you can set for the topology. The various configurations are detailed on <a href="https://storm.apache.org/javadoc/apidocs/backtype/storm/Config.html">the Javadoc for Config</a>.</p>
+                <p>To learn about how to set up your development environment so that you can run topologies in local mode (such as in Eclipse), see <a href="/documentation/creating-a-new-Storm-project.html">Creating a new Storm project</a>.</p>
+                <h3>Stream groupings</h3>
+                <p>A stream grouping tells a topology how to send tuples between two components. Remember, spouts and bolts execute in parallel as many tasks across the cluster. If you look at how a topology is executing at the task level, it looks something like this:</p>
+                <p><img src="images/topology-tasks.png" alt="Tasks in a topology" class="img-responsive"></p>
+                <p>When a task for Bolt A emits a tuple to Bolt B, which task should it send the tuple to?</p>
+                <p>A "stream grouping" answers this question by telling Storm how to send tuples between sets of tasks. Before we dig into the different kinds of stream groupings, let's take a look at another topology from <a href="https://github.com/apache/storm/tree/master/examples/storm-starter">storm-starter</a>. This <a href="https://github.com/apache/storm/blob/master/examples/storm-starter/src/jvm/storm/starter/WordCountTopology.java">WordCountTopology</a> reads sentences off of a spout and streams out of <code>WordCountBolt</code> the total number of times it has seen that word before:</p>
+
+                <div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">TopologyBuilder</span> <span class="n">builder</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">TopologyBuilder</span><span class="o">();</span>
+
+<span class="n">builder</span><span class="o">.</span><span class="na">setSpout</span><span class="o">(</span><span class="s">"sentences"</span><span class="o">,</span> <span class="k">new</span> <span class="nf">RandomSentenceSpout</span><span class="o">(),</span> <span class="mi">5</span><span class="o">);</span>        
+<span class="n">builder</span><span class="o">.</span><span class="na">setBolt</span><span class="o">(</span><span class="s">"split"</span><span class="o">,</span> <span class="k">new</span> <span class="nf">SplitSentence</span><span class="o">(),</span> <span class="mi">8</span><span class="o">)</span>
+        <span class="o">.</span><span class="na">shuffleGrouping</span><span class="o">(</span><span class="s">"sentences"</span><span class="o">);</span>
+<span class="n">builder</span><span class="o">.</span><span class="na">setBolt</span><span class="o">(</span><span class="s">"count"</span><span class="o">,</span> <span class="k">new</span> <span class="nf">WordCount</span><span class="o">(),</span> <span class="mi">12</span><span class="o">)</span>
+        <span class="o">.</span><span class="na">fieldsGrouping</span><span class="o">(</span><span class="s">"split"</span><span class="o">,</span> <span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">"word"</span><span class="o">));</span>
+</code></pre></div>
+
+                <p><code>SplitSentence</code> emits a tuple for each word in each sentence it receives, and <code>WordCount</code> keeps a map in memory from word to count. Each time <code>WordCount</code> receives a word, it updates its state and emits the new word count.</p>
+                <p>There's a few different kinds of stream groupings.</p>
+                <p>The simplest kind of grouping is called a "shuffle grouping" which sends the tuple to a random task. A shuffle grouping is used in the <code>WordCountTopology</code> to send tuples from <code>RandomSentenceSpout</code> to the <code>SplitSentence</code> bolt. It has the effect of evenly distributing the work of processing the tuples across all of <code>SplitSentence</code> bolt's tasks.</p>
+                <p>A more interesting kind of grouping is the "fields grouping". A fields grouping is used between the <code>SplitSentence</code> bolt and the <code>WordCount</code> bolt. It is critical for the functioning of the <code>WordCount</code> bolt that the same word always go to the same task. Otherwise, more than one task will see the same word, and they'll each emit incorrect values for the count since each has incomplete information. A fields grouping lets you group a stream by a subset of its fields. This causes equal values for that subset of fields to go to the same task. Since <code>WordCount</code> subscribes to <code>SplitSentence</code>'s output stream using a fields grouping on the "word" field, the same word always goes to the same task and the bolt produces the correct output.</p>
+                <p>Fields groupings are the basis of implementing streaming joins and streaming aggregations as well as a plethora of other use cases. Underneath the hood, fields groupings are implemented using mod hashing.</p>
+                <p>There's a few other kinds of stream groupings. You can read more about them on <a href="/documentation/concepts.html">Concepts</a>. </p>
+                <h3>Defining Bolts in other languages</h3>
+                <p>Bolts can be defined in any language. Bolts written in another language are executed as subprocesses, and Storm communicates with those subprocesses with JSON messages over stdin/stdout. The communication protocol just requires an ~100 line adapter library, and Storm ships with adapter libraries for Ruby, Python, and Fancy. </p>
+                <p>Here's the definition of the <code>SplitSentence</code> bolt from <code>WordCountTopology</code>:</p>
+
+                <div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">static</span> <span class="kd">class</span> <span class="nc">SplitSentence</span> <span class="kd">extends</span> <span class="n">ShellBolt</span> <span class="kd">implements</span> <span class="n">IRichBolt</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="nf">SplitSentence</span><span class="o">()</span> <span class="o">{</span>
+        <span class="kd">super</span><span class="o">(</span><span class="s">"python"</span><span class="o">,</span> <span class="s">"splitsentence.py"</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">declareOutputFields</span><span class="o">(</span><span class="n">OutputFieldsDeclarer</span> <span class="n">declarer</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">declarer</span><span class="o">.</span><span class="na">declare</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">"word"</span><span class="o">));</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div>
+
+                <p><code>SplitSentence</code> overrides <code>ShellBolt</code> and declares it as running using <code>python</code> with the arguments <code>splitsentence.py</code>. Here's the implementation of <code>splitsentence.py</code>:</p>
+
+                <div class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">storm</span>
+
+<span class="k">class</span> <span class="nc">SplitSentenceBolt</span><span class="p">(</span><span class="n">storm</span><span class="o">.</span><span class="n">BasicBolt</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tup</span><span class="p">):</span>
+        <span class="n">words</span> <span class="o">=</span> <span class="n">tup</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">" "</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">words</span><span class="p">:</span>
+          <span class="n">storm</span><span class="o">.</span><span class="n">emit</span><span class="p">([</span><span class="n">word</span><span class="p">])</span>
+
+<span class="n">SplitSentenceBolt</span><span class="p">()</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</code></pre></div>
+
+                <p>For more information on writing spouts and bolts in other languages, and to learn about how to create topologies in other languages (and avoid the JVM completely), see <a href="/documentation/using-non-jvm-languages-with-storm.html">Using non-JVM languages with Storm</a>.</p>
+                <h3>Guaranteeing message processing</h3>
+                <p>Earlier on in this tutorial, we skipped over a few aspects of how tuples are emitted. Those aspects were part of Storm's reliability API: how Storm guarantees that every message coming off a spout will be fully processed. See <a href="/documentation/guaranteeing-message-processing.html">Guaranteeing message processing</a> for information on how this works and what you have to do as a user to take advantage of Storm's reliability capabilities.</p>
+                <h3>Transactional topologies</h3>
+                <p>Storm guarantees that every message will be played through the topology at least once. A common question asked is "how do you do things like counting on top of Storm? Won't you overcount?" Storm has a feature called transactional topologies that let you achieve exactly-once messaging semantics for most computations. Read more about transactional topologies <a href="/documentation/transactional-topologies.html">here</a>. </p>
+                <h3>Distributed RPC</h3>
+                <p>This tutorial showed how to do basic stream processing on top of Storm. There's lots more things you can do with Storm's primitives. One of the most interesting applications of Storm is Distributed RPC, where you parallelize the computation of intense functions on the fly. Read more about Distributed RPC <a href="/documentation/distributed-rpc.html">here</a>. </p>
+                <h3>Conclusion</h3>
+                <p>This tutorial gave a broad overview of developing, testing, and deploying Storm topologies. The rest of the documentation dives deeper into all the aspects of using Storm.</p>
+            </div>
+        </div>
+    </div>
+</div>
+<!--Content End-->

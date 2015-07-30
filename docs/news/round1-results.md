@@ -1,0 +1,100 @@
+---
+layout: news
+title: Logo Contest - Round 1 Results
+---
+<!--Post Header-->
+<h3 class="news-title">Logo Contest - Round 1 Results</h3>
+<div class="news-meta">
+    <i class="fa fa-calendar"></i> May 27, 2014 <i class="fa fa-user"></i> P. Taylor Goetz
+</div>
+<!--Post Body-->
+<p>Round one of the Apache Storm logo contest is now complete and was a great success. We received votes from 7 PPMC members as well as 46 votes from the greater Storm community.</p>
+<p>We would like to extend a very special thanks to all those who took the time and effort to create and submit a logo proposal. We would also like to thank everyone who voted.</p>
+<h4>Results</h4>
+<p>The Storm PPMC and community votes were closely aligned, with the community vote resolving a PPMC tie for the 3rd finalist as shown in the result table below.</p>
+<p>The three finalists entering the final round are:</p>
+<ul>
+	<li><a class="news-internal" href="logo-abartos.html">No. 6 - Alec Bartos</a></li>
+	<li><a class="news-internal" href="logo-jlee1.html">No. 9 - Jennifer Lee</a></li>
+	<li><a class="news-internal" href="logo-jlee2.html">No. 10 - Jennifer Lee</a></li>
+</ul>
+<p>Congratulations Alec and Jennifer!</p>
+<p>Stay tuned for the final vote, which will be announced shortly.</p>
+<table class="table table-bordered">
+	<thead>
+		<tr>
+			<th>#</th>
+			<th>Entry</th>
+			<th>PPMC</th>
+			<th>Community</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td>1</td>
+			<td>1 - Patricia Forrest</td>
+			<td>2</td>
+			<td>23</td>
+		</tr>
+		<tr>
+			<td>2</td>
+			<td>Samuel Quiñones</td>
+			<td>3</td>
+			<td>6</td>
+		</tr>
+		<tr>
+			<td>3</td>
+			<td>Shaan Shiv Suleman</td>
+			<td>0</td>
+			<td>7</td>
+		</tr>
+		<tr>
+			<td>4</td>
+			<td>Richard Brownlie-Marshall</td>
+			<td>0</td>
+			<td>6</td>
+		</tr>
+		<tr>
+			<td>5</td>
+			<td>Ziba Sayari</td>
+			<td>0</td>
+			<td>9</td>
+		</tr>
+		<tr>
+			<td>6</td>
+			<td>Alec Bartos</td>
+			<td>3</td>
+			<td>32</td>
+		</tr>
+		<tr>
+			<td>7</td>
+			<td>Calum Boustead</td>
+			<td>0</td>
+			<td>0</td>
+		</tr>
+		<tr>
+			<td>8</td>
+			<td>Stefano Asili</td>
+			<td>0</td>
+			<td>2</td>
+		</tr>
+		<tr>
+			<td>9</td>
+			<td>Jennifer Lee</td>
+			<td>9</td>
+			<td>63</td>
+		</tr>
+		<tr>
+			<td>10</td>
+			<td>Jennifer Lee</td>
+			<td>18</td>
+			<td>64</td>
+		</tr>
+		<tr>
+			<td>11</td>
+			<td>Jennifer Lee</td>
+			<td>0</td>
+			<td>18</td>
+		</tr>
+	</tbody>
+</table>

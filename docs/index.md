@@ -1,0 +1,171 @@
+---
+layout: default
+title: Apache Storm
+logos:
+    - 
+      - "http://www.weather.com"
+      - "weatherchannel.gif"
+      - 90  
+    - 
+      - "http://www.webmd.com"
+      - "webmd.jpg"
+      - 45  
+    - 
+      - "http://www.alibaba.com"
+      - "alibaba.jpg"
+      - 65
+    - 
+      - "http://www.fullcontact.com"
+      - "fullcontact.png"
+      - 58
+    - 
+      - "http://www.yelp.com"
+      - "yelp.png"
+      - 110   
+    -
+      - "http://www.yahoo.co.jp"
+      - "Yahoo_Japan_logo.png"
+      - 58
+    - 
+      - "http://twitter.com"
+      - "twitter.png"
+      - 110
+    - 
+      - "http://www.spotify.com"
+      - "spotify.jpeg"
+      - 142
+    - 
+      - "http://groupon.com"
+      - "groupon.jpg"
+      - 71
+    - 
+      - "http://www.flipboard.com"
+      - "flipboard.jpeg"
+      - 110  
+    - 
+      - "http://www.cerner.com"
+      - "cerner.gif"
+      - 43
+    - 
+      - "http://www.aeris.com"
+      - "aeris.png"
+      - 80  
+    - 
+      - "http://www.baidu.com"
+      - "baidu.jpeg"
+      - 110  
+    - 
+      - "http://www.parc.com"
+      - "parc.png"
+      - 70  
+    - 
+      - "http://www.taobao.com"
+      - "taobao.gif"
+      - 68
+    - 
+      - "http://www.rubiconproject.com"
+      - "rubicon.png"
+      - 50
+    - 
+      - "http://www.rocketfuel.com"
+      - "rocketfuel.png"
+      - 42
+    - 
+      - "http://www.holidaycheck.com"
+      - "holidaycheck.png"
+      - 65  
+      
+---
+
+<div class="content">
+  <div class="container-fluid">
+      <div class="row">
+          <div class="col-md-8">
+              <img src="images/storm-flow.png" class="img-responsive" title="A Topology with its components" style="padding-left: 50px;" />
+                <map name="topo">
+                    <area shape="rect" href="" coords="60,150,120,210" title="Spout 1">
+                    <area shape="rect" href="" coords="60,275,120,335" title="Spout 2">
+                    <area shape="rect" href="" coords="385,275,445,335" title="bolt 3">
+                    <area shape="rect" href="" coords="385,140,445,200" title="bolt 2">
+                    <area shape="rect" href="" coords="385,15,445,75" title="bolt 1">
+                    <area shape="rect" href="" coords="715,275,775,335" title="bolt 5">
+                    <area shape="rect" href="" coords="695,75,755,135" title="bolt 4">
+                </map>
+            </div>
+            <div class="col-md-4">
+                <div class="box-info" id="twitter_widget">
+                <!-- <h4>Tweets by @ApacheStorm</h4> -->
+                    <a 
+                        class="twitter-timeline" 
+                        href="https://twitter.com/ApacheStorm" 
+                        data-widget-id="610710246395265024">Tweets
+                    </a>
+                    <script>!function(d,s,id){
+                        var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+"://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");
+                        isMobile();
+                    </script>                   
+                </div>
+            </div>
+        </div>
+        <div class="row">
+          <div class="col-md-8">
+              <div class="box-primary">
+                    <h4>Why use Storm?</h4>
+                  <p>Apache Storm is a free and open source distributed realtime computation system. Storm makes it easy to reliably process unbounded streams of data, doing for realtime processing what Hadoop did for batch processing. Storm is simple, can be used with any programming language, and is a lot of fun to use!</p>
+                    <p>Storm has many use cases: realtime analytics, online machine learning, continuous computation, distributed RPC, ETL, and more. Storm is fast: a benchmark clocked it at over <strong>a million tuples processed per second per node</strong>. It is scalable, fault-tolerant, guarantees your data will be processed, and is easy to set up and operate.</p>
+                    <p>Storm integrates with the queueing and database technologies you already use. A Storm topology consumes streams of data and processes those streams in arbitrarily complex ways, repartitioning the streams between each stage of the computation however needed. Read more in the tutorial.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+              <div class="box-warning">
+                  <h4>Latest News</h4>
+                    <ul class="latest-news">
+                        <li><a href="/news/storm0100-beta-released.html">Storm 0.10.0-beta Released</a> <span class="small">(15 Jun 2015)</span></li>
+                        <li><a href="/news/storm095-released.html">Storm 0.9.5 released</a> <span class="small">(04 Jun 2015)</span></li>
+                        <li><a href="/news/storm094-released.html">Storm 0.9.4 released</a> <span class="small">(25 Mar 2015)</span></li>
+                        <li><a href="/news/storm093-released.html">Storm 0.9.3 released</a> <span class="small">(25 Nov 2014)</span></li>
+                        <li><a href="/news/storm093-release-candidate.html">Storm 0.9.3 release candidate 1 available</a> <span class="small">(20 Oct 2014)</span></li>
+                        <li><a href="/news/contest-results.html">Storm 0.9.2 released</a> <span class="small">(25 Jun 2014)</span></li>
+                        <li><a href="/news/round1-results.html">Storm Logo Contest Results</a> <span class="small">(17 Jun 2014)</span></li>
+                    </ul>
+                    <p align="right"><a href="/news/storm0100-beta-released.html" class="btn-std">More News</a></p>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+          <div class="col-md-12">
+              <div id="owl-example" class="owl-carousel">
+                    <img src="images/logos/yahoo.png" class="img-responsive">
+                    <img src="images/logos/twitter.jpg" class="img-responsive">
+                    <img src="images/logos/spotify.jpg" class="img-responsive">
+                    <img src="images/logos/yahoo-japan.jpg" class="img-responsive">
+                    <img src="images/logos/yelp.jpg" class="img-responsive">
+                    <img src="images/logos/flipboard.jpg" class="img-responsive">
+                    <img src="images/logos/ooyala.jpg" class="img-responsive">
+                    <img src="images/logos/groupon.jpg" class="img-responsive">
+                    <img src="images/logos/parc.png" class="img-responsive">
+                    <img src="images/logos/alibaba.jpg" class="img-responsive">
+                    <img src="images/logos/bai.jpg" class="img-responsive">
+                    <img src="images/logos/cerner.jpg" class="img-responsive">
+                    <img src="images/logos/fullcontact.jpg" class="img-responsive">
+                    <img src="images/logos/health-market-science.jpg" class="img-responsive">
+                    <img src="images/logos/infochimp.jpg" class="img-responsive">
+                    <img src="images/logos/klout.jpg" class="img-responsive">
+                    <img src="images/logos/loggly.jpg" class="img-responsive">
+                    <img src="images/logos/premise.jpg" class="img-responsive">
+                    <img src="images/logos/qiy.jpg" class="img-responsive">
+                    <img src="images/logos/quicklizard.jpg" class="img-responsive">
+                    <img src="images/logos/rocketfuel.jpg" class="img-responsive">
+                    <img src="images/logos/rubicon.jpg" class="img-responsive">
+                    <img src="images/logos/spider.jpg" class="img-responsive">
+                    <img src="images/logos/taobao.jpg" class="img-responsive">
+                    <img src="images/logos/the-weather-channel.jpg" class="img-responsive">
+                    <img src="images/logos/verisign.jpg" class="img-responsive">
+                    <img src="images/logos/webmd.jpg" class="img-responsive">
+                    <img src="images/logos/wego.jpg" class="img-responsive">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

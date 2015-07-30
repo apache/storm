@@ -1,0 +1,34 @@
+---
+layout: default
+title: Setting up storm cluster
+---
+<!--Content Begin-->
+<div class="content">
+	<div class="container-fluid">
+    	<div class="row">
+        	<div class="col-md-12">
+            	<h1 class="page-title">Setting Up a Development Environment</h1>
+                <p>This page outlines what you need to do to get a Storm development environment set up. In summary, the steps are:</p>
+                <ol>
+                    <li>Download a <a href="downloads.html">Storm release</a> , unpack it, and put the unpacked <code>bin/</code> directory on your PATH</li>
+                    <li>To be able to start and stop topologies on a remote cluster, put the cluster information in <code>~/.storm/storm.yaml</code></li>
+                </ol>
+                <p>More detail on each of these steps is below.</p>
+                <h3>What is a development environment?</h3>
+                <p>Storm has two modes of operation: local mode and remote mode. In local mode, you can develop and test topologies completely in process on your local machine. In remote mode, you submit topologies for execution on a cluster of machines.</p>
+                <p>A Storm development environment has everything installed so that you can develop and test Storm topologies in local mode, package topologies for execution on a remote cluster, and submit/kill topologies on a remote cluster.</p>
+                <p>Let's quickly go over the relationship between your machine and a remote cluster. A Storm cluster is managed by a master node called "Nimbus". Your machine communicates with Nimbus to submit code (packaged as a jar) and topologies for execution on the cluster, and Nimbus will take care of distributing that code around the cluster and assigning workers to run your topology. Your machine uses a command line client called <code>storm</code> to communicate with Nimbus. The <code>storm</code> client is only used for remote mode; it is not used for developing and testing topologies in local mode.</p>
+                <h3>Installing a Storm release locally</h3>
+                <p>If you want to be able to submit topologies to a remote cluster from your machine, you should install a Storm release locally. Installing a Storm release will give you the <code>storm</code> client that you can use to interact with remote clusters. To install Storm locally, download a release <a href="https://github.com/apache/storm/releases" target="_blank">from here</a> and unzip it somewhere on your computer. Then add the unpacked <code>bin/</code> directory onto your <code>PATH</code> and make sure the <code>bin/storm</code> script is executable.</p>
+                <p>Installing a Storm release locally is only for interacting with remote clusters. For developing and testing topologies in local mode, it is recommended that you use Maven to include Storm as a dev dependency for your project. You can read more about using Maven for this purpose on <a href="/documentation/maven.html">Maven</a>. </p>
+                <h3>Starting and stopping topologies on a remote cluster</h3>
+                <p>The previous step installed the <code>storm</code> client on your machine which is used to communicate with remote Storm clusters. Now all you have to do is tell the client which Storm cluster to talk to. To do this, all you have to do is put the host address of the master in the <code>~/.storm/storm.yaml</code> file. It should look something like this:</p>
+                <pre>nimbus.host: "123.45.678.890"</pre>
+                <p>Alternatively, if you use the <a href="https://github.com/nathanmarz/storm-deploy" target="_blank">storm-deploy</a> project to provision Storm clusters on AWS, it will automatically set up your ~/.storm/storm.yaml file. You can manually attach to a Storm cluster (or switch between multiple clusters) using the "attach" command, like so:</p>
+                <pre>lein run :deploy --attach --name mystormcluster</pre>
+                <p>More information is on the storm-deploy <a href="https://github.com/nathanmarz/storm-deploy/wiki" target="_blank">wiki</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+<!--Content End-->
