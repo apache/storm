@@ -262,7 +262,8 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         extraPaths.add(this.clusterConfDirectory);
         String stormLogDirectory = this.confValue("storm.log.dir",
                 extraPaths, daemon);
-        if ((stormLogDirectory == null) || ("".equals(stormLogDirectory))) {
+        if ((stormLogDirectory == null) || ("".equals(stormLogDirectory)) ||
+                ("nil".equals(stormLogDirectory))) {
             stormLogDirectory = this.stormHomeDirectory + this.fileSeparator
                     + "logs";
         }
@@ -277,7 +278,6 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
                 .confValue("java.library.path", extraJars, daemon));
         commandList.add("-Dstorm.conf.file=" + this.configFile);
         commandList.add("-cp");
-        System.out.println("classpath is " + this.getClassPath(extraJars, daemon));
         commandList.add(this.getClassPath(extraJars, daemon));
         commandList.addAll(jvmOptions);
         commandList.add(className);
@@ -512,7 +512,8 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         extraPaths.add(this.clusterConfDirectory);
         String log4jDirectory = this.confValue("storm.logback.conf.dir",
                 extraPaths, true);
-        if ("".equals(log4jDirectory)) {
+        if ((log4jDirectory == null) || ("".equals(log4jDirectory)) ||
+                ("nil".equals(log4jDirectory))) {
             log4jDirectory = this.stormLog4jConfDirectory;
         }
         return log4jDirectory;
