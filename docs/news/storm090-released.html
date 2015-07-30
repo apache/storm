@@ -1,0 +1,95 @@
+<!--Post Header-->
+<h3 class="news-title">Storm 0.9.0 Released</h3>
+<div class="news-meta">
+    <i class="fa fa-calendar"></i> Dec 8, 2013 <i class="fa fa-user"></i> P. Taylor Goetz
+</div>
+<!--Post Body-->
+<p>We are pleased to announce that Storm 0.9.0 has been released and is available from <a href="downloads.html">the downloads page</a>. This release represents an important milestone in the evolution of Storm.</p>
+<p>While a number of new features have been added, a key focus area for this release has been stability-related fixes. Though many users are successfully running work-in-progress builds for Storm 0.9.x in production, this release represents the most stable version to-date, and is highly recommended for everyone, especially users of 0.8.x versions.</p>
+<h4>Netty Transport</h4>
+<p>The first hightlight of this release is the new <a href="http://netty.io/index.html" target="_blank">Netty</a> Transport contributed by <a href="http://yahooeng.tumblr.com/" target="_blank">Yahoo! Engineering</a>. Storm's core network transport mechanism is now plugable, and Storm now comes with two implementations: The original 0MQ transport, and a new Netty-based implementation.</p>
+<p>In earlier versions, Storm relied solely on 0MQ for transport. Since 0MQ is a native library, it was highly platform-dependent and, at times, challenging to install properly. In addition, stability between versions varied widely between versions and only a relatively old 0MQ version (2.1.7) was certified to work with Storm.</p>
+<p>The Netty transport offers a pure Java alternative that eliminates Storm's dependency on native libraries. The Netty transport's performance is up to twice as fast as 0MQ, and it will open the door for authorization and authentication between worker processes. For an in-depth performance comparison of the 0MQ and Netty transports, see <a href="http://yahooeng.tumblr.com/post/64758709722/making-storm-fly-with-netty" target="_blank">this blog post</a> by Storm contributor <a href="https://github.com/revans2" target="_blank">Bobby Evans</a>.</p>
+<p>To configure Storm to use the Netty transport simply add the following to your <code>storm.yaml</code> configuration and adjust the values to best suit your use-case:</p>
+<pre>storm.messaging.transport: "backtype.storm.messaging.netty.Context"
+storm.messaging.netty.server_worker_threads: 1
+storm.messaging.netty.client_worker_threads: 1
+storm.messaging.netty.buffer_size: 5242880
+storm.messaging.netty.max_retries: 100
+storm.messaging.netty.max_wait_ms: 1000
+storm.messaging.netty.min_wait_ms: 100</pre>
+<p>You can also write your own transport implementation by implementing the <a href="https://github.com/apache/incubator-storm/blob/master/storm-core/src/jvm/backtype/storm/messaging/IContext.java" target="_blank"><code>backtype.storm.messaging.IContext</code></a> interface.</p>
+<h4>Log Viewer UI</h4>
+<p>Storm now includes a helpful new feature for debugging and monitoring topologies: The <code>logviewer</code> daemon.</p>
+<p>In earlier versions of Storm, viewing worker logs involved determining a worker's location (host/port), typically through Storm UI, then <code>ssh</code>ing to that host and <code>tail</code>ing the corresponding worker log file. With the new log viewer. You can now easily access a specific worker's log in a web browser by clicking on a worker's port number right from Storm UI.</p>
+<p>The <code>logviewer</code> daemon runs as a separate process on Storm supervisor nodes. To enable the <code>logviewer</code> run the following command (under supervision) on your cluster's supervisor nodes:</p>
+<pre>$ storm logviewer</pre>
+<h4>Improved Windows Support</h4>
+<p>In previous versions, running Storm on Microsoft Windows required installing third-party binaries (0MQ), modifying Storm's source, and adding Windows-specific scripts. With the addition of the platform-independent Netty transport, as well as numerous enhancements to make Storm more platform-independent, running Storm on Windows is easier than ever.</p>
+<h4>Security Improvements</h4>
+<p>Security, Authentication, and Authorization have been and will continue to be important focus areas for upcoming features. Storm 0.9.0 introduces an API for pluggable tuple serialization and a blowfish encryption based implementation for encrypting tuple data for sensitive use cases.</p>
+<h4>API Compatibility and Upgrading</h4>
+<p>For most Storm topology developers, upgrading to 0.9.0 is simply a matter of updating the <a href="https://clojars.org/storm" target="_blank">dependency</a>. Storm's core API has changed very little since the 0.8.2 release.</p>
+<p>On the devops side, when upgrading to a new Storm release, it is safest to clear any existing state (Zookeeper, <code>storm.local.dir</code>), prior to upgrading.</p>
+<h4>Logging Changes</h4>
+<p>Another important change in 0.9.0 has to do with logging. Storm has largely switched over to the <a href="http://www.slf4j.org" target="_blank">slf4j API</a> (backed by a <a href="http://logback.qos.ch" target="_blank">logback</a> logger implementation). Some Storm dependencies rely on the log4j API, so Storm currently depends on <a href="http://www.slf4j.org/legacy.html#log4j-over-slf4j" target="_blank">log4j-over-slf4j</a>.</p>
+<p>These changes have implications for existing topologies and topology components that use the log4j API.</p>
+<p>In general, and when possible, Storm topologies and topology components should use the <a href="http://www.slf4j.org" target="_blank">slf4j API</a> for logging.</p>
+<h4>Thanks</h4>
+<p>Special thanks are due to all those who have contributed to Storm -- whether through direct code contributions, documentation, bug reports, or helping other users on the mailing lists. Your efforts are much appreciated.</p>
+<h4>Changelog</h4>
+<ul>
+	<li>Update build configuration to force compatibility with Java 1.6</li>
+	<li>Fixed a netty client issue where sleep times for reconnection could be negative (thanks brndnmtthws)</li>
+	<li>Fixed an issue that would cause storm-netty unit tests to fail</li>
+	<li>Added configuration to limit ShellBolt internal _pendingWrites queue length (thanks xiaokang)</li>
+	<li>Fixed a a netty client issue where sleep times for reconnection could be negative (thanks brndnmtthws)</li>
+	<li>Fixed a display issue with system stats in Storm UI (thanks d2r)</li>
+	<li>Nimbus now does worker heartbeat timeout checks as soon as heartbeats are updated (thanks d2r)</li>
+	<li>The logviewer now determines log file location by examining the logback configuration (thanks strongh)</li>
+	<li>Allow tick tuples to work with the system bolt (thanks xumingming)</li>
+	<li>Add default configuration values for the netty transport and the ability to configure the number of worker threads (thanks revans2)</li>
+	<li>Added timeout to unit tests to prevent a situation where tests would hang indefinitely (thanks d2r)</li>
+	<li>Fixed an issue in the system bolt where local mode would not be detected accurately (thanks miofthena)</li>
+	<li>Fixed <code>storm jar</code> command to work properly when STORM_JAR_JVM_OPTS is not specified (thanks roadkill001)</li>
+	<li>All logging now done with slf4j</li>
+	<li>Replaced log4j logging system with logback</li>
+	<li>Logs are now limited to 1GB per worker (configurable via logging configuration file)</li>
+	<li>Build upgraded to leiningen 2.0</li>
+	<li>Revamped Trident spout interfaces to support more dynamic spouts, such as a spout who reads from a changing set of brokers</li>
+	<li>How tuples are serialized is now pluggable (thanks anfeng)</li>
+	<li>Added blowfish encryption based tuple serialization (thanks anfeng)</li>
+	<li>Have storm fall back to installed storm.yaml (thanks revans2)</li>
+	<li>Improve error message when Storm detects bundled storm.yaml to show the URL's for offending resources (thanks revans2)</li>
+	<li>Nimbus throws NotAliveException instead of FileNotFoundException from various query methods when topology is no longer alive (thanks revans2)</li>
+	<li>Escape HTML and Javascript appropriately in Storm UI (thanks d2r)</li>
+	<li>Storm's Zookeeper client now uses bounded exponential backoff strategy on failures</li>
+	<li>Automatically drain and log error stream of multilang subprocesses</li>
+	<li>Append component name to thread name of running executors so that logs are easier to read</li>
+	<li>Messaging system used for passing messages between workers is now pluggable (thanks anfeng)</li>
+	<li>Netty implementation of messaging (thanks anfeng)</li>
+	<li>Include topology id, worker port, and worker id in properties for worker processes, useful for logging (thanks d2r)</li>
+	<li>Tick tuples can now be scheduled using floating point seconds (thanks tscurtu)</li>
+	<li>Added log viewer daemon and links from UI to logviewers (thanks xiaokang)</li>
+	<li>DRPC server childopts now configurable (thanks strongh)</li>
+	<li>Default number of ackers to number of workers, instead of just one (thanks lyogavin)</li>
+	<li>Validate that Storm configs are of proper types/format/structure (thanks d2r)</li>
+	<li>FixedBatchSpout will now replay batches appropriately on batch failure (thanks ptgoetz)</li>
+	<li>Can set JAR_JVM_OPTS env variable to add jvm options when calling 'storm jar' (thanks srmelody)</li>
+	<li>Throw error if batch id for transaction is behind the batch id in the opaque value (thanks mrflip)</li>
+	<li>Sort topologies by name in UI (thanks jaked)</li>
+	<li>Added LoggingMetricsConsumer to log all metrics to a file, by default not enabled (thanks mrflip)</li>
+	<li>Add prepare(Map conf) method to TopologyValidator (thanks ankitoshniwal)</li>
+	<li>Bug fix: Supervisor provides full path to workers to logging config rather than relative path (thanks revans2) </li>
+	<li>Bug fix: Call ReducerAggregator#init properly when used within persistentAggregate (thanks lorcan)</li>
+	<li>Bug fix: Set component-specific configs correctly for Trident spouts</li>
+</ul>
+
+
+
+
+
+
+
+
+

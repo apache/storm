@@ -1,0 +1,89 @@
+---
+layout: default
+title: Creating Project
+---
+<!--Content Begin-->
+<div class="content">
+	<div class="container-fluid">
+    	<div class="row">
+        	<div class="col-md-12">
+            	<h1 class="page-title">Creating a New Storm Project</h1>
+                <p>This page outlines how to set up a Storm project for development. The steps are:</p>
+                <ol>
+                    <li>Add Storm jars to classpath</li>
+                    <li>If using multilang, add multilang dir to classpath</li>
+                </ol>
+                <p>Follow along to see how to set up the <a href="https://github.com/apache/storm/blob/master/examples/storm-starter" target="_blank">storm-starter</a> project in Eclipse.</p>
+                <h3>Add Storm jars to classpath</h3>
+                <p>You'll need the Storm jars on your classpath to develop Storm topologies. Using <a href="javascript:void(0)">Maven</a> is highly recommended. <a href="https://github.com/apache/storm/blob/master/examples/storm-starter/pom.xml" target="_blank">Here's an example</a> of how to setup your pom.xml for a Storm project. If you don't want to use Maven, you can include the jars from the Storm release on your classpath.</p>
+                <p>To set up the classpath in Eclipse, create a new Java project, include <code>src/jvm/</code> as a source path, and make sure all the jars in <code>lib/</code> and <code>lib/dev/</code> are in the <code>Referenced Libraries</code> section of the project.</p>
+                <h3>If using multilang, add multilang dir to classpath</h3>
+                <p>If you implement spouts or bolts in languages other than Java, then those implementations should be under the <code>multilang/resources/</code> directory of the project. For Storm to find these files in local mode, the <code>resources/</code> dir needs to be on the classpath. You can do this in Eclipse by adding <code>multilang/</code> as a source folder. You may also need to add multilang/resources as a source directory.</p>
+                <p>For more information on writing topologies in other languages, see <a href="javascript:void(0)">Using non-JVM languages with Storm</a>.</p>
+                <p>To test that everything is working in Eclipse, you should now be able to <code>Run</code> the <code>WordCountTopology.java</code> file. You will see messages being emitted at the console for 10 seconds.</p>
+            </div>
+        </div>
+    </div>
+</div>
+<!--Content End-->
+<!--Footer Begin-->
+<footer>
+	<div class="container-fluid">
+    	<div class="row">
+        	<div class="col-md-3">
+            	<div class="footer-widget">
+                	<h5>Latest Tweets</h5>
+                    <div class="tweet"><i class="fa fa-twitter"></i> RT <a href="#">@jeffreyfkelly</a>: RT Hortonworks’ first acquisition is good news for the future of Hadoop security <a href="#">http://t.co/TZmi5WlHsd?</a></div>
+                    <div class="tweet"><i class="fa fa-twitter"></i> RT RT <a href="#">@ShahSank3t</a>: Hundreds of Cheatsheets on many technologies. <a href="#">http://t.co/tE8yEGjuAU\</a></div>
+                    <div class="tweet"><i class="fa fa-twitter"></i> RT <a href="#">@javacodegeeks</a>: Releasing more often drives better Dev and better Ops | #Java Code <a href="#">Geeks http://buff.ly/JOMeNn</a></div>	
+                </div>
+            </div>
+            <div class="col-md-3">
+            	<div class="footer-widget">
+                	<h5>About Storm</h5>
+                    <p>Storm integrates with any queueing system and any database system. Storm's spout abstraction makes it easy to integrate a new queuing system. Likewise, integrating Storm with database systems is easy.</p>
+                    <div class="social">
+                        <a href="#"><i class="fa fa-twitter twitter"></i></a>
+                        <a href="#"><i class="fa fa-pinterest pinterest"></i></a>
+                        <a href="#"><i class="fa fa-facebook facebook"></i></a>
+                        <a href="#"><i class="fa fa-google-plus google-plus"></i></a>
+                        <a href="#"><i class="fa fa-linkedin linkedin"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+            	<div class="footer-widget">
+                	<h5>First Look</h5>
+                    <ul class="footer-list">
+                    	<li><a href="rationale.html">Rationale</a></li>
+                        <li><a href="tutorial.html">Tutorial</a></li>
+                        <li><a href="setting-up.html">Setting up development environment</a></li>
+                        <li><a href="creating-project.html">Creating a new Storm project</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-3">
+            	<div class="footer-widget">
+                	<h5>Documentation</h5>
+                    <ul class="footer-list">
+                    	<li><a href="documentation-index.html">Index</a></li>
+                        <li><a href="documentation.html">Manual</a></li>
+                        <li><a href="https://storm.apache.org/javadoc/apidocs/index.html">Javadoc</a></li>
+                        <li><a href="faq.html">FAQ</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <hr/>
+        <div class="row">	
+        	<div class="col-md-12">
+            	<p align="center">Copyright © 2014 <a href="http://www.apache.org">Apache Software Foundation</a>. All Rights Reserved. Apache Storm, Apache, the Apache feather logo, and the Apache Storm project logos are trademarks of The Apache Software Foundation. All other marks mentioned may be trademarks or registered trademarks of their respective owners.</p>
+            </div>
+        </div>
+    </div>
+</footer>
+<!--Footer End-->
+<!-- Scroll to top -->
+<span class="totop"><a href="#"><i class="fa fa-angle-up"></i></a></span>
+</body>
+</html>
