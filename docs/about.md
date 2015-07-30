@@ -1,7 +1,140 @@
 ---
-layout: page
-title: About
-permalink: /about/
+layout: default
+title: Project Information
 ---
-
-Storm is a <a href="/about/free-and-open-source.html">free and open source</a> distributed realtime computation system. Storm makes it easy to reliably process unbounded streams of data, doing for realtime processing what Hadoop did for batch processing. Storm is <a href="/about/simple-api.html">simple</a>, can be used with <a href="/about/multi-language.html">any programming language</a>, and is a lot of fun to use!
+<!--Content Begin-->
+<div class="content">
+	<div class="container-fluid">
+        <div class="download-block">
+        	<div class="row">
+            	<div class="col-md-3 remove-custom-padding">
+                	<h4>Integrates</h4>
+                </div>
+                <div class="col-md-9 remove-custom-padding">
+                	<div class="download-info">
+                    	<p>Storm integrates with any queueing system and any database system. Storm's <a href="https://storm.apache.org/apidocs/backtype/storm/spout/ISpout.html">spout</a> abstraction makes it easy to integrate a new queuing system. Example queue integrations include:</p>
+                        <ol>
+                            <li><a href="https://github.com/nathanmarz/storm-kestrel" target="_blank">Kestrel</a></li>
+                            <li><a href="https://github.com/Xorlev/storm-amqp-spout" target="_blank">RabbitMQ / AMQP</a></li>
+                            <li><a href="https://github.com/apache/storm/tree/master/external/storm-kafka" target="_blank">Kafka</a></li>
+                            <li><a href="https://github.com/ptgoetz/storm-jms" target="_blank">JMS</a></li>
+                            <li><a href="https://github.com/awslabs/kinesis-storm-spout" target="_blank">Amazon Kinesis</a></li>
+                        </ol>
+                        <p>Likewise, integrating Storm with database systems is easy. Simply open a connection to your database and read/write like you normally would. Storm will handle the parallelization, partitioning, and retrying on failures when necessary.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="download-block">
+            <div class="row">
+                <div class="col-md-3 remove-custom-padding">
+                    <h4>Simple API</h4>
+                </div>
+                <div class="col-md-9 remove-custom-padding">
+                    <div class="download-info">
+                        <p>Storm has a simple and easy to use API. When programming on Storm, you manipulate and transform streams of tuples, and a tuple is a named list of values. Tuples can contain objects of any type; if you want to use a type Storm doesn't know about it's <a href="/documentation/serialization.html">very easy</a> to register a serializer for that type.</p>
+                        <p>There are just three abstractions in Storm: spouts, bolts, and topologies. A <strong>spout</strong> is a source of streams in a computation. Typically a spout reads from a queueing broker such as Kestrel, RabbitMQ, or Kafka, but a spout can also generate its own stream or read from somewhere like the Twitter streaming API. Spout implementations already exist for most queueing systems.</p>
+                        <p>A <strong>bolt</strong> processes any number of input streams and produces any number of new output streams. Most of the logic of a computation goes into bolts, such as functions, filters, streaming joins, streaming aggregations, talking to databases, and so on.</p>
+                        <p>A <strong>topology</strong> is a network of spouts and bolts, with each edge in the network representing a bolt subscribing to the output stream of some other spout or bolt. A topology is an arbitrarily complex multi-stage stream computation. Topologies run indefinitely when deployed.</p>
+                        <p>Storm has a "local mode" where a Storm cluster is simulated in-process. This is useful for development and testing. The "storm" command line client is used when ready to submit a topology for execution on an actual cluster.</p>
+                        <p>The <a href="https://github.com/apache/storm/tree/master/examples/storm-starter" target="_blank">storm-starter</a> project contains example topologies for learning the basics of Storm. Learn more about how to use Storm by reading the <a href="tutorial.html">tutorial</a> and the <a href="documentation.html">documentation</a>.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="download-block">
+            <div class="row">
+                <div class="col-md-3 remove-custom-padding">
+                    <h4>Scalable</h4>
+                </div>
+                <div class="col-md-9 remove-custom-padding">
+                    <div class="download-info">
+                        <p>Storm topologies are inherently parallel and run across a cluster of machines. Different parts of the topology can be scaled individually by tweaking their parallelism. The "rebalance" command of the "storm" command line client can adjust the parallelism of running topologies on the fly. </p>
+                        <p>Storm's inherent parallelism means it can process very high throughputs of messages with very low latency. Storm was benchmarked at processing <strong>one million 100 byte messages per second per node</strong> on hardware with the following specs:</p>
+                        <ul>
+                            <li><strong>Processor:</strong> 2x Intel <a href="mailto:E5645@2.4Ghz">E5645@2.4Ghz</a> </li>
+                            <li><strong>Memory:</strong> 24 GB</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="download-block">
+            <div class="row">
+                <div class="col-md-3 remove-custom-padding">
+                    <h4>Fault tolerant</h4>
+                </div>
+                <div class="col-md-9 remove-custom-padding">
+                    <div class="download-info">
+                        <p>Storm is fault-tolerant: when workers die, Storm will automatically restart them. If a node dies, the worker will be restarted on another node.</p>
+                        <p>The Storm daemons, Nimbus and the Supervisors, are designed to be stateless and fail-fast. So if they die, they will restart like nothing happened. This means you can <em>kill -9</em> the Storm daemons without affecting the health of the cluster or your topologies.</p>
+                        <p>Read more about Storm's fault-tolerance <a href="/documentation/fault-tolerance.html">on the manual</a>.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="download-block">
+            <div class="row">
+                <div class="col-md-3 remove-custom-padding">
+                    <h4>Guarantees data processing</h4>
+                </div>
+                <div class="col-md-9 remove-custom-padding">
+                    <div class="download-info">
+                        <p>Storm guarantees every tuple will be fully processed. One of Storm's core mechanisms is the ability to track the lineage of a tuple as it makes its way through the topology in an extremely efficient way. Read more about how this works <a href="/documentation/guaranteeing-message-processing.html">here</a>.</p>
+                        <p>Storm's basic abstractions provide an at-least-once processing guarantee, the same guarantee you get when using a queueing system. Messages are only replayed when there are failures.</p>
+                        <p>Using <a href="/documentation/trident-tutorial.html">Trident</a>, a higher level abstraction over Storm's basic abstractions, you can achieve exactly-once processing semantics.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="download-block">
+            <div class="row">
+                <div class="col-md-3 remove-custom-padding">
+                    <h4>Use with any language</h4>
+                </div>
+                <div class="col-md-9 remove-custom-padding">
+                    <div class="download-info">
+                        <p>Storm was designed from the ground up to be usable with any programming language. At the core of Storm is a <a href="http://thrift.apache.org/" target="_blank">Thrift</a> <a href="https://github.com/apache/storm/blob/master/storm-core/src/storm.thrift" target="_blank">definition</a> for defining and submitting topologies. Since Thrift can be used in any language, topologies can be defined and submitted from any language.</p>
+                        <p>Similarly, spouts and bolts can be defined in any language. Non-JVM spouts and bolts communicate to Storm over a <a href="/documentation/multilang-protocol.html">JSON-based protocol</a> over stdin/stdout. Adapters that implement this protocol exist for <a href="https://github.com/apache/storm/blob/master/storm-core/src/multilang/rb/storm.rb" target="_blank">Ruby</a>, <a href="https://github.com/apache/storm/blob/master/storm-core/src/multilang/py/storm.py" target="_blank">Python</a>, <a href="https://github.com/apache/storm/blob/master/storm-core/src/multilang/js/storm.js" target="_blank">Javascript</a>, <a href="https://github.com/dan-blanchard/io-storm" target="_blank">Perl</a>.</p>
+                        <p><em>storm-starter</em> has an <a href="https://github.com/apache/storm/blob/master/examples/storm-starter/src/jvm/storm/starter/WordCountTopology.java" target="_blank">example topology</a> that implements one of the bolts in Python.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="download-block">
+            <div class="row">
+                <div class="col-md-3 remove-custom-padding">
+                    <h4>Easy to deploy and operate</h4>
+                </div>
+                <div class="col-md-9 remove-custom-padding">
+                    <div class="download-info">
+                        <p>Storm clusters are easy to deploy, requiring a minimum of setup and configuration to get up and running. Storm's out of the box configurations are suitable for production. Read more about how to deploy a Storm cluster <a href="/documentation/setting-up-a-Storm-cluster.html">here</a>.</p>
+                        <p>If you're on EC2, the <a href="https://github.com/nathanmarz/storm-deploy" target="_blank">storm-deploy</a> project can provision, configure, and install a Storm cluster from scratch at just the click of a button.</p>
+                        <p>Additionally, Storm is easy to operate once deployed. Storm has been designed to be <a href="/documentation/fault-tolerance.html">extremely robust</a> – the cluster will just keep on running, month after month.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="download-block">
+            <div class="row">
+                <div class="col-md-3 remove-custom-padding">
+                    <h4>Free and open source</h4>
+                </div>
+                <div class="col-md-9 remove-custom-padding">
+                    <div class="download-info">
+                        <p>Apache Storm is a free and open source project licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0.html" target="_blank">Apache License, Version 2.0</a></p>
+                        <p>Storm has a large and growing ecosystem of libraries and tools to use in conjunction with Storm including everything from:</p>
+                        <ol>
+                            <li><em>Spouts</em>: These spouts integrate with queueing systems such as JMS, Kafka, Redis pub/sub, and more.</li>
+                            <li><em>storm-state</em>: storm-state makes it easy to manage large amounts of in-memory state in your computations in a reliable by using a distributed filesystem for persistence</li>
+                            <li><em>Database integrations</em>: There are helper bolts for integrating with various databases, such as MongoDB, RDBMS's, Cassandra, and more.</li>
+                            <li>Other miscellaneous utilities</li>
+                        </ol>
+                        <p>The <a href="documentation.html">Storm documentation</a> has links to notable Storm-related projects hosted outside of Apache.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!--Content End-->

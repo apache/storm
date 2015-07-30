@@ -1,0 +1,189 @@
+---
+layout: news
+title: Storm 0.9.3 released
+---
+<!--Post Header-->
+<h3 class="news-title">Storm 0.9.3 released</h3>
+<div class="news-meta">
+    <i class="fa fa-calendar"></i> Nov 25, 2014 <i class="fa fa-user"></i> P. Taylor Goetz
+</div>
+<!--Post Body-->
+<p>We are pleased to announce that Apache Storm 0.9.3 has been released and is available from <a href="/downloads.html">the downloads page</a>. This release includes 100 new fixes and improvements from 62 individual contributors.</p>
+<h4>Improved Kafka Integration</h4>
+<p>Apache Storm has supported <a href="http://kafka.apache.org/" target="_blank">Apache Kafka</a> as a streaming data source since version 0.9.2-incubating. Version 0.9.3 brings a number of improvements to the Kafka integration including the ability to write data to one or more Kafka clusters and topics.</p>
+<p>The ability to both read from and write to Kafka further unlocks potential of the already powerful combination of Storm and Kafka. Storm users can now use Kafka as a source of and destination for streaming data. This allows for inter-topology communication, topology chaining, combining spout/bolt-based topologies with Trident-based data flows, and integration with any external system that supports data ingest from Kafka.</p>
+<p>More information about Storm's Kafka integration can be found in the <a href="https://github.com/apache/storm/blob/v0.9.3/external/storm-kafka/README.md" target="_blank">storm-kafka project documentation</a>.</p>
+<h4>HDFS Integration</h4>
+<p>Many stream processing use cases involve storing data in HDFS for further analysis and offline (batch) processing. Apache Storm’s HDFS integration consists of several bolt and Trident state implementations that allow topology developers to easily write data to HDFS from any Storm topology. </p>
+<p>More information about Storm's HDFS integration can be found in the <a href="https://github.com/apache/storm/tree/v0.9.3/external/storm-hdfs" target="_blank">storm-hdfs project documentation</a>.</p>
+<h4>HBase Integration</h4>
+<p>Apache Storm’s HBase integration includes a number of components that allow Storm topologies to both write to and query HBase in real-time. Many organizations use Apache HBase as part of their big data strategy for batch, interactive, and real-time workflows. Storm’s HBase integration allows users to leverage data assets in HBase as streaming queries, as well as using HBase as a destination for streaming computation results.</p>
+<p>More information about Storm's HBase integration can be found in the <a href="https://github.com/apache/storm/tree/v0.9.3/external/storm-hbase" target="_blank">storm-hbase project documentation</a>.</p>
+<h4>Reduced Dependency Conflicts</h4>
+<p>In previous Storm releases, it was not uncommon for users' topology dependencies to conflict with the libraries used by Storm. In Storm 0.9.3 several dependency packages that were common sources of conflicts have been package-relocated (shaded) to avoid this situation. Developers are free to use the Storm-packaged versions, or supply their own version. </p>
+<p>The following table lists the dependency package relocations:</p>
+<table class="table table-bordered">
+	<thead>
+		<tr>
+			<th>Dependency</th>
+			<th>Original Package</th>
+			<th>Storm Package</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td>Apache Thrift</td>
+			<td><code>org.apache.thrift</code></td>
+			<td><code>org.apache.thrift7</code></td>
+		</tr>
+		<tr>
+			<td>Netty</td>
+			<td><code>org.jboss.netty</code></td>
+			<td><code>org.apache.storm.netty</code></td>
+		</tr>
+		<tr>
+			<td>Google Guava</td>
+			<td><code>com.google.common</code></td>
+			<td><code>org.apache.storm.guava</code></td>
+		</tr>
+		<tr>
+			<td></td>
+			<td><code>com.google.thirdparty</code></td>
+			<td><code>org.apache.storm.guava.thirdparty</code></td>
+		</tr>
+		<tr>
+			<td>Apache HTTPClient</td>
+			<td><code>org.apache.http</code></td>
+			<td><code>org.apache.storm.http</code></td>
+		</tr>
+		<tr>
+			<td>Apache ZooKeeper</td>
+			<td><code>org.apache.zookeeper</code></td>
+			<td><code>org.apache.storm.zookeeper</code></td>
+		</tr>
+		<tr>
+			<td>Apache Curator</td>
+			<td><code>org.apache.curator</code></td>
+			<td><code>org.apache.storm.curator</code></td>
+		</tr>
+	</tbody>
+</table>
+<h4>Multi-Lang Improvements</h4>
+<p>Apache Storm 0.9.3 includes a new <a href="http://nodejs.org" target="_blank">Node.js</a> multi-lang implementation that allows developers to write spouts and bolts in JavaScript.</p>
+<p>In addition to the Node.js implementation, the multi-lang protocol has been substantially improved in terms of robustness and error handling capabilities. As a result, <strong>the multi-lang API has changed in a non-backward-compatible way</strong>. Users with existing multi-lang topologies should consult the Python, Ruby, and JavaScript multi-lang examples to determine the impact prior to upgrading.</p>
+<h4>Thanks</h4>
+<p>Special thanks are due to all those who have contributed to Storm -- whether through direct code contributions, documentation, bug reports, or helping other users on the mailing lists. Your efforts are much appreciated.</p>
+<h4>Full Changelog</h4>
+<ul>
+	<li>STORM-558: change "swap!" to "reset!" to fix assignment-versions in supervisor</li>
+	<li>STORM-555: Storm json response should set charset to UTF-8</li>
+	<li>STORM-513: check heartbeat from multilang subprocess</li>
+	<li>STORM-549: "topology.enable.message.timeouts" does nothing</li>
+	<li>STORM-546: Local hostname configuration ignored by executor</li>
+	<li>STORM-492: Test timeout should be configurable</li>
+	<li>STORM-540: Change default time format in logs to ISO8601 in order to include timezone</li>
+	<li>STORM-511: Storm-Kafka spout keeps sending fetch requests with invalid offset</li>
+	<li>STORM-538: Guava com.google.thirdparty.publicsuffix is not shaded</li>
+	<li>STORM-497: don't modify the netty server taskToQueueId mapping while the someone could be reading it.</li>
+	<li>STORM-537: A worker reconnects infinitely to another dead worker (Sergey Tryuber)</li>
+	<li>STORM-519: add tuple as an input param to HBaseValueMapper </li>
+	<li>STORM-488: Exit with 254 error code if storm CLI is run with unknown command</li>
+	<li>STORM-506: Do not count bolt acks &amp; fails in total stats</li>
+	<li>STORM-490: fix build under Windows</li>
+	<li>STORM-439: Replace purl.js qith jquery URL plugin</li>
+	<li>STORM-499: Document and clean up shaded dependncy resolution with maven</li>
+	<li>STORM-210: Add storm-hbase module</li>
+	<li>STORM-507: Topology visualization should not block ui</li>
+	<li>STORM-504: Class used by <code>repl</code> command is deprecated.</li>
+	<li>STORM-330: Implement storm exponential backoff stategy for netty client and curator</li>
+	<li>STORM-461: exit-process! does not always exit the process, but throws an exception</li>
+	<li>STORM-341: fix assignment sorting</li>
+	<li>STORM-476: external/storm-kafka: avoid NPE on null message payloads</li>
+	<li>STORM-424: fix error message related to kafka offsets</li>
+	<li>STORM-454: correct documentation in STORM-UI-REST-API.md</li>
+	<li>STORM-474: Reformat UI HTML code</li>
+	<li>STORM-447: shade/relocate packages of dependencies that are common causes of dependency conflicts</li>
+	<li>STORM-279: cluster.xml doesn't take in STORM_LOG_DIR values.</li>
+	<li>STORM-380: Kafka spout: throw RuntimeException if a leader cannot be found for a partition</li>
+	<li>STORM-435: Improve storm-kafka documentation</li>
+	<li>STORM-405: Add kafka trident state so messages can be sent to kafka topic</li>
+	<li>STORM-211: Add module for HDFS integration</li>
+	<li>STORM-337: Expose managed spout ids publicly</li>
+	<li>STORM-320: Support STORM_CONF_DIR environment variable to support</li>
+	<li>STORM-360: Add node details for Error Topology and Component pages</li>
+	<li>STORM-54: Per-Topology Classpath and Environment for Workers</li>
+	<li>STORM-355: excluding outdated netty transitively included via curator</li>
+	<li>STORM-183: Replacing RunTime.halt() with RunTime.exit()</li>
+	<li>STORM-213: Decouple In-Process ZooKeeper from LocalCluster.</li>
+	<li>STORM-365: Add support for Python 3 to storm command.</li>
+	<li>STORM-332: Enable Kryo serialization in storm-kafka</li>
+	<li>STORM-370: Add check for empty table before sorting dom in UI</li>
+	<li>STORM-359: add logviewer paging and download</li>
+	<li>STORM-372: Typo in storm_env.ini</li>
+	<li>STORM-266: Adding shell process pid and name in the log message</li>
+	<li>STORM-367: Storm UI REST api documentation.</li>
+	<li>STORM-200: Proposal for Multilang's Metrics feature</li>
+	<li>STORM-351: multilang python process fall into endless loop</li>
+	<li>STORM-375: Smarter downloading of assignments by supervisors and workers</li>
+	<li>STORM-328: More restrictive Config checks, strict range check within Utils.getInt()</li>
+	<li>STORM-381: Replace broken jquery.tablesorter.min.js to latest</li>
+	<li>STORM-312: add storm monitor tools to monitor throughtput interactively</li>
+	<li>STORM-354: Testing: allow users to pass TEST-TIMEOUT-MS as param for complete-topology</li>
+	<li>STORM-254: one Spout/Bolt can register metric twice with same name in different timeBucket</li>
+	<li>STORM-403: heartbeats-to-nimbus in supervisor-test failed due to uninten...</li>
+	<li>STORM-402: FileNotFoundException when using storm with apache tika</li>
+	<li>STORM-364: The exception time display as default timezone.</li>
+	<li>STORM-420: Missing quotes in storm-starter python code</li>
+	<li>STORM-399: Kafka Spout defaulting to latest offset when current offset is older then 100k</li>
+	<li>STORM-421: Memoize local hostname lookup in executor</li>
+	<li>STORM-414: support logging level to multilang protocol spout and bolt</li>
+	<li>STORM-321: Added a tool to see the current status of STORM JIRA and github pulls.</li>
+	<li>STORM-415: validate-launched-once in supervisor-test can not handle multiple topologies</li>
+	<li>STORM-155: Storm rebalancing code causes multiple topologies assigned to a single port</li>
+	<li>STORM-419: Updated test so sort ordering is very explicit.</li>
+	<li>STORM-406: Fix for reconnect logic in netty client.</li>
+	<li>STORM-366: Add color span to most recent error and fix ui templates.</li>
+	<li>STORM-369: topology summary page displays wrong order.</li>
+	<li>STORM-239: Allow supervisor to operate in paths with spaces in them</li>
+	<li>STORM-87: fail fast on ShellBolt exception</li>
+	<li>STORM-417: Storm UI lost table sort style when tablesorter was updated</li>
+	<li>STORM-396: Replace NullPointerException with IllegalArgumentExeption</li>
+	<li>STORM-451: Latest storm does not build due to a pom.xml error in storm-hdfs pom.xml</li>
+	<li>STORM-453: migrated to curator 2.5.0</li>
+	<li>STORM-458: sample spout uses incorrect name when connecting bolt</li>
+	<li>STORM-455: Report error-level messages from ShellBolt children</li>
+	<li>STORM-443: multilang log's loglevel protocol can cause hang</li>
+	<li>STORM-449: Updated ShellBolt to not exit when shutting down.</li>
+	<li>STORM-464: Simulated time advanced after test cluster exits causes intermittent test failures</li>
+	<li>STORM-463: added static version of metrics helpers for Config</li>
+	<li>STORM-376: Add compression to serialization</li>
+	<li>STORM-437: Enforce utf-8 when multilang reads from stdin</li>
+	<li>STORM-361: Add JSON-P support to Storm UI API</li>
+	<li>STORM-373: Provide Additional String substitutions for *.worker.childopts</li>
+	<li>STORM-274: Add support for command remoteconfvalue in storm.cmd</li>
+	<li>STORM-132: sort supervisor by free slot in desending order</li>
+	<li>STORM-472: Improve error message for non-completeable testing spouts</li>
+	<li>STORM-401: handle InterruptedIOException properly.</li>
+	<li>STORM-461: exit-process! does not always exit the process, but throws an exception instead</li>
+	<li>STORM-475: Storm UI pages do not use UTF-8</li>
+	<li>STORM-336: Logback version should be upgraded</li>
+	<li>STORM-386: nodejs multilang protocol implementation and examples</li>
+	<li>STORM-500: Add Spinner when UI is loading stats from nimbus</li>
+	<li>STORM-501: Missing StormSubmitter API</li>
+	<li>STORM-493: Workers inherit storm.conf.file/storm.options properties of their supervisor</li>
+	<li>STORM-498: make ZK connection timeout configurable in Kafka spout</li>
+	<li>STORM-428: extracted ITuple interface</li>
+	<li>STORM-508: Update DEVELOPER.md now that Storm has graduated from Incubator</li>
+	<li>STORM-514: Update storm-starter README now that Storm has graduated from Incubator</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+

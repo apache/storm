@@ -1,0 +1,83 @@
+---
+layout: documentation
+title: Runnning Topologies on Production Cluster
+---
+<!--Content Begin-->
+<div class="content">
+	<div class="container-fluid">
+    	<div class="row">
+        	<div class="col-md-12">
+            	<h1 class="page-title">Running Topologies on a Production Cluster</h1>
+    <p>Running topologies on a production cluster is similar to running in <a href="local-mode.html">Local mode</a>. Here are the steps:</p>
+
+<p>1) Define the topology (Use <a href="https://storm.apache.org/javadoc/apidocs/backtype/storm/topology/TopologyBuilder.html" target="_blank">TopologyBuilder</a> if defining using Java)</p>
+
+<p>2) Use <a href="https://storm.apache.org/javadoc/apidocs/backtype/storm/StormSubmitter.html" target="_blank">StormSubmitter</a> to submit the topology to the cluster. <code>StormSubmitter</code> takes as input the name of the topology, a configuration for the topology, and the topology itself. For example:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">Config</span> <span class="n">conf</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">Config</span><span class="o">();</span>
+<span class="n">conf</span><span class="o">.</span><span class="na">setNumWorkers</span><span class="o">(</span><span class="mi">20</span><span class="o">);</span>
+<span class="n">conf</span><span class="o">.</span><span class="na">setMaxSpoutPending</span><span class="o">(</span><span class="mi">5000</span><span class="o">);</span>
+<span class="n">StormSubmitter</span><span class="o">.</span><span class="na">submitTopology</span><span class="o">(</span><span class="s">"mytopology"</span><span class="o">,</span> <span class="n">conf</span><span class="o">,</span> <span class="n">topology</span><span class="o">);</span>
+</code></pre></div>
+<p>3) Create a jar containing your code and all the dependencies of your code (except for Storm -- the Storm jars will be added to the classpath on the worker nodes).</p>
+
+<p>If you're using Maven, the <a href="http://maven.apache.org/plugins/maven-assembly-plugin/" target="_blank">Maven Assembly Plugin</a> can do the packaging for you. Just add this to your pom.xml:</p>
+<div class="highlight"><pre><code class="language-xml" data-lang="xml">  <span class="nt">&lt;plugin&gt;</span>
+    <span class="nt">&lt;artifactId&gt;</span>maven-assembly-plugin<span class="nt">&lt;/artifactId&gt;</span>
+    <span class="nt">&lt;configuration&gt;</span>
+      <span class="nt">&lt;descriptorRefs&gt;</span>  
+        <span class="nt">&lt;descriptorRef&gt;</span>jar-with-dependencies<span class="nt">&lt;/descriptorRef&gt;</span>
+      <span class="nt">&lt;/descriptorRefs&gt;</span>
+      <span class="nt">&lt;archive&gt;</span>
+        <span class="nt">&lt;manifest&gt;</span>
+          <span class="nt">&lt;mainClass&gt;</span>com.path.to.main.Class<span class="nt">&lt;/mainClass&gt;</span>
+        <span class="nt">&lt;/manifest&gt;</span>
+      <span class="nt">&lt;/archive&gt;</span>
+    <span class="nt">&lt;/configuration&gt;</span>
+  <span class="nt">&lt;/plugin&gt;</span>
+</code></pre></div>
+<p>Then run mvn assembly:assembly to get an appropriately packaged jar. Make sure you <a href="http://maven.apache.org/plugins/maven-assembly-plugin/examples/single/including-and-excluding-artifacts.html" target="_blank">exclude</a> the Storm jars since the cluster already has Storm on the classpath.</p>
+
+<p>4) Submit the topology to the cluster using the <code>storm</code> client, specifying the path to your jar, the classname to run, and any arguments it will use:</p>
+
+<p><code>storm jar path/to/allmycode.jar org.me.MyTopology arg1 arg2 arg3</code></p>
+
+<p><code>storm jar</code> will submit the jar to the cluster and configure the <code>StormSubmitter</code> class to talk to the right cluster. In this example, after uploading the jar <code>storm jar</code> calls the main function on <code>org.me.MyTopology</code> with the arguments "arg1", "arg2", and "arg3".</p>
+
+<p>You can find out how to configure your <code>storm</code> client to talk to a Storm cluster on <a href="setting-up.html">Setting up development environment</a>.</p>
+
+<h3>Common configurations</h3>
+
+<p>There are a variety of configurations you can set per topology. A list of all the configurations you can set can be found <a href="https://storm.apache.org/javadoc/apidocs/backtype/storm/Config.html" target="_blank">here</a>. The ones prefixed with "TOPOLOGY" can be overridden on a topology-specific basis (the other ones are cluster configurations and cannot be overridden). Here are some common ones that are set for a topology:</p>
+
+<ol>
+<li><strong>Config.TOPOLOGY_WORKERS</strong>: This sets the number of worker processes to use to execute the topology. For example, if you set this to 25, there will be 25 Java processes across the cluster executing all the tasks. If you had a combined 150 parallelism across all components in the topology, each worker process will have 6 tasks running within it as threads.</li>
+<li><strong>Config.TOPOLOGY_ACKERS</strong>: This sets the number of tasks that will track tuple trees and detect when a spout tuple has been fully processed. Ackers are an integral part of Storm's reliability model and you can read more about them on <a href="guaranteeing-message-processing.html">Guaranteeing message processing</a>.</li>
+<li><strong>Config.TOPOLOGY_MAX_SPOUT_PENDING</strong>: This sets the maximum number of spout tuples that can be pending on a single spout task at once (pending means the tuple has not been acked or failed yet). It is highly recommended you set this config to prevent queue explosion.</li>
+<li><strong>Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS</strong>: This is the maximum amount of time a spout tuple has to be fully completed before it is considered failed. This value defaults to 30 seconds, which is sufficient for most topologies. See <a href="guaranteeing-message-processing.html">Guaranteeing message processing</a> for more information on how Storm's reliability model works.</li>
+<li><strong>Config.TOPOLOGY_SERIALIZATIONS</strong>: You can register more serializers to Storm using this config so that you can use custom types within tuples.</li>
+</ol>
+
+<h3>Killing a topology</h3>
+
+<p>To kill a topology, simply run:</p>
+
+<p><code>storm kill {stormname}</code></p>
+
+<p>Give the same name to <code>storm kill</code> as you used when submitting the topology.</p>
+
+<p>Storm won't kill the topology immediately. Instead, it deactivates all the spouts so that they don't emit any more tuples, and then Storm waits Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS seconds before destroying all the workers. This gives the topology enough time to complete any tuples it was processing when it got killed.</p>
+
+<h3>Updating a running topology</h3>
+
+<p>To update a running topology, the only option currently is to kill the current topology and resubmit a new one. A planned feature is to implement a <code>storm swap</code> command that swaps a running topology with a new one, ensuring minimal downtime and no chance of both topologies processing tuples at the same time. </p>
+
+<h3>Monitoring topologies</h3>
+
+<p>The best place to monitor a topology is using the Storm UI. The Storm UI provides information about errors happening in tasks and fine-grained stats on the throughput and latency performance of each component of each running topology.</p>
+
+<p>You can also look at the worker logs on the cluster machines.</p>
+            </div>
+        </div>
+    </div>
+</div>
+<!--Content End-->
