@@ -85,7 +85,7 @@ abstract class StormCommandExecutor {
 
 class UnixStormCommandExecutor extends StormCommandExecutor {
 
-    UnixStormCommandExecutor() {
+    UnixStormCommandExecutor () {
 
     }
 
@@ -282,12 +282,17 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         commandList.addAll(jvmOptions);
         commandList.add(className);
         commandList.addAll(args);
-        System.out.println("Executing the command: ");
-        System.out.println(StringUtils.join(commandList, " "));
         ProcessBuilder processBuilder = new ProcessBuilder(commandList);
         processBuilder.inheritIO();
         try {
             Process process = processBuilder.start();
+            System.out.println("Executing the command: ");
+            String commandLine = StringUtils.join(commandList, " ");
+            System.out.println(commandLine);
+            if (daemon == true) {
+                Runtime.getRuntime().addShutdownHook(new ShutdownHookThread
+                        (process, commandLine));
+            }
             System.out.println("Waiting for subprocess to finish");
             process.waitFor();
             System.out.println("subprocess finished");
@@ -547,7 +552,7 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
 
 class WindowsStormCommandExecutor extends StormCommandExecutor {
 
-    WindowsStormCommandExecutor() {
+    WindowsStormCommandExecutor () {
 
     }
 
@@ -561,3 +566,24 @@ class WindowsStormCommandExecutor extends StormCommandExecutor {
 
 }
 
+class ShutdownHookThread extends Thread {
+    private Process process;
+    String commandLine;
+    ShutdownHookThread (Process process, String commandLine) {
+        this.process = process;
+        this.commandLine = commandLine;
+    }
+
+    public void run () {
+        System.out.println("Executing the shutdown hook for " +
+                "StormCommandExecutor subprocess");
+        if (this.process != null) {
+            System.out.println("Killing the sub-process for command: " +
+                    (this.commandLine != null ? this.commandLine : "Empty " +
+                    "commandLine found"));
+            this.process.destroy();
+        } else{
+            System.out.println("Null process object found. No process to kill");
+        }
+    }
+}
