@@ -357,7 +357,7 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         extraPaths.add(this.stormBinDirectory);
         this.executeStormClass("backtype.storm.command.kill_topology",
                 "-client", new ArrayList<String>(), extraPaths, args, false,
-                true, "");
+                false, "");
         return;
     }
 
