@@ -22,6 +22,7 @@ abstract class StormCommandExecutor {
     final String UI_CLASS = "backtype.storm.ui.core";
     final String LOGVIEWER_CLASS = "backtype.storm.daemon.logviewer";
     final String DRPC_CLASS = "backtype.storm.daemon.drpc";
+    final String REPL_CLASS = "clojure.main";
     String stormHomeDirectory;
     String userConfDirectory;
     String stormConfDirectory;
@@ -509,6 +510,18 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         for (String s: args) {
             System.out.println(s);
         }
+        if ((args == null) || (args.size() == 0)) {
+            System.out.println("Not enough arguments for localconfvalue " +
+                    "command");
+            System.out.println("Please pass the name of the config value you " +
+                    "want to be printed");
+            //TODO print command help for localconfvalue command
+        }
+        List<String> extraPaths = new ArrayList<String>();
+        extraPaths.add(this.userConfDirectory);
+        System.out.println(args.get(0) + ": " + this.confValue(args.get(0),
+                extraPaths,
+                true));
         return;
     }
 
@@ -518,6 +531,18 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         for (String s: args) {
             System.out.println(s);
         }
+        if ((args == null) || (args.size() == 0)) {
+            System.out.println("Not enough arguments for remoteconfvalue " +
+                    "command");
+            System.out.println("Please pass the name of the config value you " +
+                    "want to be printed");
+            //TODO print command help for remoteconfvalue command
+        }
+        List<String> extraPaths = new ArrayList<String>();
+        extraPaths.add(this.clusterConfDirectory);
+        System.out.println(args.get(0) + ": " + this.confValue(args.get(0),
+                extraPaths,
+                true));
         return;
     }
 
@@ -527,6 +552,11 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         for (String s: args) {
             System.out.println(s);
         }
+        List<String> extraPaths = new ArrayList<String>();
+        extraPaths.add(this.clusterConfDirectory);
+        this.executeStormClass(this.REPL_CLASS, "-client", new
+                ArrayList<String>(), extraPaths, new ArrayList<String>(),
+                false, true, "");
         return;
     }
 
@@ -536,6 +566,7 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         for (String s: args) {
             System.out.println(s);
         }
+        System.out.println(this.getClassPath(new ArrayList<String>(), true));
         return;
     }
 
