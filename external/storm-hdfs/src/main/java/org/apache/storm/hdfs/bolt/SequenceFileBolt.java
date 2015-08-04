@@ -24,10 +24,15 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.compress.CompressionCodecFactory;
+import org.apache.storm.hdfs.bolt.format.DefaultFileNameFormat;
+import org.apache.storm.hdfs.bolt.format.DefaultSequenceFormat;
 import org.apache.storm.hdfs.bolt.format.FileNameFormat;
 import org.apache.storm.hdfs.bolt.format.SequenceFormat;
 import org.apache.storm.hdfs.bolt.rotation.FileRotationPolicy;
+import org.apache.storm.hdfs.bolt.rotation.FileSizeRotationPolicy;
 import org.apache.storm.hdfs.bolt.sync.SyncPolicy;
+import org.apache.storm.hdfs.bolt.sync.CountSyncPolicy;
+import org.apache.storm.hdfs.common.rotation.MoveFileAction;
 import org.apache.storm.hdfs.common.rotation.RotationAction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,8 +50,23 @@ public class SequenceFileBolt extends AbstractHdfsBolt {
 
     private String compressionCodec = "default";
     private transient CompressionCodecFactory codecFactory;
+    private static String sourceDir = "/tmp/source";
+    private static String destDir = "/tmp/dest";
 
     public SequenceFileBolt() {
+      this(sourceDir,destDir);
+    }
+
+    public SequenceFileBolt(String sourceDir, String destDir) {
+        this.withFileNameFormat(new DefaultFileNameFormat()
+                                      .withPath(sourceDir)
+                                      .withExtension(".seq"))
+            .withSequenceFormat(new DefaultSequenceFormat("timestamp", "sentence"))
+            .withRotationPolicy(new FileSizeRotationPolicy(5.0f, FileSizeRotationPolicy.Units.MB))
+            .withSyncPolicy(new CountSyncPolicy(1000))
+            .withCompressionType(SequenceFile.CompressionType.RECORD)
+            .withCompressionCodec("deflate")
+            .addRotationAction(new MoveFileAction().toDestination(destDir));
     }
 
     public SequenceFileBolt withCompressionCodec(String codec){

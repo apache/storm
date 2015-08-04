@@ -56,29 +56,8 @@ public class SequenceFileTopology {
 
         SentenceSpout spout = new SentenceSpout();
 
-        // sync the filesystem after every 1k tuples
-        SyncPolicy syncPolicy = new CountSyncPolicy(1000);
-
-        // rotate files when they reach 5MB
-        FileRotationPolicy rotationPolicy = new FileSizeRotationPolicy(5.0f, Units.MB);
-
-        FileNameFormat fileNameFormat = new DefaultFileNameFormat()
-                .withPath("/tmp/source/")
-                .withExtension(".seq");
-
-        // create sequence format instance.
-        DefaultSequenceFormat format = new DefaultSequenceFormat("timestamp", "sentence");
-
         SequenceFileBolt bolt = new SequenceFileBolt()
-                .withFsUrl(args[0])
-                .withFileNameFormat(fileNameFormat)
-                .withSequenceFormat(format)
-                .withRotationPolicy(rotationPolicy)
-                .withSyncPolicy(syncPolicy)
-                .withCompressionType(SequenceFile.CompressionType.RECORD)
-                .withCompressionCodec("deflate")
-                .addRotationAction(new MoveFileAction().toDestination("/tmp/dest/"));
-
+                .withFsUrl(args[0]);
 
 
 

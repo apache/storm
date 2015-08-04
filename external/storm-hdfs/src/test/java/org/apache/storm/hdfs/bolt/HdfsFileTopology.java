@@ -58,18 +58,10 @@ public class HdfsFileTopology {
     public static void main(String[] args) throws Exception {
         Config config = new Config();
         config.setNumWorkers(1);
+        String sourceDir = "/tmp/foo";
+        String destDir = "tmp/dest";
 
         SentenceSpout spout = new SentenceSpout();
-
-        // sync the filesystem after every 1k tuples
-        SyncPolicy syncPolicy = new CountSyncPolicy(1000);
-
-        // rotate files when they reach 5MB
-        FileRotationPolicy rotationPolicy = new TimedRotationPolicy(1.0f, TimedRotationPolicy.TimeUnit.MINUTES);
-
-        FileNameFormat fileNameFormat = new DefaultFileNameFormat()
-                .withPath("/tmp/foo/")
-                .withExtension(".txt");
 
         // use "|" instead of "," for field delimiter
         RecordFormat format = new DelimitedRecordFormat()
@@ -81,14 +73,8 @@ public class HdfsFileTopology {
         in.close();
         config.put("hdfs.config", yamlConf);
 
-        HdfsBolt bolt = new HdfsBolt()
-                .withConfigKey("hdfs.config")
-                .withFsUrl(args[0])
-                .withFileNameFormat(fileNameFormat)
-                .withRecordFormat(format)
-                .withRotationPolicy(rotationPolicy)
-                .withSyncPolicy(syncPolicy)
-                .addRotationAction(new MoveFileAction().toDestination("/tmp/dest2/"));
+        HdfsBolt bolt = new TSVFileBolt(sourceDir,destDir)
+                .withFsUrl(args[0]);
 
         TopologyBuilder builder = new TopologyBuilder();
 

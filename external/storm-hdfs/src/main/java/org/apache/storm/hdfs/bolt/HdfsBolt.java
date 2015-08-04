@@ -25,10 +25,15 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.client.HdfsDataOutputStream;
 import org.apache.hadoop.hdfs.client.HdfsDataOutputStream.SyncFlag;
+import org.apache.storm.hdfs.bolt.format.DefaultFileNameFormat;
+import org.apache.storm.hdfs.bolt.format.DelimitedRecordFormat;
 import org.apache.storm.hdfs.bolt.format.FileNameFormat;
 import org.apache.storm.hdfs.bolt.format.RecordFormat;
 import org.apache.storm.hdfs.bolt.rotation.FileRotationPolicy;
+import org.apache.storm.hdfs.bolt.rotation.TimedRotationPolicy;
+import org.apache.storm.hdfs.bolt.sync.CountSyncPolicy;
 import org.apache.storm.hdfs.bolt.sync.SyncPolicy;
+import org.apache.storm.hdfs.common.rotation.MoveFileAction;
 import org.apache.storm.hdfs.common.rotation.RotationAction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +49,25 @@ public class HdfsBolt extends AbstractHdfsBolt{
     private transient FSDataOutputStream out;
     private RecordFormat format;
     private long offset = 0;
+    private static String defaultSourceDir = "/tmp/source";
+    private static String defaultDestDir = "/tmp/dest";
+    private static String defaultFileExtension = ".txt";
+
+
+    public HdfsBolt() {
+      this(defaultSourceDir, defaultDestDir, defaultFileExtension);
+    }
+
+    public HdfsBolt(String defaultSourceDir, String defaultDestDir, String fileExtension) {
+      this.withRotationPolicy(new TimedRotationPolicy(1.0f, TimedRotationPolicy.TimeUnit.MINUTES))
+          .withConfigKey("hdfs.config")
+          .withRecordFormat(new DelimitedRecordFormat().withRecordDelimiter("|"))
+          .withFileNameFormat(new DefaultFileNameFormat()
+                  .withPath(defaultSourceDir)
+                  .withExtension(fileExtension))
+          .withSyncPolicy(new CountSyncPolicy(1000))
+          .addRotationAction(new MoveFileAction().toDestination(defaultDestDir));
+    }
 
     public HdfsBolt withFsUrl(String fsUrl){
         this.fsUrl = fsUrl;
