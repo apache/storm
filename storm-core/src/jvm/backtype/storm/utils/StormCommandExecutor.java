@@ -18,6 +18,10 @@ import org.apache.commons.lang.SystemUtils;
  */
 abstract class StormCommandExecutor {
     final String NIMBUS_CLASS = "backtype.storm.daemon.nimbus";
+    final String SUPERVISOR_CLASS = "backtype.storm.daemon.supervisor";
+    final String UI_CLASS = "backtype.storm.ui.core";
+    final String LOGVIEWER_CLASS = "backtype.storm.daemon.logviewer";
+    final String DRPC_CLASS = "backtype.storm.daemon.drpc";
     String stormHomeDirectory;
     String userConfDirectory;
     String stormConfDirectory;
@@ -310,6 +314,30 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         for (String s: args) {
             System.out.println(s);
         }
+        if ((args == null) || (args.size() < 2)) {
+            System.out.println("Not enough arguments for storm jar command");
+            System.out.println("Please pass a jar file location and the " +
+                    "topology class for jar command");
+            //TODO print usage for jar command here
+            System.exit(-1);
+        }
+        String jarJvmOptions = System.getenv("STORM_JAR_JVM_OPTS");
+        List<String> jvmOptions = new ArrayList<String>();
+        if (jarJvmOptions != null) {
+            //TODO the python code to parse STORM_JAR_JVM_OPTIONS uses shlex
+            // .split to get the different jvm options for the jar. For now
+            // keeping it simple and splitting on space. Need to be in synch
+            // with python. Not sure though if we really need to use a
+            // lexical parser
+            jvmOptions.addAll(Arrays.asList(jarJvmOptions.split(" ")));
+        }
+        jvmOptions.add("-Dstorm.jar=" + args.get(0));
+        List<String> extraPaths = new ArrayList<String>();
+        extraPaths.add(args.get(0));
+        extraPaths.add(this.userConfDirectory);
+        extraPaths.add(this.stormBinDirectory);
+        this.executeStormClass(args.get(1), "-client", jvmOptions,
+                extraPaths, args.subList(2, args.size()), false, false, "");
         return;
     }
 
@@ -319,6 +347,17 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         for (String s: args) {
             System.out.println(s);
         }
+        if ((args == null) || (args.size() < 1)) {
+            System.out.println("Not enough arguments for storm kill command");
+            //TODO print usage for kill command here
+            System.exit(2);
+        }
+        List<String> extraPaths = new ArrayList<String>();
+        extraPaths.add(this.userConfDirectory);
+        extraPaths.add(this.stormBinDirectory);
+        this.executeStormClass("backtype.storm.command.kill_topology",
+                "-client", new ArrayList<String>(), extraPaths, args, false,
+                true, "");
         return;
     }
 
@@ -363,6 +402,24 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         for (String s: args) {
             System.out.println(s);
         }
+        List<String> jvmOptions = new ArrayList<String>();
+        List<String> extraPaths = new ArrayList<String>();
+        extraPaths.add(this.clusterConfDirectory);
+        String uiOptions = this.confValue("ui.childopts", extraPaths,
+                true);
+        // below line is different from original python script storm.py where
+        // it called parse_args method on nimbusOptions. Now we just call a
+        // split with a space.  Hence this will have different behavior and
+        // a buggy one if the nimbusOptions string in the config file has a
+        // space. TODO need to fix this
+        jvmOptions.addAll(Arrays.asList(uiOptions.split(" ")));
+        jvmOptions.add("-Dlogfile.name=ui.log");
+        jvmOptions.add("-Dlog4j.configurationFile=" + this
+                .getLog4jConfigDirectory() + this.fileSeparator + "cluster" +
+                ".xml");
+        extraPaths.add(0, this.stormHomeDirectory);
+        this.executeStormClass(this.UI_CLASS, "-server", jvmOptions,
+                extraPaths, new ArrayList<String>(), false, true, "ui");
         return;
     }
 
@@ -372,6 +429,24 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         for (String s: args) {
             System.out.println(s);
         }
+        List<String> jvmOptions = new ArrayList<String>();
+        List<String> extraPaths = new ArrayList<String>();
+        extraPaths.add(this.clusterConfDirectory);
+        String logviewerOptions = this.confValue("logviewer.childopts",
+                extraPaths, true);
+        // below line is different from original python script storm.py where
+        // it called parse_args method on nimbusOptions. Now we just call a
+        // split with a space.  Hence this will have different behavior and
+        // a buggy one if the nimbusOptions string in the config file has a
+        // space. TODO need to fix this
+        jvmOptions.addAll(Arrays.asList(logviewerOptions.split(" ")));
+        jvmOptions.add("-Dlogfile.name=logviewer.log");
+        jvmOptions.add("-Dlog4j.configurationFile=" + this
+                .getLog4jConfigDirectory() + this.fileSeparator + "cluster" +
+                ".xml");
+        extraPaths.add(0, this.stormHomeDirectory);
+        this.executeStormClass(this.LOGVIEWER_CLASS, "-server", jvmOptions,
+                extraPaths, new ArrayList<String>(), false, true, "logviewer");
         return;
     }
 
@@ -381,6 +456,23 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         for (String s: args) {
             System.out.println(s);
         }
+        List<String> jvmOptions = new ArrayList<String>();
+        List<String> extraPaths = new ArrayList<String>();
+        extraPaths.add(this.clusterConfDirectory);
+        String drpcOptions = this.confValue("drpc.childopts", extraPaths,
+                true);
+        // below line is different from original python script storm.py where
+        // it called parse_args method on nimbusOptions. Now we just call a
+        // split with a space.  Hence this will have different behavior and
+        // a buggy one if the nimbusOptions string in the config file has a
+        // space. TODO need to fix this
+        jvmOptions.addAll(Arrays.asList(drpcOptions.split(" ")));
+        jvmOptions.add("-Dlogfile.name=drpc.log");
+        jvmOptions.add("-Dlog4j.configurationFile=" + this
+                .getLog4jConfigDirectory() + this.fileSeparator + "cluster" +
+                ".xml");
+        this.executeStormClass(this.DRPC_CLASS, "-server", jvmOptions,
+                extraPaths, new ArrayList<String>(), false, true, "drpc");
         return;
     }
 
@@ -390,6 +482,24 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         for (String s: args) {
             System.out.println(s);
         }
+        List<String> jvmOptions = new ArrayList<String>();
+        List<String> extraPaths = new ArrayList<String>();
+        extraPaths.add(this.clusterConfDirectory);
+        String supervisorOptions = this.confValue("supervisor.childopts",
+                extraPaths,
+                true);
+        // below line is different from original python script storm.py where
+        // it called parse_args method on nimbusOptions. Now we just call a
+        // split with a space.  Hence this will have different behavior and
+        // a buggy one if the nimbusOptions string in the config file has a
+        // space. TODO need to fix this
+        jvmOptions.addAll(Arrays.asList(supervisorOptions.split(" ")));
+        jvmOptions.add("-Dlogfile.name=supervisor.log");
+        jvmOptions.add("-Dlog4j.configurationFile=" + this
+                .getLog4jConfigDirectory() + this.fileSeparator + "cluster" +
+                ".xml");
+        this.executeStormClass(this.SUPERVISOR_CLASS, "-server", jvmOptions,
+                extraPaths, new ArrayList<String>(), false, true, "supervisor");
         return;
     }
 
