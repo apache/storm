@@ -4,6 +4,10 @@
  * STORM-810: PartitionManager in storm-kafka should commit latest offset before close
  * STORM-928: Add sources->streams->fields map to Multi-Lang Handshake
  * STORM-945: <DefaultRolloverStrategy> element is not a policy,and should not be putted in the <Policies> element.
+ * STORM-857: create logs metadata dir when running securely
+ * STORM-793: Made change to logviewer.clj in order to remove the invalid http 500 response
+ * STORM-139: hashCode does not work for byte[]
+ * STORM-860: UI: while topology is transitioned to killed, "Activate" button is enabled but not functioning
 
 ## 0.10.0-beta1
  * STORM-873: Flux does not handle diamond topologies
