@@ -23,6 +23,10 @@ abstract class StormCommandExecutor {
     final String LOGVIEWER_CLASS = "backtype.storm.daemon.logviewer";
     final String DRPC_CLASS = "backtype.storm.daemon.drpc";
     final String REPL_CLASS = "clojure.main";
+    final String ACTIVATE_CLASS = "backtype.storm.command.activate";
+    final String DEACTIVATE_CLASS = "backtype.storm.command.deactivate";
+    final String REBALANCE_CLASS = "backtype.storm.command.rebalance";
+    final String LIST_CLASS = "backtype.storm.command.list";
     String stormHomeDirectory;
     String userConfDirectory;
     String stormConfDirectory;
@@ -362,6 +366,7 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         return;
     }
 
+    //TODO implement shell command after understanding more about it
     void shellCommand (List<String> args) {
         System.out.println("Called shellCommand using reflection");
         System.out.println("Arguments are : ");
@@ -516,6 +521,7 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
             System.out.println("Please pass the name of the config value you " +
                     "want to be printed");
             //TODO print command help for localconfvalue command
+            System.exit(2);
         }
         List<String> extraPaths = new ArrayList<String>();
         extraPaths.add(this.userConfDirectory);
@@ -537,6 +543,7 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
             System.out.println("Please pass the name of the config value you " +
                     "want to be printed");
             //TODO print command help for remoteconfvalue command
+            System.exit(2);
         }
         List<String> extraPaths = new ArrayList<String>();
         extraPaths.add(this.clusterConfDirectory);
@@ -555,7 +562,7 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         List<String> extraPaths = new ArrayList<String>();
         extraPaths.add(this.clusterConfDirectory);
         this.executeStormClass(this.REPL_CLASS, "-client", new
-                ArrayList<String>(), extraPaths, new ArrayList<String>(),
+                        ArrayList<String>(), extraPaths, new ArrayList<String>(),
                 false, true, "");
         return;
     }
@@ -576,6 +583,17 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         for (String s: args) {
             System.out.println(s);
         }
+        if ((args == null) || (args.size() < 1)) {
+            System.out.println("Not enough arguments for activate command");
+            System.out.println("Please pass the topology name to activate");
+            //TODO print usage for activate command here
+            System.exit(2);
+        }
+        List<String> extraPaths = new ArrayList<String>();
+        extraPaths.add(this.userConfDirectory);
+        extraPaths.add(this.stormBinDirectory);
+        this.executeStormClass(this.ACTIVATE_CLASS, "-client", new
+                ArrayList<String>(), extraPaths, args, false, false, "");
         return;
     }
 
@@ -585,6 +603,17 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         for (String s: args) {
             System.out.println(s);
         }
+        if ((args == null) || (args.size() < 1)) {
+            System.out.println("Not enough arguments for deactivate command");
+            System.out.println("Please pass the topology name to deactivate");
+            //TODO print usage for deactivate command here
+            System.exit(2);
+        }
+        List<String> extraPaths = new ArrayList<String>();
+        extraPaths.add(this.userConfDirectory);
+        extraPaths.add(this.stormBinDirectory);
+        this.executeStormClass(this.DEACTIVATE_CLASS, "-client", new
+                ArrayList<String>(), extraPaths, args, false, false, "");
         return;
     }
 
@@ -594,6 +623,17 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         for (String s: args) {
             System.out.println(s);
         }
+        if ((args == null) || (args.size() < 1)) {
+            System.out.println("Not enough arguments for rebalance command");
+            System.out.println("Please pass the topology name to rebalance");
+            //TODO print usage for rebalance command here
+            System.exit(2);
+        }
+        List<String> extraPaths = new ArrayList<String>();
+        extraPaths.add(this.userConfDirectory);
+        extraPaths.add(this.stormBinDirectory);
+        this.executeStormClass(this.REBALANCE_CLASS, "-client", new
+                ArrayList<String>(), extraPaths, args, false, false, "");
         return;
     }
 
@@ -602,6 +642,16 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         System.out.println("Arguments are : ");
         for (String s: args) {
             System.out.println(s);
+        }
+        if ((args == null) || (args.size() == 0)) {
+            this.printUsage();
+        } else {
+            if ((!this.COMMANDS.contains(args.get(0)))) {
+                System.out.println(args.get(0) + " is not a valid command");
+            } else {
+                //TODO print indivudual commands help here
+                System.out.println("Print command specific help here");
+            }
         }
         return;
     }
@@ -612,6 +662,11 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         for (String s: args) {
             System.out.println(s);
         }
+        List<String> extraPaths = new ArrayList<String>();
+        extraPaths.add(this.userConfDirectory);
+        extraPaths.add(this.stormBinDirectory);
+        this.executeStormClass(this.LIST_CLASS, "-client", new
+                ArrayList<String>(), extraPaths, args, false, false, "");
         return;
     }
 
