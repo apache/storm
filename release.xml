@@ -8,25 +8,25 @@
 	</formats>
 	<files>
 		<file>
-			<source>jstorm-server/bin/jstorm.py</source>
+			<source>bin/jstorm.py</source>
 			<outputDirectory>/bin</outputDirectory>
 			<fileMode>0755</fileMode>
 			<destName>jstorm</destName>
 		</file>
 		<file>
-			<source>jstorm-server/bin/start.sh</source>
+			<source>bin/start.sh</source>
 			<outputDirectory>/bin</outputDirectory>
 			<fileMode>0755</fileMode>
 			<destName>start.sh</destName>
 		</file>
 		<file>
-			<source>jstorm-server/bin/stop.sh</source>
+			<source>bin/stop.sh</source>
 			<outputDirectory>/bin</outputDirectory>
 			<fileMode>0755</fileMode>
 			<destName>stop.sh</destName>
 		</file>
 		<file>
-			<source>./version</source>
+			<source>./jstorm-core/src/main/resources/version</source>
 			<outputDirectory>./</outputDirectory>
 			<destName>RELEASE</destName>
 		</file>
@@ -34,6 +34,11 @@
 			<source>./history.md</source>
 			<outputDirectory>./</outputDirectory>
 			<destName>history.md</destName>
+		</file>
+		<file>
+			<source>./history_cn.md</source>
+			<outputDirectory>./</outputDirectory>
+			<destName>history_cn.md</destName>
 		</file>
 		<file>
 			<source>./LICENSE</source>
@@ -55,14 +60,14 @@
 	</files>
 	<fileSets>
 		<fileSet>
-			<directory>jstorm-server/conf</directory>
+			<directory>./conf</directory>
 			<outputDirectory>/conf</outputDirectory>
 			<includes>
 				<include>**/*</include>
 			</includes>
 		</fileSet>
 		<fileSet>
-			<directory>jstorm-server/conf</directory>
+			<directory>./conf</directory>
 			<outputDirectory>/logs</outputDirectory>
 			<directoryMode>0755</directoryMode>
 			<excludes>
@@ -71,7 +76,7 @@
 		</fileSet>
 
 		<fileSet>
-			<directory>jstorm-server/conf</directory>
+			<directory>./conf</directory>
 			<outputDirectory>/data</outputDirectory>
 			<directoryMode>0755</directoryMode>
 			<excludes>
@@ -95,8 +100,7 @@
 				<dependencySets>
 					<dependencySet>
 						<excludes>
-							<exclude>com.alibaba.jstorm:jstorm-client</exclude>
-							<exclude>com.alibaba.jstorm:jstorm-client-extension</exclude>
+							<exclude>com.alibaba.jstorm:jstorm-core</exclude>
 						</excludes>
 						<outputDirectory>lib</outputDirectory>
 					</dependencySet>

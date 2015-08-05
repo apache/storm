@@ -1,0 +1,342 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+########### These all have default values as shown
+########### Additional configuration goes into storm.yaml
+
+java.library.path: "/usr/local/lib:/opt/local/lib:/usr/lib"
+
+### storm.* configs are general configurations
+# the local dir is where jars are kept
+storm.local.dir: "jstorm-local"
+storm.zookeeper.servers:
+    - "localhost"
+storm.zookeeper.port: 2181
+storm.zookeeper.root: "/jstorm"
+storm.zookeeper.session.timeout: 20000
+storm.zookeeper.connection.timeout: 15000
+storm.zookeeper.retry.times: 20
+storm.zookeeper.retry.interval: 1000
+storm.zookeeper.retry.intervalceiling.millis: 30000
+storm.zookeeper.auth.user: null
+storm.zookeeper.auth.password: null
+storm.cluster.mode: "distributed" # can be distributed or local
+storm.local.mode.zmq: false
+storm.thrift.transport: "backtype.storm.security.auth.SimpleTransportPlugin"
+storm.principal.tolocal: "backtype.storm.security.auth.DefaultPrincipalToLocal"
+storm.group.mapping.service: "backtype.storm.security.auth.ShellBasedGroupsMapping"
+storm.messaging.transport: "com.alibaba.jstorm.message.netty.NettyContext"
+storm.nimbus.retry.times: 5
+storm.nimbus.retry.interval.millis: 2000
+storm.nimbus.retry.intervalceiling.millis: 60000
+storm.auth.simple-white-list.users: []
+storm.auth.simple-acl.users: []
+storm.auth.simple-acl.users.commands: []
+storm.auth.simple-acl.admins: []
+storm.meta.serialization.delegate: "backtype.storm.serialization.DefaultSerializationDelegate"
+
+### nimbus.* configs are for the master
+nimbus.host: "localhost"
+nimbus.thrift.port: 7627
+nimbus.thrift.max_buffer_size: 10485760
+nimbus.childopts: " -Xms4g -Xmx4g -Xmn1536m -XX:PermSize=256m  -XX:SurvivorRatio=4 -XX:MaxTenuringThreshold=20 -XX:+UseConcMarkSweepGC  -XX:+UseCMSInitiatingOccupancyOnly -XX:CMSInitiatingOccupancyFraction=70 -XX:CMSFullGCsBeforeCompaction=5 -XX:+HeapDumpOnOutOfMemoryError  -XX:+UseCMSCompactAtFullCollection -XX:CMSMaxAbortablePrecleanTime=5000 "
+nimbus.task.timeout.secs: 240
+nimbus.supervisor.timeout.secs: 180
+nimbus.monitor.freq.secs: 10
+nimbus.cleanup.inbox.freq.secs: 600
+nimbus.inbox.jar.expiration.secs: 3600
+nimbus.task.launch.secs: 240
+nimbus.reassign: true
+nimbus.file.copy.expiration.secs: 120
+nimbus.topology.validator: "backtype.storm.nimbus.DefaultTopologyValidator"
+nimbus.classpath: ""
+nimbus.use.ip: true
+nimbus.credential.renewers.freq.secs: 600
+## Two type cache 
+## "com.alibaba.jstorm.cache.TimeoutMemCache" is suitable for small cluster
+## "com.alibaba.jstorm.cache.TimeoutMemCache" can only run under linux/mac, it is suitable for huge cluster
+## if it is null, it will detected by environment
+nimbus.cache.class: null
+## if this is true, nimbus db cache will be reset when start nimbus
+nimbus.cache.reset: true
+cache.timeout.list: null
+
+### ui.* configs are for the master
+ui.port: 8080
+ui.childopts: " -Xms1g -Xmx1g -Xmn256m -XX:PermSize=96m -XX:+UseConcMarkSweepGC  -XX:+UseCMSInitiatingOccupancyOnly -XX:CMSInitiatingOccupancyFraction=70 -XX:CMSFullGCsBeforeCompaction=5 -XX:+HeapDumpOnOutOfMemoryError  -XX:+UseCMSCompactAtFullCollection -XX:CMSMaxAbortablePrecleanTime=5000 "
+ui.actions.enabled: true
+ui.filter: null
+ui.filter.params: null
+ui.users: null
+ui.header.buffer.bytes: 4096
+ui.http.creds.plugin: backtype.storm.security.auth.DefaultHttpCredentialsPlugin
+
+logviewer.port: 8000
+logviewer.childopts: "-Xmx128m"
+logviewer.cleanup.age.mins: 10080
+logviewer.appender.name: "A1"
+
+logs.users: null
+drpc.port: 4772
+drpc.worker.threads: 64
+drpc.max_buffer_size: 1048576
+drpc.queue.size: 128
+drpc.invocations.port: 4773
+drpc.invocations.threads: 64
+drpc.request.timeout.secs: 600
+drpc.childopts: " -Xms1g -Xmx1g -Xmn256m -XX:PermSize=96m -Xmn128m -XX:PermSize=64m -XX:+UseConcMarkSweepGC  -XX:+UseCMSInitiatingOccupancyOnly -XX:CMSInitiatingOccupancyFraction=70 -XX:CMSFullGCsBeforeCompaction=5 -XX:+HeapDumpOnOutOfMemoryError  -XX:+UseCMSCompactAtFullCollection -XX:CMSMaxAbortablePrecleanTime=5000 "
+drpc.http.port: 3774
+drpc.https.port: -1
+drpc.https.keystore.password: ""
+drpc.https.keystore.type: "JKS"
+drpc.http.creds.plugin: backtype.storm.security.auth.DefaultHttpCredentialsPlugin
+drpc.authorizer.acl.filename: "drpc-auth-acl.yaml"
+drpc.authorizer.acl.strict: false
+
+transactional.zookeeper.root: "/transactional"
+transactional.zookeeper.servers: null
+transactional.zookeeper.port: null
+# 
+# 
+# ##### These may optionally be filled in:
+#    
+## Map of tokens to a serialization class. tokens less than 32 are reserved by storm.
+## Tokens are written on the wire to identify the field.
+# topology.serializations: 
+#     - "org.mycompany.MyObjectSerialization"
+#     - "org.mycompany.MyOtherObjectSerialization"
+## Locations of the drpc servers
+drpc.servers:
+     - "localhost"
+
+### supervisor.* configs are for node supervisors
+# Define the amount of workers that can be run on this machine. Each worker is assigned a port to use for communication
+
+# if supervisor.slots.ports is null, 
+# the port list will be generated by cpu cores and system memory size 
+# for example, if there are 24 cpu cores and supervisor.slots.port.cpu.weight is 1.2
+# then there are 24/1.2 ports for cpu, 
+# there are system_physical_memory_size/worker.memory.size ports for memory 
+# The final port number is min(cpu_ports, memory_port)
+supervisor.slots.ports.base: 6800
+supervisor.slots.port.cpu.weight: 1
+supervisor.slots.ports: null
+#supervisor.slots.ports:
+#    - 6800
+#    - 6801
+#    - 6802
+#    - 6803
+supervisor.childopts: " -Xms512m -Xmx512m -Xmn128m -XX:PermSize=64m -XX:+UseConcMarkSweepGC  -XX:+UseCMSInitiatingOccupancyOnly -XX:CMSInitiatingOccupancyFraction=70 -XX:CMSFullGCsBeforeCompaction=5 -XX:+HeapDumpOnOutOfMemoryError  -XX:+UseCMSCompactAtFullCollection -XX:CMSMaxAbortablePrecleanTime=5000 "
+supervisor.run.worker.as.user: false
+#how long supervisor will wait to ensure that a worker process is started
+supervisor.worker.start.timeout.secs: 120
+#how long between heartbeats until supervisor considers that worker dead and tries to restart it
+supervisor.worker.timeout.secs: 120
+#how many seconds to sleep for before shutting down threads on worker
+supervisor.worker.shutdown.sleep.secs: 1
+#how frequently the supervisor checks on the status of the processes it's monitoring and restarts if necessary
+supervisor.monitor.frequency.secs: 10
+#how frequently the supervisor heartbeats to the cluster state (for nimbus)
+supervisor.heartbeat.frequency.secs: 60
+supervisor.enable: true
+#if set null, it will be get by system
+supervisor.hostname: null
+# use ip
+supervisor.use.ip: true
+supervisor.supervisors: []
+supervisor.supervisors.commands: []
+
+### worker.* configs are for task workers
+# worker gc configuration
+# worker.gc.path will put all gc logs and memory dump file
+worker.gc.childopts: " -XX:SurvivorRatio=4 -XX:MaxTenuringThreshold=15 -XX:+UseConcMarkSweepGC  -XX:+UseCMSInitiatingOccupancyOnly -XX:CMSInitiatingOccupancyFraction=70 -XX:CMSFullGCsBeforeCompaction=5 -XX:+HeapDumpOnOutOfMemoryError -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseCMSCompactAtFullCollection -XX:CMSMaxAbortablePrecleanTime=5000 "
+worker.heartbeat.frequency.secs: 2
+worker.metric.report.frequency.secs: 60
+worker.classpath: ""
+worker.redirect.output: true
+# if worker.redirect.output.file is null, then it will be $LOG.out
+# please use absolute path
+worker.redirect.output.file: null
+
+
+# control how many worker receiver threads we need per worker
+topology.worker.receiver.thread.count: 1
+
+# when supervisor is shutdown, automatically shutdown worker
+worker.stop.without.supervisor: false
+worker.memory.size: 2147483648
+
+task.heartbeat.frequency.secs: 10
+task.refresh.poll.secs: 10
+# how long task do cleanup 
+task.cleanup.timeout.sec: 10
+task.credentials.poll.secs: 30
+
+zmq.threads: 1
+zmq.linger.millis: 5000
+zmq.hwm: 0
+
+# Netty thread num: 0 means no limit
+storm.messaging.netty.server_worker_threads: 1
+storm.messaging.netty.client_worker_threads: 1
+storm.messaging.netty.buffer_size: 5242880 #5MB buffer
+storm.messaging.netty.max_retries: 30
+storm.messaging.netty.max_wait_ms: 1000
+storm.messaging.netty.min_wait_ms: 100
+storm.messaging.netty.disruptor: true
+# If async and batch is used in netty transfer, netty will batch message
+storm.messaging.netty.transfer.async.batch: true
+# If the Netty messaging layer is busy(netty internal buffer not writable), the Netty client will try to batch message as more as possible up to the size of storm.messaging.netty.transfer.batch.size bytes, otherwise it will try to flush message as soon as possible to reduce latency.
+storm.messaging.netty.transfer.batch.size: 262144
+# Sets the backlog value to specify when the channel binds to a local address
+storm.messaging.netty.socket.backlog: 500
+# We check with this interval that whether the Netty channel is writable and try to write pending messages if it is.
+storm.messaging.netty.flush.check.interval.ms: 10
+# when netty connection is broken, 
+# when buffer size is more than storm.messaging.netty.buffer.threshold
+# it will slow down the netty sending speed
+storm.messaging.netty.buffer.threshold: 8388608
+storm.messaging.netty.max.pending: 4
+## send message with sync or async mode
+storm.messaging.netty.sync.mode: false
+## when netty is in sync mode and client channel is unavailable, 
+## it will block sending until channel is ready
+storm.messaging.netty.async.block: true
+
+# By default, the Netty SASL authentication is set to false.  Users can override and set it true for a specific topology.
+storm.messaging.netty.authentication: false
+
+# default number of seconds group mapping service will cache user group
+storm.group.mapping.service.cache.duration.secs: 120
+
+### topology.* configs are for specific executing storms
+topology.enable.message.timeouts: true
+topology.debug: false
+topology.optimize: true
+topology.workers: 1
+topology.acker.executors: null
+topology.tasks: null
+# maximum amount of time a message has to complete before it's considered failed
+topology.message.timeout.secs: 30
+topology.multilang.serializer: "backtype.storm.multilang.JsonSerializer"
+topology.skip.missing.kryo.registrations: false
+topology.max.task.parallelism: null
+# topology.spout.parallelism and topology.bolt.parallelism are used 
+# to change the component's parallelism when executing restart command
+#topology.spout.parallelism:
+#    { "spoutName" : Num}
+#topology.bolt.parallelism:
+#    { "BoltName_1" : Num, "BoltName_2" : Num }
+topology.max.spout.pending: null
+topology.state.synchronization.timeout.secs: 60
+topology.stats.sample.rate: 0.05
+topology.builtin.metrics.bucket.size.secs: 60
+topology.fall.back.on.java.serialization: true
+topology.worker.childopts: null
+topology.executor.receive.buffer.size: 1024 #batched
+topology.executor.send.buffer.size: 1024 #individual messages
+topology.receiver.buffer.size: 8 # setting it too high causes a lot of problems (heartbeat thread gets starved, throughput plummets)
+topology.transfer.buffer.size: 2048 # batched
+topology.buffer.size.limited: true #topology queue capacity is unlimited
+topology.tick.tuple.freq.secs: null
+topology.worker.shared.thread.pool.size: 4
+topology.disruptor.wait.strategy: "com.lmax.disruptor.TimeoutBlockingWaitStrategy"
+topology.disruptor.wait.timeout: 10 # ms
+topology.spout.wait.strategy: "backtype.storm.spout.SleepSpoutWaitStrategy"
+topology.sleep.spout.wait.strategy.time.ms: 1
+topology.error.throttle.interval.secs: 10
+topology.max.error.report.per.interval: 5
+topology.kryo.factory: "backtype.storm.serialization.DefaultKryoFactory"
+topology.tuple.serializer: "backtype.storm.serialization.types.ListDelegateSerializer"
+topology.trident.batch.emit.interval.millis: 500
+
+# jstorm metrics monitor configuration
+topology.performance.metrics: true
+topology.alimonitor.metrics.post: false
+topology.alimonitor.topo.metrics.name: "jstorm_metric"
+topology.alimonitor.task.metrics.name: "jstorm_task_metrics"
+topology.alimonitor.worker.metrics.name: "jstorm_worker_metrics"
+topology.alimonitor.user.metrics.name: "jstorm_user_metrics"
+topology.task.error.report.interval: 60
+
+# enable topology use user-define classloader to avoid class conflict
+topology.enable.classloader: false
+
+topology.testing.always.try.serialize: false
+topology.classpath: null
+topology.environment: null
+topology.bolts.outgoing.overflow.buffer.enable: false
+topology.enable.netty.metrics: null
+
+
+# enable supervisor use cgroup to make resource isolation
+# Before enable it, you should make sure:
+# 	1. Linux version (>= 2.6.18)
+# 	2. Have installed cgroup (check the file's existence:/proc/cgroups)
+#	3. You should start your supervisor on root
+# You can get more about cgroup:
+#   http://t.cn/8s7nexU
+#
+# For cgroup root dir, the full path is "/cgroup/cpu + root_dir".
+# The /cgroup/cpu part is fixed. The root dir is configurable, 
+# which should be consistent with the part configured in /etc/cgconfig.conf
+supervisor.enable.cgroup: false
+supervisor.cgroup.rootdir: "jstorm"
+worker.cpu.core.upper.limit: 3
+
+dev.zookeeper.path: "/tmp/dev-storm-zookeeper"
+
+#if this configuration has been set, 
+# the spout or bolt will log all received tuples
+# topology.debug just for logging all sent tuples 
+topology.debug.recv.tuple: false
+
+#Usually, spout finish preparation before bolt, 
+#so spout need wait several seconds so that bolt finish preparation
+# the default setting is 30 seconds
+spout.delay.run: 30
+
+#Force spout use single thread
+spout.single.thread: false
+
+#When spout pending number is full, spout nextTuple will do sleep operation
+spout.pending.full.sleep: true
+
+# container setting means jstorm is running under other system, such as hadoop-yarn/Ali-Apsara
+# For example, in Ali-Apsara, Fuxi start c++ container process, 
+# the C++ container fork process to start nimbus or supervisor 
+container.heartbeat.timeout.seconds: 240
+container.heartbeat.frequence: 10
+
+
+# enable java sandbox or not
+java.sandbox.enable: false.
+
+# logview port
+nimbus.deamon.logview.port: 7621
+supervisor.deamon.logview.port: 7622
+
+# logview encoding
+supervisor.deamon.logview.encoding: "utf-8"
+
+# one log page size
+log.page.size: 32768
+
+### when disruptor queue is full, sleep until queue isn't full
+### the default disruptor  will query disruptor until queue isn't full
+### this will cost much cpu
+disruptor.use.sleep: true

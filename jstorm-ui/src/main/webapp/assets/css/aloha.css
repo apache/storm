@@ -1,0 +1,25 @@
+.disp_table {
+    width: 100%;
+    line-height: 30px;
+    border-collapse: collapse;
+    border-width: 1px;
+    text-align: center;
+}
+
+.disp_table TH {
+    color: #428bca;
+    font-weight: bold;
+    background-color: #e5ecf9;
+    border: 1px solid #999;
+    padding: 2px 3px 2px 3px;
+}
+
+.disp_table TD {
+    border: 1px solid #999;
+    padding: 2px 3px 2px 5px;
+}
+
+.disp_table TR {
+    line-height: 30px;
+}
+

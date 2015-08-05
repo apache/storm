@@ -1,5 +1,82 @@
 [JStorm English introduction](http://42.121.19.155/jstorm/JStorm-introduce-en.pptx)
 [JStorm Chinese introduction](http://42.121.19.155/jstorm/JStorm-introduce.pptx)
+#Release 2.0.4-SNAPSHOT
+## New features
+1.完全重构采样系统， 使用全新的Rollingwindow和Metric计算方式，尤其是netty采样数据，另外metric 发送和接收将不通过zk
+2.完全重构web-ui
+3.引入rocketdb，增加nimbus cache layer
+4.梳理所有的zk节点和zk操作， 去掉无用的zk 操作
+5.梳理所有的thrift 数据结构和函数， 去掉无用的rpc函数
+6.将jstorm-client/jstorm-client-extension/jstorm-core整合为jstorm－core
+7.同步依赖和storm一样
+8.同步apache-storm-0.10.0-beta1 java 代码
+9.切换日志系统到logback
+10.升级thrift 到apache thrift 0.9.2
+11. 针对超大型任务600个worker／2000个task以上任务进行优化
+12. 要求 jdk7 or higher
+
+#Release 0.9.7.1
+## New features
+1. 增加Tuple自动batch的支持，以提高TPS以及降低消息处理延迟（task.batch.tuple=true，task.msg.batch.size=4）
+2. localFirst在本地节点处理能力跟不上时，自动对外部节点进行扩容
+3. 任务运行时，支持对任务配置的动态更新
+4. 支持任务对task心跳和task cleanup超时时间的自定义设置
+5. 增加disruptor queue对非阻塞模式TimeoutBlockingWaitStrategy的支持
+6. 增加Netty层消息发送超时时间设置的支持，以及Netty Client配置的优化
+7. 更新Tuple消息处理架构。去除不必要的总接收和总发送队列，减少消息流动环节，提高性能以及降低jstorm自身的cpu消耗。
+8. 增加客户端"--include-jars"， 提交任务时，可以依赖额外的jar
+9. 启动nimbus/supervisor时， 如果取得的是127.0.0.0地址时， 拒绝启动
+10. 增加自定义样例
+11. 合并supervisor 的zk同步线程syncSupervisor和worker同步线程syncProcess
+## 配置变更
+1. 默认超时心跳时间设置为4分钟
+2. 修改netty 线程池clientScheduleService大小为5
+## Bug fix
+1. 优化gc参数，4g以下内存的worker默认4个gc线程，4g以上内存， 按内存大小/1g * 1.5原则设置gc线程数量
+2. Fix在bolt处理速度慢时，可能出现的task心跳更新不及时的bug
+3. Fix在一些情况下，netty连接重连时的异常等待bug
+4. 提交任务时， 避免重复创建thrift client
+5. Fix 启动worker失败时，重复下载binary问题
+##运维和脚本
+1. 优化cleandisk.sh脚本， 防止把当前目录删除和/tmp/hsperfdata_admin/
+2. 增加example下脚本执行权限
+3. 添加参数supervisor.host.start: true/false，可以通过脚本start.sh批量控制启动supervisor或不启动supervisor，默认是启动supervisor
+
+#Release 0.9.7
+## New features
+1. 实现topology任务并发动态调整的功能。在任务不下线的情况下，可以动态的对worker，spout, bolt或者ack进行扩容或缩容。rebalance命令被扩展用于支持动态扩容/缩容功能。
+2. 当打开资源隔离时，增加worker对cpu核使用上限的控制
+3. 调整task心跳更新机制。保证能正确反映spout/bolt exectue主线程的状态。
+4. 对worker和task的日志，增加jstorm信息前缀(clusterName, topologyName, ip:port, componentName, taskId, taskIndex)的支持
+5. 对topology任务调度时，增加对supervisor心跳状态的检查，不往无响应的supervisor调度任务
+6. 增加metric查询API，如: task的队列负载情况，worker的cpu，memory使用情况
+7. 增加supervisor上对任务jar包下载的重试，让worker不会因为jar在下载过程中的损坏，而启动失败
+8. 增加ZK Cache功能, 加快zk 读取速度, 并对部分节点采取直读方式
+9. 增加thrift getVersion api， 当客户端和服务器端版本不一致是，报warning
+10. 增加supervisor 心跳检查， 会拒绝分配任务到supervisor心跳超时的supervisor
+11. 更新发送到Alimonitor的user defined metrics 数据结构
+12. 增加客户端exclude-jar 功能， 当客户端提交任务时，可以通过exclude-jar和classloader来解决jar冲突问题。
+## 配置变更
+1. 修改supervisor到nimbus的心跳 超时时间到180秒
+2. 为避免内存outofmemory， 设置storm.messaging.netty.max.pending默认值为4
+3. 设置Nimbus 内存至4G
+4. 调大队列大小 task 队列大小为1024， 总发送队列和总接收队列为2048
+## Bug fix
+1. 短时间能多次restart worker配置多的任务时，由于Nimbus thrift thread的OOM导致，Supervisor可能出现假死的情况
+2. 同时提交任务，后续的任务可能会失败
+3. tickTuple不需要ack，更正对于tickTuple不正确的failed消息统计
+4. 解决use.old.assignment=true时，默认调度可能出现错误 
+5. 解决删除topology zk 清理不干净问题
+6. 解决当做任务分配时， restart topology失败问题
+7. 解决同时提交多个topology 竞争问题
+8. 解决NPE 当注册metrics 
+9. 解决 zkTool 读取 monitor的 znode 失败问题
+10.解决 本地模式和打开classloader模式下， 出现异常问题
+11.解决使用自定义日志logback时， 本地模式下，打印双份日志问题
+## 运维& 脚本
+1. Add rpm build spec
+2. Add deploy files of jstorm for rpm package building
+3. cronjob改成每小时运行一次， 并且coredump 改成保留1个小时
 
 #Release 0.9.6.3
 ## New features

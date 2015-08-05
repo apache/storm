@@ -1,15 +1,37 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.alipay.dw.jstorm.example.sequence;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.yaml.snakeyaml.Yaml;
+
+import com.alibaba.jstorm.utils.JStormUtils;
+import com.alibaba.jstorm.utils.LoadConf;
+import com.alipay.dw.jstorm.example.sequence.bean.Pair;
+import com.alipay.dw.jstorm.example.sequence.bean.TradeCustomer;
+import com.alipay.dw.jstorm.example.sequence.bolt.MergeRecord;
+import com.alipay.dw.jstorm.example.sequence.bolt.PairCount;
+import com.alipay.dw.jstorm.example.sequence.bolt.SplitRecord;
+import com.alipay.dw.jstorm.example.sequence.bolt.TotalCount;
+import com.alipay.dw.jstorm.example.sequence.spout.SequenceSpout;
 
 import backtype.storm.Config;
 import backtype.storm.LocalCluster;
@@ -20,15 +42,6 @@ import backtype.storm.generated.TopologyAssignException;
 import backtype.storm.topology.BoltDeclarer;
 import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.tuple.Fields;
-
-import com.alibaba.jstorm.utils.JStormUtils;
-import com.alipay.dw.jstorm.example.sequence.bean.Pair;
-import com.alipay.dw.jstorm.example.sequence.bean.TradeCustomer;
-import com.alipay.dw.jstorm.example.sequence.bolt.MergeRecord;
-import com.alipay.dw.jstorm.example.sequence.bolt.PairCount;
-import com.alipay.dw.jstorm.example.sequence.bolt.SplitRecord;
-import com.alipay.dw.jstorm.example.sequence.bolt.TotalCount;
-import com.alipay.dw.jstorm.example.sequence.spout.SequenceSpout;
 
 public class SequenceTopology {
 	private static Logger LOG = LoggerFactory.getLogger(SequenceTopology.class);
@@ -57,7 +70,7 @@ public class SequenceTopology {
 			// localFirstGrouping is only for jstorm
 			// boltDeclarer.localFirstGrouping(SequenceTopologyDef.SEQUENCE_SPOUT_NAME);
 			boltDeclarer
-					.localOrShuffleGrouping(SequenceTopologyDef.SEQUENCE_SPOUT_NAME)
+					.shuffleGrouping(SequenceTopologyDef.SEQUENCE_SPOUT_NAME)
 					.addConfiguration(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, 3);
 		} else {
 
@@ -173,51 +186,13 @@ public class SequenceTopology {
 
 	private static Map conf = new HashMap<Object, Object>();
 
-	public static void LoadProperty(String prop) {
-		Properties properties = new Properties();
-
-		try {
-			InputStream stream = new FileInputStream(prop);
-			properties.load(stream);
-		} catch (FileNotFoundException e) {
-			System.out.println("No such file " + prop);
-		} catch (Exception e1) {
-			e1.printStackTrace();
-
-			return;
-		}
-
-		conf.putAll(properties);
-	}
-
-	public static void LoadYaml(String confPath) {
-
-		Yaml yaml = new Yaml();
-
-		try {
-			InputStream stream = new FileInputStream(confPath);
-
-			conf = (Map) yaml.load(stream);
-			if (conf == null || conf.isEmpty() == true) {
-				throw new RuntimeException("Failed to read config file");
-			}
-
-		} catch (FileNotFoundException e) {
-			System.out.println("No such file " + confPath);
-			throw new RuntimeException("No config file");
-		} catch (Exception e1) {
-			e1.printStackTrace();
-			throw new RuntimeException("Failed to read config file");
-		}
-
-		return;
-	}
+	
 
 	public static void LoadConf(String arg) {
 		if (arg.endsWith("yaml")) {
-			LoadYaml(arg);
+			conf = LoadConf.LoadYaml(arg);
 		} else {
-			LoadProperty(arg);
+			conf = LoadConf.LoadProperty(arg);
 		}
 	}
 

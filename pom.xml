@@ -3,14 +3,12 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.alibaba.jstorm</groupId>
 	<artifactId>jstorm-all</artifactId>
-	<version>0.9.6.3</version>
+	<version>2.0.4-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<name>java storm</name>
 	<description>java storm</description>
 	<modules>
-		<module>jstorm-client</module>
-		<module>jstorm-client-extension</module>
-		<module>jstorm-server</module>
+		<module>jstorm-core</module>
 		<module>jstorm-ui</module>
 	</modules>
 	
@@ -36,6 +34,21 @@
 			<url>http://repository.sonatype.org/content/groups/public/</url>
 		</repository>
 	</repositories>
+	
+	<distributionManagement>
+		<repository>
+			<id>releases</id>
+			<name>releases</name>
+			<url>http://mvnrepo.alibaba-inc.com/nexus/content/repositories/releases/
+			</url>
+		</repository>
+		<snapshotRepository>
+			<id>snapshots</id>
+			<name>snapshots</name>
+			<url>http://mvnrepo.alibaba-inc.com/nexus/content/repositories/snapshots/
+			</url>
+		</snapshotRepository>
+	</distributionManagement> 
 
 	<build>
 		<plugins>
@@ -43,8 +56,8 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>2.3.2</version>
 				<configuration>
-					<source>1.6</source>
-					<target>1.6</target>
+					<source>1.7</source>
+					<target>1.7</target>
 				</configuration>
 			</plugin>
 			<plugin>

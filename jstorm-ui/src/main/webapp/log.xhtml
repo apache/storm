@@ -8,83 +8,78 @@
 	xmlns:c="http://java.sun.com/jsp/jstl/core">
 
 <h:head>
-	<title>Jstorm UI Log View</title>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Jstorm UI</title>
+	<link rel="stylesheet" href="assets/css/bootstrap.min.css" />
+	<link rel="stylesheet" href="assets/css/bootstrap-theme.min.css" />
 </h:head>
 
 <h:body>
-	<h2>Logs: '#{logpage.logFileName}'</h2>
-	
-	
-                
-	<hr />
-	<!-- 
-	<p:dataTable id="data" var="pages" value="#{logpage.pages}" rows="10">
-
-		<p:dataScroller id="scroll_1" for="data" fastStep="10"
-			paginator="true" paginatorMaxPages="9">
-			<f:facet name="first">
-				<p:graphicImage url="images/first.gif" border="1" />
-			</f:facet>
-			<f:facet name="last">
-				<p:graphicImage url="images/end.gif" border="1" />
-			</f:facet>
-			<f:facet name="previous">
-				<p:graphicImage url="images/prev.gif" border="1" />
-			</f:facet>
-			<f:facet name="next">
-				<p:graphicImage url="images/next.gif" border="1" />
-			</f:facet>
-			<f:facet name="fastforward">
-				<p:graphicImage url="images/ff.gif" border="1" />
-			</f:facet>
-			<f:facet name="fastrewind">
-				<p:graphicImage url="images/bb.gif" border="1" />
-			</f:facet>
-		</p:dataScroller>
-	</p:dataTable>
-	 -->
+	<h:outputLink value="table.jsf">
+		<h1>
+			<h:outputText value="JStorm UI" />
+			<f:param name="pageType" value="cluster" />
+			<f:param name="cluster" value="#{param.cluster}" />
+		</h1>
+	</h:outputLink>
+	<hr/>
+	<h2>Log: ${logpage.event.logName}</h2>
+    <hr/>
 	<pre>
     <h:outputText value="#{logpage.log}" />
 	</pre>
 	
    <hr />           
-   <h:form style="text-align:right">
-   <!-- 
-		<p:dataTable id="pagetable" var="pages"
-			value="#{logpage.pages}">
-			<p:column>
-			<f:facet  name="header">
-				<h:outputText value="pages" />
-			</f:facet>
-				<h:outputLink value="log.jsf" target="_blank">
-                    <h:outputText value="#{pages.index}" />
-                    <f:param name="host" value="#{logpage.host}" />
-                    <f:param name="log" value="#{logpage.logFileName}" />
-                    <f:param name="pos" value="#{pages.pos}"  />
-                </h:outputLink>
-			
-			</p:column>
-			
-		</p:dataTable>
-		
-		<% out.println("sdfsdf") %>
-		 -->
-	<c:forEach items="#{logpage.pages}" var="pages" >
-		<h:outputLink value="log.jsf" target="_blank">
-                    <h:outputText value="page:#{pages.index}"  />
-                    <f:param name="clusterName" value="#{param.clusterName}" />
-                    <f:param name="host" value="#{logpage.host}" />
-                    <f:param name="port" value="#{logpage.port}" />
-                    <f:param name="log" value="#{logpage.logFileName}" />
-                    <f:param name="pos" value="#{pages.pos}"  />
-                </h:outputLink>
-                <h:outputText value=" "  />
+   <div class="text-center">
+	  <ul class="pagination">
+		  <c:forEach items="#{logpage.pages}" var="page">
+		  <li class="${page.status}">
+			<h:outputLink value="${page.linkData.url}">
+				<h:outputText value="${page.linkData.text}" />
+				<c:forEach items="${page.linkData.paramMap}" var="paramEntry">
+					<f:param name="${paramEntry.key}" value="#{paramEntry.value}" />
+				</c:forEach>
+				<span aria-hidden="true">
+				</span>
+			</h:outputLink>
+			</li>
+		</c:forEach> 
+	  </ul>
+
+	</div>
+   
+	<!-- 
+	  <h:form style="text-align:right">
+	  <li class="disabled"><a href="#" aria-label="Previous"><span aria-hidden="true">&laquo;</span></a></li>
+	    <li class="active"><a href="#">1 <span class="sr-only">(current)</span></a></li>
+	</h:form>	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<hr />        
+	
+	
+	
+	<c:forEach items="${logpage.pages}" var="page">
+		<h:outputLink value="${page.linkData.url}">
+			<h:outputText value="${page.linkData.text}" />
+			<c:forEach items="${page.linkData.paramMap}" var="paramEntry">
+				<f:param name="${paramEntry.key}" value="#{paramEntry.value}" />
+			</c:forEach>
+		</h:outputLink>
+
+		<h:outputText value=" " />
 	</c:forEach>
 	
-
-	
-	  
-	</h:form>	
+	 -->
 				
 	
 </h:body>

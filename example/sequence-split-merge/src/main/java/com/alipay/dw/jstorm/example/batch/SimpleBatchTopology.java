@@ -1,13 +1,29 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.alipay.dw.jstorm.example.batch;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
 import java.util.Map;
 
-import org.yaml.snakeyaml.Yaml;
+import com.alibaba.jstorm.batch.BatchTopologyBuilder;
+import com.alibaba.jstorm.cluster.StormConfig;
+import com.alibaba.jstorm.utils.JStormUtils;
+import com.alibaba.jstorm.utils.LoadConf;
 
-import backtype.storm.Config;
 import backtype.storm.LocalCluster;
 import backtype.storm.StormSubmitter;
 import backtype.storm.generated.AlreadyAliveException;
@@ -16,39 +32,12 @@ import backtype.storm.generated.TopologyAssignException;
 import backtype.storm.topology.BoltDeclarer;
 import backtype.storm.topology.TopologyBuilder;
 
-import com.alibaba.jstorm.batch.BatchTopologyBuilder;
-import com.alibaba.jstorm.cluster.StormConfig;
-import com.alibaba.jstorm.utils.JStormUtils;
-
 public class SimpleBatchTopology {
 
-	private static String topologyName;
+	private static String topologyName = "Batch";
 
 	private static Map conf;
 
-	private static void LoadYaml(String confPath) {
-
-		Yaml yaml = new Yaml();
-
-		try {
-			InputStream stream = new FileInputStream(confPath);
-
-			conf = (Map) yaml.load(stream);
-			if (conf == null || conf.isEmpty() == true) {
-				throw new RuntimeException("Failed to read config file");
-			}
-
-		} catch (FileNotFoundException e) {
-			System.out.println("No such file " + confPath);
-			throw new RuntimeException("No config file");
-		} catch (Exception e1) {
-			e1.printStackTrace();
-			throw new RuntimeException("Failed to read config file");
-		}
-
-		topologyName = (String) conf.get(Config.TOPOLOGY_NAME);
-		return;
-	}
 
 	public static TopologyBuilder SetBuilder() {
 		BatchTopologyBuilder topologyBuilder = new BatchTopologyBuilder(
@@ -72,7 +61,7 @@ public class SimpleBatchTopology {
 		LocalCluster cluster = new LocalCluster();
 		cluster.submitTopology(topologyName, conf, builder.createTopology());
 
-		Thread.sleep(600000);
+		Thread.sleep(60000);
 
 		cluster.shutdown();
 	}
@@ -94,7 +83,8 @@ public class SimpleBatchTopology {
 			System.exit(-1);
 		}
 
-		LoadYaml(args[0]);
+		conf = LoadConf.LoadYaml(args[0]);
+		
 
 		boolean isLocal = StormConfig.local_mode(conf);
 

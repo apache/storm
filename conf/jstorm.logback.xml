@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration scan="true" scanPeriod="60 seconds">
+	<appender name="A1"
+		class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${jstorm.home}/logs/${logfile.name}</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+			<fileNamePattern>${jstorm.home}/logs/${logfile.name}.%i</fileNamePattern>
+			<minIndex>1</minIndex>
+			<maxIndex>5</maxIndex>
+		</rollingPolicy>
+
+		<triggeringPolicy
+			class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+			<maxFileSize>1GB</maxFileSize>
+		</triggeringPolicy>
+
+		<encoder>
+			<pattern>[%p %d{yyyy-MM-dd HH:mm:ss} %c{1}:%L %t] %m%n</pattern>
+
+		</encoder>
+	</appender>
+
+	<appender name="METRICS"
+		class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${jstorm.home}/logs/${logfile.name}.metrics</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+			<fileNamePattern>${jstorm.home}/logs/${logfile.name}.metrics.%i</fileNamePattern>
+			<minIndex>1</minIndex>
+			<maxIndex>5</maxIndex>
+		</rollingPolicy>
+
+		<triggeringPolicy
+			class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+			<maxFileSize>100MB</maxFileSize>
+		</triggeringPolicy>
+
+		<encoder>
+			<pattern>[%p %d{yyyy-MM-dd HH:mm:ss} %c{1}:%L %t] %m%n</pattern>
+		</encoder>
+	</appender>
+
+	<root level="INFO">
+		<appender-ref ref="A1" />
+	</root>
+
+	<logger name="com.alibaba.jstorm"
+		additivity="false">
+		<level value="INFO" />
+		<appender-ref ref="A1" />
+	</logger>
+
+	<logger name="com.alibaba.jstorm.common.metric"
+		additivity="false">
+		<level value="INFO" />
+		<appender-ref ref="METRICS" />
+	</logger>
+	
+	<logger name="com.alibaba.jstorm.task.heartbeat"
+		additivity="false">
+		<level value="INFO" />
+		<appender-ref ref="METRICS" />
+	</logger>
+	
+	<logger name="com.alibaba.jstorm.daemon.worker.hearbeat"
+		additivity="false">
+		<level value="INFO" />
+		<appender-ref ref="METRICS" />
+	</logger>
+	
+	<logger name="com.alibaba.jstorm.daemon.nimbus.TopologyMetricsRunnable"
+		additivity="false">
+		<level value="INFO" />
+		<appender-ref ref="METRICS" />
+	</logger>
+	
+	<logger name="com.alibaba.jstorm.metric"
+		additivity="false">
+		<level value="INFO" />
+		<appender-ref ref="METRICS" />
+	</logger>
+
+</configuration>
+ 

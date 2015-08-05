@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration scan="true" scanPeriod="10 seconds">
+	<appender name="A1"
+		class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>../logs/jstorm-ui.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+			<fileNamePattern>../logs/jstorm-ui.log.%i</fileNamePattern>
+			<minIndex>1</minIndex>
+			<maxIndex>5</maxIndex>
+		</rollingPolicy>
+
+		<triggeringPolicy
+			class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+			<maxFileSize>1GB</maxFileSize>
+		</triggeringPolicy>
+
+		<encoder>
+			<pattern>[%p %d{yyyy-MM-dd HH:mm:ss} %c{1}:%L %t] %m%n</pattern>
+
+		</encoder>
+	</appender>
+	<appender name="A2" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<pattern>%-4r [%t] %-5p %c - %m%n</pattern>
+		</encoder>
+	</appender>
+
+	<logger name="org.apache.zookeeper" level="ERROR" />
+	<logger name="com.netflix.curator" level="ERROR" />
+
+	<root level="INFO">
+		<appender-ref ref="A1" />
+	</root>
+	
+	<logger name="com.alibaba.jstorm"
+		additivity="false">
+		<level value="INFO" />
+		<appender-ref ref="A1" />
+	</logger>
+	
+	<logger name="backtype.storm"
+		additivity="false">
+		<level value="INFO" />
+		<appender-ref ref="A1" />
+	</logger>
+
+</configuration>
+ 

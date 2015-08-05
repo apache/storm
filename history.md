@@ -1,6 +1,82 @@
 [JStorm English introduction](http://42.121.19.155/jstorm/JStorm-introduce-en.pptx)
 [JStorm Chinese introduction](http://42.121.19.155/jstorm/JStorm-introduce.pptx)
 
+#Release 2.0.4-SNAPSHOT
+## New features
+1.Redesign Metric/Monitor system, new RollingWindow/Metrics/NettyMetrics, all data will send/recv through thrift
+2.Redesign Web-UI, the new Web-UI code is clear and clean
+3.Add NimbusCache Layer, using RocksDB and TimeCacheWindow
+4.Refactoring all ZK structure and ZK operation
+5.Refactoring all thrift structure
+6.Merge jstorm-client/jstorm-client-extension/jstorm-core 3 modules into jstorm－core
+7.set the dependency version same as storm
+8.Sync apache-storm-0.10.0-beta1 all java code
+9.Switch log system to logback
+10.Upgrade thrift to apache thrift 0.9.2
+11. Performance tuning Huge topology more than 600 workers or 2000 tasks
+12. Require jdk7 or higher
+
+#Release 0.9.7.1
+## New Features
+1. Batch the tuples whose target task is same, before sending out（task.batch.tuple=true，task.msg.batch.size=4）.  
+2. LocalFirst grouping is updated. If all local tasks are busy, the tasks of outside nodes will be chosen as target task instead of waiting on the busy local task.
+3. Support user to reload the application config when topology is running.
+4. Support user to define the task heartbeat timeout and task cleanup timeout for topology.
+5. Update the wait strategy of disruptor queue to no-blocking mode "TimeoutBlockingWaitStrategy"
+6. Support user to define the timeout of discarding messages that are pending for a long time in netty buffer.  
+7. Update the message processing structure. The virtualPortDispatch and drainer thread are removed to reduce the unnecessary cost of cpu and the transmitting of tuples 
+8. Add jstorm parameter "--include-jars" when submit topology, add these jar to classpath
+9. Nimbus or Supervisor suicide when the local ip is 127.0.0.0
+10. Add user-define-scheduler example
+11. Merge Supervisor's syncSupervisor and syncProcess
+## Bug Fix
+1. Improve the GC setting.
+2. Fix the bug that task heartbeat might not be updated timely in some scenarioes.  
+3. Fix the bug that the reconnection operation might be stick for a unexpected period when the connection to remote worker is shutdown and some messages are buffer in netty.   
+4. Reuse thrift client when submit topology
+5. Avoid repeatedly download binary when failed to start worker.
+## Changed setting
+1. Change task's heartbeat timeout to 4 minutes
+2. Set the netty client thread pool(clientScheduleService) size as 5 
+## Deploy and scripts
+1. Improve cleandisk.sh, avoid delete current directory and /tmp/hsperfdata_admin
+2. Add executable attribute for the script under example
+3. Add parameter to stat.sh, which can be used to start supervisor or not. This is useful under virtual 
+
+#Release 0.9.7
+## New Features
+1. Support dynamic scale-out/scale-in of worker, spout, bolt or acker without stopping the service of topology.
+2. When enable cgroup, Support the upper limit control of cpu core usage. Default setting is 3 cpu cores.
+3. Update the mechanism of task heartbeats to make heartbeat to track the status of spout/bolt execute thread correctly.
+4. Support to add jstorm prefix info(clusterName, topologyName, ip:port, componentName, taskId, taskIndex) for worker/task log
+5. Check the heartbeat of supervisor when topology assignment to ensure no worker will be assigned into a dead supervisor
+6. Add api to query the task/worker's metric info, e.g. load status of task queue, worker cpu usage, worker mem usage...
+7. Try to re-download jars when staring worker fails several times to avoid potential corruption of jars 
+8. Add Nimbus ZK cache, accelerate nimbus read zk
+9. Add thrift api getVersion, it will be used check between the client jstorm version and the server jstorm version.  
+10. Update the metrics' structure to Alimonitor
+11. Add exclude-jar parameter into jstorm.py, which avoid class conflict when submit topology
+## Bug Fix
+1. Fix the no response problem of supervisor process when subimtting big amout topologys in a short time
+2. When submitting two or more topologys at the same time, the later one might be failed.
+3. TickTuple does not need to be acked. Fix the incorrect count of failure message.
+4. Fix the potential incorrect assignment when use.old.assignment=true
+5. Fix failed to remove some zk nodes when kill topology 
+6. Fix failed to restart topology, when nimbus do assignment job.
+7. Fix NPE when register metrics
+8. Fix failed to read ZK monitor znode through zktool
+9. Fix exception when enable classload and local mode
+10. Fix duplicate log when enable user-defined logback in local mode
+## Changed Setting
+1. Set Nimbus jvm memory size as 4G
+2. Set hearbeat from supervisor to nimbus timeout from 60s to 180s
+3. In order to avoid OOM, set storm.messaging.netty.max.pending as 4
+4. Set task queue size as 1024, worker's total send/receive queue size as 2048
+## Deploy and scripts
+1. Add rpm build spec
+2. Add deploy files of jstorm for rpm package building
+3. Enable the cleandisk cronjob every hour, reserve coredump for only one hour.
+
 #Release 0.9.6.3
 ## New features
 1. Implement tick tuple

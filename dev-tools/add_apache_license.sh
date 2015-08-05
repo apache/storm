@@ -1,0 +1,1 @@
+find . -name \*.java -exec sh -c "if ! grep -q 'LICENSE-2.0' '{}';then mv '{}' tmp && cp LICENSEHEADER.txt '{}' && cat tmp >> '{}' && rm tmp;fi" \;
