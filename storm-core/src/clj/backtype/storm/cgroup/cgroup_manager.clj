@@ -1,7 +1,7 @@
 (ns backtype.storm.cgroup.cgroup-manager
   (:import [java.io File BufferedReader FileReader])
   (:use [backtype.storm log]
-        [com.jd.bdp constant])
+        [backtype.storm.cgroup constant])
   (:require [backtype.storm.util :as util]))
 
 (defn- get-dir [dir file-dir]
