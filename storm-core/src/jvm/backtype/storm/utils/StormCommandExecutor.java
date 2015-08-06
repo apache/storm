@@ -33,6 +33,7 @@ abstract class StormCommandExecutor {
     final String UPLOADCREDENTIALS_CLASS = "backtype.storm.command" +
             ".upload_credentials";
     final String GETERRORS_CLASS = "backtype.storm.command.get_errors";
+    final String SHELL_CLASS = "backtype.storm.command.shell_submission";
     String stormHomeDirectory;
     String userConfDirectory;
     String stormConfDirectory;
@@ -378,6 +379,44 @@ class UnixStormCommandExecutor extends StormCommandExecutor {
         System.out.println("Arguments are : ");
         for (String s: args) {
             System.out.println(s);
+        }
+        if ((args == null) || (args.size() < 2)) {
+            System.out.println("Not enough arguments for storm shell command");
+            System.out.println("Please pass the resources directory and the " +
+                    "command to be packaged as jar");
+            System.exit(2);
+        }
+        int random = new Random().nextInt(10000001);
+        String tmpJarPath = "stormshell" + String.valueOf(random) + ".jar";
+        ProcessBuilder processBuilder = new ProcessBuilder("jar", "cf",
+                tmpJarPath, args.get(0));
+        processBuilder.inheritIO();
+        try {
+            Process process = processBuilder.start();
+            process.waitFor();
+            System.out.println("jar cf subprocess finished");
+            System.out.println("Exit value from subprocess is :" + process
+                    .exitValue());
+            List<String> runnerArgs = new ArrayList<String>();
+            runnerArgs.add(tmpJarPath);
+            runnerArgs.add(args.get(1));
+            runnerArgs.addAll(args.subList(2, args.size()));
+            List<String> extraPaths = new ArrayList<String>();
+            extraPaths.add(this.userConfDirectory);
+            this.executeStormClass(this.SHELL_CLASS, "-client", new
+                    ArrayList<String>(), extraPaths, runnerArgs, true, false, "");
+            List<String> commands = new ArrayList<String>();
+            commands.add("rm");
+            commands.add(tmpJarPath);
+            processBuilder.command(commands);
+            process = processBuilder.start();
+            process.waitFor();
+            System.out.println("rm <tmpJarPath> subprocess finished");
+            System.out.println("Exit value from subprocess is :" + process
+                    .exitValue());
+        } catch (Exception ex) {
+            System.out.println("Exception occured while starting process via " +
+                    "processbuilder " + ex.getMessage());
         }
         return;
     }
