@@ -1,15 +1,30 @@
----
-layout: default
----
-<div class="container">
+<!DOCTYPE html>
+<html>
 
-  <header class="post-header">
-    <h1 class="post-title">{{ page.title }}</h1>
-    <p class="text-muted credit">Posted on {{ page.date | date: "%b %-d, %Y" }}{% if page.author %} by {{ page.author }}{% endif %}{% if page.meta %} • {{ page.meta }}{% endif %}</p>
-  </header>
+  {% include head.html %}
 
-  <article class="post-content">
-    {{ content }}
-  </article>
+    <body>
+    {% include header.html %}
+        <div class="row">
+            <div class="col-md-3">
+                <ul class="news" id="news-list">
+                    {% for post in site.posts %}
+              		<li><a href="{{ post.url }}">{{ post.title }}</a></li>
+            		{% endfor %}
+                </ul>
+            </div>
+            <div class="col-md-9" id="news-content">
+        	    <div>
+        	        <h1>{{ page.title }}</h1>
+        	    	<p class="text-muted credit">Posted on {{ page.date | date: "%b %-d, %Y" }}{% if page.author %} by {{ page.author }}{% endif %}{% if page.meta %} • {{ page.meta }}{% endif %}</p>
+        	    </div>
+        	    <div>
+        	        {{ content }}
+        	    </div>
+            </div>
+        </div>
+    {% include footer.html %}
+    </body>
 
-</div>
+</html>
+
