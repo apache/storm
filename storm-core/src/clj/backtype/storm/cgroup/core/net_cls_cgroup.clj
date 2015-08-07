@@ -1,5 +1,5 @@
 (ns backtype.storm.cgroup.core.net-cls-cgroup
-  (:use [com.jd.bdp.constant])
+  (:use [backtype.storm.cgroup.constant])
   (:require [backtype.storm.util :as util]))
 
 (defn- get-dir [dir file-dir]
