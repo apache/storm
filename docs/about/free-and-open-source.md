@@ -12,4 +12,4 @@ Storm has a large and growing ecosystem of libraries and tools to use in conjunc
 3. *Database integrations*: There are helper bolts for integrating with various databases, such as MongoDB, RDBMS's, Cassandra, and more.
 4. Other miscellaneous utilities
 
-The [Storm documentation](/documentation/Home.html) has links to notable Storm-related projects hosted outside of Apache.
+The [Storm documentation](/documentation.html) has links to notable Storm-related projects hosted outside of Apache.
