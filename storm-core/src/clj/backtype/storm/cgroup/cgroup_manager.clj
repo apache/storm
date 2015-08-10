@@ -85,25 +85,3 @@
             _hierarchy
             (recur (rest a_hierarchy))))
         ))))
-
-;(defn mount [hierarchy]
-;  (let [dir (:dir hierarchy)
-;        subsystems (:subsystems hierarchy)
-;        name (:name hierarchy)]
-;    (if (mounted hierarchy)
-;      (log-error dir " is mounted.")
-;      (do (if-let [_subsystems (loop [r #{} s subsystems]
-;                                 (if-let [subsystem (first subsystems)]
-;                                   (if (busy subsystem)
-;                                     (recur r (rest subsystems))
-;                                     (recur (conj r subsystem) (rest subsystems)))
-;                                   (if (empty? r) nil r)))]
-;            (if-not (util/exists-dir? dir) (util/local-mkdirs dir))
-;            (util/launch-process (str "mount -t cgroup -o " (clojure.string/join "," _subsystems) name dir)))))))
-;
-;(defn umount [hierarchy]
-;  (let [dir (:dir hierarchy)
-;        name (:name hierarchy)]
-;    (when (mounted hierarchy)
-;      (util/launch-process (str "umount " dir))
-;      (util/rmr dir))))
