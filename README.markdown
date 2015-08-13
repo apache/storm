@@ -199,6 +199,7 @@ under the License.
 * Zhuo Liu ([@zhuoliu](https://github.com/zhuoliu))
 * jangie ([@jangie](https://github.com/jangie))
 * Hailei Zhang ([@Hailei](https://github.com/Hailei))
+* Gabor Liptak ([@gliptak](https://github.com/glibtak))
 
 ## Acknowledgements
 
