@@ -336,8 +336,10 @@ public class ShellBolt implements IBolt {
                     if (command.equals("sync")) {
                         setHeartbeat();
                     } else if(command.equals("ack")) {
+                        setHeartbeat();
                         handleAck(shellMsg.getId());
                     } else if (command.equals("fail")) {
+                        setHeartbeat();
                         handleFail(shellMsg.getId());
                     } else if (command.equals("error")) {
                         handleError(shellMsg.getMsg());
