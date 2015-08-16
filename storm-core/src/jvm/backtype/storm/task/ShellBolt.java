@@ -136,9 +136,7 @@ public class ShellBolt implements IBolt {
         heartBeatExecutorService = MoreExecutors.getExitingScheduledExecutorService(new ScheduledThreadPoolExecutor(1));
         heartBeatExecutorService.scheduleAtFixedRate(new BoltHeartbeatTimerTask(this), 1, 1, TimeUnit.SECONDS);
 
-        LOG.info("Start checking heartbeat...");
-        setHeartbeat();
-    }
+     }
 
     public void execute(Tuple input) {
         if (_exception != null) {
@@ -313,7 +311,7 @@ public class ShellBolt implements IBolt {
             LOG.debug("BOLT - current time : {}, last heartbeat : {}, worker timeout (ms) : {}",
                     currentTimeMillis, lastHeartbeat, workerTimeoutMills);
 
-            if (currentTimeMillis - lastHeartbeat > workerTimeoutMills) {
+            if (lastHeartbeat > 0 && currentTimeMillis - lastHeartbeat > workerTimeoutMills) {
                 bolt.die(new RuntimeException("subprocess heartbeat timeout"));
             }
 
@@ -325,6 +323,9 @@ public class ShellBolt implements IBolt {
 
     private class BoltReaderRunnable implements Runnable {
         public void run() {
+
+            LOG.info("Start checking heartbeat...");
+            setHeartbeat();
             while (_running) {
                 try {
                     ShellMsg shellMsg = _process.readShellMsg();
