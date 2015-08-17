@@ -479,6 +479,59 @@ footer hr {
 	.logo, .btn-download {margin-top:0; margin-bottom:0;}
 }
 
+.brick{
+	width: 370px;
+    border: solid 1px #CCCCCC;
+    margin: 20px;
+}
+
+.brick h3{
+	border-bottom: 1px solid #CCCCCC
+    margin-bottom: 20px;
+}
+.brickSS {
+    border: solid 1px #CCCCCC;
+    margin: 20px;
+}
+
+.brickSS .row{
+    padding: 15px;
+}
+
+.brickSS iframe{
+    margin: 15px;
+}
+
+.resources .nav-tabs {
+	border-bottom: 1px solid #328fbf;
+}
+.resources .nav-tabs > li > a {
+	margin-right: 2px;
+	font-family: "Oswald", sans-serif;
+	font-size: 18px;
+	letter-spacing: 1px;
+	border: none;
+	border-radius: 0;
+}
+.resources .nav-tabs > li > a:hover {
+	border-bottom-color: #328fbf;
+	background-color: #FFF0DF;
+}
+.resources .nav-tabs > li.active > a, 
+.resources .nav-tabs > li.active > a:hover, 
+.resources .nav-tabs > li.active > a:focus {
+	color: #235693;
+	cursor: default;
+	background-color: #fff;
+	border: 1px solid #328fbf;
+	border-bottom-color: transparent;
+}
+.resources .tab-content {
+	padding: 15px;
+	border: 1px #328fbf solid;
+	border-top: none;
+}
+
 
 
 
