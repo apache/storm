@@ -45,7 +45,7 @@
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-client</artifactId>
-						<version>${hadoop.version}</version>
+            <version>${hadoop.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -60,7 +60,7 @@
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-hdfs</artifactId>
-						<version>${hadoop.version}</version>
+            <version>${hadoop.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
