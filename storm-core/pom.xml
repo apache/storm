@@ -257,10 +257,6 @@
                <artifactId>slf4j-api</artifactId>
              </exclusion>
              <exclusion>
-               <groupId>commons-codec</groupId>
-               <artifactId>commons-codec</artifactId>
-             </exclusion>
-             <exclusion>
                <groupId>log4j</groupId>
                <artifactId>log4j</artifactId>
              </exclusion>
