@@ -236,6 +236,22 @@ If you are using Trident and sequence files you can do something like this:
 ```
 
 
+### Proxy User for HDFS interaction
+The HDFS bolt implementation now allows you to interact with HDFS as a
+user that is different than the user running the worker process in a
+non-secured cluster. The bolt checks for the key `hdfs.proxyuser` in the
+map that is set as the value for the key set as the config key in
+the bolt using the withConfigKey method. The key value pair just mentioned is
+passed to the topology in the configuration object during creation of the
+topology. The HDFS config core-site.xml needs to be modified for HDFS to
+allow such a proxy user functionality. More details on how to modify the file
+and its limitations can be found at
+
+http://hadoop.apache.org/docs/r2.7.1/hadoop-project-dist/hadoop-common/Superusers.html
+
+
+
+
 ## Support for HDFS Sequence Files
 
 The `org.apache.storm.hdfs.bolt.SequenceFileBolt` class allows you to write storm data to HDFS sequence files:

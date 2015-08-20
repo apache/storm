@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
+import java.security.PrivilegedExceptionAction;
 import java.util.EnumSet;
 import java.util.Map;
 
@@ -87,32 +88,44 @@ public class HdfsBolt extends AbstractHdfsBolt{
     }
 
     @Override
-    public void execute(Tuple tuple) {
+    public void execute(final Tuple tuple) {
         try {
-            byte[] bytes = this.format.format(tuple);
-            synchronized (this.writeLock) {
-                out.write(bytes);
-                this.offset += bytes.length;
+            this.userGroupInformation.doAs(
+                new PrivilegedExceptionAction<Void>() {
+                    public Void run() throws Exception {
+                        byte[] bytes = format.format(tuple);
+                        synchronized (writeLock) {
+                            out.write(bytes);
+                            offset += bytes.length;
 
-                if (this.syncPolicy.mark(tuple, this.offset)) {
-                    if (this.out instanceof HdfsDataOutputStream) {
-                        ((HdfsDataOutputStream) this.out).hsync(EnumSet.of(SyncFlag.UPDATE_LENGTH));
-                    } else {
-                        this.out.hsync();
+                            if (syncPolicy.mark(tuple, offset)) {
+                                if (out instanceof HdfsDataOutputStream) {
+                                    ((HdfsDataOutputStream) out).hsync
+                                            (EnumSet.of(SyncFlag.UPDATE_LENGTH));
+                                } else {
+                                    out.hsync();
+                                }
+                                syncPolicy.reset();
+                            }
+                        }
+
+                        collector.ack(tuple);
+
+                        if(rotationPolicy.mark(tuple, offset)){
+                            rotateOutputFile(); // synchronized
+                            offset = 0;
+                            rotationPolicy.reset();
+                        }
+                        return null;
                     }
-                    this.syncPolicy.reset();
                 }
-            }
+            );
 
-            this.collector.ack(tuple);
-
-            if(this.rotationPolicy.mark(tuple, this.offset)){
-                rotateOutputFile(); // synchronized
-                this.offset = 0;
-                this.rotationPolicy.reset();
-            }
         } catch (IOException e) {
             this.collector.reportError(e);
+            this.collector.fail(tuple);
+        } catch (InterruptedException ie) {
+            this.collector.reportError(ie);
             this.collector.fail(tuple);
         }
     }

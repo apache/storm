@@ -24,6 +24,7 @@ import backtype.storm.topology.base.BaseRichBolt;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.storm.hdfs.bolt.format.FileNameFormat;
 import org.apache.storm.hdfs.bolt.rotation.FileRotationPolicy;
 import org.apache.storm.hdfs.bolt.rotation.TimedRotationPolicy;
@@ -34,6 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Timer;
@@ -54,6 +56,7 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
     protected String configKey;
     protected transient Object writeLock;
     protected transient Timer rotationTimer; // only used for TimedRotationPolicy
+    protected transient UserGroupInformation userGroupInformation;
 
     protected transient Configuration hdfsConfig;
 
@@ -81,7 +84,8 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
      * @param topologyContext
      * @param collector
      */
-    public final void prepare(Map conf, TopologyContext topologyContext, OutputCollector collector){
+    public final void prepare(final Map conf, final TopologyContext
+            topologyContext, final OutputCollector collector){
         this.writeLock = new Object();
         if (this.syncPolicy == null) throw new IllegalStateException("SyncPolicy must be specified.");
         if (this.rotationPolicy == null) throw new IllegalStateException("RotationPolicy must be specified.");
@@ -99,11 +103,23 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
             }
         }
 
-
         try{
             HdfsSecurityUtil.login(conf, hdfsConfig);
-            doPrepare(conf, topologyContext, collector);
-            this.currentFile = createOutputFile();
+            String ugiUser = (String) this.hdfsConfig.get("hdfs.proxyuser");
+            if (ugiUser == null) {
+                this.userGroupInformation = UserGroupInformation.getLoginUser();
+            } else {
+                this.userGroupInformation = UserGroupInformation.createProxyUser
+                        (ugiUser,
+                                UserGroupInformation.getLoginUser());
+            }
+            this.userGroupInformation.doAs(new PrivilegedExceptionAction<Void>() {
+                public Void run() throws Exception {
+                    doPrepare(conf, topologyContext, collector);
+                    currentFile = createOutputFile();
+                    return null;
+                }
+            });
 
         } catch (Exception e){
             throw new RuntimeException("Error preparing HdfsBolt: " + e.getMessage(), e);
@@ -116,9 +132,19 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
                 @Override
                 public void run() {
                     try {
-                        rotateOutputFile();
+                        userGroupInformation.doAs(
+                            new PrivilegedExceptionAction<Void>() {
+                                public Void run() throws Exception {
+                                    rotateOutputFile();
+                                    return null;
+                                }
+                            }
+                        );
                     } catch(IOException e){
                         LOG.warn("IOException during scheduled file rotation.", e);
+                    } catch (InterruptedException ie) {
+                        LOG.warn("InterruptedException during scheduled file " +
+                                        "rotation.", ie);
                     }
                 }
             };
