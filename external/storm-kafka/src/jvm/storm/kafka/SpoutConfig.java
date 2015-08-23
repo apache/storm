@@ -17,6 +17,8 @@
  */
 package storm.kafka;
 
+import backtype.storm.utils.Utils;
+
 import java.io.Serializable;
 import java.util.List;
 
@@ -29,6 +31,8 @@ public class SpoutConfig extends KafkaConfig implements Serializable {
 
     // setting for how often to save the current kafka offset to ZooKeeper
     public long stateUpdateIntervalMs = 2000;
+    // by default the spout emits to the default storm stream. Provide a different stream id to change it.
+    public String emitStreamId = Utils.DEFAULT_STREAM_ID;
 
     // Exponential back-off retry settings.  These are used when retrying messages after a bolt
     // calls OutputCollector.fail().

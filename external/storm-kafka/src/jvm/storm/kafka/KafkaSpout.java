@@ -138,7 +138,7 @@ public class KafkaSpout extends BaseRichSpout {
             try {
                 // in case the number of managers decreased
                 _currPartitionIndex = _currPartitionIndex % managers.size();
-                EmitState state = managers.get(_currPartitionIndex).next(_collector);
+                EmitState state = managers.get(_currPartitionIndex).next(_collector, _spoutConfig.emitStreamId);
                 if (state != EmitState.EMITTED_MORE_LEFT) {
                     _currPartitionIndex = (_currPartitionIndex + 1) % managers.size();
                 }
