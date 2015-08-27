@@ -17,7 +17,6 @@
  */
 package storm.kafka;
 
-import backtype.storm.Config;
 import backtype.storm.metric.api.IMetric;
 import backtype.storm.spout.SpoutOutputCollector;
 import backtype.storm.task.TopologyContext;
@@ -56,7 +55,7 @@ public class KafkaSpout extends BaseRichSpout {
     SpoutOutputCollector _collector;
     PartitionCoordinator _coordinator;
     DynamicPartitionConnections _connections;
-    ZkState _state;
+    PartitionStateManagerFactory _partitionStateManagerFactory;
 
     long _lastUpdateMs = 0;
 
@@ -69,29 +68,15 @@ public class KafkaSpout extends BaseRichSpout {
     @Override
     public void open(Map conf, final TopologyContext context, final SpoutOutputCollector collector) {
         _collector = collector;
-
-        Map stateConf = new HashMap(conf);
-        List<String> zkServers = _spoutConfig.zkServers;
-        if (zkServers == null) {
-            zkServers = (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS);
-        }
-        Integer zkPort = _spoutConfig.zkPort;
-        if (zkPort == null) {
-            zkPort = ((Number) conf.get(Config.STORM_ZOOKEEPER_PORT)).intValue();
-        }
-        stateConf.put(Config.TRANSACTIONAL_ZOOKEEPER_SERVERS, zkServers);
-        stateConf.put(Config.TRANSACTIONAL_ZOOKEEPER_PORT, zkPort);
-        stateConf.put(Config.TRANSACTIONAL_ZOOKEEPER_ROOT, _spoutConfig.zkRoot);
-        _state = new ZkState(stateConf);
-
         _connections = new DynamicPartitionConnections(_spoutConfig, KafkaUtils.makeBrokerReader(conf, _spoutConfig));
+        _partitionStateManagerFactory = new PartitionStateManagerFactory(conf, _spoutConfig);
 
         // using TransactionalState like this is a hack
         int totalTasks = context.getComponentTasks(context.getThisComponentId()).size();
         if (_spoutConfig.hosts instanceof StaticHosts) {
-            _coordinator = new StaticCoordinator(_connections, conf, _spoutConfig, _state, context.getThisTaskIndex(), totalTasks, _uuid);
+            _coordinator = new StaticCoordinator(_connections, _partitionStateManagerFactory, conf, _spoutConfig, context.getThisTaskIndex(), totalTasks, _uuid);
         } else {
-            _coordinator = new ZkCoordinator(_connections, conf, _spoutConfig, _state, context.getThisTaskIndex(), totalTasks, _uuid);
+            _coordinator = new ZkCoordinator(_connections, _partitionStateManagerFactory, conf, _spoutConfig, context.getThisTaskIndex(), totalTasks, _uuid);
         }
 
         context.registerMetric("kafkaOffset", new IMetric() {
@@ -127,7 +112,7 @@ public class KafkaSpout extends BaseRichSpout {
 
     @Override
     public void close() {
-        _state.close();
+        _partitionStateManagerFactory.close();
     }
 
     @Override
