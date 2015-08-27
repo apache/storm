@@ -45,15 +45,19 @@ public class KafkaTestBroker {
     private File logDir;
 
     public KafkaTestBroker() {
+        this(null, 0);
+    }
+
+    public KafkaTestBroker(TestingServer s, int brokerId) {
         try {
-            server = new TestingServer();
+            server = s == null? server = new TestingServer() : s;
             String zookeeperConnectionString = server.getConnectString();
             ExponentialBackoffRetry retryPolicy = new ExponentialBackoffRetry(1000, 3);
             zookeeper = CuratorFrameworkFactory.newClient(zookeeperConnectionString, retryPolicy);
             zookeeper.start();
             port = InstanceSpec.getRandomPort();
             logDir = new File(System.getProperty("java.io.tmpdir"), "kafka/logs/kafka-test-" + port);
-            KafkaConfig config = buildKafkaConfig(zookeeperConnectionString);
+            KafkaConfig config = buildKafkaConfig(zookeeperConnectionString, brokerId);
             kafka = new KafkaServerStartable(config);
             kafka.startup();
         } catch (Exception ex) {
@@ -61,12 +65,14 @@ public class KafkaTestBroker {
         }
     }
 
-    private kafka.server.KafkaConfig buildKafkaConfig(String zookeeperConnectionString) {
+    private kafka.server.KafkaConfig buildKafkaConfig(String zookeeperConnectionString, int brokerId) {
         Properties p = new Properties();
         p.setProperty("zookeeper.connect", zookeeperConnectionString);
-        p.setProperty("broker.id", "0");
+        p.setProperty("broker.id", String.valueOf(brokerId));
         p.setProperty("port", "" + port);
         p.setProperty("log.dirs", logDir.getAbsolutePath());
+        // we need to make it default to 1 so that offset manager can create the internal topic during unit test
+        p.setProperty("offsets.topic.replication.factor", "1");
         return new KafkaConfig(p);
     }
 

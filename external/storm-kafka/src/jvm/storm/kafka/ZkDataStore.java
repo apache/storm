@@ -32,8 +32,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ZkState {
-    public static final Logger LOG = LoggerFactory.getLogger(ZkState.class);
+public class ZkDataStore {
+    public static final Logger LOG = LoggerFactory.getLogger(ZkDataStore.class);
+
     CuratorFramework _curator;
 
     private CuratorFramework newCurator(Map stateConf) throws Exception {
@@ -54,7 +55,7 @@ public class ZkState {
         return _curator;
     }
 
-    public ZkState(Map stateConf) {
+    public ZkDataStore(Map stateConf) {
         stateConf = new HashMap(stateConf);
 
         try {
@@ -65,12 +66,7 @@ public class ZkState {
         }
     }
 
-    public void writeJSON(String path, Map<Object, Object> data) {
-        LOG.debug("Writing " + path + " the data " + data.toString());
-        writeBytes(path, JSONValue.toJSONString(data).getBytes(Charset.forName("UTF-8")));
-    }
-
-    public void writeBytes(String path, byte[] bytes) {
+    public void write(String path, byte[] bytes) {
         try {
             if (_curator.checkExists().forPath(path) == null) {
                 _curator.create()
@@ -85,19 +81,7 @@ public class ZkState {
         }
     }
 
-    public Map<Object, Object> readJSON(String path) {
-        try {
-            byte[] b = readBytes(path);
-            if (b == null) {
-                return null;
-            }
-            return (Map<Object, Object>) JSONValue.parse(new String(b, "UTF-8"));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public byte[] readBytes(String path) {
+    public byte[] read(String path) {
         try {
             if (_curator.checkExists().forPath(path) != null) {
                 return _curator.getData().forPath(path);

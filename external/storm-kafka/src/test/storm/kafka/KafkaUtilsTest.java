@@ -26,7 +26,6 @@ import kafka.javaapi.message.ByteBufferMessageSet;
 import kafka.message.MessageAndOffset;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.clients.producer.RecordMetadata;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -113,7 +112,7 @@ public class KafkaUtilsTest {
 
     @Test
     public void getOffsetFromConfigAndDontForceFromStart() {
-        config.ignoreZkOffsets = false;
+        config.ignoreStoredOffsets = false;
         config.startOffsetTime = OffsetRequest.EarliestTime();
         createTopicAndSendMessage();
         long latestOffset = KafkaUtils.getOffset(simpleConsumer, config.topic, 0, OffsetRequest.EarliestTime());
@@ -123,7 +122,7 @@ public class KafkaUtilsTest {
 
     @Test
     public void getOffsetFromConfigAndFroceFromStart() {
-        config.ignoreZkOffsets = true;
+        config.ignoreStoredOffsets = true;
         config.startOffsetTime = OffsetRequest.EarliestTime();
         createTopicAndSendMessage();
         long earliestOffset = KafkaUtils.getOffset(simpleConsumer, config.topic, 0, OffsetRequest.EarliestTime());
