@@ -18,6 +18,7 @@
 package backtype.storm.utils;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.lmax.disruptor.BlockingWaitStrategy;
@@ -28,8 +29,11 @@ import org.junit.Assert;
 import org.junit.Test;
 import junit.framework.TestCase;
 
-public class DisruptorQueueTest extends TestCase {
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+public class DisruptorQueueTest extends TestCase {
+    private static final Logger LOG = LoggerFactory.getLogger(DisruptorQueueTest.class);
     private final static int TIMEOUT = 1000; // MS
     private final static int PRODUCER_NUM = 4;
 
@@ -83,6 +87,76 @@ public class DisruptorQueueTest extends TestCase {
                 messageConsumed.get());
     }
 
+    @Test
+    public void testBatch() throws Exception {
+        final int BATCH_SIZE = 100;
+        LOG.info("Starting test-batch");
+        final AtomicInteger messageConsumed = new AtomicInteger(0);
+        DisruptorQueue q = new DisruptorQueue("TEST-BATCH", new MultiThreadedClaimStrategy(
+                1024), new BlockingWaitStrategy(), 10000L, BATCH_SIZE);
+
+        Runnable consumer = new Consumer(q, new EventHandler<Object>() {
+            @Override
+            public void onEvent(Object obj, long sequence, boolean endOfBatch)
+                    throws Exception {
+                LOG.info("GOT {} {} {}", obj, sequence, endOfBatch);
+                messageConsumed.incrementAndGet();
+            }
+        });
+        Thread con = new Thread(consumer);
+        con.start();
+        try {
+            Thread.sleep(15);
+            //The Flush message messes things up, so we are off by one to start out with.
+            for (int i = 0; i < BATCH_SIZE -1; i++) {
+                q.publish(i);
+            } 
+            Thread.sleep(15);
+            assertEquals(BATCH_SIZE - 1, messageConsumed.get());
+
+            for (int base = BATCH_SIZE - 1 ; base < 2048; base += BATCH_SIZE) {
+                for (int i = 0; i < (BATCH_SIZE - 1); i++) {
+                    q.publish(base + i);
+                    //assertEquals(base, messageConsumed.get());
+                }
+                q.publish(base + BATCH_SIZE - 1);
+                Thread.sleep(15);
+                assertEquals(base + BATCH_SIZE, messageConsumed.get());
+            }
+        } finally {
+            con.interrupt();
+            con.join(TIMEOUT);
+        }
+    }
+
+    @Test
+    public void testBatchiTimeout() throws Exception {
+        final int BATCH_SIZE = 100;
+        LOG.info("Starting test-batch-timeout");
+        final AtomicInteger messageConsumed = new AtomicInteger(0);
+        DisruptorQueue q = new DisruptorQueue("TEST-BATCH", new MultiThreadedClaimStrategy(
+                1024), new BlockingWaitStrategy(), 20L, BATCH_SIZE);
+
+        Runnable consumer = new Consumer(q, new EventHandler<Object>() {
+            @Override
+            public void onEvent(Object obj, long sequence, boolean endOfBatch)
+                    throws Exception {
+                LOG.info("GOT {} {} {}", obj, sequence, endOfBatch);
+                messageConsumed.incrementAndGet();
+            }
+        });
+        Thread con = new Thread(consumer);
+        con.start();
+        try {
+            Thread.sleep(15);
+            q.publish(1);
+            Thread.sleep(35);
+            assertEquals(1, messageConsumed.get());
+        } finally {
+            con.interrupt();
+            con.join(TIMEOUT);
+        }
+    }
 
     private void run(Runnable producer, Runnable consumer)
             throws InterruptedException {
@@ -154,6 +228,6 @@ public class DisruptorQueueTest extends TestCase {
 
     private static DisruptorQueue createQueue(String name, int queueSize) {
         return new DisruptorQueue(name, new MultiThreadedClaimStrategy(
-                queueSize), new BlockingWaitStrategy(), 10L);
+                queueSize), new BlockingWaitStrategy(), 10L, 1);
     }
 }

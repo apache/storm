@@ -1490,6 +1490,13 @@ public class Config extends HashMap<String, Object> {
     public static final Object TOPOLOGY_DISRUPTOR_WAIT_TIMEOUT_MILLIS_SCHEMA = ConfigValidation.NotNullPosIntegerValidator;
 
     /**
+     * Configure the number of tuples to wait for in a batch before processing
+     */
+    public static final String TOPOLOGY_DISRUPTOR_WAIT_BATCH_SIZE="topology.disruptor.wait.batch.size";
+    public static final Object TOPOLOGY_DISRUPTOR_WAIT_BATCH_SIZE_SCHEMA = ConfigValidation.NotNullPosIntegerValidator;
+
+
+    /**
      * Which implementation of {@link backtype.storm.codedistributor.ICodeDistributor} should be used by storm for code
      * distribution.
      */

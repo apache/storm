@@ -36,6 +36,8 @@ import java.util.HashMap;
 import java.util.Map;
 import backtype.storm.metric.api.IStatefulObject;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -43,8 +45,10 @@ import backtype.storm.metric.api.IStatefulObject;
  * the ability to catch up to the producer by processing tuples in batches.
  */
 public class DisruptorQueue implements IStatefulObject {
+    private static final Logger LOG = LoggerFactory.getLogger(DisruptorQueue.class);
     static final Object FLUSH_CACHE = new Object();
     static final Object INTERRUPT = new Object();
+    private final int _batchSize;
     
     RingBuffer<MutableObject> _buffer;
     Sequence _consumer;
@@ -63,8 +67,9 @@ public class DisruptorQueue implements IStatefulObject {
 
     private long _waitTimeout;
     
-    public DisruptorQueue(String queueName, ClaimStrategy claim, WaitStrategy wait, long timeout) {
-         this._queueName = PREFIX + queueName;
+    public DisruptorQueue(String queueName, ClaimStrategy claim, WaitStrategy wait, long timeout, int batchSize) {
+        this._queueName = PREFIX + queueName;
+        _batchSize = batchSize;
         _buffer = new RingBuffer<MutableObject>(new ObjectEventFactory(), claim, wait);
         _consumer = new Sequence();
         _barrier = _buffer.newBarrier();
@@ -97,12 +102,15 @@ public class DisruptorQueue implements IStatefulObject {
     
     public void consumeBatchWhenAvailable(EventHandler<Object> handler) {
         try {
-            final long nextSequence = _consumer.get() + 1;
+            final long origSeq = _consumer.get();
+            final long nextSequence = origSeq + _batchSize;
+            //LOG.warn("trying to get {} more tuples sequence {} timeout {}", _batchSize, nextSequence, _waitTimeout);
             final long availableSequence =
                     _waitTimeout == 0L ? _barrier.waitFor(nextSequence) : _barrier.waitFor(nextSequence, _waitTimeout,
                             TimeUnit.MILLISECONDS);
+            //LOG.warn("Done waiting {} - {} = {}", availableSequence, origSeq, availableSequence-origSeq);
 
-            if (availableSequence >= nextSequence) {
+            if (availableSequence - origSeq > 0) {
                 consumeBatchToCursor(availableSequence, handler);
             }
         } catch (AlertException e) {
@@ -120,8 +128,9 @@ public class DisruptorQueue implements IStatefulObject {
                 Object o = mo.o;
                 mo.setObject(null);
                 if(o==FLUSH_CACHE) {
+                    //LOG.warn("FLUSHING {} messages", _cache.size());
                     Object c = null;
-                    while(true) {                        
+                    while(true) {
                         c = _cache.poll();
                         if(c==null) break;
                         else handler.onEvent(c, curr, true);
