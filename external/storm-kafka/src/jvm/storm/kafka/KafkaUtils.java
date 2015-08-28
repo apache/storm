@@ -71,7 +71,7 @@ public class KafkaUtils {
         OffsetRequest request = new OffsetRequest(
                 requestInfo, kafka.api.OffsetRequest.CurrentVersion(), consumer.clientId());
 
-        long[] offsets = consumer.getOffsetsBefore(request).offsets(topic, partition);
+        long[] offsets = (long[])consumer.getOffsetsBefore(request).offsets(topic, partition);
         if (offsets.length > 0) {
             return offsets[0];
         } else {

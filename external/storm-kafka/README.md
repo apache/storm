@@ -52,16 +52,23 @@ The optional ClientId is used as a part of the zookeeper path where the spout's 
 There are 2 extensions of KafkaConfig currently in use.
 
 Spoutconfig is an extension of KafkaConfig that supports additional fields with ZooKeeper connection info and for controlling
-behavior specific to KafkaSpout. The Zkroot will be used as root to store your consumer's offset. The id should uniquely
-identify your spout.
+behavior specific to KafkaSpout. The Zkroot will be used as root to store your consumer's offset if you chose Zookeeper as the storage. 
+The id should uniquely identify your spout.
 ```java
-public SpoutConfig(BrokerHosts hosts, String topic, String zkRoot, String id);
 public SpoutConfig(BrokerHosts hosts, String topic, String id);
+public SpoutConfig(BrokerHosts hosts, String topic, String zkRoot, String id);
 ```
 In addition to these parameters, SpoutConfig contains the following fields that control how KafkaSpout behaves:
 ```java
-    // setting for how often to save the current kafka offset to ZooKeeper
+    // setting for how often to save the current kafka offset
     public long stateUpdateIntervalMs = 2000;
+
+    // offset state information storage. validate options are storm and kafka
+    public String stateStore = "storm";
+    // timeout in millis for state read/write operations
+    public int stateOpTimeout = 5000;
+    // max retries allowed for state read/write operations
+    public int stateOpMaxRetry = 3;
 
     // Exponential back-off retry settings.  These are used when retrying messages after a bolt
     // calls OutputCollector.fail().
@@ -86,7 +93,7 @@ The KafkaConfig class also has bunch of public variables that controls your appl
     public int fetchMaxWait = 10000;
     public int bufferSizeBytes = 1024 * 1024;
     public MultiScheme scheme = new RawMultiScheme();
-    public boolean ignoreZkOffsets = false;
+    public boolean ignoreStoredOffsets = false;
     public long startOffsetTime = kafka.api.OffsetRequest.EarliestTime();
     public long maxOffsetBehind = Long.MAX_VALUE;
     public boolean useStartOffsetTimeIfOffsetOutOfRange = true;
@@ -139,20 +146,23 @@ setting `KafkaConfig.startOffsetTime` as follows:
 3. A Unix timestamp aka seconds since the epoch (e.g. via `System.currentTimeMillis()`):
    see [How do I accurately get offsets of messages for a certain timestamp using OffsetRequest?](https://cwiki.apache.org/confluence/display/KAFKA/FAQ#FAQ-HowdoIaccuratelygetoffsetsofmessagesforacertaintimestampusingOffsetRequest?) in the Kafka FAQ
 
-As the topology runs the Kafka spout keeps track of the offsets it has read and emitted by storing state information
-under the ZooKeeper path `SpoutConfig.zkRoot+ "/" + SpoutConfig.id`.  In the case of failures it recovers from the last
-written offset in ZooKeeper.
+As the topology runs the Kafka spout keeps track of the offsets it has read and emitted.  Kafka spout offers two options for offset storage which 
+can be configured by setting `SpoutConfig.stateStore`. By default, the `storm` option is chosen which stores offset state information 
+under the ZooKeeper path `SpoutConfig.zkRoot+ "/" + SpoutConfig.id`. The second option is `kafka` which stores offset state information using 
+Kafka's built-in offset management API.
 
-> **Important:**  When re-deploying a topology make sure that the settings for `SpoutConfig.zkRoot` and `SpoutConfig.id`
-> were not modified, otherwise the spout will not be able to read its previous consumer state information (i.e. the
-> offsets) from ZooKeeper -- which may lead to unexpected behavior and/or to data loss, depending on your use case.
+In the case of failures Kafka spout recovers from the last written offset.
+
+> **Important:**  When re-deploying a topology make sure that the settings for `SpoutConfig.zkRoot` (if `storm` is chosen as storage option)
+> and `SpoutConfig.id` were not modified, otherwise the spout will not be able to read its previous consumer state information (i.e. the
+> offsets) from storage -- which may lead to unexpected behavior and/or to data loss, depending on your use case.
 
 This means that when a topology has run once the setting `KafkaConfig.startOffsetTime` will not have an effect for
 subsequent runs of the topology because now the topology will rely on the consumer state information (offsets) in
-ZooKeeper to determine from where it should begin (more precisely: resume) reading.
-If you want to force the spout to ignore any consumer state information stored in ZooKeeper, then you should
-set the parameter `KafkaConfig.ignoreZkOffsets` to `true`.  If `true`, the spout will always begin reading from the
-offset defined by `KafkaConfig.startOffsetTime` as described above.
+storage to determine from where it should begin (more precisely: resume) reading.
+If you want to force the spout to ignore any consumer state information stored in storage, then you should
+set the parameter `KafkaConfig.ignoreStoredOffsets` to `true` (`KafkaConfig.ignoreZkOffsets` can be used as alias for backward compatibility).  
+If `true`, the spout will always begin reading from the offset defined by `KafkaConfig.startOffsetTime` as described above.
 
 
 ## Using storm-kafka with different versions of Scala

@@ -24,14 +24,16 @@ import java.util.Map;
 
 
 public class StaticCoordinator implements PartitionCoordinator {
+
     Map<Partition, PartitionManager> _managers = new HashMap<Partition, PartitionManager>();
     List<PartitionManager> _allManagers = new ArrayList();
 
-    public StaticCoordinator(DynamicPartitionConnections connections, Map stormConf, SpoutConfig config, ZkState state, int taskIndex, int totalTasks, String topologyInstanceId) {
-        StaticHosts hosts = (StaticHosts) config.hosts;
+    public StaticCoordinator(DynamicPartitionConnections connections, PartitionStateManagerFactory partitionStateManagerFactory, Map stormConf, SpoutConfig spoutConfig, int taskIndex, int totalTasks, String topologyInstanceId) {
+        StaticHosts hosts = (StaticHosts) spoutConfig.hosts;
         List<Partition> myPartitions = KafkaUtils.calculatePartitionsForTask(hosts.getPartitionInformation(), totalTasks, taskIndex);
+
         for (Partition myPartition : myPartitions) {
-            _managers.put(myPartition, new PartitionManager(connections, topologyInstanceId, state, stormConf, config, myPartition));
+            _managers.put(myPartition, new PartitionManager(connections, topologyInstanceId, partitionStateManagerFactory.getInstance(myPartition), stormConf, spoutConfig, myPartition));
         }
         _allManagers = new ArrayList(_managers.values());
     }
@@ -47,5 +49,4 @@ public class StaticCoordinator implements PartitionCoordinator {
 
     @Override
     public void refresh() { return; }
-
 }

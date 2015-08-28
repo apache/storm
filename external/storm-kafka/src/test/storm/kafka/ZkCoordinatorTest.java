@@ -47,32 +47,33 @@ public class ZkCoordinatorTest {
     private TestingServer server;
     private Map stormConf = new HashMap();
     private SpoutConfig spoutConfig;
-    private ZkState state;
     private SimpleConsumer simpleConsumer;
+    private PartitionStateManagerFactory partitionStateManagerFactory;
 
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
+
         server = new TestingServer();
         String connectionString = server.getConnectString();
         ZkHosts hosts = new ZkHosts(connectionString);
         hosts.refreshFreqSecs = 1;
-        spoutConfig = new SpoutConfig(hosts, "topic", "/test", "id");
-        Map conf = buildZookeeperConfig(server);
-        state = new ZkState(conf);
-        simpleConsumer = new SimpleConsumer("localhost", broker.getPort(), 60000, 1024, "testClient");
-        when(dynamicPartitionConnections.register(any(Broker.class), anyInt())).thenReturn(simpleConsumer);
-    }
 
-    private Map buildZookeeperConfig(TestingServer server) {
-        Map conf = new HashMap();
-        conf.put(Config.TRANSACTIONAL_ZOOKEEPER_PORT, server.getPort());
-        conf.put(Config.TRANSACTIONAL_ZOOKEEPER_SERVERS, Arrays.asList("localhost"));
-        conf.put(Config.STORM_ZOOKEEPER_SESSION_TIMEOUT, 20000);
-        conf.put(Config.STORM_ZOOKEEPER_CONNECTION_TIMEOUT, 20000);
-        conf.put(Config.STORM_ZOOKEEPER_RETRY_TIMES, 3);
-        conf.put(Config.STORM_ZOOKEEPER_RETRY_INTERVAL, 30);
-        return conf;
+        spoutConfig = new SpoutConfig(hosts, "topic", "/test", "id");
+        spoutConfig.zkServers = Arrays.asList("localhost");
+        spoutConfig.zkPort = server.getPort();
+
+        stormConf.put(Config.TRANSACTIONAL_ZOOKEEPER_PORT, server.getPort());
+        stormConf.put(Config.TRANSACTIONAL_ZOOKEEPER_SERVERS, Arrays.asList("localhost"));
+        stormConf.put(Config.STORM_ZOOKEEPER_SESSION_TIMEOUT, 20000);
+        stormConf.put(Config.STORM_ZOOKEEPER_CONNECTION_TIMEOUT, 20000);
+        stormConf.put(Config.STORM_ZOOKEEPER_RETRY_TIMES, 3);
+        stormConf.put(Config.STORM_ZOOKEEPER_RETRY_INTERVAL, 30);
+
+        simpleConsumer = new SimpleConsumer("localhost", broker.getPort(), 60000, 1024, "testClient");
+        partitionStateManagerFactory = new PartitionStateManagerFactory(stormConf, spoutConfig);
+
+        when(dynamicPartitionConnections.register(any(Broker.class), anyInt())).thenReturn(simpleConsumer);
     }
 
     @After
@@ -94,7 +95,6 @@ public class ZkCoordinatorTest {
             assertEquals(coordinator._taskIndex, myManagedPartitions.get(0).getPartition().partition);
         }
     }
-
 
     @Test
     public void testPartitionsChange() throws Exception {
@@ -138,7 +138,7 @@ public class ZkCoordinatorTest {
     private List<ZkCoordinator> buildCoordinators(int totalTasks) {
         List<ZkCoordinator> coordinatorList = new ArrayList<ZkCoordinator>();
         for (int i = 0; i < totalTasks; i++) {
-            ZkCoordinator coordinator = new ZkCoordinator(dynamicPartitionConnections, stormConf, spoutConfig, state, i, totalTasks, "test-id", reader);
+            ZkCoordinator coordinator = new ZkCoordinator(dynamicPartitionConnections, partitionStateManagerFactory, stormConf, spoutConfig, i, totalTasks, "test-id", reader);
             coordinatorList.add(coordinator);
         }
         return coordinatorList;
