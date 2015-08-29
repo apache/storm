@@ -42,22 +42,22 @@ public class PartitionManager {
     private final ReducedMetric _fetchAPILatencyMean;
     private final CountMetric _fetchAPICallCount;
     private final CountMetric _fetchAPIMessageCount;
-    private Long _emittedToOffset;
+    Long _emittedToOffset;
     // _pending key = Kafka offset, value = time at which the message was first submitted to the topology
     private SortedMap<Long,Long> _pending = new TreeMap<Long,Long>();
     private final FailedMsgRetryManager _failedMsgRetryManager;
 
     // retryRecords key = Kafka offset, value = retry info for the given message
-    private Long _committedTo;
-    private LinkedList<MessageAndRealOffset> _waitingToEmit = new LinkedList<MessageAndRealOffset>();
-    private Partition _partition;
-    private SpoutConfig _spoutConfig;
-    private String _topologyInstanceId;
-    private SimpleConsumer _consumer;
-    private DynamicPartitionConnections _connections;
-    private ZkState _state;
-    private Map _stormConf;
-    private long numberFailed, numberAcked;
+    Long _committedTo;
+    LinkedList<MessageAndRealOffset> _waitingToEmit = new LinkedList<MessageAndRealOffset>();
+    Partition _partition;
+    SpoutConfig _spoutConfig;
+    String _topologyInstanceId;
+    SimpleConsumer _consumer;
+    DynamicPartitionConnections _connections;
+    ZkState _state;
+    Map _stormConf;
+    long numberFailed, numberAcked;
     public PartitionManager(DynamicPartitionConnections connections, String topologyInstanceId, ZkState state, Map stormConf, SpoutConfig spoutConfig, Partition id) {
         _partition = id;
         _connections = connections;
