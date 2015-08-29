@@ -849,7 +849,7 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>make-maven-plugin</artifactId>
-						<version>1.0-beta-1</version>
+                        <version>1.0-beta-1</version>
                         <executions>
                             <execution>
                                 <id>compile</id>
