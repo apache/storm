@@ -887,7 +887,6 @@
 
                             <!-- configure & make settings -->
                             <destDir>${project.build.directory}/native/target</destDir>
-
                         </configuration>
                     </plugin>
                 </plugins>
