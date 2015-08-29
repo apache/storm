@@ -210,4 +210,5 @@ public interface ITuple {
      * Gets all the values in this tuple.
      */
     public List<Object> getValues();
+
 }
