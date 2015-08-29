@@ -23,9 +23,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class StaticPartitionConnections {
-    Map<Integer, SimpleConsumer> _kafka = new HashMap<Integer, SimpleConsumer>();
-    KafkaConfig _config;
-    StaticHosts hosts;
+    private Map<Integer, SimpleConsumer> _kafka = new HashMap<Integer, SimpleConsumer>();
+    private KafkaConfig _config;
+    private StaticHosts hosts;
 
     public StaticPartitionConnections(KafkaConfig conf) {
         _config = conf;

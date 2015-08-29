@@ -26,20 +26,20 @@ import java.util.*;
 import static storm.kafka.KafkaUtils.taskId;
 
 public class ZkCoordinator implements PartitionCoordinator {
-    public static final Logger LOG = LoggerFactory.getLogger(ZkCoordinator.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ZkCoordinator.class);
 
-    SpoutConfig _spoutConfig;
-    int _taskIndex;
-    int _totalTasks;
-    String _topologyInstanceId;
-    Map<Partition, PartitionManager> _managers = new HashMap();
-    List<PartitionManager> _cachedList = new ArrayList<PartitionManager>();
-    Long _lastRefreshTime = null;
-    int _refreshFreqMs;
-    DynamicPartitionConnections _connections;
-    DynamicBrokersReader _reader;
-    ZkState _state;
-    Map _stormConf;
+    private SpoutConfig _spoutConfig;
+    private int _taskIndex;
+    private int _totalTasks;
+    private String _topologyInstanceId;
+    private Map<Partition, PartitionManager> _managers = new HashMap();
+    private List<PartitionManager> _cachedList = new ArrayList<PartitionManager>();
+    private Long _lastRefreshTime;
+    private int _refreshFreqMs;
+    private DynamicPartitionConnections _connections;
+    private DynamicBrokersReader _reader;
+    private ZkState _state;
+    private Map _stormConf;
 
     public ZkCoordinator(DynamicPartitionConnections connections, Map stormConf, SpoutConfig spoutConfig, ZkState state, int taskIndex, int totalTasks, String topologyInstanceId) {
         this(connections, stormConf, spoutConfig, state, taskIndex, totalTasks, topologyInstanceId, buildReader(stormConf, spoutConfig));
