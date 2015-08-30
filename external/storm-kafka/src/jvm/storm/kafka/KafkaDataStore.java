@@ -165,7 +165,7 @@ public class KafkaDataStore {
         if (commitResponse.hasError()) {
             // note: here we should have only 1 error for the partition in request
             for (Object partitionErrorCode : commitResponse.errors().values()) {
-                if (partitionErrorCode == ErrorMapping.OffsetMetadataTooLargeCode()) {
+                if (partitionErrorCode.equals(ErrorMapping.OffsetMetadataTooLargeCode())) {
                     throw new RuntimeException("Data is too big. The data object is " + data);
                 } else {
                     _offsetManager = null;
