@@ -1,4 +1,5 @@
 ## 0.10.0-beta2
+ * STORM-994: Connection leak between nimbus and supervisors
  * STORM-1001: Undefined STORM_EXT_CLASSPATH adds '::' to classpath of workers
  * STORM-977: Incorrect signal (-9) when as-user is true
  * STORM-843: [storm-redis] Add Javadoc to storm-redis
