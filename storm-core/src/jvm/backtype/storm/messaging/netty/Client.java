@@ -120,7 +120,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
     private final MessageBuffer batcher;
 
     private final Object writeLock = new Object();
-    
+
     @SuppressWarnings("rawtypes")
     Client(Map stormConf, ChannelFactory factory, HashedWheelTimer scheduler, String host, int port) {
         closing = false;
@@ -251,7 +251,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
                 }
             }
         }
-            
+
         if(channel.isWritable()){
             synchronized (writeLock) {
                 // Netty's internal buffer is not full and we still have message left in the buffer.
@@ -315,7 +315,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
         if (null == batch || batch.isEmpty()) {
             return;
         }
-        
+
         final int numMessages = batch.size();
         LOG.debug("writing {} messages to channel {}", batch.size(), channel.toString());
         pendingMessages.addAndGet(numMessages);
