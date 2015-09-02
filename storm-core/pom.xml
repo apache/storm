@@ -859,6 +859,7 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>make-maven-plugin</artifactId>
+                        <version>1.0-beta-1</version>
                         <executions>
                             <execution>
                                 <id>compile</id>
@@ -896,7 +897,6 @@
 
                             <!-- configure & make settings -->
                             <destDir>${project.build.directory}/native/target</destDir>
-
                         </configuration>
                     </plugin>
                 </plugins>
