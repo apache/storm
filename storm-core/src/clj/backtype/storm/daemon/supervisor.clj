@@ -692,6 +692,7 @@
                      (str "-Dstorm.id=" storm-id)
                      (str "-Dworker.id=" worker-id)
                      (str "-Dworker.port=" port)
+                     (str "-Dstorm.log.dir=" storm-log-dir)
                      (str "-Dlog4j.configurationFile=" storm-logback-conf-dir file-path-separator "worker.xml")
                      "backtype.storm.LogWriter"]
                     [(java-cmd) "-server"]
