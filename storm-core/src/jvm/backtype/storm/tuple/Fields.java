@@ -26,7 +26,7 @@ import java.util.Map;
 import java.io.Serializable;
 
 /**
- * Collection of unique named fields using in an ITuple
+ * Collection of unique named fields using in an ITuple 
  */
 public class Fields implements Iterable<String>, Serializable {
     private List<String> _fields;
