@@ -439,8 +439,7 @@
         storm-base (.storm-base (:storm-cluster-state nimbus) storm-id nil)
         component->executors (:component->executors storm-base)
         storm-conf (read-storm-conf conf storm-id)
-        topology (read-storm-topology conf storm-id)
-        task->component (storm-task-info topology storm-conf)]
+        topology (read-storm-topology conf storm-id)]
     (->> (storm-task-info topology storm-conf)
          reverse-map
          (map-val sort)
