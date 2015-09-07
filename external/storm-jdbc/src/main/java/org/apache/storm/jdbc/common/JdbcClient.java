@@ -17,23 +17,35 @@
  */
 package org.apache.storm.jdbc.common;
 
-import com.google.common.base.Function;
-import com.google.common.base.Joiner;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.Lists;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.Date;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.*;
-import java.sql.Date;
-import java.util.*;
+import com.google.common.base.Function;
+import com.google.common.base.Joiner;
+import com.google.common.collect.Collections2;
+import com.google.common.collect.Lists;
 
 public class JdbcClient {
     private static final Logger LOG = LoggerFactory.getLogger(JdbcClient.class);
 
-    private ConnectionProvider connectionProvider;
-    private int queryTimeoutSecs;
+    protected ConnectionProvider connectionProvider;
+    protected int queryTimeoutSecs;
 
     public JdbcClient(ConnectionProvider connectionProvider, int queryTimeoutSecs) {
         this.connectionProvider = connectionProvider;
@@ -187,8 +199,43 @@ public class JdbcClient {
             closeConnection(connection);
         }
     }
-
-    private void setPreparedStatementParams(PreparedStatement preparedStatement, List<Column> columnList) throws SQLException {
+    
+    public void executeBatchSql(List<String> sqlList) {
+        Connection connection = null;
+        try {
+            connection = connectionProvider.getConnection();
+            Statement statement = connection.createStatement();
+            connection.setAutoCommit(false);
+            for(String sql : sqlList){
+                statement.addBatch(sql);
+            }
+            int[] results = statement.executeBatch();
+            if(Arrays.asList(results).contains(Statement.EXECUTE_FAILED)) {
+                connection.rollback();
+                throw new RuntimeException("failed at least one sql statement in the batch, operation rolled back.");
+            } else {
+                try {
+                    connection.commit();
+                } catch (SQLException e) {
+                    throw new RuntimeException("Failed to commit insert query ", e);
+                }
+            }
+        } catch (SQLException e) {
+        	try
+			{
+				connection.rollback();
+			}
+			catch (SQLException e1)
+			{
+	            throw new RuntimeException("Failed to rollback jdbc connection ", e);
+			}
+            throw new RuntimeException("Failed to execute SQL", e);
+        } finally {
+            closeConnection(connection);
+        }
+    }
+    
+    protected void setPreparedStatementParams(PreparedStatement preparedStatement, List<Column> columnList) throws SQLException {
         int index = 1;
         for (Column column : columnList) {
             Class columnJavaType = Util.getJavaType(column.getSqlType());
@@ -223,7 +270,7 @@ public class JdbcClient {
         }
     }
 
-    private void closeConnection(Connection connection) {
+    protected void closeConnection(Connection connection) {
         if (connection != null) {
             try {
                 connection.close();
