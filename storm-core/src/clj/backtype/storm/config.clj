@@ -102,7 +102,7 @@
 ;
 ; ### storm.* configs are general configurations
 ; # the local dir is where jars are kept
-; storm.local.dir: "/mnt/storm"
+; storm.local.dir: "/var/storm-local"
 ; storm.zookeeper.port: 2181
 ; storm.zookeeper.root: "/storm"
 

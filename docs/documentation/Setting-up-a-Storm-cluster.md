@@ -52,10 +52,13 @@ storm.zookeeper.servers:
 
 If the port that your Zookeeper cluster uses is different than the default, you should set **storm.zookeeper.port** as well.
 
-2) **storm.local.dir**: The Nimbus and Supervisor daemons require a directory on the local disk to store small amounts of state (like jars, confs, and things like that). You should create that directory on each machine, give it proper permissions, and then fill in the directory location using this config. For example:
+2) **storm.local.dir**: The Nimbus and Supervisor daemons require a directory on the local disk to store small amounts of state (like jars, confs, and things like that).
+ You should create that directory on each machine, give it proper permissions, and then fill in the directory location using this config.
+ You'd better set it to absolute path rather than relative path,otherwise it will cause unexpected behavior when you launch daemons
+ from different directories.For example:
 
 ```yaml
-storm.local.dir: "/mnt/storm"
+storm.local.dir: "/var/storm-local"
 ```
 
 3) **nimbus.host**: The worker nodes need to know which machine is the master in order to download topology jars and confs. For example:
