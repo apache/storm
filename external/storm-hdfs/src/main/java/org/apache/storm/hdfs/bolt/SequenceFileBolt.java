@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
+import java.security.PrivilegedExceptionAction;
 import java.util.Map;
 
 public class SequenceFileBolt extends AbstractHdfsBolt {
@@ -104,29 +105,38 @@ public class SequenceFileBolt extends AbstractHdfsBolt {
     }
 
     @Override
-    public void execute(Tuple tuple) {
+    public void execute(final Tuple tuple) {
         try {
-            long offset;
-            synchronized (this.writeLock) {
-                this.writer.append(this.format.key(tuple), this.format.value(tuple));
-                offset = this.writer.getLength();
+            this.userGroupInformation.doAs(
+                    new PrivilegedExceptionAction<Void>() {
+                        public Void run() throws Exception {
+                            long offset;
+                            synchronized (writeLock) {
+                                writer.append(format.key(tuple), format.value(tuple));
+                                offset = writer.getLength();
 
-                if (this.syncPolicy.mark(tuple, offset)) {
-                    this.writer.hsync();
-                    this.syncPolicy.reset();
-                }
-            }
+                                if (syncPolicy.mark(tuple, offset)) {
+                                    writer.hsync();
+                                    syncPolicy.reset();
+                                }
+                            }
 
-            this.collector.ack(tuple);
-            if (this.rotationPolicy.mark(tuple, offset)) {
-                rotateOutputFile(); // synchronized
-                this.rotationPolicy.reset();
-            }
+                            collector.ack(tuple);
+                            if (rotationPolicy.mark(tuple, offset)) {
+                                rotateOutputFile(); // synchronized
+                                rotationPolicy.reset();
+                            }
+                            return null;
+                        }
+                    }
+            );
         } catch (IOException e) {
             this.collector.reportError(e);
             this.collector.fail(tuple);
+        } catch (InterruptedException ie) {
+            this.collector.reportError(ie);
+            this.collector.fail(tuple);
         }
-
     }
 
     Path createOutputFile() throws IOException {
