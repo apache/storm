@@ -236,7 +236,7 @@
         </dependency>
         <dependency>
             <groupId>io.netty</groupId>
-            <artifactId>netty</artifactId>
+            <artifactId>netty-all</artifactId>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
@@ -361,7 +361,7 @@
                     <artifactSet>
                         <includes>
                             <include>org.apache.thrift:*</include>
-                            <include>io.netty:netty</include>
+                            <include>io.netty:netty-all</include>
                             <include>com.google.guava:guava</include>
                             <include>org.apache.httpcomponents:http*</include>
                             <include>org.apache.zookeeper:zookeeper</include>
@@ -407,7 +407,7 @@
                             <shadedPattern>org.apache.thrift7</shadedPattern>
                         </relocation>
                         <relocation>
-                            <pattern>org.jboss.netty</pattern>
+                            <pattern>io.netty</pattern>
                             <shadedPattern>org.apache.storm.netty</shadedPattern>
                         </relocation>
                         <relocation>
@@ -429,10 +429,6 @@
                         <relocation>
                             <pattern>org.apache.curator</pattern>
                             <shadedPattern>org.apache.storm.curator</shadedPattern>
-                        </relocation>
-                        <relocation>
-                            <pattern>org.jboss.netty</pattern>
-                            <shadedPattern>org.apache.storm.netty</shadedPattern>
                         </relocation>
                         <relocation>
                             <pattern>com.google.common</pattern>
@@ -555,7 +551,7 @@
                             </excludes>
                         </filter>
                         <filter>
-                            <artifact>io.netty:netty</artifact>
+                            <artifact>io.netty:netty-all</artifact>
                             <excludes>
                                 <exclude>META-INF/LICENSE.txt</exclude>
                                 <exclude>META-INF/NOTICE.txt</exclude>

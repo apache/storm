@@ -18,17 +18,15 @@
 package backtype.storm.messaging.netty;
 
 import backtype.storm.messaging.TaskMessage;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import com.google.common.collect.ImmutableList;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.util.List;
+
 import java.util.concurrent.atomic.AtomicInteger;
 
-class StormServerHandler extends SimpleChannelUpstreamHandler  {
+class StormServerHandler extends ChannelInboundHandlerAdapter {
     private static final Logger LOG = LoggerFactory.getLogger(StormServerHandler.class);
     Server server;
     private AtomicInteger failure_count; 
@@ -37,30 +35,27 @@ class StormServerHandler extends SimpleChannelUpstreamHandler  {
         this.server = server;
         failure_count = new AtomicInteger(0);
     }
-    
+
     @Override
-    public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
-        server.addChannel(e.getChannel());
+    public void channelActive(ChannelHandlerContext ctx) {
+        server.addChannel(ctx.channel());
     }
-    
+
     @Override
-    public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) {
-      List<TaskMessage> msgs = (List<TaskMessage>) e.getMessage();
-      if (msgs == null) {
-        return;
-      }
-      
+    public void channelRead(ChannelHandlerContext ctx, Object msg) {
+      TaskMessage taskMessage = (TaskMessage) msg;
+
       try {
-        server.enqueue(msgs, e.getRemoteAddress().toString());
+        server.enqueue(ImmutableList.of(taskMessage), ctx.channel().remoteAddress().toString());
       } catch (InterruptedException e1) {
-        LOG.info("failed to enqueue a request message", e);
+        LOG.info("failed to enqueue a request message", e1);
         failure_count.incrementAndGet();
       }
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
-        LOG.error("server errors in handling the request", e.getCause());
-        server.closeChannel(e.getChannel());
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        LOG.error("server errors in handling the request", cause);
+        server.closeChannel(ctx.channel());
     }
 }

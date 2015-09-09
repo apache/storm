@@ -211,7 +211,7 @@
         <disruptor.version>2.10.4</disruptor.version>
         <jgrapht.version>0.9.0</jgrapht.version>
         <guava.version>16.0.1</guava.version>
-        <netty.version>3.9.0.Final</netty.version>
+        <netty.version>4.0.30.Final</netty.version>
         <log4j-over-slf4j.version>1.6.6</log4j-over-slf4j.version>
         <log4j.version>2.1</log4j.version>
         <clojure.tools.nrepl.version>0.2.3</clojure.tools.nrepl.version>
@@ -517,7 +517,7 @@
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
-                <artifactId>netty</artifactId>
+                <artifactId>netty-all</artifactId>
                 <version>${netty.version}</version>
             </dependency>
             <dependency>

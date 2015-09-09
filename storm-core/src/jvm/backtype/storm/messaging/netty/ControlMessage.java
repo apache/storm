@@ -17,11 +17,11 @@
  */
 package backtype.storm.messaging.netty;
 
-import java.io.IOException;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufOutputStream;
+import io.netty.buffer.Unpooled;
 
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBufferOutputStream;
-import org.jboss.netty.buffer.ChannelBuffers;
+import java.io.IOException;
 
 enum ControlMessage {
     CLOSE_MESSAGE((short)-100),
@@ -56,16 +56,16 @@ enum ControlMessage {
     
     /**
      * encode the current Control Message into a channel buffer
-     * @throws Exception
+     * @throws Exception if failed to write to buffer
      */
-    ChannelBuffer buffer() throws IOException {
-        ChannelBufferOutputStream bout = new ChannelBufferOutputStream(ChannelBuffers.directBuffer(encodeLength()));      
+    ByteBuf buffer() throws IOException {
+        ByteBufOutputStream bout = new ByteBufOutputStream(Unpooled.directBuffer(encodeLength()));
         write(bout);
         bout.close();
         return bout.buffer();
     }
 
-    void write(ChannelBufferOutputStream bout) throws IOException {
+    void write(ByteBufOutputStream bout) throws IOException {
         bout.writeShort(code);        
     } 
 }

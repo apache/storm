@@ -17,16 +17,15 @@
  */
 package backtype.storm.messaging.netty;
 
-import java.util.ArrayList;
+import backtype.storm.messaging.TaskMessage;
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.ByteToMessageDecoder;
+
 import java.util.List;
 
-import backtype.storm.messaging.TaskMessage;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.handler.codec.frame.FrameDecoder;
+public class MessageDecoder extends ByteToMessageDecoder {
 
-public class MessageDecoder extends FrameDecoder {    
     /*
      * Each ControlMessage is encoded as:
      *  code (<0) ... short(2)
@@ -35,15 +34,14 @@ public class MessageDecoder extends FrameDecoder {
      *  len ... int(4)
      *  payload ... byte[]     *  
      */
-    protected Object decode(ChannelHandlerContext ctx, Channel channel, ChannelBuffer buf) throws Exception {
+    @Override
+    protected void decode(ChannelHandlerContext ctx, ByteBuf buf, List<Object> out) throws Exception {
         // Make sure that we have received at least a short 
         long available = buf.readableBytes();
         if (available < 2) {
             //need more data
-            return null;
+            return;
         }
-
-        List<Object> ret = new ArrayList<Object>();
 
         // Use while loop, try to decode as more messages as possible in single call
         while (available >= 2) {
@@ -65,7 +63,8 @@ public class MessageDecoder extends FrameDecoder {
                 if (ctrl_msg == ControlMessage.EOB_MESSAGE) {
                     continue;
                 } else {
-                    return ctrl_msg;
+                    out.add(ctrl_msg);
+                    return;
                 }
             }
             
@@ -75,28 +74,30 @@ public class MessageDecoder extends FrameDecoder {
                 if (buf.readableBytes() < 4) {
                     //need more data
                     buf.resetReaderIndex();
-                    return null;
+                    return;
                 }
                 
                 // Read the length field.
                 int length = buf.readInt();
                 if (length<=0) {
-                    return new SaslMessageToken(null);
+                    out.add(new SaslMessageToken(null));
+                    return;
                 }
                 
                 // Make sure if there's enough bytes in the buffer.
                 if (buf.readableBytes() < length) {
                     // The whole bytes were not received yet - return null.
                     buf.resetReaderIndex();
-                    return null;
+                    return;
                 }
                 
                 // There's enough bytes in the buffer. Read it.  
-                ChannelBuffer payload = buf.readBytes(length);
+                ByteBuf payload = buf.readBytes(length);
                 
                 // Successfully decoded a frame.
                 // Return a SaslTokenMessageRequest object
-                return new SaslMessageToken(payload.array());
+                out.add(new SaslMessageToken(payload.array()));
+                return;
             }
 
             // case 3: task Message
@@ -115,7 +116,7 @@ public class MessageDecoder extends FrameDecoder {
             available -= 4;
 
             if (length <= 0) {
-                ret.add(new TaskMessage(task, null));
+                out.add(new TaskMessage(task, null));
                 break;
             }
 
@@ -128,18 +129,13 @@ public class MessageDecoder extends FrameDecoder {
             available -= length;
 
             // There's enough bytes in the buffer. Read it.
-            ChannelBuffer payload = buf.readBytes(length);
+            ByteBuf payload = buf.readBytes(length);
 
 
             // Successfully decoded a frame.
             // Return a TaskMessage object
-            ret.add(new TaskMessage(task, payload.array()));
-        }
-
-        if (ret.size() == 0) {
-            return null;
-        } else {
-            return ret;
+            out.add(new TaskMessage(task, payload.array()));
         }
     }
+
 }

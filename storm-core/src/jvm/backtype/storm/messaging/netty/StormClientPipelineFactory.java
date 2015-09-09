@@ -17,22 +17,23 @@
  */
 package backtype.storm.messaging.netty;
 
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.Channels;
 
 import backtype.storm.Config;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
 
-class StormClientPipelineFactory implements ChannelPipelineFactory {
+class StormClientPipelineFactory extends ChannelInitializer {
     private Client client;
 
     StormClientPipelineFactory(Client client) {
         this.client = client;
     }
 
-    public ChannelPipeline getPipeline() throws Exception {
+    @Override
+    protected void initChannel(Channel ch) throws Exception {
         // Create a default pipeline implementation.
-        ChannelPipeline pipeline = Channels.pipeline();
+        ChannelPipeline pipeline = ch.pipeline();
 
         // Decoder
         pipeline.addLast("decoder", new MessageDecoder());
@@ -47,7 +48,5 @@ class StormClientPipelineFactory implements ChannelPipelineFactory {
         }
         // business logic.
         pipeline.addLast("handler", new StormClientHandler(client));
-
-        return pipeline;
     }
 }

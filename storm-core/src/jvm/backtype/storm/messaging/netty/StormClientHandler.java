@@ -19,11 +19,12 @@ package backtype.storm.messaging.netty;
 
 import java.net.ConnectException;
 
-import org.jboss.netty.channel.*;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class StormClientHandler extends SimpleChannelUpstreamHandler  {
+public class StormClientHandler extends ChannelInboundHandlerAdapter {
     private static final Logger LOG = LoggerFactory.getLogger(StormClientHandler.class);
     private Client client;
     
@@ -32,13 +33,12 @@ public class StormClientHandler extends SimpleChannelUpstreamHandler  {
     }
 
     @Override
-    public void channelInterestChanged(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
-        client.notifyInterestChanged(e.getChannel());
+    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+        client.notifyInterestChanged(ctx.channel());
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent event) {
-        Throwable cause = event.getCause();
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         if (!(cause instanceof ConnectException)) {
             LOG.info("Connection failed " + client.dstAddressPrefixedName, cause);
         }

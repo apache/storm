@@ -19,18 +19,15 @@ package backtype.storm.messaging.netty;
 
 import java.io.IOException;
 
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import backtype.storm.Config;
 
-public class SaslStormServerHandler extends SimpleChannelUpstreamHandler {
+public class SaslStormServerHandler extends ChannelInboundHandlerAdapter {
 
     Server server;
     /** Used for client or server's token to send or receive from each other. */
@@ -46,21 +43,17 @@ public class SaslStormServerHandler extends SimpleChannelUpstreamHandler {
     }
 
     @Override
-    public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
-            throws Exception {
-        Object msg = e.getMessage();
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         if (msg == null)
             return;
 
-        Channel channel = ctx.getChannel();
+        Channel channel = ctx.channel();
 
-        if (msg instanceof ControlMessage
-                && ((ControlMessage) e.getMessage()) == ControlMessage.SASL_TOKEN_MESSAGE_REQUEST) {
+        if (msg instanceof ControlMessage && ((ControlMessage) msg) == ControlMessage.SASL_TOKEN_MESSAGE_REQUEST) {
             // initialize server-side SASL functionality, if we haven't yet
             // (in which case we are looking at the first SASL message from the
             // client).
-            SaslNettyServer saslNettyServer = SaslNettyServerState.getSaslNettyServer
-                    .get(channel);
+            SaslNettyServer saslNettyServer = ctx.attr(SaslNettyServerState.SAS_NETTY_SERVER).get();
             if (saslNettyServer == null) {
                 LOG.debug("No saslNettyServer for " + channel
                         + " yet; creating now, with topology token: ");
@@ -68,18 +61,17 @@ public class SaslStormServerHandler extends SimpleChannelUpstreamHandler {
                     saslNettyServer = new SaslNettyServer(topologyName, token);
                 } catch (IOException ioe) {
                     LOG.error("Error occurred while creating saslNettyServer on server "
-                            + channel.getLocalAddress()
+                            + channel.localAddress()
                             + " for client "
-                            + channel.getRemoteAddress());
+                            + channel.remoteAddress());
                     saslNettyServer = null;
                 }
 
-                SaslNettyServerState.getSaslNettyServer.set(channel,
-                        saslNettyServer);
+                ctx.attr(SaslNettyServerState.SAS_NETTY_SERVER).set(saslNettyServer);
             } else {
                 LOG.debug("Found existing saslNettyServer on server:"
-                        + channel.getLocalAddress() + " for client "
-                        + channel.getRemoteAddress());
+                        + channel.localAddress() + " for client "
+                        + channel.remoteAddress());
             }
 
             LOG.debug("processToken:  With nettyServer: " + saslNettyServer
@@ -89,7 +81,7 @@ public class SaslStormServerHandler extends SimpleChannelUpstreamHandler {
             saslTokenMessageRequest = new SaslMessageToken(
                     saslNettyServer.response(new byte[0]));
             // Send response to client.
-            channel.write(saslTokenMessageRequest);
+            channel.writeAndFlush(saslTokenMessageRequest);
             // do not send upstream to other handlers: no further action needs
             // to be done for SASL_TOKEN_MESSAGE_REQUEST requests.
             return;
@@ -99,8 +91,7 @@ public class SaslStormServerHandler extends SimpleChannelUpstreamHandler {
             // initialize server-side SASL functionality, if we haven't yet
             // (in which case we are looking at the first SASL message from the
             // client).
-            SaslNettyServer saslNettyServer = SaslNettyServerState.getSaslNettyServer
-                    .get(channel);
+            SaslNettyServer saslNettyServer = ctx.attr(SaslNettyServerState.SAS_NETTY_SERVER).get();
             if (saslNettyServer == null) {
                 if (saslNettyServer == null) {
                     throw new Exception("saslNettyServer was unexpectedly "
@@ -112,17 +103,17 @@ public class SaslStormServerHandler extends SimpleChannelUpstreamHandler {
                             .getSaslToken()));
 
             // Send response to client.
-            channel.write(saslTokenMessageRequest);
+            channel.writeAndFlush(saslTokenMessageRequest);
 
             if (saslNettyServer.isComplete()) {
                 // If authentication of client is complete, we will also send a
                 // SASL-Complete message to the client.
                 LOG.debug("SASL authentication is complete for client with "
                         + "username: " + saslNettyServer.getUserName());
-                channel.write(ControlMessage.SASL_COMPLETE_REQUEST);
+                channel.writeAndFlush(ControlMessage.SASL_COMPLETE_REQUEST);
                 LOG.debug("Removing SaslServerHandler from pipeline since SASL "
                         + "authentication is complete.");
-                ctx.getPipeline().remove(this);
+                ctx.pipeline().remove(this);
             }
             return;
         } else {
@@ -133,13 +124,13 @@ public class SaslStormServerHandler extends SimpleChannelUpstreamHandler {
             // authentication has not completed.
             LOG.warn("Sending upstream an unexpected non-SASL message :  "
                     + msg);
-            Channels.fireMessageReceived(ctx, msg);
+            ctx.fireChannelRead(msg);
         }
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
-        server.closeChannel(e.getChannel());
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        server.closeChannel(ctx.channel());
     }
 
     private void getSASLCredentials() throws IOException {

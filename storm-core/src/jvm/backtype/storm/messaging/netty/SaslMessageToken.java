@@ -17,9 +17,9 @@
  */
 package backtype.storm.messaging.netty;
 
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBufferOutputStream;
-import org.jboss.netty.buffer.ChannelBuffers;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufOutputStream;
+import io.netty.buffer.Unpooled;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,9 +80,9 @@ public class SaslMessageToken {
      * 
      * @throws Exception
      */
-    ChannelBuffer buffer() throws Exception {
-        ChannelBufferOutputStream bout = new ChannelBufferOutputStream(
-                ChannelBuffers.directBuffer(encodeLength()));
+    ByteBuf buffer() throws Exception {
+        ByteBufOutputStream bout = new ByteBufOutputStream(
+                Unpooled.directBuffer(encodeLength()));
         short identifier = -500;
         int payload_len = 0;
         if (token != null)

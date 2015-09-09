@@ -26,22 +26,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 
-import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFactory;
-import org.jboss.netty.channel.group.ChannelGroup;
-import org.jboss.netty.channel.group.DefaultChannelGroup;
-import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.*;
+import io.netty.channel.group.ChannelGroup;
+import io.netty.channel.group.DefaultChannelGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.util.concurrent.GlobalEventExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import backtype.storm.Config;
 import backtype.storm.messaging.ConnectionWithStatus;
-import backtype.storm.messaging.IConnection;
 import backtype.storm.messaging.TaskMessage;
 import backtype.storm.metric.api.IStatefulObject;
 import backtype.storm.utils.Utils;
@@ -61,8 +60,9 @@ class Server extends ConnectionWithStatus implements IStatefulObject {
     // For message which is sent to same task, it will be stored in the same queue to preserve the message order.
     private LinkedBlockingQueue<ArrayList<TaskMessage>>[] message_queue;
     
-    volatile ChannelGroup allChannels = new DefaultChannelGroup("storm-server");
-    final ChannelFactory factory;
+    volatile ChannelGroup allChannels = new DefaultChannelGroup("storm-server", GlobalEventExecutor.INSTANCE);
+    final EventLoopGroup bossEventLoopGroup;
+    final EventLoopGroup workerEventLoopGroup;
     final ServerBootstrap bootstrap;
     
     private int queueCount;
@@ -96,29 +96,34 @@ class Server extends ConnectionWithStatus implements IStatefulObject {
 
         ThreadFactory bossFactory = new NettyRenameThreadFactory(name() + "-boss");
         ThreadFactory workerFactory = new NettyRenameThreadFactory(name() + "-worker");
-        
+
+        // 0 means DEFAULT_EVENT_LOOP_THREADS
+        bossEventLoopGroup = new NioEventLoopGroup(0, bossFactory);
         if (maxWorkers > 0) {
-            factory = new NioServerSocketChannelFactory(Executors.newCachedThreadPool(bossFactory), 
-                Executors.newCachedThreadPool(workerFactory), maxWorkers);
+            workerEventLoopGroup = new NioEventLoopGroup(maxWorkers, workerFactory);
         } else {
-            factory = new NioServerSocketChannelFactory(Executors.newCachedThreadPool(bossFactory), 
-                Executors.newCachedThreadPool(workerFactory));
+            workerEventLoopGroup = new NioEventLoopGroup(0, workerFactory);
         }
         
         LOG.info("Create Netty Server " + name() + ", buffer_size: " + buffer_size + ", maxWorkers: " + maxWorkers);
         
-        bootstrap = new ServerBootstrap(factory);
-        bootstrap.setOption("child.tcpNoDelay", true);
-        bootstrap.setOption("child.receiveBufferSize", buffer_size);
-        bootstrap.setOption("child.keepAlive", true);
-        bootstrap.setOption("backlog", backlog);
+        bootstrap = new ServerBootstrap()
+                .group(bossEventLoopGroup, workerEventLoopGroup)
+                .channel(NioServerSocketChannel.class)
+                .option(ChannelOption.SO_BACKLOG, backlog)
+                .childOption(ChannelOption.TCP_NODELAY, true)
+                .childOption(ChannelOption.SO_RCVBUF, buffer_size)
+                .childOption(ChannelOption.SO_KEEPALIVE, true)
+                .childHandler(new StormServerPipelineFactory(this));
 
-        // Set up the pipeline factory.
-        bootstrap.setPipelineFactory(new StormServerPipelineFactory(this));
 
         // Bind and start to accept incoming connections.
-        Channel channel = bootstrap.bind(new InetSocketAddress(port));
-        allChannels.add(channel);
+        try {
+            ChannelFuture f = bootstrap.bind(new InetSocketAddress(port)).sync();
+            allChannels.add(f.channel());
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
     
     private ArrayList<TaskMessage>[] groupMessages(List<TaskMessage> msgs) {
@@ -260,7 +265,8 @@ class Server extends ConnectionWithStatus implements IStatefulObject {
     public synchronized void close() {
         if (allChannels != null) {
             allChannels.close().awaitUninterruptibly();
-            factory.releaseExternalResources();
+            bossEventLoopGroup.shutdownGracefully();
+            workerEventLoopGroup.shutdownGracefully();
             allChannels = null;
         }
     }
@@ -291,7 +297,7 @@ class Server extends ConnectionWithStatus implements IStatefulObject {
     }
 
     private boolean connectionEstablished(Channel channel) {
-      return channel != null && channel.isBound();
+      return channel != null && channel.isOpen();
     }
 
     private boolean connectionEstablished(ChannelGroup allChannels) {

@@ -17,15 +17,11 @@
  */
 package backtype.storm.messaging.netty;
 
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelLocal;
+
+import io.netty.util.AttributeKey;
 
 final class SaslNettyClientState {
 
-	public static final ChannelLocal<SaslNettyClient> getSaslNettyClient = new ChannelLocal<SaslNettyClient>() {
-		protected SaslNettyClient initialValue(Channel channel) {
-			return null;
-		}
-	};
+	public static final AttributeKey<SaslNettyClient> SASL_NETTY_CLIENT = AttributeKey.valueOf("sas.netty.client");
 
 }

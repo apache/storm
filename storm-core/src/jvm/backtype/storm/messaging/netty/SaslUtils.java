@@ -17,16 +17,13 @@
  */
 package backtype.storm.messaging.netty;
 
-import java.nio.charset.Charset;
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.security.sasl.Sasl;
-
+import backtype.storm.Config;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.Charsets;
 
-import backtype.storm.Config;
+import javax.security.sasl.Sasl;
+import java.util.HashMap;
+import java.util.Map;
 
 class SaslUtils {
     public static final String AUTH_DIGEST_MD5 = "DIGEST-MD5";

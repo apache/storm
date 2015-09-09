@@ -23,24 +23,17 @@ import backtype.storm.messaging.TaskMessage;
 import backtype.storm.metric.api.IStatefulObject;
 import backtype.storm.utils.StormBoundedExponentialBackoffRetry;
 import backtype.storm.utils.Utils;
-import org.jboss.netty.bootstrap.ClientBootstrap;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFactory;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
-import org.jboss.netty.util.HashedWheelTimer;
-import org.jboss.netty.util.Timeout;
-import org.jboss.netty.util.TimerTask;
+import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.*;
+import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.util.*;
+import io.netty.util.TimerTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -70,7 +63,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
 
     private final Map stormConf;
     private final StormBoundedExponentialBackoffRetry retryPolicy;
-    private final ClientBootstrap bootstrap;
+    private final Bootstrap bootstrap;
     private final InetSocketAddress dstAddress;
     protected final String dstAddressPrefixedName;
 
@@ -125,7 +118,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
     private final Object writeLock = new Object();
 
     @SuppressWarnings("rawtypes")
-    Client(Map stormConf, ChannelFactory factory, HashedWheelTimer scheduler, String host, int port, Context context) {
+    Client(Map stormConf, EventLoopGroup eventLoopGroup, HashedWheelTimer scheduler, String host, int port, Context context) {
         this.stormConf = stormConf;
         closing = false;
         this.scheduler = scheduler;
@@ -140,19 +133,21 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
         retryPolicy = new StormBoundedExponentialBackoffRetry(minWaitMs, maxWaitMs, maxReconnectionAttempts);
 
         // Initiate connection to remote destination
-        bootstrap = createClientBootstrap(factory, bufferSize);
+        bootstrap = createClientBootstrap(eventLoopGroup, bufferSize);
         dstAddress = new InetSocketAddress(host, port);
         dstAddressPrefixedName = prefixedName(dstAddress);
         scheduleConnect(NO_DELAY_MS);
         batcher = new MessageBuffer(messageBatchSize);
     }
 
-    private ClientBootstrap createClientBootstrap(ChannelFactory factory, int bufferSize) {
-        ClientBootstrap bootstrap = new ClientBootstrap(factory);
-        bootstrap.setOption("tcpNoDelay", true);
-        bootstrap.setOption("sendBufferSize", bufferSize);
-        bootstrap.setOption("keepAlive", true);
-        bootstrap.setPipelineFactory(new StormClientPipelineFactory(this));
+    private Bootstrap createClientBootstrap(EventLoopGroup eventLoopGroup, int bufferSize) {
+        Bootstrap bootstrap = new Bootstrap()
+                .group(eventLoopGroup)
+                .channel(NioSocketChannel.class)
+                .option(ChannelOption.TCP_NODELAY, true)
+                .option(ChannelOption.SO_SNDBUF, bufferSize)
+                .option(ChannelOption.SO_KEEPALIVE, true)
+                .handler(new StormClientPipelineFactory(this));
         return bootstrap;
     }
 
@@ -182,7 +177,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
         // See:
         // - http://netty.io/3.9/api/org/jboss/netty/channel/ChannelEvent.html
         // - http://stackoverflow.com/questions/13356622/what-are-the-netty-channel-state-transitions
-        return channel != null && channel.isConnected();
+        return channel != null && channel.isOpen();
     }
 
     /**
@@ -325,7 +320,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
         LOG.debug("writing {} messages to channel {}", batch.size(), channel.toString());
         pendingMessages.addAndGet(numMessages);
 
-        ChannelFuture future = channel.write(batch);
+        ChannelFuture future = channel.writeAndFlush(batch);
         future.addListener(new ChannelFutureListener() {
             public void operationComplete(ChannelFuture future) throws Exception {
                 pendingMessages.addAndGet(0 - numMessages);
@@ -334,8 +329,8 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
                     messagesSent.getAndAdd(batch.size());
                 } else {
                     LOG.error("failed to send {} messages to {}: {}", numMessages, dstAddressPrefixedName,
-                            future.getCause());
-                    closeChannelAndReconnect(future.getChannel());
+                            future.cause());
+                    closeChannelAndReconnect(future.channel());
                     messagesLost.getAndAdd(numMessages);
                 }
             }
@@ -430,7 +425,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
         String name = null;
         Channel channel = channelRef.get();
         if (channel != null) {
-            SocketAddress address = channel.getLocalAddress();
+            SocketAddress address = channel.localAddress();
             if (address != null) {
                 name = address.toString();
             }
@@ -445,7 +440,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
 
     /**
      * Called by Netty thread on change in channel interest
-     * @param channel
+     * @param channel channel
      */
     public void notifyInterestChanged(Channel channel) {
         if(channel.isWritable()){
@@ -492,7 +487,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
                     @Override
                     public void operationComplete(ChannelFuture future) throws Exception {
                         // This call returns immediately
-                        Channel newChannel = future.getChannel();
+                        Channel newChannel = future.channel();
 
                         if (future.isSuccess() && connectionEstablished(newChannel)) {
                             boolean setChannel = channelRef.compareAndSet(null, newChannel);
@@ -503,7 +498,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
                                 LOG.warn("Re-connection to {} was successful but {} messages has been lost so far", address.toString(), messagesLost.get());
                             }
                         } else {
-                            Throwable cause = future.getCause();
+                            Throwable cause = future.cause();
                             reschedule(cause);
                             if (newChannel != null) {
                                 newChannel.close();

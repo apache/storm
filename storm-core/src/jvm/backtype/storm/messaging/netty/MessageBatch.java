@@ -18,9 +18,9 @@
 package backtype.storm.messaging.netty;
 
 import backtype.storm.messaging.TaskMessage;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBufferOutputStream;
-import org.jboss.netty.buffer.ChannelBuffers;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufOutputStream;
+import io.netty.buffer.Unpooled;
 
 import java.util.ArrayList;
 
@@ -80,8 +80,8 @@ class MessageBatch {
     /**
      * create a buffer containing the encoding of this batch
      */
-    ChannelBuffer buffer() throws Exception {
-        ChannelBufferOutputStream bout = new ChannelBufferOutputStream(ChannelBuffers.directBuffer(encoded_length));
+    ByteBuf buffer() throws Exception {
+        ByteBufOutputStream bout = new ByteBufOutputStream(Unpooled.directBuffer(encoded_length));
         
         for (TaskMessage msg : msgs)
             writeTaskMessage(bout, msg);
@@ -102,7 +102,7 @@ class MessageBatch {
      *  len ... int(4)
      *  payload ... byte[]     *  
      */
-    private void writeTaskMessage(ChannelBufferOutputStream bout, TaskMessage message) throws Exception {
+    private void writeTaskMessage(ByteBufOutputStream bout, TaskMessage message) throws Exception {
         int payload_len = 0;
         if (message.message() != null)
             payload_len =  message.message().length;
