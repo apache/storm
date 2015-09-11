@@ -1,4 +1,27 @@
 ## 0.11.0
+ * STORM-1019: Added missing dependency version to use of org.codehaus.mojo:make-maven-plugin
+ * STORM-1020: Document exceptions in ITuple & Fields
+ * STORM-1025: Invalid links at https://storm.apache.org/about/multi-language.html
+ * STORM-1010: Each KafkaBolt could have a specified properties.
+ * STORM-1008: Isolate the code for metric collection and retrieval from DisruptorQueue
+ * STORM-991: General cleanup of the generics (storm.trident.spout package)
+ * STORM-1000: Use static member classes when permitted 
+ * STORM-1003: In cluster.clj replace task-id with component-id in the declaration
+ * STORM-1013: [storm-elasticsearch] Expose TransportClient configuration Map to EsConfig
+ * STORM-1012: Shading jackson.
+ * STORM-974: [storm-elasticsearch] Introduces Tuple -> ES document mapper to get rid of constant field mapping (source, index, type)
+ * STORM-978: [storm-elasticsearch] Introduces Lookup(or Query)Bolt which emits matched documents from ES
+ * STORM-851: Storm Solr connector
+ * STORM-854: [Storm-Kafka] KafkaSpout can set the topic name as the output streamid
+ * STORM-990: Refactored TimeCacheMap to extend RotatingMap
+ * STORM-829: Hadoop dependency confusion
+ * STORM-166: Nimbus HA
+ * STORM-976: Config storm.logback.conf.dir is specific to previous logging framework
+ * STORM-995: Fix excessive logging
+ * STORM-837: HdfsState ignores commits
+ * STORM-938: storm-hive add a time interval to flush tuples to hive.
+ * STORM-964: Add config (with small default value) for logwriter to restrict its memory usage
+ * STORM-980: Re-include storm-kafka tests from Travis CI build
  * STORM-960: HiveBolt should ack tuples only after flushing.
  * STORM-951: Storm Hive connector leaking connections.
  * STORM_803: Better CI logs
@@ -6,7 +29,6 @@
  * STORM-809: topology.message.timeout.secs should not allow for null or <= 0 values
  * STORM-847: Add cli to get the last storm error from the topology
  * STORM-864: Exclude storm-kafka tests from Travis CI build
- * STORM-860: UI: while topology is transitioned to killed, "Activate" button is enabled but not functioning
  * STORM-477: Add warning for invalid JAVA_HOME
  * STORM-826: Update KafkaBolt to use the new kafka producer API
  * STORM-912: Support SSL on Logviewer
@@ -17,19 +39,37 @@
  * STORM-924: Set the file mode of the files included when packaging release packages
  * STORM-799: Use IErrorReport interface more broadly
  * STORM-926: change pom to use maven-shade-plugin:2.2
- * STORM-793: Made change to logviewer.clj in order to remove the invalid http 500 response
- * STORM-857: create logs metadata dir when running securely
  * STORM-942: Add FluxParser method parseInputStream() to eliminate disk usage
  * STORM-67: Provide API for spouts to know how many pending messages there are
  * STORM-918: Storm CLI could validate arguments/print usage
- * STORM-139: hashCode does not work for byte[]
+ * STORM-859: Add regression test of STORM-856
+ * STORM-913: Use Curator's delete().deletingChildrenIfNeeded() instead of zk/delete-recursive
+ * STORM-968: Adding support to generate the id based on names in Trident
+ * STORM-845: Storm ElasticSearch connector
+ * STORM-988: supervisor.slots.ports should not allow duplicate element values
+ * STORM-975: Storm-Kafka trident topology example
+ * STORM-958: Add config for init params of group mapping service
+ * STORM-949: On the topology summary UI page, last shown error should have the time and date
 
 ## 0.10.0-beta2
+ * STORM-1024: log4j changes leaving ${sys:storm.log.dir} under STORM_HOME dir
+ * STORM-996: netty-unit-tests/test-batch demonstrates out-of-order delivery
+ * STORM-944: storm-hive pom.xml has a dependency conflict with calcite
+ * STORM-994: Connection leak between nimbus and supervisors
+ * STORM-1001: Undefined STORM_EXT_CLASSPATH adds '::' to classpath of workers
+ * STORM-977: Incorrect signal (-9) when as-user is true
  * STORM-843: [storm-redis] Add Javadoc to storm-redis
  * STORM-866: Use storm.log.dir instead of storm.home in log4j2 config
  * STORM-810: PartitionManager in storm-kafka should commit latest offset before close
  * STORM-928: Add sources->streams->fields map to Multi-Lang Handshake
  * STORM-945: <DefaultRolloverStrategy> element is not a policy,and should not be putted in the <Policies> element.
+ * STORM-857: create logs metadata dir when running securely
+ * STORM-793: Made change to logviewer.clj in order to remove the invalid http 500 response
+ * STORM-139: hashCode does not work for byte[]
+ * STORM-860: UI: while topology is transitioned to killed, "Activate" button is enabled but not functioning
+ * STORM-966: ConfigValidation.DoubleValidator doesn't really validate whether the type of the object is a double
+ * STORM-742: Let ShellBolt treat all messages to update heartbeat
+ * STORM-992: A bug in the timer.clj might cause unexpected delay to schedule new event
 
 ## 0.10.0-beta1
  * STORM-873: Flux does not handle diamond topologies
@@ -202,6 +242,7 @@
  * STORM-503: Short disruptor queue wait time leads to high CPU usage when idle
  * STORM-728: Put emitted and transferred stats under correct columns
  * STORM-643: KafkaUtils repeatedly fetches messages whose offset is out of range
+ * STORM-933: NullPointerException during KafkaSpout deactivation
 
 ## 0.9.5
  * STORM-790: Log "task is null" instead of let worker died when task is null in transfer-fn

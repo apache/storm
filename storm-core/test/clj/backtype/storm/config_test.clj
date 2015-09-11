@@ -89,9 +89,11 @@
           (.validateField validator "test" (inc Integer/MAX_VALUE))))))
 
 (deftest test-integers-validator
-  (let [validator ConfigValidation/IntegersValidator]
+  (let [validator ConfigValidation/NoDuplicateIntegersValidator]
     (.validateField validator "test" nil)
     (.validateField validator "test" [1000 0 -1000])
+    (is (thrown-cause? java.lang.IllegalArgumentException
+          (.validateField validator "test" [0 10 10])))
     (is (thrown-cause? java.lang.IllegalArgumentException
           (.validateField validator "test" [0 10 1.34])))
     (is (thrown-cause? java.lang.IllegalArgumentException
@@ -99,14 +101,19 @@
     (is (thrown-cause? java.lang.IllegalArgumentException
           (.validateField validator "test" [-100 (inc Integer/MAX_VALUE)])))))
 
-(deftest test-double-validator
-  (let [validator ConfigValidation/DoubleValidator]
+(deftest test-positive-number-validator
+  (let [validator ConfigValidation/PositiveNumberValidator]
     (.validateField validator "test" nil)
-    (.validateField validator "test" 10)
-    ;; we can provide lenient way to convert int/long to double with losing precision
-    (.validateField validator "test" Integer/MAX_VALUE)
-    (.validateField validator "test" (inc Integer/MAX_VALUE))
-    (.validateField validator "test" Double/MAX_VALUE)))
+    (.validateField validator "test" 1.0)
+    (.validateField validator "test" 1)
+    (is (thrown-cause? java.lang.IllegalArgumentException
+          (.validateField validator "test" -1.0)))
+    (is (thrown-cause? java.lang.IllegalArgumentException
+          (.validateField validator "test" -1)))
+    (is (thrown-cause? java.lang.IllegalArgumentException
+          (.validateField validator "test" 0)))
+    (is (thrown-cause? java.lang.IllegalArgumentException
+          (.validateField validator "test" 0.0)))))
 
 (deftest test-topology-workers-is-integer
   (let [validator (CONFIG-SCHEMA-MAP TOPOLOGY-WORKERS)]
