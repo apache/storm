@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Storm 0.10.0-beta Released
+title: Storm 0.10.0 Beta Released
 author: P. Taylor Goetz
 ---
 
