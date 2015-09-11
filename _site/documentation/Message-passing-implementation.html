@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+
+    <title>Message Passing Implementation</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="/assets/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap theme -->
+    <link href="/assets/css/bootstrap-theme.min.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link rel="stylesheet" href="http://fortawesome.github.io/Font-Awesome/assets/font-awesome/css/font-awesome.css">
+    <link href="/css/style.css" rel="stylesheet">
+    <link href="/assets/css/owl.theme.css" rel="stylesheet">
+    <link href="/assets/css/owl.carousel.css" rel="stylesheet">
+    <script type="text/javascript" src="/assets/js/jquery.min.js"></script>
+    <script type="text/javascript" src="/assets/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="/assets/js/owl.carousel.min.js"></script>
+    <script type="text/javascript" src="/assets/js/storm.js"></script>
+    <!-- Just for debugging purposes. Don't actually copy these 2 lines! -->
+    <!--[if lt IE 9]><script src="../../assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
+    
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+
+
+  <body>
+    <header>
+  <div class="container-fluid">
+      <div class="row">
+          <div class="col-md-10">
+              <a href="/index.html"><img src="/images/logo.png" class="logo" /></a>
+            </div>
+            <div class="col-md-2">
+              <a href="/downloads.html" class="btn-std btn-block btn-download">Download</a>
+            </div>
+        </div>
+    </div>
+</header>
+<!--Header End-->
+<!--Navigation Begin-->
+<div class="navbar" role="banner">
+  <div class="container-fluid">
+      <div class="navbar-header">
+          <button class="navbar-toggle" type="button" data-toggle="collapse" data-target=".bs-navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+        </div>
+        <nav class="collapse navbar-collapse bs-navbar-collapse" role="navigation">
+          <ul class="nav navbar-nav">
+              <li><a href="/index.html" id="home">Home</a></li>
+                <li><a href="/getting-help.html" id="getting-help">Getting Help</a></li>
+                <li><a href="/about/integrates.html" id="project-info">Project Information</a></li>
+                <li><a href="/documentation.html" id="documentation">Documentation</a></li>
+                <li><a href="/talksAndVideos.html">Talks and Slideshows</a></li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" id="contribute">Contribute <b class="caret"></b></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="/contribute/Contributing-to-Storm.html">Getting Started</a></li>
+                        <li><a href="/contribute/BYLAWS.html">ByLaws</a></li>
+                    </ul>
+                </li>
+                <li><a href="/2015/06/15/storm0100-beta-released.html" id="news">News</a></li>
+            </ul>
+        </nav>
+    </div>
+</div>
+
+
+
+    <div class="container-fluid">
+    <h1 class="page-title">Message Passing Implementation</h1>
+          <div class="row">
+           	<div class="col-md-12">
+	             <!-- Documentation -->
+
+<p class="post-meta"></p>
+
+<p>(Note: this walkthrough is out of date as of 0.8.0. 0.8.0 revamped the message passing infrastructure to be based on the Disruptor)</p>
+
+<p>This page walks through how emitting and transferring tuples works in Storm.</p>
+
+<ul>
+<li>Worker is responsible for message transfer
+
+<ul>
+<li><code>refresh-connections</code> is called every &quot;task.refresh.poll.secs&quot; or whenever assignment in ZK changes. It manages connections to other workers and maintains a mapping from task -&gt; worker <a href="https://github.com/apache/incubator-storm/blob/0.7.1/src/clj/backtype/storm/daemon/worker.clj#L123">code</a></li>
+<li>Provides a &quot;transfer function&quot; that is used by tasks to send tuples to other tasks. The transfer function takes in a task id and a tuple, and it serializes the tuple and puts it onto a &quot;transfer queue&quot;. There is a single transfer queue for each worker. <a href="https://github.com/apache/incubator-storm/blob/0.7.1/src/clj/backtype/storm/daemon/worker.clj#L56">code</a></li>
+<li>The serializer is thread-safe <a href="https://github.com/apache/incubator-storm/blob/0.7.1/src/jvm/backtype/storm/serialization/KryoTupleSerializer.java#L26">code</a></li>
+<li>The worker has a single thread which drains the transfer queue and sends the messages to other workers <a href="https://github.com/apache/incubator-storm/blob/0.7.1/src/clj/backtype/storm/daemon/worker.clj#L185">code</a></li>
+<li>Message sending happens through this protocol: <a href="https://github.com/apache/incubator-storm/blob/0.7.1/src/clj/backtype/storm/messaging/protocol.clj">code</a></li>
+<li>The implementation for distributed mode uses ZeroMQ <a href="https://github.com/apache/incubator-storm/blob/0.7.1/src/clj/backtype/storm/messaging/zmq.clj">code</a></li>
+<li>The implementation for local mode uses in memory Java queues (so that it&#39;s easy to use Storm locally without needing to get ZeroMQ installed) <a href="https://github.com/apache/incubator-storm/blob/0.7.1/src/clj/backtype/storm/messaging/local.clj">code</a></li>
+</ul></li>
+<li>Receiving messages in tasks works differently in local mode and distributed mode
+
+<ul>
+<li>In local mode, the tuple is sent directly to an in-memory queue for the receiving task <a href="https://github.com/apache/incubator-storm/blob/master/src/clj/backtype/storm/messaging/local.clj#L21">code</a></li>
+<li>In distributed mode, each worker listens on a single TCP port for incoming messages and then routes those messages in-memory to tasks. The TCP port is called a &quot;virtual port&quot;, because it receives [task id, message] and then routes it to the actual task. <a href="https://github.com/apache/incubator-storm/blob/master/src/clj/backtype/storm/daemon/worker.clj#L204">code</a>
+
+<ul>
+<li>The virtual port implementation is here: <a href="https://github.com/apache/incubator-storm/blob/master/src/clj/zilch/virtual_port.clj">code</a></li>
+<li>Tasks listen on an in-memory ZeroMQ port for messages from the virtual port <a href="https://github.com/apache/incubator-storm/blob/master/src/clj/backtype/storm/daemon/task.clj#L201">code</a></li>
+<li>Bolts listen here: <a href="https://github.com/apache/incubator-storm/blob/master/src/clj/backtype/storm/daemon/task.clj#L489">code</a></li>
+<li>Spouts listen here: <a href="https://github.com/apache/incubator-storm/blob/master/src/clj/backtype/storm/daemon/task.clj#L382">code</a></li>
+</ul></li>
+</ul></li>
+<li>Tasks are responsible for message routing. A tuple is emitted either to a direct stream (where the task id is specified) or a regular stream. In direct streams, the message is only sent if that bolt subscribes to that direct stream. In regular streams, the stream grouping functions are used to determine the task ids to send the tuple to.
+
+<ul>
+<li>Tasks have a routing map from {stream id} -&gt; {component id} -&gt; {stream grouping function} <a href="https://github.com/apache/incubator-storm/blob/master/src/clj/backtype/storm/daemon/task.clj#L198">code</a></li>
+<li>The &quot;tasks-fn&quot; returns the task ids to send the tuples to for either regular stream emit or direct stream emit <a href="https://github.com/apache/incubator-storm/blob/master/src/clj/backtype/storm/daemon/task.clj#L207">code</a></li>
+<li>After getting the output task ids, bolts and spouts use the transfer-fn provided by the worker to actually transfer the tuples
+
+<ul>
+<li>Bolt transfer code here: <a href="https://github.com/apache/incubator-storm/blob/master/src/clj/backtype/storm/daemon/task.clj#L429">code</a></li>
+<li>Spout transfer code here: <a href="https://github.com/apache/incubator-storm/blob/master/src/clj/backtype/storm/daemon/task.clj#L329">code</a></li>
+</ul></li>
+</ul></li>
+</ul>
+
+
+
+	          </div>
+	       </div>
+	  </div>
+<footer>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="footer-widget">
+                    <h5>Meetups</h5>
+                    <ul class="latest-news">
+                        <li><a href="http://www.meetup.com/Apache-Storm-Apache-Kafka/">Sunnyvale, CA</a> <span class="small">(10 May 2015)</span></li>
+                        <li><a href="http://www.meetup.com/Apache-Storm-Kafka-Users/">Seatle, WA</a> <span class="small">(27 Jun 2015)</span></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="footer-widget">
+                    <h5>About Storm</h5>
+                    <p>Storm integrates with any queueing system and any database system. Storm's spout abstraction makes it easy to integrate a new queuing system. Likewise, integrating Storm with database systems is easy.</p>
+               </div>
+            </div>
+            <div class="col-md-3">
+                <div class="footer-widget">
+                    <h5>First Look</h5>
+                    <ul class="footer-list">
+                        <li><a href="/documentation/Rationale.html">Rationale</a></li>
+                        <li><a href="/tutorial.html">Tutorial</a></li>
+                        <li><a href="/documentation/Setting-up-development-environment.html">Setting up development environment</a></li>
+                        <li><a href="/documentation/Creating-a-new-Storm-project.html">Creating a new Storm project</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="footer-widget">
+                    <h5>Documentation</h5>
+                    <ul class="footer-list">
+                        <li><a href="/doc-index.html">Index</a></li>
+                        <li><a href="/documentation.html">Manual</a></li>
+                        <li><a href="https://storm.apache.org/javadoc/apidocs/index.html">Javadoc</a></li>
+                        <li><a href="/documentation/FAQ.html">FAQ</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <hr/>
+        <div class="row">   
+            <div class="col-md-12">
+                <p align="center">Copyright © 2015 <a href="http://www.apache.org">Apache Software Foundation</a>. All Rights Reserved. Apache Storm, Apache, the Apache feather logo, and the Apache Storm project logos are trademarks of The Apache Software Foundation. All other marks mentioned may be trademarks or registered trademarks of their respective owners.</p>
+            </div>
+        </div>
+    </div>
+</footer>
+<!--Footer End-->
+<!-- Scroll to top -->
+<span class="totop"><a href="#"><i class="fa fa-angle-up"></i></a></span> 
+
+</body>
+
+</html>
+

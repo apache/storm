@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+
+    <title>Storm 0.8.0 and Trident released</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="/assets/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap theme -->
+    <link href="/assets/css/bootstrap-theme.min.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link rel="stylesheet" href="http://fortawesome.github.io/Font-Awesome/assets/font-awesome/css/font-awesome.css">
+    <link href="/css/style.css" rel="stylesheet">
+    <link href="/assets/css/owl.theme.css" rel="stylesheet">
+    <link href="/assets/css/owl.carousel.css" rel="stylesheet">
+    <script type="text/javascript" src="/assets/js/jquery.min.js"></script>
+    <script type="text/javascript" src="/assets/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="/assets/js/owl.carousel.min.js"></script>
+    <script type="text/javascript" src="/assets/js/storm.js"></script>
+    <!-- Just for debugging purposes. Don't actually copy these 2 lines! -->
+    <!--[if lt IE 9]><script src="../../assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
+    
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+
+
+
+    <body>
+
+    <header>
+  <div class="container-fluid">
+      <div class="row">
+          <div class="col-md-10">
+              <a href="/index.html"><img src="/images/logo.png" class="logo" /></a>
+            </div>
+            <div class="col-md-2">
+              <a href="/downloads.html" class="btn-std btn-block btn-download">Download</a>
+            </div>
+        </div>
+    </div>
+</header>
+<!--Header End-->
+<!--Navigation Begin-->
+<div class="navbar" role="banner">
+  <div class="container-fluid">
+      <div class="navbar-header">
+          <button class="navbar-toggle" type="button" data-toggle="collapse" data-target=".bs-navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+        </div>
+        <nav class="collapse navbar-collapse bs-navbar-collapse" role="navigation">
+          <ul class="nav navbar-nav">
+              <li><a href="/index.html" id="home">Home</a></li>
+                <li><a href="/getting-help.html" id="getting-help">Getting Help</a></li>
+                <li><a href="/about/integrates.html" id="project-info">Project Information</a></li>
+                <li><a href="/documentation.html" id="documentation">Documentation</a></li>
+                <li><a href="/talksAndVideos.html">Talks and Slideshows</a></li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" id="contribute">Contribute <b class="caret"></b></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="/contribute/Contributing-to-Storm.html">Getting Started</a></li>
+                        <li><a href="/contribute/BYLAWS.html">ByLaws</a></li>
+                    </ul>
+                </li>
+                <li><a href="/2015/06/15/storm0100-beta-released.html" id="news">News</a></li>
+            </ul>
+        </nav>
+    </div>
+</div>
+
+
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="row">
+                    <div class="col-md-3">
+                        <ul class="news" id="news-list">
+                            
+                      		<li><a href="/2015/06/15/storm0100-beta-released.html">Storm 0.10.0 Beta Released</a></li>
+                    		
+                      		<li><a href="/2015/06/04/storm095-released.html">Storm 0.9.5 released</a></li>
+                    		
+                      		<li><a href="/2015/03/25/storm094-released.html">Storm 0.9.4 released</a></li>
+                    		
+                      		<li><a href="/2014/11/25/storm093-released.html">Storm 0.9.3 released</a></li>
+                    		
+                      		<li><a href="/2014/10/20/storm093-release-candidate.html">Storm 0.9.3 release candidate 1 available</a></li>
+                    		
+                      		<li><a href="/2014/06/25/storm092-released.html">Storm 0.9.2 released</a></li>
+                    		
+                      		<li><a href="/2014/06/17/contest-results.html">Storm Logo Contest Results</a></li>
+                    		
+                      		<li><a href="/2014/05/27/round1-results.html">Logo Contest - Round 1 Results</a></li>
+                    		
+                      		<li><a href="/2014/04/29/logo-jlee3.html">Logo Entry No. 11 - Jennifer Lee</a></li>
+                    		
+                      		<li><a href="/2014/04/29/logo-jlee2.html">Logo Entry No. 10 - Jennifer Lee</a></li>
+                    		
+                      		<li><a href="/2014/04/29/logo-jlee1.html">Logo Entry No. 9 - Jennifer Lee</a></li>
+                    		
+                      		<li><a href="/2014/04/27/logo-sasili.html">Logo Entry No. 8 - Stefano Asili</a></li>
+                    		
+                      		<li><a href="/2014/04/27/logo-cboustead.html">Logo Entry No. 7 - Calum Boustead</a></li>
+                    		
+                      		<li><a href="/2014/04/23/logo-abartos.html">Logo Entry No. 6 - Alec Bartos</a></li>
+                    		
+                      		<li><a href="/2014/04/22/logo-zsayari.html">Logo Entry No. 5 - Ziba Sayari</a></li>
+                    		
+                      		<li><a href="/2014/04/21/logo-rmarshall.html">Logo Entry No. 4 - Richard Brownlie-Marshall</a></li>
+                    		
+                      		<li><a href="/2014/04/19/logo-ssuleman.html">Logo Entry No. 3- Shaan Shiv Suleman</a></li>
+                    		
+                      		<li><a href="/2014/04/17/logo-squinones.html">Logo Entry No. 2 - Samuel Quiñones</a></li>
+                    		
+                      		<li><a href="/2014/04/17/logo-pforrest.html">Logo Entry No. 1 - Patricia Forrest</a></li>
+                    		
+                      		<li><a href="/2014/04/10/storm-logo-contest.html">Apache Storm Logo Contest</a></li>
+                    		
+                      		<li><a href="/2013/12/08/storm090-released.html">Storm 0.9.0 Released</a></li>
+                    		
+                      		<li><a href="/2013/01/11/storm082-released.html">Storm 0.8.2 released</a></li>
+                    		
+                      		<li><a href="/2012/09/06/storm081-released.html">Storm 0.8.1 released</a></li>
+                    		
+                      		<li><a href="/2012/08/02/storm080-released.html">Storm 0.8.0 and Trident released</a></li>
+                    		
+                        </ul>
+                    </div>
+                    <div class="col-md-9" id="news-content">
+                            <h1 class="page-title">
+                               Storm 0.8.0 and Trident released
+                            </h1>
+                                
+                            <div class="row" style="margin: -15px;">
+                                <div class="col-md-12">
+                                    <p class="text-muted credit pull-left">Posted on Aug 2, 2012 by Nathan Marz</p>
+                                    <div class="pull-right">
+                                        <a 
+                                                href="https://twitter.com/share" 
+                                                class="twitter-share-button"
+                                                data-count=none
+                                        >Tweet</a>
+                                        <script> !function(d,s,id){
+                                                var js,
+                                                fjs=d.getElementsByTagName(s)[0],
+                                                p=/^http:/.test(d.location)?'http':'https';
+                                                if(!d.getElementById(id)){
+                                                    js=d.createElement(s);
+                                                    js.id=id;
+                                                    js.src=p+'://platform.twitter.com/widgets.js';
+                                                    fjs.parentNode.insertBefore(js,fjs);
+                                                }
+                                            }(document, 'script', 'twitter-wjs');
+                                        </script>
+                                    </div>
+                                </div>
+                            </div>
+                        <div>
+                	        <p>I&#39;m happy to announce the release of Storm 0.8.0. This is a <em>huge</em> release. Thanks to everyone who tested out the dev release and helped find and fix issues. And thanks to everyone who contributed pull requests. There&#39;s one big new thing available in the release: Trident. You may have heard me hint about Trident before, and now it&#39;s finally public. </p>
+
+<p>Trident is a higher level abstraction for Storm. It allows you to seamlessly mix high throughput (millions of messages per second), stateful stream processing with low latency distributed querying. If you&#39;re familiar with high level batch processing tools like Pig or Cascading, the concepts of Trident will be very familiar - Trident has joins, aggregations, grouping, functions, and filters. In addition to these, Trident adds primitives for doing stateful, incremental processing on top of any database or persistence store. Trident has consistent, exactly-once semantics, so it is easy to reason about Trident topologies. Trident is bundled with Storm, and you can read documentation about it on <a href="https://github.com/apache/incubator-storm/wiki/Documentation">this page</a> (start with &quot;Trident tutorial&quot;).</p>
+
+<p>Trident supersedes both LinearDRPCTopologyBuilder and transactional topologies, both of which will be deprecated soon and eventually removed from the codebase. </p>
+
+<p>Here are the other highlights of this release: </p>
+
+<h2 id="executors">Executors</h2>
+
+<p>Prior to Storm 0.8.0, a running topology consisted of some number of workers and some number of tasks that ran on those workers. In the old model, worker = process and task = thread. Storm 0.8.0 changes this model by introducing executors. In this model, a worker = process, an executor = thread, and one executor runs many tasks from the same spout/bolt. </p>
+
+<p>The reason for the change is that the old model complected the semantics of the topology with its physical execution. For example, if you had a bolt with 4 tasks doing a fields grouping on some stream, in order to maintain the semantics of the fields grouping (that the same value always goes to the same task id for that bolt), the number of tasks for that bolt needs to be fixed for the lifetime of the topology, and since task = thread, the number of threads for that bolt is fixed for the lifetime of the topology. In the new model, the number of threads for a bolt is disassociated from the number of tasks, meaning you can change the number of threads for a spout/bolt dynamically without affecting semantics. Similarly, if you&#39;re keeping large amounts of state in your bolts, and you want to increase the parallelism of the bolt without having to repartition the state, you can do this with the new executors. </p>
+
+<p>At the API level, the &quot;parallelism_hint&quot; now specifies the initial number of executors for that bolt. You can specify the number of tasks using the TOPOLOGY_TASKS component config. For example:</p>
+
+<p><code>
+builder.setBolt(new MyBolt(), 3).setNumTasks(128).shuffleGrouping(&quot;spout&quot;); 
+</code></p>
+
+<p>This sets the initial number of executors to 3 and the number of tasks to 128. If you don&#39;t specify the number of tasks for a component, it will be fixed to the initial number of executors for the lifetime of the topology. </p>
+
+<p>Finally, you can change the number of workers and/or number of executors for components using the &quot;storm rebalance&quot; command. The following command changes the number of workers for the &quot;demo&quot; topology to 3, the number of executors for the &quot;myspout&quot; component to 5, and the number of executors for the &quot;mybolt&quot; component to 1: </p>
+
+<p><code>
+storm rebalance demo -n 3 -e myspout=5 -e mybolt=1 
+</code></p>
+
+<h2 id="pluggable-scheduler">Pluggable scheduler</h2>
+
+<p>You can now implement your own scheduler to replace the default scheduler to assign executors to workers. You configure the class to use using the &quot;storm.scheduler&quot; config in your storm.yaml, and your scheduler must implement <a href="https://github.com/apache/incubator-storm/blob/master/src/jvm/backtype/storm/scheduler/IScheduler.java">this interface</a>.</p>
+
+<h2 id="throughput-improvements">Throughput improvements</h2>
+
+<p>The internals of Storm have been rearchitected for extremely significant performance gains. I&#39;m seeing throughput increases of anywhere from 5-10x of what it was before. I&#39;ve benchmarked Storm at 1M tuples / sec / node on an internal Twitter cluster. </p>
+
+<p>The key changes made were: </p>
+
+<p>a) Replacing all the internal in-memory queuing with the LMAX Disruptor 
+b) Doing intelligent auto-batching of processing so that the consumers can keep up with the producers </p>
+
+<p>Here are the configs which affect how buffering/batching is done: </p>
+
+<p>topology.executor.receive.buffer.size 
+topology.executor.send.buffer.size 
+topology.receiver.buffer.size 
+topology.transfer.buffer.size </p>
+
+<p>These may require some tweaking to optimize your topologies, but most likely the default values will work fine for you out of the box. </p>
+
+<h2 id="decreased-zookeeper-load-/-increased-storm-ui-performance">Decreased Zookeeper load / increased Storm UI performance</h2>
+
+<p>Storm sends significantly less traffic to Zookeeper now (on the order of 10x less). Since it also uses so many fewer znodes to store state, the UI is significantly faster as well. </p>
+
+<h2 id="abstractions-for-shared-resources">Abstractions for shared resources</h2>
+
+<p>The TopologyContext has methods &quot;getTaskData&quot;, &quot;getExecutorData&quot;, and &quot;getResource&quot; for sharing resources at the task level, executor level, or worker level respectively. Currently you can&#39;t set any worker resources, but this is in development. Storm currently provides a shared ExecutorService worker resource (via &quot;getSharedExecutor&quot; method) that can be used for launching background tasks on a shared thread pool. </p>
+
+<h2 id="tick-tuples">Tick tuples</h2>
+
+<p>It&#39;s common to require a bolt to &quot;do something&quot; at a fixed interval, like flush writes to a database. Many people have been using variants of a ClockSpout to send these ticks. The problem with a ClockSpout is that you can&#39;t internalize the need for ticks within your bolt, so if you forget to set up your bolt correctly within your topology it won&#39;t work correctly. 0.8.0 introduces a new &quot;tick tuple&quot; config that lets you specify the frequency at which you want to receive tick tuples via the &quot;topology.tick.tuple.freq.secs&quot; component- specific config, and then your bolt will receive a tuple from the __system component and __tick stream at that frequency. </p>
+
+<h2 id="improved-storm-ui">Improved Storm UI</h2>
+
+<p>The Storm UI now has a button for showing/hiding the &quot;system stats&quot; (tuples sent on streams other than ones you&#39;ve defined, like acker streams), making it easier to digest what your topology is doing.</p>
+
+<p>Here&#39;s the full changelog for Storm 0.8.0: </p>
+
+<ul>
+<li>Added Trident, the new high-level abstraction for intermixing high throughput, stateful stream processing with low-latency distributed querying </li>
+<li>Added executor abstraction between workers and tasks. Workers = processes, executors = threads that run many tasks from the same spout or bolt. </li>
+<li>Pluggable scheduler (thanks xumingming) </li>
+<li>Eliminate explicit storage of task-&gt;component in Zookeeper </li>
+<li>Number of workers can be dynamically changed at runtime through rebalance command and -n switch </li>
+<li>Number of executors for a component can be dynamically changed at runtime through rebalance command and -e switch (multiple -e switches allowed) </li>
+<li>Use worker heartbeats instead of task heartbeats (thanks xumingming) </li>
+<li>UI performance for topologies with many executors/tasks much faster due to optimized usage of Zookeeper (10x improvement) </li>
+<li>Added button to show/hide system stats (e.g., acker component and stream stats) from the Storm UI (thanks xumingming) </li>
+<li>Stats are tracked on a per-executor basis instead of per-task basis </li>
+<li>Major optimization for unreliable spouts and unanchored tuples (will use far less CPU) </li>
+<li>Revamped internals of Storm to use LMAX disruptor for internal queuing. Dramatic reductions in contention and CPU usage. </li>
+<li>Numerous micro-optimizations all throughout the codebase to reduce CPU usage. </li>
+<li>Optimized internals of Storm to use much fewer threads - two fewer threads per spout and one fewer thread per acker. </li>
+<li>Removed error method from task hooks (to be re-added at a later time) </li>
+<li>Validate that subscriptions come from valid components and streams, and if it&#39;s a field grouping that the schema is correct (thanks xumingming) </li>
+<li>MemoryTransactionalSpout now works in cluster mode </li>
+<li>Only track errors on a component by component basis to reduce the amount stored in zookeeper (to speed up UI). A side effect of this change is the removal of the task page in the UI. </li>
+<li>Add TOPOLOGY-TICK-TUPLE-FREQ-SECS config to have Storm automatically send &quot;tick&quot; tuples to a bolt&#39;s execute method coming from the __system component and __tick stream at the configured frequency. Meant to be used as a component-specific configuration. </li>
+<li>Upgrade Kryo to v2.17 </li>
+<li>Tuple is now an interface and is much cleaner. The Clojure DSL helpers have been moved to TupleImpl </li>
+<li>Added shared worker resources. Storm provides a shared ExecutorService thread pool by default. The number of threads in the pool can be configured with topology.worker.shared.thread.pool.size </li>
+<li>Improve CustomStreamGrouping interface to make it more flexible by providing more information </li>
+<li>Enhanced INimbus interface to allow for forced schedulers and better integration with global scheduler </li>
+<li>Added assigned method to ISupervisor so it knows exactly what&#39;s running and not running </li>
+<li>Custom serializers can now have one of four constructors: (), (Kryo), (Class), or (Kryo, Class) </li>
+<li>Disallow &quot;:&quot;, &quot;.&quot;, and &quot;\&quot; from topology names </li>
+<li>Errors in multilang subprocesses that go to stderr will be captured and logged to the worker logs (thanks vinodc) </li>
+<li>Workers detect and warn for missing outbound connections from assignment, drop messages for which there&#39;s no outbound connection </li>
+<li>Zookeeper connection timeout is now configurable (via storm.zookeeper.connection.timeout config) </li>
+<li>Storm is now less aggressive about halting process when there are Zookeeper errors, preferring to wait until client calls return exceptions. </li>
+<li>Can configure Zookeeper authentication for Storm&#39;s Zookeeper clients via &quot;storm.zookeeper.auth.scheme&quot; and &quot;storm.zookeeper.auth.payload&quot; configs </li>
+<li>Supervisors only download code for topologies assigned to them </li>
+<li>Include task id information in task hooks (thanks velvia) </li>
+<li>Use execvp to spawn daemons (replaces the python launcher process) (thanks ept) </li>
+<li>Expanded INimbus/ISupervisor interfaces to provide more information (used in Storm/Mesos integration) </li>
+<li>Bug fix: Realize task ids when worker heartbeats to supervisor. Some users were hitting deserialization problems here in very rare cases (thanks herberteuler) </li>
+<li>Bug fix: Fix bug where a topology&#39;s status would get corrupted to true if nimbus is restarted while status is rebalancing </li>
+</ul>
+
+                	    </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <footer>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="footer-widget">
+                    <h5>Meetups</h5>
+                    <ul class="latest-news">
+                        <li><a href="http://www.meetup.com/Apache-Storm-Apache-Kafka/">Sunnyvale, CA</a> <span class="small">(10 May 2015)</span></li>
+                        <li><a href="http://www.meetup.com/Apache-Storm-Kafka-Users/">Seatle, WA</a> <span class="small">(27 Jun 2015)</span></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="footer-widget">
+                    <h5>About Storm</h5>
+                    <p>Storm integrates with any queueing system and any database system. Storm's spout abstraction makes it easy to integrate a new queuing system. Likewise, integrating Storm with database systems is easy.</p>
+               </div>
+            </div>
+            <div class="col-md-3">
+                <div class="footer-widget">
+                    <h5>First Look</h5>
+                    <ul class="footer-list">
+                        <li><a href="/documentation/Rationale.html">Rationale</a></li>
+                        <li><a href="/tutorial.html">Tutorial</a></li>
+                        <li><a href="/documentation/Setting-up-development-environment.html">Setting up development environment</a></li>
+                        <li><a href="/documentation/Creating-a-new-Storm-project.html">Creating a new Storm project</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="footer-widget">
+                    <h5>Documentation</h5>
+                    <ul class="footer-list">
+                        <li><a href="/doc-index.html">Index</a></li>
+                        <li><a href="/documentation.html">Manual</a></li>
+                        <li><a href="https://storm.apache.org/javadoc/apidocs/index.html">Javadoc</a></li>
+                        <li><a href="/documentation/FAQ.html">FAQ</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <hr/>
+        <div class="row">   
+            <div class="col-md-12">
+                <p align="center">Copyright © 2015 <a href="http://www.apache.org">Apache Software Foundation</a>. All Rights Reserved. Apache Storm, Apache, the Apache feather logo, and the Apache Storm project logos are trademarks of The Apache Software Foundation. All other marks mentioned may be trademarks or registered trademarks of their respective owners.</p>
+            </div>
+        </div>
+    </div>
+</footer>
+<!--Footer End-->
+<!-- Scroll to top -->
+<span class="totop"><a href="#"><i class="fa fa-angle-up"></i></a></span> 
+
+    </body>
+
+</html>
+

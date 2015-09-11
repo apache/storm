@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+
+    <title>Multi-Lang Protocol</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="/assets/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap theme -->
+    <link href="/assets/css/bootstrap-theme.min.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link rel="stylesheet" href="http://fortawesome.github.io/Font-Awesome/assets/font-awesome/css/font-awesome.css">
+    <link href="/css/style.css" rel="stylesheet">
+    <link href="/assets/css/owl.theme.css" rel="stylesheet">
+    <link href="/assets/css/owl.carousel.css" rel="stylesheet">
+    <script type="text/javascript" src="/assets/js/jquery.min.js"></script>
+    <script type="text/javascript" src="/assets/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="/assets/js/owl.carousel.min.js"></script>
+    <script type="text/javascript" src="/assets/js/storm.js"></script>
+    <!-- Just for debugging purposes. Don't actually copy these 2 lines! -->
+    <!--[if lt IE 9]><script src="../../assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
+    
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+
+
+  <body>
+    <header>
+  <div class="container-fluid">
+      <div class="row">
+          <div class="col-md-10">
+              <a href="/index.html"><img src="/images/logo.png" class="logo" /></a>
+            </div>
+            <div class="col-md-2">
+              <a href="/downloads.html" class="btn-std btn-block btn-download">Download</a>
+            </div>
+        </div>
+    </div>
+</header>
+<!--Header End-->
+<!--Navigation Begin-->
+<div class="navbar" role="banner">
+  <div class="container-fluid">
+      <div class="navbar-header">
+          <button class="navbar-toggle" type="button" data-toggle="collapse" data-target=".bs-navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+        </div>
+        <nav class="collapse navbar-collapse bs-navbar-collapse" role="navigation">
+          <ul class="nav navbar-nav">
+              <li><a href="/index.html" id="home">Home</a></li>
+                <li><a href="/getting-help.html" id="getting-help">Getting Help</a></li>
+                <li><a href="/about/integrates.html" id="project-info">Project Information</a></li>
+                <li><a href="/documentation.html" id="documentation">Documentation</a></li>
+                <li><a href="/talksAndVideos.html">Talks and Slideshows</a></li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" id="contribute">Contribute <b class="caret"></b></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="/contribute/Contributing-to-Storm.html">Getting Started</a></li>
+                        <li><a href="/contribute/BYLAWS.html">ByLaws</a></li>
+                    </ul>
+                </li>
+                <li><a href="/2015/06/15/storm0100-beta-released.html" id="news">News</a></li>
+            </ul>
+        </nav>
+    </div>
+</div>
+
+
+
+    <div class="container-fluid">
+    <h1 class="page-title">Multi-Lang Protocol</h1>
+          <div class="row">
+           	<div class="col-md-12">
+	             <!-- Documentation -->
+
+<p class="post-meta"></p>
+
+<p>This page explains the multilang protocol as of Storm 0.7.1. Versions prior to 0.7.1 used a somewhat different protocol, documented [here](Storm-multi-language-protocol-(versions-0.7.0-and-below).html).</p>
+
+<h1 id="storm-multi-language-protocol">Storm Multi-Language Protocol</h1>
+
+<h2 id="shell-components">Shell Components</h2>
+
+<p>Support for multiple languages is implemented via the ShellBolt,
+ShellSpout, and ShellProcess classes.  These classes implement the
+IBolt and ISpout interfaces and the protocol for executing a script or
+program via the shell using Java&#39;s ProcessBuilder class.</p>
+
+<h2 id="output-fields">Output fields</h2>
+
+<p>Output fields are part of the Thrift definition of the topology. This means that when you multilang in Java, you need to create a bolt that extends ShellBolt, implements IRichBolt, and declare the fields in <code>declareOutputFields</code> (similarly for ShellSpout).</p>
+
+<p>You can learn more about this on <a href="Concepts.html">Concepts</a></p>
+
+<h2 id="protocol-preamble">Protocol Preamble</h2>
+
+<p>A simple protocol is implemented via the STDIN and STDOUT of the
+executed script or program. All data exchanged with the process is
+encoded in JSON, making support possible for pretty much any language.</p>
+
+<h1 id="packaging-your-stuff">Packaging Your Stuff</h1>
+
+<p>To run a shell component on a cluster, the scripts that are shelled
+out to must be in the <code>resources/</code> directory within the jar submitted
+to the master.</p>
+
+<p>However, during development or testing on a local machine, the resources
+directory just needs to be on the classpath.</p>
+
+<h2 id="the-protocol">The Protocol</h2>
+
+<p>Notes:</p>
+
+<ul>
+<li>Both ends of this protocol use a line-reading mechanism, so be sure to
+trim off newlines from the input and to append them to your output.</li>
+<li>All JSON inputs and outputs are terminated by a single line containing &quot;end&quot;. Note that this delimiter is not itself JSON encoded.</li>
+<li>The bullet points below are written from the perspective of the script writer&#39;s
+STDIN and STDOUT.</li>
+</ul>
+
+<h3 id="initial-handshake">Initial Handshake</h3>
+
+<p>The initial handshake is the same for both types of shell components:</p>
+
+<ul>
+<li>STDIN: Setup info. This is a JSON object with the Storm configuration, a PID directory, and a topology context, like this:</li>
+</ul>
+<div class="highlight"><pre><code class="language-text" data-lang="text">{
+    &quot;conf&quot;: {
+        &quot;topology.message.timeout.secs&quot;: 3,
+        // etc
+    },
+    &quot;pidDir&quot;: &quot;...&quot;,
+    &quot;context&quot;: {
+        &quot;task-&gt;component&quot;: {
+            &quot;1&quot;: &quot;example-spout&quot;,
+            &quot;2&quot;: &quot;__acker&quot;,
+            &quot;3&quot;: &quot;example-bolt1&quot;,
+            &quot;4&quot;: &quot;example-bolt2&quot;
+        },
+        &quot;taskid&quot;: 3,
+        // Everything below this line is only available in Storm 0.10.0+
+        &quot;componentid&quot;: &quot;example-bolt&quot;
+        &quot;stream-&gt;target-&gt;grouping&quot;: {
+            &quot;default&quot;: {
+                &quot;example-bolt2&quot;: {
+                    &quot;type&quot;: &quot;SHUFFLE&quot;}}},
+        &quot;streams&quot;: [&quot;default&quot;],
+        &quot;stream-&gt;outputfields&quot;: {&quot;default&quot;: [&quot;word&quot;]},
+        &quot;source-&gt;stream-&gt;grouping&quot;: {
+            &quot;example-spout&quot;: {
+                &quot;default&quot;: {
+                    &quot;type&quot;: &quot;FIELDS&quot;,
+                    &quot;fields&quot;: [&quot;word&quot;]
+                }
+            }
+        }
+        &quot;source-&gt;stream-&gt;fields&quot;: {
+            &quot;example-spout&quot;: {
+                &quot;default&quot;: [&quot;word&quot;]
+            }
+        }
+    }
+}
+</code></pre></div>
+<p>Your script should create an empty file named with its PID in this directory. e.g.
+the PID is 1234, so an empty file named 1234 is created in the directory. This
+file lets the supervisor know the PID so it can shutdown the process later on.</p>
+
+<p>As of Storm 0.10.0, the context sent by Storm to shell components has been
+enhanced substantially to include all aspects of the topology context available
+to JVM components.  One key addition is the ability to determine a shell
+component&#39;s source and targets (i.e., inputs and outputs) in the topology via
+the <code>stream-&gt;target-&gt;grouping</code> and <code>source-&gt;stream-&gt;grouping</code> dictionaries.  At
+the innermost level of these nested dictionaries, groupings are represented as
+a dictionary that minimally has a <code>type</code> key, but can also have a <code>fields</code> key
+to specify which fields are involved in a <code>FIELDS</code> grouping.</p>
+
+<ul>
+<li>STDOUT: Your PID, in a JSON object, like <code>{&quot;pid&quot;: 1234}</code>. The shell component will log the PID to its log.</li>
+</ul>
+
+<p>What happens next depends on the type of component:</p>
+
+<h3 id="spouts">Spouts</h3>
+
+<p>Shell spouts are synchronous. The rest happens in a while(true) loop:</p>
+
+<ul>
+<li>STDIN: Either a next, ack, or fail command.</li>
+</ul>
+
+<p>&quot;next&quot; is the equivalent of ISpout&#39;s <code>nextTuple</code>. It looks like:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">{&quot;command&quot;: &quot;next&quot;}
+</code></pre></div>
+<p>&quot;ack&quot; looks like:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">{&quot;command&quot;: &quot;ack&quot;, &quot;id&quot;: &quot;1231231&quot;}
+</code></pre></div>
+<p>&quot;fail&quot; looks like:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">{&quot;command&quot;: &quot;fail&quot;, &quot;id&quot;: &quot;1231231&quot;}
+</code></pre></div>
+<ul>
+<li>STDOUT: The results of your spout for the previous command. This can
+be a sequence of emits and logs.</li>
+</ul>
+
+<p>An emit looks like:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">{
+    &quot;command&quot;: &quot;emit&quot;,
+    // The id for the tuple. Leave this out for an unreliable emit. The id can
+    // be a string or a number.
+    &quot;id&quot;: &quot;1231231&quot;,
+    // The id of the stream this tuple was emitted to. Leave this empty to emit to default stream.
+    &quot;stream&quot;: &quot;1&quot;,
+    // If doing an emit direct, indicate the task to send the tuple to
+    &quot;task&quot;: 9,
+    // All the values in this tuple
+    &quot;tuple&quot;: [&quot;field1&quot;, 2, 3]
+}
+</code></pre></div>
+<p>If not doing an emit direct, you will immediately receive the task ids to which the tuple was emitted on STDIN as a JSON array.</p>
+
+<p>A &quot;log&quot; will log a message in the worker log. It looks like:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">{
+    &quot;command&quot;: &quot;log&quot;,
+    // the message to log
+    &quot;msg&quot;: &quot;hello world!&quot;
+}
+</code></pre></div>
+<ul>
+<li>STDOUT: a &quot;sync&quot; command ends the sequence of emits and logs. It looks like:</li>
+</ul>
+<div class="highlight"><pre><code class="language-text" data-lang="text">{&quot;command&quot;: &quot;sync&quot;}
+</code></pre></div>
+<p>After you sync, ShellSpout will not read your output until it sends another next, ack, or fail command.</p>
+
+<p>Note that, similarly to ISpout, all of the spouts in the worker will be locked up after a next, ack, or fail, until you sync. Also like ISpout, if you have no tuples to emit for a next, you should sleep for a small amount of time before syncing. ShellSpout will not automatically sleep for you.</p>
+
+<h3 id="bolts">Bolts</h3>
+
+<p>The shell bolt protocol is asynchronous. You will receive tuples on STDIN as soon as they are available, and you may emit, ack, and fail, and log at any time by writing to STDOUT, as follows:</p>
+
+<ul>
+<li>STDIN: A tuple! This is a JSON encoded structure like this:</li>
+</ul>
+<div class="highlight"><pre><code class="language-text" data-lang="text">{
+    // The tuple&#39;s id - this is a string to support languages lacking 64-bit precision
+    &quot;id&quot;: &quot;-6955786537413359385&quot;,
+    // The id of the component that created this tuple
+    &quot;comp&quot;: &quot;1&quot;,
+    // The id of the stream this tuple was emitted to
+    &quot;stream&quot;: &quot;1&quot;,
+    // The id of the task that created this tuple
+    &quot;task&quot;: 9,
+    // All the values in this tuple
+    &quot;tuple&quot;: [&quot;snow white and the seven dwarfs&quot;, &quot;field2&quot;, 3]
+}
+</code></pre></div>
+<ul>
+<li>STDOUT: An ack, fail, emit, or log. Emits look like:</li>
+</ul>
+<div class="highlight"><pre><code class="language-text" data-lang="text">{
+    &quot;command&quot;: &quot;emit&quot;,
+    // The ids of the tuples this output tuples should be anchored to
+    &quot;anchors&quot;: [&quot;1231231&quot;, &quot;-234234234&quot;],
+    // The id of the stream this tuple was emitted to. Leave this empty to emit to default stream.
+    &quot;stream&quot;: &quot;1&quot;,
+    // If doing an emit direct, indicate the task to send the tuple to
+    &quot;task&quot;: 9,
+    // All the values in this tuple
+    &quot;tuple&quot;: [&quot;field1&quot;, 2, 3]
+}
+</code></pre></div>
+<p>If not doing an emit direct, you will receive the task ids to which
+the tuple was emitted on STDIN as a JSON array. Note that, due to the
+asynchronous nature of the shell bolt protocol, when you read after
+emitting, you may not receive the task ids. You may instead read the
+task ids for a previous emit or a new tuple to process. You will
+receive the task id lists in the same order as their corresponding
+emits, however.</p>
+
+<p>An ack looks like:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">{
+    &quot;command&quot;: &quot;ack&quot;,
+    // the id of the tuple to ack
+    &quot;id&quot;: &quot;123123&quot;
+}
+</code></pre></div>
+<p>A fail looks like:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">{
+    &quot;command&quot;: &quot;fail&quot;,
+    // the id of the tuple to fail
+    &quot;id&quot;: &quot;123123&quot;
+}
+</code></pre></div>
+<p>A &quot;log&quot; will log a message in the worker log. It looks like:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">{
+    &quot;command&quot;: &quot;log&quot;,
+    // the message to log
+    &quot;msg&quot;: &quot;hello world!&quot;
+}
+</code></pre></div>
+<ul>
+<li>Note that, as of version 0.7.1, there is no longer any need for a
+shell bolt to &#39;sync&#39;.</li>
+</ul>
+
+<h3 id="handling-heartbeats-(0.9.3-and-later)">Handling Heartbeats (0.9.3 and later)</h3>
+
+<p>As of Storm 0.9.3, heartbeats have been between ShellSpout/ShellBolt and their
+multi-lang subprocesses to detect hanging/zombie subprocesses.  Any libraries
+for interfacing with Storm via multi-lang must take the following actions
+regarding hearbeats:</p>
+
+<h4 id="spout">Spout</h4>
+
+<p>Shell spouts are synchronous, so subprocesses always send <code>sync</code> commands at the
+end of <code>next()</code>,  so you should not have to do much to support heartbeats for
+spouts.  That said, you must not let subprocesses sleep more than the worker
+timeout during <code>next()</code>.</p>
+
+<h4 id="bolt">Bolt</h4>
+
+<p>Shell bolts are asynchronous, so a ShellBolt will send heartbeat tuples to its
+subprocess periodically.  Heartbeat tuple looks like:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">{
+    &quot;id&quot;: &quot;-6955786537413359385&quot;,
+    &quot;comp&quot;: &quot;1&quot;,
+    &quot;stream&quot;: &quot;__heartbeat&quot;,
+    // this shell bolt&#39;s system task id
+    &quot;task&quot;: -1,
+    &quot;tuple&quot;: []
+}
+</code></pre></div>
+<p>When subprocess receives heartbeat tuple, it must send a <code>sync</code> command back to
+ShellBolt.</p>
+
+
+
+	          </div>
+	       </div>
+	  </div>
+<footer>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="footer-widget">
+                    <h5>Meetups</h5>
+                    <ul class="latest-news">
+                        <li><a href="http://www.meetup.com/Apache-Storm-Apache-Kafka/">Sunnyvale, CA</a> <span class="small">(10 May 2015)</span></li>
+                        <li><a href="http://www.meetup.com/Apache-Storm-Kafka-Users/">Seatle, WA</a> <span class="small">(27 Jun 2015)</span></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="footer-widget">
+                    <h5>About Storm</h5>
+                    <p>Storm integrates with any queueing system and any database system. Storm's spout abstraction makes it easy to integrate a new queuing system. Likewise, integrating Storm with database systems is easy.</p>
+               </div>
+            </div>
+            <div class="col-md-3">
+                <div class="footer-widget">
+                    <h5>First Look</h5>
+                    <ul class="footer-list">
+                        <li><a href="/documentation/Rationale.html">Rationale</a></li>
+                        <li><a href="/tutorial.html">Tutorial</a></li>
+                        <li><a href="/documentation/Setting-up-development-environment.html">Setting up development environment</a></li>
+                        <li><a href="/documentation/Creating-a-new-Storm-project.html">Creating a new Storm project</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="footer-widget">
+                    <h5>Documentation</h5>
+                    <ul class="footer-list">
+                        <li><a href="/doc-index.html">Index</a></li>
+                        <li><a href="/documentation.html">Manual</a></li>
+                        <li><a href="https://storm.apache.org/javadoc/apidocs/index.html">Javadoc</a></li>
+                        <li><a href="/documentation/FAQ.html">FAQ</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <hr/>
+        <div class="row">   
+            <div class="col-md-12">
+                <p align="center">Copyright © 2015 <a href="http://www.apache.org">Apache Software Foundation</a>. All Rights Reserved. Apache Storm, Apache, the Apache feather logo, and the Apache Storm project logos are trademarks of The Apache Software Foundation. All other marks mentioned may be trademarks or registered trademarks of their respective owners.</p>
+            </div>
+        </div>
+    </div>
+</footer>
+<!--Footer End-->
+<!-- Scroll to top -->
+<span class="totop"><a href="#"><i class="fa fa-angle-up"></i></a></span> 
+
+</body>
+
+</html>
+

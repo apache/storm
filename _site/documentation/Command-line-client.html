@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+
+    <title>Command Line Client</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="/assets/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap theme -->
+    <link href="/assets/css/bootstrap-theme.min.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link rel="stylesheet" href="http://fortawesome.github.io/Font-Awesome/assets/font-awesome/css/font-awesome.css">
+    <link href="/css/style.css" rel="stylesheet">
+    <link href="/assets/css/owl.theme.css" rel="stylesheet">
+    <link href="/assets/css/owl.carousel.css" rel="stylesheet">
+    <script type="text/javascript" src="/assets/js/jquery.min.js"></script>
+    <script type="text/javascript" src="/assets/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="/assets/js/owl.carousel.min.js"></script>
+    <script type="text/javascript" src="/assets/js/storm.js"></script>
+    <!-- Just for debugging purposes. Don't actually copy these 2 lines! -->
+    <!--[if lt IE 9]><script src="../../assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
+    
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+
+
+  <body>
+    <header>
+  <div class="container-fluid">
+      <div class="row">
+          <div class="col-md-10">
+              <a href="/index.html"><img src="/images/logo.png" class="logo" /></a>
+            </div>
+            <div class="col-md-2">
+              <a href="/downloads.html" class="btn-std btn-block btn-download">Download</a>
+            </div>
+        </div>
+    </div>
+</header>
+<!--Header End-->
+<!--Navigation Begin-->
+<div class="navbar" role="banner">
+  <div class="container-fluid">
+      <div class="navbar-header">
+          <button class="navbar-toggle" type="button" data-toggle="collapse" data-target=".bs-navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+        </div>
+        <nav class="collapse navbar-collapse bs-navbar-collapse" role="navigation">
+          <ul class="nav navbar-nav">
+              <li><a href="/index.html" id="home">Home</a></li>
+                <li><a href="/getting-help.html" id="getting-help">Getting Help</a></li>
+                <li><a href="/about/integrates.html" id="project-info">Project Information</a></li>
+                <li><a href="/documentation.html" id="documentation">Documentation</a></li>
+                <li><a href="/talksAndVideos.html">Talks and Slideshows</a></li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" id="contribute">Contribute <b class="caret"></b></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="/contribute/Contributing-to-Storm.html">Getting Started</a></li>
+                        <li><a href="/contribute/BYLAWS.html">ByLaws</a></li>
+                    </ul>
+                </li>
+                <li><a href="/2015/06/15/storm0100-beta-released.html" id="news">News</a></li>
+            </ul>
+        </nav>
+    </div>
+</div>
+
+
+
+    <div class="container-fluid">
+    <h1 class="page-title">Command Line Client</h1>
+          <div class="row">
+           	<div class="col-md-12">
+	             <!-- Documentation -->
+
+<p class="post-meta"></p>
+
+<p>This page describes all the commands that are possible with the &quot;storm&quot; command line client. To learn how to set up your &quot;storm&quot; client to talk to a remote cluster, follow the instructions in <a href="Setting-up-development-environment.html">Setting up development environment</a>.</p>
+
+<p>These commands are:</p>
+
+<ol>
+<li>jar</li>
+<li>kill</li>
+<li>activate</li>
+<li>deactivate</li>
+<li>rebalance</li>
+<li>repl</li>
+<li>classpath</li>
+<li>localconfvalue</li>
+<li>remoteconfvalue</li>
+<li>nimbus</li>
+<li>supervisor</li>
+<li>ui</li>
+<li>drpc</li>
+</ol>
+
+<h3 id="jar">jar</h3>
+
+<p>Syntax: <code>storm jar topology-jar-path class ...</code></p>
+
+<p>Runs the main method of <code>class</code> with the specified arguments. The storm jars and configs in <code>~/.storm</code> are put on the classpath. The process is configured so that <a href="/javadoc/apidocs/backtype/storm/StormSubmitter.html">StormSubmitter</a> will upload the jar at <code>topology-jar-path</code> when the topology is submitted.</p>
+
+<h3 id="kill">kill</h3>
+
+<p>Syntax: <code>storm kill topology-name [-w wait-time-secs]</code></p>
+
+<p>Kills the topology with the name <code>topology-name</code>. Storm will first deactivate the topology&#39;s spouts for the duration of the topology&#39;s message timeout to allow all messages currently being processed to finish processing. Storm will then shutdown the workers and clean up their state. You can override the length of time Storm waits between deactivation and shutdown with the -w flag.</p>
+
+<h3 id="activate">activate</h3>
+
+<p>Syntax: <code>storm activate topology-name</code></p>
+
+<p>Activates the specified topology&#39;s spouts.</p>
+
+<h3 id="deactivate">deactivate</h3>
+
+<p>Syntax: <code>storm deactivate topology-name</code></p>
+
+<p>Deactivates the specified topology&#39;s spouts.</p>
+
+<h3 id="rebalance">rebalance</h3>
+
+<p>Syntax: <code>storm rebalance topology-name [-w wait-time-secs]</code></p>
+
+<p>Sometimes you may wish to spread out where the workers for a topology are running. For example, let&#39;s say you have a 10 node cluster running 4 workers per node, and then let&#39;s say you add another 10 nodes to the cluster. You may wish to have Storm spread out the workers for the running topology so that each node runs 2 workers. One way to do this is to kill the topology and resubmit it, but Storm provides a &quot;rebalance&quot; command that provides an easier way to do this. </p>
+
+<p>Rebalance will first deactivate the topology for the duration of the message timeout (overridable with the -w flag) and then redistribute the workers evenly around the cluster. The topology will then return to its previous state of activation (so a deactivated topology will still be deactivated and an activated topology will go back to being activated).</p>
+
+<h3 id="repl">repl</h3>
+
+<p>Syntax: <code>storm repl</code></p>
+
+<p>Opens up a Clojure REPL with the storm jars and configuration on the classpath. Useful for debugging.</p>
+
+<h3 id="classpath">classpath</h3>
+
+<p>Syntax: <code>storm classpath</code></p>
+
+<p>Prints the classpath used by the storm client when running commands.</p>
+
+<h3 id="localconfvalue">localconfvalue</h3>
+
+<p>Syntax: <code>storm localconfvalue conf-name</code></p>
+
+<p>Prints out the value for <code>conf-name</code> in the local Storm configs. The local Storm configs are the ones in <code>~/.storm/storm.yaml</code> merged in with the configs in <code>defaults.yaml</code>.</p>
+
+<h3 id="remoteconfvalue">remoteconfvalue</h3>
+
+<p>Syntax: <code>storm remoteconfvalue conf-name</code></p>
+
+<p>Prints out the value for <code>conf-name</code> in the cluster&#39;s Storm configs. The cluster&#39;s Storm configs are the ones in <code>$STORM-PATH/conf/storm.yaml</code> merged in with the configs in <code>defaults.yaml</code>. This command must be run on a cluster machine.</p>
+
+<h3 id="nimbus">nimbus</h3>
+
+<p>Syntax: <code>storm nimbus</code></p>
+
+<p>Launches the nimbus daemon. This command should be run under supervision with a tool like <a href="http://cr.yp.to/daemontools.html">daemontools</a> or <a href="http://mmonit.com/monit/">monit</a>. See <a href="Setting-up-a-Storm-cluster.html">Setting up a Storm cluster</a> for more information.</p>
+
+<h3 id="supervisor">supervisor</h3>
+
+<p>Syntax: <code>storm supervisor</code></p>
+
+<p>Launches the supervisor daemon. This command should be run under supervision with a tool like <a href="http://cr.yp.to/daemontools.html">daemontools</a> or <a href="http://mmonit.com/monit/">monit</a>. See <a href="Setting-up-a-Storm-cluster.html">Setting up a Storm cluster</a> for more information.</p>
+
+<h3 id="ui">ui</h3>
+
+<p>Syntax: <code>storm ui</code></p>
+
+<p>Launches the UI daemon. The UI provides a web interface for a Storm cluster and shows detailed stats about running topologies. This command should be run under supervision with a tool like <a href="http://cr.yp.to/daemontools.html">daemontools</a> or <a href="http://mmonit.com/monit/">monit</a>. See <a href="Setting-up-a-Storm-cluster.html">Setting up a Storm cluster</a> for more information.</p>
+
+<h3 id="drpc">drpc</h3>
+
+<p>Syntax: <code>storm drpc</code></p>
+
+<p>Launches a DRPC daemon. This command should be run under supervision with a tool like <a href="http://cr.yp.to/daemontools.html">daemontools</a> or <a href="http://mmonit.com/monit/">monit</a>. See <a href="Distributed-RPC.html">Distributed RPC</a> for more information.</p>
+
+
+
+	          </div>
+	       </div>
+	  </div>
+<footer>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="footer-widget">
+                    <h5>Meetups</h5>
+                    <ul class="latest-news">
+                        <li><a href="http://www.meetup.com/Apache-Storm-Apache-Kafka/">Sunnyvale, CA</a> <span class="small">(10 May 2015)</span></li>
+                        <li><a href="http://www.meetup.com/Apache-Storm-Kafka-Users/">Seatle, WA</a> <span class="small">(27 Jun 2015)</span></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="footer-widget">
+                    <h5>About Storm</h5>
+                    <p>Storm integrates with any queueing system and any database system. Storm's spout abstraction makes it easy to integrate a new queuing system. Likewise, integrating Storm with database systems is easy.</p>
+               </div>
+            </div>
+            <div class="col-md-3">
+                <div class="footer-widget">
+                    <h5>First Look</h5>
+                    <ul class="footer-list">
+                        <li><a href="/documentation/Rationale.html">Rationale</a></li>
+                        <li><a href="/tutorial.html">Tutorial</a></li>
+                        <li><a href="/documentation/Setting-up-development-environment.html">Setting up development environment</a></li>
+                        <li><a href="/documentation/Creating-a-new-Storm-project.html">Creating a new Storm project</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="footer-widget">
+                    <h5>Documentation</h5>
+                    <ul class="footer-list">
+                        <li><a href="/doc-index.html">Index</a></li>
+                        <li><a href="/documentation.html">Manual</a></li>
+                        <li><a href="https://storm.apache.org/javadoc/apidocs/index.html">Javadoc</a></li>
+                        <li><a href="/documentation/FAQ.html">FAQ</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <hr/>
+        <div class="row">   
+            <div class="col-md-12">
+                <p align="center">Copyright © 2015 <a href="http://www.apache.org">Apache Software Foundation</a>. All Rights Reserved. Apache Storm, Apache, the Apache feather logo, and the Apache Storm project logos are trademarks of The Apache Software Foundation. All other marks mentioned may be trademarks or registered trademarks of their respective owners.</p>
+            </div>
+        </div>
+    </div>
+</footer>
+<!--Footer End-->
+<!-- Scroll to top -->
+<span class="totop"><a href="#"><i class="fa fa-angle-up"></i></a></span> 
+
+</body>
+
+</html>
+

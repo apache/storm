@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+
+    <title>Setting up a Storm Cluster</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="/assets/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap theme -->
+    <link href="/assets/css/bootstrap-theme.min.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link rel="stylesheet" href="http://fortawesome.github.io/Font-Awesome/assets/font-awesome/css/font-awesome.css">
+    <link href="/css/style.css" rel="stylesheet">
+    <link href="/assets/css/owl.theme.css" rel="stylesheet">
+    <link href="/assets/css/owl.carousel.css" rel="stylesheet">
+    <script type="text/javascript" src="/assets/js/jquery.min.js"></script>
+    <script type="text/javascript" src="/assets/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="/assets/js/owl.carousel.min.js"></script>
+    <script type="text/javascript" src="/assets/js/storm.js"></script>
+    <!-- Just for debugging purposes. Don't actually copy these 2 lines! -->
+    <!--[if lt IE 9]><script src="../../assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
+    
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+
+
+  <body>
+    <header>
+  <div class="container-fluid">
+      <div class="row">
+          <div class="col-md-10">
+              <a href="/index.html"><img src="/images/logo.png" class="logo" /></a>
+            </div>
+            <div class="col-md-2">
+              <a href="/downloads.html" class="btn-std btn-block btn-download">Download</a>
+            </div>
+        </div>
+    </div>
+</header>
+<!--Header End-->
+<!--Navigation Begin-->
+<div class="navbar" role="banner">
+  <div class="container-fluid">
+      <div class="navbar-header">
+          <button class="navbar-toggle" type="button" data-toggle="collapse" data-target=".bs-navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+        </div>
+        <nav class="collapse navbar-collapse bs-navbar-collapse" role="navigation">
+          <ul class="nav navbar-nav">
+              <li><a href="/index.html" id="home">Home</a></li>
+                <li><a href="/getting-help.html" id="getting-help">Getting Help</a></li>
+                <li><a href="/about/integrates.html" id="project-info">Project Information</a></li>
+                <li><a href="/documentation.html" id="documentation">Documentation</a></li>
+                <li><a href="/talksAndVideos.html">Talks and Slideshows</a></li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" id="contribute">Contribute <b class="caret"></b></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="/contribute/Contributing-to-Storm.html">Getting Started</a></li>
+                        <li><a href="/contribute/BYLAWS.html">ByLaws</a></li>
+                    </ul>
+                </li>
+                <li><a href="/2015/06/15/storm0100-beta-released.html" id="news">News</a></li>
+            </ul>
+        </nav>
+    </div>
+</div>
+
+
+
+    <div class="container-fluid">
+    <h1 class="page-title">Setting up a Storm Cluster</h1>
+          <div class="row">
+           	<div class="col-md-12">
+	             <!-- Documentation -->
+
+<p class="post-meta"></p>
+
+<p>This page outlines the steps for getting a Storm cluster up and running. If you&#39;re on AWS, you should check out the <a href="https://github.com/nathanmarz/storm-deploy/wiki">storm-deploy</a> project. <a href="https://github.com/nathanmarz/storm-deploy/wiki">storm-deploy</a> completely automates the provisioning, configuration, and installation of Storm clusters on EC2. It also sets up Ganglia for you so you can monitor CPU, disk, and network usage.</p>
+
+<p>If you run into difficulties with your Storm cluster, first check for a solution is in the <a href="Troubleshooting.html">Troubleshooting</a> page. Otherwise, email the mailing list.</p>
+
+<p>Here&#39;s a summary of the steps for setting up a Storm cluster:</p>
+
+<ol>
+<li>Set up a Zookeeper cluster</li>
+<li>Install dependencies on Nimbus and worker machines</li>
+<li>Download and extract a Storm release to Nimbus and worker machines</li>
+<li>Fill in mandatory configurations into storm.yaml</li>
+<li>Launch daemons under supervision using &quot;storm&quot; script and a supervisor of your choice</li>
+</ol>
+
+<h3 id="set-up-a-zookeeper-cluster">Set up a Zookeeper cluster</h3>
+
+<p>Storm uses Zookeeper for coordinating the cluster. Zookeeper <strong>is not</strong> used for message passing, so the load Storm places on Zookeeper is quite low. Single node Zookeeper clusters should be sufficient for most cases, but if you want failover or are deploying large Storm clusters you may want larger Zookeeper clusters. Instructions for deploying Zookeeper are <a href="http://zookeeper.apache.org/doc/r3.3.3/zookeeperAdmin.html">here</a>. </p>
+
+<p>A few notes about Zookeeper deployment:</p>
+
+<ol>
+<li>It&#39;s critical that you run Zookeeper under supervision, since Zookeeper is fail-fast and will exit the process if it encounters any error case. See <a href="http://zookeeper.apache.org/doc/r3.3.3/zookeeperAdmin.html#sc_supervision">here</a> for more details. </li>
+<li>It&#39;s critical that you set up a cron to compact Zookeeper&#39;s data and transaction logs. The Zookeeper daemon does not do this on its own, and if you don&#39;t set up a cron, Zookeeper will quickly run out of disk space. See <a href="http://zookeeper.apache.org/doc/r3.3.3/zookeeperAdmin.html#sc_maintenance">here</a> for more details.</li>
+</ol>
+
+<h3 id="install-dependencies-on-nimbus-and-worker-machines">Install dependencies on Nimbus and worker machines</h3>
+
+<p>Next you need to install Storm&#39;s dependencies on Nimbus and the worker machines. These are:</p>
+
+<ol>
+<li>Java 6</li>
+<li>Python 2.6.6</li>
+</ol>
+
+<p>These are the versions of the dependencies that have been tested with Storm. Storm may or may not work with different versions of Java and/or Python.</p>
+
+<h3 id="download-and-extract-a-storm-release-to-nimbus-and-worker-machines">Download and extract a Storm release to Nimbus and worker machines</h3>
+
+<p>Next, download a Storm release and extract the zip file somewhere on Nimbus and each of the worker machines. The Storm releases can be downloaded <a href="http://github.com/apache/storm/releases">from here</a>.</p>
+
+<h3 id="fill-in-mandatory-configurations-into-storm.yaml">Fill in mandatory configurations into storm.yaml</h3>
+
+<p>The Storm release contains a file at <code>conf/storm.yaml</code> that configures the Storm daemons. You can see the default configuration values <a href="https://github.com/apache/storm/blob/master/conf/defaults.yaml">here</a>. storm.yaml overrides anything in defaults.yaml. There&#39;s a few configurations that are mandatory to get a working cluster:</p>
+
+<p>1) <strong>storm.zookeeper.servers</strong>: This is a list of the hosts in the Zookeeper cluster for your Storm cluster. It should look something like:</p>
+<div class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="l-Scalar-Plain">storm.zookeeper.servers</span><span class="p-Indicator">:</span>
+  <span class="p-Indicator">-</span> <span class="s">&quot;111.222.333.444&quot;</span>
+  <span class="p-Indicator">-</span> <span class="s">&quot;555.666.777.888&quot;</span>
+</code></pre></div>
+<p>If the port that your Zookeeper cluster uses is different than the default, you should set <strong>storm.zookeeper.port</strong> as well.</p>
+
+<p>2) <strong>storm.local.dir</strong>: The Nimbus and Supervisor daemons require a directory on the local disk to store small amounts of state (like jars, confs, and things like that). You should create that directory on each machine, give it proper permissions, and then fill in the directory location using this config. For example:</p>
+<div class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="l-Scalar-Plain">storm.local.dir</span><span class="p-Indicator">:</span> <span class="s">&quot;/mnt/storm&quot;</span>
+</code></pre></div>
+<p>3) <strong>nimbus.host</strong>: The worker nodes need to know which machine is the master in order to download topology jars and confs. For example:</p>
+<div class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="l-Scalar-Plain">nimbus.host</span><span class="p-Indicator">:</span> <span class="s">&quot;111.222.333.44&quot;</span>
+</code></pre></div>
+<p>4) <strong>supervisor.slots.ports</strong>: For each worker machine, you configure how many workers run on that machine with this config. Each worker uses a single port for receiving messages, and this setting defines which ports are open for use. If you define five ports here, then Storm will allocate up to five workers to run on this machine. If you define three ports, Storm will only run up to three. By default, this setting is configured to run 4 workers on the ports 6700, 6701, 6702, and 6703. For example:</p>
+<div class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="l-Scalar-Plain">supervisor.slots.ports</span><span class="p-Indicator">:</span>
+    <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">6700</span>
+    <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">6701</span>
+    <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">6702</span>
+    <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">6703</span>
+</code></pre></div>
+<h3 id="configure-external-libraries-and-environmental-variables-(optional)">Configure external libraries and environmental variables (optional)</h3>
+
+<p>If you need support from external libraries or custom plugins, you can place such jars into the extlib/ and extlib-daemon/ directories. Note that the extlib-daemon/ directory stores jars used only by daemons (Nimbus, Supervisor, DRPC, UI, Logviewer), e.g., HDFS and customized scheduling libraries. Accordingly, two environmental variables STORM_EXT_CLASSPATH and STORM_EXT_CLASSPATH_DAEMON can be configured by users for including the external classpath and daemon-only external classpath.</p>
+
+<h3 id="launch-daemons-under-supervision-using-&quot;storm&quot;-script-and-a-supervisor-of-your-choice">Launch daemons under supervision using &quot;storm&quot; script and a supervisor of your choice</h3>
+
+<p>The last step is to launch all the Storm daemons. It is critical that you run each of these daemons under supervision. Storm is a <strong>fail-fast</strong> system which means the processes will halt whenever an unexpected error is encountered. Storm is designed so that it can safely halt at any point and recover correctly when the process is restarted. This is why Storm keeps no state in-process -- if Nimbus or the Supervisors restart, the running topologies are unaffected. Here&#39;s how to run the Storm daemons:</p>
+
+<ol>
+<li><strong>Nimbus</strong>: Run the command &quot;bin/storm nimbus&quot; under supervision on the master machine.</li>
+<li><strong>Supervisor</strong>: Run the command &quot;bin/storm supervisor&quot; under supervision on each worker machine. The supervisor daemon is responsible for starting and stopping worker processes on that machine.</li>
+<li><strong>UI</strong>: Run the Storm UI (a site you can access from the browser that gives diagnostics on the cluster and topologies) by running the command &quot;bin/storm ui&quot; under supervision. The UI can be accessed by navigating your web browser to http://{nimbus host}:8080. </li>
+</ol>
+
+<p>As you can see, running the daemons is very straightforward. The daemons will log to the logs/ directory in wherever you extracted the Storm release.</p>
+
+
+
+	          </div>
+	       </div>
+	  </div>
+<footer>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="footer-widget">
+                    <h5>Meetups</h5>
+                    <ul class="latest-news">
+                        <li><a href="http://www.meetup.com/Apache-Storm-Apache-Kafka/">Sunnyvale, CA</a> <span class="small">(10 May 2015)</span></li>
+                        <li><a href="http://www.meetup.com/Apache-Storm-Kafka-Users/">Seatle, WA</a> <span class="small">(27 Jun 2015)</span></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="footer-widget">
+                    <h5>About Storm</h5>
+                    <p>Storm integrates with any queueing system and any database system. Storm's spout abstraction makes it easy to integrate a new queuing system. Likewise, integrating Storm with database systems is easy.</p>
+               </div>
+            </div>
+            <div class="col-md-3">
+                <div class="footer-widget">
+                    <h5>First Look</h5>
+                    <ul class="footer-list">
+                        <li><a href="/documentation/Rationale.html">Rationale</a></li>
+                        <li><a href="/tutorial.html">Tutorial</a></li>
+                        <li><a href="/documentation/Setting-up-development-environment.html">Setting up development environment</a></li>
+                        <li><a href="/documentation/Creating-a-new-Storm-project.html">Creating a new Storm project</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="footer-widget">
+                    <h5>Documentation</h5>
+                    <ul class="footer-list">
+                        <li><a href="/doc-index.html">Index</a></li>
+                        <li><a href="/documentation.html">Manual</a></li>
+                        <li><a href="https://storm.apache.org/javadoc/apidocs/index.html">Javadoc</a></li>
+                        <li><a href="/documentation/FAQ.html">FAQ</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <hr/>
+        <div class="row">   
+            <div class="col-md-12">
+                <p align="center">Copyright © 2015 <a href="http://www.apache.org">Apache Software Foundation</a>. All Rights Reserved. Apache Storm, Apache, the Apache feather logo, and the Apache Storm project logos are trademarks of The Apache Software Foundation. All other marks mentioned may be trademarks or registered trademarks of their respective owners.</p>
+            </div>
+        </div>
+    </div>
+</footer>
+<!--Footer End-->
+<!-- Scroll to top -->
+<span class="totop"><a href="#"><i class="fa fa-angle-up"></i></a></span> 
+
+</body>
+
+</html>
+

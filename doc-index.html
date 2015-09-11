@@ -1,0 +1,12 @@
+---
+layout: default
+title: Documentation index
+---
+
+<ul>
+{% for page in site.pages %}
+{% if page.documentation == true %}
+<li><a href="{{ page.url }}">{{ page.title }}</a></li>
+{% endif %}   <!-- resource-p -->
+{% endfor %} <!-- page -->
+</ul>

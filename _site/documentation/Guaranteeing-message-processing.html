@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+
+    <title>Guaranteeing Message Processing</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="/assets/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap theme -->
+    <link href="/assets/css/bootstrap-theme.min.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link rel="stylesheet" href="http://fortawesome.github.io/Font-Awesome/assets/font-awesome/css/font-awesome.css">
+    <link href="/css/style.css" rel="stylesheet">
+    <link href="/assets/css/owl.theme.css" rel="stylesheet">
+    <link href="/assets/css/owl.carousel.css" rel="stylesheet">
+    <script type="text/javascript" src="/assets/js/jquery.min.js"></script>
+    <script type="text/javascript" src="/assets/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="/assets/js/owl.carousel.min.js"></script>
+    <script type="text/javascript" src="/assets/js/storm.js"></script>
+    <!-- Just for debugging purposes. Don't actually copy these 2 lines! -->
+    <!--[if lt IE 9]><script src="../../assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
+    
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+
+
+  <body>
+    <header>
+  <div class="container-fluid">
+      <div class="row">
+          <div class="col-md-10">
+              <a href="/index.html"><img src="/images/logo.png" class="logo" /></a>
+            </div>
+            <div class="col-md-2">
+              <a href="/downloads.html" class="btn-std btn-block btn-download">Download</a>
+            </div>
+        </div>
+    </div>
+</header>
+<!--Header End-->
+<!--Navigation Begin-->
+<div class="navbar" role="banner">
+  <div class="container-fluid">
+      <div class="navbar-header">
+          <button class="navbar-toggle" type="button" data-toggle="collapse" data-target=".bs-navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+        </div>
+        <nav class="collapse navbar-collapse bs-navbar-collapse" role="navigation">
+          <ul class="nav navbar-nav">
+              <li><a href="/index.html" id="home">Home</a></li>
+                <li><a href="/getting-help.html" id="getting-help">Getting Help</a></li>
+                <li><a href="/about/integrates.html" id="project-info">Project Information</a></li>
+                <li><a href="/documentation.html" id="documentation">Documentation</a></li>
+                <li><a href="/talksAndVideos.html">Talks and Slideshows</a></li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" id="contribute">Contribute <b class="caret"></b></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="/contribute/Contributing-to-Storm.html">Getting Started</a></li>
+                        <li><a href="/contribute/BYLAWS.html">ByLaws</a></li>
+                    </ul>
+                </li>
+                <li><a href="/2015/06/15/storm0100-beta-released.html" id="news">News</a></li>
+            </ul>
+        </nav>
+    </div>
+</div>
+
+
+
+    <div class="container-fluid">
+    <h1 class="page-title">Guaranteeing Message Processing</h1>
+          <div class="row">
+           	<div class="col-md-12">
+	             <!-- Documentation -->
+
+<p class="post-meta"></p>
+
+<p>Storm guarantees that each message coming off a spout will be fully processed. This page describes how Storm accomplishes this guarantee and what you have to do as a user to benefit from Storm&#39;s reliability capabilities.</p>
+
+<h3 id="what-does-it-mean-for-a-message-to-be-&quot;fully-processed&quot;?">What does it mean for a message to be &quot;fully processed&quot;?</h3>
+
+<p>A tuple coming off a spout can trigger thousands of tuples to be created based on it. Consider, for example, the streaming word count topology:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">TopologyBuilder</span> <span class="n">builder</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">TopologyBuilder</span><span class="o">();</span>
+<span class="n">builder</span><span class="o">.</span><span class="na">setSpout</span><span class="o">(</span><span class="s">&quot;sentences&quot;</span><span class="o">,</span> <span class="k">new</span> <span class="nf">KestrelSpout</span><span class="o">(</span><span class="s">&quot;kestrel.backtype.com&quot;</span><span class="o">,</span>
+                                               <span class="mi">22133</span><span class="o">,</span>
+                                               <span class="s">&quot;sentence_queue&quot;</span><span class="o">,</span>
+                                               <span class="k">new</span> <span class="nf">StringScheme</span><span class="o">()));</span>
+<span class="n">builder</span><span class="o">.</span><span class="na">setBolt</span><span class="o">(</span><span class="s">&quot;split&quot;</span><span class="o">,</span> <span class="k">new</span> <span class="nf">SplitSentence</span><span class="o">(),</span> <span class="mi">10</span><span class="o">)</span>
+        <span class="o">.</span><span class="na">shuffleGrouping</span><span class="o">(</span><span class="s">&quot;sentences&quot;</span><span class="o">);</span>
+<span class="n">builder</span><span class="o">.</span><span class="na">setBolt</span><span class="o">(</span><span class="s">&quot;count&quot;</span><span class="o">,</span> <span class="k">new</span> <span class="nf">WordCount</span><span class="o">(),</span> <span class="mi">20</span><span class="o">)</span>
+        <span class="o">.</span><span class="na">fieldsGrouping</span><span class="o">(</span><span class="s">&quot;split&quot;</span><span class="o">,</span> <span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;word&quot;</span><span class="o">));</span>
+</code></pre></div>
+<p>This topology reads sentences off of a Kestrel queue, splits the sentences into its constituent words, and then emits for each word the number of times it has seen that word before. A tuple coming off the spout triggers many tuples being created based on it: a tuple for each word in the sentence and a tuple for the updated count for each word. The tree of messages looks something like this:</p>
+
+<p><img src="images/tuple_tree.png" alt="Tuple tree"></p>
+
+<p>Storm considers a tuple coming off a spout &quot;fully processed&quot; when the tuple tree has been exhausted and every message in the tree has been processed. A tuple is considered failed when its tree of messages fails to be fully processed within a specified timeout. This timeout can be configured on a topology-specific basis using the <a href="/javadoc/apidocs/backtype/storm/Config.html#TOPOLOGY_MESSAGE_TIMEOUT_SECS">Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS</a> configuration and defaults to 30 seconds.</p>
+
+<h3 id="what-happens-if-a-message-is-fully-processed-or-fails-to-be-fully-processed?">What happens if a message is fully processed or fails to be fully processed?</h3>
+
+<p>To understand this question, let&#39;s take a look at the lifecycle of a tuple coming off of a spout. For reference, here is the interface that spouts implement (see the <a href="/javadoc/apidocs/backtype/storm/spout/ISpout.html">Javadoc</a> for more information):</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">ISpout</span> <span class="kd">extends</span> <span class="n">Serializable</span> <span class="o">{</span>
+    <span class="kt">void</span> <span class="nf">open</span><span class="o">(</span><span class="n">Map</span> <span class="n">conf</span><span class="o">,</span> <span class="n">TopologyContext</span> <span class="n">context</span><span class="o">,</span> <span class="n">SpoutOutputCollector</span> <span class="n">collector</span><span class="o">);</span>
+    <span class="kt">void</span> <span class="nf">close</span><span class="o">();</span>
+    <span class="kt">void</span> <span class="nf">nextTuple</span><span class="o">();</span>
+    <span class="kt">void</span> <span class="nf">ack</span><span class="o">(</span><span class="n">Object</span> <span class="n">msgId</span><span class="o">);</span>
+    <span class="kt">void</span> <span class="nf">fail</span><span class="o">(</span><span class="n">Object</span> <span class="n">msgId</span><span class="o">);</span>
+<span class="o">}</span>
+</code></pre></div>
+<p>First, Storm requests a tuple from the <code>Spout</code> by calling the <code>nextTuple</code> method on the <code>Spout</code>. The <code>Spout</code> uses the <code>SpoutOutputCollector</code> provided in the <code>open</code> method to emit a tuple to one of its output streams. When emitting a tuple, the <code>Spout</code> provides a &quot;message id&quot; that will be used to identify the tuple later. For example, the <code>KestrelSpout</code> reads a message off of the kestrel queue and emits as the &quot;message id&quot; the id provided by Kestrel for the message. Emitting a message to the <code>SpoutOutputCollector</code> looks like this:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">_collector</span><span class="o">.</span><span class="na">emit</span><span class="o">(</span><span class="k">new</span> <span class="nf">Values</span><span class="o">(</span><span class="s">&quot;field1&quot;</span><span class="o">,</span> <span class="s">&quot;field2&quot;</span><span class="o">,</span> <span class="mi">3</span><span class="o">)</span> <span class="o">,</span> <span class="n">msgId</span><span class="o">);</span>
+</code></pre></div>
+<p>Next, the tuple gets sent to consuming bolts and Storm takes care of tracking the tree of messages that is created. If Storm detects that a tuple is fully processed, Storm will call the <code>ack</code> method on the originating <code>Spout</code> task with the message id that the <code>Spout</code> provided to Storm. Likewise, if the tuple times-out Storm will call the <code>fail</code> method on the <code>Spout</code>. Note that a tuple will be acked or failed by the exact same <code>Spout</code> task that created it. So if a <code>Spout</code> is executing as many tasks across the cluster, a tuple won&#39;t be acked or failed by a different task than the one that created it.</p>
+
+<p>Let&#39;s use <code>KestrelSpout</code> again to see what a <code>Spout</code> needs to do to guarantee message processing. When <code>KestrelSpout</code> takes a message off the Kestrel queue, it &quot;opens&quot; the message. This means the message is not actually taken off the queue yet, but instead placed in a &quot;pending&quot; state waiting for acknowledgement that the message is completed. While in the pending state, a message will not be sent to other consumers of the queue. Additionally, if a client disconnects all pending messages for that client are put back on the queue. When a message is opened, Kestrel provides the client with the data for the message as well as a unique id for the message. The <code>KestrelSpout</code> uses that exact id as the &quot;message id&quot; for the tuple when emitting the tuple to the <code>SpoutOutputCollector</code>. Sometime later on, when <code>ack</code> or <code>fail</code> are called on the <code>KestrelSpout</code>, the <code>KestrelSpout</code> sends an ack or fail message to Kestrel with the message id to take the message off the queue or have it put back on.</p>
+
+<h3 id="what-is-storm&#39;s-reliability-api?">What is Storm&#39;s reliability API?</h3>
+
+<p>There&#39;s two things you have to do as a user to benefit from Storm&#39;s reliability capabilities. First, you need to tell Storm whenever you&#39;re creating a new link in the tree of tuples. Second, you need to tell Storm when you have finished processing an individual tuple. By doing both these things, Storm can detect when the tree of tuples is fully processed and can ack or fail the spout tuple appropriately. Storm&#39;s API provides a concise way of doing both of these tasks. </p>
+
+<p>Specifying a link in the tuple tree is called <em>anchoring</em>. Anchoring is done at the same time you emit a new tuple. Let&#39;s use the following bolt as an example. This bolt splits a tuple containing a sentence into a tuple for each word:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">SplitSentence</span> <span class="kd">extends</span> <span class="n">BaseRichBolt</span> <span class="o">{</span>
+        <span class="n">OutputCollector</span> <span class="n">_collector</span><span class="o">;</span>
+
+        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">prepare</span><span class="o">(</span><span class="n">Map</span> <span class="n">conf</span><span class="o">,</span> <span class="n">TopologyContext</span> <span class="n">context</span><span class="o">,</span> <span class="n">OutputCollector</span> <span class="n">collector</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">_collector</span> <span class="o">=</span> <span class="n">collector</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">execute</span><span class="o">(</span><span class="n">Tuple</span> <span class="n">tuple</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">String</span> <span class="n">sentence</span> <span class="o">=</span> <span class="n">tuple</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="mi">0</span><span class="o">);</span>
+            <span class="k">for</span><span class="o">(</span><span class="n">String</span> <span class="nl">word:</span> <span class="n">sentence</span><span class="o">.</span><span class="na">split</span><span class="o">(</span><span class="s">&quot; &quot;</span><span class="o">))</span> <span class="o">{</span>
+                <span class="n">_collector</span><span class="o">.</span><span class="na">emit</span><span class="o">(</span><span class="n">tuple</span><span class="o">,</span> <span class="k">new</span> <span class="nf">Values</span><span class="o">(</span><span class="n">word</span><span class="o">));</span>
+            <span class="o">}</span>
+            <span class="n">_collector</span><span class="o">.</span><span class="na">ack</span><span class="o">(</span><span class="n">tuple</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">declareOutputFields</span><span class="o">(</span><span class="n">OutputFieldsDeclarer</span> <span class="n">declarer</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">declarer</span><span class="o">.</span><span class="na">declare</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;word&quot;</span><span class="o">));</span>
+        <span class="o">}</span>        
+    <span class="o">}</span>
+</code></pre></div>
+<p>Each word tuple is <em>anchored</em> by specifying the input tuple as the first argument to <code>emit</code>. Since the word tuple is anchored, the spout tuple at the root of the tree will be replayed later on if the word tuple failed to be processed downstream. In contrast, let&#39;s look at what happens if the word tuple is emitted like this:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">_collector</span><span class="o">.</span><span class="na">emit</span><span class="o">(</span><span class="k">new</span> <span class="nf">Values</span><span class="o">(</span><span class="n">word</span><span class="o">));</span>
+</code></pre></div>
+<p>Emitting the word tuple this way causes it to be <em>unanchored</em>. If the tuple fails be processed downstream, the root tuple will not be replayed. Depending on the fault-tolerance guarantees you need in your topology, sometimes it&#39;s appropriate to emit an unanchored tuple.</p>
+
+<p>An output tuple can be anchored to more than one input tuple. This is useful when doing streaming joins or aggregations. A multi-anchored tuple failing to be processed will cause multiple tuples to be replayed from the spouts. Multi-anchoring is done by specifying a list of tuples rather than just a single tuple. For example:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">List</span><span class="o">&lt;</span><span class="n">Tuple</span><span class="o">&gt;</span> <span class="n">anchors</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">Tuple</span><span class="o">&gt;();</span>
+<span class="n">anchors</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">tuple1</span><span class="o">);</span>
+<span class="n">anchors</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">tuple2</span><span class="o">);</span>
+<span class="n">_collector</span><span class="o">.</span><span class="na">emit</span><span class="o">(</span><span class="n">anchors</span><span class="o">,</span> <span class="k">new</span> <span class="nf">Values</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="mi">2</span><span class="o">,</span> <span class="mi">3</span><span class="o">));</span>
+</code></pre></div>
+<p>Multi-anchoring adds the output tuple into multiple tuple trees. Note that it&#39;s also possible for multi-anchoring to break the tree structure and create tuple DAGs, like so:</p>
+
+<p><img src="images/tuple-dag.png" alt="Tuple DAG"></p>
+
+<p>Storm&#39;s implementation works for DAGs as well as trees (pre-release it only worked for trees, and the name &quot;tuple tree&quot; stuck).</p>
+
+<p>Anchoring is how you specify the tuple tree -- the next and final piece to Storm&#39;s reliability API is specifying when you&#39;ve finished processing an individual tuple in the tuple tree. This is done by using the <code>ack</code> and <code>fail</code> methods on the <code>OutputCollector</code>. If you look back at the <code>SplitSentence</code> example, you can see that the input tuple is acked after all the word tuples are emitted.</p>
+
+<p>You can use the <code>fail</code> method on the <code>OutputCollector</code> to immediately fail the spout tuple at the root of the tuple tree. For example, your application may choose to catch an exception from a database client and explicitly fail the input tuple. By failing the tuple explicitly, the spout tuple can be replayed faster than if you waited for the tuple to time-out.</p>
+
+<p>Every tuple you process must be acked or failed. Storm uses memory to track each tuple, so if you don&#39;t ack/fail every tuple, the task will eventually run out of memory. </p>
+
+<p>A lot of bolts follow a common pattern of reading an input tuple, emitting tuples based on it, and then acking the tuple at the end of the <code>execute</code> method. These bolts fall into the categories of filters and simple functions. Storm has an interface called <code>BasicBolt</code> that encapsulates this pattern for you. The <code>SplitSentence</code> example can be written as a <code>BasicBolt</code> like follows:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">SplitSentence</span> <span class="kd">extends</span> <span class="n">BaseBasicBolt</span> <span class="o">{</span>
+        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">execute</span><span class="o">(</span><span class="n">Tuple</span> <span class="n">tuple</span><span class="o">,</span> <span class="n">BasicOutputCollector</span> <span class="n">collector</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">String</span> <span class="n">sentence</span> <span class="o">=</span> <span class="n">tuple</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="mi">0</span><span class="o">);</span>
+            <span class="k">for</span><span class="o">(</span><span class="n">String</span> <span class="nl">word:</span> <span class="n">sentence</span><span class="o">.</span><span class="na">split</span><span class="o">(</span><span class="s">&quot; &quot;</span><span class="o">))</span> <span class="o">{</span>
+                <span class="n">collector</span><span class="o">.</span><span class="na">emit</span><span class="o">(</span><span class="k">new</span> <span class="nf">Values</span><span class="o">(</span><span class="n">word</span><span class="o">));</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+
+        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">declareOutputFields</span><span class="o">(</span><span class="n">OutputFieldsDeclarer</span> <span class="n">declarer</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">declarer</span><span class="o">.</span><span class="na">declare</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;word&quot;</span><span class="o">));</span>
+        <span class="o">}</span>        
+    <span class="o">}</span>
+</code></pre></div>
+<p>This implementation is simpler than the implementation from before and is semantically identical. Tuples emitted to <code>BasicOutputCollector</code> are automatically anchored to the input tuple, and the input tuple is acked for you automatically when the execute method completes.</p>
+
+<p>In contrast, bolts that do aggregations or joins may delay acking a tuple until after it has computed a result based on a bunch of tuples. Aggregations and joins will commonly multi-anchor their output tuples as well. These things fall outside the simpler pattern of <code>IBasicBolt</code>.</p>
+
+<h3 id="how-do-i-make-my-applications-work-correctly-given-that-tuples-can-be-replayed?">How do I make my applications work correctly given that tuples can be replayed?</h3>
+
+<p>As always in software design, the answer is &quot;it depends.&quot; Storm 0.7.0 introduced the &quot;transactional topologies&quot; feature, which enables you to get fully fault-tolerant exactly-once messaging semantics for most computations. Read more about transactional topologies <a href="Transactional-topologies.html">here</a>. </p>
+
+<h3 id="how-does-storm-implement-reliability-in-an-efficient-way?">How does Storm implement reliability in an efficient way?</h3>
+
+<p>A Storm topology has a set of special &quot;acker&quot; tasks that track the DAG of tuples for every spout tuple. When an acker sees that a DAG is complete, it sends a message to the spout task that created the spout tuple to ack the message. You can set the number of acker executors for a topology in the topology configuration using <a href="/javadoc/apidocs/backtype/storm/Config.html#TOPOLOGY_ACKER_EXECUTORS">Config.TOPOLOGY_ACKER_EXECUTORS</a>. Storm defaults TOPOLOGY_ACKER_EXECUTORS to be equal to the number of workers configured in the topology -- you will need to increase this number for topologies processing large amounts of messages.</p>
+
+<p>The best way to understand Storm&#39;s reliability implementation is to look at the lifecycle of tuples and tuple DAGs. When a tuple is created in a topology, whether in a spout or a bolt, it is given a random 64 bit id. These ids are used by ackers to track the tuple DAG for every spout tuple.</p>
+
+<p>Every tuple knows the ids of all the spout tuples for which it exists in their tuple trees. When you emit a new tuple in a bolt, the spout tuple ids from the tuple&#39;s anchors are copied into the new tuple. When a tuple is acked, it sends a message to the appropriate acker tasks with information about how the tuple tree changed. In particular it tells the acker &quot;I am now completed within the tree for this spout tuple, and here are the new tuples in the tree that were anchored to me&quot;. </p>
+
+<p>For example, if tuples &quot;D&quot; and &quot;E&quot; were created based on tuple &quot;C&quot;, here&#39;s how the tuple tree changes when &quot;C&quot; is acked: </p>
+
+<p><img src="images/ack_tree.png" alt="What happens on an ack"></p>
+
+<p>Since &quot;C&quot; is removed from the tree at the same time that &quot;D&quot; and &quot;E&quot; are added to it, the tree can never be prematurely completed.</p>
+
+<p>There are a few more details to how Storm tracks tuple trees. As mentioned already, you can have an arbitrary number of acker tasks in a topology. This leads to the following question: when a tuple is acked in the topology, how does it know to which acker task to send that information? </p>
+
+<p>Storm uses mod hashing to map a spout tuple id to an acker task. Since every tuple carries with it the spout tuple ids of all the trees they exist within, they know which acker tasks to communicate with. </p>
+
+<p>Another detail of Storm is how the acker tasks track which spout tasks are responsible for each spout tuple they&#39;re tracking. When a spout task emits a new tuple, it simply sends a message to the appropriate acker telling it that its task id is responsible for that spout tuple. Then when an acker sees a tree has been completed, it knows to which task id to send the completion message.</p>
+
+<p>Acker tasks do not track the tree of tuples explicitly. For large tuple trees with tens of thousands of nodes (or more), tracking all the tuple trees could overwhelm the memory used by the ackers. Instead, the ackers take a different strategy that only requires a fixed amount of space per spout tuple (about 20 bytes). This tracking algorithm is the key to how Storm works and is one of its major breakthroughs.</p>
+
+<p>An acker task stores a map from a spout tuple id to a pair of values. The first value is the task id that created the spout tuple which is used later on to send completion messages. The second value is a 64 bit number called the &quot;ack val&quot;. The ack val is a representation of the state of the entire tuple tree, no matter how big or how small.  It is simply the xor of all tuple ids that have been created and/or acked in the tree.</p>
+
+<p>When an acker task sees that an &quot;ack val&quot; has become 0, then it knows that the tuple tree is completed. Since tuple ids are random 64 bit numbers, the chances of an &quot;ack val&quot; accidentally becoming 0 is extremely small. If you work the math, at 10K acks per second, it will take 50,000,000 years until a mistake is made. And even then, it will only cause data loss if that tuple happens to fail in the topology.</p>
+
+<p>Now that you understand the reliability algorithm, let&#39;s go over all the failure cases and see how in each case Storm avoids data loss:</p>
+
+<ul>
+<li><strong>A tuple isn&#39;t acked because the task died</strong>: In this case the spout tuple ids at the root of the trees for the failed tuple will time out and be replayed.</li>
+<li><strong>Acker task dies</strong>: In this case all the spout tuples the acker was tracking will time out and be replayed.</li>
+<li><strong>Spout task dies</strong>: In this case the source that the spout talks to is responsible for replaying the messages. For example, queues like Kestrel and RabbitMQ will place all pending messages back on the queue when a client disconnects.</li>
+</ul>
+
+<p>As you have seen, Storm&#39;s reliability mechanisms are completely distributed, scalable, and fault-tolerant. </p>
+
+<h3 id="tuning-reliability">Tuning reliability</h3>
+
+<p>Acker tasks are lightweight, so you don&#39;t need very many of them in a topology. You can track their performance through the Storm UI (component id &quot;__acker&quot;). If the throughput doesn&#39;t look right, you&#39;ll need to add more acker tasks. </p>
+
+<p>If reliability isn&#39;t important to you -- that is, you don&#39;t care about losing tuples in failure situations -- then you can improve performance by not tracking the tuple tree for spout tuples. Not tracking a tuple tree halves the number of messages transferred since normally there&#39;s an ack message for every tuple in the tuple tree. Additionally, it requires fewer ids to be kept in each downstream tuple, reducing bandwidth usage.</p>
+
+<p>There are three ways to remove reliability. The first is to set Config.TOPOLOGY_ACKERS to 0. In this case, Storm will call the <code>ack</code> method on the spout immediately after the spout emits a tuple. The tuple tree won&#39;t be tracked.</p>
+
+<p>The second way is to remove reliability on a message by message basis. You can turn off tracking for an individual spout tuple by omitting a message id in the <code>SpoutOutputCollector.emit</code> method.</p>
+
+<p>Finally, if you don&#39;t care if a particular subset of the tuples downstream in the topology fail to be processed, you can emit them as unanchored tuples. Since they&#39;re not anchored to any spout tuples, they won&#39;t cause any spout tuples to fail if they aren&#39;t acked.</p>
+
+
+
+	          </div>
+	       </div>
+	  </div>
+<footer>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="footer-widget">
+                    <h5>Meetups</h5>
+                    <ul class="latest-news">
+                        <li><a href="http://www.meetup.com/Apache-Storm-Apache-Kafka/">Sunnyvale, CA</a> <span class="small">(10 May 2015)</span></li>
+                        <li><a href="http://www.meetup.com/Apache-Storm-Kafka-Users/">Seatle, WA</a> <span class="small">(27 Jun 2015)</span></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="footer-widget">
+                    <h5>About Storm</h5>
+                    <p>Storm integrates with any queueing system and any database system. Storm's spout abstraction makes it easy to integrate a new queuing system. Likewise, integrating Storm with database systems is easy.</p>
+               </div>
+            </div>
+            <div class="col-md-3">
+                <div class="footer-widget">
+                    <h5>First Look</h5>
+                    <ul class="footer-list">
+                        <li><a href="/documentation/Rationale.html">Rationale</a></li>
+                        <li><a href="/tutorial.html">Tutorial</a></li>
+                        <li><a href="/documentation/Setting-up-development-environment.html">Setting up development environment</a></li>
+                        <li><a href="/documentation/Creating-a-new-Storm-project.html">Creating a new Storm project</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="footer-widget">
+                    <h5>Documentation</h5>
+                    <ul class="footer-list">
+                        <li><a href="/doc-index.html">Index</a></li>
+                        <li><a href="/documentation.html">Manual</a></li>
+                        <li><a href="https://storm.apache.org/javadoc/apidocs/index.html">Javadoc</a></li>
+                        <li><a href="/documentation/FAQ.html">FAQ</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <hr/>
+        <div class="row">   
+            <div class="col-md-12">
+                <p align="center">Copyright © 2015 <a href="http://www.apache.org">Apache Software Foundation</a>. All Rights Reserved. Apache Storm, Apache, the Apache feather logo, and the Apache Storm project logos are trademarks of The Apache Software Foundation. All other marks mentioned may be trademarks or registered trademarks of their respective owners.</p>
+            </div>
+        </div>
+    </div>
+</footer>
+<!--Footer End-->
+<!-- Scroll to top -->
+<span class="totop"><a href="#"><i class="fa fa-angle-up"></i></a></span> 
+
+</body>
+
+</html>
+

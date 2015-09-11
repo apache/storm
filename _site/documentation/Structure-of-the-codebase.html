@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+
+    <title>Structure of the Codebase</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="/assets/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap theme -->
+    <link href="/assets/css/bootstrap-theme.min.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link rel="stylesheet" href="http://fortawesome.github.io/Font-Awesome/assets/font-awesome/css/font-awesome.css">
+    <link href="/css/style.css" rel="stylesheet">
+    <link href="/assets/css/owl.theme.css" rel="stylesheet">
+    <link href="/assets/css/owl.carousel.css" rel="stylesheet">
+    <script type="text/javascript" src="/assets/js/jquery.min.js"></script>
+    <script type="text/javascript" src="/assets/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="/assets/js/owl.carousel.min.js"></script>
+    <script type="text/javascript" src="/assets/js/storm.js"></script>
+    <!-- Just for debugging purposes. Don't actually copy these 2 lines! -->
+    <!--[if lt IE 9]><script src="../../assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
+    
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+
+
+  <body>
+    <header>
+  <div class="container-fluid">
+      <div class="row">
+          <div class="col-md-10">
+              <a href="/index.html"><img src="/images/logo.png" class="logo" /></a>
+            </div>
+            <div class="col-md-2">
+              <a href="/downloads.html" class="btn-std btn-block btn-download">Download</a>
+            </div>
+        </div>
+    </div>
+</header>
+<!--Header End-->
+<!--Navigation Begin-->
+<div class="navbar" role="banner">
+  <div class="container-fluid">
+      <div class="navbar-header">
+          <button class="navbar-toggle" type="button" data-toggle="collapse" data-target=".bs-navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+        </div>
+        <nav class="collapse navbar-collapse bs-navbar-collapse" role="navigation">
+          <ul class="nav navbar-nav">
+              <li><a href="/index.html" id="home">Home</a></li>
+                <li><a href="/getting-help.html" id="getting-help">Getting Help</a></li>
+                <li><a href="/about/integrates.html" id="project-info">Project Information</a></li>
+                <li><a href="/documentation.html" id="documentation">Documentation</a></li>
+                <li><a href="/talksAndVideos.html">Talks and Slideshows</a></li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" id="contribute">Contribute <b class="caret"></b></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="/contribute/Contributing-to-Storm.html">Getting Started</a></li>
+                        <li><a href="/contribute/BYLAWS.html">ByLaws</a></li>
+                    </ul>
+                </li>
+                <li><a href="/2015/06/15/storm0100-beta-released.html" id="news">News</a></li>
+            </ul>
+        </nav>
+    </div>
+</div>
+
+
+
+    <div class="container-fluid">
+    <h1 class="page-title">Structure of the Codebase</h1>
+          <div class="row">
+           	<div class="col-md-12">
+	             <!-- Documentation -->
+
+<p class="post-meta"></p>
+
+<p>There are three distinct layers to Storm&#39;s codebase.</p>
+
+<p>First, Storm was designed from the very beginning to be compatible with multiple languages. Nimbus is a Thrift service and topologies are defined as Thrift structures. The usage of Thrift allows Storm to be used from any language.</p>
+
+<p>Second, all of Storm&#39;s interfaces are specified as Java interfaces. So even though there&#39;s a lot of Clojure in Storm&#39;s implementation, all usage must go through the Java API. This means that every feature of Storm is always available via Java.</p>
+
+<p>Third, Storm&#39;s implementation is largely in Clojure. Line-wise, Storm is about half Java code, half Clojure code. But Clojure is much more expressive, so in reality the great majority of the implementation logic is in Clojure. </p>
+
+<p>The following sections explain each of these layers in more detail.</p>
+
+<h3 id="storm.thrift">storm.thrift</h3>
+
+<p>The first place to look to understand the structure of Storm&#39;s codebase is the <a href="https://github.com/apache/storm/blob/master/storm-core/src/storm.thrift">storm.thrift</a> file.</p>
+
+<p>Storm uses <a href="https://github.com/nathanmarz/thrift/tree/storm">this fork</a> of Thrift (branch &#39;storm&#39;) to produce the generated code. This &quot;fork&quot; is actually Thrift 7 with all the Java packages renamed to be <code>org.apache.thrift7</code>. Otherwise, it&#39;s identical to Thrift 7. This fork was done because of the lack of backwards compatibility in Thrift and the need for many people to use other versions of Thrift in their Storm topologies.</p>
+
+<p>Every spout or bolt in a topology is given a user-specified identifier called the &quot;component id&quot;. The component id is used to specify subscriptions from a bolt to the output streams of other spouts or bolts. A <a href="https://github.com/apache/storm/blob/master/storm-core/src/storm.thrift#L91">StormTopology</a> structure contains a map from component id to component for each type of component (spouts and bolts).</p>
+
+<p>Spouts and bolts have the same Thrift definition, so let&#39;s just take a look at the <a href="https://github.com/apache/storm/blob/master/storm-core/src/storm.thrift#L102">Thrift definition for bolts</a>. It contains a <code>ComponentObject</code> struct and a <code>ComponentCommon</code> struct.</p>
+
+<p>The <code>ComponentObject</code> defines the implementation for the bolt. It can be one of three types:</p>
+
+<ol>
+<li>A serialized java object (that implements <a href="https://github.com/apache/storm/blob/master/storm-core/src/jvm/backtype/storm/task/IBolt.java">IBolt</a>)</li>
+<li>A <code>ShellComponent</code> object that indicates the implementation is in another language. Specifying a bolt this way will cause Storm to instantiate a <a href="https://github.com/apache/storm/blob/master/storm-core/src/jvm/backtype/storm/task/ShellBolt.java">ShellBolt</a> object to handle the communication between the JVM-based worker process and the non-JVM-based implementation of the component.</li>
+<li>A <code>JavaObject</code> structure which tells Storm the classname and constructor arguments to use to instantiate that bolt. This is useful if you want to define a topology in a non-JVM language. This way, you can make use of JVM-based spouts and bolts without having to create and serialize a Java object yourself.</li>
+</ol>
+
+<p><code>ComponentCommon</code> defines everything else for this component. This includes:</p>
+
+<ol>
+<li>What streams this component emits and the metadata for each stream (whether it&#39;s a direct stream, the fields declaration)</li>
+<li>What streams this component consumes (specified as a map from component_id:stream_id to the stream grouping to use)</li>
+<li>The parallelism for this component</li>
+<li>The component-specific <a href="https://github.com/apache/storm/wiki/Configuration">configuration</a> for this component</li>
+</ol>
+
+<p>Note that the structure spouts also have a <code>ComponentCommon</code> field, and so spouts can also have declarations to consume other input streams. Yet the Storm Java API does not provide a way for spouts to consume other streams, and if you put any input declarations there for a spout you would get an error when you tried to submit the topology. The reason that spouts have an input declarations field is not for users to use, but for Storm itself to use. Storm adds implicit streams and bolts to the topology to set up the <a href="https://github.com/apache/storm/wiki/Guaranteeing-message-processing">acking framework</a>, and two of these implicit streams are from the acker bolt to each spout in the topology. The acker sends &quot;ack&quot; or &quot;fail&quot; messages along these streams whenever a tuple tree is detected to be completed or failed. The code that transforms the user&#39;s topology into the runtime topology is located <a href="https://github.com/apache/storm/blob/master/storm-core/src/clj/backtype/storm/daemon/common.clj#L279">here</a>.</p>
+
+<h3 id="java-interfaces">Java interfaces</h3>
+
+<p>The interfaces for Storm are generally specified as Java interfaces. The main interfaces are:</p>
+
+<ol>
+<li><a href="/javadoc/apidocs/backtype/storm/topology/IRichBolt.html">IRichBolt</a></li>
+<li><a href="/javadoc/apidocs/backtype/storm/topology/IRichSpout.html">IRichSpout</a></li>
+<li><a href="/javadoc/apidocs/backtype/storm/topology/TopologyBuilder.html">TopologyBuilder</a></li>
+</ol>
+
+<p>The strategy for the majority of the interfaces is to:</p>
+
+<ol>
+<li>Specify the interface using a Java interface</li>
+<li>Provide a base class that provides default implementations when appropriate</li>
+</ol>
+
+<p>You can see this strategy at work with the <a href="/javadoc/apidocs/backtype/storm/topology/base/BaseRichSpout.html">BaseRichSpout</a> class.</p>
+
+<p>Spouts and bolts are serialized into the Thrift definition of the topology as described above. </p>
+
+<p>One subtle aspect of the interfaces is the difference between <code>IBolt</code> and <code>ISpout</code> vs. <code>IRichBolt</code> and <code>IRichSpout</code>. The main difference between them is the addition of the <code>declareOutputFields</code> method in the &quot;Rich&quot; versions of the interfaces. The reason for the split is that the output fields declaration for each output stream needs to be part of the Thrift struct (so it can be specified from any language), but as a user you want to be able to declare the streams as part of your class. What <code>TopologyBuilder</code> does when constructing the Thrift representation is call <code>declareOutputFields</code> to get the declaration and convert it into the Thrift structure. The conversion happens <a href="https://github.com/apache/storm/blob/master/storm-core/src/jvm/backtype/storm/topology/TopologyBuilder.java#L205">at this portion</a> of the <code>TopologyBuilder</code> code.</p>
+
+<h3 id="implementation">Implementation</h3>
+
+<p>Specifying all the functionality via Java interfaces ensures that every feature of Storm is available via Java. Moreso, the focus on Java interfaces ensures that the user experience from Java-land is pleasant as well.</p>
+
+<p>The implementation of Storm, on the other hand, is primarily in Clojure. While the codebase is about 50% Java and 50% Clojure in terms of LOC, most of the implementation logic is in Clojure. There are two notable exceptions to this, and that is the <a href="https://github.com/apache/storm/wiki/Distributed-RPC">DRPC</a> and <a href="https://github.com/apache/storm/wiki/Transactional-topologies">transactional topologies</a> implementations. These are implemented purely in Java. This was done to serve as an illustration for how to implement a higher level abstraction on Storm. The DRPC and transactional topologies implementations are in the <a href="https://github.com/apache/storm/tree/master/storm-core/src/jvm/backtype/storm/coordination">backtype.storm.coordination</a>, <a href="https://github.com/apache/storm/tree/master/storm-core/src/jvm/backtype/storm/drpc">backtype.storm.drpc</a>, and <a href="https://github.com/apache/storm/tree/master/storm-core/src/jvm/backtype/storm/transactional">backtype.storm.transactional</a> packages.</p>
+
+<p>Here&#39;s a summary of the purpose of the main Java packages and Clojure namespace:</p>
+
+<h4 id="java-packages">Java packages</h4>
+
+<p><a href="https://github.com/apache/storm/tree/master/storm-core/src/jvm/backtype/storm/coordination">backtype.storm.coordination</a>: Implements the pieces required to coordinate batch-processing on top of Storm, which both DRPC and transactional topologies use. <code>CoordinatedBolt</code> is the most important class here.</p>
+
+<p><a href="https://github.com/apache/storm/tree/master/storm-core/src/jvm/backtype/storm/drpc">backtype.storm.drpc</a>: Implementation of the DRPC higher level abstraction</p>
+
+<p><a href="https://github.com/apache/storm/tree/master/storm-core/src/jvm/backtype/storm/generated">backtype.storm.generated</a>: The generated Thrift code for Storm (generated using <a href="https://github.com/nathanmarz/thrift">this fork</a> of Thrift, which simply renames the packages to org.apache.thrift7 to avoid conflicts with other Thrift versions)</p>
+
+<p><a href="https://github.com/apache/storm/tree/master/storm-core/src/jvm/backtype/storm/grouping">backtype.storm.grouping</a>: Contains interface for making custom stream groupings</p>
+
+<p><a href="https://github.com/apache/storm/tree/master/storm-core/src/jvm/backtype/storm/hooks">backtype.storm.hooks</a>: Interfaces for hooking into various events in Storm, such as when tasks emit tuples, when tuples are acked, etc. User guide for hooks is <a href="https://github.com/apache/storm/wiki/Hooks">here</a>.</p>
+
+<p><a href="https://github.com/apache/storm/tree/master/storm-core/src/jvm/backtype/storm/serialization">backtype.storm.serialization</a>: Implementation of how Storm serializes/deserializes tuples. Built on top of <a href="http://code.google.com/p/kryo/">Kryo</a>.</p>
+
+<p><a href="https://github.com/apache/storm/tree/master/storm-core/src/jvm/backtype/storm/spout">backtype.storm.spout</a>: Definition of spout and associated interfaces (like the <code>SpoutOutputCollector</code>). Also contains <code>ShellSpout</code> which implements the protocol for defining spouts in non-JVM languages.</p>
+
+<p><a href="https://github.com/apache/storm/tree/master/storm-core/src/jvm/backtype/storm/task">backtype.storm.task</a>: Definition of bolt and associated interfaces (like <code>OutputCollector</code>). Also contains <code>ShellBolt</code> which implements the protocol for defining bolts in non-JVM languages. Finally, <code>TopologyContext</code> is defined here as well, which is provided to spouts and bolts so they can get data about the topology and its execution at runtime.</p>
+
+<p><a href="https://github.com/apache/storm/tree/master/storm-core/src/jvm/backtype/storm/testing">backtype.storm.testing</a>: Contains a variety of test bolts and utilities used in Storm&#39;s unit tests.</p>
+
+<p><a href="https://github.com/apache/storm/tree/master/storm-core/src/jvm/backtype/storm/topology">backtype.storm.topology</a>: Java layer over the underlying Thrift structure to provide a clean, pure-Java API to Storm (users don&#39;t have to know about Thrift). <code>TopologyBuilder</code> is here as well as the helpful base classes for the different spouts and bolts. The slightly-higher level <code>IBasicBolt</code> interface is here, which is a simpler way to write certain kinds of bolts.</p>
+
+<p><a href="https://github.com/apache/storm/tree/master/storm-core/src/jvm/backtype/storm/transactional">backtype.storm.transactional</a>: Implementation of transactional topologies.</p>
+
+<p><a href="https://github.com/apache/storm/tree/master/storm-core/src/jvm/backtype/storm/tuple">backtype.storm.tuple</a>: Implementation of Storm&#39;s tuple data model.</p>
+
+<p><a href="https://github.com/apache/storm/tree/master/storm-core/src/jvm/backtype/storm/tuple">backtype.storm.utils</a>: Data structures and miscellaneous utilities used throughout the codebase.</p>
+
+<h4 id="clojure-namespaces">Clojure namespaces</h4>
+
+<p><a href="https://github.com/apache/storm/blob/master/storm-core/src/clj/backtype/storm/bootstrap.clj">backtype.storm.bootstrap</a>: Contains a helpful macro to import all the classes and namespaces that are used throughout the codebase.</p>
+
+<p><a href="https://github.com/apache/storm/blob/master/storm-core/src/clj/backtype/storm/clojure.clj">backtype.storm.clojure</a>: Implementation of the Clojure DSL for Storm.</p>
+
+<p><a href="https://github.com/apache/storm/blob/master/storm-core/src/clj/backtype/storm/cluster.clj">backtype.storm.cluster</a>: All Zookeeper logic used in Storm daemons is encapsulated in this file. This code manages how cluster state (like what tasks are running where, what spout/bolt each task runs as) is mapped to the Zookeeper &quot;filesystem&quot; API.</p>
+
+<p><a href="https://github.com/apache/storm/blob/master/storm-core/src/clj/backtype/storm/command">backtype.storm.command.*</a>: These namespaces implement various commands for the <code>storm</code> command line client. These implementations are very short.</p>
+
+<p><a href="https://github.com/apache/storm/blob/master/storm-core/src/clj/backtype/storm/config.clj">backtype.storm.config</a>: Implementation of config reading/parsing code for Clojure. Also has utility functions for determining what local path nimbus/supervisor/daemons should be using for various things. e.g. the <code>master-inbox</code> function will return the local path that Nimbus should use when jars are uploaded to it.</p>
+
+<p><a href="https://github.com/apache/storm/blob/master/storm-core/src/clj/backtype/storm/daemon/acker.clj">backtype.storm.daemon.acker</a>: Implementation of the &quot;acker&quot; bolt, which is a key part of how Storm guarantees data processing.</p>
+
+<p><a href="https://github.com/apache/storm/blob/master/storm-core/src/clj/backtype/storm/daemon/common.clj">backtype.storm.daemon.common</a>: Implementation of common functions used in Storm daemons, like getting the id for a topology based on the name, mapping a user&#39;s topology into the one that actually executes (with implicit acking streams and acker bolt added - see <code>system-topology!</code> function), and definitions for the various heartbeat and other structures persisted by Storm.</p>
+
+<p><a href="https://github.com/apache/storm/blob/master/storm-core/src/clj/backtype/storm/daemon/drpc.clj">backtype.storm.daemon.drpc</a>: Implementation of the DRPC server for use with DRPC topologies.</p>
+
+<p><a href="https://github.com/apache/storm/blob/master/storm-core/src/clj/backtype/storm/daemon/nimbus.clj">backtype.storm.daemon.nimbus</a>: Implementation of Nimbus.</p>
+
+<p><a href="https://github.com/apache/storm/blob/master/storm-core/src/clj/backtype/storm/daemon/supervisor.clj">backtype.storm.daemon.supervisor</a>: Implementation of Supervisor.</p>
+
+<p><a href="https://github.com/apache/storm/blob/master/storm-core/src/clj/backtype/storm/daemon/task.clj">backtype.storm.daemon.task</a>: Implementation of an individual task for a spout or bolt. Handles message routing, serialization, stats collection for the UI, as well as the spout-specific and bolt-specific execution implementations.</p>
+
+<p><a href="https://github.com/apache/storm/blob/master/storm-core/src/clj/backtype/storm/daemon/worker.clj">backtype.storm.daemon.worker</a>: Implementation of a worker process (which will contain many tasks within). Implements message transferring and task launching.</p>
+
+<p><a href="https://github.com/apache/storm/blob/master/storm-core/src/clj/backtype/storm/event.clj">backtype.storm.event</a>: Implements a simple asynchronous function executor. Used in various places in Nimbus and Supervisor to make functions execute in serial to avoid any race conditions.</p>
+
+<p><a href="https://github.com/apache/storm/blob/master/storm-core/src/clj/backtype/storm/log.clj">backtype.storm.log</a>: Defines the functions used to log messages to log4j.</p>
+
+<p><a href="https://github.com/apache/storm/blob/master/storm-core/src/clj/backtype/storm/messaging">backtype.storm.messaging.*</a>: Defines a higher level interface to implementing point to point messaging. In local mode Storm uses in-memory Java queues to do this; on a cluster, it uses ZeroMQ. The generic interface is defined in protocol.clj.</p>
+
+<p><a href="https://github.com/apache/storm/blob/master/storm-core/src/clj/backtype/storm/stats.clj">backtype.storm.stats</a>: Implementation of stats rollup routines used when sending stats to ZK for use by the UI. Does things like windowed and rolling aggregations at multiple granularities.</p>
+
+<p><a href="https://github.com/apache/storm/blob/master/storm-core/src/clj/backtype/storm/testing.clj">backtype.storm.testing</a>: Implementation of facilities used to test Storm topologies. Includes time simulation, <code>complete-topology</code> for running a fixed set of tuples through a topology and capturing the output, tracker topologies for having fine grained control over detecting when a cluster is &quot;idle&quot;, and other utilities.</p>
+
+<p><a href="https://github.com/apache/storm/blob/master/storm-core/src/clj/backtype/storm/thrift.clj">backtype.storm.thrift</a>: Clojure wrappers around the generated Thrift API to make working with Thrift structures more pleasant.</p>
+
+<p><a href="https://github.com/apache/storm/blob/master/storm-core/src/clj/backtype/storm/timer.clj">backtype.storm.timer</a>: Implementation of a background timer to execute functions in the future or on a recurring interval. Storm couldn&#39;t use the <a href="http://docs.oracle.com/javase/1.4.2/docs/api/java/util/Timer.html">Timer</a> class because it needed integration with time simulation in order to be able to unit test Nimbus and the Supervisor.</p>
+
+<p><a href="https://github.com/apache/storm/blob/master/storm-core/src/clj/backtype/storm/ui">backtype.storm.ui.*</a>: Implementation of Storm UI. Completely independent from rest of code base and uses the Nimbus Thrift API to get data.</p>
+
+<p><a href="https://github.com/apache/storm/blob/master/storm-core/src/clj/backtype/storm/util.clj">backtype.storm.util</a>: Contains generic utility functions used throughout the code base.</p>
+
+<p><a href="https://github.com/apache/storm/blob/master/storm-core/src/clj/backtype/storm/zookeeper.clj">backtype.storm.zookeeper</a>: Clojure wrapper around the Zookeeper API and implements some &quot;high-level&quot; stuff like &quot;mkdirs&quot; and &quot;delete-recursive&quot;.</p>
+
+
+
+	          </div>
+	       </div>
+	  </div>
+<footer>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="footer-widget">
+                    <h5>Meetups</h5>
+                    <ul class="latest-news">
+                        <li><a href="http://www.meetup.com/Apache-Storm-Apache-Kafka/">Sunnyvale, CA</a> <span class="small">(10 May 2015)</span></li>
+                        <li><a href="http://www.meetup.com/Apache-Storm-Kafka-Users/">Seatle, WA</a> <span class="small">(27 Jun 2015)</span></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="footer-widget">
+                    <h5>About Storm</h5>
+                    <p>Storm integrates with any queueing system and any database system. Storm's spout abstraction makes it easy to integrate a new queuing system. Likewise, integrating Storm with database systems is easy.</p>
+               </div>
+            </div>
+            <div class="col-md-3">
+                <div class="footer-widget">
+                    <h5>First Look</h5>
+                    <ul class="footer-list">
+                        <li><a href="/documentation/Rationale.html">Rationale</a></li>
+                        <li><a href="/tutorial.html">Tutorial</a></li>
+                        <li><a href="/documentation/Setting-up-development-environment.html">Setting up development environment</a></li>
+                        <li><a href="/documentation/Creating-a-new-Storm-project.html">Creating a new Storm project</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="footer-widget">
+                    <h5>Documentation</h5>
+                    <ul class="footer-list">
+                        <li><a href="/doc-index.html">Index</a></li>
+                        <li><a href="/documentation.html">Manual</a></li>
+                        <li><a href="https://storm.apache.org/javadoc/apidocs/index.html">Javadoc</a></li>
+                        <li><a href="/documentation/FAQ.html">FAQ</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <hr/>
+        <div class="row">   
+            <div class="col-md-12">
+                <p align="center">Copyright © 2015 <a href="http://www.apache.org">Apache Software Foundation</a>. All Rights Reserved. Apache Storm, Apache, the Apache feather logo, and the Apache Storm project logos are trademarks of The Apache Software Foundation. All other marks mentioned may be trademarks or registered trademarks of their respective owners.</p>
+            </div>
+        </div>
+    </div>
+</footer>
+<!--Footer End-->
+<!-- Scroll to top -->
+<span class="totop"><a href="#"><i class="fa fa-angle-up"></i></a></span> 
+
+</body>
+
+</html>
+

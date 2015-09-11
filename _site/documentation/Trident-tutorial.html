@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+
+    <title>Trident Tutorial</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="/assets/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap theme -->
+    <link href="/assets/css/bootstrap-theme.min.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link rel="stylesheet" href="http://fortawesome.github.io/Font-Awesome/assets/font-awesome/css/font-awesome.css">
+    <link href="/css/style.css" rel="stylesheet">
+    <link href="/assets/css/owl.theme.css" rel="stylesheet">
+    <link href="/assets/css/owl.carousel.css" rel="stylesheet">
+    <script type="text/javascript" src="/assets/js/jquery.min.js"></script>
+    <script type="text/javascript" src="/assets/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="/assets/js/owl.carousel.min.js"></script>
+    <script type="text/javascript" src="/assets/js/storm.js"></script>
+    <!-- Just for debugging purposes. Don't actually copy these 2 lines! -->
+    <!--[if lt IE 9]><script src="../../assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
+    
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+
+
+  <body>
+    <header>
+  <div class="container-fluid">
+      <div class="row">
+          <div class="col-md-10">
+              <a href="/index.html"><img src="/images/logo.png" class="logo" /></a>
+            </div>
+            <div class="col-md-2">
+              <a href="/downloads.html" class="btn-std btn-block btn-download">Download</a>
+            </div>
+        </div>
+    </div>
+</header>
+<!--Header End-->
+<!--Navigation Begin-->
+<div class="navbar" role="banner">
+  <div class="container-fluid">
+      <div class="navbar-header">
+          <button class="navbar-toggle" type="button" data-toggle="collapse" data-target=".bs-navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+        </div>
+        <nav class="collapse navbar-collapse bs-navbar-collapse" role="navigation">
+          <ul class="nav navbar-nav">
+              <li><a href="/index.html" id="home">Home</a></li>
+                <li><a href="/getting-help.html" id="getting-help">Getting Help</a></li>
+                <li><a href="/about/integrates.html" id="project-info">Project Information</a></li>
+                <li><a href="/documentation.html" id="documentation">Documentation</a></li>
+                <li><a href="/talksAndVideos.html">Talks and Slideshows</a></li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" id="contribute">Contribute <b class="caret"></b></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="/contribute/Contributing-to-Storm.html">Getting Started</a></li>
+                        <li><a href="/contribute/BYLAWS.html">ByLaws</a></li>
+                    </ul>
+                </li>
+                <li><a href="/2015/06/15/storm0100-beta-released.html" id="news">News</a></li>
+            </ul>
+        </nav>
+    </div>
+</div>
+
+
+
+    <div class="container-fluid">
+    <h1 class="page-title">Trident Tutorial</h1>
+          <div class="row">
+           	<div class="col-md-12">
+	             <!-- Documentation -->
+
+<p class="post-meta"></p>
+
+<p>Trident is a high-level abstraction for doing realtime computing on top of Storm. It allows you to seamlessly intermix high throughput (millions of messages per second), stateful stream processing with low latency distributed querying. If you&#39;re familiar with high level batch processing tools like Pig or Cascading, the concepts of Trident will be very familiar – Trident has joins, aggregations, grouping, functions, and filters. In addition to these, Trident adds primitives for doing stateful, incremental processing on top of any database or persistence store. Trident has consistent, exactly-once semantics, so it is easy to reason about Trident topologies.</p>
+
+<h2 id="illustrative-example">Illustrative example</h2>
+
+<p>Let&#39;s look at an illustrative example of Trident. This example will do two things:</p>
+
+<ol>
+<li>Compute streaming word count from an input stream of sentences</li>
+<li>Implement queries to get the sum of the counts for a list of words</li>
+</ol>
+
+<p>For the purposes of illustration, this example will read an infinite stream of sentences from the following source:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">FixedBatchSpout</span> <span class="n">spout</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">FixedBatchSpout</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;sentence&quot;</span><span class="o">),</span> <span class="mi">3</span><span class="o">,</span>
+               <span class="k">new</span> <span class="nf">Values</span><span class="o">(</span><span class="s">&quot;the cow jumped over the moon&quot;</span><span class="o">),</span>
+               <span class="k">new</span> <span class="nf">Values</span><span class="o">(</span><span class="s">&quot;the man went to the store and bought some candy&quot;</span><span class="o">),</span>
+               <span class="k">new</span> <span class="nf">Values</span><span class="o">(</span><span class="s">&quot;four score and seven years ago&quot;</span><span class="o">),</span>
+               <span class="k">new</span> <span class="nf">Values</span><span class="o">(</span><span class="s">&quot;how many apples can you eat&quot;</span><span class="o">));</span>
+<span class="n">spout</span><span class="o">.</span><span class="na">setCycle</span><span class="o">(</span><span class="kc">true</span><span class="o">);</span>
+</code></pre></div>
+<p>This spout cycles through that set of sentences over and over to produce the sentence stream. Here&#39;s the code to do the streaming word count part of the computation:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">TridentTopology</span> <span class="n">topology</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">TridentTopology</span><span class="o">();</span>        
+<span class="n">TridentState</span> <span class="n">wordCounts</span> <span class="o">=</span>
+     <span class="n">topology</span><span class="o">.</span><span class="na">newStream</span><span class="o">(</span><span class="s">&quot;spout1&quot;</span><span class="o">,</span> <span class="n">spout</span><span class="o">)</span>
+       <span class="o">.</span><span class="na">each</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;sentence&quot;</span><span class="o">),</span> <span class="k">new</span> <span class="nf">Split</span><span class="o">(),</span> <span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;word&quot;</span><span class="o">))</span>
+       <span class="o">.</span><span class="na">groupBy</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;word&quot;</span><span class="o">))</span>
+       <span class="o">.</span><span class="na">persistentAggregate</span><span class="o">(</span><span class="k">new</span> <span class="n">MemoryMapState</span><span class="o">.</span><span class="na">Factory</span><span class="o">(),</span> <span class="k">new</span> <span class="nf">Count</span><span class="o">(),</span> <span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;count&quot;</span><span class="o">))</span>                
+       <span class="o">.</span><span class="na">parallelismHint</span><span class="o">(</span><span class="mi">6</span><span class="o">);</span>
+</code></pre></div>
+<p>Let&#39;s go through the code line by line. First a TridentTopology object is created, which exposes the interface for constructing Trident computations. TridentTopology has a method called newStream that creates a new stream of data in the topology reading from an input source. In this case, the input source is just the FixedBatchSpout defined from before. Input sources can also be queue brokers like Kestrel or Kafka. Trident keeps track of a small amount of state for each input source (metadata about what it has consumed) in Zookeeper, and the &quot;spout1&quot; string here specifies the node in Zookeeper where Trident should keep that metadata.</p>
+
+<p>Trident processes the stream as small batches of tuples. For example, the incoming stream of sentences might be divided into batches like so:</p>
+
+<p><img src="images/batched-stream.png" alt="Batched stream"></p>
+
+<p>Generally the size of those small batches will be on the order of thousands or millions of tuples, depending on your incoming throughput.</p>
+
+<p>Trident provides a fully fledged batch processing API to process those small batches. The API is very similar to what you see in high level abstractions for Hadoop like Pig or Cascading: you can do group by&#39;s, joins, aggregations, run functions, run filters, and so on. Of course, processing each small batch in isolation isn&#39;t that interesting, so Trident provides functions for doing aggregations across batches and persistently storing those aggregations – whether in memory, in Memcached, in Cassandra, or some other store. Finally, Trident has first-class functions for querying sources of realtime state. That state could be updated by Trident (like in this example), or it could be an independent source of state.</p>
+
+<p>Back to the example, the spout emits a stream containing one field called &quot;sentence&quot;. The next line of the topology definition applies the Split function to each tuple in the stream, taking the &quot;sentence&quot; field and splitting it into words. Each sentence tuple creates potentially many word tuples – for instance, the sentence &quot;the cow jumped over the moon&quot; creates six &quot;word&quot; tuples. Here&#39;s the definition of Split:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">Split</span> <span class="kd">extends</span> <span class="n">BaseFunction</span> <span class="o">{</span>
+   <span class="kd">public</span> <span class="kt">void</span> <span class="nf">execute</span><span class="o">(</span><span class="n">TridentTuple</span> <span class="n">tuple</span><span class="o">,</span> <span class="n">TridentCollector</span> <span class="n">collector</span><span class="o">)</span> <span class="o">{</span>
+       <span class="n">String</span> <span class="n">sentence</span> <span class="o">=</span> <span class="n">tuple</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="mi">0</span><span class="o">);</span>
+       <span class="k">for</span><span class="o">(</span><span class="n">String</span> <span class="nl">word:</span> <span class="n">sentence</span><span class="o">.</span><span class="na">split</span><span class="o">(</span><span class="s">&quot; &quot;</span><span class="o">))</span> <span class="o">{</span>
+           <span class="n">collector</span><span class="o">.</span><span class="na">emit</span><span class="o">(</span><span class="k">new</span> <span class="nf">Values</span><span class="o">(</span><span class="n">word</span><span class="o">));</span>                
+       <span class="o">}</span>
+   <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div>
+<p>As you can see, it&#39;s really simple. It simply grabs the sentence, splits it on whitespace, and emits a tuple for each word.</p>
+
+<p>The rest of the topology computes word count and keeps the results persistently stored. First the stream is grouped by the &quot;word&quot; field. Then, each group is persistently aggregated using the Count aggregator. The persistentAggregate function knows how to store and update the results of the aggregation in a source of state. In this example, the word counts are kept in memory, but this can be trivially swapped to use Memcached, Cassandra, or any other persistent store. Swapping this topology to store counts in Memcached is as simple as replacing the persistentAggregate line with this (using <a href="https://github.com/nathanmarz/trident-memcached">trident-memcached</a>), where the &quot;serverLocations&quot; is a list of host/ports for the Memcached cluster:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="o">.</span><span class="na">persistentAggregate</span><span class="o">(</span><span class="n">MemcachedState</span><span class="o">.</span><span class="na">transactional</span><span class="o">(</span><span class="n">serverLocations</span><span class="o">),</span> <span class="k">new</span> <span class="nf">Count</span><span class="o">(),</span> <span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;count&quot;</span><span class="o">))</span>        
+<span class="n">MemcachedState</span><span class="o">.</span><span class="na">transactional</span><span class="o">()</span>
+</code></pre></div>
+<p>The values stored by persistentAggregate represents the aggregation of all batches ever emitted by the stream.</p>
+
+<p>One of the cool things about Trident is that it has fully fault-tolerant, exactly-once processing semantics. This makes it easy to reason about your realtime processing. Trident persists state in a way so that if failures occur and retries are necessary, it won&#39;t perform multiple updates to the database for the same source data.</p>
+
+<p>The persistentAggregate method transforms a Stream into a TridentState object. In this case the TridentState object represents all the word counts. We will use this TridentState object to implement the distributed query portion of the computation.</p>
+
+<p>The next part of the topology implements a low latency distributed query on the word counts. The query takes as input a whitespace separated list of words and return the sum of the counts for those words. These queries are executed just like normal RPC calls, except they are parallelized in the background. Here&#39;s an example of how you might invoke one of these queries:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">DRPCClient</span> <span class="n">client</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">DRPCClient</span><span class="o">(</span><span class="s">&quot;drpc.server.location&quot;</span><span class="o">,</span> <span class="mi">3772</span><span class="o">);</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">client</span><span class="o">.</span><span class="na">execute</span><span class="o">(</span><span class="s">&quot;words&quot;</span><span class="o">,</span> <span class="s">&quot;cat dog the man&quot;</span><span class="o">);</span>
+<span class="c1">// prints the JSON-encoded result, e.g.: &quot;[[5078]]&quot;</span>
+</code></pre></div>
+<p>As you can see, it looks just like a regular remote procedure call (RPC), except it&#39;s executing in parallel across a Storm cluster. The latency for small queries like this are typically around 10ms. More intense DRPC queries can take longer of course, although the latency largely depends on how many resources you have allocated for the computation.</p>
+
+<p>The implementation of the distributed query portion of the topology looks like this:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">topology</span><span class="o">.</span><span class="na">newDRPCStream</span><span class="o">(</span><span class="s">&quot;words&quot;</span><span class="o">)</span>
+       <span class="o">.</span><span class="na">each</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;args&quot;</span><span class="o">),</span> <span class="k">new</span> <span class="nf">Split</span><span class="o">(),</span> <span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;word&quot;</span><span class="o">))</span>
+       <span class="o">.</span><span class="na">groupBy</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;word&quot;</span><span class="o">))</span>
+       <span class="o">.</span><span class="na">stateQuery</span><span class="o">(</span><span class="n">wordCounts</span><span class="o">,</span> <span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;word&quot;</span><span class="o">),</span> <span class="k">new</span> <span class="nf">MapGet</span><span class="o">(),</span> <span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;count&quot;</span><span class="o">))</span>
+       <span class="o">.</span><span class="na">each</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;count&quot;</span><span class="o">),</span> <span class="k">new</span> <span class="nf">FilterNull</span><span class="o">())</span>
+       <span class="o">.</span><span class="na">aggregate</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;count&quot;</span><span class="o">),</span> <span class="k">new</span> <span class="nf">Sum</span><span class="o">(),</span> <span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;sum&quot;</span><span class="o">));</span>
+</code></pre></div>
+<p>The same TridentTopology object is used to create the DRPC stream, and the function is named &quot;words&quot;. The function name corresponds to the function name given in the first argument of execute when using a DRPCClient.</p>
+
+<p>Each DRPC request is treated as its own little batch processing job that takes as input a single tuple representing the request. The tuple contains one field called &quot;args&quot; that contains the argument provided by the client. In this case, the argument is a whitespace separated list of words.</p>
+
+<p>First, the Split function is used to split the arguments for the request into its constituent words. The stream is grouped by &quot;word&quot;, and the stateQuery operator is used to query the TridentState object that the first part of the topology generated. stateQuery takes in a source of state – in this case, the word counts computed by the other portion of the topology – and a function for querying that state. In this case, the MapGet function is invoked, which gets the count for each word. Since the DRPC stream is grouped the exact same way as the TridentState was (by the &quot;word&quot; field), each word query is routed to the exact partition of the TridentState object that manages updates for that word.</p>
+
+<p>Next, words that didn&#39;t have a count are filtered out via the FilterNull filter and the counts are summed using the Sum aggregator to get the result. Then, Trident automatically sends the result back to the waiting client.</p>
+
+<p>Trident is intelligent about how it executes a topology to maximize performance. There&#39;s two interesting things happening automatically in this topology:</p>
+
+<ol>
+<li>Operations that read from or write to state (like persistentAggregate and stateQuery) automatically batch operations to that state. So if there&#39;s 20 updates that need to be made to the database for the current batch of processing, rather than do 20 read requests and 20 writes requests to the database, Trident will automatically batch up the reads and writes, doing only 1 read request and 1 write request (and in many cases, you can use caching in your State implementation to eliminate the read request). So you get the best of both words of convenience – being able to express your computation in terms of what should be done with each tuple – and performance.</li>
+<li>Trident aggregators are heavily optimized. Rather than transfer all tuples for a group to the same machine and then run the aggregator, Trident will do partial aggregations when possible before sending tuples over the network. For example, the Count aggregator computes the count on each partition, sends the partial count over the network, and then sums together all the partial counts to get the total count. This technique is similar to the use of combiners in MapReduce.</li>
+</ol>
+
+<p>Let&#39;s look at another example of Trident.</p>
+
+<h2 id="reach">Reach</h2>
+
+<p>The next example is a pure DRPC topology that computes the reach of a URL on demand. Reach is the number of unique people exposed to a URL on Twitter. To compute reach, you need to fetch all the people who ever tweeted a URL, fetch all the followers of all those people, unique that set of followers, and that count that uniqued set. Computing reach is too intense for a single machine – it can require thousands of database calls and tens of millions of tuples. With Storm and Trident, you can parallelize the computation of each step across a cluster.</p>
+
+<p>This topology will read from two sources of state. One database maps URLs to a list of people who tweeted that URL. The other database maps a person to a list of followers for that person. The topology definition looks like this:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">TridentState</span> <span class="n">urlToTweeters</span> <span class="o">=</span>
+       <span class="n">topology</span><span class="o">.</span><span class="na">newStaticState</span><span class="o">(</span><span class="n">getUrlToTweetersState</span><span class="o">());</span>
+<span class="n">TridentState</span> <span class="n">tweetersToFollowers</span> <span class="o">=</span>
+       <span class="n">topology</span><span class="o">.</span><span class="na">newStaticState</span><span class="o">(</span><span class="n">getTweeterToFollowersState</span><span class="o">());</span>
+
+<span class="n">topology</span><span class="o">.</span><span class="na">newDRPCStream</span><span class="o">(</span><span class="s">&quot;reach&quot;</span><span class="o">)</span>
+       <span class="o">.</span><span class="na">stateQuery</span><span class="o">(</span><span class="n">urlToTweeters</span><span class="o">,</span> <span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;args&quot;</span><span class="o">),</span> <span class="k">new</span> <span class="nf">MapGet</span><span class="o">(),</span> <span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;tweeters&quot;</span><span class="o">))</span>
+       <span class="o">.</span><span class="na">each</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;tweeters&quot;</span><span class="o">),</span> <span class="k">new</span> <span class="nf">ExpandList</span><span class="o">(),</span> <span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;tweeter&quot;</span><span class="o">))</span>
+       <span class="o">.</span><span class="na">shuffle</span><span class="o">()</span>
+       <span class="o">.</span><span class="na">stateQuery</span><span class="o">(</span><span class="n">tweetersToFollowers</span><span class="o">,</span> <span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;tweeter&quot;</span><span class="o">),</span> <span class="k">new</span> <span class="nf">MapGet</span><span class="o">(),</span> <span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;followers&quot;</span><span class="o">))</span>
+       <span class="o">.</span><span class="na">parallelismHint</span><span class="o">(</span><span class="mi">200</span><span class="o">)</span>
+       <span class="o">.</span><span class="na">each</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;followers&quot;</span><span class="o">),</span> <span class="k">new</span> <span class="nf">ExpandList</span><span class="o">(),</span> <span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;follower&quot;</span><span class="o">))</span>
+       <span class="o">.</span><span class="na">groupBy</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;follower&quot;</span><span class="o">))</span>
+       <span class="o">.</span><span class="na">aggregate</span><span class="o">(</span><span class="k">new</span> <span class="nf">One</span><span class="o">(),</span> <span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;one&quot;</span><span class="o">))</span>
+       <span class="o">.</span><span class="na">parallelismHint</span><span class="o">(</span><span class="mi">20</span><span class="o">)</span>
+       <span class="o">.</span><span class="na">aggregate</span><span class="o">(</span><span class="k">new</span> <span class="nf">Count</span><span class="o">(),</span> <span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;reach&quot;</span><span class="o">));</span>
+</code></pre></div>
+<p>The topology creates TridentState objects representing each external database using the newStaticState method. These can then be queried in the topology. Like all sources of state, queries to these databases will be automatically batched for maximum efficiency.</p>
+
+<p>The topology definition is straightforward – it&#39;s just a simple batch processing job. First, the urlToTweeters database is queried to get the list of people who tweeted the URL for this request. That returns a list, so the ExpandList function is invoked to create a tuple for each tweeter.</p>
+
+<p>Next, the followers for each tweeter must be fetched. It&#39;s important that this step be parallelized, so shuffle is invoked to evenly distribute the tweeters among all workers for the topology. Then, the followers database is queried to get the list of followers for each tweeter. You can see that this portion of the topology is given a large parallelism since this is the most intense portion of the computation.</p>
+
+<p>Next, the set of followers is uniqued and counted. This is done in two steps. First a &quot;group by&quot; is done on the batch by &quot;follower&quot;, running the &quot;One&quot; aggregator on each group. The &quot;One&quot; aggregator simply emits a single tuple containing the number one for each group. Then, the ones are summed together to get the unique count of the followers set. Here&#39;s the definition of the &quot;One&quot; aggregator:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">One</span> <span class="kd">implements</span> <span class="n">CombinerAggregator</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">&gt;</span> <span class="o">{</span>
+   <span class="kd">public</span> <span class="n">Integer</span> <span class="nf">init</span><span class="o">(</span><span class="n">TridentTuple</span> <span class="n">tuple</span><span class="o">)</span> <span class="o">{</span>
+       <span class="k">return</span> <span class="mi">1</span><span class="o">;</span>
+   <span class="o">}</span>
+
+   <span class="kd">public</span> <span class="n">Integer</span> <span class="nf">combine</span><span class="o">(</span><span class="n">Integer</span> <span class="n">val1</span><span class="o">,</span> <span class="n">Integer</span> <span class="n">val2</span><span class="o">)</span> <span class="o">{</span>
+       <span class="k">return</span> <span class="mi">1</span><span class="o">;</span>
+   <span class="o">}</span>
+
+   <span class="kd">public</span> <span class="n">Integer</span> <span class="nf">zero</span><span class="o">()</span> <span class="o">{</span>
+       <span class="k">return</span> <span class="mi">1</span><span class="o">;</span>
+   <span class="o">}</span>        
+<span class="o">}</span>
+</code></pre></div>
+<p>This is a &quot;combiner aggregator&quot;, which knows how to do partial aggregations before transferring tuples over the network to maximize efficiency. Sum is also defined as a combiner aggregator, so the global sum done at the end of the topology will be very efficient.</p>
+
+<p>Let&#39;s now look at Trident in more detail.</p>
+
+<h2 id="fields-and-tuples">Fields and tuples</h2>
+
+<p>The Trident data model is the TridentTuple which is a named list of values. During a topology, tuples are incrementally built up through a sequence of operations. Operations generally take in a set of input fields and emit a set of &quot;function fields&quot;. The input fields are used to select a subset of the tuple as input to the operation, while the &quot;function fields&quot; name the fields the operation emits.</p>
+
+<p>Consider this example. Suppose you have a stream called &quot;stream&quot; that contains the fields &quot;x&quot;, &quot;y&quot;, and &quot;z&quot;. To run a filter MyFilter that takes in &quot;y&quot; as input, you would say:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">stream</span><span class="o">.</span><span class="na">each</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;y&quot;</span><span class="o">),</span> <span class="k">new</span> <span class="nf">MyFilter</span><span class="o">())</span>
+</code></pre></div>
+<p>Suppose the implementation of MyFilter is this:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">MyFilter</span> <span class="kd">extends</span> <span class="n">BaseFilter</span> <span class="o">{</span>
+   <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">isKeep</span><span class="o">(</span><span class="n">TridentTuple</span> <span class="n">tuple</span><span class="o">)</span> <span class="o">{</span>
+       <span class="k">return</span> <span class="n">tuple</span><span class="o">.</span><span class="na">getInteger</span><span class="o">(</span><span class="mi">0</span><span class="o">)</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="o">;</span>
+   <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div>
+<p>This will keep all tuples whose &quot;y&quot; field is less than 10. The TridentTuple given as input to MyFilter will only contain the &quot;y&quot; field. Note that Trident is able to project a subset of a tuple extremely efficiently when selecting the input fields: the projection is essentially free.</p>
+
+<p>Let&#39;s now look at how &quot;function fields&quot; work. Suppose you had this function:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">AddAndMultiply</span> <span class="kd">extends</span> <span class="n">BaseFunction</span> <span class="o">{</span>
+   <span class="kd">public</span> <span class="kt">void</span> <span class="nf">execute</span><span class="o">(</span><span class="n">TridentTuple</span> <span class="n">tuple</span><span class="o">,</span> <span class="n">TridentCollector</span> <span class="n">collector</span><span class="o">)</span> <span class="o">{</span>
+       <span class="kt">int</span> <span class="n">i1</span> <span class="o">=</span> <span class="n">tuple</span><span class="o">.</span><span class="na">getInteger</span><span class="o">(</span><span class="mi">0</span><span class="o">);</span>
+       <span class="kt">int</span> <span class="n">i2</span> <span class="o">=</span> <span class="n">tuple</span><span class="o">.</span><span class="na">getInteger</span><span class="o">(</span><span class="mi">1</span><span class="o">);</span>
+       <span class="n">collector</span><span class="o">.</span><span class="na">emit</span><span class="o">(</span><span class="k">new</span> <span class="nf">Values</span><span class="o">(</span><span class="n">i1</span> <span class="o">+</span> <span class="n">i2</span><span class="o">,</span> <span class="n">i1</span> <span class="o">*</span> <span class="n">i2</span><span class="o">));</span>
+   <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div>
+<p>This function takes two numbers as input and emits two new values: the addition of the numbers and the multiplication of the numbers. Suppose you had a stream with the fields &quot;x&quot;, &quot;y&quot;, and &quot;z&quot;. You would use this function like this:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">stream</span><span class="o">.</span><span class="na">each</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;x&quot;</span><span class="o">,</span> <span class="s">&quot;y&quot;</span><span class="o">),</span> <span class="k">new</span> <span class="nf">AddAndMultiply</span><span class="o">(),</span> <span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;added&quot;</span><span class="o">,</span> <span class="s">&quot;multiplied&quot;</span><span class="o">));</span>
+</code></pre></div>
+<p>The output of functions is additive: the fields are added to the input tuple. So the output of this each call would contain tuples with the five fields &quot;x&quot;, &quot;y&quot;, &quot;z&quot;, &quot;added&quot;, and &quot;multiplied&quot;. &quot;added&quot; corresponds to the first value emitted by AddAndMultiply, while &quot;multiplied&quot; corresponds to the second value.</p>
+
+<p>With aggregators, on the other hand, the function fields replace the input tuples. So if you had a stream containing the fields &quot;val1&quot; and &quot;val2&quot;, and you did this:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">stream</span><span class="o">.</span><span class="na">aggregate</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;val2&quot;</span><span class="o">),</span> <span class="k">new</span> <span class="nf">Sum</span><span class="o">(),</span> <span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;sum&quot;</span><span class="o">))</span>
+</code></pre></div>
+<p>The output stream would only contain a single tuple with a single field called &quot;sum&quot;, representing the sum of all &quot;val2&quot; fields in that batch.</p>
+
+<p>With grouped streams, the output will contain the grouping fields followed by the fields emitted by the aggregator. For example:</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">stream</span><span class="o">.</span><span class="na">groupBy</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;val1&quot;</span><span class="o">))</span>
+     <span class="o">.</span><span class="na">aggregate</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;val2&quot;</span><span class="o">),</span> <span class="k">new</span> <span class="nf">Sum</span><span class="o">(),</span> <span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;sum&quot;</span><span class="o">))</span>
+</code></pre></div>
+<p>In this example, the output will contain the fields &quot;val1&quot; and &quot;sum&quot;.</p>
+
+<h2 id="state">State</h2>
+
+<p>A key problem to solve with realtime computation is how to manage state so that updates are idempotent in the face of failures and retries. It&#39;s impossible to eliminate failures, so when a node dies or something else goes wrong, batches need to be retried. The question is – how do you do state updates (whether external databases or state internal to the topology) so that it&#39;s like each message was only processed only once?</p>
+
+<p>This is a tricky problem, and can be illustrated with the following example. Suppose that you&#39;re doing a count aggregation of your stream and want to store the running count in a database. If you store only the count in the database and it&#39;s time to apply a state update for a batch, there&#39;s no way to know if you applied that state update before. The batch could have been attempted before, succeeded in updating the database, and then failed at a later step. Or the batch could have been attempted before and failed to update the database. You just don&#39;t know.</p>
+
+<p>Trident solves this problem by doing two things:</p>
+
+<ol>
+<li>Each batch is given a unique id called the &quot;transaction id&quot;. If a batch is retried it will have the exact same transaction id.</li>
+<li>State updates are ordered among batches. That is, the state updates for batch 3 won&#39;t be applied until the state updates for batch 2 have succeeded.</li>
+</ol>
+
+<p>With these two primitives, you can achieve exactly-once semantics with your state updates. Rather than store just the count in the database, what you can do instead is store the transaction id with the count in the database as an atomic value. Then, when updating the count, you can just compare the transaction id in the database with the transaction id for the current batch. If they&#39;re the same, you skip the update – because of the strong ordering, you know for sure that the value in the database incorporates the current batch. If they&#39;re different, you increment the count.</p>
+
+<p>Of course, you don&#39;t have to do this logic manually in your topologies. This logic is wrapped by the State abstraction and done automatically. Nor is your State object required to implement the transaction id trick: if you don&#39;t want to pay the cost of storing the transaction id in the database, you don&#39;t have to. In that case the State will have at-least-once-processing semantics in the case of failures (which may be fine for your application). You can read more about how to implement a State and the various fault-tolerance tradeoffs possible <a href="/documentation/Trident-state.html">in this doc</a>.</p>
+
+<p>A State is allowed to use whatever strategy it wants to store state. So it could store state in an external database or it could keep the state in-memory but backed by HDFS (like how HBase works). State&#39;s are not required to hold onto state forever. For example, you could have an in-memory State implementation that only keeps the last X hours of data available and drops anything older. Take a look at the implementation of the <a href="https://github.com/nathanmarz/trident-memcached/blob/master/src/jvm/trident/memcached/MemcachedState.java">Memcached integration</a> for an example State implementation.</p>
+
+<h2 id="execution-of-trident-topologies">Execution of Trident topologies</h2>
+
+<p>Trident topologies compile down into as efficient of a Storm topology as possible. Tuples are only sent over the network when a repartitioning of the data is required, such as if you do a groupBy or a shuffle. So if you had this Trident topology:</p>
+
+<p><img src="images/trident-to-storm1.png" alt="Compiling Trident to Storm 1"></p>
+
+<p>It would compile into Storm spouts/bolts like this:</p>
+
+<p><img src="images/trident-to-storm2.png" alt="Compiling Trident to Storm 2"></p>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>Trident makes realtime computation elegant. You&#39;ve seen how high throughput stream processing, state manipulation, and low-latency querying can be seamlessly intermixed via Trident&#39;s API. Trident lets you express your realtime computations in a natural way while still getting maximal performance.</p>
+
+
+
+	          </div>
+	       </div>
+	  </div>
+<footer>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="footer-widget">
+                    <h5>Meetups</h5>
+                    <ul class="latest-news">
+                        <li><a href="http://www.meetup.com/Apache-Storm-Apache-Kafka/">Sunnyvale, CA</a> <span class="small">(10 May 2015)</span></li>
+                        <li><a href="http://www.meetup.com/Apache-Storm-Kafka-Users/">Seatle, WA</a> <span class="small">(27 Jun 2015)</span></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="footer-widget">
+                    <h5>About Storm</h5>
+                    <p>Storm integrates with any queueing system and any database system. Storm's spout abstraction makes it easy to integrate a new queuing system. Likewise, integrating Storm with database systems is easy.</p>
+               </div>
+            </div>
+            <div class="col-md-3">
+                <div class="footer-widget">
+                    <h5>First Look</h5>
+                    <ul class="footer-list">
+                        <li><a href="/documentation/Rationale.html">Rationale</a></li>
+                        <li><a href="/tutorial.html">Tutorial</a></li>
+                        <li><a href="/documentation/Setting-up-development-environment.html">Setting up development environment</a></li>
+                        <li><a href="/documentation/Creating-a-new-Storm-project.html">Creating a new Storm project</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="footer-widget">
+                    <h5>Documentation</h5>
+                    <ul class="footer-list">
+                        <li><a href="/doc-index.html">Index</a></li>
+                        <li><a href="/documentation.html">Manual</a></li>
+                        <li><a href="https://storm.apache.org/javadoc/apidocs/index.html">Javadoc</a></li>
+                        <li><a href="/documentation/FAQ.html">FAQ</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <hr/>
+        <div class="row">   
+            <div class="col-md-12">
+                <p align="center">Copyright © 2015 <a href="http://www.apache.org">Apache Software Foundation</a>. All Rights Reserved. Apache Storm, Apache, the Apache feather logo, and the Apache Storm project logos are trademarks of The Apache Software Foundation. All other marks mentioned may be trademarks or registered trademarks of their respective owners.</p>
+            </div>
+        </div>
+    </div>
+</footer>
+<!--Footer End-->
+<!-- Scroll to top -->
+<span class="totop"><a href="#"><i class="fa fa-angle-up"></i></a></span> 
+
+</body>
+
+</html>
+
