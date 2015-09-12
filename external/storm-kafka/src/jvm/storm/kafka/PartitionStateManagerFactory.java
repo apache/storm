@@ -10,7 +10,7 @@ import java.util.Map;
 
 public class PartitionStateManagerFactory {
 
-    public static final Logger LOG = LoggerFactory.getLogger(PartitionStateManagerFactory.class);
+    private static final Logger LOG = LoggerFactory.getLogger(PartitionStateManagerFactory.class);
 
     private ZkDataStore sharedZkDataStore;
 

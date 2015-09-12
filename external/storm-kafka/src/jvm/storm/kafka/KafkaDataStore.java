@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 public class KafkaDataStore {
-    public static final Logger LOG = LoggerFactory.getLogger(KafkaDataStore.class);
+    private static final Logger LOG = LoggerFactory.getLogger(KafkaDataStore.class);
 
     private SpoutConfig _spoutConfig;
     private Partition _partition;
@@ -119,7 +119,6 @@ public class KafkaDataStore {
             }
 
         } else {
-            // may attempt to implement retry later
             _offsetManager = null;
             throw new RuntimeException("Kafka offset fetch error: " + result.error());
         }
@@ -169,7 +168,6 @@ public class KafkaDataStore {
                     throw new RuntimeException("Data is too big. The data object is " + data);
                 } else {
                     _offsetManager = null;
-                    // may attempt to implement retry later
                     throw new RuntimeException("Kafka offset commit error: " + partitionErrorCode);
                 }
             }

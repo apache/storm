@@ -35,7 +35,7 @@ import java.util.Map;
 
 public class DynamicBrokersReader {
 
-    public static final Logger LOG = LoggerFactory.getLogger(DynamicBrokersReader.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DynamicBrokersReader.class);
 
     private CuratorFramework _curator;
     private String _zkPath;

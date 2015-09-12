@@ -36,28 +36,28 @@ import storm.kafka.trident.MaxMetric;
 import java.util.*;
 
 public class PartitionManager {
-    public static final Logger LOG = LoggerFactory.getLogger(PartitionManager.class);
+    private static final Logger LOG = LoggerFactory.getLogger(PartitionManager.class);
 
     private final CombinedMetric _fetchAPILatencyMax;
     private final ReducedMetric _fetchAPILatencyMean;
     private final CountMetric _fetchAPICallCount;
     private final CountMetric _fetchAPIMessageCount;
-    Long _emittedToOffset;
+
+    private Long _emittedToOffset;
     // _pending key = Kafka offset, value = time at which the message was first submitted to the topology
-    private SortedMap<Long,Long> _pending = new TreeMap<Long,Long>();
+    private final SortedMap<Long,Long> _pending = new TreeMap<Long,Long>();
     private final FailedMsgRetryManager _failedMsgRetryManager;
 
-    // retryRecords key = Kafka offset, value = retry info for the given message
-    Long _committedTo;
-    LinkedList<MessageAndRealOffset> _waitingToEmit = new LinkedList<MessageAndRealOffset>();
-    Partition _partition;
-    SpoutConfig _spoutConfig;
-    String _topologyInstanceId;
-    SimpleConsumer _consumer;
-    DynamicPartitionConnections _connections;
-    PartitionStateManager _partitionStateManager;
-    Map _stormConf;
-    long numberFailed, numberAcked;
+    private Long _committedTo;
+    private final LinkedList<MessageAndRealOffset> _waitingToEmit = new LinkedList<MessageAndRealOffset>();
+    private final Partition _partition;
+    private final SpoutConfig _spoutConfig;
+    private final String _topologyInstanceId;
+    private final SimpleConsumer _consumer;
+    private final DynamicPartitionConnections _connections;
+    private final PartitionStateManager _partitionStateManager;
+    private final Map _stormConf;
+    private long numberFailed, numberAcked;
 
     public PartitionManager(DynamicPartitionConnections connections, String topologyInstanceId, PartitionStateManager partitionStateManager,
                             Map stormConf, SpoutConfig spoutConfig, Partition id) {

@@ -23,19 +23,17 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.RetryNTimes;
 import org.apache.zookeeper.CreateMode;
-import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class ZkDataStore {
-    public static final Logger LOG = LoggerFactory.getLogger(ZkDataStore.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ZkDataStore.class);
 
-    CuratorFramework _curator;
+    private CuratorFramework _curator;
 
     private CuratorFramework newCurator(Map stateConf) throws Exception {
         Integer port = (Integer) stateConf.get(Config.TRANSACTIONAL_ZOOKEEPER_PORT);

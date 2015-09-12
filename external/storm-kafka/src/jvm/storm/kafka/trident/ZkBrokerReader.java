@@ -27,7 +27,7 @@ import java.util.Map;
 
 public class ZkBrokerReader implements IBrokerReader {
 
-	public static final Logger LOG = LoggerFactory.getLogger(ZkBrokerReader.class);
+	private static final Logger LOG = LoggerFactory.getLogger(ZkBrokerReader.class);
 
 	GlobalPartitionInformation cachedBrokers;
 	DynamicBrokersReader reader;

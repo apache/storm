@@ -9,7 +9,7 @@ import java.util.Map;
 
 public class ZKBackedPartitionStateManager implements PartitionStateManager  {
 
-    public static final Logger LOG = LoggerFactory.getLogger(ZKBackedPartitionStateManager.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ZKBackedPartitionStateManager.class);
 
     private SpoutConfig _spoutConfig;
     private Partition _partition;

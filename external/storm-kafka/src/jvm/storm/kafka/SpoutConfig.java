@@ -22,15 +22,23 @@ import java.util.List;
 
 
 public class SpoutConfig extends KafkaConfig implements Serializable {
+
+    /** a list of ZooKeeper servers */
     public List<String> zkServers = null;
+
+    /** ZooKeeper port */
     public Integer zkPort = null;
+
+    /** ZooKeeper context root */
     public String zkRoot = null;
+
+    /** Spout id which is also used to track the Kafka offsets */
     public String id = null;
 
-    // if set to true, spout will set Kafka topic as the emitted Stream ID
+    /** if set to true, spout will set Kafka topic as the emitted Stream ID */
     public boolean topicAsStreamId = false;
 
-    // setting for how often to save the current kafka offset to ZooKeeper
+    /** setting for how often to save the current kafka offset to ZooKeeper */
     public long stateUpdateIntervalMs = 2000;
 
     // Exponential back-off retry settings.  These are used when retrying messages after a bolt
@@ -39,11 +47,13 @@ public class SpoutConfig extends KafkaConfig implements Serializable {
     public double retryDelayMultiplier = 1.0;
     public long retryDelayMaxMs = 60 * 1000;
 
-    // offset state information storage. validate options are storm and kafka
+    /** offset state information storage. validate options are storm and kafka */
     public String stateStore = "storm";
-    // timeout in millis for state read/write operations
+
+    /** timeout in millis for state read/write operations */
     public int stateOpTimeout = 5000;
-    // max retries allowed for state read/write operations
+
+    /** max retries allowed for state read/write operations */
     public int stateOpMaxRetry = 3;
 
     public SpoutConfig(BrokerHosts hosts, String topic, String id) {

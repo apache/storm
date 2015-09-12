@@ -8,7 +8,7 @@ import java.util.Map;
 
 public class KafkaBackedPartitionStateManager implements PartitionStateManager {
 
-    public static final Logger LOG = LoggerFactory.getLogger(KafkaBackedPartitionStateManager.class);
+    private static final Logger LOG = LoggerFactory.getLogger(KafkaBackedPartitionStateManager.class);
 
     private KafkaDataStore _dataStore;
 

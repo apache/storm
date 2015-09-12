@@ -42,13 +42,13 @@ public class KafkaSpout extends BaseRichSpout {
         }
     }
 
-    static enum EmitState {
+    enum EmitState {
         EMITTED_MORE_LEFT,
         EMITTED_END,
         NO_EMITTED
     }
 
-    public static final Logger LOG = LoggerFactory.getLogger(KafkaSpout.class);
+    private static final Logger LOG = LoggerFactory.getLogger(KafkaSpout.class);
 
     String _uuid = UUID.randomUUID().toString();
     SpoutConfig _spoutConfig;
