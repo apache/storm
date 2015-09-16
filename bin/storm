@@ -71,6 +71,8 @@ else:
 if (not os.path.isfile(USER_CONF_DIR + "/storm.yaml")):
     USER_CONF_DIR = CLUSTER_CONF_DIR
 
+STORM_SUPERVISOR_LOG_FILE = os.getenv('STORM_SUPERVISOR_LOG_FILE', "supervisor.log")
+
 init_storm_env()
 
 CONFIG_OPTS = []
@@ -326,7 +328,7 @@ def supervisor(klass="backtype.storm.daemon.supervisor"):
     """
     cppaths = [CLUSTER_CONF_DIR]
     jvmopts = parse_args(confvalue("supervisor.childopts", cppaths)) + [
-        "-Dlogfile.name=supervisor.log",
+        "-Dlogfile.name=" + STORM_SUPERVISOR_LOG_FILE,
         "-Dlogback.configurationFile=" + STORM_DIR + "/logback/cluster.xml",
     ]
     exec_storm_class(
