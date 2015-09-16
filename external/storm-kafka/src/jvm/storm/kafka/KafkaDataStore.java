@@ -1,13 +1,16 @@
 package storm.kafka;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import kafka.api.ConsumerMetadataRequest;
 import kafka.common.ErrorMapping;
 import kafka.common.OffsetAndMetadata;
 import kafka.common.OffsetMetadataAndError;
 import kafka.common.TopicAndPartition;
-import kafka.javaapi.*;
+import kafka.javaapi.ConsumerMetadataResponse;
+import kafka.javaapi.OffsetCommitRequest;
+import kafka.javaapi.OffsetCommitResponse;
+import kafka.javaapi.OffsetFetchRequest;
+import kafka.javaapi.OffsetFetchResponse;
 import kafka.network.BlockingChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -51,7 +51,7 @@ public class PartitionStateManagerFactory {
            return new ZKBackedPartitionStateManager(_stormConf,_spoutConfig,  partition, sharedZkDataStore);
 
         } else if ("kafka".equals(_spoutConfig.stateStore)) {
-            KafkaDataStore kafkaDataStore =  new KafkaDataStore(_stormConf, _spoutConfig, partition);
+            KafkaDataStore kafkaDataStore = new KafkaDataStore(_stormConf, _spoutConfig, partition);
             return new KafkaBackedPartitionStateManager(_stormConf, _spoutConfig, partition, kafkaDataStore);
 
         } else {
