@@ -450,11 +450,59 @@
     ret
     ))
 
+(defprotocol MaxSpoutPendingTuner
+  (get-limit [this])
+  (auto-tune [this])
+  (record-ack [this]))
+
+(defn setup-tune-max-spout-pending! [executor-data tuner]
+  (schedule-recurring
+    (:user-timer (:worker executor-data))
+    0
+    (-> executor-data :storm-conf TOPOLOGY-MAX-SPOUT-PENDING-UPDATE-INTERVAL)
+    (fn []
+      (auto-tune tuner))))
+
 (defmethod mk-threads :spout [executor-data task-datas initial-credentials]
   (let [{:keys [storm-conf component-id worker-context transfer-fn report-error sampler open-or-prepare-was-called?]} executor-data
         ^ISpoutWaitStrategy spout-wait-strategy (init-spout-wait-strategy storm-conf)
         max-spout-pending (executor-max-spout-pending storm-conf (count task-datas))
-        ^Integer max-spout-pending (if max-spout-pending (int max-spout-pending))        
+        ^Integer max-spout-pending (if max-spout-pending (int max-spout-pending))
+        max-spout-pending-update-auto? (storm-conf TOPOLOGY-MAX-SPOUT-PENDING-UPDATE-AUTO)
+        tuner (let [last-action (atom {:status :no-change :count 0})
+                    last-delta-progress (atom 0)
+                    max-spout-pending (atom max-spout-pending)
+                    current-delta-progress (atom 0)
+                    need-desc? (fn [] (>* @last-delta-progress @current-delta-progress))
+                    need-inc? (fn [] (<* @last-delta-progress @current-delta-progress))
+                    no-change? (fn [] (=* @last-delta-progress @current-delta-progress))
+                    inc! (fn [] (do (reset! last-action {:status :increase :count 0})
+                                    (swap! max-spout-pending (fn [current] (-> current (* 1.25) int)))))
+                    desc! (fn [] (do (reset! last-action {:status :increase :count 0})
+                                     (swap! max-spout-pending (fn [current] (-> current (* 0.75) int)))))]
+                    (reify
+                      MaxSpoutPendingTuner
+                      (get-limit [this]
+                        @max-spout-pending)
+                      (auto-tune [this]
+                        (let [status-count (:count @last-action)
+                              status (:status @last-action)]
+                          (condp = status
+                            :increase (cond
+                                        (need-desc?) (desc!)
+                                        (need-inc?) (inc!)
+                                        (no-change?) (reset! last-action {:status :no-change :count 0}))
+                            :descrease (cond
+                                         (need-inc?) (inc!)
+                                         :else (reset! last-action {:status :no-change :count 0}))
+                            :no-change (cond
+                                         (need-desc?) (desc!)
+                                         (or need-inc? (> status-count 5)) (inc!)
+                                         (no-change?) (reset! last-action {:status :no-change :count (inc status-count)}))))
+                        (reset! last-delta-progress @current-delta-progress)
+                        (reset! current-delta-progress 0))
+                      (record-ack [this]
+                        (swap! current-delta-progress inc))))
         last-active (atom false)        
         spouts (ArrayList. (map :object (vals task-datas)))
         rand (Random. (Utils/secureRandomLong))
@@ -492,8 +540,9 @@
                                     (throw-runtime "Fatal error, mismatched task ids: " task-id " " stored-task-id))
                                   (let [time-delta (if start-time-ms (time-delta-ms start-time-ms))]
                                     (condp = stream-id
-                                      ACKER-ACK-STREAM-ID (ack-spout-msg executor-data (get task-datas task-id)
-                                                                         spout-id tuple-finished-info time-delta id)
+                                      ACKER-ACK-STREAM-ID (do (ack-spout-msg executor-data (get task-datas task-id)
+                                                                             spout-id tuple-finished-info time-delta id)
+                                                              (when max-spout-pending-update-auto? (record-ack tuner)))
                                       ACKER-FAIL-STREAM-ID (fail-spout-msg executor-data (get task-datas task-id)
                                                                            spout-id tuple-finished-info time-delta "FAIL-STREAM" id)
                                       )))
@@ -580,6 +629,7 @@
         (reset! open-or-prepare-was-called? true) 
         (log-message "Opened spout " component-id ":" (keys task-datas))
         (setup-metrics! executor-data)
+        (setup-tune-max-spout-pending! executor-data tuner)
         
         (disruptor/consumer-started! (:receive-queue executor-data))
         (fn []
@@ -598,8 +648,8 @@
           (let [active? @(:storm-active-atom executor-data)
                 curr-count (.get emitted-count)]
             (if (and (.isEmpty overflow-buffer)
-                     (or (not max-spout-pending)
-                         (< (.size pending) max-spout-pending)))
+                     (or (not (get-limit tuner))
+                         (< (.size pending) (get-limit tuner))))
               (if active?
                 (do
                   (when-not @last-active

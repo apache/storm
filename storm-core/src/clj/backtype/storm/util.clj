@@ -1065,3 +1065,14 @@
     (assoc coll k (apply str (repeat (count (coll k)) "#")))
     coll))
 
+(defn >*
+   [left right]
+   (> left (* right 1.05)))
+
+(defn <*
+   [left right]
+   (< left (* right 0.95)))
+
+(defn =*
+   [left right]
+   (< (* 0.95 right) left (* 1.05 right)))
