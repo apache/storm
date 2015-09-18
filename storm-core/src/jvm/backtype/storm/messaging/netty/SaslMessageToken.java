@@ -18,6 +18,7 @@
 package backtype.storm.messaging.netty;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufOutputStream;
 import io.netty.buffer.Unpooled;
 import org.slf4j.Logger;
@@ -80,9 +81,8 @@ public class SaslMessageToken {
      * 
      * @throws Exception
      */
-    ByteBuf buffer() throws Exception {
-        ByteBufOutputStream bout = new ByteBufOutputStream(
-                Unpooled.directBuffer(encodeLength()));
+    ByteBuf buffer(ByteBufAllocator allocator) throws Exception {
+        ByteBufOutputStream bout = new ByteBufOutputStream(allocator.ioBuffer(encodeLength()));
         short identifier = -500;
         int payload_len = 0;
         if (token != null)

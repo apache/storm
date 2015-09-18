@@ -19,6 +19,7 @@ package backtype.storm.messaging.netty;
 
 import backtype.storm.messaging.TaskMessage;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufOutputStream;
 import io.netty.buffer.Unpooled;
 
@@ -80,8 +81,8 @@ class MessageBatch {
     /**
      * create a buffer containing the encoding of this batch
      */
-    ByteBuf buffer() throws Exception {
-        ByteBufOutputStream bout = new ByteBufOutputStream(Unpooled.directBuffer(encoded_length));
+    ByteBuf buffer(ByteBufAllocator allocator) throws Exception {
+        ByteBufOutputStream bout = new ByteBufOutputStream(allocator.ioBuffer(encoded_length));
         
         for (TaskMessage msg : msgs)
             writeTaskMessage(bout, msg);

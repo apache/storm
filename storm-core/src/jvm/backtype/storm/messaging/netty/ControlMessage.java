@@ -18,6 +18,7 @@
 package backtype.storm.messaging.netty;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufOutputStream;
 import io.netty.buffer.Unpooled;
 
@@ -58,8 +59,8 @@ enum ControlMessage {
      * encode the current Control Message into a channel buffer
      * @throws Exception if failed to write to buffer
      */
-    ByteBuf buffer() throws IOException {
-        ByteBufOutputStream bout = new ByteBufOutputStream(Unpooled.directBuffer(encodeLength()));
+    ByteBuf buffer(ByteBufAllocator allocator) throws IOException {
+        ByteBufOutputStream bout = new ByteBufOutputStream(allocator.ioBuffer(encodeLength()));
         write(bout);
         bout.close();
         return bout.buffer();

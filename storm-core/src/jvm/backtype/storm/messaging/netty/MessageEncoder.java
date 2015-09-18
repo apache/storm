@@ -24,16 +24,18 @@ import io.netty.handler.codec.MessageToMessageEncoder;
 import java.util.List;
 
 public class MessageEncoder extends MessageToMessageEncoder {
+
     @Override
     protected void encode(ChannelHandlerContext ctx, Object obj, List out) throws Exception {
+
         if (obj instanceof ControlMessage) {
-            out.add(((ControlMessage) obj).buffer());
+            out.add(((ControlMessage) obj).buffer(ctx.alloc()));
 
         } else if (obj instanceof MessageBatch) {
-            out.add(((MessageBatch)obj).buffer());
+            out.add(((MessageBatch)obj).buffer(ctx.alloc()));
 
         } else if (obj instanceof SaslMessageToken) {
-        	out.add(((SaslMessageToken)obj).buffer());
+        	out.add(((SaslMessageToken)obj).buffer(ctx.alloc()));
 
         } else {
             throw new RuntimeException("Unsupported encoding of object of class " + obj.getClass().getName());
