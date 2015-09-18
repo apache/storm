@@ -1,4 +1,5 @@
 ## 0.10.0
+ * STORM-803: Cleanup travis-ci build and logs
  * STORM-1027: Use overflow buffer for emitting metrics
  * STORM-1024: log4j changes leaving ${sys:storm.log.dir} under STORM_HOME dir
  * STORM-996: netty-unit-tests/test-batch demonstrates out-of-order delivery
