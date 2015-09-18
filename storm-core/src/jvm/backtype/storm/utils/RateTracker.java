@@ -31,7 +31,12 @@ public class RateTracker{
 
     private int _currentValidSlideNum;
 
-    private static Timer _timer = new Timer();
+    /*
+    Although this timer is static, it cannot be created by "... Timer _timer = new Timer()" here, due to a bug
+    in maven clojure plugin. Otherwise, the compiling process will never finish, infinitely waiting for
+    the termination of this timer.
+     */
+    private static Timer _timer;
 
     /**
      * @param validTimeWindowInMils events that happened before validTimeWindowInMils are not considered
@@ -60,6 +65,9 @@ public class RateTracker{
         assert(_slideSizeInMils > 1);
         _histograms = new long[_numOfSlides];
         Arrays.fill(_histograms,0L);
+        /* the first instance of RateTracker is responsible for creating this globally shared timer. */
+        if(_timer == null)
+            _timer = new Timer();
         if(!simulate) {
             _timer.scheduleAtFixedRate(new Fresher(), _slideSizeInMils, _slideSizeInMils);
         }
@@ -72,7 +80,7 @@ public class RateTracker{
      * @param count number of arrivals
      */
     public void notify(long count) {
-        _histograms[_histograms.length-1]+=count;
+        _histograms[_numOfSlides - 1] += count;
     }
 
     /**
@@ -87,7 +95,7 @@ public class RateTracker{
             sum += _histograms[i];
         }
 
-        return sum / (float) duration * 1000;
+        return sum / (float) duration;
     }
 
     public final void forceUpdateSlides(int numToEclipse) {
