@@ -1,4 +1,5 @@
 ## 0.10.0
+ * STORM-1005: Supervisor do not get running workers after restart.
  * STORM-803: Cleanup travis-ci build and logs
  * STORM-1027: Use overflow buffer for emitting metrics
  * STORM-1024: log4j changes leaving ${sys:storm.log.dir} under STORM_HOME dir
