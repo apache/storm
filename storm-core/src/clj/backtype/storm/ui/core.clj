@@ -115,7 +115,7 @@
              (into {}
                    (for [[stream c] streams]
                      [stream
-                      [(* c (get-in avg [slice stream]))
+                      [(* c (nil-to-zero (get-in avg [slice stream])) )
                        c]]
                      ))]))))
 
@@ -160,7 +160,8 @@
 (defn aggregate-common-stats
   [stats-seq]
   {:emitted (aggregate-counts (map #(.get_emitted ^ExecutorStats %) stats-seq))
-   :transferred (aggregate-counts (map #(.get_transferred ^ExecutorStats %) stats-seq))})
+   :transferred (aggregate-counts (map #(.get_transferred ^ExecutorStats %) stats-seq))
+   :throughput (aggregate-counts (map #(.get_throughput ^ExecutorStats %) stats-seq))})
 
 (defn mk-include-sys-fn
   [include-sys?]
@@ -185,8 +186,12 @@
         transferred (:transferred stream-summary)
         transferred (into {} (for [[window stat] transferred]
                                {window (filter-key filter-fn stat)}))
+        throughput (:throughput stream-summary)
+        throughput (into {} (for [[window stat] throughput]
+                              {window (filter-key filter-fn stat)}))
         stream-summary (-> stream-summary (dissoc :emitted) (assoc :emitted emitted))
-        stream-summary (-> stream-summary (dissoc :transferred) (assoc :transferred transferred))]
+        stream-summary (-> stream-summary (dissoc :transferred) (assoc :transferred transferred))
+        stream-summary (-> stream-summary (dissoc :throughput) (assoc :throughput throughput))]
     stream-summary))
 
 (defn aggregate-bolt-stats
@@ -239,7 +244,8 @@
                                              (:acked stats))
    :executed (aggregate-count-streams (:executed stats))
    :execute-latencies (aggregate-avg-streams (:execute-latencies stats)
-                                             (:executed stats))})
+                                             (:executed stats))
+   :throughput (aggregate-count-streams (:throughput stats))})
 
 (defn aggregate-spout-streams
   [stats]
@@ -248,7 +254,8 @@
    :emitted (aggregate-count-streams (:emitted stats))
    :transferred (aggregate-count-streams (:transferred stats))
    :complete-latencies (aggregate-avg-streams (:complete-latencies stats)
-                                              (:acked stats))})
+                                              (:acked stats))
+   :throughput (aggregate-count-streams (:throughput stats))})
 
 (defn spout-summary?
   [topology s]
@@ -477,6 +484,13 @@
                            (get-in
                              (spout-streams-stats spout-summs true)
                              [:complete-latencies window]))
+                :throughput (if bolt-summs
+                              (get-in
+                                (bolt-streams-stats bolt-summs true)
+                                [:throughput window])
+                              (get-in
+                                (spout-streams-stats spout-summs true)
+                                [:throughput window]))
                 :transferred (or
                                (get-in
                                  (spout-streams-stats spout-summs true)
@@ -685,6 +699,7 @@
        "emitted" (get-in stats [:emitted k])
        "transferred" (get-in stats [:transferred k])
        "completeLatency" (float-str (get-in stats [:complete-latencies k]))
+       "throughput" (float-str (get-in stats [:throughput k]))
        "acked" (get-in stats [:acked k])
        "failed" (get-in stats [:failed k])})))
 
@@ -704,6 +719,7 @@
      "emitted" (get-in stats [:emitted window])
      "transferred" (get-in stats [:transferred window])
      "completeLatency" (float-str (get-in stats [:complete-latencies window]))
+     "throughput" (float-str (get-in stats [:throughput window]))
      "acked" (get-in stats [:acked window])
      "failed" (get-in stats [:failed window])
      "errorHost" error-host
@@ -732,6 +748,7 @@
      "executeLatency" (float-str (get-in stats [:execute-latencies window]))
      "executed" (get-in stats [:executed window])
      "processLatency" (float-str (get-in stats [:process-latencies window]))
+     "throughput" (float-str (get-in stats [:throughput window]))
      "acked" (get-in stats [:acked window])
      "failed" (get-in stats [:failed window])
      "errorHost" error-host
@@ -772,6 +789,7 @@
         "emitted" (get-in stats [:emitted k])
         "transferred" (get-in stats [:transferred k])
         "completeLatency" (float-str (get-in stats [:complete-latencies k]))
+        "throughput" (float-str (get-in stats [:throughput k]))
         "acked" (get-in stats [:acked k])
         "failed" (get-in stats [:failed k])})))
 
@@ -823,6 +841,7 @@
        "emitted" (nil-to-zero (:emitted stats))
        "transferred" (nil-to-zero (:transferred stats))
        "completeLatency" (float-str (:complete-latencies stats))
+       "throughput" (float-str (:throughput stats))
        "acked" (nil-to-zero (:acked stats))
        "failed" (nil-to-zero (:failed stats))})))
 
@@ -844,6 +863,7 @@
      "emitted" (nil-to-zero (:emitted stats))
      "transferred" (nil-to-zero (:transferred stats))
      "completeLatency" (float-str (:complete-latencies stats))
+     "throughput" (float-str (:throughput stats))
      "acked" (nil-to-zero (:acked stats))
      "failed" (nil-to-zero (:failed stats))
      "workerLogLink" (worker-log-link (.get_host e) (.get_port e) topology-id secure?)}))
@@ -888,6 +908,7 @@
        "executeLatency" (float-str (get-in stats [:execute-latencies k]))
        "executed" (get-in stats [:executed k])
        "processLatency" (float-str (get-in stats [:process-latencies k]))
+       "throughput" (float-str (get-in stats [:throughput k]))
        "acked" (get-in stats [:acked k])
        "failed" (get-in stats [:failed k])})))
 
@@ -943,6 +964,7 @@
      "executeLatency" (float-str (:execute-latencies stats))
      "executed" (nil-to-zero (:executed stats))
      "processLatency" (float-str (:process-latencies stats))
+     "throughput" (float-str (:throughput stats))
      "acked" (nil-to-zero (:acked stats))
      "failed" (nil-to-zero (:failed stats))
      "workerLogLink" (worker-log-link (.get_host e) (.get_port e) topology-id secure?)}))

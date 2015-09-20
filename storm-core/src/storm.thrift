@@ -204,6 +204,7 @@ struct ExecutorStats {
   2: required map<string, map<string, i64>> transferred;
   3: required ExecutorSpecificStats specific;
   4: required double rate;
+  5: required map<string, map<string, double>> throughput;
 }
 
 struct ExecutorInfo {

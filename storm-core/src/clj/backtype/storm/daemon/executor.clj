@@ -578,7 +578,8 @@
                                              out-ids (fast-list-for [t out-tasks] (if rooted? (MessageId/generateId rand)))
                                              sampler? (sampler)]
                                          (when sampler?
-                                           (.notify rate-tracker (count out-tasks)))
+                                           (.notify rate-tracker (count out-tasks))
+                                           (stats/update-stats-throughput! (:stats executor-data) out-stream-id (.reportRate rate-tracker)))
                                          (fast-list-iter [out-task out-tasks id out-ids]
                                                          (let [tuple-id (if rooted?
                                                                           (MessageId/makeRootId root-id id)
@@ -782,9 +783,10 @@
                                     (stats/bolt-execute-tuple! executor-stats
                                                                (.getSourceComponent tuple)
                                                                (.getSourceStreamId tuple)
+                                                               (.reportRate rate-tracker)
                                                                delta)))))))
         has-eventloggers? (has-eventloggers? storm-conf)]
-    
+
     ;; TODO: can get any SubscribedState objects out of the context now
 
     [(async-loop
