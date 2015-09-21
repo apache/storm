@@ -1,4 +1,5 @@
 ## 0.10.0
+ * STORM-1026: Adding external classpath elements does not work
  * STORM-1056: allow supervisor log filename to be configurable via ENV variable
  * STORM-1055: storm-jdbc README needs fixes and context
  * STORM-1044: Setting dop to zero does not raise an error
