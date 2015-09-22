@@ -211,6 +211,11 @@
             Transferred
           </span>
         </th>
+        <th>
+          <span data-toggle="tooltip" data-placement="above" title="The number of Tuples emitted per millisecond.">
+            Throughput (tuples/ms)
+          </span>
+        </th>
         <th class="header">
           <span data-toggle="tooltip" data-placement="above" title="The average time a Tuple &quot;tree&quot; takes to be completely processed by the Topology. A value of 0 is expected if no acking is done.">
             Complete latency (ms)
@@ -244,6 +249,7 @@
         <td>{{tasks}}</td>
         <td>{{emitted}}</td>
         <td>{{transferred}}</td>
+        <td>{{throughput}}</td>
         <td>{{completeLatency}}</td>
         <td>{{acked}}</td>
         <td>{{failed}}</td>
@@ -298,6 +304,11 @@
             Execute latency (ms)
           </span>
         </th>
+        <th>
+        <span data-toggle="tooltip" data-placement="above" title="The number of incoming Tuples processed per millisecond.">
+        Throughput (tuples/ms)
+        </span>
+        </th>
         <th class="header">
           <span data-toggle="tooltip" data-placement="above" title="The number of incoming Tuples processed.">
             Executed
@@ -337,6 +348,7 @@
         <td>{{transferred}}</td>
         <td>{{capacity}}</td>
         <td>{{executeLatency}}</td>
+        <td>{{throughput}}</td>
         <td>{{executed}}</td>
         <td>{{processLatency}}</td>
         <td>{{acked}}</td>
