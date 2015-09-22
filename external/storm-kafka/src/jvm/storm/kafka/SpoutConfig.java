@@ -23,6 +23,9 @@ import java.util.List;
 
 public class SpoutConfig extends KafkaConfig implements Serializable {
 
+    public static final String STATE_STORE_ZOOKEEPER = "zookeeper";
+    public static final String STATE_STORE__KAFKA = "kafka";
+
     /** a list of ZooKeeper servers */
     public List<String> zkServers = null;
 
@@ -47,8 +50,8 @@ public class SpoutConfig extends KafkaConfig implements Serializable {
     public double retryDelayMultiplier = 1.0;
     public long retryDelayMaxMs = 60 * 1000;
 
-    /** offset state information storage. validate options are storm and kafka */
-    public String stateStore = "storm";
+    /** offset state information storage. validate options are zookeeper and kafka */
+    public String stateStore = STATE_STORE_ZOOKEEPER;
 
     /** timeout in millis for state read/write operations */
     public int stateOpTimeout = 5000;

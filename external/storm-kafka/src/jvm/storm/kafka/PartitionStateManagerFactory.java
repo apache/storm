@@ -8,6 +8,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static storm.kafka.SpoutConfig.STATE_STORE__KAFKA;
+import static storm.kafka.SpoutConfig.STATE_STORE_ZOOKEEPER;
+
 public class PartitionStateManagerFactory {
 
     private static final Logger LOG = LoggerFactory.getLogger(PartitionStateManagerFactory.class);
@@ -39,24 +42,25 @@ public class PartitionStateManagerFactory {
         this._stormConf = stormConf;
         this._spoutConfig = spoutConfig;
 
-        // default to orignal storm storage format
-        if (_spoutConfig.stateStore == null || "storm".equals(_spoutConfig.stateStore)) {
+        // default to original storm storage format
+        if (_spoutConfig.stateStore == null || STATE_STORE_ZOOKEEPER.equals(_spoutConfig.stateStore)) {
             sharedZkDataStore = createZkDataStore(_stormConf, _spoutConfig);
         }
     }
 
     public PartitionStateManager getInstance(Partition partition) {
 
-        if (_spoutConfig.stateStore == null || "storm".equals(_spoutConfig.stateStore)) {
-           return new ZKBackedPartitionStateManager(_stormConf,_spoutConfig,  partition, sharedZkDataStore);
+        if (_spoutConfig.stateStore == null || STATE_STORE_ZOOKEEPER.equals(_spoutConfig.stateStore)) {
+            return new ZKBackedPartitionStateManager(_stormConf,_spoutConfig,  partition, sharedZkDataStore);
 
-        } else if ("kafka".equals(_spoutConfig.stateStore)) {
+        } else if (STATE_STORE__KAFKA.equals(_spoutConfig.stateStore)) {
             KafkaDataStore kafkaDataStore = new KafkaDataStore(_stormConf, _spoutConfig, partition);
             return new KafkaBackedPartitionStateManager(_stormConf, _spoutConfig, partition, kafkaDataStore);
 
         } else {
-            throw new RuntimeException("Invalid value defined for _spoutConfig.stateStore: " + _spoutConfig.stateStore
-                + ". Valid values are storm, kafka. Default to storm");
+            throw new RuntimeException(String.format("Invalid value defined for _spoutConfig.stateStore: %s. "
+                            + "Valid values are %s, %s. Default to %s",
+                    _spoutConfig.stateStore, STATE_STORE_ZOOKEEPER, STATE_STORE__KAFKA, STATE_STORE_ZOOKEEPER));
         }
     }
 

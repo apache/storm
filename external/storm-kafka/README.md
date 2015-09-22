@@ -52,7 +52,7 @@ The optional ClientId is used as a part of the zookeeper path where the spout's 
 There are 2 extensions of KafkaConfig currently in use.
 
 Spoutconfig is an extension of KafkaConfig that supports additional fields with ZooKeeper connection info and for controlling
-behavior specific to KafkaSpout. The Zkroot will be used as root to store your consumer's offset if you chose Zookeeper as the storage. 
+behavior specific to KafkaSpout. The Zkroot will be used as root to store your consumer's offset if you chose ZooKeeper as the storage. 
 The id should uniquely identify your spout.
 ```java
 public SpoutConfig(BrokerHosts hosts, String topic, String id);
@@ -63,8 +63,8 @@ In addition to these parameters, SpoutConfig contains the following fields that 
     // setting for how often to save the current kafka offset
     public long stateUpdateIntervalMs = 2000;
 
-    // offset state information storage. validate options are storm and kafka
-    public String stateStore = "storm";
+    // offset state information storage. validate options are zookeeper and kafka
+    public String stateStore = "zookeeper";
     // timeout in millis for state read/write operations
     public int stateOpTimeout = 5000;
     // max retries allowed for state read/write operations
@@ -147,13 +147,13 @@ setting `KafkaConfig.startOffsetTime` as follows:
    see [How do I accurately get offsets of messages for a certain timestamp using OffsetRequest?](https://cwiki.apache.org/confluence/display/KAFKA/FAQ#FAQ-HowdoIaccuratelygetoffsetsofmessagesforacertaintimestampusingOffsetRequest?) in the Kafka FAQ
 
 As the topology runs the Kafka spout keeps track of the offsets it has read and emitted.  Kafka spout offers two options for offset storage which 
-can be configured by setting `SpoutConfig.stateStore`. By default, the `storm` option is chosen which stores offset state information 
+can be configured by setting `SpoutConfig.stateStore`. By default, the `zookeeper` option is chosen which stores offset state information 
 under the ZooKeeper path `SpoutConfig.zkRoot+ "/" + SpoutConfig.id`. The second option is `kafka` which stores offset state information using 
 Kafka's built-in offset management API.
 
 In the case of failures Kafka spout recovers from the last written offset.
 
-> **Important:**  When re-deploying a topology make sure that the settings for `SpoutConfig.zkRoot` (if `storm` is chosen as storage option)
+> **Important:**  When re-deploying a topology make sure that the settings for `SpoutConfig.zkRoot` (if `zookeeper` is chosen as storage option)
 > and `SpoutConfig.id` were not modified, otherwise the spout will not be able to read its previous consumer state information (i.e. the
 > offsets) from storage -- which may lead to unexpected behavior and/or to data loss, depending on your use case.
 
