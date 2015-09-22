@@ -61,7 +61,9 @@
       ~@body
       (log-message "Stopping DRPC servers ...")
       (.stop handler-server#)
+      (wait-for-condition #(not (.isServing handler-server#)))
       (.stop invoke-server#)
+      (wait-for-condition #(not (.isServing invoke-server#)))
       ))
 
 (deftest deny-drpc-test
