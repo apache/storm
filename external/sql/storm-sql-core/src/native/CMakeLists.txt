@@ -41,7 +41,11 @@ if(APPLE)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
 endif()
 
-include_directories(include)
+include_directories(
+  include
+  third_party/gmock-1.7.0
+  third_party/json11)
 
 add_subdirectory(lib)
 add_subdirectory(bindings)
+add_subdirectory(third_party)
