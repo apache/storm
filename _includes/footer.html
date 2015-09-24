@@ -5,8 +5,10 @@
                 <div class="footer-widget">
                     <h5>Meetups</h5>
                     <ul class="latest-news">
-                        <li><a href="http://www.meetup.com/Apache-Storm-Apache-Kafka/">Sunnyvale, CA</a> <span class="small">(10 May 2015)</span></li>
-                        <li><a href="http://www.meetup.com/Apache-Storm-Kafka-Users/">Seatle, WA</a> <span class="small">(27 Jun 2015)</span></li>
+                        {% for meetup in site.data.meetups %}
+                        <li><a href="{{meetup.url}}">{{meetup.title}}</a> <span class="small">({{meetup.location}})</span></li>
+                        {% endfor %}
+                        <!-- <li><a href="http://www.meetup.com/Apache-Storm-Kafka-Users/">Seatle, WA</a> <span class="small">(27 Jun 2015)</span></li> -->
                     </ul>
                 </div>
             </div>
@@ -42,7 +44,9 @@
         <hr/>
         <div class="row">   
             <div class="col-md-12">
-                <p align="center">Copyright © 2015 <a href="http://www.apache.org">Apache Software Foundation</a>. All Rights Reserved. Apache Storm, Apache, the Apache feather logo, and the Apache Storm project logos are trademarks of The Apache Software Foundation. All other marks mentioned may be trademarks or registered trademarks of their respective owners.</p>
+                <p align="center">Copyright © 2015 <a href="http://www.apache.org">Apache Software Foundation</a>. All Rights Reserved. 
+                    <br>Apache Storm, Apache, the Apache feather logo, and the Apache Storm project logos are trademarks of The Apache Software Foundation. 
+                    <br>All other marks mentioned may be trademarks or registered trademarks of their respective owners.</p>
             </div>
         </div>
     </div>

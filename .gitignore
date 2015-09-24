@@ -1,2 +1,5 @@
 **/.DS_STORE
 .sass-cache
+**/*.iml
+**/*.ipr
+**/*.iws

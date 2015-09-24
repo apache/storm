@@ -5,8 +5,8 @@
     <description></description>
     <link>http://storm.apache.org/</link>
     <atom:link href="http://storm.apache.org/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Thu, 17 Sep 2015 11:35:08 -0400</pubDate>
-    <lastBuildDate>Thu, 17 Sep 2015 11:35:08 -0400</lastBuildDate>
+    <pubDate>Thu, 24 Sep 2015 12:13:34 -0400</pubDate>
+    <lastBuildDate>Thu, 24 Sep 2015 12:13:34 -0400</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
     
       <item>
@@ -750,118 +750,274 @@ version: 0.9.2-incubating
       </item>
     
       <item>
-        <title>Logo Contest - Round 1 Results</title>
-        <description>&lt;p&gt;Round one of the Apache Storm logo contest is now complete and was a great success. We received votes from 7 PPMC members as well as 46 votes from the greater Storm community.&lt;/p&gt;
+        <title>Apache Storm Logo Contest</title>
+        <description>&lt;p&gt;Apache Storm is a platform for distributed, real-time computation that has been undergoing incubation at Apache since September 18, 2013. You can contribute by helping establish the Storm brand by submitting a proposal for the Apache Storm logo.&lt;/p&gt;
 
-&lt;p&gt;We would like to extend a very special thanks to all those who took the time and effort to create and submit a logo proposal. We would also like to thank everyone who voted.&lt;/p&gt;
+&lt;p&gt;Your proposal will be published on the &lt;a href=&quot;http://storm.incubator.apache.org&quot;&gt;Storm project website&lt;/a&gt; next to the other proposals. On &lt;strong&gt;Wednesday, April 30, 2014&lt;/strong&gt; the community will choose the new logo through a vote on the &lt;a href=&quot;http://mail-archives.apache.org/mod_mbox/incubator-storm-dev/&quot;&gt;Apache Storm Mailing List&lt;/a&gt;. If more than 10 proposals are received, voting will take place in two rounds, with the first round selecting 10 proposals to move to round two.&lt;/p&gt;
 
-&lt;h2 id=&quot;results&quot;&gt;Results&lt;/h2&gt;
+&lt;p&gt;The winning artist will be credited on the Apache Storm website as having designed the logo, and may include a link to her/his website or blog. Prizes for the winner(s) are currently TBD.&lt;/p&gt;
 
-&lt;p&gt;The Storm PPMC and community votes were closely aligned, with the community vote resolving a PPMC tie for the 3rd finalist as shown in the result table below.&lt;/p&gt;
+&lt;h2 id=&quot;guidelines&quot;&gt;GUIDELINES&lt;/h2&gt;
 
-&lt;p&gt;The three finalists entering the final round are:&lt;/p&gt;
+&lt;p&gt;The logo should meet the following requirements: &lt;/p&gt;
 
 &lt;ul&gt;
-&lt;li&gt;&lt;a href=&quot;/2014/04/23/logo-abartos.html&quot;&gt;No. 6 - Alec Bartos&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&quot;/2014/04/29/logo-jlee1.html&quot;&gt;No. 9 - Jennifer Lee&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&quot;/2014/04/29/logo-jlee2.html&quot;&gt;No. 10 - Jennifer Lee&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;Include 2 versions of the logo: a rectangular layout (full brand) and a square layout (icon, stand-alone logo) &lt;/li&gt;
+&lt;li&gt;Be scalable up or down (hi-res raster, or vector) &lt;/li&gt;
+&lt;li&gt;Translate to a 2-color representation (black/white, 2 greys, etc.) &lt;/li&gt;
+&lt;li&gt;Able to be inverted if running on a dark background &lt;/li&gt;
+&lt;li&gt;Comply with the &lt;a href=&quot;http://www.apache.org/foundation/marks/&quot;&gt;Apache branding requirements&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;p&gt;Congratulations Alec and Jennifer!&lt;/p&gt;
+&lt;p&gt;Optional, but nice to have:&lt;/p&gt;
 
-&lt;p&gt;Stay tuned for the final vote, which will be announced shortly.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Icons representing storm components (suitable for use in diagrams, presentations, etc.):
 
-&lt;hr&gt;
+&lt;ul&gt;
+&lt;li&gt;Spouts&lt;/li&gt;
+&lt;li&gt;Bolts&lt;/li&gt;
+&lt;li&gt;Streams&lt;/li&gt;
+&lt;li&gt;Trident&lt;/li&gt;
+&lt;li&gt;Functions/Filters&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;/ul&gt;
 
-&lt;table&gt;&lt;thead&gt;
-&lt;tr&gt;
-&lt;th style=&quot;text-align: left&quot;&gt;Entry&lt;/th&gt;
-&lt;th style=&quot;text-align: right&quot;&gt;PPMC&lt;/th&gt;
-&lt;th style=&quot;text-align: right&quot;&gt;Community&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;&lt;tbody&gt;
-&lt;tr&gt;
-&lt;td style=&quot;text-align: left&quot;&gt;1 - Patricia Forrest&lt;/td&gt;
-&lt;td style=&quot;text-align: right&quot;&gt;2&lt;/td&gt;
-&lt;td style=&quot;text-align: right&quot;&gt;23&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&quot;text-align: left&quot;&gt;2 - Samuel Quiñones&lt;/td&gt;
-&lt;td style=&quot;text-align: right&quot;&gt;3&lt;/td&gt;
-&lt;td style=&quot;text-align: right&quot;&gt;6&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&quot;text-align: left&quot;&gt;3- Shaan Shiv Suleman&lt;/td&gt;
-&lt;td style=&quot;text-align: right&quot;&gt;0&lt;/td&gt;
-&lt;td style=&quot;text-align: right&quot;&gt;7&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&quot;text-align: left&quot;&gt;4 - Richard Brownlie-Marshall&lt;/td&gt;
-&lt;td style=&quot;text-align: right&quot;&gt;0&lt;/td&gt;
-&lt;td style=&quot;text-align: right&quot;&gt;6&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&quot;text-align: left&quot;&gt;5 - Ziba Sayari&lt;/td&gt;
-&lt;td style=&quot;text-align: right&quot;&gt;0&lt;/td&gt;
-&lt;td style=&quot;text-align: right&quot;&gt;9&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&quot;text-align: left&quot;&gt;6 - Alec Bartos&lt;/td&gt;
-&lt;td style=&quot;text-align: right&quot;&gt;3&lt;/td&gt;
-&lt;td style=&quot;text-align: right&quot;&gt;32&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&quot;text-align: left&quot;&gt;7 - Calum Boustead&lt;/td&gt;
-&lt;td style=&quot;text-align: right&quot;&gt;0&lt;/td&gt;
-&lt;td style=&quot;text-align: right&quot;&gt;0&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&quot;text-align: left&quot;&gt;8 - Stefano Asili&lt;/td&gt;
-&lt;td style=&quot;text-align: right&quot;&gt;0&lt;/td&gt;
-&lt;td style=&quot;text-align: right&quot;&gt;2&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&quot;text-align: left&quot;&gt;9 - Jennifer Lee&lt;/td&gt;
-&lt;td style=&quot;text-align: right&quot;&gt;9&lt;/td&gt;
-&lt;td style=&quot;text-align: right&quot;&gt;63&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&quot;text-align: left&quot;&gt;10 - Jennifer Lee&lt;/td&gt;
-&lt;td style=&quot;text-align: right&quot;&gt;18&lt;/td&gt;
-&lt;td style=&quot;text-align: right&quot;&gt;64&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td style=&quot;text-align: left&quot;&gt;11 - Jennifer Lee&lt;/td&gt;
-&lt;td style=&quot;text-align: right&quot;&gt;0&lt;/td&gt;
-&lt;td style=&quot;text-align: right&quot;&gt;18&lt;/td&gt;
-&lt;/tr&gt;
-&lt;/tbody&gt;&lt;/table&gt;
+&lt;p&gt;Note: The winning design as accepted by popular vote will be treated as a proposal that can be modified and iterated upon to reach its final form. &lt;/p&gt;
+
+&lt;p&gt;There is no limit on the number of entries per individual.&lt;/p&gt;
+
+&lt;h2 id=&quot;inspiration&quot;&gt;INSPIRATION&lt;/h2&gt;
+
+&lt;p&gt;While designing the logo, keep in mind what describes Storm: &lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Distributed Computation&lt;/li&gt;
+&lt;li&gt;High Performance&lt;/li&gt;
+&lt;li&gt;Fault Tolerance&lt;/li&gt;
+&lt;li&gt;Community Driven&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;deadline&quot;&gt;DEADLINE&lt;/h2&gt;
+
+&lt;p&gt;The contest will be open until &lt;strong&gt;Wednesday, April 30, 2014&lt;/strong&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;how-to-enter&quot;&gt;HOW TO ENTER&lt;/h2&gt;
+
+&lt;p&gt;Send the &lt;a href=&quot;mailto:dev@storm.incubator.apache.org&quot;&gt;Apache Storm Mailing List&lt;/a&gt; links to:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;A PNG version of the logo (and it&amp;#39;s scalable variations) &lt;/li&gt;
+&lt;li&gt;A ZIP file with all assets&lt;/li&gt;
+&lt;li&gt;(Optional) A link to a blog post, etc. describing the proposal&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Alternatively, contributers can mail the above to the &lt;a href=&quot;mailto:ptgoetz@apache.org&quot;&gt;contest coordinator&lt;/a&gt; to have them forwarded to the mailing list.&lt;/p&gt;
+
+&lt;p&gt;Contributors may also publicise their proposal by tweeting links to a proposal with the hashtag #stormlogocontest&lt;/p&gt;
+
+&lt;h2 id=&quot;license&quot;&gt;LICENSE&lt;/h2&gt;
+
+&lt;p&gt;The authors of the selected Apache Storm logo(s) will be required to donate them to the Apache Storm project and complete and &lt;a href=&quot;http://www.apache.org/licenses/icla.txt&quot;&gt;Apache Individual Contributor License Agreement(ICLA)&lt;/a&gt;&lt;/p&gt;
 </description>
-        <pubDate>Tue, 27 May 2014 00:00:00 -0400</pubDate>
-        <link>http://storm.apache.org/2014/05/27/round1-results.html</link>
-        <guid isPermaLink="true">http://storm.apache.org/2014/05/27/round1-results.html</guid>
+        <pubDate>Thu, 10 Apr 2014 00:00:00 -0400</pubDate>
+        <link>http://storm.apache.org/2014/04/10/storm-logo-contest.html</link>
+        <guid isPermaLink="true">http://storm.apache.org/2014/04/10/storm-logo-contest.html</guid>
         
         
       </item>
     
       <item>
-        <title>Logo Entry No. 11 - Jennifer Lee</title>
-        <description>&lt;p&gt;&lt;img src=&quot;/images/logocontest/jlee2/storm_logo.jpg&quot; alt=&quot;Storm Brand&quot;&gt;&lt;/p&gt;
+        <title>Storm 0.9.0 Released</title>
+        <description>&lt;p&gt;We are pleased to announce that Storm 0.9.0 has been released and is available from &lt;a href=&quot;/downloads.html&quot;&gt;the downloads page&lt;/a&gt;. This release represents an important milestone in the evolution of Storm.&lt;/p&gt;
+
+&lt;p&gt;While a number of new features have been added, a key focus area for this release has been stability-related fixes. Though many users are successfully running work-in-progress builds for Storm 0.9.x in production, this release represents the most stable version to-date, and is highly recommended for everyone, especially users of 0.8.x versions.&lt;/p&gt;
+
+&lt;h2 id=&quot;netty-transport&quot;&gt;Netty Transport&lt;/h2&gt;
+
+&lt;p&gt;The first hightlight of this release is the new &lt;a href=&quot;http://netty.io/index.html&quot;&gt;Netty&lt;/a&gt; Transport contributed by &lt;a href=&quot;http://yahooeng.tumblr.com/&quot;&gt;Yahoo! Engineering&lt;/a&gt;. Storm&amp;#39;s core network transport mechanism is now plugable, and Storm now comes with two implementations: The original 0MQ transport, and a new Netty-based implementation.&lt;/p&gt;
+
+&lt;p&gt;In earlier versions, Storm relied solely on 0MQ for transport. Since 0MQ is a native library, it was highly platform-dependent and, at times, challenging to install properly. In addition, stability between versions varied widely between versions and only a relatively old 0MQ version (2.1.7) was certified to work with Storm.&lt;/p&gt;
+
+&lt;p&gt;The Netty transport offers a pure Java alternative that eliminates Storm&amp;#39;s dependency on native libraries. The Netty transport&amp;#39;s performance is up to twice as fast as 0MQ, and it will open the door for authorization and authentication between worker processes. For an in-depth performance comparison of the 0MQ and Netty transports, see &lt;a href=&quot;http://yahooeng.tumblr.com/post/64758709722/making-storm-fly-with-netty&quot;&gt;this blog post&lt;/a&gt; by Storm contributor &lt;a href=&quot;https://github.com/revans2&quot;&gt;Bobby Evans&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;To configure Storm to use the Netty transport simply add the following to your &lt;code&gt;storm.yaml&lt;/code&gt; configuration and adjust the values to best suit your use-case:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;storm.messaging.transport: &amp;quot;backtype.storm.messaging.netty.Context&amp;quot;
+storm.messaging.netty.server_worker_threads: 1
+storm.messaging.netty.client_worker_threads: 1
+storm.messaging.netty.buffer_size: 5242880
+storm.messaging.netty.max_retries: 100
+storm.messaging.netty.max_wait_ms: 1000
+storm.messaging.netty.min_wait_ms: 100
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;You can also write your own transport implementation by implementing the &lt;a href=&quot;https://github.com/apache/incubator-storm/blob/master/storm-core/src/jvm/backtype/storm/messaging/IContext.java&quot;&gt;&lt;code&gt;backtype.storm.messaging.IContext&lt;/code&gt;&lt;/a&gt; interface.&lt;/p&gt;
+
+&lt;h2 id=&quot;log-viewer-ui&quot;&gt;Log Viewer UI&lt;/h2&gt;
+
+&lt;p&gt;Storm now includes a helpful new feature for debugging and monitoring topologies: The &lt;code&gt;logviewer&lt;/code&gt; daemon.&lt;/p&gt;
+
+&lt;p&gt;In earlier versions of Storm, viewing worker logs involved determining a worker&amp;#39;s location (host/port), typically through Storm UI, then &lt;code&gt;ssh&lt;/code&gt;ing to that host and &lt;code&gt;tail&lt;/code&gt;ing the corresponding worker log file. With the new log viewer. You can now easily access a specific worker&amp;#39;s log in a web browser by clicking on a worker&amp;#39;s port number right from Storm UI.&lt;/p&gt;
+
+&lt;p&gt;The &lt;code&gt;logviewer&lt;/code&gt; daemon runs as a separate process on Storm supervisor nodes. To enable the &lt;code&gt;logviewer&lt;/code&gt; run the following command (under supervision) on your cluster&amp;#39;s supervisor nodes:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;$ storm logviewer
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;h2 id=&quot;improved-windows-support&quot;&gt;Improved Windows Support&lt;/h2&gt;
+
+&lt;p&gt;In previous versions, running Storm on Microsoft Windows required installing third-party binaries (0MQ), modifying Storm&amp;#39;s source, and adding Windows-specific scripts. With the addition of the platform-independent Netty transport, as well as numerous enhancements to make Storm more platform-independent, running Storm on Windows is easier than ever.&lt;/p&gt;
+
+&lt;h2 id=&quot;security-improvements&quot;&gt;Security Improvements&lt;/h2&gt;
+
+&lt;p&gt;Security, Authentication, and Authorization have been and will continue to be important focus areas for upcoming features. Storm 0.9.0 introduces an API for pluggable tuple serialization and a blowfish encryption based implementation for encrypting tuple data for sensitive use cases.&lt;/p&gt;
+
+&lt;h2 id=&quot;api-compatibility-and-upgrading&quot;&gt;API Compatibility and Upgrading&lt;/h2&gt;
+
+&lt;p&gt;For most Storm topology developers, upgrading to 0.9.0 is simply a matter of updating the &lt;a href=&quot;https://clojars.org/storm&quot;&gt;dependency&lt;/a&gt;. Storm&amp;#39;s core API has changed very little since the 0.8.2 release.&lt;/p&gt;
+
+&lt;p&gt;On the devops side, when upgrading to a new Storm release, it is safest to clear any existing state (Zookeeper, &lt;code&gt;storm.local.dir&lt;/code&gt;), prior to upgrading.&lt;/p&gt;
+
+&lt;h2 id=&quot;logging-changes&quot;&gt;Logging Changes&lt;/h2&gt;
+
+&lt;p&gt;Another important change in 0.9.0 has to do with logging. Storm has largely switched over to the &lt;a href=&quot;http://www.slf4j.org&quot;&gt;slf4j API&lt;/a&gt; (backed by a &lt;a href=&quot;http://logback.qos.ch&quot;&gt;logback&lt;/a&gt; logger implementation). Some Storm dependencies rely on the log4j API, so Storm currently depends on &lt;a href=&quot;http://www.slf4j.org/legacy.html#log4j-over-slf4j&quot;&gt;log4j-over-slf4j&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;These changes have implications for existing topologies and topology components that use the log4j API.&lt;/p&gt;
+
+&lt;p&gt;In general, and when possible, Storm topologies and topology components should use the &lt;a href=&quot;http://www.slf4j.org&quot;&gt;slf4j API&lt;/a&gt; for logging.&lt;/p&gt;
+
+&lt;h2 id=&quot;thanks&quot;&gt;Thanks&lt;/h2&gt;
+
+&lt;p&gt;Special thanks are due to all those who have contributed to Storm -- whether through direct code contributions, documentation, bug reports, or helping other users on the mailing lists. Your efforts are much appreciated.&lt;/p&gt;
+
+&lt;h2 id=&quot;changelog&quot;&gt;Changelog&lt;/h2&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Update build configuration to force compatibility with Java 1.6&lt;/li&gt;
+&lt;li&gt;Fixed a netty client issue where sleep times for reconnection could be negative (thanks brndnmtthws)&lt;/li&gt;
+&lt;li&gt;Fixed an issue that would cause storm-netty unit tests to fail&lt;/li&gt;
+&lt;li&gt;Added configuration to limit ShellBolt internal _pendingWrites queue length (thanks xiaokang)&lt;/li&gt;
+&lt;li&gt;Fixed a a netty client issue where sleep times for reconnection could be negative (thanks brndnmtthws)&lt;/li&gt;
+&lt;li&gt;Fixed a display issue with system stats in Storm UI (thanks d2r)&lt;/li&gt;
+&lt;li&gt;Nimbus now does worker heartbeat timeout checks as soon as heartbeats are updated (thanks d2r)&lt;/li&gt;
+&lt;li&gt;The logviewer now determines log file location by examining the logback configuration (thanks strongh)&lt;/li&gt;
+&lt;li&gt;Allow tick tuples to work with the system bolt (thanks xumingming)&lt;/li&gt;
+&lt;li&gt;Add default configuration values for the netty transport and the ability to configure the number of worker threads (thanks revans2)&lt;/li&gt;
+&lt;li&gt;Added timeout to unit tests to prevent a situation where tests would hang indefinitely (thanks d2r)&lt;/li&gt;
+&lt;li&gt;Fixed an issue in the system bolt where local mode would not be detected accurately (thanks miofthena)&lt;/li&gt;
+&lt;li&gt;Fixed &lt;code&gt;storm jar&lt;/code&gt; command to work properly when STORM_JAR_JVM_OPTS is not specified (thanks roadkill001)&lt;/li&gt;
+&lt;li&gt;All logging now done with slf4j&lt;/li&gt;
+&lt;li&gt;Replaced log4j logging system with logback&lt;/li&gt;
+&lt;li&gt;Logs are now limited to 1GB per worker (configurable via logging configuration file)&lt;/li&gt;
+&lt;li&gt;Build upgraded to leiningen 2.0&lt;/li&gt;
+&lt;li&gt;Revamped Trident spout interfaces to support more dynamic spouts, such as a spout who reads from a changing set of brokers&lt;/li&gt;
+&lt;li&gt;How tuples are serialized is now pluggable (thanks anfeng)&lt;/li&gt;
+&lt;li&gt;Added blowfish encryption based tuple serialization (thanks anfeng)&lt;/li&gt;
+&lt;li&gt;Have storm fall back to installed storm.yaml (thanks revans2)&lt;/li&gt;
+&lt;li&gt;Improve error message when Storm detects bundled storm.yaml to show the URL&amp;#39;s for offending resources (thanks revans2)&lt;/li&gt;
+&lt;li&gt;Nimbus throws NotAliveException instead of FileNotFoundException from various query methods when topology is no longer alive (thanks revans2)&lt;/li&gt;
+&lt;li&gt;Escape HTML and Javascript appropriately in Storm UI (thanks d2r)&lt;/li&gt;
+&lt;li&gt;Storm&amp;#39;s Zookeeper client now uses bounded exponential backoff strategy on failures&lt;/li&gt;
+&lt;li&gt;Automatically drain and log error stream of multilang subprocesses&lt;/li&gt;
+&lt;li&gt;Append component name to thread name of running executors so that logs are easier to read&lt;/li&gt;
+&lt;li&gt;Messaging system used for passing messages between workers is now pluggable (thanks anfeng)&lt;/li&gt;
+&lt;li&gt;Netty implementation of messaging (thanks anfeng)&lt;/li&gt;
+&lt;li&gt;Include topology id, worker port, and worker id in properties for worker processes, useful for logging (thanks d2r)&lt;/li&gt;
+&lt;li&gt;Tick tuples can now be scheduled using floating point seconds (thanks tscurtu)&lt;/li&gt;
+&lt;li&gt;Added log viewer daemon and links from UI to logviewers (thanks xiaokang)&lt;/li&gt;
+&lt;li&gt;DRPC server childopts now configurable (thanks strongh)&lt;/li&gt;
+&lt;li&gt;Default number of ackers to number of workers, instead of just one (thanks lyogavin)&lt;/li&gt;
+&lt;li&gt;Validate that Storm configs are of proper types/format/structure (thanks d2r)&lt;/li&gt;
+&lt;li&gt;FixedBatchSpout will now replay batches appropriately on batch failure (thanks ptgoetz)&lt;/li&gt;
+&lt;li&gt;Can set JAR_JVM_OPTS env variable to add jvm options when calling &amp;#39;storm jar&amp;#39; (thanks srmelody)&lt;/li&gt;
+&lt;li&gt;Throw error if batch id for transaction is behind the batch id in the opaque value (thanks mrflip)&lt;/li&gt;
+&lt;li&gt;Sort topologies by name in UI (thanks jaked)&lt;/li&gt;
+&lt;li&gt;Added LoggingMetricsConsumer to log all metrics to a file, by default not enabled (thanks mrflip)&lt;/li&gt;
+&lt;li&gt;Add prepare(Map conf) method to TopologyValidator (thanks ankitoshniwal)&lt;/li&gt;
+&lt;li&gt;Bug fix: Supervisor provides full path to workers to logging config rather than relative path (thanks revans2) &lt;/li&gt;
+&lt;li&gt;Bug fix: Call ReducerAggregator#init properly when used within persistentAggregate (thanks lorcan)&lt;/li&gt;
+&lt;li&gt;Bug fix: Set component-specific configs correctly for Trident spouts&lt;/li&gt;
+&lt;/ul&gt;
 </description>
-        <pubDate>Tue, 29 Apr 2014 00:00:00 -0400</pubDate>
-        <link>http://storm.apache.org/2014/04/29/logo-jlee3.html</link>
-        <guid isPermaLink="true">http://storm.apache.org/2014/04/29/logo-jlee3.html</guid>
+        <pubDate>Sun, 08 Dec 2013 00:00:00 -0500</pubDate>
+        <link>http://storm.apache.org/2013/12/08/storm090-released.html</link>
+        <guid isPermaLink="true">http://storm.apache.org/2013/12/08/storm090-released.html</guid>
         
         
       </item>
     
       <item>
-        <title>Logo Entry No. 10 - Jennifer Lee</title>
-        <description>&lt;p&gt;&lt;img src=&quot;/images/logocontest/jlee3/storm_logo.jpg&quot; alt=&quot;Storm Brand&quot;&gt;&lt;/p&gt;
+        <title>Storm 0.8.2 released</title>
+        <description>&lt;p&gt;Storm 0.8.2 has been released and is available from &lt;a href=&quot;/downloads.html&quot;&gt;the downloads page&lt;/a&gt;. This release contains a ton of improvements and fixes and is a highly recommended upgrade for everyone.&lt;/p&gt;
+
+&lt;h2 id=&quot;isolation-scheduler&quot;&gt;Isolation Scheduler&lt;/h2&gt;
+
+&lt;p&gt;The highlight of this release is the new &amp;quot;Isolation scheduler&amp;quot; that makes it easy and safe to share a cluster among many topologies. The isolation scheduler lets you specify which topologies should be &amp;quot;isolated&amp;quot;, meaning that they run on a dedicated set of machines within the cluster where no other topologies will be running. These isolated topologies are given priority on the cluster, so resources will be allocated to isolated topologies if there&amp;#39;s competition with non-isolated topologies, and resources will be taken away from non-isolated topologies if necessary to get resources for an isolated topology. Once all isolated topologies are allocated, the remaining machines on the cluster are shared among all non-isolated topologies.&lt;/p&gt;
+
+&lt;p&gt;You configure the isolation scheduler in the Nimbus configuration. Set &amp;quot;storm.scheduler&amp;quot; to &amp;quot;backtype.storm.scheduler.IsolationScheduler&amp;quot;. Then, use the &amp;quot;isolation.scheduler.machines&amp;quot; config to specify how many machines each topology should get. This config is a map from topology name to number of machines. For example:&lt;/p&gt;
+
+&lt;script src=&quot;https://gist.github.com/4514691.js&quot;&gt;&lt;/script&gt;
+
+&lt;p&gt;Any topologies submitted to the cluster not listed there will not be isolated. Note that there is no way for a user of Storm to affect their isolation settings – this is only allowed by the administrator of the cluster (this is very much intentional).&lt;/p&gt;
+
+&lt;p&gt;The isolation scheduler solves the multi-tenancy problem – avoiding resource contention between topologies – by providing full isolation between topologies. The intention is that &amp;quot;productionized&amp;quot; topologies should be listed in the isolation config, and test or in-development topologies should not. The remaining machines on the cluster serve the dual role of failover for isolated topologies and for running the non-isolated topologies.&lt;/p&gt;
+
+&lt;h2 id=&quot;storm-ui-improvements&quot;&gt;Storm UI improvements&lt;/h2&gt;
+
+&lt;p&gt;The Storm UI has also been made significantly more useful. There are new stats &amp;quot;#executed&amp;quot;, &amp;quot;execute latency&amp;quot;, and &amp;quot;capacity&amp;quot; tracked for all bolts. The &amp;quot;capacity&amp;quot; metric is very useful and tells you what % of the time in the last 10 minutes the bolt spent executing tuples. If this value is close to 1, then the bolt is &amp;quot;at capacity&amp;quot; and is a bottleneck in your topology. The solution to at-capacity bolts is to increase the parallelism of that bolt.&lt;/p&gt;
+
+&lt;p&gt;Another useful improvement is the ability to kill, activate, deactivate, and rebalance topologies from the Storm UI.&lt;/p&gt;
+
+&lt;h2 id=&quot;important-bug-fixes&quot;&gt;Important bug fixes&lt;/h2&gt;
+
+&lt;p&gt;There are also a few important bug fixes in this release. We fixed two bugs that could cause a topology to freeze up and stop processing. One of these bugs was extremely unlikely to hit, but the other one was a regression in 0.8.1 and there was a small chance of hitting it anytime a worker was restarted.&lt;/p&gt;
+
+&lt;h2 id=&quot;changelog&quot;&gt;Changelog&lt;/h2&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Added backtype.storm.scheduler.IsolationScheduler. This lets you run topologies that are completely isolated at the machine level. Configure Nimbus to isolate certain topologies, and how many machines to give to each of those topologies, with the isolation.scheduler.machines config in Nimbus&amp;#39;s storm.yaml. Topologies run on the cluster that are not listed there will share whatever remaining machines there are on the cluster after machines are allocated to the listed topologies.&lt;/li&gt;
+&lt;li&gt;Storm UI now uses nimbus.host to find Nimbus rather than always using localhost (thanks Frostman)&lt;/li&gt;
+&lt;li&gt;Added report-error! to Clojure DSL&lt;/li&gt;
+&lt;li&gt;Automatically throttle errors sent to Zookeeper/Storm UI when too many are reported in a time interval (all errors are still logged) Configured with TOPOLOGY_MAX_ERROR_REPORT_PER_INTERVAL and TOPOLOGY_ERROR_THROTTLE_INTERVAL_SECS&lt;/li&gt;
+&lt;li&gt;Kryo instance used for serialization can now be controlled via IKryoFactory interface and TOPOLOGY_KRYO_FACTORY config&lt;/li&gt;
+&lt;li&gt;Add ability to plug in custom code into Nimbus to allow/disallow topologies to be submitted via NIMBUS_TOPOLOGY_VALIDATOR config&lt;/li&gt;
+&lt;li&gt;Added TOPOLOGY_TRIDENT_BATCH_EMIT_INTERVAL_MILLIS config to control how often a batch can be emitted in a Trident topology. Defaults to 500 milliseconds. This is used to prevent too much load from being placed on Zookeeper in the case that batches are being processed super quickly.&lt;/li&gt;
+&lt;li&gt;Log any topology submissions errors in nimbus.log&lt;/li&gt;
+&lt;li&gt;Add static helpers in Config when using regular maps&lt;/li&gt;
+&lt;li&gt;Make Trident much more memory efficient during failures by immediately removing state for failed attempts when a more recent attempt is seen&lt;/li&gt;
+&lt;li&gt;Add ability to name portions of a Trident computation and have those names appear in the Storm UI&lt;/li&gt;
+&lt;li&gt;Show Nimbus and topology configurations through Storm UI (thanks rnfein)&lt;/li&gt;
+&lt;li&gt;Added ITupleCollection interface for TridentState&amp;#39;s and TupleCollectionGet QueryFunction for getting the full contents of a state. MemoryMapState and LRUMemoryMapState implement this&lt;/li&gt;
+&lt;li&gt;Can now submit a topology in inactive state. Storm will wait to call open/prepare on the spouts/bolts until it is first activated.&lt;/li&gt;
+&lt;li&gt;Can now activate, deactive, rebalance, and kill topologies from the Storm UI (thanks Frostman)&lt;/li&gt;
+&lt;li&gt;Can now use --config option to override which yaml file from ~/.storm to use for the config (thanks tjun)&lt;/li&gt;
+&lt;li&gt;Redesigned the pluggable resource scheduler (INimbus, ISupervisor) interfaces to allow for much simpler integrations&lt;/li&gt;
+&lt;li&gt;Added prepare method to IScheduler&lt;/li&gt;
+&lt;li&gt;Added &amp;quot;throws Exception&amp;quot; to TestJob interface&lt;/li&gt;
+&lt;li&gt;Added reportError to multilang protocol and updated Python and Ruby adapters to use it (thanks Lazyshot)&lt;/li&gt;
+&lt;li&gt;Number tuples executed now tracked and shown in Storm UI&lt;/li&gt;
+&lt;li&gt;Added ReportedFailedException which causes a batch to fail without killing worker and reports the error to the UI&lt;/li&gt;
+&lt;li&gt;Execute latency now tracked and shown in Storm UI&lt;/li&gt;
+&lt;li&gt;Adding testTuple methods for easily creating Tuple instances to Testing API (thanks xumingming)&lt;/li&gt;
+&lt;li&gt;Trident now throws an error during construction of a topology when try to select fields that don&amp;#39;t exist in a stream (thanks xumingming)&lt;/li&gt;
+&lt;li&gt;Compute the capacity of a bolt based on execute latency and #executed over last 10 minutes and display in UI&lt;/li&gt;
+&lt;li&gt;Storm UI displays exception instead of blank page when there&amp;#39;s an error rendering the page (thanks Frostman)&lt;/li&gt;
+&lt;li&gt;Added MultiScheme interface (thanks sritchie)&lt;/li&gt;
+&lt;li&gt;Added MockTridentTuple for testing (thanks emblem)&lt;/li&gt;
+&lt;li&gt;Add whitelist methods to Cluster to allow only a subset of hosts to be revealed as available slots&lt;/li&gt;
+&lt;li&gt;Updated Trident Debug filter to take in an identifier to use when logging (thanks emblem)&lt;/li&gt;
+&lt;li&gt;Number of DRPC server worker threads now customizable (thanks xiaokang)&lt;/li&gt;
+&lt;li&gt;DRPC server now uses a bounded queue for requests to prevent being overloaded with requests (thanks xiaokang)&lt;/li&gt;
+&lt;li&gt;Add &lt;strong&gt;hash&lt;/strong&gt; method to all generated Python Thrift objects so that Python code can read Nimbus stats which use Thrift objects as dict keys&lt;/li&gt;
+&lt;li&gt;Bug fix: Fix for bug that could cause topology to hang when ZMQ blocks sending to a worker that got reassigned&lt;/li&gt;
+&lt;li&gt;Bug fix: Fix deadlock bug due to variant of dining philosophers problem. Spouts now use an overflow buffer to prevent blocking and guarantee that it can consume the incoming queue of acks/fails.&lt;/li&gt;
+&lt;li&gt;Bug fix: Fix race condition in supervisor that would lead to supervisor continuously crashing due to not finding &amp;quot;stormconf.ser&amp;quot; file for an already killed topology&lt;/li&gt;
+&lt;li&gt;Bug fix: bin/storm script now displays a helpful error message when an invalid command is specified&lt;/li&gt;
+&lt;li&gt;Bug fix: fixed NPE when emitting during emit method of Aggregator&lt;/li&gt;
+&lt;li&gt;Bug fix: URLs with periods in them in Storm UI now route correctly&lt;/li&gt;
+&lt;li&gt;Bug fix: Fix occasional cascading worker crashes due when a worker dies due to not removing connections from connection cache appropriately&lt;/li&gt;
+&lt;/ul&gt;
 </description>
-        <pubDate>Tue, 29 Apr 2014 00:00:00 -0400</pubDate>
-        <link>http://storm.apache.org/2014/04/29/logo-jlee2.html</link>
-        <guid isPermaLink="true">http://storm.apache.org/2014/04/29/logo-jlee2.html</guid>
+        <pubDate>Fri, 11 Jan 2013 00:00:00 -0500</pubDate>
+        <link>http://storm.apache.org/2013/01/11/storm082-released.html</link>
+        <guid isPermaLink="true">http://storm.apache.org/2013/01/11/storm082-released.html</guid>
         
         
       </item>
