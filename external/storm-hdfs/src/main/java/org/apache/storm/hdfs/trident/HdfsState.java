@@ -29,6 +29,7 @@ import org.apache.hadoop.hdfs.client.HdfsDataOutputStream;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.compress.CompressionCodecFactory;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.storm.hdfs.common.rotation.RotationAction;
 import org.apache.storm.hdfs.common.security.HdfsSecurityUtil;
 import org.apache.storm.hdfs.trident.format.FileNameFormat;
@@ -50,6 +51,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Serializable;
 import java.net.URI;
+import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -68,6 +70,7 @@ public class HdfsState implements State {
         protected int rotation = 0;
         protected transient Configuration hdfsConfig;
         protected ArrayList<RotationAction> rotationActions = new ArrayList<RotationAction>();
+        protected transient UserGroupInformation userGroupInformation;
 
 
         abstract void closeOutputFile() throws IOException;
@@ -106,7 +109,7 @@ public class HdfsState implements State {
         }
 
 
-        void prepare(Map conf, int partitionIndex, int numPartitions) {
+        void prepare(final Map conf, final int partitionIndex, final int numPartitions) {
             if (this.rotationPolicy == null) {
                 throw new IllegalStateException("RotationPolicy must be specified.");
             } else if (this.rotationPolicy instanceof FileSizeRotationPolicy) {
@@ -132,8 +135,21 @@ public class HdfsState implements State {
             }
             try {
                 HdfsSecurityUtil.login(conf, hdfsConfig);
-                doPrepare(conf, partitionIndex, numPartitions);
-                this.currentFile = createOutputFile();
+                String ugiUser = this.hdfsConfig.get("hdfs.proxyuser");
+                if (ugiUser == null) {
+                    this.userGroupInformation = UserGroupInformation.getLoginUser();
+                } else {
+                    this.userGroupInformation = UserGroupInformation.createProxyUser
+                            (ugiUser,
+                                    UserGroupInformation.getLoginUser());
+                }
+                this.userGroupInformation.doAs(new PrivilegedExceptionAction<Void>() {
+                    public Void run() throws Exception {
+                        doPrepare(conf, partitionIndex, numPartitions);
+                        currentFile = createOutputFile();
+                        return null;
+                    }
+                });
 
             } catch (Exception e) {
                 throw new RuntimeException("Error preparing HdfsState: " + e.getMessage(), e);
@@ -419,7 +435,6 @@ public class HdfsState implements State {
         }
     }
 
-
     public static final Logger LOG = LoggerFactory.getLogger(HdfsState.class);
     private Options options;
     private volatile TxnRecord lastSeenTxn;
@@ -429,9 +444,20 @@ public class HdfsState implements State {
         this.options = options;
     }
 
-    void prepare(Map conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
+    void prepare(final Map conf, IMetricsContext metrics, final int
+            partitionIndex, int numPartitions) {
         this.options.prepare(conf, partitionIndex, numPartitions);
-        initLastTxn(conf, partitionIndex);
+        try {
+            this.options.userGroupInformation.doAs(new PrivilegedExceptionAction<Void>() {
+                public Void run() throws Exception {
+                    initLastTxn(conf, partitionIndex);
+                    return null;
+                }
+            });
+        } catch (Exception e) {
+            throw new RuntimeException("Error preparing HdfsState: " + e
+                    .getMessage(), e);
+        }
     }
 
     private TxnRecord readTxnRecord(Path path) throws IOException {
@@ -524,31 +550,53 @@ public class HdfsState implements State {
     }
 
     @Override
-    public void beginCommit(Long txId) {
-        if (txId <= lastSeenTxn.txnid) {
-            LOG.info("txID {} is already processed, lastSeenTxn {}. Triggering recovery.", txId, lastSeenTxn);
-            long start = System.currentTimeMillis();
-            options.recover(lastSeenTxn.dataFilePath, lastSeenTxn.offset);
-            LOG.info("Recovery took {} ms.", System.currentTimeMillis() - start);
+    public void beginCommit(final Long txId) {
+        try {
+            this.options.userGroupInformation.doAs(new PrivilegedExceptionAction<Void>() {
+                public Void run() throws Exception {
+                    if (txId <= lastSeenTxn.txnid) {
+                        LOG.info("txID {} is already processed, lastSeenTxn {}. Triggering recovery.", txId, lastSeenTxn);
+                        long start = System.currentTimeMillis();
+                        options.recover(lastSeenTxn.dataFilePath, lastSeenTxn.offset);
+                        LOG.info("Recovery took {} ms.", System.currentTimeMillis() - start);
+                    }
+                    updateIndex(txId);
+                    return null;
+                }
+            });
+        } catch (Exception e) {
+            throw new RuntimeException("Error in beginCommit HdfsState: " + e
+                    .getMessage(), e);
         }
-        updateIndex(txId);
+
     }
 
     @Override
-    public void commit(Long txId) {
+    public void commit(final Long txId) {
         try {
-            options.doCommit(txId);
-        } catch (IOException e) {
-            LOG.warn("Commit failed due to IOException. Failing the batch.", e);
+            this.options.userGroupInformation.doAs(new PrivilegedExceptionAction<Void>() {
+                public Void run() throws Exception {
+                    options.doCommit(txId);
+                    return null;
+                }
+            });
+        } catch (Exception e) {
+            LOG.warn("Commit failed due to Exception. Failing the batch.", e);
             throw new FailedException(e);
         }
     }
 
-    public void updateState(List<TridentTuple> tuples, TridentCollector tridentCollector) {
+    public void updateState(final List<TridentTuple> tuples, TridentCollector
+            tridentCollector) {
         try {
-            this.options.execute(tuples);
-        } catch (IOException e) {
-            LOG.warn("Failing batch due to IOException.", e);
+            this.options.userGroupInformation.doAs(new PrivilegedExceptionAction<Void>() {
+                public Void run() throws Exception {
+                    options.execute(tuples);
+                    return null;
+                }
+            });
+        } catch (Exception e) {
+            LOG.warn("Failing batch due to Exception.", e);
             throw new FailedException(e);
         }
     }
@@ -557,6 +605,16 @@ public class HdfsState implements State {
      * for unit tests
      */
     void close() throws IOException {
-        this.options.closeOutputFile();
+        try {
+            this.options.userGroupInformation.doAs(new PrivilegedExceptionAction<Void>() {
+                public Void run() throws Exception {
+                    options.closeOutputFile();
+                    return null;
+                }
+            });
+        } catch (Exception e) {
+            throw new RuntimeException("Error while closing HdfsState: " + e
+                    .getMessage(), e);
+        }
     }
 }
