@@ -8,7 +8,7 @@
     <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
 
-    <title>Project Information</title>
+    <title>Azue Event Hubs Integration</title>
 
     <!-- Bootstrap core CSS -->
     <link href="/assets/css/bootstrap.min.css" rel="stylesheet">
@@ -83,55 +83,50 @@
 
 
     <div class="container-fluid">
-    <h1 class="page-title">Project Information</h1>
+    <h1 class="page-title">Azue Event Hubs Integration</h1>
           <div class="row">
            	<div class="col-md-12">
-	             <div class="download-block">
-    <div class="row">
-          <div class="col-md-3">
-          <ul class="news">
-          
-                      <li>
-                      <a href="/about/simple-api.html">Simple API</a>
-                      </li>
-          
-                      <li>
-                      <a href="/about/scalable.html">Scalable</a>
-                      </li>
-          
-                      <li>
-                      <a href="/about/fault-tolerant.html">Fault tolerant</a>
-                      </li>
-          
-                      <li>
-                      <a href="/about/guarantees-data-processing.html">Guarantees data processing</a>
-                      </li>
-          
-                      <li>
-                      <a href="/about/multi-language.html">Use with any language</a>
-                      </li>
-          
-                      <li>
-                      <a href="/about/deployment.html">Easy to deploy and operate</a>
-                      </li>
-          
-                      <li>
-                      <a href="/about/free-and-open-source.html">Free and open source</a>
-                      </li>
-          
-          </ul>
-          </div>
-          <div class="col-md-9">
-                    <p>Storm clusters are easy to deploy, requiring a minimum of setup and configuration to get up and running. Storm&#39;s out of the box configurations are suitable for production. Read more about how to deploy a Storm cluster <a href="/documentation/Setting-up-a-Storm-cluster.html">here</a>.</p>
+	             <!-- Documentation -->
 
-<p>If you&#39;re on EC2, the <a href="https://github.com/nathanmarz/storm-deploy">storm-deploy</a> project can provision, configure, and install a Storm cluster from scratch at just the click of a button.</p>
+<p class="post-meta"></p>
 
-<p>Additionally, Storm is easy to operate once deployed. Storm has been designed to be <a href="/about/fault-tolerant.html">extremely robust</a> – the cluster will just keep on running, month after month.</p>
+<p>Storm spout and bolt implementation for Microsoft Azure Eventhubs</p>
+
+<h3 id="build">build</h3>
+<div class="highlight"><pre><code class="language-text" data-lang="text">mvn clean package
+</code></pre></div>
+<h3 id="run-sample-topology">run sample topology</h3>
+
+<p>To run the sample topology, you need to modify the config.properties file with
+the eventhubs configurations. Here is an example:</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">eventhubspout.username = [username: policy name in EventHubs Portal]
+eventhubspout.password = [password: shared access key in EventHubs Portal]
+eventhubspout.namespace = [namespace]
+eventhubspout.entitypath = [entitypath]
+eventhubspout.partitions.count = [partitioncount]
+
+# if not provided, will use storm&#39;s zookeeper settings
+# zookeeper.connectionstring=zookeeper0:2181,zookeeper1:2181,zookeeper2:2181
+
+eventhubspout.checkpoint.interval = 10
+eventhub.receiver.credits = 1024
+</code></pre></div>
+<p>Then you can use storm.cmd to submit the sample topology:
+    storm jar {jarfile} com.microsoft.eventhubs.samples.EventCount {topologyname} {spoutconffile}
+    where the {jarfile} should be: eventhubs-storm-spout-{version}-jar-with-dependencies.jar</p>
+
+<h3 id="run-eventhubsendclient">Run EventHubSendClient</h3>
+
+<p>We have included a simple EventHubs send client for testing purpose. You can run the client like this:
+    java -cp .\target\eventhubs-storm-spout-{version}-jar-with-dependencies.jar com.microsoft.eventhubs.client.EventHubSendClient
+    [username] [password] [entityPath] [partitionId] [messageSize] [messageCount]
+If you want to send messages to all partitions, use &quot;-1&quot; as partitionId.</p>
+
+<h3 id="windows-azure-eventhubs">Windows Azure Eventhubs</h3>
+<div class="highlight"><pre><code class="language-text" data-lang="text">http://azure.microsoft.com/en-us/services/event-hubs/
+</code></pre></div>
 
 
-        </div>
-    </div>
-</div>
 	          </div>
 	       </div>
 	  </div>

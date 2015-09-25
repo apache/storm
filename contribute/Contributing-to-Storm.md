@@ -18,14 +18,10 @@ Contributions to the Storm codebase should be sent as [GitHub](https://github.co
 
 For small patches, feel free to submit pull requests directly for them. For larger contributions, please use the following process. The idea behind this process is to prevent any wasted work and catch design issues early on:
 
-1. Open an issue on the [issue tracker](https://issues.apache.org/jira/browse/STORM) if one doesn't exist already
+1. Open an issue on the [JIRA issue tracker](https://issues.apache.org/jira/browse/STORM) if one doesn't exist already
 2. Comment on the issue with your plan for implementing the issue. Explain what pieces of the codebase you're going to touch and how everything is going to fit together.
 3. Storm committers will iterate with you on the design to make sure you're on the right track
-4. Implement your issue, submit a pull request, and iterate from there.
-
-### Modules built on top of Storm
-
-Modules built on top of Storm (like spouts, bolts, etc) that aren't appropriate for Storm core can be done as your own project or as part of [@stormprocessor](https://github.com/stormprocessor). To be part of @stormprocessor put your project on your own Github and then send an email to the mailing list proposing to make it part of @stormprocessor. Then the community can discuss whether it's useful enough to be part of @stormprocessor. Then you'll be added to the @stormprocessor organization and can maintain your project there. The advantage of hosting your module in @stormprocessor is that it will be easier for potential users to find your project.
+4. Implement your issue, submit a pull request prefixed with the JIRA ID (e.g. "STORM-123: add new feature foo"), and iterate from there.
 
 ### Contributing documentation
 

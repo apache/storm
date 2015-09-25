@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+
+    <title>Storm Hive Integration</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="/assets/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap theme -->
+    <link href="/assets/css/bootstrap-theme.min.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link rel="stylesheet" href="http://fortawesome.github.io/Font-Awesome/assets/font-awesome/css/font-awesome.css">
+    <link href="/css/style.css" rel="stylesheet">
+    <link href="/assets/css/owl.theme.css" rel="stylesheet">
+    <link href="/assets/css/owl.carousel.css" rel="stylesheet">
+    <script type="text/javascript" src="/assets/js/jquery.min.js"></script>
+    <script type="text/javascript" src="/assets/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="/assets/js/owl.carousel.min.js"></script>
+    <script type="text/javascript" src="/assets/js/storm.js"></script>
+    <!-- Just for debugging purposes. Don't actually copy these 2 lines! -->
+    <!--[if lt IE 9]><script src="../../assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
+    
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+
+
+  <body>
+    <header>
+  <div class="container-fluid">
+      <div class="row">
+          <div class="col-md-10">
+              <a href="/index.html"><img src="/images/logo.png" class="logo" /></a>
+            </div>
+            <div class="col-md-2">
+              <a href="/downloads.html" class="btn-std btn-block btn-download">Download</a>
+            </div>
+        </div>
+    </div>
+</header>
+<!--Header End-->
+<!--Navigation Begin-->
+<div class="navbar" role="banner">
+  <div class="container-fluid">
+      <div class="navbar-header">
+          <button class="navbar-toggle" type="button" data-toggle="collapse" data-target=".bs-navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+        </div>
+        <nav class="collapse navbar-collapse bs-navbar-collapse" role="navigation">
+          <ul class="nav navbar-nav">
+              <li><a href="/index.html" id="home">Home</a></li>
+                <li><a href="/getting-help.html" id="getting-help">Getting Help</a></li>
+                <li><a href="/about/integrates.html" id="project-info">Project Information</a></li>
+                <li><a href="/documentation.html" id="documentation">Documentation</a></li>
+                <li><a href="/talksAndVideos.html">Talks and Slideshows</a></li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" id="contribute">Community <b class="caret"></b></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="/contribute/Contributing-to-Storm.html">Contributing</a></li>
+                        <li><a href="/contribute/People.html">People</a></li>
+                        <li><a href="/contribute/BYLAWS.html">ByLaws</a></li>
+                    </ul>
+                </li>
+                <li><a href="/2015/06/15/storm0100-beta-released.html" id="news">News</a></li>
+            </ul>
+        </nav>
+    </div>
+</div>
+
+
+
+    <div class="container-fluid">
+    <h1 class="page-title">Storm Hive Integration</h1>
+          <div class="row">
+           	<div class="col-md-12">
+	             <!-- Documentation -->
+
+<p class="post-meta"></p>
+
+<p>Hive offers streaming API that allows data to be written continuously into Hive. The incoming data 
+  can be continuously committed in small batches of records into existing Hive partition or table. Once the data
+  is committed its immediately visible to all hive queries. More info on Hive Streaming API 
+  <a href="https://cwiki.apache.org/confluence/display/Hive/Streaming+Data+Ingest">https://cwiki.apache.org/confluence/display/Hive/Streaming+Data+Ingest</a></p>
+
+<p>With the help of Hive Streaming API, HiveBolt and HiveState allows users to stream data from Storm into Hive directly.
+  To use Hive streaming API users need to create a bucketed table with ORC format.  Example below</p>
+<div class="highlight"><pre><code class="language-sql" data-lang="sql">  <span class="k">create</span> <span class="k">table</span> <span class="n">test_table</span> <span class="p">(</span> <span class="n">id</span> <span class="nb">INT</span><span class="p">,</span> <span class="n">name</span> <span class="n">STRING</span><span class="p">,</span> <span class="n">phone</span> <span class="n">STRING</span><span class="p">,</span> <span class="n">street</span> <span class="n">STRING</span><span class="p">)</span> <span class="n">partitioned</span> <span class="k">by</span> <span class="p">(</span><span class="n">city</span> <span class="n">STRING</span><span class="p">,</span> <span class="k">state</span> <span class="n">STRING</span><span class="p">)</span> <span class="n">stored</span> <span class="k">as</span> <span class="n">orc</span> <span class="n">tblproperties</span> <span class="p">(</span><span class="ss">&quot;orc.compress&quot;</span><span class="o">=</span><span class="ss">&quot;NONE&quot;</span><span class="p">);</span>
+</code></pre></div>
+<h2 id="hivebolt-(org.apache.storm.hive.bolt.hivebolt)">HiveBolt (org.apache.storm.hive.bolt.HiveBolt)</h2>
+
+<p>HiveBolt streams tuples directly into Hive. Tuples are written using Hive Transactions. 
+Partitions to which HiveBolt will stream to can either created or pre-created or optionally
+HiveBolt can create them if they are missing. Fields from Tuples are mapped to table columns.
+User should make sure that Tuple field names are matched to the table column names.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">DelimitedRecordHiveMapper</span> <span class="n">mapper</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">DelimitedRecordHiveMapper</span><span class="o">()</span>
+            <span class="o">.</span><span class="na">withColumnFields</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="n">colNames</span><span class="o">));</span>
+<span class="n">HiveOptions</span> <span class="n">hiveOptions</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">HiveOptions</span><span class="o">(</span><span class="n">metaStoreURI</span><span class="o">,</span><span class="n">dbName</span><span class="o">,</span><span class="n">tblName</span><span class="o">,</span><span class="n">mapper</span><span class="o">);</span>
+<span class="n">HiveBolt</span> <span class="n">hiveBolt</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">HiveBolt</span><span class="o">(</span><span class="n">hiveOptions</span><span class="o">);</span>
+</code></pre></div>
+<h3 id="recordhivemapper">RecordHiveMapper</h3>
+
+<p>This class maps Tuple field names to Hive table column names.
+   There are two implementaitons available</p>
+
+<ul>
+<li>DelimitedRecordHiveMapper (org.apache.storm.hive.bolt.mapper.DelimitedRecordHiveMapper)</li>
+<li>JsonRecordHiveMapper (org.apache.storm.hive.bolt.mapper.JsonRecordHiveMapper)</li>
+</ul>
+<div class="highlight"><pre><code class="language-java" data-lang="java">   <span class="n">DelimitedRecordHiveMapper</span> <span class="n">mapper</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">DelimitedRecordHiveMapper</span><span class="o">()</span>
+            <span class="o">.</span><span class="na">withColumnFields</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="n">colNames</span><span class="o">))</span>
+            <span class="o">.</span><span class="na">withPartitionFields</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="n">partNames</span><span class="o">));</span>
+    <span class="n">or</span>
+   <span class="n">DelimitedRecordHiveMapper</span> <span class="n">mapper</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">DelimitedRecordHiveMapper</span><span class="o">()</span>
+            <span class="o">.</span><span class="na">withColumnFields</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="n">colNames</span><span class="o">))</span>
+            <span class="o">.</span><span class="na">withTimeAsPartitionField</span><span class="o">(</span><span class="s">&quot;YYYY/MM/DD&quot;</span><span class="o">);</span>
+</code></pre></div>
+<table><thead>
+<tr>
+<th>Arg</th>
+<th>Description</th>
+<th>Type</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>withColumnFields</td>
+<td>field names in a tuple to be mapped to table column names</td>
+<td>Fields (required)</td>
+</tr>
+<tr>
+<td>withPartitionFields</td>
+<td>field names in a tuple can be mapped to hive table partitions</td>
+<td>Fields</td>
+</tr>
+<tr>
+<td>withTimeAsPartitionField</td>
+<td>users can select system time as partition in hive table</td>
+<td>String . Date format</td>
+</tr>
+</tbody></table>
+
+<h3 id="hiveoptions-(org.apache.storm.hive.common.hiveoptions)">HiveOptions (org.apache.storm.hive.common.HiveOptions)</h3>
+
+<p>HiveBolt takes in HiveOptions as a constructor arg.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java">  <span class="n">HiveOptions</span> <span class="n">hiveOptions</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">HiveOptions</span><span class="o">(</span><span class="n">metaStoreURI</span><span class="o">,</span><span class="n">dbName</span><span class="o">,</span><span class="n">tblName</span><span class="o">,</span><span class="n">mapper</span><span class="o">)</span>
+                                <span class="o">.</span><span class="na">withTxnsPerBatch</span><span class="o">(</span><span class="mi">10</span><span class="o">)</span>
+                                <span class="o">.</span><span class="na">withBatchSize</span><span class="o">(</span><span class="mi">1000</span><span class="o">)</span>
+                                <span class="o">.</span><span class="na">withIdleTimeout</span><span class="o">(</span><span class="mi">10</span><span class="o">)</span>
+</code></pre></div>
+<p>HiveOptions params</p>
+
+<table><thead>
+<tr>
+<th>Arg</th>
+<th>Description</th>
+<th>Type</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>metaStoreURI</td>
+<td>hive meta store URI (can be found in hive-site.xml)</td>
+<td>String (required)</td>
+</tr>
+<tr>
+<td>dbName</td>
+<td>database name</td>
+<td>String (required)</td>
+</tr>
+<tr>
+<td>tblName</td>
+<td>table name</td>
+<td>String (required)</td>
+</tr>
+<tr>
+<td>mapper</td>
+<td>Mapper class to map Tuple field names to Table column names</td>
+<td>DelimitedRecordHiveMapper or JsonRecordHiveMapper (required)</td>
+</tr>
+<tr>
+<td>withTxnsPerBatch</td>
+<td>Hive grants a <em>batch of transactions</em> instead of single transactions to streaming clients like HiveBolt.This setting configures the number of desired transactions per Transaction Batch. Data from all transactions in a single batch end up in a single file. Flume will write a maximum of batchSize events in each transaction in the batch. This setting in conjunction with batchSize provides control over the size of each file. Note that eventually Hive will transparently compact these files into larger files.</td>
+<td>Integer . default 100</td>
+</tr>
+<tr>
+<td>withMaxOpenConnections</td>
+<td>Allow only this number of open connections. If this number is exceeded, the least recently used connection is closed.</td>
+<td>Integer . default 100</td>
+</tr>
+<tr>
+<td>withBatchSize</td>
+<td>Max number of events written to Hive in a single Hive transaction</td>
+<td>Integer. default 15000</td>
+</tr>
+<tr>
+<td>withCallTimeout</td>
+<td>(In milliseconds) Timeout for Hive &amp; HDFS I/O operations, such as openTxn, write, commit, abort.</td>
+<td>Integer. default 10000</td>
+</tr>
+<tr>
+<td>withHeartBeatInterval</td>
+<td>(In seconds) Interval between consecutive heartbeats sent to Hive to keep unused transactions from expiring. Set this value to 0 to disable heartbeats.</td>
+<td>Integer. default 240</td>
+</tr>
+<tr>
+<td>withAutoCreatePartitions</td>
+<td>HiveBolt will automatically create the necessary Hive partitions to stream to.</td>
+<td>Boolean. default true</td>
+</tr>
+<tr>
+<td>withKerberosPrinicipal</td>
+<td>Kerberos user principal for accessing secure Hive</td>
+<td>String</td>
+</tr>
+<tr>
+<td>withKerberosKeytab</td>
+<td>Kerberos keytab for accessing secure Hive</td>
+<td>String</td>
+</tr>
+<tr>
+<td>withTickTupleInterval</td>
+<td>(In seconds) If &gt; 0 then the Hive Bolt will periodically flush transaction batches. Enabling this is recommended to avoid tuple timeouts while waiting for a batch to fill up.</td>
+<td>Integer. default 0</td>
+</tr>
+</tbody></table>
+
+<h2 id="hivestate-(org.apache.storm.hive.trident.hivetrident)">HiveState (org.apache.storm.hive.trident.HiveTrident)</h2>
+
+<p>Hive Trident state also follows similar pattern to HiveBolt it takes in HiveOptions as an arg.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java">   <span class="n">DelimitedRecordHiveMapper</span> <span class="n">mapper</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">DelimitedRecordHiveMapper</span><span class="o">()</span>
+            <span class="o">.</span><span class="na">withColumnFields</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="n">colNames</span><span class="o">))</span>
+            <span class="o">.</span><span class="na">withTimeAsPartitionField</span><span class="o">(</span><span class="s">&quot;YYYY/MM/DD&quot;</span><span class="o">);</span>
+
+   <span class="n">HiveOptions</span> <span class="n">hiveOptions</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">HiveOptions</span><span class="o">(</span><span class="n">metaStoreURI</span><span class="o">,</span><span class="n">dbName</span><span class="o">,</span><span class="n">tblName</span><span class="o">,</span><span class="n">mapper</span><span class="o">)</span>
+                                <span class="o">.</span><span class="na">withTxnsPerBatch</span><span class="o">(</span><span class="mi">10</span><span class="o">)</span>
+                                <span class="o">.</span><span class="na">withBatchSize</span><span class="o">(</span><span class="mi">1000</span><span class="o">)</span>
+                                <span class="o">.</span><span class="na">withIdleTimeout</span><span class="o">(</span><span class="mi">10</span><span class="o">)</span>
+
+   <span class="n">StateFactory</span> <span class="n">factory</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">HiveStateFactory</span><span class="o">().</span><span class="na">withOptions</span><span class="o">(</span><span class="n">hiveOptions</span><span class="o">);</span>
+   <span class="n">TridentState</span> <span class="n">state</span> <span class="o">=</span> <span class="n">stream</span><span class="o">.</span><span class="na">partitionPersist</span><span class="o">(</span><span class="n">factory</span><span class="o">,</span> <span class="n">hiveFields</span><span class="o">,</span> <span class="k">new</span> <span class="nf">HiveUpdater</span><span class="o">(),</span> <span class="k">new</span> <span class="nf">Fields</span><span class="o">());</span>
+</code></pre></div>
+
+
+	          </div>
+	       </div>
+	  </div>
+<footer>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="footer-widget">
+                    <h5>Meetups</h5>
+                    <ul class="latest-news">
+                        
+                        <li><a href="http://www.meetup.com/Apache-Storm-Apache-Kafka/">Apache Storm & Apache Kafka</a> <span class="small">(Sunnyvale, CA)</span></li>
+                        
+                        <li><a href="http://www.meetup.com/Apache-Storm-Kafka-Users/">Apache Storm & Kafka Users</a> <span class="small">(Seattle, WA)</span></li>
+                        
+                        <li><a href="http://www.meetup.com/New-York-City-Storm-User-Group/">NYC Storm User Group</a> <span class="small">(New York, NY)</span></li>
+                        
+                        <li><a href="http://www.meetup.com/Bay-Area-Stream-Processing">Bay Area Stream Processing</a> <span class="small">(Emeryville, CA)</span></li>
+                        
+                        <li><a href="http://www.meetup.com/Boston-Storm-Users/">Boston Realtime Data</a> <span class="small">(Boston, MA)</span></li>
+                        
+                        <li><a href="http://www.meetup.com/storm-london">London Storm User Group</a> <span class="small">(London, UK)</span></li>
+                        
+                        <!-- <li><a href="http://www.meetup.com/Apache-Storm-Kafka-Users/">Seatle, WA</a> <span class="small">(27 Jun 2015)</span></li> -->
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="footer-widget">
+                    <h5>About Storm</h5>
+                    <p>Storm integrates with any queueing system and any database system. Storm's spout abstraction makes it easy to integrate a new queuing system. Likewise, integrating Storm with database systems is easy.</p>
+               </div>
+            </div>
+            <div class="col-md-3">
+                <div class="footer-widget">
+                    <h5>First Look</h5>
+                    <ul class="footer-list">
+                        <li><a href="/documentation/Rationale.html">Rationale</a></li>
+                        <li><a href="/tutorial.html">Tutorial</a></li>
+                        <li><a href="/documentation/Setting-up-development-environment.html">Setting up development environment</a></li>
+                        <li><a href="/documentation/Creating-a-new-Storm-project.html">Creating a new Storm project</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="footer-widget">
+                    <h5>Documentation</h5>
+                    <ul class="footer-list">
+                        <li><a href="/doc-index.html">Index</a></li>
+                        <li><a href="/documentation.html">Manual</a></li>
+                        <li><a href="https://storm.apache.org/javadoc/apidocs/index.html">Javadoc</a></li>
+                        <li><a href="/documentation/FAQ.html">FAQ</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <hr/>
+        <div class="row">   
+            <div class="col-md-12">
+                <p align="center">Copyright © 2015 <a href="http://www.apache.org">Apache Software Foundation</a>. All Rights Reserved. 
+                    <br>Apache Storm, Apache, the Apache feather logo, and the Apache Storm project logos are trademarks of The Apache Software Foundation. 
+                    <br>All other marks mentioned may be trademarks or registered trademarks of their respective owners.</p>
+            </div>
+        </div>
+    </div>
+</footer>
+<!--Footer End-->
+<!-- Scroll to top -->
+<span class="totop"><a href="#"><i class="fa fa-angle-up"></i></a></span> 
+
+</body>
+
+</html>
+
