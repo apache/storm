@@ -16,11 +16,9 @@
 (ns backtype.storm.daemon.task
   (:use [backtype.storm.daemon common])
   (:use [backtype.storm config util log])
-  (:import [backtype.storm.hooks ITaskHook])
-  (:import [backtype.storm.tuple Tuple TupleImpl])
+  (:import [backtype.storm.tuple MessageId])
   (:import [backtype.storm.generated SpoutSpec Bolt StateSpoutSpec StormTopology])
-  (:import [backtype.storm.hooks.info SpoutAckInfo SpoutFailInfo
-            EmitInfo BoltFailInfo BoltAckInfo])
+  (:import [backtype.storm.hooks.info EmitInfo])
   (:import [backtype.storm.task TopologyContext ShellBolt WorkerTopologyContext])
   (:import [backtype.storm.utils Utils])
   (:import [backtype.storm.generated ShellComponent JavaObject])
@@ -105,21 +103,13 @@
 
 ;; TODO: this is all expensive... should be precomputed
 (defn send-unanchored
-  ([task-data stream values overflow-buffer]
-    (let [^TopologyContext topology-context (:system-context task-data)
-          tasks-fn (:tasks-fn task-data)
-          transfer-fn (-> task-data :executor-data :transfer-fn)
-          out-tuple (TupleImpl. topology-context
-                                 values
-                                 (.getThisTaskId topology-context)
-                                 stream)]
+   [task-data stream values transfer-fn]
+    (let [tasks-fn (:tasks-fn task-data)]
       (fast-list-iter [t (tasks-fn stream values)]
         (transfer-fn t
-                     out-tuple
-                     overflow-buffer)
-        )))
-    ([task-data stream values]
-      (send-unanchored task-data stream values nil)
+                     values
+                     (MessageId/makeUnanchored)
+                     stream))
       ))
 
 (defn mk-tasks-fn [task-data]
@@ -185,13 +175,13 @@
     :object (get-task-object (.getRawTopology ^TopologyContext (:system-context <>)) (:component-id executor-data))))
 
 
-(defn mk-task [executor-data task-id]
+(defn mk-task [executor-data task-id transfer-fn]
   (let [task-data (mk-task-data executor-data task-id)
         storm-conf (:storm-conf executor-data)]
     (doseq [klass (storm-conf TOPOLOGY-AUTO-TASK-HOOKS)]
       (.addTaskHook ^TopologyContext (:user-context task-data) (-> klass Class/forName .newInstance)))
     ;; when this is called, the threads for the executor haven't been started yet,
     ;; so we won't be risking trampling on the single-threaded claim strategy disruptor queue
-    (send-unanchored task-data SYSTEM-STREAM-ID ["startup"])
+    (send-unanchored task-data SYSTEM-STREAM-ID ["startup"] transfer-fn)
     task-data
     ))
