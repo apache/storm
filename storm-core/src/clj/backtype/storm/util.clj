@@ -934,6 +934,7 @@
 (defmacro fast-list-iter
   [pairs & body]
   (let [pairs (partition 2 pairs)
+        triplets (partition 3 pairs)
         lists (map second pairs)
         elems (map first pairs)
         iters (map (fn [_] (gensym)) lists)

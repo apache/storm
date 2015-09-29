@@ -111,7 +111,7 @@
 
 (defn- assert-can-serialize [^KryoTupleSerializer serializer tuple-batch]
   "Check that all of the tuples can be serialized by serializing them."
-  (fast-list-iter [[task tuple :as pair] tuple-batch]
+  (fast-list-iter [[task task-src tuple :as triplets] tuple-batch]
     (.serialize serializer tuple)))
 
 (defn mk-transfer-fn [worker]
@@ -124,9 +124,9 @@
           (fn [^KryoTupleSerializer serializer tuple-batch]
             (let [local (ArrayList.)
                   remoteMap (HashMap.)]
-              (fast-list-iter [[task tuple :as pair] tuple-batch]
+              (fast-list-iter [[task task_src tuple :as triplets] tuple-batch]
                 (if (local-tasks task)
-                  (.add local pair) 
+                  (.add local triplets)
 
                   ;;Using java objects directly to avoid performance issues in java code
                   (do
@@ -134,7 +134,7 @@
                       (.put remoteMap task (ArrayList.)))
                     (let [remote (.get remoteMap task)]
                       (if (not-nil? task)
-                        (.add remote (TaskMessage. task (.serialize serializer tuple)))
+                        (.add remote (TaskMessage. task task_src (.serialize serializer tuple)))
                         (log-warn "Can't transfer tuple - task value is nil. tuple type: " (pr-str (type tuple)) " and information: " (pr-str tuple)))
                      ))))
                 (local-transfer local)

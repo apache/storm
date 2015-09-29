@@ -21,15 +21,25 @@ import java.nio.ByteBuffer;
 
 public class TaskMessage {
     private int _task;
+    private int _task_src;
     private byte[] _message;
     
     public TaskMessage(int task, byte[] message) {
         _task = task;
         _message = message;
     }
-    
+
+    public TaskMessage(int task_src, int task, byte[] message) {
+        _task = task;
+        _task_src = task_src;
+        _message = message;
+    }
     public int task() {
         return _task;
+    }
+
+    public int task_src() {
+        return _task_src;
     }
 
     public byte[] message() {
@@ -37,8 +47,9 @@ public class TaskMessage {
     }
     
     public ByteBuffer serialize() {
-        ByteBuffer bb = ByteBuffer.allocate(_message.length+2);
+        ByteBuffer bb = ByteBuffer.allocate(_message.length+4);
         bb.putShort((short)_task);
+        bb.putShort((short)_task_src);
         bb.put(_message);
         return bb;
     }
@@ -46,7 +57,8 @@ public class TaskMessage {
     public void deserialize(ByteBuffer packet) {
         if (packet==null) return;
         _task = packet.getShort();
-        _message = new byte[packet.limit()-2];
+        _task_src = packet.getShort();
+        _message = new byte[packet.limit()-4];
         packet.get(_message);
     }
 
