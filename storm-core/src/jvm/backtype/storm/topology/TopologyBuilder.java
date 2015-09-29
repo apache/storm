@@ -45,9 +45,9 @@ import org.json.simple.JSONValue;
  * <pre>
  * TopologyBuilder builder = new TopologyBuilder();
  *
- * builder.setSpout("1", new TestWordSpout(true), 5);
- * builder.setSpout("2", new TestWordSpout(true), 3);
- * builder.setBolt("3", new TestWordCounter(), 3)
+ * builder.setSpout("1", new TestWordSpout(true), 5, 20);
+ * builder.setSpout("2", new TestWordSpout(true), 3, 20);
+ * builder.setBolt("3", new TestWordCounter(), 3, 40)
  *          .fieldsGrouping("1", new Fields("word"))
  *          .fieldsGrouping("2", new Fields("word"));
  * builder.setBolt("4", new TestGlobalCount())
@@ -66,9 +66,9 @@ import org.json.simple.JSONValue;
  * <pre>
  * TopologyBuilder builder = new TopologyBuilder();
  *
- * builder.setSpout("1", new TestWordSpout(true), 5);
- * builder.setSpout("2", new TestWordSpout(true), 3);
- * builder.setBolt("3", new TestWordCounter(), 3)
+ * builder.setSpout("1", new TestWordSpout(true), 5, 20);
+ * builder.setSpout("2", new TestWordSpout(true), 3, 20);
+ * builder.setBolt("3", new TestWordCounter(), 3, 40)
  *          .fieldsGrouping("1", new Fields("word"))
  *          .fieldsGrouping("2", new Fields("word"));
  * builder.setBolt("4", new TestGlobalCount())
@@ -118,7 +118,7 @@ public class TopologyBuilder {
     }
 
     /**
-     * Define a new bolt in this topology with parallelism of just one thread.
+     * Define a new bolt in this topology with parallelism of just one thread and transport batching disabled.
      *
      * @param id the id of this component. This id is referenced by other components that want to consume this bolt's outputs.
      * @param bolt the bolt
@@ -126,11 +126,11 @@ public class TopologyBuilder {
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
     public BoltDeclarer setBolt(String id, IRichBolt bolt) throws IllegalArgumentException {
-        return setBolt(id, bolt, null);
+        return setBolt(id, bolt, (Number)null);
     }
 
     /**
-     * Define a new bolt in this topology with the specified amount of parallelism.
+     * Define a new bolt in this topology with the specified amount of parallelism and transport batching disabled.
      *
      * @param id the id of this component. This id is referenced by other components that want to consume this bolt's outputs.
      * @param bolt the bolt
@@ -139,8 +139,49 @@ public class TopologyBuilder {
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
     public BoltDeclarer setBolt(String id, IRichBolt bolt, Number parallelism_hint) throws IllegalArgumentException {
+        return setBolt(id, bolt, parallelism_hint, (Number) null);
+    }
+
+    /**
+     * Define a new bolt in this topology with parallelism of just one thread and transport batch sizes for the specified streams.
+     *
+     * @param id the id of this component. This id is referenced by other components that want to consume this bolt's outputs.
+     * @param bolt the bolt
+     * @param batch_sizes the number of output tuples that should be assembled into a batch per output stream. Each batch will be transferred to a consumer instance at once.
+     * @return use the returned object to declare the inputs to this component
+     * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
+     */
+    public <T extends Number> BoltDeclarer setBolt(String id, IRichBolt bolt, Map<String,T> batch_sizes) throws IllegalArgumentException {
+        return setBolt(id, bolt, null, batch_sizes);
+    }
+    
+    /**
+     * Define a new bolt in this topology with the specified amount of parallelism and single transport batch size for all output streams.
+     *
+     * @param id the id of this component. This id is referenced by other components that want to consume this bolt's outputs.
+     * @param bolt the bolt
+     * @param parallelism_hint the number of tasks that should be assigned to execute this bolt. Each task will run on a thread in a process somewhere around the cluster.
+     * @param batch_size the number of output tuples that should be assembled into a batch. Each batch will be transferred to a consumer instance at once.
+     * @return use the returned object to declare the inputs to this component
+     * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
+     */
+    public BoltDeclarer setBolt(String id, IRichBolt bolt, Number parallelism_hint, Number batch_size) throws IllegalArgumentException {
+        return setBolt(id, bolt, parallelism_hint, applyBatchSizeToDeclaredStreams(bolt, batch_size));
+    }
+
+    /**
+     * Define a new bolt in this topology with the specified amount of parallelism and transport batch sizes for the specified streams.
+     *
+     * @param id the id of this component. This id is referenced by other components that want to consume this bolt's outputs.
+     * @param bolt the bolt
+     * @param parallelism_hint the number of tasks that should be assigned to execute this bolt. Each task will run on a thread in a process somewhere around the cluster.
+     * @param batch_sizes the number of output tuples that should be assembled into a batch per output stream. Each batch will be transferred to a consumer instance at once.
+     * @return use the returned object to declare the inputs to this component
+     * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
+     */
+    public <T extends Number> BoltDeclarer setBolt(String id, IRichBolt bolt, Number parallelism_hint, Map<String,T> batch_sizes) throws IllegalArgumentException {
         validateUnusedId(id);
-        initCommon(id, bolt, parallelism_hint);
+        initCommon(id, bolt, parallelism_hint, convertHashMap(batch_sizes));
         _bolts.put(id, bolt);
         return new BoltGetter(id);
     }
@@ -157,7 +198,7 @@ public class TopologyBuilder {
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
     public BoltDeclarer setBolt(String id, IBasicBolt bolt) throws IllegalArgumentException {
-        return setBolt(id, bolt, null);
+        return setBolt(id, bolt, (Number) null);
     }
 
     /**
@@ -168,47 +209,151 @@ public class TopologyBuilder {
      *
      * @param id the id of this component. This id is referenced by other components that want to consume this bolt's outputs.
      * @param bolt the basic bolt
-     * @param parallelism_hint the number of tasks that should be assigned to execute this bolt. Each task will run on a thread in a process somwehere around the cluster.
+     * @param parallelism_hint the number of tasks that should be assigned to execute this bolt. Each task will run on a thread in a process somewhere around the cluster.
      * @return use the returned object to declare the inputs to this component
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
     public BoltDeclarer setBolt(String id, IBasicBolt bolt, Number parallelism_hint) throws IllegalArgumentException {
-        return setBolt(id, new BasicBoltExecutor(bolt), parallelism_hint);
+        return setBolt(id, bolt, parallelism_hint, (Number) null);
     }
 
     /**
-     * Define a new spout in this topology.
+     * Define a new bolt in this topology. This defines a basic bolt, which is a
+     * simpler to use but more restricted kind of bolt. Basic bolts are intended
+     * for non-aggregation processing and automate the anchoring/acking process to
+     * achieve proper reliability in the topology.
+     *
+     * @param id the id of this component. This id is referenced by other components that want to consume this bolt's outputs.
+     * @param bolt the basic bolt
+     * @param batch_sizes the number of output tuples that should be assembled into a batch per output stream. Each batch will be transferred to a consumer instance at once.
+     * @return use the returned object to declare the inputs to this component
+     * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
+     */
+    public <T extends Number> BoltDeclarer setBolt(String id, IBasicBolt bolt, Map<String,T> batch_sizes) throws IllegalArgumentException {
+        return setBolt(id, bolt, null, batch_sizes);
+    }
+
+    /**
+     * Define a new bolt in this topology. This defines a basic bolt, which is a
+     * simpler to use but more restricted kind of bolt. Basic bolts are intended
+     * for non-aggregation processing and automate the anchoring/acking process to
+     * achieve proper reliability in the topology.
+     *
+     * @param id the id of this component. This id is referenced by other components that want to consume this bolt's outputs.
+     * @param bolt the basic bolt
+     * @param parallelism_hint the number of tasks that should be assigned to execute this bolt. Each task will run on a thread in a process somewhere around the cluster.
+     * @param batch_size the number of output tuples that should be assembled into a batch. Each batch will be transferred to a consumer instance at once.
+     * @return use the returned object to declare the inputs to this component
+     * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
+     */
+    public BoltDeclarer setBolt(String id, IBasicBolt bolt, Number parallelism_hint, Number batch_size) throws IllegalArgumentException {
+        return setBolt(id, bolt, parallelism_hint, applyBatchSizeToDeclaredStreams(bolt, batch_size));
+    }
+
+    /**
+     * Define a new bolt in this topology. This defines a basic bolt, which is a
+     * simpler to use but more restricted kind of bolt. Basic bolts are intended
+     * for non-aggregation processing and automate the anchoring/acking process to
+     * achieve proper reliability in the topology.
+     *
+     * @param id the id of this component. This id is referenced by other components that want to consume this bolt's outputs.
+     * @param bolt the basic bolt
+     * @param parallelism_hint the number of tasks that should be assigned to execute this bolt. Each task will run on a thread in a process somewhere around the cluster.
+     * @param batch_sizes the number of output tuples that should be assembled into a batch per output stream. Each batch will be transferred to a consumer instance at once.
+     * @return use the returned object to declare the inputs to this component
+     * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
+     */
+    public <T extends Number> BoltDeclarer setBolt(String id, IBasicBolt bolt, Number parallelism_hint, Map<String,T> batch_sizes) throws IllegalArgumentException {
+        return setBolt(id, new BasicBoltExecutor(bolt), parallelism_hint, batch_sizes);
+    }
+
+    /**
+     * Define a new spout in this topology with parallelism of just one thread and transport batching disabled.
      *
      * @param id the id of this component. This id is referenced by other components that want to consume this spout's outputs.
      * @param spout the spout
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
     public SpoutDeclarer setSpout(String id, IRichSpout spout) throws IllegalArgumentException {
-        return setSpout(id, spout, null);
+        return setSpout(id, spout, (Number) null);
     }
 
     /**
-     * Define a new spout in this topology with the specified parallelism. If the spout declares
-     * itself as non-distributed, the parallelism_hint will be ignored and only one task
-     * will be allocated to this component.
+     * Define a new spout in this topology with the specified parallelism and transport batching
+     * disabled. If the spout declares itself as non-distributed, The parallelism_hint will be
+     * ignored and only one task will be allocated to this component.
      *
      * @param id the id of this component. This id is referenced by other components that want to consume this spout's outputs.
-     * @param parallelism_hint the number of tasks that should be assigned to execute this spout. Each task will run on a thread in a process somwehere around the cluster.
      * @param spout the spout
+     * @param parallelism_hint the number of tasks that should be assigned to execute this spout. Each task will run on a thread in a process somwehere around the cluster.
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
     public SpoutDeclarer setSpout(String id, IRichSpout spout, Number parallelism_hint) throws IllegalArgumentException {
+        return setSpout(id, spout, parallelism_hint, (Number) null);
+    }
+
+    /**
+     * Define a new spout in this topology of just one thread and transport batch sizes for the specified streams.
+     *
+     * @param id the id of this component. This id is referenced by other components that want to consume this spout's outputs.
+     * @param spout the spout
+     * @param batch_sizes the number of output tuples that should be assembled into a batch per output stream. Each batch will be transferred to a consumer instance at once.
+     * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
+     */
+    public <T extends Number> SpoutDeclarer setSpout(String id, IRichSpout spout, Map<String,T> batch_sizes) throws IllegalArgumentException {
+        return setSpout(id, spout, null, batch_sizes);
+    }
+
+    /**
+     * Define a new spout in this topology with the specified parallelism and single transport
+     * batch size for all output streams. If the spout declares itself as non-distributed, the
+     * parallelism_hint will be ignored and only one task will be allocated to this component.
+     *
+     * @param id the id of this component. This id is referenced by other components that want to consume this spout's outputs.
+     * @param spout the spout
+     * @param parallelism_hint the number of tasks that should be assigned to execute this spout. Each task will run on a thread in a process somwehere around the cluster.
+     * @param batch_size the number of output tuples that should be assembled into a batch. Each batch will be transferred to a consumer instance at once.
+     * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
+     */
+    public SpoutDeclarer setSpout(String id, IRichSpout spout, Number parallelism_hint, Number batch_size) throws IllegalArgumentException {
+        return setSpout(id, spout, parallelism_hint, applyBatchSizeToDeclaredStreams(spout, batch_size));
+    }
+
+    /**
+     * Define a new spout in this topology with the specified parallelism and transport batch sizes
+     * for the specified streams. If the spout declares itself as non-distributed, the
+     * parallelism_hint will be ignored and only one task will be allocated to this component.
+     *
+     * @param id the id of this component. This id is referenced by other components that want to consume this spout's outputs.
+     * @param spout the spout
+     * @param parallelism_hint the number of tasks that should be assigned to execute this spout. Each task will run on a thread in a process somwehere around the cluster.
+     * @param batch_sizes the number of output tuples that should be assembled into a batch per output stream. Each batch will be transferred to a consumer instance at once.
+     * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
+     */
+    public <T extends Number> SpoutDeclarer setSpout(String id, IRichSpout spout, Number parallelism_hint, Map<String,T> batch_sizes) throws IllegalArgumentException {
         validateUnusedId(id);
-        initCommon(id, spout, parallelism_hint);
+        initCommon(id, spout, parallelism_hint, convertHashMap(batch_sizes));
         _spouts.put(id, spout);
         return new SpoutGetter(id);
     }
 
     public void setStateSpout(String id, IRichStateSpout stateSpout) throws IllegalArgumentException {
-        setStateSpout(id, stateSpout, null);
+        setStateSpout(id, stateSpout, (Number) null);
     }
 
     public void setStateSpout(String id, IRichStateSpout stateSpout, Number parallelism_hint) throws IllegalArgumentException {
+        setStateSpout(id, stateSpout, parallelism_hint,(Number) null);
+    }
+
+    public <T extends Number> void setStateSpout(String id, IRichStateSpout stateSpout, Map<String,T> batch_sizes) throws IllegalArgumentException {
+        setStateSpout(id, stateSpout,  null, batch_sizes);
+    }
+
+    public void setStateSpout(String id, IRichStateSpout stateSpout, Number parallelism_hint, Number batch_size) throws IllegalArgumentException {
+        setStateSpout(id, stateSpout, parallelism_hint, applyBatchSizeToDeclaredStreams(stateSpout, batch_size));
+    }
+
+    public <T extends Number> void setStateSpout(String id, IRichStateSpout stateSpout, Number parallelism_hint, Map<String,T> batch_sizes) throws IllegalArgumentException {
         validateUnusedId(id);
         // TODO: finish
     }
@@ -235,7 +380,7 @@ public class TopologyBuilder {
         return ret;        
     }
     
-    private void initCommon(String id, IComponent component, Number parallelism) throws IllegalArgumentException {
+    private void initCommon(String id, IComponent component, Number parallelism, Map<String,Integer> batch_sizes) throws IllegalArgumentException {
         ComponentCommon common = new ComponentCommon();
         common.set_inputs(new HashMap<GlobalStreamId, Grouping>());
         if(parallelism!=null) {
@@ -245,6 +390,7 @@ public class TopologyBuilder {
             }
             common.set_parallelism_hint(dop);
         }
+        if(batch_sizes!=null) common.set_batch_sizes(batch_sizes);
         Map conf = component.getComponentConfiguration();
         if(conf!=null) common.set_json_conf(JSONValue.toJSONString(conf));
         _commons.put(id, common);
@@ -378,5 +524,31 @@ public class TopologyBuilder {
         Map res = new HashMap(into);
         if(newMap!=null) res.putAll(newMap);
         return JSONValue.toJSONString(res);
+    }
+    
+    private static HashMap<String, Number> applyBatchSizeToDeclaredStreams(IComponent spout_or_bolt, Number batch_size) {
+        HashMap<String, Number> batchSizes = null;
+        if (batch_size != null) {
+            batchSizes = new HashMap<String, Number>();
+
+            OutputFieldsGetter declarer = new OutputFieldsGetter();
+            spout_or_bolt.declareOutputFields(declarer);
+
+            for (String outputStreamId : declarer.getFieldsDeclaration().keySet()) {
+                batchSizes.put(outputStreamId, batch_size);
+            }
+        }
+        return batchSizes;
+    }
+
+    private static <T extends Number> HashMap<String, Integer> convertHashMap(Map<String, T> batch_sizes) {
+        HashMap<String, Integer> batchSizes = null;
+        if(batch_sizes != null) {
+            batchSizes = new HashMap<String,Integer>();
+            for(Map.Entry<String,T> e : batch_sizes.entrySet()) {
+                batchSizes.put(e.getKey(), e.getValue().intValue());
+            }
+        }
+        return batchSizes;
     }
 }

@@ -81,6 +81,7 @@ struct ComponentCommon {
   1: required map<GlobalStreamId, Grouping> inputs;
   2: required map<string, StreamInfo> streams; //key is stream id
   3: optional i32 parallelism_hint; //how many threads across the cluster should be dedicated to this component
+  4: optional map<string, i32> batch_sizes; //output batch size per declared output stream
 
   // component specific configuration respects:
   // topology.debug: false
@@ -89,7 +90,7 @@ struct ComponentCommon {
   // topology.kryo.register // this is the only additive one
   
   // component specific configuration
-  4: optional string json_conf;
+  5: optional string json_conf;
 }
 
 struct SpoutSpec {
