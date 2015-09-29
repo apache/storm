@@ -15,7 +15,7 @@
 ;; limitations under the License.
 (ns backtype.storm.serialization-test
   (:use [clojure test])
-  (:import [backtype.storm.serialization KryoTupleSerializer KryoTupleDeserializer
+  (:import [backtype.storm.serialization KryoTupleBatchSerializer KryoTupleBatchDeserializer
             KryoValuesSerializer KryoValuesDeserializer])
   (:import [backtype.storm.testing TestSerObject TestKryoDecorator])
   (:import [backtype.storm ConfigValidation])

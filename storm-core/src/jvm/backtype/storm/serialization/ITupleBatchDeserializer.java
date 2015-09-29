@@ -17,10 +17,9 @@
  */
 package backtype.storm.serialization;
 
-import backtype.storm.tuple.TupleImpl;
+import backtype.storm.tuple.Tuple;
+import java.io.IOException;
 
-
-public interface ITupleSerializer {
-    byte[] serialize(TupleImpl tuple);
-//    long crc32(Tuple tuple);
+public interface ITupleBatchDeserializer {
+    Object deserialize(byte[] ser);
 }
