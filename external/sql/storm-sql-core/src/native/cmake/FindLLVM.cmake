@@ -15,13 +15,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
 if (LLVM_INCLUDE_DIR)
   set(LLVM_FOUND TRUE)
 endif()
 
+set(LLVM_CONFIG_NAMES llvm-config-3.7 llvm-config37
+                      llvm-config-3.6 llvm-config36
+                      llvm-config)
+
 if (NOT LLVM_FOUND)
   if (NOT LLVM_CONFIG)
-    find_program(LLVM_CONFIG NAMES llvm-config DOC "llvm-config executable")
+    find_program(LLVM_CONFIG NAMES ${LLVM_CONFIG_NAMES} DOC "llvm-config executable")
     if (${LLVM_CONFIG} STREQUAL LLVM_CONFIG-NOTFOUND)
       message(FATAL_ERROR "Cannot find llvm-config")
     endif()
@@ -29,10 +34,9 @@ if (NOT LLVM_FOUND)
   endif ()
 
   execute_process(COMMAND ${LLVM_CONFIG} --cxxflags OUTPUT_VARIABLE LLVM_CXXFLAGS OUTPUT_STRIP_TRAILING_WHITESPACE)
-
-  execute_process(COMMAND ${LLVM_CONFIG} --ldflags --libs core OUTPUT_VARIABLE LLVM_LDFLAGS OUTPUT_STRIP_TRAILING_WHITESPACE)
-
-  set(LLVM_LIBRARIES ${LLVM_LDFLAGS})
+  execute_process(COMMAND ${LLVM_CONFIG} --ldflags OUTPUT_VARIABLE LLVM_LDFLAGS OUTPUT_STRIP_TRAILING_WHITESPACE)
+  execute_process(COMMAND ${LLVM_CONFIG} --libs core OUTPUT_VARIABLE LLVM_LIBRARIES OUTPUT_STRIP_TRAILING_WHITESPACE)
+  execute_process(COMMAND ${LLVM_CONFIG} --system-libs OUTPUT_VARIABLE LLVM_SYSTEM_LIBRARIES OUTPUT_STRIP_TRAILING_WHITESPACE)
   mark_as_advanced(LLVM_LIBRARIES)
 
   execute_process(COMMAND ${LLVM_CONFIG} --version OUTPUT_VARIABLE LLVM_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)

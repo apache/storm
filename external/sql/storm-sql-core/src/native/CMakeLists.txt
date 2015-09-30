@@ -34,7 +34,7 @@ endif()
 enable_testing()
 
 if(UNIX)
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -std=c++11 -g -fPIC -fno-strict-aliasing -fno-exceptions")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -std=c++11 -g -fPIC -fno-strict-aliasing -fno-exceptions -fno-rtti")
 endif()
 
 if(APPLE)
@@ -43,9 +43,11 @@ endif()
 
 include_directories(
   include
+  lib
   third_party/gmock-1.7.0
   third_party/json11)
 
 add_subdirectory(lib)
-add_subdirectory(bindings)
 add_subdirectory(third_party)
+add_subdirectory(bindings)
+add_subdirectory(test)

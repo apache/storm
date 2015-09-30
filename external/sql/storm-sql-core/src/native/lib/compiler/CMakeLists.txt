@@ -15,7 +15,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${LLVM_CXXFLAGS}")
-add_subdirectory(compiler)
-add_subdirectory(tool)
+add_library(compiler typesystem.cc expr_visitor.cc expr_compiler.cc)
