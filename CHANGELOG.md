@@ -1,4 +1,5 @@
 ## 0.11.0
+ * STORM-1060: Serialize Calcite plans into JSON format.
  * STORM-1062: Establish the basic structure of the code generator.
  * STORM-1054: Excessive logging ShellBasedGroupsMapping if the user doesn't have any groups.
  * STORM-954: Toplogy Event Inspector
