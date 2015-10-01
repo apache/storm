@@ -17,12 +17,26 @@
  */
 
 #include "typesystem.h"
+#include <llvm/IR/Constants.h>
 #include <llvm/IR/DerivedTypes.h>
+#include <llvm/IR/GlobalVariable.h>
+#include <array>
 #include <cassert>
 
 using json11::Json;
+using llvm::cast;
+using llvm::Constant;
+using llvm::ConstantDataArray;
+using llvm::Function;
+using llvm::FunctionType;
+using llvm::GlobalValue;
+using llvm::GlobalVariable;
+using llvm::LLVMContext;
+using llvm::Module;
 using llvm::Type;
+using std::array;
 using std::map;
+using std::make_pair;
 using std::string;
 
 namespace stormsql {
@@ -35,7 +49,16 @@ const map<string, TypeSystem::SqlType> TypeSystem::sql_type_map_ = {
 
 Table::Table(std::vector<Field> &&fields) : fields_(std::move(fields)) {}
 
-TypeSystem::TypeSystem(llvm::LLVMContext *ctx) : ctx_(*ctx) {}
+TypeSystem::TypeSystem(Module *module) : module_(module) {
+  LLVMContext &ctx = module_->getContext();
+  Type *PtrTy = Type::getInt8PtrTy(ctx);
+  FunctionType *EQTy =
+      FunctionType::get(Type::getInt1Ty(ctx), {PtrTy, PtrTy}, false);
+  equals_ =
+      cast<Function>(module_->getOrInsertFunction("stormsql.equals", EQTy));
+  string_equals_ignore_case_ = cast<Function>(
+      module_->getOrInsertFunction("stormsql.string.equals_ignore_case", EQTy));
+}
 
 TypeSystem::SqlType TypeSystem::GetSqlTypeId(const Json &type) {
   auto it = sql_type_map_.find(type.string_value());
@@ -44,17 +67,35 @@ TypeSystem::SqlType TypeSystem::GetSqlTypeId(const Json &type) {
 }
 
 Type *TypeSystem::GetLLVMType(const Json &type) {
+  LLVMContext &ctx = module_->getContext();
   switch (GetSqlTypeId(type)) {
   case kIntegerTy:
-    return Type::getInt32Ty(ctx_);
+    return Type::getInt32Ty(ctx);
   case kBooleanTy:
-    return Type::getInt1Ty(ctx_);
+    return Type::getInt1Ty(ctx);
   case kDecimalTy:
     // SQL supports arbitary precision decimal type. For now the type system
     // returns a double
-    return Type::getDoubleTy(ctx_);
+    return Type::getDoubleTy(ctx);
   case kStringTy:
-    return Type::getInt8PtrTy(ctx_);
+    return Type::getInt8PtrTy(ctx);
   }
+}
+
+Type *TypeSystem::llvm_string_type() const {
+  LLVMContext &ctx = module_->getContext();
+  return Type::getInt8PtrTy(ctx);
+}
+
+Constant *TypeSystem::GetOrInsertString(const string &str) {
+  auto it = string_map_.find(str);
+  if (it != string_map_.end()) {
+    return it->second;
+  }
+  auto c = ConstantDataArray::getString(module_->getContext(), str);
+  auto v = new GlobalVariable(*module_, c->getType(), true,
+                              GlobalValue::PrivateLinkage, c);
+  string_map_.insert(make_pair(str, v));
+  return v;
 }
 }

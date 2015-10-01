@@ -19,5 +19,5 @@
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${LLVM_CXXFLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${LLVM_LDFLAGS}")
 add_executable(expr_compiler_test expr_compiler_test.cc)
-target_link_libraries(expr_compiler_test compiler json11 gmock_main ${LLVM_LIBRARIES} ${LLVM_SYSTEM_LIBRARIES})
+target_link_libraries(expr_compiler_test compiler json11 gmock_main ${LLVM_LIBRARIES}  ${LLVM_SYSTEM_LIBRARIES})
 add_test(expr_compiler expr_compiler_test)

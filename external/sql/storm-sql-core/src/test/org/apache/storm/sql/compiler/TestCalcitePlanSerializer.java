@@ -80,6 +80,29 @@ public class TestCalcitePlanSerializer {
     checkLiteral("INTEGER", Integer.toString(1), exprs.get(0));
   }
 
+  @Test
+  @SuppressWarnings("unchecked")
+  public void testInputRef() throws Exception {
+    String sql = "SELECT ID FROM FOO";
+    CalciteState state = sqlOverDummyTable(sql);
+    String res = new CalcitePlanSerializer(state.schema, state.tree).toJson();
+
+    ObjectMapper m = new ObjectMapper();
+    HashMap<String, Object> o = m.readValue(res, HashMap.class);
+    List<HashMap<String, Object>> stages = asList(o.get("stages"));
+    HashMap<String, Object> project = null;
+    for (HashMap<String, Object> s : stages) {
+      if ("LogicalProject".equals(s.get("type"))) {
+        project = s;
+        break;
+      }
+    }
+    assertNotNull(project);
+    List<HashMap<String, Object>> exprs = asList(project.get("exprs"));
+    assertEquals(1, exprs.size());
+    checkInputRef("INTEGER", 0, exprs.get(0));
+  }
+
   private static class CalciteState {
     private final SchemaPlus schema;
     private final RelNode tree;
@@ -118,4 +141,15 @@ public class TestCalcitePlanSerializer {
     assertEquals("literal", v.get("inst"));
     assertEquals(value, v.get("value"));
   }
+
+  @SuppressWarnings("unchecked")
+  private void checkInputRef(String type, int idx, Object l) {
+    HashMap<String, Object> e = (HashMap<String, Object>) ((HashMap<String, Object>) l).get(
+        "expr");
+    assertEquals(type, e.get("type"));
+    HashMap<String, Object> v = (HashMap<String, Object>) e.get("value");
+    assertEquals("inputref", v.get("inst"));
+    assertEquals(idx, v.get("idx"));
+  }
+
 }

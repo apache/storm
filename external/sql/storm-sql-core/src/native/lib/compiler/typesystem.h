@@ -20,6 +20,8 @@
 #define STORM_SQL_COMPILER_TYPESYSTEM_H_
 
 #include <json11/json11.hpp>
+#include <llvm/IR/Function.h>
+#include <llvm/IR/Module.h>
 #include <llvm/IR/Type.h>
 
 #include <map>
@@ -41,13 +43,23 @@ private:
 class TypeSystem {
 public:
   enum SqlType { kIntegerTy, kDecimalTy, kBooleanTy, kStringTy };
-  explicit TypeSystem(llvm::LLVMContext *ctx);
+  explicit TypeSystem(llvm::Module *module);
   llvm::Type *GetLLVMType(const json11::Json &type);
   static SqlType GetSqlTypeId(const json11::Json &type);
+  llvm::Module *module() const { return module_; }
+  llvm::Function *equals() const { return equals_; }
+  llvm::Function *string_equals_ignore_case() const {
+    return string_equals_ignore_case_;
+  }
+  llvm::Type *llvm_string_type() const;
+  llvm::Constant *GetOrInsertString(const std::string &str);
 
 private:
-  llvm::LLVMContext &ctx_;
+  llvm::Module *module_;
+  llvm::Function *equals_;
+  llvm::Function *string_equals_ignore_case_;
   static const std::map<std::string, SqlType> sql_type_map_;
+  std::map<std::string, llvm::Constant *> string_map_;
 };
 }
 

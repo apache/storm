@@ -23,18 +23,25 @@
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/Module.h>
+#include <llvm/IR/Verifier.h>
 
 #include <gtest/gtest.h>
 #include <memory>
 
 using llvm::dyn_cast;
+using llvm::verifyModule;
 using llvm::APFloat;
 using llvm::BasicBlock;
+using llvm::CallInst;
 using llvm::ConstantDataSequential;
 using llvm::ConstantInt;
 using llvm::ConstantFP;
+using llvm::FCmpInst;
 using llvm::Function;
 using llvm::FunctionType;
+using llvm::GlobalValue;
+using llvm::GlobalVariable;
+using llvm::ICmpInst;
 using llvm::LLVMContext;
 using llvm::Module;
 using llvm::SMDiagnostic;
@@ -45,6 +52,7 @@ using std::map;
 using std::string;
 using std::to_string;
 using std::unique_ptr;
+using std::vector;
 
 using namespace stormsql;
 
@@ -65,12 +73,27 @@ static inline Json LiteralDouble(double v) {
 static inline Json LiteralString(const string &v) {
   return GetLiteral("CHAR", v);
 }
+static inline Json CallExpr(const string &type, const string &op,
+                            const vector<Json> &operands) {
+  map<string, Json> v(
+      {{"inst", "call"}, {"operator", op}, {"operands", operands}});
+  map<string, Json> r({{"type", type}, {"value", Json(v)}});
+  return Json(r);
+}
+static inline Json InputRef(const string &type, int idx) {
+  map<string, Json> v({{"inst", "inputref"}, {"idx", idx}});
+  map<string, Json> r({{"type", type}, {"value", Json(v)}});
+  return Json(r);
+}
 
 TEST(TestExprCompiler, TestLiteral) {
   LLVMContext ctx;
+  unique_ptr<Module> M(new Module("test-literal", ctx));
   unique_ptr<BasicBlock> BB(BasicBlock::Create(ctx));
-  TypeSystem ts(&ctx);
-  ExprCompiler compiler("TestLiteral", &ts);
+  llvm::IRBuilder<> builder(BB.get());
+  TypeSystem ts(M.get());
+  SMDiagnostic err;
+  ExprCompiler compiler("TestLiteral", &ts, &builder, &err);
   Value *v = compiler.Visit(LiteralBool(1));
   ConstantInt *CI = dyn_cast<ConstantInt>(v);
   ASSERT_TRUE(CI && CI == ConstantInt::getTrue(CI->getType()));
@@ -85,6 +108,38 @@ TEST(TestExprCompiler, TestLiteral) {
               CF->getValueAPF().compare(APFloat(1.0)) == APFloat::cmpEqual);
 
   v = compiler.Visit(LiteralString("foo"));
-  ConstantDataSequential *CDS = dyn_cast<ConstantDataSequential>(v);
+  GlobalVariable *GV = dyn_cast<GlobalVariable>(v);
+  ASSERT_TRUE(GV && GV->isConstant());
+  ConstantDataSequential *CDS =
+      dyn_cast<ConstantDataSequential>(GV->getInitializer());
   ASSERT_TRUE(CDS && CDS->getAsCString() == "foo");
+}
+
+TEST(TestExprCompiler, TestCompare) {
+  LLVMContext ctx;
+  unique_ptr<Module> M(new Module("test-compare", ctx));
+  TypeSystem ts(M.get());
+  FunctionType *FTy = FunctionType::get(
+      Type::getVoidTy(ctx),
+      {Type::getInt32Ty(ctx), ts.llvm_string_type(), Type::getDoubleTy(ctx)},
+      false);
+  Function *F =
+      Function::Create(FTy, GlobalValue::PrivateLinkage, "dummy", M.get());
+  BasicBlock *BB = BasicBlock::Create(ctx, "entry", F);
+  llvm::IRBuilder<> builder(BB);
+  SMDiagnostic err;
+  ExprCompiler compiler("TestCompare", &ts, &builder, &err);
+  Value *v = compiler.Visit(
+      CallExpr("BOOLEAN", "<", {InputRef("INTEGER", 0), LiteralInt(2)}));
+  ICmpInst *IC = dyn_cast<ICmpInst>(v);
+  ASSERT_TRUE(IC && IC->getPredicate() == ICmpInst::ICMP_SLT);
+  v = compiler.Visit(
+      CallExpr("BOOLEAN", "=", {InputRef("CHAR", 1), LiteralString("2")}));
+  CallInst *CI = dyn_cast<CallInst>(v);
+  ASSERT_TRUE(CI && CI->getCalledFunction() == ts.equals());
+  v = compiler.Visit(
+      CallExpr("BOOLEAN", "<>", {InputRef("DECIMAL", 2), LiteralDouble(2)}));
+  FCmpInst *FC = dyn_cast<FCmpInst>(v);
+  ASSERT_TRUE(FC && FC->getPredicate() == FCmpInst::FCMP_ONE);
+  ASSERT_TRUE(verifyModule(*M));
 }

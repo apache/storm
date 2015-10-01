@@ -62,7 +62,13 @@ class ExprSerializer {
 
     @Override
     public Void visitInputRef(RexInputRef inputRef) {
-      throw new UnsupportedOperationException();
+      try {
+        jg.writeStringField("inst", "inputref");
+        jg.writeNumberField("idx", inputRef.getIndex());
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+      return null;
     }
 
     @Override

@@ -29,6 +29,7 @@ using llvm::CmpInst;
 using llvm::ConstantDataArray;
 using llvm::ConstantFP;
 using llvm::ConstantInt;
+using llvm::Function;
 using llvm::IntegerType;
 using llvm::SMDiagnostic;
 using llvm::SourceMgr;
@@ -38,12 +39,105 @@ using std::back_inserter;
 using std::map;
 using std::vector;
 using std::string;
+using std::to_string;
 using std::transform;
 
 namespace stormsql {
 
-ExprCompiler::ExprCompiler(const string &err_ctx, TypeSystem *typesystem)
-    : err_ctx_(err_ctx), typesystem_(typesystem) {}
+const map<CmpInst::Predicate, CmpInst::Predicate>
+    ExprCompiler::floating_op_predicates_ = {
+        {CmpInst::Predicate::ICMP_EQ, CmpInst::Predicate::FCMP_OEQ},
+        {CmpInst::Predicate::ICMP_NE, CmpInst::Predicate::FCMP_ONE},
+        {CmpInst::Predicate::ICMP_SGT, CmpInst::Predicate::FCMP_OGT},
+        {CmpInst::Predicate::ICMP_SGE, CmpInst::Predicate::FCMP_OGE},
+        {CmpInst::Predicate::ICMP_SLT, CmpInst::Predicate::FCMP_OLT},
+        {CmpInst::Predicate::ICMP_SLE, CmpInst::Predicate::FCMP_OLE}};
+
+const map<BinaryOperator::BinaryOps, BinaryOperator::BinaryOps>
+    ExprCompiler::floating_binary_op_ = {
+        {BinaryOperator::BinaryOps::Add, BinaryOperator::BinaryOps::FAdd},
+        {BinaryOperator::BinaryOps::Sub, BinaryOperator::BinaryOps::FSub},
+        {BinaryOperator::BinaryOps::Mul, BinaryOperator::BinaryOps::FMul},
+        {BinaryOperator::BinaryOps::SDiv, BinaryOperator::BinaryOps::FDiv}};
+
+ExprCompiler::ExprCompiler(const string &err_ctx, TypeSystem *typesystem,
+                           llvm::IRBuilder<> *builder, SMDiagnostic *err)
+    : err_ctx_(err_ctx), typesystem_(typesystem), builder_(builder), err_(err) {
+}
+
+Value *ExprCompiler::CompileValue(const Json &value) {
+  Value *v = Visit(value);
+  if (!v) {
+    *err_ = SMDiagnostic(err_ctx_, SourceMgr::DK_Error,
+                         "Failed to compile expression " + value.dump());
+  }
+  return v;
+}
+
+Value *ExprCompiler::VisitBinaryOperator(BinaryOperator::BinaryOps opcode,
+                                         const Json &LHS, const Json &RHS) {
+  Value *L, *R;
+  if (!(L = CompileValue(LHS)) || !(R = CompileValue(RHS))) {
+    return nullptr;
+  }
+
+  Type *t = L->getType();
+  BinaryOperator::BinaryOps op = opcode;
+  if (t == builder_->getFloatTy() || t == builder_->getDoubleTy()) {
+    op = floating_binary_op_.at(opcode);
+  }
+  return builder_->CreateBinOp(op, L, R);
+}
+
+Value *ExprCompiler::VisitCmp(CmpInst::Predicate predicate, const Json &LHS,
+                              const Json &RHS) {
+  Value *L, *R;
+  if (!(L = CompileValue(LHS)) || !(R = CompileValue(RHS))) {
+    return nullptr;
+  }
+
+  // Assuming that the type promotion has been done
+  TypeSystem::SqlType type_id = typesystem_->GetSqlTypeId(LHS["type"]);
+  Value *v = nullptr;
+  switch (type_id) {
+  case TypeSystem::kBooleanTy:
+  case TypeSystem::kIntegerTy:
+    v = builder_->CreateICmp(predicate, L, R);
+    break;
+  case TypeSystem::kDecimalTy:
+    v = builder_->CreateFCmp(floating_op_predicates_.at(predicate), L, R);
+    break;
+  case TypeSystem::kStringTy: {
+    if (predicate != CmpInst::Predicate::ICMP_EQ &&
+        predicate != CmpInst::Predicate::ICMP_NE) {
+      *err_ =
+          SMDiagnostic(err_ctx_, SourceMgr::DK_Error,
+                       "Invalid predicate for string " + to_string(predicate));
+      v = nullptr;
+    } else {
+      Function *f = typesystem_->equals();
+      Value *CL = builder_->CreateBitCast(L, typesystem_->llvm_string_type());
+      Value *CR = builder_->CreateBitCast(R, typesystem_->llvm_string_type());
+      v = builder_->CreateCall(f, {CL, CR});
+      if (predicate == CmpInst::Predicate::ICMP_NE) {
+        v = builder_->CreateNot(v);
+      }
+    }
+  } break;
+  }
+  return v;
+}
+
+Value *ExprCompiler::VisitInputRef(const Json &type, int index) {
+  Function *F = builder_->GetInsertBlock()->getParent();
+  auto AI = F->arg_begin();
+  for (int i = 0; i < index; ++i) {
+    ++AI;
+  }
+  Type *ty = typesystem_->GetLLVMType(type);
+  assert(ty == AI->getType());
+  return AI;
+}
 
 Value *ExprCompiler::VisitLiteral(const Json &type, const Json &value) {
   TypeSystem::SqlType sql_ty = typesystem_->GetSqlTypeId(type);
@@ -62,7 +156,7 @@ Value *ExprCompiler::VisitLiteral(const Json &type, const Json &value) {
     return ConstantFP::get(ty->getContext(), fp);
   }
   case TypeSystem::kStringTy: {
-    return ConstantDataArray::getString(ty->getContext(), value.string_value());
+    return typesystem_->GetOrInsertString(value.string_value());
   }
   }
 }

@@ -31,12 +31,25 @@ namespace stormsql {
  **/
 class ExprCompiler : public ExprVisitor<ExprCompiler, llvm::Value *> {
 public:
-  explicit ExprCompiler(const std::string &err_ctx, TypeSystem *typesystem);
+  explicit ExprCompiler(const std::string &err_ctx, TypeSystem *typesystem,
+                        llvm::IRBuilder<> *builder, llvm::SMDiagnostic *err);
+  llvm::Value *VisitBinaryOperator(llvm::BinaryOperator::BinaryOps opcode,
+                                   const Json &LHS, const Json &RHS);
+  llvm::Value *VisitCmp(llvm::CmpInst::Predicate predicate, const Json &LHS,
+                        const Json &RHS);
+  llvm::Value *VisitInputRef(const Json &type, int index);
   llvm::Value *VisitLiteral(const Json &type, const Json &value);
 
 private:
+  llvm::Value *CompileValue(const Json &v);
   const std::string err_ctx_;
   TypeSystem *typesystem_;
+  llvm::IRBuilder<> *builder_;
+  llvm::SMDiagnostic *err_;
+  static const std::map<llvm::CmpInst::Predicate, llvm::CmpInst::Predicate>
+      floating_op_predicates_;
+  static const std::map<llvm::BinaryOperator::BinaryOps,
+                        llvm::BinaryOperator::BinaryOps> floating_binary_op_;
 };
 }
 #endif

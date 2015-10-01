@@ -51,14 +51,12 @@ public:
       }
     } else if (inst == "literal") {
       return static_cast<SubClass *>(this)->VisitLiteral(type, value["value"]);
+    } else if (inst == "inputref") {
+      return static_cast<SubClass *>(this)
+          ->VisitInputRef(type, value["idx"].int_value());
     } else {
       assert(0 && "Unknown expression!");
     }
-    return RetTy();
-  }
-
-  RetTy VisitCmp(llvm::CmpInst::Predicate predicate, const Json &LHS,
-                 const Json &RHS) {
     return RetTy();
   }
 
@@ -67,6 +65,12 @@ public:
     return RetTy();
   }
 
+  RetTy VisitCmp(llvm::CmpInst::Predicate predicate, const Json &LHS,
+                 const Json &RHS) {
+    return RetTy();
+  }
+
+  RetTy VisitInputRef(const Json &type, int index) { return RetTy(); }
   RetTy VisitLiteral(const Json &type, const Json &value) { return RetTy(); }
 };
 }
