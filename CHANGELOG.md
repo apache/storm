@@ -1,4 +1,8 @@
 ## 0.10.0
+ * STORM-1012: Shaded everything that was not already shaded
+ * STORM-967: Shaded everything that was not already shaded
+ * STORM-922: Shaded everything that was not already shaded
+ * STORM-1042: Shaded everything that was not already shaded
  * STORM-1026: Adding external classpath elements does not work
  * STORM-1055: storm-jdbc README needs fixes and context
  * STORM-1044: Setting dop to zero does not raise an error
