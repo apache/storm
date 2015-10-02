@@ -18,26 +18,7 @@
 package storm.kafka;
 
 import java.io.Serializable;
-import java.util.List;
 
-
-public class SpoutConfig extends KafkaConfig implements Serializable {
-    public List<String> zkServers = null;
-    public Integer zkPort = null;
-    public String zkRoot = null;
-    public String id = null;
-
-    // if set to true, spout will set Kafka topic as the emitted Stream ID
-    public boolean topicAsStreamId = false;
-
-    // setting for how often to save the current kafka offset to ZooKeeper
-    public long stateUpdateIntervalMs = 2000;
-
-    public FailedMsgRetryManagerFactory failedMsgRetryManagerFactory = new ExponentialBackoffMsgRetryManagerFactory();
-
-    public SpoutConfig(BrokerHosts hosts, String topic, String zkRoot, String id) {
-        super(hosts, topic);
-        this.zkRoot = zkRoot;
-        this.id = id;
-    }
+public interface FailedMsgRetryManagerFactory extends Serializable {
+    FailedMsgRetryManager construct();
 }
