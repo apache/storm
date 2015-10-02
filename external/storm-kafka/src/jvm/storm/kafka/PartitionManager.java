@@ -58,7 +58,8 @@ public class PartitionManager {
     ZkState _state;
     Map _stormConf;
     long numberFailed, numberAcked;
-    public PartitionManager(DynamicPartitionConnections connections, String topologyInstanceId, ZkState state, Map stormConf, SpoutConfig spoutConfig, Partition id) {
+
+    public PartitionManager(DynamicPartitionConnections connections, String topologyInstanceId, ZkState state, Map stormConf, SpoutConfig spoutConfig, Partition id, FailedMsgRetryManager failedMsgRetryManager) {
         _partition = id;
         _connections = connections;
         _spoutConfig = spoutConfig;
@@ -67,10 +68,7 @@ public class PartitionManager {
         _state = state;
         _stormConf = stormConf;
         numberAcked = numberFailed = 0;
-
-        _failedMsgRetryManager = new ExponentialBackoffMsgRetryManager(_spoutConfig.retryInitialDelayMs,
-                                                                           _spoutConfig.retryDelayMultiplier,
-                                                                           _spoutConfig.retryDelayMaxMs);
+        _failedMsgRetryManager = failedMsgRetryManager;
 
         String jsonTopologyId = null;
         Long jsonOffset = null;
