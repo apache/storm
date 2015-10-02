@@ -27,11 +27,11 @@ public class StaticCoordinator implements PartitionCoordinator {
     Map<Partition, PartitionManager> _managers = new HashMap<Partition, PartitionManager>();
     List<PartitionManager> _allManagers = new ArrayList();
 
-    public StaticCoordinator(DynamicPartitionConnections connections, Map stormConf, SpoutConfig config, ZkState state, int taskIndex, int totalTasks, String topologyInstanceId) {
+    public StaticCoordinator(DynamicPartitionConnections connections, Map stormConf, SpoutConfig config, ZkState state, int taskIndex, int totalTasks, String topologyInstanceId, FailedMsgRetryManager failedMsgRetryManager) {
         StaticHosts hosts = (StaticHosts) config.hosts;
         List<Partition> myPartitions = KafkaUtils.calculatePartitionsForTask(hosts.getPartitionInformation(), totalTasks, taskIndex);
         for (Partition myPartition : myPartitions) {
-            _managers.put(myPartition, new PartitionManager(connections, topologyInstanceId, state, stormConf, config, myPartition));
+            _managers.put(myPartition, new PartitionManager(connections, topologyInstanceId, state, stormConf, config, myPartition, failedMsgRetryManager));
         }
         _allManagers = new ArrayList(_managers.values());
     }

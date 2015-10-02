@@ -40,12 +40,13 @@ public class ZkCoordinator implements PartitionCoordinator {
     DynamicBrokersReader _reader;
     ZkState _state;
     Map _stormConf;
+    FailedMsgRetryManager _failedMsgRetryManager;
 
-    public ZkCoordinator(DynamicPartitionConnections connections, Map stormConf, SpoutConfig spoutConfig, ZkState state, int taskIndex, int totalTasks, String topologyInstanceId) {
-        this(connections, stormConf, spoutConfig, state, taskIndex, totalTasks, topologyInstanceId, buildReader(stormConf, spoutConfig));
+    public ZkCoordinator(DynamicPartitionConnections connections, Map stormConf, SpoutConfig spoutConfig, ZkState state, int taskIndex, int totalTasks, String topologyInstanceId, FailedMsgRetryManager failedMsgRetryManager) {
+        this(connections, stormConf, spoutConfig, state, taskIndex, totalTasks, topologyInstanceId, failedMsgRetryManager, buildReader(stormConf, spoutConfig));
     }
 
-    public ZkCoordinator(DynamicPartitionConnections connections, Map stormConf, SpoutConfig spoutConfig, ZkState state, int taskIndex, int totalTasks, String topologyInstanceId, DynamicBrokersReader reader) {
+    public ZkCoordinator(DynamicPartitionConnections connections, Map stormConf, SpoutConfig spoutConfig, ZkState state, int taskIndex, int totalTasks, String topologyInstanceId, FailedMsgRetryManager failedMsgRetryManager, DynamicBrokersReader reader) {
         _spoutConfig = spoutConfig;
         _connections = connections;
         _taskIndex = taskIndex;
@@ -56,6 +57,7 @@ public class ZkCoordinator implements PartitionCoordinator {
         ZkHosts brokerConf = (ZkHosts) spoutConfig.hosts;
         _refreshFreqMs = brokerConf.refreshFreqSecs * 1000;
         _reader = reader;
+        _failedMsgRetryManager = failedMsgRetryManager;
     }
 
     private static DynamicBrokersReader buildReader(Map stormConf, SpoutConfig spoutConfig) {
@@ -95,7 +97,7 @@ public class ZkCoordinator implements PartitionCoordinator {
             LOG.info(taskId(_taskIndex, _totalTasks) + "New partition managers: " + newPartitions.toString());
 
             for (Partition id : newPartitions) {
-                PartitionManager man = new PartitionManager(_connections, _topologyInstanceId, _state, _stormConf, _spoutConfig, id);
+                PartitionManager man = new PartitionManager(_connections, _topologyInstanceId, _state, _stormConf, _spoutConfig, id, _failedMsgRetryManager);
                 _managers.put(id, man);
             }
 

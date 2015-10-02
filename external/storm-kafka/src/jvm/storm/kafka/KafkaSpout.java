@@ -61,8 +61,20 @@ public class KafkaSpout extends BaseRichSpout {
 
     int _currPartitionIndex = 0;
 
-    public KafkaSpout(SpoutConfig spoutConf) {
+    final FailedMsgRetryManager _failedMsgRetryManager;
+
+    public KafkaSpout(SpoutConfig spoutConfig) {
+        this(spoutConfig,
+                new ExponentialBackoffMsgRetryManager(
+                        spoutConfig.retryInitialDelayMs,
+                        spoutConfig.retryDelayMultiplier,
+                        spoutConfig.retryDelayMaxMs)
+        );
+    }
+
+    public KafkaSpout(SpoutConfig spoutConf, FailedMsgRetryManager failedMsgRetryManager) {
         _spoutConfig = spoutConf;
+        _failedMsgRetryManager = failedMsgRetryManager;
     }
 
     @Override
@@ -90,11 +102,11 @@ public class KafkaSpout extends BaseRichSpout {
         if (_spoutConfig.hosts instanceof StaticHosts) {
             _coordinator = new StaticCoordinator(_connections, conf,
                     _spoutConfig, _state, context.getThisTaskIndex(),
-                    totalTasks, topologyInstanceId);
+                    totalTasks, topologyInstanceId, _failedMsgRetryManager);
         } else {
             _coordinator = new ZkCoordinator(_connections, conf,
                     _spoutConfig, _state, context.getThisTaskIndex(),
-                    totalTasks, topologyInstanceId);
+                    totalTasks, topologyInstanceId, _failedMsgRetryManager);
         }
 
         context.registerMetric("kafkaOffset", new IMetric() {
