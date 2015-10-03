@@ -162,8 +162,8 @@
 ;;         :else (* 10 (to-proportional-bucket (ceil (/ val 10))
 ;;                                             buckets))))
 
-(def COMMON-FIELDS [:emitted :transferred :throughput ])
-(defrecord CommonStats [emitted transferred throughput rate])
+(def COMMON-FIELDS [:emitted :transferred])
+(defrecord CommonStats [emitted transferred rate])
 
 (def BOLT-FIELDS [:acked :failed :process-latencies :executed :execute-latencies])
 ;;acked and failed count individual tuples
@@ -182,7 +182,6 @@
   (CommonStats.
     (atom (apply keyed-counter-rolling-window-set NUM-STAT-BUCKETS STAT-BUCKETS))
     (atom (apply keyed-counter-rolling-window-set NUM-STAT-BUCKETS STAT-BUCKETS))
-    (atom (apply keyed-avg-rolling-window-set NUM-STAT-BUCKETS STAT-BUCKETS))
     rate))
 
 (defn mk-bolt-stats
@@ -224,13 +223,10 @@
   (update-executor-stat! stats [:common :throughput] stream (* (stats-rate stats) throughput)))
 
 (defn bolt-execute-tuple!
-  [^BoltExecutorStats stats component stream throughput latency-ms]
+  [^BoltExecutorStats stats component stream latency-ms]
   (let [key [component stream]]
     (update-executor-stat! stats :executed key (stats-rate stats))
-    (update-executor-stat! stats :execute-latencies key latency-ms)
-    (update-stats-throughput! stats stream throughput)
-    ))
-
+    (update-executor-stat! stats :execute-latencies key latency-ms)))
 
 (defn bolt-acked-tuple!
   [^BoltExecutorStats stats component stream latency-ms]
@@ -298,15 +294,34 @@
          (value-stats stats SPOUT-FIELDS)
          {:type :spout}))
 
+(defn values-divided-by [pairs t]
+  (let [update-values (fn [m f & args]
+                        (into {} (for [[k v] m] [k (apply f v args)])))]
+    (update-values pairs / (double t))))
+
+(defn convert-count-to-throughput
+  [stat eclipsed-time-in-secs]
+  (into {} (for [[time buckets] stat]
+             [time (values-divided-by buckets (if (= time :all-time) eclipsed-time-in-secs (min time eclipsed-time-in-secs)))])))
+
+(defn remove-component-id [buckets]
+  (into {} (for [[time pair] buckets]
+             {time (into {} (for [[[component stream] v] pair]
+                              {stream v}))})))
+
 (defmulti render-stats! class-selector)
 
 (defmethod render-stats! SpoutExecutorStats
-  [stats]
-  (value-spout-stats! stats))
+  [stats start-time-in-secs]
+  (let [stats (value-spout-stats! stats)
+        eclipsed-time-in-secs (- (current-time-secs) start-time-in-secs)]
+    (assoc stats :throughput (convert-count-to-throughput (:emitted stats) eclipsed-time-in-secs))))
 
 (defmethod render-stats! BoltExecutorStats
-  [stats]
-  (value-bolt-stats! stats))
+  [stats start-time-in-secs]
+  (let [stats (value-bolt-stats! stats)
+        eclipsed-time-in-secs (- (current-time-secs) start-time-in-secs)]
+    (assoc stats :throughput (remove-component-id (convert-count-to-throughput (:executed stats) eclipsed-time-in-secs)))))
 
 (defmulti thriftify-specific-stats :type)
 (defmulti clojurify-specific-stats class-selector)
@@ -348,13 +363,13 @@
          is_bolt? (.is_set_bolt specific-stats)
          specific-stats (if is_bolt? (.get_bolt specific-stats) (.get_spout specific-stats))
          specific-stats (clojurify-specific-stats specific-stats)
-         common-stats (CommonStats. (window-set-converter (.get_emitted stats) symbol) (window-set-converter (.get_transferred stats) symbol) (window-set-converter (.get_throughput stats) symbol) (.get_rate stats))]
+         common-stats (CommonStats. (window-set-converter (.get_emitted stats) symbol) (window-set-converter (.get_transferred stats) symbol) (.get_rate stats))]
     (if is_bolt?
       ; worker heart beat does not store the BoltExecutorStats or SpoutExecutorStats , instead it stores the result returned by render-stats!
       ; which flattens the BoltExecutorStats/SpoutExecutorStats by extracting values from all atoms and merging all values inside :common to top
       ;level map we are pretty much doing the same here.
-      (dissoc (merge common-stats {:type :bolt}  (apply ->BoltExecutorStats (into [nil] specific-stats))) :common)
-      (dissoc (merge common-stats {:type :spout} (apply ->SpoutExecutorStats (into [nil] specific-stats))) :common)
+      (dissoc (merge common-stats {:type :bolt} {:throughput (.get_throughput stats)} (apply ->BoltExecutorStats (into [nil] specific-stats))) :common)
+      (dissoc (merge common-stats {:type :spout} {:throughput (.get_throughput stats)} (apply ->SpoutExecutorStats (into [nil] specific-stats))) :common)
       )))
 
 (defmethod thriftify-specific-stats :bolt

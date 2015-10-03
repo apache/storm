@@ -40,7 +40,8 @@
              [cluster :as cluster] [disruptor :as disruptor] [stats :as stats]])
   (:require [backtype.storm.daemon [task :as task]])
   (:require [backtype.storm.daemon.builtin-metrics :as builtin-metrics])
-  (:require [clojure.set :as set]))
+  (:require [clojure.set :as set]
+            [backtype.storm.util :as util]))
 
 (defn- mk-fields-grouper [^Fields out-fields ^Fields group-fields ^List target-tasks]
   (let [num-tasks (count target-tasks)
@@ -268,7 +269,7 @@
      :spout-throttling-metrics (if (= executor-type :spout)
                                 (builtin-metrics/make-spout-throttling-data)
                                 nil)
-     :rate-tracker (RateTracker. 10000 10)
+     :start-time-in-secs (util/current-time-secs)
      ;; TODO: add in the executor-specific stuff in a :specific... or make a spout-data, bolt-data function?
      )))
 
@@ -398,7 +399,7 @@
     (reify
       RunningExecutor
       (render-stats [this]
-        (stats/render-stats! (:stats executor-data)))
+        (stats/render-stats! (:stats executor-data) (:start-time-in-secs executor-data)))
       (get-executor-id [this]
         executor-id)
       (credentials-changed [this creds]
@@ -553,9 +554,7 @@
         has-ackers? (has-ackers? storm-conf)
         has-eventloggers? (has-eventloggers? storm-conf)
         emitted-count (MutableLong. 0)
-        empty-emit-streak (MutableLong. 0)
-        spout-counts (count task-datas)
-        rate-tracker (:rate-tracker executor-data)]
+        empty-emit-streak (MutableLong. 0)]
 
     [(async-loop
       (fn []
@@ -575,11 +574,7 @@
                                                          (tasks-fn out-stream-id values))
                                              rooted? (and message-id has-ackers?)
                                              root-id (if rooted? (MessageId/generateId rand))
-                                             out-ids (fast-list-for [t out-tasks] (if rooted? (MessageId/generateId rand)))
-                                             sampler? (sampler)]
-                                         (when sampler?
-                                           (.notify rate-tracker (count out-tasks))
-                                           (stats/update-stats-throughput! (:stats executor-data) out-stream-id (.reportRate rate-tracker)))
+                                             out-ids (fast-list-for [t out-tasks] (if rooted? (MessageId/generateId rand)))]
                                          (fast-list-iter [out-task out-tasks id out-ids]
                                                          (let [tuple-id (if rooted?
                                                                           (MessageId/makeRootId root-id id)
@@ -674,8 +669,7 @@
                     (log-message "Activating spout " component-id ":" (keys task-datas))
                     (fast-list-iter [^ISpout spout spouts] (.activate spout)))
 
-                  (fast-list-iter [^ISpout spout spouts] (.nextTuple spout))
-                  )
+                  (fast-list-iter [^ISpout spout spouts] (.nextTuple spout)))
                 (do
                   (when @last-active
                     (reset! last-active false)
@@ -720,8 +714,6 @@
         {:keys [storm-conf component-id worker-context transfer-fn report-error sampler
                 open-or-prepare-was-called?]} executor-data
         rand (Random. (Utils/secureRandomLong))
-
-        rate-tracker (:rate-tracker executor-data)
 
         ;; the overflow buffer is used to ensure that bolts do not block when emitting
         ;; this ensures that the bolt can always clear the incoming messages, which
@@ -774,7 +766,6 @@
 
                                   (task/apply-hooks user-context .boltExecute (BoltExecuteInfo. tuple task-id delta))
                                   (when delta
-                                    (.notify rate-tracker 1)
                                     (builtin-metrics/bolt-execute-tuple! (:builtin-metrics task-data)
                                                                          executor-stats
                                                                          (.getSourceComponent tuple)
@@ -783,7 +774,6 @@
                                     (stats/bolt-execute-tuple! executor-stats
                                                                (.getSourceComponent tuple)
                                                                (.getSourceStreamId tuple)
-                                                               (.reportRate rate-tracker)
                                                                delta)))))))
         has-eventloggers? (has-eventloggers? storm-conf)]
 
