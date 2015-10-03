@@ -1,4 +1,5 @@
 ## 0.10.0
+ * STORM-1066: Specify current directory when supervisor launches a worker
  * STORM-1012: Shaded everything that was not already shaded
  * STORM-967: Shaded everything that was not already shaded
  * STORM-922: Shaded everything that was not already shaded
