@@ -18,6 +18,7 @@
   (:import [java.net InetAddress])
   (:import [java.util Map Map$Entry List ArrayList Collection Iterator HashMap])
   (:import [java.io FileReader FileNotFoundException])
+  (:import [java.nio.file Paths])
   (:import [backtype.storm Config])
   (:import [backtype.storm.utils Time Container ClojureTimerTask Utils
             MutableObject MutableInt])
@@ -57,6 +58,9 @@
 
 (def class-path-separator
   (System/getProperty "path.separator"))
+
+(defn is-absolute-path? [path]
+  (.isAbsolute (Paths/get path (into-array String []))))
 
 (defmacro defalias
   "Defines an alias for a var: a new var with the same root binding (if
@@ -519,9 +523,10 @@
   ))
 
 (defnk launch-process
-  [command :environment {} :log-prefix nil :exit-code-callback nil]
+  [command :environment {} :log-prefix nil :exit-code-callback nil :directory nil]
   (let [builder (ProcessBuilder. command)
         process-env (.environment builder)]
+    (when directory (.directory builder directory))
     (.redirectErrorStream builder true)
     (doseq [[k v] environment]
       (.put process-env k v))
@@ -750,10 +755,6 @@
           my-elems (map first colls)
           rest-elems (apply interleave-all (map rest colls))]
       (concat my-elems rest-elems))))
-
-(defn update
-  [m k afn]
-  (assoc m k (afn (get m k))))
 
 (defn any-intersection
   [& sets]
@@ -1017,11 +1018,15 @@
   (.getCanonicalPath 
                 (clojure.java.io/file (System/getProperty "storm.home") "logs")))
 
-(defn- logs-rootname [storm-id port]
-  (str storm-id "-worker-" port))
+(defn- logs-rootname
+  ([storm-id port] (logs-rootname storm-id port "-worker-"))
+  ([storm-id port type] (str storm-id type port)))
 
-(defn logs-filename [storm-id port]
-  (str (logs-rootname storm-id port) ".log"))
+(defn logs-filename
+  ([storm-id port] (str (logs-rootname storm-id port) ".log"))
+  ([storm-id port type] (str (logs-rootname storm-id port type) ".log")))
+
+(defn event-logs-filename [storm-id port] (logs-filename storm-id port "-events-"))
 
 (defn logs-metadata-filename [storm-id port]
   (str (logs-rootname storm-id port) ".yaml"))
