@@ -199,7 +199,7 @@ public class ConfigValidation {
                 }
             }
 
-            throw new IllegalArgumentException("Field " + name + " must be an Integer > 0");
+            throw new IllegalArgumentException("Field " + name + " must be an Integer");
         }
     };
 
