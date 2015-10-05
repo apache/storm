@@ -94,6 +94,8 @@ The KafkaConfig class also has bunch of public variables that controls your appl
     public int bufferSizeBytes = 1024 * 1024;
     public MultiScheme scheme = new RawMultiScheme();
     public boolean ignoreStoredOffsets = false;
+    // ignoreZkOffsets is now deprecated. Although it is still honored now, you should change to use ignoreStoredOffsets.
+    public boolean ignoreZkOffsets = false;
     public long startOffsetTime = kafka.api.OffsetRequest.EarliestTime();
     public long maxOffsetBehind = Long.MAX_VALUE;
     public boolean useStartOffsetTimeIfOffsetOutOfRange = true;
