@@ -17,10 +17,8 @@
  */
 package backtype.storm.serialization;
 
-import backtype.storm.tuple.TupleImpl;
+import backtype.storm.tuple.Batch;
 
-
-public interface ITupleSerializer {
-    byte[] serialize(TupleImpl tuple);
-//    long crc32(Tuple tuple);
+public interface IBatchSerializer {
+    byte[] serialize(Batch batch);
 }

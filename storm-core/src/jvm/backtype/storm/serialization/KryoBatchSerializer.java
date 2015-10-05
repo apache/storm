@@ -18,44 +18,41 @@
 package backtype.storm.serialization;
 
 import backtype.storm.task.GeneralTopologyContext;
+import backtype.storm.tuple.Batch;
 import backtype.storm.tuple.TupleImpl;
+import backtype.storm.tuple.Values;
 import com.esotericsoftware.kryo.io.Output;
+
 import java.io.IOException;
 import java.util.Map;
 
-public class KryoTupleSerializer implements ITupleSerializer {
+public class KryoBatchSerializer implements IBatchSerializer {
     KryoValuesSerializer _kryo;
-    SerializationFactory.IdDictionary _ids;   
+    SerializationFactory.IdDictionary _ids;
     Output _kryoOut;
-    
-    public KryoTupleSerializer(final Map conf, final GeneralTopologyContext context) {
+
+    public KryoBatchSerializer(final Map conf, final GeneralTopologyContext context) {
         _kryo = new KryoValuesSerializer(conf);
         _kryoOut = new Output(2000, 2000000000);
         _ids = new SerializationFactory.IdDictionary(context.getRawTopology());
     }
 
-    public byte[] serialize(TupleImpl tuple) {
+    public byte[] serialize(Batch batch) {
+        final int size = batch.tupleBuffer.size();
         try {
-            
             _kryoOut.clear();
-            _kryoOut.writeByte('T');
-            _kryoOut.writeInt(tuple.getSourceTask(), true);
-            _kryoOut.writeInt(_ids.getStreamId(tuple.getSourceComponent(), tuple.getSourceStreamId()), true);
-            tuple.getMessageId().serialize(_kryoOut);
-            _kryo.serializeInto(tuple.getValues(), _kryoOut);
+            _kryoOut.writeByte('B');
+            _kryoOut.writeInt(size);
+            _kryoOut.writeInt(batch.sourceTaskId, true);
+            _kryoOut.writeInt(_ids.getStreamId(batch.sourceComponent, batch.streamId), true);
+            for(int i = 0; i < size; ++i) {
+                batch.idBuffer.get(i).serialize(_kryoOut);
+                _kryo.serializeInto(batch.tupleBuffer.get(i), _kryoOut);
+            }
             return _kryoOut.toBytes();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-//    public long crc32(Tuple tuple) {
-//        try {
-//            CRC32OutputStream hasher = new CRC32OutputStream();
-//            _kryo.serializeInto(tuple.getValues(), hasher);
-//            return hasher.getValue();
-//        } catch (IOException e) {
-//            throw new RuntimeException(e);
-//        }
-//    }
 }

@@ -26,9 +26,8 @@
   (:import [java.util ArrayList HashMap])
   (:import [backtype.storm.utils Utils TransferDrainer ThriftTopologyUtils WorkerBackpressureThread DisruptorQueue])
   (:import [backtype.storm.messaging TransportFactory])
-  (:import [backtype.storm.messaging TaskMessage IContext IConnection ConnectionWithStatus ConnectionWithStatus$Status])
+  (:import [backtype.storm.messaging IContext IConnection ConnectionWithStatus ConnectionWithStatus$Status])
   (:import [backtype.storm.daemon Shutdownable])
-  (:import [backtype.storm.serialization KryoTupleSerializer])
   (:import [backtype.storm.generated StormTopology])
   (:import [backtype.storm.tuple Fields])
   (:import [backtype.storm.task WorkerTopologyContext])
@@ -115,11 +114,6 @@
               (log-warn "Received invalid messages for unknown tasks. Dropping... ")
               )))))))
 
-(defn- assert-can-serialize [^KryoTupleSerializer serializer tuple-batch]
-  "Check that all of the tuples can be serialized by serializing them."
-  (fast-list-iter [[task tuple :as pair] tuple-batch]
-    (.serialize serializer tuple)))
-
 (defn- mk-backpressure-handler [executors]
   "make a handler that checks and updates worker's backpressure flag"
   (disruptor/worker-backpressure-handler
@@ -151,41 +145,6 @@
       "If worker's queue is below low watermark, we do nothing since we want the
       WorkerBackPressureThread to also check for all the executors' status"
       )))
-
-(defn mk-transfer-fn [worker]
-  (let [local-tasks (-> worker :task-ids set)
-        local-transfer (:transfer-local-fn worker)
-        ^DisruptorQueue transfer-queue (:transfer-queue worker)
-        task->node+port (:cached-task->node+port worker)
-        try-serialize-local ((:storm-conf worker) TOPOLOGY-TESTING-ALWAYS-TRY-SERIALIZE)
-
-        transfer-fn
-          (fn [^KryoTupleSerializer serializer tuple-batch]
-            (let [local (ArrayList.)
-                  remoteMap (HashMap.)]
-              (fast-list-iter [[task tuple :as pair] tuple-batch]
-                (if (local-tasks task)
-                  (.add local pair)
-
-                  ;;Using java objects directly to avoid performance issues in java code
-                  (do
-                    (when (not (.get remoteMap task))
-                      (.put remoteMap task (ArrayList.)))
-                    (let [remote (.get remoteMap task)]
-                      (if (not-nil? task)
-                        (.add remote (TaskMessage. task (.serialize serializer tuple)))
-                        (log-warn "Can't transfer tuple - task value is nil. tuple type: " (pr-str (type tuple)) " and information: " (pr-str tuple)))
-                     ))))
-
-              (local-transfer local)
-              (disruptor/publish transfer-queue remoteMap)))]
-    (if try-serialize-local
-      (do
-        (log-warn "WILL TRY TO SERIALIZE ALL TUPLES (Turn off " TOPOLOGY-TESTING-ALWAYS-TRY-SERIALIZE " for production)")
-        (fn [^KryoTupleSerializer serializer tuple-batch]
-          (assert-can-serialize serializer tuple-batch)
-          (transfer-fn serializer tuple-batch)))
-      transfer-fn)))
 
 (defn- mk-receive-queue-map [storm-conf executors]
   (->> executors
@@ -294,7 +253,6 @@
       :user-shared-resources (mk-user-resources <>)
       :transfer-local-fn (mk-transfer-local-fn <>)
       :receiver-thread-count (get storm-conf WORKER-RECEIVER-THREAD-COUNT)
-      :transfer-fn (mk-transfer-fn <>)
       :assignment-versions assignment-versions
       :backpressure (atom false) ;; whether this worker is going slow
       :backpressure-trigger (atom false) ;; a trigger for synchronization with executors

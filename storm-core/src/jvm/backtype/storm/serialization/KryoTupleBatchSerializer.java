@@ -17,10 +17,26 @@
  */
 package backtype.storm.serialization;
 
+import backtype.storm.task.GeneralTopologyContext;
+import backtype.storm.tuple.Batch;
 import backtype.storm.tuple.TupleImpl;
+import java.util.Map;
 
+public class KryoTupleBatchSerializer implements ITupleBatchSerializer {
+    KryoTupleSerializer _kryoTuple;
+    KryoBatchSerializer _kryoBatch;
 
-public interface ITupleSerializer {
-    byte[] serialize(TupleImpl tuple);
-//    long crc32(Tuple tuple);
+    public KryoTupleBatchSerializer(final Map conf, final GeneralTopologyContext context) {
+        _kryoTuple = new KryoTupleSerializer(conf, context);
+        _kryoBatch = new KryoBatchSerializer(conf, context);
+    }
+
+    public byte[] serialize(TupleImpl tuple) {
+        return _kryoTuple.serialize(tuple);
+    }
+
+    public byte[] serialize(Batch batch) {
+        return _kryoBatch.serialize(batch);
+    }
+
 }
