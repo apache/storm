@@ -1,5 +1,6 @@
 package storm.kafka;
 
+import com.google.common.collect.ImmutableMap;
 import kafka.javaapi.producer.Producer;
 import kafka.producer.KeyedMessage;
 import kafka.producer.ProducerConfig;
@@ -29,8 +30,8 @@ public class KafkaDataSourceTest {
 
         Properties props = new Properties();
         props.put("metadata.broker.list", testBroker.getBrokerConnectionString());
-        Producer p = new Producer(new ProducerConfig(props));
-        KeyedMessage msg = new KeyedMessage(testTopic, "test message".getBytes());
+        Producer<byte[], byte[]> p = new Producer<>(new ProducerConfig(props));
+        KeyedMessage<byte[], byte[]> msg = new KeyedMessage<>(testTopic, "test message".getBytes());
         p.send(msg);
 
         ZkHosts hosts = new ZkHosts(connectionString);
@@ -51,12 +52,22 @@ public class KafkaDataSourceTest {
 
     @Test
     public void testStoreReadWrite() {
-        Long offset = 100L;
-        String testData = "abcdefg";
+        Partition testPartition = new Partition(new Broker("localhost", 9100), 1);
 
-        dataStore.write(offset, testData);
-        String readBack = dataStore.read();
+        Map broker = ImmutableMap.of("host", "kafka.sample.net", "port", 9100L);
+        Map topology = ImmutableMap.of("id", "fce905ff-25e0 -409e-bc3a-d855f 787d13b", "name", "Test Topology");
+        Map testState = ImmutableMap.of("broker", broker, "offset", 4285L, "partition", 1L, "topic", "testTopic", "topology", topology);
 
-        assertEquals(testData, readBack);
+        dataStore.writeState(testPartition, testState);
+        Map<Object, Object> state = dataStore.readState(testPartition);
+
+        assertEquals("kafka.sample.net", ((Map)state.get("broker")).get("host"));
+        assertEquals(9100L, ((Map)state.get("broker")).get("port"));
+        assertEquals(4285L, state.get("offset"));
+        assertEquals(1L, state.get("partition"));
+        assertEquals(4285L, state.get("offset"));
+        assertEquals("testTopic", state.get("topic"));
+        assertEquals("fce905ff-25e0 -409e-bc3a-d855f 787d13b", ((Map) state.get("topology")).get("id"));
+        assertEquals("Test Topology", ((Map)state.get("topology")).get("name"));
     }
 }

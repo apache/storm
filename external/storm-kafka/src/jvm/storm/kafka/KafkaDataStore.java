@@ -12,6 +12,7 @@ import kafka.javaapi.OffsetCommitResponse;
 import kafka.javaapi.OffsetFetchRequest;
 import kafka.javaapi.OffsetFetchResponse;
 import kafka.network.BlockingChannel;
+import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class KafkaDataStore {
+public class KafkaDataStore implements StateStore {
     private static final Logger LOG = LoggerFactory.getLogger(KafkaDataStore.class);
 
     private SpoutConfig _spoutConfig;
@@ -40,6 +41,20 @@ public class KafkaDataStore {
         this._consumerClientId = _spoutConfig.clientId;
         this._stateOpTimeout = _spoutConfig.stateOpTimeout;
         this._stateOpMaxRetry = _spoutConfig.stateOpMaxRetry;
+    }
+
+    @Override
+    public void writeState(Partition p, Map<Object, Object> state) {
+        assert state.containsKey("offset");
+
+        Long offsetOfPartition = (Long)state.get("offset");
+        String stateData = JSONValue.toJSONString(state);
+        write(offsetOfPartition, stateData);
+    }
+
+    @Override
+    public Map<Object, Object> readState(Partition p) {
+        return  (Map<Object, Object>) JSONValue.parse(read());
     }
 
     // as there is a manager per topic per partition and the stateUpdateIntervalMs should not be too small
@@ -127,7 +142,7 @@ public class KafkaDataStore {
         }
     }
 
-    public String read() {
+    private String read() {
         int attemptCount = 0;
         while (true) {
             try {
@@ -177,7 +192,7 @@ public class KafkaDataStore {
         }
     }
 
-    public void write(Long offsetOfPartition,  String data) {
+    private void write(Long offsetOfPartition,  String data) {
         int attemptCount = 0;
         while (true) {
             try {
@@ -201,5 +216,4 @@ public class KafkaDataStore {
         _offsetManager.disconnect();
         _offsetManager = null;
     }
-
 }

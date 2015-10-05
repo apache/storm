@@ -23,16 +23,19 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.RetryNTimes;
 import org.apache.zookeeper.CreateMode;
+import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ZkDataStore {
+public class ZkDataStore implements StateStore {
     private static final Logger LOG = LoggerFactory.getLogger(ZkDataStore.class);
 
+    private SpoutConfig _spoutConfig;
     private CuratorFramework _curator;
 
     private CuratorFramework newCurator(Map stateConf) throws Exception {
@@ -53,9 +56,10 @@ public class ZkDataStore {
         return _curator;
     }
 
-    public ZkDataStore(Map stateConf) {
-        stateConf = new HashMap(stateConf);
+    public ZkDataStore(Map stateConf, SpoutConfig spoutConfig) {
+        _spoutConfig = spoutConfig;
 
+        stateConf = new HashMap(stateConf);
         try {
             _curator = newCurator(stateConf);
             _curator.start();
@@ -64,7 +68,31 @@ public class ZkDataStore {
         }
     }
 
-    public void write(String path, byte[] bytes) {
+    @Override
+    public void writeState(Partition p, Map<Object, Object> state) {
+        LOG.debug("Writing to " + committedPath(p) + " with stat data " + state.toString());
+        write(committedPath(p), JSONValue.toJSONString(state).getBytes(Charset.forName("UTF-8")));
+    }
+
+    @Override
+    public Map<Object, Object> readState(Partition p) {
+        LOG.debug("Reading from " + committedPath(p) + " for state data");
+        try {
+            byte[] b = read(committedPath(p));
+            if (b == null) {
+                return null;
+            }
+            return (Map<Object, Object>) JSONValue.parse(new String(b, "UTF-8"));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private String committedPath(Partition partition) {
+        return _spoutConfig.zkRoot + "/" + _spoutConfig.id + "/" + partition.getId();
+    }
+
+    private void write(String path, byte[] bytes) {
         try {
             if (_curator.checkExists().forPath(path) == null) {
                 _curator.create()
@@ -79,7 +107,7 @@ public class ZkDataStore {
         }
     }
 
-    public byte[] read(String path) {
+    private byte[] read(String path) {
         try {
             if (_curator.checkExists().forPath(path) != null) {
                 return _curator.getData().forPath(path);

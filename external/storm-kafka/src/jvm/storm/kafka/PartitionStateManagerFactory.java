@@ -34,7 +34,7 @@ public class PartitionStateManagerFactory {
         _zkDataStoreConf.put(Config.TRANSACTIONAL_ZOOKEEPER_SERVERS, zkServers);
         _zkDataStoreConf.put(Config.TRANSACTIONAL_ZOOKEEPER_PORT, zkPort);
         _zkDataStoreConf.put(Config.TRANSACTIONAL_ZOOKEEPER_ROOT, _spoutConfig.zkRoot);
-        return new ZkDataStore(_zkDataStoreConf);
+        return new ZkDataStore(_zkDataStoreConf, _spoutConfig);
 
     }
 
@@ -51,11 +51,11 @@ public class PartitionStateManagerFactory {
     public PartitionStateManager getInstance(Partition partition) {
 
         if (_spoutConfig.stateStore == null || STATE_STORE_ZOOKEEPER.equals(_spoutConfig.stateStore)) {
-            return new ZKBackedPartitionStateManager(_stormConf,_spoutConfig,  partition, sharedZkDataStore);
+            return new SimplePartitionStateManager(_stormConf,_spoutConfig,  partition, sharedZkDataStore);
 
         } else if (STATE_STORE__KAFKA.equals(_spoutConfig.stateStore)) {
             KafkaDataStore kafkaDataStore = new KafkaDataStore(_stormConf, _spoutConfig, partition);
-            return new KafkaBackedPartitionStateManager(_stormConf, _spoutConfig, partition, kafkaDataStore);
+            return new SimplePartitionStateManager(_stormConf, _spoutConfig, partition, kafkaDataStore);
 
         } else {
             throw new RuntimeException(String.format("Invalid value defined for _spoutConfig.stateStore: %s. "
