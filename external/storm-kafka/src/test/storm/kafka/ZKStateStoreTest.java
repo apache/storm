@@ -32,7 +32,7 @@ public class ZKStateStoreTest {
         spoutConfig.zkServers = Arrays.asList("localhost");
         spoutConfig.zkPort = server.getPort();
 
-        Map stormConf = new HashMap();
+        Map<String, Object> stormConf = new HashMap<>();
         stormConf.put(Config.TRANSACTIONAL_ZOOKEEPER_PORT, spoutConfig.zkPort);
         stormConf.put(Config.TRANSACTIONAL_ZOOKEEPER_SERVERS, spoutConfig.zkServers);
         stormConf.put(Config.STORM_ZOOKEEPER_SESSION_TIMEOUT, 20000);
@@ -40,12 +40,7 @@ public class ZKStateStoreTest {
         stormConf.put(Config.STORM_ZOOKEEPER_RETRY_TIMES, 3);
         stormConf.put(Config.STORM_ZOOKEEPER_RETRY_INTERVAL, 30);
 
-        Map storeConfig = new HashMap(stormConf);
-        storeConfig.put(Config.TRANSACTIONAL_ZOOKEEPER_SERVERS, spoutConfig.zkServers);
-        storeConfig.put(Config.TRANSACTIONAL_ZOOKEEPER_PORT, spoutConfig.zkPort);
-        storeConfig.put(Config.TRANSACTIONAL_ZOOKEEPER_ROOT, spoutConfig.zkRoot);
-
-        stateStore = new ZkStateStore(storeConfig,spoutConfig);
+        stateStore = new ZkStateStore(stormConf, spoutConfig);
     }
 
     @After

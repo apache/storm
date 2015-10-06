@@ -39,10 +39,7 @@ public class KafkaStateStoreTest {
 
         Map stormConf = new HashMap();
 
-        Broker broker = new Broker("localhost", testBroker.getPort());
-        Partition testPartition = new Partition(broker, 0);
-
-        stateStore = new KafkaStateStore(stormConf, spoutConfig, testPartition);
+        stateStore = new KafkaStateStore(stormConf, spoutConfig);
     }
 
     @After
@@ -52,7 +49,7 @@ public class KafkaStateStoreTest {
 
     @Test
     public void testStoreReadWrite() {
-        Partition testPartition = new Partition(new Broker("localhost", 9100), 1);
+        Partition testPartition = new Partition(new Broker("localhost", testBroker.getPort()), 0);
 
         Map broker = ImmutableMap.of("host", "kafka.sample.net", "port", 9100L);
         Map topology = ImmutableMap.of("id", "fce905ff-25e0 -409e-bc3a-d855f 787d13b", "name", "Test Topology");

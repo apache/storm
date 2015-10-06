@@ -10,12 +10,10 @@ import java.util.Map;
  */
 public class PartitionStateManager implements Closeable {
 
-    private SpoutConfig _spoutConfig;
     private Partition _partition;
     private StateStore _stateStore;
 
-    public PartitionStateManager(Map stormConfig, SpoutConfig spoutConfig, Partition partition, StateStore stateStore) {
-        this._spoutConfig = spoutConfig;
+    public PartitionStateManager(Partition partition, StateStore stateStore) {
         this._partition = partition;
         this._stateStore = stateStore;
     }

@@ -56,12 +56,24 @@ public class ZkStateStore implements StateStore {
         return _curator;
     }
 
-    public ZkStateStore(Map stateConf, SpoutConfig spoutConfig) {
+    public ZkStateStore(Map conf, SpoutConfig spoutConfig) {
         _spoutConfig = spoutConfig;
 
-        stateConf = new HashMap(stateConf);
+        Map<String, Object> zkStateStoreConf = new HashMap<>(conf);
+        List<String> zkServers = _spoutConfig.zkServers;
+        if (zkServers == null) {
+            zkServers = (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS);
+        }
+        Integer zkPort = _spoutConfig.zkPort;
+        if (zkPort == null) {
+            zkPort = ((Number) conf.get(Config.STORM_ZOOKEEPER_PORT)).intValue();
+        }
+        zkStateStoreConf.put(Config.TRANSACTIONAL_ZOOKEEPER_SERVERS, zkServers);
+        zkStateStoreConf.put(Config.TRANSACTIONAL_ZOOKEEPER_PORT, zkPort);
+        zkStateStoreConf.put(Config.TRANSACTIONAL_ZOOKEEPER_ROOT, _spoutConfig.zkRoot);
+
         try {
-            _curator = newCurator(stateConf);
+            _curator = newCurator(zkStateStoreConf);
             _curator.start();
         } catch (Exception e) {
             throw new RuntimeException(e);

@@ -6,11 +6,7 @@ import kafka.common.ErrorMapping;
 import kafka.common.OffsetAndMetadata;
 import kafka.common.OffsetMetadataAndError;
 import kafka.common.TopicAndPartition;
-import kafka.javaapi.ConsumerMetadataResponse;
-import kafka.javaapi.OffsetCommitRequest;
-import kafka.javaapi.OffsetCommitResponse;
-import kafka.javaapi.OffsetFetchRequest;
-import kafka.javaapi.OffsetFetchResponse;
+import kafka.javaapi.*;
 import kafka.network.BlockingChannel;
 import org.json.simple.JSONValue;
 import org.slf4j.Logger;
@@ -24,23 +20,13 @@ public class KafkaStateStore implements StateStore {
     private static final Logger LOG = LoggerFactory.getLogger(KafkaStateStore.class);
 
     private SpoutConfig _spoutConfig;
-    private Partition _partition;
-
-    private String _consumerGroupId;
-    private String _consumerClientId;
-    private int _stateOpTimeout;
-    private int _stateOpMaxRetry;
 
     private int _correlationId = 0;
-    private BlockingChannel _offsetManager;
+    // https://en.wikipedia.org/wiki/Double-checked_locking#Usage_in_Java
+    private volatile BlockingChannel _offsetManager;
 
-    public KafkaStateStore(Map stormConf, SpoutConfig spoutConfig, Partition partition) {
+    public KafkaStateStore(Map stormConf, SpoutConfig spoutConfig) {
         this._spoutConfig = spoutConfig;
-        this._partition = partition;
-        this._consumerGroupId = _spoutConfig.id;
-        this._consumerClientId = _spoutConfig.clientId;
-        this._stateOpTimeout = _spoutConfig.stateOpTimeout;
-        this._stateOpMaxRetry = _spoutConfig.stateOpMaxRetry;
     }
 
     @Override
@@ -49,12 +35,12 @@ public class KafkaStateStore implements StateStore {
 
         Long offsetOfPartition = (Long)state.get("offset");
         String stateData = JSONValue.toJSONString(state);
-        write(offsetOfPartition, stateData);
+        write(offsetOfPartition, stateData, p);
     }
 
     @Override
     public Map<Object, Object> readState(Partition p) {
-        return  (Map<Object, Object>) JSONValue.parse(read());
+        return  (Map<Object, Object>) JSONValue.parse(read(p));
     }
 
     @Override
@@ -63,73 +49,87 @@ public class KafkaStateStore implements StateStore {
         _offsetManager = null;
     }
 
-    // as there is a manager per topic per partition and the stateUpdateIntervalMs should not be too small
-    // feels ok to  place a sync here
-    private synchronized BlockingChannel locateOffsetManager() {
+    private BlockingChannel getOffsetManager(Partition partition) {
         if (_offsetManager == null) {
-            BlockingChannel channel = new BlockingChannel(_partition.host.host, _partition.host.port,
-                    BlockingChannel.UseDefaultBufferSize(),
-                    BlockingChannel.UseDefaultBufferSize(),
-                    1000000 /* read timeout in millis */);
-            channel.connect();
-
-            ConsumerMetadataResponse metadataResponse = null;
-            long backoffMillis = 3000L;
-            int maxRetry = 3;
-            int retryCount = 0;
-            // this usually only happens when the internal offsets topic does not exist before and we need to wait until
-            // the topic is automatically created and the meta data are populated across cluster. So we hard-code the retry here.
-
-            // one scenario when this could happen is during unit test.
-            while (retryCount < maxRetry) {
-                channel.send(new ConsumerMetadataRequest(_consumerGroupId, ConsumerMetadataRequest.CurrentVersion(),
-                        _correlationId++, _consumerClientId));
-                metadataResponse = ConsumerMetadataResponse.readFrom(channel.receive().buffer());
-                if (metadataResponse.errorCode() == ErrorMapping.ConsumerCoordinatorNotAvailableCode()) {
-                    LOG.warn("Failed to get coordinator: " + metadataResponse.errorCode());
-                    retryCount++;
-                    try {
-                        Thread.sleep(backoffMillis);
-                    } catch (InterruptedException e) {
-                        // eat the exception
-                    }
-                } else {
-                    break;
-                }
-            }
-
-            if (metadataResponse.errorCode() == ErrorMapping.NoError()) {
-                kafka.cluster.Broker offsetManager = metadataResponse.coordinator();
-                if (!offsetManager.host().equals(_partition.host.host)
-                        || !(offsetManager.port() == _partition.host.port)) {
-                    // if the coordinator is different, from the above channel's host then reconnect
-                    channel.disconnect();
-                    channel = new BlockingChannel(offsetManager.host(), offsetManager.port(),
-                            BlockingChannel.UseDefaultBufferSize(),
-                            BlockingChannel.UseDefaultBufferSize(),
-                            _stateOpTimeout /* read timeout in millis */);
-                    channel.connect();
-                }
-            } else {
-                throw new RuntimeException("Kafka metadata fetch error: " + metadataResponse.errorCode());
-            }
-            _offsetManager = channel;
+            _offsetManager = locateOffsetManager(partition);
         }
         return _offsetManager;
     }
 
-    private String attemptToRead() {
+    // supposedly we only need to locate offset manager once. Other cases, such as the offsetManager
+    // gets relocated, should be rare. So it is ok to sync.
+    //
+    // although we take a particular partition to locate the offset manager, the location of the
+    // offset manager should apply to the entire consumer group
+    private synchronized BlockingChannel locateOffsetManager(Partition partition) {
+
+        // if another invocation has already
+        if (_offsetManager != null) {
+            return _offsetManager;
+        }
+
+        BlockingChannel channel = new BlockingChannel(partition.host.host, partition.host.port,
+                BlockingChannel.UseDefaultBufferSize(),
+                BlockingChannel.UseDefaultBufferSize(),
+                1000000 /* read timeout in millis */);
+        channel.connect();
+
+        ConsumerMetadataResponse metadataResponse = null;
+        long backoffMillis = 3000L;
+        int maxRetry = 3;
+        int retryCount = 0;
+        // this usually only happens when the internal offsets topic does not exist before and we need to wait until
+        // the topic is automatically created and the meta data are populated across cluster. So we hard-code the retry here.
+
+        // one scenario when this could happen is during unit test.
+        while (retryCount < maxRetry) {
+            channel.send(new ConsumerMetadataRequest(_spoutConfig.id, ConsumerMetadataRequest.CurrentVersion(),
+                    _correlationId++, _spoutConfig.clientId));
+            metadataResponse = ConsumerMetadataResponse.readFrom(channel.receive().buffer());
+            if (metadataResponse.errorCode() == ErrorMapping.ConsumerCoordinatorNotAvailableCode()) {
+                LOG.warn("Failed to get coordinator: " + metadataResponse.errorCode());
+                retryCount++;
+                try {
+                    Thread.sleep(backoffMillis);
+                } catch (InterruptedException e) {
+                    // eat the exception
+                }
+            } else {
+                break;
+            }
+        }
+
+        assert (metadataResponse != null);
+        if (metadataResponse.errorCode() == ErrorMapping.NoError()) {
+            kafka.cluster.Broker offsetManager = metadataResponse.coordinator();
+            if (!offsetManager.host().equals(partition.host.host)
+                    || !(offsetManager.port() == partition.host.port)) {
+                // if the coordinator is different, from the above channel's host then reconnect
+                channel.disconnect();
+                channel = new BlockingChannel(offsetManager.host(), offsetManager.port(),
+                        BlockingChannel.UseDefaultBufferSize(),
+                        BlockingChannel.UseDefaultBufferSize(),
+                        _spoutConfig.stateOpTimeout /* read timeout in millis */);
+                channel.connect();
+            }
+        } else {
+            throw new RuntimeException("Kafka metadata fetch error: " + metadataResponse.errorCode());
+        }
+        return channel;
+    }
+
+    private String attemptToRead(Partition partition) {
         List<TopicAndPartition> partitions = new ArrayList<TopicAndPartition>();
-        TopicAndPartition thisTopicPartition = new TopicAndPartition(_spoutConfig.topic, _partition.partition);
+        TopicAndPartition thisTopicPartition = new TopicAndPartition(_spoutConfig.topic, partition.partition);
         partitions.add(thisTopicPartition);
         OffsetFetchRequest fetchRequest = new OffsetFetchRequest(
-                _consumerGroupId,
+                _spoutConfig.id,
                 partitions,
                 (short) 1, // version 1 and above fetch from Kafka, version 0 fetches from ZooKeeper
                 _correlationId++,
-                _consumerClientId);
+                _spoutConfig.clientId);
 
-        BlockingChannel offsetManager = locateOffsetManager();
+        BlockingChannel offsetManager = getOffsetManager(partition);
         offsetManager.send(fetchRequest.underlying());
         OffsetFetchResponse fetchResponse = OffsetFetchResponse.readFrom(offsetManager.receive().buffer());
         OffsetMetadataAndError result = fetchResponse.offsets().get(thisTopicPartition);
@@ -148,48 +148,48 @@ public class KafkaStateStore implements StateStore {
         }
     }
 
-    private String read() {
+    private String read(Partition partition) {
         int attemptCount = 0;
         while (true) {
             try {
-                return attemptToRead();
+                return attemptToRead(partition);
 
             } catch(RuntimeException re) {
-                if (++attemptCount > _stateOpMaxRetry) {
+                if (++attemptCount > _spoutConfig.stateOpMaxRetry) {
                     _offsetManager = null;
                     throw re;
                 } else {
-                    LOG.warn("Attempt " + attemptCount + " out of " + _stateOpMaxRetry
-                            + ". Failed to fetch state for partition " + _partition.partition
+                    LOG.warn("Attempt " + attemptCount + " out of " + _spoutConfig.stateOpMaxRetry
+                            + ". Failed to fetch state for partition " + partition.partition
                             + " of topic " + _spoutConfig.topic + " due to Kafka offset fetch error: " + re.getMessage());
                 }
             }
         }
     }
 
-    private void attemptToWrite(long offsetOfPartition, String data) {
+    private void attemptToWrite(long offsetOfPartition, String state, Partition partition) {
         long now = System.currentTimeMillis();
         Map<TopicAndPartition, OffsetAndMetadata> offsets = Maps.newLinkedHashMap();
-        TopicAndPartition thisTopicPartition = new TopicAndPartition(_spoutConfig.topic, _partition.partition);
+        TopicAndPartition thisTopicPartition = new TopicAndPartition(_spoutConfig.topic, partition.partition);
         offsets.put(thisTopicPartition, new OffsetAndMetadata(
                 offsetOfPartition,
-                data,
+                state,
                 now));
         OffsetCommitRequest commitRequest = new OffsetCommitRequest(
-                _consumerGroupId,
+                _spoutConfig.id,
                 offsets,
                 _correlationId,
-                _consumerClientId,
+                _spoutConfig.clientId,
                 (short) 1); // version 1 and above commit to Kafka, version 0 commits to ZooKeeper
 
-        BlockingChannel offsetManager = locateOffsetManager();
+        BlockingChannel offsetManager = getOffsetManager(partition);
         offsetManager.send(commitRequest.underlying());
         OffsetCommitResponse commitResponse = OffsetCommitResponse.readFrom(offsetManager.receive().buffer());
         if (commitResponse.hasError()) {
             // note: here we should have only 1 error for the partition in request
             for (Object partitionErrorCode : commitResponse.errors().values()) {
                 if (partitionErrorCode.equals(ErrorMapping.OffsetMetadataTooLargeCode())) {
-                    throw new RuntimeException("Data is too big. The data object is " + data);
+                    throw new RuntimeException("Data is too big. The data object is " + state);
                 } else {
                     _offsetManager = null;
                     throw new RuntimeException("Kafka offset commit error: " + partitionErrorCode);
@@ -198,20 +198,20 @@ public class KafkaStateStore implements StateStore {
         }
     }
 
-    private void write(Long offsetOfPartition,  String data) {
+    private void write(Long offsetOfPartition, String state, Partition partition) {
         int attemptCount = 0;
         while (true) {
             try {
-                attemptToWrite(offsetOfPartition, data);
+                attemptToWrite(offsetOfPartition, state, partition);
                 return;
 
             } catch(RuntimeException re) {
-                if (++attemptCount > _stateOpMaxRetry) {
+                if (++attemptCount > _spoutConfig.stateOpMaxRetry) {
                     _offsetManager = null;
                     throw re;
                 } else {
-                    LOG.warn("Attempt " + attemptCount + " out of " + _stateOpMaxRetry
-                            + ". Failed to save state for partition " + _partition.partition
+                    LOG.warn("Attempt " + attemptCount + " out of " + _spoutConfig.stateOpMaxRetry
+                            + ". Failed to save state for partition " + partition.partition
                             + " of topic " + _spoutConfig.topic + " due to Kafka offset commit error: " + re.getMessage());
                 }
             }
