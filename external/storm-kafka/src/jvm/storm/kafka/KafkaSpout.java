@@ -57,7 +57,6 @@ public class KafkaSpout extends BaseRichSpout {
     PartitionStateManagerFactory _partitionStateManagerFactory;
 
     long _lastUpdateMs = 0;
-
     int _currPartitionIndex = 0;
 
     public KafkaSpout(SpoutConfig spoutConf) {
@@ -88,7 +87,7 @@ public class KafkaSpout extends BaseRichSpout {
             @Override
             public Object getValueAndReset() {
                 List<PartitionManager> pms = _coordinator.getMyManagedPartitions();
-                Set<Partition> latestPartitions = new HashSet();
+                Set<Partition> latestPartitions = new HashSet<>();
                 for (PartitionManager pm : pms) {
                     latestPartitions.add(pm.getPartition());
                 }

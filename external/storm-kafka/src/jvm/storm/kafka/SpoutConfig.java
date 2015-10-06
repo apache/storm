@@ -24,7 +24,7 @@ import java.util.List;
 public class SpoutConfig extends KafkaConfig implements Serializable {
 
     public static final String STATE_STORE_ZOOKEEPER = "zookeeper";
-    public static final String STATE_STORE__KAFKA = "kafka";
+    public static final String STATE_STORE_KAFKA = "kafka";
 
     /** a list of ZooKeeper servers */
     public List<String> zkServers = null;

@@ -1,65 +1,70 @@
 package storm.kafka;
 
+import backtype.storm.Config;
 import com.google.common.collect.ImmutableMap;
-import kafka.javaapi.producer.Producer;
-import kafka.producer.KeyedMessage;
-import kafka.producer.ProducerConfig;
 import org.apache.curator.test.TestingServer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.MockitoAnnotations;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
 
-public class KafkaDataSourceTest {
+public class ZKStateStoreTest {
 
-    private KafkaTestBroker testBroker;
-    private KafkaDataStore dataStore;
+    private TestingServer server;
+    private ZkStateStore stateStore;
 
     @Before
     public void setUp() throws Exception {
-        String testTopic = "testTopic";
+        MockitoAnnotations.initMocks(this);
 
-        TestingServer server = new TestingServer();
-        testBroker = new KafkaTestBroker(server, 0);
+        server = new TestingServer();
         String connectionString = server.getConnectString();
-
-        Properties props = new Properties();
-        props.put("metadata.broker.list", testBroker.getBrokerConnectionString());
-        Producer<byte[], byte[]> p = new Producer<>(new ProducerConfig(props));
-        KeyedMessage<byte[], byte[]> msg = new KeyedMessage<>(testTopic, "test message".getBytes());
-        p.send(msg);
-
         ZkHosts hosts = new ZkHosts(connectionString);
-        SpoutConfig spoutConfig = new SpoutConfig(hosts, testTopic, "/", "testConsumerGroup");
+
+        SpoutConfig spoutConfig;
+        spoutConfig = new SpoutConfig(hosts, "topic", "/test", "id");
+        spoutConfig.zkServers = Arrays.asList("localhost");
+        spoutConfig.zkPort = server.getPort();
 
         Map stormConf = new HashMap();
+        stormConf.put(Config.TRANSACTIONAL_ZOOKEEPER_PORT, spoutConfig.zkPort);
+        stormConf.put(Config.TRANSACTIONAL_ZOOKEEPER_SERVERS, spoutConfig.zkServers);
+        stormConf.put(Config.STORM_ZOOKEEPER_SESSION_TIMEOUT, 20000);
+        stormConf.put(Config.STORM_ZOOKEEPER_CONNECTION_TIMEOUT, 20000);
+        stormConf.put(Config.STORM_ZOOKEEPER_RETRY_TIMES, 3);
+        stormConf.put(Config.STORM_ZOOKEEPER_RETRY_INTERVAL, 30);
 
-        Broker broker = new Broker("localhost", testBroker.getPort());
-        Partition testPartition = new Partition(broker, 0);
+        Map storeConfig = new HashMap(stormConf);
+        storeConfig.put(Config.TRANSACTIONAL_ZOOKEEPER_SERVERS, spoutConfig.zkServers);
+        storeConfig.put(Config.TRANSACTIONAL_ZOOKEEPER_PORT, spoutConfig.zkPort);
+        storeConfig.put(Config.TRANSACTIONAL_ZOOKEEPER_ROOT, spoutConfig.zkRoot);
 
-        dataStore = new KafkaDataStore(stormConf, spoutConfig, testPartition);
+        stateStore = new ZkStateStore(storeConfig,spoutConfig);
     }
 
     @After
     public void shutdown() throws Exception {
-        testBroker.shutdown();
+        stateStore.close();
+        server.close();
     }
 
     @Test
     public void testStoreReadWrite() {
+
         Partition testPartition = new Partition(new Broker("localhost", 9100), 1);
 
         Map broker = ImmutableMap.of("host", "kafka.sample.net", "port", 9100L);
         Map topology = ImmutableMap.of("id", "fce905ff-25e0 -409e-bc3a-d855f 787d13b", "name", "Test Topology");
         Map testState = ImmutableMap.of("broker", broker, "offset", 4285L, "partition", 1L, "topic", "testTopic", "topology", topology);
 
-        dataStore.writeState(testPartition, testState);
-        Map<Object, Object> state = dataStore.readState(testPartition);
+        stateStore.writeState(testPartition, testState);
+        Map<Object, Object> state = stateStore.readState(testPartition);
 
         assertEquals("kafka.sample.net", ((Map)state.get("broker")).get("host"));
         assertEquals(9100L, ((Map)state.get("broker")).get("port"));

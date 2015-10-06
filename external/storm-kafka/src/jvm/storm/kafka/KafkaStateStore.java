@@ -20,8 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class KafkaDataStore implements StateStore {
-    private static final Logger LOG = LoggerFactory.getLogger(KafkaDataStore.class);
+public class KafkaStateStore implements StateStore {
+    private static final Logger LOG = LoggerFactory.getLogger(KafkaStateStore.class);
 
     private SpoutConfig _spoutConfig;
     private Partition _partition;
@@ -34,7 +34,7 @@ public class KafkaDataStore implements StateStore {
     private int _correlationId = 0;
     private BlockingChannel _offsetManager;
 
-    public KafkaDataStore(Map stormConf, SpoutConfig spoutConfig, Partition partition) {
+    public KafkaStateStore(Map stormConf, SpoutConfig spoutConfig, Partition partition) {
         this._spoutConfig = spoutConfig;
         this._partition = partition;
         this._consumerGroupId = _spoutConfig.id;
@@ -55,6 +55,12 @@ public class KafkaDataStore implements StateStore {
     @Override
     public Map<Object, Object> readState(Partition p) {
         return  (Map<Object, Object>) JSONValue.parse(read());
+    }
+
+    @Override
+    public void close() {
+        _offsetManager.disconnect();
+        _offsetManager = null;
     }
 
     // as there is a manager per topic per partition and the stateUpdateIntervalMs should not be too small
@@ -210,10 +216,5 @@ public class KafkaDataStore implements StateStore {
                 }
             }
         }
-    }
-
-    public void close() {
-        _offsetManager.disconnect();
-        _offsetManager = null;
     }
 }

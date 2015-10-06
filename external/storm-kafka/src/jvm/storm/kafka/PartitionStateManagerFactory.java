@@ -1,28 +1,23 @@
 package storm.kafka;
 
 import backtype.storm.Config;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static storm.kafka.SpoutConfig.STATE_STORE__KAFKA;
+import static storm.kafka.SpoutConfig.STATE_STORE_KAFKA;
 import static storm.kafka.SpoutConfig.STATE_STORE_ZOOKEEPER;
 
 public class PartitionStateManagerFactory {
 
-    private static final Logger LOG = LoggerFactory.getLogger(PartitionStateManagerFactory.class);
-
-    private ZkDataStore sharedZkDataStore;
+    private ZkStateStore sharedZkStateStore;
 
     private Map _stormConf;
     private SpoutConfig _spoutConfig;
 
-
-    private ZkDataStore createZkDataStore(Map conf, SpoutConfig spoutConfig) {
-        Map _zkDataStoreConf = new HashMap(conf);
+    private ZkStateStore createZkStateStore(Map conf, SpoutConfig spoutConfig) {
+        Map _zkStateStoreConf = new HashMap(conf);
         List<String> zkServers = _spoutConfig.zkServers;
         if (zkServers == null) {
             zkServers = (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS);
@@ -31,11 +26,10 @@ public class PartitionStateManagerFactory {
         if (zkPort == null) {
             zkPort = ((Number) conf.get(Config.STORM_ZOOKEEPER_PORT)).intValue();
         }
-        _zkDataStoreConf.put(Config.TRANSACTIONAL_ZOOKEEPER_SERVERS, zkServers);
-        _zkDataStoreConf.put(Config.TRANSACTIONAL_ZOOKEEPER_PORT, zkPort);
-        _zkDataStoreConf.put(Config.TRANSACTIONAL_ZOOKEEPER_ROOT, _spoutConfig.zkRoot);
-        return new ZkDataStore(_zkDataStoreConf, _spoutConfig);
-
+        _zkStateStoreConf.put(Config.TRANSACTIONAL_ZOOKEEPER_SERVERS, zkServers);
+        _zkStateStoreConf.put(Config.TRANSACTIONAL_ZOOKEEPER_PORT, zkPort);
+        _zkStateStoreConf.put(Config.TRANSACTIONAL_ZOOKEEPER_ROOT, _spoutConfig.zkRoot);
+        return new ZkStateStore(_zkStateStoreConf, _spoutConfig);
     }
 
     public PartitionStateManagerFactory(Map stormConf, SpoutConfig spoutConfig) {
@@ -44,29 +38,29 @@ public class PartitionStateManagerFactory {
 
         // default to original storm storage format
         if (_spoutConfig.stateStore == null || STATE_STORE_ZOOKEEPER.equals(_spoutConfig.stateStore)) {
-            sharedZkDataStore = createZkDataStore(_stormConf, _spoutConfig);
+            sharedZkStateStore = createZkStateStore(_stormConf, _spoutConfig);
         }
     }
 
     public PartitionStateManager getInstance(Partition partition) {
 
         if (_spoutConfig.stateStore == null || STATE_STORE_ZOOKEEPER.equals(_spoutConfig.stateStore)) {
-            return new SimplePartitionStateManager(_stormConf,_spoutConfig,  partition, sharedZkDataStore);
+            return new PartitionStateManager(_stormConf,_spoutConfig,  partition, sharedZkStateStore);
 
-        } else if (STATE_STORE__KAFKA.equals(_spoutConfig.stateStore)) {
-            KafkaDataStore kafkaDataStore = new KafkaDataStore(_stormConf, _spoutConfig, partition);
-            return new SimplePartitionStateManager(_stormConf, _spoutConfig, partition, kafkaDataStore);
+        } else if (STATE_STORE_KAFKA.equals(_spoutConfig.stateStore)) {
+            KafkaStateStore kafkaStateStore = new KafkaStateStore(_stormConf, _spoutConfig, partition);
+            return new PartitionStateManager(_stormConf, _spoutConfig, partition, kafkaStateStore);
 
         } else {
             throw new RuntimeException(String.format("Invalid value defined for _spoutConfig.stateStore: %s. "
                             + "Valid values are %s, %s. Default to %s",
-                    _spoutConfig.stateStore, STATE_STORE_ZOOKEEPER, STATE_STORE__KAFKA, STATE_STORE_ZOOKEEPER));
+                    _spoutConfig.stateStore, STATE_STORE_ZOOKEEPER, STATE_STORE_KAFKA, STATE_STORE_ZOOKEEPER));
         }
     }
 
     public void close() {
-        if (sharedZkDataStore != null) {
-            sharedZkDataStore.close();
+        if (sharedZkStateStore != null) {
+            sharedZkStateStore.close();
         }
     }
 }

@@ -1,5 +1,6 @@
 package storm.kafka;
 
+import java.io.Closeable;
 import java.util.Map;
 
 /**
@@ -35,7 +36,7 @@ import java.util.Map;
  *                "port", 9092))
  *        .put("topic", "testTopic").build();
  */
-public interface StateStore {
+public interface StateStore extends Closeable {
 
     Map<Object, Object> readState(Partition p);
 

@@ -32,8 +32,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ZkDataStore implements StateStore {
-    private static final Logger LOG = LoggerFactory.getLogger(ZkDataStore.class);
+public class ZkStateStore implements StateStore {
+    private static final Logger LOG = LoggerFactory.getLogger(ZkStateStore.class);
 
     private SpoutConfig _spoutConfig;
     private CuratorFramework _curator;
@@ -56,7 +56,7 @@ public class ZkDataStore implements StateStore {
         return _curator;
     }
 
-    public ZkDataStore(Map stateConf, SpoutConfig spoutConfig) {
+    public ZkStateStore(Map stateConf, SpoutConfig spoutConfig) {
         _spoutConfig = spoutConfig;
 
         stateConf = new HashMap(stateConf);
@@ -88,6 +88,12 @@ public class ZkDataStore implements StateStore {
         }
     }
 
+    @Override
+    public void close() {
+        _curator.close();
+        _curator = null;
+    }
+
     private String committedPath(Partition partition) {
         return _spoutConfig.zkRoot + "/" + _spoutConfig.id + "/" + partition.getId();
     }
@@ -117,10 +123,5 @@ public class ZkDataStore implements StateStore {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    public void close() {
-        _curator.close();
-        _curator = null;
     }
 }

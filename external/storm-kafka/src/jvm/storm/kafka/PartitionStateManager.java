@@ -1,10 +1,37 @@
 package storm.kafka;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.Map;
 
-public interface PartitionStateManager {
+/**
+ * A partition state manager that simply encapsulates a partition in itself. Each instance of this manager keeps
+ * the state of its corresponding partition.
+ */
+public class PartitionStateManager implements Closeable {
 
-    Map<Object, Object> getState();
+    private SpoutConfig _spoutConfig;
+    private Partition _partition;
+    private StateStore _stateStore;
 
-    void writeState(Map<Object, Object> data);
+    public PartitionStateManager(Map stormConfig, SpoutConfig spoutConfig, Partition partition, StateStore stateStore) {
+        this._spoutConfig = spoutConfig;
+        this._partition = partition;
+        this._stateStore = stateStore;
+    }
+
+    public Map<Object, Object> getState() {
+        return _stateStore.readState(_partition);
+    }
+
+    public void writeState(Map<Object, Object> state) {
+        _stateStore.writeState(_partition, state);
+    }
+
+    @Override
+    public void close() throws IOException {
+        if (_stateStore != null) {
+            _stateStore.close();
+        }
+    }
 }
