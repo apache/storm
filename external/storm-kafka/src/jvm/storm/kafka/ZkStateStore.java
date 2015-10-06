@@ -44,6 +44,8 @@ public class ZkStateStore implements StateStore {
         for (String server : (List<String>) stateConf.get(Config.TRANSACTIONAL_ZOOKEEPER_SERVERS)) {
             serverPorts = serverPorts + server + ":" + port + ",";
         }
+
+        LOG.info("Creating new curator framework on {}.", serverPorts);
         return CuratorFrameworkFactory.newClient(serverPorts,
                 Utils.getInt(stateConf.get(Config.STORM_ZOOKEEPER_SESSION_TIMEOUT)),
                 Utils.getInt(stateConf.get(Config.STORM_ZOOKEEPER_CONNECTION_TIMEOUT)),
@@ -75,6 +77,7 @@ public class ZkStateStore implements StateStore {
         try {
             _curator = newCurator(zkStateStoreConf);
             _curator.start();
+            LOG.info("Started curator framework.");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -82,19 +85,24 @@ public class ZkStateStore implements StateStore {
 
     @Override
     public void writeState(Partition p, Map<Object, Object> state) {
-        LOG.debug("Writing to " + committedPath(p) + " with stat data " + state.toString());
-        write(committedPath(p), JSONValue.toJSONString(state).getBytes(Charset.forName("UTF-8")));
+        String zkPath = committedPath(p);
+        LOG.debug("Writing to {} with stat data {} for partition {}:{}.", zkPath, state, p.host, p.partition);
+        write(zkPath, JSONValue.toJSONString(state).getBytes(Charset.forName("UTF-8")));
     }
 
     @Override
     public Map<Object, Object> readState(Partition p) {
-        LOG.debug("Reading from " + committedPath(p) + " for state data");
+        String zkPath = committedPath(p);
+        LOG.debug("Reading from {} for state data for partition {}:{}.", zkPath, p.host, p.partition);
         try {
-            byte[] b = read(committedPath(p));
+            byte[] b = read(zkPath);
             if (b == null) {
+                LOG.warn("No state found for partition {}:{} at this time.", p.host, p.partition);
                 return null;
             }
-            return (Map<Object, Object>) JSONValue.parse(new String(b, "UTF-8"));
+            Map<Object, Object> state = (Map<Object, Object>) JSONValue.parse(new String(b, "UTF-8"));
+            LOG.debug("Retrieved state {} from {} for partition {}:{}.", state, zkPath, p.host, p.partition);
+            return state;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -104,6 +112,7 @@ public class ZkStateStore implements StateStore {
     public void close() {
         _curator.close();
         _curator = null;
+        LOG.info("Closed curator framework.");
     }
 
     private String committedPath(Partition partition) {

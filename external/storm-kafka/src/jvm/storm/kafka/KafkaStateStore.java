@@ -19,8 +19,11 @@ import java.util.Map;
 public class KafkaStateStore implements StateStore {
     private static final Logger LOG = LoggerFactory.getLogger(KafkaStateStore.class);
 
-    private SpoutConfig _spoutConfig;
+    private static final int OFFSET_MANAGER_DISCOVERY_TIMEOUT = 5000;
+    private static final long OFFSET_MANAGER_DISCOVERY_RETRY_BACKOFF = 1000L;
+    private static final int OFFSET_MANAGER_DISCOVERY_MAX_RETRY = 3;
 
+    private SpoutConfig _spoutConfig;
     private int _correlationId = 0;
     // https://en.wikipedia.org/wiki/Double-checked_locking#Usage_in_Java
     private volatile BlockingChannel _offsetManager;
@@ -33,6 +36,7 @@ public class KafkaStateStore implements StateStore {
     public void writeState(Partition p, Map<Object, Object> state) {
         assert state.containsKey("offset");
 
+        LOG.debug("Writing stat data {} for partition {}:{}.", state, p.host, p.partition);
         Long offsetOfPartition = (Long)state.get("offset");
         String stateData = JSONValue.toJSONString(state);
         write(offsetOfPartition, stateData, p);
@@ -40,13 +44,23 @@ public class KafkaStateStore implements StateStore {
 
     @Override
     public Map<Object, Object> readState(Partition p) {
-        return  (Map<Object, Object>) JSONValue.parse(read(p));
+        LOG.debug("Reading state data for partition {}:{}.", p.host, p.partition);
+        String raw = read(p);
+        if (raw == null) {
+            LOG.warn("No state found for partition {}:{} at this time.", p.host, p.partition);
+            return null;
+        }
+
+        LOG.debug("Retrieved state {} for partition {}:{}.", raw, p.host, p.partition);
+        Map<Object, Object> state = (Map<Object, Object>) JSONValue.parse(raw);
+        return state;
     }
 
     @Override
     public void close() {
         _offsetManager.disconnect();
         _offsetManager = null;
+        LOG.info("kafka state store closed.");
     }
 
     private BlockingChannel getOffsetManager(Partition partition) {
@@ -59,7 +73,7 @@ public class KafkaStateStore implements StateStore {
     // supposedly we only need to locate offset manager once. Other cases, such as the offsetManager
     // gets relocated, should be rare. So it is ok to sync.
     //
-    // although we take a particular partition to locate the offset manager, the location of the
+    // although we take a particular partition to locate the offset manager, the instance of the
     // offset manager should apply to the entire consumer group
     private synchronized BlockingChannel locateOffsetManager(Partition partition) {
 
@@ -68,15 +82,16 @@ public class KafkaStateStore implements StateStore {
             return _offsetManager;
         }
 
+        LOG.info("Try to locate the offset manager by asking broker {}:{}.", partition.host.host, partition.host.port);
         BlockingChannel channel = new BlockingChannel(partition.host.host, partition.host.port,
                 BlockingChannel.UseDefaultBufferSize(),
                 BlockingChannel.UseDefaultBufferSize(),
-                1000000 /* read timeout in millis */);
+                OFFSET_MANAGER_DISCOVERY_TIMEOUT /* read timeout in millis */);
         channel.connect();
 
         ConsumerMetadataResponse metadataResponse = null;
-        long backoffMillis = 3000L;
-        int maxRetry = 3;
+        long backoffMillis = OFFSET_MANAGER_DISCOVERY_RETRY_BACKOFF;
+        int maxRetry = OFFSET_MANAGER_DISCOVERY_MAX_RETRY;
         int retryCount = 0;
         // this usually only happens when the internal offsets topic does not exist before and we need to wait until
         // the topic is automatically created and the meta data are populated across cluster. So we hard-code the retry here.
@@ -86,8 +101,11 @@ public class KafkaStateStore implements StateStore {
             channel.send(new ConsumerMetadataRequest(_spoutConfig.id, ConsumerMetadataRequest.CurrentVersion(),
                     _correlationId++, _spoutConfig.clientId));
             metadataResponse = ConsumerMetadataResponse.readFrom(channel.receive().buffer());
+            assert (metadataResponse != null);
+
+            // only retry if the error indicates the offset manager is temporary unavailable
             if (metadataResponse.errorCode() == ErrorMapping.ConsumerCoordinatorNotAvailableCode()) {
-                LOG.warn("Failed to get coordinator: " + metadataResponse.errorCode());
+                LOG.warn("Offset manager is not available yet. Will retry in {} ms", backoffMillis);
                 retryCount++;
                 try {
                     Thread.sleep(backoffMillis);
@@ -104,7 +122,7 @@ public class KafkaStateStore implements StateStore {
             kafka.cluster.Broker offsetManager = metadataResponse.coordinator();
             if (!offsetManager.host().equals(partition.host.host)
                     || !(offsetManager.port() == partition.host.port)) {
-                // if the coordinator is different, from the above channel's host then reconnect
+                LOG.info("Reconnect to the offset manager on a different broker {}:{}.", offsetManager.host(), offsetManager.port());
                 channel.disconnect();
                 channel = new BlockingChannel(offsetManager.host(), offsetManager.port(),
                         BlockingChannel.UseDefaultBufferSize(),
@@ -113,8 +131,10 @@ public class KafkaStateStore implements StateStore {
                 channel.connect();
             }
         } else {
-            throw new RuntimeException("Kafka metadata fetch error: " + metadataResponse.errorCode());
+            throw new RuntimeException("Unable to locate offset manager. Error code is " + metadataResponse.errorCode());
         }
+
+        LOG.info("Successfully located offset manager.");
         return channel;
     }
 
@@ -143,8 +163,7 @@ public class KafkaStateStore implements StateStore {
             }
 
         } else {
-            _offsetManager = null;
-            throw new RuntimeException("Kafka offset fetch error: " + result.error());
+            throw new RuntimeException("OffsetMetadataAndError:" + result.error());
         }
     }
 
@@ -155,13 +174,13 @@ public class KafkaStateStore implements StateStore {
                 return attemptToRead(partition);
 
             } catch(RuntimeException re) {
+                _offsetManager = null;
                 if (++attemptCount > _spoutConfig.stateOpMaxRetry) {
-                    _offsetManager = null;
                     throw re;
                 } else {
                     LOG.warn("Attempt " + attemptCount + " out of " + _spoutConfig.stateOpMaxRetry
                             + ". Failed to fetch state for partition " + partition.partition
-                            + " of topic " + _spoutConfig.topic + " due to Kafka offset fetch error: " + re.getMessage());
+                            + " of topic " + _spoutConfig.topic + ". Error code is " + re.getMessage());
                 }
             }
         }
@@ -189,10 +208,9 @@ public class KafkaStateStore implements StateStore {
             // note: here we should have only 1 error for the partition in request
             for (Object partitionErrorCode : commitResponse.errors().values()) {
                 if (partitionErrorCode.equals(ErrorMapping.OffsetMetadataTooLargeCode())) {
-                    throw new RuntimeException("Data is too big. The data object is " + state);
+                    throw new RuntimeException("Data is too big. The state object is " + state);
                 } else {
-                    _offsetManager = null;
-                    throw new RuntimeException("Kafka offset commit error: " + partitionErrorCode);
+                    throw new RuntimeException("OffsetCommitResponse:" + partitionErrorCode);
                 }
             }
         }
@@ -206,13 +224,13 @@ public class KafkaStateStore implements StateStore {
                 return;
 
             } catch(RuntimeException re) {
+                _offsetManager = null;
                 if (++attemptCount > _spoutConfig.stateOpMaxRetry) {
-                    _offsetManager = null;
                     throw re;
                 } else {
                     LOG.warn("Attempt " + attemptCount + " out of " + _spoutConfig.stateOpMaxRetry
                             + ". Failed to save state for partition " + partition.partition
-                            + " of topic " + _spoutConfig.topic + " due to Kafka offset commit error: " + re.getMessage());
+                            + " of topic " + _spoutConfig.topic + ". Error code is: " + re.getMessage());
                 }
             }
         }

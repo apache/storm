@@ -2,6 +2,8 @@ package storm.kafka;
 
 import com.google.common.base.Strings;
 import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -11,6 +13,7 @@ import static storm.kafka.SpoutConfig.STATE_STORE_KAFKA;
 import static storm.kafka.SpoutConfig.STATE_STORE_ZOOKEEPER;
 
 public class PartitionStateManagerFactory {
+    private static final Logger LOG = LoggerFactory.getLogger(KafkaStateStore.class);
 
     private StateStore _stateStore;
 
@@ -67,15 +70,19 @@ public class PartitionStateManagerFactory {
     }
 
     public PartitionStateManagerFactory(Map stormConf, SpoutConfig spoutConfig) {
+
         // default to original storm storage format
         if (Strings.isNullOrEmpty(spoutConfig.stateStore) || STATE_STORE_ZOOKEEPER.equals(spoutConfig.stateStore)) {
             _stateStore = createZkStateStore(stormConf, spoutConfig);
+            LOG.info("Created Zookeeper backed state store.");
 
         } else if (STATE_STORE_KAFKA.equals(spoutConfig.stateStore)) {
             _stateStore = createKafkaStateStore(stormConf, spoutConfig);
+            LOG.info("Created Kafka backed state store.");
 
         } else {
             _stateStore = createCustomStateStore(stormConf, spoutConfig, spoutConfig.stateStore);
+            LOG.info("Created custom state store implemented by {}.", spoutConfig.stateStore);
         }
     }
 

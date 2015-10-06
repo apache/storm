@@ -144,14 +144,18 @@ As shown in the above KafkaConfig properties, you can control from where in the 
 setting `KafkaConfig.startOffsetTime` as follows:
 
 1. `kafka.api.OffsetRequest.EarliestTime()`:  read from the beginning of the topic (i.e. from the oldest messages onwards)
-2. `kafka.api.OffsetRequest.LatestTime()`: read from the end of the topic (i.e. any new messsages that are being written to the topic)
+2. `kafka.api.OffsetRequest.LatestTime()`: read from the end of the topic (i.e. any new messages that are being written to the topic)
 3. A Unix timestamp aka seconds since the epoch (e.g. via `System.currentTimeMillis()`):
    see [How do I accurately get offsets of messages for a certain timestamp using OffsetRequest?](https://cwiki.apache.org/confluence/display/KAFKA/FAQ#FAQ-HowdoIaccuratelygetoffsetsofmessagesforacertaintimestampusingOffsetRequest?) in the Kafka FAQ
 
-As the topology runs the Kafka spout keeps track of the offsets it has read and emitted.  Kafka spout offers two options for offset storage which 
+As the topology runs the Kafka spout keeps track of the offsets it has read and emitted.  Kafka spout offers two built-in options for offset storage which 
 can be configured by setting `SpoutConfig.stateStore`. By default, the `zookeeper` option is chosen which stores offset state information 
 under the ZooKeeper path `SpoutConfig.zkRoot+ "/" + SpoutConfig.id`. The second option is `kafka` which stores offset state information using 
-Kafka's built-in offset management API.
+Kafka's built-in offset management API. In addition, you may supply your own custom state store implementation by providing the full class name of your 
+implementation. The custom state store must implement the storm.kafka.StateStore interface and must have a public constructor that takes two arguments as
+```java
+    public MyStateStore(Map stormConf, SpoutConfig spoutConfig)
+```
 
 In the case of failures Kafka spout recovers from the last written offset.
 

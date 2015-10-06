@@ -1,5 +1,8 @@
 package storm.kafka;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Map;
@@ -9,6 +12,7 @@ import java.util.Map;
  * the state of its corresponding partition.
  */
 public class PartitionStateManager implements Closeable {
+    private static final Logger LOG = LoggerFactory.getLogger(KafkaStateStore.class);
 
     private Partition _partition;
     private StateStore _stateStore;
@@ -31,5 +35,6 @@ public class PartitionStateManager implements Closeable {
         if (_stateStore != null) {
             _stateStore.close();
         }
+        LOG.info("State store closed.");
     }
 }
