@@ -1,7 +1,10 @@
 package storm.kafka;
 
+import com.google.common.base.Strings;
 import org.apache.commons.io.IOUtils;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 
 import static storm.kafka.SpoutConfig.STATE_STORE_KAFKA;
@@ -19,18 +22,60 @@ public class PartitionStateManagerFactory {
         return new KafkaStateStore(conf, spoutConfig);
     }
 
+    private StateStore createCustomStateStore(Map conf, SpoutConfig spoutConfig, String customStateStoreClazzName) {
+
+        Class<?> customStateStoreClazz;
+        try {
+            customStateStoreClazz = Class.forName(customStateStoreClazzName);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(String.format("Invalid value defined for _spoutConfig.stateStore: %s. "
+                            + "Valid values are %s, %s or name of the custom state store class. Default to %s",
+                    spoutConfig.stateStore, STATE_STORE_ZOOKEEPER, STATE_STORE_KAFKA, STATE_STORE_ZOOKEEPER));
+        }
+
+        if (!StateStore.class.isAssignableFrom(customStateStoreClazz)) {
+            throw new RuntimeException(String.format("Invalid custom state store class: %s. "
+                                + "Must implement interface " + StateStore.class.getCanonicalName(),
+                        spoutConfig.stateStore));
+        }
+
+        Constructor<?> constructor;
+        try {
+            constructor = customStateStoreClazz.getConstructor(Map.class, SpoutConfig.class);
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException(String.format("Invalid custom state store class: %s. "
+                                + "Must define a constructor with two parameters: Map conf, SpoutConfig spoutConfig",
+                        spoutConfig.stateStore));
+        }
+
+        Object customStateStoreObj;
+        try {
+            customStateStoreObj= constructor.newInstance(conf, spoutConfig);
+        } catch (InstantiationException e) {
+            throw new RuntimeException(String.format("Failed to instantiate custom state store class: %s due to InstantiationException.",
+                        spoutConfig.stateStore), e);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(String.format("Failed to instantiate custom state store class: %s due to IllegalAccessException.",
+                        spoutConfig.stateStore), e);
+        } catch (InvocationTargetException e) {
+            throw new RuntimeException(String.format("Failed to instantiate custom state store class: %s due to InvocationTargetException.",
+                        spoutConfig.stateStore), e);
+        }
+
+        assert (customStateStoreObj instanceof StateStore);
+        return (StateStore)customStateStoreObj;
+    }
+
     public PartitionStateManagerFactory(Map stormConf, SpoutConfig spoutConfig) {
         // default to original storm storage format
-        if (spoutConfig.stateStore == null || STATE_STORE_ZOOKEEPER.equals(spoutConfig.stateStore)) {
+        if (Strings.isNullOrEmpty(spoutConfig.stateStore) || STATE_STORE_ZOOKEEPER.equals(spoutConfig.stateStore)) {
             _stateStore = createZkStateStore(stormConf, spoutConfig);
 
         } else if (STATE_STORE_KAFKA.equals(spoutConfig.stateStore)) {
             _stateStore = createKafkaStateStore(stormConf, spoutConfig);
 
         } else {
-            throw new RuntimeException(String.format("Invalid value defined for _spoutConfig.stateStore: %s. "
-                            + "Valid values are %s, %s. Default to %s",
-                    spoutConfig.stateStore, STATE_STORE_ZOOKEEPER, STATE_STORE_KAFKA, STATE_STORE_ZOOKEEPER));
+            _stateStore = createCustomStateStore(stormConf, spoutConfig, spoutConfig.stateStore);
         }
     }
 
