@@ -375,13 +375,8 @@ def supervisor(klass="backtype.storm.daemon.supervisor"):
     """
     cppaths = [CLUSTER_CONF_DIR]
     jvmopts = parse_args(confvalue("supervisor.childopts", cppaths)) + [
-<<<<<<< HEAD
-        "-Dlogfile.name=supervisor.log",
-        "-Dlog4j.configurationFile=" + os.path.join(get_log4j_conf_dir(), "cluster.xml"),
-=======
         "-Dlogfile.name=" + STORM_SUPERVISOR_LOG_FILE,
-        "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(), "cluster.xml"),
->>>>>>> 3813930... configurable supervisor log filename
+        "-Dlog4j.configurationFile=" + os.path.join(get_log4j_conf_dir(), "cluster.xml"),
     ]
     exec_storm_class(
         klass,
