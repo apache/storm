@@ -958,17 +958,17 @@
   (GET "/api/v1/topology/summary" [:as {:keys [cookies servlet-request]} & m]
        (assert-authorized-user servlet-request "getClusterInfo")
        (json-response (all-topologies-summary) (:callback m)))
-  (GET  "/api/v1/topology/:id" [:as {:keys [cookies servlet-request schema]} id & m]
+  (GET  "/api/v1/topology/:id" [:as {:keys [cookies servlet-request scheme params]} id & m]
         (let [user (.getUserName http-creds-handler servlet-request)]
           (assert-authorized-user servlet-request "getTopology" (topology-config id))
-          (json-response (topology-page id (:window m) (check-include-sys? (:sys m)) user (= schema :https)) (:callback m))))
+          (json-response (topology-page id (:window m) (check-include-sys? (:sys m)) user (= scheme :https)) (:callback m))))
   (GET "/api/v1/topology/:id/visualization" [:as {:keys [cookies servlet-request]} id & m]
         (assert-authorized-user servlet-request "getTopology" (topology-config id))
         (json-response (mk-visualization-data id (:window m) (check-include-sys? (:sys m))) (:callback m)))
-  (GET "/api/v1/topology/:id/component/:component" [:as {:keys [cookies servlet-request schema]} id component & m]
+  (GET "/api/v1/topology/:id/component/:component" [:as {:keys [cookies servlet-request scheme]} id component & m]
        (let [user (.getUserName http-creds-handler servlet-request)]
          (assert-authorized-user servlet-request "getTopology" (topology-config id))
-         (json-response (component-page id component (:window m) (check-include-sys? (:sys m)) user (= schema :https)) (:callback m))))
+         (json-response (component-page id component (:window m) (check-include-sys? (:sys m)) user (= scheme :https)) (:callback m))))
   (POST "/api/v1/topology/:id/activate" [:as {:keys [cookies servlet-request]} id & m]
     (assert-authorized-user servlet-request "activate" (topology-config id))
     (with-nimbus nimbus
