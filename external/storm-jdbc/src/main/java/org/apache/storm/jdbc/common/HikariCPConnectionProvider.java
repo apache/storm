@@ -40,6 +40,7 @@ public class HikariCPConnectionProvider implements ConnectionProvider {
             Properties properties = new Properties();
             properties.putAll(configMap);
             HikariConfig config = new HikariConfig(properties);
+            config.setConnectionTestQuery("select 1");
             this.dataSource = new HikariDataSource(config);
             this.dataSource.setAutoCommit(false);
         }
