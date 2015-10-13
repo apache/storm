@@ -20,6 +20,7 @@ package org.apache.storm.sql.compiler;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Filter;
 import org.apache.calcite.rel.core.Project;
@@ -108,6 +109,7 @@ public class CalcitePlanSerializer extends PostOrderRelNodeVisitor<Void> {
 
   @Override
   Void visitFilter(Filter filter) throws Exception {
+    Preconditions.checkArgument(filter.getInputs().size() == 1);
     jg.writeStartObject();
     writeCommonFieldsForRelNode(jg, filter);
     jg.writeFieldName("expr");

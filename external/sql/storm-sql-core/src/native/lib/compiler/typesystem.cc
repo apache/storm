@@ -27,6 +27,8 @@ using json11::Json;
 using llvm::cast;
 using llvm::Constant;
 using llvm::ConstantDataArray;
+using llvm::ConstantExpr;
+using llvm::ConstantInt;
 using llvm::Function;
 using llvm::FunctionType;
 using llvm::GlobalValue;
@@ -38,6 +40,8 @@ using std::array;
 using std::map;
 using std::make_pair;
 using std::string;
+using std::to_string;
+using std::vector;
 
 namespace stormsql {
 
@@ -53,7 +57,7 @@ TypeSystem::TypeSystem(Module *module) : module_(module) {
   LLVMContext &ctx = module_->getContext();
   Type *PtrTy = Type::getInt8PtrTy(ctx);
   FunctionType *EQTy =
-      FunctionType::get(Type::getInt1Ty(ctx), {PtrTy, PtrTy}, false);
+      FunctionType::get(Type::getInt1Ty(ctx), vector<Type*>({PtrTy, PtrTy}), false);
   equals_ =
       cast<Function>(module_->getOrInsertFunction("stormsql.equals", EQTy));
   string_equals_ignore_case_ = cast<Function>(
@@ -80,6 +84,20 @@ Type *TypeSystem::GetLLVMType(const Json &type) {
   case kStringTy:
     return Type::getInt8PtrTy(ctx);
   }
+}
+
+Constant *TypeSystem::GetOrInsertNullRecord(Type *type) {
+  auto it = null_record_map_.find(type);
+  Constant *C = nullptr;
+  if (it != null_record_map_.end()) {
+    C = it->second;
+  } else {
+    C = new GlobalVariable(*module_, type, true,
+                           GlobalVariable::ExternalLinkage, nullptr,
+                           "null." + to_string(null_record_map_.size()));
+    null_record_map_.insert(make_pair(type, C));
+  }
+  return C;
 }
 
 Type *TypeSystem::llvm_string_type() const {

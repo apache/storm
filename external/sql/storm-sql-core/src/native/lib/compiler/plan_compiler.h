@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,24 +15,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.sql.compiler;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+#ifndef STORM_SQL_COMPILER_PLAN_COMPILER_H_
+#define STORM_SQL_COMPILER_PLAN_COMPILER_H_
 
-import java.io.File;
+#include "typesystem.h"
 
-public class TestTridentCompiler {
-  @Rule
-  public TemporaryFolder folder = new TemporaryFolder();
-  @Test
-  public void testNativeLoad() throws Exception {
-    TridentCompiler t = new TridentCompiler();
-    String sql = "SELECT * FROM FOO";
-    TestUtils.CalciteState state = TestUtils.sqlOverDummyTable(sql);
-    String res = new CalcitePlanSerializer(state.schema, state.tree).toJson();
-    File workingDir = folder.newFolder();
-    t.compile(workingDir, res);
-  }
+#include <llvm/IR/Module.h>
+#include <llvm/Support/SourceMgr.h>
+
+namespace stormsql {
+
+/**
+ * The compiler compiles the Calcite execution plan in JSON format into LLVM
+ * Module.
+ **/
+class PlanCompiler {
+public:
+  static std::unique_ptr<PlanCompiler> Create(llvm::StringRef module_id,
+                                              llvm::LLVMContext *ctx,
+                                              llvm::SMDiagnostic *err);
+  virtual std::unique_ptr<llvm::Module>
+  Compile(const llvm::MemoryBuffer &plan) = 0;
+  virtual ~PlanCompiler();
+};
 }
+
+#endif

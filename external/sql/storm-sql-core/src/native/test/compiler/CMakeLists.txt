@@ -18,6 +18,17 @@
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${LLVM_CXXFLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${LLVM_LDFLAGS}")
+
+add_library(compiler_test_util compiler_input.cc)
+
 add_executable(expr_compiler_test expr_compiler_test.cc)
-target_link_libraries(expr_compiler_test compiler json11 gmock_main ${LLVM_LIBRARIES}  ${LLVM_SYSTEM_LIBRARIES})
+target_link_libraries(expr_compiler_test compiler compiler_test_util json11 gmock_main ${LLVM_LIBRARIES}  ${LLVM_SYSTEM_LIBRARIES})
 add_test(expr_compiler expr_compiler_test)
+
+add_executable(stage_compiler_test stage_compiler_test.cc)
+target_link_libraries(stage_compiler_test compiler compiler_test_util json11 gmock_main ${LLVM_LIBRARIES}  ${LLVM_SYSTEM_LIBRARIES})
+add_test(stage_compiler stage_compiler_test)
+
+add_executable(plan_compiler_test plan_compiler_test.cc)
+target_link_libraries(plan_compiler_test compiler compiler_test_util json11 gmock_main ${LLVM_LIBRARIES}  ${LLVM_SYSTEM_LIBRARIES})
+add_test(plan_compiler plan_compiler_test)
