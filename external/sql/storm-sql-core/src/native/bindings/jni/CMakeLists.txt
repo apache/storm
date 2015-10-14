@@ -17,6 +17,7 @@
 #
 
 include_directories(${JNI_INCLUDE_DIRS} ${GENERATED_JAVAH})
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden")
+set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${LLVM_LDFLAGS}")
+
 add_library(stormsql SHARED jni.cc)
-target_link_libraries(stormsql tool ${JAVA_JVM_LIBRARY})
+target_link_libraries(stormsql tool compiler json11 ${JAVA_JVM_LIBRARY} ${LLVM_LIBRARIES} ${LLVM_SYSTEM_LIBRARIES})

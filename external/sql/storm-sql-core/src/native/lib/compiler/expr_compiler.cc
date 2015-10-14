@@ -33,6 +33,7 @@ using llvm::Function;
 using llvm::IntegerType;
 using llvm::SMDiagnostic;
 using llvm::SourceMgr;
+using llvm::StructType;
 using llvm::Type;
 using llvm::Value;
 using std::back_inserter;
@@ -118,7 +119,7 @@ Value *ExprCompiler::VisitCmp(CmpInst::Predicate predicate, const Json &LHS,
       Function *f = typesystem_->equals();
       Value *CL = builder_->CreateBitCast(L, typesystem_->llvm_string_type());
       Value *CR = builder_->CreateBitCast(R, typesystem_->llvm_string_type());
-      v = builder_->CreateCall(f, {CL, CR});
+      v = builder_->CreateCall(f, vector<Value*>({CL, CR}));
       if (predicate == CmpInst::Predicate::ICMP_NE) {
         v = builder_->CreateNot(v);
       }
@@ -130,13 +131,23 @@ Value *ExprCompiler::VisitCmp(CmpInst::Predicate predicate, const Json &LHS,
 
 Value *ExprCompiler::VisitInputRef(const Json &type, int index) {
   Function *F = builder_->GetInsertBlock()->getParent();
-  auto AI = F->arg_begin();
-  for (int i = 0; i < index; ++i) {
-    ++AI;
-  }
   Type *ty = typesystem_->GetLLVMType(type);
-  assert(ty == AI->getType());
-  return AI;
+  (void)ty;
+  auto AI = F->arg_begin(), AE = F->arg_end();
+  int i = index;
+  while (AI != AE && i >= 0) {
+    StructType *type = cast<StructType>(AI->getType());
+    if ((size_t)i <= type->getNumElements()) {
+      Type *retTy = type->getElementType(i);
+      (void)retTy;
+      assert(retTy == ty && "The type system is corrupted");
+      vector<unsigned> idx({static_cast<unsigned>(i)});
+      return builder_->CreateExtractValue(AI, idx);
+    } else {
+      i -= type->getNumElements();
+    }
+  }
+  return nullptr;
 }
 
 Value *ExprCompiler::VisitLiteral(const Json &type, const Json &value) {

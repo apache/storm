@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 
+#include "compiler_input.h"
 #include "compiler/typesystem.h"
 #include "compiler/expr_compiler.h"
 
@@ -45,6 +46,7 @@ using llvm::ICmpInst;
 using llvm::LLVMContext;
 using llvm::Module;
 using llvm::SMDiagnostic;
+using llvm::StructType;
 using llvm::Type;
 using llvm::Value;
 using json11::Json;
@@ -55,36 +57,6 @@ using std::unique_ptr;
 using std::vector;
 
 using namespace stormsql;
-
-static inline Json GetLiteral(const string &type, const string &value) {
-  map<string, Json> v({{"inst", "literal"}, {"value", value}});
-  map<string, Json> r({{"type", type}, {"value", Json(v)}});
-  return Json(r);
-}
-static inline Json LiteralBool(bool v) {
-  return GetLiteral("BOOLEAN", v ? "true" : "false");
-}
-static inline Json LiteralInt(int v) {
-  return GetLiteral("INTEGER", to_string(v));
-}
-static inline Json LiteralDouble(double v) {
-  return GetLiteral("DECIMAL", to_string(v));
-}
-static inline Json LiteralString(const string &v) {
-  return GetLiteral("CHAR", v);
-}
-static inline Json CallExpr(const string &type, const string &op,
-                            const vector<Json> &operands) {
-  map<string, Json> v(
-      {{"inst", "call"}, {"operator", op}, {"operands", operands}});
-  map<string, Json> r({{"type", type}, {"value", Json(v)}});
-  return Json(r);
-}
-static inline Json InputRef(const string &type, int idx) {
-  map<string, Json> v({{"inst", "inputref"}, {"idx", idx}});
-  map<string, Json> r({{"type", type}, {"value", Json(v)}});
-  return Json(r);
-}
 
 TEST(TestExprCompiler, TestLiteral) {
   LLVMContext ctx;
@@ -121,7 +93,8 @@ TEST(TestExprCompiler, TestCompare) {
   TypeSystem ts(M.get());
   FunctionType *FTy = FunctionType::get(
       Type::getVoidTy(ctx),
-      {Type::getInt32Ty(ctx), ts.llvm_string_type(), Type::getDoubleTy(ctx)},
+      StructType::get(Type::getInt32Ty(ctx), ts.llvm_string_type(),
+                      Type::getDoubleTy(ctx), nullptr),
       false);
   Function *F =
       Function::Create(FTy, GlobalValue::PrivateLinkage, "dummy", M.get());

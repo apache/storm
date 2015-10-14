@@ -53,6 +53,11 @@ public:
   }
   llvm::Type *llvm_string_type() const;
   llvm::Constant *GetOrInsertString(const std::string &str);
+  /**
+   * Return a value that represents the null record for a particular type, which
+   * is represented by an external global variable.
+   **/
+  llvm::Constant *GetOrInsertNullRecord(llvm::Type *type);
 
 private:
   llvm::Module *module_;
@@ -60,6 +65,7 @@ private:
   llvm::Function *string_equals_ignore_case_;
   static const std::map<std::string, SqlType> sql_type_map_;
   std::map<std::string, llvm::Constant *> string_map_;
+  std::map<llvm::Type *, llvm::Constant *> null_record_map_;
 };
 }
 

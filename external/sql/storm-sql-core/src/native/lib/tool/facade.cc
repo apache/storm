@@ -17,6 +17,17 @@
  */
 
 #include "stormsql/stormsql.h"
+#include "compiler/plan_compiler.h"
+
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Module.h>
+
+using llvm::LLVMContext;
+using llvm::MemoryBuffer;
+using llvm::Module;
+using llvm::SMDiagnostic;
+using std::string;
+using std::unique_ptr;
 
 namespace stormsql {
 
@@ -26,9 +37,17 @@ namespace stormsql {
  *
  * Return 0 if succeeds.
  **/
-int CompilePlanToTrident(const std::string &plan,
-                         const std::string &working_dir, std::string *err) {
-  (void)plan;
+int CompilePlanToTrident(const string &plan_json,
+                         const string &working_dir, string *err) {
+  LLVMContext ctx;
+  unique_ptr<MemoryBuffer> plan = MemoryBuffer::getMemBuffer(plan_json);
+  SMDiagnostic sm;
+  unique_ptr<PlanCompiler> compiler = PlanCompiler::Create("trident", &ctx, &sm);
+  std::unique_ptr<Module> m = compiler->Compile(*plan);
+  if (!m) {
+    *err = sm.getMessage();
+    return -1;
+  }
   (void)working_dir;
   (void)err;
   return 0;

@@ -18,17 +18,6 @@
 package org.apache.storm.sql.compiler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.schema.SchemaPlus;
-import org.apache.calcite.schema.Table;
-import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.parser.SqlParseException;
-import org.apache.calcite.sql.type.SqlTypeName;
-import org.apache.calcite.tools.FrameworkConfig;
-import org.apache.calcite.tools.Frameworks;
-import org.apache.calcite.tools.Planner;
-import org.apache.calcite.tools.RelConversionException;
-import org.apache.calcite.tools.ValidationException;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -42,7 +31,7 @@ public class TestCalcitePlanSerializer {
   @SuppressWarnings("unchecked")
   public void testTableSchema() throws Exception {
     String sql = "SELECT 1 FROM FOO";
-    CalciteState state = sqlOverDummyTable(sql);
+    TestUtils.CalciteState state = TestUtils.sqlOverDummyTable(sql);
     String res = new CalcitePlanSerializer(state.schema, state.tree).toJson();
 
     ObjectMapper m = new ObjectMapper();
@@ -61,7 +50,7 @@ public class TestCalcitePlanSerializer {
   @SuppressWarnings("unchecked")
   public void testLiteral() throws Exception {
     String sql = "SELECT 1,1.0,TRUE,'FOO' FROM FOO";
-    CalciteState state = sqlOverDummyTable(sql);
+    TestUtils.CalciteState state = TestUtils.sqlOverDummyTable(sql);
     String res = new CalcitePlanSerializer(state.schema, state.tree).toJson();
 
     ObjectMapper m = new ObjectMapper();
@@ -84,7 +73,7 @@ public class TestCalcitePlanSerializer {
   @SuppressWarnings("unchecked")
   public void testInputRef() throws Exception {
     String sql = "SELECT ID FROM FOO";
-    CalciteState state = sqlOverDummyTable(sql);
+    TestUtils.CalciteState state = TestUtils.sqlOverDummyTable(sql);
     String res = new CalcitePlanSerializer(state.schema, state.tree).toJson();
 
     ObjectMapper m = new ObjectMapper();
@@ -103,33 +92,9 @@ public class TestCalcitePlanSerializer {
     checkInputRef("INTEGER", 0, exprs.get(0));
   }
 
-  private static class CalciteState {
-    private final SchemaPlus schema;
-    private final RelNode tree;
-
-    private CalciteState(SchemaPlus schema, RelNode tree) {
-      this.schema = schema;
-      this.tree = tree;
-    }
-  }
-
   @SuppressWarnings("unchecked")
   private List<HashMap<String, Object>> asList(Object p) {
     return (List<HashMap<String, Object>>) p;
-  }
-
-  private CalciteState sqlOverDummyTable(String sql)
-      throws RelConversionException, ValidationException, SqlParseException {
-    SchemaPlus schema = Frameworks.createRootSchema(true);
-    Table table = TestUtils.newTable().field("ID", SqlTypeName.INTEGER).build();
-    schema.add("FOO", table);
-    FrameworkConfig config = Frameworks.newConfigBuilder().defaultSchema(
-        schema).build();
-    Planner planner = Frameworks.getPlanner(config);
-    SqlNode parse = planner.parse(sql);
-    SqlNode validate = planner.validate(parse);
-    RelNode tree = planner.convert(validate);
-    return new CalciteState(schema, tree);
   }
 
   @SuppressWarnings("unchecked")

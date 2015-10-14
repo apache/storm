@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,24 +15,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.sql.compiler;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+#ifndef COMPILER_INPUT_H_
+#define COMPILER_INPUT_H_
 
-import java.io.File;
+#include <json11/json11.hpp>
+#include <map>
+#include <string>
+#include <vector>
 
-public class TestTridentCompiler {
-  @Rule
-  public TemporaryFolder folder = new TemporaryFolder();
-  @Test
-  public void testNativeLoad() throws Exception {
-    TridentCompiler t = new TridentCompiler();
-    String sql = "SELECT * FROM FOO";
-    TestUtils.CalciteState state = TestUtils.sqlOverDummyTable(sql);
-    String res = new CalcitePlanSerializer(state.schema, state.tree).toJson();
-    File workingDir = folder.newFolder();
-    t.compile(workingDir, res);
-  }
+namespace stormsql {
+
+json11::Json GetLiteral(const std::string &type, const std::string &value);
+json11::Json LiteralBool(bool v);
+json11::Json LiteralInt(int v);
+json11::Json LiteralDouble(double v);
+json11::Json LiteralString(const std::string &v);
+json11::Json CallExpr(const std::string &type, const std::string &op,
+                      const std::vector<json11::Json> &operands);
+json11::Json InputRef(const std::string &type, int idx);
 }
+#endif
