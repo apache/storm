@@ -30,6 +30,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -295,6 +296,28 @@ public class JdbcClient {
 			ResultSet resultSet = metaData.getColumns(null, null, tableName, null);
 			while (resultSet.next()) {
 				columns.add(new Column(resultSet.getString("COLUMN_NAME"), resultSet.getInt("DATA_TYPE")));
+			}
+			return columns;
+		} catch (SQLException e) {
+			throw new RuntimeException("Failed to get schema for table " + tableName, e);
+		} finally {
+			closeConnection(connection);
+		}
+	}
+
+	@SuppressWarnings("rawtypes")
+	public Map<String, Class> getColumnSchemaToMap(String tableName) {
+		Connection connection = null;
+		Map<String, Class> columns = new HashMap<String, Class>();
+		try {
+			connection = connectionProvider.getConnection();
+			DatabaseMetaData metaData = connection.getMetaData();
+			ResultSet resultSet = metaData.getColumns(null, null, tableName, null);
+			while (resultSet.next()) {
+				String columnName = resultSet.getString("COLUMN_NAME");
+				int columnType = resultSet.getInt("DATA_TYPE");
+				Class columnJavaType = Util.getJavaType(columnType);
+				columns.put(columnName, columnJavaType);
 			}
 			return columns;
 		} catch (SQLException e) {
