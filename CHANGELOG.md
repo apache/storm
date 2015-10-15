@@ -1,4 +1,5 @@
 ## 0.10.0
+ * STORM-1106: Netty should not limit attempts to reconnect
  * STORM-1099: Fix worker childopts as arraylist of strings
  * STORM-1096: Fix some issues with impersonation on the UI
  * STORM-912: Support SSL on Logviewer
