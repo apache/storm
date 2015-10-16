@@ -31,9 +31,10 @@ public interface IConnection {
     /**
      * send a message with taskId and payload
      * @param taskId task ID
+     * @param taskSrc task ID
      * @param payload
      */
-    public void send(int taskId,  byte[] payload);
+    public void send(int taskId, int taskSrc, byte[] payload);
     
     /**
      * send batch messages

@@ -205,8 +205,8 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
     }
 
     @Override
-    public void send(int taskId, byte[] payload) {
-        TaskMessage msg = new TaskMessage(taskId, payload);
+    public void send(int taskId, int task_src, byte[] payload) {
+        TaskMessage msg = new TaskMessage(taskId, task_src, payload);
         List<TaskMessage> wrapper = new ArrayList<TaskMessage>(1);
         wrapper.add(msg);
         send(wrapper.iterator());

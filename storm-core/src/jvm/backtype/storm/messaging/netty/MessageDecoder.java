@@ -26,11 +26,13 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.handler.codec.frame.FrameDecoder;
 
+
 public class MessageDecoder extends FrameDecoder {    
     /*
      * Each ControlMessage is encoded as:
      *  code (<0) ... short(2)
      * Each TaskMessage is encoded as:
+     *  task (>=0) ... short(2)
      *  task (>=0) ... short(2)
      *  len ... int(4)
      *  payload ... byte[]     *  
@@ -101,6 +103,8 @@ public class MessageDecoder extends FrameDecoder {
 
             // case 3: task Message
             short task = code;
+            short task_src = buf.readShort();
+            available-=2;
 
             // Make sure that we have received at least an integer (length)
             if (available < 4) {
@@ -115,7 +119,7 @@ public class MessageDecoder extends FrameDecoder {
             available -= 4;
 
             if (length <= 0) {
-                ret.add(new TaskMessage(task, null));
+                ret.add(new TaskMessage(task, task_src, null));
                 break;
             }
 
@@ -133,7 +137,7 @@ public class MessageDecoder extends FrameDecoder {
 
             // Successfully decoded a frame.
             // Return a TaskMessage object
-            ret.add(new TaskMessage(task, payload.array()));
+            ret.add(new TaskMessage(task, task_src, payload.array()));
         }
 
         if (ret.size() == 0) {

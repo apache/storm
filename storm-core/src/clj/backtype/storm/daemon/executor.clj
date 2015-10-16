@@ -197,22 +197,22 @@
 ;; in its own function so that it can be mocked out by tracked topologies
 (defn mk-executor-transfer-fn [batch-transfer->worker storm-conf]
   (fn this
-    ([task tuple block? ^ConcurrentLinkedQueue overflow-buffer]
+    ([task task-src tuple block? ^ConcurrentLinkedQueue overflow-buffer]
       (when (= true (storm-conf TOPOLOGY-DEBUG))
         (log-message "TRANSFERING tuple TASK: " task " TUPLE: " tuple))
       (if (and overflow-buffer (not (.isEmpty overflow-buffer)))
-        (.add overflow-buffer [task tuple])
+        (.add overflow-buffer [task task-src tuple])
         (try-cause
-          (disruptor/publish batch-transfer->worker [task tuple] block?)
+          (disruptor/publish batch-transfer->worker [task task-src tuple] block?)
         (catch InsufficientCapacityException e
           (if overflow-buffer
-            (.add overflow-buffer [task tuple])
+            (.add overflow-buffer [task task-src tuple])
             (throw e))
           ))))
-    ([task tuple overflow-buffer]
-      (this task tuple (nil? overflow-buffer) overflow-buffer))
-    ([task tuple]
-      (this task tuple nil)
+    ([task task-src tuple overflow-buffer]
+      (this task task-src tuple (nil? overflow-buffer) overflow-buffer))
+    ([task task-src tuple]
+      (this task task-src tuple nil)
       )))
 
 (defn mk-executor-data [worker executor-id]
@@ -314,7 +314,7 @@
        (fn []
          (disruptor/publish
           receive-queue
-          [[nil (TupleImpl. worker-context [interval] Constants/SYSTEM_TASK_ID Constants/METRICS_TICK_STREAM_ID)]]))))))
+          [[nil nil (TupleImpl. worker-context [interval] Constants/SYSTEM_TASK_ID Constants/METRICS_TICK_STREAM_ID)]]))))))
 
 (defn metrics-tick
   ([executor-data task-data ^TupleImpl tuple overflow-buffer]
@@ -360,7 +360,7 @@
           (fn []
             (disruptor/publish
               receive-queue
-              [[nil (TupleImpl. context [tick-time-secs] Constants/SYSTEM_TASK_ID Constants/SYSTEM_TICK_STREAM_ID)]]
+              [[nil nil (TupleImpl. context [tick-time-secs] Constants/SYSTEM_TASK_ID Constants/SYSTEM_TICK_STREAM_ID)]]
               )))))))
 
 (defn mk-executor [worker executor-id initial-credentials]
@@ -404,7 +404,7 @@
               context (:worker-context executor-data)]
           (disruptor/publish
             receive-queue
-            [[nil (TupleImpl. context [creds] Constants/SYSTEM_TASK_ID Constants/CREDENTIALS_CHANGED_STREAM_ID)]]
+            [[nil nil (TupleImpl. context [creds] Constants/SYSTEM_TASK_ID Constants/CREDENTIALS_CHANGED_STREAM_ID)]]
               )))
       (get-backpressure-flag [this]
         @(:backpressure executor-data))
@@ -460,16 +460,20 @@
         ]
     (disruptor/clojure-handler
       (fn [tuple-batch sequence-id end-of-batch?]
-        (fast-list-iter [[task-id msg] tuple-batch]
-          (let [^TupleImpl tuple (if (instance? Tuple msg) msg (.deserialize deserializer msg))]
-            (when debug? (log-message "Processing received message FOR " task-id " TUPLE: " tuple))
-            (if task-id
-              (tuple-action-fn task-id tuple)
-              ;; null task ids are broadcast tuples
-              (fast-list-iter [task-id task-ids]
-                (tuple-action-fn task-id tuple)
-                ))
-            ))))))
+        (fast-list-iter [[task-id task-src msg] tuple-batch]
+          (if (not (nil? msg))
+            (do 
+              (let [^TupleImpl tuple (if (instance? Tuple msg) msg (.deserialize deserializer msg))]
+                (when debug? (log-message "Processing received message FOR " task-id " TUPLE: " tuple))
+                (if task-id
+                  (tuple-action-fn task-id task-src tuple)
+                  ;; null task ids are broadcast tuples
+                  (fast-list-iter [task-id task-ids]
+                                  (tuple-action-fn task-id task-src tuple)
+                                  ))))
+            (log-debug "NULL message received tuple-batch" tuple-batch)
+            )
+          )))))
 
 (defn executor-max-spout-pending [storm-conf num-tasks]
   (let [p (storm-conf TOPOLOGY-MAX-SPOUT-PENDING)]
@@ -521,7 +525,7 @@
                      (let [time-delta (if start-time-ms (time-delta-ms start-time-ms))]
                        (fail-spout-msg executor-data (get task-datas task-id) spout-id tuple-info time-delta "TIMEOUT" id)
                        ))))
-        tuple-action-fn (fn [task-id ^TupleImpl tuple]
+        tuple-action-fn (fn [task-id task-src ^TupleImpl tuple]
                           (let [stream-id (.getSourceStreamId tuple)]
                             (condp = stream-id
                               Constants/SYSTEM_TICK_STREAM_ID (.rotate pending)
@@ -581,6 +585,7 @@
                                                                                      out-stream-id
                                                                                      tuple-id)]
                                                            (transfer-fn out-task
+                                                                        task-id
                                                                         out-tuple
                                                                         overflow-buffer)
                                                            ))
@@ -639,8 +644,8 @@
           ;; try to clear the overflow-buffer
           (try-cause
             (while (not (.isEmpty overflow-buffer))
-              (let [[out-task out-tuple] (.peek overflow-buffer)]
-                (transfer-fn out-task out-tuple false nil)
+              (let [[out-task task-src out-tuple] (.peek overflow-buffer)]
+                (transfer-fn out-task task-src out-tuple false nil)
                 (.poll overflow-buffer)))
           (catch InsufficientCapacityException e
             ))
@@ -717,7 +722,7 @@
         ;; the overflow buffer is might gradually fill degrading the performance gradually
         ;; eventually running out of memory, but at least prevent live-locks/deadlocks.
         overflow-buffer (if (storm-conf TOPOLOGY-BOLTS-OUTGOING-OVERFLOW-BUFFER-ENABLE) (ConcurrentLinkedQueue.) nil)
-        tuple-action-fn (fn [task-id ^TupleImpl tuple]
+        tuple-action-fn (fn [task-id task-src ^TupleImpl tuple]
                           ;; synchronization needs to be done with a key provided by this bolt, otherwise:
                           ;; spout 1 sends synchronization (s1), dies, same spout restarts somewhere else, sends synchronization (s2) and incremental update. s2 and update finish before s1 -> lose the incremental update
                           ;; TODO: for state sync, need to first send sync messages in a loop and receive tuples until synchronization
@@ -799,6 +804,7 @@
                                                                                             (put-xor! anchors-to-ids root-id edge-id))
                                                                             ))))
                                                         (transfer-fn t
+                                                                    task-id
                                                                    (TupleImpl. worker-context
                                                                                values
                                                                                task-id
@@ -889,8 +895,8 @@
             ;; try to clear the overflow-buffer
             (try-cause
               (while (and overflow-buffer (not (.isEmpty overflow-buffer)))
-                (let [[out-task out-tuple] (.peek overflow-buffer)]
-                  (transfer-fn out-task out-tuple false nil)
+                (let [[out-task task-src out-tuple] (.peek overflow-buffer)]
+                  (transfer-fn out-task task-src out-tuple false nil)
                   (.poll overflow-buffer)))
               (catch InsufficientCapacityException e
                 (when (= true (storm-conf TOPOLOGY-DEBUG))

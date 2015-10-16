@@ -70,7 +70,7 @@ class Server extends ConnectionWithStatus implements IStatefulObject {
     int roundRobinQueueId;
 	
     private volatile boolean closing = false;
-    List<TaskMessage> closeMessage = Arrays.asList(new TaskMessage(-1, null));
+    List<TaskMessage> closeMessage = Arrays.asList(new TaskMessage(-1, -1, null));
     
     
     @SuppressWarnings("rawtypes")
@@ -265,7 +265,7 @@ class Server extends ConnectionWithStatus implements IStatefulObject {
         }
     }
 
-    public void send(int task, byte[] message) {
+    public void send(int task, int taskSrc, byte[] message) {
         throw new UnsupportedOperationException("Server connection should not send any messages");
     }
     

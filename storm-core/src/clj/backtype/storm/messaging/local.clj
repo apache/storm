@@ -41,9 +41,9 @@
           (.add ret msg)
           (.iterator ret))
         nil)))
-  (^void send [this ^int taskId ^bytes payload]
+  (^void send [this ^int taskId ^int taskSrc ^bytes payload]
     (let [send-queue (add-queue! queues-map lock storm-id port)]
-      (.put send-queue (TaskMessage. taskId payload))
+      (.put send-queue (TaskMessage. taskId taskSrc payload))
       ))
   (^void send [this ^Iterator iter]
     (let [send-queue (add-queue! queues-map lock storm-id port)]
