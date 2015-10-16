@@ -22,6 +22,7 @@
 
 (def port (available-port))
 (def task 1)
+(def task-src 1)
 
 ;; In a "real" cluster (or an integration test), Storm itself would ensure that a topology's workers would only be
 ;; activated once all the workers' connections are ready.  The tests in this file however launch Netty servers and
@@ -59,10 +60,12 @@
         server (.bind context nil port)
         client (.connect context nil "localhost" port)
         _ (wait-until-ready [server client])
-        _ (.send client task (.getBytes req_msg))
+        _ (.send client task task-src (.getBytes req_msg))
+
         iter (.recv server 0 0)
         resp (.next iter)]
     (is (= task (.task resp)))
+    (is (= task-src (.taskSrc resp)))
     (is (= req_msg (String. (.message resp))))
     (.close client)
     (.close server)
@@ -84,10 +87,11 @@
         server (.bind context nil port)
         client (.connect context nil "localhost" port)
         _ (wait-until-ready [server client])
-        _ (.send client task (.getBytes req_msg))
+        _ (.send client task task-src (.getBytes req_msg))
         iter (.recv server 0 0)
         resp (.next iter)]
     (is (= task (.task resp)))
+    (is (= task-src (.taskSrc resp)))
     (is (= req_msg (String. (.message resp))))
     (.close client)
     (.close server)
@@ -95,7 +99,7 @@
 
 
 (deftest test-batch
-  (let [num-messages 100000
+  (let [num-messages 1000
         storm-conf {STORM-MESSAGING-TRANSPORT "backtype.storm.messaging.netty.Context"
                     STORM-MESSAGING-NETTY-AUTHENTICATION false
                     STORM-MESSAGING-NETTY-BUFFER-SIZE 1024000
@@ -105,14 +109,13 @@
                     STORM-MESSAGING-NETTY-SERVER-WORKER-THREADS 1
                     STORM-MESSAGING-NETTY-CLIENT-WORKER-THREADS 1
                     }
-        _ (log-message "Should send and receive many messages (testing with " num-messages " messages)")
         context (TransportFactory/makeContext storm-conf)
         server (.bind context nil port)
         client (.connect context nil "localhost" port)
         _ (wait-until-ready [server client])]
     (doseq [num  (range 1 num-messages)]
-      (let [req_msg (str num)]
-        (.send client task (.getBytes req_msg))))
+        (let [req_msg (str num)]
+          (.send client task task-src (.getBytes req_msg))))
 
     (let [resp (ArrayList.)
           received (atom 0)]
