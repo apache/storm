@@ -250,6 +250,7 @@ Response fields:
 |spouts.emitted| Long |Number of messages emitted in given window |
 |spouts.completeLatency| String (double value returned in String format) |Total latency for processing the message|
 |spouts.transferred| Long |Total number of messages  transferred in given window|
+|spouts.throughput| String (double value returned in String format) |Number of tuples emitted per second|
 |spouts.tasks| Integer |Total number of tasks for the spout|
 |spouts.lastError| String |Shows the last error happened in a spout|
 |spouts.errorLapsedSecs| Integer | Number of seconds elapsed since that last error happened in a spout|
@@ -259,7 +260,7 @@ Response fields:
 |bolts| Array | Array of bolt components in the topology|
 |bolts.boltId| String |Bolt id|
 |bolts.capacity| String (double value returned in String format) |This value indicates number of messages executed * average execute latency / time window|
-|bolts.processLatency| String (double value returned in String format)  |Average time of the bolt to ack a message after it was received|
+|bolts.processLatency| String (double value returned in String format) |Average time of the bolt to ack a message after it was received|
 |bolts.executeLatency| String (double value returned in String format) |Average time to run the execute method of the bolt|
 |bolts.executors| Integer |Number of executor tasks in the bolt component|
 |bolts.tasks| Integer |Number of instances of bolt|
@@ -269,6 +270,7 @@ Response fields:
 |bolts.errorLapsedSecs| Integer |Number of seconds elapsed since that last error happened in a bolt|
 |bolts.errorWorkerLogLink| String | Link to the worker log that reported the exception |
 |bolts.emitted| Long |Number of tuples emitted|
+|bolts.throughput| String (double value returned in String format) |Number of tuples processed per second|
 |replicationCount| Integer |Number of nimbus hosts on which this topology code is replicated|
 
 Examples:
@@ -338,6 +340,7 @@ Sample response:
             "emitted": 28880,
             "completeLatency": "0.000",
             "transferred": 28880,
+            "throughput": "126.001",
             "acked": 0,
             "spoutId": "spout",
             "tasks": 5,
@@ -351,11 +354,13 @@ Sample response:
             "executors": 12,
             "emitted": 184580,
             "transferred": 0,
+            "throughput": "195.000",
             "acked": 184640,
             "executeLatency": "0.048",
             "tasks": 12,
             "executed": 184620,
             "processLatency": "0.043",
+            "throughput": 
             "boltId": "count",
             "lastError": "",
             "errorLapsedSecs": null,
@@ -366,6 +371,7 @@ Sample response:
             "executors": 8,
             "emitted": 184500,
             "transferred": 184500,
+            "throughput": "1703.420",
             "acked": 28820,
             "executeLatency": "0.024",
             "tasks": 8,
@@ -455,6 +461,7 @@ Response fields:
 |spoutSummary.windowPretty| String |Duration passed in HH:MM:SS format|
 |spoutSummary.window| String | window duration for metrics in seconds|
 |spoutSummary.emitted| Long |Number of messages emitted in given window |
+|spoutSummary.throughput| String (double value returned in String format) |Number of tuples emitted per second|
 |spoutSummary.completeLatency| String (double value returned in String format) |Total latency for processing the message|
 |spoutSummary.transferred| Long |Total number of messages  transferred in given window|
 |spoutSummary.acked| Long |Number of messages acked|
@@ -463,6 +470,7 @@ Response fields:
 |boltStats..window| String | window duration for metrics in seconds|
 |boltStats.transferred| Long |Total number of messages  transferred in given window|
 |boltStats.processLatency| String (double value returned in String format)  |Average time of the bolt to ack a message after it was received|
+|boltStats.throughput| String (double value returned in String format) |Number of tuples processed per second|
 |boltStats.acked| Long |Number of messages acked|
 |boltStats.failed| Long |Number of messages failed|
 
@@ -499,6 +507,7 @@ Sample response:
             "window": "600",
             "emitted": 28500,
             "transferred": 28460,
+            "throughput": "324.232",
             "completeLatency": "0.000",
             "acked": 0,
             "failed": 0
@@ -508,6 +517,7 @@ Sample response:
             "window": "10800",
             "emitted": 127640,
             "transferred": 127440,
+            "throughput": "344.120",
             "completeLatency": "0.000",
             "acked": 0,
             "failed": 0
@@ -517,6 +527,7 @@ Sample response:
             "window": "86400",
             "emitted": 127640,
             "transferred": 127440,
+            "throughput": "319.623",
             "completeLatency": "0.000",
             "acked": 0,
             "failed": 0
@@ -526,6 +537,7 @@ Sample response:
             "window": ":all-time",
             "emitted": 127640,
             "transferred": 127440,
+            "throughput": "321.174",
             "completeLatency": "0.000",
             "acked": 0,
             "failed": 0
@@ -536,6 +548,7 @@ Sample response:
             "stream": "__metrics",
             "emitted": 40,
             "transferred": 0,
+            "throughput": "234.223",
             "completeLatency": "0",
             "acked": 0,
             "failed": 0
@@ -544,6 +557,7 @@ Sample response:
             "stream": "default",
             "emitted": 28460,
             "transferred": 28460,
+            "throughput": "243.283,
             "completeLatency": "0",
             "acked": 0,
             "failed": 0
@@ -582,6 +596,7 @@ Sample response:
             "port": 6702,
             "completeLatency": "0.000",
             "transferred": 5680,
+            "throughput": "303.839",
             "host": "10.11.1.7",
             "acked": 0,
             "uptime": "42m 57s",
@@ -595,6 +610,7 @@ Sample response:
             "port": 6701,
             "completeLatency": "0.000",
             "transferred": 5680,
+            "throughput": "316.603",
             "host": "10.11.1.7",
             "acked": 0,
             "uptime": "43m 4s",
@@ -608,6 +624,7 @@ Sample response:
             "port": 6703,
             "completeLatency": "0.000",
             "transferred": 5680,
+            "throughput": "327.372",
             "host": "10.11.1.7",
             "acked": 0,
             "uptime": "42m 57s",

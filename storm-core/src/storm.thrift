@@ -204,7 +204,7 @@ struct ExecutorStats {
   2: required map<string, map<string, i64>> transferred;
   3: required ExecutorSpecificStats specific;
   4: required double rate;
-  5: required map<string, map<string, double>> throughput;
+  5: optional map<string, map<string, double>> throughput;
 }
 
 struct ExecutorInfo {
@@ -246,6 +246,7 @@ struct CommonAggregateStats {
 4: optional i64 transferred;
 5: optional i64 acked;
 6: optional i64 failed;
+7: optional double throughput;
 }
 
 struct SpoutAggregateStats {
@@ -282,6 +283,7 @@ struct TopologyStats {
 3: optional map<string, double> window_to_complete_latencies_ms;
 4: optional map<string, i64> window_to_acked;
 5: optional map<string, i64> window_to_failed;
+6: optional map<string, double> window_to_throughput;
 }
 
 struct TopologyPageInfo {

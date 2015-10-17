@@ -127,6 +127,7 @@ function renderGraph(elem) {
                 }
                 
                 var w = Math.max(55, 25 + gfx.textWidth(node.name));
+
                 gfx.oval(pt.x - w/2, pt.y - w/2, w, w, {fill: col});
                 gfx.text(node.name, pt.x, pt.y+3, {color:"white", align:"center", font:"Arial", size:12});
                 gfx.text(node.name, pt.x, pt.y+3, {color:"white", align:"center", font:"Arial", size:12});

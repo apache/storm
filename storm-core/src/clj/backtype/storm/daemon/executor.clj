@@ -16,8 +16,7 @@
 (ns backtype.storm.daemon.executor
   (:use [backtype.storm.daemon common])
   (:import [backtype.storm.generated Grouping]
-           [java.io Serializable]
-           [backtype.storm.utils RateTracker])
+           [java.io Serializable])
   (:use [backtype.storm util config log timer stats])
   (:import [java.util List Random HashMap ArrayList LinkedList Map])
   (:import [backtype.storm ICredentialsListener])
@@ -29,7 +28,7 @@
   (:import [backtype.storm.grouping CustomStreamGrouping])
   (:import [backtype.storm.task WorkerTopologyContext IBolt OutputCollector IOutputCollector])
   (:import [backtype.storm.generated GlobalStreamId])
-  (:import [backtype.storm.utils Utils MutableObject RotatingMap RotatingMap$ExpiredCallback MutableLong Time DisruptorQueue RateTracker WorkerBackpressureThread])
+  (:import [backtype.storm.utils Utils MutableObject RotatingMap RotatingMap$ExpiredCallback MutableLong Time DisruptorQueue WorkerBackpressureThread])
   (:import [com.lmax.disruptor InsufficientCapacityException])
   (:import [backtype.storm.serialization KryoTupleSerializer KryoTupleDeserializer])
   (:import [backtype.storm.daemon Shutdownable])
@@ -516,7 +515,6 @@
         ;; this limits the size of the overflow buffer to however many tuples a spout emits in one call of nextTuple,
         ;; preventing memory issues
         overflow-buffer (ConcurrentLinkedQueue.)
-        sampler (mk-stats-sampler storm-conf)
 
         pending (RotatingMap.
                  2 ;; microoptimize for performance of .size method
@@ -656,7 +654,6 @@
                               @(:throttle-on (:worker executor-data)))
                 reached-max-spout-pending (and max-spout-pending
                                                (>= (.size pending) max-spout-pending))
-
                 ]
             (if (and (.isEmpty overflow-buffer)
                      (not throttle-on)

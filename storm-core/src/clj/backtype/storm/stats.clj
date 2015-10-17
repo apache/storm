@@ -205,9 +205,6 @@
   [stats stream amt]
   (update-executor-stat! stats [:common :transferred] stream (* (stats-rate stats) amt)))
 
-(defn update-stats-throughput! [stats stream throughput]
-  (update-executor-stat! stats [:common :throughput] stream (* (stats-rate stats) throughput)))
-
 (defn bolt-execute-tuple!
   [^BoltExecutorStats stats component stream latency-ms]
   (let [key [component stream]]

@@ -4617,9 +4617,9 @@ class CommonAggregateStats:
    - num_tasks
    - emitted
    - transferred
-   - throughput
    - acked
    - failed
+   - throughput
   """
 
   thrift_spec = (
@@ -4628,19 +4628,19 @@ class CommonAggregateStats:
     (2, TType.I32, 'num_tasks', None, None, ), # 2
     (3, TType.I64, 'emitted', None, None, ), # 3
     (4, TType.I64, 'transferred', None, None, ), # 4
-    (5, TType.DOUBLE, 'throughput', None, None, ), # 5
-    (6, TType.I64, 'acked', None, None, ), # 6
-    (7, TType.I64, 'failed', None, None, ), # 7
+    (5, TType.I64, 'acked', None, None, ), # 5
+    (6, TType.I64, 'failed', None, None, ), # 6
+    (7, TType.DOUBLE, 'throughput', None, None, ), # 7
   )
 
-  def __init__(self, num_executors=None, num_tasks=None, emitted=None, transferred=None, throughput=None, acked=None, failed=None,):
+  def __init__(self, num_executors=None, num_tasks=None, emitted=None, transferred=None, acked=None, failed=None, throughput=None,):
     self.num_executors = num_executors
     self.num_tasks = num_tasks
     self.emitted = emitted
     self.transferred = transferred
-    self.throughput = throughput
     self.acked = acked
     self.failed = failed
+    self.throughput = throughput
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -4672,18 +4672,18 @@ class CommonAggregateStats:
         else:
           iprot.skip(ftype)
       elif fid == 5:
-        if ftype == TType.DOUBLE:
-          self.throughput = iprot.readDouble();
-        else:
-          iprot.skip(ftype)
-      elif fid == 6:
         if ftype == TType.I64:
           self.acked = iprot.readI64();
         else:
           iprot.skip(ftype)
-      elif fid == 7:
+      elif fid == 6:
         if ftype == TType.I64:
           self.failed = iprot.readI64();
+        else:
+          iprot.skip(ftype)
+      elif fid == 7:
+        if ftype == TType.DOUBLE:
+          self.throughput = iprot.readDouble();
         else:
           iprot.skip(ftype)
       else:
@@ -4712,17 +4712,17 @@ class CommonAggregateStats:
       oprot.writeFieldBegin('transferred', TType.I64, 4)
       oprot.writeI64(self.transferred)
       oprot.writeFieldEnd()
-    if self.throughput is not None:
-      oprot.writeFieldBegin('throughput', TType.DOUBLE, 5)
-      oprot.writeDouble(self.throughput)
-      oprot.writeFieldEnd()
     if self.acked is not None:
-      oprot.writeFieldBegin('acked', TType.I64, 6)
+      oprot.writeFieldBegin('acked', TType.I64, 5)
       oprot.writeI64(self.acked)
       oprot.writeFieldEnd()
     if self.failed is not None:
-      oprot.writeFieldBegin('failed', TType.I64, 7)
+      oprot.writeFieldBegin('failed', TType.I64, 6)
       oprot.writeI64(self.failed)
+      oprot.writeFieldEnd()
+    if self.throughput is not None:
+      oprot.writeFieldBegin('throughput', TType.DOUBLE, 7)
+      oprot.writeDouble(self.throughput)
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
@@ -4737,9 +4737,9 @@ class CommonAggregateStats:
     value = (value * 31) ^ hash(self.num_tasks)
     value = (value * 31) ^ hash(self.emitted)
     value = (value * 31) ^ hash(self.transferred)
-    value = (value * 31) ^ hash(self.throughput)
     value = (value * 31) ^ hash(self.acked)
     value = (value * 31) ^ hash(self.failed)
+    value = (value * 31) ^ hash(self.throughput)
     return value
 
   def __repr__(self):
@@ -5114,29 +5114,29 @@ class TopologyStats:
   Attributes:
    - window_to_emitted
    - window_to_transferred
-   - window_to_throughput
    - window_to_complete_latencies_ms
    - window_to_acked
    - window_to_failed
+   - window_to_throughput
   """
 
   thrift_spec = (
     None, # 0
     (1, TType.MAP, 'window_to_emitted', (TType.STRING,None,TType.I64,None), None, ), # 1
     (2, TType.MAP, 'window_to_transferred', (TType.STRING,None,TType.I64,None), None, ), # 2
-    (3, TType.MAP, 'window_to_throughput', (TType.STRING,None,TType.DOUBLE,None), None, ), # 3
-    (4, TType.MAP, 'window_to_complete_latencies_ms', (TType.STRING,None,TType.DOUBLE,None), None, ), # 4
-    (5, TType.MAP, 'window_to_acked', (TType.STRING,None,TType.I64,None), None, ), # 5
-    (6, TType.MAP, 'window_to_failed', (TType.STRING,None,TType.I64,None), None, ), # 6
+    (3, TType.MAP, 'window_to_complete_latencies_ms', (TType.STRING,None,TType.DOUBLE,None), None, ), # 3
+    (4, TType.MAP, 'window_to_acked', (TType.STRING,None,TType.I64,None), None, ), # 4
+    (5, TType.MAP, 'window_to_failed', (TType.STRING,None,TType.I64,None), None, ), # 5
+    (6, TType.MAP, 'window_to_throughput', (TType.STRING,None,TType.DOUBLE,None), None, ), # 6
   )
 
-  def __init__(self, window_to_emitted=None, window_to_transferred=None, window_to_throughput=None, window_to_complete_latencies_ms=None, window_to_acked=None, window_to_failed=None,):
+  def __init__(self, window_to_emitted=None, window_to_transferred=None, window_to_complete_latencies_ms=None, window_to_acked=None, window_to_failed=None, window_to_throughput=None,):
     self.window_to_emitted = window_to_emitted
     self.window_to_transferred = window_to_transferred
-    self.window_to_throughput = window_to_throughput
     self.window_to_complete_latencies_ms = window_to_complete_latencies_ms
     self.window_to_acked = window_to_acked
     self.window_to_failed = window_to_failed
+    self.window_to_throughput = window_to_throughput
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -5171,45 +5171,45 @@ class TopologyStats:
           iprot.skip(ftype)
       elif fid == 3:
         if ftype == TType.MAP:
-          self.window_to_throughput = {}
+          self.window_to_complete_latencies_ms = {}
           (_ktype341, _vtype342, _size340 ) = iprot.readMapBegin()
           for _i344 in xrange(_size340):
             _key345 = iprot.readString().decode('utf-8')
             _val346 = iprot.readDouble();
-            self.window_to_throughput[_key345] = _val346
+            self.window_to_complete_latencies_ms[_key345] = _val346
           iprot.readMapEnd()
         else:
           iprot.skip(ftype)
       elif fid == 4:
         if ftype == TType.MAP:
-          self.window_to_complete_latencies_ms = {}
+          self.window_to_acked = {}
           (_ktype348, _vtype349, _size347 ) = iprot.readMapBegin()
           for _i351 in xrange(_size347):
             _key352 = iprot.readString().decode('utf-8')
-            _val353 = iprot.readDouble();
-            self.window_to_complete_latencies_ms[_key352] = _val353
+            _val353 = iprot.readI64();
+            self.window_to_acked[_key352] = _val353
           iprot.readMapEnd()
         else:
           iprot.skip(ftype)
       elif fid == 5:
         if ftype == TType.MAP:
-          self.window_to_acked = {}
+          self.window_to_failed = {}
           (_ktype355, _vtype356, _size354 ) = iprot.readMapBegin()
           for _i358 in xrange(_size354):
             _key359 = iprot.readString().decode('utf-8')
             _val360 = iprot.readI64();
-            self.window_to_acked[_key359] = _val360
+            self.window_to_failed[_key359] = _val360
           iprot.readMapEnd()
         else:
           iprot.skip(ftype)
       elif fid == 6:
         if ftype == TType.MAP:
-          self.window_to_failed = {}
+          self.window_to_throughput = {}
           (_ktype362, _vtype363, _size361 ) = iprot.readMapBegin()
           for _i365 in xrange(_size361):
             _key366 = iprot.readString().decode('utf-8')
-            _val367 = iprot.readI64();
-            self.window_to_failed[_key366] = _val367
+            _val367 = iprot.readDouble();
+            self.window_to_throughput[_key366] = _val367
           iprot.readMapEnd()
         else:
           iprot.skip(ftype)
@@ -5239,36 +5239,36 @@ class TopologyStats:
         oprot.writeI64(viter371)
       oprot.writeMapEnd()
       oprot.writeFieldEnd()
-    if self.window_to_throughput is not None:
-      oprot.writeFieldBegin('window_to_throughput', TType.MAP, 3)
-      oprot.writeMapBegin(TType.STRING, TType.DOUBLE, len(self.window_to_throughput))
-      for kiter372,viter373 in self.window_to_throughput.items():
+    if self.window_to_complete_latencies_ms is not None:
+      oprot.writeFieldBegin('window_to_complete_latencies_ms', TType.MAP, 3)
+      oprot.writeMapBegin(TType.STRING, TType.DOUBLE, len(self.window_to_complete_latencies_ms))
+      for kiter372,viter373 in self.window_to_complete_latencies_ms.items():
         oprot.writeString(kiter372.encode('utf-8'))
         oprot.writeDouble(viter373)
       oprot.writeMapEnd()
       oprot.writeFieldEnd()
-    if self.window_to_complete_latencies_ms is not None:
-      oprot.writeFieldBegin('window_to_complete_latencies_ms', TType.MAP, 4)
-      oprot.writeMapBegin(TType.STRING, TType.DOUBLE, len(self.window_to_complete_latencies_ms))
-      for kiter374,viter375 in self.window_to_complete_latencies_ms.items():
+    if self.window_to_acked is not None:
+      oprot.writeFieldBegin('window_to_acked', TType.MAP, 4)
+      oprot.writeMapBegin(TType.STRING, TType.I64, len(self.window_to_acked))
+      for kiter374,viter375 in self.window_to_acked.items():
         oprot.writeString(kiter374.encode('utf-8'))
-        oprot.writeDouble(viter375)
+        oprot.writeI64(viter375)
       oprot.writeMapEnd()
       oprot.writeFieldEnd()
-    if self.window_to_acked is not None:
-      oprot.writeFieldBegin('window_to_acked', TType.MAP, 5)
-      oprot.writeMapBegin(TType.STRING, TType.I64, len(self.window_to_acked))
-      for kiter376,viter377 in self.window_to_acked.items():
+    if self.window_to_failed is not None:
+      oprot.writeFieldBegin('window_to_failed', TType.MAP, 5)
+      oprot.writeMapBegin(TType.STRING, TType.I64, len(self.window_to_failed))
+      for kiter376,viter377 in self.window_to_failed.items():
         oprot.writeString(kiter376.encode('utf-8'))
         oprot.writeI64(viter377)
       oprot.writeMapEnd()
       oprot.writeFieldEnd()
-    if self.window_to_failed is not None:
-      oprot.writeFieldBegin('window_to_failed', TType.MAP, 6)
-      oprot.writeMapBegin(TType.STRING, TType.I64, len(self.window_to_failed))
-      for kiter378,viter379 in self.window_to_failed.items():
+    if self.window_to_throughput is not None:
+      oprot.writeFieldBegin('window_to_throughput', TType.MAP, 6)
+      oprot.writeMapBegin(TType.STRING, TType.DOUBLE, len(self.window_to_throughput))
+      for kiter378,viter379 in self.window_to_throughput.items():
         oprot.writeString(kiter378.encode('utf-8'))
-        oprot.writeI64(viter379)
+        oprot.writeDouble(viter379)
       oprot.writeMapEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -5282,10 +5282,10 @@ class TopologyStats:
     value = 17
     value = (value * 31) ^ hash(self.window_to_emitted)
     value = (value * 31) ^ hash(self.window_to_transferred)
-    value = (value * 31) ^ hash(self.window_to_throughput)
     value = (value * 31) ^ hash(self.window_to_complete_latencies_ms)
     value = (value * 31) ^ hash(self.window_to_acked)
     value = (value * 31) ^ hash(self.window_to_failed)
+    value = (value * 31) ^ hash(self.window_to_throughput)
     return value
 
   def __repr__(self):
