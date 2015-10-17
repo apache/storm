@@ -25,6 +25,7 @@
            [java.io File])
   (:use [backtype.storm config util log timer local-state])
   (:import [backtype.storm.utils VersionInfo])
+  (:import [backtype.storm Config])
   (:use [backtype.storm.daemon common])
   (:require [backtype.storm.daemon [worker :as worker]]
             [backtype.storm [process-simulator :as psim] [cluster :as cluster] [event :as event]]
@@ -196,7 +197,7 @@
 (defn generate-supervisor-id []
   (uuid))
 
-(defnk worker-launcher [conf user args :environment {} :log-prefix nil :exit-code-callback nil]
+(defnk worker-launcher [conf user args :environment {} :log-prefix nil :exit-code-callback nil :directory nil]
   (let [_ (when (clojure.string/blank? user)
             (throw (java.lang.IllegalArgumentException.
                      "User cannot be blank when calling worker-launcher.")))
@@ -205,7 +206,7 @@
         wl (if wl-initial wl-initial (str storm-home "/bin/worker-launcher"))
         command (concat [wl user] args)]
     (log-message "Running as user:" user " command:" (pr-str command))
-    (launch-process command :environment environment :log-prefix log-prefix :exit-code-callback exit-code-callback)
+    (launch-process command :environment environment :log-prefix log-prefix :exit-code-callback exit-code-callback :directory directory)
   ))
 
 (defnk worker-launcher-and-wait [conf user args :environment {} :log-prefix nil]
@@ -495,6 +496,11 @@
       (.add processes-event-manager sync-processes)
       )))
 
+(defn mk-supervisor-capacities
+  [conf]
+  {Config/SUPERVISOR_MEMORY_CAPACITY_MB (double (conf SUPERVISOR-MEMORY-CAPACITY-MB))
+   Config/SUPERVISOR_CPU_CAPACITY (double (conf SUPERVISOR-CPU-CAPACITY))})
+
 ;; in local state, supervisor stores who its current assignments are
 ;; another thread launches events to restart any dead processes if necessary
 (defserverfn mk-supervisor [conf shared-context ^ISupervisor isupervisor]
@@ -516,7 +522,8 @@
                                                  (.getMetadata isupervisor)
                                                  (conf SUPERVISOR-SCHEDULER-META)
                                                  ((:uptime supervisor))
-                                                 (:version supervisor))))]
+                                                 (:version supervisor)
+                                                 (mk-supervisor-capacities conf))))]
     (heartbeat-fn)
 
     ;; should synchronize supervisor so it doesn't launch anything after being down (optimization)
@@ -644,7 +651,7 @@
                         replacement-map)]
     (cond
       (nil? value) nil
-      (list? value) (map sub-fn value)
+      (sequential? value) (vec (map sub-fn value))
       :else (-> value sub-fn (clojure.string/split #"\s+")))))
 
 (defn java-cmd []
@@ -664,7 +671,11 @@
           storm-conf-file (System/getProperty "storm.conf.file")
           storm-log-dir (or (System/getProperty "storm.log.dir") (str storm-home file-path-separator "logs"))
           storm-log-conf-dir (conf STORM-LOG4J2-CONF-DIR)
-          storm-log4j2-conf-dir (or storm-log-conf-dir (str storm-home file-path-separator "log4j2"))
+          storm-log4j2-conf-dir (if storm-log-conf-dir
+                                  (if (is-absolute-path? storm-log-conf-dir)
+                                    storm-log-conf-dir
+                                    (str storm-home file-path-separator storm-log-conf-dir))
+                                  (str storm-home file-path-separator "log4j2"))
           stormroot (supervisor-stormdist-root conf storm-id)
           jlp (jlp stormroot conf)
           stormjar (supervisor-stormjar-path stormroot)
@@ -698,6 +709,7 @@
                      (str "-Dworker.port=" port)
                      (str "-Dstorm.log.dir=" storm-log-dir)
                      (str "-Dlog4j.configurationFile=" storm-log4j2-conf-dir file-path-separator "worker.xml")
+                     (str "-DLog4jContextSelector=org.apache.logging.log4j.core.selector.BasicContextSelector")
                      "backtype.storm.LogWriter"]
                     [(java-cmd) "-server"]
                     worker-childopts
@@ -711,6 +723,7 @@
                      (str "-Dstorm.log.dir=" storm-log-dir)
                      (str "-Dlogging.sensitivity=" logging-sensitivity)
                      (str "-Dlog4j.configurationFile=" storm-log4j2-conf-dir file-path-separator "worker.xml")
+                     (str "-DLog4jContextSelector=org.apache.logging.log4j.core.selector.BasicContextSelector")
                      (str "-Dstorm.id=" storm-id)
                      (str "-Dworker.id=" worker-id)
                      (str "-Dworker.port=" port)
@@ -725,15 +738,15 @@
       (write-log-metadata! storm-conf user worker-id storm-id port conf)
       (set-worker-user! conf worker-id user)
       (let [log-prefix (str "Worker Process " worker-id)
-           callback (fn [exit-code]
-                          (log-message log-prefix " exited with code: " exit-code)
-                          (add-dead-worker worker-id))]
+            callback (fn [exit-code]
+                       (log-message log-prefix " exited with code: " exit-code)
+                       (add-dead-worker worker-id))
+            worker-dir (worker-root conf worker-id)]
         (remove-dead-worker worker-id)
         (if run-worker-as-user
-          (let [worker-dir (worker-root conf worker-id)]
-            (worker-launcher conf user ["worker" worker-dir (write-script worker-dir command :environment topology-worker-environment)] :log-prefix log-prefix :exit-code-callback callback))
-          (launch-process command :environment topology-worker-environment :log-prefix log-prefix :exit-code-callback callback)
-      ))))
+          (worker-launcher conf user ["worker" worker-dir (write-script worker-dir command :environment topology-worker-environment)] :log-prefix log-prefix :exit-code-callback callback :directory (File. worker-dir))
+          (launch-process command :environment topology-worker-environment :log-prefix log-prefix :exit-code-callback callback :directory (File. worker-dir)))
+        )))
 
 ;; local implementation
 
