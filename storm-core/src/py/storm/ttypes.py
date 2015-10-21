@@ -6579,6 +6579,97 @@ class NodeInfo:
   def __ne__(self, other):
     return not (self == other)
 
+class WorkerResources:
+  """
+  Attributes:
+   - mem_on_heap
+   - mem_off_heap
+   - cpu
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.DOUBLE, 'mem_on_heap', None, None, ), # 1
+    (2, TType.DOUBLE, 'mem_off_heap', None, None, ), # 2
+    (3, TType.DOUBLE, 'cpu', None, None, ), # 3
+  )
+
+  def __init__(self, mem_on_heap=None, mem_off_heap=None, cpu=None,):
+    self.mem_on_heap = mem_on_heap
+    self.mem_off_heap = mem_off_heap
+    self.cpu = cpu
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.DOUBLE:
+          self.mem_on_heap = iprot.readDouble();
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.DOUBLE:
+          self.mem_off_heap = iprot.readDouble();
+        else:
+          iprot.skip(ftype)
+      elif fid == 3:
+        if ftype == TType.DOUBLE:
+          self.cpu = iprot.readDouble();
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('WorkerResources')
+    if self.mem_on_heap is not None:
+      oprot.writeFieldBegin('mem_on_heap', TType.DOUBLE, 1)
+      oprot.writeDouble(self.mem_on_heap)
+      oprot.writeFieldEnd()
+    if self.mem_off_heap is not None:
+      oprot.writeFieldBegin('mem_off_heap', TType.DOUBLE, 2)
+      oprot.writeDouble(self.mem_off_heap)
+      oprot.writeFieldEnd()
+    if self.cpu is not None:
+      oprot.writeFieldBegin('cpu', TType.DOUBLE, 3)
+      oprot.writeDouble(self.cpu)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.mem_on_heap)
+    value = (value * 31) ^ hash(self.mem_off_heap)
+    value = (value * 31) ^ hash(self.cpu)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
 class Assignment:
   """
   Attributes:
@@ -6586,6 +6677,7 @@ class Assignment:
    - node_host
    - executor_node_port
    - executor_start_time_secs
+   - worker_resources
   """
 
   thrift_spec = (
@@ -6597,9 +6689,11 @@ class Assignment:
     }, ), # 3
     (4, TType.MAP, 'executor_start_time_secs', (TType.LIST,(TType.I64,None),TType.I64,None), {
     }, ), # 4
+    (5, TType.MAP, 'worker_resources', (TType.STRUCT,(NodeInfo, NodeInfo.thrift_spec),TType.STRUCT,(WorkerResources, WorkerResources.thrift_spec)), {
+    }, ), # 5
   )
 
-  def __init__(self, master_code_dir=None, node_host=thrift_spec[2][4], executor_node_port=thrift_spec[3][4], executor_start_time_secs=thrift_spec[4][4],):
+  def __init__(self, master_code_dir=None, node_host=thrift_spec[2][4], executor_node_port=thrift_spec[3][4], executor_start_time_secs=thrift_spec[4][4], worker_resources=thrift_spec[5][4],):
     self.master_code_dir = master_code_dir
     if node_host is self.thrift_spec[2][4]:
       node_host = {
@@ -6613,6 +6707,10 @@ class Assignment:
       executor_start_time_secs = {
     }
     self.executor_start_time_secs = executor_start_time_secs
+    if worker_resources is self.thrift_spec[5][4]:
+      worker_resources = {
+    }
+    self.worker_resources = worker_resources
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -6672,6 +6770,19 @@ class Assignment:
           iprot.readMapEnd()
         else:
           iprot.skip(ftype)
+      elif fid == 5:
+        if ftype == TType.MAP:
+          self.worker_resources = {}
+          (_ktype530, _vtype531, _size529 ) = iprot.readMapBegin()
+          for _i533 in xrange(_size529):
+            _key534 = NodeInfo()
+            _key534.read(iprot)
+            _val535 = WorkerResources()
+            _val535.read(iprot)
+            self.worker_resources[_key534] = _val535
+          iprot.readMapEnd()
+        else:
+          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -6689,31 +6800,39 @@ class Assignment:
     if self.node_host is not None:
       oprot.writeFieldBegin('node_host', TType.MAP, 2)
       oprot.writeMapBegin(TType.STRING, TType.STRING, len(self.node_host))
-      for kiter529,viter530 in self.node_host.items():
-        oprot.writeString(kiter529.encode('utf-8'))
-        oprot.writeString(viter530.encode('utf-8'))
+      for kiter536,viter537 in self.node_host.items():
+        oprot.writeString(kiter536.encode('utf-8'))
+        oprot.writeString(viter537.encode('utf-8'))
       oprot.writeMapEnd()
       oprot.writeFieldEnd()
     if self.executor_node_port is not None:
       oprot.writeFieldBegin('executor_node_port', TType.MAP, 3)
       oprot.writeMapBegin(TType.LIST, TType.STRUCT, len(self.executor_node_port))
-      for kiter531,viter532 in self.executor_node_port.items():
-        oprot.writeListBegin(TType.I64, len(kiter531))
-        for iter533 in kiter531:
-          oprot.writeI64(iter533)
+      for kiter538,viter539 in self.executor_node_port.items():
+        oprot.writeListBegin(TType.I64, len(kiter538))
+        for iter540 in kiter538:
+          oprot.writeI64(iter540)
         oprot.writeListEnd()
-        viter532.write(oprot)
+        viter539.write(oprot)
       oprot.writeMapEnd()
       oprot.writeFieldEnd()
     if self.executor_start_time_secs is not None:
       oprot.writeFieldBegin('executor_start_time_secs', TType.MAP, 4)
       oprot.writeMapBegin(TType.LIST, TType.I64, len(self.executor_start_time_secs))
-      for kiter534,viter535 in self.executor_start_time_secs.items():
-        oprot.writeListBegin(TType.I64, len(kiter534))
-        for iter536 in kiter534:
-          oprot.writeI64(iter536)
+      for kiter541,viter542 in self.executor_start_time_secs.items():
+        oprot.writeListBegin(TType.I64, len(kiter541))
+        for iter543 in kiter541:
+          oprot.writeI64(iter543)
         oprot.writeListEnd()
-        oprot.writeI64(viter535)
+        oprot.writeI64(viter542)
+      oprot.writeMapEnd()
+      oprot.writeFieldEnd()
+    if self.worker_resources is not None:
+      oprot.writeFieldBegin('worker_resources', TType.MAP, 5)
+      oprot.writeMapBegin(TType.STRUCT, TType.STRUCT, len(self.worker_resources))
+      for kiter544,viter545 in self.worker_resources.items():
+        kiter544.write(oprot)
+        viter545.write(oprot)
       oprot.writeMapEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -6731,6 +6850,7 @@ class Assignment:
     value = (value * 31) ^ hash(self.node_host)
     value = (value * 31) ^ hash(self.executor_node_port)
     value = (value * 31) ^ hash(self.executor_start_time_secs)
+    value = (value * 31) ^ hash(self.worker_resources)
     return value
 
   def __repr__(self):
@@ -6889,11 +7009,11 @@ class StormBase:
       elif fid == 4:
         if ftype == TType.MAP:
           self.component_executors = {}
-          (_ktype538, _vtype539, _size537 ) = iprot.readMapBegin()
-          for _i541 in xrange(_size537):
-            _key542 = iprot.readString().decode('utf-8')
-            _val543 = iprot.readI32();
-            self.component_executors[_key542] = _val543
+          (_ktype547, _vtype548, _size546 ) = iprot.readMapBegin()
+          for _i550 in xrange(_size546):
+            _key551 = iprot.readString().decode('utf-8')
+            _val552 = iprot.readI32();
+            self.component_executors[_key551] = _val552
           iprot.readMapEnd()
         else:
           iprot.skip(ftype)
@@ -6921,12 +7041,12 @@ class StormBase:
       elif fid == 9:
         if ftype == TType.MAP:
           self.component_debug = {}
-          (_ktype545, _vtype546, _size544 ) = iprot.readMapBegin()
-          for _i548 in xrange(_size544):
-            _key549 = iprot.readString().decode('utf-8')
-            _val550 = DebugOptions()
-            _val550.read(iprot)
-            self.component_debug[_key549] = _val550
+          (_ktype554, _vtype555, _size553 ) = iprot.readMapBegin()
+          for _i557 in xrange(_size553):
+            _key558 = iprot.readString().decode('utf-8')
+            _val559 = DebugOptions()
+            _val559.read(iprot)
+            self.component_debug[_key558] = _val559
           iprot.readMapEnd()
         else:
           iprot.skip(ftype)
@@ -6955,9 +7075,9 @@ class StormBase:
     if self.component_executors is not None:
       oprot.writeFieldBegin('component_executors', TType.MAP, 4)
       oprot.writeMapBegin(TType.STRING, TType.I32, len(self.component_executors))
-      for kiter551,viter552 in self.component_executors.items():
-        oprot.writeString(kiter551.encode('utf-8'))
-        oprot.writeI32(viter552)
+      for kiter560,viter561 in self.component_executors.items():
+        oprot.writeString(kiter560.encode('utf-8'))
+        oprot.writeI32(viter561)
       oprot.writeMapEnd()
       oprot.writeFieldEnd()
     if self.launch_time_secs is not None:
@@ -6979,9 +7099,9 @@ class StormBase:
     if self.component_debug is not None:
       oprot.writeFieldBegin('component_debug', TType.MAP, 9)
       oprot.writeMapBegin(TType.STRING, TType.STRUCT, len(self.component_debug))
-      for kiter553,viter554 in self.component_debug.items():
-        oprot.writeString(kiter553.encode('utf-8'))
-        viter554.write(oprot)
+      for kiter562,viter563 in self.component_debug.items():
+        oprot.writeString(kiter562.encode('utf-8'))
+        viter563.write(oprot)
       oprot.writeMapEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -7061,13 +7181,13 @@ class ClusterWorkerHeartbeat:
       elif fid == 2:
         if ftype == TType.MAP:
           self.executor_stats = {}
-          (_ktype556, _vtype557, _size555 ) = iprot.readMapBegin()
-          for _i559 in xrange(_size555):
-            _key560 = ExecutorInfo()
-            _key560.read(iprot)
-            _val561 = ExecutorStats()
-            _val561.read(iprot)
-            self.executor_stats[_key560] = _val561
+          (_ktype565, _vtype566, _size564 ) = iprot.readMapBegin()
+          for _i568 in xrange(_size564):
+            _key569 = ExecutorInfo()
+            _key569.read(iprot)
+            _val570 = ExecutorStats()
+            _val570.read(iprot)
+            self.executor_stats[_key569] = _val570
           iprot.readMapEnd()
         else:
           iprot.skip(ftype)
@@ -7098,9 +7218,9 @@ class ClusterWorkerHeartbeat:
     if self.executor_stats is not None:
       oprot.writeFieldBegin('executor_stats', TType.MAP, 2)
       oprot.writeMapBegin(TType.STRUCT, TType.STRUCT, len(self.executor_stats))
-      for kiter562,viter563 in self.executor_stats.items():
-        kiter562.write(oprot)
-        viter563.write(oprot)
+      for kiter571,viter572 in self.executor_stats.items():
+        kiter571.write(oprot)
+        viter572.write(oprot)
       oprot.writeMapEnd()
       oprot.writeFieldEnd()
     if self.time_secs is not None:
@@ -7253,12 +7373,12 @@ class LocalStateData:
       if fid == 1:
         if ftype == TType.MAP:
           self.serialized_parts = {}
-          (_ktype565, _vtype566, _size564 ) = iprot.readMapBegin()
-          for _i568 in xrange(_size564):
-            _key569 = iprot.readString().decode('utf-8')
-            _val570 = ThriftSerializedObject()
-            _val570.read(iprot)
-            self.serialized_parts[_key569] = _val570
+          (_ktype574, _vtype575, _size573 ) = iprot.readMapBegin()
+          for _i577 in xrange(_size573):
+            _key578 = iprot.readString().decode('utf-8')
+            _val579 = ThriftSerializedObject()
+            _val579.read(iprot)
+            self.serialized_parts[_key578] = _val579
           iprot.readMapEnd()
         else:
           iprot.skip(ftype)
@@ -7275,9 +7395,9 @@ class LocalStateData:
     if self.serialized_parts is not None:
       oprot.writeFieldBegin('serialized_parts', TType.MAP, 1)
       oprot.writeMapBegin(TType.STRING, TType.STRUCT, len(self.serialized_parts))
-      for kiter571,viter572 in self.serialized_parts.items():
-        oprot.writeString(kiter571.encode('utf-8'))
-        viter572.write(oprot)
+      for kiter580,viter581 in self.serialized_parts.items():
+        oprot.writeString(kiter580.encode('utf-8'))
+        viter581.write(oprot)
       oprot.writeMapEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -7310,17 +7430,20 @@ class LocalAssignment:
   Attributes:
    - topology_id
    - executors
+   - resources
   """
 
   thrift_spec = (
     None, # 0
     (1, TType.STRING, 'topology_id', None, None, ), # 1
     (2, TType.LIST, 'executors', (TType.STRUCT,(ExecutorInfo, ExecutorInfo.thrift_spec)), None, ), # 2
+    (3, TType.STRUCT, 'resources', (WorkerResources, WorkerResources.thrift_spec), None, ), # 3
   )
 
-  def __init__(self, topology_id=None, executors=None,):
+  def __init__(self, topology_id=None, executors=None, resources=None,):
     self.topology_id = topology_id
     self.executors = executors
+    self.resources = resources
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -7339,12 +7462,18 @@ class LocalAssignment:
       elif fid == 2:
         if ftype == TType.LIST:
           self.executors = []
-          (_etype576, _size573) = iprot.readListBegin()
-          for _i577 in xrange(_size573):
-            _elem578 = ExecutorInfo()
-            _elem578.read(iprot)
-            self.executors.append(_elem578)
+          (_etype585, _size582) = iprot.readListBegin()
+          for _i586 in xrange(_size582):
+            _elem587 = ExecutorInfo()
+            _elem587.read(iprot)
+            self.executors.append(_elem587)
           iprot.readListEnd()
+        else:
+          iprot.skip(ftype)
+      elif fid == 3:
+        if ftype == TType.STRUCT:
+          self.resources = WorkerResources()
+          self.resources.read(iprot)
         else:
           iprot.skip(ftype)
       else:
@@ -7364,9 +7493,13 @@ class LocalAssignment:
     if self.executors is not None:
       oprot.writeFieldBegin('executors', TType.LIST, 2)
       oprot.writeListBegin(TType.STRUCT, len(self.executors))
-      for iter579 in self.executors:
-        iter579.write(oprot)
+      for iter588 in self.executors:
+        iter588.write(oprot)
       oprot.writeListEnd()
+      oprot.writeFieldEnd()
+    if self.resources is not None:
+      oprot.writeFieldBegin('resources', TType.STRUCT, 3)
+      self.resources.write(oprot)
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
@@ -7383,6 +7516,7 @@ class LocalAssignment:
     value = 17
     value = (value * 31) ^ hash(self.topology_id)
     value = (value * 31) ^ hash(self.executors)
+    value = (value * 31) ^ hash(self.resources)
     return value
 
   def __repr__(self):
@@ -7489,11 +7623,11 @@ class LSApprovedWorkers:
       if fid == 1:
         if ftype == TType.MAP:
           self.approved_workers = {}
-          (_ktype581, _vtype582, _size580 ) = iprot.readMapBegin()
-          for _i584 in xrange(_size580):
-            _key585 = iprot.readString().decode('utf-8')
-            _val586 = iprot.readI32();
-            self.approved_workers[_key585] = _val586
+          (_ktype590, _vtype591, _size589 ) = iprot.readMapBegin()
+          for _i593 in xrange(_size589):
+            _key594 = iprot.readString().decode('utf-8')
+            _val595 = iprot.readI32();
+            self.approved_workers[_key594] = _val595
           iprot.readMapEnd()
         else:
           iprot.skip(ftype)
@@ -7510,9 +7644,9 @@ class LSApprovedWorkers:
     if self.approved_workers is not None:
       oprot.writeFieldBegin('approved_workers', TType.MAP, 1)
       oprot.writeMapBegin(TType.STRING, TType.I32, len(self.approved_workers))
-      for kiter587,viter588 in self.approved_workers.items():
-        oprot.writeString(kiter587.encode('utf-8'))
-        oprot.writeI32(viter588)
+      for kiter596,viter597 in self.approved_workers.items():
+        oprot.writeString(kiter596.encode('utf-8'))
+        oprot.writeI32(viter597)
       oprot.writeMapEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -7566,12 +7700,12 @@ class LSSupervisorAssignments:
       if fid == 1:
         if ftype == TType.MAP:
           self.assignments = {}
-          (_ktype590, _vtype591, _size589 ) = iprot.readMapBegin()
-          for _i593 in xrange(_size589):
-            _key594 = iprot.readI32();
-            _val595 = LocalAssignment()
-            _val595.read(iprot)
-            self.assignments[_key594] = _val595
+          (_ktype599, _vtype600, _size598 ) = iprot.readMapBegin()
+          for _i602 in xrange(_size598):
+            _key603 = iprot.readI32();
+            _val604 = LocalAssignment()
+            _val604.read(iprot)
+            self.assignments[_key603] = _val604
           iprot.readMapEnd()
         else:
           iprot.skip(ftype)
@@ -7588,9 +7722,9 @@ class LSSupervisorAssignments:
     if self.assignments is not None:
       oprot.writeFieldBegin('assignments', TType.MAP, 1)
       oprot.writeMapBegin(TType.I32, TType.STRUCT, len(self.assignments))
-      for kiter596,viter597 in self.assignments.items():
-        oprot.writeI32(kiter596)
-        viter597.write(oprot)
+      for kiter605,viter606 in self.assignments.items():
+        oprot.writeI32(kiter605)
+        viter606.write(oprot)
       oprot.writeMapEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -7663,11 +7797,11 @@ class LSWorkerHeartbeat:
       elif fid == 3:
         if ftype == TType.LIST:
           self.executors = []
-          (_etype601, _size598) = iprot.readListBegin()
-          for _i602 in xrange(_size598):
-            _elem603 = ExecutorInfo()
-            _elem603.read(iprot)
-            self.executors.append(_elem603)
+          (_etype610, _size607) = iprot.readListBegin()
+          for _i611 in xrange(_size607):
+            _elem612 = ExecutorInfo()
+            _elem612.read(iprot)
+            self.executors.append(_elem612)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -7697,8 +7831,8 @@ class LSWorkerHeartbeat:
     if self.executors is not None:
       oprot.writeFieldBegin('executors', TType.LIST, 3)
       oprot.writeListBegin(TType.STRUCT, len(self.executors))
-      for iter604 in self.executors:
-        iter604.write(oprot)
+      for iter613 in self.executors:
+        iter613.write(oprot)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     if self.port is not None:
@@ -7950,12 +8084,12 @@ class LogConfig:
       if fid == 2:
         if ftype == TType.MAP:
           self.named_logger_level = {}
-          (_ktype606, _vtype607, _size605 ) = iprot.readMapBegin()
-          for _i609 in xrange(_size605):
-            _key610 = iprot.readString().decode('utf-8')
-            _val611 = LogLevel()
-            _val611.read(iprot)
-            self.named_logger_level[_key610] = _val611
+          (_ktype615, _vtype616, _size614 ) = iprot.readMapBegin()
+          for _i618 in xrange(_size614):
+            _key619 = iprot.readString().decode('utf-8')
+            _val620 = LogLevel()
+            _val620.read(iprot)
+            self.named_logger_level[_key619] = _val620
           iprot.readMapEnd()
         else:
           iprot.skip(ftype)
@@ -7972,9 +8106,9 @@ class LogConfig:
     if self.named_logger_level is not None:
       oprot.writeFieldBegin('named_logger_level', TType.MAP, 2)
       oprot.writeMapBegin(TType.STRING, TType.STRUCT, len(self.named_logger_level))
-      for kiter612,viter613 in self.named_logger_level.items():
-        oprot.writeString(kiter612.encode('utf-8'))
-        viter613.write(oprot)
+      for kiter621,viter622 in self.named_logger_level.items():
+        oprot.writeString(kiter621.encode('utf-8'))
+        viter622.write(oprot)
       oprot.writeMapEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()

@@ -1,4 +1,14 @@
 ## 0.11.0
+ * STORM-1119: Create access logging for all daemons
+ * STORM-1117: Adds visualization-init route previously missing
+ * STORM-1118: Added test to compare latency vs. throughput in storm.
+ * STORM-1110: Fix Component Page for system components
+ * STORM-1093: Launching Workers with resources specified in resource-aware schedulers
+ * STORM-1102: Add a default flush interval for HiveBolt
+ * STORM-1112: Add executor id to the thread name of the executor thread for debug
+ * STORM-1079: Batch Puts to HBase
+ * STORM-1084: Improve Storm config validation process to use java annotations instead of *_SCHEMA format
+ * STORM-1106: Netty should not limit attempts to reconnect
  * STORM-1103: Changes log message to DEBUG from INFO
  * STORM-1104: Nimbus HA fails to find newly downloaded code files
  * STORM-1087: Avoid issues with transfer-queue backpressure.
@@ -79,6 +89,7 @@
  * STORM-949: On the topology summary UI page, last shown error should have the time and date
 
 ## 0.10.0-beta2
+ * STORM-1108: Fix NPE in simulated time
  * STORM-1099: Fix worker childopts as arraylist of strings
  * STORM-1094: advance kafka offset when deserializer yields no object
  * STORM-1066: Specify current directory when supervisor launches a worker
@@ -94,7 +105,6 @@
  * STORM-803: Better CI logs
  * STORM-1027: Use overflow buffer for emitting metrics
  * STORM-1024: log4j changes leaving ${sys:storm.log.dir} under STORM_HOME dir
- * STORM-996: netty-unit-tests/test-batch demonstrates out-of-order delivery
  * STORM-944: storm-hive pom.xml has a dependency conflict with calcite
  * STORM-994: Connection leak between nimbus and supervisors
  * STORM-1001: Undefined STORM_EXT_CLASSPATH adds '::' to classpath of workers
@@ -281,6 +291,7 @@
  * STORM-130: Supervisor getting killed due to java.io.FileNotFoundException: File '../stormconf.ser' does not exist.
 
 ## 0.9.6
+ * STORM-996: netty-unit-tests/test-batch demonstrates out-of-order delivery
  * STORM-1056: allow supervisor log filename to be configurable via ENV variable
  * STORM-1051: Netty Client.java's flushMessages produces a NullPointerException
  * STORM-763: nimbus reassigned worker A to another machine, but other worker's netty client can't connect to the new worker A
@@ -843,3 +854,4 @@ NOTE: The change from 0.7.0 in which OutputCollector no longer assumes immutable
 ## 0.5.0
  
  * Initial release!
+
