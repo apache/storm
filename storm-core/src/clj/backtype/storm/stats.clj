@@ -277,10 +277,11 @@
          (value-stats stats SPOUT-FIELDS)
          {:type :spout}))
 
-(defn values-divided-by [pairs t]
-  (let [update-values (fn [m f & args]
-                        (into {} (for [[k v] m] [k (apply f v args)])))]
-    (update-values pairs / (double t))))
+(defn update-values [m f & args]
+  (into {} (for [[k v] m] [k (apply f v args)])))
+
+(defn values-divided-by [kv-pairs t]
+  (update-values kv-pairs / (double t)))
 
 (defn convert-count-to-throughput
   [stat eclipsed-time-in-secs]

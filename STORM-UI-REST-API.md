@@ -360,7 +360,6 @@ Sample response:
             "tasks": 12,
             "executed": 184620,
             "processLatency": "0.043",
-            "throughput": 
             "boltId": "count",
             "lastError": "",
             "errorLapsedSecs": null,
