@@ -43,7 +43,7 @@ public interface SchedulerAssignment {
     public String getTopologyId();
 
     /**
-     * get the executor -> slot map.
+     * get the executor -&gt; slot map.
      * @return
      */
     public Map<ExecutorDetails, WorkerSlot> getExecutorToSlot();

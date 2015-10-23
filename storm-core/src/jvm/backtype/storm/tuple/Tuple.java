@@ -29,7 +29,8 @@ import java.util.List;
  * Storm needs to know how to serialize all the values in a tuple. By default, Storm 
  * knows how to serialize the primitive types, strings, and byte arrays. If you want to 
  * use another type, you'll need to implement and register a serializer for that type.
- * See {@link http://github.com/nathanmarz/storm/wiki/Serialization} for more info.
+ * See <a href="https://storm.apache.org/documentation/Serialization.html">Serialization Documentation</a>
+ * for more info.
  */
 public interface Tuple extends ITuple{
 

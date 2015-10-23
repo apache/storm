@@ -37,17 +37,17 @@ import java.util.*;
 /**
  * This is a good example of doing complex Distributed RPC on top of Storm. This program creates a topology that can
  * compute the reach for any URL on Twitter in realtime by parallelizing the whole computation.
- * <p/>
+ * <p></p>
  * Reach is the number of unique people exposed to a URL on Twitter. To compute reach, you have to get all the people
  * who tweeted the URL, get all the followers of all those people, unique that set of followers, and then count the
  * unique set. It's an intense computation that can involve thousands of database calls and tens of millions of follower
  * records.
- * <p/>
+ * <p></p>
  * This Storm topology does every piece of that computation in parallel, turning what would be a computation that takes
  * minutes on a single machine into one that takes just a couple seconds.
- * <p/>
+ * <p></p>
  * For the purposes of demonstration, this topology replaces the use of actual DBs with in-memory hashmaps.
- * <p/>
+ * <p></p>
  * See https://github.com/nathanmarz/storm/wiki/Distributed-RPC for more information on Distributed RPC.
  */
 public class ReachTopology {

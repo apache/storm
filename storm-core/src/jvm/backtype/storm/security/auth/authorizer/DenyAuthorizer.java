@@ -41,9 +41,9 @@ public class DenyAuthorizer implements IAuthorizer {
 
     /**
      * permit() method is invoked for each incoming Thrift request
-     * @param contrext request context 
+     * @param context request context
      * @param operation operation name
-     * @param topology_storm configuration of targeted topology 
+     * @param topology_conf configuration of targeted topology
      * @return true if the request is authorized, false if reject
      */
     public boolean permit(ReqContext context, String operation, Map topology_conf) {

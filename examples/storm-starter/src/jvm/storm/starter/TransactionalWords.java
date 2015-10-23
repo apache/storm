@@ -42,10 +42,10 @@ import java.util.Map;
 /**
  * This class defines a more involved transactional topology then TransactionalGlobalCount. This topology processes a
  * stream of words and produces two outputs:
- * <p/>
+ * <p></p>
  * 1. A count for each word (stored in a database) 2. The number of words for every bucket of 10 counts. So it stores in
  * the database how many words have appeared 0-9 times, how many have appeared 10-19 times, and so on.
- * <p/>
+ * <p></p>
  * A batch of words can cause the bucket counts to decrement for some buckets and increment for others as words move
  * between buckets as their counts accumulate.
  */

@@ -34,9 +34,9 @@ import java.io.Serializable;
  *
  * The following class can be used to represent the data in the table as
  * <pre>
- * List<List<Column>> rows = new ArrayList<List<Column>>();
- * List<Column> row1 = Lists.newArrayList(new Column("UserId", 1, Types.INTEGER), new Column("UserName", "Foo", Types.VARCHAR))
- * List<Column> row1 = Lists.newArrayList(new Column("UserId", 2, Types.INTEGER), new Column("UserName", "Bar", Types.VARCHAR))
+ * List&lt;List&lt;Column&gt;&gt; rows = new ArrayList&lt;List&lt;Column&gt;&gt;();
+ * List&lt;Column&gt; row1 = Lists.newArrayList(new Column("UserId", 1, Types.INTEGER), new Column("UserName", "Foo", Types.VARCHAR))
+ * List&lt;Column&gt; row1 = Lists.newArrayList(new Column("UserId", 2, Types.INTEGER), new Column("UserName", "Bar", Types.VARCHAR))
  *
  * rows.add(row1)
  * rows.add(row2)

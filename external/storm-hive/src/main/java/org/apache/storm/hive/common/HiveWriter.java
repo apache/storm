@@ -91,9 +91,9 @@ public class HiveWriter {
     }
 
     /**
-     * Write data <br />
+     * Write data
      *
-     * @throws IOException
+     * @throws org.apache.storm.hive.common.HiveWriter.WriteFailure
      * @throws InterruptedException
      */
     public synchronized void write(final byte[] record)
@@ -278,7 +278,7 @@ public class HiveWriter {
 
     /**
      * Aborts the current Txn and switches to next Txn.
-     * @throws StreamingException if could not get new Transaction Batch, or switch to next Txn
+     * @throws InterruptedException if could not get new Transaction Batch, or switch to next Txn
      */
     public void abort() throws InterruptedException {
         abortTxn();

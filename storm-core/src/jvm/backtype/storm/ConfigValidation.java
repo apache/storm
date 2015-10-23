@@ -176,7 +176,7 @@ public class ConfigValidation {
 
     /**
      * Validates a map of Strings to a map of Strings to a list.
-     * {str -> {str -> [str,str]}
+     * {str -&gt; {str -&gt; [str,str]}
      */
     public static Object MapOfStringToMapValidator = mapFv(fv(String.class, false), mapFv(fv(String.class, false), listFv(String.class, false), false), true);
 

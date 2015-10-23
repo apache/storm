@@ -36,9 +36,9 @@ public class JedisClusterConfig implements Serializable {
 
     /**
      * Constructor
-     * <p/>
+     * <p></p>
      * You can use JedisClusterConfig.Builder() for leaving some fields to apply default value.
-     * <p/>
+     * <p></p>
      * Note that list of node is mandatory, and when you didn't set nodes, it throws NullPointerException.
      *
      * @param nodes list of node information for JedisCluster

@@ -29,6 +29,7 @@ import backtype.storm.ILocalCluster;
  *         // your testing logic here.
  *     }
  * });
+ * </code>
  */
 public interface TestJob {
 	/**

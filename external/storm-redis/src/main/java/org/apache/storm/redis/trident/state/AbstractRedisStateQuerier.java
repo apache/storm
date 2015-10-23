@@ -30,7 +30,7 @@ import java.util.List;
 
 /**
  * AbstractRedisStateQuerier is base class of any RedisStateQuerier, which implements BaseQueryFunction.
- * <p/>
+ * <p></p>
  * Derived classes should provide how to retrieve values from Redis,
  * and AbstractRedisStateQuerier takes care of rest things.
  *

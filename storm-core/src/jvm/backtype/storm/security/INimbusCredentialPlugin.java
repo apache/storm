@@ -41,7 +41,6 @@ public interface INimbusCredentialPlugin extends Shutdownable {
      * and stored in zookeeper.
      * @param credentials credentials map where more credentials will be added.
      * @param conf topology configuration
-     * @return
      */
     void populateCredentials(Map<String, String> credentials, Map conf);
 }

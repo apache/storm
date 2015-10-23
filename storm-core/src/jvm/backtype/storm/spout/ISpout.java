@@ -93,6 +93,8 @@ public interface ISpout extends Serializable {
      * Storm has determined that the tuple emitted by this spout with the msgId identifier
      * has been fully processed. Typically, an implementation of this method will take that
      * message off the queue and prevent it from being replayed.
+     *
+     * @param msgId
      */
     void ack(Object msgId);
 
@@ -100,6 +102,8 @@ public interface ISpout extends Serializable {
      * The tuple emitted by this spout with the msgId identifier has failed to be
      * fully processed. Typically, an implementation of this method will put that
      * message back on the queue to be replayed at a later time.
+     *
+     * @param msgId
      */
     void fail(Object msgId);
 }

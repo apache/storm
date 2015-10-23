@@ -35,7 +35,7 @@ public class JedisPoolConfig implements Serializable {
 
     /**
      * Constructor
-     * <p/>
+     * <p></p>
      * You can use JedisPoolConfig.Builder() for leaving some fields to apply default value.
      *
      * @param host hostname or IP

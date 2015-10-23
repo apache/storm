@@ -24,7 +24,7 @@ import java.io.Closeable;
 
 /**
  * Container for managing JedisCluster.
- * <p/>
+ * <p></p>
  * Note that JedisCluster doesn't need to be pooled since it's thread-safe and it stores pools internally.
  */
 public class JedisClusterContainer implements JedisCommandsInstanceContainer, Closeable {

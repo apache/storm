@@ -144,7 +144,7 @@ public interface InputDeclarer<T extends InputDeclarer> {
     /**
      * Tuples are passed to two hashing functions and each target task is
      * decided based on the comparison of the state of candidate nodes.
-     * @see   https://melmeric.files.wordpress.com/2014/11/the-power-of-both-choices-practical-load-balancing-for-distributed-stream-processing-engines.pdf
+     * @see   "https://melmeric.files.wordpress.com/2014/11/the-power-of-both-choices-practical-load-balancing-for-distributed-stream-processing-engines.pdf"
      * @param componentId
      * @param fields
      * @return
@@ -154,7 +154,7 @@ public interface InputDeclarer<T extends InputDeclarer> {
     /**
      * Tuples are passed to two hashing functions and each target task is
      * decided based on the comparison of the state of candidate nodes.
-     * @see   https://melmeric.files.wordpress.com/2014/11/the-power-of-both-choices-practical-load-balancing-for-distributed-stream-processing-engines.pdf
+     * @see   "https://melmeric.files.wordpress.com/2014/11/the-power-of-both-choices-practical-load-balancing-for-distributed-stream-processing-engines.pdf"
      * @param componentId
      * @param streamId
      * @param fields

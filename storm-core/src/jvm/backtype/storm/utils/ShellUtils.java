@@ -274,7 +274,7 @@ abstract public class ShellUtils {
         }
     }
 
-    /** return an array containing the command name & its parameters */
+    /** return an array containing the command name and its parameters */
     protected abstract String[] getExecString();
 
     /** Parse the execution result */

@@ -32,7 +32,7 @@ import backtype.storm.tuple.Values;
 /**
  * This topology is a basic example of doing distributed RPC on top of Storm. It implements a function that appends a
  * "!" to any string you send the DRPC function.
- * <p/>
+ * <p></p>
  * See https://github.com/nathanmarz/storm/wiki/Distributed-RPC for more information on doing distributed RPC on top of
  * Storm.
  */

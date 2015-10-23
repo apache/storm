@@ -30,7 +30,7 @@ import java.util.List;
 
 /**
  * Basic bolt for querying from Redis and emits response as tuple.
- * <p/>
+ * <p></p>
  * Various data types are supported: STRING, LIST, HASH, SET, SORTED_SET, HYPER_LOG_LOG
  */
 public class RedisLookupBolt extends AbstractRedisBolt {

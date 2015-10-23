@@ -36,18 +36,18 @@ import java.util.Map.Entry;
 
 /**
  * This bolt performs rolling counts of incoming objects, i.e. sliding window based counting.
- * <p/>
+ * <p></p>
  * The bolt is configured by two parameters, the length of the sliding window in seconds (which influences the output
  * data of the bolt, i.e. how it will count objects) and the emit frequency in seconds (which influences how often the
  * bolt will output the latest window counts). For instance, if the window length is set to an equivalent of five
  * minutes and the emit frequency to one minute, then the bolt will output the latest five-minute sliding window every
  * minute.
- * <p/>
+ * <p></p>
  * The bolt emits a rolling count tuple per object, consisting of the object itself, its latest rolling count, and the
  * actual duration of the sliding window. The latter is included in case the expected sliding window length (as
  * configured by the user) is different from the actual length, e.g. due to high system load. Note that the actual
  * window length is tracked and calculated for the window, and not individually for each object within a window.
- * <p/>
+ * <p></p>
  * Note: During the startup phase you will usually observe that the bolt warns you about the actual sliding window
  * length being smaller than the expected length. This behavior is expected and is caused by the way the sliding window
  * counts are initially "loaded up". You can safely ignore this warning during startup (e.g. you will see this warning

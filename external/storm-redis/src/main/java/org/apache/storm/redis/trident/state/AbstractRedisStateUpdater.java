@@ -30,7 +30,7 @@ import java.util.Map;
 
 /**
  * AbstractRedisStateUpdater is base class of any RedisStateUpdater, which implements BaseStateUpdater.
- * <p/>
+ * <p></p>
  * Derived classes should provide how to update (key, value) pairs to Redis,
  * and AbstractRedisStateUpdater takes care of rest things.
  *

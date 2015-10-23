@@ -23,7 +23,7 @@ import storm.trident.state.Serializer;
 import java.io.Serializable;
 
 /**
- * Options of State.<br/>
+ * Options of State.<p></p>
  * It's a data structure (whole things are public) and you can access and modify all fields.
  *
  * @param <T> value's type class

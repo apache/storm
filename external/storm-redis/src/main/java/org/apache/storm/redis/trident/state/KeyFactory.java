@@ -21,7 +21,7 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * KeyFactory defines conversion of state key (which could be compounded) -> Redis key.
+ * KeyFactory defines conversion of state key (which could be compounded) -&gt; Redis key.
  */
 public interface KeyFactory extends Serializable {
     /**
@@ -37,7 +37,7 @@ public interface KeyFactory extends Serializable {
 	class DefaultKeyFactory implements KeyFactory {
         /**
          * {@inheritDoc}
-         * <p/>
+         * <p></p>
          * Currently DefaultKeyFactory returns just first element of list.
          *
          * @param key state key

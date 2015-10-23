@@ -35,8 +35,8 @@ public class StormBoundedExponentialBackoffRetry extends BoundedExponentialBacko
      * storm. It calculates threshold for exponentially increasing sleeptime
      * for retries. Beyond this threshold, the sleeptime increase is linear.
      * Also adds jitter for exponential/linear retry.
-     * It guarantees currSleepTimeMs >= prevSleepTimeMs and 
-     * baseSleepTimeMs <= currSleepTimeMs <= maxSleepTimeMs
+     * It guarantees currSleepTimeMs &gt;= prevSleepTimeMs and
+     * baseSleepTimeMs &lt;= currSleepTimeMs &lt;= maxSleepTimeMs
      */
 
     public StormBoundedExponentialBackoffRetry(int baseSleepTimeMs, int maxSleepTimeMs, int maxRetries) {

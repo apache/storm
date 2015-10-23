@@ -91,7 +91,7 @@ public class RedisClusterState implements State {
 
     /**
      * Borrows JedisCluster instance.
-     * <p/>
+     * <p></p>
      * Note that you should return borrowed instance when you finish using instance.
      *
      * @return JedisCluster instance

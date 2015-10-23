@@ -35,12 +35,14 @@ import java.util.Map;
 
 /**
  * AbstractRedisMapState is base class of any RedisMapState, which implements IBackingMap.
- * <p/>
- * Derived classes should provide<br/>
- * - which Serializer it uses<br/>
- * - which KeyFactory it uses<br/>
- * - how to retrieve values from Redis<br/>
- * - how to store values to Redis<br/>
+ * <p></p>
+ * Derived classes should provide
+ * <ul>
+ * <li>which Serializer it uses</li>
+ * <li>which KeyFactory it uses</li>
+ * <li>how to retrieve values from Redis</li>
+ * <li>how to store values to Redis</li>
+ * </ul>
  * and AbstractRedisMapState takes care of rest things.
  *
  * @param <T> value's type class
@@ -115,7 +117,7 @@ public abstract class AbstractRedisMapState<T> implements IBackingMap<T> {
 	protected abstract Serializer getSerializer();
 
 	/**
-	 * Returns KeyFactory which is used for converting state key -> Redis key.
+	 * Returns KeyFactory which is used for converting state key -&gt; Redis key.
 	 * @return key factory
 	 */
 	protected abstract KeyFactory getKeyFactory();

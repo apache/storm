@@ -94,7 +94,7 @@ public class RedisState implements State {
 
     /**
      * Borrows Jedis instance from pool.
-     * <p/>
+     * <p></p>
      * Note that you should return borrowed instance to pool when you finish using instance.
      *
      * @return Jedis instance

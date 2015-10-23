@@ -30,11 +30,11 @@ import java.util.Map;
 
 /**
  * AbstractRedisBolt class is for users to implement custom bolts which makes interaction with Redis.
- * <p/>
+ * <p></p>
  * Due to environment abstraction, AbstractRedisBolt provides JedisCommands which contains only single key operations.
- * <p/>
+ * <p></p>
  * Custom Bolts may want to follow this pattern:
- * <p><blockquote><pre>
+ * <blockquote><pre>
  * JedisCommands jedisCommands = null;
  * try {
  *     jedisCommand = getInstance();
@@ -90,7 +90,7 @@ public abstract class AbstractRedisBolt extends BaseRichBolt {
     }
 
     /**
-     * Borrow JedisCommands instance from container.<p/>
+     * Borrow JedisCommands instance from container.<p></p>
      * JedisCommands is an interface which contains single key operations.
      * @return implementation of JedisCommands
      * @see JedisCommandsInstanceContainer#getInstance()

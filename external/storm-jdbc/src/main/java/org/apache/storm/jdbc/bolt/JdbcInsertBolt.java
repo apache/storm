@@ -33,7 +33,7 @@ import java.util.Map;
 
 /**
  * Basic bolt for writing to any Database table.
- * <p/>
+ * <p></p>
  * Note: Each JdbcInsertBolt defined in a topology is tied to a specific table.
  */
 public class JdbcInsertBolt extends AbstractJdbcBolt {

@@ -55,7 +55,7 @@ public class SimpleWhitelistAuthorizer implements IAuthorizer {
      * permit() method is invoked for each incoming Thrift request
      * @param context request context includes info about 
      * @param operation operation name
-     * @param topology_storm configuration of targeted topology 
+     * @param topology_conf configuration of targeted topology
      * @return true if the request is authorized, false if reject
      */
     @Override

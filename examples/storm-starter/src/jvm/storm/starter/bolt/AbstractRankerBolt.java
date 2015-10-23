@@ -33,7 +33,7 @@ import java.util.Map;
 
 /**
  * This abstract bolt provides the basic behavior of bolts that rank objects according to their count.
- * <p/>
+ * <p></p>
  * It uses a template method design pattern for {@link AbstractRankerBolt#execute(Tuple, BasicOutputCollector)} to allow
  * actual bolt implementations to specify how incoming tuples are processed, i.e. how the objects embedded within those
  * tuples are retrieved and counted.

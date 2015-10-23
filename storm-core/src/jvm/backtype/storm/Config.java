@@ -398,7 +398,7 @@ public class Config extends HashMap<String, Object> {
 
     /**
      * How often nimbus should wake the cleanup thread to clean the inbox.
-     * @see NIMBUS_INBOX_JAR_EXPIRATION_SECS
+     * @see backtype.storm.Config#NIMBUS_INBOX_JAR_EXPIRATION_SECS
      */
     public static final String NIMBUS_CLEANUP_INBOX_FREQ_SECS = "nimbus.cleanup.inbox.freq.secs";
     public static final Object NIMBUS_CLEANUP_INBOX_FREQ_SECS_SCHEMA = ConfigValidation.IntegerValidator;
@@ -410,7 +410,7 @@ public class Config extends HashMap<String, Object> {
      * Note that the time it takes to delete an inbox jar file is going to be somewhat more than
      * NIMBUS_CLEANUP_INBOX_JAR_EXPIRATION_SECS (depending on how often NIMBUS_CLEANUP_FREQ_SECS
      * is set to).
-     * @see NIMBUS_CLEANUP_FREQ_SECS
+     * @see backtype.storm.Config#NIMBUS_CLEANUP_INBOX_FREQ_SECS
      */
     public static final String NIMBUS_INBOX_JAR_EXPIRATION_SECS = "nimbus.inbox.jar.expiration.secs";
     public static final Object NIMBUS_INBOX_JAR_EXPIRATION_SECS_SCHEMA = ConfigValidation.IntegerValidator;
@@ -781,14 +781,14 @@ public class Config extends HashMap<String, Object> {
 
     /**
      * The Access Control List for the DRPC Authorizer.
-     * @see DRPCSimpleAclAuthorizer
+     * @see backtype.storm.security.auth.authorizer.DRPCSimpleACLAuthorizer
      */
     public static final String DRPC_AUTHORIZER_ACL = "drpc.authorizer.acl";
     public static final Object DRPC_AUTHORIZER_ACL_SCHEMA = Map.class;
 
     /**
      * File name of the DRPC Authorizer ACL.
-     * @see DRPCSimpleAclAuthorizer
+     * @see backtype.storm.security.auth.authorizer.DRPCSimpleACLAuthorizer
      */
     public static final String DRPC_AUTHORIZER_ACL_FILENAME = "drpc.authorizer.acl.filename";
     public static final Object DRPC_AUTHORIZER_ACL_FILENAME_SCHEMA = String.class;
@@ -800,7 +800,7 @@ public class Config extends HashMap<String, Object> {
      * permitted, which is appropriate for a development environment. When set
      * to true, explicit ACL entries are required for every DRPC function, and
      * any request for functions will be denied.
-     * @see DRPCSimpleAclAuthorizer
+     * @see backtype.storm.security.auth.authorizer.DRPCSimpleACLAuthorizer
      */
     public static final String DRPC_AUTHORIZER_ACL_STRICT = "drpc.authorizer.acl.strict";
     public static final Object DRPC_AUTHORIZER_ACL_STRICT_SCHEMA = Boolean.class;
@@ -972,10 +972,10 @@ public class Config extends HashMap<String, Object> {
     /**
      * The jvm opts provided to workers launched by this supervisor. All "%ID%", "%WORKER-ID%", "%TOPOLOGY-ID%"
      * and "%WORKER-PORT%" substrings are replaced with:
-     * %ID%          -> port (for backward compatibility),
-     * %WORKER-ID%   -> worker-id,
-     * %TOPOLOGY-ID%    -> topology-id,
-     * %WORKER-PORT% -> port.
+     * %ID%          -&gt; port (for backward compatibility),
+     * %WORKER-ID%   -&gt; worker-id,
+     * %TOPOLOGY-ID%    -&gt; topology-id,
+     * %WORKER-PORT% -&gt; port.
      */
     public static final String WORKER_CHILDOPTS = "worker.childopts";
     public static final Object WORKER_CHILDOPTS_SCHEMA = ConfigValidation.StringOrStringListValidator;

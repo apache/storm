@@ -22,9 +22,9 @@ import org.apache.commons.collections.buffer.CircularFifoBuffer;
 
 /**
  * This class tracks the time-since-last-modify of a "thing" in a rolling fashion.
- * <p/>
+ * <p></p>
  * For example, create a 5-slot tracker to track the five most recent time-since-last-modify.
- * <p/>
+ * <p></p>
  * You must manually "mark" that the "something" that you want to track -- in terms of modification times -- has just
  * been modified.
  */
