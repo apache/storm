@@ -212,51 +212,6 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>native-maven-plugin</artifactId>
-                <version>1.0-alpha-8</version>
-                <executions>
-                    <execution>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>javah</goal>
-                        </goals>
-                        <configuration>
-                            <javahPath>${env.JAVA_HOME}/bin/javah</javahPath>
-                            <javahClassNames>
-                                <javahClassName>org.apache.storm.sql.compiler.TridentCompiler</javahClassName>
-                            </javahClassNames>
-                            <javahOutputDirectory>${project.build.directory}/native/javah</javahOutputDirectory>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <version>1.8</version>
-                <executions>
-                    <execution>
-                        <id>make</id>
-                        <phase>compile</phase>
-                        <goals><goal>run</goal></goals>
-                        <configuration>
-                            <target>
-                                <exec executable="cmake" dir="${project.build.directory}/native" failonerror="true">
-                                    <arg line="${basedir}/src/native -DGENERATED_JAVAH=${project.build.directory}/native/javah"/>
-                                </exec>
-                                <exec executable="make" dir="${project.build.directory}/native" failonerror="true"/>
-                                <copy todir="${project.build.directory}/lib">
-                                    <fileset dir="${project.build.directory}/native/bindings/jni">
-                                        <include name="libstormsql.*"/>
-                                    </fileset>
-                                </copy>
-                            </target>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>

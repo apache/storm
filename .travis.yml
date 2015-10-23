@@ -11,17 +11,6 @@
 #  limitations under the License.
 language: java
 
-addons:
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-      - llvm-toolchain-precise-3.6
-    packages:
-      - clang-3.6
-      - llvm-3.6
-      - llvm-3.6-dev
-      - libedit-dev
-
 jdk:
   - oraclejdk7
   - oraclejdk8
@@ -30,7 +19,6 @@ before_install:
   - rvm use 2.1.5 --install
   - nvm install 0.12.2
   - nvm use 0.12.2
-  - export CXX="clang++-3.6"
 
 install: /bin/bash ./dev-tools/travis/travis-install.sh `pwd`
 
