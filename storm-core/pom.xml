@@ -20,7 +20,7 @@
     <parent>
         <artifactId>storm</artifactId>
         <groupId>org.apache.storm</groupId>
-        <version>0.10.0-beta2-SNAPSHOT</version>
+        <version>0.10.0</version>
         <relativePath>..</relativePath>
     </parent>
     <groupId>org.apache.storm</groupId>
@@ -31,8 +31,8 @@
 
     <properties>
         <worker-launcher.conf.dir>/etc/storm</worker-launcher.conf.dir>
-        <worker-launcher.additional_cflags></worker-launcher.additional_cflags>
-        <argLine></argLine>
+        <worker-launcher.additional_cflags />
+        <argLine />
     </properties>
 
     <dependencies>
