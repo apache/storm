@@ -30,6 +30,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.Assert.*;
+
 public class TestPlanCompiler {
   private static final List<Values> INPUTS;
 
@@ -55,8 +57,27 @@ public class TestPlanCompiler {
     while(v.hasNext()) {
       results.add((Integer) v.next().get(0));
     }
-    Assert.assertEquals(2, results.size());
-    Assert.assertEquals(4, results.get(0).intValue());
-    Assert.assertEquals(5, results.get(1).intValue());
+    assertEquals(2, results.size());
+    assertEquals(4, results.get(0).intValue());
+    assertEquals(5, results.get(1).intValue());
   }
+
+  @Test
+  public void testLogicalExpr() throws Exception {
+    String sql = "SELECT ID > 0 OR ID < 1, ID > 0 AND ID < 1, " +
+        "NOT (ID > 0 AND ID < 1) FROM FOO WHERE ID > 0 AND ID < 2";
+    TestUtils.CalciteState state = TestUtils.sqlOverDummyTable(sql);
+    PlanCompiler compiler = new PlanCompiler();
+    AbstractValuesProcessor proc = compiler.compile(state.tree);
+    Map<String, Iterator<Values>> data = new HashMap<>();
+    data.put("FOO", INPUTS.iterator());
+    proc.initialize(data);
+    ValueIterator v = new ValueIterator(proc);
+    assertTrue(v.hasNext());
+    Values val = v.next();
+    assertEquals(true, val.get(0));
+    assertEquals(false, val.get(1));
+    assertEquals(true, val.get(2));
+  }
+
 }
