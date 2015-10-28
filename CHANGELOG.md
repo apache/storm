@@ -1,4 +1,5 @@
 ## 0.9.6
+ * STORM-1027: Use overflow buffer for emitting metrics
  * STORM-996: netty-unit-tests/test-batch demonstrates out-of-order delivery
  * STORM-1056: allow supervisor log filename to be configurable via ENV variable
  * STORM-1051: Netty Client.java's flushMessages produces a NullPointerException
