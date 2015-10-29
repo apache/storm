@@ -30,7 +30,8 @@
   (:use [backtype.storm.daemon common])
   (:require [backtype.storm.daemon [worker :as worker]]
             [backtype.storm [process-simulator :as psim] [cluster :as cluster] [event :as event]]
-            [clojure.set :as set])
+            [clojure.set :as set]
+            [backtype.storm.cgroup.cgroup-manager :as cgroup-manager])
   (:import [org.apache.zookeeper data.ACL ZooDefs$Ids ZooDefs$Perms])
   (:import [org.yaml.snakeyaml Yaml]
            [org.yaml.snakeyaml.constructor SafeConstructor])
@@ -46,6 +47,11 @@
   (get-conf [this])
   (shutdown-all-workers [this])
   )
+
+(defprotocol WorkerManager
+  (start-worker [this cpu-num memory-size worker-id])
+  (stop-worker [this worker-id is-killed?])
+  (close [this]))
 
 (defn- assignments-snapshot [storm-cluster-state callback assignment-versions]
   (let [storm-ids (.assignments storm-cluster-state callback)]
@@ -282,6 +288,8 @@
         (try
           (rmpath (worker-pid-path conf id pid))
           (catch Exception e)))) ;; on windows, the supervisor may still holds the lock on the worker directory
+    (if-let [worker-manager (:worker-manager supervisor)]
+      (stop-worker worker-manager id true))
     (try-cleanup-worker conf id user))
   (log-message "Shut down " (:supervisor-id supervisor) ":" id))
 
@@ -318,6 +326,56 @@
    :sync-retry (atom 0)
    :code-distributor (mk-code-distributor conf)
    :download-lock (Object.)
+   :worker-manager (if (cgroup-manager/check-cgroup conf)
+                     (let [cpu-root-hierarchy (cgroup-manager/busy :cpu)
+                           root-group (conf CGROUP-ROOT-DIR)
+                           root-group (clojure.string/join "/" (tokenize-path root-group))
+                           hierarchy-ok? (fn [root-hierarchy]
+                                           (let [root-dir (:dir root-hierarchy)]
+                                             (if-not (cgroup-manager/mounted root-hierarchy)
+                                               (log-error root-dir " is not mounted.")
+                                               true)))
+                           get-worker-group (fn [worker-id] (str root-group File/separator worker-id))
+                           get-worker-cpu-dir (fn [worker-id] (normalize-path (str (:dir cpu-root-hierarchy) File/separator (get-worker-group worker-id))))
+                           root-cpu-dir (normalize-path (str (:dir cpu-root-hierarchy) File/separator root-group))
+                           cpu-ok? (hierarchy-ok? cpu-root-hierarchy)
+                           ]
+                       (reify WorkerManager
+                         (start-worker [this cpu-num memory-size worker-id]
+                           (let [worker-cpu-dir (get-worker-cpu-dir worker-id)
+                                 sb (StringBuffer.)
+                                 group (get-worker-group worker-id)]
+                             (when cpu-ok?
+                               (log-message "comming into cgroup")
+                               (when (and cpu-ok? (> cpu-num 0))
+                                 (if (exists-dir? worker-cpu-dir)
+                                   (log-error worker-cpu-dir " is existed.")
+                                   (do
+                                     (.append sb "cgexec -g ")
+                                     (log-message "comming into cpu hierarchy")
+                                     (local-mkdirs worker-cpu-dir)
+                                     (cgroup-manager/set-cpu-shares worker-cpu-dir (* cpu-num 1024))
+                                     (.append sb "cpu")
+                                     (.append sb ":")
+                                     (.append sb group)))
+                                 (log-message "exit cpu hierarchy"))
+                               (.append sb group))
+                             (log-message "cgroup final command " (.toString sb))
+                             (.toString sb)))
+                         (stop-worker [this worker-id is-killed?]
+                           (try
+                             (let [worker-cpu-dir (get-worker-cpu-dir worker-id)]
+                               (when-not is-killed?
+                                 (when-let [tasks (cgroup-manager/get-tasks worker-cpu-dir)]
+                                   (doseq [pid tasks]
+                                     (force-kill-process pid))))
+                               (when-let [tasks (cgroup-manager/get-tasks worker-cpu-dir)]
+                                 (doseq [task tasks]
+                                   (cgroup-manager/add-task root-cpu-dir task)))
+                               (rmpath worker-cpu-dir))
+                             (catch Exception e
+                               (log-message "No task of " worker-id " exception: " (ExceptionUtils/getFullStackTrace e)))))
+                         (close [this]))))
    })
 
 (defn sync-processes [supervisor]
@@ -710,7 +768,12 @@
           topology-worker-environment (if-let [env (storm-conf TOPOLOGY-ENVIRONMENT)]
                                         (merge env {"LD_LIBRARY_PATH" jlp})
                                         {"LD_LIBRARY_PATH" jlp})
+          cpu (parse-int (conf WORKER-CPU-NUM))
+          command (if-let [worker-manager (:worker-manager supervisor)]
+                    (start-worker worker-manager cpu worker-id))
           command (concat
+                    (if command
+                      (.split command " "))
                     [(java-cmd) "-cp" classpath 
                      topo-worker-logwriter-childopts
                      (str "-Dlogfile.name=" logfilename)

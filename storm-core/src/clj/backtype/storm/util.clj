@@ -26,7 +26,7 @@
   (:import [java.util.zip ZipFile])
   (:import [java.util.concurrent.locks ReentrantReadWriteLock])
   (:import [java.util.concurrent Semaphore])
-  (:import [java.io File FileOutputStream RandomAccessFile StringWriter
+  (:import [java.io File FileOutputStream RandomAccessFile StringWriter FileReader FileWriter BufferedWriter
             PrintWriter BufferedReader InputStreamReader IOException])
   (:import [java.lang.management ManagementFactory])
   (:import [org.apache.commons.exec DefaultExecutor CommandLine])
@@ -549,6 +549,42 @@
 (defn exists-file?
   [path]
   (.exists (File. path)))
+
+(defn exists-dir? [path]
+  (.isDirectory (File. path)))
+
+(defn append-line [^String file-dir ^String content]
+  (let [^File file (File. file-dir)]
+    (if (.exists file)
+      (with-open [^FileWriter writer (FileWriter. file true)
+                  ^BufferedWriter bw (BufferedWriter. writer)]
+        (.write bw content)
+        (.newLine bw)
+        (.flush bw))
+      (log-error file-dir " is not existed"))))
+
+(defn append-lines [^String file-dir contents]
+  (let [^File file (File. file-dir)]
+    (if (.exists file)
+      (with-open [^FileWriter writer (FileWriter. file true)
+                  ^BufferedWriter bw (BufferedWriter. writer)]
+        (doseq [^String content contents]
+          (.write bw content)
+          (.newLine bw)
+          (.flush bw)))
+      (log-error file-dir " is not existed"))))
+
+(defn read-file [^String file-dir]
+  (let [^File file (File. file-dir)]
+    (if (.exists file)
+      (with-open [^FileReader reader (FileReader. file)
+                  ^BufferedReader br (BufferedReader. reader)]
+        (loop [contents []]
+          (if-let [content (.readLine br)]
+            (recur (conj contents content))
+            contents)))
+      (log-error file-dir " is not existed")
+      )))
 
 (defn rmr
   [path]
