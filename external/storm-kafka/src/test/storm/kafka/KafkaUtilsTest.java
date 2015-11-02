@@ -265,7 +265,6 @@ public class KafkaUtilsTest {
         runPartitionToTaskMappingTest(32, 32);
     }
     
-
     public void runPartitionToTaskMappingTest(int numPartitions, int partitionsPerTask) {
         GlobalPartitionInformation globalPartitionInformation = TestUtils.buildPartitionInfo(numPartitions);
         List<GlobalPartitionInformation> partitions = new ArrayList<GlobalPartitionInformation>();
