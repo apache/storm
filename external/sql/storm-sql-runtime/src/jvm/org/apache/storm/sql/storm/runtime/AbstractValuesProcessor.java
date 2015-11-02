@@ -1,8 +1,9 @@
 package org.apache.storm.sql.storm.runtime;
 
 import backtype.storm.tuple.Values;
+import org.apache.storm.sql.storm.ChannelHandler;
+import org.apache.storm.sql.storm.DataSource;
 
-import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -18,30 +19,11 @@ import java.util.Map;
 public abstract class AbstractValuesProcessor {
 
   /**
-   * @return the next tuple in the output stream, null if the tuple should be
-   * skipped.
-   */
-  public abstract Values next();
-
-  /**
    * Initialize the data sources.
    *
    * @param data a map from the table name to the iterators of the values.
    *
    */
-  public abstract void initialize(Map<String, Iterator<Values>> data);
-
-  protected abstract Iterator<Values>[] getDataSource();
-  /**
-   * Does the output stream potentially has more output.
-   */
-  public boolean mayHasNext() {
-    Iterator<Values>[] d = getDataSource();
-    for (int i = 0; i < d.length; ++i) {
-      if (d[i].hasNext()) {
-        return true;
-      }
-    }
-    return false;
-  }
+  public abstract void initialize(Map<String, DataSource> data, ChannelHandler
+      result);
 }

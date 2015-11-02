@@ -17,39 +17,11 @@
  */
 package org.apache.storm.sql.storm;
 
-import backtype.storm.tuple.Values;
-import org.apache.storm.sql.storm.runtime.AbstractValuesProcessor;
-
-import java.util.Iterator;
-
 /**
- * A ValuesIterator wraps an instance of {@link AbstractValuesProcessor} to
- * provide an iterator of non-null {@link Values}.
+ * A DataSource ingests data in StormSQL. It provides a series of tuple to
+ * the downstream {@link ChannelHandler}.
+ *
  */
-public class ValueIterator implements Iterator<Values> {
-  private final AbstractValuesProcessor processor;
-  private Values next;
-  public ValueIterator(AbstractValuesProcessor processor) {
-    this.processor = processor;
-  }
-
-  @Override
-  public Values next() {
-    Values oldNext = next;
-    next = null;
-    return oldNext;
-  }
-
-  @Override
-  public boolean hasNext() {
-    while (processor.mayHasNext() && next == null)  {
-      next = processor.next();
-    }
-    return next != null;
-  }
-
-  @Override
-  public void remove() {
-    throw new UnsupportedOperationException("remove");
-  }
+public interface DataSource {
+  void open(ChannelContext ctx);
 }
