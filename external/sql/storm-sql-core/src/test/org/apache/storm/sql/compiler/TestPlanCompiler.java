@@ -18,66 +18,51 @@
 package org.apache.storm.sql.compiler;
 
 import backtype.storm.tuple.Values;
-import org.apache.storm.sql.storm.ValueIterator;
+import org.apache.calcite.adapter.java.JavaTypeFactory;
+import org.apache.calcite.jdbc.JavaTypeFactoryImpl;
+import org.apache.calcite.rel.type.RelDataTypeSystem;
+import org.apache.storm.sql.storm.ChannelHandler;
+import org.apache.storm.sql.storm.DataSource;
 import org.apache.storm.sql.storm.runtime.AbstractValuesProcessor;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.*;
-
 public class TestPlanCompiler {
-  private static final List<Values> INPUTS;
-
-  static {
-    ArrayList<Values> records = new ArrayList<>();
-    for (int i = 0; i < 5; ++i) {
-      records.add(new Values(i));
-    }
-    INPUTS = Collections.unmodifiableList(records);
-  }
+  private final JavaTypeFactory typeFactory = new JavaTypeFactoryImpl(
+      RelDataTypeSystem.DEFAULT);
 
   @Test
   public void testCompile() throws Exception {
     String sql = "SELECT ID + 1 FROM FOO WHERE ID > 2";
     TestUtils.CalciteState state = TestUtils.sqlOverDummyTable(sql);
-    PlanCompiler compiler = new PlanCompiler();
+    PlanCompiler compiler = new PlanCompiler(typeFactory);
     AbstractValuesProcessor proc = compiler.compile(state.tree);
-    Map<String, Iterator<Values>> data = new HashMap<>();
-    data.put("FOO", INPUTS.iterator());
-    proc.initialize(data);
-    ValueIterator v = new ValueIterator(proc);
-    List<Integer> results = new ArrayList<>();
-    while(v.hasNext()) {
-      results.add((Integer) v.next().get(0));
-    }
-    assertEquals(2, results.size());
-    assertEquals(4, results.get(0).intValue());
-    assertEquals(5, results.get(1).intValue());
+    Map<String, DataSource> data = new HashMap<>();
+    data.put("FOO", new TestUtils.MockDataSource());
+    List<Values> values = new ArrayList<>();
+    ChannelHandler h = new TestUtils.CollectDataChannelHandler(values);
+    proc.initialize(data, h);
+    Assert.assertArrayEquals(new Values[] { new Values(4), new Values(5)},
+                             values.toArray());
   }
 
   @Test
   public void testLogicalExpr() throws Exception {
-    String sql = "SELECT ID > 0 OR ID < 1, ID > 0 AND ID < 1, " +
-        "NOT (ID > 0 AND ID < 1) FROM FOO WHERE ID > 0 AND ID < 2";
+    String sql = "SELECT ID > 0 OR ID < 1, ID > 0 AND ID < 1, NOT (ID > 0 AND ID < 1) FROM FOO WHERE ID > 0 AND ID < 2";
     TestUtils.CalciteState state = TestUtils.sqlOverDummyTable(sql);
-    PlanCompiler compiler = new PlanCompiler();
+    PlanCompiler compiler = new PlanCompiler(typeFactory);
     AbstractValuesProcessor proc = compiler.compile(state.tree);
-    Map<String, Iterator<Values>> data = new HashMap<>();
-    data.put("FOO", INPUTS.iterator());
-    proc.initialize(data);
-    ValueIterator v = new ValueIterator(proc);
-    assertTrue(v.hasNext());
-    Values val = v.next();
-    assertEquals(true, val.get(0));
-    assertEquals(false, val.get(1));
-    assertEquals(true, val.get(2));
+    Map<String, DataSource> data = new HashMap<>();
+    data.put("FOO", new TestUtils.MockDataSource());
+    List<Values> values = new ArrayList<>();
+    ChannelHandler h = new TestUtils.CollectDataChannelHandler(values);
+    proc.initialize(data, h);
+    Assert.assertEquals(new Values(true, false, true), values.get(0));
   }
 
 }
