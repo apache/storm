@@ -22,6 +22,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
@@ -102,7 +103,7 @@ public class KafkaUtilsTest {
     public void fetchMessagesWithInvalidOffsetAndDefaultHandlingDisabled() throws Exception {
         config.useStartOffsetTimeIfOffsetOutOfRange = false;
         KafkaUtils.fetchMessages(config, simpleConsumer,
-                new Partition(Broker.fromString(broker.getBrokerConnectionString()),TEST_TOPIC, 0), -99);
+                new Partition(Broker.fromString(broker.getBrokerConnectionString()), TEST_TOPIC, 0), -99);
     }
 
     @Test(expected = TopicOffsetOutOfRangeException.class)
