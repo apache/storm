@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuites>
-    <testsuite package="backtype.storm" name="worker-test">
-        <testcase name="test-worker-is-connection-ready" classname="backtype.storm.worker-test">
-        </testcase>
-    </testsuite>
-</testsuites>

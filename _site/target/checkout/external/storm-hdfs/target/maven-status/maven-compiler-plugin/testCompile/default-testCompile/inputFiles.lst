@@ -1,5 +1,0 @@
-/Users/tgoetz/Projects/apache/storm/target/checkout/external/storm-hdfs/src/test/java/org/apache/storm/hdfs/bolt/SequenceFileTopology.java
-/Users/tgoetz/Projects/apache/storm/target/checkout/external/storm-hdfs/src/test/java/org/apache/storm/hdfs/bolt/HdfsFileTopology.java
-/Users/tgoetz/Projects/apache/storm/target/checkout/external/storm-hdfs/src/test/java/org/apache/storm/hdfs/trident/FixedBatchSpout.java
-/Users/tgoetz/Projects/apache/storm/target/checkout/external/storm-hdfs/src/test/java/org/apache/storm/hdfs/trident/TridentFileTopology.java
-/Users/tgoetz/Projects/apache/storm/target/checkout/external/storm-hdfs/src/test/java/org/apache/storm/hdfs/trident/TridentSequenceTopology.java

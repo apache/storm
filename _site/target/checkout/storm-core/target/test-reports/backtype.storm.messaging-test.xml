@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuites>
-    <testsuite package="backtype.storm" name="messaging-test">
-        <testcase name="test-local-transport" classname="backtype.storm.messaging-test">
-        </testcase>
-        <testcase name="test-receiver-message-order" classname="backtype.storm.messaging-test">
-        </testcase>
-    </testsuite>
-</testsuites>

@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuites>
-    <testsuite package="backtype.storm" name="grouping-test">
-        <testcase name="test-shuffle" classname="backtype.storm.grouping-test">
-        </testcase>
-        <testcase name="test-custom-groupings" classname="backtype.storm.grouping-test">
-        </testcase>
-    </testsuite>
-</testsuites>

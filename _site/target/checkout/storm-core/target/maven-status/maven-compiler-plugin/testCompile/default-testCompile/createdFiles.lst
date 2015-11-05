@@ -1,8 +1,0 @@
-backtype/storm/serialization/GzipBridgeSerializationDelegateTest.class
-backtype/storm/serialization/GzipBridgeSerializationDelegateTest$TestPojo.class
-backtype/storm/utils/DisruptorQueueTest$2.class
-backtype/storm/utils/DisruptorQueueTest.class
-backtype/storm/utils/DisruptorQueueTest$1.class
-backtype/storm/utils/StormBoundedExponentialBackoffRetryTest.class
-backtype/storm/utils/DisruptorQueueTest$Producer.class
-backtype/storm/utils/DisruptorQueueTest$Consumer.class

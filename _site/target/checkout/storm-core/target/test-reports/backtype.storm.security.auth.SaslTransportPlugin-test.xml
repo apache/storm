@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuites>
-    <testsuite package="backtype.storm.security.auth" name="SaslTransportPlugin-test">
-        <testcase name="test-User-name" classname="backtype.storm.security.auth.SaslTransportPlugin-test">
-        </testcase>
-        <testcase name="test-User-equals" classname="backtype.storm.security.auth.SaslTransportPlugin-test">
-        </testcase>
-    </testsuite>
-</testsuites>

@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuites>
-    <testsuite package="backtype.storm.security.auth" name="ThriftClient-test">
-        <testcase name="test-ctor-throws-if-port-invalid" classname="backtype.storm.security.auth.ThriftClient-test">
-        </testcase>
-        <testcase name="test-ctor-throws-if-host-not-set" classname="backtype.storm.security.auth.ThriftClient-test">
-        </testcase>
-    </testsuite>
-</testsuites>

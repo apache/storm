@@ -1,7 +1,0 @@
-storm.kafka
-storm.kafka.bolt
-storm.kafka.bolt.mapper
-storm.kafka.bolt.selector
-storm.kafka.trident
-storm.kafka.trident.mapper
-storm.kafka.trident.selector

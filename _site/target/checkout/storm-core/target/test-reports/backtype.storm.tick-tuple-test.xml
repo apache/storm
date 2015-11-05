@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuites>
-    <testsuite package="backtype.storm" name="tick-tuple-test">
-        <testcase name="test-tick-tuple-works-with-system-bolt" classname="backtype.storm.tick-tuple-test">
-        </testcase>
-    </testsuite>
-</testsuites>
