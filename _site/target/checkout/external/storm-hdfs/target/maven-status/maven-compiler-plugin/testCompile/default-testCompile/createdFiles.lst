@@ -1,0 +1,9 @@
+org/apache/storm/hdfs/bolt/SequenceFileTopology$MyBolt.class
+org/apache/storm/hdfs/bolt/SequenceFileTopology$SentenceSpout.class
+org/apache/storm/hdfs/trident/TridentSequenceTopology.class
+org/apache/storm/hdfs/bolt/HdfsFileTopology.class
+org/apache/storm/hdfs/trident/TridentFileTopology.class
+org/apache/storm/hdfs/bolt/HdfsFileTopology$SentenceSpout.class
+org/apache/storm/hdfs/trident/FixedBatchSpout.class
+org/apache/storm/hdfs/bolt/HdfsFileTopology$MyBolt.class
+org/apache/storm/hdfs/bolt/SequenceFileTopology.class

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+    <testsuite package="backtype.storm" name="integration-test">
+        <testcase name="test-submit-inactive-topology" classname="backtype.storm.integration-test">
+        </testcase>
+        <testcase name="test-basic-topology" classname="backtype.storm.integration-test">
+        </testcase>
+        <testcase name="test-kryo-decorators-config" classname="backtype.storm.integration-test">
+        </testcase>
+        <testcase name="test-validate-topology-structure" classname="backtype.storm.integration-test">
+        </testcase>
+        <testcase name="test-timeout" classname="backtype.storm.integration-test">
+        </testcase>
+        <testcase name="test-component-specific-config" classname="backtype.storm.integration-test">
+        </testcase>
+        <testcase name="test-direct-grouping" classname="backtype.storm.integration-test">
+        </testcase>
+        <testcase name="test-ack-branching" classname="backtype.storm.integration-test">
+        </testcase>
+        <testcase name="test-acking-branching-complex" classname="backtype.storm.integration-test">
+        </testcase>
+        <testcase name="test-fields-grouping" classname="backtype.storm.integration-test">
+        </testcase>
+        <testcase name="test-acking-self-anchor" classname="backtype.storm.integration-test">
+        </testcase>
+        <testcase name="test-throttled-errors" classname="backtype.storm.integration-test">
+        </testcase>
+        <testcase name="test-all-grouping" classname="backtype.storm.integration-test">
+        </testcase>
+        <testcase name="test-system-stream" classname="backtype.storm.integration-test">
+        </testcase>
+        <testcase name="test-hooks" classname="backtype.storm.integration-test">
+        </testcase>
+        <testcase name="test-acking" classname="backtype.storm.integration-test">
+        </testcase>
+        <testcase name="test-multi-tasks-per-executor" classname="backtype.storm.integration-test">
+        </testcase>
+    </testsuite>
+</testsuites>

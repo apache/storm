@@ -1,0 +1,9 @@
+/Users/tgoetz/Projects/apache/storm/target/checkout/examples/storm-starter/test/jvm/storm/starter/tools/MockTupleHelpers.java
+/Users/tgoetz/Projects/apache/storm/target/checkout/examples/storm-starter/test/jvm/storm/starter/tools/NthLastModifiedTimeTrackerTest.java
+/Users/tgoetz/Projects/apache/storm/target/checkout/examples/storm-starter/test/jvm/storm/starter/tools/RankableObjectWithFieldsTest.java
+/Users/tgoetz/Projects/apache/storm/target/checkout/examples/storm-starter/test/jvm/storm/starter/tools/SlidingWindowCounterTest.java
+/Users/tgoetz/Projects/apache/storm/target/checkout/examples/storm-starter/test/jvm/storm/starter/tools/SlotBasedCounterTest.java
+/Users/tgoetz/Projects/apache/storm/target/checkout/examples/storm-starter/test/jvm/storm/starter/bolt/TotalRankingsBoltTest.java
+/Users/tgoetz/Projects/apache/storm/target/checkout/examples/storm-starter/test/jvm/storm/starter/tools/RankingsTest.java
+/Users/tgoetz/Projects/apache/storm/target/checkout/examples/storm-starter/test/jvm/storm/starter/bolt/RollingCountBoltTest.java
+/Users/tgoetz/Projects/apache/storm/target/checkout/examples/storm-starter/test/jvm/storm/starter/bolt/IntermediateRankingsBoltTest.java

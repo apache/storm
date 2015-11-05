@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+    <testsuite package="backtype.storm.security.auth" name="ThriftServer-test">
+        <testcase name="test-stop-checks-for-null" classname="backtype.storm.security.auth.ThriftServer-test">
+        </testcase>
+        <testcase name="test-isServing-checks-for-null" classname="backtype.storm.security.auth.ThriftServer-test">
+        </testcase>
+    </testsuite>
+</testsuites>

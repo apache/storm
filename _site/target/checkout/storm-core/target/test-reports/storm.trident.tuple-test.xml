@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+    <testsuite package="storm.trident" name="tuple-test">
+        <testcase name="test-projection" classname="storm.trident.tuple-test">
+        </testcase>
+        <testcase name="test-fresh" classname="storm.trident.tuple-test">
+        </testcase>
+        <testcase name="test-root" classname="storm.trident.tuple-test">
+        </testcase>
+        <testcase name="test-appends" classname="storm.trident.tuple-test">
+        </testcase>
+        <testcase name="test-ituple-interface" classname="storm.trident.tuple-test">
+        </testcase>
+        <testcase name="test-complex" classname="storm.trident.tuple-test">
+        </testcase>
+    </testsuite>
+</testsuites>

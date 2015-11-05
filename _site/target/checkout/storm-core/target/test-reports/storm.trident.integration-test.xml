@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+    <testsuite package="storm.trident" name="integration-test">
+        <testcase name="test-stream-projection-validation" classname="storm.trident.integration-test">
+        </testcase>
+        <testcase name="test-multiple-groupings-same-stream" classname="storm.trident.integration-test">
+        </testcase>
+        <testcase name="test-memory-map-get-tuples" classname="storm.trident.integration-test">
+        </testcase>
+        <testcase name="test-multi-repartition" classname="storm.trident.integration-test">
+        </testcase>
+        <testcase name="test-split-merge" classname="storm.trident.integration-test">
+        </testcase>
+        <testcase name="test-word-count-committer-spout" classname="storm.trident.integration-test">
+        </testcase>
+        <testcase name="test-word-count" classname="storm.trident.integration-test">
+        </testcase>
+        <testcase name="test-count-agg" classname="storm.trident.integration-test">
+        </testcase>
+    </testsuite>
+</testsuites>

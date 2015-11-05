@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+    <testsuite package="backtype.storm" name="serialization-test">
+        <testcase name="test-clojure-serialization" classname="backtype.storm.serialization-test">
+        </testcase>
+        <testcase name="test-java-serialization" classname="backtype.storm.serialization-test">
+        </testcase>
+        <testcase name="validate-kryo-conf-fail" classname="backtype.storm.serialization-test">
+        </testcase>
+        <testcase name="test-kryo-decorator" classname="backtype.storm.serialization-test">
+        </testcase>
+        <testcase name="test-string-serialization" classname="backtype.storm.serialization-test">
+        </testcase>
+        <testcase name="validate-kryo-conf-basic" classname="backtype.storm.serialization-test">
+        </testcase>
+    </testsuite>
+</testsuites>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+    <testsuite package="backtype.storm" name="clojure-test">
+        <testcase name="test-map-emit" classname="backtype.storm.clojure-test">
+        </testcase>
+        <testcase name="test-component-specific-config-clojure" classname="backtype.storm.clojure-test">
+        </testcase>
+        <testcase name="test-clojure-bolt" classname="backtype.storm.clojure-test">
+        </testcase>
+    </testsuite>
+</testsuites>

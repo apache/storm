@@ -1,0 +1,127 @@
+// ------------------------------------------------------------------
+// Transitive dependencies of this project determined from the
+// maven pom organized by organization.
+// ------------------------------------------------------------------
+
+Storm Core
+
+
+From: 'an unknown organization'
+  - clj-stacktrace (http://github.com/mmcgrana/clj-stacktrace) clj-stacktrace:clj-stacktrace:jar:0.2.2
+
+  - clj-time  clj-time:clj-time:jar:0.4.1
+
+  - clout (http://github.com/weavejester/clout) clout:clout:jar:1.0.1
+
+  - Kryo (http://code.google.com/p/kryo/) com.esotericsoftware.kryo:kryo:bundle:2.21
+    License: New BSD License  (http://www.opensource.org/licenses/bsd-license.php)
+  - MinLog (http://code.google.com/p/minlog/) com.esotericsoftware.minlog:minlog:jar:1.2
+    License: New BSD License  (http://www.opensource.org/licenses/bsd-license.php)
+  - ReflectASM (http://code.google.com/p/reflectasm/) com.esotericsoftware.reflectasm:reflectasm:jar:1.07
+    License: New BSD License  (http://www.opensource.org/licenses/bsd-license.php)
+  - Guava: Google Core Libraries for Java (http://code.google.com/p/guava-libraries/guava) com.google.guava:guava:bundle:16.0.1
+    License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)
+  - Disruptor Framework (http://code.google.com/p/disruptor/) com.googlecode.disruptor:disruptor:jar:2.10.4
+    License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)
+  - JSON.simple (http://code.google.com/p/json-simple/) com.googlecode.json-simple:json-simple:jar:1.1
+    License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)
+  - carbonite  com.twitter:carbonite:jar:1.4.0
+
+  - compojure (https://github.com/weavejester/compojure) compojure:compojure:jar:1.1.3
+    License: Eclipse Public License  (http://www.eclipse.org/legal/epl-v10.html)
+  - hiccup (http://github.com/weavejester/hiccup) hiccup:hiccup:jar:0.3.6
+
+  - servlet-api  javax.servlet:servlet-api:jar:2.5
+
+  - JLine (http://nexus.sonatype.org/oss-repository-hosting.html/jline) jline:jline:jar:2.11
+    License: The BSD License  (http://www.opensource.org/licenses/bsd-license.php)
+  - Apache Thrift (http://thrift.apache.org) org.apache.thrift:libthrift:pom:0.7.0
+    License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt")
+  - zookeeper  org.apache.zookeeper:zookeeper:pom:3.4.6
+
+  - clojure (http://clojure.org/) org.clojure:clojure:jar:1.5.1
+    License: Eclipse Public License 1.0  (http://opensource.org/licenses/eclipse-1.0.php)
+  - core.incubator (http://nexus.sonatype.org/oss-repository-hosting.html/pom.contrib/core.incubator) org.clojure:core.incubator:jar:0.1.0
+    License: Eclipse Public License 1.0  (http://opensource.org/licenses/eclipse-1.0.php)
+  - math.numeric-tower (http://nexus.sonatype.org/oss-repository-hosting.html/pom.contrib/math.numeric-tower) org.clojure:math.numeric-tower:jar:0.0.1
+    License: Eclipse Public License 1.0  (http://opensource.org/licenses/eclipse-1.0.php)
+  - tools.cli (http://nexus.sonatype.org/oss-repository-hosting.html/pom.contrib/tools.cli) org.clojure:tools.cli:jar:0.2.4
+    License: Eclipse Public License 1.0  (http://opensource.org/licenses/eclipse-1.0.php)
+  - tools.logging (http://nexus.sonatype.org/oss-repository-hosting.html/pom.contrib/tools.logging) org.clojure:tools.logging:jar:0.2.3
+    License: Eclipse Public License 1.0  (http://opensource.org/licenses/eclipse-1.0.php)
+  - tools.macro (http://nexus.sonatype.org/oss-repository-hosting.html/pom.contrib/tools.macro) org.clojure:tools.macro:jar:0.1.0
+    License: Eclipse Public License 1.0  (http://opensource.org/licenses/eclipse-1.0.php)
+  - JGraphT - Core (http://www.jgrapht.org/jgrapht-core) org.jgrapht:jgrapht-core:jar:0.9.0
+    License: GNU Lesser General Public License Version 2.1, February 1999  (http://jgrapht.sourceforge.net/LGPL.html)    License: Eclipse Public License (EPL) 1.0  (http://www.eclipse.org/legal/epl-v10.html)
+  - SnakeYAML (http://www.snakeyaml.org) org.yaml:snakeyaml:bundle:1.11
+    License: Apache License Version 2.0  (LICENSE.txt)
+  - ring-core (https://github.com/ring-clojure/ring) ring:ring-core:jar:1.1.5
+
+  - ring-devel (http://github.com/mmcgrana/ring) ring:ring-devel:jar:0.3.11
+
+  - ring-jetty-adapter (http://github.com/mmcgrana/ring) ring:ring-jetty-adapter:jar:0.3.11
+
+  - ring-servlet (http://github.com/mmcgrana/ring) ring:ring-servlet:jar:0.3.11
+
+
+From: 'com.twitter'
+  - chill-java (https://github.com/twitter/chill) com.twitter:chill-java:jar:0.3.5
+    License: Apache 2  (http://www.apache.org/licenses/LICENSE-2.0.txt)
+
+From: 'Joda.org' (http://www.joda.org)
+  - Joda time (http://joda-time.sourceforge.net) joda-time:joda-time:jar:2.0
+    License: Apache 2  (http://www.apache.org/licenses/LICENSE-2.0.txt)
+
+From: 'Joe Walnes, Henri Tremblay, Leonardo Mesquita'
+  - Objenesis (http://objenesis.googlecode.com/svn/docs/index.html) org.objenesis:objenesis:jar:1.2
+    License: Apache 2  (http://www.apache.org/licenses/LICENSE-2.0.txt)
+
+From: 'Mort Bay Consulting' (http://www.mortbay.com)
+  - Jetty Server (http://www.eclipse.org/jetty/jetty-parent/project/modules/jetty) org.mortbay.jetty:jetty:jar:6.1.26
+    License: Apache Software License - Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0)    License: Eclipse Public License - Version 1.0  (http://www.eclipse.org/org/documents/epl-v10.php)
+  - Jetty Utilities (http://www.eclipse.org/jetty/jetty-parent/project/jetty-util) org.mortbay.jetty:jetty-util:jar:6.1.26
+    License: Apache Software License - Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0)    License: Eclipse Public License - Version 1.0  (http://www.eclipse.org/org/documents/epl-v10.php)
+
+From: 'ObjectWeb' (http://www.objectweb.org/)
+  - ASM Core (http://asm.objectweb.org/asm/) org.ow2.asm:asm:jar:4.0
+    License: BSD  (http://asm.objectweb.org/license.html)
+
+From: 'QOS.ch' (http://www.qos.ch)
+  - Logback Classic Module (http://logback.qos.ch) ch.qos.logback:logback-classic:jar:1.0.13
+    License: Eclipse Public License - v 1.0  (http://www.eclipse.org/legal/epl-v10.html)    License: GNU Lesser General Public License  (http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html)
+  - Logback Core Module (http://logback.qos.ch) ch.qos.logback:logback-core:jar:1.0.13
+    License: Eclipse Public License - v 1.0  (http://www.eclipse.org/legal/epl-v10.html)    License: GNU Lesser General Public License  (http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html)
+  - Log4j Implemented Over SLF4J (http://www.slf4j.org) org.slf4j:log4j-over-slf4j:jar:1.6.6
+    License: Apache Software Licenses  (http://www.apache.org/licenses/LICENSE-2.0.txt)
+  - SLF4J API Module (http://www.slf4j.org) org.slf4j:slf4j-api:jar:1.7.5
+    License: MIT License  (http://www.opensource.org/licenses/mit-license.php)
+
+From: 'The Apache Software Foundation' (http://www.apache.org/)
+  - Commons Codec (http://commons.apache.org/codec/) commons-codec:commons-codec:jar:1.6
+    License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)
+  - Commons FileUpload (http://commons.apache.org/fileupload/) commons-fileupload:commons-fileupload:jar:1.2.1
+    License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)
+  - Commons IO (http://commons.apache.org/io/) commons-io:commons-io:jar:2.4
+    License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)
+  - Commons Lang (http://commons.apache.org/lang/) commons-lang:commons-lang:jar:2.5
+    License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)
+  - Commons Logging (http://commons.apache.org/proper/commons-logging/) commons-logging:commons-logging:jar:1.1.3
+    License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)
+  - Commons Exec (http://commons.apache.org/exec/) org.apache.commons:commons-exec:jar:1.1
+    License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)
+  - Curator Client (http://curator.apache.org/curator-client) org.apache.curator:curator-client:bundle:2.5.0
+    License: The Apache Software License, Version 2.0  (file://${basedir}/LICENSE)
+  - Curator Framework (http://curator.apache.org/curator-framework) org.apache.curator:curator-framework:bundle:2.5.0
+    License: The Apache Software License, Version 2.0  (file://${basedir}/LICENSE)
+  - Apache HttpClient (http://hc.apache.org/httpcomponents-client) org.apache.httpcomponents:httpclient:jar:4.3.3
+    License: Apache License, Version 2.0  (LICENSE.txt)
+  - Apache HttpCore (http://hc.apache.org/httpcomponents-core-ga) org.apache.httpcomponents:httpcore:jar:4.3.2
+    License: Apache License, Version 2.0  (LICENSE.txt)
+
+From: 'The Netty Project' (http://netty.io/)
+  - The Netty Project (http://netty.io/) io.netty:netty:bundle:3.9.0.Final
+    License: Apache License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0)
+
+
+
+

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+    <testsuite package="storm.trident" name="state-test">
+        <testcase name="test-transactional-map" classname="storm.trident.state-test">
+        </testcase>
+        <testcase name="test-memory-map-state-remove" classname="storm.trident.state-test">
+        </testcase>
+        <testcase name="test-opaque-value" classname="storm.trident.state-test">
+        </testcase>
+        <testcase name="test-opaque-map" classname="storm.trident.state-test">
+        </testcase>
+    </testsuite>
+</testsuites>

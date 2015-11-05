@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+    <testsuite package="backtype.storm.messaging" name="netty-integration-test">
+        <testcase name="test-integration" classname="backtype.storm.messaging.netty-integration-test">
+        </testcase>
+    </testsuite>
+</testsuites>

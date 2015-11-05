@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+    <testsuite package="backtype.storm.security.auth" name="auth-test">
+        <testcase name="Simple-authentication-test" classname="backtype.storm.security.auth.auth-test">
+        </testcase>
+        <testcase name="deny-authorization-test" classname="backtype.storm.security.auth.auth-test">
+        </testcase>
+        <testcase name="digest-authentication-test" classname="backtype.storm.security.auth.auth-test">
+        </testcase>
+        <testcase name="test-GetTransportPlugin-throws-RuntimeException" classname="backtype.storm.security.auth.auth-test">
+        </testcase>
+        <testcase name="positive-authorization-test" classname="backtype.storm.security.auth.auth-test">
+        </testcase>
+    </testsuite>
+</testsuites>

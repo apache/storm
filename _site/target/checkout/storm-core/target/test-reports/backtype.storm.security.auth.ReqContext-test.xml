@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+    <testsuite package="backtype.storm.security.auth" name="ReqContext-test">
+        <testcase name="test-principal" classname="backtype.storm.security.auth.ReqContext-test">
+        </testcase>
+        <testcase name="test-remote-address" classname="backtype.storm.security.auth.ReqContext-test">
+        </testcase>
+        <testcase name="test-principal-returns-null-when-no-subject" classname="backtype.storm.security.auth.ReqContext-test">
+        </testcase>
+    </testsuite>
+</testsuites>

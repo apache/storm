@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+    <testsuite package="backtype.storm" name="utils-test">
+        <testcase name="test-secs-to-millis-long" classname="backtype.storm.utils-test">
+        </testcase>
+        <testcase name="test-new-curator-uses-exponential-backoff" classname="backtype.storm.utils-test">
+        </testcase>
+        <testcase name="test-getConfiguredClient-throws-RunTimeException-on-bad-config" classname="backtype.storm.utils-test">
+        </testcase>
+        <testcase name="test-getConfiguredClient-throws-RunTimeException-on-bad-args" classname="backtype.storm.utils-test">
+        </testcase>
+    </testsuite>
+</testsuites>

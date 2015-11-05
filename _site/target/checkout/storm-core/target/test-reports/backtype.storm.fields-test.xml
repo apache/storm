@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+    <testsuite package="backtype.storm" name="fields-test">
+        <testcase name="test-fields-methods" classname="backtype.storm.fields-test">
+        </testcase>
+        <testcase name="test-fields-constructor" classname="backtype.storm.fields-test">
+        </testcase>
+    </testsuite>
+</testsuites>

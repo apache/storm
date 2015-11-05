@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+    <testsuite package="backtype.storm.security.serialization" name="BlowfishTupleSerializer-test">
+        <testcase name="test-encrypts-and-decrypts-message" classname="backtype.storm.security.serialization.BlowfishTupleSerializer-test">
+        </testcase>
+        <testcase name="test-constructor-throws-on-invalid-key" classname="backtype.storm.security.serialization.BlowfishTupleSerializer-test">
+        </testcase>
+        <testcase name="test-constructor-throws-on-null-key" classname="backtype.storm.security.serialization.BlowfishTupleSerializer-test">
+        </testcase>
+    </testsuite>
+</testsuites>

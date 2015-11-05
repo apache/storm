@@ -1,0 +1,10 @@
+/Users/tgoetz/Projects/apache/storm/target/checkout/external/storm-kafka/src/test/storm/kafka/bolt/KafkaBoltTest.java
+/Users/tgoetz/Projects/apache/storm/target/checkout/external/storm-kafka/src/test/storm/kafka/StringKeyValueSchemeTest.java
+/Users/tgoetz/Projects/apache/storm/target/checkout/external/storm-kafka/src/test/storm/kafka/TestUtils.java
+/Users/tgoetz/Projects/apache/storm/target/checkout/external/storm-kafka/src/test/storm/kafka/TridentKafkaTest.java
+/Users/tgoetz/Projects/apache/storm/target/checkout/external/storm-kafka/src/test/storm/kafka/KafkaTestBroker.java
+/Users/tgoetz/Projects/apache/storm/target/checkout/external/storm-kafka/src/test/storm/kafka/DynamicBrokersReaderTest.java
+/Users/tgoetz/Projects/apache/storm/target/checkout/external/storm-kafka/src/test/storm/kafka/KafkaUtilsTest.java
+/Users/tgoetz/Projects/apache/storm/target/checkout/external/storm-kafka/src/test/storm/kafka/TridentKafkaTopology.java
+/Users/tgoetz/Projects/apache/storm/target/checkout/external/storm-kafka/src/test/storm/kafka/ZkCoordinatorTest.java
+/Users/tgoetz/Projects/apache/storm/target/checkout/external/storm-kafka/src/test/storm/kafka/KafkaErrorTest.java

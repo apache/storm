@@ -1,0 +1,10 @@
+org.apache.storm.hdfs.bolt
+org.apache.storm.hdfs.bolt.format
+org.apache.storm.hdfs.bolt.rotation
+org.apache.storm.hdfs.bolt.sync
+org.apache.storm.hdfs.common.rotation
+org.apache.storm.hdfs.common.security
+org.apache.storm.hdfs.trident
+org.apache.storm.hdfs.trident.format
+org.apache.storm.hdfs.trident.rotation
+org.apache.storm.hdfs.trident.sync

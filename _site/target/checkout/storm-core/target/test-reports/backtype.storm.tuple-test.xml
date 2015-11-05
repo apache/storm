@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+    <testsuite package="backtype.storm" name="tuple-test">
+        <testcase name="test-indexed" classname="backtype.storm.tuple-test">
+        </testcase>
+        <testcase name="test-lookup" classname="backtype.storm.tuple-test">
+        </testcase>
+        <testcase name="test-seq" classname="backtype.storm.tuple-test">
+        </testcase>
+        <testcase name="test-map" classname="backtype.storm.tuple-test">
+        </testcase>
+    </testsuite>
+</testsuites>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+    <testsuite package="backtype.storm" name="versioned-store-test">
+        <testcase name="test-multiple-versions" classname="backtype.storm.versioned-store-test">
+        </testcase>
+        <testcase name="test-empty-version" classname="backtype.storm.versioned-store-test">
+        </testcase>
+    </testsuite>
+</testsuites>

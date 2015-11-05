@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+    <testsuite package="backtype.storm" name="config-test">
+        <testcase name="test-power-of-2-validator" classname="backtype.storm.config-test">
+        </testcase>
+        <testcase name="test-list-validator" classname="backtype.storm.config-test">
+        </testcase>
+        <testcase name="test-topology-workers-is-integer" classname="backtype.storm.config-test">
+        </testcase>
+        <testcase name="test-integers-validator" classname="backtype.storm.config-test">
+        </testcase>
+        <testcase name="test-validity" classname="backtype.storm.config-test">
+        </testcase>
+        <testcase name="test-topology-stats-sample-rate-is-float" classname="backtype.storm.config-test">
+        </testcase>
+        <testcase name="test-isolation-scheduler-machines-is-map" classname="backtype.storm.config-test">
+        </testcase>
+        <testcase name="test-integer-validator" classname="backtype.storm.config-test">
+        </testcase>
+        <testcase name="test-double-validator" classname="backtype.storm.config-test">
+        </testcase>
+        <testcase name="test-worker-childopts-is-string-or-string-list" classname="backtype.storm.config-test">
+        </testcase>
+    </testsuite>
+</testsuites>
