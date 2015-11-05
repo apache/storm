@@ -1,3 +1,0 @@
-[submodule "jstorm-utility/rocket-mq"]
-	path = jstorm-utility/rocket-mq
-	url = https://github.com/rocketmq/rocketmq-storm
