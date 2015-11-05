@@ -1,1 +1,0 @@
-Hello JStorm-on-YARN
