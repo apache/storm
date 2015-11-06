@@ -435,7 +435,9 @@ public class Config extends HashMap<String, Object> {
     /**
      * Whether or not nimbus should reassign tasks if it detects that a task goes down.
      * Defaults to true, and it's not recommended to change this value.
+     * @deprecated - This configuration is for unit testing. Please never set this to false on real cluster.
      */
+    @Deprecated
     public static final String NIMBUS_REASSIGN = "nimbus.reassign";
     public static final Object NIMBUS_REASSIGN_SCHEMA = Boolean.class;
 
