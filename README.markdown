@@ -200,6 +200,7 @@ under the License.
 * jangie ([@jangie](https://github.com/jangie))
 * Hailei Zhang ([@Hailei](https://github.com/Hailei))
 * Gabor Liptak ([@gliptak](https://github.com/glibtak))
+* Chuck Burgess ([@ashnazg](https://github.com/ashnazg))
 
 ## Acknowledgements
 
