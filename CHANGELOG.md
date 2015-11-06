@@ -1,4 +1,5 @@
 ## 0.10.0
+ * STORM-1180: FLUX logo wasn't appearing quite right
  * STORM-1108: Fix NPE in simulated time
  * STORM-1106: Netty should not limit attempts to reconnect
  * STORM-1099: Fix worker childopts as arraylist of strings
