@@ -20,3 +20,6 @@ before_install:
 install: /bin/bash ./dev-tools/travis/travis-install.sh `pwd`
 script: /bin/bash ./dev-tools/travis/travis-script.sh `pwd`
 sudo: false
+cache:
+  directories:
+    - "$HOME/.m2/repository"
