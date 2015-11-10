@@ -10,25 +10,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-MODULE:
-  - storm-multilang/javascript
-  - storm-multilang/python
-  - storm-multilang/ruby
-  - storm-buildtools/maven-shade-clojure-transformer
-  - storm-buildtools/storm-maven-plugins
-  - storm-core
-  - external/storm-kafka
-  - external/storm-hdfs
-  - external/storm-hbase
-  - external/storm-hive
-  - external/storm-jdbc
-  - external/storm-redis
-  - external/storm-eventhubs
-  - external/flux
-  - external/storm-elasticsearch
-  - external/storm-solr
-  - external/storm-metrics
-  - examples/storm-starter
+env:
+  - MODULES=storm-core
+  - MODULES=external/storm-kafka,external/storm-hdfs,external/storm-hbase,external/storm-hive,external/storm-jdbc,external/storm-redis,external/storm-eventhubs,external/flux,external/storm-elasticsearch,external/storm-solr,external/storm-metrics,storm-buildtools/maven-shade-clojure-transformer,storm-buildtools/storm-maven-plugins,examples/storm-starter
 
 language: java
 jdk:
@@ -38,10 +22,11 @@ before_install:
   - rvm use 2.1.5 --install
   - nvm install 0.12.2
   - nvm use 0.12.2
-install: /bin/bash ./dev-tools/travis/travis-install.sh `pwd` 
-script: /bin/bash ./dev-tools/travis/travis-script.sh `pwd` $MODULE
+install: /bin/bash ./dev-tools/travis/travis-install.sh `pwd` $MODULES
+script: /bin/bash ./dev-tools/travis/travis-script.sh `pwd` $MODULES
 sudo: false
 cache:
   directories:
     - "$HOME/.m2/repository"
-
+    - "$HOME/.rvm"
+    - "$NVM_DIR"
