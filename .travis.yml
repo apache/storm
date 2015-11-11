@@ -11,7 +11,7 @@
 #  limitations under the License.
 
 env:
-  - MODULES=storm-core
+  - MODULES=storm-core,storm-buildtools/storm-maven-plugins
   - MODULES=external/storm-kafka,external/storm-hdfs,external/storm-hbase,external/storm-hive,external/storm-jdbc,external/storm-redis,external/storm-eventhubs,external/flux,external/storm-elasticsearch,external/storm-solr,external/storm-metrics,storm-buildtools/maven-shade-clojure-transformer,storm-buildtools/storm-maven-plugins,examples/storm-starter
 
 language: java
