@@ -26,6 +26,8 @@ import backtype.storm.serialization.DefaultSerializationDelegate;
 import backtype.storm.serialization.SerializationDelegate;
 import clojure.lang.IFn;
 import clojure.lang.RT;
+import com.google.common.annotations.VisibleForTesting;
+import org.apache.commons.io.input.ClassLoaderObjectInputStream;
 import org.apache.commons.lang.StringUtils;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -57,6 +59,7 @@ public class Utils {
     public static final String DEFAULT_STREAM_ID = "default";
 
     private static SerializationDelegate serializationDelegate;
+    private static ClassLoader cl = ClassLoader.getSystemClassLoader();
 
     static {
         Map conf = readStormConfig();
@@ -95,7 +98,7 @@ public class Utils {
     public static <T> T javaDeserialize(byte[] serialized, Class<T> clazz) {
         try {
             ByteArrayInputStream bis = new ByteArrayInputStream(serialized);
-            ObjectInputStream ois = new ObjectInputStream(bis);
+            ObjectInputStream ois = new ClassLoaderObjectInputStream(cl, bis);
             Object ret = ois.readObject();
             ois.close();
             return (T)ret;
@@ -670,6 +673,16 @@ public class Utils {
         throw (Error) t;
       }
     }
+  }
+
+  @VisibleForTesting
+  public static void setClassLoaderForJavaDeSerialize(ClassLoader cl) {
+    Utils.cl = cl;
+  }
+
+  @VisibleForTesting
+  public static void resetClassLoaderForJavaDeSerialize() {
+    Utils.cl = ClassLoader.getSystemClassLoader();
   }
 }
 
