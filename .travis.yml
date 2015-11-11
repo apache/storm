@@ -24,7 +24,6 @@ before_install:
   - nvm use 0.12.2
 install: /bin/bash ./dev-tools/travis/travis-install.sh `pwd` $MODULES
 script: /bin/bash ./dev-tools/travis/travis-script.sh `pwd` $MODULES
-sudo: false
 cache:
   directories:
     - "$HOME/.m2/repository"
