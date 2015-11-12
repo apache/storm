@@ -23,13 +23,17 @@ public class KafkaStateStore implements StateStore {
     private static final long OFFSET_MANAGER_DISCOVERY_RETRY_BACKOFF = 1000L;
     private static final int OFFSET_MANAGER_DISCOVERY_MAX_RETRY = 3;
 
-    private SpoutConfig _spoutConfig;
+    private KafkaStateStoreConfig _config;
     private int _correlationId = 0;
     // https://en.wikipedia.org/wiki/Double-checked_locking#Usage_in_Java
     private volatile BlockingChannel _offsetManager;
 
     public KafkaStateStore(Map stormConf, SpoutConfig spoutConfig) {
-        this._spoutConfig = spoutConfig;
+        this(new KafkaStateStoreConfig(stormConf, spoutConfig));
+    }
+
+    public KafkaStateStore(KafkaStateStoreConfig config) {
+        this._config = config;
     }
 
     @Override
@@ -98,8 +102,8 @@ public class KafkaStateStore implements StateStore {
 
         // one scenario when this could happen is during unit test.
         while (retryCount < maxRetry) {
-            channel.send(new ConsumerMetadataRequest(_spoutConfig.id, ConsumerMetadataRequest.CurrentVersion(),
-                    _correlationId++, _spoutConfig.clientId));
+            channel.send(new ConsumerMetadataRequest(_config.getConsumerId(), ConsumerMetadataRequest.CurrentVersion(),
+                    _correlationId++, _config.getClientId()));
             metadataResponse = ConsumerMetadataResponse.readFrom(channel.receive().buffer());
             assert (metadataResponse != null);
 
@@ -127,7 +131,7 @@ public class KafkaStateStore implements StateStore {
                 channel = new BlockingChannel(offsetManager.host(), offsetManager.port(),
                         BlockingChannel.UseDefaultBufferSize(),
                         BlockingChannel.UseDefaultBufferSize(),
-                        _spoutConfig.stateOpTimeout /* read timeout in millis */);
+                        _config.getStateOpTimeout() /* read timeout in millis */);
                 channel.connect();
             }
         } else {
@@ -140,14 +144,14 @@ public class KafkaStateStore implements StateStore {
 
     private String attemptToRead(Partition partition) {
         List<TopicAndPartition> partitions = new ArrayList<TopicAndPartition>();
-        TopicAndPartition thisTopicPartition = new TopicAndPartition(_spoutConfig.topic, partition.partition);
+        TopicAndPartition thisTopicPartition = new TopicAndPartition(_config.getTopic(), partition.partition);
         partitions.add(thisTopicPartition);
         OffsetFetchRequest fetchRequest = new OffsetFetchRequest(
-                _spoutConfig.id,
+                _config.getConsumerId(),
                 partitions,
                 (short) 1, // version 1 and above fetch from Kafka, version 0 fetches from ZooKeeper
                 _correlationId++,
-                _spoutConfig.clientId);
+                _config.getClientId());
 
         BlockingChannel offsetManager = getOffsetManager(partition);
         offsetManager.send(fetchRequest.underlying());
@@ -175,12 +179,12 @@ public class KafkaStateStore implements StateStore {
 
             } catch(RuntimeException re) {
                 _offsetManager = null;
-                if (++attemptCount > _spoutConfig.stateOpMaxRetry) {
+                if (++attemptCount > _config.getStateOpMaxRetry()) {
                     throw re;
                 } else {
-                    LOG.warn("Attempt " + attemptCount + " out of " + _spoutConfig.stateOpMaxRetry
+                    LOG.warn("Attempt " + attemptCount + " out of " + _config.getStateOpMaxRetry()
                             + ". Failed to fetch state for partition " + partition.partition
-                            + " of topic " + _spoutConfig.topic + ". Error code is " + re.getMessage());
+                            + " of topic " + _config.getTopic() + ". Error code is " + re.getMessage());
                 }
             }
         }
@@ -189,16 +193,16 @@ public class KafkaStateStore implements StateStore {
     private void attemptToWrite(long offsetOfPartition, String state, Partition partition) {
         long now = System.currentTimeMillis();
         Map<TopicAndPartition, OffsetAndMetadata> offsets = Maps.newLinkedHashMap();
-        TopicAndPartition thisTopicPartition = new TopicAndPartition(_spoutConfig.topic, partition.partition);
+        TopicAndPartition thisTopicPartition = new TopicAndPartition(_config.getTopic(), partition.partition);
         offsets.put(thisTopicPartition, new OffsetAndMetadata(
                 offsetOfPartition,
                 state,
                 now));
         OffsetCommitRequest commitRequest = new OffsetCommitRequest(
-                _spoutConfig.id,
+                _config.getConsumerId(),
                 offsets,
                 _correlationId,
-                _spoutConfig.clientId,
+                _config.getClientId(),
                 (short) 1); // version 1 and above commit to Kafka, version 0 commits to ZooKeeper
 
         BlockingChannel offsetManager = getOffsetManager(partition);
@@ -225,14 +229,50 @@ public class KafkaStateStore implements StateStore {
 
             } catch(RuntimeException re) {
                 _offsetManager = null;
-                if (++attemptCount > _spoutConfig.stateOpMaxRetry) {
+                if (++attemptCount > _config.getStateOpMaxRetry()) {
                     throw re;
                 } else {
-                    LOG.warn("Attempt " + attemptCount + " out of " + _spoutConfig.stateOpMaxRetry
+                    LOG.warn("Attempt " + attemptCount + " out of " + _config.getStateOpMaxRetry()
                             + ". Failed to save state for partition " + partition.partition
-                            + " of topic " + _spoutConfig.topic + ". Error code is: " + re.getMessage());
+                            + " of topic " + _config.getTopic() + ". Error code is: " + re.getMessage());
                 }
             }
+        }
+    }
+
+    public static class KafkaStateStoreConfig {
+        private final String topic;
+        private final int stateOpTimeout;
+        private final int stateOpMaxRetry;
+        private final String consumerId;
+        private final String clientId;
+
+        public KafkaStateStoreConfig(Map stormConf, SpoutConfig spoutConfig) {
+            this.topic = spoutConfig.topic;
+            this.stateOpMaxRetry = spoutConfig.stateOpMaxRetry;
+            this.stateOpTimeout = spoutConfig.stateOpTimeout;
+            this.consumerId = spoutConfig.id;
+            this.clientId = spoutConfig.clientId;
+        }
+
+        public String getTopic() {
+            return topic;
+        }
+
+        public int getStateOpMaxRetry() {
+            return stateOpMaxRetry;
+        }
+
+        public int getStateOpTimeout() {
+            return stateOpTimeout;
+        }
+
+        public String getConsumerId() {
+            return consumerId;
+        }
+
+        public String getClientId() {
+            return clientId;
         }
     }
 }

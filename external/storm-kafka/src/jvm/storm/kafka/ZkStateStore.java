@@ -28,29 +28,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.Charset;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class ZkStateStore implements StateStore {
     private static final Logger LOG = LoggerFactory.getLogger(ZkStateStore.class);
 
-    private SpoutConfig _spoutConfig;
+    private ZkStateStoreConfig _config;
     private CuratorFramework _curator;
 
-    private CuratorFramework newCurator(Map stateConf) throws Exception {
-        Integer port = (Integer) stateConf.get(Config.TRANSACTIONAL_ZOOKEEPER_PORT);
-        String serverPorts = "";
-        for (String server : (List<String>) stateConf.get(Config.TRANSACTIONAL_ZOOKEEPER_SERVERS)) {
-            serverPorts = serverPorts + server + ":" + port + ",";
-        }
-
-        LOG.info("Creating new curator framework on {}.", serverPorts);
-        return CuratorFrameworkFactory.newClient(serverPorts,
-                Utils.getInt(stateConf.get(Config.STORM_ZOOKEEPER_SESSION_TIMEOUT)),
-                Utils.getInt(stateConf.get(Config.STORM_ZOOKEEPER_CONNECTION_TIMEOUT)),
-                new RetryNTimes(Utils.getInt(stateConf.get(Config.STORM_ZOOKEEPER_RETRY_TIMES)),
-                        Utils.getInt(stateConf.get(Config.STORM_ZOOKEEPER_RETRY_INTERVAL))));
+    private CuratorFramework newCurator(ZkStateStoreConfig config) throws Exception {
+        LOG.info("Creating new curator framework on {}.", config.getZkServerPorts());
+        return CuratorFrameworkFactory.newClient(config.getZkServerPorts(),
+                config.getSessionTimeout(), config.getConnectionTimeout(),
+                new RetryNTimes(config.getRetryTimes(), config.getRetryInterval()));
     }
 
     public CuratorFramework getCurator() {
@@ -58,29 +49,19 @@ public class ZkStateStore implements StateStore {
         return _curator;
     }
 
-    public ZkStateStore(Map conf, SpoutConfig spoutConfig) {
-        _spoutConfig = spoutConfig;
-
-        Map<String, Object> zkStateStoreConf = new HashMap<>(conf);
-        List<String> zkServers = _spoutConfig.zkServers;
-        if (zkServers == null) {
-            zkServers = (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS);
-        }
-        Integer zkPort = _spoutConfig.zkPort;
-        if (zkPort == null) {
-            zkPort = ((Number) conf.get(Config.STORM_ZOOKEEPER_PORT)).intValue();
-        }
-        zkStateStoreConf.put(Config.TRANSACTIONAL_ZOOKEEPER_SERVERS, zkServers);
-        zkStateStoreConf.put(Config.TRANSACTIONAL_ZOOKEEPER_PORT, zkPort);
-        zkStateStoreConf.put(Config.TRANSACTIONAL_ZOOKEEPER_ROOT, _spoutConfig.zkRoot);
-
+    public ZkStateStore(ZkStateStoreConfig config) {
+        this._config = config;
         try {
-            _curator = newCurator(zkStateStoreConf);
+            _curator = newCurator(_config);
             _curator.start();
             LOG.info("Started curator framework.");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public ZkStateStore(Map conf, SpoutConfig spoutConfig) {
+        this(new ZkStateStoreConfig(conf, spoutConfig));
     }
 
     @Override
@@ -116,7 +97,7 @@ public class ZkStateStore implements StateStore {
     }
 
     private String committedPath(Partition partition) {
-        return _spoutConfig.zkRoot + "/" + _spoutConfig.id + "/" + partition.getId();
+        return _config.getZkRoot() + "/" + _config.getConsumerId() + "/" + partition.getId();
     }
 
     private void write(String path, byte[] bytes) {
@@ -143,6 +124,69 @@ public class ZkStateStore implements StateStore {
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public static class ZkStateStoreConfig {
+        private final String zkServerPorts;
+        private final String zkRoot;
+        private final String consumerId;
+        private final int connectionTimeout;
+        private final int sessionTimeout;
+        private final int retryTimes;
+        private final int retryInterval;
+
+        public ZkStateStoreConfig(Map conf, SpoutConfig spoutConfig) {
+            List<String> zkServers = spoutConfig.zkServers;
+            if (zkServers == null) {
+                zkServers = (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS);
+            }
+
+            Integer zkPort = spoutConfig.zkPort;
+            if (zkPort == null) {
+                zkPort = ((Number) conf.get(Config.STORM_ZOOKEEPER_PORT)).intValue();
+            }
+
+            String serverPorts = "";
+            for (String server : zkServers) {
+                serverPorts = serverPorts + server + ":" + zkPort + ",";
+            }
+
+            this.zkServerPorts = serverPorts;
+            this.zkRoot = spoutConfig.zkRoot;
+            this.consumerId = spoutConfig.id;
+            this.connectionTimeout = Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_CONNECTION_TIMEOUT));
+            this.sessionTimeout = Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_SESSION_TIMEOUT));
+            this.retryTimes = Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_RETRY_TIMES));
+            this.retryInterval = Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_RETRY_INTERVAL));
+        }
+
+        public String getZkServerPorts() {
+            return zkServerPorts;
+        }
+
+        public String getZkRoot() {
+            return zkRoot;
+        }
+
+        public String getConsumerId() {
+            return consumerId;
+        }
+
+        public int getConnectionTimeout() {
+            return connectionTimeout;
+        }
+
+        public int getSessionTimeout() {
+            return sessionTimeout;
+        }
+
+        public int getRetryTimes() {
+            return retryTimes;
+        }
+
+        public int getRetryInterval() {
+            return retryInterval;
         }
     }
 }

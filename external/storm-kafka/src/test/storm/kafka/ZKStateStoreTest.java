@@ -33,8 +33,8 @@ public class ZKStateStoreTest {
         spoutConfig.zkPort = server.getPort();
 
         Map<String, Object> stormConf = new HashMap<>();
-        stormConf.put(Config.TRANSACTIONAL_ZOOKEEPER_PORT, spoutConfig.zkPort);
-        stormConf.put(Config.TRANSACTIONAL_ZOOKEEPER_SERVERS, spoutConfig.zkServers);
+        stormConf.put(Config.STORM_ZOOKEEPER_PORT, spoutConfig.zkPort);
+        stormConf.put(Config.STORM_ZOOKEEPER_SERVERS, spoutConfig.zkServers);
         stormConf.put(Config.STORM_ZOOKEEPER_SESSION_TIMEOUT, 20000);
         stormConf.put(Config.STORM_ZOOKEEPER_CONNECTION_TIMEOUT, 20000);
         stormConf.put(Config.STORM_ZOOKEEPER_RETRY_TIMES, 3);
