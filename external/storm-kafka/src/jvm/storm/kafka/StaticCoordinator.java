@@ -17,10 +17,9 @@
  */
 package storm.kafka;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import storm.kafka.trident.GlobalPartitionInformation;
+
+import java.util.*;
 
 
 public class StaticCoordinator implements PartitionCoordinator {
@@ -30,7 +29,9 @@ public class StaticCoordinator implements PartitionCoordinator {
 
     public StaticCoordinator(DynamicPartitionConnections connections, PartitionStateManagerFactory partitionStateManagerFactory, Map stormConf, SpoutConfig spoutConfig, int taskIndex, int totalTasks, String topologyInstanceId) {
         StaticHosts hosts = (StaticHosts) spoutConfig.hosts;
-        List<Partition> myPartitions = KafkaUtils.calculatePartitionsForTask(hosts.getPartitionInformation(), totalTasks, taskIndex);
+        List<GlobalPartitionInformation> partitions = new ArrayList<GlobalPartitionInformation>();
+        partitions.add(hosts.getPartitionInformation());
+        List<Partition> myPartitions = KafkaUtils.calculatePartitionsForTask(partitions, totalTasks, taskIndex);
 
         for (Partition myPartition : myPartitions) {
             _managers.put(myPartition, new PartitionManager(connections, topologyInstanceId, partitionStateManagerFactory.getInstance(myPartition), stormConf, spoutConfig, myPartition));

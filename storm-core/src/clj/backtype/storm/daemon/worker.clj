@@ -16,6 +16,8 @@
 (ns backtype.storm.daemon.worker
   (:use [backtype.storm.daemon common])
   (:use [backtype.storm config log util timer local-state])
+  (:require [clj-time.core :as time])
+  (:require [clj-time.coerce :as coerce])
   (:require [backtype.storm.daemon [executor :as executor]])
   (:require [backtype.storm [disruptor :as disruptor] [cluster :as cluster]])
   (:require [clojure.set :as set])
@@ -23,17 +25,22 @@
   (:import [java.util.concurrent Executors])
   (:import [java.util ArrayList HashMap])
   (:import [backtype.storm.utils Utils TransferDrainer ThriftTopologyUtils WorkerBackpressureThread DisruptorQueue])
+  (:import [backtype.storm.grouping LoadMapping])
   (:import [backtype.storm.messaging TransportFactory])
   (:import [backtype.storm.messaging TaskMessage IContext IConnection ConnectionWithStatus ConnectionWithStatus$Status])
   (:import [backtype.storm.daemon Shutdownable])
   (:import [backtype.storm.serialization KryoTupleSerializer])
   (:import [backtype.storm.generated StormTopology])
-  (:import [backtype.storm.tuple Fields])
+  (:import [backtype.storm.tuple AddressedTuple Fields])
   (:import [backtype.storm.task WorkerTopologyContext])
   (:import [backtype.storm Constants])
   (:import [backtype.storm.security.auth AuthUtils])
   (:import [javax.security.auth Subject])
   (:import [java.security PrivilegedExceptionAction])
+  (:import [org.apache.logging.log4j LogManager])
+  (:import [org.apache.logging.log4j Level])
+  (:import [org.apache.logging.log4j.core.config LoggerConfig])
+  (:import [backtype.storm.generated LogConfig LogLevelAction])
   (:gen-class))
 
 (defmulti mk-suicide-fn cluster-mode)
@@ -96,10 +103,15 @@
         flatten
         set )))
 
+(defn get-dest
+  [^AddressedTuple addressed-tuple]
+  "get the destination for an AddressedTuple"
+  (.getDest addressed-tuple))
+
 (defn mk-transfer-local-fn [worker]
   (let [short-executor-receive-queue-map (:short-executor-receive-queue-map worker)
         task->short-executor (:task->short-executor worker)
-        task-getter (comp #(get task->short-executor %) fast-first)]
+        task-getter (comp #(get task->short-executor %) get-dest)]
     (fn [tuple-batch]
       (let [grouped (fast-group-by task-getter tuple-batch)]
         (fast-map-iter [[short-executor pairs] grouped]
@@ -123,12 +135,13 @@
             port (:port worker)
             storm-cluster-state (:storm-cluster-state worker)
             prev-backpressure-flag @(:backpressure worker)]
-        (if executors 
-          (if (reduce #(or %1 %2) (map #(.get-backpressure-flag %1) executors))
-            (reset! (:backpressure worker) true)   ;; at least one executor has set backpressure
-            (reset! (:backpressure worker) false))) ;; no executor has backpressure set
+        (when executors
+          (reset! (:backpressure worker)
+                  (or @(:transfer-backpressure worker)
+                      (reduce #(or %1 %2) (map #(.get-backpressure-flag %1) executors)))))
         ;; update the worker's backpressure flag to zookeeper only when it has changed
-        (if (not= prev-backpressure-flag @(:backpressure worker))
+        (log-debug "BP " @(:backpressure worker) " WAS " prev-backpressure-flag)
+        (when (not= prev-backpressure-flag @(:backpressure worker))
           (.worker-backpressure! storm-cluster-state storm-id assignment-id port @(:backpressure worker)))
         ))))
 
@@ -137,14 +150,11 @@
   check highWaterMark and lowWaterMark for backpressure"
   (disruptor/disruptor-backpressure-handler
     (fn []
-      "When worker's queue is above highWaterMark, we set its backpressure flag"
-      (if (not @(:backpressure worker))
-        (do (reset! (:backpressure worker) true)
-            (WorkerBackpressureThread/notifyBackpressureChecker (:backpressure-trigger worker)))))  ;; set backpressure no matter how the executors are
+      (reset! (:transfer-backpressure worker) true)
+      (WorkerBackpressureThread/notifyBackpressureChecker (:backpressure-trigger worker)))
     (fn []
-      "If worker's queue is below low watermark, we do nothing since we want the
-      WorkerBackPressureThread to also check for all the executors' status"
-      )))
+      (reset! (:transfer-backpressure worker) false)
+      (WorkerBackpressureThread/notifyBackpressureChecker (:backpressure-trigger worker)))))
 
 (defn mk-transfer-fn [worker]
   (let [local-tasks (-> worker :task-ids set)
@@ -155,24 +165,26 @@
 
         transfer-fn
           (fn [^KryoTupleSerializer serializer tuple-batch]
-            (let [local (ArrayList.)
-                  remoteMap (HashMap.)]
-              (fast-list-iter [[task tuple :as pair] tuple-batch]
-                (if (local-tasks task)
-                  (.add local pair)
+            (let [^ArrayList local (ArrayList.)
+                  ^HashMap remoteMap (HashMap.)]
+              (fast-list-iter [^AddressedTuple addressed-tuple tuple-batch]
+                (let [task (.getDest addressed-tuple)
+                      tuple (.getTuple addressed-tuple)]
+                  (if (local-tasks task)
+                    (.add local addressed-tuple)
 
-                  ;;Using java objects directly to avoid performance issues in java code
-                  (do
-                    (when (not (.get remoteMap task))
-                      (.put remoteMap task (ArrayList.)))
-                    (let [remote (.get remoteMap task)]
-                      (if (not-nil? task)
-                        (.add remote (TaskMessage. task (.serialize serializer tuple)))
-                        (log-warn "Can't transfer tuple - task value is nil. tuple type: " (pr-str (type tuple)) " and information: " (pr-str tuple)))
-                     ))))
+                    ;;Using java objects directly to avoid performance issues in java code
+                    (do
+                      (when (not (.get remoteMap task))
+                        (.put remoteMap task (ArrayList.)))
+                      (let [^ArrayList remote (.get remoteMap task)]
+                        (if (not-nil? task)
+                          (.add remote (TaskMessage. task ^bytes (.serialize serializer tuple)))
+                          (log-warn "Can't transfer tuple - task value is nil. tuple type: " (pr-str (type tuple)) " and information: " (pr-str tuple)))
+                       )))))
 
-              (local-transfer local)
-              (disruptor/publish transfer-queue remoteMap)))]
+              (when (not (.isEmpty local)) (local-transfer local))
+              (when (not (.isEmpty remoteMap)) (disruptor/publish transfer-queue remoteMap))))]
     (if try-serialize-local
       (do
         (log-warn "WILL TRY TO SERIALIZE ALL TUPLES (Turn off " TOPOLOGY-TESTING-ALWAYS-TRY-SERIALIZE " for production)")
@@ -187,7 +199,8 @@
        (map (fn [e] [e (disruptor/disruptor-queue (str "receive-queue" e)
                                                   (storm-conf TOPOLOGY-EXECUTOR-RECEIVE-BUFFER-SIZE)
                                                   (storm-conf TOPOLOGY-DISRUPTOR-WAIT-TIMEOUT-MILLIS)
-                                                  :wait-strategy (storm-conf TOPOLOGY-DISRUPTOR-WAIT-STRATEGY))]))
+                                                  :batch-size (storm-conf TOPOLOGY-DISRUPTOR-BATCH-SIZE)
+                                                  :batch-timeout (storm-conf TOPOLOGY-DISRUPTOR-BATCH-TIMEOUT-MILLIS))]))
        (into {})
        ))
 
@@ -229,7 +242,8 @@
         executors (set (read-worker-executors storm-conf storm-cluster-state storm-id assignment-id port assignment-versions))
         transfer-queue (disruptor/disruptor-queue "worker-transfer-queue" (storm-conf TOPOLOGY-TRANSFER-BUFFER-SIZE)
                                                   (storm-conf TOPOLOGY-DISRUPTOR-WAIT-TIMEOUT-MILLIS)
-                                                  :wait-strategy (storm-conf TOPOLOGY-DISRUPTOR-WAIT-STRATEGY))
+                                                  :batch-size (storm-conf TOPOLOGY-DISRUPTOR-BATCH-SIZE)
+                                                  :batch-timeout (storm-conf TOPOLOGY-DISRUPTOR-BATCH-TIMEOUT-MILLIS))
         executor-receive-queue-map (mk-receive-queue-map storm-conf executors)
 
         receive-queue-map (->> executor-receive-queue-map
@@ -263,8 +277,10 @@
       :topology topology
       :system-topology (system-topology! storm-conf topology)
       :heartbeat-timer (mk-halting-timer "heartbeat-timer")
+      :refresh-load-timer (mk-halting-timer "refresh-load-timer")
       :refresh-connections-timer (mk-halting-timer "refresh-connections-timer")
       :refresh-credentials-timer (mk-halting-timer "refresh-credentials-timer")
+      :reset-log-levels-timer (mk-halting-timer "reset-log-levels-timer")
       :refresh-active-timer (mk-halting-timer "refresh-active-timer")
       :executor-heartbeat-timer (mk-halting-timer "executor-heartbeat-timer")
       :user-timer (mk-halting-timer "user-timer")
@@ -286,10 +302,11 @@
       :default-shared-resources (mk-default-resources <>)
       :user-shared-resources (mk-user-resources <>)
       :transfer-local-fn (mk-transfer-local-fn <>)
-      :receiver-thread-count (get storm-conf WORKER-RECEIVER-THREAD-COUNT)
       :transfer-fn (mk-transfer-fn <>)
+      :load-mapping (LoadMapping.)
       :assignment-versions assignment-versions
       :backpressure (atom false) ;; whether this worker is going slow
+      :transfer-backpressure (atom false) ;; if the transfer queue is backed-up
       :backpressure-trigger (atom false) ;; a trigger for synchronization with executors
       :throttle-on (atom false) ;; whether throttle is activated for spouts
       )))
@@ -301,6 +318,28 @@
   (let [[port-str node] (.split s "/" 2)]
     [node (Integer/valueOf port-str)]
     ))
+
+(def LOAD-REFRESH-INTERVAL-MS 5000)
+
+(defn mk-refresh-load [worker]
+  (let [local-tasks (set (:task-ids worker))
+        remote-tasks (set/difference (worker-outbound-tasks worker) local-tasks)
+        short-executor-receive-queue-map (:short-executor-receive-queue-map worker)
+        next-update (atom 0)]
+    (fn this
+      ([]
+        (let [^LoadMapping load-mapping (:load-mapping worker)
+              local-pop (map-val (fn [queue]
+                                   (let [q-metrics (.getMetrics queue)]
+                                     (/ (double (.population q-metrics)) (.capacity q-metrics))))
+                                 short-executor-receive-queue-map)
+              remote-load (reduce merge (for [[np conn] @(:cached-node+port->socket worker)] (into {} (.getLoad conn remote-tasks))))
+              now (System/currentTimeMillis)]
+          (.setLocal load-mapping local-pop)
+          (.setRemote load-mapping remote-load)
+          (when (> now @next-update)
+            (.sendLoadMetrics (:receiver worker) local-pop)
+            (reset! next-update (+ LOAD-REFRESH-INTERVAL-MS now))))))))
 
 (defn mk-refresh-connections [worker]
   (let [outbound-tasks (worker-outbound-tasks worker)
@@ -417,16 +456,12 @@
           (schedule timer recur-secs this :check-active false)
             )))))
 
-(defn launch-receive-thread [worker]
-  (log-message "Launching receive-thread for " (:assignment-id worker) ":" (:port worker))
-  (msg-loader/launch-receive-thread!
-    (:mq-context worker)
-    (:receiver worker)
-    (:storm-id worker)
-    (:receiver-thread-count worker)
-    (:port worker)
-    (:transfer-local-fn worker)
-    :kill-fn (fn [t] (exit-process! 11))))
+(defn register-callbacks [worker]
+  (log-message "Registering IConnectionCallbacks for " (:assignment-id worker) ":" (:port worker))
+  (msg-loader/register-callback (:transfer-local-fn worker)
+                                (:receiver worker)
+                                (:storm-conf worker)
+                                (worker-context worker)))
 
 (defn- close-resources [worker]
   (let [dr (:default-shared-resources worker)]
@@ -438,6 +473,85 @@
   (if-let [login_conf_file (System/getProperty "java.security.auth.login.config")]
     (assoc conf "java.security.auth.login.config" login_conf_file)
     conf))
+
+(defn- get-logger-levels []
+  (into {}
+    (let [logger-config (.getConfiguration (LogManager/getContext false))]
+      (for [[logger-name logger] (.getLoggers logger-config)]
+        {logger-name (.getLevel logger)}))))
+
+(defn set-logger-level [logger-context logger-name new-level]
+  (let [config (.getConfiguration logger-context)
+        logger-config (.getLoggerConfig config logger-name)]
+    (if (not (= (.getName logger-config) logger-name))
+      ;; create a new config. Make it additive (true) s.t. inherit
+      ;; parents appenders
+      (let [new-logger-config (LoggerConfig. logger-name new-level true)]
+        (log-message "Adding config for: " new-logger-config " with level: " new-level)
+        (.addLogger config logger-name new-logger-config))
+      (do
+        (log-message "Setting " logger-config " log level to: " new-level)
+        (.setLevel logger-config new-level)))))
+
+;; function called on timer to reset log levels last set to DEBUG
+;; also called from process-log-config-change
+(defn reset-log-levels [latest-log-config-atom]
+  (let [latest-log-config @latest-log-config-atom
+        logger-context (LogManager/getContext false)]
+    (doseq [[logger-name logger-setting] (sort latest-log-config)]
+      (let [timeout (:timeout logger-setting)
+            target-log-level (:target-log-level logger-setting)
+            reset-log-level (:reset-log-level logger-setting)]
+        (when (> (coerce/to-long (time/now)) timeout)
+          (log-message logger-name ": Resetting level to " reset-log-level) 
+          (set-logger-level logger-context logger-name reset-log-level)
+          (swap! latest-log-config-atom
+            (fn [prev]
+              (dissoc prev logger-name))))))
+    (.updateLoggers logger-context)))
+
+;; when a new log level is received from zookeeper, this function is called
+(defn process-log-config-change [latest-log-config original-log-levels log-config]
+  (when log-config
+    (log-debug "Processing received log config: " log-config)
+    ;; merge log configs together
+    (let [loggers (.get_named_logger_level log-config)
+          logger-context (LogManager/getContext false)]
+      (def new-log-configs
+        (into {}
+         ;; merge named log levels
+         (for [[msg-logger-name logger-level] loggers]
+           (let [logger-name (if (= msg-logger-name "ROOT")
+                                LogManager/ROOT_LOGGER_NAME
+                                msg-logger-name)]
+             ;; the new-timeouts map now contains logger => timeout 
+             (when (.is_set_reset_log_level_timeout_epoch logger-level)
+               {logger-name {:action (.get_action logger-level)
+                             :target-log-level (Level/toLevel (.get_target_log_level logger-level))
+                             :reset-log-level (or (.get @original-log-levels logger-name) (Level/INFO))
+                             :timeout (.get_reset_log_level_timeout_epoch logger-level)}})))))
+
+      ;; look for deleted log timeouts
+      (doseq [[logger-name logger-val] (sort @latest-log-config)]
+        (when (not (contains? new-log-configs logger-name))
+          ;; if we had a timeout, but the timeout is no longer active
+          (set-logger-level
+            logger-context logger-name (:reset-log-level logger-val))))
+
+      ;; apply new log settings we just received
+      ;; the merged configs are only for the reset logic
+      (doseq [[msg-logger-name logger-level] (sort (into {} (.get_named_logger_level log-config)))]
+        (let [logger-name (if (= msg-logger-name "ROOT")
+                                LogManager/ROOT_LOGGER_NAME
+                                msg-logger-name)
+              level (Level/toLevel (.get_target_log_level logger-level))
+              action (.get_action logger-level)]
+          (if (= action LogLevelAction/UPDATE)
+            (set-logger-level logger-context logger-name level))))
+   
+      (.updateLoggers logger-context)
+      (reset! latest-log-config new-log-configs)
+      (log-debug "New merged log config is " @latest-log-config))))
 
 ;; TODO: should worker even take the storm-id as input? this should be
 ;; deducable from cluster state (by searching through assignments)
@@ -451,7 +565,16 @@
   ;; because in local mode, its not a separate
   ;; process. supervisor will register it in this case
   (when (= :distributed (cluster-mode conf))
-    (touch (worker-pid-path conf worker-id (process-pid))))
+    (let [pid (process-pid)]
+      (touch (worker-pid-path conf worker-id pid))
+      (spit (worker-artifacts-pid-path conf storm-id port) pid)))
+
+  (declare establish-log-setting-callback)
+
+  ;; start out with empty list of timeouts 
+  (def latest-log-config (atom {}))
+  (def original-log-levels (atom {}))
+
   (let [storm-conf (read-supervisor-storm-conf conf storm-id)
         storm-conf (override-login-config-with-system-property storm-conf)
         acls (Utils/getWorkerACL storm-conf)
@@ -475,9 +598,10 @@
         _ (schedule-recurring (:heartbeat-timer worker) 0 (conf WORKER-HEARTBEAT-FREQUENCY-SECS) heartbeat-fn)
         _ (schedule-recurring (:executor-heartbeat-timer worker) 0 (conf TASK-HEARTBEAT-FREQUENCY-SECS) #(do-executor-heartbeats worker :executors @executors))
 
-        receive-thread-shutdown (launch-receive-thread worker)
+        _ (register-callbacks worker)
 
         refresh-connections (mk-refresh-connections worker)
+        refresh-load (mk-refresh-load worker)
 
         _ (refresh-connections nil)
 
@@ -513,9 +637,6 @@
                       ;; this will do best effort flushing since the linger period
                       ;; was set on creation
                       (.close socket))
-                    (log-message "Shutting down receive thread")
-                    (receive-thread-shutdown)
-                    (log-message "Shut down receive thread")
                     (log-message "Terminating messaging context")
                     (log-message "Shutting down executors")
                     (doseq [executor @executors] (.shutdown executor))
@@ -539,6 +660,7 @@
                     (cancel-timer (:refresh-active-timer worker))
                     (cancel-timer (:executor-heartbeat-timer worker))
                     (cancel-timer (:user-timer worker))
+                    (cancel-timer (:refresh-load-timer worker))
 
                     (close-resources worker)
 
@@ -559,6 +681,7 @@
                (and
                  (timer-waiting? (:heartbeat-timer worker))
                  (timer-waiting? (:refresh-connections-timer worker))
+                 (timer-waiting? (:refresh-load-timer worker))
                  (timer-waiting? (:refresh-credentials-timer worker))
                  (timer-waiting? (:refresh-active-timer worker))
                  (timer-waiting? (:executor-heartbeat-timer worker))
@@ -577,14 +700,29 @@
                                                  (let [throttle-on (.topology-backpressure (:storm-cluster-state worker) storm-id cb)]
                                                    (reset! (:throttle-on worker) throttle-on)))
                                       new-throttle-on (.topology-backpressure (:storm-cluster-state worker) storm-id callback)]
-                                    (reset! (:throttle-on worker) new-throttle-on)))]
+                                    (reset! (:throttle-on worker) new-throttle-on)))
+        check-log-config-changed (fn []
+                                  (let [log-config (.topology-log-config (:storm-cluster-state worker) storm-id nil)]
+                                    (process-log-config-change latest-log-config original-log-levels log-config)
+                                    (establish-log-setting-callback)))]
+    (reset! original-log-levels (get-logger-levels))
+    (log-message "Started with log levels: " @original-log-levels)
+  
+    (defn establish-log-setting-callback []
+      (.topology-log-config (:storm-cluster-state worker) storm-id (fn [args] (check-log-config-changed))))
+
+    (establish-log-setting-callback)
     (.credentials (:storm-cluster-state worker) storm-id (fn [args] (check-credentials-changed)))
     (schedule-recurring (:refresh-credentials-timer worker) 0 (conf TASK-CREDENTIALS-POLL-SECS)
                         (fn [& args]
                           (check-credentials-changed)
                           (if ((:storm-conf worker) TOPOLOGY-BACKPRESSURE-ENABLE)
                             (check-throttle-changed))))
+    ;; The jitter allows the clients to get the data at different times, and avoids thundering herd
+    (when-not (.get conf TOPOLOGY-DISABLE-LOADAWARE-MESSAGING)
+      (schedule-recurring-with-jitter (:refresh-load-timer worker) 0 1 500 refresh-load))
     (schedule-recurring (:refresh-connections-timer worker) 0 (conf TASK-REFRESH-POLL-SECS) refresh-connections)
+    (schedule-recurring (:reset-log-levels-timer worker) 0 (conf WORKER-LOG-LEVEL-RESET-POLL-SECS) (fn [] (reset-log-levels latest-log-config)))
     (schedule-recurring (:refresh-active-timer worker) 0 (conf TASK-REFRESH-POLL-SECS) (partial refresh-storm-active worker))
 
     (log-message "Worker has topology config " (redact-value (:storm-conf worker) STORM-ZOOKEEPER-TOPOLOGY-AUTH-PAYLOAD))

@@ -52,7 +52,7 @@ public class ZKStateStoreTest {
     @Test
     public void testStoreReadWrite() {
 
-        Partition testPartition = new Partition(new Broker("localhost", 9100), 1);
+        Partition testPartition = new Partition(new Broker("localhost", 9100), "testTopic", 1);
 
         Map broker = ImmutableMap.of("host", "kafka.sample.net", "port", 9100L);
         Map topology = ImmutableMap.of("id", "fce905ff-25e0 -409e-bc3a-d855f 787d13b", "name", "Test Topology");
