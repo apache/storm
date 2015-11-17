@@ -852,7 +852,7 @@
           gc-opts (substitute-childopts (if top-gc-opts top-gc-opts (conf WORKER-GC-CHILDOPTS)) worker-id storm-id port mem-onheap)
           topo-worker-logwriter-childopts (storm-conf TOPOLOGY-WORKER-LOGWRITER-CHILDOPTS)
           user (storm-conf TOPOLOGY-SUBMITTER-USER)
-          logfilename "worker.log"
+          logfilename (logs-filename storm-id port)
           workers-artifacts (worker-artifacts-root conf)
           logging-sensitivity (storm-conf TOPOLOGY-LOGGING-SENSITIVITY "S3")
           worker-childopts (when-let [s (conf WORKER-CHILDOPTS)]
