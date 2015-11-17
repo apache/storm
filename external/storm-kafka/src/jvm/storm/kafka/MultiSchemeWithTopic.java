@@ -17,32 +17,11 @@
  */
 package storm.kafka;
 
-import backtype.storm.spout.MultiScheme;
-import backtype.storm.tuple.Fields;
-import backtype.storm.tuple.Values;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
-
 import java.nio.ByteBuffer;
-import java.util.Collections;
 import java.util.List;
 
-public class StringMultiSchemeWithTopic
-        implements MultiScheme {
-    public static final String STRING_SCHEME_KEY = "str";
+import backtype.storm.spout.MultiScheme;
 
-    public static final String TOPIC_KEY = "topic";
-
-    @Override
-    public Iterable<List<Object>> deserialize(ByteBuffer bytes) {
-        throw new NotImplementedException();
-    }
-
-    public Iterable<List<Object>> deserializeWithTopic(String topic, ByteBuffer bytes) {
-        List<Object> items = new Values(StringScheme.deserializeString(bytes), topic);
-        return Collections.singletonList(items);
-    }
-
-    public Fields getOutputFields() {
-        return new Fields(STRING_SCHEME_KEY, TOPIC_KEY);
-    }
+public interface MultiSchemeWithTopic extends MultiScheme {
+    public Iterable<List<Object>> deserializeWithTopic(String topic, ByteBuffer bytes);
 }
