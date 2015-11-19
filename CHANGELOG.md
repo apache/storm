@@ -1,4 +1,9 @@
 ## 0.11.0
+ * STORM-1204: Logviewer should graceful report page-not-found instead of 500 for bad topo-id etc
+ * STORM-831: Add BugTracker and Central Logging URL to UI
+ * STORM-1208: UI: NPE seen when aggregating bolt streams stats
+ * STORM-1016: Generate trident bolt ids with sorted group names
+ * STORM-1190: System Load too high after recent changes
  * STORM-1098: Nimbus hook for topology actions.
  * STORM-1145: Have IConnection push tuples instead of pull them
  * STORM-1191: bump timeout by 50% due to intermittent travis build failures
