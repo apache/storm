@@ -226,6 +226,7 @@
         <hadoop.version>2.6.0</hadoop.version>
         <kryo.version>2.21</kryo.version>
         <calcite.version>1.4.0-incubating</calcite.version>
+        <jackson.version>2.6.3</jackson.version>
     </properties>
 
     <profiles>
@@ -579,6 +580,11 @@
               <groupId>org.apache.calcite</groupId>
               <artifactId>calcite-core</artifactId>
               <version>${calcite.version}</version>
+            </dependency>
+            <dependency>
+              <groupId>com.fasterxml.jackson.core</groupId>
+              <artifactId>jackson-databind</artifactId>
+              <version>${jackson.version}</version>
             </dependency>
 			<!-- used by examples/storm-starter -->
 		    <dependency>
