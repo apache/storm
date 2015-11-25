@@ -183,7 +183,6 @@ public class KafkaBoltTest {
     }
 
     private KafkaBolt generateStringSerializerBolt() {
-        KafkaBolt bolt = new KafkaBolt();
         Properties props = new Properties();
         props.put("request.required.acks", "1");
         props.put("serializer.class", "kafka.serializer.StringEncoder");
@@ -191,14 +190,13 @@ public class KafkaBoltTest {
         props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         props.put("metadata.fetch.timeout.ms", 1000);
-        config.put(KafkaBolt.KAFKA_BROKER_PROPERTIES, props);
+        KafkaBolt bolt = new KafkaBolt().withProducerProperties(props);
         bolt.prepare(config, null, new OutputCollector(collector));
         bolt.setAsync(false);
         return bolt;
     }
 
     private KafkaBolt generateDefaultSerializerBolt(boolean async, boolean fireAndForget) {
-        KafkaBolt bolt = new KafkaBolt();
         Properties props = new Properties();
         props.put("request.required.acks", "1");
         props.put("serializer.class", "kafka.serializer.StringEncoder");
@@ -207,7 +205,7 @@ public class KafkaBoltTest {
         props.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
         props.put("metadata.fetch.timeout.ms", 1000);
         props.put("linger.ms", 0);
-        config.put(KafkaBolt.KAFKA_BROKER_PROPERTIES, props);
+        KafkaBolt bolt = new KafkaBolt().withProducerProperties(props);
         bolt.prepare(config, null, new OutputCollector(collector));
         bolt.setAsync(async);
         bolt.setFireAndForget(fireAndForget);
