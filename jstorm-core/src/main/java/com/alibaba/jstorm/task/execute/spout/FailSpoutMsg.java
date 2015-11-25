@@ -40,8 +40,7 @@ public class FailSpoutMsg implements IAckMsg {
     private TaskBaseMetric task_stats;
     private boolean isDebug = false;
 
-    public FailSpoutMsg(Object id, ISpout _spout, TupleInfo _tupleInfo,
-            TaskBaseMetric _task_stats, boolean _isDebug) {
+    public FailSpoutMsg(Object id, ISpout _spout, TupleInfo _tupleInfo, TaskBaseMetric _task_stats, boolean _isDebug) {
         this.id = id;
         this.spout = _spout;
         this.tupleInfo = _tupleInfo;
@@ -63,8 +62,7 @@ public class FailSpoutMsg implements IAckMsg {
         task_stats.spout_failed_tuple(tupleInfo.getStream());
 
         if (isDebug) {
-            LOG.info("Failed message rootId: {}, messageId:{} : {}", id,
-                    msg_id, tupleInfo.getValues().toString());
+            LOG.info("Failed message rootId: {}, messageId:{} : {}", id, msg_id, tupleInfo.getValues().toString());
         }
     }
 

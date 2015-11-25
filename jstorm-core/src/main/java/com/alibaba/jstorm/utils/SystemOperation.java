@@ -25,20 +25,16 @@ import org.slf4j.LoggerFactory;
 
 public class SystemOperation {
 
-    public static final Logger LOG = LoggerFactory
-            .getLogger(SystemOperation.class);
+    public static final Logger LOG = LoggerFactory.getLogger(SystemOperation.class);
 
     public static boolean isRoot() throws IOException {
         String result = SystemOperation.exec("echo $EUID").substring(0, 1);
-        return Integer.valueOf(result.substring(0, result.length())).intValue() == 0 ? true
-                : false;
+        return Integer.valueOf(result.substring(0, result.length())).intValue() == 0 ? true : false;
     };
 
-    public static void mount(String name, String target, String type,
-            String data) throws IOException {
+    public static void mount(String name, String target, String type, String data) throws IOException {
         StringBuilder sb = new StringBuilder();
-        sb.append("mount -t ").append(type).append(" -o ").append(data)
-                .append(" ").append(name).append(" ").append(target);
+        sb.append("mount -t ").append(type).append(" -o ").append(data).append(" ").append(name).append(" ").append(target);
         SystemOperation.exec(sb.toString());
     }
 
@@ -50,9 +46,7 @@ public class SystemOperation {
 
     public static String exec(String cmd) throws IOException {
         LOG.debug("Shell cmd: " + cmd);
-        Process process =
-                new ProcessBuilder(new String[] { "/bin/bash", "-c", cmd })
-                        .start();
+        Process process = new ProcessBuilder(new String[] { "/bin/bash", "-c", cmd }).start();
         try {
             process.waitFor();
             String output = IOUtils.toString(process.getInputStream());

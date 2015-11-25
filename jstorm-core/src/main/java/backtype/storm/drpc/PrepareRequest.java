@@ -28,7 +28,6 @@ import java.util.Map;
 import java.util.Random;
 import backtype.storm.utils.Utils;
 
-
 public class PrepareRequest extends BaseBasicBolt {
     public static final String ARGS_STREAM = Utils.DEFAULT_STREAM_ID;
     public static final String RETURN_STREAM = "ret";

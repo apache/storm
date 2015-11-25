@@ -21,19 +21,13 @@ import backtype.storm.generated.StreamInfo;
 import backtype.storm.topology.IComponent;
 import backtype.storm.topology.OutputFieldsGetter;
 import backtype.storm.tuple.Fields;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TDeserializer;
 import org.apache.thrift.TException;
 import org.apache.thrift.TSerializer;
 import org.jgrapht.DirectedGraph;
+
+import java.util.*;
 
 public class TridentUtils {
     public static Fields fieldsUnion(Fields... fields) {
@@ -74,7 +68,7 @@ public class TridentUtils {
         if(si.is_direct()) {
             throw new RuntimeException("Trident does not support direct streams");
         }
-        return new Fields(si.get_output_fields());        
+        return new Fields(si.get_output_fields());
     }
     
     /**

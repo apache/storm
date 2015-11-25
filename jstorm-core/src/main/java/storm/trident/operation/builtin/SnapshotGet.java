@@ -31,7 +31,7 @@ public class SnapshotGet extends BaseQueryFunction<ReadOnlySnapshottable, Object
     public List<Object> batchRetrieve(ReadOnlySnapshottable state, List<TridentTuple> args) {
         List<Object> ret = new ArrayList<Object>(args.size());
         Object snapshot = state.get();
-        for(int i=0; i<args.size(); i++) {
+        for (int i = 0; i < args.size(); i++) {
             ret.add(snapshot);
         }
         return ret;

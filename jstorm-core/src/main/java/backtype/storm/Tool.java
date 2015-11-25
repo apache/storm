@@ -58,13 +58,13 @@ package backtype.storm;
 
 public abstract class Tool {
     Config config;
-    
+
     public abstract int run(String[] args) throws Exception;
-    
+
     public Config getConf() {
         return config;
     }
-    
+
     public void setConf(Config config) {
         this.config = config;
     }

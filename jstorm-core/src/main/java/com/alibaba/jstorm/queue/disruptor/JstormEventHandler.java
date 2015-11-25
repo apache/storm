@@ -33,8 +33,7 @@ public class JstormEventHandler implements EventHandler {
     }
 
     @Override
-    public void onEvent(Object event, long sequence, boolean endOfBatch)
-            throws Exception {
+    public void onEvent(Object event, long sequence, boolean endOfBatch) throws Exception {
         long msgId = Long.parseLong(((JstormEvent) event).getMsgId());
         // if (msgId % size ==0) {
         // logger.warn("consumer msgId=" + msgId + ", seq=" + sequence);

@@ -39,8 +39,7 @@ import com.alibaba.jstorm.utils.Pair;
  * 
  */
 public class BatchDrainerRunable extends DisruptorRunable {
-    private final static Logger LOG = LoggerFactory
-            .getLogger(BatchDrainerRunable.class);
+    private final static Logger LOG = LoggerFactory.getLogger(BatchDrainerRunable.class);
 
     public BatchDrainerRunable(WorkerData workerData) {
         super(workerData.getSendingQueue(), MetricDef.BATCH_DRAINER_THREAD);
@@ -50,8 +49,7 @@ public class BatchDrainerRunable extends DisruptorRunable {
     @Override
     public void handleEvent(Object event, boolean endOfBatch) throws Exception {
 
-        Pair<IConnection, List<TaskMessage>> pair =
-                (Pair<IConnection, List<TaskMessage>>) event;
+        Pair<IConnection, List<TaskMessage>> pair = (Pair<IConnection, List<TaskMessage>>) event;
 
         pair.getFirst().send(pair.getSecond());
 

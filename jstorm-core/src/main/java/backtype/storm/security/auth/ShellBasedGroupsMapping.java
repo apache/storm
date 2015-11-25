@@ -31,15 +31,14 @@ import backtype.storm.utils.ShellUtils.ExitCodeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
-public class ShellBasedGroupsMapping implements
-                                             IGroupMappingServiceProvider {
+public class ShellBasedGroupsMapping implements IGroupMappingServiceProvider {
 
     public static Logger LOG = LoggerFactory.getLogger(ShellBasedGroupsMapping.class);
     public TimeCacheMap<String, Set<String>> cachedGroups;
 
     /**
      * Invoked once immediately after construction
+     * 
      * @param storm_conf Storm configuration
      */
     @Override
@@ -50,24 +49,24 @@ public class ShellBasedGroupsMapping implements
 
     /**
      * Returns list of groups for a user
-     *
+     * 
      * @param user get groups for this user
      * @return list of groups for a given user
      */
     @Override
     public Set<String> getGroups(String user) throws IOException {
-        if(cachedGroups.containsKey(user)) {
+        if (cachedGroups.containsKey(user)) {
             return cachedGroups.get(user);
         }
         Set<String> groups = getUnixGroups(user);
-        if(!groups.isEmpty())
-            cachedGroups.put(user,groups);
+        if (!groups.isEmpty())
+            cachedGroups.put(user, groups);
         return groups;
     }
 
     /**
-     * Get the current user's group list from Unix by running the command 'groups'
-     * NOTE. For non-existing user it will return EMPTY list
+     * Get the current user's group list from Unix by running the command 'groups' NOTE. For non-existing user it will return EMPTY list
+     * 
      * @param user user name
      * @return the groups set that the <code>user</code> belongs to
      * @throws IOException if encounter any error when running the command
@@ -82,8 +81,7 @@ public class ShellBasedGroupsMapping implements
             return new HashSet<String>();
         }
 
-        StringTokenizer tokenizer =
-            new StringTokenizer(result, ShellUtils.TOKEN_SEPARATOR_REGEX);
+        StringTokenizer tokenizer = new StringTokenizer(result, ShellUtils.TOKEN_SEPARATOR_REGEX);
         Set<String> groups = new HashSet<String>();
         while (tokenizer.hasMoreTokens()) {
             groups.add(tokenizer.nextToken());

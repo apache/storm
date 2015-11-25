@@ -22,14 +22,13 @@ import backtype.storm.tuple.Tuple;
 
 public final class TupleUtils {
 
-  private TupleUtils() {
-    // No instantiation
-  }
+    private TupleUtils() {
+        // No instantiation
+    }
 
-  public static boolean isTick(Tuple tuple) {
-    return tuple != null
-           && Constants.SYSTEM_COMPONENT_ID  .equals(tuple.getSourceComponent())
-           && Constants.SYSTEM_TICK_STREAM_ID.equals(tuple.getSourceStreamId());
-  }
+    public static boolean isTick(Tuple tuple) {
+        return tuple != null && Constants.SYSTEM_COMPONENT_ID.equals(tuple.getSourceComponent())
+                && Constants.SYSTEM_TICK_STREAM_ID.equals(tuple.getSourceStreamId());
+    }
 
 }

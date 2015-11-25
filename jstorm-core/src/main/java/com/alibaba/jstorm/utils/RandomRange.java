@@ -20,8 +20,7 @@ package com.alibaba.jstorm.utils;
 import java.util.ArrayList;
 
 /**
- * Shuffle the Range, This class is used in shuffle grouping, it is better than
- * random, which can't make sure balance.
+ * Shuffle the Range, This class is used in shuffle grouping, it is better than random, which can't make sure balance.
  * 
  * @author yannian
  * 

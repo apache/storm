@@ -23,15 +23,15 @@ import storm.trident.tuple.ComboList;
 
 public class GroupCollector implements TridentCollector {
     public List<Object> currGroup;
-    
+
     ComboList.Factory _factory;
     TridentCollector _collector;
-    
+
     public GroupCollector(TridentCollector collector, ComboList.Factory factory) {
         _factory = factory;
         _collector = collector;
     }
-    
+
     @Override
     public void emit(List<Object> values) {
         List[] delegates = new List[2];
@@ -44,5 +44,5 @@ public class GroupCollector implements TridentCollector {
     public void reportError(Throwable t) {
         _collector.reportError(t);
     }
-    
+
 }

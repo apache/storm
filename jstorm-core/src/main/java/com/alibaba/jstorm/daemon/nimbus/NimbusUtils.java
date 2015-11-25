@@ -17,53 +17,31 @@
  */
 package com.alibaba.jstorm.daemon.nimbus;
 
-import java.io.BufferedReader;
-import java.io.Closeable;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.security.InvalidParameterException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import backtype.storm.Config;
-import backtype.storm.generated.Bolt;
-import backtype.storm.generated.ComponentCommon;
-import backtype.storm.generated.NimbusStat;
-import backtype.storm.generated.NimbusSummary;
-import backtype.storm.generated.NotAliveException;
-import backtype.storm.generated.SpoutSpec;
-import backtype.storm.generated.StateSpoutSpec;
-import backtype.storm.generated.StormTopology;
-import backtype.storm.generated.SupervisorSummary;
-import backtype.storm.generated.TopologySummary;
+import backtype.storm.generated.*;
 import backtype.storm.utils.ThriftTopologyUtils;
 import backtype.storm.utils.Utils;
-
 import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.cluster.Cluster;
+import com.alibaba.jstorm.cluster.Common;
 import com.alibaba.jstorm.cluster.StormBase;
 import com.alibaba.jstorm.cluster.StormClusterState;
 import com.alibaba.jstorm.cluster.StormConfig;
 import com.alibaba.jstorm.daemon.supervisor.SupervisorInfo;
 import com.alibaba.jstorm.schedule.Assignment;
 import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
+import com.alibaba.jstorm.task.TaskInfo;
 import com.alibaba.jstorm.task.TkHbCacheTime;
-import com.alibaba.jstorm.task.heartbeat.TaskHeartbeat;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.PathUtils;
 import com.alibaba.jstorm.utils.TimeUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.security.InvalidParameterException;
+import java.util.*;
+import java.util.Map.Entry;
 
 public class NimbusUtils {
 
@@ -71,7 +49,6 @@ public class NimbusUtils {
 
     /**
      * add coustom KRYO serialization
-     * 
      */
     private static Map mapifySerializations(List sers) {
         Map rtn = new HashMap();
@@ -92,8 +69,6 @@ public class NimbusUtils {
     /**
      * Normalize stormConf
      * 
-     * 
-     * 
      * @param conf
      * @param stormConf
      * @param topology
@@ -101,8 +76,7 @@ public class NimbusUtils {
      * @throws Exception
      */
     @SuppressWarnings("rawtypes")
-    public static Map normalizeConf(Map conf, Map stormConf,
-            StormTopology topology) throws Exception {
+    public static Map normalizeConf(Map conf, Map stormConf, StormTopology topology) throws Exception {
 
         List kryoRegisterList = new ArrayList();
         List kryoDecoratorList = new ArrayList();
@@ -113,18 +87,14 @@ public class NimbusUtils {
 
         Object totalRegister = totalConf.get(Config.TOPOLOGY_KRYO_REGISTER);
         if (totalRegister != null) {
-            LOG.info("topology:" + stormConf.get(Config.TOPOLOGY_NAME)
-                    + ", TOPOLOGY_KRYO_REGISTER"
-                    + totalRegister.getClass().getName());
+            LOG.info("topology:" + stormConf.get(Config.TOPOLOGY_NAME) + ", TOPOLOGY_KRYO_REGISTER" + totalRegister.getClass().getName());
 
             JStormUtils.mergeList(kryoRegisterList, totalRegister);
         }
 
         Object totalDecorator = totalConf.get(Config.TOPOLOGY_KRYO_DECORATORS);
         if (totalDecorator != null) {
-            LOG.info("topology:" + stormConf.get(Config.TOPOLOGY_NAME)
-                    + ", TOPOLOGY_KRYO_DECORATOR"
-                    + totalDecorator.getClass().getName());
+            LOG.info("topology:" + stormConf.get(Config.TOPOLOGY_NAME) + ", TOPOLOGY_KRYO_DECORATOR" + totalDecorator.getClass().getName());
             JStormUtils.mergeList(kryoDecoratorList, totalDecorator);
         }
 
@@ -132,9 +102,7 @@ public class NimbusUtils {
         for (Iterator it = cids.iterator(); it.hasNext();) {
             String componentId = (String) it.next();
 
-            ComponentCommon common =
-                    ThriftTopologyUtils.getComponentCommon(topology,
-                            componentId);
+            ComponentCommon common = ThriftTopologyUtils.getComponentCommon(topology, componentId);
             String json = common.get_json_conf();
             if (json == null) {
                 continue;
@@ -150,24 +118,18 @@ public class NimbusUtils {
                 throw new Exception(sb.toString());
             }
 
-            Object componentKryoRegister =
-                    mtmp.get(Config.TOPOLOGY_KRYO_REGISTER);
+            Object componentKryoRegister = mtmp.get(Config.TOPOLOGY_KRYO_REGISTER);
 
             if (componentKryoRegister != null) {
-                LOG.info("topology:" + stormConf.get(Config.TOPOLOGY_NAME)
-                        + ", componentId:" + componentId
-                        + ", TOPOLOGY_KRYO_REGISTER"
+                LOG.info("topology:" + stormConf.get(Config.TOPOLOGY_NAME) + ", componentId:" + componentId + ", TOPOLOGY_KRYO_REGISTER"
                         + componentKryoRegister.getClass().getName());
 
                 JStormUtils.mergeList(kryoRegisterList, componentKryoRegister);
             }
 
-            Object componentDecorator =
-                    mtmp.get(Config.TOPOLOGY_KRYO_DECORATORS);
+            Object componentDecorator = mtmp.get(Config.TOPOLOGY_KRYO_DECORATORS);
             if (componentDecorator != null) {
-                LOG.info("topology:" + stormConf.get(Config.TOPOLOGY_NAME)
-                        + ", componentId:" + componentId
-                        + ", TOPOLOGY_KRYO_DECORATOR"
+                LOG.info("topology:" + stormConf.get(Config.TOPOLOGY_NAME) + ", componentId:" + componentId + ", TOPOLOGY_KRYO_DECORATOR"
                         + componentDecorator.getClass().getName());
                 JStormUtils.mergeList(kryoDecoratorList, componentDecorator);
             }
@@ -177,25 +139,23 @@ public class NimbusUtils {
         Map kryoRegisterMap = mapifySerializations(kryoRegisterList);
         List decoratorList = JStormUtils.distinctList(kryoDecoratorList);
 
-        Integer ackerNum =
-                JStormUtils.parseInt(totalConf
-                        .get(Config.TOPOLOGY_ACKER_EXECUTORS));
+        Integer ackerNum = JStormUtils.parseInt(totalConf.get(Config.TOPOLOGY_ACKER_EXECUTORS));
         if (ackerNum == null) {
             ackerNum = Integer.valueOf(1);
         }
 
         Map rtn = new HashMap();
+        //ensure to be cluster_mode
+        rtn.put(Config.STORM_CLUSTER_MODE, conf.get(Config.STORM_CLUSTER_MODE));
         rtn.putAll(stormConf);
-        rtn.put(Config.TOPOLOGY_KRYO_DECORATORS, decoratorList);
+		rtn.put(Config.TOPOLOGY_KRYO_DECORATORS, decoratorList);
         rtn.put(Config.TOPOLOGY_KRYO_REGISTER, kryoRegisterMap);
         rtn.put(Config.TOPOLOGY_ACKER_EXECUTORS, ackerNum);
-        rtn.put(Config.TOPOLOGY_MAX_TASK_PARALLELISM,
-                totalConf.get(Config.TOPOLOGY_MAX_TASK_PARALLELISM));
+        rtn.put(Config.TOPOLOGY_MAX_TASK_PARALLELISM, totalConf.get(Config.TOPOLOGY_MAX_TASK_PARALLELISM));
         return rtn;
     }
 
-    public static Integer componentParalism(Map stormConf,
-            ComponentCommon common) {
+    public static Integer componentParalism(Map stormConf, ComponentCommon common) {
         Map mergeMap = new HashMap();
         mergeMap.putAll(stormConf);
 
@@ -223,8 +183,7 @@ public class NimbusUtils {
         // }
         // }
 
-        Object maxTaskParalismObject =
-                mergeMap.get(Config.TOPOLOGY_MAX_TASK_PARALLELISM);
+        Object maxTaskParalismObject = mergeMap.get(Config.TOPOLOGY_MAX_TASK_PARALLELISM);
         if (maxTaskParalismObject == null) {
             return taskNum;
         } else {
@@ -239,24 +198,19 @@ public class NimbusUtils {
      * finalize component's task paralism
      * 
      * @param topology
-     * @param fromConf means if the paralism is read from conf file instead of
-     *            reading from topology code
+     * @param fromConf means if the paralism is read from conf file instead of reading from topology code
      * @return
      */
-    public static StormTopology normalizeTopology(Map stormConf,
-            StormTopology topology, boolean fromConf) {
+    public static StormTopology normalizeTopology(Map stormConf, StormTopology topology, boolean fromConf) {
         StormTopology ret = topology.deepCopy();
 
-        Map<String, Object> rawComponents =
-                ThriftTopologyUtils.getComponents(topology);
+        Map<String, Object> rawComponents = ThriftTopologyUtils.getComponents(topology);
 
         Map<String, Object> components = ThriftTopologyUtils.getComponents(ret);
 
         if (rawComponents.keySet().equals(components.keySet()) == false) {
-            String errMsg =
-                    "Failed to normalize topology binary, maybe due to wrong dependency";
-            LOG.info(errMsg + " raw components:" + rawComponents.keySet()
-                    + ", normalized " + components.keySet());
+            String errMsg = "Failed to normalize topology binary, maybe due to wrong dependency";
+            LOG.info(errMsg + " raw components:" + rawComponents.keySet() + ", normalized " + components.keySet());
 
             throw new InvalidParameterException(errMsg);
         }
@@ -269,9 +223,7 @@ public class NimbusUtils {
             if (component instanceof Bolt) {
                 common = ((Bolt) component).get_common();
                 if (fromConf) {
-                    Integer paraNum =
-                            ConfigExtension.getBoltParallelism(stormConf,
-                                    componentName);
+                    Integer paraNum = ConfigExtension.getBoltParallelism(stormConf, componentName);
                     if (paraNum != null) {
                         LOG.info("Set " + componentName + " as " + paraNum);
                         common.set_parallelism_hint(paraNum);
@@ -281,9 +233,7 @@ public class NimbusUtils {
             if (component instanceof SpoutSpec) {
                 common = ((SpoutSpec) component).get_common();
                 if (fromConf) {
-                    Integer paraNum =
-                            ConfigExtension.getSpoutParallelism(stormConf,
-                                    componentName);
+                    Integer paraNum = ConfigExtension.getSpoutParallelism(stormConf, componentName);
                     if (paraNum != null) {
                         LOG.info("Set " + componentName + " as " + paraNum);
                         common.set_parallelism_hint(paraNum);
@@ -293,9 +243,7 @@ public class NimbusUtils {
             if (component instanceof StateSpoutSpec) {
                 common = ((StateSpoutSpec) component).get_common();
                 if (fromConf) {
-                    Integer paraNum =
-                            ConfigExtension.getSpoutParallelism(stormConf,
-                                    componentName);
+                    Integer paraNum = ConfigExtension.getSpoutParallelism(stormConf, componentName);
                     if (paraNum != null) {
                         LOG.info("Set " + componentName + " as " + paraNum);
                         common.set_parallelism_hint(paraNum);
@@ -307,8 +255,7 @@ public class NimbusUtils {
 
             String jsonConfString = common.get_json_conf();
             if (jsonConfString != null) {
-                componentMap
-                        .putAll((Map) JStormUtils.from_json(jsonConfString));
+                componentMap.putAll((Map) JStormUtils.from_json(jsonConfString));
             }
 
             Integer taskNum = componentParalism(stormConf, common);
@@ -328,20 +275,16 @@ public class NimbusUtils {
      * clean the topology which is in ZK but not in local dir
      * 
      * @throws Exception
-     * 
      */
-    public static void cleanupCorruptTopologies(NimbusData data)
-            throws Exception {
+    public static void cleanupCorruptTopologies(NimbusData data) throws Exception {
 
         StormClusterState stormClusterState = data.getStormClusterState();
 
         // get /local-storm-dir/nimbus/stormdist path
-        String master_stormdist_root =
-                StormConfig.masterStormdistRoot(data.getConf());
+        String master_stormdist_root = StormConfig.masterStormdistRoot(data.getConf());
 
         // listdir /local-storm-dir/nimbus/stormdist
-        List<String> code_ids =
-                PathUtils.read_dir_contents(master_stormdist_root);
+        List<String> code_ids = PathUtils.read_dir_contents(master_stormdist_root);
 
         // get topology in ZK /storms
         List<String> active_ids = data.getStormClusterState().active_storms();
@@ -352,9 +295,7 @@ public class NimbusUtils {
             }
 
             for (String corrupt : active_ids) {
-                LOG.info("Corrupt topology "
-                        + corrupt
-                        + " has state on zookeeper but doesn't have a local dir on Nimbus. Cleaning up...");
+                LOG.info("Corrupt topology " + corrupt + " has state on zookeeper but doesn't have a local dir on Nimbus. Cleaning up...");
 
                 /**
                  * Just removing the /STORMS is enough
@@ -368,53 +309,47 @@ public class NimbusUtils {
 
     }
 
-    public static boolean isTaskDead(NimbusData data, String topologyId,
-            Integer taskId) {
+    public static boolean isTaskDead(NimbusData data, String topologyId, Integer taskId) {
         String idStr = " topology:" + topologyId + ",taskid:" + taskId;
 
-        Integer zkReportTime = null;
+        TopologyTaskHbInfo topoTasksHbInfo = data.getTasksHeartbeat().get(topologyId);
+        Map<Integer, TaskHeartbeat> taskHbMap = null;
+        Integer taskReportTime = null;
 
-        StormClusterState stormClusterState = data.getStormClusterState();
-        TaskHeartbeat zkTaskHeartbeat = null;
-        try {
-            zkTaskHeartbeat =
-                    stormClusterState.task_heartbeat(topologyId, taskId);
-            if (zkTaskHeartbeat != null) {
-                zkReportTime = zkTaskHeartbeat.getTimeSecs();
+        if (topoTasksHbInfo != null) {
+            taskHbMap = topoTasksHbInfo.get_taskHbs();
+            if (taskHbMap != null) {
+                TaskHeartbeat tHb = taskHbMap.get(taskId);
+                taskReportTime = ((tHb != null ) ? tHb.get_time() : null);
             }
-        } catch (Exception e) {
-            LOG.error("Failed to get ZK task hearbeat " + idStr, e);
         }
 
-        Map<Integer, TkHbCacheTime> taskHBs =
-                data.getTaskHeartbeatsCache(topologyId, true);
+        Map<Integer, TkHbCacheTime> taskHBs = data.getTaskHeartbeatsCache(topologyId, true);
 
         TkHbCacheTime taskHB = taskHBs.get(taskId);
         if (taskHB == null) {
             LOG.info("No task heartbeat cache " + idStr);
 
-            if (zkTaskHeartbeat == null) {
-                LOG.info("No ZK task hearbeat " + idStr);
+            if (topoTasksHbInfo == null || taskHbMap == null) {
+                LOG.info("No task hearbeat was reported for " + idStr);
                 return true;
             }
 
             taskHB = new TkHbCacheTime();
-            taskHB.update(zkTaskHeartbeat);
+            taskHB.update(taskHbMap.get(taskId));
 
             taskHBs.put(taskId, taskHB);
 
             return false;
         }
 
-        if (zkReportTime == null) {
-            LOG.debug("No ZK task heartbeat " + idStr);
+        if (taskReportTime == null || taskReportTime < taskHB.getTaskAssignedTime()) {
+            LOG.debug("No task heartbeat was reported for " + idStr);
             // Task hasn't finish init
             int nowSecs = TimeUtils.current_time_secs();
             int assignSecs = taskHB.getTaskAssignedTime();
 
-            int waitInitTimeout =
-                    JStormUtils.parseInt(data.getConf().get(
-                            Config.NIMBUS_TASK_LAUNCH_SECS));
+            int waitInitTimeout = JStormUtils.parseInt(data.getConf().get(Config.NIMBUS_TASK_LAUNCH_SECS));
 
             if (nowSecs - assignSecs > waitInitTimeout) {
                 LOG.info(idStr + " failed to init ");
@@ -433,30 +368,29 @@ public class NimbusUtils {
         int nowSecs = TimeUtils.current_time_secs();
         if (nimbusTime == 0) {
             // taskHB no entry, first time
-            // update taskHB
+            // update taskHBtaskReportTime
             taskHB.setNimbusTime(nowSecs);
-            taskHB.setTaskReportedTime(zkReportTime);
+            taskHB.setTaskReportedTime(taskReportTime);
 
             LOG.info("Update taskheartbeat to nimbus cache " + idStr);
             return false;
         }
 
-        if (reportTime != zkReportTime.intValue()) {
+        if (reportTime != taskReportTime.intValue()) {
             // zk has been updated the report time
             taskHB.setNimbusTime(nowSecs);
-            taskHB.setTaskReportedTime(zkReportTime);
+            taskHB.setTaskReportedTime(taskReportTime);
 
-            LOG.debug(idStr + ",nimbusTime " + nowSecs + ",zkReport:"
-                    + zkReportTime + ",report:" + reportTime);
+            LOG.debug(idStr + ",nimbusTime " + nowSecs + ",zkReport:" + taskReportTime + ",report:" + reportTime);
             return false;
         }
 
         // the following is (zkReportTime == reportTime)
         Integer taskHBTimeout = data.getTopologyTaskTimeout().get(topologyId);
         if (taskHBTimeout == null)
-            taskHBTimeout =
-                    JStormUtils.parseInt(data.getConf().get(
-                            Config.NIMBUS_TASK_TIMEOUT_SECS));
+            taskHBTimeout = JStormUtils.parseInt(data.getConf().get(Config.NIMBUS_TASK_TIMEOUT_SECS));
+        if (taskId == topoTasksHbInfo.get_topologyMasterId())
+            taskHBTimeout = (taskHBTimeout / 2);
         if (nowSecs - nimbusTime > taskHBTimeout) {
             // task is dead
             long ts = ((long) nimbusTime) * 1000;
@@ -470,7 +404,7 @@ public class NimbusUtils {
             sb.append(",current ");
             sb.append(nowSecs);
             sb.append(":").append(new Date(((long) nowSecs) * 1000));
-            LOG.info(sb.toString());
+            LOG.debug(sb.toString());
             return true;
         }
 
@@ -478,13 +412,10 @@ public class NimbusUtils {
 
     }
 
-    public static void updateTaskHbStartTime(NimbusData data,
-            Assignment assignment, String topologyId) {
-        Map<Integer, TkHbCacheTime> taskHBs =
-                data.getTaskHeartbeatsCache(topologyId, true);
+    public static void updateTaskHbStartTime(NimbusData data, Assignment assignment, String topologyId) {
+        Map<Integer, TkHbCacheTime> taskHBs = data.getTaskHeartbeatsCache(topologyId, true);
 
-        Map<Integer, Integer> taskStartTimes =
-                assignment.getTaskStartTimeSecs();
+        Map<Integer, Integer> taskStartTimes = assignment.getTaskStartTimeSecs();
         for (Entry<Integer, Integer> entry : taskStartTimes.entrySet()) {
             Integer taskId = entry.getKey();
             Integer taskStartTime = entry.getValue();
@@ -501,25 +432,19 @@ public class NimbusUtils {
         return;
     }
 
-    public static <T> void transitionName(NimbusData data, String topologyName,
-            boolean errorOnNoTransition, StatusType transition_status,
-            T... args) throws Exception {
+    public static <T> void transitionName(NimbusData data, String topologyName, boolean errorOnNoTransition, StatusType transition_status, T... args)
+            throws Exception {
         StormClusterState stormClusterState = data.getStormClusterState();
-        String topologyId =
-                Cluster.get_topology_id(stormClusterState, topologyName);
+        String topologyId = Cluster.get_topology_id(stormClusterState, topologyName);
         if (topologyId == null) {
             throw new NotAliveException(topologyName);
         }
-        transition(data, topologyId, errorOnNoTransition, transition_status,
-                args);
+        transition(data, topologyId, errorOnNoTransition, transition_status, args);
     }
 
-    public static <T> void transition(NimbusData data, String topologyid,
-            boolean errorOnNoTransition, StatusType transition_status,
-            T... args) {
+    public static <T> void transition(NimbusData data, String topologyid, boolean errorOnNoTransition, StatusType transition_status, T... args) {
         try {
-            data.getStatusTransition().transition(topologyid,
-                    errorOnNoTransition, transition_status, args);
+            data.getStatusTransition().transition(topologyid, errorOnNoTransition, transition_status, args);
         } catch (Exception e) {
             // TODO Auto-generated catch block
             LOG.error("Failed to do status transition,", e);
@@ -535,22 +460,17 @@ public class NimbusUtils {
         return numTasks;
     }
 
-    public static List<TopologySummary> getTopologySummary(
-            StormClusterState stormClusterState,
-            Map<String, Assignment> assignments) throws Exception {
-        List<TopologySummary> topologySummaries =
-                new ArrayList<TopologySummary>();
+    public static List<TopologySummary> getTopologySummary(StormClusterState stormClusterState, Map<String, Assignment> assignments) throws Exception {
+        List<TopologySummary> topologySummaries = new ArrayList<TopologySummary>();
 
         // get all active topology's StormBase
-        Map<String, StormBase> bases =
-                Cluster.get_all_StormBase(stormClusterState);
+        Map<String, StormBase> bases = Cluster.get_all_StormBase(stormClusterState);
         for (Entry<String, StormBase> entry : bases.entrySet()) {
 
             String topologyId = entry.getKey();
             StormBase base = entry.getValue();
 
-            Assignment assignment =
-                    stormClusterState.assignment_info(topologyId, null);
+            Assignment assignment = stormClusterState.assignment_info(topologyId, null);
             if (assignment == null) {
                 LOG.error("Failed to get assignment of " + topologyId);
                 continue;
@@ -571,11 +491,10 @@ public class NimbusUtils {
             topology.set_id(topologyId);
             topology.set_name(base.getStormName());
             topology.set_status(base.getStatusString());
-            topology.set_uptime_secs(TimeUtils.time_delta(base
-                    .getLanchTimeSecs()));
-            topology.set_num_workers(num_workers);
-            topology.set_num_tasks(num_tasks);
-            topology.set_error_info(errorString);
+            topology.set_uptimeSecs(TimeUtils.time_delta(base.getLanchTimeSecs()));
+            topology.set_numWorkers(num_workers);
+            topology.set_numTasks(num_tasks);
+            topology.set_errorInfo(errorString);
 
             topologySummaries.add(topology);
 
@@ -584,34 +503,26 @@ public class NimbusUtils {
         return topologySummaries;
     }
 
-    public static SupervisorSummary mkSupervisorSummary(
-            SupervisorInfo supervisorInfo, String supervisorId,
-            Map<String, Integer> supervisorToUsedSlotNum) {
+    public static SupervisorSummary mkSupervisorSummary(SupervisorInfo supervisorInfo, String supervisorId, Map<String, Integer> supervisorToUsedSlotNum) {
         Integer usedNum = supervisorToUsedSlotNum.get(supervisorId);
 
         SupervisorSummary summary =
-                new SupervisorSummary(supervisorInfo.getHostName(),
-                        supervisorId, supervisorInfo.getUptimeSecs(),
-                        supervisorInfo.getWorkerPorts().size(),
+                new SupervisorSummary(supervisorInfo.getHostName(), supervisorId, supervisorInfo.getUptimeSecs(), supervisorInfo.getWorkerPorts().size(),
                         usedNum == null ? 0 : usedNum);
 
         return summary;
     }
 
-    public static List<SupervisorSummary> mkSupervisorSummaries(
-            Map<String, SupervisorInfo> supervisorInfos,
-            Map<String, Assignment> assignments) {
+    public static List<SupervisorSummary> mkSupervisorSummaries(Map<String, SupervisorInfo> supervisorInfos, Map<String, Assignment> assignments) {
 
-        Map<String, Integer> supervisorToLeftSlotNum =
-                new HashMap<String, Integer>();
+        Map<String, Integer> supervisorToLeftSlotNum = new HashMap<String, Integer>();
         for (Entry<String, Assignment> entry : assignments.entrySet()) {
             Set<ResourceWorkerSlot> workers = entry.getValue().getWorkers();
 
             for (ResourceWorkerSlot worker : workers) {
 
                 String supervisorId = worker.getNodeId();
-                SupervisorInfo supervisorInfo =
-                        supervisorInfos.get(supervisorId);
+                SupervisorInfo supervisorInfo = supervisorInfos.get(supervisorId);
                 if (supervisorInfo == null) {
                     continue;
                 }
@@ -629,9 +540,7 @@ public class NimbusUtils {
             String supervisorId = entry.getKey();
             SupervisorInfo supervisorInfo = entry.getValue();
 
-            SupervisorSummary summary =
-                    mkSupervisorSummary(supervisorInfo, supervisorId,
-                            supervisorToLeftSlotNum);
+            SupervisorSummary summary = mkSupervisorSummary(supervisorInfo, supervisorId, supervisorToLeftSlotNum);
 
             ret.add(summary);
         }
@@ -648,27 +557,24 @@ public class NimbusUtils {
         return ret;
     }
 
-    public static NimbusSummary getNimbusSummary(
-            StormClusterState stormClusterState,
-            List<SupervisorSummary> supervisorSummaries, NimbusData data)
+    public static NimbusSummary getNimbusSummary(StormClusterState stormClusterState, List<SupervisorSummary> supervisorSummaries, NimbusData data)
             throws Exception {
         NimbusSummary ret = new NimbusSummary();
 
         String master = stormClusterState.get_leader_host();
         NimbusStat nimbusMaster = new NimbusStat();
         nimbusMaster.set_host(master);
-        nimbusMaster.set_uptime_secs(String.valueOf(data.uptime()));
-        ret.set_nimbus_master(nimbusMaster);
+        nimbusMaster.set_uptimeSecs(String.valueOf(data.uptime()));
+        ret.set_nimbusMaster(nimbusMaster);
 
         List<NimbusStat> nimbusSlaveList = new ArrayList<NimbusStat>();
-        ret.set_nimbus_slaves(nimbusSlaveList);
-        Map<String, String> nimbusSlaveMap =
-                Cluster.get_all_nimbus_slave(stormClusterState);
+        ret.set_nimbusSlaves(nimbusSlaveList);
+        Map<String, String> nimbusSlaveMap = Cluster.get_all_nimbus_slave(stormClusterState);
         if (nimbusSlaveMap != null) {
             for (Entry<String, String> entry : nimbusSlaveMap.entrySet()) {
                 NimbusStat slave = new NimbusStat();
                 slave.set_host(entry.getKey());
-                slave.set_uptime_secs(entry.getValue());
+                slave.set_uptimeSecs(entry.getValue());
 
                 nimbusSlaveList.add(slave);
             }
@@ -678,46 +584,75 @@ public class NimbusUtils {
         int usedPort = 0;
 
         for (SupervisorSummary supervisor : supervisorSummaries) {
-            totalPort += supervisor.get_num_workers();
-            usedPort += supervisor.get_num_used_workers();
+            totalPort += supervisor.get_numWorkers();
+            usedPort += supervisor.get_numUsedWorkers();
         }
 
-        ret.set_supervisor_num(supervisorSummaries.size());
-        ret.set_total_port_num(totalPort);
-        ret.set_used_port_num(usedPort);
-        ret.set_free_port_num(totalPort - usedPort);
+        ret.set_supervisorNum(supervisorSummaries.size());
+        ret.set_totalPortNum(totalPort);
+        ret.set_usedPortNum(usedPort);
+        ret.set_freePortNum(totalPort - usedPort);
         ret.set_version(Utils.getVersion());
 
         return ret;
 
     }
 
-    public static void updateTopologyTaskTimeout(NimbusData data,
-            String topologyId) {
+    public static void updateTopologyTaskTimeout(NimbusData data, String topologyId) {
         Map topologyConf = null;
         try {
-            topologyConf =
-                    StormConfig.read_nimbus_topology_conf(data.getConf(),
-                            topologyId);
+            topologyConf = StormConfig.read_nimbus_topology_conf(data.getConf(), topologyId);
         } catch (IOException e) {
-            LOG.warn("Failed to read configuration of " + topologyId + ", "
-                    + e.getMessage());
+            LOG.warn("Failed to read configuration of " + topologyId + ", " + e.getMessage());
         }
 
-        Integer timeout =
-                JStormUtils.parseInt(topologyConf
-                        .get(Config.NIMBUS_TASK_TIMEOUT_SECS));
+        Integer timeout = JStormUtils.parseInt(topologyConf.get(Config.NIMBUS_TASK_TIMEOUT_SECS));
         if (timeout == null) {
-            timeout =
-                    JStormUtils.parseInt(data.getConf().get(
-                            Config.NIMBUS_TASK_TIMEOUT_SECS));
+            timeout = JStormUtils.parseInt(data.getConf().get(Config.NIMBUS_TASK_TIMEOUT_SECS));
         }
         LOG.info("Setting taskTimeout:" + timeout + " for " + topologyId);
         data.getTopologyTaskTimeout().put(topologyId, timeout);
     }
 
-    public static void removeTopologyTaskTimeout(NimbusData data,
-            String topologyId) {
+    public static void removeTopologyTaskTimeout(NimbusData data, String topologyId) {
         data.getTopologyTaskTimeout().remove(topologyId);
+    }
+
+    public static void updateTopologyTaskHb(NimbusData data, String topologyId) {
+        StormClusterState clusterState = data.getStormClusterState();
+        TopologyTaskHbInfo topologyTaskHb = null;
+
+        try {
+            topologyTaskHb = clusterState.topology_heartbeat(topologyId);
+        } catch (Exception e) {
+            LOG.error("updateTopologyTaskHb: Failed to get topology task heartbeat info", e);
+        }
+
+        if (topologyTaskHb != null) {
+            data.getTasksHeartbeat().put(topologyId, topologyTaskHb);
+        }
+    }
+
+    public static void removeTopologyTaskHb(NimbusData data, String topologyId, int taskId) {
+        TopologyTaskHbInfo topologyTaskHbs = data.getTasksHeartbeat().get(topologyId);
+
+        if (topologyTaskHbs != null) {
+            Map<Integer, TaskHeartbeat> taskHbs = topologyTaskHbs.get_taskHbs();
+            if (taskHbs != null) {
+                taskHbs.remove(taskId);
+            }
+        }
+    }
+
+    public static int getTopologyMasterId(Map<Integer, TaskInfo> tasksInfo) {
+        int ret = 0;
+        for (Entry<Integer, TaskInfo> entry : tasksInfo.entrySet()) {
+            if (entry.getValue().getComponentId().equalsIgnoreCase(Common.TOPOLOGY_MASTER_COMPONENT_ID)) {
+                ret = entry.getKey();
+                break;
+            }
+        }
+
+        return ret;
     }
 }

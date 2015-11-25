@@ -24,7 +24,7 @@ public class CountMetric implements IMetric {
 
     public CountMetric() {
     }
-    
+
     public void incr() {
         _value++;
     }

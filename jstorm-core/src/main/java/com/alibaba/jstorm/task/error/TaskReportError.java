@@ -34,8 +34,7 @@ public class TaskReportError implements ITaskReportErr {
     private String topology_id;
     private int task_id;
 
-    public TaskReportError(StormClusterState _storm_cluster_state,
-            String _topology_id, int _task_id) {
+    public TaskReportError(StormClusterState _storm_cluster_state, String _topology_id, int _task_id) {
         this.zkCluster = _storm_cluster_state;
         this.topology_id = _topology_id;
         this.task_id = _task_id;
@@ -44,16 +43,23 @@ public class TaskReportError implements ITaskReportErr {
     @Override
     public void report(Throwable error) {
 
-        LOG.error("Report error to /ZK/taskerrors/" + topology_id + "/"
-                + task_id + "\n", error);
+        LOG.error("Report error to /ZK/taskerrors/" + topology_id + "/" + task_id + "\n", error);
         try {
             zkCluster.report_task_error(topology_id, task_id, error);
         } catch (Exception e) {
             // TODO Auto-generated catch block
-            LOG.error("Failed update error to /ZK/taskerrors/" + topology_id
-                    + "/" + task_id + "\n", e);
+            LOG.error("Failed update error to /ZK/taskerrors/" + topology_id + "/" + task_id + "\n", e);
         }
-
     }
 
+    @Override
+    public void report(String error) {
+
+        LOG.error("Report error to /ZK/taskerrors/" + topology_id + "/" + task_id + ": " + error);
+        try {
+            zkCluster.report_task_error(topology_id, task_id, error, null);
+        } catch (Exception e) {
+            LOG.error("Failed update error to /ZK/taskerrors/" + topology_id + "/" + task_id + "\n", e);
+        }
+    }
 }

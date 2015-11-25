@@ -26,88 +26,88 @@ import backtype.storm.messaging.TaskMessage;
 
 public class TransferDrainer {
 
-  private HashMap<String, ArrayList<ArrayList<TaskMessage>>> bundles = new HashMap();
-  
-  public void add(HashMap<String, ArrayList<TaskMessage>> workerTupleSetMap) {
-    for (String key : workerTupleSetMap.keySet()) {
-      
-      ArrayList<ArrayList<TaskMessage>> bundle = bundles.get(key);
-      if (null == bundle) {
-        bundle = new ArrayList<ArrayList<TaskMessage>>();
-        bundles.put(key, bundle);
-      }
-      
-      ArrayList tupleSet = workerTupleSetMap.get(key);
-      if (null != tupleSet && tupleSet.size() > 0) {
-        bundle.add(tupleSet);
-      }
-    } 
-  }
-  
-  public void send(HashMap<String, IConnection> connections) {
-    for (String hostPort : bundles.keySet()) {
-      IConnection connection = connections.get(hostPort);
-      if (null != connection) { 
-        ArrayList<ArrayList<TaskMessage>> bundle = bundles.get(hostPort);
-        for (ArrayList<TaskMessage> list : bundle) {
-            connection.send(list);
+    private HashMap<String, ArrayList<ArrayList<TaskMessage>>> bundles = new HashMap();
+
+    public void add(HashMap<String, ArrayList<TaskMessage>> workerTupleSetMap) {
+        for (String key : workerTupleSetMap.keySet()) {
+
+            ArrayList<ArrayList<TaskMessage>> bundle = bundles.get(key);
+            if (null == bundle) {
+                bundle = new ArrayList<ArrayList<TaskMessage>>();
+                bundles.put(key, bundle);
+            }
+
+            ArrayList tupleSet = workerTupleSetMap.get(key);
+            if (null != tupleSet && tupleSet.size() > 0) {
+                bundle.add(tupleSet);
+            }
         }
-        
-      }
-    } 
-  }
-  
-  private Iterator<TaskMessage> getBundleIterator(final ArrayList<ArrayList<TaskMessage>> bundle) {
-    
-    if (null == bundle) {
-      return null;
     }
-    
-    return new Iterator<TaskMessage> () {
-      
-      private int offset = 0;
-      private int size = 0;
-      {
-        for (ArrayList<TaskMessage> list : bundle) {
-            size += list.size();
-        }
-      }
-      
-      private int bundleOffset = 0;
-      private Iterator<TaskMessage> iter = bundle.get(bundleOffset).iterator();
-      
-      @Override
-      public boolean hasNext() {
-        if (offset < size) {
-          return true;
-        }
-        return false;
-      }
 
-      @Override
-      public TaskMessage next() {
-        TaskMessage msg = null;
-        if (iter.hasNext()) {
-          msg = iter.next(); 
-        } else {
-          bundleOffset++;
-          iter = bundle.get(bundleOffset).iterator();
-          msg = iter.next();
-        }
-        if (null != msg) {
-          offset++;
-        }
-        return msg;
-      }
+    public void send(HashMap<String, IConnection> connections) {
+        for (String hostPort : bundles.keySet()) {
+            IConnection connection = connections.get(hostPort);
+            if (null != connection) {
+                ArrayList<ArrayList<TaskMessage>> bundle = bundles.get(hostPort);
+                for (ArrayList<TaskMessage> list : bundle) {
+                    connection.send(list);
+                }
 
-      @Override
-      public void remove() {
-        throw new RuntimeException("not supported");
-      }
-    };
-  }
-  
-  public void clear() {
-    bundles.clear();
-  }
+            }
+        }
+    }
+
+    private Iterator<TaskMessage> getBundleIterator(final ArrayList<ArrayList<TaskMessage>> bundle) {
+
+        if (null == bundle) {
+            return null;
+        }
+
+        return new Iterator<TaskMessage>() {
+
+            private int offset = 0;
+            private int size = 0;
+            {
+                for (ArrayList<TaskMessage> list : bundle) {
+                    size += list.size();
+                }
+            }
+
+            private int bundleOffset = 0;
+            private Iterator<TaskMessage> iter = bundle.get(bundleOffset).iterator();
+
+            @Override
+            public boolean hasNext() {
+                if (offset < size) {
+                    return true;
+                }
+                return false;
+            }
+
+            @Override
+            public TaskMessage next() {
+                TaskMessage msg = null;
+                if (iter.hasNext()) {
+                    msg = iter.next();
+                } else {
+                    bundleOffset++;
+                    iter = bundle.get(bundleOffset).iterator();
+                    msg = iter.next();
+                }
+                if (null != msg) {
+                    offset++;
+                }
+                return msg;
+            }
+
+            @Override
+            public void remove() {
+                throw new RuntimeException("not supported");
+            }
+        };
+    }
+
+    public void clear() {
+        bundles.clear();
+    }
 }

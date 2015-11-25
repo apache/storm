@@ -17,12 +17,11 @@
  */
 package backtype.storm.command;
 
-import java.security.InvalidParameterException;
-import java.util.Map;
-
 import backtype.storm.generated.RebalanceOptions;
 import backtype.storm.utils.NimbusClient;
 import backtype.storm.utils.Utils;
+
+import java.util.Map;
 
 /**
  * Active topology
@@ -32,7 +31,7 @@ import backtype.storm.utils.Utils;
  */
 public class rebalance {
     static final String REASSIGN_FLAG = "-r";
-    
+
     /**
      * @param args
      */
@@ -42,15 +41,15 @@ public class rebalance {
             printErrorInfo();
             return;
         }
-        
+
         int argsIndex = 0;
         String topologyName = null;
-        
+
         try {
             RebalanceOptions options = new RebalanceOptions();
             options.set_reassign(false);
             options.set_conf(null);
-            
+
             if (args[argsIndex].equalsIgnoreCase(REASSIGN_FLAG)) {
                 options.set_reassign(true);
                 argsIndex++;
@@ -64,7 +63,7 @@ public class rebalance {
             } else {
                 topologyName = args[argsIndex];
             }
-            
+
             argsIndex++;
             if (args.length > argsIndex) {
                 for (int i = argsIndex; i < args.length; i++) {
@@ -85,32 +84,34 @@ public class rebalance {
                     }
                 }
             }
-            
+
             submitRebalance(topologyName, options);
-            
-            System.out.println("Successfully submit command rebalance " + topologyName + ", delaySecs=" + options.get_wait_secs() + ", reassignFlag=" + options.is_reassign() + ", newConfiguration=" + options.get_conf());
+
+            System.out.println("Successfully submit command rebalance " + topologyName + ", delaySecs=" +
+                    options.get_wait_secs() + ", reassignFlag="
+                    + options.is_reassign() + ", newConfiguration=" + options.get_conf());
         } catch (Exception e) {
             System.out.println(e.getMessage());
             e.printStackTrace();
             throw new RuntimeException(e);
         }
     }
-    
+
     private static void printErrorInfo() {
         System.out.println("Error: Invalid parameters!");
         System.out.println("USAGE: jstorm rebalance [-r] TopologyName [DelayTime] [NewConfig]");
     }
-    
+
     public static void submitRebalance(String topologyName, RebalanceOptions options) throws Exception {
         submitRebalance(topologyName, options, null);
     }
-    
+
     public static void submitRebalance(String topologyName, RebalanceOptions options, Map conf) throws Exception {
         Map stormConf = Utils.readStormConfig();
         if (conf != null) {
             stormConf.putAll(conf);
         }
-        
+
         NimbusClient client = null;
         try {
             client = NimbusClient.getConfiguredClient(stormConf);
@@ -123,5 +124,5 @@ public class rebalance {
             }
         }
     }
-    
+
 }

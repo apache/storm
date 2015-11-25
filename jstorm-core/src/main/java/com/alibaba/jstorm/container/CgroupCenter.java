@@ -100,9 +100,8 @@ public class CgroupCenter implements CgroupOperation {
                 SubSystemType type = SubSystemType.getSubSystem(split[0]);
                 if (type == null)
                     continue;
-                subSystems.add(new SubSystem(type, Integer.valueOf(split[1]),
-                        Integer.valueOf(split[2]), Integer.valueOf(split[3])
-                                .intValue() == 1 ? true : false));
+                subSystems.add(new SubSystem(type, Integer.valueOf(split[1]), Integer.valueOf(split[2]), Integer.valueOf(split[3]).intValue() == 1 ? true
+                        : false));
             }
             return subSystems;
         } catch (Exception e) {
@@ -168,8 +167,7 @@ public class CgroupCenter implements CgroupOperation {
         if (!CgroupUtils.dirExists(hierarchy.getDir()))
             new File(hierarchy.getDir()).mkdirs();
         String subSystems = CgroupUtils.reAnalyse(subsystems);
-        SystemOperation.mount(subSystems, hierarchy.getDir(), "cgroup",
-                subSystems);
+        SystemOperation.mount(subSystems, hierarchy.getDir(), "cgroup", subSystems);
 
     }
 
@@ -217,8 +215,7 @@ public class CgroupCenter implements CgroupOperation {
     }
 
     public static void main(String args[]) {
-        System.out.println(CgroupCenter.getInstance().getHierarchies().get(0)
-                .getRootCgroups().getChildren().size());
+        System.out.println(CgroupCenter.getInstance().getHierarchies().get(0).getRootCgroups().getChildren().size());
     }
 
 }

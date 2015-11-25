@@ -19,13 +19,8 @@ package com.alibaba.jstorm.utils;
 
 import org.junit.Test;
 
-import backtype.storm.generated.MetricInfo;
-
 public class TestThrift {
     @Test
     public void testEmpty() {
-        MetricInfo metricInfo = new MetricInfo();
-        
-        System.out.println("base:" + metricInfo.get_baseMetric());
     }
 }

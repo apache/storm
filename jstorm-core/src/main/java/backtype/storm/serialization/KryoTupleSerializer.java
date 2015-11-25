@@ -33,30 +33,35 @@ public class KryoTupleSerializer implements ITupleSerializer {
     KryoValuesSerializer _kryo;
     SerializationFactory.IdDictionary _ids;
     Output _kryoOut;
-    
+
     public KryoTupleSerializer(final Map conf, final GeneralTopologyContext context) {
         _kryo = new KryoValuesSerializer(conf);
         _kryoOut = new Output(2000, 2000000000);
         _ids = new SerializationFactory.IdDictionary(context.getRawTopology());
     }
-    
+
+    public byte[] serialize(Tuple tuple) {
+        _kryoOut.clear();
+        serializeTuple(_kryoOut, tuple);
+        return _kryoOut.toBytes();
+    }
     /**
      * @@@ in the furture, it will skill serialize 'targetTask' through check some flag
-     * @see backtype.storm.serialization.ITupleSerializer#serialize(int, backtype.storm.tuple.Tuple)
+     * @see ITupleSerializer#serialize(int, Tuple)
      */
-    public byte[] serialize(Tuple tuple) {
+    private void serializeTuple(Output output, Tuple tuple) {
         try {
-            
-            _kryoOut.clear();
             if (tuple instanceof TupleExt) {
-                _kryoOut.writeInt(((TupleExt) tuple).getTargetTaskId());
+                output.writeInt(((TupleExt) tuple).getTargetTaskId());
+                output.writeLong(((TupleExt) tuple).getCreationTimeStamp());
             }
-            
-            _kryoOut.writeInt(tuple.getSourceTask(), true);
-            _kryoOut.writeInt(_ids.getStreamId(tuple.getSourceComponent(), tuple.getSourceStreamId()), true);
-            tuple.getMessageId().serialize(_kryoOut);
-            _kryo.serializeInto(tuple.getValues(), _kryoOut);
-            return _kryoOut.toBytes();
+
+            output.writeInt(tuple.getSourceTask(), true);
+            output.writeInt(
+                    _ids.getStreamId(tuple.getSourceComponent(),
+                            tuple.getSourceStreamId()), true);
+            tuple.getMessageId().serialize(output);
+            _kryo.serializeInto(tuple.getValues(), output);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -66,31 +71,28 @@ public class KryoTupleSerializer implements ITupleSerializer {
         if (batch == null || batch.currBatchSize() == 0)
             return null;
 
-        byte[][] bytes = new byte[batch.currBatchSize()][];
-        int i = 0, len = 0;
+        _kryoOut.clear();
         for (Tuple tuple : batch.getTuples()) {
-            /* byte structure: 
+            /* 
+             * byte structure: 
              * 1st tuple: length + tuple bytes
              * 2nd tuple: length + tuple bytes
              * ......
              */
-            bytes[i] = serialize(tuple);
-            len += bytes[i].length;
-            // add length bytes (int)
-            len += 4;
-            i++;
+            int startPos = _kryoOut.position();
+            
+            // Set initial value of tuple length, which will be updated accordingly after serialization
+            _kryoOut.writeInt(0);
+            
+            serializeTuple(_kryoOut, tuple);
+            
+            // Update the tuple length
+            int endPos = _kryoOut.position();
+            _kryoOut.setPosition(startPos);
+            _kryoOut.writeInt(endPos - startPos - 4);
+            _kryoOut.setPosition(endPos);
         }
-
-        byte[] ret = new byte[len];
-        int index = 0;
-        for (i = 0; i < bytes.length; i++) {
-            Utils.writeIntToByteArray(ret, index, bytes[i].length);
-            index += 4;
-            for (int j = 0; j < bytes[i].length; j++) {
-                ret[index++] = bytes[i][j];
-            }
-        }
-        return ret;
+        return _kryoOut.toBytes();
     }
 
     public static byte[] serialize(int targetTask) {

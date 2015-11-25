@@ -28,8 +28,7 @@ import org.slf4j.LoggerFactory;
 import backtype.storm.messaging.TaskMessage;
 
 class MessageBatch {
-    private static final Logger LOG = LoggerFactory
-            .getLogger(MessageBatch.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MessageBatch.class);
     private int buffer_size;
     private ArrayList<Object> msgs;
     private int encoded_length;
@@ -58,8 +57,7 @@ class MessageBatch {
             return;
         }
 
-        throw new RuntimeException("Unsuppoted object type "
-                + obj.getClass().getName());
+        throw new RuntimeException("Unsuppoted object type " + obj.getClass().getName());
     }
 
     void remove(Object obj) {
@@ -89,8 +87,7 @@ class MessageBatch {
      * try to add a TaskMessage to a batch
      * 
      * @param taskMsg
-     * @return false if the msg could not be added due to buffer size limit;
-     *         true otherwise
+     * @return false if the msg could not be added due to buffer size limit; true otherwise
      */
     boolean tryAdd(TaskMessage taskMsg) {
         if ((encoded_length + msgEncodeLength(taskMsg)) > buffer_size)
@@ -144,9 +141,7 @@ class MessageBatch {
      * create a buffer containing the encoding of this batch
      */
     ChannelBuffer buffer() throws Exception {
-        ChannelBufferOutputStream bout =
-                new ChannelBufferOutputStream(
-                        ChannelBuffers.directBuffer(encoded_length));
+        ChannelBufferOutputStream bout = new ChannelBufferOutputStream(ChannelBuffers.directBuffer(encoded_length));
 
         for (Object msg : msgs)
             if (msg instanceof TaskMessage)
@@ -168,19 +163,16 @@ class MessageBatch {
     /**
      * write a TaskMessage into a stream
      * 
-     * Each TaskMessage is encoded as: task ... short(2) len ... int(4) payload
-     * ... byte[] *
+     * Each TaskMessage is encoded as: task ... short(2) len ... int(4) payload ... byte[] *
      */
-    private void writeTaskMessage(ChannelBufferOutputStream bout,
-            TaskMessage message) throws Exception {
+    private void writeTaskMessage(ChannelBufferOutputStream bout, TaskMessage message) throws Exception {
         int payload_len = 0;
         if (message.message() != null)
             payload_len = message.message().length;
 
         int task_id = message.task();
         if (task_id > Short.MAX_VALUE)
-            throw new RuntimeException("Task ID should not exceed "
-                    + Short.MAX_VALUE);
+            throw new RuntimeException("Task ID should not exceed " + Short.MAX_VALUE);
 
         bout.writeShort((short) task_id);
         bout.writeInt(payload_len);

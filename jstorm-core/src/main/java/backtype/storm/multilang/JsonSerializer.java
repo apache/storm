@@ -52,8 +52,7 @@ public class JsonSerializer implements ISerializer {
         }
     }
 
-    public Number connect(Map conf, TopologyContext context)
-            throws IOException, NoOutputException {
+    public Number connect(Map conf, TopologyContext context) throws IOException, NoOutputException {
         JSONObject setupInfo = new JSONObject();
         setupInfo.put("pidDir", context.getPIDDir());
         setupInfo.put("conf", conf);
@@ -140,22 +139,22 @@ public class JsonSerializer implements ISerializer {
                 shellMsg.addAnchor((String) o);
             }
         }
-       
-        Object nameObj = msg.get("name"); 
+
+        Object nameObj = msg.get("name");
         String metricName = null;
         if (nameObj != null && nameObj instanceof String) {
             metricName = (String) nameObj;
         }
         shellMsg.setMetricName(metricName);
-        
+
         Object paramsObj = msg.get("params");
         shellMsg.setMetricParams(paramsObj);
 
         if (command.equals("log")) {
             Object logLevelObj = msg.get("level");
             if (logLevelObj != null && logLevelObj instanceof Long) {
-                long logLevel = (Long)logLevelObj;
-                shellMsg.setLogLevel((int)logLevel);
+                long logLevel = (Long) logLevelObj;
+                shellMsg.setLogLevel((int) logLevel);
             }
         }
 
@@ -183,8 +182,7 @@ public class JsonSerializer implements ISerializer {
                 if (line.length() == 0) {
                     errorMessage.append(" No output read.\n");
                 } else {
-                    errorMessage.append(" Currently read output: "
-                            + line.toString() + "\n");
+                    errorMessage.append(" Currently read output: " + line.toString() + "\n");
                 }
                 errorMessage.append("Serializer Exception:\n");
                 throw new NoOutputException(errorMessage.toString());

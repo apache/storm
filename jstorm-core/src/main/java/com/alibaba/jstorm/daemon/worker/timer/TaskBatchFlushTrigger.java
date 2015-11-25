@@ -22,9 +22,9 @@ import org.slf4j.LoggerFactory;
 
 import com.alibaba.jstorm.task.TaskBatchTransfer;
 
-public class TaskBatchFlushTrigger extends TimerTrigger{
+public class TaskBatchFlushTrigger extends TimerTrigger {
     private static final Logger LOG = LoggerFactory.getLogger(TickTupleTrigger.class);
-    
+
     private TaskBatchTransfer batchTransfer;
 
     public TaskBatchFlushTrigger(int frequence, String name, TaskBatchTransfer transfer) {

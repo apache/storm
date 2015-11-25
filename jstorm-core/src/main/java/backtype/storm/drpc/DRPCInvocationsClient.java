@@ -17,23 +17,22 @@
  */
 package backtype.storm.drpc;
 
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
-
+import backtype.storm.generated.AuthorizationException;
 import backtype.storm.generated.DRPCRequest;
 import backtype.storm.generated.DistributedRPCInvocations;
-import backtype.storm.generated.AuthorizationException;
 import backtype.storm.security.auth.ThriftClient;
 import backtype.storm.security.auth.ThriftConnectionType;
-import org.apache.thrift.transport.TTransportException;
 import org.apache.thrift.TException;
+import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+
 public class DRPCInvocationsClient extends ThriftClient implements DistributedRPCInvocations.Iface {
     public static Logger LOG = LoggerFactory.getLogger(DRPCInvocationsClient.class);
-    private final AtomicReference<DistributedRPCInvocations.Client> client =
-       new AtomicReference<DistributedRPCInvocations.Client>();
+    private final AtomicReference<DistributedRPCInvocations.Client> client = new AtomicReference<DistributedRPCInvocations.Client>();
     private String host;
     private int port;
 
@@ -43,14 +42,14 @@ public class DRPCInvocationsClient extends ThriftClient implements DistributedRP
         this.port = port;
         client.set(new DistributedRPCInvocations.Client(_protocol));
     }
-        
+
     public String getHost() {
         return host;
     }
-    
+
     public int getPort() {
         return port;
-    }       
+    }
 
     public void reconnectClient() throws TException {
         if (client.get() == null) {
@@ -70,9 +69,9 @@ public class DRPCInvocationsClient extends ThriftClient implements DistributedRP
                 throw new TException("Client is not connected...");
             }
             c.result(id, result);
-        } catch(AuthorizationException aze) {
+        } catch (AuthorizationException aze) {
             throw aze;
-        } catch(TException e) {
+        } catch (TException e) {
             client.compareAndSet(c, null);
             throw e;
         }
@@ -85,24 +84,24 @@ public class DRPCInvocationsClient extends ThriftClient implements DistributedRP
                 throw new TException("Client is not connected...");
             }
             return c.fetchRequest(func);
-        } catch(AuthorizationException aze) {
+        } catch (AuthorizationException aze) {
             throw aze;
-        } catch(TException e) {
+        } catch (TException e) {
             client.compareAndSet(c, null);
             throw e;
         }
-    }    
+    }
 
-    public void failRequest(String id) throws TException, AuthorizationException {
+    public void failRequest(String id) throws TException {
         DistributedRPCInvocations.Client c = client.get();
         try {
             if (c == null) {
                 throw new TException("Client is not connected...");
             }
             c.failRequest(id);
-        } catch(AuthorizationException aze) {
+        } catch (AuthorizationException aze) {
             throw aze;
-        } catch(TException e) {
+        } catch (TException e) {
             client.compareAndSet(c, null);
             throw e;
         }

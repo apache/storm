@@ -40,29 +40,28 @@ import java.util.concurrent.atomic.AtomicLong;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * A bolt that shells out to another process to process tuples. ShellBolt
- * communicates with that process over stdio using a special protocol. An ~100
- * line library is required to implement that protocol, and adapter libraries
- * currently exist for Ruby and Python.
- *
- * <p>To run a ShellBolt on a cluster, the scripts that are shelled out to must be
- * in the resources directory within the jar submitted to the master.
- * During development/testing on a local machine, that resources directory just
- * needs to be on the classpath.</p>
- *
- * <p>When creating topologies using the Java API, subclass this bolt and implement
- * the IRichBolt interface to create components for the topology that use other languages. For example:
+ * A bolt that shells out to another process to process tuples. ShellBolt communicates with that process over stdio using a special protocol. An ~100 line
+ * library is required to implement that protocol, and adapter libraries currently exist for Ruby and Python.
+ * 
+ * <p>
+ * To run a ShellBolt on a cluster, the scripts that are shelled out to must be in the resources directory within the jar submitted to the master. During
+ * development/testing on a local machine, that resources directory just needs to be on the classpath.
  * </p>
- *
+ * 
+ * <p>
+ * When creating topologies using the Java API, subclass this bolt and implement the IRichBolt interface to create components for the topology that use other
+ * languages. For example:
+ * </p>
+ * 
  * <pre>
  * public class MyBolt extends ShellBolt implements IRichBolt {
- *      public MyBolt() {
- *          super("python", "mybolt.py");
- *      }
- *
- *      public void declareOutputFields(OutputFieldsDeclarer declarer) {
- *          declarer.declare(new Fields("field1", "field2"));
- *      }
+ *     public MyBolt() {
+ *         super(&quot;python&quot;, &quot;mybolt.py&quot;);
+ *     }
+ * 
+ *     public void declareOutputFields(OutputFieldsDeclarer declarer) {
+ *         declarer.declare(new Fields(&quot;field1&quot;, &quot;field2&quot;));
+ *     }
  * }
  * </pre>
  */
@@ -82,7 +81,7 @@ public class ShellBolt implements IBolt {
 
     private Thread _readerThread;
     private Thread _writerThread;
-    
+
     private TopologyContext _context;
 
     private int workerTimeoutMills;
@@ -98,11 +97,10 @@ public class ShellBolt implements IBolt {
         _command = command;
     }
 
-    public void prepare(Map stormConf, TopologyContext context,
-                        final OutputCollector collector) {
+    public void prepare(Map stormConf, TopologyContext context, final OutputCollector collector) {
         Object maxPending = stormConf.get(Config.TOPOLOGY_SHELLBOLT_MAX_PENDING);
         if (maxPending != null) {
-           this._pendingWrites = new LinkedBlockingQueue(((Number)maxPending).intValue());
+            this._pendingWrites = new LinkedBlockingQueue(((Number) maxPending).intValue());
         }
         _rand = new Random();
         _collector = collector;
@@ -113,7 +111,7 @@ public class ShellBolt implements IBolt {
 
         _process = new ShellProcess(_command);
 
-        //subprocesses must send their pid first thing
+        // subprocesses must send their pid first thing
         Number subpid = _process.launch(stormConf, context);
         LOG.info("Launched subprocess with pid " + subpid);
 
@@ -136,14 +134,14 @@ public class ShellBolt implements IBolt {
             throw new RuntimeException(_exception);
         }
 
-        //just need an id
+        // just need an id
         String genId = Long.toString(_rand.nextLong());
         _inputs.put(genId, input);
         try {
             BoltMsg boltMsg = createBoltMessage(input, genId);
 
             _pendingWrites.put(boltMsg);
-        } catch(InterruptedException e) {
+        } catch (InterruptedException e) {
             String processInfo = _process.getProcessInfoString() + _process.getProcessTerminationInfoString();
             throw new RuntimeException("Error during multilang processing " + processInfo, e);
         }
@@ -170,7 +168,7 @@ public class ShellBolt implements IBolt {
 
     private void handleAck(Object id) {
         Tuple acked = _inputs.remove(id);
-        if(acked==null) {
+        if (acked == null) {
             throw new RuntimeException("Acked a non-existent or already acked/failed id: " + id);
         }
         _collector.ack(acked);
@@ -178,7 +176,7 @@ public class ShellBolt implements IBolt {
 
     private void handleFail(Object id) {
         Tuple failed = _inputs.remove(id);
-        if(failed==null) {
+        if (failed == null) {
             throw new RuntimeException("Failed a non-existent or already acked/failed id: " + id);
         }
         _collector.fail(failed);
@@ -201,14 +199,13 @@ public class ShellBolt implements IBolt {
             }
         }
 
-        if(shellMsg.getTask() == 0) {
+        if (shellMsg.getTask() == 0) {
             List<Integer> outtasks = _collector.emit(shellMsg.getStream(), anchors, shellMsg.getTuple());
             if (shellMsg.areTaskIdsNeeded()) {
                 _pendingWrites.put(outtasks);
             }
         } else {
-            _collector.emitDirect((int) shellMsg.getTask(),
-                    shellMsg.getStream(), anchors, shellMsg.getTuple());
+            _collector.emitDirect((int) shellMsg.getTask(), shellMsg.getStream(), anchors, shellMsg.getTuple());
         }
     }
 
@@ -218,46 +215,46 @@ public class ShellBolt implements IBolt {
         ShellMsg.ShellLogLevel logLevel = shellMsg.getLogLevel();
 
         switch (logLevel) {
-            case TRACE:
-                LOG.trace(msg);
-                break;
-            case DEBUG:
-                LOG.debug(msg);
-                break;
-            case INFO:
-                LOG.info(msg);
-                break;
-            case WARN:
-                LOG.warn(msg);
-                break;
-            case ERROR:
-                LOG.error(msg);
-                _collector.reportError(new ReportedFailedException(msg));
-                break;
-            default:
-                LOG.info(msg);
-                break;
+        case TRACE:
+            LOG.trace(msg);
+            break;
+        case DEBUG:
+            LOG.debug(msg);
+            break;
+        case INFO:
+            LOG.info(msg);
+            break;
+        case WARN:
+            LOG.warn(msg);
+            break;
+        case ERROR:
+            LOG.error(msg);
+            _collector.reportError(new ReportedFailedException(msg));
+            break;
+        default:
+            LOG.info(msg);
+            break;
         }
     }
 
     private void handleMetrics(ShellMsg shellMsg) {
-        //get metric name
+        // get metric name
         String name = shellMsg.getMetricName();
         if (name.isEmpty()) {
             throw new RuntimeException("Receive Metrics name is empty");
         }
-        
-        //get metric by name
+
+        // get metric by name
         IMetric iMetric = _context.getRegisteredMetricByName(name);
         if (iMetric == null) {
-            throw new RuntimeException("Could not find metric by name["+name+"] ");
+            throw new RuntimeException("Could not find metric by name[" + name + "] ");
         }
-        if ( !(iMetric instanceof IShellMetric)) {
-            throw new RuntimeException("Metric["+name+"] is not IShellMetric, can not call by RPC");
+        if (!(iMetric instanceof IShellMetric)) {
+            throw new RuntimeException("Metric[" + name + "] is not IShellMetric, can not call by RPC");
         }
-        IShellMetric iShellMetric = (IShellMetric)iMetric;
-        
-        //call updateMetricFromRPC with params
+        IShellMetric iShellMetric = (IShellMetric) iMetric;
+
+        // call updateMetricFromRPC with params
         Object paramsObj = shellMsg.getMetricParams();
         try {
             iShellMetric.updateMetricFromRPC(paramsObj);
@@ -265,7 +262,7 @@ public class ShellBolt implements IBolt {
             throw re;
         } catch (Exception e) {
             throw new RuntimeException(e);
-        }       
+        }
     }
 
     private void setHeartbeat() {
@@ -279,12 +276,10 @@ public class ShellBolt implements IBolt {
     private void die(Throwable exception) {
         String processInfo = _process.getProcessInfoString() + _process.getProcessTerminationInfoString();
         _exception = new RuntimeException(processInfo, exception);
-        String message = String.format("Halting process: ShellBolt died. Command: %s, ProcessInfo %s",
-                Arrays.toString(_command),
-                processInfo);
+        String message = String.format("Halting process: ShellBolt died. Command: %s, ProcessInfo %s", Arrays.toString(_command), processInfo);
         LOG.error(message, exception);
         _collector.reportError(exception);
-        if (_running || (exception instanceof Error)) { //don't exit if not running, unless it is an Error
+        if (_running || (exception instanceof Error)) { // don't exit if not running, unless it is an Error
             System.exit(11);
         }
     }
@@ -301,8 +296,7 @@ public class ShellBolt implements IBolt {
             long currentTimeMillis = System.currentTimeMillis();
             long lastHeartbeat = getLastHeartbeat();
 
-            LOG.debug("BOLT - current time : {}, last heartbeat : {}, worker timeout (ms) : {}",
-                    currentTimeMillis, lastHeartbeat, workerTimeoutMills);
+            LOG.debug("BOLT - current time : {}, last heartbeat : {}, worker timeout (ms) : {}", currentTimeMillis, lastHeartbeat, workerTimeoutMills);
 
             if (currentTimeMillis - lastHeartbeat > workerTimeoutMills) {
                 bolt.die(new RuntimeException("subprocess heartbeat timeout"));
@@ -310,7 +304,6 @@ public class ShellBolt implements IBolt {
 
             sendHeartbeatFlag.compareAndSet(false, true);
         }
-
 
     }
 
@@ -326,7 +319,7 @@ public class ShellBolt implements IBolt {
                     }
                     if (command.equals("sync")) {
                         setHeartbeat();
-                    } else if(command.equals("ack")) {
+                    } else if (command.equals("ack")) {
                         handleAck(shellMsg.getId());
                     } else if (command.equals("fail")) {
                         handleFail(shellMsg.getId());
@@ -363,7 +356,7 @@ public class ShellBolt implements IBolt {
                     if (write instanceof BoltMsg) {
                         _process.writeBoltMsg((BoltMsg) write);
                     } else if (write instanceof List<?>) {
-                        _process.writeTaskIds((List<Integer>)write);
+                        _process.writeTaskIds((List<Integer>) write);
                     } else if (write != null) {
                         throw new RuntimeException("Unknown class type to write: " + write.getClass().getName());
                     }

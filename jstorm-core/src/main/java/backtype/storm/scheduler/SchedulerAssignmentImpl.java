@@ -35,7 +35,7 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
      * assignment detail, a mapping from executor to <code>WorkerSlot</code>
      */
     Map<ExecutorDetails, WorkerSlot> executorToSlot;
-    
+
     public SchedulerAssignmentImpl(String topologyId, Map<ExecutorDetails, WorkerSlot> executorToSlots) {
         this.topologyId = topologyId;
         this.executorToSlot = new HashMap<ExecutorDetails, WorkerSlot>(0);
@@ -47,10 +47,11 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
     @Override
     public Set<WorkerSlot> getSlots() {
         return new HashSet(executorToSlot.values());
-    }    
-    
+    }
+
     /**
      * Assign the slot to executors.
+     * 
      * @param slot
      * @param executors
      */
@@ -59,9 +60,10 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
             this.executorToSlot.put(executor, slot);
         }
     }
-    
+
     /**
      * Release the slot occupied by this assignment.
+     * 
      * @param slot
      */
     public void unassignBySlot(WorkerSlot slot) {
@@ -72,7 +74,7 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
                 executors.add(executor);
             }
         }
-        
+
         // remove
         for (ExecutorDetails executor : executors) {
             this.executorToSlot.remove(executor);
@@ -81,6 +83,7 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
 
     /**
      * Does this slot occupied by this assignment?
+     * 
      * @param slot
      * @return
      */
@@ -91,7 +94,7 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
     public boolean isExecutorAssigned(ExecutorDetails executor) {
         return this.executorToSlot.containsKey(executor);
     }
-    
+
     public String getTopologyId() {
         return this.topologyId;
     }
@@ -102,6 +105,7 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
 
     /**
      * Return the executors covered by this assignments
+     * 
      * @return
      */
     public Set<ExecutorDetails> getExecutors() {

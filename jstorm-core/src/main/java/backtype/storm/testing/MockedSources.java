@@ -26,11 +26,11 @@ import backtype.storm.tuple.Values;
 import backtype.storm.utils.Utils;
 
 public class MockedSources {
-	/**
-	 * mocked spout sources for the [spout, stream] pair.
-	 */
+    /**
+     * mocked spout sources for the [spout, stream] pair.
+     */
     private Map<String, List<FixedTuple>> data = new HashMap<String, List<FixedTuple>>();
-    
+
     /**
      * add mock data for the spout.
      * 
@@ -42,18 +42,18 @@ public class MockedSources {
         if (!data.containsKey(spoutId)) {
             data.put(spoutId, new ArrayList<FixedTuple>());
         }
-        
+
         List<FixedTuple> tuples = data.get(spoutId);
         for (int i = 0; i < valueses.length; i++) {
             FixedTuple tuple = new FixedTuple(streamId, valueses[i]);
             tuples.add(tuple);
         }
     }
-    
+
     public void addMockData(String spoutId, Values... valueses) {
         this.addMockData(spoutId, Utils.DEFAULT_STREAM_ID, valueses);
     }
-    
+
     public Map<String, List<FixedTuple>> getData() {
         return this.data;
     }

@@ -25,16 +25,12 @@ import java.util.Random;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import backtype.storm.Config;
-import backtype.storm.spout.ISpoutOutputCollector;
-import backtype.storm.task.TopologyContext;
-import backtype.storm.tuple.MessageId;
-import backtype.storm.tuple.TupleImplExt;
-import backtype.storm.utils.DisruptorQueue;
-
-import com.alibaba.jstorm.common.metric.Histogram;
+import com.alibaba.jstorm.common.metric.AsmHistogram;
 import com.alibaba.jstorm.metric.JStormMetrics;
 import com.alibaba.jstorm.metric.MetricDef;
+import com.alibaba.jstorm.metric.MetricType;
+import com.alibaba.jstorm.metric.MetricUtils;
+import com.alibaba.jstorm.task.Task;
 import com.alibaba.jstorm.task.TaskBaseMetric;
 import com.alibaba.jstorm.task.TaskTransfer;
 import com.alibaba.jstorm.task.acker.Acker;
@@ -44,12 +40,20 @@ import com.alibaba.jstorm.task.comm.UnanchoredSend;
 import com.alibaba.jstorm.task.error.ITaskReportErr;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.TimeOutMap;
+import com.alibaba.jstorm.utils.TimeUtils;
+
+import backtype.storm.Config;
+import backtype.storm.spout.ISpout;
+import backtype.storm.spout.ISpoutOutputCollector;
+import backtype.storm.task.TopologyContext;
+import backtype.storm.tuple.MessageId;
+import backtype.storm.tuple.TupleImplExt;
+import backtype.storm.utils.DisruptorQueue;
 
 /**
  * spout collector, sending tuple through this Object
  * 
  * @author yannian/Longda
- * 
  */
 public class SpoutCollector implements ISpoutOutputCollector {
     private static Logger LOG = LoggerFactory.getLogger(SpoutCollector.class);
@@ -71,64 +75,53 @@ public class SpoutCollector implements ISpoutOutputCollector {
     private Integer ackerNum;
     private boolean isDebug = false;
 
-    private Histogram emitTotalTimer;
+    private AsmHistogram emitTotalTimer;
     Random random;
 
-    public SpoutCollector(Integer task_id, backtype.storm.spout.ISpout spout,
-            TaskBaseMetric task_stats, TaskSendTargets sendTargets,
-            Map _storm_conf, TaskTransfer _transfer_fn,
-            TimeOutMap<Long, TupleInfo> pending,
-            TopologyContext topology_context,
-            DisruptorQueue disruptorAckerQueue, ITaskReportErr _report_error) {
-        this.sendTargets = sendTargets;
-        this.storm_conf = _storm_conf;
-        this.transfer_fn = _transfer_fn;
+    //Integer task_id, backtype.storm.spout.ISpout spout, TaskBaseMetric task_stats, TaskSendTargets sendTargets, Map _storm_conf,
+    //TaskTransfer _transfer_fn, TimeOutMap<Long, TupleInfo> pending, TopologyContext topology_context, DisruptorQueue disruptorAckerQueue,
+    //ITaskReportErr _report_error
+    public SpoutCollector(Task task, TimeOutMap<Long, TupleInfo> pending, DisruptorQueue disruptorAckerQueue) {
+        this.sendTargets = task.getTaskSendTargets();
+        this.storm_conf = task.getStormConf();
+        this.transfer_fn = task.getTaskTransfer();
         this.pending = pending;
-        this.topology_context = topology_context;
+        this.topology_context = task.getTopologyContext();
 
         this.disruptorAckerQueue = disruptorAckerQueue;
 
-        this.task_stats = task_stats;
-        this.spout = spout;
-        this.task_id = task_id;
-        this.report_error = _report_error;
+        this.task_stats = task.getTaskStats();
+        this.spout = (ISpout)task.getTaskObj();
+        this.task_id = task.getTaskId();
+        this.report_error = task.getReportErrorDie();
 
-        ackerNum =
-                JStormUtils.parseInt(storm_conf
-                        .get(Config.TOPOLOGY_ACKER_EXECUTORS));
-        isDebug =
-                JStormUtils.parseBoolean(storm_conf.get(Config.TOPOLOGY_DEBUG),
-                        false);
+        ackerNum = JStormUtils.parseInt(storm_conf.get(Config.TOPOLOGY_ACKER_EXECUTORS));
+        isDebug = JStormUtils.parseBoolean(storm_conf.get(Config.TOPOLOGY_DEBUG), false);
 
         random = new Random();
         random.setSeed(System.currentTimeMillis());
 
         String componentId = topology_context.getThisComponentId();
         emitTotalTimer =
-                JStormMetrics.registerTaskHistogram(task_id,
-                        MetricDef.COLLECTOR_EMIT_TIME);
-
+                (AsmHistogram) JStormMetrics
+                        .registerTaskMetric(MetricUtils.taskMetricName(topology_context.getTopologyId(), componentId, task_id, MetricDef.COLLECTOR_EMIT_TIME,
+                                MetricType.HISTOGRAM), new AsmHistogram());
     }
 
     @Override
-    public List<Integer> emit(String streamId, List<Object> tuple,
-            Object messageId) {
+    public List<Integer> emit(String streamId, List<Object> tuple, Object messageId) {
         return sendSpoutMsg(streamId, tuple, messageId, null);
     }
 
     @Override
-    public void emitDirect(int taskId, String streamId, List<Object> tuple,
-            Object messageId) {
+    public void emitDirect(int taskId, String streamId, List<Object> tuple, Object messageId) {
         sendSpoutMsg(streamId, tuple, messageId, taskId);
     }
 
-    private List<Integer> sendSpoutMsg(String out_stream_id,
-            List<Object> values, Object message_id, Integer out_task_id) {
-
-        long startTime = System.nanoTime();
-
+    private List<Integer> sendSpoutMsg(String out_stream_id, List<Object> values, Object message_id, Integer out_task_id) {
+        final long startTime = System.nanoTime();
         try {
-            java.util.List<Integer> out_tasks = null;
+            List<Integer> out_tasks;
             if (out_task_id != null) {
                 out_tasks = sendTargets.get(out_task_id, out_stream_id, values);
             } else {
@@ -148,7 +141,7 @@ public class SpoutCollector implements ISpoutOutputCollector {
             // when duplicate root_id, it will miss call ack/fail
             Long root_id = MessageId.generateId(random);
             if (needAck) {
-                while (pending.containsKey(root_id) == true) {
+                while (pending.containsKey(root_id)) {
                     root_id = MessageId.generateId(random);
                 }
             }
@@ -163,30 +156,23 @@ public class SpoutCollector implements ISpoutOutputCollector {
                     msgid = MessageId.makeUnanchored();
                 }
 
-                TupleImplExt tp =
-                        new TupleImplExt(topology_context, values, task_id,
-                                out_stream_id, msgid);
+                TupleImplExt tp = new TupleImplExt(topology_context, values, task_id, out_stream_id, msgid);
                 tp.setTargetTaskId(t);
                 transfer_fn.transfer(tp);
-
             }
 
             if (needAck) {
-
                 TupleInfo info = new TupleInfo();
                 info.setStream(out_stream_id);
                 info.setValues(values);
                 info.setMessageId(message_id);
-                info.setTimestamp(System.currentTimeMillis());
+                info.setTimestamp(System.nanoTime());
 
                 pending.putHead(root_id, info);
 
-                List<Object> ackerTuple =
-                        JStormUtils.mk_list((Object) root_id,
-                                JStormUtils.bit_xor_vals(ackSeq), task_id);
+                List<Object> ackerTuple = JStormUtils.mk_list((Object) root_id, JStormUtils.bit_xor_vals(ackSeq), task_id);
 
-                UnanchoredSend.send(topology_context, sendTargets, transfer_fn,
-                        Acker.ACKER_INIT_STREAM_ID, ackerTuple);
+                UnanchoredSend.send(topology_context, sendTargets, transfer_fn, Acker.ACKER_INIT_STREAM_ID, ackerTuple);
 
             } else if (message_id != null) {
                 TupleInfo info = new TupleInfo();
@@ -195,23 +181,20 @@ public class SpoutCollector implements ISpoutOutputCollector {
                 info.setMessageId(message_id);
                 info.setTimestamp(0);
 
-                AckSpoutMsg ack =
-                        new AckSpoutMsg(spout, info, task_stats, isDebug);
+                AckSpoutMsg ack = new AckSpoutMsg(spout, null, info, task_stats, isDebug);
                 ack.run();
-
             }
 
             return out_tasks;
         } finally {
             long endTime = System.nanoTime();
-            emitTotalTimer.update((endTime - startTime)/1000000.0d);
+            emitTotalTimer.update((endTime - startTime) / TimeUtils.NS_PER_US);
         }
 
     }
 
     @Override
     public void reportError(Throwable error) {
-        // TODO Auto-generated method stub
         report_error.report(error);
     }
 

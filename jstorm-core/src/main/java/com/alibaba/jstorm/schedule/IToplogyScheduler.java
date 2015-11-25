@@ -26,6 +26,5 @@ import com.alibaba.jstorm.utils.FailedAssignTopologyException;
 public interface IToplogyScheduler {
     void prepare(Map conf);
 
-    Set<ResourceWorkerSlot> assignTasks(TopologyAssignContext contex)
-            throws FailedAssignTopologyException;
+    Set<ResourceWorkerSlot> assignTasks(TopologyAssignContext contex) throws FailedAssignTopologyException;
 }

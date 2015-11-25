@@ -30,8 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class StormClientHandler extends SimpleChannelUpstreamHandler {
-    private static final Logger LOG = LoggerFactory
-            .getLogger(StormClientHandler.class);
+    private static final Logger LOG = LoggerFactory.getLogger(StormClientHandler.class);
     private NettyClient client;
     private AtomicBoolean being_closed;
 
@@ -41,16 +40,25 @@ public class StormClientHandler extends SimpleChannelUpstreamHandler {
     }
 
     /**
-     * Sometime when connect one bad channel which isn't writable, it will call
-     * this function
+     * @@@ Comment this function
+     * 
+     * Don't allow call from low netty layer, whose call will try to obtain the lock of jstorm netty layer
+     * otherwise it will lead to deadlock 
+     */
+//    @Override
+//    public void channelInterestChanged(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
+//        
+//    	client.notifyInterestChanged(e.getChannel());
+//    }
+
+    /**
+     * Sometime when connect one bad channel which isn't writable, it will call this function
      */
     @Override
-    public void channelConnected(ChannelHandlerContext ctx,
-            ChannelStateEvent event) {
+    public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent event) {
         // register the newly established channel
         Channel channel = event.getChannel();
-        LOG.info("connection established to :{}, local port:{}",
-                client.getRemoteAddr(), channel.getLocalAddress());
+        LOG.info("connection established to :{}, local port:{}", client.getRemoteAddr(), channel.getLocalAddress());
 
         client.handleResponse();
     }
@@ -63,8 +71,8 @@ public class StormClientHandler extends SimpleChannelUpstreamHandler {
 
     /**
      * 
-     * @see org.jboss.netty.channel.SimpleChannelUpstreamHandler#exceptionCaught(org.jboss.netty.channel.ChannelHandlerContext,
-     *      org.jboss.netty.channel.ExceptionEvent)
+     * @see SimpleChannelUpstreamHandler#exceptionCaught(ChannelHandlerContext,
+     *      ExceptionEvent)
      */
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent event) {
@@ -82,14 +90,12 @@ public class StormClientHandler extends SimpleChannelUpstreamHandler {
     /**
      * Attention please,
      * 
-     * @see org.jboss.netty.channel.SimpleChannelUpstreamHandler#channelDisconnected(org.jboss.netty.channel.ChannelHandlerContext,
-     *      org.jboss.netty.channel.ChannelStateEvent)
+     * @see SimpleChannelUpstreamHandler#channelDisconnected(ChannelHandlerContext,
+     *      ChannelStateEvent)
      */
     @Override
-    public void channelDisconnected(ChannelHandlerContext ctx,
-            ChannelStateEvent e) throws Exception {
-        LOG.info("Receive channelDisconnected to {}, channel = {}",
-                client.getRemoteAddr(), e.getChannel());
+    public void channelDisconnected(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
+        LOG.info("Receive channelDisconnected to {}, channel = {}", client.getRemoteAddr(), e.getChannel());
         // ctx.sendUpstream(e);
         super.channelDisconnected(ctx, e);
 
@@ -97,10 +103,8 @@ public class StormClientHandler extends SimpleChannelUpstreamHandler {
     }
 
     @Override
-    public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e)
-            throws Exception {
-        LOG.info("Connection to {} has been closed, channel = {}",
-                client.getRemoteAddr(), e.getChannel());
+    public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
+        LOG.info("Connection to {} has been closed, channel = {}", client.getRemoteAddr(), e.getChannel());
         super.channelClosed(ctx, e);
     }
 

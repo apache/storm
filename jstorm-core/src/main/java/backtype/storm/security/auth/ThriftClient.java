@@ -45,17 +45,17 @@ public class ThriftClient {
     private String hostPort;
     private String host;
     private Integer port;
-    
+
     private Map<Object, Object> conf;
-    
+
     private Integer timeout;
     private ThriftConnectionType type;
     private String asUser;
-    
+
     public ThriftClient(Map conf, ThriftConnectionType type) throws Exception {
         this(conf, type, null, null, null, null);
     }
-    
+
     @SuppressWarnings("unchecked")
     public ThriftClient(Map conf, ThriftConnectionType type, Integer timeout) throws Exception {
         this(conf, type, null, null, timeout, null);
@@ -63,6 +63,7 @@ public class ThriftClient {
 
     /**
      * This is only for be compatible for Storm
+     * 
      * @param conf
      * @param type
      * @param host
@@ -71,45 +72,39 @@ public class ThriftClient {
         this(conf, type, host, null, null, null);
     }
 
-    public ThriftClient(Map conf, ThriftConnectionType type, String host, Integer port, Integer timeout){
+    public ThriftClient(Map conf, ThriftConnectionType type, String host, Integer port, Integer timeout) {
         this(conf, type, host, port, timeout, null);
     }
 
     public ThriftClient(Map conf, ThriftConnectionType type, String host, Integer port, Integer timeout, String asUser) {
-        //create a socket with server
-        
+        // create a socket with server
+
         this.timeout = timeout;
         this.conf = conf;
         this.type = type;
         this.asUser = asUser;
-        
+
         getMaster(conf, host, port);
         reconnect();
     }
-    
-    
-    
+
     public static String getMasterByZk(Map conf) throws Exception {
 
-        
         CuratorFramework zkobj = null;
         String masterHost = null;
-        
+
         try {
             String root = String.valueOf(conf.get(Config.STORM_ZOOKEEPER_ROOT));
             String zkMasterDir = root + Cluster.MASTER_SUBTREE;
-            
-            zkobj = Utils.newCurator(conf, 
-                            (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS), 
-                            conf.get(Config.STORM_ZOOKEEPER_PORT), 
-                            zkMasterDir);
+
+            zkobj = Utils.newCurator(conf, (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS), conf.get(Config.STORM_ZOOKEEPER_PORT), zkMasterDir);
             zkobj.start();
             if (zkobj.checkExists().forPath("/") == null) {
                 throw new RuntimeException("No alive nimbus ");
             }
-            
+
             masterHost = new String(zkobj.getData().forPath("/"));
-            
+
             LOG.info("masterHost:" + masterHost);
             return masterHost;
         } finally {
@@ -119,8 +114,8 @@ public class ThriftClient {
             }
         }
     }
-    
-    public void getMaster(Map conf, String host, Integer port){
+
+    public void getMaster(Map conf, String host, Integer port) {
         if (StringUtils.isBlank(host) == false) {
             this.host = host;
             if (port == null) {
@@ -128,7 +123,7 @@ public class ThriftClient {
             }
             this.port = port;
             this.hostPort = host + ":" + port;
-        }else {
+        } else {
             try {
                 hostPort = ThriftClient.getMasterByZk(conf);
             } catch (Exception e) {
@@ -142,7 +137,7 @@ public class ThriftClient {
             this.host = host_port[0];
             this.port = Integer.parseInt(host_port[1]);
         }
-        
+
         // create a socket with server
         if (this.host == null) {
             throw new IllegalArgumentException("host is not set");
@@ -151,45 +146,43 @@ public class ThriftClient {
             throw new IllegalArgumentException("invalid port: " + port);
         }
     }
-    
+
     public synchronized TTransport transport() {
         return _transport;
     }
-    
+
     public synchronized void reconnect() {
-        close();    
+        close();
         try {
             TSocket socket = new TSocket(host, port);
-            if(timeout!=null) {
+            if (timeout != null) {
                 socket.setTimeout(timeout);
-            }else {
-                //@@@ Todo
+            } else {
+                // @@@ Todo
                 // set the socket default Timeout as xxxx
             }
 
-            //locate login configuration 
+            // locate login configuration
             Configuration login_conf = AuthUtils.GetConfiguration(conf);
 
-            //construct a transport plugin
+            // construct a transport plugin
             ITransportPlugin transportPlugin = AuthUtils.GetTransportPlugin(type, conf, login_conf);
 
             final TTransport underlyingTransport = socket;
 
-            //TODO get this from type instead of hardcoding to Nimbus.
-            //establish client-server transport via plugin
-            //do retries if the connect fails
-            TBackoffConnect connectionRetry 
-                = new TBackoffConnect(
-                                      Utils.getInt(conf.get(Config.STORM_NIMBUS_RETRY_TIMES)),
-                                      Utils.getInt(conf.get(Config.STORM_NIMBUS_RETRY_INTERVAL)),
-                                      Utils.getInt(conf.get(Config.STORM_NIMBUS_RETRY_INTERVAL_CEILING)));
+            // TODO get this from type instead of hardcoding to Nimbus.
+            // establish client-server transport via plugin
+            // do retries if the connect fails
+            TBackoffConnect connectionRetry =
+                    new TBackoffConnect(Utils.getInt(conf.get(Config.STORM_NIMBUS_RETRY_TIMES)), Utils.getInt(conf.get(Config.STORM_NIMBUS_RETRY_INTERVAL)),
+                            Utils.getInt(conf.get(Config.STORM_NIMBUS_RETRY_INTERVAL_CEILING)));
             _transport = connectionRetry.doConnectWithRetry(transportPlugin, underlyingTransport, host, asUser);
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
         _protocol = null;
         if (_transport != null) {
-            _protocol = new  TBinaryProtocol(_transport);
+            _protocol = new TBinaryProtocol(_transport);
         }
     }
 

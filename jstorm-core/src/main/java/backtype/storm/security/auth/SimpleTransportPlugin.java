@@ -73,22 +73,21 @@ public class SimpleTransportPlugin implements ITransportPlugin {
         int maxBufferSize = type.getMaxBufferSize(storm_conf);
         Integer queueSize = type.getQueueSize(storm_conf);
 
-        THsHaServer.Args server_args = new THsHaServer.Args(serverTransport).
-                processor(new SimpleWrapProcessor(processor)).
-                workerThreads(numWorkerThreads).
-                protocolFactory(new TBinaryProtocol.Factory(false, true, maxBufferSize, -1));
+        THsHaServer.Args server_args =
+                new THsHaServer.Args(serverTransport).processor(new SimpleWrapProcessor(processor)).workerThreads(numWorkerThreads)
+                        .protocolFactory(new TBinaryProtocol.Factory(false, true, maxBufferSize, -1));
 
         if (queueSize != null) {
-            server_args.executorService(new ThreadPoolExecutor(numWorkerThreads, numWorkerThreads, 
-                                   60, TimeUnit.SECONDS, new ArrayBlockingQueue(queueSize)));
+            server_args.executorService(new ThreadPoolExecutor(numWorkerThreads, numWorkerThreads, 60, TimeUnit.SECONDS, new ArrayBlockingQueue(queueSize)));
         }
 
-        //construct THsHaServer
+        // construct THsHaServer
         return new THsHaServer(server_args);
     }
 
     /**
-     * Connect to the specified server via framed transport 
+     * Connect to the specified server via framed transport
+     * 
      * @param transport The underlying Thrift transport.
      * @param serverHost unused.
      * @param asUser unused.
@@ -96,10 +95,10 @@ public class SimpleTransportPlugin implements ITransportPlugin {
     @Override
     public TTransport connect(TTransport transport, String serverHost, String asUser) throws TTransportException {
         int maxBufferSize = type.getMaxBufferSize(storm_conf);
-        //create a framed transport
+        // create a framed transport
         TTransport conn = new TFramedTransport(transport, maxBufferSize);
 
-        //connect
+        // connect
         conn.open();
         LOG.debug("Simple client transport has been established");
 
@@ -108,13 +107,13 @@ public class SimpleTransportPlugin implements ITransportPlugin {
 
     /**
      * @return the subject that will be used for all connections
-     */  
+     */
     protected Subject getDefaultSubject() {
         return null;
     }
 
-    /**                                                                                                                                                                             
-     * Processor that populate simple transport info into ReqContext, and then invoke a service handler                                                                              
+    /**
+     * Processor that populate simple transport info into ReqContext, and then invoke a service handler
      */
     private class SimpleWrapProcessor implements TProcessor {
         final TProcessor wrapped;
@@ -124,7 +123,7 @@ public class SimpleTransportPlugin implements ITransportPlugin {
         }
 
         public boolean process(final TProtocol inProt, final TProtocol outProt) throws TException {
-            //populating request context 
+            // populating request context
             ReqContext req_context = ReqContext.context();
 
             TTransport trans = inProt.getTransport();
@@ -133,31 +132,36 @@ public class SimpleTransportPlugin implements ITransportPlugin {
                     req_context.setRemoteAddress(InetAddress.getLocalHost());
                 } catch (UnknownHostException e) {
                     throw new RuntimeException(e);
-                }                                
+                }
             } else if (trans instanceof TSocket) {
-                TSocket tsocket = (TSocket)trans;
-                //remote address
+                TSocket tsocket = (TSocket) trans;
+                // remote address
                 Socket socket = tsocket.getSocket();
-                req_context.setRemoteAddress(socket.getInetAddress());                
-            } 
+                req_context.setRemoteAddress(socket.getInetAddress());
+            }
 
-            //anonymous user
+            // anonymous user
             Subject s = getDefaultSubject();
             if (s == null) {
-              final String user = (String)storm_conf.get("debug.simple.transport.user");
-              if (user != null) {
-                HashSet<Principal> principals = new HashSet<Principal>();
-                principals.add(new Principal() {
-                  public String getName() { return user; }
-                  public String toString() { return user; }
-                });
-                s = new Subject(true, principals, new HashSet<Object>(), new HashSet<Object>());
-              }
+                final String user = (String) storm_conf.get("debug.simple.transport.user");
+                if (user != null) {
+                    HashSet<Principal> principals = new HashSet<Principal>();
+                    principals.add(new Principal() {
+                        public String getName() {
+                            return user;
+                        }
+
+                        public String toString() {
+                            return user;
+                        }
+                    });
+                    s = new Subject(true, principals, new HashSet<Object>(), new HashSet<Object>());
+                }
             }
             req_context.setSubject(s);
 
-            //invoke service handler
+            // invoke service handler
             return wrapped.process(inProt, outProt);
         }
-    } 
+    }
 }

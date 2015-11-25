@@ -29,10 +29,8 @@ import com.alibaba.jstorm.daemon.nimbus.StatusType;
  * 
  * Dedicate Topology status
  * 
- * Topology status: active/inactive/killed/rebalancing killTimeSecs: when status
- * isn't killed, it is -1 and useless. when status is killed, do kill operation
- * after killTimeSecs seconds when status is rebalancing, do rebalancing opation
- * after delaySecs seconds restore oldStatus as current status
+ * Topology status: active/inactive/killed/rebalancing killTimeSecs: when status isn't killed, it is -1 and useless. when status is killed, do kill operation
+ * after killTimeSecs seconds when status is rebalancing, do rebalancing opation after delaySecs seconds restore oldStatus as current status
  */
 public class StormStatus implements Serializable {
 
@@ -99,9 +97,7 @@ public class StormStatus implements Serializable {
         }
 
         StormStatus check = (StormStatus) base;
-        if (check.getStatusType().equals(getStatusType())
-                && check.getKillTimeSecs() == getKillTimeSecs()
-                && check.getDelaySecs().equals(getDelaySecs())) {
+        if (check.getStatusType().equals(getStatusType()) && check.getKillTimeSecs() == getKillTimeSecs() && check.getDelaySecs().equals(getDelaySecs())) {
             return true;
         }
         return false;
@@ -109,15 +105,12 @@ public class StormStatus implements Serializable {
 
     @Override
     public int hashCode() {
-        return this.getStatusType().hashCode()
-                + this.getKillTimeSecs().hashCode()
-                + this.getDelaySecs().hashCode();
+        return this.getStatusType().hashCode() + this.getKillTimeSecs().hashCode() + this.getDelaySecs().hashCode();
     }
 
     @Override
     public String toString() {
-        return ToStringBuilder.reflectionToString(this,
-                ToStringStyle.SHORT_PREFIX_STYLE);
+        return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
 
 }

@@ -21,8 +21,7 @@ import java.util.Comparator;
 
 import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
 
-public abstract class WorkerComparator implements
-        Comparator<ResourceWorkerSlot> {
+public abstract class WorkerComparator implements Comparator<ResourceWorkerSlot> {
 
     protected String name;
 

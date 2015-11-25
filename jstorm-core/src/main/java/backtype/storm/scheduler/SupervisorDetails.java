@@ -38,19 +38,19 @@ public class SupervisorDetails {
      */
     Set<Integer> allPorts;
 
-    public SupervisorDetails(String id, Object meta){
+    public SupervisorDetails(String id, Object meta) {
         this.id = id;
         this.meta = meta;
         allPorts = new HashSet();
     }
-    
-    public SupervisorDetails(String id, Object meta, Collection<Number> allPorts){
+
+    public SupervisorDetails(String id, Object meta, Collection<Number> allPorts) {
         this.id = id;
         this.meta = meta;
         setAllPorts(allPorts);
     }
 
-    public SupervisorDetails(String id, String host, Object schedulerMeta, Collection<Number> allPorts){
+    public SupervisorDetails(String id, String host, Object schedulerMeta, Collection<Number> allPorts) {
         this.id = id;
         this.host = host;
         this.schedulerMeta = schedulerMeta;
@@ -60,8 +60,8 @@ public class SupervisorDetails {
 
     private void setAllPorts(Collection<Number> allPorts) {
         this.allPorts = new HashSet<Integer>();
-        if(allPorts!=null) {
-            for(Number n: allPorts) {
+        if (allPorts != null) {
+            for (Number n : allPorts) {
                 this.allPorts.add(n.intValue());
             }
         }
@@ -78,7 +78,7 @@ public class SupervisorDetails {
     public Object getMeta() {
         return meta;
     }
-    
+
     public Set<Integer> getAllPorts() {
         return allPorts;
     }

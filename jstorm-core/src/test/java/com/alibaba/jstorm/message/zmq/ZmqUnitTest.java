@@ -27,14 +27,12 @@ import backtype.storm.Config;
 
 public class ZmqUnitTest {
 
-    private static final Logger LOG = LoggerFactory
-            .getLogger(ZmqUnitTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ZmqUnitTest.class);
 
     private static int port = 6700;
     private static int task = 1;
 
-    private static String context_class_name =
-            "com.alibaba.jstorm.message.zeroMq.MQContext";
+    private static String context_class_name = "com.alibaba.jstorm.message.zeroMq.MQContext";
 
     private static Map storm_conf = new HashMap<Object, Object>();
     static {

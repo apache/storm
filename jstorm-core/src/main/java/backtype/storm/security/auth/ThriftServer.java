@@ -28,19 +28,19 @@ import org.slf4j.LoggerFactory;
 
 public class ThriftServer {
     private static final Logger LOG = LoggerFactory.getLogger(ThriftServer.class);
-    private Map _storm_conf; //storm configuration
+    private Map _storm_conf; // storm configuration
     protected TProcessor _processor = null;
     private final ThriftConnectionType _type;
     private TServer _server = null;
     private Configuration _login_conf;
-    
+
     public ThriftServer(Map storm_conf, TProcessor processor, ThriftConnectionType type) {
         _storm_conf = storm_conf;
         _processor = processor;
         _type = type;
 
         try {
-            //retrieve authentication configuration 
+            // retrieve authentication configuration
             _login_conf = AuthUtils.GetConfiguration(_storm_conf);
         } catch (Exception x) {
             LOG.error(x.getMessage(), x);
@@ -54,27 +54,30 @@ public class ThriftServer {
 
     /**
      * Is ThriftServer listening to requests?
+     * 
      * @return
      */
     public boolean isServing() {
-        if (_server == null) return false;
+        if (_server == null)
+            return false;
         return _server.isServing();
     }
-    
-    public void serve()  {
-        try {
-            //locate our thrift transport plugin
-            ITransportPlugin  transportPlugin = AuthUtils.GetTransportPlugin(_type, _storm_conf, _login_conf);
 
-            //server
+    public void serve() {
+        try {
+            // locate our thrift transport plugin
+            ITransportPlugin transportPlugin = AuthUtils.GetTransportPlugin(_type, _storm_conf, _login_conf);
+
+            // server
             _server = transportPlugin.getServer(_processor);
 
-            //start accepting requests
+            // start accepting requests
             _server.serve();
         } catch (Exception ex) {
             LOG.error("ThriftServer is being stopped due to: " + ex, ex);
-            if (_server != null) _server.stop();
-            Runtime.getRuntime().halt(1); //shutdown server process since we could not handle Thrift requests any more
+            if (_server != null)
+                _server.stop();
+            Runtime.getRuntime().halt(1); // shutdown server process since we could not handle Thrift requests any more
         }
     }
 }

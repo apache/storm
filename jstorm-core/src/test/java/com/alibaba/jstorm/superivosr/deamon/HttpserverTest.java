@@ -29,11 +29,8 @@ public class HttpserverTest {
 
     @Test
     public void test_httpserver() {
-        int port =
-                ConfigExtension.getSupervisorDeamonHttpserverPort(Maps
-                        .newHashMap());
-        Httpserver httpserver =
-                new Httpserver(port, new HashMap<String, Object>());
+        int port = ConfigExtension.getSupervisorDeamonHttpserverPort(Maps.newHashMap());
+        Httpserver httpserver = new Httpserver(port, new HashMap<String, Object>());
         httpserver.start();
         System.out.println("start....");
 

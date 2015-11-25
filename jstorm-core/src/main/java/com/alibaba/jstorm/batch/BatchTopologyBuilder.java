@@ -30,8 +30,7 @@ import com.alibaba.jstorm.batch.impl.CoordinatedBolt;
 import com.alibaba.jstorm.batch.util.BatchDef;
 
 public class BatchTopologyBuilder {
-    private static final Logger LOG = LoggerFactory
-            .getLogger(BatchTopologyBuilder.class);
+    private static final Logger LOG = LoggerFactory.getLogger(BatchTopologyBuilder.class);
 
     private TopologyBuilder topologyBuilder;
 
@@ -40,17 +39,13 @@ public class BatchTopologyBuilder {
     public BatchTopologyBuilder(String topologyName) {
         topologyBuilder = new TopologyBuilder();
 
-        spoutDeclarer =
-                topologyBuilder.setSpout(BatchDef.SPOUT_TRIGGER,
-                        new BatchSpoutTrigger(), 1);
+        spoutDeclarer = topologyBuilder.setSpout(BatchDef.SPOUT_TRIGGER, new BatchSpoutTrigger(), 1);
     }
 
     public BoltDeclarer setSpout(String id, IBatchSpout spout, int paralel) {
 
-        BoltDeclarer boltDeclarer =
-                this.setBolt(id, (IBatchSpout) spout, paralel);
-        boltDeclarer.allGrouping(BatchDef.SPOUT_TRIGGER,
-                BatchDef.COMPUTING_STREAM_ID);
+        BoltDeclarer boltDeclarer = this.setBolt(id, (IBatchSpout) spout, paralel);
+        boltDeclarer.allGrouping(BatchDef.SPOUT_TRIGGER, BatchDef.COMPUTING_STREAM_ID);
 
         return boltDeclarer;
     }
@@ -58,24 +53,19 @@ public class BatchTopologyBuilder {
     public BoltDeclarer setBolt(String id, IBasicBolt bolt, int paralel) {
         CoordinatedBolt coordinatedBolt = new CoordinatedBolt(bolt);
 
-        BoltDeclarer boltDeclarer =
-                topologyBuilder.setBolt(id, coordinatedBolt, paralel);
+        BoltDeclarer boltDeclarer = topologyBuilder.setBolt(id, coordinatedBolt, paralel);
 
         if (bolt instanceof IPrepareCommit) {
-            boltDeclarer.allGrouping(BatchDef.SPOUT_TRIGGER,
-                    BatchDef.PREPARE_STREAM_ID);
+            boltDeclarer.allGrouping(BatchDef.SPOUT_TRIGGER, BatchDef.PREPARE_STREAM_ID);
         }
 
         if (bolt instanceof ICommitter) {
-            boltDeclarer.allGrouping(BatchDef.SPOUT_TRIGGER,
-                    BatchDef.COMMIT_STREAM_ID);
-            boltDeclarer.allGrouping(BatchDef.SPOUT_TRIGGER,
-                    BatchDef.REVERT_STREAM_ID);
+            boltDeclarer.allGrouping(BatchDef.SPOUT_TRIGGER, BatchDef.COMMIT_STREAM_ID);
+            boltDeclarer.allGrouping(BatchDef.SPOUT_TRIGGER, BatchDef.REVERT_STREAM_ID);
         }
 
         if (bolt instanceof IPostCommit) {
-            boltDeclarer.allGrouping(BatchDef.SPOUT_TRIGGER,
-                    BatchDef.POST_STREAM_ID);
+            boltDeclarer.allGrouping(BatchDef.SPOUT_TRIGGER, BatchDef.POST_STREAM_ID);
         }
 
         return boltDeclarer;

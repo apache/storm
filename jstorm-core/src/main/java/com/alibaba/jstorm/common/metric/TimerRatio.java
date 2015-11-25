@@ -28,11 +28,7 @@ public class TimerRatio implements Gauge<Double> {
 
     private long lastUpdateTime = 0;
     private long sum = 0;
-    private long lastGaugeTime;
-
-    public void init() {
-        lastGaugeTime = System.nanoTime();
-    }
+    private long lastGaugeTime = 0;
 
     public synchronized void start() {
         if (lastUpdateTime == 0) {

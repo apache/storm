@@ -32,11 +32,9 @@ import com.alibaba.jstorm.task.TaskTransfer;
  */
 
 public class UnanchoredSend {
-    public static void send(TopologyContext topologyContext,
-            TaskSendTargets taskTargets, TaskTransfer transfer_fn,
-            String stream, List<Object> values) {
+    public static void send(TopologyContext topologyContext, TaskSendTargets taskTargets, TaskTransfer transfer_fn, String stream, List<Object> values) {
 
-        java.util.List<Integer> tasks = taskTargets.get(stream, values);
+        List<Integer> tasks = taskTargets.get(stream, values);
         if (tasks.size() == 0) {
             return;
         }
@@ -44,8 +42,7 @@ public class UnanchoredSend {
         Integer taskId = topologyContext.getThisTaskId();
 
         for (Integer task : tasks) {
-            TupleImplExt tup =
-                    new TupleImplExt(topologyContext, values, taskId, stream);
+            TupleImplExt tup = new TupleImplExt(topologyContext, values, taskId, stream);
             tup.setTargetTaskId(task);
 
             transfer_fn.transfer(tup);

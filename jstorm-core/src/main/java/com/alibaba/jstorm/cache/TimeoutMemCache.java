@@ -17,50 +17,46 @@
  */
 package com.alibaba.jstorm.cache;
 
+import com.alibaba.jstorm.client.ConfigExtension;
+import com.alibaba.jstorm.utils.JStormUtils;
+import com.alibaba.jstorm.utils.TimeCacheMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.alibaba.jstorm.client.ConfigExtension;
-import com.alibaba.jstorm.utils.JStormUtils;
-import com.alibaba.jstorm.utils.TimeCacheMap;
-
 public class TimeoutMemCache implements JStormCache {
     private static final long serialVersionUID = 705938812240167583L;
     private static Logger LOG = LoggerFactory.getLogger(TimeoutMemCache.class);
-    
-   
+
     protected int defaultTimeout;
     protected final TreeMap<Integer, TimeCacheMap<String, Object>> cacheWindows = new TreeMap<Integer, TimeCacheMap<String, Object>>();
-    
+
     public TimeoutMemCache() {
-        
     }
-    
+
     protected void registerCacheWindow(int timeoutSecond) {
         synchronized (this) {
             if (cacheWindows.get(timeoutSecond) == null) {
                 TimeCacheMap<String, Object> cacheWindow = new TimeCacheMap<String, Object>(timeoutSecond);
                 cacheWindows.put(timeoutSecond, cacheWindow);
-                
+
                 LOG.info("Successfully register CacheWindow: " + timeoutSecond);
             } else {
                 LOG.info("CacheWindow: " + timeoutSecond + " has been registered");
             }
         }
     }
-    
+
     @Override
     public void init(Map<Object, Object> conf) {
-        // TODO Auto-generated method stub
         this.defaultTimeout = ConfigExtension.getDefaultCacheTimeout(conf);
         registerCacheWindow(defaultTimeout);
-        
+
         List<Object> list = (List) ConfigExtension.getCacheTimeoutList(conf);
         if (list != null) {
             for (Object obj : list) {
@@ -68,21 +64,17 @@ public class TimeoutMemCache implements JStormCache {
                 if (timeoutSecond == null) {
                     continue;
                 }
-                
                 registerCacheWindow(timeoutSecond);
             }
         }
     }
-    
+
     @Override
     public void cleanup() {
-        // TODO Auto-generated method stub
-        
     }
-    
+
     @Override
     public Object get(String key) {
-        // TODO Auto-generated method stub
         // @@@ TODO
         // in order to improve performance, it can be query from defaultWindow firstly, then others
         for (TimeCacheMap<String, Object> cacheWindow : cacheWindows.values()) {
@@ -93,21 +85,17 @@ public class TimeoutMemCache implements JStormCache {
         }
         return null;
     }
-    
+
     @Override
     public void getBatch(Map<String, Object> map) {
-        // TODO Auto-generated method stub
         for (String key : map.keySet()) {
             Object obj = get(key);
             map.put(key, obj);
         }
-        
-        return;
     }
-    
+
     @Override
     public void remove(String key) {
-        // TODO Auto-generated method stub
         for (TimeCacheMap<String, Object> cacheWindow : cacheWindows.values()) {
             Object ret = cacheWindow.remove(key);
             if (ret != null) {
@@ -115,64 +103,52 @@ public class TimeoutMemCache implements JStormCache {
             }
         }
     }
-    
+
     @Override
     public void removeBatch(Collection<String> keys) {
-        // TODO Auto-generated method stub
         for (String key : keys) {
             remove(key);
         }
-        
-        return;
     }
-    
+
     @Override
     public void put(String key, Object value, int timeoutSecond) {
-        
-        // TODO Auto-generated method stub
         Entry<Integer, TimeCacheMap<String, Object>> ceilingEntry = cacheWindows.ceilingEntry(timeoutSecond);
         if (ceilingEntry == null) {
             put(key, value);
-            return ;
-        }else {
+        } else {
             remove(key);
             ceilingEntry.getValue().put(key, value);
         }
-        
     }
-    
+
     @Override
     public void put(String key, Object value) {
         remove(key);
         TimeCacheMap<String, Object> bestWindow = cacheWindows.get(defaultTimeout);
         bestWindow.put(key, value);
     }
-    
+
     @Override
-    public void putBatch(Map<String, Object> map)  {
-        // TODO Auto-generated method stub
+    public void putBatch(Map<String, Object> map) {
         for (Entry<String, Object> entry : map.entrySet()) {
             put(entry.getKey(), entry.getValue());
         }
-        
     }
-    
+
     @Override
     public void putBatch(Map<String, Object> map, int timeoutSeconds) {
-        // TODO Auto-generated method stub
         for (Entry<String, Object> entry : map.entrySet()) {
             put(entry.getKey(), entry.getValue(), timeoutSeconds);
         }
-        
     }
 
-	public int getDefaultTimeout() {
-		return defaultTimeout;
-	}
+    public int getDefaultTimeout() {
+        return defaultTimeout;
+    }
 
-	public void setDefaultTimeout(int defaultTimeout) {
-		this.defaultTimeout = defaultTimeout;
-	}
-    
-    
+    public void setDefaultTimeout(int defaultTimeout) {
+        this.defaultTimeout = defaultTimeout;
+    }
+
 }

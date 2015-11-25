@@ -32,10 +32,10 @@ public class FilterExecutor implements Function {
     public FilterExecutor(Filter filter) {
         _filter = filter;
     }
-    
+
     @Override
     public void execute(TridentTuple tuple, TridentCollector collector) {
-        if(_filter.isKeep(tuple)) {
+        if (_filter.isKeep(tuple)) {
             collector.emit(null);
         }
     }
@@ -49,5 +49,5 @@ public class FilterExecutor implements Function {
     public void cleanup() {
         _filter.cleanup();
     }
-    
+
 }

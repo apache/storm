@@ -43,12 +43,10 @@ import com.alibaba.jstorm.cluster.StormConfig;
  */
 public class JStormServerUtils {
 
-    private static final Logger LOG = LoggerFactory
-            .getLogger(JStormServerUtils.class);
+    private static final Logger LOG = LoggerFactory.getLogger(JStormServerUtils.class);
 
-    public static void downloadCodeFromMaster(Map conf, String localRoot,
-            String masterCodeDir, String topologyId, boolean isSupervisor)
-            throws IOException, TException {
+    public static void downloadCodeFromMaster(Map conf, String localRoot, String masterCodeDir, String topologyId, boolean isSupervisor) throws IOException,
+            TException {
         FileUtils.forceMkdir(new File(localRoot));
         FileUtils.forceMkdir(new File(StormConfig.stormlib_path(localRoot)));
 
@@ -64,25 +62,18 @@ public class JStormServerUtils {
         String masterStormConfPath = StormConfig.stormconf_path(masterCodeDir);
         Utils.downloadFromMaster(conf, masterStormConfPath, localStormConfPath);
 
-        Map stormConf =
-                (Map) StormConfig.readLocalObject(topologyId,
-                        localStormConfPath);
+        Map stormConf = (Map) StormConfig.readLocalObject(topologyId, localStormConfPath);
 
         if (stormConf == null)
             throw new IOException("Get topology conf error: " + topologyId);
 
-        List<String> libs =
-                (List<String>) stormConf
-                        .get(GenericOptionsParser.TOPOLOGY_LIB_NAME);
+        List<String> libs = (List<String>) stormConf.get(GenericOptionsParser.TOPOLOGY_LIB_NAME);
         if (libs == null)
             return;
         for (String libName : libs) {
-            String localStromLibPath =
-                    StormConfig.stormlib_path(localRoot, libName);
-            String masterStormLibPath =
-                    StormConfig.stormlib_path(masterCodeDir, libName);
-            Utils.downloadFromMaster(conf, masterStormLibPath,
-                    localStromLibPath);
+            String localStromLibPath = StormConfig.stormlib_path(localRoot, libName);
+            String masterStormLibPath = StormConfig.stormlib_path(masterCodeDir, libName);
+            Utils.downloadFromMaster(conf, masterStormLibPath, localStromLibPath);
         }
     }
 

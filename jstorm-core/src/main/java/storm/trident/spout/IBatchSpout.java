@@ -25,9 +25,14 @@ import storm.trident.operation.TridentCollector;
 
 public interface IBatchSpout extends Serializable {
     void open(Map conf, TopologyContext context);
+
     void emitBatch(long batchId, TridentCollector collector);
+
     void ack(long batchId);
+
     void close();
+
     Map getComponentConfiguration();
+
     Fields getOutputFields();
 }

@@ -36,6 +36,7 @@ import com.alibaba.jstorm.utils.TimeUtils;
 
 /**
  * supervisor Heartbeat, just write SupervisorInfo to ZK
+ * @author Johnfang (xiaojian.fxj@alibaba-inc.com)
  */
 class Heartbeat extends RunnableCallback {
 
@@ -67,8 +68,7 @@ class Heartbeat extends RunnableCallback {
      * @param myHostName
      */
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    public Heartbeat(Map conf, StormClusterState stormClusterState,
-            String supervisorId) {
+    public Heartbeat(Map conf, StormClusterState stormClusterState, String supervisorId) {
 
         String myHostName = JStormServerUtils.getHostName(conf);
 
@@ -77,15 +77,12 @@ class Heartbeat extends RunnableCallback {
         this.conf = conf;
         this.myHostName = myHostName;
         this.startTime = TimeUtils.current_time_secs();
-        this.frequence =
-                JStormUtils.parseInt(conf
-                        .get(Config.SUPERVISOR_HEARTBEAT_FREQUENCY_SECS));
+        this.frequence = JStormUtils.parseInt(conf.get(Config.SUPERVISOR_HEARTBEAT_FREQUENCY_SECS));
         this.hbUpdateTrigger = new AtomicBoolean(true);
 
         initSupervisorInfo(conf);
 
-        LOG.info("Successfully init supervisor heartbeat thread, "
-                + supervisorInfo);
+        LOG.info("Successfully init supervisor heartbeat thread, " + supervisorInfo);
     }
 
     private void initSupervisorInfo(Map conf) {
@@ -96,32 +93,28 @@ class Heartbeat extends RunnableCallback {
 
                 boolean isLocaliP = false;
                 isLocaliP = myHostName.equals("127.0.0.1");
-                if(isLocaliP){
+                if (isLocaliP) {
                     throw new Exception("the hostname which  supervisor get is localhost");
                 }
-            }catch(Exception e1){
+            } catch (Exception e1) {
                 LOG.error("get supervisor host error!", e1);
                 throw new RuntimeException(e1);
             }
             Set<Integer> ports = JStormUtils.listToSet(portList);
-            supervisorInfo =
-                    new SupervisorInfo(myHostName, supervisorId, ports);
+            supervisorInfo = new SupervisorInfo(myHostName, supervisorId, ports);
         } else {
-            Set<Integer> ports = JStormUtils.listToSet(portList.subList(0, 1));
-            supervisorInfo =
-                    new SupervisorInfo(myHostName, supervisorId, ports);
+            Set<Integer> ports = JStormUtils.listToSet(portList);
+            supervisorInfo = new SupervisorInfo(myHostName, supervisorId, ports);
         }
     }
 
     @SuppressWarnings("unchecked")
     public void update() {
         supervisorInfo.setTimeSecs(TimeUtils.current_time_secs());
-        supervisorInfo
-                .setUptimeSecs((int) (TimeUtils.current_time_secs() - startTime));
+        supervisorInfo.setUptimeSecs((int) (TimeUtils.current_time_secs() - startTime));
 
         try {
-            stormClusterState
-                    .supervisor_heartbeat(supervisorId, supervisorInfo);
+            stormClusterState.supervisor_heartbeat(supervisorId, supervisorInfo);
         } catch (Exception e) {
             LOG.error("Failed to update SupervisorInfo to ZK");
 

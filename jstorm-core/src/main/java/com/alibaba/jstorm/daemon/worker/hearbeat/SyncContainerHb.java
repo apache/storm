@@ -35,8 +35,7 @@ import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.PathUtils;
 
 public class SyncContainerHb extends RunnableCallback {
-    private final static Logger LOG = LoggerFactory
-            .getLogger(SyncContainerHb.class);
+    private final static Logger LOG = LoggerFactory.getLogger(SyncContainerHb.class);
 
     private String readDir;
     private String writeDir;
@@ -113,8 +112,7 @@ public class SyncContainerHb extends RunnableCallback {
         try {
             hb = Long.valueOf(biggest);
         } catch (Exception e) {
-            LOG.info("Heartbeat file " + biggest
-                    + " isn't a valid file, remove it");
+            LOG.info("Heartbeat file " + biggest + " isn't a valid file, remove it");
 
             String path = readDir + File.separator + biggest;
             try {
@@ -151,8 +149,7 @@ public class SyncContainerHb extends RunnableCallback {
             return;
         }
 
-        String seconds =
-                String.valueOf(System.currentTimeMillis() / SECOND_MILLISCOND);
+        String seconds = String.valueOf(System.currentTimeMillis() / SECOND_MILLISCOND);
 
         String path = writeDir + File.separator + seconds;
 
@@ -289,8 +286,7 @@ public class SyncContainerHb extends RunnableCallback {
         this.reserverNum = reserverNum;
     }
 
-    public static AsyncLoopThread mkInstance(String containerHbDir,
-            String hbDir, int timeout, int frequence) {
+    public static AsyncLoopThread mkInstance(String containerHbDir, String hbDir, int timeout, int frequence) {
         SyncContainerHb syncContainerHbThread = new SyncContainerHb();
 
         syncContainerHbThread.setReadDir(containerHbDir);
@@ -306,9 +302,7 @@ public class SyncContainerHb extends RunnableCallback {
         sb.append(",frequence:").append(frequence);
         LOG.info(sb.toString());
 
-        AsyncLoopThread thread =
-                new AsyncLoopThread(syncContainerHbThread, true,
-                        Thread.NORM_PRIORITY, true);
+        AsyncLoopThread thread = new AsyncLoopThread(syncContainerHbThread, true, Thread.NORM_PRIORITY, true);
 
         return thread;
     }
@@ -329,31 +323,23 @@ public class SyncContainerHb extends RunnableCallback {
 
     }
 
-    public static AsyncLoopThread mkSupervisorInstance(Map conf)
-            throws IOException {
-        boolean isEnableContainer =
-                ConfigExtension.isEnableContainerSupervisor();
+    public static AsyncLoopThread mkSupervisorInstance(Map conf) throws IOException {
+        boolean isEnableContainer = ConfigExtension.isEnableContainerSupervisor();
         if (isEnableContainer) {
-            String containerHbDir =
-                    ConfigExtension.getContainerSupervisorHearbeat();
+            String containerHbDir = ConfigExtension.getContainerSupervisorHearbeat();
             String hbDir = StormConfig.supervisorHearbeatForContainer(conf);
-            int timeout =
-                    ConfigExtension.getContainerHeartbeatTimeoutSeconds(conf);
-            int frequence =
-                    ConfigExtension.getContainerHeartbeatFrequence(conf);
+            int timeout = ConfigExtension.getContainerHeartbeatTimeoutSeconds(conf);
+            int frequence = ConfigExtension.getContainerHeartbeatFrequence(conf);
 
             return mkInstance(containerHbDir, hbDir, timeout, frequence);
         }
 
-        boolean isWorkerAutomaticStop =
-                ConfigExtension.isWorkerStopWithoutSupervisor(conf);
+        boolean isWorkerAutomaticStop = ConfigExtension.isWorkerStopWithoutSupervisor(conf);
         if (isWorkerAutomaticStop) {
             String containerHbDir = null;
             String hbDir = StormConfig.supervisorHearbeatForContainer(conf);
-            int timeout =
-                    ConfigExtension.getContainerHeartbeatTimeoutSeconds(conf);
-            int frequence =
-                    ConfigExtension.getContainerHeartbeatFrequence(conf);
+            int timeout = ConfigExtension.getContainerHeartbeatTimeoutSeconds(conf);
+            int frequence = ConfigExtension.getContainerHeartbeatFrequence(conf);
 
             return mkInstance(containerHbDir, hbDir, timeout, frequence);
         }
@@ -364,17 +350,14 @@ public class SyncContainerHb extends RunnableCallback {
     }
 
     public static AsyncLoopThread mkWorkerInstance(Map conf) throws IOException {
-        boolean isEnableContainer =
-                ConfigExtension.isEnableContainerSupervisor();
-        boolean isWorkerAutomaticStop =
-                ConfigExtension.isWorkerStopWithoutSupervisor(conf);
+        boolean isEnableContainer = ConfigExtension.isEnableContainerSupervisor();
+        boolean isWorkerAutomaticStop = ConfigExtension.isWorkerStopWithoutSupervisor(conf);
         if (isEnableContainer == false && isWorkerAutomaticStop == false) {
             LOG.info("Run worker without Apsara/Yarn container");
             return null;
         }
 
-        String containerHbDir =
-                StormConfig.supervisorHearbeatForContainer(conf);
+        String containerHbDir = StormConfig.supervisorHearbeatForContainer(conf);
         String hbDir = null;
         int timeout = ConfigExtension.getContainerHeartbeatTimeoutSeconds(conf);
         int frequence = ConfigExtension.getContainerHeartbeatFrequence(conf);

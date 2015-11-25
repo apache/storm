@@ -110,8 +110,7 @@ public class DevicesCore implements CgroupCore {
             final int prime = 31;
             int result = 1;
             result = prime * result + accesses;
-            result =
-                    prime * result + ((device == null) ? 0 : device.hashCode());
+            result = prime * result + ((device == null) ? 0 : device.hashCode());
             result = prime * result + type;
             return result;
         }
@@ -161,27 +160,21 @@ public class DevicesCore implements CgroupCore {
         }
     }
 
-    private void setPermission(String prop, char type, Device device,
-            int accesses) throws IOException {
+    private void setPermission(String prop, char type, Device device, int accesses) throws IOException {
         Record record = new Record(type, device, accesses);
-        CgroupUtils.writeFileByLine(Constants.getDir(this.dir, prop),
-                record.toString());
+        CgroupUtils.writeFileByLine(Constants.getDir(this.dir, prop), record.toString());
     }
 
-    public void setAllow(char type, Device device, int accesses)
-            throws IOException {
+    public void setAllow(char type, Device device, int accesses) throws IOException {
         setPermission(DEVICES_ALLOW, type, device, accesses);
     }
 
-    public void setDeny(char type, Device device, int accesses)
-            throws IOException {
+    public void setDeny(char type, Device device, int accesses) throws IOException {
         setPermission(DEVICES_DENY, type, device, accesses);
     }
 
     public Record[] getList() throws IOException {
-        List<String> output =
-                CgroupUtils.readFileByLine(Constants.getDir(this.dir,
-                        DEVICES_LIST));
+        List<String> output = CgroupUtils.readFileByLine(Constants.getDir(this.dir, DEVICES_LIST));
         return Record.parseRecordList(output);
     }
 

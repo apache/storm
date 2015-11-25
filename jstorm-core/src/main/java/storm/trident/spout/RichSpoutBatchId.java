@@ -18,12 +18,12 @@
 package storm.trident.spout;
 
 public class RichSpoutBatchId implements IBatchID {
-    long _id;    
-    
+    long _id;
+
     public RichSpoutBatchId(long id) {
         _id = id;
     }
-    
+
     @Override
     public Object getId() {
         // this is to distinguish from TransactionAttempt
@@ -42,7 +42,8 @@ public class RichSpoutBatchId implements IBatchID {
 
     @Override
     public boolean equals(Object o) {
-        if(!(o instanceof RichSpoutBatchId)) return false;
+        if (!(o instanceof RichSpoutBatchId))
+            return false;
         RichSpoutBatchId other = (RichSpoutBatchId) o;
         return _id == other._id;
     }

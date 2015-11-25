@@ -25,6 +25,7 @@ import storm.trident.util.LRUMap;
 
 /**
  * Useful to layer over a map that communicates with a database. you generally layer opaque map over this over your database store
+ * 
  * @author nathan
  * @param <T>
  */
@@ -41,8 +42,8 @@ public class CachedMap<T> implements IBackingMap<T> {
     public List<T> multiGet(List<List<Object>> keys) {
         Map<List<Object>, T> results = new HashMap<List<Object>, T>();
         List<List<Object>> toGet = new ArrayList<List<Object>>();
-        for(List<Object> key: keys) {
-            if(_cache.containsKey(key)) {
+        for (List<Object> key : keys) {
+            if (_cache.containsKey(key)) {
                 results.put(key, _cache.get(key));
             } else {
                 toGet.add(key);
@@ -50,7 +51,7 @@ public class CachedMap<T> implements IBackingMap<T> {
         }
 
         List<T> fetchedVals = _delegate.multiGet(toGet);
-        for(int i=0; i<toGet.size(); i++) {
+        for (int i = 0; i < toGet.size(); i++) {
             List<Object> key = toGet.get(i);
             T val = fetchedVals.get(i);
             _cache.put(key, val);
@@ -58,7 +59,7 @@ public class CachedMap<T> implements IBackingMap<T> {
         }
 
         List<T> ret = new ArrayList<T>(keys.size());
-        for(List<Object> key: keys) {
+        for (List<Object> key : keys) {
             ret.add(results.get(key));
         }
         return ret;
@@ -71,7 +72,7 @@ public class CachedMap<T> implements IBackingMap<T> {
     }
 
     private void cache(List<List<Object>> keys, List<T> values) {
-        for(int i=0; i<keys.size(); i++) {
+        for (int i = 0; i < keys.size(); i++) {
             _cache.put(keys.get(i), values.get(i));
         }
     }

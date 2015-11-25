@@ -25,8 +25,7 @@ import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 
 /**
- * Worker's Heartbeat data woker will update the object to
- * /LOCAL-DIR/workers/${woker-id}/heartbeats
+ * Worker's Heartbeat data woker will update the object to /LOCAL-DIR/workers/${woker-id}/heartbeats
  * 
  * @author yannian/Longda
  * 
@@ -39,8 +38,7 @@ public class WorkerHeartbeat implements Serializable {
     private Set<Integer> taskIds;
     private Integer port;
 
-    public WorkerHeartbeat(int timeSecs, String topologyId,
-            Set<Integer> taskIds, Integer port) {
+    public WorkerHeartbeat(int timeSecs, String topologyId, Set<Integer> taskIds, Integer port) {
 
         this.timeSecs = timeSecs;
         this.topologyId = topologyId;
@@ -83,7 +81,6 @@ public class WorkerHeartbeat implements Serializable {
 
     @Override
     public String toString() {
-        return ToStringBuilder.reflectionToString(this,
-                ToStringStyle.SHORT_PREFIX_STYLE);
+        return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
 }

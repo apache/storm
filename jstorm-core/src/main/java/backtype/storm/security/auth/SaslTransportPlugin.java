@@ -73,11 +73,9 @@ public abstract class SaslTransportPlugin implements ITransportPlugin {
         int numWorkerThreads = type.getNumThreads(storm_conf);
         Integer queueSize = type.getQueueSize(storm_conf);
 
-        TThreadPoolServer.Args server_args = new TThreadPoolServer.Args(serverTransport).
-                processor(new TUGIWrapProcessor(processor)).
-                minWorkerThreads(numWorkerThreads).
-                maxWorkerThreads(numWorkerThreads).
-                protocolFactory(new TBinaryProtocol.Factory(false, true));
+        TThreadPoolServer.Args server_args =
+                new TThreadPoolServer.Args(serverTransport).processor(new TUGIWrapProcessor(processor)).minWorkerThreads(numWorkerThreads)
+                        .maxWorkerThreads(numWorkerThreads).protocolFactory(new TBinaryProtocol.Factory(false, true));
 
         if (serverTransportFactory != null) {
             server_args.transportFactory(serverTransportFactory);
@@ -86,26 +84,23 @@ public abstract class SaslTransportPlugin implements ITransportPlugin {
         if (queueSize != null) {
             workQueue = new ArrayBlockingQueue(queueSize);
         }
-        ThreadPoolExecutor executorService = new ExtendedThreadPoolExecutor(numWorkerThreads, numWorkerThreads,
-            60, TimeUnit.SECONDS, workQueue);
+        ThreadPoolExecutor executorService = new ExtendedThreadPoolExecutor(numWorkerThreads, numWorkerThreads, 60, TimeUnit.SECONDS, workQueue);
         server_args.executorService(executorService);
         return new TThreadPoolServer(server_args);
     }
 
     /**
      * All subclass must implement this method
+     * 
      * @return
      * @throws IOException
      */
     protected abstract TTransportFactory getServerTransportFactory() throws IOException;
 
-
-    /**                                                                                                                                                                             
-     * Processor that pulls the SaslServer object out of the transport, and                                                                                                         
-     * assumes the remote user's UGI before calling through to the original                                                                                                         
-     * processor.                                                                                                                                                                   
-     *                                                                                                                                                                              
-     * This is used on the server side to set the UGI for each specific call.                                                                                                       
+    /**
+     * Processor that pulls the SaslServer object out of the transport, and assumes the remote user's UGI before calling through to the original processor.
+     * 
+     * This is used on the server side to set the UGI for each specific call.
      */
     private class TUGIWrapProcessor implements TProcessor {
         final TProcessor wrapped;
@@ -115,25 +110,25 @@ public abstract class SaslTransportPlugin implements ITransportPlugin {
         }
 
         public boolean process(final TProtocol inProt, final TProtocol outProt) throws TException {
-            //populating request context 
+            // populating request context
             ReqContext req_context = ReqContext.context();
 
             TTransport trans = inProt.getTransport();
-            //Sasl transport
-            TSaslServerTransport saslTrans = (TSaslServerTransport)trans;
-            //remote address
-            TSocket tsocket = (TSocket)saslTrans.getUnderlyingTransport();
+            // Sasl transport
+            TSaslServerTransport saslTrans = (TSaslServerTransport) trans;
+            // remote address
+            TSocket tsocket = (TSocket) saslTrans.getUnderlyingTransport();
             Socket socket = tsocket.getSocket();
             req_context.setRemoteAddress(socket.getInetAddress());
 
-            //remote subject 
+            // remote subject
             SaslServer saslServer = saslTrans.getSaslServer();
             String authId = saslServer.getAuthorizationID();
             Subject remoteUser = new Subject();
             remoteUser.getPrincipals().add(new User(authId));
             req_context.setSubject(remoteUser);
 
-            //invoke service handler
+            // invoke service handler
             return wrapped.process(inProt, outProt);
         }
     }
@@ -142,11 +137,11 @@ public abstract class SaslTransportPlugin implements ITransportPlugin {
         private final String name;
 
         public User(String name) {
-            this.name =  name;
+            this.name = name;
         }
 
-        /**                                                                                                                                                                                
-         * Get the full name of the user.                                                                                                                                                  
+        /**
+         * Get the full name of the user.
          */
         public String getName() {
             return name;

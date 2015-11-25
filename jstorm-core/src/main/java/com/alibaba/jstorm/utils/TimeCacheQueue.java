@@ -25,14 +25,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Expires keys that have not been updated in the configured number of seconds.
- * The algorithm used will take between expirationSecs and expirationSecs * (1 +
- * 1 / (numBuckets-1)) to actually expire the message.
+ * Expires keys that have not been updated in the configured number of seconds. The algorithm used will take between expirationSecs and expirationSecs * (1 + 1
+ * / (numBuckets-1)) to actually expire the message.
  * 
  * get, put, remove, containsKey, and size take O(numBuckets) time to run.
  * 
- * The advantage of this design is that the expiration thread only locks the
- * object for O(1) time, meaning the object is essentially always available for
+ * The advantage of this design is that the expiration thread only locks the object for O(1) time, meaning the object is essentially always available for
  * poll/offer
  */
 public class TimeCacheQueue<K> {
@@ -44,8 +42,7 @@ public class TimeCacheQueue<K> {
     }
 
     public static class DefaultExpiredCallback<K> implements ExpiredCallback<K> {
-        protected static final Logger LOG = LoggerFactory
-                .getLogger(TimeCacheQueue.DefaultExpiredCallback.class);
+        protected static final Logger LOG = LoggerFactory.getLogger(DefaultExpiredCallback.class);
 
         protected String queueName;
 
@@ -54,8 +51,7 @@ public class TimeCacheQueue<K> {
         }
 
         public void expire(K entry) {
-            LOG.info("TimeCacheQueue " + queueName + " entry:" + entry
-                    + ", timeout");
+            LOG.info("TimeCacheQueue " + queueName + " entry:" + entry + ", timeout");
         }
     }
 
@@ -65,8 +61,7 @@ public class TimeCacheQueue<K> {
     protected Thread _cleaner;
     protected ExpiredCallback _callback;
 
-    public TimeCacheQueue(int expirationSecs, int numBuckets,
-            ExpiredCallback<K> callback) {
+    public TimeCacheQueue(int expirationSecs, int numBuckets, ExpiredCallback<K> callback) {
         if (numBuckets < 2) {
             throw new IllegalArgumentException("numBuckets must be >= 2");
         }
@@ -130,8 +125,7 @@ public class TimeCacheQueue<K> {
 
     public K poll() {
         synchronized (_lock) {
-            Iterator<LinkedBlockingDeque<K>> itor =
-                    _buckets.descendingIterator();
+            Iterator<LinkedBlockingDeque<K>> itor = _buckets.descendingIterator();
             while (itor.hasNext()) {
                 LinkedBlockingDeque<K> bucket = itor.next();
                 K entry = bucket.poll();

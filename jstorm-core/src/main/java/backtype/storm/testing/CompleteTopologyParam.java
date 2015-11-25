@@ -23,65 +23,65 @@ import backtype.storm.Config;
  * The param class for the <code>Testing.completeTopology</code>.
  */
 public class CompleteTopologyParam {
-	/**
-	 * The mocked spout sources
-	 */
-	private MockedSources mockedSources;
-	/**
-	 * the config for the topology when it was submitted to the cluster
-	 */
-	private Config stormConf;
-	/**
-	 * whether cleanup the state?
-	 */
-	private Boolean cleanupState;
-	/**
-	 * the topology name you want to submit to the cluster
-	 */
-	private String topologyName;
+    /**
+     * The mocked spout sources
+     */
+    private MockedSources mockedSources;
+    /**
+     * the config for the topology when it was submitted to the cluster
+     */
+    private Config stormConf;
+    /**
+     * whether cleanup the state?
+     */
+    private Boolean cleanupState;
+    /**
+     * the topology name you want to submit to the cluster
+     */
+    private String topologyName;
 
-	/**
-	 * the timeout of topology you want to submit to the cluster
-	 */
-	private Integer timeoutMs;
+    /**
+     * the timeout of topology you want to submit to the cluster
+     */
+    private Integer timeoutMs;
 
-	public MockedSources getMockedSources() {
-		return mockedSources;
-	}
+    public MockedSources getMockedSources() {
+        return mockedSources;
+    }
 
-	public void setMockedSources(MockedSources mockedSources) {
-		this.mockedSources = mockedSources;
-	}
+    public void setMockedSources(MockedSources mockedSources) {
+        this.mockedSources = mockedSources;
+    }
 
-	public Config getStormConf() {
-		return stormConf;
-	}
+    public Config getStormConf() {
+        return stormConf;
+    }
 
-	public void setStormConf(Config stormConf) {
-		this.stormConf = stormConf;
-	}
+    public void setStormConf(Config stormConf) {
+        this.stormConf = stormConf;
+    }
 
-	public Boolean getCleanupState() {
-		return cleanupState;
-	}
+    public Boolean getCleanupState() {
+        return cleanupState;
+    }
 
-	public void setCleanupState(Boolean cleanupState) {
-		this.cleanupState = cleanupState;
-	}
+    public void setCleanupState(Boolean cleanupState) {
+        this.cleanupState = cleanupState;
+    }
 
-	public String getTopologyName() {
-		return topologyName;
-	}
+    public String getTopologyName() {
+        return topologyName;
+    }
 
-	public void setTopologyName(String topologyName) {
-		this.topologyName = topologyName;
-	}
+    public void setTopologyName(String topologyName) {
+        this.topologyName = topologyName;
+    }
 
-	public Integer getTimeoutMs() {
-		return timeoutMs;
-	}
+    public Integer getTimeoutMs() {
+        return timeoutMs;
+    }
 
-	public void setTimeoutMs(Integer timeoutMs) {
-		this.timeoutMs = timeoutMs;
-	}
+    public void setTimeoutMs(Integer timeoutMs) {
+        this.timeoutMs = timeoutMs;
+    }
 }

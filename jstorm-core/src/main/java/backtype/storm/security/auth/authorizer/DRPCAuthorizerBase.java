@@ -22,9 +22,10 @@ public abstract class DRPCAuthorizerBase implements IAuthorizer {
     abstract protected boolean permitClientRequest(ReqContext context, String operation, Map params);
 
     abstract protected boolean permitInvocationRequest(ReqContext context, String operation, Map params);
-    
+
     /**
      * Authorizes request from to the DRPC server.
+     * 
      * @param context the client request context
      * @param operation the operation requested by the DRPC server
      * @param params a Map with any key-value entries of use to the authorization implementation
@@ -33,14 +34,11 @@ public abstract class DRPCAuthorizerBase implements IAuthorizer {
     public boolean permit(ReqContext context, String operation, Map params) {
         if ("execute".equals(operation)) {
             return permitClientRequest(context, operation, params);
-        } else if ("failRequest".equals(operation) || 
-                "fetchRequest".equals(operation) || 
-                "result".equals(operation)) {
+        } else if ("failRequest".equals(operation) || "fetchRequest".equals(operation) || "result".equals(operation)) {
             return permitInvocationRequest(context, operation, params);
         }
         // Deny unsupported operations.
-        LOG.warn("Denying unsupported operation \""+operation+"\" from "+
-                context.remoteAddress());
+        LOG.warn("Denying unsupported operation \"" + operation + "\" from " + context.remoteAddress());
         return false;
     }
 }

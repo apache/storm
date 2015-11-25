@@ -37,6 +37,9 @@ import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.PathUtils;
 import com.alibaba.jstorm.utils.TimeUtils;
 
+/**
+ * @author Johnfang (xiaojian.fxj@alibaba-inc.com)
+ */
 public class ShutdownWork extends RunnableCallback {
 
     private static Logger LOG = LoggerFactory.getLogger(ShutdownWork.class);
@@ -54,14 +57,9 @@ public class ShutdownWork extends RunnableCallback {
      * 
      * @return the topologys whose workers are shutdown successfully
      */
-    public void shutWorker(Map conf, String supervisorId,
-            Map<String, String> removed,
-            ConcurrentHashMap<String, String> workerThreadPids,
-            CgroupManager cgroupManager, boolean block,
-            Map<String, Integer> killingWorkers,
-            Map<String, Integer> taskCleanupTimeoutMap) {
-        Map<String, List<String>> workerId2Pids =
-                new HashMap<String, List<String>>();
+    public void shutWorker(Map conf, String supervisorId, Map<String, String> removed, ConcurrentHashMap<String, String> workerThreadPids,
+            CgroupManager cgroupManager, boolean block, Map<String, Integer> killingWorkers, Map<String, Integer> taskCleanupTimeoutMap) {
+        Map<String, List<String>> workerId2Pids = new HashMap<String, List<String>>();
 
         boolean localMode = false;
 
@@ -78,8 +76,7 @@ public class ShutdownWork extends RunnableCallback {
             try {
                 pids = getPid(conf, workerId);
             } catch (IOException e1) {
-                LOG.error("Failed to get pid for " + workerId + " of "
-                        + topologyId);
+                LOG.error("Failed to get pid for " + workerId + " of " + topologyId);
             }
             workerId2Pids.put(workerId, pids);
 
@@ -100,15 +97,10 @@ public class ShutdownWork extends RunnableCallback {
                         JStormUtils.process_killed(Integer.parseInt(pid));
                     }
 
-                    if (taskCleanupTimeoutMap != null
-                            && taskCleanupTimeoutMap.get(topologyId) != null) {
-                        maxWaitTime =
-                                Math.max(maxWaitTime,
-                                        taskCleanupTimeoutMap.get(topologyId));
+                    if (taskCleanupTimeoutMap != null && taskCleanupTimeoutMap.get(topologyId) != null) {
+                        maxWaitTime = Math.max(maxWaitTime, taskCleanupTimeoutMap.get(topologyId));
                     } else {
-                        maxWaitTime =
-                                Math.max(maxWaitTime, ConfigExtension
-                                        .getTaskCleanupTimeoutSec(conf));
+                        maxWaitTime = Math.max(maxWaitTime, ConfigExtension.getTaskCleanupTimeoutSec(conf));
                     }
                 } catch (Exception e) {
                     LOG.info("Failed to shutdown ", e);
@@ -126,8 +118,7 @@ public class ShutdownWork extends RunnableCallback {
             List<String> pids = workerId2Pids.get(workerId);
 
             int cleanupTimeout;
-            if (taskCleanupTimeoutMap != null
-                    && taskCleanupTimeoutMap.get(topologyId) != null) {
+            if (taskCleanupTimeoutMap != null && taskCleanupTimeoutMap.get(topologyId) != null) {
                 cleanupTimeout = taskCleanupTimeoutMap.get(topologyId);
             } else {
                 cleanupTimeout = ConfigExtension.getTaskCleanupTimeoutSec(conf);
@@ -137,8 +128,7 @@ public class ShutdownWork extends RunnableCallback {
             if (TimeUtils.current_time_secs() - initCleaupTime > cleanupTimeout) {
                 if (localMode == false) {
                     for (String pid : pids) {
-                        JStormUtils
-                                .ensure_process_killed(Integer.parseInt(pid));
+                        JStormUtils.ensure_process_killed(Integer.parseInt(pid));
                         if (cgroupManager != null) {
                             cgroupManager.shutDownWorker(workerId, true);
                         }
@@ -169,14 +159,12 @@ public class ShutdownWork extends RunnableCallback {
             // delete workerid dir, LOCAL_DIR/worker/workerid
             PathUtils.rmr(StormConfig.worker_root(conf, workerId));
         } catch (Exception e) {
-            LOG.warn(e + "Failed to cleanup worker " + workerId
-                    + ". Will retry later");
+            LOG.warn(e + "Failed to cleanup worker " + workerId + ". Will retry later");
         }
     }
 
     /**
-     * When worker has been started by manually and supervisor, it will return
-     * multiple pid
+     * When worker has been started by manually and supervisor, it will return multiple pid
      * 
      * @param conf
      * @param workerId

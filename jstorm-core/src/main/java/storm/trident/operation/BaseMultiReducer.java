@@ -25,9 +25,8 @@ public abstract class BaseMultiReducer<T> implements MultiReducer<T> {
     public void prepare(Map conf, TridentMultiReducerContext context) {
     }
 
-
     @Override
     public void cleanup() {
     }
-    
+
 }

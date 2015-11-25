@@ -29,8 +29,7 @@ public class HttpserverUtils {
 
     public static final String HTTPSERVER_LOGVIEW_PARAM_CMD_JSTACK = "jstack";
 
-    public static final String HTTPSERVER_LOGVIEW_PARAM_CMD_SHOW_CONF =
-            "showConf";
+    public static final String HTTPSERVER_LOGVIEW_PARAM_CMD_SHOW_CONF = "showConf";
 
     public static final String HTTPSERVER_LOGVIEW_PARAM_LOGFILE = "log";
 
@@ -38,8 +37,7 @@ public class HttpserverUtils {
 
     public static final String HTTPSERVER_LOGVIEW_PARAM_DIR = "dir";
 
-    public static final String HTTPSERVER_LOGVIEW_PARAM_WORKER_PORT =
-            "workerPort";
+    public static final String HTTPSERVER_LOGVIEW_PARAM_WORKER_PORT = "workerPort";
 
     public static final String HTTPSERVER_LOGVIEW_PARAM_SIZE_FORMAT = "%016d\n";
 

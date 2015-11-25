@@ -30,7 +30,7 @@ import java.io.ObjectOutputStream;
 import org.apache.commons.io.input.ClassLoaderObjectInputStream;
 
 public class SerializableSerializer extends Serializer<Object> {
-    
+
     @Override
     public void write(Kryo kryo, Output output, Object object) {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -45,7 +45,7 @@ public class SerializableSerializer extends Serializer<Object> {
         output.writeInt(ser.length);
         output.writeBytes(ser);
     }
-    
+
     @Override
     public Object read(Kryo kryo, Input input, Class c) {
         int len = input.readInt();

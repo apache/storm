@@ -33,13 +33,11 @@ import com.alibaba.jstorm.zk.ZkKeeperStates;
  */
 public class DefaultWatcherCallBack implements WatcherCallBack {
 
-    private static Logger LOG = LoggerFactory
-            .getLogger(DefaultWatcherCallBack.class);
+    private static Logger LOG = LoggerFactory.getLogger(DefaultWatcherCallBack.class);
 
     @Override
     public void execute(KeeperState state, EventType type, String path) {
-        LOG.info("Zookeeper state update:" + ZkKeeperStates.getStateName(state)
-                + "," + ZkEventTypes.getStateName(type) + "," + path);
+        LOG.info("Zookeeper state update:" + ZkKeeperStates.getStateName(state) + "," + ZkEventTypes.getStateName(type) + "," + path);
     }
 
 }

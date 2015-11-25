@@ -20,11 +20,10 @@ package backtype.storm.tuple;
 import java.util.ArrayList;
 import java.util.List;
 
-
-public class BatchTuple {
+public class BatchTuple implements ITupleExt{
     private int targetTaskId;
 
-    private List<Tuple> batch;
+    private List<Tuple> batch = new ArrayList<Tuple>();
     private int batchSize;
 
     public BatchTuple() {
@@ -37,15 +36,12 @@ public class BatchTuple {
     }
 
     public void addToBatch(Tuple tuple) {
-        if (batch == null) {
-            batch = new ArrayList<Tuple>();
-        }
         batch.add(tuple);
     }
 
     public boolean isBatchFull() {
         boolean ret = false;
-        if (batch != null && batch.size() >= batchSize)
+        if (batch.size() >= batchSize)
             ret = true;
 
         return ret;
@@ -60,7 +56,7 @@ public class BatchTuple {
     }
 
     public int currBatchSize() {
-        return batch == null ? 0 : batch.size();
+        return batch.size();
     }
 
     public void setTargetTaskId(int taskId) {
@@ -74,4 +70,16 @@ public class BatchTuple {
     public void setBatchSize(int batchSize) {
         this.batchSize = batchSize;
     }
+
+	@Deprecated
+	public long getCreationTimeStamp() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Deprecated
+	public void setCreationTimeStamp(long timeStamp) {
+		// TODO Auto-generated method stub
+		
+	}
 }

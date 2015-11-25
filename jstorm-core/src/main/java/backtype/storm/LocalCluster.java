@@ -17,30 +17,21 @@
  */
 package backtype.storm;
 
-import java.util.Map;
-
+import backtype.storm.generated.*;
+import backtype.storm.utils.Utils;
+import com.alibaba.jstorm.utils.JStormUtils;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import backtype.storm.generated.ClusterSummary;
-import backtype.storm.generated.Credentials;
-import backtype.storm.generated.KillOptions;
-import backtype.storm.generated.NotAliveException;
-import backtype.storm.generated.RebalanceOptions;
-import backtype.storm.generated.StormTopology;
-import backtype.storm.generated.SubmitOptions;
-import backtype.storm.generated.TopologyInfo;
-import backtype.storm.utils.Utils;
-
-import com.alibaba.jstorm.utils.JStormUtils;
+import java.util.Map;
 
 public class LocalCluster implements ILocalCluster {
-    
+
     public static Logger LOG = LoggerFactory.getLogger(LocalCluster.class);
-    
+
     private LocalClusterMap state;
-    
+
     protected void setLogger() {
         // the code is for log4j
         // boolean needReset = true;
@@ -56,61 +47,62 @@ public class LocalCluster implements ILocalCluster {
         // BasicConfigurator.configure();
         // rootLogger.setLevel(Level.INFO);
         // }
-        
+
     }
-    
+
     // this is easy to debug
     protected static LocalCluster instance = null;
-    
+
     public static LocalCluster getInstance() {
         return instance;
     }
-    
+
     public LocalCluster() {
         synchronized (LocalCluster.class) {
             if (instance != null) {
                 throw new RuntimeException("LocalCluster should be single");
             }
             setLogger();
-            
+
             // fix in zk occur Address family not supported by protocol family:
             // connect
             System.setProperty("java.net.preferIPv4Stack", "true");
-            
+
             this.state = LocalUtils.prepareLocalCluster();
             if (this.state == null)
                 throw new RuntimeException("prepareLocalCluster error");
-            
+
             instance = this;
         }
     }
-    
+
     @Override
     public void submitTopology(String topologyName, Map conf, StormTopology topology) {
         submitTopologyWithOpts(topologyName, conf, topology, null);
     }
-    
+
     @Override
     public void submitTopologyWithOpts(String topologyName, Map conf, StormTopology topology, SubmitOptions submitOpts) {
         // TODO Auto-generated method stub
         if (!Utils.isValidConf(conf))
             throw new RuntimeException("Topology conf is not json-serializable");
         JStormUtils.setLocalMode(true);
-        
+        conf.put(Config.STORM_CLUSTER_MODE, "local");
+
         try {
             if (submitOpts == null) {
                 state.getNimbus().submitTopology(topologyName, null, Utils.to_json(conf), topology);
             } else {
                 state.getNimbus().submitTopologyWithOpts(topologyName, null, Utils.to_json(conf), topology, submitOpts);
             }
-            
+
         } catch (Exception e) {
             // TODO Auto-generated catch block
             LOG.error("Failed to submit topology " + topologyName, e);
             throw new RuntimeException(e);
         }
     }
-    
+
     @Override
     public void killTopology(String topologyName) {
         // TODO Auto-generated method stub
@@ -124,7 +116,7 @@ public class LocalCluster implements ILocalCluster {
             LOG.error("fail to kill Topology " + topologyName, e);
         }
     }
-    
+
     @Override
     public void killTopologyWithOpts(String name, KillOptions options) throws NotAliveException {
         // TODO Auto-generated method stub
@@ -136,7 +128,7 @@ public class LocalCluster implements ILocalCluster {
             throw new RuntimeException(e);
         }
     }
-    
+
     @Override
     public void activate(String topologyName) {
         // TODO Auto-generated method stub
@@ -148,7 +140,7 @@ public class LocalCluster implements ILocalCluster {
             throw new RuntimeException(e);
         }
     }
-    
+
     @Override
     public void deactivate(String topologyName) {
         // TODO Auto-generated method stub
@@ -160,7 +152,7 @@ public class LocalCluster implements ILocalCluster {
             throw new RuntimeException(e);
         }
     }
-    
+
     @Override
     public void rebalance(String name, RebalanceOptions options) {
         // TODO Auto-generated method stub
@@ -172,7 +164,7 @@ public class LocalCluster implements ILocalCluster {
             throw new RuntimeException(e);
         }
     }
-    
+
     @Override
     public void shutdown() {
         // TODO Auto-generated method stub
@@ -180,8 +172,9 @@ public class LocalCluster implements ILocalCluster {
         // it take 10 seconds to remove topology's node
         JStormUtils.sleepMs(10 * 1000);
         this.state.clean();
+        instance = null;
     }
-    
+
     @Override
     public String getTopologyConf(String id) {
         // TODO Auto-generated method stub
@@ -193,7 +186,7 @@ public class LocalCluster implements ILocalCluster {
         }
         return null;
     }
-    
+
     @Override
     public StormTopology getTopology(String id) {
         // TODO Auto-generated method stub
@@ -208,7 +201,7 @@ public class LocalCluster implements ILocalCluster {
         }
         return null;
     }
-    
+
     @Override
     public ClusterSummary getClusterInfo() {
         // TODO Auto-generated method stub
@@ -220,7 +213,7 @@ public class LocalCluster implements ILocalCluster {
         }
         return null;
     }
-    
+
     @Override
     public TopologyInfo getTopologyInfo(String id) {
         // TODO Auto-generated method stub
@@ -235,7 +228,7 @@ public class LocalCluster implements ILocalCluster {
         }
         return null;
     }
-    
+
     /***
      * You should use getLocalClusterMap() to instead.This function will always return null
      * */
@@ -245,11 +238,11 @@ public class LocalCluster implements ILocalCluster {
         // TODO Auto-generated method stub
         return null;
     }
-    
+
     public LocalClusterMap getLocalClusterMap() {
         return state;
     }
-    
+
     public static void main(String[] args) throws Exception {
         LocalCluster localCluster = null;
         try {
@@ -269,7 +262,7 @@ public class LocalCluster implements ILocalCluster {
         } catch (Exception e) {
             // TODO Auto-generated catch block
             LOG.error("fail to uploadNewCredentials of topologyId: " + topologyName, e);
-        } 
+        }
     }
-    
+
 }

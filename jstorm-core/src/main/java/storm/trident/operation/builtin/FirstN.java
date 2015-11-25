@@ -27,42 +27,39 @@ import storm.trident.operation.BaseAggregator;
 import storm.trident.operation.TridentCollector;
 import storm.trident.tuple.TridentTuple;
 
-
 public class FirstN implements Assembly {
 
     Aggregator _agg;
-    
+
     public FirstN(int n, String sortField) {
         this(n, sortField, false);
     }
-    
+
     public FirstN(int n, String sortField, boolean reverse) {
-        if(sortField!=null) {
+        if (sortField != null) {
             _agg = new FirstNSortedAgg(n, sortField, reverse);
         } else {
             _agg = new FirstNAgg(n);
         }
     }
-    
+
     @Override
     public Stream apply(Stream input) {
         Fields outputFields = input.getOutputFields();
-        return input.partitionAggregate(outputFields, _agg, outputFields)
-                    .global()
-                    .partitionAggregate(outputFields, _agg, outputFields);             
+        return input.partitionAggregate(outputFields, _agg, outputFields).global().partitionAggregate(outputFields, _agg, outputFields);
     }
-    
+
     public static class FirstNAgg extends BaseAggregator<FirstNAgg.State> {
         int _n;
-        
+
         public FirstNAgg(int n) {
             _n = n;
         }
-        
+
         static class State {
             int emitted = 0;
         }
-        
+
         @Override
         public State init(Object batchId, TridentCollector collector) {
             return new State();
@@ -70,7 +67,7 @@ public class FirstN implements Assembly {
 
         @Override
         public void aggregate(State val, TridentTuple tuple, TridentCollector collector) {
-            if(val.emitted < _n) {
+            if (val.emitted < _n) {
                 collector.emit(tuple);
                 val.emitted++;
             }
@@ -79,15 +76,15 @@ public class FirstN implements Assembly {
         @Override
         public void complete(State val, TridentCollector collector) {
         }
-        
+
     }
-    
+
     public static class FirstNSortedAgg extends BaseAggregator<PriorityQueue> {
 
         int _n;
         String _sortField;
         boolean _reverse;
-        
+
         public FirstNSortedAgg(int n, String sortField, boolean reverse) {
             _n = n;
             _sortField = sortField;
@@ -102,9 +99,10 @@ public class FirstN implements Assembly {
                     Comparable c1 = (Comparable) t1.getValueByField(_sortField);
                     Comparable c2 = (Comparable) t2.getValueByField(_sortField);
                     int ret = c1.compareTo(c2);
-                    if(_reverse) ret *= -1;
+                    if (_reverse)
+                        ret *= -1;
                     return ret;
-                }                
+                }
             });
         }
 
@@ -116,10 +114,10 @@ public class FirstN implements Assembly {
         @Override
         public void complete(PriorityQueue val, TridentCollector collector) {
             int total = val.size();
-            for(int i=0; i<_n && i < total; i++) {
+            for (int i = 0; i < _n && i < total; i++) {
                 TridentTuple t = (TridentTuple) val.remove();
                 collector.emit(t);
             }
         }
-    }    
+    }
 }

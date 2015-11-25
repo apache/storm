@@ -40,13 +40,11 @@ public class FreezerCore implements CgroupCore {
     }
 
     public void setState(State state) throws IOException {
-        CgroupUtils.writeFileByLine(Constants.getDir(this.dir, FREEZER_STATE),
-                state.name().toUpperCase());
+        CgroupUtils.writeFileByLine(Constants.getDir(this.dir, FREEZER_STATE), state.name().toUpperCase());
     }
 
     public State getState() throws IOException {
-        return State.getStateValue(CgroupUtils.readFileByLine(
-                Constants.getDir(this.dir, FREEZER_STATE)).get(0));
+        return State.getStateValue(CgroupUtils.readFileByLine(Constants.getDir(this.dir, FREEZER_STATE)).get(0));
     }
 
     public enum State {

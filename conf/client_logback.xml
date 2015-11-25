@@ -23,10 +23,11 @@
 		</encoder>
 	</appender>
 	<logger name="org.apache.zookeeper" level="ERROR" />
+	<logger name="org.apache.curator" level="ERROR" />
 	<logger name="com.netflix.curator" level="ERROR" />
-	<logger name="com.alibaba.jstorm.common.metric" level="ERROR" />	
-	<logger name="com.alibaba.jstorm.daemon.nimbus.TopologyMetricsRunnable" level="ERROR" />
-	<logger name="com.alibaba.jstorm.metric" level="ERROR" />
+	<logger name="com.alibaba.jstorm.common.metric" level="INFO" />
+	<logger name="com.alibaba.jstorm.daemon.nimbus.TopologyMetricsRunnable" level="INFO" />
+	<logger name="com.alibaba.jstorm.metric" level="INFO" />
 
 	<root level="INFO">
 		<appender-ref ref="A1" />

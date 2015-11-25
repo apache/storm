@@ -17,9 +17,28 @@
  */
 package com.alibaba.jstorm.daemon.nimbus;
 
+import backtype.storm.Config;
+import backtype.storm.generated.TopologyTaskHbInfo;
+import backtype.storm.scheduler.INimbus;
+import backtype.storm.utils.BufferFileInputStream;
+import backtype.storm.utils.TimeCacheMap;
+import com.alibaba.jstorm.cache.JStormCache;
+import com.alibaba.jstorm.callback.AsyncLoopThread;
+import com.alibaba.jstorm.client.ConfigExtension;
+import com.alibaba.jstorm.cluster.Cluster;
+import com.alibaba.jstorm.cluster.StormClusterState;
+import com.alibaba.jstorm.cluster.StormConfig;
+import com.alibaba.jstorm.cluster.StormZkClusterState;
+import com.alibaba.jstorm.metric.JStormMetricCache;
+import com.alibaba.jstorm.metric.JStormMetricsReporter;
+import com.alibaba.jstorm.task.TkHbCacheTime;
+import com.alibaba.jstorm.utils.JStormUtils;
+import com.alibaba.jstorm.utils.TimeUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.nio.channels.Channel;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -27,26 +46,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.alibaba.jstorm.cache.JStormCache;
-import com.alibaba.jstorm.cluster.Cluster;
-import com.alibaba.jstorm.cluster.StormClusterState;
-import com.alibaba.jstorm.cluster.StormConfig;
-import com.alibaba.jstorm.cluster.StormZkClusterState;
-import com.alibaba.jstorm.task.TkHbCacheTime;
-import com.alibaba.jstorm.utils.JStormUtils;
-import com.alibaba.jstorm.utils.TimeUtils;
-
-import backtype.storm.Config;
-import backtype.storm.scheduler.INimbus;
-import backtype.storm.utils.BufferFileInputStream;
-import backtype.storm.utils.TimeCacheMap;
-
 /**
  * All nimbus data
- * 
  */
 public class NimbusData {
     private static final Logger LOG = LoggerFactory.getLogger(NimbusData.class);
@@ -62,7 +63,7 @@ public class NimbusData {
     private TimeCacheMap<Object, Object> downloaders;
     private TimeCacheMap<Object, Object> uploaders;
     // cache thrift response to avoid scan zk too frequently
-    private NimbusCache cache;
+    private NimbusCache nimbusCache;
 
     private int startTime;
 
@@ -82,17 +83,24 @@ public class NimbusData {
 
     private AtomicBoolean isShutdown = new AtomicBoolean(false);
 
-    private final TopologyMetricsRunnable metricRunnable;
+    private TopologyMetricsRunnable metricRunnable;
+    private AsyncLoopThread metricLoopThread;
 
     // The topologys which has been submitted, but the assignment is not
     // finished
     private TimeCacheMap<String, Object> pendingSubmitTopologys;
-
     private Map<String, Integer> topologyTaskTimeout;
-    
-    private TopologyNettyMgr topologyNettyMgr ;
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    // Map<TopologyId, TasksHeartbeat>
+    private Map<String, TopologyTaskHbInfo> tasksHeartbeat;
+
+    private final JStormMetricCache metricCache;
+
+    private final String clusterName;
+
+    private JStormMetricsReporter metricsReporter;
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public NimbusData(Map conf, INimbus inimbus) throws Exception {
         this.conf = conf;
 
@@ -104,8 +112,7 @@ public class NimbusData {
 
         createCache();
 
-        this.taskHeartbeatsCache =
-                new ConcurrentHashMap<String, Map<Integer, TkHbCacheTime>>();
+        this.taskHeartbeatsCache = new ConcurrentHashMap<String, Map<Integer, TkHbCacheTime>>();
 
         this.scheduExec = Executors.newScheduledThreadPool(SCHEDULE_THREAD_NUM);
 
@@ -117,66 +124,63 @@ public class NimbusData {
 
         localMode = StormConfig.local_mode(conf);
 
-        this.topologyNettyMgr = new TopologyNettyMgr(conf);
-        this.metricRunnable = new TopologyMetricsRunnable(this);
+        this.metricCache = new JStormMetricCache(conf, this.stormClusterState);
+        this.clusterName = ConfigExtension.getClusterName(conf);
 
-        pendingSubmitTopologys =
-                new TimeCacheMap<String, Object>(JStormUtils.MIN_30);
-        
+        this.metricRunnable = new TopologyMetricsRunnable(this);
+        this.metricRunnable.init();
+
+        pendingSubmitTopologys = new TimeCacheMap<String, Object>(JStormUtils.MIN_30);
         topologyTaskTimeout = new ConcurrentHashMap<String, Integer>();
+        tasksHeartbeat = new ConcurrentHashMap<String, TopologyTaskHbInfo>();
+
+        if (!localMode) {
+            startMetricThreads();
+        }
     }
 
-    /**
-     * Just for test
-     */
-    public NimbusData() {
-        scheduExec = Executors.newScheduledThreadPool(6);
+    public void startMetricThreads() {
+        this.metricRunnable.start();
 
-        inimubs = null;
-        conf = new HashMap<Object, Object>();
-        localMode = false;
-        this.metricRunnable = new TopologyMetricsRunnable(this);
+        // init nimbus metric reporter
+        this.metricsReporter = new JStormMetricsReporter(this);
+        this.metricsReporter.init();
     }
 
     public void createFileHandler() {
-        TimeCacheMap.ExpiredCallback<Object, Object> expiredCallback =
-                new TimeCacheMap.ExpiredCallback<Object, Object>() {
-                    @Override
-                    public void expire(Object key, Object val) {
-                        try {
-                            LOG.info("Close file " + String.valueOf(key));
-                            if (val != null) {
-                                if (val instanceof Channel) {
-                                    Channel channel = (Channel) val;
-                                    channel.close();
-                                } else if (val instanceof BufferFileInputStream) {
-                                    BufferFileInputStream is =
-                                            (BufferFileInputStream) val;
-                                    is.close();
-                                }
-                            }
-                        } catch (IOException e) {
-                            LOG.error(e.getMessage(), e);
+        TimeCacheMap.ExpiredCallback<Object, Object> expiredCallback = new TimeCacheMap.ExpiredCallback<Object, Object>() {
+            @Override
+            public void expire(Object key, Object val) {
+                try {
+                    LOG.info("Close file " + String.valueOf(key));
+                    if (val != null) {
+                        if (val instanceof Channel) {
+                            Channel channel = (Channel) val;
+                            channel.close();
+                        } else if (val instanceof BufferFileInputStream) {
+                            BufferFileInputStream is = (BufferFileInputStream) val;
+                            is.close();
                         }
-
                     }
-                };
+                } catch (IOException e) {
+                    LOG.error(e.getMessage(), e);
+                }
 
-        int file_copy_expiration_secs =
-                JStormUtils.parseInt(
-                        conf.get(Config.NIMBUS_FILE_COPY_EXPIRATION_SECS), 30);
-        uploaders =
-                new TimeCacheMap<Object, Object>(file_copy_expiration_secs,
-                        expiredCallback);
-        downloaders =
-                new TimeCacheMap<Object, Object>(file_copy_expiration_secs,
-                        expiredCallback);
+            }
+        };
+
+        int file_copy_expiration_secs = JStormUtils.parseInt(conf.get(Config.NIMBUS_FILE_COPY_EXPIRATION_SECS), 30);
+        uploaders = new TimeCacheMap<Object, Object>(file_copy_expiration_secs, expiredCallback);
+        downloaders = new TimeCacheMap<Object, Object>(file_copy_expiration_secs, expiredCallback);
     }
 
     public void createCache() throws IOException {
-        cache = new NimbusCache(conf, stormClusterState);
-        
-        ((StormZkClusterState) stormClusterState).setCache(cache.getMemCache());
+        nimbusCache = new NimbusCache(conf, stormClusterState);
+        ((StormZkClusterState) stormClusterState).setCache(nimbusCache.getMemCache());
+    }
+
+    public String getClusterName() {
+        return clusterName;
     }
 
     public int uptime() {
@@ -203,8 +207,7 @@ public class NimbusData {
         return taskHeartbeatsCache;
     }
 
-    public Map<Integer, TkHbCacheTime> getTaskHeartbeatsCache(
-            String topologyId, boolean createIfNotExist) {
+    public Map<Integer, TkHbCacheTime> getTaskHeartbeatsCache(String topologyId, boolean createIfNotExist) {
         Map<Integer, TkHbCacheTime> ret = null;
         ret = taskHeartbeatsCache.get(topologyId);
         if (ret == null && createIfNotExist) {
@@ -214,8 +217,7 @@ public class NimbusData {
         return ret;
     }
 
-    public void setTaskHeartbeatsCache(
-            ConcurrentHashMap<String, Map<Integer, TkHbCacheTime>> taskHeartbeatsCache) {
+    public void setTaskHeartbeatsCache(ConcurrentHashMap<String, Map<Integer, TkHbCacheTime>> taskHeartbeatsCache) {
         this.taskHeartbeatsCache = taskHeartbeatsCache;
     }
 
@@ -256,7 +258,7 @@ public class NimbusData {
     }
 
     public void cleanup() {
-        cache.cleanup();
+        nimbusCache.cleanup();
         LOG.info("Successfully shutdown Cache");
         try {
             stormClusterState.disconnect();
@@ -296,15 +298,19 @@ public class NimbusData {
     }
 
     public JStormCache getMemCache() {
-        return cache.getMemCache();
+        return nimbusCache.getMemCache();
     }
-    
+
     public JStormCache getDbCache() {
-        return cache.getDbCache();
+        return nimbusCache.getDbCache();
     }
-    
+
     public NimbusCache getNimbusCache() {
-        return cache;
+        return nimbusCache;
+    }
+
+    public JStormMetricCache getMetricCache() {
+        return metricCache;
     }
 
     public final TopologyMetricsRunnable getMetricRunnable() {
@@ -319,9 +325,7 @@ public class NimbusData {
         return topologyTaskTimeout;
     }
 
-	public TopologyNettyMgr getTopologyNettyMgr() {
-		return topologyNettyMgr;
-	}
-    
-    
+    public Map<String, TopologyTaskHbInfo> getTasksHeartbeat() {
+        return tasksHeartbeat;
+    }
 }

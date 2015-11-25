@@ -40,26 +40,24 @@ public class MapReducerAggStateUpdater implements StateUpdater<MapState> {
     ProjectionFactory _groupFactory;
     ProjectionFactory _inputFactory;
     ComboList.Factory _factory;
-    
-    
+
     public MapReducerAggStateUpdater(ReducerAggregator agg, Fields groupFields, Fields inputFields) {
         _agg = agg;
         _groupFields = groupFields;
         _inputFields = inputFields;
         _factory = new ComboList.Factory(groupFields.size(), 1);
     }
-    
 
     @Override
     public void updateState(MapState map, List<TridentTuple> tuples, TridentCollector collector) {
         Map<List<Object>, List<TridentTuple>> grouped = new HashMap();
-        
+
         List<List<Object>> groups = new ArrayList<List<Object>>(tuples.size());
         List<Object> values = new ArrayList<Object>(tuples.size());
-        for(TridentTuple t: tuples) {
+        for (TridentTuple t : tuples) {
             List<Object> group = _groupFactory.create(t);
             List<TridentTuple> groupTuples = grouped.get(group);
-            if(groupTuples==null) {
+            if (groupTuples == null) {
                 groupTuples = new ArrayList();
                 grouped.put(group, groupTuples);
             }
@@ -67,15 +65,15 @@ public class MapReducerAggStateUpdater implements StateUpdater<MapState> {
         }
         List<List<Object>> uniqueGroups = new ArrayList(grouped.keySet());
         List<ValueUpdater> updaters = new ArrayList(uniqueGroups.size());
-        for(List<Object> group: uniqueGroups) {
+        for (List<Object> group : uniqueGroups) {
             updaters.add(new ReducerValueUpdater(_agg, grouped.get(group)));
         }
         List<Object> results = map.multiUpdate(uniqueGroups, updaters);
 
-        for(int i=0; i<uniqueGroups.size(); i++) {
+        for (int i = 0; i < uniqueGroups.size(); i++) {
             List<Object> group = uniqueGroups.get(i);
             Object result = results.get(i);
-            collector.emit(_factory.create(new List[] {group, new Values(result) }));
+            collector.emit(_factory.create(new List[] { group, new Values(result) }));
         }
     }
 
@@ -88,5 +86,5 @@ public class MapReducerAggStateUpdater implements StateUpdater<MapState> {
     @Override
     public void cleanup() {
     }
-    
+
 }

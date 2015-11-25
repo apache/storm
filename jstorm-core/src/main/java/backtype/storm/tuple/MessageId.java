@@ -29,12 +29,12 @@ import java.util.Set;
 
 public class MessageId {
     private Map<Long, Long> _anchorsToIds;
-    
+
     @Deprecated
     public static long generateId() {
         return Utils.secureRandomLong();
     }
-    
+
     public static long generateId(Random rand) {
         return rand.nextLong();
     }
@@ -42,17 +42,17 @@ public class MessageId {
     public static MessageId makeUnanchored() {
         return makeId(new HashMap<Long, Long>());
     }
-        
+
     public static MessageId makeId(Map<Long, Long> anchorsToIds) {
         return new MessageId(anchorsToIds);
     }
-        
+
     public static MessageId makeRootId(long id, long val) {
         Map<Long, Long> anchorsToIds = new HashMap<Long, Long>();
         anchorsToIds.put(id, val);
         return new MessageId(anchorsToIds);
     }
-    
+
     protected MessageId(Map<Long, Long> anchorsToIds) {
         _anchorsToIds = anchorsToIds;
     }
@@ -63,8 +63,8 @@ public class MessageId {
 
     public Set<Long> getAnchors() {
         return _anchorsToIds.keySet();
-    }    
-    
+    }
+
     @Override
     public int hashCode() {
         return _anchorsToIds.hashCode();
@@ -72,7 +72,7 @@ public class MessageId {
 
     @Override
     public boolean equals(Object other) {
-        if(other instanceof MessageId) {
+        if (other instanceof MessageId) {
             return _anchorsToIds.equals(((MessageId) other)._anchorsToIds);
         } else {
             return false;
@@ -86,7 +86,7 @@ public class MessageId {
 
     public void serialize(Output out) throws IOException {
         out.writeInt(_anchorsToIds.size(), true);
-        for(Entry<Long, Long> anchorToId: _anchorsToIds.entrySet()) {
+        for (Entry<Long, Long> anchorToId : _anchorsToIds.entrySet()) {
             out.writeLong(anchorToId.getKey());
             out.writeLong(anchorToId.getValue());
         }
@@ -95,7 +95,7 @@ public class MessageId {
     public static MessageId deserialize(Input in) throws IOException {
         int numAnchors = in.readInt(true);
         Map<Long, Long> anchorsToIds = new HashMap<Long, Long>();
-        for(int i=0; i<numAnchors; i++) {
+        for (int i = 0; i < numAnchors; i++) {
             anchorsToIds.put(in.readLong(), in.readLong());
         }
         return new MessageId(anchorsToIds);

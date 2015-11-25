@@ -17,27 +17,28 @@
  */
 package com.alibaba.jstorm.schedule;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import backtype.storm.Config;
+import backtype.storm.generated.TaskHeartbeat;
+import backtype.storm.generated.TopologyTaskHbInfo;
 
 import com.alibaba.jstorm.cluster.StormClusterState;
 import com.alibaba.jstorm.daemon.nimbus.NimbusData;
 import com.alibaba.jstorm.daemon.nimbus.NimbusUtils;
 import com.alibaba.jstorm.daemon.nimbus.StatusType;
 import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
+import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.TimeFormat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static com.alibaba.jstorm.daemon.nimbus.TopologyMetricsRunnable.TaskDeadEvent;
+
+import java.util.*;
 
 /**
- * 
- * Scan all task's heartbeat, if task isn't alive, DO
- * NimbusUtils.transition(monitor)
+ * Scan all task's heartbeat, if task isn't alive, DO NimbusUtils.transition(monitor)
  * 
  * @author Longda
- * 
  */
 public class MonitorRunnable implements Runnable {
     private static Logger LOG = LoggerFactory.getLogger(MonitorRunnable.class);
@@ -49,9 +50,7 @@ public class MonitorRunnable implements Runnable {
     }
 
     /**
-     * @@@ Todo when one topology is being reassigned, the topology should be
-     *     skip check
-     * @param data
+     * @@@ Todo when one topology is being reassigned, the topology should skip check
      */
     @Override
     public void run() {
@@ -80,44 +79,84 @@ public class MonitorRunnable implements Runnable {
                     LOG.info("Failed to get task ids of " + topologyid);
                     continue;
                 }
+                Assignment assignment = clusterState.assignment_info(topologyid, null);
 
+                Set<Integer> deadTasks = new HashSet<Integer>();
                 boolean needReassign = false;
                 for (Integer task : taskIds) {
-                    boolean isTaskDead =
-                            NimbusUtils.isTaskDead(data, topologyid, task);
+                    boolean isTaskDead = NimbusUtils.isTaskDead(data, topologyid, task);
                     if (isTaskDead == true) {
-                        LOG.info("Found " + topologyid + ",taskid:" + task
-                                + " is dead");
-
-                        ResourceWorkerSlot resource = null;
-                        Assignment assignment =
-                                clusterState.assignment_info(topologyid, null);
-                        if (assignment != null)
-                            resource = assignment.getWorkerByTaskId(task);
-                        if (resource != null) {
-                            Date now = new Date();
-                            String nowStr = TimeFormat.getSecond(now);
-                            String errorInfo =
-                                    "Task-" + task + " is dead on "
-                                            + resource.getHostname() + ":"
-                                            + resource.getPort() + ", "
-                                            + nowStr;
-                            LOG.info(errorInfo);
-                            clusterState.report_task_error(topologyid, task,
-                                    errorInfo);
-                        }
+                        deadTasks.add(task);
                         needReassign = true;
-                        break;
                     }
                 }
+
+
+                TopologyTaskHbInfo topologyHbInfo = data.getTasksHeartbeat().get(topologyid);
                 if (needReassign == true) {
-                    NimbusUtils.transition(data, topologyid, false,
-                            StatusType.monitor);
+                    if (topologyHbInfo != null) {
+                        int topologyMasterId = topologyHbInfo.get_topologyMasterId();
+                        if (deadTasks.contains(topologyMasterId)) {
+                            deadTasks.clear();
+                            if (assignment != null) {
+                                ResourceWorkerSlot resource = assignment.getWorkerByTaskId(topologyMasterId);
+                                if (resource != null)
+                                    deadTasks.addAll(resource.getTasks());
+                                else
+                                    deadTasks.add(topologyMasterId);
+                            }
+                        } else {
+                            Map<Integer, TaskHeartbeat> taskHbs = topologyHbInfo.get_taskHbs();
+                            int launchTime = JStormUtils.parseInt(data.getConf().get(Config.NIMBUS_TASK_LAUNCH_SECS));
+                            if (taskHbs == null || taskHbs.get(topologyMasterId) == null || taskHbs.get(topologyMasterId).get_uptime() < launchTime) {
+                                /*try {
+                                    clusterState.topology_heartbeat(topologyid, topologyHbInfo);
+                                } catch (Exception e) {
+                                    LOG.error("Failed to update task heartbeat info to ZK for " + topologyid, e);
+                                }*/
+                                return;
+                            }
+                        }
+                        Map<Integer, ResourceWorkerSlot> deadTaskWorkers = new HashMap<>();
+                        for (Integer task : deadTasks) {
+                            LOG.info("Found " + topologyid + ",taskid:" + task + " is dead");
+
+                            ResourceWorkerSlot resource = null;
+                            if (assignment != null)
+                                resource = assignment.getWorkerByTaskId(task);
+                            if (resource != null) {
+                                deadTaskWorkers.put(task, resource);
+                                Date now = new Date();
+                                String nowStr = TimeFormat.getSecond(now);
+                                String errorInfo = "Task-" + task + " is dead on " + resource.getHostname() + ":" + resource.getPort() + ", " + nowStr;
+                                LOG.info(errorInfo);
+                                clusterState.report_task_error(topologyid, task, errorInfo, null);
+                            }
+                        }
+
+                        if (deadTaskWorkers.size() > 0) {
+                            // notify jstorm monitor
+                            TaskDeadEvent event = new TaskDeadEvent();
+                            event.clusterName = data.getClusterName();
+                            event.topologyId = topologyid;
+                            event.deadTasks = deadTaskWorkers;
+                            event.timestamp = System.currentTimeMillis();
+                            data.getMetricRunnable().pushEvent(event);
+                        }
+                    }
+                    NimbusUtils.transition(data, topologyid, false, StatusType.monitor);
+                }
+                
+                if (topologyHbInfo != null) {
+                    try {
+                        clusterState.topology_heartbeat(topologyid, topologyHbInfo);
+                    } catch (Exception e) {
+                        LOG.error("Failed to update task heartbeat info to ZK for " + topologyid, e);
+                    }
                 }
             }
 
         } catch (Exception e) {
-            // TODO Auto-generated catch block
             LOG.error(e.getMessage(), e);
         }
     }

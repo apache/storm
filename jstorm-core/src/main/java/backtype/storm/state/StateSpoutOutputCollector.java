@@ -17,7 +17,6 @@
  */
 package backtype.storm.state;
 
-
 public class StateSpoutOutputCollector extends SynchronizeOutputCollector implements IStateSpoutOutputCollector {
 
     @Override

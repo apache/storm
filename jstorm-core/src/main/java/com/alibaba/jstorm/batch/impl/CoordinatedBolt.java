@@ -75,23 +75,20 @@ public class CoordinatedBolt implements IRichBolt {
         try {
             zkClient = BatchCommon.getZkClient(conf);
 
-            zkCommitPath =
-                    BatchDef.ZK_COMMIT_DIR + BatchDef.ZK_SEPERATOR + taskId;
+            zkCommitPath = BatchDef.ZK_COMMIT_DIR + BatchDef.ZK_SEPERATOR + taskId;
             if (zkClient.node_existed(zkCommitPath, false)) {
                 zkClient.delete_node(zkCommitPath);
             }
             zkClient.mkdirs(zkCommitPath);
 
-            LOG.info(taskName + " successfully create commit path"
-                    + zkCommitPath);
+            LOG.info(taskName + " successfully create commit path" + zkCommitPath);
         } catch (Exception e) {
             LOG.error("Failed to create zk node", e);
             throw new RuntimeException();
         }
     }
 
-    public void prepare(Map conf, TopologyContext context,
-            OutputCollector collector) {
+    public void prepare(Map conf, TopologyContext context, OutputCollector collector) {
 
         taskId = String.valueOf(context.getThisTaskId());
         taskName = context.getThisComponentId() + "_" + context.getThisTaskId();
@@ -101,9 +98,7 @@ public class CoordinatedBolt implements IRichBolt {
 
         if (delegate instanceof ICommitter) {
             isCommiter = true;
-            commited =
-                    new TimeCacheMap<Object, Object>(
-                            context.maxTopologyMessageTimeout());
+            commited = new TimeCacheMap<Object, Object>(context.maxTopologyMessageTimeout());
             mkCommitDir(conf);
         }
 
@@ -130,8 +125,7 @@ public class CoordinatedBolt implements IRichBolt {
         });
 
         for (int index = 0; index < childs.size() - reserveSize; index++) {
-            zkClient.delete_node(path + BatchDef.ZK_SEPERATOR
-                    + childs.get(index));
+            zkClient.delete_node(path + BatchDef.ZK_SEPERATOR + childs.get(index));
         }
     }
 
@@ -263,8 +257,7 @@ public class CoordinatedBolt implements IRichBolt {
         } else if (batchStatus == BatchStatus.POST_COMMIT) {
             handlePostCommit(tuple);
         } else {
-            throw new RuntimeException(
-                    "Receive commit tuple, but not committer");
+            throw new RuntimeException("Receive commit tuple, but not committer");
         }
     }
 

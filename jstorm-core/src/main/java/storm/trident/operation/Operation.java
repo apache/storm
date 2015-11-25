@@ -22,5 +22,6 @@ import java.util.Map;
 
 public interface Operation extends Serializable {
     void prepare(Map conf, TridentOperationContext context);
+
     void cleanup();
 }

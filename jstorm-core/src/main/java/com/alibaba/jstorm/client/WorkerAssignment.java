@@ -33,15 +33,12 @@ import backtype.storm.utils.Utils;
 
 import com.alibaba.jstorm.utils.JStormUtils;
 
-public class WorkerAssignment extends WorkerSlot implements Serializable,
-        JSONAware {
-    private static final Logger LOG = LoggerFactory
-            .getLogger(WorkerAssignment.class);
+public class WorkerAssignment extends WorkerSlot implements Serializable, JSONAware {
+    private static final Logger LOG = LoggerFactory.getLogger(WorkerAssignment.class);
 
     private static final long serialVersionUID = -3483047434535537861L;
 
-    private Map<String, Integer> componentToNum =
-            new HashMap<String, Integer>();
+    private Map<String, Integer> componentToNum = new HashMap<String, Integer>();
 
     private long mem;
 
@@ -165,9 +162,7 @@ public class WorkerAssignment extends WorkerSlot implements Serializable,
             String jvm = map.get(JVM_TAG);
             Long mem = JStormUtils.parseLong(map.get(MEM_TAG));
             Integer cpu = JStormUtils.parseInt(map.get(CPU_TAG));
-            Map<String, Object> componentToNum =
-                    (Map<String, Object>) Utils.from_json(map
-                            .get(COMPONENTTONUM_TAG));
+            Map<String, Object> componentToNum = (Map<String, Object>) Utils.from_json(map.get(COMPONENTTONUM_TAG));
 
             WorkerAssignment ret = new WorkerAssignment(supervisorId, port);
 
@@ -185,8 +180,7 @@ public class WorkerAssignment extends WorkerSlot implements Serializable,
             }
 
             for (Entry<String, Object> entry : componentToNum.entrySet()) {
-                ret.addComponent(entry.getKey(),
-                        JStormUtils.parseInt(entry.getValue()));
+                ret.addComponent(entry.getKey(), JStormUtils.parseInt(entry.getValue()));
             }
             return ret;
         } catch (Exception e) {
@@ -202,22 +196,16 @@ public class WorkerAssignment extends WorkerSlot implements Serializable,
 
     @Override
     public String toString() {
-        return ToStringBuilder.reflectionToString(this,
-                ToStringStyle.SHORT_PREFIX_STYLE);
+        return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
 
     @Override
     public int hashCode() {
         final int prime = 31;
         int result = super.hashCode();
-        result =
-                prime
-                        * result
-                        + ((componentToNum == null) ? 0 : componentToNum
-                                .hashCode());
+        result = prime * result + ((componentToNum == null) ? 0 : componentToNum.hashCode());
         result = prime * result + cpu;
-        result =
-                prime * result + ((hostName == null) ? 0 : hostName.hashCode());
+        result = prime * result + ((hostName == null) ? 0 : hostName.hashCode());
         result = prime * result + ((jvm == null) ? 0 : jvm.hashCode());
         result = prime * result + (int) (mem ^ (mem >>> 32));
         return result;

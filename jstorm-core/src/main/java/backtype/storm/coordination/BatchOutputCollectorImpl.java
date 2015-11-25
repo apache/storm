@@ -23,11 +23,11 @@ import java.util.List;
 
 public class BatchOutputCollectorImpl extends BatchOutputCollector {
     OutputCollector _collector;
-    
+
     public BatchOutputCollectorImpl(OutputCollector collector) {
         _collector = collector;
     }
-    
+
     @Override
     public List<Integer> emit(String streamId, List<Object> tuple) {
         return _collector.emit(streamId, tuple);
@@ -42,11 +42,11 @@ public class BatchOutputCollectorImpl extends BatchOutputCollector {
     public void reportError(Throwable error) {
         _collector.reportError(error);
     }
-    
+
     public void ack(Tuple tup) {
         _collector.ack(tup);
     }
-    
+
     public void fail(Tuple tup) {
         _collector.fail(tup);
     }

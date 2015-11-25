@@ -32,7 +32,7 @@ public class CountingCommitBolt extends BaseTransactionalBolt implements ICommit
     BatchOutputCollector _collector;
     TransactionAttempt _id;
     int _count = 0;
-    
+
     @Override
     public void prepare(Map conf, TopologyContext context, BatchOutputCollector collector, TransactionAttempt id) {
         _id = id;
@@ -46,8 +46,8 @@ public class CountingCommitBolt extends BaseTransactionalBolt implements ICommit
 
     @Override
     public void finishBatch() {
-        _collector.emit(new Values(_id, _count));        
-    }   
+        _collector.emit(new Values(_id, _count));
+    }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {

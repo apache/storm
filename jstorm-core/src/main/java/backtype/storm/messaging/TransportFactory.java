@@ -28,13 +28,13 @@ import backtype.storm.Config;
 
 public class TransportFactory {
     public static final Logger LOG = LoggerFactory.getLogger(TransportFactory.class);
-    
+
     public static IContext makeContext(Map storm_conf) {
-        
+
         // get factory class name
         String transport_plugin_klassName = (String) storm_conf.get(Config.STORM_MESSAGING_TRANSPORT);
         LOG.info("JStorm peer transport plugin:" + transport_plugin_klassName);
-        
+
         IContext transport = null;
         try {
             // create a factory class
@@ -64,5 +64,5 @@ public class TransportFactory {
         }
         return transport;
     }
-    
+
 }

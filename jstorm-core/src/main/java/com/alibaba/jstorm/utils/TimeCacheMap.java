@@ -24,9 +24,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 /**
- * Expires keys that have not been updated in the configured number of seconds.
- * The algorithm used will take between expirationSecs and expirationSecs * (1 +
- * 1 / (numBuckets-1)) to actually expire the message.
+ * Expires keys that have not been updated in the configured number of seconds. The algorithm used will take between expirationSecs and expirationSecs * (1 + 1
+ * / (numBuckets-1)) to actually expire the message.
  * 
  * get, put, remove, containsKey, and size take O(numBuckets) time to run.
  * 
@@ -42,8 +41,7 @@ public class TimeCacheMap<K, V> implements TimeOutMap<K, V> {
     private Thread _cleaner;
     private ExpiredCallback _callback;
 
-    public TimeCacheMap(int expirationSecs, int numBuckets,
-            ExpiredCallback<K, V> callback) {
+    public TimeCacheMap(int expirationSecs, int numBuckets, ExpiredCallback<K, V> callback) {
         if (numBuckets < 2) {
             throw new IllegalArgumentException("numBuckets must be >= 2");
         }

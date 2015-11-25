@@ -21,7 +21,7 @@ public class ExecutorDetails {
     int startTask;
     int endTask;
 
-    public ExecutorDetails(int startTask, int endTask){
+    public ExecutorDetails(int startTask, int endTask) {
         this.startTask = startTask;
         this.endTask = endTask;
     }
@@ -38,17 +38,17 @@ public class ExecutorDetails {
         if (other == null || !(other instanceof ExecutorDetails)) {
             return false;
         }
-        
-        ExecutorDetails executor = (ExecutorDetails)other;
+
+        ExecutorDetails executor = (ExecutorDetails) other;
         return (this.startTask == executor.startTask) && (this.endTask == executor.endTask);
     }
-    
+
     public int hashCode() {
         return this.startTask + 13 * this.endTask;
     }
-    
+
     @Override
     public String toString() {
-    	return "[" + this.startTask + ", " + this.endTask + "]";
+        return "[" + this.startTask + ", " + this.endTask + "]";
     }
 }

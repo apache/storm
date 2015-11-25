@@ -36,8 +36,7 @@ public abstract class AbstractSelector implements Selector {
         this.context = context;
     }
 
-    protected List<ResourceWorkerSlot> selectWorker(
-            List<ResourceWorkerSlot> list, Comparator<ResourceWorkerSlot> c) {
+    protected List<ResourceWorkerSlot> selectWorker(List<ResourceWorkerSlot> list, Comparator<ResourceWorkerSlot> c) {
         List<ResourceWorkerSlot> result = new ArrayList<ResourceWorkerSlot>();
         ResourceWorkerSlot best = null;
         for (ResourceWorkerSlot worker : list) {
@@ -58,8 +57,7 @@ public abstract class AbstractSelector implements Selector {
     }
 
     @Override
-    public List<ResourceWorkerSlot> select(List<ResourceWorkerSlot> result,
-            String name) {
+    public List<ResourceWorkerSlot> select(List<ResourceWorkerSlot> result, String name) {
         if (result.size() == 1)
             return result;
         result = this.selectWorker(result, workerComparator.get(name));

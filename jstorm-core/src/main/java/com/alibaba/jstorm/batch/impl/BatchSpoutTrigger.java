@@ -53,8 +53,7 @@ public class BatchSpoutTrigger implements IRichSpout {
     /**  */
     private static final long serialVersionUID = 7215109169247425954L;
 
-    private static final Logger LOG = LoggerFactory
-            .getLogger(BatchSpoutTrigger.class);
+    private static final Logger LOG = LoggerFactory.getLogger(BatchSpoutTrigger.class);
 
     private LinkedBlockingQueue<BatchSpoutMsgId> batchQueue;
 
@@ -95,9 +94,7 @@ public class BatchSpoutTrigger implements IRichSpout {
             BatchId.updateId(zkMsgId);
         }
 
-        int max_spout_pending =
-                JStormUtils.parseInt(
-                        conf.get(Config.TOPOLOGY_MAX_SPOUT_PENDING), 1);
+        int max_spout_pending = JStormUtils.parseInt(conf.get(Config.TOPOLOGY_MAX_SPOUT_PENDING), 1);
 
         for (int i = 0; i < max_spout_pending; i++) {
             BatchSpoutMsgId msgId = BatchSpoutMsgId.mkInstance();
@@ -111,8 +108,7 @@ public class BatchSpoutTrigger implements IRichSpout {
     }
 
     @Override
-    public void open(Map conf, TopologyContext context,
-            SpoutOutputCollector collector) {
+    public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
         batchQueue = new LinkedBlockingQueue<BatchSpoutMsgId>();
         this.collector = collector;
         this.conf = conf;
@@ -134,7 +130,7 @@ public class BatchSpoutTrigger implements IRichSpout {
 
     @Override
     public void close() {
-    	zkClient.close();
+        zkClient.close();
     }
 
     @Override
@@ -204,19 +200,16 @@ public class BatchSpoutTrigger implements IRichSpout {
 
             batchQueue.offer(msgId);
             if (intervalCheck.check()) {
-                LOG.info("Current msgId " + msgId
-                        + ", but current commit BatchId is " + currentBatchId);
+                LOG.info("Current msgId " + msgId + ", but current commit BatchId is " + currentBatchId);
             } else {
-                LOG.debug("Current msgId " + msgId
-                        + ", but current commit BatchId is " + currentBatchId);
+                LOG.debug("Current msgId " + msgId + ", but current commit BatchId is " + currentBatchId);
             }
 
             return;
         }
 
         String streamId = getStreamId(msgId.getBatchStatus());
-        List<Integer> outTasks =
-                collector.emit(streamId, new Values(msgId.getBatchId()), msgId);
+        List<Integer> outTasks = collector.emit(streamId, new Values(msgId.getBatchId()), msgId);
         if (outTasks.isEmpty()) {
             forward(msgId);
         }
@@ -278,8 +271,7 @@ public class BatchSpoutTrigger implements IRichSpout {
             forward((BatchSpoutMsgId) msgId);
             return;
         } else {
-            LOG.warn("Unknown type msgId " + msgId.getClass().getName() + ":"
-                    + msgId);
+            LOG.warn("Unknown type msgId " + msgId.getClass().getName() + ":" + msgId);
             return;
         }
     }
@@ -306,18 +298,15 @@ public class BatchSpoutTrigger implements IRichSpout {
         if (msgId instanceof BatchSpoutMsgId) {
             handleFail((BatchSpoutMsgId) msgId);
         } else {
-            LOG.warn("Unknown type msgId " + msgId.getClass().getName() + ":"
-                    + msgId);
+            LOG.warn("Unknown type msgId " + msgId.getClass().getName() + ":" + msgId);
             return;
         }
     }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declareStream(BatchDef.COMPUTING_STREAM_ID, new Fields(
-                "BatchId"));
-        declarer.declareStream(BatchDef.PREPARE_STREAM_ID,
-                new Fields("BatchId"));
+        declarer.declareStream(BatchDef.COMPUTING_STREAM_ID, new Fields("BatchId"));
+        declarer.declareStream(BatchDef.PREPARE_STREAM_ID, new Fields("BatchId"));
         declarer.declareStream(BatchDef.COMMIT_STREAM_ID, new Fields("BatchId"));
         declarer.declareStream(BatchDef.REVERT_STREAM_ID, new Fields("BatchId"));
         declarer.declareStream(BatchDef.POST_STREAM_ID, new Fields("BatchId"));

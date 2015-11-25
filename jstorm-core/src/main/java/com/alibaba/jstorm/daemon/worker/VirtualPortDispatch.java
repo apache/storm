@@ -38,23 +38,21 @@ import com.alibaba.jstorm.utils.DisruptorRunable;
  * 
  */
 public class VirtualPortDispatch extends DisruptorRunable {
-    private final static Logger LOG = LoggerFactory
-            .getLogger(VirtualPortDispatch.class);
+    private final static Logger LOG = LoggerFactory.getLogger(VirtualPortDispatch.class);
 
     private ConcurrentHashMap<Integer, DisruptorQueue> deserializeQueues;
     private IConnection recvConnection;
 
-    public VirtualPortDispatch(WorkerData workerData,
-            IConnection recvConnection, DisruptorQueue recvQueue) {
+    public VirtualPortDispatch(WorkerData workerData, IConnection recvConnection, DisruptorQueue recvQueue) {
         super(recvQueue, MetricDef.DISPATCH_THREAD);
 
         this.recvConnection = recvConnection;
         this.deserializeQueues = workerData.getDeserializeQueues();
 
     }
-    
+
     public void shutdownRecv() {
-    	// don't need send shutdown command to every task
+        // don't need send shutdown command to every task
         // due to every task has been shutdown by workerData.active
         // at the same time queue has been fulll
         // byte shutdownCmd[] = { TaskStatus.SHUTDOWN };
@@ -87,8 +85,7 @@ public class VirtualPortDispatch extends DisruptorRunable {
 
         DisruptorQueue queue = deserializeQueues.get(task);
         if (queue == null) {
-            LOG.warn("Received invalid message directed at port " + task
-                    + ". Dropping...");
+            LOG.warn("Received invalid message directed at port " + task + ". Dropping...");
             return;
         }
 

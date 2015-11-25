@@ -284,7 +284,7 @@ public class Grouping extends org.apache.thrift.TUnion<Grouping, Grouping._Field
   }
 
   @Override
-  protected Object standardSchemeReadValue(org.apache.thrift.protocol.TProtocol iprot, org.apache.thrift.protocol.TField field) throws org.apache.thrift.TException {
+  protected Object standardSchemeReadValue(org.apache.thrift.protocol.TProtocol iprot, org.apache.thrift.protocol.TField field) throws TException {
     _Fields setField = _Fields.findByThriftId(field.id);
     if (setField != null) {
       switch (setField) {
@@ -396,7 +396,7 @@ public class Grouping extends org.apache.thrift.TUnion<Grouping, Grouping._Field
   }
 
   @Override
-  protected void standardSchemeWriteValue(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
+  protected void standardSchemeWriteValue(org.apache.thrift.protocol.TProtocol oprot) throws TException {
     switch (setField_) {
       case FIELDS:
         List<String> fields = (List<String>)value_;
@@ -447,7 +447,7 @@ public class Grouping extends org.apache.thrift.TUnion<Grouping, Grouping._Field
   }
 
   @Override
-  protected Object tupleSchemeReadValue(org.apache.thrift.protocol.TProtocol iprot, short fieldID) throws org.apache.thrift.TException {
+  protected Object tupleSchemeReadValue(org.apache.thrift.protocol.TProtocol iprot, short fieldID) throws TException {
     _Fields setField = _Fields.findByThriftId(fieldID);
     if (setField != null) {
       switch (setField) {
@@ -513,7 +513,7 @@ public class Grouping extends org.apache.thrift.TUnion<Grouping, Grouping._Field
   }
 
   @Override
-  protected void tupleSchemeWriteValue(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
+  protected void tupleSchemeWriteValue(org.apache.thrift.protocol.TProtocol oprot) throws TException {
     switch (setField_) {
       case FIELDS:
         List<String> fields = (List<String>)value_;
@@ -826,7 +826,7 @@ public class Grouping extends org.apache.thrift.TUnion<Grouping, Grouping._Field
   private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
     try {
       write(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(out)));
-    } catch (org.apache.thrift.TException te) {
+    } catch (TException te) {
       throw new java.io.IOException(te);
     }
   }
@@ -835,7 +835,7 @@ public class Grouping extends org.apache.thrift.TUnion<Grouping, Grouping._Field
   private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
     try {
       read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
-    } catch (org.apache.thrift.TException te) {
+    } catch (TException te) {
       throw new java.io.IOException(te);
     }
   }

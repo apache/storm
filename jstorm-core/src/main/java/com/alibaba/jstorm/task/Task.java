@@ -17,31 +17,20 @@
  */
 package com.alibaba.jstorm.task;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import backtype.storm.Config;
 import backtype.storm.messaging.IContext;
 import backtype.storm.serialization.KryoTupleSerializer;
 import backtype.storm.spout.ISpout;
 import backtype.storm.task.IBolt;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.utils.DisruptorQueue;
-import backtype.storm.utils.Utils;
 import backtype.storm.utils.WorkerClassLoader;
 import clojure.lang.Atom;
-
 import com.alibaba.jstorm.callback.AsyncLoopDefaultKill;
 import com.alibaba.jstorm.callback.AsyncLoopThread;
 import com.alibaba.jstorm.callback.RunnableCallback;
 import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.cluster.Common;
 import com.alibaba.jstorm.cluster.StormClusterState;
-import com.alibaba.jstorm.cluster.StormZkClusterState;
 import com.alibaba.jstorm.daemon.worker.WorkerData;
 import com.alibaba.jstorm.schedule.Assignment.AssignmentType;
 import com.alibaba.jstorm.task.comm.TaskSendTargets;
@@ -55,29 +44,27 @@ import com.alibaba.jstorm.task.execute.spout.MultipleThreadSpoutExecutors;
 import com.alibaba.jstorm.task.execute.spout.SingleThreadSpoutExecutors;
 import com.alibaba.jstorm.task.execute.spout.SpoutExecutors;
 import com.alibaba.jstorm.task.group.MkGrouper;
-import com.alibaba.jstorm.task.heartbeat.TaskHeartbeatRunable;
-import com.alibaba.jstorm.task.heartbeat.TaskStats;
 import com.alibaba.jstorm.utils.JStormServerUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
-import com.alibaba.jstorm.utils.NetWorkUtils;
-import com.lmax.disruptor.WaitStrategy;
-import com.lmax.disruptor.dsl.ProducerType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Task instance
  * 
  * @author yannian/Longda
- * 
  */
-public class Task {
-
+public class Task implements Runnable{
     private final static Logger LOG = LoggerFactory.getLogger(Task.class);
 
     private Map<Object, Object> stormConf;
 
     private TopologyContext topologyContext;
     private TopologyContext userContext;
-    private String topologyid;
     private IContext context;
 
     private TaskTransfer taskTransfer;
@@ -86,8 +73,9 @@ public class Task {
     private Map<Integer, DisruptorQueue> deserializeQueues;
     private AsyncLoopDefaultKill workHalt;
 
-    private Integer taskid;
-    private String componentid;
+    private String topologyId;
+    private Integer taskId;
+    private String componentId;
     private volatile TaskStatus taskStatus;
     private Atom openOrPrepareWasCalled;
     // running time counter
@@ -97,63 +85,46 @@ public class Task {
     private Object taskObj;
     private TaskBaseMetric taskStats;
     private WorkerData workerData;
-    private String componentType; // "spout" or "bolt"
 
     private TaskSendTargets taskSendTargets;
+    private TaskReportErrorAndDie reportErrorDie;
 
     private boolean isTaskBatchTuple;
+    private TaskShutdownDameon taskShutdownDameon;
 
     @SuppressWarnings("rawtypes")
     public Task(WorkerData workerData, int taskId) throws Exception {
         openOrPrepareWasCalled = new Atom(Boolean.valueOf(false));
 
         this.workerData = workerData;
-        this.topologyContext =
-                workerData.getContextMaker().makeTopologyContext(
-                        workerData.getSysTopology(), taskId,
-                        openOrPrepareWasCalled);
-        this.userContext =
-                workerData.getContextMaker().makeTopologyContext(
-                        workerData.getRawTopology(), taskId,
-                        openOrPrepareWasCalled);
-        this.taskid = taskId;
-        this.componentid = topologyContext.getThisComponentId();
-        this.stormConf =
-                Common.component_conf(workerData.getStormConf(),
-                        topologyContext, componentid);
+        this.topologyContext = workerData.getContextMaker().makeTopologyContext(workerData.getSysTopology(), taskId, openOrPrepareWasCalled);
+        this.userContext = workerData.getContextMaker().makeTopologyContext(workerData.getRawTopology(), taskId, openOrPrepareWasCalled);
+        this.taskId = taskId;
+        this.componentId = topologyContext.getThisComponentId();
+        this.stormConf = Common.component_conf(workerData.getStormConf(), topologyContext, componentId);
 
         this.taskStatus = new TaskStatus();
-        this.taskStats = new TaskBaseMetric(taskId);
 
         this.innerTaskTransfer = workerData.getInnerTaskTransfer();
         this.deserializeQueues = workerData.getDeserializeQueues();
-        this.topologyid = workerData.getTopologyId();
+        this.topologyId = workerData.getTopologyId();
         this.context = workerData.getContext();
         this.workHalt = workerData.getWorkHalt();
-        this.zkCluster =
-                new StormZkClusterState(workerData.getZkClusterstate());
+        this.zkCluster =workerData.getZkCluster();
+        this.taskStats = new TaskBaseMetric(topologyId, componentId, taskId,
+                ConfigExtension.isEnableMetrics(workerData.getStormConf()));
 
-        LOG.info("Begin to deserialize taskObj " + componentid + ":" + taskid);
+        LOG.info("Begin to deserialize taskObj " + componentId + ":" + this.taskId);
 
         WorkerClassLoader.switchThreadContext();
         // get real task object -- spout/bolt/spoutspec
-        this.taskObj =
-                Common.get_task_object(topologyContext.getRawTopology(),
-                        componentid, WorkerClassLoader.getInstance());
+        this.taskObj = Common.get_task_object(topologyContext.getRawTopology(), componentId, WorkerClassLoader.getInstance());
         WorkerClassLoader.restoreThreadContext();
 
         isTaskBatchTuple = ConfigExtension.isTaskBatchTuple(stormConf);
         LOG.info("Transfer/receive in batch mode :" + isTaskBatchTuple);
 
-        LOG.info("Loading task " + componentid + ":" + taskid);
-    }
-
-    private void setComponentType() {
-        if (taskObj instanceof IBolt) {
-            componentType = "bolt";
-        } else if (taskObj instanceof ISpout) {
-            componentType = "spout";
-        }
+        LOG.info("Loading task " + componentId + ":" + this.taskId);
     }
 
     private TaskSendTargets makeSendTargets() {
@@ -161,42 +132,18 @@ public class Task {
 
         // get current task's output
         // <Stream_id,<component, Grouping>>
-        Map<String, Map<String, MkGrouper>> streamComponentGrouper =
-                Common.outbound_components(topologyContext, workerData);
+        Map<String, Map<String, MkGrouper>> streamComponentGrouper = Common.outbound_components(topologyContext, workerData);
 
-        return new TaskSendTargets(stormConf, component,
-                streamComponentGrouper, topologyContext, taskStats);
+        return new TaskSendTargets(stormConf, component, streamComponentGrouper, topologyContext, taskStats);
     }
 
     private void updateSendTargets() {
         if (taskSendTargets != null) {
-            Map<String, Map<String, MkGrouper>> streamComponentGrouper =
-                    Common.outbound_components(topologyContext, workerData);
+            Map<String, Map<String, MkGrouper>> streamComponentGrouper = Common.outbound_components(topologyContext, workerData);
             taskSendTargets.updateStreamCompGrouper(streamComponentGrouper);
         } else {
             LOG.error("taskSendTargets is null when trying to update it.");
         }
-    }
-
-    private TaskTransfer mkTaskSending(WorkerData workerData) {
-
-        // sending tuple's serializer
-        KryoTupleSerializer serializer =
-                new KryoTupleSerializer(workerData.getStormConf(),
-                        topologyContext);
-
-        String taskName = JStormServerUtils.getName(componentid, taskid);
-        // Task sending all tuples through this Object
-        TaskTransfer taskTransfer;
-        if (isTaskBatchTuple)
-            taskTransfer =
-                    new TaskBatchTransfer(this, taskName, serializer,
-                            taskStatus, workerData);
-        else
-            taskTransfer =
-                    new TaskTransfer(this, taskName, serializer, taskStatus,
-                            workerData);
-        return taskTransfer;
     }
 
     public TaskSendTargets echoToSystemBolt() {
@@ -206,9 +153,7 @@ public class Task {
 
         // create task receive object
         TaskSendTargets sendTargets = makeSendTargets();
-        UnanchoredSend.send(topologyContext, sendTargets, taskTransfer,
-                Common.SYSTEM_STREAM_ID, msg);
-
+        UnanchoredSend.send(topologyContext, sendTargets, taskTransfer, Common.SYSTEM_STREAM_ID, msg);
         return sendTargets;
     }
 
@@ -217,102 +162,90 @@ public class Task {
         if (isOnePending == true) {
             return true;
         }
-
         return ConfigExtension.isSpoutSingleThread(conf);
     }
 
-    public RunnableCallback mk_executors(TaskSendTargets sendTargets,
-            ITaskReportErr report_error) {
+    public BaseExecutors mkExecutor() {
+    	BaseExecutors baseExecutor = null;
 
         if (taskObj instanceof IBolt) {
-            return new BoltExecutors(this, (IBolt) taskObj, taskTransfer,
-                    innerTaskTransfer, stormConf, sendTargets, taskStatus,
-                    topologyContext, userContext, taskStats, report_error);
+        	baseExecutor = new BoltExecutors(this);
         } else if (taskObj instanceof ISpout) {
             if (isSingleThread(stormConf) == true) {
-                return new SingleThreadSpoutExecutors(this, (ISpout) taskObj,
-                        taskTransfer, innerTaskTransfer, stormConf,
-                        sendTargets, taskStatus, topologyContext, userContext,
-                        taskStats, report_error);
+            	baseExecutor = new SingleThreadSpoutExecutors(this);
             } else {
-                return new MultipleThreadSpoutExecutors(this, (ISpout) taskObj,
-                        taskTransfer, innerTaskTransfer, stormConf,
-                        sendTargets, taskStatus, topologyContext, userContext,
-                        taskStats, report_error);
+                baseExecutor = new MultipleThreadSpoutExecutors(this);
             }
         }
-
-        return null;
+        
+        return baseExecutor;
     }
 
     /**
      * create executor to receive tuples and run bolt/spout execute function
-     * 
-     * @param puller
-     * @param sendTargets
-     * @return
      */
-    private RunnableCallback mkExecutor(TaskSendTargets sendTargets) {
+    private RunnableCallback prepareExecutor() {
         // create report error callback,
         // in fact it is storm_cluster.report-task-error
-        ITaskReportErr reportError =
-                new TaskReportError(zkCluster, topologyid, taskid);
+        ITaskReportErr reportError = new TaskReportError(zkCluster, topologyId, taskId);
 
         // report error and halt worker
-        TaskReportErrorAndDie reportErrorDie =
-                new TaskReportErrorAndDie(reportError, workHalt);
+        reportErrorDie = new TaskReportErrorAndDie(reportError, workHalt);
+        
+        final BaseExecutors baseExecutor = mkExecutor();
 
-        return mk_executors(sendTargets, reportErrorDie);
+        return baseExecutor;
     }
 
     public TaskReceiver mkTaskReceiver() {
-        String taskName = JStormServerUtils.getName(componentid, taskid);
-        TaskReceiver taskReceiver;
+        String taskName = JStormServerUtils.getName(componentId, taskId);
         if (isTaskBatchTuple)
-            taskReceiver =
-                    new TaskBatchReceiver(this, taskid, stormConf,
-                            topologyContext, innerTaskTransfer, taskStatus,
-                            taskName);
+            taskReceiver = new TaskBatchReceiver(this, taskId, stormConf, topologyContext, innerTaskTransfer, taskStatus, taskName);
         else
-            taskReceiver =
-                    new TaskReceiver(this, taskid, stormConf, topologyContext,
-                            innerTaskTransfer, taskStatus, taskName);
-        deserializeQueues.put(taskid, taskReceiver.getDeserializeQueue());
+            taskReceiver = new TaskReceiver(this, taskId, stormConf, topologyContext, innerTaskTransfer, taskStatus, taskName);
+        deserializeQueues.put(taskId, taskReceiver.getDeserializeQueue());
         return taskReceiver;
     }
 
     public TaskShutdownDameon execute() throws Exception {
-        setComponentType();
 
         taskSendTargets = echoToSystemBolt();
 
         // create thread to get tuple from zeroMQ,
         // and pass the tuple to bolt/spout
         taskTransfer = mkTaskSending(workerData);
-        RunnableCallback baseExecutor = mkExecutor(taskSendTargets);
-        AsyncLoopThread executor_threads =
-                new AsyncLoopThread(baseExecutor, false, Thread.MAX_PRIORITY,
-                        true);
+        RunnableCallback baseExecutor = prepareExecutor();
+        AsyncLoopThread executor_threads = new AsyncLoopThread(baseExecutor, false, Thread.MAX_PRIORITY, true);
         taskReceiver = mkTaskReceiver();
 
         List<AsyncLoopThread> allThreads = new ArrayList<AsyncLoopThread>();
         allThreads.add(executor_threads);
 
-        TaskHeartbeatRunable.registerTaskStats(taskid, new TaskStats(
-                componentType, taskStats));
-        LOG.info("Finished loading task " + componentid + ":" + taskid);
+        LOG.info("Finished loading task " + componentId + ":" + taskId);
 
-        return getShutdown(allThreads, taskReceiver.getDeserializeQueue(),
+        taskShutdownDameon =  getShutdown(allThreads, taskReceiver.getDeserializeQueue(),
                 baseExecutor);
+        return taskShutdownDameon;
     }
 
-    public TaskShutdownDameon getShutdown(List<AsyncLoopThread> allThreads,
-            DisruptorQueue deserializeQueue, RunnableCallback baseExecutor) {
+    private TaskTransfer mkTaskSending(WorkerData workerData) {
+        // sending tuple's serializer
+        KryoTupleSerializer serializer = new KryoTupleSerializer(workerData.getStormConf(), topologyContext);
 
+        String taskName = JStormServerUtils.getName(componentId, taskId);
+        // Task sending all tuples through this Object
+        TaskTransfer taskTransfer;
+        if (isTaskBatchTuple)
+            taskTransfer = new TaskBatchTransfer(this, taskName, serializer, taskStatus, workerData);
+        else
+            taskTransfer = new TaskTransfer(this, taskName, serializer, taskStatus, workerData);
+        return taskTransfer;
+    }
+
+    public TaskShutdownDameon getShutdown(List<AsyncLoopThread> allThreads, DisruptorQueue deserializeQueue, RunnableCallback baseExecutor) {
         AsyncLoopThread ackerThread = null;
         if (baseExecutor instanceof SpoutExecutors) {
-            ackerThread =
-                    ((SpoutExecutors) baseExecutor).getAckerRunnableThread();
+            ackerThread = ((SpoutExecutors) baseExecutor).getAckerRunnableThread();
 
             if (ackerThread != null) {
                 allThreads.add(ackerThread);
@@ -324,24 +257,30 @@ public class Task {
         AsyncLoopThread serializeThread = taskTransfer.getSerializeThread();
         allThreads.add(serializeThread);
 
-        TaskShutdownDameon shutdown =
-                new TaskShutdownDameon(taskStatus, topologyid, taskid,
-                        allThreads, zkCluster, taskObj);
+        TaskShutdownDameon shutdown = new TaskShutdownDameon(taskStatus, topologyId, taskId, allThreads, zkCluster, taskObj, this);
 
         return shutdown;
     }
 
-    public static TaskShutdownDameon mk_task(WorkerData workerData, int taskId)
-            throws Exception {
+    public TaskShutdownDameon getTaskShutdownDameon(){
+        return taskShutdownDameon;
+    }
 
+    public void run(){
+        try {
+            taskShutdownDameon=this.execute();
+        }catch (Throwable e){
+            LOG.error("init task take error", e);
+        }
+    }
+
+    public static TaskShutdownDameon mk_task(WorkerData workerData, int taskId) throws Exception {
         Task t = new Task(workerData, taskId);
-
         return t.execute();
     }
 
     /**
-     * Update the data which can be changed dynamically e.g. when scale-out of a
-     * task parallelism
+     * Update the data which can be changed dynamically e.g. when scale-out of a task parallelism
      */
     public void updateTaskData() {
         // Only update the local task list of topologyContext here. Because
@@ -359,12 +298,94 @@ public class Task {
     public long getWorkerAssignmentTs() {
         return workerData.getAssignmentTs();
     }
-    
+
     public AssignmentType getWorkerAssignmentType() {
         return workerData.getAssignmentType();
     }
 
     public void unregisterDeserializeQueue() {
-        deserializeQueues.remove(taskid);
+        deserializeQueues.remove(taskId);
     }
+
+    public String getComponentId() {
+        return componentId;
+    }
+
+    public Integer getTaskId() {
+        return taskId;
+    }
+
+    public DisruptorQueue getExecuteQueue() {
+        return innerTaskTransfer.get(taskId);
+    }
+
+    public DisruptorQueue getDeserializeQueue() {
+        return deserializeQueues.get(taskId);
+    }
+
+	public Map<Object, Object> getStormConf() {
+		return stormConf;
+	}
+
+	public TopologyContext getTopologyContext() {
+		return topologyContext;
+	}
+
+	public TopologyContext getUserContext() {
+		return userContext;
+	}
+
+	public TaskTransfer getTaskTransfer() {
+		return taskTransfer;
+	}
+
+	public TaskReceiver getTaskReceiver() {
+		return taskReceiver;
+	}
+
+	public Map<Integer, DisruptorQueue> getInnerTaskTransfer() {
+		return innerTaskTransfer;
+	}
+
+	public Map<Integer, DisruptorQueue> getDeserializeQueues() {
+		return deserializeQueues;
+	}
+
+	public String getTopologyId() {
+		return topologyId;
+	}
+
+	public TaskStatus getTaskStatus() {
+		return taskStatus;
+	}
+
+	public StormClusterState getZkCluster() {
+		return zkCluster;
+	}
+
+	public Object getTaskObj() {
+		return taskObj;
+	}
+
+	public TaskBaseMetric getTaskStats() {
+		return taskStats;
+	}
+
+	public WorkerData getWorkerData() {
+		return workerData;
+	}
+
+	public TaskSendTargets getTaskSendTargets() {
+		return taskSendTargets;
+	}
+
+	public TaskReportErrorAndDie getReportErrorDie() {
+		return reportErrorDie;
+	}
+
+	public boolean isTaskBatchTuple() {
+		return isTaskBatchTuple;
+	}
+    
+    
 }

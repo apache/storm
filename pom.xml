@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
  Licensed to the Apache Software Foundation (ASF) under one or more
  contributor license agreements.  See the NOTICE file distributed with
@@ -14,22 +15,257 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <!--
+    <parent>
+        <groupId>org.apache</groupId>
+        <artifactId>apache</artifactId>
+        <version>10</version>
+    </parent>
+    -->
+    <parent>
+		<groupId>org.sonatype.oss</groupId>
+		<artifactId>oss-parent</artifactId>
+		<version>7</version>
+	</parent>
+
 	<groupId>com.alibaba.jstorm</groupId>
 	<artifactId>jstorm-all</artifactId>
-	<version>2.0.4-SNAPSHOT</version>
+	<version>2.1.0</version>
 	<packaging>pom</packaging>
-	<name>java storm</name>
-	<description>java storm</description>
+	<name>jstorm-all</name>
+	<description>Distributed and fault-tolerant realtime computation</description>
+	<url>http://storm.taobao.org</url>
+	<licenses>
+		<license>
+			<name>The Apache Software License, Version 2.0</name>
+			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+		</license>
+	</licenses>
+
+	<mailingLists>
+		<mailingList>
+			<!-- Due to JStorm has been merged into Storm, So directly use their email 
+				list -->
+			<name>Storm user mailing list</name>
+			<subscribe>user-subscribe@storm.apache.org</subscribe>
+			<unsubscribe>user-unsubscribe@storm.apache.org</unsubscribe>
+			<post>user@storm.apache.org</post>
+			<archive>http://mail-archives.apache.org/mod_mbox/storm-user/</archive>
+		</mailingList>
+		<mailingList>
+			<name>Storm developer mailing list</name>
+			<subscribe>dev-subscribe@storm.apache.org</subscribe>
+			<unsubscribe>dev-unsubscribe@storm.apache.org</unsubscribe>
+			<post>dev@storm.apache.org</post>
+			<archive>http://mail-archives.apache.org/mod_mbox/storm-dev/</archive>
+		</mailingList>
+	</mailingLists>
+
+	<developers>
+		<developer>
+			<id>longda</id>
+			<name>Longda Feng</name>
+			<email>zhongyan.feng@alibaba-inc.com</email>
+			<roles>
+				<role>Committer</role>
+			</roles>
+			<timezone>+8</timezone>
+		</developer>
+		<developer>
+			<id>basti</id>
+			<name>Basti Liu</name>
+			<email>basti.liu@alibaba-inc.com</email>
+			<roles>
+				<role>Committer</role>
+			</roles>
+			<timezone>+8</timezone>
+		</developer>
+        <developer>
+            <id>cody</id>
+            <name>Cody Innowhere</name>
+            <email>weiyue.wy@alibaba-inc.com</email>
+            <roles>
+                <role>Committer</role>
+            </roles>
+            <timezone>+8</timezone>
+        </developer>
+		<developer>
+			<id>jian.wang</id>
+			<name>Jian Wang</name>
+			<email>Jian.Wang@alibaba-inc.com</email>
+			<roles>
+				<role>Committer</role>
+			</roles>
+			<timezone>+8</timezone>
+		</developer>
+        <developer>
+            <id>john</id>
+            <name>John Fang</name>
+            <email>xiaojian.fxj@alibaba-inc.com</email>
+            <roles>
+                <role>Committer</role>
+            </roles>
+            <timezone>+8</timezone>
+        </developer>
+        <developer>
+            <id>Jark</id>
+            <name>Jark Wu</name>
+            <email>wuchong.wc@alibaba-inc.com</email>
+            <roles>
+                <role>Committer</role>
+            </roles>
+            <timezone>+8</timezone>
+        </developer>
+
+	</developers>
+
+
+	<prerequisites>
+		<maven>3.0.0</maven>
+	</prerequisites>
+
+	<scm>
+		<connection>scm:git:https://github.com/alibaba/jstorm.git</connection>
+		<developerConnection>scm:git:https://github.com/alibaba/jstorm.git</developerConnection>
+		<tag>jstorm-all-2.1.0</tag>
+		<url>https://git-wip-us.apache.org/repos/asf/storm</url>
+	</scm>
+
+	<issueManagement>
+		<system>jira</system>
+		<url>https://issues.apache.org/jira/browse/STORM</url>
+	</issueManagement>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<test.extra.args>-Djava.net.preferIPv4Stack=true</test.extra.args>
+
+		<!-- dependency versions -->
+		<powermock.version>1.4.11</powermock.version>
+	</properties>
 	<modules>
 		<module>jstorm-core</module>
 		<module>jstorm-ui</module>
+	<!--	<module>example/sequence-split-merge</module> -->
 	</modules>
-	
+
+    
+    <profiles>
+        <profile>
+            <id>sign</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        
+    <!-- 
+    <profile>
+            <id>dist</id>
+            <modules>
+                <module>storm-dist/binary</module>
+                <module>storm-dist/source</module>
+            </modules>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>attach-sources</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/javadoc</outputDirectory>
+                            <reportOutputDirectory>./docs/javadoc</reportOutputDirectory>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>aggregate</id>
+                                <goals>
+                                    <goal>aggregate</goal>
+                                </goals>
+                                <phase>site</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-jar-plugin</artifactId>
+                        <configuration>
+                            <archive>
+                                <manifest>
+                                    <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                                    <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                                </manifest>
+                            </archive>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    -->
+    </profiles>
+    
+    <!-- 
+    <distributionManagement>
+        <repository>
+            <id>releases</id>
+            <name>releases</name>
+            <url>http://mvnrepo.alibaba-inc.com/nexus/content/repositories/releases/</url>
+        </repository>
+        <snapshotRepository>
+            <id>snapshots</id>
+            <name>snapshots</name>
+            <url>http://mvnrepo.alibaba-inc.com/nexus/content/repositories/snapshots/</url>
+        </snapshotRepository>
+    <snapshotRepository>
+        <id>ossrh</id>
+        <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+      </snapshotRepository>
+      <repository>
+        <id>ossrh</id>
+        <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+      </repository>
+    </distributionManagement>
+    -->
+    
+    
+    <dependencies>
+
+	</dependencies>
+
 	<repositories>
-	    <repository>
+		<repository>
 			<id>taobao</id>
 			<url>http://mvnrepo.code.taobao.org/nexus/content/repositories/releases/</url>
 		</repository>
@@ -46,49 +282,139 @@
 			<url>http://clojars.org/repo/</url>
 		</repository>
 		<repository>
-			<id>sonatype</id>
+			<id>C</id>
 			<url>http://repository.sonatype.org/content/groups/public/</url>
 		</repository>
 	</repositories>
-	
-	<distributionManagement>
-		<repository>
-			<id>releases</id>
-			<name>releases</name>
-			<url>http://mvnrepo.alibaba-inc.com/nexus/content/repositories/releases/
-			</url>
-		</repository>
-		<snapshotRepository>
-			<id>snapshots</id>
-			<name>snapshots</name>
-			<url>http://mvnrepo.alibaba-inc.com/nexus/content/repositories/snapshots/
-			</url>
-		</snapshotRepository>
-	</distributionManagement> 
 
-	<build>
-		<plugins>
-			<plugin>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>2.3.2</version>
-				<configuration>
-					<source>1.7</source>
-					<target>1.7</target>
-				</configuration>
-			</plugin>
-			<plugin>
+    <build>
+
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-surefire-plugin</artifactId>
+					<version>2.18.1</version>
+					<configuration>
+						<redirectTestOutputToFile>true</redirectTestOutputToFile>
+					</configuration>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-assembly-plugin</artifactId>
+					<version>2.2.2</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-install-plugin</artifactId>
+					<version>2.4</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-compiler-plugin</artifactId>
+					<version>3.1</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-source-plugin</artifactId>
+					<version>2.2.1</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-javadoc-plugin</artifactId>
+					<version>2.9</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-jar-plugin</artifactId>
+					<version>2.4</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-release-plugin</artifactId>
+					<version>2.5</version>
+				</plugin>
+				<plugin>
+					<groupId>com.theoryinpractise</groupId>
+					<artifactId>clojure-maven-plugin</artifactId>
+					<version>1.7.1</version>
+					<extensions>true</extensions>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-surefire-report-plugin</artifactId>
+					<version>2.16</version>
+				</plugin>
+		
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-gpg-plugin</artifactId>
+					<version>1.6</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-shade-plugin</artifactId>
+					<version>2.4.1</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-project-info-reports-plugin</artifactId>
+					<version>2.7</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-site-plugin</artifactId>
+					<version>3.3</version>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+        <plugins>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>1.7</source>
+                    <target>1.7</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+    <!-- 
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-javadoc-plugin</artifactId>
+      <executions>
+        <execution>
+          <id>attach-javadocs</id>
+          <goals>
+            <goal>jar</goal>
+          </goals>
+        </execution>
+      </executions>
+      </plugin> 
+		-->
+      		<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-source-plugin</artifactId>
+				<artifactId>maven-gpg-plugin</artifactId>
 				<executions>
 					<execution>
-						<id>attach-sources</id>
+						<id>sign-artifacts</id>
+						<phase>verify</phase>
 						<goals>
-							<goal>jar</goal>
+							<goal>sign</goal>
 						</goals>
 					</execution>
 				</executions>
 			</plugin>
-
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
 				<configuration>
@@ -98,12 +424,6 @@
 					</descriptors>
 				</configuration>
 			</plugin>
-		</plugins>
-	</build>
-	<properties>
-		<powermock.version>1.4.11</powermock.version>
-	</properties>
-	<dependencies>
-		
-	</dependencies>
+        </plugins>
+    </build>
 </project>

@@ -28,22 +28,22 @@ import java.util.Map;
 public class KryoValuesDeserializer {
     Kryo _kryo;
     Input _kryoInput;
-    
+
     public KryoValuesDeserializer(Map conf) {
         _kryo = SerializationFactory.getKryo(conf);
         _kryoInput = new Input(1);
     }
-    
+
     public List<Object> deserializeFrom(Input input) {
-    	ListDelegate delegate = (ListDelegate) _kryo.readObject(input, ListDelegate.class);
-   	return delegate.getDelegate();
+        ListDelegate delegate = (ListDelegate) _kryo.readObject(input, ListDelegate.class);
+        return delegate.getDelegate();
     }
-    
+
     public List<Object> deserialize(byte[] ser) throws IOException {
         _kryoInput.setBuffer(ser);
         return deserializeFrom(_kryoInput);
     }
-    
+
     public Object deserializeObject(byte[] ser) throws IOException {
         _kryoInput.setBuffer(ser);
         return _kryo.readClassAndObject(_kryoInput);

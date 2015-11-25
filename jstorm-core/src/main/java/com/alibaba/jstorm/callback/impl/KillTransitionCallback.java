@@ -19,20 +19,30 @@ package com.alibaba.jstorm.callback.impl;
 
 import com.alibaba.jstorm.daemon.nimbus.NimbusData;
 import com.alibaba.jstorm.daemon.nimbus.StatusType;
+import com.alibaba.jstorm.daemon.nimbus.TopologyMetricsRunnable;
 
 /**
  * The action when nimbus receive killed command.
- * 
- * 1. change current topology status as killed 2. one TIMEOUT seconds later, do
- * remove action, which remove topology from ZK
+ * <p/>
+ * 1. change current topology status as killed 2. one TIMEOUT seconds later, do remove action, which remove topology from ZK
  * 
  * @author Longda
- * 
  */
 public class KillTransitionCallback extends DelayStatusTransitionCallback {
 
     public KillTransitionCallback(NimbusData data, String topologyid) {
         super(data, topologyid, null, StatusType.killed, StatusType.remove);
+    }
+
+    @Override
+    public <T> Object execute(T... args) {
+        TopologyMetricsRunnable.KillTopologyEvent event = new TopologyMetricsRunnable.KillTopologyEvent();
+        event.clusterName = this.data.getClusterName();
+        event.topologyId = this.topologyid;
+        event.timestamp = System.currentTimeMillis();
+
+        this.data.getMetricRunnable().pushEvent(event);
+        return super.execute(args);
     }
 
 }

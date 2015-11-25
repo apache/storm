@@ -40,8 +40,9 @@ import backtype.storm.Config;
  */
 public class BlowfishTupleSerializer extends Serializer<ListDelegate> {
     /**
-     * The secret key (if any) for data encryption by blowfish payload serialization factory (BlowfishSerializationFactory). 
-     * You should use in via "storm -c topology.tuple.serializer.blowfish.key=YOURKEY -c topology.tuple.serializer=backtype.storm.security.serialization.BlowfishTupleSerializer jar ...".
+     * The secret key (if any) for data encryption by blowfish payload serialization factory (BlowfishSerializationFactory). You should use in via
+     * "storm -c topology.tuple.serializer.blowfish.key=YOURKEY -c topology.tuple.serializer=backtype.storm.security.serialization.BlowfishTupleSerializer jar ..."
+     * .
      */
     public static String SECRET_KEY = "topology.tuple.serializer.blowfish.key";
     private static final Logger LOG = LoggerFactory.getLogger(BlowfishTupleSerializer.class);
@@ -50,12 +51,12 @@ public class BlowfishTupleSerializer extends Serializer<ListDelegate> {
     public BlowfishTupleSerializer(Kryo kryo, Map storm_conf) {
         String encryption_key = null;
         try {
-            encryption_key = (String)storm_conf.get(SECRET_KEY);
+            encryption_key = (String) storm_conf.get(SECRET_KEY);
             LOG.debug("Blowfish serializer being constructed ...");
             if (encryption_key == null) {
                 throw new RuntimeException("Blowfish encryption key not specified");
             }
-            byte[] bytes =  Hex.decodeHex(encryption_key.toCharArray());
+            byte[] bytes = Hex.decodeHex(encryption_key.toCharArray());
             _serializer = new BlowfishSerializer(new ListDelegateSerializer(), bytes);
         } catch (org.apache.commons.codec.DecoderException ex) {
             throw new RuntimeException("Blowfish encryption key invalid", ex);
@@ -69,22 +70,23 @@ public class BlowfishTupleSerializer extends Serializer<ListDelegate> {
 
     @Override
     public ListDelegate read(Kryo kryo, Input input, Class<ListDelegate> type) {
-        return (ListDelegate)_serializer.read(kryo, input, type);
+        return (ListDelegate) _serializer.read(kryo, input, type);
     }
 
     /**
      * Produce a blowfish key to be used in "Storm jar" command
      */
     public static void main(String[] args) {
-        try{
+        try {
             KeyGenerator kgen = KeyGenerator.getInstance("Blowfish");
             SecretKey skey = kgen.generateKey();
             byte[] raw = skey.getEncoded();
             String keyString = new String(Hex.encodeHex(raw));
-            System.out.println("storm -c "+SECRET_KEY+"="+keyString+" -c "+Config.TOPOLOGY_TUPLE_SERIALIZER+"="+BlowfishTupleSerializer.class.getName() + " ..." );
+            System.out.println("storm -c " + SECRET_KEY + "=" + keyString + " -c " + Config.TOPOLOGY_TUPLE_SERIALIZER + "="
+                    + BlowfishTupleSerializer.class.getName() + " ...");
         } catch (Exception ex) {
             LOG.error(ex.getMessage());
             ex.printStackTrace();
         }
-    }    
+    }
 }

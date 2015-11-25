@@ -36,15 +36,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * An authorization implementation that simply checks if a user is allowed to perform specific
- * operations.
+ * An authorization implementation that simply checks if a user is allowed to perform specific operations.
  */
 public class SimpleACLAuthorizer implements IAuthorizer {
     private static final Logger LOG = LoggerFactory.getLogger(SimpleACLAuthorizer.class);
 
     protected Set<String> _userCommands = new HashSet<String>(Arrays.asList("submitTopology", "fileUpload", "getNimbusConf", "getClusterInfo"));
     protected Set<String> _supervisorCommands = new HashSet<String>(Arrays.asList("fileDownload"));
-    protected Set<String> _topoCommands = new HashSet<String>(Arrays.asList("killTopology","rebalance","activate","deactivate","getTopologyConf","getTopology","getUserTopology","getTopologyInfo","uploadNewCredentials"));
+    protected Set<String> _topoCommands = new HashSet<String>(Arrays.asList("killTopology", "rebalance", "activate", "deactivate", "getTopologyConf",
+            "getTopology", "getUserTopology", "getTopologyInfo", "uploadNewCredentials"));
 
     protected Set<String> _admins;
     protected Set<String> _supervisors;
@@ -52,8 +52,10 @@ public class SimpleACLAuthorizer implements IAuthorizer {
     protected Set<String> _nimbusGroups;
     protected IPrincipalToLocal _ptol;
     protected IGroupMappingServiceProvider _groupMappingProvider;
+
     /**
      * Invoked once immediately after construction
+     * 
      * @param conf Storm configuration
      */
     @Override
@@ -64,17 +66,17 @@ public class SimpleACLAuthorizer implements IAuthorizer {
         _nimbusGroups = new HashSet<String>();
 
         if (conf.containsKey(Config.NIMBUS_ADMINS)) {
-            _admins.addAll((Collection<String>)conf.get(Config.NIMBUS_ADMINS));
+            _admins.addAll((Collection<String>) conf.get(Config.NIMBUS_ADMINS));
         }
         if (conf.containsKey(Config.NIMBUS_SUPERVISOR_USERS)) {
-            _supervisors.addAll((Collection<String>)conf.get(Config.NIMBUS_SUPERVISOR_USERS));
+            _supervisors.addAll((Collection<String>) conf.get(Config.NIMBUS_SUPERVISOR_USERS));
         }
         if (conf.containsKey(Config.NIMBUS_USERS)) {
-            _nimbusUsers.addAll((Collection<String>)conf.get(Config.NIMBUS_USERS));
+            _nimbusUsers.addAll((Collection<String>) conf.get(Config.NIMBUS_USERS));
         }
 
         if (conf.containsKey(Config.NIMBUS_GROUPS)) {
-            _nimbusGroups.addAll((Collection<String>)conf.get(Config.NIMBUS_GROUPS));
+            _nimbusGroups.addAll((Collection<String>) conf.get(Config.NIMBUS_GROUPS));
         }
 
         _ptol = AuthUtils.GetPrincipalToLocalPlugin(conf);
@@ -83,6 +85,7 @@ public class SimpleACLAuthorizer implements IAuthorizer {
 
     /**
      * permit() method is invoked for each incoming Thrift request
+     * 
      * @param context request context includes info about
      * @param operation operation name
      * @param topology_conf configuration of targeted topology
@@ -90,10 +93,8 @@ public class SimpleACLAuthorizer implements IAuthorizer {
      */
     @Override
     public boolean permit(ReqContext context, String operation, Map topology_conf) {
-        LOG.info("[req " + context.requestID() + "] Access "
-                + " from: " + (context.remoteAddress() == null ? "null" : context.remoteAddress().toString())
-                + (context.principal() == null ? "" : (" principal:" + context.principal()))
-                + " op:" + operation
+        LOG.info("[req " + context.requestID() + "] Access " + " from: " + (context.remoteAddress() == null ? "null" : context.remoteAddress().toString())
+                + (context.principal() == null ? "" : (" principal:" + context.principal())) + " op:" + operation
                 + (topology_conf == null ? "" : (" topoology:" + topology_conf.get(Config.TOPOLOGY_NAME))));
 
         String principal = context.principal().getName();
@@ -103,8 +104,8 @@ public class SimpleACLAuthorizer implements IAuthorizer {
         if (_groupMappingProvider != null) {
             try {
                 userGroups = _groupMappingProvider.getGroups(user);
-            } catch(IOException e) {
-                LOG.warn("Error while trying to fetch user groups",e);
+            } catch (IOException e) {
+                LOG.warn("Error while trying to fetch user groups", e);
             }
         }
 
@@ -123,7 +124,7 @@ public class SimpleACLAuthorizer implements IAuthorizer {
         if (_topoCommands.contains(operation)) {
             Set topoUsers = new HashSet<String>();
             if (topology_conf.containsKey(Config.TOPOLOGY_USERS)) {
-                topoUsers.addAll((Collection<String>)topology_conf.get(Config.TOPOLOGY_USERS));
+                topoUsers.addAll((Collection<String>) topology_conf.get(Config.TOPOLOGY_USERS));
             }
 
             if (topoUsers.contains(principal) || topoUsers.contains(user)) {
@@ -132,18 +133,19 @@ public class SimpleACLAuthorizer implements IAuthorizer {
 
             Set<String> topoGroups = new HashSet<String>();
             if (topology_conf.containsKey(Config.TOPOLOGY_GROUPS) && topology_conf.get(Config.TOPOLOGY_GROUPS) != null) {
-                topoGroups.addAll((Collection<String>)topology_conf.get(Config.TOPOLOGY_GROUPS));
+                topoGroups.addAll((Collection<String>) topology_conf.get(Config.TOPOLOGY_GROUPS));
             }
 
-            if (checkUserGroupAllowed(userGroups, topoGroups)) return true;
+            if (checkUserGroupAllowed(userGroups, topoGroups))
+                return true;
         }
         return false;
     }
 
     private Boolean checkUserGroupAllowed(Set<String> userGroups, Set<String> configuredGroups) {
-        if(userGroups.size() > 0 && configuredGroups.size() > 0) {
+        if (userGroups.size() > 0 && configuredGroups.size() > 0) {
             for (String tgroup : configuredGroups) {
-                if(userGroups.contains(tgroup))
+                if (userGroups.contains(tgroup))
                     return true;
             }
         }

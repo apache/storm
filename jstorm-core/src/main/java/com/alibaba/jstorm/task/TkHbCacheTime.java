@@ -17,12 +17,12 @@
  */
 package com.alibaba.jstorm.task;
 
-import com.alibaba.jstorm.task.heartbeat.TaskHeartbeat;
+import backtype.storm.generated.TaskHeartbeat;
+
 import com.alibaba.jstorm.utils.TimeUtils;
 
 /**
- * TkHbCacheTime is describle taskheartcache (Map<topologyId, Map<taskid,
- * Map<tkHbCacheTime, time>>>)
+ * TkHbCacheTime is describle taskheartcache (Map<topologyId, Map<taskid, Map<tkHbCacheTime, time>>>)
  */
 
 public class TkHbCacheTime {
@@ -54,12 +54,13 @@ public class TkHbCacheTime {
         this.taskAssignedTime = taskAssignedTime;
     }
 
-    public void update(TaskHeartbeat zkTaskHeartbeat) {
-        int nowSecs = TimeUtils.current_time_secs();
-        this.nimbusTime = nowSecs;
-        this.taskReportedTime = zkTaskHeartbeat.getTimeSecs();
-        this.taskAssignedTime =
-                zkTaskHeartbeat.getTimeSecs() - zkTaskHeartbeat.getUptimeSecs();
+    public void update(TaskHeartbeat taskHeartbeat) {
+        if (taskHeartbeat != null) {
+            int nowSecs = TimeUtils.current_time_secs();
+            this.nimbusTime = nowSecs;
+            this.taskReportedTime = taskHeartbeat.get_time();
+            this.taskAssignedTime = taskHeartbeat.get_time() - taskHeartbeat.get_uptime();
+        }
     }
 
 }

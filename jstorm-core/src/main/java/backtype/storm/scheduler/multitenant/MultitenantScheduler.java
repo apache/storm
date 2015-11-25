@@ -32,67 +32,66 @@ import backtype.storm.scheduler.TopologyDetails;
 import backtype.storm.utils.Utils;
 
 public class MultitenantScheduler implements IScheduler {
-  private static final Logger LOG = LoggerFactory.getLogger(MultitenantScheduler.class);
-  @SuppressWarnings("rawtypes")
-  private Map _conf;
-  
-  @Override
-  public void prepare(@SuppressWarnings("rawtypes") Map conf) {
-    _conf = conf;
-  }
- 
-  private Map<String, Number> getUserConf() {
-    Map<String, Number> ret = (Map<String, Number>)_conf.get(Config.MULTITENANT_SCHEDULER_USER_POOLS);
-    if (ret == null) {
-      ret = new HashMap<String, Number>();
-    } else {
-      ret = new HashMap<String, Number>(ret); 
+    private static final Logger LOG = LoggerFactory.getLogger(MultitenantScheduler.class);
+    @SuppressWarnings("rawtypes")
+    private Map _conf;
+
+    @Override
+    public void prepare(@SuppressWarnings("rawtypes") Map conf) {
+        _conf = conf;
     }
 
-    Map fromFile = Utils.findAndReadConfigFile("multitenant-scheduler.yaml", false);
-    Map<String, Number> tmp = (Map<String, Number>)fromFile.get(Config.MULTITENANT_SCHEDULER_USER_POOLS);
-    if (tmp != null) {
-      ret.putAll(tmp);
-    }
-    return ret;
-  }
+    private Map<String, Number> getUserConf() {
+        Map<String, Number> ret = (Map<String, Number>) _conf.get(Config.MULTITENANT_SCHEDULER_USER_POOLS);
+        if (ret == null) {
+            ret = new HashMap<String, Number>();
+        } else {
+            ret = new HashMap<String, Number>(ret);
+        }
 
- 
-  @Override
-  public void schedule(Topologies topologies, Cluster cluster) {
-    LOG.debug("Rerunning scheduling...");
-    Map<String, Node> nodeIdToNode = Node.getAllNodesFrom(cluster);
-    
-    Map<String, Number> userConf = getUserConf();
-    
-    Map<String, IsolatedPool> userPools = new HashMap<String, IsolatedPool>();
-    for (Map.Entry<String, Number> entry : userConf.entrySet()) {
-      userPools.put(entry.getKey(), new IsolatedPool(entry.getValue().intValue()));
+        Map fromFile = Utils.findAndReadConfigFile("multitenant-scheduler.yaml", false);
+        Map<String, Number> tmp = (Map<String, Number>) fromFile.get(Config.MULTITENANT_SCHEDULER_USER_POOLS);
+        if (tmp != null) {
+            ret.putAll(tmp);
+        }
+        return ret;
     }
-    DefaultPool defaultPool = new DefaultPool();
-    FreePool freePool = new FreePool();
-    
-    freePool.init(cluster, nodeIdToNode);
-    for (IsolatedPool pool : userPools.values()) {
-      pool.init(cluster, nodeIdToNode);
+
+    @Override
+    public void schedule(Topologies topologies, Cluster cluster) {
+        LOG.debug("Rerunning scheduling...");
+        Map<String, Node> nodeIdToNode = Node.getAllNodesFrom(cluster);
+
+        Map<String, Number> userConf = getUserConf();
+
+        Map<String, IsolatedPool> userPools = new HashMap<String, IsolatedPool>();
+        for (Map.Entry<String, Number> entry : userConf.entrySet()) {
+            userPools.put(entry.getKey(), new IsolatedPool(entry.getValue().intValue()));
+        }
+        DefaultPool defaultPool = new DefaultPool();
+        FreePool freePool = new FreePool();
+
+        freePool.init(cluster, nodeIdToNode);
+        for (IsolatedPool pool : userPools.values()) {
+            pool.init(cluster, nodeIdToNode);
+        }
+        defaultPool.init(cluster, nodeIdToNode);
+
+        for (TopologyDetails td : topologies.getTopologies()) {
+            String user = (String) td.getConf().get(Config.TOPOLOGY_SUBMITTER_USER);
+            LOG.debug("Found top {} run by user {}", td.getId(), user);
+            NodePool pool = userPools.get(user);
+            if (pool == null || !pool.canAdd(td)) {
+                pool = defaultPool;
+            }
+            pool.addTopology(td);
+        }
+
+        // Now schedule all of the topologies that need to be scheduled
+        for (IsolatedPool pool : userPools.values()) {
+            pool.scheduleAsNeeded(freePool, defaultPool);
+        }
+        defaultPool.scheduleAsNeeded(freePool);
+        LOG.debug("Scheduling done...");
     }
-    defaultPool.init(cluster, nodeIdToNode);
-    
-    for (TopologyDetails td: topologies.getTopologies()) {
-      String user = (String)td.getConf().get(Config.TOPOLOGY_SUBMITTER_USER);
-      LOG.debug("Found top {} run by user {}",td.getId(), user);
-      NodePool pool = userPools.get(user);
-      if (pool == null || !pool.canAdd(td)) {
-        pool = defaultPool;
-      }
-      pool.addTopology(td);
-    }
-    
-    //Now schedule all of the topologies that need to be scheduled
-    for (IsolatedPool pool : userPools.values()) {
-      pool.scheduleAsNeeded(freePool, defaultPool);
-    }
-    defaultPool.scheduleAsNeeded(freePool);
-    LOG.debug("Scheduling done...");
-  }
 }

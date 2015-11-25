@@ -23,10 +23,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import backtype.storm.spout.ISpout;
+import backtype.storm.tuple.Tuple;
+import backtype.storm.tuple.TupleExt;
 
 import com.alibaba.jstorm.client.spout.IAckValueSpout;
 import com.alibaba.jstorm.task.TaskBaseMetric;
 import com.alibaba.jstorm.task.comm.TupleInfo;
+import com.alibaba.jstorm.utils.TimeUtils;
 
 /**
  * The action after spout receive one ack tuple
@@ -38,15 +41,15 @@ public class AckSpoutMsg implements IAckMsg {
     private static Logger LOG = LoggerFactory.getLogger(AckSpoutMsg.class);
 
     private ISpout spout;
+    private Tuple tuple;
+    private TupleInfo tupleInfo;
     private Object msgId;
     private String stream;
-    private long timeStamp;
     private List<Object> values;
     private TaskBaseMetric task_stats;
     private boolean isDebug = false;
 
-    public AckSpoutMsg(ISpout _spout, TupleInfo tupleInfo,
-            TaskBaseMetric _task_stats, boolean _isDebug) {
+    public AckSpoutMsg(ISpout _spout, Tuple tuple, TupleInfo tupleInfo, TaskBaseMetric _task_stats, boolean _isDebug) {
 
         this.task_stats = _task_stats;
 
@@ -55,10 +58,11 @@ public class AckSpoutMsg implements IAckMsg {
 
         this.msgId = tupleInfo.getMessageId();
         this.stream = tupleInfo.getStream();
-        if (tupleInfo.getTimestamp() != 0) {
-            this.timeStamp = System.currentTimeMillis() - tupleInfo.getTimestamp(); 
-        }
+        
         this.values = tupleInfo.getValues();
+
+        this.tuple = tuple;
+        this.tupleInfo = tupleInfo;
     }
 
     public void run() {
@@ -73,7 +77,15 @@ public class AckSpoutMsg implements IAckMsg {
             spout.ack(msgId);
         }
 
-        task_stats.spout_acked_tuple(stream, timeStamp);
+        long latency = 0, lifeCycle = 0;
+        if (tupleInfo.getTimestamp() != 0) {
+        	long endTime = System.nanoTime();
+        	latency = (endTime - tupleInfo.getTimestamp())/TimeUtils.NS_PER_US;
+        	if (tuple != null && tuple instanceof TupleExt) {
+        		lifeCycle = (System.currentTimeMillis() - ((TupleExt) tuple).getCreationTimeStamp()) * TimeUtils.NS_PER_US;
+        	}
+        }
+        task_stats.spout_acked_tuple(stream, latency, lifeCycle);
     }
 
 }

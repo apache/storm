@@ -40,8 +40,7 @@ import com.alibaba.jstorm.utils.RandomRange;
  * @version
  */
 public class MkLocalFirst extends Shuffer {
-    private static final Logger LOG = LoggerFactory
-            .getLogger(MkLocalFirst.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MkLocalFirst.class);
 
     private List<Integer> allOutTasks = new ArrayList<Integer>();
     private List<Integer> localOutTasks = new ArrayList<Integer>();
@@ -52,8 +51,7 @@ public class MkLocalFirst extends Shuffer {
     private WorkerData workerData;
     private IntervalCheck intervalCheck;
 
-    public MkLocalFirst(List<Integer> workerTasks, List<Integer> allOutTasks,
-            WorkerData workerData) {
+    public MkLocalFirst(List<Integer> workerTasks, List<Integer> allOutTasks, WorkerData workerData) {
         super(workerData);
 
         intervalCheck = new IntervalCheck();
@@ -74,7 +72,6 @@ public class MkLocalFirst extends Shuffer {
         if (localWorkerOutTasks.size() != 0) {
             isLocalWorkerAvail = true;
             localOutTasks.addAll(localWorkerOutTasks);
-            remoteOutTasks.removeAll(localWorkerOutTasks);
         } else {
             isLocalWorkerAvail = false;
         }
@@ -93,8 +90,7 @@ public class MkLocalFirst extends Shuffer {
         for (i = 0; i < size; i++) {
             Integer taskId = outTasks.get(index);
             boolean taskStatus = workerData.isOutboundTaskActive(taskId);
-            DisruptorQueue exeQueue =
-                    (workerData.getInnerTaskTransfer().get(taskId));
+            DisruptorQueue exeQueue = (workerData.getInnerTaskTransfer().get(taskId));
             float queueLoadRatio = exeQueue != null ? exeQueue.pctFull() : 0;
             if (taskStatus && queueLoadRatio < 1.0)
                 break;
@@ -123,7 +119,6 @@ public class MkLocalFirst extends Shuffer {
         }
         return JStormUtils.mk_list(remoteOutTasks.get(index));
     }
-    
 
     public List<Integer> grouper(List<Object> values) {
         List<Integer> ret;

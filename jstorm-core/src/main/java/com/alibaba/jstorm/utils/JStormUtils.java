@@ -53,6 +53,7 @@ import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.ExecuteResultHandler;
 import org.apache.commons.exec.PumpStreamHandler;
 import org.apache.commons.lang.StringUtils;
+import org.apache.thrift.TFieldIdEnum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,11 +68,9 @@ import com.alibaba.jstorm.client.ConfigExtension;
  * JStorm utility
  * 
  * @author yannian/Longda/Xin.Zhou/Xin.Li
- * 
  */
 public class JStormUtils {
-    private static final Logger LOG = LoggerFactory
-            .getLogger(JStormUtils.class);
+    private static final Logger LOG = LoggerFactory.getLogger(JStormUtils.class);
 
     public static long SIZE_1_K = 1024;
     public static long SIZE_1_M = SIZE_1_K * 1024;
@@ -223,8 +222,7 @@ public class JStormUtils {
     }
 
     /**
-     * Gets the pid of this JVM, because Java doesn't provide a real way to do
-     * this.
+     * Gets the pid of this JVM, because Java doesn't provide a real way to do this.
      * 
      * @return
      */
@@ -238,8 +236,7 @@ public class JStormUtils {
         return split[0];
     }
 
-    public static void exec_command(String command) throws ExecuteException,
-            IOException {
+    public static void exec_command(String command) throws ExecuteException, IOException {
         String[] cmdlist = command.split(" ");
         CommandLine cmd = new CommandLine(cmdlist[0]);
         for (int i = 1; i < cmdlist.length; i++) {
@@ -257,14 +254,12 @@ public class JStormUtils {
      * @param dir
      * @param destdir
      */
-    public static void extract_dir_from_jar(String jarpath, String dir,
-            String destdir) {
+    public static void extract_dir_from_jar(String jarpath, String dir, String destdir) {
         String cmd = "unzip -qq " + jarpath + " " + dir + "/** -d " + destdir;
         try {
             exec_command(cmd);
         } catch (Exception e) {
-            LOG.warn("No " + dir + " from " + jarpath + " by cmd:" + cmd
-                    + "!\n" + e.getMessage());
+            LOG.warn("No " + dir + " from " + jarpath + " by cmd:" + cmd + "!\n" + e.getMessage());
         }
 
     }
@@ -278,8 +273,7 @@ public class JStormUtils {
                 LOG.info("kill -9 process " + pid);
                 sleepMs(100);
             } catch (ExecuteException e) {
-                LOG.info("Error when trying to kill " + pid
-                        + ". Process has been killed");
+                LOG.info("Error when trying to kill " + pid + ". Process has been killed");
             } catch (Exception e) {
                 LOG.info("Error when trying to kill " + pid + ".Exception ", e);
             }
@@ -291,8 +285,7 @@ public class JStormUtils {
             exec_command("kill " + pid);
             LOG.info("kill process " + pid);
         } catch (ExecuteException e) {
-            LOG.info("Error when trying to kill " + pid
-                    + ". Process has been killed. ");
+            LOG.info("Error when trying to kill " + pid + ". Process has been killed. ");
         } catch (Exception e) {
             LOG.info("Error when trying to kill " + pid + ".Exception ", e);
         }
@@ -349,7 +342,8 @@ public class JStormUtils {
         String output = null;
         try {
             String pid = JStormUtils.process_pid();
-            output = SystemOperation.exec("top -b -n 1 | grep " + pid);
+            String command = String.format("top -b -n 1 -p %s | grep -w %s", pid, pid);
+            output = SystemOperation.exec(command);
             String subStr = output.substring(output.indexOf("S") + 1);
             for (int i = 0; i < subStr.length(); i++) {
                 char ch = subStr.charAt(i);
@@ -369,64 +363,89 @@ public class JStormUtils {
 
         return value;
     }
-    
+
+    public static Double getDiskUsage() {
+        if (!OSInfo.isLinux() && !OSInfo.isMac()) {
+            return 0.0;
+        }
+        try {
+            String output = SystemOperation.exec("df -h /");
+            if (output != null) {
+                String[] lines = output.split("[\\r\\n]+");
+                if (lines.length >= 2) {
+                    String[] parts = lines[1].split("\\s+");
+                    if (parts.length >= 5) {
+                        String pct = parts[4];
+                        if (pct.endsWith("%")) {
+                            return Integer.valueOf(pct.substring(0, pct.length() - 1)) / 100.0;
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            LOG.warn("failed to get disk usage:", e);
+        }
+        return 0.0;
+    }
+
     public static Double getMemUsage() {
-    	if (OSInfo.isLinux() == true) {
-    		try {
-    			Double value = 0.0;
+        if (OSInfo.isLinux() == true) {
+            try {
+                Double value = 0.0;
                 String pid = JStormUtils.process_pid();
-                String output = SystemOperation.exec("top -b -n 1 | grep " + pid);
-                
-                int m = 0;  
-                String[] strArray = output.split(" ");  
-                for (int i = 0; i < strArray.length; i++) {  
-                    String info = strArray[i];  
-                    if (info.trim().length() == 0){  
-                        continue;  
-                    }  
-                    if(m == 5) {
-                    	// memory
-                        String unit = info.substring(info.length() - 1); 
-                        
-                        if(unit.equalsIgnoreCase("g")) {  
-                            value =  Double.parseDouble(info.substring(0, info.length() - 1));
+                String command = String.format("top -b -n 1 -p %s | grep -w %s", pid, pid);
+                String output = SystemOperation.exec(command);
+
+                int m = 0;
+                String[] strArray = output.split(" ");
+                for (int i = 0; i < strArray.length; i++) {
+                    String info = strArray[i];
+                    if (info.trim().length() == 0) {
+                        continue;
+                    }
+                    if (m == 5) {
+                        // memory
+                        String unit = info.substring(info.length() - 1);
+
+                        if (unit.equalsIgnoreCase("g")) {
+                            value = Double.parseDouble(info.substring(0, info.length() - 1));
                             value *= 1000000000;
-                        } else if(unit.equalsIgnoreCase("m")) {  
-                        	value =  Double.parseDouble(info.substring(0, info.length() - 1)); 
-                        	value *= 1000000;
-                        } else {  
-                        	value =  Double.parseDouble(info);  
-                        } 
+                        } else if (unit.equalsIgnoreCase("m")) {
+                            value = Double.parseDouble(info.substring(0, info.length() - 1));
+                            value *= 1000000;
+                        } else {
+                            value = Double.parseDouble(info);
+                        }
+                        
+                        //LOG.info("!!!! Get Memory Size:{}, info:{}", value, info);
                         return value;
-                    }  
-                    if(m == 8) {
-                    	// cpu usage
-                          
-                    }  
-                    if(m == 9) {
-                    	// memory ratio
-                         
-                    }  
-                    m++;  
-                }  
+                    }
+                    if (m == 8) {
+                        // cpu usage
+
+                    }
+                    if (m == 9) {
+                        // memory ratio
+
+                    }
+                    m++;
+                }
             } catch (Exception e) {
                 LOG.warn("Failed to get memory usage .");
 
             }
-    	}
-    	
-    	// this will be incorrect
-		MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();    
+        }
+
+        // this will be incorrect
+        MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
         MemoryUsage memoryUsage = memoryMXBean.getHeapMemoryUsage();
 
         return Double.valueOf(memoryUsage.getUsed());
     }
 
     /**
-     * If it is backend, please set resultHandler, such as
-     * DefaultExecuteResultHandler If it is frontend,
-     * ByteArrayOutputStream.toString get the result
-     * 
+     * If it is backend, please set resultHandler, such as DefaultExecuteResultHandler If it is frontend, ByteArrayOutputStream.toString get the result
+     * <p/>
      * This function don't care whether the command is successfully or not
      * 
      * @param command
@@ -436,9 +455,8 @@ public class JStormUtils {
      * @return
      * @throws IOException
      */
-    public static ByteArrayOutputStream launchProcess(String command,
-            final Map environment, final String workDir,
-            ExecuteResultHandler resultHandler) throws IOException {
+    public static ByteArrayOutputStream launchProcess(String command, final Map environment, final String workDir, ExecuteResultHandler resultHandler)
+            throws IOException {
 
         String[] cmdlist = command.split(" ");
 
@@ -479,8 +497,7 @@ public class JStormUtils {
 
     }
 
-    protected static java.lang.Process launchProcess(final String[] cmdlist,
-            final Map<String, String> environment) throws IOException {
+    protected static Process launchProcess(final String[] cmdlist, final Map<String, String> environment) throws IOException {
         ArrayList<String> buff = new ArrayList<String>();
         for (String tok : cmdlist) {
             if (!tok.isEmpty()) {
@@ -499,33 +516,26 @@ public class JStormUtils {
     }
 
     /**
-     * @@@ it should use DefaultExecutor to start a process, but some little
-     *     problem have been found, such as exitCode/output string so still use
-     *     the old method to start process
-     * 
      * @param command
      * @param environment
      * @param backend
      * @return
      * @throws IOException
+     * @@@ it should use DefaultExecutor to start a process, but some little problem have been found, such as exitCode/output string so still use the old method
+     *     to start process
      */
-    public static java.lang.Process launch_process(final String command,
-            final Map<String, String> environment, boolean backend)
-            throws IOException {
+    public static Process launch_process(final String command, final Map<String, String> environment, boolean backend) throws IOException {
 
         if (backend == true) {
             new Thread(new Runnable() {
 
                 @Override
                 public void run() {
-                    String[] cmdlist =
-                            (new String("nohup " + command + " &")).split(" ");
+                    String[] cmdlist = (new String("nohup " + command + " &")).split(" ");
                     try {
                         launchProcess(cmdlist, environment);
                     } catch (IOException e) {
-                        LOG.error(
-                                "Failed to run " + command + ":" + e.getCause(),
-                                e);
+                        LOG.error("Failed to run " + command + ":" + e.getCause(), e);
                     }
                 }
             }).start();
@@ -568,9 +578,8 @@ public class JStormUtils {
     }
 
     /**
-     * 
      * if the list exist repeat string, return the repeated string
-     * 
+     * <p/>
      * this function will be used to check wheter bolt or spout exist same id
      * 
      * @param sets
@@ -629,7 +638,7 @@ public class JStormUtils {
         return rtn;
     }
 
-    public static <T> Long bit_xor_vals(java.util.List<T> vals) {
+    public static <T> Long bit_xor_vals(List<T> vals) {
         Long rtn = 0l;
         for (T n : vals) {
             rtn = bit_xor(rtn, n);
@@ -638,7 +647,7 @@ public class JStormUtils {
         return rtn;
     }
 
-    public static <T> Long bit_xor_vals_sets(java.util.Set<T> vals) {
+    public static <T> Long bit_xor_vals_sets(Set<T> vals) {
         Long rtn = 0l;
         for (T n : vals) {
             rtn = bit_xor(rtn, n);
@@ -675,7 +684,7 @@ public class JStormUtils {
         return rtn;
     }
 
-    public static <V> List<V> mk_list(java.util.Set<V> args) {
+    public static <V> List<V> mk_list(Set<V> args) {
         ArrayList<V> rtn = new ArrayList<V>();
         if (args != null) {
             for (V o : args) {
@@ -712,8 +721,7 @@ public class JStormUtils {
         } else if (o instanceof Long) {
             return (Long) o;
         } else {
-            throw new RuntimeException("Invalid value "
-                    + o.getClass().getName() + " " + o);
+            throw new RuntimeException("Invalid value " + o.getClass().getName() + " " + o);
         }
     }
 
@@ -733,8 +741,18 @@ public class JStormUtils {
         } else if (o instanceof Double) {
             return (Double) o;
         } else {
-            throw new RuntimeException("Invalid value "
-                    + o.getClass().getName() + " " + o);
+            throw new RuntimeException("Invalid value " + o.getClass().getName() + " " + o);
+        }
+    }
+
+    public static Double parseDouble(Object o, double defaultValue) {
+        if (o == null) {
+            return defaultValue;
+        }
+        try {
+            return parseDouble(o);
+        } catch (Exception ignored) {
+            return defaultValue;
         }
     }
 
@@ -769,8 +787,7 @@ public class JStormUtils {
         } else if (o instanceof Integer) {
             return (Integer) o;
         } else {
-            throw new RuntimeException("Invalid value "
-                    + o.getClass().getName() + " " + o);
+            throw new RuntimeException("Invalid value " + o.getClass().getName() + " " + o);
         }
     }
 
@@ -788,6 +805,20 @@ public class JStormUtils {
             return (Integer) o;
         } else {
             return defaultValue;
+        }
+    }
+
+    public static Boolean parseBoolean(Object o) {
+        if (o == null) {
+            return null;
+        }
+
+        if (o instanceof String) {
+            return Boolean.valueOf((String) o);
+        } else if (o instanceof Boolean) {
+            return (Boolean) o;
+        } else {
+            throw new RuntimeException("Invalid value " + o.getClass().getName() + " " + o);
         }
     }
 
@@ -863,8 +894,7 @@ public class JStormUtils {
         } else if (oldValue instanceof BigInteger) {
             return ((BigInteger) oldValue).add((BigInteger) newValue);
         } else if (oldValue instanceof Number) {
-            return ((Number) oldValue).doubleValue()
-                    + ((Number) newValue).doubleValue();
+            return ((Number) oldValue).doubleValue() + ((Number) newValue).doubleValue();
         } else {
             return null;
         }
@@ -933,8 +963,7 @@ public class JStormUtils {
 
     public static String formatSimpleDouble(Double value) {
         try {
-            java.text.DecimalFormat form =
-                    new java.text.DecimalFormat("##0.000");
+            java.text.DecimalFormat form = new java.text.DecimalFormat("##0.000");
             String s = form.format(value);
             return s;
         } catch (Exception e) {
@@ -955,8 +984,7 @@ public class JStormUtils {
 
     public static double formatDoubleDecPoint4(Double value) {
         try {
-            java.text.DecimalFormat form =
-                    new java.text.DecimalFormat("###.0000");
+            java.text.DecimalFormat form = new java.text.DecimalFormat("###.0000");
             String s = form.format(value);
             return Double.valueOf(s);
         } catch (Exception e) {
@@ -1041,18 +1069,13 @@ public class JStormUtils {
     }
 
     /**
-     * @@@ Todo
-     * 
      * @return
+     * @@@ Todo
      */
     public static Long getPhysicMemorySize() {
         Object object;
         try {
-            object =
-                    ManagementFactory.getPlatformMBeanServer().getAttribute(
-                            new ObjectName("java.lang", "type",
-                                    "OperatingSystem"),
-                            "TotalPhysicalMemorySize");
+            object = ManagementFactory.getPlatformMBeanServer().getAttribute(new ObjectName("java.lang", "type", "OperatingSystem"), "TotalPhysicalMemorySize");
         } catch (Exception e) {
             LOG.warn("Failed to get system physical memory size,", e);
             return null;
@@ -1089,19 +1112,15 @@ public class JStormUtils {
 
     public static String getLogFileName() {
         try {
-            Logger rootLogger =
-                    LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
+            Logger rootLogger = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
             if (rootLogger instanceof ch.qos.logback.classic.Logger) {
-                ch.qos.logback.classic.Logger logbackLogger =
-                        (ch.qos.logback.classic.Logger) rootLogger;
+                ch.qos.logback.classic.Logger logbackLogger = (ch.qos.logback.classic.Logger) rootLogger;
                 // Logger framework is Logback
-                for (Iterator<ch.qos.logback.core.Appender<ch.qos.logback.classic.spi.ILoggingEvent>> index =
-                        logbackLogger.iteratorForAppenders(); index.hasNext();) {
-                    ch.qos.logback.core.Appender<ch.qos.logback.classic.spi.ILoggingEvent> appender =
-                            index.next();
+                for (Iterator<ch.qos.logback.core.Appender<ch.qos.logback.classic.spi.ILoggingEvent>> index = logbackLogger.iteratorForAppenders(); index
+                        .hasNext();) {
+                    ch.qos.logback.core.Appender<ch.qos.logback.classic.spi.ILoggingEvent> appender = index.next();
                     if (appender instanceof ch.qos.logback.core.FileAppender) {
-                        ch.qos.logback.core.FileAppender fileAppender =
-                                (ch.qos.logback.core.FileAppender) appender;
+                        ch.qos.logback.core.FileAppender fileAppender = (ch.qos.logback.core.FileAppender) appender;
                         return fileAppender.getFile();
                     }
                 }
@@ -1156,8 +1175,7 @@ public class JStormUtils {
 
         FileOutputStream workerOut = new FileOutputStream(new File(file));
 
-        PrintStream ps =
-                new PrintStream(new BufferedOutputStream(workerOut), true);
+        PrintStream ps = new PrintStream(new BufferedOutputStream(workerOut), true);
         System.setOut(ps);
         System.setErr(ps);
 
@@ -1170,13 +1188,11 @@ public class JStormUtils {
         return new AsyncLoopDefaultKill();
     }
 
-    public static TreeMap<Integer, Integer> integer_divided(int sum,
-            int num_pieces) {
+    public static TreeMap<Integer, Integer> integer_divided(int sum, int num_pieces) {
         return Utils.integerDivided(sum, num_pieces);
     }
 
-    public static <K, V> HashMap<K, V> filter_val(RunnableCallback fn,
-            Map<K, V> amap) {
+    public static <K, V> HashMap<K, V> filter_val(RunnableCallback fn, Map<K, V> amap) {
         HashMap<K, V> rtn = new HashMap<K, V>();
 
         for (Entry<K, V> entry : amap.entrySet()) {
@@ -1191,16 +1207,14 @@ public class JStormUtils {
     }
 
     public static List<Integer> getSupervisorPortList(Map conf) {
-        List<Integer> portList =
-                (List<Integer>) conf.get(Config.SUPERVISOR_SLOTS_PORTS);
+        List<Integer> portList = (List<Integer>) conf.get(Config.SUPERVISOR_SLOTS_PORTS);
         if (portList != null && portList.size() > 0) {
             return portList;
         }
 
         LOG.info("Generate port list through CPU cores and system memory size");
 
-        double cpuWeight =
-                ConfigExtension.getSupervisorSlotsPortCpuWeight(conf);
+        double cpuWeight = ConfigExtension.getSupervisorSlotsPortCpuWeight(conf);
         int sysCpuNum = 4;
         try {
             sysCpuNum = Runtime.getRuntime().availableProcessors();
@@ -1211,11 +1225,11 @@ public class JStormUtils {
         int cpuPortNum = (int) (sysCpuNum / cpuWeight);
         if (cpuPortNum < 1) {
 
-            LOG.info("Invalid supervisor.slots.port.cpu.weight setting :"
-                    + cpuWeight + ", cpu cores:" + sysCpuNum);
+            LOG.info("Invalid supervisor.slots.port.cpu.weight setting :" + cpuWeight + ", cpu cores:" + sysCpuNum);
             cpuPortNum = 1;
         }
 
+        Double memWeight = ConfigExtension.getSupervisorSlotsPortMemWeight(conf);
         int memPortNum = Integer.MAX_VALUE;
         Long physicalMemSize = JStormUtils.getPhysicMemorySize();
         if (physicalMemSize == null) {
@@ -1223,7 +1237,7 @@ public class JStormUtils {
         } else {
             LOG.info("Get system memory size :" + physicalMemSize);
             long workerMemSize = ConfigExtension.getMemSizePerWorker(conf);
-            memPortNum = (int) (physicalMemSize / workerMemSize);
+            memPortNum = (int) (physicalMemSize / (workerMemSize * memWeight));
             if (memPortNum < 1) {
                 LOG.info("Invalide worker.memory.size setting:" + workerMemSize);
                 memPortNum = 4;
@@ -1261,19 +1275,75 @@ public class JStormUtils {
     }
 
     public static Object createDisruptorWaitStrategy(Map conf) {
-        String waitStrategy =
-                (String) conf.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY);
+        String waitStrategy = (String) conf.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY);
         Object ret;
-
-        if (waitStrategy.indexOf("TimeoutBlockingWaitStrategy") != -1) {
-            long timeout =
-                    parseLong(conf.get(Config.TOPOLOGY_DISRUPTOR_WAIT_TIMEOUT),
-                            10);
+        if (waitStrategy.contains("TimeoutBlockingWaitStrategy")) {
+            long timeout = parseLong(conf.get(Config.TOPOLOGY_DISRUPTOR_WAIT_TIMEOUT), 10);
             ret = Utils.newInstance(waitStrategy, timeout, TimeUnit.MILLISECONDS);
         } else {
             ret = Utils.newInstance(waitStrategy);
         }
 
+        return ret;
+    }
+    
+    public static Object thriftToObject(Object obj) {
+    	Object ret = null;
+    	if (obj instanceof org.apache.thrift.TBase) {
+			ret = thriftToMap((org.apache.thrift.TBase)obj);
+		}else if (obj instanceof List) {
+			ret = new ArrayList<>();
+			for (Object item : (List)obj) {
+				((List)ret).add(thriftToObject(item));
+			}
+		}else if (obj instanceof Map) {
+			ret = new HashMap<String, Object>();
+			Set<Entry> entrySet = ((Map)obj).entrySet();
+			for (Entry entry : entrySet) {
+				((Map)ret).put(String.valueOf(entry.getKey()), thriftToObject(entry.getValue()));
+			}
+		}else {
+
+			ret = String.valueOf(obj);
+		}
+    	
+    	return ret;
+    }
+    
+    public static  Map<String, Object> thriftToMap(
+    		org.apache.thrift.TBase thriftObj) {
+    	Map<String, Object> ret = new HashMap<String, Object>();
+    	
+    	int i = 1;
+    	TFieldIdEnum field = thriftObj.fieldForId(i);
+    	while(field != null) {
+    		if (thriftObj.isSet(field)) {
+    			Object obj = thriftObj.getFieldValue(field);
+    			ret.put(field.getFieldName(), thriftToObject(obj));
+    			
+    		}
+    		field = thriftObj.fieldForId(++i);
+    	}
+    	
+    	return ret;
+    }
+    
+    public static List<Map<String, Object>> thriftToMap(List thriftObjs) {
+    	List<Map<String, Object> > ret = new ArrayList<Map<String, Object> > () ;
+    	
+    	for (Object thriftObj : thriftObjs) {
+    		ret.add(thriftToMap((org.apache.thrift.TBase)thriftObj));
+    	}
+    	
+    	return ret;
+    }
+
+
+    public static long halfValueOfSum(long v1, long v2, boolean increment) {
+        long ret = (v1 + v2) / 2;
+        if (increment) {
+            ret += (v1 + v2) % 2;
+        }
         return ret;
     }
 }

@@ -20,23 +20,26 @@ package com.alibaba.jstorm.zk;
 import java.util.List;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.alibaba.jstorm.cluster.Cluster;
+import org.apache.log4j.Logger;
 
 import backtype.storm.Config;
 import backtype.storm.utils.Utils;
 
-import com.alibaba.jstorm.cluster.Cluster;
 import com.alibaba.jstorm.cluster.ClusterState;
 import com.alibaba.jstorm.cluster.DistributedClusterState;
 import com.google.common.collect.Maps;
 
 public class ZkTool {
-    private static Logger LOG = LoggerFactory.getLogger(ZkTool.class);
+    private static Logger LOG = Logger.getLogger(ZkTool.class);
 
     public static final String READ_CMD = "read";
 
     public static final String RM_CMD = "rm";
+
+    public static final String LIST_CMD = "list";
+
+    public static final String CLEAN_CMD = "clean";
 
     public static void usage() {
         LOG.info("Read ZK node's data, please do as following:");
@@ -44,10 +47,17 @@ public class ZkTool {
 
         LOG.info("\nDelete topology backup assignment, please do as following:");
         LOG.info(ZkTool.class.getName() + " rm topologyname");
+
+        LOG.info("\nlist subdirectory of zkPath , please do as following:");
+        LOG.info(ZkTool.class.getName() + " list zkpath");
+
+        LOG.info("\nDelete all nodes about a topologyId of zk , please do as following:");
+        LOG.info(ZkTool.class.getName() + " clean topologyId");
+
     }
 
     public static String getData(DistributedClusterState zkClusterState,
-            String path) throws Exception {
+                                 String path) throws Exception {
         byte[] data = zkClusterState.get_data(path, false);
         if (data == null || data.length == 0) {
             return null;
@@ -56,6 +66,135 @@ public class ZkTool {
         Object obj = Utils.deserialize(data, null);
 
         return obj.toString();
+    }
+
+
+    public static void list(String path) {
+        DistributedClusterState zkClusterState = null;
+
+        try {
+            conf.put(Config.STORM_ZOOKEEPER_ROOT, "/");
+
+            zkClusterState = new DistributedClusterState(conf);
+
+            List<String>  children = zkClusterState.get_children(path, false);
+            if (children == null || children.isEmpty() ) {
+                LOG.info("No children of " + path);
+            }
+            else
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.append("Zk node children of " + path + "\n");
+                for (String str : children){
+                    sb.append(" " + str + ",");
+                }
+                sb.append("\n");
+                LOG.info(sb.toString());
+            }
+        } catch (Exception e) {
+            if (zkClusterState == null) {
+                LOG.error("Failed to connect ZK ", e);
+            } else {
+                LOG.error("Failed to list children of  " + path + "\n", e);
+            }
+        } finally {
+            if (zkClusterState != null) {
+                zkClusterState.close();
+            }
+        }
+    }
+    /**
+     * warnning! use this method cann't delete zkCache right now because of
+     *  new DistributedClusterState(conf)
+     */
+    public static void cleanTopology( String topologyId){
+        DistributedClusterState zkClusterState = null;
+        try {
+            zkClusterState = new DistributedClusterState(conf);
+            String rootDir = String.valueOf(conf.get(Config.STORM_ZOOKEEPER_ROOT));
+            String assignmentPath = "/assignments/"+ topologyId;
+            String stormBase = "/topology/"+ topologyId;
+            String taskbeats = "/taskbeats/"+ topologyId;
+            String tasks = "/tasks/"+ topologyId;
+            String taskerrors = "/taskerrors/"+ topologyId;
+            String monitor = "/monitor/"+ topologyId;
+            if (zkClusterState.node_existed(assignmentPath, false)){
+                try {
+                    zkClusterState.delete_node(assignmentPath);
+                } catch (Exception e) {
+                    LOG.error("Could not remove assignments for " + topologyId, e);
+                }
+            }else {
+                LOG.info(" node of " + rootDir + assignmentPath + " isn't existed ");
+
+            }
+
+            if (zkClusterState.node_existed(stormBase, false)){
+                try {
+                    zkClusterState.delete_node(stormBase);
+                } catch (Exception e) {
+                    LOG.error("Failed to remove storm base for " + topologyId, e);
+                }
+            }else {
+                LOG.info(" node of " + rootDir + stormBase + " isn't existed ");
+
+            }
+
+            if (zkClusterState.node_existed(taskbeats, false)){
+                try {
+                    zkClusterState.delete_node(taskbeats);
+                } catch (Exception e) {
+                    LOG.error("Failed to remove taskbeats for " + topologyId, e);
+                }
+            }else {
+                LOG.info(" node of " + rootDir + taskbeats + " isn't existed ");
+
+            }
+
+            if (zkClusterState.node_existed(tasks, false)){
+                try {
+                    zkClusterState.delete_node(tasks);
+                } catch (Exception e) {
+                    LOG.error("Failed to remove tasks for " + topologyId, e);
+                }
+            }else {
+                LOG.info(" node of " + rootDir + tasks + " isn't existed ");
+
+            }
+
+            if (zkClusterState.node_existed(taskerrors, false)){
+                try {
+                    zkClusterState.delete_node(taskerrors);
+                } catch (Exception e) {
+                    LOG.error("Failed to remove taskerrors for " + topologyId, e);
+                }
+            }else {
+                LOG.info(" node of " + rootDir + taskerrors + " isn't existed ");
+
+            }
+
+            if (zkClusterState.node_existed(monitor, false)){
+                try {
+                    zkClusterState.delete_node(monitor);
+                } catch (Exception e) {
+                    LOG.error("Failed to remove monitor for " + topologyId, e);
+                }
+            }else {
+                LOG.info(" node of " + rootDir + monitor + " isn't existed ");
+
+            }
+        } catch (Exception e) {
+            if (zkClusterState == null) {
+                LOG.error("Failed to connect ZK ", e);
+            } else {
+                LOG.error("Failed to clean  topolodyId: " + topologyId + "\n", e);
+            }
+        } finally {
+            if (zkClusterState != null) {
+                zkClusterState.close();
+            }
+        }
+
     }
 
     public static void readData(String path) {
@@ -110,8 +249,7 @@ public class ZkTool {
                 if (tid.equals(topologyName)) {
                     LOG.info("Find backup " + topologyName);
 
-                    String topologyPath =
-                            Cluster.assignment_bak_path(topologyName);
+                    String topologyPath = assignment_bak_path(topologyName);
                     zkClusterState.delete_node(topologyPath);
 
                     LOG.info("Successfully delete topology " + topologyName
@@ -161,11 +299,20 @@ public class ZkTool {
 
         } else if (args[0].equalsIgnoreCase(RM_CMD)) {
             rmBakTopology(args[1]);
+        } else if (args[0].equalsIgnoreCase(LIST_CMD)) {
+            list(args[1]);
+        } else if (args[0].equalsIgnoreCase(CLEAN_CMD)) {
+            cleanTopology(args[1]);
         }
 
     }
 
     /*******************************************************************/
+
+    public static String assignment_bak_path(String id) {
+        return Cluster.ASSIGNMENTS_BAK_SUBTREE + Cluster.ZK_SEPERATOR
+                + id;
+    }
 
     @SuppressWarnings("rawtypes")
     public static ClusterState mk_distributed_cluster_state(Map _conf)
@@ -177,7 +324,8 @@ public class ZkTool {
             throws Exception {
         Map<String, String> ret = Maps.newHashMap();
         List<String> followers =
-                cluster_state.get_children(Cluster.NIMBUS_SLAVE_SUBTREE, false);
+                cluster_state.get_children(Cluster.NIMBUS_SLAVE_SUBTREE,
+                        false);
         if (followers == null || followers.size() == 0) {
             return ret;
         }

@@ -62,6 +62,9 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
+/**
+ * @author Johnfang (xiaojian.fxj@alibaba-inc.com)
+ */
 public class Httpserver implements Shutdownable {
 
     private static Logger LOG = LoggerFactory.getLogger(Httpserver.class);
@@ -119,13 +122,11 @@ public class Httpserver implements Shutdownable {
 
         }
 
-        public void handlFailure(HttpExchange t, String errorMsg)
-                throws IOException {
+        public void handlFailure(HttpExchange t, String errorMsg) throws IOException {
             LOG.error(errorMsg);
 
             byte[] data = errorMsg.getBytes();
-            t.sendResponseHeaders(HttpURLConnection.HTTP_BAD_REQUEST,
-                    data.length);
+            t.sendResponseHeaders(HttpURLConnection.HTTP_BAD_REQUEST, data.length);
             OutputStream os = t.getResponseBody();
             os.write(data);
             os.close();
@@ -136,8 +137,7 @@ public class Httpserver implements Shutdownable {
             Map<String, String> paramMap = parseRawQuery(uri.getRawQuery());
             LOG.info("Receive command " + paramMap);
 
-            String cmd =
-                    paramMap.get(HttpserverUtils.HTTPSERVER_LOGVIEW_PARAM_CMD);
+            String cmd = paramMap.get(HttpserverUtils.HTTPSERVER_LOGVIEW_PARAM_CMD);
             if (StringUtils.isBlank(cmd) == true) {
                 handlFailure(t, "Bad Request, Not set command type");
                 return;
@@ -146,16 +146,13 @@ public class Httpserver implements Shutdownable {
             if (HttpserverUtils.HTTPSERVER_LOGVIEW_PARAM_CMD_SHOW.equals(cmd)) {
                 handleShowLog(t, paramMap);
                 return;
-            } else if (HttpserverUtils.HTTPSERVER_LOGVIEW_PARAM_CMD_LIST
-                    .equals(cmd)) {
+            } else if (HttpserverUtils.HTTPSERVER_LOGVIEW_PARAM_CMD_LIST.equals(cmd)) {
                 handleListDir(t, paramMap);
                 return;
-            } else if (HttpserverUtils.HTTPSERVER_LOGVIEW_PARAM_CMD_JSTACK
-                    .equals(cmd)) {
+            } else if (HttpserverUtils.HTTPSERVER_LOGVIEW_PARAM_CMD_JSTACK.equals(cmd)) {
                 handleJstack(t, paramMap);
                 return;
-            } else if (HttpserverUtils.HTTPSERVER_LOGVIEW_PARAM_CMD_SHOW_CONF
-                    .equals(cmd)) {
+            } else if (HttpserverUtils.HTTPSERVER_LOGVIEW_PARAM_CMD_SHOW_CONF.equals(cmd)) {
                 handleShowConf(t, paramMap);
                 return;
             }
@@ -178,8 +175,7 @@ public class Httpserver implements Shutdownable {
 
             if (isChild == false) {
                 LOG.error("Access one disallowed path: " + canonicalPath);
-                throw new IOException(
-                        "Destination file/path is not accessible.");
+                throw new IOException("Destination file/path is not accessible.");
             }
         }
 
@@ -196,34 +192,27 @@ public class Httpserver implements Shutdownable {
             return paramMap;
         }
 
-        private void handleShowLog(HttpExchange t, Map<String, String> paramMap)
-                throws IOException {
+        private void handleShowLog(HttpExchange t, Map<String, String> paramMap) throws IOException {
             Pair<Long, byte[]> logPair = queryLog(t, paramMap);
             if (logPair == null) {
                 return;
             }
 
-            String size =
-                    String.format(
-                            HttpserverUtils.HTTPSERVER_LOGVIEW_PARAM_SIZE_FORMAT,
-                            logPair.getFirst());
+            String size = String.format(HttpserverUtils.HTTPSERVER_LOGVIEW_PARAM_SIZE_FORMAT, logPair.getFirst());
             byte[] sizeByts = size.getBytes();
 
             byte[] logData = logPair.getSecond();
 
-            t.sendResponseHeaders(HttpURLConnection.HTTP_OK, sizeByts.length
-                    + logData.length);
+            t.sendResponseHeaders(HttpURLConnection.HTTP_OK, sizeByts.length + logData.length);
             OutputStream os = t.getResponseBody();
             os.write(sizeByts);
             os.write(logData);
             os.close();
         }
 
-        private Pair<Long, byte[]> queryLog(HttpExchange t,
-                Map<String, String> paramMap) throws IOException {
+        private Pair<Long, byte[]> queryLog(HttpExchange t, Map<String, String> paramMap) throws IOException {
 
-            String fileParam =
-                    paramMap.get(HttpserverUtils.HTTPSERVER_LOGVIEW_PARAM_LOGFILE);
+            String fileParam = paramMap.get(HttpserverUtils.HTTPSERVER_LOGVIEW_PARAM_LOGFILE);
             if (StringUtils.isBlank(fileParam)) {
                 handlFailure(t, "Bad Request, Params Error, no log file name.");
                 return null;
@@ -242,8 +231,7 @@ public class Httpserver implements Shutdownable {
 
                 long position = fileSize - pageSize;
                 try {
-                    String posStr =
-                            paramMap.get(HttpserverUtils.HTTPSERVER_LOGVIEW_PARAM_POS);
+                    String posStr = paramMap.get(HttpserverUtils.HTTPSERVER_LOGVIEW_PARAM_POS);
                     if (StringUtils.isBlank(posStr) == false) {
                         long pos = Long.valueOf(posStr);
 
@@ -258,15 +246,12 @@ public class Httpserver implements Shutdownable {
 
                 long size = Math.min(fileSize - position, pageSize);
 
-                LOG.info("logview " + logFile + ", position=" + position
-                        + ", size=" + size);
+                LOG.info("logview " + logFile + ", position=" + position + ", size=" + size);
                 fout = fc.map(FileChannel.MapMode.READ_ONLY, position, size);
 
                 ret = new byte[(int) size];
                 fout.get(ret);
-                String str =
-                        new String(ret,
-                                ConfigExtension.getLogViewEncoding(conf));
+                String str = new String(ret, ConfigExtension.getLogViewEncoding(conf));
                 return new Pair<Long, byte[]>(fileSize, str.getBytes());
 
             } catch (FileNotFoundException e) {
@@ -288,8 +273,7 @@ public class Httpserver implements Shutdownable {
         }
 
         byte[] getJSonFiles(String dir) throws Exception {
-            Map<String, FileAttribute> fileMap =
-                    new HashMap<String, FileAttribute>();
+            Map<String, FileAttribute> fileMap = new HashMap<String, FileAttribute>();
 
             String path = logDir;
             if (dir != null) {
@@ -332,13 +316,11 @@ public class Httpserver implements Shutdownable {
             return fileJsonStr.getBytes();
         }
 
-        void handleListDir(HttpExchange t, Map<String, String> paramMap)
-                throws IOException {
+        void handleListDir(HttpExchange t, Map<String, String> paramMap) throws IOException {
             byte[] filesJson = "Failed to get file list".getBytes();
 
             try {
-                String dir =
-                        paramMap.get(HttpserverUtils.HTTPSERVER_LOGVIEW_PARAM_DIR);
+                String dir = paramMap.get(HttpserverUtils.HTTPSERVER_LOGVIEW_PARAM_DIR);
                 filesJson = getJSonFiles(dir);
             } catch (Exception e) {
                 LOG.error("Failed to list files", e);
@@ -358,15 +340,12 @@ public class Httpserver implements Shutdownable {
 
             try {
                 LOG.info("Begin to execute " + cmd);
-                Process process =
-                        JStormUtils.launch_process(cmd,
-                                new HashMap<String, String>(), false);
+                Process process = JStormUtils.launch_process(cmd, new HashMap<String, String>(), false);
 
                 // Process process = Runtime.getRuntime().exec(sb.toString());
 
                 InputStream stdin = process.getInputStream();
-                BufferedReader reader =
-                        new BufferedReader(new InputStreamReader(stdin));
+                BufferedReader reader = new BufferedReader(new InputStreamReader(stdin));
 
                 JStormUtils.sleepMs(1000);
 
@@ -398,10 +377,8 @@ public class Httpserver implements Shutdownable {
             }
         }
 
-        void handleJstack(HttpExchange t, Map<String, String> paramMap)
-                throws IOException {
-            String workerPort =
-                    paramMap.get(HttpserverUtils.HTTPSERVER_LOGVIEW_PARAM_WORKER_PORT);
+        void handleJstack(HttpExchange t, Map<String, String> paramMap) throws IOException {
+            String workerPort = paramMap.get(HttpserverUtils.HTTPSERVER_LOGVIEW_PARAM_WORKER_PORT);
             if (workerPort == null) {
                 handlFailure(t, "Not set worker's port");
                 return;
@@ -425,8 +402,7 @@ public class Httpserver implements Shutdownable {
             os.close();
         }
 
-        void handleShowConf(HttpExchange t, Map<String, String> paramMap)
-                throws IOException {
+        void handleShowConf(HttpExchange t, Map<String, String> paramMap) throws IOException {
             byte[] json = "Failed to get configuration".getBytes();
 
             try {
@@ -452,8 +428,7 @@ public class Httpserver implements Shutdownable {
 
         try {
             hs = HttpServer.create(socketAddr, 0);
-            hs.createContext(HttpserverUtils.HTTPSERVER_CONTEXT_PATH_LOGVIEW,
-                    new LogHandler(conf));
+            hs.createContext(HttpserverUtils.HTTPSERVER_CONTEXT_PATH_LOGVIEW, new LogHandler(conf));
             hs.setExecutor(executor);
             hs.start();
 

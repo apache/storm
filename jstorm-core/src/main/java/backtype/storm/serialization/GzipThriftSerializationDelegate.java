@@ -49,7 +49,7 @@ public class GzipThriftSerializationDelegate implements SerializationDelegate {
         try {
             TBase instance = (TBase) clazz.newInstance();
             new TDeserializer().deserialize(instance, Utils.gunzip(bytes));
-            return (T)instance;
+            return (T) instance;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

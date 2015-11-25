@@ -29,26 +29,20 @@ import com.alibaba.jstorm.task.acker.Acker;
 import com.alibaba.jstorm.utils.JStormUtils;
 
 public class RotatingMapTrigger extends TimerTrigger {
-    private static final Logger LOG = LoggerFactory
-            .getLogger(RotatingMapTrigger.class);
+    private static final Logger LOG = LoggerFactory.getLogger(RotatingMapTrigger.class);
 
     public RotatingMapTrigger(Map conf, String name, DisruptorQueue queue) {
         this.name = name;
         this.queue = queue;
         this.opCode = TimerConstants.ROTATING_MAP;
 
-        int msgTimeOut =
-                JStormUtils.parseInt(
-                        conf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS), 30);
+        int msgTimeOut = JStormUtils.parseInt(conf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS), 30);
         frequence = (msgTimeOut) / (Acker.TIMEOUT_BUCKET_NUM - 1);
         if (frequence <= 0) {
             frequence = 1;
         }
 
-        firstTime =
-                JStormUtils.parseInt(
-                        conf.get(Config.SUPERVISOR_WORKER_START_TIMEOUT_SECS),
-                        120);
+        firstTime = JStormUtils.parseInt(conf.get(Config.SUPERVISOR_WORKER_START_TIMEOUT_SECS), 120);
 
         firstTime += frequence;
     }

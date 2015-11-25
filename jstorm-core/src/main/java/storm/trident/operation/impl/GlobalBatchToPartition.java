@@ -17,7 +17,6 @@
  */
 package storm.trident.operation.impl;
 
-
 public class GlobalBatchToPartition implements SingleEmitAggregator.BatchToPartition {
 
     @Override
@@ -25,5 +24,5 @@ public class GlobalBatchToPartition implements SingleEmitAggregator.BatchToParti
         // TODO: take away knowledge of storm's internals here
         return 0;
     }
-    
+
 }

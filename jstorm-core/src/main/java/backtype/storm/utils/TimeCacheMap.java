@@ -37,18 +37,18 @@ import java.util.Set;
 public class TimeCacheMap<K, V> {
     // this default ensures things expire at most 50% past the expiration time
     private static final int DEFAULT_NUM_BUCKETS = 3;
-    
+
     @Deprecated
     public static interface ExpiredCallback<K, V> {
         public void expire(K key, V val);
     }
-    
+
     private LinkedList<HashMap<K, V>> _buckets;
-    
+
     private final Object _lock = new Object();
     private Thread _cleaner;
     private ExpiredCallback _callback;
-    
+
     public TimeCacheMap(int expirationSecs, int numBuckets, ExpiredCallback<K, V> callback) {
         if (numBuckets < 2) {
             throw new IllegalArgumentException("numBuckets must be >= 2");
@@ -57,7 +57,7 @@ public class TimeCacheMap<K, V> {
         for (int i = 0; i < numBuckets; i++) {
             _buckets.add(new HashMap<K, V>());
         }
-        
+
         _callback = callback;
         final long expirationMillis = expirationSecs * 1000L;
         final long sleepTime = expirationMillis / (numBuckets - 1);
@@ -78,26 +78,26 @@ public class TimeCacheMap<K, V> {
                         }
                     }
                 } catch (InterruptedException ex) {
-                    
+
                 }
             }
         });
         _cleaner.setDaemon(true);
         _cleaner.start();
     }
-    
+
     public TimeCacheMap(int expirationSecs, ExpiredCallback<K, V> callback) {
         this(expirationSecs, DEFAULT_NUM_BUCKETS, callback);
     }
-    
+
     public TimeCacheMap(int expirationSecs) {
         this(expirationSecs, DEFAULT_NUM_BUCKETS);
     }
-    
+
     public TimeCacheMap(int expirationSecs, int numBuckets) {
         this(expirationSecs, numBuckets, null);
     }
-    
+
     public boolean containsKey(K key) {
         synchronized (_lock) {
             for (HashMap<K, V> bucket : _buckets) {
@@ -108,7 +108,7 @@ public class TimeCacheMap<K, V> {
             return false;
         }
     }
-    
+
     public V get(K key) {
         synchronized (_lock) {
             for (HashMap<K, V> bucket : _buckets) {
@@ -119,7 +119,7 @@ public class TimeCacheMap<K, V> {
             return null;
         }
     }
-    
+
     public void put(K key, V value) {
         synchronized (_lock) {
             Iterator<HashMap<K, V>> it = _buckets.iterator();
@@ -131,7 +131,7 @@ public class TimeCacheMap<K, V> {
             }
         }
     }
-    
+
     public Object remove(K key) {
         synchronized (_lock) {
             for (HashMap<K, V> bucket : _buckets) {
@@ -142,7 +142,7 @@ public class TimeCacheMap<K, V> {
             return null;
         }
     }
-    
+
     public int size() {
         synchronized (_lock) {
             int size = 0;
@@ -152,11 +152,11 @@ public class TimeCacheMap<K, V> {
             return size;
         }
     }
-    
+
     public void cleanup() {
         _cleaner.interrupt();
     }
-    
+
     public Set<K> keySet() {
         Set<K> ret = new HashSet<K>();
         synchronized (_lock) {

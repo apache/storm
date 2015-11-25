@@ -31,8 +31,7 @@ import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.TimeUtils;
 
 public class ClearThread extends RunnableCallback {
-    private static final Logger LOG = LoggerFactory
-            .getLogger(ClearThread.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ClearThread.class);
 
     private final int REQUEST_TIMEOUT_SECS;
     private static final int TIMEOUT_CHECK_SECS = 5;
@@ -42,10 +41,7 @@ public class ClearThread extends RunnableCallback {
     public ClearThread(Drpc drpc) {
         drpcService = drpc;
 
-        REQUEST_TIMEOUT_SECS =
-                JStormUtils.parseInt(
-                        drpcService.getConf().get(
-                                Config.DRPC_REQUEST_TIMEOUT_SECS), 60);
+        REQUEST_TIMEOUT_SECS = JStormUtils.parseInt(drpcService.getConf().get(Config.DRPC_REQUEST_TIMEOUT_SECS), 60);
         LOG.info("Drpc timeout seconds is " + REQUEST_TIMEOUT_SECS);
     }
 
@@ -56,8 +52,7 @@ public class ClearThread extends RunnableCallback {
             if (TimeUtils.time_delta(e.getValue()) > REQUEST_TIMEOUT_SECS) {
                 String id = e.getKey();
 
-                drpcService.getIdtoResult().put(id,
-                        new DRPCExecutionException("Request timed out"));
+                drpcService.getIdtoResult().put(id, new DRPCExecutionException("Request timed out"));
                 Semaphore s = drpcService.getIdtoSem().get(id);
                 if (s != null) {
                     s.release();

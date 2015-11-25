@@ -28,5 +28,5 @@ public class BaseOperation implements Operation {
     @Override
     public void cleanup() {
     }
-    
+
 }

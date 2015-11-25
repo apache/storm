@@ -21,7 +21,6 @@ import clojure.lang.Numbers;
 import storm.trident.operation.CombinerAggregator;
 import storm.trident.tuple.TridentTuple;
 
-
 public class Sum implements CombinerAggregator<Number> {
 
     @Override
@@ -38,5 +37,5 @@ public class Sum implements CombinerAggregator<Number> {
     public Number zero() {
         return 0;
     }
-    
+
 }

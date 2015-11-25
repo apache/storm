@@ -25,7 +25,7 @@ public class CombinedMetric implements IMetric {
         _combiner = combiner;
         _value = _combiner.identity();
     }
-    
+
     public void update(Object value) {
         _value = _combiner.combine(_value, value);
     }

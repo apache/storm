@@ -34,9 +34,9 @@ public class RichShellSpout extends ShellSpout implements IRichSpout {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        for(String stream: _outputs.keySet()) {
+        for (String stream : _outputs.keySet()) {
             StreamInfo def = _outputs.get(stream);
-            if(def.is_direct()) {
+            if (def.is_direct()) {
                 declarer.declareStream(stream, true, new Fields(def.get_output_fields()));
             } else {
                 declarer.declareStream(stream, new Fields(def.get_output_fields()));

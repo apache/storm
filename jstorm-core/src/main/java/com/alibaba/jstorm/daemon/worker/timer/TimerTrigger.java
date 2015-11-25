@@ -30,13 +30,11 @@ import backtype.storm.utils.DisruptorQueue;
 import com.lmax.disruptor.InsufficientCapacityException;
 
 public class TimerTrigger implements Runnable {
-    private static final Logger LOG = LoggerFactory
-            .getLogger(TimerTrigger.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TimerTrigger.class);
 
     private static ScheduledExecutorService threadPool;
 
-    public static void setScheduledExecutorService(
-            ScheduledExecutorService scheduledExecutorService) {
+    public static void setScheduledExecutorService(ScheduledExecutorService scheduledExecutorService) {
         threadPool = scheduledExecutorService;
     }
 
@@ -44,7 +42,7 @@ public class TimerTrigger implements Runnable {
     protected int opCode;
     protected int firstTime;
     protected int frequence;
-    protected DisruptorQueue queue;
+    protected DisruptorQueue queue = null;
     protected Object object;
     protected boolean block = true;
 
@@ -53,8 +51,7 @@ public class TimerTrigger implements Runnable {
     }
 
     public void register(TimeUnit timeUnit) {
-        threadPool.scheduleAtFixedRate(this, firstTime, frequence,
-                timeUnit);
+        threadPool.scheduleAtFixedRate(this, firstTime, frequence, timeUnit);
         LOG.info("Successfully register timer " + this);
     }
 
@@ -145,8 +142,7 @@ public class TimerTrigger implements Runnable {
 
     @Override
     public String toString() {
-        return ToStringBuilder.reflectionToString(this,
-                ToStringStyle.SHORT_PREFIX_STYLE);
+        return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
 
     public class TimerEvent {

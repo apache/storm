@@ -38,6 +38,8 @@ public class TopologyAssignContext {
     public static final int ASSIGN_TYPE_MONITOR = 2; // monitor a topology, some
                                                      // tasks are dead
 
+    protected String topologyId;
+
     protected int assignType;
 
     protected StormTopology rawTopology;
@@ -50,6 +52,9 @@ public class TopologyAssignContext {
     protected Assignment oldAssignment;
 
     protected Map<String, SupervisorInfo> cluster;
+
+    protected int topoMasterTaskId;
+    protected boolean assignSingleWorkerForTM = false;
 
     protected Map<Integer, String> taskToComponent;
 
@@ -76,6 +81,17 @@ public class TopologyAssignContext {
         this.deadTaskIds = copy.getDeadTaskIds();
         this.unstoppedTaskIds = copy.getUnstoppedTaskIds();
         this.isReassign = copy.isReassign();
+        this.topologyId = copy.getTopologyId();
+        this.topoMasterTaskId = copy.getTopologyMasterTaskId();
+        this.assignSingleWorkerForTM = copy.getAssignSingleWorkerForTM();
+    }
+
+    public String getTopologyId() {
+        return topologyId;
+    }
+
+    public void setTopologyId(String topologyId) {
+        this.topologyId = topologyId;
     }
 
     public int getAssignType() {
@@ -151,8 +167,7 @@ public class TopologyAssignContext {
     }
 
     public static boolean isAssignTypeValid(int type) {
-        return (type == ASSIGN_TYPE_NEW) || (type == ASSIGN_TYPE_REBALANCE)
-                || (type == ASSIGN_TYPE_MONITOR);
+        return (type == ASSIGN_TYPE_NEW) || (type == ASSIGN_TYPE_REBALANCE) || (type == ASSIGN_TYPE_MONITOR);
     }
 
     public Set<ResourceWorkerSlot> getUnstoppedWorkers() {
@@ -171,9 +186,24 @@ public class TopologyAssignContext {
         this.isReassign = isReassign;
     }
 
+    public int getTopologyMasterTaskId() {
+        return topoMasterTaskId;
+    }
+
+    public void setTopologyMasterTaskId(int taskId) {
+        this.topoMasterTaskId = taskId;
+    }
+
+    public boolean getAssignSingleWorkerForTM() {
+        return assignSingleWorkerForTM;
+    }
+
+    public void setAssignSingleWorkerForTM(boolean isAssign) {
+        this.assignSingleWorkerForTM = isAssign;
+    }
+
     @Override
     public String toString() {
-        return ToStringBuilder.reflectionToString(this,
-                ToStringStyle.SHORT_PREFIX_STYLE);
+        return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
 }

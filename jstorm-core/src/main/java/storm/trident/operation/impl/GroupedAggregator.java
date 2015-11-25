@@ -37,7 +37,7 @@ public class GroupedAggregator implements Aggregator<Object[]> {
     ComboList.Factory _fact;
     Fields _inFields;
     Fields _groupFields;
-    
+
     public GroupedAggregator(Aggregator agg, Fields group, Fields input, int outSize) {
         _groupFields = group;
         _inFields = input;
@@ -47,7 +47,7 @@ public class GroupedAggregator implements Aggregator<Object[]> {
         sizes[1] = outSize;
         _fact = new ComboList.Factory(sizes);
     }
-    
+
     @Override
     public void prepare(Map conf, TridentOperationContext context) {
         _inputFactory = context.makeProjectionFactory(_inFields);
@@ -57,7 +57,7 @@ public class GroupedAggregator implements Aggregator<Object[]> {
 
     @Override
     public Object[] init(Object batchId, TridentCollector collector) {
-        return new Object[] {new GroupCollector(collector, _fact), new HashMap(), batchId};
+        return new Object[] { new GroupCollector(collector, _fact), new HashMap(), batchId };
     }
 
     @Override
@@ -67,7 +67,7 @@ public class GroupedAggregator implements Aggregator<Object[]> {
         TridentTuple group = _groupFactory.create((TridentTupleView) tuple);
         TridentTuple input = _inputFactory.create((TridentTupleView) tuple);
         Object curr;
-        if(!val.containsKey(group)) {
+        if (!val.containsKey(group)) {
             curr = _agg.init(arr[2], groupColl);
             val.put((List) group, curr);
         } else {
@@ -75,14 +75,14 @@ public class GroupedAggregator implements Aggregator<Object[]> {
         }
         groupColl.currGroup = group;
         _agg.aggregate(curr, input, groupColl);
-        
+
     }
 
     @Override
     public void complete(Object[] arr, TridentCollector collector) {
-        Map<List, Object> val = (Map) arr[1];        
+        Map<List, Object> val = (Map) arr[1];
         GroupCollector groupColl = (GroupCollector) arr[0];
-        for(Entry<List, Object> e: val.entrySet()) {
+        for (Entry<List, Object> e : val.entrySet()) {
             groupColl.currGroup = e.getKey();
             _agg.complete(e.getValue(), groupColl);
         }
@@ -92,5 +92,5 @@ public class GroupedAggregator implements Aggregator<Object[]> {
     public void cleanup() {
         _agg.cleanup();
     }
-    
+
 }

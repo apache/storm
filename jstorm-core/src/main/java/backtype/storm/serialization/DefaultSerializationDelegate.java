@@ -48,10 +48,10 @@ public class DefaultSerializationDelegate implements SerializationDelegate {
             ObjectInputStream ois = new ObjectInputStream(bis);
             Object ret = ois.readObject();
             ois.close();
-            return (T)ret;
-        } catch(IOException ioe) {
+            return (T) ret;
+        } catch (IOException ioe) {
             throw new RuntimeException(ioe);
-        } catch(ClassNotFoundException e) {
+        } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
     }

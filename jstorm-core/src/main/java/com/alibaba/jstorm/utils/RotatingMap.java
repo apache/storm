@@ -28,9 +28,8 @@ import java.util.concurrent.LinkedBlockingDeque;
 /**
  * RotatingMap must be used under thread-safe environment
  * 
- * Expires keys that have not been updated in the configured number of seconds.
- * The algorithm used will take between expirationSecs and expirationSecs * (1 +
- * 1 / (numBuckets-1)) to actually expire the message.
+ * Expires keys that have not been updated in the configured number of seconds. The algorithm used will take between expirationSecs and expirationSecs * (1 + 1
+ * / (numBuckets-1)) to actually expire the message.
  * 
  * get, put, remove, containsKey, and size take O(numBuckets) time to run.
  * 
@@ -45,8 +44,7 @@ public class RotatingMap<K, V> implements TimeOutMap<K, V> {
 
     private final Object lock = new Object();
 
-    public RotatingMap(int numBuckets, ExpiredCallback<K, V> callback,
-            boolean isSingleThread) {
+    public RotatingMap(int numBuckets, ExpiredCallback<K, V> callback, boolean isSingleThread) {
         if (numBuckets < 2) {
             throw new IllegalArgumentException("numBuckets must be >= 2");
         }
@@ -121,8 +119,7 @@ public class RotatingMap<K, V> implements TimeOutMap<K, V> {
     /**
      * Remove item from Rotate
      * 
-     * On the side of performance, scanning from header is faster On the side of
-     * logic, it should scan from the end to first.
+     * On the side of performance, scanning from header is faster On the side of logic, it should scan from the end to first.
      * 
      * @param key
      * @return

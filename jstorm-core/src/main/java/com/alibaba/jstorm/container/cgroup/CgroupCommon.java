@@ -59,9 +59,7 @@ public class CgroupCommon implements CgroupCommonOperation {
         this.parent = parent;
         this.dir = parent.getDir() + "/" + name;
         this.init();
-        cores =
-                CgroupCoreFactory.getInstance(this.hierarchy.getSubSystems(),
-                        this.dir);
+        cores = CgroupCoreFactory.getInstance(this.hierarchy.getSubSystems(), this.dir);
         this.isRoot = false;
     }
 
@@ -74,23 +72,19 @@ public class CgroupCommon implements CgroupCommonOperation {
         this.parent = null;
         this.dir = dir;
         this.init();
-        cores =
-                CgroupCoreFactory.getInstance(this.hierarchy.getSubSystems(),
-                        this.dir);
+        cores = CgroupCoreFactory.getInstance(this.hierarchy.getSubSystems(), this.dir);
         this.isRoot = true;
     }
 
     @Override
     public void addTask(int taskId) throws IOException {
         // TODO Auto-generated method stub
-        CgroupUtils.writeFileByLine(Constants.getDir(this.dir, TASKS),
-                String.valueOf(taskId));
+        CgroupUtils.writeFileByLine(Constants.getDir(this.dir, TASKS), String.valueOf(taskId));
     }
 
     @Override
     public Set<Integer> getTasks() throws IOException {
-        List<String> stringTasks =
-                CgroupUtils.readFileByLine(Constants.getDir(this.dir, TASKS));
+        List<String> stringTasks = CgroupUtils.readFileByLine(Constants.getDir(this.dir, TASKS));
         Set<Integer> tasks = new HashSet<Integer>();
         for (String task : stringTasks) {
             tasks.add(Integer.valueOf(task));
@@ -101,16 +95,13 @@ public class CgroupCommon implements CgroupCommonOperation {
     @Override
     public void addProcs(int pid) throws IOException {
         // TODO Auto-generated method stub
-        CgroupUtils.writeFileByLine(Constants.getDir(this.dir, CGROUP_PROCS),
-                String.valueOf(pid));
+        CgroupUtils.writeFileByLine(Constants.getDir(this.dir, CGROUP_PROCS), String.valueOf(pid));
     }
 
     @Override
     public Set<Integer> getPids() throws IOException {
         // TODO Auto-generated method stub
-        List<String> stringPids =
-                CgroupUtils.readFileByLine(Constants.getDir(this.dir,
-                        CGROUP_PROCS));
+        List<String> stringPids = CgroupUtils.readFileByLine(Constants.getDir(this.dir, CGROUP_PROCS));
         Set<Integer> pids = new HashSet<Integer>();
         for (String task : stringPids) {
             pids.add(Integer.valueOf(task));
@@ -121,16 +112,12 @@ public class CgroupCommon implements CgroupCommonOperation {
     @Override
     public void setNotifyOnRelease(boolean flag) throws IOException {
         // TODO Auto-generated method stub
-        CgroupUtils
-                .writeFileByLine(Constants.getDir(this.dir, NOTIFY_ON_RELEASE),
-                        flag ? "1" : "0");
+        CgroupUtils.writeFileByLine(Constants.getDir(this.dir, NOTIFY_ON_RELEASE), flag ? "1" : "0");
     }
 
     @Override
     public boolean getNotifyOnRelease() throws IOException {
-        return CgroupUtils
-                .readFileByLine(Constants.getDir(this.dir, NOTIFY_ON_RELEASE))
-                .get(0).equals("1") ? true : false;
+        return CgroupUtils.readFileByLine(Constants.getDir(this.dir, NOTIFY_ON_RELEASE)).get(0).equals("1") ? true : false;
     }
 
     @Override
@@ -138,16 +125,14 @@ public class CgroupCommon implements CgroupCommonOperation {
         // TODO Auto-generated method stub
         if (!this.isRoot)
             return;
-        CgroupUtils.writeFileByLine(Constants.getDir(this.dir, RELEASE_AGENT),
-                command);
+        CgroupUtils.writeFileByLine(Constants.getDir(this.dir, RELEASE_AGENT), command);
     }
 
     @Override
     public String getReleaseAgent() throws IOException {
         if (!this.isRoot)
             return null;
-        return CgroupUtils.readFileByLine(
-                Constants.getDir(this.dir, RELEASE_AGENT)).get(0);
+        return CgroupUtils.readFileByLine(Constants.getDir(this.dir, RELEASE_AGENT)).get(0);
     }
 
     @Override
@@ -155,21 +140,16 @@ public class CgroupCommon implements CgroupCommonOperation {
         // TODO Auto-generated method stub
         if (!this.cores.keySet().contains(SubSystemType.cpuset))
             return;
-        CgroupUtils.writeFileByLine(Constants.getDir(this.dir,
-                CGROUP_CLONE_CHILDREN), flag ? "1" : "0");
+        CgroupUtils.writeFileByLine(Constants.getDir(this.dir, CGROUP_CLONE_CHILDREN), flag ? "1" : "0");
     }
 
     @Override
     public boolean getCgroupCloneChildren() throws IOException {
-        return CgroupUtils
-                .readFileByLine(
-                        Constants.getDir(this.dir, CGROUP_CLONE_CHILDREN))
-                .get(0).equals("1") ? true : false;
+        return CgroupUtils.readFileByLine(Constants.getDir(this.dir, CGROUP_CLONE_CHILDREN)).get(0).equals("1") ? true : false;
     }
 
     @Override
-    public void setEventControl(String eventFd, String controlFd,
-            String... args) throws IOException {
+    public void setEventControl(String eventFd, String controlFd, String... args) throws IOException {
         // TODO Auto-generated method stub
         StringBuilder sb = new StringBuilder();
         sb.append(eventFd);
@@ -179,10 +159,7 @@ public class CgroupCommon implements CgroupCommonOperation {
             sb.append(' ');
             sb.append(arg);
         }
-        CgroupUtils
-                .writeFileByLine(
-                        Constants.getDir(this.dir, CGROUP_EVENT_CONTROL),
-                        sb.toString());
+        CgroupUtils.writeFileByLine(Constants.getDir(this.dir, CGROUP_EVENT_CONTROL), sb.toString());
     }
 
     public Hierarchy getHierarchy() {
@@ -240,8 +217,7 @@ public class CgroupCommon implements CgroupCommonOperation {
             return;
         for (File child : files) {
             if (child.isDirectory()) {
-                this.children.add(new CgroupCommon(child.getName(),
-                        this.hierarchy, this));
+                this.children.add(new CgroupCommon(child.getName(), this.hierarchy, this));
             }
         }
     }

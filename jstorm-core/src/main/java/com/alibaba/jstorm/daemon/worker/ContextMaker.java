@@ -17,25 +17,23 @@
  */
 package com.alibaba.jstorm.daemon.worker;
 
+import backtype.storm.generated.StormTopology;
+import backtype.storm.generated.StreamInfo;
+import backtype.storm.task.TopologyContext;
+import backtype.storm.tuple.Fields;
+import backtype.storm.utils.ThriftTopologyUtils;
+import com.alibaba.jstorm.cluster.StormConfig;
+import com.alibaba.jstorm.utils.JStormUtils;
+import com.alibaba.jstorm.utils.PathUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import backtype.storm.generated.StormTopology;
-import backtype.storm.generated.StreamInfo;
-import backtype.storm.task.TopologyContext;
-import backtype.storm.tuple.Fields;
-import backtype.storm.utils.ThriftTopologyUtils;
-
-import com.alibaba.jstorm.cluster.StormConfig;
-import com.alibaba.jstorm.utils.JStormUtils;
-import com.alibaba.jstorm.utils.PathUtils;
 
 /**
  * ContextMaker This class is used to create TopologyContext
@@ -56,8 +54,7 @@ public class ContextMaker {
     @SuppressWarnings("rawtypes")
     public ContextMaker(WorkerData workerData) {
         /*
-         * Map stormConf, String topologyId, String workerId, HashMap<Integer,
-         * String> tasksToComponent, Integer port, List<Integer> workerTasks
+         * Map stormConf, String topologyId, String workerId, HashMap<Integer, String> tasksToComponent, Integer port, List<Integer> workerTasks
          */
         this.workerData = workerData;
         this.workerTasks = JStormUtils.mk_list(workerData.getTaskids());
@@ -67,12 +64,9 @@ public class ContextMaker {
             String topologyId = workerData.getTopologyId();
             String workerId = workerData.getWorkerId();
 
-            String distroot =
-                    StormConfig
-                            .supervisor_stormdist_root(stormConf, topologyId);
+            String distroot = StormConfig.supervisor_stormdist_root(stormConf, topologyId);
 
-            resourcePath =
-                    StormConfig.supervisor_storm_resources_path(distroot);
+            resourcePath = StormConfig.supervisor_storm_resources_path(distroot);
 
             pidDir = StormConfig.worker_pids_root(stormConf, workerId);
 
@@ -85,43 +79,32 @@ public class ContextMaker {
         }
     }
 
-    public TopologyContext makeTopologyContext(StormTopology topology,
-            Integer taskId, clojure.lang.Atom openOrPrepareWasCalled) {
+    public TopologyContext makeTopologyContext(StormTopology topology, Integer taskId, clojure.lang.Atom openOrPrepareWasCalled) {
 
         Map stormConf = workerData.getStormConf();
         String topologyId = workerData.getTopologyId();
 
-        HashMap<String, Map<String, Fields>> componentToStreamToFields =
-                new HashMap<String, Map<String, Fields>>();
+        HashMap<String, Map<String, Fields>> componentToStreamToFields = new HashMap<String, Map<String, Fields>>();
 
         Set<String> components = ThriftTopologyUtils.getComponentIds(topology);
         for (String component : components) {
 
-            Map<String, Fields> streamToFieldsMap =
-                    new HashMap<String, Fields>();
+            Map<String, Fields> streamToFieldsMap = new HashMap<String, Fields>();
 
-            Map<String, StreamInfo> streamInfoMap =
-                    ThriftTopologyUtils.getComponentCommon(topology, component)
-                            .get_streams();
+            Map<String, StreamInfo> streamInfoMap = ThriftTopologyUtils.getComponentCommon(topology, component).get_streams();
             for (Entry<String, StreamInfo> entry : streamInfoMap.entrySet()) {
                 String streamId = entry.getKey();
                 StreamInfo streamInfo = entry.getValue();
 
-                streamToFieldsMap.put(streamId,
-                        new Fields(streamInfo.get_output_fields()));
+                streamToFieldsMap.put(streamId, new Fields(streamInfo.get_output_fields()));
             }
 
             componentToStreamToFields.put(component, streamToFieldsMap);
         }
 
-        return new TopologyContext(topology, stormConf,
-                workerData.getTasksToComponent(),
-                workerData.getComponentToSortedTasks(),
-                componentToStreamToFields, topologyId, resourcePath, pidDir,
-                taskId, workerData.getPort(), workerTasks,
-                workerData.getDefaultResources(),
-                workerData.getUserResources(), workerData.getExecutorData(),
-                workerData.getRegisteredMetrics(), openOrPrepareWasCalled);
+        return new TopologyContext(topology, stormConf, workerData.getTasksToComponent(), workerData.getComponentToSortedTasks(), componentToStreamToFields,
+                topologyId, resourcePath, pidDir, taskId, workerData.getPort(), workerTasks, workerData.getDefaultResources(), workerData.getUserResources(),
+                workerData.getExecutorData(), workerData.getRegisteredMetrics(), openOrPrepareWasCalled, workerData.getZkCluster());
 
     }
 

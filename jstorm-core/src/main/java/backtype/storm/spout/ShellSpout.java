@@ -25,19 +25,18 @@ import backtype.storm.multilang.ShellMsg;
 import backtype.storm.multilang.SpoutMsg;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.utils.ShellProcess;
-import java.util.Map;
-import java.util.List;
-import java.util.TimerTask;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-
 import clojure.lang.RT;
 import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+import java.util.Map;
+import java.util.TimerTask;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class ShellSpout implements ISpout {
     public static Logger LOG = LoggerFactory.getLogger(ShellSpout.class);
@@ -45,9 +44,9 @@ public class ShellSpout implements ISpout {
     private SpoutOutputCollector _collector;
     private String[] _command;
     private ShellProcess _process;
-    
+
     private TopologyContext _context;
-    
+
     private SpoutMsg _spoutMsg;
 
     private int workerTimeoutMills;
@@ -62,8 +61,7 @@ public class ShellSpout implements ISpout {
         _command = command;
     }
 
-    public void open(Map stormConf, TopologyContext context,
-                     SpoutOutputCollector collector) {
+    public void open(Map stormConf, TopologyContext context, SpoutOutputCollector collector) {
         _collector = collector;
         _context = context;
 
@@ -108,25 +106,25 @@ public class ShellSpout implements ISpout {
         _spoutMsg.setId(msgId);
         querySubprocess();
     }
-    
+
     private void handleMetrics(ShellMsg shellMsg) {
-        //get metric name
+        // get metric name
         String name = shellMsg.getMetricName();
         if (name.isEmpty()) {
             throw new RuntimeException("Receive Metrics name is empty");
         }
-        
-        //get metric by name
+
+        // get metric by name
         IMetric iMetric = _context.getRegisteredMetricByName(name);
         if (iMetric == null) {
-            throw new RuntimeException("Could not find metric by name["+name+"] ");
+            throw new RuntimeException("Could not find metric by name[" + name + "] ");
         }
-        if ( !(iMetric instanceof IShellMetric)) {
-            throw new RuntimeException("Metric["+name+"] is not IShellMetric, can not call by RPC");
+        if (!(iMetric instanceof IShellMetric)) {
+            throw new RuntimeException("Metric[" + name + "] is not IShellMetric, can not call by RPC");
         }
-        IShellMetric iShellMetric = (IShellMetric)iMetric;
-        
-        //call updateMetricFromRPC with params
+        IShellMetric iShellMetric = (IShellMetric) iMetric;
+
+        // call updateMetricFromRPC with params
         Object paramsObj = shellMsg.getMetricParams();
         try {
             iShellMetric.updateMetricFromRPC(paramsObj);
@@ -134,7 +132,7 @@ public class ShellSpout implements ISpout {
             throw re;
         } catch (Exception e) {
             throw new RuntimeException(e);
-        }       
+        }
     }
 
     private void querySubprocess() {
@@ -187,24 +185,24 @@ public class ShellSpout implements ISpout {
         ShellMsg.ShellLogLevel logLevel = shellMsg.getLogLevel();
 
         switch (logLevel) {
-            case TRACE:
-                LOG.trace(msg);
-                break;
-            case DEBUG:
-                LOG.debug(msg);
-                break;
-            case INFO:
-                LOG.info(msg);
-                break;
-            case WARN:
-                LOG.warn(msg);
-                break;
-            case ERROR:
-                LOG.error(msg);
-                break;
-            default:
-                LOG.info(msg);
-                break;
+        case TRACE:
+            LOG.trace(msg);
+            break;
+        case DEBUG:
+            LOG.debug(msg);
+            break;
+        case INFO:
+            LOG.info(msg);
+            break;
+        case WARN:
+            LOG.warn(msg);
+            break;
+        case ERROR:
+            LOG.error(msg);
+            break;
+        default:
+            LOG.info(msg);
+            break;
         }
     }
 
@@ -254,8 +252,7 @@ public class ShellSpout implements ISpout {
             long currentTimeMillis = System.currentTimeMillis();
             long lastHeartbeat = getLastHeartbeat();
 
-            LOG.debug("current time : {}, last heartbeat : {}, worker timeout (ms) : {}",
-                    currentTimeMillis, lastHeartbeat, workerTimeoutMills);
+            LOG.debug("current time : {}, last heartbeat : {}, worker timeout (ms) : {}", currentTimeMillis, lastHeartbeat, workerTimeoutMills);
 
             if (currentTimeMillis - lastHeartbeat > workerTimeoutMills) {
                 spout.die(new RuntimeException("subprocess heartbeat timeout"));

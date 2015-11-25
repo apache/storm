@@ -27,8 +27,7 @@ public class NettyRenameThreadFactory implements ThreadFactory {
 
     static {
         // Rename Netty threads
-        ThreadRenamingRunnable
-                .setThreadNameDeterminer(ThreadNameDeterminer.CURRENT);
+        ThreadRenamingRunnable.setThreadNameDeterminer(ThreadNameDeterminer.CURRENT);
     }
 
     final ThreadGroup group;
@@ -37,15 +36,12 @@ public class NettyRenameThreadFactory implements ThreadFactory {
 
     NettyRenameThreadFactory(String name) {
         SecurityManager s = System.getSecurityManager();
-        group =
-                (s != null) ? s.getThreadGroup() : Thread.currentThread()
-                        .getThreadGroup();
+        group = (s != null) ? s.getThreadGroup() : Thread.currentThread().getThreadGroup();
         this.name = name;
     }
 
     public Thread newThread(Runnable r) {
-        Thread t =
-                new Thread(group, r, name + "-" + index.getAndIncrement(), 0);
+        Thread t = new Thread(group, r, name + "-" + index.getAndIncrement(), 0);
         if (t.isDaemon())
             t.setDaemon(false);
         if (t.getPriority() != Thread.NORM_PRIORITY)

@@ -23,9 +23,9 @@ import storm.trident.operation.TridentOperationContext;
 import storm.trident.tuple.TridentTuple;
 
 public class Negate implements Filter {
-    
+
     Filter _delegate;
-    
+
     public Negate(Filter delegate) {
         _delegate = delegate;
     }
@@ -44,5 +44,5 @@ public class Negate implements Filter {
     public void cleanup() {
         _delegate.cleanup();
     }
-    
+
 }

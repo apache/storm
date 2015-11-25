@@ -1338,16 +1338,366 @@ class StormTopology:
   def __ne__(self, other):
     return not (self == other)
 
+class AlreadyAliveException(TException):
+  """
+  Attributes:
+   - msg
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'msg', None, None, ), # 1
+  )
+
+  def __init__(self, msg=None,):
+    self.msg = msg
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRING:
+          self.msg = iprot.readString().decode('utf-8')
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('AlreadyAliveException')
+    if self.msg is not None:
+      oprot.writeFieldBegin('msg', TType.STRING, 1)
+      oprot.writeString(self.msg.encode('utf-8'))
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    if self.msg is None:
+      raise TProtocol.TProtocolException(message='Required field msg is unset!')
+    return
+
+
+  def __str__(self):
+    return repr(self)
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.msg)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class NotAliveException(TException):
+  """
+  Attributes:
+   - msg
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'msg', None, None, ), # 1
+  )
+
+  def __init__(self, msg=None,):
+    self.msg = msg
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRING:
+          self.msg = iprot.readString().decode('utf-8')
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('NotAliveException')
+    if self.msg is not None:
+      oprot.writeFieldBegin('msg', TType.STRING, 1)
+      oprot.writeString(self.msg.encode('utf-8'))
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    if self.msg is None:
+      raise TProtocol.TProtocolException(message='Required field msg is unset!')
+    return
+
+
+  def __str__(self):
+    return repr(self)
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.msg)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class AuthorizationException(TException):
+  """
+  Attributes:
+   - msg
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'msg', None, None, ), # 1
+  )
+
+  def __init__(self, msg=None,):
+    self.msg = msg
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRING:
+          self.msg = iprot.readString().decode('utf-8')
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('AuthorizationException')
+    if self.msg is not None:
+      oprot.writeFieldBegin('msg', TType.STRING, 1)
+      oprot.writeString(self.msg.encode('utf-8'))
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    if self.msg is None:
+      raise TProtocol.TProtocolException(message='Required field msg is unset!')
+    return
+
+
+  def __str__(self):
+    return repr(self)
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.msg)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class InvalidTopologyException(TException):
+  """
+  Attributes:
+   - msg
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'msg', None, None, ), # 1
+  )
+
+  def __init__(self, msg=None,):
+    self.msg = msg
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRING:
+          self.msg = iprot.readString().decode('utf-8')
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('InvalidTopologyException')
+    if self.msg is not None:
+      oprot.writeFieldBegin('msg', TType.STRING, 1)
+      oprot.writeString(self.msg.encode('utf-8'))
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    if self.msg is None:
+      raise TProtocol.TProtocolException(message='Required field msg is unset!')
+    return
+
+
+  def __str__(self):
+    return repr(self)
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.msg)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class TopologyAssignException(TException):
+  """
+  Attributes:
+   - msg
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'msg', None, None, ), # 1
+  )
+
+  def __init__(self, msg=None,):
+    self.msg = msg
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRING:
+          self.msg = iprot.readString().decode('utf-8')
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('TopologyAssignException')
+    if self.msg is not None:
+      oprot.writeFieldBegin('msg', TType.STRING, 1)
+      oprot.writeString(self.msg.encode('utf-8'))
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    if self.msg is None:
+      raise TProtocol.TProtocolException(message='Required field msg is unset!')
+    return
+
+
+  def __str__(self):
+    return repr(self)
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.msg)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
 class TopologySummary:
   """
   Attributes:
    - id
    - name
    - status
-   - uptime_secs
-   - num_tasks
-   - num_workers
-   - error_info
+   - uptimeSecs
+   - numTasks
+   - numWorkers
+   - errorInfo
   """
 
   thrift_spec = (
@@ -1355,20 +1705,20 @@ class TopologySummary:
     (1, TType.STRING, 'id', None, None, ), # 1
     (2, TType.STRING, 'name', None, None, ), # 2
     (3, TType.STRING, 'status', None, None, ), # 3
-    (4, TType.I32, 'uptime_secs', None, None, ), # 4
-    (5, TType.I32, 'num_tasks', None, None, ), # 5
-    (6, TType.I32, 'num_workers', None, None, ), # 6
-    (7, TType.STRING, 'error_info', None, None, ), # 7
+    (4, TType.I32, 'uptimeSecs', None, None, ), # 4
+    (5, TType.I32, 'numTasks', None, None, ), # 5
+    (6, TType.I32, 'numWorkers', None, None, ), # 6
+    (7, TType.STRING, 'errorInfo', None, None, ), # 7
   )
 
-  def __init__(self, id=None, name=None, status=None, uptime_secs=None, num_tasks=None, num_workers=None, error_info=None,):
+  def __init__(self, id=None, name=None, status=None, uptimeSecs=None, numTasks=None, numWorkers=None, errorInfo=None,):
     self.id = id
     self.name = name
     self.status = status
-    self.uptime_secs = uptime_secs
-    self.num_tasks = num_tasks
-    self.num_workers = num_workers
-    self.error_info = error_info
+    self.uptimeSecs = uptimeSecs
+    self.numTasks = numTasks
+    self.numWorkers = numWorkers
+    self.errorInfo = errorInfo
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -1396,22 +1746,22 @@ class TopologySummary:
           iprot.skip(ftype)
       elif fid == 4:
         if ftype == TType.I32:
-          self.uptime_secs = iprot.readI32();
+          self.uptimeSecs = iprot.readI32();
         else:
           iprot.skip(ftype)
       elif fid == 5:
         if ftype == TType.I32:
-          self.num_tasks = iprot.readI32();
+          self.numTasks = iprot.readI32();
         else:
           iprot.skip(ftype)
       elif fid == 6:
         if ftype == TType.I32:
-          self.num_workers = iprot.readI32();
+          self.numWorkers = iprot.readI32();
         else:
           iprot.skip(ftype)
       elif fid == 7:
         if ftype == TType.STRING:
-          self.error_info = iprot.readString().decode('utf-8')
+          self.errorInfo = iprot.readString().decode('utf-8')
         else:
           iprot.skip(ftype)
       else:
@@ -1436,21 +1786,21 @@ class TopologySummary:
       oprot.writeFieldBegin('status', TType.STRING, 3)
       oprot.writeString(self.status.encode('utf-8'))
       oprot.writeFieldEnd()
-    if self.uptime_secs is not None:
-      oprot.writeFieldBegin('uptime_secs', TType.I32, 4)
-      oprot.writeI32(self.uptime_secs)
+    if self.uptimeSecs is not None:
+      oprot.writeFieldBegin('uptimeSecs', TType.I32, 4)
+      oprot.writeI32(self.uptimeSecs)
       oprot.writeFieldEnd()
-    if self.num_tasks is not None:
-      oprot.writeFieldBegin('num_tasks', TType.I32, 5)
-      oprot.writeI32(self.num_tasks)
+    if self.numTasks is not None:
+      oprot.writeFieldBegin('numTasks', TType.I32, 5)
+      oprot.writeI32(self.numTasks)
       oprot.writeFieldEnd()
-    if self.num_workers is not None:
-      oprot.writeFieldBegin('num_workers', TType.I32, 6)
-      oprot.writeI32(self.num_workers)
+    if self.numWorkers is not None:
+      oprot.writeFieldBegin('numWorkers', TType.I32, 6)
+      oprot.writeI32(self.numWorkers)
       oprot.writeFieldEnd()
-    if self.error_info is not None:
-      oprot.writeFieldBegin('error_info', TType.STRING, 7)
-      oprot.writeString(self.error_info.encode('utf-8'))
+    if self.errorInfo is not None:
+      oprot.writeFieldBegin('errorInfo', TType.STRING, 7)
+      oprot.writeString(self.errorInfo.encode('utf-8'))
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
@@ -1462,12 +1812,12 @@ class TopologySummary:
       raise TProtocol.TProtocolException(message='Required field name is unset!')
     if self.status is None:
       raise TProtocol.TProtocolException(message='Required field status is unset!')
-    if self.uptime_secs is None:
-      raise TProtocol.TProtocolException(message='Required field uptime_secs is unset!')
-    if self.num_tasks is None:
-      raise TProtocol.TProtocolException(message='Required field num_tasks is unset!')
-    if self.num_workers is None:
-      raise TProtocol.TProtocolException(message='Required field num_workers is unset!')
+    if self.uptimeSecs is None:
+      raise TProtocol.TProtocolException(message='Required field uptimeSecs is unset!')
+    if self.numTasks is None:
+      raise TProtocol.TProtocolException(message='Required field numTasks is unset!')
+    if self.numWorkers is None:
+      raise TProtocol.TProtocolException(message='Required field numWorkers is unset!')
     return
 
 
@@ -1476,10 +1826,10 @@ class TopologySummary:
     value = (value * 31) ^ hash(self.id)
     value = (value * 31) ^ hash(self.name)
     value = (value * 31) ^ hash(self.status)
-    value = (value * 31) ^ hash(self.uptime_secs)
-    value = (value * 31) ^ hash(self.num_tasks)
-    value = (value * 31) ^ hash(self.num_workers)
-    value = (value * 31) ^ hash(self.error_info)
+    value = (value * 31) ^ hash(self.uptimeSecs)
+    value = (value * 31) ^ hash(self.numTasks)
+    value = (value * 31) ^ hash(self.numWorkers)
+    value = (value * 31) ^ hash(self.errorInfo)
     return value
 
   def __repr__(self):
@@ -1497,27 +1847,27 @@ class SupervisorSummary:
   """
   Attributes:
    - host
-   - supervisor_id
-   - uptime_secs
-   - num_workers
-   - num_used_workers
+   - supervisorId
+   - uptimeSecs
+   - numWorkers
+   - numUsedWorkers
   """
 
   thrift_spec = (
     None, # 0
     (1, TType.STRING, 'host', None, None, ), # 1
-    (2, TType.STRING, 'supervisor_id', None, None, ), # 2
-    (3, TType.I32, 'uptime_secs', None, None, ), # 3
-    (4, TType.I32, 'num_workers', None, None, ), # 4
-    (5, TType.I32, 'num_used_workers', None, None, ), # 5
+    (2, TType.STRING, 'supervisorId', None, None, ), # 2
+    (3, TType.I32, 'uptimeSecs', None, None, ), # 3
+    (4, TType.I32, 'numWorkers', None, None, ), # 4
+    (5, TType.I32, 'numUsedWorkers', None, None, ), # 5
   )
 
-  def __init__(self, host=None, supervisor_id=None, uptime_secs=None, num_workers=None, num_used_workers=None,):
+  def __init__(self, host=None, supervisorId=None, uptimeSecs=None, numWorkers=None, numUsedWorkers=None,):
     self.host = host
-    self.supervisor_id = supervisor_id
-    self.uptime_secs = uptime_secs
-    self.num_workers = num_workers
-    self.num_used_workers = num_used_workers
+    self.supervisorId = supervisorId
+    self.uptimeSecs = uptimeSecs
+    self.numWorkers = numWorkers
+    self.numUsedWorkers = numUsedWorkers
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -1535,22 +1885,22 @@ class SupervisorSummary:
           iprot.skip(ftype)
       elif fid == 2:
         if ftype == TType.STRING:
-          self.supervisor_id = iprot.readString().decode('utf-8')
+          self.supervisorId = iprot.readString().decode('utf-8')
         else:
           iprot.skip(ftype)
       elif fid == 3:
         if ftype == TType.I32:
-          self.uptime_secs = iprot.readI32();
+          self.uptimeSecs = iprot.readI32();
         else:
           iprot.skip(ftype)
       elif fid == 4:
         if ftype == TType.I32:
-          self.num_workers = iprot.readI32();
+          self.numWorkers = iprot.readI32();
         else:
           iprot.skip(ftype)
       elif fid == 5:
         if ftype == TType.I32:
-          self.num_used_workers = iprot.readI32();
+          self.numUsedWorkers = iprot.readI32();
         else:
           iprot.skip(ftype)
       else:
@@ -1567,21 +1917,21 @@ class SupervisorSummary:
       oprot.writeFieldBegin('host', TType.STRING, 1)
       oprot.writeString(self.host.encode('utf-8'))
       oprot.writeFieldEnd()
-    if self.supervisor_id is not None:
-      oprot.writeFieldBegin('supervisor_id', TType.STRING, 2)
-      oprot.writeString(self.supervisor_id.encode('utf-8'))
+    if self.supervisorId is not None:
+      oprot.writeFieldBegin('supervisorId', TType.STRING, 2)
+      oprot.writeString(self.supervisorId.encode('utf-8'))
       oprot.writeFieldEnd()
-    if self.uptime_secs is not None:
-      oprot.writeFieldBegin('uptime_secs', TType.I32, 3)
-      oprot.writeI32(self.uptime_secs)
+    if self.uptimeSecs is not None:
+      oprot.writeFieldBegin('uptimeSecs', TType.I32, 3)
+      oprot.writeI32(self.uptimeSecs)
       oprot.writeFieldEnd()
-    if self.num_workers is not None:
-      oprot.writeFieldBegin('num_workers', TType.I32, 4)
-      oprot.writeI32(self.num_workers)
+    if self.numWorkers is not None:
+      oprot.writeFieldBegin('numWorkers', TType.I32, 4)
+      oprot.writeI32(self.numWorkers)
       oprot.writeFieldEnd()
-    if self.num_used_workers is not None:
-      oprot.writeFieldBegin('num_used_workers', TType.I32, 5)
-      oprot.writeI32(self.num_used_workers)
+    if self.numUsedWorkers is not None:
+      oprot.writeFieldBegin('numUsedWorkers', TType.I32, 5)
+      oprot.writeI32(self.numUsedWorkers)
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
@@ -1589,24 +1939,24 @@ class SupervisorSummary:
   def validate(self):
     if self.host is None:
       raise TProtocol.TProtocolException(message='Required field host is unset!')
-    if self.supervisor_id is None:
-      raise TProtocol.TProtocolException(message='Required field supervisor_id is unset!')
-    if self.uptime_secs is None:
-      raise TProtocol.TProtocolException(message='Required field uptime_secs is unset!')
-    if self.num_workers is None:
-      raise TProtocol.TProtocolException(message='Required field num_workers is unset!')
-    if self.num_used_workers is None:
-      raise TProtocol.TProtocolException(message='Required field num_used_workers is unset!')
+    if self.supervisorId is None:
+      raise TProtocol.TProtocolException(message='Required field supervisorId is unset!')
+    if self.uptimeSecs is None:
+      raise TProtocol.TProtocolException(message='Required field uptimeSecs is unset!')
+    if self.numWorkers is None:
+      raise TProtocol.TProtocolException(message='Required field numWorkers is unset!')
+    if self.numUsedWorkers is None:
+      raise TProtocol.TProtocolException(message='Required field numUsedWorkers is unset!')
     return
 
 
   def __hash__(self):
     value = 17
     value = (value * 31) ^ hash(self.host)
-    value = (value * 31) ^ hash(self.supervisor_id)
-    value = (value * 31) ^ hash(self.uptime_secs)
-    value = (value * 31) ^ hash(self.num_workers)
-    value = (value * 31) ^ hash(self.num_used_workers)
+    value = (value * 31) ^ hash(self.supervisorId)
+    value = (value * 31) ^ hash(self.uptimeSecs)
+    value = (value * 31) ^ hash(self.numWorkers)
+    value = (value * 31) ^ hash(self.numUsedWorkers)
     return value
 
   def __repr__(self):
@@ -1624,18 +1974,18 @@ class NimbusStat:
   """
   Attributes:
    - host
-   - uptime_secs
+   - uptimeSecs
   """
 
   thrift_spec = (
     None, # 0
     (1, TType.STRING, 'host', None, None, ), # 1
-    (2, TType.STRING, 'uptime_secs', None, None, ), # 2
+    (2, TType.STRING, 'uptimeSecs', None, None, ), # 2
   )
 
-  def __init__(self, host=None, uptime_secs=None,):
+  def __init__(self, host=None, uptimeSecs=None,):
     self.host = host
-    self.uptime_secs = uptime_secs
+    self.uptimeSecs = uptimeSecs
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -1653,7 +2003,7 @@ class NimbusStat:
           iprot.skip(ftype)
       elif fid == 2:
         if ftype == TType.STRING:
-          self.uptime_secs = iprot.readString().decode('utf-8')
+          self.uptimeSecs = iprot.readString().decode('utf-8')
         else:
           iprot.skip(ftype)
       else:
@@ -1670,9 +2020,9 @@ class NimbusStat:
       oprot.writeFieldBegin('host', TType.STRING, 1)
       oprot.writeString(self.host.encode('utf-8'))
       oprot.writeFieldEnd()
-    if self.uptime_secs is not None:
-      oprot.writeFieldBegin('uptime_secs', TType.STRING, 2)
-      oprot.writeString(self.uptime_secs.encode('utf-8'))
+    if self.uptimeSecs is not None:
+      oprot.writeFieldBegin('uptimeSecs', TType.STRING, 2)
+      oprot.writeString(self.uptimeSecs.encode('utf-8'))
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
@@ -1680,15 +2030,15 @@ class NimbusStat:
   def validate(self):
     if self.host is None:
       raise TProtocol.TProtocolException(message='Required field host is unset!')
-    if self.uptime_secs is None:
-      raise TProtocol.TProtocolException(message='Required field uptime_secs is unset!')
+    if self.uptimeSecs is None:
+      raise TProtocol.TProtocolException(message='Required field uptimeSecs is unset!')
     return
 
 
   def __hash__(self):
     value = 17
     value = (value * 31) ^ hash(self.host)
-    value = (value * 31) ^ hash(self.uptime_secs)
+    value = (value * 31) ^ hash(self.uptimeSecs)
     return value
 
   def __repr__(self):
@@ -1705,33 +2055,33 @@ class NimbusStat:
 class NimbusSummary:
   """
   Attributes:
-   - nimbus_master
-   - nimbus_slaves
-   - supervisor_num
-   - total_port_num
-   - used_port_num
-   - free_port_num
+   - nimbusMaster
+   - nimbusSlaves
+   - supervisorNum
+   - totalPortNum
+   - usedPortNum
+   - freePortNum
    - version
   """
 
   thrift_spec = (
     None, # 0
-    (1, TType.STRUCT, 'nimbus_master', (NimbusStat, NimbusStat.thrift_spec), None, ), # 1
-    (2, TType.LIST, 'nimbus_slaves', (TType.STRUCT,(NimbusStat, NimbusStat.thrift_spec)), None, ), # 2
-    (3, TType.I32, 'supervisor_num', None, None, ), # 3
-    (4, TType.I32, 'total_port_num', None, None, ), # 4
-    (5, TType.I32, 'used_port_num', None, None, ), # 5
-    (6, TType.I32, 'free_port_num', None, None, ), # 6
+    (1, TType.STRUCT, 'nimbusMaster', (NimbusStat, NimbusStat.thrift_spec), None, ), # 1
+    (2, TType.LIST, 'nimbusSlaves', (TType.STRUCT,(NimbusStat, NimbusStat.thrift_spec)), None, ), # 2
+    (3, TType.I32, 'supervisorNum', None, None, ), # 3
+    (4, TType.I32, 'totalPortNum', None, None, ), # 4
+    (5, TType.I32, 'usedPortNum', None, None, ), # 5
+    (6, TType.I32, 'freePortNum', None, None, ), # 6
     (7, TType.STRING, 'version', None, None, ), # 7
   )
 
-  def __init__(self, nimbus_master=None, nimbus_slaves=None, supervisor_num=None, total_port_num=None, used_port_num=None, free_port_num=None, version=None,):
-    self.nimbus_master = nimbus_master
-    self.nimbus_slaves = nimbus_slaves
-    self.supervisor_num = supervisor_num
-    self.total_port_num = total_port_num
-    self.used_port_num = used_port_num
-    self.free_port_num = free_port_num
+  def __init__(self, nimbusMaster=None, nimbusSlaves=None, supervisorNum=None, totalPortNum=None, usedPortNum=None, freePortNum=None, version=None,):
+    self.nimbusMaster = nimbusMaster
+    self.nimbusSlaves = nimbusSlaves
+    self.supervisorNum = supervisorNum
+    self.totalPortNum = totalPortNum
+    self.usedPortNum = usedPortNum
+    self.freePortNum = freePortNum
     self.version = version
 
   def read(self, iprot):
@@ -1745,39 +2095,39 @@ class NimbusSummary:
         break
       if fid == 1:
         if ftype == TType.STRUCT:
-          self.nimbus_master = NimbusStat()
-          self.nimbus_master.read(iprot)
+          self.nimbusMaster = NimbusStat()
+          self.nimbusMaster.read(iprot)
         else:
           iprot.skip(ftype)
       elif fid == 2:
         if ftype == TType.LIST:
-          self.nimbus_slaves = []
+          self.nimbusSlaves = []
           (_etype69, _size66) = iprot.readListBegin()
           for _i70 in xrange(_size66):
             _elem71 = NimbusStat()
             _elem71.read(iprot)
-            self.nimbus_slaves.append(_elem71)
+            self.nimbusSlaves.append(_elem71)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
       elif fid == 3:
         if ftype == TType.I32:
-          self.supervisor_num = iprot.readI32();
+          self.supervisorNum = iprot.readI32();
         else:
           iprot.skip(ftype)
       elif fid == 4:
         if ftype == TType.I32:
-          self.total_port_num = iprot.readI32();
+          self.totalPortNum = iprot.readI32();
         else:
           iprot.skip(ftype)
       elif fid == 5:
         if ftype == TType.I32:
-          self.used_port_num = iprot.readI32();
+          self.usedPortNum = iprot.readI32();
         else:
           iprot.skip(ftype)
       elif fid == 6:
         if ftype == TType.I32:
-          self.free_port_num = iprot.readI32();
+          self.freePortNum = iprot.readI32();
         else:
           iprot.skip(ftype)
       elif fid == 7:
@@ -1795,32 +2145,32 @@ class NimbusSummary:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
     oprot.writeStructBegin('NimbusSummary')
-    if self.nimbus_master is not None:
-      oprot.writeFieldBegin('nimbus_master', TType.STRUCT, 1)
-      self.nimbus_master.write(oprot)
+    if self.nimbusMaster is not None:
+      oprot.writeFieldBegin('nimbusMaster', TType.STRUCT, 1)
+      self.nimbusMaster.write(oprot)
       oprot.writeFieldEnd()
-    if self.nimbus_slaves is not None:
-      oprot.writeFieldBegin('nimbus_slaves', TType.LIST, 2)
-      oprot.writeListBegin(TType.STRUCT, len(self.nimbus_slaves))
-      for iter72 in self.nimbus_slaves:
+    if self.nimbusSlaves is not None:
+      oprot.writeFieldBegin('nimbusSlaves', TType.LIST, 2)
+      oprot.writeListBegin(TType.STRUCT, len(self.nimbusSlaves))
+      for iter72 in self.nimbusSlaves:
         iter72.write(oprot)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
-    if self.supervisor_num is not None:
-      oprot.writeFieldBegin('supervisor_num', TType.I32, 3)
-      oprot.writeI32(self.supervisor_num)
+    if self.supervisorNum is not None:
+      oprot.writeFieldBegin('supervisorNum', TType.I32, 3)
+      oprot.writeI32(self.supervisorNum)
       oprot.writeFieldEnd()
-    if self.total_port_num is not None:
-      oprot.writeFieldBegin('total_port_num', TType.I32, 4)
-      oprot.writeI32(self.total_port_num)
+    if self.totalPortNum is not None:
+      oprot.writeFieldBegin('totalPortNum', TType.I32, 4)
+      oprot.writeI32(self.totalPortNum)
       oprot.writeFieldEnd()
-    if self.used_port_num is not None:
-      oprot.writeFieldBegin('used_port_num', TType.I32, 5)
-      oprot.writeI32(self.used_port_num)
+    if self.usedPortNum is not None:
+      oprot.writeFieldBegin('usedPortNum', TType.I32, 5)
+      oprot.writeI32(self.usedPortNum)
       oprot.writeFieldEnd()
-    if self.free_port_num is not None:
-      oprot.writeFieldBegin('free_port_num', TType.I32, 6)
-      oprot.writeI32(self.free_port_num)
+    if self.freePortNum is not None:
+      oprot.writeFieldBegin('freePortNum', TType.I32, 6)
+      oprot.writeI32(self.freePortNum)
       oprot.writeFieldEnd()
     if self.version is not None:
       oprot.writeFieldBegin('version', TType.STRING, 7)
@@ -1830,18 +2180,18 @@ class NimbusSummary:
     oprot.writeStructEnd()
 
   def validate(self):
-    if self.nimbus_master is None:
-      raise TProtocol.TProtocolException(message='Required field nimbus_master is unset!')
-    if self.nimbus_slaves is None:
-      raise TProtocol.TProtocolException(message='Required field nimbus_slaves is unset!')
-    if self.supervisor_num is None:
-      raise TProtocol.TProtocolException(message='Required field supervisor_num is unset!')
-    if self.total_port_num is None:
-      raise TProtocol.TProtocolException(message='Required field total_port_num is unset!')
-    if self.used_port_num is None:
-      raise TProtocol.TProtocolException(message='Required field used_port_num is unset!')
-    if self.free_port_num is None:
-      raise TProtocol.TProtocolException(message='Required field free_port_num is unset!')
+    if self.nimbusMaster is None:
+      raise TProtocol.TProtocolException(message='Required field nimbusMaster is unset!')
+    if self.nimbusSlaves is None:
+      raise TProtocol.TProtocolException(message='Required field nimbusSlaves is unset!')
+    if self.supervisorNum is None:
+      raise TProtocol.TProtocolException(message='Required field supervisorNum is unset!')
+    if self.totalPortNum is None:
+      raise TProtocol.TProtocolException(message='Required field totalPortNum is unset!')
+    if self.usedPortNum is None:
+      raise TProtocol.TProtocolException(message='Required field usedPortNum is unset!')
+    if self.freePortNum is None:
+      raise TProtocol.TProtocolException(message='Required field freePortNum is unset!')
     if self.version is None:
       raise TProtocol.TProtocolException(message='Required field version is unset!')
     return
@@ -1849,12 +2199,12 @@ class NimbusSummary:
 
   def __hash__(self):
     value = 17
-    value = (value * 31) ^ hash(self.nimbus_master)
-    value = (value * 31) ^ hash(self.nimbus_slaves)
-    value = (value * 31) ^ hash(self.supervisor_num)
-    value = (value * 31) ^ hash(self.total_port_num)
-    value = (value * 31) ^ hash(self.used_port_num)
-    value = (value * 31) ^ hash(self.free_port_num)
+    value = (value * 31) ^ hash(self.nimbusMaster)
+    value = (value * 31) ^ hash(self.nimbusSlaves)
+    value = (value * 31) ^ hash(self.supervisorNum)
+    value = (value * 31) ^ hash(self.totalPortNum)
+    value = (value * 31) ^ hash(self.usedPortNum)
+    value = (value * 31) ^ hash(self.freePortNum)
     value = (value * 31) ^ hash(self.version)
     return value
 
@@ -2265,25 +2615,73 @@ class MetricWindow:
   def __ne__(self, other):
     return not (self == other)
 
-class MetricInfo:
+class MetricSnapshot:
   """
   Attributes:
-   - baseMetric
-   - inputMetric
-   - outputMetric
+   - metricId
+   - ts
+   - metricType
+   - longValue
+   - doubleValue
+   - m1
+   - m5
+   - m15
+   - mean
+   - min
+   - max
+   - p50
+   - p75
+   - p95
+   - p98
+   - p99
+   - p999
+   - stddev
+   - points
   """
 
   thrift_spec = (
     None, # 0
-    (1, TType.MAP, 'baseMetric', (TType.STRING,None,TType.STRUCT,(MetricWindow, MetricWindow.thrift_spec)), None, ), # 1
-    (2, TType.MAP, 'inputMetric', (TType.STRING,None,TType.MAP,(TType.STRING,None,TType.STRUCT,(MetricWindow, MetricWindow.thrift_spec))), None, ), # 2
-    (3, TType.MAP, 'outputMetric', (TType.STRING,None,TType.MAP,(TType.STRING,None,TType.STRUCT,(MetricWindow, MetricWindow.thrift_spec))), None, ), # 3
+    (1, TType.I64, 'metricId', None, None, ), # 1
+    (2, TType.I64, 'ts', None, None, ), # 2
+    (3, TType.I32, 'metricType', None, None, ), # 3
+    (4, TType.I64, 'longValue', None, None, ), # 4
+    (5, TType.DOUBLE, 'doubleValue', None, None, ), # 5
+    (6, TType.DOUBLE, 'm1', None, None, ), # 6
+    (7, TType.DOUBLE, 'm5', None, None, ), # 7
+    (8, TType.DOUBLE, 'm15', None, None, ), # 8
+    (9, TType.DOUBLE, 'mean', None, None, ), # 9
+    (10, TType.I64, 'min', None, None, ), # 10
+    (11, TType.I64, 'max', None, None, ), # 11
+    (12, TType.DOUBLE, 'p50', None, None, ), # 12
+    (13, TType.DOUBLE, 'p75', None, None, ), # 13
+    (14, TType.DOUBLE, 'p95', None, None, ), # 14
+    (15, TType.DOUBLE, 'p98', None, None, ), # 15
+    (16, TType.DOUBLE, 'p99', None, None, ), # 16
+    (17, TType.DOUBLE, 'p999', None, None, ), # 17
+    (18, TType.DOUBLE, 'stddev', None, None, ), # 18
+    (19, TType.LIST, 'points', (TType.I64,None), None, ), # 19
   )
 
-  def __init__(self, baseMetric=None, inputMetric=None, outputMetric=None,):
-    self.baseMetric = baseMetric
-    self.inputMetric = inputMetric
-    self.outputMetric = outputMetric
+  def __init__(self, metricId=None, ts=None, metricType=None, longValue=None, doubleValue=None, m1=None, m5=None, m15=None, mean=None, min=None, max=None, p50=None, p75=None, p95=None, p98=None, p99=None, p999=None, stddev=None, points=None,):
+    self.metricId = metricId
+    self.ts = ts
+    self.metricType = metricType
+    self.longValue = longValue
+    self.doubleValue = doubleValue
+    self.m1 = m1
+    self.m5 = m5
+    self.m15 = m15
+    self.mean = mean
+    self.min = min
+    self.max = max
+    self.p50 = p50
+    self.p75 = p75
+    self.p95 = p95
+    self.p98 = p98
+    self.p99 = p99
+    self.p999 = p999
+    self.stddev = stddev
+    self.points = points
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -2295,51 +2693,103 @@ class MetricInfo:
       if ftype == TType.STOP:
         break
       if fid == 1:
-        if ftype == TType.MAP:
-          self.baseMetric = {}
-          (_ktype104, _vtype105, _size103 ) = iprot.readMapBegin()
-          for _i107 in xrange(_size103):
-            _key108 = iprot.readString().decode('utf-8')
-            _val109 = MetricWindow()
-            _val109.read(iprot)
-            self.baseMetric[_key108] = _val109
-          iprot.readMapEnd()
+        if ftype == TType.I64:
+          self.metricId = iprot.readI64();
         else:
           iprot.skip(ftype)
       elif fid == 2:
-        if ftype == TType.MAP:
-          self.inputMetric = {}
-          (_ktype111, _vtype112, _size110 ) = iprot.readMapBegin()
-          for _i114 in xrange(_size110):
-            _key115 = iprot.readString().decode('utf-8')
-            _val116 = {}
-            (_ktype118, _vtype119, _size117 ) = iprot.readMapBegin()
-            for _i121 in xrange(_size117):
-              _key122 = iprot.readString().decode('utf-8')
-              _val123 = MetricWindow()
-              _val123.read(iprot)
-              _val116[_key122] = _val123
-            iprot.readMapEnd()
-            self.inputMetric[_key115] = _val116
-          iprot.readMapEnd()
+        if ftype == TType.I64:
+          self.ts = iprot.readI64();
         else:
           iprot.skip(ftype)
       elif fid == 3:
-        if ftype == TType.MAP:
-          self.outputMetric = {}
-          (_ktype125, _vtype126, _size124 ) = iprot.readMapBegin()
-          for _i128 in xrange(_size124):
-            _key129 = iprot.readString().decode('utf-8')
-            _val130 = {}
-            (_ktype132, _vtype133, _size131 ) = iprot.readMapBegin()
-            for _i135 in xrange(_size131):
-              _key136 = iprot.readString().decode('utf-8')
-              _val137 = MetricWindow()
-              _val137.read(iprot)
-              _val130[_key136] = _val137
-            iprot.readMapEnd()
-            self.outputMetric[_key129] = _val130
-          iprot.readMapEnd()
+        if ftype == TType.I32:
+          self.metricType = iprot.readI32();
+        else:
+          iprot.skip(ftype)
+      elif fid == 4:
+        if ftype == TType.I64:
+          self.longValue = iprot.readI64();
+        else:
+          iprot.skip(ftype)
+      elif fid == 5:
+        if ftype == TType.DOUBLE:
+          self.doubleValue = iprot.readDouble();
+        else:
+          iprot.skip(ftype)
+      elif fid == 6:
+        if ftype == TType.DOUBLE:
+          self.m1 = iprot.readDouble();
+        else:
+          iprot.skip(ftype)
+      elif fid == 7:
+        if ftype == TType.DOUBLE:
+          self.m5 = iprot.readDouble();
+        else:
+          iprot.skip(ftype)
+      elif fid == 8:
+        if ftype == TType.DOUBLE:
+          self.m15 = iprot.readDouble();
+        else:
+          iprot.skip(ftype)
+      elif fid == 9:
+        if ftype == TType.DOUBLE:
+          self.mean = iprot.readDouble();
+        else:
+          iprot.skip(ftype)
+      elif fid == 10:
+        if ftype == TType.I64:
+          self.min = iprot.readI64();
+        else:
+          iprot.skip(ftype)
+      elif fid == 11:
+        if ftype == TType.I64:
+          self.max = iprot.readI64();
+        else:
+          iprot.skip(ftype)
+      elif fid == 12:
+        if ftype == TType.DOUBLE:
+          self.p50 = iprot.readDouble();
+        else:
+          iprot.skip(ftype)
+      elif fid == 13:
+        if ftype == TType.DOUBLE:
+          self.p75 = iprot.readDouble();
+        else:
+          iprot.skip(ftype)
+      elif fid == 14:
+        if ftype == TType.DOUBLE:
+          self.p95 = iprot.readDouble();
+        else:
+          iprot.skip(ftype)
+      elif fid == 15:
+        if ftype == TType.DOUBLE:
+          self.p98 = iprot.readDouble();
+        else:
+          iprot.skip(ftype)
+      elif fid == 16:
+        if ftype == TType.DOUBLE:
+          self.p99 = iprot.readDouble();
+        else:
+          iprot.skip(ftype)
+      elif fid == 17:
+        if ftype == TType.DOUBLE:
+          self.p999 = iprot.readDouble();
+        else:
+          iprot.skip(ftype)
+      elif fid == 18:
+        if ftype == TType.DOUBLE:
+          self.stddev = iprot.readDouble();
+        else:
+          iprot.skip(ftype)
+      elif fid == 19:
+        if ftype == TType.LIST:
+          self.points = []
+          (_etype106, _size103) = iprot.readListBegin()
+          for _i107 in xrange(_size103):
+            _elem108 = iprot.readI64();
+            self.points.append(_elem108)
+          iprot.readListEnd()
         else:
           iprot.skip(ftype)
       else:
@@ -2351,53 +2801,120 @@ class MetricInfo:
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('MetricInfo')
-    if self.baseMetric is not None:
-      oprot.writeFieldBegin('baseMetric', TType.MAP, 1)
-      oprot.writeMapBegin(TType.STRING, TType.STRUCT, len(self.baseMetric))
-      for kiter138,viter139 in self.baseMetric.items():
-        oprot.writeString(kiter138.encode('utf-8'))
-        viter139.write(oprot)
-      oprot.writeMapEnd()
+    oprot.writeStructBegin('MetricSnapshot')
+    if self.metricId is not None:
+      oprot.writeFieldBegin('metricId', TType.I64, 1)
+      oprot.writeI64(self.metricId)
       oprot.writeFieldEnd()
-    if self.inputMetric is not None:
-      oprot.writeFieldBegin('inputMetric', TType.MAP, 2)
-      oprot.writeMapBegin(TType.STRING, TType.MAP, len(self.inputMetric))
-      for kiter140,viter141 in self.inputMetric.items():
-        oprot.writeString(kiter140.encode('utf-8'))
-        oprot.writeMapBegin(TType.STRING, TType.STRUCT, len(viter141))
-        for kiter142,viter143 in viter141.items():
-          oprot.writeString(kiter142.encode('utf-8'))
-          viter143.write(oprot)
-        oprot.writeMapEnd()
-      oprot.writeMapEnd()
+    if self.ts is not None:
+      oprot.writeFieldBegin('ts', TType.I64, 2)
+      oprot.writeI64(self.ts)
       oprot.writeFieldEnd()
-    if self.outputMetric is not None:
-      oprot.writeFieldBegin('outputMetric', TType.MAP, 3)
-      oprot.writeMapBegin(TType.STRING, TType.MAP, len(self.outputMetric))
-      for kiter144,viter145 in self.outputMetric.items():
-        oprot.writeString(kiter144.encode('utf-8'))
-        oprot.writeMapBegin(TType.STRING, TType.STRUCT, len(viter145))
-        for kiter146,viter147 in viter145.items():
-          oprot.writeString(kiter146.encode('utf-8'))
-          viter147.write(oprot)
-        oprot.writeMapEnd()
-      oprot.writeMapEnd()
+    if self.metricType is not None:
+      oprot.writeFieldBegin('metricType', TType.I32, 3)
+      oprot.writeI32(self.metricType)
+      oprot.writeFieldEnd()
+    if self.longValue is not None:
+      oprot.writeFieldBegin('longValue', TType.I64, 4)
+      oprot.writeI64(self.longValue)
+      oprot.writeFieldEnd()
+    if self.doubleValue is not None:
+      oprot.writeFieldBegin('doubleValue', TType.DOUBLE, 5)
+      oprot.writeDouble(self.doubleValue)
+      oprot.writeFieldEnd()
+    if self.m1 is not None:
+      oprot.writeFieldBegin('m1', TType.DOUBLE, 6)
+      oprot.writeDouble(self.m1)
+      oprot.writeFieldEnd()
+    if self.m5 is not None:
+      oprot.writeFieldBegin('m5', TType.DOUBLE, 7)
+      oprot.writeDouble(self.m5)
+      oprot.writeFieldEnd()
+    if self.m15 is not None:
+      oprot.writeFieldBegin('m15', TType.DOUBLE, 8)
+      oprot.writeDouble(self.m15)
+      oprot.writeFieldEnd()
+    if self.mean is not None:
+      oprot.writeFieldBegin('mean', TType.DOUBLE, 9)
+      oprot.writeDouble(self.mean)
+      oprot.writeFieldEnd()
+    if self.min is not None:
+      oprot.writeFieldBegin('min', TType.I64, 10)
+      oprot.writeI64(self.min)
+      oprot.writeFieldEnd()
+    if self.max is not None:
+      oprot.writeFieldBegin('max', TType.I64, 11)
+      oprot.writeI64(self.max)
+      oprot.writeFieldEnd()
+    if self.p50 is not None:
+      oprot.writeFieldBegin('p50', TType.DOUBLE, 12)
+      oprot.writeDouble(self.p50)
+      oprot.writeFieldEnd()
+    if self.p75 is not None:
+      oprot.writeFieldBegin('p75', TType.DOUBLE, 13)
+      oprot.writeDouble(self.p75)
+      oprot.writeFieldEnd()
+    if self.p95 is not None:
+      oprot.writeFieldBegin('p95', TType.DOUBLE, 14)
+      oprot.writeDouble(self.p95)
+      oprot.writeFieldEnd()
+    if self.p98 is not None:
+      oprot.writeFieldBegin('p98', TType.DOUBLE, 15)
+      oprot.writeDouble(self.p98)
+      oprot.writeFieldEnd()
+    if self.p99 is not None:
+      oprot.writeFieldBegin('p99', TType.DOUBLE, 16)
+      oprot.writeDouble(self.p99)
+      oprot.writeFieldEnd()
+    if self.p999 is not None:
+      oprot.writeFieldBegin('p999', TType.DOUBLE, 17)
+      oprot.writeDouble(self.p999)
+      oprot.writeFieldEnd()
+    if self.stddev is not None:
+      oprot.writeFieldBegin('stddev', TType.DOUBLE, 18)
+      oprot.writeDouble(self.stddev)
+      oprot.writeFieldEnd()
+    if self.points is not None:
+      oprot.writeFieldBegin('points', TType.LIST, 19)
+      oprot.writeListBegin(TType.I64, len(self.points))
+      for iter109 in self.points:
+        oprot.writeI64(iter109)
+      oprot.writeListEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
   def validate(self):
-    if self.baseMetric is None:
-      raise TProtocol.TProtocolException(message='Required field baseMetric is unset!')
+    if self.metricId is None:
+      raise TProtocol.TProtocolException(message='Required field metricId is unset!')
+    if self.ts is None:
+      raise TProtocol.TProtocolException(message='Required field ts is unset!')
+    if self.metricType is None:
+      raise TProtocol.TProtocolException(message='Required field metricType is unset!')
     return
 
 
   def __hash__(self):
     value = 17
-    value = (value * 31) ^ hash(self.baseMetric)
-    value = (value * 31) ^ hash(self.inputMetric)
-    value = (value * 31) ^ hash(self.outputMetric)
+    value = (value * 31) ^ hash(self.metricId)
+    value = (value * 31) ^ hash(self.ts)
+    value = (value * 31) ^ hash(self.metricType)
+    value = (value * 31) ^ hash(self.longValue)
+    value = (value * 31) ^ hash(self.doubleValue)
+    value = (value * 31) ^ hash(self.m1)
+    value = (value * 31) ^ hash(self.m5)
+    value = (value * 31) ^ hash(self.m15)
+    value = (value * 31) ^ hash(self.mean)
+    value = (value * 31) ^ hash(self.min)
+    value = (value * 31) ^ hash(self.max)
+    value = (value * 31) ^ hash(self.p50)
+    value = (value * 31) ^ hash(self.p75)
+    value = (value * 31) ^ hash(self.p95)
+    value = (value * 31) ^ hash(self.p98)
+    value = (value * 31) ^ hash(self.p99)
+    value = (value * 31) ^ hash(self.p999)
+    value = (value * 31) ^ hash(self.stddev)
+    value = (value * 31) ^ hash(self.points)
     return value
 
   def __repr__(self):
@@ -2411,28 +2928,19 @@ class MetricInfo:
   def __ne__(self, other):
     return not (self == other)
 
-class TopologyMetric:
+class MetricInfo:
   """
   Attributes:
-   - topologyMetric
-   - componentMetric
-   - workerMetric
-   - taskMetric
+   - metrics
   """
 
   thrift_spec = (
     None, # 0
-    (1, TType.STRUCT, 'topologyMetric', (MetricInfo, MetricInfo.thrift_spec), None, ), # 1
-    (2, TType.MAP, 'componentMetric', (TType.STRING,None,TType.STRUCT,(MetricInfo, MetricInfo.thrift_spec)), None, ), # 2
-    (3, TType.MAP, 'workerMetric', (TType.STRING,None,TType.STRUCT,(MetricInfo, MetricInfo.thrift_spec)), None, ), # 3
-    (4, TType.MAP, 'taskMetric', (TType.I32,None,TType.STRUCT,(MetricInfo, MetricInfo.thrift_spec)), None, ), # 4
+    (1, TType.MAP, 'metrics', (TType.STRING,None,TType.MAP,(TType.I32,None,TType.STRUCT,(MetricSnapshot, MetricSnapshot.thrift_spec))), None, ), # 1
   )
 
-  def __init__(self, topologyMetric=None, componentMetric=None, workerMetric=None, taskMetric=None,):
-    self.topologyMetric = topologyMetric
-    self.componentMetric = componentMetric
-    self.workerMetric = workerMetric
-    self.taskMetric = taskMetric
+  def __init__(self, metrics=None,):
+    self.metrics = metrics
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -2444,44 +2952,20 @@ class TopologyMetric:
       if ftype == TType.STOP:
         break
       if fid == 1:
-        if ftype == TType.STRUCT:
-          self.topologyMetric = MetricInfo()
-          self.topologyMetric.read(iprot)
-        else:
-          iprot.skip(ftype)
-      elif fid == 2:
         if ftype == TType.MAP:
-          self.componentMetric = {}
-          (_ktype149, _vtype150, _size148 ) = iprot.readMapBegin()
-          for _i152 in xrange(_size148):
-            _key153 = iprot.readString().decode('utf-8')
-            _val154 = MetricInfo()
-            _val154.read(iprot)
-            self.componentMetric[_key153] = _val154
-          iprot.readMapEnd()
-        else:
-          iprot.skip(ftype)
-      elif fid == 3:
-        if ftype == TType.MAP:
-          self.workerMetric = {}
-          (_ktype156, _vtype157, _size155 ) = iprot.readMapBegin()
-          for _i159 in xrange(_size155):
-            _key160 = iprot.readString().decode('utf-8')
-            _val161 = MetricInfo()
-            _val161.read(iprot)
-            self.workerMetric[_key160] = _val161
-          iprot.readMapEnd()
-        else:
-          iprot.skip(ftype)
-      elif fid == 4:
-        if ftype == TType.MAP:
-          self.taskMetric = {}
-          (_ktype163, _vtype164, _size162 ) = iprot.readMapBegin()
-          for _i166 in xrange(_size162):
-            _key167 = iprot.readI32();
-            _val168 = MetricInfo()
-            _val168.read(iprot)
-            self.taskMetric[_key167] = _val168
+          self.metrics = {}
+          (_ktype111, _vtype112, _size110 ) = iprot.readMapBegin()
+          for _i114 in xrange(_size110):
+            _key115 = iprot.readString().decode('utf-8')
+            _val116 = {}
+            (_ktype118, _vtype119, _size117 ) = iprot.readMapBegin()
+            for _i121 in xrange(_size117):
+              _key122 = iprot.readI32();
+              _val123 = MetricSnapshot()
+              _val123.read(iprot)
+              _val116[_key122] = _val123
+            iprot.readMapEnd()
+            self.metrics[_key115] = _val116
           iprot.readMapEnd()
         else:
           iprot.skip(ftype)
@@ -2494,56 +2978,29 @@ class TopologyMetric:
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('TopologyMetric')
-    if self.topologyMetric is not None:
-      oprot.writeFieldBegin('topologyMetric', TType.STRUCT, 1)
-      self.topologyMetric.write(oprot)
-      oprot.writeFieldEnd()
-    if self.componentMetric is not None:
-      oprot.writeFieldBegin('componentMetric', TType.MAP, 2)
-      oprot.writeMapBegin(TType.STRING, TType.STRUCT, len(self.componentMetric))
-      for kiter169,viter170 in self.componentMetric.items():
-        oprot.writeString(kiter169.encode('utf-8'))
-        viter170.write(oprot)
-      oprot.writeMapEnd()
-      oprot.writeFieldEnd()
-    if self.workerMetric is not None:
-      oprot.writeFieldBegin('workerMetric', TType.MAP, 3)
-      oprot.writeMapBegin(TType.STRING, TType.STRUCT, len(self.workerMetric))
-      for kiter171,viter172 in self.workerMetric.items():
-        oprot.writeString(kiter171.encode('utf-8'))
-        viter172.write(oprot)
-      oprot.writeMapEnd()
-      oprot.writeFieldEnd()
-    if self.taskMetric is not None:
-      oprot.writeFieldBegin('taskMetric', TType.MAP, 4)
-      oprot.writeMapBegin(TType.I32, TType.STRUCT, len(self.taskMetric))
-      for kiter173,viter174 in self.taskMetric.items():
-        oprot.writeI32(kiter173)
-        viter174.write(oprot)
+    oprot.writeStructBegin('MetricInfo')
+    if self.metrics is not None:
+      oprot.writeFieldBegin('metrics', TType.MAP, 1)
+      oprot.writeMapBegin(TType.STRING, TType.MAP, len(self.metrics))
+      for kiter124,viter125 in self.metrics.items():
+        oprot.writeString(kiter124.encode('utf-8'))
+        oprot.writeMapBegin(TType.I32, TType.STRUCT, len(viter125))
+        for kiter126,viter127 in viter125.items():
+          oprot.writeI32(kiter126)
+          viter127.write(oprot)
+        oprot.writeMapEnd()
       oprot.writeMapEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
   def validate(self):
-    if self.topologyMetric is None:
-      raise TProtocol.TProtocolException(message='Required field topologyMetric is unset!')
-    if self.componentMetric is None:
-      raise TProtocol.TProtocolException(message='Required field componentMetric is unset!')
-    if self.workerMetric is None:
-      raise TProtocol.TProtocolException(message='Required field workerMetric is unset!')
-    if self.taskMetric is None:
-      raise TProtocol.TProtocolException(message='Required field taskMetric is unset!')
     return
 
 
   def __hash__(self):
     value = 17
-    value = (value * 31) ^ hash(self.topologyMetric)
-    value = (value * 31) ^ hash(self.componentMetric)
-    value = (value * 31) ^ hash(self.workerMetric)
-    value = (value * 31) ^ hash(self.taskMetric)
+    value = (value * 31) ^ hash(self.metrics)
     return value
 
   def __repr__(self):
@@ -2595,23 +3052,23 @@ class SupervisorWorkers:
       elif fid == 2:
         if ftype == TType.LIST:
           self.workers = []
-          (_etype178, _size175) = iprot.readListBegin()
-          for _i179 in xrange(_size175):
-            _elem180 = WorkerSummary()
-            _elem180.read(iprot)
-            self.workers.append(_elem180)
+          (_etype131, _size128) = iprot.readListBegin()
+          for _i132 in xrange(_size128):
+            _elem133 = WorkerSummary()
+            _elem133.read(iprot)
+            self.workers.append(_elem133)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
       elif fid == 3:
         if ftype == TType.MAP:
           self.workerMetric = {}
-          (_ktype182, _vtype183, _size181 ) = iprot.readMapBegin()
-          for _i185 in xrange(_size181):
-            _key186 = iprot.readString().decode('utf-8')
-            _val187 = MetricInfo()
-            _val187.read(iprot)
-            self.workerMetric[_key186] = _val187
+          (_ktype135, _vtype136, _size134 ) = iprot.readMapBegin()
+          for _i138 in xrange(_size134):
+            _key139 = iprot.readString().decode('utf-8')
+            _val140 = MetricInfo()
+            _val140.read(iprot)
+            self.workerMetric[_key139] = _val140
           iprot.readMapEnd()
         else:
           iprot.skip(ftype)
@@ -2632,16 +3089,16 @@ class SupervisorWorkers:
     if self.workers is not None:
       oprot.writeFieldBegin('workers', TType.LIST, 2)
       oprot.writeListBegin(TType.STRUCT, len(self.workers))
-      for iter188 in self.workers:
-        iter188.write(oprot)
+      for iter141 in self.workers:
+        iter141.write(oprot)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     if self.workerMetric is not None:
       oprot.writeFieldBegin('workerMetric', TType.MAP, 3)
       oprot.writeMapBegin(TType.STRING, TType.STRUCT, len(self.workerMetric))
-      for kiter189,viter190 in self.workerMetric.items():
-        oprot.writeString(kiter189.encode('utf-8'))
-        viter190.write(oprot)
+      for kiter142,viter143 in self.workerMetric.items():
+        oprot.writeString(kiter142.encode('utf-8'))
+        viter143.write(oprot)
       oprot.writeMapEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -2679,18 +3136,18 @@ class ErrorInfo:
   """
   Attributes:
    - error
-   - error_time_secs
+   - errorTimeSecs
   """
 
   thrift_spec = (
     None, # 0
     (1, TType.STRING, 'error', None, None, ), # 1
-    (2, TType.I32, 'error_time_secs', None, None, ), # 2
+    (2, TType.I32, 'errorTimeSecs', None, None, ), # 2
   )
 
-  def __init__(self, error=None, error_time_secs=None,):
+  def __init__(self, error=None, errorTimeSecs=None,):
     self.error = error
-    self.error_time_secs = error_time_secs
+    self.errorTimeSecs = errorTimeSecs
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -2708,7 +3165,7 @@ class ErrorInfo:
           iprot.skip(ftype)
       elif fid == 2:
         if ftype == TType.I32:
-          self.error_time_secs = iprot.readI32();
+          self.errorTimeSecs = iprot.readI32();
         else:
           iprot.skip(ftype)
       else:
@@ -2725,9 +3182,9 @@ class ErrorInfo:
       oprot.writeFieldBegin('error', TType.STRING, 1)
       oprot.writeString(self.error.encode('utf-8'))
       oprot.writeFieldEnd()
-    if self.error_time_secs is not None:
-      oprot.writeFieldBegin('error_time_secs', TType.I32, 2)
-      oprot.writeI32(self.error_time_secs)
+    if self.errorTimeSecs is not None:
+      oprot.writeFieldBegin('errorTimeSecs', TType.I32, 2)
+      oprot.writeI32(self.errorTimeSecs)
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
@@ -2735,15 +3192,15 @@ class ErrorInfo:
   def validate(self):
     if self.error is None:
       raise TProtocol.TProtocolException(message='Required field error is unset!')
-    if self.error_time_secs is None:
-      raise TProtocol.TProtocolException(message='Required field error_time_secs is unset!')
+    if self.errorTimeSecs is None:
+      raise TProtocol.TProtocolException(message='Required field errorTimeSecs is unset!')
     return
 
 
   def __hash__(self):
     value = 17
     value = (value * 31) ^ hash(self.error)
-    value = (value * 31) ^ hash(self.error_time_secs)
+    value = (value * 31) ^ hash(self.errorTimeSecs)
     return value
 
   def __repr__(self):
@@ -2763,7 +3220,7 @@ class ComponentSummary:
    - name
    - parallel
    - type
-   - task_ids
+   - taskIds
    - errors
   """
 
@@ -2772,15 +3229,15 @@ class ComponentSummary:
     (1, TType.STRING, 'name', None, None, ), # 1
     (2, TType.I32, 'parallel', None, None, ), # 2
     (3, TType.STRING, 'type', None, None, ), # 3
-    (4, TType.LIST, 'task_ids', (TType.I32,None), None, ), # 4
+    (4, TType.LIST, 'taskIds', (TType.I32,None), None, ), # 4
     (5, TType.LIST, 'errors', (TType.STRUCT,(ErrorInfo, ErrorInfo.thrift_spec)), None, ), # 5
   )
 
-  def __init__(self, name=None, parallel=None, type=None, task_ids=None, errors=None,):
+  def __init__(self, name=None, parallel=None, type=None, taskIds=None, errors=None,):
     self.name = name
     self.parallel = parallel
     self.type = type
-    self.task_ids = task_ids
+    self.taskIds = taskIds
     self.errors = errors
 
   def read(self, iprot):
@@ -2809,22 +3266,22 @@ class ComponentSummary:
           iprot.skip(ftype)
       elif fid == 4:
         if ftype == TType.LIST:
-          self.task_ids = []
-          (_etype194, _size191) = iprot.readListBegin()
-          for _i195 in xrange(_size191):
-            _elem196 = iprot.readI32();
-            self.task_ids.append(_elem196)
+          self.taskIds = []
+          (_etype147, _size144) = iprot.readListBegin()
+          for _i148 in xrange(_size144):
+            _elem149 = iprot.readI32();
+            self.taskIds.append(_elem149)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
       elif fid == 5:
         if ftype == TType.LIST:
           self.errors = []
-          (_etype200, _size197) = iprot.readListBegin()
-          for _i201 in xrange(_size197):
-            _elem202 = ErrorInfo()
-            _elem202.read(iprot)
-            self.errors.append(_elem202)
+          (_etype153, _size150) = iprot.readListBegin()
+          for _i154 in xrange(_size150):
+            _elem155 = ErrorInfo()
+            _elem155.read(iprot)
+            self.errors.append(_elem155)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -2850,18 +3307,18 @@ class ComponentSummary:
       oprot.writeFieldBegin('type', TType.STRING, 3)
       oprot.writeString(self.type.encode('utf-8'))
       oprot.writeFieldEnd()
-    if self.task_ids is not None:
-      oprot.writeFieldBegin('task_ids', TType.LIST, 4)
-      oprot.writeListBegin(TType.I32, len(self.task_ids))
-      for iter203 in self.task_ids:
-        oprot.writeI32(iter203)
+    if self.taskIds is not None:
+      oprot.writeFieldBegin('taskIds', TType.LIST, 4)
+      oprot.writeListBegin(TType.I32, len(self.taskIds))
+      for iter156 in self.taskIds:
+        oprot.writeI32(iter156)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     if self.errors is not None:
       oprot.writeFieldBegin('errors', TType.LIST, 5)
       oprot.writeListBegin(TType.STRUCT, len(self.errors))
-      for iter204 in self.errors:
-        iter204.write(oprot)
+      for iter157 in self.errors:
+        iter157.write(oprot)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -2874,8 +3331,8 @@ class ComponentSummary:
       raise TProtocol.TProtocolException(message='Required field parallel is unset!')
     if self.type is None:
       raise TProtocol.TProtocolException(message='Required field type is unset!')
-    if self.task_ids is None:
-      raise TProtocol.TProtocolException(message='Required field task_ids is unset!')
+    if self.taskIds is None:
+      raise TProtocol.TProtocolException(message='Required field taskIds is unset!')
     return
 
 
@@ -2884,7 +3341,7 @@ class ComponentSummary:
     value = (value * 31) ^ hash(self.name)
     value = (value * 31) ^ hash(self.parallel)
     value = (value * 31) ^ hash(self.type)
-    value = (value * 31) ^ hash(self.task_ids)
+    value = (value * 31) ^ hash(self.taskIds)
     value = (value * 31) ^ hash(self.errors)
     return value
 
@@ -2902,7 +3359,7 @@ class ComponentSummary:
 class TaskSummary:
   """
   Attributes:
-   - task_id
+   - taskId
    - uptime
    - status
    - host
@@ -2912,7 +3369,7 @@ class TaskSummary:
 
   thrift_spec = (
     None, # 0
-    (1, TType.I32, 'task_id', None, None, ), # 1
+    (1, TType.I32, 'taskId', None, None, ), # 1
     (2, TType.I32, 'uptime', None, None, ), # 2
     (3, TType.STRING, 'status', None, None, ), # 3
     (4, TType.STRING, 'host', None, None, ), # 4
@@ -2920,8 +3377,8 @@ class TaskSummary:
     (6, TType.LIST, 'errors', (TType.STRUCT,(ErrorInfo, ErrorInfo.thrift_spec)), None, ), # 6
   )
 
-  def __init__(self, task_id=None, uptime=None, status=None, host=None, port=None, errors=None,):
-    self.task_id = task_id
+  def __init__(self, taskId=None, uptime=None, status=None, host=None, port=None, errors=None,):
+    self.taskId = taskId
     self.uptime = uptime
     self.status = status
     self.host = host
@@ -2939,7 +3396,7 @@ class TaskSummary:
         break
       if fid == 1:
         if ftype == TType.I32:
-          self.task_id = iprot.readI32();
+          self.taskId = iprot.readI32();
         else:
           iprot.skip(ftype)
       elif fid == 2:
@@ -2965,11 +3422,11 @@ class TaskSummary:
       elif fid == 6:
         if ftype == TType.LIST:
           self.errors = []
-          (_etype208, _size205) = iprot.readListBegin()
-          for _i209 in xrange(_size205):
-            _elem210 = ErrorInfo()
-            _elem210.read(iprot)
-            self.errors.append(_elem210)
+          (_etype161, _size158) = iprot.readListBegin()
+          for _i162 in xrange(_size158):
+            _elem163 = ErrorInfo()
+            _elem163.read(iprot)
+            self.errors.append(_elem163)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -2983,9 +3440,9 @@ class TaskSummary:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
     oprot.writeStructBegin('TaskSummary')
-    if self.task_id is not None:
-      oprot.writeFieldBegin('task_id', TType.I32, 1)
-      oprot.writeI32(self.task_id)
+    if self.taskId is not None:
+      oprot.writeFieldBegin('taskId', TType.I32, 1)
+      oprot.writeI32(self.taskId)
       oprot.writeFieldEnd()
     if self.uptime is not None:
       oprot.writeFieldBegin('uptime', TType.I32, 2)
@@ -3006,16 +3463,16 @@ class TaskSummary:
     if self.errors is not None:
       oprot.writeFieldBegin('errors', TType.LIST, 6)
       oprot.writeListBegin(TType.STRUCT, len(self.errors))
-      for iter211 in self.errors:
-        iter211.write(oprot)
+      for iter164 in self.errors:
+        iter164.write(oprot)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
   def validate(self):
-    if self.task_id is None:
-      raise TProtocol.TProtocolException(message='Required field task_id is unset!')
+    if self.taskId is None:
+      raise TProtocol.TProtocolException(message='Required field taskId is unset!')
     if self.uptime is None:
       raise TProtocol.TProtocolException(message='Required field uptime is unset!')
     if self.status is None:
@@ -3029,12 +3486,160 @@ class TaskSummary:
 
   def __hash__(self):
     value = 17
-    value = (value * 31) ^ hash(self.task_id)
+    value = (value * 31) ^ hash(self.taskId)
     value = (value * 31) ^ hash(self.uptime)
     value = (value * 31) ^ hash(self.status)
     value = (value * 31) ^ hash(self.host)
     value = (value * 31) ^ hash(self.port)
     value = (value * 31) ^ hash(self.errors)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class TopologyMetric:
+  """
+  Attributes:
+   - topologyMetric
+   - componentMetric
+   - workerMetric
+   - taskMetric
+   - streamMetric
+   - nettyMetric
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRUCT, 'topologyMetric', (MetricInfo, MetricInfo.thrift_spec), None, ), # 1
+    (2, TType.STRUCT, 'componentMetric', (MetricInfo, MetricInfo.thrift_spec), None, ), # 2
+    (3, TType.STRUCT, 'workerMetric', (MetricInfo, MetricInfo.thrift_spec), None, ), # 3
+    (4, TType.STRUCT, 'taskMetric', (MetricInfo, MetricInfo.thrift_spec), None, ), # 4
+    (5, TType.STRUCT, 'streamMetric', (MetricInfo, MetricInfo.thrift_spec), None, ), # 5
+    (6, TType.STRUCT, 'nettyMetric', (MetricInfo, MetricInfo.thrift_spec), None, ), # 6
+  )
+
+  def __init__(self, topologyMetric=None, componentMetric=None, workerMetric=None, taskMetric=None, streamMetric=None, nettyMetric=None,):
+    self.topologyMetric = topologyMetric
+    self.componentMetric = componentMetric
+    self.workerMetric = workerMetric
+    self.taskMetric = taskMetric
+    self.streamMetric = streamMetric
+    self.nettyMetric = nettyMetric
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRUCT:
+          self.topologyMetric = MetricInfo()
+          self.topologyMetric.read(iprot)
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.STRUCT:
+          self.componentMetric = MetricInfo()
+          self.componentMetric.read(iprot)
+        else:
+          iprot.skip(ftype)
+      elif fid == 3:
+        if ftype == TType.STRUCT:
+          self.workerMetric = MetricInfo()
+          self.workerMetric.read(iprot)
+        else:
+          iprot.skip(ftype)
+      elif fid == 4:
+        if ftype == TType.STRUCT:
+          self.taskMetric = MetricInfo()
+          self.taskMetric.read(iprot)
+        else:
+          iprot.skip(ftype)
+      elif fid == 5:
+        if ftype == TType.STRUCT:
+          self.streamMetric = MetricInfo()
+          self.streamMetric.read(iprot)
+        else:
+          iprot.skip(ftype)
+      elif fid == 6:
+        if ftype == TType.STRUCT:
+          self.nettyMetric = MetricInfo()
+          self.nettyMetric.read(iprot)
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('TopologyMetric')
+    if self.topologyMetric is not None:
+      oprot.writeFieldBegin('topologyMetric', TType.STRUCT, 1)
+      self.topologyMetric.write(oprot)
+      oprot.writeFieldEnd()
+    if self.componentMetric is not None:
+      oprot.writeFieldBegin('componentMetric', TType.STRUCT, 2)
+      self.componentMetric.write(oprot)
+      oprot.writeFieldEnd()
+    if self.workerMetric is not None:
+      oprot.writeFieldBegin('workerMetric', TType.STRUCT, 3)
+      self.workerMetric.write(oprot)
+      oprot.writeFieldEnd()
+    if self.taskMetric is not None:
+      oprot.writeFieldBegin('taskMetric', TType.STRUCT, 4)
+      self.taskMetric.write(oprot)
+      oprot.writeFieldEnd()
+    if self.streamMetric is not None:
+      oprot.writeFieldBegin('streamMetric', TType.STRUCT, 5)
+      self.streamMetric.write(oprot)
+      oprot.writeFieldEnd()
+    if self.nettyMetric is not None:
+      oprot.writeFieldBegin('nettyMetric', TType.STRUCT, 6)
+      self.nettyMetric.write(oprot)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    if self.topologyMetric is None:
+      raise TProtocol.TProtocolException(message='Required field topologyMetric is unset!')
+    if self.componentMetric is None:
+      raise TProtocol.TProtocolException(message='Required field componentMetric is unset!')
+    if self.workerMetric is None:
+      raise TProtocol.TProtocolException(message='Required field workerMetric is unset!')
+    if self.taskMetric is None:
+      raise TProtocol.TProtocolException(message='Required field taskMetric is unset!')
+    if self.streamMetric is None:
+      raise TProtocol.TProtocolException(message='Required field streamMetric is unset!')
+    if self.nettyMetric is None:
+      raise TProtocol.TProtocolException(message='Required field nettyMetric is unset!')
+    return
+
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.topologyMetric)
+    value = (value * 31) ^ hash(self.componentMetric)
+    value = (value * 31) ^ hash(self.workerMetric)
+    value = (value * 31) ^ hash(self.taskMetric)
+    value = (value * 31) ^ hash(self.streamMetric)
+    value = (value * 31) ^ hash(self.nettyMetric)
     return value
 
   def __repr__(self):
@@ -3089,22 +3694,22 @@ class TopologyInfo:
       elif fid == 2:
         if ftype == TType.LIST:
           self.components = []
-          (_etype215, _size212) = iprot.readListBegin()
-          for _i216 in xrange(_size212):
-            _elem217 = ComponentSummary()
-            _elem217.read(iprot)
-            self.components.append(_elem217)
+          (_etype168, _size165) = iprot.readListBegin()
+          for _i169 in xrange(_size165):
+            _elem170 = ComponentSummary()
+            _elem170.read(iprot)
+            self.components.append(_elem170)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
       elif fid == 3:
         if ftype == TType.LIST:
           self.tasks = []
-          (_etype221, _size218) = iprot.readListBegin()
-          for _i222 in xrange(_size218):
-            _elem223 = TaskSummary()
-            _elem223.read(iprot)
-            self.tasks.append(_elem223)
+          (_etype174, _size171) = iprot.readListBegin()
+          for _i175 in xrange(_size171):
+            _elem176 = TaskSummary()
+            _elem176.read(iprot)
+            self.tasks.append(_elem176)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -3131,15 +3736,15 @@ class TopologyInfo:
     if self.components is not None:
       oprot.writeFieldBegin('components', TType.LIST, 2)
       oprot.writeListBegin(TType.STRUCT, len(self.components))
-      for iter224 in self.components:
-        iter224.write(oprot)
+      for iter177 in self.components:
+        iter177.write(oprot)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     if self.tasks is not None:
       oprot.writeFieldBegin('tasks', TType.LIST, 3)
       oprot.writeListBegin(TType.STRUCT, len(self.tasks))
-      for iter225 in self.tasks:
-        iter225.write(oprot)
+      for iter178 in self.tasks:
+        iter178.write(oprot)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     if self.metrics is not None:
@@ -3180,19 +3785,28 @@ class TopologyInfo:
   def __ne__(self, other):
     return not (self == other)
 
-class TopologyAssignException(TException):
+class WorkerUploadMetrics:
   """
   Attributes:
-   - msg
+   - topologyId
+   - supervisorId
+   - port
+   - allMetrics
   """
 
   thrift_spec = (
     None, # 0
-    (1, TType.STRING, 'msg', None, None, ), # 1
+    (1, TType.STRING, 'topologyId', None, None, ), # 1
+    (2, TType.STRING, 'supervisorId', None, None, ), # 2
+    (3, TType.I32, 'port', None, None, ), # 3
+    (4, TType.STRUCT, 'allMetrics', (MetricInfo, MetricInfo.thrift_spec), None, ), # 4
   )
 
-  def __init__(self, msg=None,):
-    self.msg = msg
+  def __init__(self, topologyId=None, supervisorId=None, port=None, allMetrics=None,):
+    self.topologyId = topologyId
+    self.supervisorId = supervisorId
+    self.port = port
+    self.allMetrics = allMetrics
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -3205,77 +3819,23 @@ class TopologyAssignException(TException):
         break
       if fid == 1:
         if ftype == TType.STRING:
-          self.msg = iprot.readString().decode('utf-8')
+          self.topologyId = iprot.readString().decode('utf-8')
         else:
           iprot.skip(ftype)
-      else:
-        iprot.skip(ftype)
-      iprot.readFieldEnd()
-    iprot.readStructEnd()
-
-  def write(self, oprot):
-    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
-      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
-      return
-    oprot.writeStructBegin('TopologyAssignException')
-    if self.msg is not None:
-      oprot.writeFieldBegin('msg', TType.STRING, 1)
-      oprot.writeString(self.msg.encode('utf-8'))
-      oprot.writeFieldEnd()
-    oprot.writeFieldStop()
-    oprot.writeStructEnd()
-
-  def validate(self):
-    if self.msg is None:
-      raise TProtocol.TProtocolException(message='Required field msg is unset!')
-    return
-
-
-  def __str__(self):
-    return repr(self)
-
-  def __hash__(self):
-    value = 17
-    value = (value * 31) ^ hash(self.msg)
-    return value
-
-  def __repr__(self):
-    L = ['%s=%r' % (key, value)
-      for key, value in self.__dict__.iteritems()]
-    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
-
-  def __eq__(self, other):
-    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-  def __ne__(self, other):
-    return not (self == other)
-
-class AlreadyAliveException(TException):
-  """
-  Attributes:
-   - msg
-  """
-
-  thrift_spec = (
-    None, # 0
-    (1, TType.STRING, 'msg', None, None, ), # 1
-  )
-
-  def __init__(self, msg=None,):
-    self.msg = msg
-
-  def read(self, iprot):
-    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
-      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
-      return
-    iprot.readStructBegin()
-    while True:
-      (fname, ftype, fid) = iprot.readFieldBegin()
-      if ftype == TType.STOP:
-        break
-      if fid == 1:
+      elif fid == 2:
         if ftype == TType.STRING:
-          self.msg = iprot.readString().decode('utf-8')
+          self.supervisorId = iprot.readString().decode('utf-8')
+        else:
+          iprot.skip(ftype)
+      elif fid == 3:
+        if ftype == TType.I32:
+          self.port = iprot.readI32();
+        else:
+          iprot.skip(ftype)
+      elif fid == 4:
+        if ftype == TType.STRUCT:
+          self.allMetrics = MetricInfo()
+          self.allMetrics.read(iprot)
         else:
           iprot.skip(ftype)
       else:
@@ -3287,236 +3847,44 @@ class AlreadyAliveException(TException):
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('AlreadyAliveException')
-    if self.msg is not None:
-      oprot.writeFieldBegin('msg', TType.STRING, 1)
-      oprot.writeString(self.msg.encode('utf-8'))
+    oprot.writeStructBegin('WorkerUploadMetrics')
+    if self.topologyId is not None:
+      oprot.writeFieldBegin('topologyId', TType.STRING, 1)
+      oprot.writeString(self.topologyId.encode('utf-8'))
+      oprot.writeFieldEnd()
+    if self.supervisorId is not None:
+      oprot.writeFieldBegin('supervisorId', TType.STRING, 2)
+      oprot.writeString(self.supervisorId.encode('utf-8'))
+      oprot.writeFieldEnd()
+    if self.port is not None:
+      oprot.writeFieldBegin('port', TType.I32, 3)
+      oprot.writeI32(self.port)
+      oprot.writeFieldEnd()
+    if self.allMetrics is not None:
+      oprot.writeFieldBegin('allMetrics', TType.STRUCT, 4)
+      self.allMetrics.write(oprot)
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
   def validate(self):
-    if self.msg is None:
-      raise TProtocol.TProtocolException(message='Required field msg is unset!')
+    if self.topologyId is None:
+      raise TProtocol.TProtocolException(message='Required field topologyId is unset!')
+    if self.supervisorId is None:
+      raise TProtocol.TProtocolException(message='Required field supervisorId is unset!')
+    if self.port is None:
+      raise TProtocol.TProtocolException(message='Required field port is unset!')
+    if self.allMetrics is None:
+      raise TProtocol.TProtocolException(message='Required field allMetrics is unset!')
     return
 
 
-  def __str__(self):
-    return repr(self)
-
   def __hash__(self):
     value = 17
-    value = (value * 31) ^ hash(self.msg)
-    return value
-
-  def __repr__(self):
-    L = ['%s=%r' % (key, value)
-      for key, value in self.__dict__.iteritems()]
-    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
-
-  def __eq__(self, other):
-    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-  def __ne__(self, other):
-    return not (self == other)
-
-class NotAliveException(TException):
-  """
-  Attributes:
-   - msg
-  """
-
-  thrift_spec = (
-    None, # 0
-    (1, TType.STRING, 'msg', None, None, ), # 1
-  )
-
-  def __init__(self, msg=None,):
-    self.msg = msg
-
-  def read(self, iprot):
-    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
-      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
-      return
-    iprot.readStructBegin()
-    while True:
-      (fname, ftype, fid) = iprot.readFieldBegin()
-      if ftype == TType.STOP:
-        break
-      if fid == 1:
-        if ftype == TType.STRING:
-          self.msg = iprot.readString().decode('utf-8')
-        else:
-          iprot.skip(ftype)
-      else:
-        iprot.skip(ftype)
-      iprot.readFieldEnd()
-    iprot.readStructEnd()
-
-  def write(self, oprot):
-    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
-      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
-      return
-    oprot.writeStructBegin('NotAliveException')
-    if self.msg is not None:
-      oprot.writeFieldBegin('msg', TType.STRING, 1)
-      oprot.writeString(self.msg.encode('utf-8'))
-      oprot.writeFieldEnd()
-    oprot.writeFieldStop()
-    oprot.writeStructEnd()
-
-  def validate(self):
-    if self.msg is None:
-      raise TProtocol.TProtocolException(message='Required field msg is unset!')
-    return
-
-
-  def __str__(self):
-    return repr(self)
-
-  def __hash__(self):
-    value = 17
-    value = (value * 31) ^ hash(self.msg)
-    return value
-
-  def __repr__(self):
-    L = ['%s=%r' % (key, value)
-      for key, value in self.__dict__.iteritems()]
-    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
-
-  def __eq__(self, other):
-    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-  def __ne__(self, other):
-    return not (self == other)
-
-class InvalidTopologyException(TException):
-  """
-  Attributes:
-   - msg
-  """
-
-  thrift_spec = (
-    None, # 0
-    (1, TType.STRING, 'msg', None, None, ), # 1
-  )
-
-  def __init__(self, msg=None,):
-    self.msg = msg
-
-  def read(self, iprot):
-    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
-      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
-      return
-    iprot.readStructBegin()
-    while True:
-      (fname, ftype, fid) = iprot.readFieldBegin()
-      if ftype == TType.STOP:
-        break
-      if fid == 1:
-        if ftype == TType.STRING:
-          self.msg = iprot.readString().decode('utf-8')
-        else:
-          iprot.skip(ftype)
-      else:
-        iprot.skip(ftype)
-      iprot.readFieldEnd()
-    iprot.readStructEnd()
-
-  def write(self, oprot):
-    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
-      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
-      return
-    oprot.writeStructBegin('InvalidTopologyException')
-    if self.msg is not None:
-      oprot.writeFieldBegin('msg', TType.STRING, 1)
-      oprot.writeString(self.msg.encode('utf-8'))
-      oprot.writeFieldEnd()
-    oprot.writeFieldStop()
-    oprot.writeStructEnd()
-
-  def validate(self):
-    if self.msg is None:
-      raise TProtocol.TProtocolException(message='Required field msg is unset!')
-    return
-
-
-  def __str__(self):
-    return repr(self)
-
-  def __hash__(self):
-    value = 17
-    value = (value * 31) ^ hash(self.msg)
-    return value
-
-  def __repr__(self):
-    L = ['%s=%r' % (key, value)
-      for key, value in self.__dict__.iteritems()]
-    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
-
-  def __eq__(self, other):
-    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-  def __ne__(self, other):
-    return not (self == other)
-
-class AuthorizationException(TException):
-  """
-  Attributes:
-   - msg
-  """
-
-  thrift_spec = (
-    None, # 0
-    (1, TType.STRING, 'msg', None, None, ), # 1
-  )
-
-  def __init__(self, msg=None,):
-    self.msg = msg
-
-  def read(self, iprot):
-    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
-      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
-      return
-    iprot.readStructBegin()
-    while True:
-      (fname, ftype, fid) = iprot.readFieldBegin()
-      if ftype == TType.STOP:
-        break
-      if fid == 1:
-        if ftype == TType.STRING:
-          self.msg = iprot.readString().decode('utf-8')
-        else:
-          iprot.skip(ftype)
-      else:
-        iprot.skip(ftype)
-      iprot.readFieldEnd()
-    iprot.readStructEnd()
-
-  def write(self, oprot):
-    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
-      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
-      return
-    oprot.writeStructBegin('AuthorizationException')
-    if self.msg is not None:
-      oprot.writeFieldBegin('msg', TType.STRING, 1)
-      oprot.writeString(self.msg.encode('utf-8'))
-      oprot.writeFieldEnd()
-    oprot.writeFieldStop()
-    oprot.writeStructEnd()
-
-  def validate(self):
-    if self.msg is None:
-      raise TProtocol.TProtocolException(message='Required field msg is unset!')
-    return
-
-
-  def __str__(self):
-    return repr(self)
-
-  def __hash__(self):
-    value = 17
-    value = (value * 31) ^ hash(self.msg)
+    value = (value * 31) ^ hash(self.topologyId)
+    value = (value * 31) ^ hash(self.supervisorId)
+    value = (value * 31) ^ hash(self.port)
+    value = (value * 31) ^ hash(self.allMetrics)
     return value
 
   def __repr__(self):
@@ -3686,19 +4054,99 @@ class RebalanceOptions:
   def __ne__(self, other):
     return not (self == other)
 
+class Credentials:
+  """
+  Attributes:
+   - creds
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.MAP, 'creds', (TType.STRING,None,TType.STRING,None), None, ), # 1
+  )
+
+  def __init__(self, creds=None,):
+    self.creds = creds
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.MAP:
+          self.creds = {}
+          (_ktype180, _vtype181, _size179 ) = iprot.readMapBegin()
+          for _i183 in xrange(_size179):
+            _key184 = iprot.readString().decode('utf-8')
+            _val185 = iprot.readString().decode('utf-8')
+            self.creds[_key184] = _val185
+          iprot.readMapEnd()
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('Credentials')
+    if self.creds is not None:
+      oprot.writeFieldBegin('creds', TType.MAP, 1)
+      oprot.writeMapBegin(TType.STRING, TType.STRING, len(self.creds))
+      for kiter186,viter187 in self.creds.items():
+        oprot.writeString(kiter186.encode('utf-8'))
+        oprot.writeString(viter187.encode('utf-8'))
+      oprot.writeMapEnd()
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    if self.creds is None:
+      raise TProtocol.TProtocolException(message='Required field creds is unset!')
+    return
+
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.creds)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
 class SubmitOptions:
   """
   Attributes:
    - initial_status
+   - creds
   """
 
   thrift_spec = (
     None, # 0
     (1, TType.I32, 'initial_status', None, None, ), # 1
+    (2, TType.STRUCT, 'creds', (Credentials, Credentials.thrift_spec), None, ), # 2
   )
 
-  def __init__(self, initial_status=None,):
+  def __init__(self, initial_status=None, creds=None,):
     self.initial_status = initial_status
+    self.creds = creds
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -3712,6 +4160,12 @@ class SubmitOptions:
       if fid == 1:
         if ftype == TType.I32:
           self.initial_status = iprot.readI32();
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.STRUCT:
+          self.creds = Credentials()
+          self.creds.read(iprot)
         else:
           iprot.skip(ftype)
       else:
@@ -3728,6 +4182,10 @@ class SubmitOptions:
       oprot.writeFieldBegin('initial_status', TType.I32, 1)
       oprot.writeI32(self.initial_status)
       oprot.writeFieldEnd()
+    if self.creds is not None:
+      oprot.writeFieldBegin('creds', TType.STRUCT, 2)
+      self.creds.write(oprot)
+      oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
@@ -3740,6 +4198,7 @@ class SubmitOptions:
   def __hash__(self):
     value = 17
     value = (value * 31) ^ hash(self.initial_status)
+    value = (value * 31) ^ hash(self.creds)
     return value
 
   def __repr__(self):
@@ -3805,83 +4264,6 @@ class MonitorOptions:
   def __hash__(self):
     value = 17
     value = (value * 31) ^ hash(self.isEnable)
-    return value
-
-  def __repr__(self):
-    L = ['%s=%r' % (key, value)
-      for key, value in self.__dict__.iteritems()]
-    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
-
-  def __eq__(self, other):
-    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-  def __ne__(self, other):
-    return not (self == other)
-
-class Credentials:
-  """
-  Attributes:
-   - creds
-  """
-
-  thrift_spec = (
-    None, # 0
-    (1, TType.MAP, 'creds', (TType.STRING,None,TType.STRING,None), None, ), # 1
-  )
-
-  def __init__(self, creds=None,):
-    self.creds = creds
-
-  def read(self, iprot):
-    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
-      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
-      return
-    iprot.readStructBegin()
-    while True:
-      (fname, ftype, fid) = iprot.readFieldBegin()
-      if ftype == TType.STOP:
-        break
-      if fid == 1:
-        if ftype == TType.MAP:
-          self.creds = {}
-          (_ktype227, _vtype228, _size226 ) = iprot.readMapBegin()
-          for _i230 in xrange(_size226):
-            _key231 = iprot.readString().decode('utf-8')
-            _val232 = iprot.readString().decode('utf-8')
-            self.creds[_key231] = _val232
-          iprot.readMapEnd()
-        else:
-          iprot.skip(ftype)
-      else:
-        iprot.skip(ftype)
-      iprot.readFieldEnd()
-    iprot.readStructEnd()
-
-  def write(self, oprot):
-    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
-      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
-      return
-    oprot.writeStructBegin('Credentials')
-    if self.creds is not None:
-      oprot.writeFieldBegin('creds', TType.MAP, 1)
-      oprot.writeMapBegin(TType.STRING, TType.STRING, len(self.creds))
-      for kiter233,viter234 in self.creds.items():
-        oprot.writeString(kiter233.encode('utf-8'))
-        oprot.writeString(viter234.encode('utf-8'))
-      oprot.writeMapEnd()
-      oprot.writeFieldEnd()
-    oprot.writeFieldStop()
-    oprot.writeStructEnd()
-
-  def validate(self):
-    if self.creds is None:
-      raise TProtocol.TProtocolException(message='Required field creds is unset!')
-    return
-
-
-  def __hash__(self):
-    value = 17
-    value = (value * 31) ^ hash(self.creds)
     return value
 
   def __repr__(self):
@@ -4003,12 +4385,12 @@ class LocalStateData:
       if fid == 1:
         if ftype == TType.MAP:
           self.serialized_parts = {}
-          (_ktype236, _vtype237, _size235 ) = iprot.readMapBegin()
-          for _i239 in xrange(_size235):
-            _key240 = iprot.readString().decode('utf-8')
-            _val241 = ThriftSerializedObject()
-            _val241.read(iprot)
-            self.serialized_parts[_key240] = _val241
+          (_ktype189, _vtype190, _size188 ) = iprot.readMapBegin()
+          for _i192 in xrange(_size188):
+            _key193 = iprot.readString().decode('utf-8')
+            _val194 = ThriftSerializedObject()
+            _val194.read(iprot)
+            self.serialized_parts[_key193] = _val194
           iprot.readMapEnd()
         else:
           iprot.skip(ftype)
@@ -4025,9 +4407,9 @@ class LocalStateData:
     if self.serialized_parts is not None:
       oprot.writeFieldBegin('serialized_parts', TType.MAP, 1)
       oprot.writeMapBegin(TType.STRING, TType.STRUCT, len(self.serialized_parts))
-      for kiter242,viter243 in self.serialized_parts.items():
-        oprot.writeString(kiter242.encode('utf-8'))
-        viter243.write(oprot)
+      for kiter195,viter196 in self.serialized_parts.items():
+        oprot.writeString(kiter195.encode('utf-8'))
+        viter196.write(oprot)
       oprot.writeMapEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -4055,22 +4437,22 @@ class LocalStateData:
   def __ne__(self, other):
     return not (self == other)
 
-class NettyMetric:
+class TaskHeartbeat:
   """
   Attributes:
-   - connections
-   - connectionNum
+   - time
+   - uptime
   """
 
   thrift_spec = (
     None, # 0
-    (1, TType.MAP, 'connections', (TType.STRING,None,TType.STRUCT,(MetricInfo, MetricInfo.thrift_spec)), None, ), # 1
-    (2, TType.I32, 'connectionNum', None, None, ), # 2
+    (1, TType.I32, 'time', None, None, ), # 1
+    (2, TType.I32, 'uptime', None, None, ), # 2
   )
 
-  def __init__(self, connections=None, connectionNum=None,):
-    self.connections = connections
-    self.connectionNum = connectionNum
+  def __init__(self, time=None, uptime=None,):
+    self.time = time
+    self.uptime = uptime
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -4082,20 +4464,13 @@ class NettyMetric:
       if ftype == TType.STOP:
         break
       if fid == 1:
-        if ftype == TType.MAP:
-          self.connections = {}
-          (_ktype245, _vtype246, _size244 ) = iprot.readMapBegin()
-          for _i248 in xrange(_size244):
-            _key249 = iprot.readString().decode('utf-8')
-            _val250 = MetricInfo()
-            _val250.read(iprot)
-            self.connections[_key249] = _val250
-          iprot.readMapEnd()
+        if ftype == TType.I32:
+          self.time = iprot.readI32();
         else:
           iprot.skip(ftype)
       elif fid == 2:
         if ftype == TType.I32:
-          self.connectionNum = iprot.readI32();
+          self.uptime = iprot.readI32();
         else:
           iprot.skip(ftype)
       else:
@@ -4107,34 +4482,30 @@ class NettyMetric:
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('NettyMetric')
-    if self.connections is not None:
-      oprot.writeFieldBegin('connections', TType.MAP, 1)
-      oprot.writeMapBegin(TType.STRING, TType.STRUCT, len(self.connections))
-      for kiter251,viter252 in self.connections.items():
-        oprot.writeString(kiter251.encode('utf-8'))
-        viter252.write(oprot)
-      oprot.writeMapEnd()
+    oprot.writeStructBegin('TaskHeartbeat')
+    if self.time is not None:
+      oprot.writeFieldBegin('time', TType.I32, 1)
+      oprot.writeI32(self.time)
       oprot.writeFieldEnd()
-    if self.connectionNum is not None:
-      oprot.writeFieldBegin('connectionNum', TType.I32, 2)
-      oprot.writeI32(self.connectionNum)
+    if self.uptime is not None:
+      oprot.writeFieldBegin('uptime', TType.I32, 2)
+      oprot.writeI32(self.uptime)
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
   def validate(self):
-    if self.connections is None:
-      raise TProtocol.TProtocolException(message='Required field connections is unset!')
-    if self.connectionNum is None:
-      raise TProtocol.TProtocolException(message='Required field connectionNum is unset!')
+    if self.time is None:
+      raise TProtocol.TProtocolException(message='Required field time is unset!')
+    if self.uptime is None:
+      raise TProtocol.TProtocolException(message='Required field uptime is unset!')
     return
 
 
   def __hash__(self):
     value = 17
-    value = (value * 31) ^ hash(self.connections)
-    value = (value * 31) ^ hash(self.connectionNum)
+    value = (value * 31) ^ hash(self.time)
+    value = (value * 31) ^ hash(self.uptime)
     return value
 
   def __repr__(self):
@@ -4148,34 +4519,25 @@ class NettyMetric:
   def __ne__(self, other):
     return not (self == other)
 
-class WorkerUploadMetrics:
+class TopologyTaskHbInfo:
   """
   Attributes:
-   - topology_id
-   - supervisor_id
-   - port
-   - workerMetric
-   - nettyMetric
-   - taskMetric
+   - topologyId
+   - topologyMasterId
+   - taskHbs
   """
 
   thrift_spec = (
     None, # 0
-    (1, TType.STRING, 'topology_id', None, None, ), # 1
-    (2, TType.STRING, 'supervisor_id', None, None, ), # 2
-    (3, TType.I32, 'port', None, None, ), # 3
-    (4, TType.STRUCT, 'workerMetric', (MetricInfo, MetricInfo.thrift_spec), None, ), # 4
-    (5, TType.STRUCT, 'nettyMetric', (NettyMetric, NettyMetric.thrift_spec), None, ), # 5
-    (6, TType.MAP, 'taskMetric', (TType.I32,None,TType.STRUCT,(MetricInfo, MetricInfo.thrift_spec)), None, ), # 6
+    (1, TType.STRING, 'topologyId', None, None, ), # 1
+    (2, TType.I32, 'topologyMasterId', None, None, ), # 2
+    (3, TType.MAP, 'taskHbs', (TType.I32,None,TType.STRUCT,(TaskHeartbeat, TaskHeartbeat.thrift_spec)), None, ), # 3
   )
 
-  def __init__(self, topology_id=None, supervisor_id=None, port=None, workerMetric=None, nettyMetric=None, taskMetric=None,):
-    self.topology_id = topology_id
-    self.supervisor_id = supervisor_id
-    self.port = port
-    self.workerMetric = workerMetric
-    self.nettyMetric = nettyMetric
-    self.taskMetric = taskMetric
+  def __init__(self, topologyId=None, topologyMasterId=None, taskHbs=None,):
+    self.topologyId = topologyId
+    self.topologyMasterId = topologyMasterId
+    self.taskHbs = taskHbs
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -4188,40 +4550,23 @@ class WorkerUploadMetrics:
         break
       if fid == 1:
         if ftype == TType.STRING:
-          self.topology_id = iprot.readString().decode('utf-8')
+          self.topologyId = iprot.readString().decode('utf-8')
         else:
           iprot.skip(ftype)
       elif fid == 2:
-        if ftype == TType.STRING:
-          self.supervisor_id = iprot.readString().decode('utf-8')
+        if ftype == TType.I32:
+          self.topologyMasterId = iprot.readI32();
         else:
           iprot.skip(ftype)
       elif fid == 3:
-        if ftype == TType.I32:
-          self.port = iprot.readI32();
-        else:
-          iprot.skip(ftype)
-      elif fid == 4:
-        if ftype == TType.STRUCT:
-          self.workerMetric = MetricInfo()
-          self.workerMetric.read(iprot)
-        else:
-          iprot.skip(ftype)
-      elif fid == 5:
-        if ftype == TType.STRUCT:
-          self.nettyMetric = NettyMetric()
-          self.nettyMetric.read(iprot)
-        else:
-          iprot.skip(ftype)
-      elif fid == 6:
         if ftype == TType.MAP:
-          self.taskMetric = {}
-          (_ktype254, _vtype255, _size253 ) = iprot.readMapBegin()
-          for _i257 in xrange(_size253):
-            _key258 = iprot.readI32();
-            _val259 = MetricInfo()
-            _val259.read(iprot)
-            self.taskMetric[_key258] = _val259
+          self.taskHbs = {}
+          (_ktype198, _vtype199, _size197 ) = iprot.readMapBegin()
+          for _i201 in xrange(_size197):
+            _key202 = iprot.readI32();
+            _val203 = TaskHeartbeat()
+            _val203.read(iprot)
+            self.taskHbs[_key202] = _val203
           iprot.readMapEnd()
         else:
           iprot.skip(ftype)
@@ -4234,62 +4579,39 @@ class WorkerUploadMetrics:
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('WorkerUploadMetrics')
-    if self.topology_id is not None:
-      oprot.writeFieldBegin('topology_id', TType.STRING, 1)
-      oprot.writeString(self.topology_id.encode('utf-8'))
+    oprot.writeStructBegin('TopologyTaskHbInfo')
+    if self.topologyId is not None:
+      oprot.writeFieldBegin('topologyId', TType.STRING, 1)
+      oprot.writeString(self.topologyId.encode('utf-8'))
       oprot.writeFieldEnd()
-    if self.supervisor_id is not None:
-      oprot.writeFieldBegin('supervisor_id', TType.STRING, 2)
-      oprot.writeString(self.supervisor_id.encode('utf-8'))
+    if self.topologyMasterId is not None:
+      oprot.writeFieldBegin('topologyMasterId', TType.I32, 2)
+      oprot.writeI32(self.topologyMasterId)
       oprot.writeFieldEnd()
-    if self.port is not None:
-      oprot.writeFieldBegin('port', TType.I32, 3)
-      oprot.writeI32(self.port)
-      oprot.writeFieldEnd()
-    if self.workerMetric is not None:
-      oprot.writeFieldBegin('workerMetric', TType.STRUCT, 4)
-      self.workerMetric.write(oprot)
-      oprot.writeFieldEnd()
-    if self.nettyMetric is not None:
-      oprot.writeFieldBegin('nettyMetric', TType.STRUCT, 5)
-      self.nettyMetric.write(oprot)
-      oprot.writeFieldEnd()
-    if self.taskMetric is not None:
-      oprot.writeFieldBegin('taskMetric', TType.MAP, 6)
-      oprot.writeMapBegin(TType.I32, TType.STRUCT, len(self.taskMetric))
-      for kiter260,viter261 in self.taskMetric.items():
-        oprot.writeI32(kiter260)
-        viter261.write(oprot)
+    if self.taskHbs is not None:
+      oprot.writeFieldBegin('taskHbs', TType.MAP, 3)
+      oprot.writeMapBegin(TType.I32, TType.STRUCT, len(self.taskHbs))
+      for kiter204,viter205 in self.taskHbs.items():
+        oprot.writeI32(kiter204)
+        viter205.write(oprot)
       oprot.writeMapEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
   def validate(self):
-    if self.topology_id is None:
-      raise TProtocol.TProtocolException(message='Required field topology_id is unset!')
-    if self.supervisor_id is None:
-      raise TProtocol.TProtocolException(message='Required field supervisor_id is unset!')
-    if self.port is None:
-      raise TProtocol.TProtocolException(message='Required field port is unset!')
-    if self.workerMetric is None:
-      raise TProtocol.TProtocolException(message='Required field workerMetric is unset!')
-    if self.nettyMetric is None:
-      raise TProtocol.TProtocolException(message='Required field nettyMetric is unset!')
-    if self.taskMetric is None:
-      raise TProtocol.TProtocolException(message='Required field taskMetric is unset!')
+    if self.topologyId is None:
+      raise TProtocol.TProtocolException(message='Required field topologyId is unset!')
+    if self.topologyMasterId is None:
+      raise TProtocol.TProtocolException(message='Required field topologyMasterId is unset!')
     return
 
 
   def __hash__(self):
     value = 17
-    value = (value * 31) ^ hash(self.topology_id)
-    value = (value * 31) ^ hash(self.supervisor_id)
-    value = (value * 31) ^ hash(self.port)
-    value = (value * 31) ^ hash(self.workerMetric)
-    value = (value * 31) ^ hash(self.nettyMetric)
-    value = (value * 31) ^ hash(self.taskMetric)
+    value = (value * 31) ^ hash(self.topologyId)
+    value = (value * 31) ^ hash(self.topologyMasterId)
+    value = (value * 31) ^ hash(self.taskHbs)
     return value
 
   def __repr__(self):

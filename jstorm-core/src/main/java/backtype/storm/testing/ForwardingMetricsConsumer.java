@@ -51,45 +51,42 @@ public class ForwardingMetricsConsumer implements IMetricsConsumer {
 
     @Override
     public void prepare(Map stormConf, Object registrationArgument, TopologyContext context, IErrorReporter errorReporter) {
-        String [] parts = ((String)registrationArgument).split(":",2);
+        String[] parts = ((String) registrationArgument).split(":", 2);
         host = parts[0];
         port = Integer.valueOf(parts[1]);
         try {
-          socket = new Socket(host, port);
-          out = socket.getOutputStream();
+            socket = new Socket(host, port);
+            out = socket.getOutputStream();
         } catch (Exception e) {
-          throw new RuntimeException(e);
+            throw new RuntimeException(e);
         }
     }
 
     @Override
     public void handleDataPoints(TaskInfo taskInfo, Collection<DataPoint> dataPoints) {
         StringBuilder sb = new StringBuilder();
-        String header = taskInfo.timestamp + "\t" +
-            taskInfo.srcWorkerHost + ":"+ taskInfo.srcWorkerPort + "\t"+
-            taskInfo.srcTaskId + "\t" + taskInfo.srcComponentId + "\t";
+        String header =
+                taskInfo.timestamp + "\t" + taskInfo.srcWorkerHost + ":" + taskInfo.srcWorkerPort + "\t" + taskInfo.srcTaskId + "\t" + taskInfo.srcComponentId
+                        + "\t";
         sb.append(header);
         for (DataPoint p : dataPoints) {
             sb.delete(header.length(), sb.length());
-            sb.append(p.name)
-                .append("\t")
-                .append(p.value)
-                .append("\n");
+            sb.append(p.name).append("\t").append(p.value).append("\n");
             try {
-              out.write(sb.toString().getBytes());
-              out.flush();
+                out.write(sb.toString().getBytes());
+                out.flush();
             } catch (Exception e) {
-              throw new RuntimeException(e);
+                throw new RuntimeException(e);
             }
         }
     }
 
     @Override
-    public void cleanup() { 
-      try {
-        socket.close();
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      }
+    public void cleanup() {
+        try {
+            socket.close();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

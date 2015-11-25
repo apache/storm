@@ -44,7 +44,7 @@ public class PathUtils {
      */
     public static List<String> tokenize_path(String path) {
         String[] toks = path.split(SEPERATOR);
-        java.util.ArrayList<String> rtn = new ArrayList<String>();
+        ArrayList<String> rtn = new ArrayList<String>();
         for (String str : toks) {
             if (!str.isEmpty()) {
                 rtn.add(str);

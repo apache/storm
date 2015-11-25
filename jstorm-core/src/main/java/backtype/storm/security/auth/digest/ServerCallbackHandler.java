@@ -48,26 +48,27 @@ public class ServerCallbackHandler implements CallbackHandler {
     private static final String SYSPROP_SUPER_PASSWORD = "storm.SASLAuthenticationProvider.superPassword";
 
     private String userName;
-    private final Map<String,String> credentials = new HashMap<String,String>();
+    private final Map<String, String> credentials = new HashMap<String, String>();
 
     public ServerCallbackHandler(Configuration configuration) throws IOException {
-        if (configuration==null) return;
+        if (configuration == null)
+            return;
 
         AppConfigurationEntry configurationEntries[] = configuration.getAppConfigurationEntry(AuthUtils.LOGIN_CONTEXT_SERVER);
         if (configurationEntries == null) {
-            String errorMessage = "Could not find a '"+AuthUtils.LOGIN_CONTEXT_SERVER+"' entry in this configuration: Server cannot start.";
+            String errorMessage = "Could not find a '" + AuthUtils.LOGIN_CONTEXT_SERVER + "' entry in this configuration: Server cannot start.";
             throw new IOException(errorMessage);
         }
         credentials.clear();
-        for(AppConfigurationEntry entry: configurationEntries) {
-            Map<String,?> options = entry.getOptions();
+        for (AppConfigurationEntry entry : configurationEntries) {
+            Map<String, ?> options = entry.getOptions();
             // Populate DIGEST-MD5 user -> password map with JAAS configuration entries from the "Server" section.
             // Usernames are distinguished from other options by prefixing the username with a "user_" prefix.
-            for(Map.Entry<String, ?> pair : options.entrySet()) {
+            for (Map.Entry<String, ?> pair : options.entrySet()) {
                 String key = pair.getKey();
                 if (key.startsWith(USER_PREFIX)) {
                     String userName = key.substring(USER_PREFIX.length());
-                    credentials.put(userName,(String)pair.getValue());
+                    credentials.put(userName, (String) pair.getValue());
                 }
             }
         }
@@ -98,7 +99,7 @@ public class ServerCallbackHandler implements CallbackHandler {
         if ("super".equals(this.userName) && System.getProperty(SYSPROP_SUPER_PASSWORD) != null) {
             // superuser: use Java system property for password, if available.
             pc.setPassword(System.getProperty(SYSPROP_SUPER_PASSWORD).toCharArray());
-        } else if (credentials.containsKey(userName) ) {
+        } else if (credentials.containsKey(userName)) {
             pc.setPassword(credentials.get(userName).toCharArray());
         } else {
             LOG.warn("No password found for user: " + userName);
@@ -106,7 +107,7 @@ public class ServerCallbackHandler implements CallbackHandler {
     }
 
     private void handleRealmCallback(RealmCallback rc) {
-        LOG.debug("handleRealmCallback: "+ rc.getDefaultText());
+        LOG.debug("handleRealmCallback: " + rc.getDefaultText());
         rc.setText(rc.getDefaultText());
     }
 
@@ -114,14 +115,14 @@ public class ServerCallbackHandler implements CallbackHandler {
         String authenticationID = ac.getAuthenticationID();
         LOG.info("Successfully authenticated client: authenticationID = " + authenticationID + " authorizationID = " + ac.getAuthorizationID());
 
-        //if authorizationId is not set, set it to authenticationId.
-        if(ac.getAuthorizationID() == null) {
+        // if authorizationId is not set, set it to authenticationId.
+        if (ac.getAuthorizationID() == null) {
             ac.setAuthorizedID(authenticationID);
         }
 
-        //When authNid and authZid are not equal , authNId is attempting to impersonate authZid, We
-        //add the authNid as the real user in reqContext's subject which will be used during authorization.
-        if(!authenticationID.equals(ac.getAuthorizationID())) {
+        // When authNid and authZid are not equal , authNId is attempting to impersonate authZid, We
+        // add the authNid as the real user in reqContext's subject which will be used during authorization.
+        if (!authenticationID.equals(ac.getAuthorizationID())) {
             LOG.info("Impersonation attempt  authenticationID = " + ac.getAuthenticationID() + " authorizationID = " + ac.getAuthorizationID());
             ReqContext.context().setRealPrincipal(new SaslTransportPlugin.User(ac.getAuthenticationID()));
         }

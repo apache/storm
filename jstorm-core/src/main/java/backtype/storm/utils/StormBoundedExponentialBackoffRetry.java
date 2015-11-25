@@ -31,12 +31,9 @@ public class StormBoundedExponentialBackoffRetry extends BoundedExponentialBacko
     private final int linearBaseSleepMs;
 
     /**
-     * The class provides generic exponential-linear backoff retry strategy for
-     * storm. It calculates threshold for exponentially increasing sleeptime
-     * for retries. Beyond this threshold, the sleeptime increase is linear.
-     * Also adds jitter for exponential/linear retry.
-     * It guarantees currSleepTimeMs >= prevSleepTimeMs and 
-     * baseSleepTimeMs <= currSleepTimeMs <= maxSleepTimeMs
+     * The class provides generic exponential-linear backoff retry strategy for storm. It calculates threshold for exponentially increasing sleeptime for
+     * retries. Beyond this threshold, the sleeptime increase is linear. Also adds jitter for exponential/linear retry. It guarantees currSleepTimeMs >=
+     * prevSleepTimeMs and baseSleepTimeMs <= currSleepTimeMs <= maxSleepTimeMs
      */
 
     public StormBoundedExponentialBackoffRetry(int baseSleepTimeMs, int maxSleepTimeMs, int maxRetries) {
@@ -44,17 +41,15 @@ public class StormBoundedExponentialBackoffRetry extends BoundedExponentialBacko
         expRetriesThreshold = 1;
         while ((1 << (expRetriesThreshold + 1)) < ((maxSleepTimeMs - baseSleepTimeMs) / 2))
             expRetriesThreshold++;
-        LOG.info("The baseSleepTimeMs [" + baseSleepTimeMs + "] the maxSleepTimeMs [" + maxSleepTimeMs + "] " +
-                "the maxRetries [" + maxRetries + "]");
+        LOG.info("The baseSleepTimeMs [" + baseSleepTimeMs + "] the maxSleepTimeMs [" + maxSleepTimeMs + "] " + "the maxRetries [" + maxRetries + "]");
         if (baseSleepTimeMs > maxSleepTimeMs) {
-            LOG.warn("Misconfiguration: the baseSleepTimeMs [" + baseSleepTimeMs + "] can't be greater than " +
-                    "the maxSleepTimeMs [" + maxSleepTimeMs + "].");
+            LOG.warn("Misconfiguration: the baseSleepTimeMs [" + baseSleepTimeMs + "] can't be greater than " + "the maxSleepTimeMs [" + maxSleepTimeMs + "].");
         }
-        if( maxRetries > 0 && maxRetries > expRetriesThreshold ) {
+        if (maxRetries > 0 && maxRetries > expRetriesThreshold) {
             this.stepSize = Math.max(1, (maxSleepTimeMs - (1 << expRetriesThreshold)) / (maxRetries - expRetriesThreshold));
         } else {
             this.stepSize = 1;
-	}
+        }
         this.linearBaseSleepMs = super.getBaseSleepTimeMs() + (1 << expRetriesThreshold);
     }
 
@@ -67,8 +62,7 @@ public class StormBoundedExponentialBackoffRetry extends BoundedExponentialBacko
             return sleepTimeMs;
         } else {
             int stepJitter = random.nextInt(stepSize);
-            return Math.min(super.getMaxSleepTimeMs(), (linearBaseSleepMs +
-                    (stepSize * (retryCount - expRetriesThreshold)) + stepJitter));
+            return Math.min(super.getMaxSleepTimeMs(), (linearBaseSleepMs + (stepSize * (retryCount - expRetriesThreshold)) + stepJitter));
         }
     }
 }

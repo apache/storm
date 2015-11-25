@@ -41,18 +41,18 @@ public class MetricsConsumerBolt implements IBolt {
     @Override
     public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
         try {
-            _metricsConsumer = (IMetricsConsumer)Class.forName(_consumerClassName).newInstance();
+            _metricsConsumer = (IMetricsConsumer) Class.forName(_consumerClassName).newInstance();
         } catch (Exception e) {
-            throw new RuntimeException("Could not instantiate a class listed in config under section " +
-                Config.TOPOLOGY_METRICS_CONSUMER_REGISTER + " with fully qualified name " + _consumerClassName, e);
+            throw new RuntimeException("Could not instantiate a class listed in config under section " + Config.TOPOLOGY_METRICS_CONSUMER_REGISTER
+                    + " with fully qualified name " + _consumerClassName, e);
         }
-        _metricsConsumer.prepare(stormConf, _registrationArgument, context, (IErrorReporter)collector);
+        _metricsConsumer.prepare(stormConf, _registrationArgument, context, (IErrorReporter) collector);
         _collector = collector;
     }
-    
+
     @Override
     public void execute(Tuple input) {
-        _metricsConsumer.handleDataPoints((IMetricsConsumer.TaskInfo)input.getValue(0), (Collection)input.getValue(1));
+        _metricsConsumer.handleDataPoints((IMetricsConsumer.TaskInfo) input.getValue(0), (Collection) input.getValue(1));
         _collector.ack(input);
     }
 
@@ -60,5 +60,5 @@ public class MetricsConsumerBolt implements IBolt {
     public void cleanup() {
         _metricsConsumer.cleanup();
     }
-    
+
 }

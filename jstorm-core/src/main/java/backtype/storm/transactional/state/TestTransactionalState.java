@@ -32,16 +32,13 @@ import org.apache.zookeeper.data.ACL;
 public class TestTransactionalState extends TransactionalState {
 
     /**
-     * Matching constructor in absence of a default constructor in the parent
-     * class.
+     * Matching constructor in absence of a default constructor in the parent class.
      */
     protected TestTransactionalState(Map conf, String id, Map componentConf, String subroot) {
         super(conf, id, componentConf, subroot);
     }
 
-    public static void createNode(CuratorFramework curator, 
-            String rootDir, byte[] data, List<ACL> acls, CreateMode mode)
-            throws Exception {
-       TransactionalState.createNode(curator, rootDir, data, acls, mode);
+    public static void createNode(CuratorFramework curator, String rootDir, byte[] data, List<ACL> acls, CreateMode mode) throws Exception {
+        TransactionalState.createNode(curator, rootDir, data, acls, mode);
     }
 }

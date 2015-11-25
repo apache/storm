@@ -22,10 +22,10 @@ import backtype.storm.generated.Grouping;
 import backtype.storm.grouping.CustomStreamGrouping;
 import backtype.storm.tuple.Fields;
 
-
 public interface InputDeclarer<T extends InputDeclarer> {
     /**
      * The stream is partitioned by the fields specified in the grouping.
+     * 
      * @param componentId
      * @param fields
      * @return
@@ -34,6 +34,7 @@ public interface InputDeclarer<T extends InputDeclarer> {
 
     /**
      * The stream is partitioned by the fields specified in the grouping.
+     * 
      * @param componentId
      * @param streamId
      * @param fields
@@ -42,16 +43,16 @@ public interface InputDeclarer<T extends InputDeclarer> {
     public T fieldsGrouping(String componentId, String streamId, Fields fields);
 
     /**
-     * The entire stream goes to a single one of the bolt's tasks.
-     * Specifically, it goes to the task with the lowest id.
+     * The entire stream goes to a single one of the bolt's tasks. Specifically, it goes to the task with the lowest id.
+     * 
      * @param componentId
      * @return
      */
     public T globalGrouping(String componentId);
 
     /**
-     * The entire stream goes to a single one of the bolt's tasks.
-     * Specifically, it goes to the task with the lowest id.
+     * The entire stream goes to a single one of the bolt's tasks. Specifically, it goes to the task with the lowest id.
+     * 
      * @param componentId
      * @param streamId
      * @return
@@ -59,16 +60,16 @@ public interface InputDeclarer<T extends InputDeclarer> {
     public T globalGrouping(String componentId, String streamId);
 
     /**
-     * Tuples are randomly distributed across the bolt's tasks in a way such that
-     * each bolt is guaranteed to get an equal number of tuples.
+     * Tuples are randomly distributed across the bolt's tasks in a way such that each bolt is guaranteed to get an equal number of tuples.
+     * 
      * @param componentId
      * @return
      */
     public T shuffleGrouping(String componentId);
 
     /**
-     * Tuples are randomly distributed across the bolt's tasks in a way such that
-     * each bolt is guaranteed to get an equal number of tuples.
+     * Tuples are randomly distributed across the bolt's tasks in a way such that each bolt is guaranteed to get an equal number of tuples.
+     * 
      * @param componentId
      * @param streamId
      * @return
@@ -76,29 +77,31 @@ public interface InputDeclarer<T extends InputDeclarer> {
     public T shuffleGrouping(String componentId, String streamId);
 
     /**
-     * If the target bolt has one or more tasks in the same worker process,
-     * tuples will be shuffled to just those in-process tasks.
-     * Otherwise, this acts like a normal shuffle grouping.
+     * If the target bolt has one or more tasks in the same worker process, tuples will be shuffled to just those in-process tasks. Otherwise, this acts like a
+     * normal shuffle grouping.
+     * 
      * @param componentId
      * @return
      */
     public T localOrShuffleGrouping(String componentId);
 
     /**
-     * If the target bolt has one or more tasks in the same worker process,
-     * tuples will be shuffled to just those in-process tasks.
-     * Otherwise, this acts like a normal shuffle grouping.
+     * If the target bolt has one or more tasks in the same worker process, tuples will be shuffled to just those in-process tasks. Otherwise, this acts like a
+     * normal shuffle grouping.
+     * 
      * @param componentId
      * @param streamId
      * @return
      */
     public T localOrShuffleGrouping(String componentId, String streamId);
-    
+
     public T localFirstGrouping(String componentId);
-    
+
     public T localFirstGrouping(String componentId, String streamId);
+
     /**
      * This grouping specifies that you don't care how the stream is grouped.
+     * 
      * @param componentId
      * @return
      */
@@ -106,6 +109,7 @@ public interface InputDeclarer<T extends InputDeclarer> {
 
     /**
      * This grouping specifies that you don't care how the stream is grouped.
+     * 
      * @param componentId
      * @param streamId
      * @return
@@ -114,6 +118,7 @@ public interface InputDeclarer<T extends InputDeclarer> {
 
     /**
      * The stream is replicated across all the bolt's tasks. Use this grouping with care.
+     * 
      * @param componentId
      * @return
      */
@@ -121,6 +126,7 @@ public interface InputDeclarer<T extends InputDeclarer> {
 
     /**
      * The stream is replicated across all the bolt's tasks. Use this grouping with care.
+     * 
      * @param componentId
      * @param streamId
      * @return
@@ -128,16 +134,16 @@ public interface InputDeclarer<T extends InputDeclarer> {
     public T allGrouping(String componentId, String streamId);
 
     /**
-     * A stream grouped this way means that the producer of the tuple decides
-     * which task of the consumer will receive this tuple.
+     * A stream grouped this way means that the producer of the tuple decides which task of the consumer will receive this tuple.
+     * 
      * @param componentId
      * @return
      */
     public T directGrouping(String componentId);
 
     /**
-     * A stream grouped this way means that the producer of the tuple decides
-     * which task of the consumer will receive this tuple.
+     * A stream grouped this way means that the producer of the tuple decides which task of the consumer will receive this tuple.
+     * 
      * @param componentId
      * @param streamId
      * @return
@@ -145,9 +151,9 @@ public interface InputDeclarer<T extends InputDeclarer> {
     public T directGrouping(String componentId, String streamId);
 
     /**
-     * Tuples are passed to two hashing functions and each target task is
-     * decided based on the comparison of the state of candidate nodes.
-     * @see   https://melmeric.files.wordpress.com/2014/11/the-power-of-both-choices-practical-load-balancing-for-distributed-stream-processing-engines.pdf
+     * Tuples are passed to two hashing functions and each target task is decided based on the comparison of the state of candidate nodes.
+     * 
+     * @see https://melmeric.files.wordpress.com/2014/11/the-power-of-both-choices-practical-load-balancing-for-distributed-stream-processing-engines.pdf
      * @param componentId
      * @param fields
      * @return
@@ -155,9 +161,9 @@ public interface InputDeclarer<T extends InputDeclarer> {
     public T partialKeyGrouping(String componentId, Fields fields);
 
     /**
-     * Tuples are passed to two hashing functions and each target task is
-     * decided based on the comparison of the state of candidate nodes.
-     * @see   https://melmeric.files.wordpress.com/2014/11/the-power-of-both-choices-practical-load-balancing-for-distributed-stream-processing-engines.pdf
+     * Tuples are passed to two hashing functions and each target task is decided based on the comparison of the state of candidate nodes.
+     * 
+     * @see https://melmeric.files.wordpress.com/2014/11/the-power-of-both-choices-practical-load-balancing-for-distributed-stream-processing-engines.pdf
      * @param componentId
      * @param streamId
      * @param fields
@@ -167,6 +173,7 @@ public interface InputDeclarer<T extends InputDeclarer> {
 
     /**
      * A custom stream grouping by implementing the CustomStreamGrouping interface.
+     * 
      * @param componentId
      * @param grouping
      * @return
@@ -175,13 +182,14 @@ public interface InputDeclarer<T extends InputDeclarer> {
 
     /**
      * A custom stream grouping by implementing the CustomStreamGrouping interface.
+     * 
      * @param componentId
      * @param streamId
      * @param grouping
      * @return
      */
     public T customGrouping(String componentId, String streamId, CustomStreamGrouping grouping);
-    
+
     public T grouping(GlobalStreamId id, Grouping grouping);
-    
+
 }

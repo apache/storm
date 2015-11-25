@@ -33,8 +33,7 @@ public class ProcessSimulator {
      * skip old function name: pid-counter
      */
 
-    protected static ConcurrentHashMap<String, WorkerShutdown> processMap =
-            new ConcurrentHashMap<String, WorkerShutdown>();
+    protected static ConcurrentHashMap<String, WorkerShutdown> processMap = new ConcurrentHashMap<String, WorkerShutdown>();
 
     /**
      * Register process handler old function name: register-process

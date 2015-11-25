@@ -41,11 +41,12 @@ public class ServerCallbackHandler implements CallbackHandler {
     private String userName;
 
     public ServerCallbackHandler(Configuration configuration, Map stormConf) throws IOException {
-        if (configuration==null) return;
+        if (configuration == null)
+            return;
 
         AppConfigurationEntry configurationEntries[] = configuration.getAppConfigurationEntry(AuthUtils.LOGIN_CONTEXT_SERVER);
         if (configurationEntries == null) {
-            String errorMessage = "Could not find a '"+AuthUtils.LOGIN_CONTEXT_SERVER+"' entry in this configuration: Server cannot start.";
+            String errorMessage = "Could not find a '" + AuthUtils.LOGIN_CONTEXT_SERVER + "' entry in this configuration: Server cannot start.";
             LOG.error(errorMessage);
             throw new IOException(errorMessage);
         }
@@ -78,14 +79,14 @@ public class ServerCallbackHandler implements CallbackHandler {
         String authenticationID = ac.getAuthenticationID();
         LOG.info("Successfully authenticated client: authenticationID=" + authenticationID + " authorizationID= " + ac.getAuthorizationID());
 
-        //if authorizationId is not set, set it to authenticationId.
-        if(ac.getAuthorizationID() == null) {
+        // if authorizationId is not set, set it to authenticationId.
+        if (ac.getAuthorizationID() == null) {
             ac.setAuthorizedID(authenticationID);
         }
 
-        //When authNid and authZid are not equal , authNId is attempting to impersonate authZid, We
-        //add the authNid as the real user in reqContext's subject which will be used during authorization.
-        if(!ac.getAuthenticationID().equals(ac.getAuthorizationID())) {
+        // When authNid and authZid are not equal , authNId is attempting to impersonate authZid, We
+        // add the authNid as the real user in reqContext's subject which will be used during authorization.
+        if (!ac.getAuthenticationID().equals(ac.getAuthorizationID())) {
             ReqContext.context().setRealPrincipal(new SaslTransportPlugin.User(ac.getAuthenticationID()));
         }
 

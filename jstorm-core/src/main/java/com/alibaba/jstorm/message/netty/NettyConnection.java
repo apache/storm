@@ -21,23 +21,23 @@ import java.io.Serializable;
 
 import com.alibaba.jstorm.utils.NetWorkUtils;
 
-public class NettyConnection implements Serializable{
+public class NettyConnection implements Serializable {
     protected String clientPort;
     protected String serverPort;
-    
+
     public String getClientPort() {
         return clientPort;
     }
-    
+
     public void setClientPort(String client, int port) {
         String ip = NetWorkUtils.host2Ip(client);
         clientPort = ip + ":" + port;
     }
-    
+
     public String getServerPort() {
         return serverPort;
     }
-    
+
     public void setServerPort(String server, int port) {
         String ip = NetWorkUtils.host2Ip(server);
         serverPort = ip + ":" + port;
@@ -47,12 +47,8 @@ public class NettyConnection implements Serializable{
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result =
-                prime * result
-                        + ((clientPort == null) ? 0 : clientPort.hashCode());
-        result =
-                prime * result
-                        + ((serverPort == null) ? 0 : serverPort.hashCode());
+        result = prime * result + ((clientPort == null) ? 0 : clientPort.hashCode());
+        result = prime * result + ((serverPort == null) ? 0 : serverPort.hashCode());
         return result;
     }
 
@@ -77,15 +73,14 @@ public class NettyConnection implements Serializable{
             return false;
         return true;
     }
-    
+
     @Override
     public String toString() {
-        return clientPort  + "->" + serverPort;
+        return clientPort + "->" + serverPort;
     }
-    
-    public static String mkString(String client, int clientPort, 
-            String server, int serverPort) {
+
+    public static String mkString(String client, int clientPort, String server, int serverPort) {
         return client + ":" + clientPort + "->" + server + ":" + serverPort;
     }
-    
+
 }

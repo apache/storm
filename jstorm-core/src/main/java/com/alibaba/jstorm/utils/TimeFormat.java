@@ -40,29 +40,24 @@ public class TimeFormat {
 
     public static final long ONE_DAY_HOURS = 24;
 
-    public static final long ONE_MINUTE_MILLISECONDS = ONE_MINUTE_SECONDS
-            * ONE_SECOND_MILLISECONDS;
+    public static final long ONE_MINUTE_MILLISECONDS = ONE_MINUTE_SECONDS * ONE_SECOND_MILLISECONDS;
 
-    public static final long ONE_HOUR_MILLISECONDS = ONE_HOUR_MINUTES
-            * ONE_MINUTE_MILLISECONDS;
+    public static final long ONE_HOUR_MILLISECONDS = ONE_HOUR_MINUTES * ONE_MINUTE_MILLISECONDS;
 
-    public static final long ONE_DAY_MILLISECONDS = ONE_DAY_HOURS
-            * ONE_HOUR_MILLISECONDS;
+    public static final long ONE_DAY_MILLISECONDS = ONE_DAY_HOURS * ONE_HOUR_MILLISECONDS;
 
     public static Date convertDate(String dateStr, String format) {
         Date date = null;
         try {
             if (format != null) {
-                SimpleDateFormat simpleDateFormat =
-                        new SimpleDateFormat(format);
+                SimpleDateFormat simpleDateFormat = new SimpleDateFormat(format);
                 date = simpleDateFormat.parse(dateStr);
             } else {
                 date = new Date(dateStr);
             }
 
         } catch (Exception ex) {
-            log.error("Failed to convert " + dateStr + " to Date, format:"
-                    + format);
+            log.error("Failed to convert " + dateStr + " to Date, format:" + format);
             return null;
         }
         return date;
@@ -77,8 +72,7 @@ public class TimeFormat {
             ret = sdf.format(date);
 
         } catch (Exception e) {
-            log.error("Failed to convert " + date + " to String, format:"
-                    + format);
+            log.error("Failed to convert " + date + " to String, format:" + format);
             return null;
         }
         return ret;
@@ -207,12 +201,9 @@ public class TimeFormat {
         tomorrow.set(Calendar.MINUTE, 0);
         Date startTime = tomorrow.getTime();
 
-        long hourdiff =
-                (startTime.getTime() - current.getTime())
-                        / ONE_HOUR_MILLISECONDS;
+        long hourdiff = (startTime.getTime() - current.getTime()) / ONE_HOUR_MILLISECONDS;
 
-        System.out.println("Current:" + current + ", tomorrow" + startTime
-                + ", diff hour" + hourdiff);
+        System.out.println("Current:" + current + ", tomorrow" + startTime + ", diff hour" + hourdiff);
 
     }
 

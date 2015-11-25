@@ -26,11 +26,9 @@ import org.slf4j.LoggerFactory;
 import com.alibaba.jstorm.callback.RunnableCallback;
 
 public class ReconnectRunnable extends RunnableCallback {
-    private static final Logger LOG = LoggerFactory
-            .getLogger(ReconnectRunnable.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ReconnectRunnable.class);
 
-    private BlockingQueue<NettyClient> queue =
-            new LinkedBlockingDeque<NettyClient>();
+    private BlockingQueue<NettyClient> queue = new LinkedBlockingDeque<NettyClient>();
 
     public void pushEvent(NettyClient client) {
         queue.offer(client);

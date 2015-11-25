@@ -30,8 +30,7 @@ public class EventManagerPusher extends RunnableCallback {
 
     private int frequence;
 
-    public EventManagerPusher(EventManager eventManager,
-            RunnableCallback event, int frequence) {
+    public EventManagerPusher(EventManager eventManager, RunnableCallback event, int frequence) {
         this.eventManager = eventManager;
         this.event = event;
         this.frequence = frequence;

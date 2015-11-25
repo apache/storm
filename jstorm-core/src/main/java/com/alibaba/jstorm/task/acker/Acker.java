@@ -17,25 +17,21 @@
  */
 package com.alibaba.jstorm.task.acker;
 
-import java.util.List;
-import java.util.Map;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import backtype.storm.Config;
 import backtype.storm.task.IBolt;
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.tuple.Tuple;
-
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.RotatingMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.List;
+import java.util.Map;
 
 /**
- * 
  * @author yannian/Longda
- * 
  */
 public class Acker implements IBolt {
 
@@ -57,27 +53,19 @@ public class Acker implements IBolt {
     private long rotateTime;
 
     @Override
-    public void prepare(Map stormConf, TopologyContext context,
-            OutputCollector collector) {
+    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
         this.collector = collector;
         // pending = new TimeCacheMap<Object, AckObject>(timeoutSec,
         // TIMEOUT_BUCKET_NUM);
         this.pending = new RotatingMap<Object, AckObject>(TIMEOUT_BUCKET_NUM);
-        this.rotateTime =
-                1000L
-                        * JStormUtils.parseInt(stormConf
-                                .get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS), 30)
-                        / (TIMEOUT_BUCKET_NUM - 1);
+        this.rotateTime = 1000L * JStormUtils.parseInt(stormConf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS), 30) / (TIMEOUT_BUCKET_NUM - 1);
     }
 
     @Override
     public void execute(Tuple input) {
         Object id = input.getValue(0);
-
         AckObject curr = pending.get(id);
-
         String stream_id = input.getSourceStreamId();
-
         if (Acker.ACKER_INIT_STREAM_ID.equals(stream_id)) {
             if (curr == null) {
                 curr = new AckObject();
@@ -95,17 +83,13 @@ public class Acker implements IBolt {
         } else if (Acker.ACKER_ACK_STREAM_ID.equals(stream_id)) {
             if (curr != null) {
                 curr.update_ack(input.getValue(1));
-
             } else {
                 // two case
                 // one is timeout
                 // the other is bolt's ack first come
                 curr = new AckObject();
-
-                curr.val = Long.valueOf(input.getLong(1));
-
+                curr.val = input.getLong(1);
                 pending.put(id, curr);
-
             }
         } else if (Acker.ACKER_FAIL_STREAM_ID.equals(stream_id)) {
             if (curr == null) {
@@ -113,31 +97,23 @@ public class Acker implements IBolt {
                 // already timeout, should go fail
                 return;
             }
-
             curr.failed = true;
-
         } else {
             LOG.info("Unknow source stream");
             return;
         }
 
         Integer task = curr.spout_task;
-
         if (task != null) {
-
             if (curr.val == 0) {
                 pending.remove(id);
                 List values = JStormUtils.mk_list(id);
-
                 collector.emitDirect(task, Acker.ACKER_ACK_STREAM_ID, values);
-
             } else {
-
                 if (curr.failed) {
                     pending.remove(id);
                     List values = JStormUtils.mk_list(id);
-                    collector.emitDirect(task, Acker.ACKER_FAIL_STREAM_ID,
-                            values);
+                    collector.emitDirect(task, Acker.ACKER_FAIL_STREAM_ID, values);
                 }
             }
         } else {

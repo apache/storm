@@ -193,44 +193,108 @@ class Iface:
     """
     pass
 
-  def workerUploadMetric(self, uploadMetrics):
+  def uploadTopologyMetrics(self, topologyId, topologyMetrics):
     """
     Parameters:
-     - uploadMetrics
+     - topologyId
+     - topologyMetrics
     """
     pass
 
-  def getTopologyMetric(self, topologyName):
+  def registerMetrics(self, topologyId, metrics):
     """
     Parameters:
-     - topologyName
+     - topologyId
+     - metrics
     """
     pass
 
-  def getNettyMetric(self, topologyName, pos):
+  def getTopologyMetrics(self, topologyId):
     """
     Parameters:
-     - topologyName
-     - pos
+     - topologyId
     """
     pass
 
-  def getServerNettyMetric(self, topologyName, serverName):
+  def getMetrics(self, topologyId, type):
     """
     Parameters:
-     - topologyName
-     - serverName
+     - topologyId
+     - type
+    """
+    pass
+
+  def getNettyMetrics(self, topologyId):
+    """
+    Parameters:
+     - topologyId
+    """
+    pass
+
+  def getNettyMetricsByHost(self, topologyId, host):
+    """
+    Parameters:
+     - topologyId
+     - host
+    """
+    pass
+
+  def getPagingNettyMetrics(self, topologyId, host, page):
+    """
+    Parameters:
+     - topologyId
+     - host
+     - page
+    """
+    pass
+
+  def getNettyMetricSizeByHost(self, topologyId, host):
+    """
+    Parameters:
+     - topologyId
+     - host
+    """
+    pass
+
+  def getTaskMetrics(self, topologyId, component):
+    """
+    Parameters:
+     - topologyId
+     - component
+    """
+    pass
+
+  def getTaskAndStreamMetrics(self, topologyId, taskId):
+    """
+    Parameters:
+     - topologyId
+     - taskId
+    """
+    pass
+
+  def getSummarizedTopologyMetrics(self, topologyId):
+    """
+    Parameters:
+     - topologyId
     """
     pass
 
   def getVersion(self):
     pass
 
-  def updateConf(self, name, conf):
+  def updateTopology(self, name, uploadedLocation, updateConf):
     """
     Parameters:
      - name
-     - conf
+     - uploadedLocation
+     - updateConf
+    """
+    pass
+
+  def updateTaskHeartbeat(self, taskHbs):
+    """
+    Parameters:
+     - taskHbs
     """
     pass
 
@@ -1046,23 +1110,25 @@ class Client(Iface):
       raise result.e
     raise TApplicationException(TApplicationException.MISSING_RESULT, "getUserTopology failed: unknown result");
 
-  def workerUploadMetric(self, uploadMetrics):
+  def uploadTopologyMetrics(self, topologyId, topologyMetrics):
     """
     Parameters:
-     - uploadMetrics
+     - topologyId
+     - topologyMetrics
     """
-    self.send_workerUploadMetric(uploadMetrics)
-    self.recv_workerUploadMetric()
+    self.send_uploadTopologyMetrics(topologyId, topologyMetrics)
+    self.recv_uploadTopologyMetrics()
 
-  def send_workerUploadMetric(self, uploadMetrics):
-    self._oprot.writeMessageBegin('workerUploadMetric', TMessageType.CALL, self._seqid)
-    args = workerUploadMetric_args()
-    args.uploadMetrics = uploadMetrics
+  def send_uploadTopologyMetrics(self, topologyId, topologyMetrics):
+    self._oprot.writeMessageBegin('uploadTopologyMetrics', TMessageType.CALL, self._seqid)
+    args = uploadTopologyMetrics_args()
+    args.topologyId = topologyId
+    args.topologyMetrics = topologyMetrics
     args.write(self._oprot)
     self._oprot.writeMessageEnd()
     self._oprot.trans.flush()
 
-  def recv_workerUploadMetric(self):
+  def recv_uploadTopologyMetrics(self):
     iprot = self._iprot
     (fname, mtype, rseqid) = iprot.readMessageBegin()
     if mtype == TMessageType.EXCEPTION:
@@ -1070,28 +1136,30 @@ class Client(Iface):
       x.read(iprot)
       iprot.readMessageEnd()
       raise x
-    result = workerUploadMetric_result()
+    result = uploadTopologyMetrics_result()
     result.read(iprot)
     iprot.readMessageEnd()
     return
 
-  def getTopologyMetric(self, topologyName):
+  def registerMetrics(self, topologyId, metrics):
     """
     Parameters:
-     - topologyName
+     - topologyId
+     - metrics
     """
-    self.send_getTopologyMetric(topologyName)
-    return self.recv_getTopologyMetric()
+    self.send_registerMetrics(topologyId, metrics)
+    return self.recv_registerMetrics()
 
-  def send_getTopologyMetric(self, topologyName):
-    self._oprot.writeMessageBegin('getTopologyMetric', TMessageType.CALL, self._seqid)
-    args = getTopologyMetric_args()
-    args.topologyName = topologyName
+  def send_registerMetrics(self, topologyId, metrics):
+    self._oprot.writeMessageBegin('registerMetrics', TMessageType.CALL, self._seqid)
+    args = registerMetrics_args()
+    args.topologyId = topologyId
+    args.metrics = metrics
     args.write(self._oprot)
     self._oprot.writeMessageEnd()
     self._oprot.trans.flush()
 
-  def recv_getTopologyMetric(self):
+  def recv_registerMetrics(self):
     iprot = self._iprot
     (fname, mtype, rseqid) = iprot.readMessageBegin()
     if mtype == TMessageType.EXCEPTION:
@@ -1099,32 +1167,30 @@ class Client(Iface):
       x.read(iprot)
       iprot.readMessageEnd()
       raise x
-    result = getTopologyMetric_result()
+    result = registerMetrics_result()
     result.read(iprot)
     iprot.readMessageEnd()
     if result.success is not None:
       return result.success
-    raise TApplicationException(TApplicationException.MISSING_RESULT, "getTopologyMetric failed: unknown result");
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "registerMetrics failed: unknown result");
 
-  def getNettyMetric(self, topologyName, pos):
+  def getTopologyMetrics(self, topologyId):
     """
     Parameters:
-     - topologyName
-     - pos
+     - topologyId
     """
-    self.send_getNettyMetric(topologyName, pos)
-    return self.recv_getNettyMetric()
+    self.send_getTopologyMetrics(topologyId)
+    return self.recv_getTopologyMetrics()
 
-  def send_getNettyMetric(self, topologyName, pos):
-    self._oprot.writeMessageBegin('getNettyMetric', TMessageType.CALL, self._seqid)
-    args = getNettyMetric_args()
-    args.topologyName = topologyName
-    args.pos = pos
+  def send_getTopologyMetrics(self, topologyId):
+    self._oprot.writeMessageBegin('getTopologyMetrics', TMessageType.CALL, self._seqid)
+    args = getTopologyMetrics_args()
+    args.topologyId = topologyId
     args.write(self._oprot)
     self._oprot.writeMessageEnd()
     self._oprot.trans.flush()
 
-  def recv_getNettyMetric(self):
+  def recv_getTopologyMetrics(self):
     iprot = self._iprot
     (fname, mtype, rseqid) = iprot.readMessageBegin()
     if mtype == TMessageType.EXCEPTION:
@@ -1132,32 +1198,32 @@ class Client(Iface):
       x.read(iprot)
       iprot.readMessageEnd()
       raise x
-    result = getNettyMetric_result()
+    result = getTopologyMetrics_result()
     result.read(iprot)
     iprot.readMessageEnd()
     if result.success is not None:
       return result.success
-    raise TApplicationException(TApplicationException.MISSING_RESULT, "getNettyMetric failed: unknown result");
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "getTopologyMetrics failed: unknown result");
 
-  def getServerNettyMetric(self, topologyName, serverName):
+  def getMetrics(self, topologyId, type):
     """
     Parameters:
-     - topologyName
-     - serverName
+     - topologyId
+     - type
     """
-    self.send_getServerNettyMetric(topologyName, serverName)
-    return self.recv_getServerNettyMetric()
+    self.send_getMetrics(topologyId, type)
+    return self.recv_getMetrics()
 
-  def send_getServerNettyMetric(self, topologyName, serverName):
-    self._oprot.writeMessageBegin('getServerNettyMetric', TMessageType.CALL, self._seqid)
-    args = getServerNettyMetric_args()
-    args.topologyName = topologyName
-    args.serverName = serverName
+  def send_getMetrics(self, topologyId, type):
+    self._oprot.writeMessageBegin('getMetrics', TMessageType.CALL, self._seqid)
+    args = getMetrics_args()
+    args.topologyId = topologyId
+    args.type = type
     args.write(self._oprot)
     self._oprot.writeMessageEnd()
     self._oprot.trans.flush()
 
-  def recv_getServerNettyMetric(self):
+  def recv_getMetrics(self):
     iprot = self._iprot
     (fname, mtype, rseqid) = iprot.readMessageBegin()
     if mtype == TMessageType.EXCEPTION:
@@ -1165,12 +1231,241 @@ class Client(Iface):
       x.read(iprot)
       iprot.readMessageEnd()
       raise x
-    result = getServerNettyMetric_result()
+    result = getMetrics_result()
     result.read(iprot)
     iprot.readMessageEnd()
     if result.success is not None:
       return result.success
-    raise TApplicationException(TApplicationException.MISSING_RESULT, "getServerNettyMetric failed: unknown result");
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "getMetrics failed: unknown result");
+
+  def getNettyMetrics(self, topologyId):
+    """
+    Parameters:
+     - topologyId
+    """
+    self.send_getNettyMetrics(topologyId)
+    return self.recv_getNettyMetrics()
+
+  def send_getNettyMetrics(self, topologyId):
+    self._oprot.writeMessageBegin('getNettyMetrics', TMessageType.CALL, self._seqid)
+    args = getNettyMetrics_args()
+    args.topologyId = topologyId
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_getNettyMetrics(self):
+    iprot = self._iprot
+    (fname, mtype, rseqid) = iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(iprot)
+      iprot.readMessageEnd()
+      raise x
+    result = getNettyMetrics_result()
+    result.read(iprot)
+    iprot.readMessageEnd()
+    if result.success is not None:
+      return result.success
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "getNettyMetrics failed: unknown result");
+
+  def getNettyMetricsByHost(self, topologyId, host):
+    """
+    Parameters:
+     - topologyId
+     - host
+    """
+    self.send_getNettyMetricsByHost(topologyId, host)
+    return self.recv_getNettyMetricsByHost()
+
+  def send_getNettyMetricsByHost(self, topologyId, host):
+    self._oprot.writeMessageBegin('getNettyMetricsByHost', TMessageType.CALL, self._seqid)
+    args = getNettyMetricsByHost_args()
+    args.topologyId = topologyId
+    args.host = host
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_getNettyMetricsByHost(self):
+    iprot = self._iprot
+    (fname, mtype, rseqid) = iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(iprot)
+      iprot.readMessageEnd()
+      raise x
+    result = getNettyMetricsByHost_result()
+    result.read(iprot)
+    iprot.readMessageEnd()
+    if result.success is not None:
+      return result.success
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "getNettyMetricsByHost failed: unknown result");
+
+  def getPagingNettyMetrics(self, topologyId, host, page):
+    """
+    Parameters:
+     - topologyId
+     - host
+     - page
+    """
+    self.send_getPagingNettyMetrics(topologyId, host, page)
+    return self.recv_getPagingNettyMetrics()
+
+  def send_getPagingNettyMetrics(self, topologyId, host, page):
+    self._oprot.writeMessageBegin('getPagingNettyMetrics', TMessageType.CALL, self._seqid)
+    args = getPagingNettyMetrics_args()
+    args.topologyId = topologyId
+    args.host = host
+    args.page = page
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_getPagingNettyMetrics(self):
+    iprot = self._iprot
+    (fname, mtype, rseqid) = iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(iprot)
+      iprot.readMessageEnd()
+      raise x
+    result = getPagingNettyMetrics_result()
+    result.read(iprot)
+    iprot.readMessageEnd()
+    if result.success is not None:
+      return result.success
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "getPagingNettyMetrics failed: unknown result");
+
+  def getNettyMetricSizeByHost(self, topologyId, host):
+    """
+    Parameters:
+     - topologyId
+     - host
+    """
+    self.send_getNettyMetricSizeByHost(topologyId, host)
+    return self.recv_getNettyMetricSizeByHost()
+
+  def send_getNettyMetricSizeByHost(self, topologyId, host):
+    self._oprot.writeMessageBegin('getNettyMetricSizeByHost', TMessageType.CALL, self._seqid)
+    args = getNettyMetricSizeByHost_args()
+    args.topologyId = topologyId
+    args.host = host
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_getNettyMetricSizeByHost(self):
+    iprot = self._iprot
+    (fname, mtype, rseqid) = iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(iprot)
+      iprot.readMessageEnd()
+      raise x
+    result = getNettyMetricSizeByHost_result()
+    result.read(iprot)
+    iprot.readMessageEnd()
+    if result.success is not None:
+      return result.success
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "getNettyMetricSizeByHost failed: unknown result");
+
+  def getTaskMetrics(self, topologyId, component):
+    """
+    Parameters:
+     - topologyId
+     - component
+    """
+    self.send_getTaskMetrics(topologyId, component)
+    return self.recv_getTaskMetrics()
+
+  def send_getTaskMetrics(self, topologyId, component):
+    self._oprot.writeMessageBegin('getTaskMetrics', TMessageType.CALL, self._seqid)
+    args = getTaskMetrics_args()
+    args.topologyId = topologyId
+    args.component = component
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_getTaskMetrics(self):
+    iprot = self._iprot
+    (fname, mtype, rseqid) = iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(iprot)
+      iprot.readMessageEnd()
+      raise x
+    result = getTaskMetrics_result()
+    result.read(iprot)
+    iprot.readMessageEnd()
+    if result.success is not None:
+      return result.success
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "getTaskMetrics failed: unknown result");
+
+  def getTaskAndStreamMetrics(self, topologyId, taskId):
+    """
+    Parameters:
+     - topologyId
+     - taskId
+    """
+    self.send_getTaskAndStreamMetrics(topologyId, taskId)
+    return self.recv_getTaskAndStreamMetrics()
+
+  def send_getTaskAndStreamMetrics(self, topologyId, taskId):
+    self._oprot.writeMessageBegin('getTaskAndStreamMetrics', TMessageType.CALL, self._seqid)
+    args = getTaskAndStreamMetrics_args()
+    args.topologyId = topologyId
+    args.taskId = taskId
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_getTaskAndStreamMetrics(self):
+    iprot = self._iprot
+    (fname, mtype, rseqid) = iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(iprot)
+      iprot.readMessageEnd()
+      raise x
+    result = getTaskAndStreamMetrics_result()
+    result.read(iprot)
+    iprot.readMessageEnd()
+    if result.success is not None:
+      return result.success
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "getTaskAndStreamMetrics failed: unknown result");
+
+  def getSummarizedTopologyMetrics(self, topologyId):
+    """
+    Parameters:
+     - topologyId
+    """
+    self.send_getSummarizedTopologyMetrics(topologyId)
+    return self.recv_getSummarizedTopologyMetrics()
+
+  def send_getSummarizedTopologyMetrics(self, topologyId):
+    self._oprot.writeMessageBegin('getSummarizedTopologyMetrics', TMessageType.CALL, self._seqid)
+    args = getSummarizedTopologyMetrics_args()
+    args.topologyId = topologyId
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_getSummarizedTopologyMetrics(self):
+    iprot = self._iprot
+    (fname, mtype, rseqid) = iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(iprot)
+      iprot.readMessageEnd()
+      raise x
+    result = getSummarizedTopologyMetrics_result()
+    result.read(iprot)
+    iprot.readMessageEnd()
+    if result.success is not None:
+      return result.success
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "getSummarizedTopologyMetrics failed: unknown result");
 
   def getVersion(self):
     self.send_getVersion()
@@ -1198,25 +1493,27 @@ class Client(Iface):
       return result.success
     raise TApplicationException(TApplicationException.MISSING_RESULT, "getVersion failed: unknown result");
 
-  def updateConf(self, name, conf):
+  def updateTopology(self, name, uploadedLocation, updateConf):
     """
     Parameters:
      - name
-     - conf
+     - uploadedLocation
+     - updateConf
     """
-    self.send_updateConf(name, conf)
-    self.recv_updateConf()
+    self.send_updateTopology(name, uploadedLocation, updateConf)
+    self.recv_updateTopology()
 
-  def send_updateConf(self, name, conf):
-    self._oprot.writeMessageBegin('updateConf', TMessageType.CALL, self._seqid)
-    args = updateConf_args()
+  def send_updateTopology(self, name, uploadedLocation, updateConf):
+    self._oprot.writeMessageBegin('updateTopology', TMessageType.CALL, self._seqid)
+    args = updateTopology_args()
     args.name = name
-    args.conf = conf
+    args.uploadedLocation = uploadedLocation
+    args.updateConf = updateConf
     args.write(self._oprot)
     self._oprot.writeMessageEnd()
     self._oprot.trans.flush()
 
-  def recv_updateConf(self):
+  def recv_updateTopology(self):
     iprot = self._iprot
     (fname, mtype, rseqid) = iprot.readMessageBegin()
     if mtype == TMessageType.EXCEPTION:
@@ -1224,13 +1521,42 @@ class Client(Iface):
       x.read(iprot)
       iprot.readMessageEnd()
       raise x
-    result = updateConf_result()
+    result = updateTopology_result()
     result.read(iprot)
     iprot.readMessageEnd()
     if result.e is not None:
       raise result.e
     if result.ite is not None:
       raise result.ite
+    return
+
+  def updateTaskHeartbeat(self, taskHbs):
+    """
+    Parameters:
+     - taskHbs
+    """
+    self.send_updateTaskHeartbeat(taskHbs)
+    self.recv_updateTaskHeartbeat()
+
+  def send_updateTaskHeartbeat(self, taskHbs):
+    self._oprot.writeMessageBegin('updateTaskHeartbeat', TMessageType.CALL, self._seqid)
+    args = updateTaskHeartbeat_args()
+    args.taskHbs = taskHbs
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_updateTaskHeartbeat(self):
+    iprot = self._iprot
+    (fname, mtype, rseqid) = iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(iprot)
+      iprot.readMessageEnd()
+      raise x
+    result = updateTaskHeartbeat_result()
+    result.read(iprot)
+    iprot.readMessageEnd()
     return
 
 
@@ -1263,12 +1589,20 @@ class Processor(Iface, TProcessor):
     self._processMap["getTopologyInfoByName"] = Processor.process_getTopologyInfoByName
     self._processMap["getTopology"] = Processor.process_getTopology
     self._processMap["getUserTopology"] = Processor.process_getUserTopology
-    self._processMap["workerUploadMetric"] = Processor.process_workerUploadMetric
-    self._processMap["getTopologyMetric"] = Processor.process_getTopologyMetric
-    self._processMap["getNettyMetric"] = Processor.process_getNettyMetric
-    self._processMap["getServerNettyMetric"] = Processor.process_getServerNettyMetric
+    self._processMap["uploadTopologyMetrics"] = Processor.process_uploadTopologyMetrics
+    self._processMap["registerMetrics"] = Processor.process_registerMetrics
+    self._processMap["getTopologyMetrics"] = Processor.process_getTopologyMetrics
+    self._processMap["getMetrics"] = Processor.process_getMetrics
+    self._processMap["getNettyMetrics"] = Processor.process_getNettyMetrics
+    self._processMap["getNettyMetricsByHost"] = Processor.process_getNettyMetricsByHost
+    self._processMap["getPagingNettyMetrics"] = Processor.process_getPagingNettyMetrics
+    self._processMap["getNettyMetricSizeByHost"] = Processor.process_getNettyMetricSizeByHost
+    self._processMap["getTaskMetrics"] = Processor.process_getTaskMetrics
+    self._processMap["getTaskAndStreamMetrics"] = Processor.process_getTaskAndStreamMetrics
+    self._processMap["getSummarizedTopologyMetrics"] = Processor.process_getSummarizedTopologyMetrics
     self._processMap["getVersion"] = Processor.process_getVersion
-    self._processMap["updateConf"] = Processor.process_updateConf
+    self._processMap["updateTopology"] = Processor.process_updateTopology
+    self._processMap["updateTaskHeartbeat"] = Processor.process_updateTaskHeartbeat
 
   def process(self, iprot, oprot):
     (name, type, seqid) = iprot.readMessageBegin()
@@ -1622,46 +1956,123 @@ class Processor(Iface, TProcessor):
     oprot.writeMessageEnd()
     oprot.trans.flush()
 
-  def process_workerUploadMetric(self, seqid, iprot, oprot):
-    args = workerUploadMetric_args()
+  def process_uploadTopologyMetrics(self, seqid, iprot, oprot):
+    args = uploadTopologyMetrics_args()
     args.read(iprot)
     iprot.readMessageEnd()
-    result = workerUploadMetric_result()
-    self._handler.workerUploadMetric(args.uploadMetrics)
-    oprot.writeMessageBegin("workerUploadMetric", TMessageType.REPLY, seqid)
+    result = uploadTopologyMetrics_result()
+    self._handler.uploadTopologyMetrics(args.topologyId, args.topologyMetrics)
+    oprot.writeMessageBegin("uploadTopologyMetrics", TMessageType.REPLY, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
 
-  def process_getTopologyMetric(self, seqid, iprot, oprot):
-    args = getTopologyMetric_args()
+  def process_registerMetrics(self, seqid, iprot, oprot):
+    args = registerMetrics_args()
     args.read(iprot)
     iprot.readMessageEnd()
-    result = getTopologyMetric_result()
-    result.success = self._handler.getTopologyMetric(args.topologyName)
-    oprot.writeMessageBegin("getTopologyMetric", TMessageType.REPLY, seqid)
+    result = registerMetrics_result()
+    result.success = self._handler.registerMetrics(args.topologyId, args.metrics)
+    oprot.writeMessageBegin("registerMetrics", TMessageType.REPLY, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
 
-  def process_getNettyMetric(self, seqid, iprot, oprot):
-    args = getNettyMetric_args()
+  def process_getTopologyMetrics(self, seqid, iprot, oprot):
+    args = getTopologyMetrics_args()
     args.read(iprot)
     iprot.readMessageEnd()
-    result = getNettyMetric_result()
-    result.success = self._handler.getNettyMetric(args.topologyName, args.pos)
-    oprot.writeMessageBegin("getNettyMetric", TMessageType.REPLY, seqid)
+    result = getTopologyMetrics_result()
+    result.success = self._handler.getTopologyMetrics(args.topologyId)
+    oprot.writeMessageBegin("getTopologyMetrics", TMessageType.REPLY, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
 
-  def process_getServerNettyMetric(self, seqid, iprot, oprot):
-    args = getServerNettyMetric_args()
+  def process_getMetrics(self, seqid, iprot, oprot):
+    args = getMetrics_args()
     args.read(iprot)
     iprot.readMessageEnd()
-    result = getServerNettyMetric_result()
-    result.success = self._handler.getServerNettyMetric(args.topologyName, args.serverName)
-    oprot.writeMessageBegin("getServerNettyMetric", TMessageType.REPLY, seqid)
+    result = getMetrics_result()
+    result.success = self._handler.getMetrics(args.topologyId, args.type)
+    oprot.writeMessageBegin("getMetrics", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_getNettyMetrics(self, seqid, iprot, oprot):
+    args = getNettyMetrics_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = getNettyMetrics_result()
+    result.success = self._handler.getNettyMetrics(args.topologyId)
+    oprot.writeMessageBegin("getNettyMetrics", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_getNettyMetricsByHost(self, seqid, iprot, oprot):
+    args = getNettyMetricsByHost_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = getNettyMetricsByHost_result()
+    result.success = self._handler.getNettyMetricsByHost(args.topologyId, args.host)
+    oprot.writeMessageBegin("getNettyMetricsByHost", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_getPagingNettyMetrics(self, seqid, iprot, oprot):
+    args = getPagingNettyMetrics_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = getPagingNettyMetrics_result()
+    result.success = self._handler.getPagingNettyMetrics(args.topologyId, args.host, args.page)
+    oprot.writeMessageBegin("getPagingNettyMetrics", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_getNettyMetricSizeByHost(self, seqid, iprot, oprot):
+    args = getNettyMetricSizeByHost_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = getNettyMetricSizeByHost_result()
+    result.success = self._handler.getNettyMetricSizeByHost(args.topologyId, args.host)
+    oprot.writeMessageBegin("getNettyMetricSizeByHost", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_getTaskMetrics(self, seqid, iprot, oprot):
+    args = getTaskMetrics_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = getTaskMetrics_result()
+    result.success = self._handler.getTaskMetrics(args.topologyId, args.component)
+    oprot.writeMessageBegin("getTaskMetrics", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_getTaskAndStreamMetrics(self, seqid, iprot, oprot):
+    args = getTaskAndStreamMetrics_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = getTaskAndStreamMetrics_result()
+    result.success = self._handler.getTaskAndStreamMetrics(args.topologyId, args.taskId)
+    oprot.writeMessageBegin("getTaskAndStreamMetrics", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_getSummarizedTopologyMetrics(self, seqid, iprot, oprot):
+    args = getSummarizedTopologyMetrics_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = getSummarizedTopologyMetrics_result()
+    result.success = self._handler.getSummarizedTopologyMetrics(args.topologyId)
+    oprot.writeMessageBegin("getSummarizedTopologyMetrics", TMessageType.REPLY, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
@@ -1677,18 +2088,29 @@ class Processor(Iface, TProcessor):
     oprot.writeMessageEnd()
     oprot.trans.flush()
 
-  def process_updateConf(self, seqid, iprot, oprot):
-    args = updateConf_args()
+  def process_updateTopology(self, seqid, iprot, oprot):
+    args = updateTopology_args()
     args.read(iprot)
     iprot.readMessageEnd()
-    result = updateConf_result()
+    result = updateTopology_result()
     try:
-      self._handler.updateConf(args.name, args.conf)
+      self._handler.updateTopology(args.name, args.uploadedLocation, args.updateConf)
     except NotAliveException, e:
       result.e = e
     except InvalidTopologyException, ite:
       result.ite = ite
-    oprot.writeMessageBegin("updateConf", TMessageType.REPLY, seqid)
+    oprot.writeMessageBegin("updateTopology", TMessageType.REPLY, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_updateTaskHeartbeat(self, seqid, iprot, oprot):
+    args = updateTaskHeartbeat_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = updateTaskHeartbeat_result()
+    self._handler.updateTaskHeartbeat(args.taskHbs)
+    oprot.writeMessageBegin("updateTaskHeartbeat", TMessageType.REPLY, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
@@ -5174,131 +5596,22 @@ class getUserTopology_result:
   def __ne__(self, other):
     return not (self == other)
 
-class workerUploadMetric_args:
+class uploadTopologyMetrics_args:
   """
   Attributes:
-   - uploadMetrics
+   - topologyId
+   - topologyMetrics
   """
 
   thrift_spec = (
     None, # 0
-    (1, TType.STRUCT, 'uploadMetrics', (WorkerUploadMetrics, WorkerUploadMetrics.thrift_spec), None, ), # 1
+    (1, TType.STRING, 'topologyId', None, None, ), # 1
+    (2, TType.STRUCT, 'topologyMetrics', (TopologyMetric, TopologyMetric.thrift_spec), None, ), # 2
   )
 
-  def __init__(self, uploadMetrics=None,):
-    self.uploadMetrics = uploadMetrics
-
-  def read(self, iprot):
-    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
-      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
-      return
-    iprot.readStructBegin()
-    while True:
-      (fname, ftype, fid) = iprot.readFieldBegin()
-      if ftype == TType.STOP:
-        break
-      if fid == 1:
-        if ftype == TType.STRUCT:
-          self.uploadMetrics = WorkerUploadMetrics()
-          self.uploadMetrics.read(iprot)
-        else:
-          iprot.skip(ftype)
-      else:
-        iprot.skip(ftype)
-      iprot.readFieldEnd()
-    iprot.readStructEnd()
-
-  def write(self, oprot):
-    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
-      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
-      return
-    oprot.writeStructBegin('workerUploadMetric_args')
-    if self.uploadMetrics is not None:
-      oprot.writeFieldBegin('uploadMetrics', TType.STRUCT, 1)
-      self.uploadMetrics.write(oprot)
-      oprot.writeFieldEnd()
-    oprot.writeFieldStop()
-    oprot.writeStructEnd()
-
-  def validate(self):
-    return
-
-
-  def __hash__(self):
-    value = 17
-    value = (value * 31) ^ hash(self.uploadMetrics)
-    return value
-
-  def __repr__(self):
-    L = ['%s=%r' % (key, value)
-      for key, value in self.__dict__.iteritems()]
-    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
-
-  def __eq__(self, other):
-    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-  def __ne__(self, other):
-    return not (self == other)
-
-class workerUploadMetric_result:
-
-  thrift_spec = (
-  )
-
-  def read(self, iprot):
-    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
-      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
-      return
-    iprot.readStructBegin()
-    while True:
-      (fname, ftype, fid) = iprot.readFieldBegin()
-      if ftype == TType.STOP:
-        break
-      else:
-        iprot.skip(ftype)
-      iprot.readFieldEnd()
-    iprot.readStructEnd()
-
-  def write(self, oprot):
-    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
-      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
-      return
-    oprot.writeStructBegin('workerUploadMetric_result')
-    oprot.writeFieldStop()
-    oprot.writeStructEnd()
-
-  def validate(self):
-    return
-
-
-  def __hash__(self):
-    value = 17
-    return value
-
-  def __repr__(self):
-    L = ['%s=%r' % (key, value)
-      for key, value in self.__dict__.iteritems()]
-    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
-
-  def __eq__(self, other):
-    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
-
-  def __ne__(self, other):
-    return not (self == other)
-
-class getTopologyMetric_args:
-  """
-  Attributes:
-   - topologyName
-  """
-
-  thrift_spec = (
-    None, # 0
-    (1, TType.STRING, 'topologyName', None, None, ), # 1
-  )
-
-  def __init__(self, topologyName=None,):
-    self.topologyName = topologyName
+  def __init__(self, topologyId=None, topologyMetrics=None,):
+    self.topologyId = topologyId
+    self.topologyMetrics = topologyMetrics
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -5311,7 +5624,13 @@ class getTopologyMetric_args:
         break
       if fid == 1:
         if ftype == TType.STRING:
-          self.topologyName = iprot.readString().decode('utf-8')
+          self.topologyId = iprot.readString().decode('utf-8')
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.STRUCT:
+          self.topologyMetrics = TopologyMetric()
+          self.topologyMetrics.read(iprot)
         else:
           iprot.skip(ftype)
       else:
@@ -5323,10 +5642,14 @@ class getTopologyMetric_args:
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('getTopologyMetric_args')
-    if self.topologyName is not None:
-      oprot.writeFieldBegin('topologyName', TType.STRING, 1)
-      oprot.writeString(self.topologyName.encode('utf-8'))
+    oprot.writeStructBegin('uploadTopologyMetrics_args')
+    if self.topologyId is not None:
+      oprot.writeFieldBegin('topologyId', TType.STRING, 1)
+      oprot.writeString(self.topologyId.encode('utf-8'))
+      oprot.writeFieldEnd()
+    if self.topologyMetrics is not None:
+      oprot.writeFieldBegin('topologyMetrics', TType.STRUCT, 2)
+      self.topologyMetrics.write(oprot)
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
@@ -5337,7 +5660,8 @@ class getTopologyMetric_args:
 
   def __hash__(self):
     value = 17
-    value = (value * 31) ^ hash(self.topologyName)
+    value = (value * 31) ^ hash(self.topologyId)
+    value = (value * 31) ^ hash(self.topologyMetrics)
     return value
 
   def __repr__(self):
@@ -5351,7 +5675,278 @@ class getTopologyMetric_args:
   def __ne__(self, other):
     return not (self == other)
 
-class getTopologyMetric_result:
+class uploadTopologyMetrics_result:
+
+  thrift_spec = (
+  )
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('uploadTopologyMetrics_result')
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __hash__(self):
+    value = 17
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class registerMetrics_args:
+  """
+  Attributes:
+   - topologyId
+   - metrics
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'topologyId', None, None, ), # 1
+    (2, TType.SET, 'metrics', (TType.STRING,None), None, ), # 2
+  )
+
+  def __init__(self, topologyId=None, metrics=None,):
+    self.topologyId = topologyId
+    self.metrics = metrics
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRING:
+          self.topologyId = iprot.readString().decode('utf-8')
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.SET:
+          self.metrics = set()
+          (_etype209, _size206) = iprot.readSetBegin()
+          for _i210 in xrange(_size206):
+            _elem211 = iprot.readString().decode('utf-8')
+            self.metrics.add(_elem211)
+          iprot.readSetEnd()
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('registerMetrics_args')
+    if self.topologyId is not None:
+      oprot.writeFieldBegin('topologyId', TType.STRING, 1)
+      oprot.writeString(self.topologyId.encode('utf-8'))
+      oprot.writeFieldEnd()
+    if self.metrics is not None:
+      oprot.writeFieldBegin('metrics', TType.SET, 2)
+      oprot.writeSetBegin(TType.STRING, len(self.metrics))
+      for iter212 in self.metrics:
+        oprot.writeString(iter212.encode('utf-8'))
+      oprot.writeSetEnd()
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.topologyId)
+    value = (value * 31) ^ hash(self.metrics)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class registerMetrics_result:
+  """
+  Attributes:
+   - success
+  """
+
+  thrift_spec = (
+    (0, TType.MAP, 'success', (TType.STRING,None,TType.I64,None), None, ), # 0
+  )
+
+  def __init__(self, success=None,):
+    self.success = success
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 0:
+        if ftype == TType.MAP:
+          self.success = {}
+          (_ktype214, _vtype215, _size213 ) = iprot.readMapBegin()
+          for _i217 in xrange(_size213):
+            _key218 = iprot.readString().decode('utf-8')
+            _val219 = iprot.readI64();
+            self.success[_key218] = _val219
+          iprot.readMapEnd()
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('registerMetrics_result')
+    if self.success is not None:
+      oprot.writeFieldBegin('success', TType.MAP, 0)
+      oprot.writeMapBegin(TType.STRING, TType.I64, len(self.success))
+      for kiter220,viter221 in self.success.items():
+        oprot.writeString(kiter220.encode('utf-8'))
+        oprot.writeI64(viter221)
+      oprot.writeMapEnd()
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.success)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class getTopologyMetrics_args:
+  """
+  Attributes:
+   - topologyId
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'topologyId', None, None, ), # 1
+  )
+
+  def __init__(self, topologyId=None,):
+    self.topologyId = topologyId
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRING:
+          self.topologyId = iprot.readString().decode('utf-8')
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('getTopologyMetrics_args')
+    if self.topologyId is not None:
+      oprot.writeFieldBegin('topologyId', TType.STRING, 1)
+      oprot.writeString(self.topologyId.encode('utf-8'))
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.topologyId)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class getTopologyMetrics_result:
   """
   Attributes:
    - success
@@ -5388,7 +5983,7 @@ class getTopologyMetric_result:
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('getTopologyMetric_result')
+    oprot.writeStructBegin('getTopologyMetrics_result')
     if self.success is not None:
       oprot.writeFieldBegin('success', TType.STRUCT, 0)
       self.success.write(oprot)
@@ -5416,22 +6011,22 @@ class getTopologyMetric_result:
   def __ne__(self, other):
     return not (self == other)
 
-class getNettyMetric_args:
+class getMetrics_args:
   """
   Attributes:
-   - topologyName
-   - pos
+   - topologyId
+   - type
   """
 
   thrift_spec = (
     None, # 0
-    (1, TType.STRING, 'topologyName', None, None, ), # 1
-    (2, TType.I32, 'pos', None, None, ), # 2
+    (1, TType.STRING, 'topologyId', None, None, ), # 1
+    (2, TType.I32, 'type', None, None, ), # 2
   )
 
-  def __init__(self, topologyName=None, pos=None,):
-    self.topologyName = topologyName
-    self.pos = pos
+  def __init__(self, topologyId=None, type=None,):
+    self.topologyId = topologyId
+    self.type = type
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -5444,12 +6039,12 @@ class getNettyMetric_args:
         break
       if fid == 1:
         if ftype == TType.STRING:
-          self.topologyName = iprot.readString().decode('utf-8')
+          self.topologyId = iprot.readString().decode('utf-8')
         else:
           iprot.skip(ftype)
       elif fid == 2:
         if ftype == TType.I32:
-          self.pos = iprot.readI32();
+          self.type = iprot.readI32();
         else:
           iprot.skip(ftype)
       else:
@@ -5461,14 +6056,14 @@ class getNettyMetric_args:
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('getNettyMetric_args')
-    if self.topologyName is not None:
-      oprot.writeFieldBegin('topologyName', TType.STRING, 1)
-      oprot.writeString(self.topologyName.encode('utf-8'))
+    oprot.writeStructBegin('getMetrics_args')
+    if self.topologyId is not None:
+      oprot.writeFieldBegin('topologyId', TType.STRING, 1)
+      oprot.writeString(self.topologyId.encode('utf-8'))
       oprot.writeFieldEnd()
-    if self.pos is not None:
-      oprot.writeFieldBegin('pos', TType.I32, 2)
-      oprot.writeI32(self.pos)
+    if self.type is not None:
+      oprot.writeFieldBegin('type', TType.I32, 2)
+      oprot.writeI32(self.type)
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
@@ -5479,8 +6074,8 @@ class getNettyMetric_args:
 
   def __hash__(self):
     value = 17
-    value = (value * 31) ^ hash(self.topologyName)
-    value = (value * 31) ^ hash(self.pos)
+    value = (value * 31) ^ hash(self.topologyId)
+    value = (value * 31) ^ hash(self.type)
     return value
 
   def __repr__(self):
@@ -5494,14 +6089,152 @@ class getNettyMetric_args:
   def __ne__(self, other):
     return not (self == other)
 
-class getNettyMetric_result:
+class getMetrics_result:
   """
   Attributes:
    - success
   """
 
   thrift_spec = (
-    (0, TType.STRUCT, 'success', (NettyMetric, NettyMetric.thrift_spec), None, ), # 0
+    (0, TType.LIST, 'success', (TType.STRUCT,(MetricInfo, MetricInfo.thrift_spec)), None, ), # 0
+  )
+
+  def __init__(self, success=None,):
+    self.success = success
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 0:
+        if ftype == TType.LIST:
+          self.success = []
+          (_etype225, _size222) = iprot.readListBegin()
+          for _i226 in xrange(_size222):
+            _elem227 = MetricInfo()
+            _elem227.read(iprot)
+            self.success.append(_elem227)
+          iprot.readListEnd()
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('getMetrics_result')
+    if self.success is not None:
+      oprot.writeFieldBegin('success', TType.LIST, 0)
+      oprot.writeListBegin(TType.STRUCT, len(self.success))
+      for iter228 in self.success:
+        iter228.write(oprot)
+      oprot.writeListEnd()
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.success)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class getNettyMetrics_args:
+  """
+  Attributes:
+   - topologyId
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'topologyId', None, None, ), # 1
+  )
+
+  def __init__(self, topologyId=None,):
+    self.topologyId = topologyId
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRING:
+          self.topologyId = iprot.readString().decode('utf-8')
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('getNettyMetrics_args')
+    if self.topologyId is not None:
+      oprot.writeFieldBegin('topologyId', TType.STRING, 1)
+      oprot.writeString(self.topologyId.encode('utf-8'))
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.topologyId)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class getNettyMetrics_result:
+  """
+  Attributes:
+   - success
+  """
+
+  thrift_spec = (
+    (0, TType.STRUCT, 'success', (MetricInfo, MetricInfo.thrift_spec), None, ), # 0
   )
 
   def __init__(self, success=None,):
@@ -5518,7 +6251,7 @@ class getNettyMetric_result:
         break
       if fid == 0:
         if ftype == TType.STRUCT:
-          self.success = NettyMetric()
+          self.success = MetricInfo()
           self.success.read(iprot)
         else:
           iprot.skip(ftype)
@@ -5531,7 +6264,7 @@ class getNettyMetric_result:
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('getNettyMetric_result')
+    oprot.writeStructBegin('getNettyMetrics_result')
     if self.success is not None:
       oprot.writeFieldBegin('success', TType.STRUCT, 0)
       self.success.write(oprot)
@@ -5559,22 +6292,22 @@ class getNettyMetric_result:
   def __ne__(self, other):
     return not (self == other)
 
-class getServerNettyMetric_args:
+class getNettyMetricsByHost_args:
   """
   Attributes:
-   - topologyName
-   - serverName
+   - topologyId
+   - host
   """
 
   thrift_spec = (
     None, # 0
-    (1, TType.STRING, 'topologyName', None, None, ), # 1
-    (2, TType.STRING, 'serverName', None, None, ), # 2
+    (1, TType.STRING, 'topologyId', None, None, ), # 1
+    (2, TType.STRING, 'host', None, None, ), # 2
   )
 
-  def __init__(self, topologyName=None, serverName=None,):
-    self.topologyName = topologyName
-    self.serverName = serverName
+  def __init__(self, topologyId=None, host=None,):
+    self.topologyId = topologyId
+    self.host = host
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -5587,12 +6320,12 @@ class getServerNettyMetric_args:
         break
       if fid == 1:
         if ftype == TType.STRING:
-          self.topologyName = iprot.readString().decode('utf-8')
+          self.topologyId = iprot.readString().decode('utf-8')
         else:
           iprot.skip(ftype)
       elif fid == 2:
         if ftype == TType.STRING:
-          self.serverName = iprot.readString().decode('utf-8')
+          self.host = iprot.readString().decode('utf-8')
         else:
           iprot.skip(ftype)
       else:
@@ -5604,14 +6337,14 @@ class getServerNettyMetric_args:
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('getServerNettyMetric_args')
-    if self.topologyName is not None:
-      oprot.writeFieldBegin('topologyName', TType.STRING, 1)
-      oprot.writeString(self.topologyName.encode('utf-8'))
+    oprot.writeStructBegin('getNettyMetricsByHost_args')
+    if self.topologyId is not None:
+      oprot.writeFieldBegin('topologyId', TType.STRING, 1)
+      oprot.writeString(self.topologyId.encode('utf-8'))
       oprot.writeFieldEnd()
-    if self.serverName is not None:
-      oprot.writeFieldBegin('serverName', TType.STRING, 2)
-      oprot.writeString(self.serverName.encode('utf-8'))
+    if self.host is not None:
+      oprot.writeFieldBegin('host', TType.STRING, 2)
+      oprot.writeString(self.host.encode('utf-8'))
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
@@ -5622,8 +6355,8 @@ class getServerNettyMetric_args:
 
   def __hash__(self):
     value = 17
-    value = (value * 31) ^ hash(self.topologyName)
-    value = (value * 31) ^ hash(self.serverName)
+    value = (value * 31) ^ hash(self.topologyId)
+    value = (value * 31) ^ hash(self.host)
     return value
 
   def __repr__(self):
@@ -5637,14 +6370,14 @@ class getServerNettyMetric_args:
   def __ne__(self, other):
     return not (self == other)
 
-class getServerNettyMetric_result:
+class getNettyMetricsByHost_result:
   """
   Attributes:
    - success
   """
 
   thrift_spec = (
-    (0, TType.STRUCT, 'success', (NettyMetric, NettyMetric.thrift_spec), None, ), # 0
+    (0, TType.STRUCT, 'success', (MetricInfo, MetricInfo.thrift_spec), None, ), # 0
   )
 
   def __init__(self, success=None,):
@@ -5661,7 +6394,7 @@ class getServerNettyMetric_result:
         break
       if fid == 0:
         if ftype == TType.STRUCT:
-          self.success = NettyMetric()
+          self.success = MetricInfo()
           self.success.read(iprot)
         else:
           iprot.skip(ftype)
@@ -5674,10 +6407,740 @@ class getServerNettyMetric_result:
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('getServerNettyMetric_result')
+    oprot.writeStructBegin('getNettyMetricsByHost_result')
     if self.success is not None:
       oprot.writeFieldBegin('success', TType.STRUCT, 0)
       self.success.write(oprot)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.success)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class getPagingNettyMetrics_args:
+  """
+  Attributes:
+   - topologyId
+   - host
+   - page
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'topologyId', None, None, ), # 1
+    (2, TType.STRING, 'host', None, None, ), # 2
+    (3, TType.I32, 'page', None, None, ), # 3
+  )
+
+  def __init__(self, topologyId=None, host=None, page=None,):
+    self.topologyId = topologyId
+    self.host = host
+    self.page = page
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRING:
+          self.topologyId = iprot.readString().decode('utf-8')
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.STRING:
+          self.host = iprot.readString().decode('utf-8')
+        else:
+          iprot.skip(ftype)
+      elif fid == 3:
+        if ftype == TType.I32:
+          self.page = iprot.readI32();
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('getPagingNettyMetrics_args')
+    if self.topologyId is not None:
+      oprot.writeFieldBegin('topologyId', TType.STRING, 1)
+      oprot.writeString(self.topologyId.encode('utf-8'))
+      oprot.writeFieldEnd()
+    if self.host is not None:
+      oprot.writeFieldBegin('host', TType.STRING, 2)
+      oprot.writeString(self.host.encode('utf-8'))
+      oprot.writeFieldEnd()
+    if self.page is not None:
+      oprot.writeFieldBegin('page', TType.I32, 3)
+      oprot.writeI32(self.page)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.topologyId)
+    value = (value * 31) ^ hash(self.host)
+    value = (value * 31) ^ hash(self.page)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class getPagingNettyMetrics_result:
+  """
+  Attributes:
+   - success
+  """
+
+  thrift_spec = (
+    (0, TType.STRUCT, 'success', (MetricInfo, MetricInfo.thrift_spec), None, ), # 0
+  )
+
+  def __init__(self, success=None,):
+    self.success = success
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 0:
+        if ftype == TType.STRUCT:
+          self.success = MetricInfo()
+          self.success.read(iprot)
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('getPagingNettyMetrics_result')
+    if self.success is not None:
+      oprot.writeFieldBegin('success', TType.STRUCT, 0)
+      self.success.write(oprot)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.success)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class getNettyMetricSizeByHost_args:
+  """
+  Attributes:
+   - topologyId
+   - host
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'topologyId', None, None, ), # 1
+    (2, TType.STRING, 'host', None, None, ), # 2
+  )
+
+  def __init__(self, topologyId=None, host=None,):
+    self.topologyId = topologyId
+    self.host = host
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRING:
+          self.topologyId = iprot.readString().decode('utf-8')
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.STRING:
+          self.host = iprot.readString().decode('utf-8')
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('getNettyMetricSizeByHost_args')
+    if self.topologyId is not None:
+      oprot.writeFieldBegin('topologyId', TType.STRING, 1)
+      oprot.writeString(self.topologyId.encode('utf-8'))
+      oprot.writeFieldEnd()
+    if self.host is not None:
+      oprot.writeFieldBegin('host', TType.STRING, 2)
+      oprot.writeString(self.host.encode('utf-8'))
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.topologyId)
+    value = (value * 31) ^ hash(self.host)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class getNettyMetricSizeByHost_result:
+  """
+  Attributes:
+   - success
+  """
+
+  thrift_spec = (
+    (0, TType.I32, 'success', None, None, ), # 0
+  )
+
+  def __init__(self, success=None,):
+    self.success = success
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 0:
+        if ftype == TType.I32:
+          self.success = iprot.readI32();
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('getNettyMetricSizeByHost_result')
+    if self.success is not None:
+      oprot.writeFieldBegin('success', TType.I32, 0)
+      oprot.writeI32(self.success)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.success)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class getTaskMetrics_args:
+  """
+  Attributes:
+   - topologyId
+   - component
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'topologyId', None, None, ), # 1
+    (2, TType.STRING, 'component', None, None, ), # 2
+  )
+
+  def __init__(self, topologyId=None, component=None,):
+    self.topologyId = topologyId
+    self.component = component
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRING:
+          self.topologyId = iprot.readString().decode('utf-8')
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.STRING:
+          self.component = iprot.readString().decode('utf-8')
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('getTaskMetrics_args')
+    if self.topologyId is not None:
+      oprot.writeFieldBegin('topologyId', TType.STRING, 1)
+      oprot.writeString(self.topologyId.encode('utf-8'))
+      oprot.writeFieldEnd()
+    if self.component is not None:
+      oprot.writeFieldBegin('component', TType.STRING, 2)
+      oprot.writeString(self.component.encode('utf-8'))
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.topologyId)
+    value = (value * 31) ^ hash(self.component)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class getTaskMetrics_result:
+  """
+  Attributes:
+   - success
+  """
+
+  thrift_spec = (
+    (0, TType.STRUCT, 'success', (MetricInfo, MetricInfo.thrift_spec), None, ), # 0
+  )
+
+  def __init__(self, success=None,):
+    self.success = success
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 0:
+        if ftype == TType.STRUCT:
+          self.success = MetricInfo()
+          self.success.read(iprot)
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('getTaskMetrics_result')
+    if self.success is not None:
+      oprot.writeFieldBegin('success', TType.STRUCT, 0)
+      self.success.write(oprot)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.success)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class getTaskAndStreamMetrics_args:
+  """
+  Attributes:
+   - topologyId
+   - taskId
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'topologyId', None, None, ), # 1
+    (2, TType.I32, 'taskId', None, None, ), # 2
+  )
+
+  def __init__(self, topologyId=None, taskId=None,):
+    self.topologyId = topologyId
+    self.taskId = taskId
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRING:
+          self.topologyId = iprot.readString().decode('utf-8')
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.I32:
+          self.taskId = iprot.readI32();
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('getTaskAndStreamMetrics_args')
+    if self.topologyId is not None:
+      oprot.writeFieldBegin('topologyId', TType.STRING, 1)
+      oprot.writeString(self.topologyId.encode('utf-8'))
+      oprot.writeFieldEnd()
+    if self.taskId is not None:
+      oprot.writeFieldBegin('taskId', TType.I32, 2)
+      oprot.writeI32(self.taskId)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.topologyId)
+    value = (value * 31) ^ hash(self.taskId)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class getTaskAndStreamMetrics_result:
+  """
+  Attributes:
+   - success
+  """
+
+  thrift_spec = (
+    (0, TType.LIST, 'success', (TType.STRUCT,(MetricInfo, MetricInfo.thrift_spec)), None, ), # 0
+  )
+
+  def __init__(self, success=None,):
+    self.success = success
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 0:
+        if ftype == TType.LIST:
+          self.success = []
+          (_etype232, _size229) = iprot.readListBegin()
+          for _i233 in xrange(_size229):
+            _elem234 = MetricInfo()
+            _elem234.read(iprot)
+            self.success.append(_elem234)
+          iprot.readListEnd()
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('getTaskAndStreamMetrics_result')
+    if self.success is not None:
+      oprot.writeFieldBegin('success', TType.LIST, 0)
+      oprot.writeListBegin(TType.STRUCT, len(self.success))
+      for iter235 in self.success:
+        iter235.write(oprot)
+      oprot.writeListEnd()
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.success)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class getSummarizedTopologyMetrics_args:
+  """
+  Attributes:
+   - topologyId
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'topologyId', None, None, ), # 1
+  )
+
+  def __init__(self, topologyId=None,):
+    self.topologyId = topologyId
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRING:
+          self.topologyId = iprot.readString().decode('utf-8')
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('getSummarizedTopologyMetrics_args')
+    if self.topologyId is not None:
+      oprot.writeFieldBegin('topologyId', TType.STRING, 1)
+      oprot.writeString(self.topologyId.encode('utf-8'))
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.topologyId)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class getSummarizedTopologyMetrics_result:
+  """
+  Attributes:
+   - success
+  """
+
+  thrift_spec = (
+    (0, TType.LIST, 'success', (TType.STRUCT,(MetricInfo, MetricInfo.thrift_spec)), None, ), # 0
+  )
+
+  def __init__(self, success=None,):
+    self.success = success
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 0:
+        if ftype == TType.LIST:
+          self.success = []
+          (_etype239, _size236) = iprot.readListBegin()
+          for _i240 in xrange(_size236):
+            _elem241 = MetricInfo()
+            _elem241.read(iprot)
+            self.success.append(_elem241)
+          iprot.readListEnd()
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('getSummarizedTopologyMetrics_result')
+    if self.success is not None:
+      oprot.writeFieldBegin('success', TType.LIST, 0)
+      oprot.writeListBegin(TType.STRUCT, len(self.success))
+      for iter242 in self.success:
+        iter242.write(oprot)
+      oprot.writeListEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
@@ -5812,22 +7275,25 @@ class getVersion_result:
   def __ne__(self, other):
     return not (self == other)
 
-class updateConf_args:
+class updateTopology_args:
   """
   Attributes:
    - name
-   - conf
+   - uploadedLocation
+   - updateConf
   """
 
   thrift_spec = (
     None, # 0
     (1, TType.STRING, 'name', None, None, ), # 1
-    (2, TType.STRING, 'conf', None, None, ), # 2
+    (2, TType.STRING, 'uploadedLocation', None, None, ), # 2
+    (3, TType.STRING, 'updateConf', None, None, ), # 3
   )
 
-  def __init__(self, name=None, conf=None,):
+  def __init__(self, name=None, uploadedLocation=None, updateConf=None,):
     self.name = name
-    self.conf = conf
+    self.uploadedLocation = uploadedLocation
+    self.updateConf = updateConf
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -5845,7 +7311,12 @@ class updateConf_args:
           iprot.skip(ftype)
       elif fid == 2:
         if ftype == TType.STRING:
-          self.conf = iprot.readString().decode('utf-8')
+          self.uploadedLocation = iprot.readString().decode('utf-8')
+        else:
+          iprot.skip(ftype)
+      elif fid == 3:
+        if ftype == TType.STRING:
+          self.updateConf = iprot.readString().decode('utf-8')
         else:
           iprot.skip(ftype)
       else:
@@ -5857,14 +7328,18 @@ class updateConf_args:
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('updateConf_args')
+    oprot.writeStructBegin('updateTopology_args')
     if self.name is not None:
       oprot.writeFieldBegin('name', TType.STRING, 1)
       oprot.writeString(self.name.encode('utf-8'))
       oprot.writeFieldEnd()
-    if self.conf is not None:
-      oprot.writeFieldBegin('conf', TType.STRING, 2)
-      oprot.writeString(self.conf.encode('utf-8'))
+    if self.uploadedLocation is not None:
+      oprot.writeFieldBegin('uploadedLocation', TType.STRING, 2)
+      oprot.writeString(self.uploadedLocation.encode('utf-8'))
+      oprot.writeFieldEnd()
+    if self.updateConf is not None:
+      oprot.writeFieldBegin('updateConf', TType.STRING, 3)
+      oprot.writeString(self.updateConf.encode('utf-8'))
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
@@ -5876,7 +7351,8 @@ class updateConf_args:
   def __hash__(self):
     value = 17
     value = (value * 31) ^ hash(self.name)
-    value = (value * 31) ^ hash(self.conf)
+    value = (value * 31) ^ hash(self.uploadedLocation)
+    value = (value * 31) ^ hash(self.updateConf)
     return value
 
   def __repr__(self):
@@ -5890,7 +7366,7 @@ class updateConf_args:
   def __ne__(self, other):
     return not (self == other)
 
-class updateConf_result:
+class updateTopology_result:
   """
   Attributes:
    - e
@@ -5937,7 +7413,7 @@ class updateConf_result:
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('updateConf_result')
+    oprot.writeStructBegin('updateTopology_result')
     if self.e is not None:
       oprot.writeFieldBegin('e', TType.STRUCT, 1)
       self.e.write(oprot)
@@ -5957,6 +7433,118 @@ class updateConf_result:
     value = 17
     value = (value * 31) ^ hash(self.e)
     value = (value * 31) ^ hash(self.ite)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class updateTaskHeartbeat_args:
+  """
+  Attributes:
+   - taskHbs
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRUCT, 'taskHbs', (TopologyTaskHbInfo, TopologyTaskHbInfo.thrift_spec), None, ), # 1
+  )
+
+  def __init__(self, taskHbs=None,):
+    self.taskHbs = taskHbs
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRUCT:
+          self.taskHbs = TopologyTaskHbInfo()
+          self.taskHbs.read(iprot)
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('updateTaskHeartbeat_args')
+    if self.taskHbs is not None:
+      oprot.writeFieldBegin('taskHbs', TType.STRUCT, 1)
+      self.taskHbs.write(oprot)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.taskHbs)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class updateTaskHeartbeat_result:
+
+  thrift_spec = (
+  )
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('updateTaskHeartbeat_result')
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __hash__(self):
+    value = 17
     return value
 
   def __repr__(self):

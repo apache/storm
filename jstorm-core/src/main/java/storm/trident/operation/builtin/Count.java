@@ -20,7 +20,6 @@ package storm.trident.operation.builtin;
 import storm.trident.operation.CombinerAggregator;
 import storm.trident.tuple.TridentTuple;
 
-
 public class Count implements CombinerAggregator<Long> {
 
     @Override
@@ -37,5 +36,5 @@ public class Count implements CombinerAggregator<Long> {
     public Long zero() {
         return 0L;
     }
-    
+
 }

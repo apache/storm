@@ -30,7 +30,7 @@ import backtype.storm.utils.Utils;
  * 
  */
 public class activate {
-    
+
     /**
      * @param args
      */
@@ -39,17 +39,17 @@ public class activate {
         if (args == null || args.length == 0) {
             throw new InvalidParameterException("Should input topology name");
         }
-        
+
         String topologyName = args[0];
-        
+
         NimbusClient client = null;
         try {
-            
+
             Map conf = Utils.readStormConfig();
             client = NimbusClient.getConfiguredClient(conf);
-            
+
             client.getClient().activate(topologyName);
-            
+
             System.out.println("Successfully submit command activate " + topologyName);
         } catch (Exception e) {
             System.out.println(e.getMessage());
@@ -61,5 +61,5 @@ public class activate {
             }
         }
     }
-    
+
 }

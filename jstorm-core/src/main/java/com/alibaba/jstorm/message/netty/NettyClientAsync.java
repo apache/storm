@@ -17,12 +17,14 @@
  */
 package com.alibaba.jstorm.message.netty;
 
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-
+import backtype.storm.Config;
+import backtype.storm.messaging.TaskMessage;
+import backtype.storm.utils.Utils;
+import com.alibaba.jstorm.client.ConfigExtension;
+import com.alibaba.jstorm.utils.IntervalCheck;
+import com.alibaba.jstorm.utils.JStormServerUtils;
+import com.alibaba.jstorm.utils.JStormUtils;
+import com.alibaba.jstorm.utils.TimeUtils;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.jboss.netty.channel.Channel;
@@ -30,18 +32,14 @@ import org.jboss.netty.channel.ChannelFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import backtype.storm.Config;
-import backtype.storm.messaging.TaskMessage;
-import backtype.storm.utils.Utils;
-
-import com.alibaba.jstorm.client.ConfigExtension;
-import com.alibaba.jstorm.utils.IntervalCheck;
-import com.alibaba.jstorm.utils.JStormServerUtils;
-import com.alibaba.jstorm.utils.JStormUtils;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 class NettyClientAsync extends NettyClient {
-    private static final Logger LOG = LoggerFactory
-            .getLogger(NettyClientAsync.class);
+    private static final Logger LOG = LoggerFactory.getLogger(NettyClientAsync.class);
     public static final String PREFIX = "Netty-Client-";
 
     // when batch buffer size is more than BATCH_THREASHOLD_WARN
@@ -54,7 +52,6 @@ class NettyClientAsync extends NettyClient {
     protected final boolean blockSend;
 
     boolean isDirectSend(Map conf) {
-
         if (JStormServerUtils.isOnePending(conf) == true) {
             return true;
         }
@@ -71,22 +68,15 @@ class NettyClientAsync extends NettyClient {
     }
 
     @SuppressWarnings("rawtypes")
-    NettyClientAsync(Map storm_conf, ChannelFactory factory,
-            ScheduledExecutorService scheduler, String host, int port,
-            ReconnectRunnable reconnector) {
+    NettyClientAsync(Map storm_conf, ChannelFactory factory, ScheduledExecutorService scheduler, String host, int port, ReconnectRunnable reconnector) {
         super(storm_conf, factory, scheduler, host, port, reconnector);
 
-        BATCH_THREASHOLD_WARN =
-                ConfigExtension.getNettyBufferThresholdSize(storm_conf);
-
+        BATCH_THREASHOLD_WARN = ConfigExtension.getNettyBufferThresholdSize(storm_conf);
         blockSend = isBlockSend(storm_conf);
-
         directlySend = isDirectSend(storm_conf);
 
         flush_later = new AtomicBoolean(false);
-        flushCheckInterval =
-                Utils.getInt(storm_conf
-                        .get(Config.STORM_NETTY_FLUSH_CHECK_INTERVAL_MS), 10);
+        flushCheckInterval = Utils.getInt(storm_conf.get(Config.STORM_NETTY_FLUSH_CHECK_INTERVAL_MS), 10);
 
         Runnable flusher = new Runnable() {
             @Override
@@ -95,13 +85,11 @@ class NettyClientAsync extends NettyClient {
             }
         };
         long initialDelay = Math.min(1000, max_sleep_ms * max_retries);
-        scheduler.scheduleAtFixedRate(flusher, initialDelay,
-                flushCheckInterval, TimeUnit.MILLISECONDS);
+        scheduler.scheduleAtFixedRate(flusher, initialDelay, flushCheckInterval, TimeUnit.MILLISECONDS);
 
         clientChannelFactory = factory;
 
         start();
-
         LOG.info(this.toString());
     }
 
@@ -109,7 +97,7 @@ class NettyClientAsync extends NettyClient {
      * Enqueue a task message to be sent to server
      */
     @Override
-    synchronized public void send(List<TaskMessage> messages) {
+    public synchronized void send(List<TaskMessage> messages) {
         // throw exception if the client is being closed
         if (isClosed()) {
             LOG.warn("Client is being closed, and does not take requests any more");
@@ -123,13 +111,14 @@ class NettyClientAsync extends NettyClient {
             throw new RuntimeException(e);
         } finally {
             long end = System.nanoTime();
-            sendTimer.update((end - start)/1000000.0d);
-
+            if (sendTimer != null) {
+                sendTimer.update((end - start) / TimeUtils.NS_PER_US);
+            }
         }
     }
 
     @Override
-    synchronized public void send(TaskMessage message) {
+    public synchronized void send(TaskMessage message) {
         // throw exception if the client is being closed
         if (isClosed()) {
             LOG.warn("Client is being closed, and does not take requests any more");
@@ -143,7 +132,9 @@ class NettyClientAsync extends NettyClient {
             throw new RuntimeException(e);
         } finally {
             long end = System.nanoTime();
-            sendTimer.update((end - start)/1000000.0d);
+            if (sendTimer != null) {
+                sendTimer.update((end - start) / TimeUtils.NS_PER_US);
+            }
         }
     }
 
@@ -159,21 +150,17 @@ class NettyClientAsync extends NettyClient {
             long now = System.currentTimeMillis();
             long delt = now - begin;
             if (oneSecond.check() == true) {
-                LOG.warn(
-                        "Target server  {} is unavailable, pending {}, bufferSize {}, block sending {}ms",
-                        name, pendings.get(), cachedSize, delt);
+                LOG.warn("Target server  {} is unavailable, pending {}, bufferSize {}, block sending {}ms", name, pendings.get(), cachedSize, delt);
             }
 
             if (timeoutIntervalCheck.check() == true) {
                 if (messageBatchRef.get() != null) {
-                    LOG.warn(
-                            "Target server  {} is unavailable, wait too much time, throw timeout message",
-                            name);
+                    LOG.warn("Target server  {} is unavailable, wait too much time, throw timeout message", name);
                     messageBatchRef.set(null);
                 }
                 setChannel(null);
                 LOG.warn("Reset channel as null");
-                
+
                 if (blockSend == false) {
                     reconnect();
                     break;
@@ -184,12 +171,10 @@ class NettyClientAsync extends NettyClient {
             JStormUtils.sleepMs(sleepMs);
 
             if (delt > 2 * timeoutMs * 1000L && changeThreadhold == false) {
-                if (channelRef.get() != null
-                        && BATCH_THREASHOLD_WARN >= 2 * messageBatchSize) {
+                if (channelRef.get() != null && BATCH_THREASHOLD_WARN >= 2 * messageBatchSize) {
                     // it is just channel isn't writable;
                     BATCH_THREASHOLD_WARN = BATCH_THREASHOLD_WARN / 2;
-                    LOG.info("Reduce BATCH_THREASHOLD_WARN to {}",
-                            BATCH_THREASHOLD_WARN);
+                    LOG.info("Reduce BATCH_THREASHOLD_WARN to {}", BATCH_THREASHOLD_WARN);
 
                     changeThreadhold = true;
                 }
@@ -296,12 +281,9 @@ class NettyClientAsync extends NettyClient {
         } else {
             if (messageBatchRef.compareAndSet(null, messageBatch)) {
                 flush_later.set(true);
-            }
-            else
+            } else
                 LOG.error("MessageBatch will be lost. This should not happen.");
         }
-
-        return;
     }
 
     void flush() {
@@ -339,12 +321,10 @@ class NettyClientAsync extends NettyClient {
     @Override
     public void handleResponse() {
         // do nothing
-        return;
     }
 
     @Override
     public String toString() {
-        return ToStringBuilder.reflectionToString(this,
-                ToStringStyle.SHORT_PREFIX_STYLE);
+        return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
 }

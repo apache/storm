@@ -58,14 +58,11 @@ public class NetClsCore implements CgroupCore {
         StringBuilder sb = new StringBuilder("0x");
         sb.append(toHex(major));
         sb.append(toHex(minor));
-        CgroupUtils.writeFileByLine(
-                Constants.getDir(this.dir, NET_CLS_CLASSID), sb.toString());
+        CgroupUtils.writeFileByLine(Constants.getDir(this.dir, NET_CLS_CLASSID), sb.toString());
     }
 
     public Device getClassId() throws IOException {
-        String output =
-                CgroupUtils.readFileByLine(
-                        Constants.getDir(this.dir, NET_CLS_CLASSID)).get(0);
+        String output = CgroupUtils.readFileByLine(Constants.getDir(this.dir, NET_CLS_CLASSID)).get(0);
         output = Integer.toHexString(Integer.parseInt(output));
         int major = Integer.parseInt(output.substring(0, output.length() - 4));
         int minor = Integer.parseInt(output.substring(output.length() - 4));

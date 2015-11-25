@@ -44,8 +44,7 @@ import com.alibaba.jstorm.utils.TimeUtils;
  * 
  */
 public class WorkerHeartbeatRunable extends RunnableCallback {
-    private static Logger LOG = LoggerFactory
-            .getLogger(WorkerHeartbeatRunable.class);
+    private static Logger LOG = LoggerFactory.getLogger(WorkerHeartbeatRunable.class);
 
     private WorkerData workerData;
 
@@ -69,8 +68,7 @@ public class WorkerHeartbeatRunable extends RunnableCallback {
         this.worker_id = workerData.getWorkerId();
         this.port = workerData.getPort();
         this.topologyId = workerData.getTopologyId();
-        this.task_ids =
-                new CopyOnWriteArraySet<Integer>(workerData.getTaskids());
+        this.task_ids = new CopyOnWriteArraySet<Integer>(workerData.getTaskids());
         this.shutdown = workerData.getShutdown();
 
         String key = Config.WORKER_HEARTBEAT_FREQUENCY_SECS;
@@ -97,11 +95,9 @@ public class WorkerHeartbeatRunable extends RunnableCallback {
     public void doHeartbeat() throws IOException {
 
         int currtime = TimeUtils.current_time_secs();
-        WorkerHeartbeat hb =
-                new WorkerHeartbeat(currtime, topologyId, task_ids, port);
+        WorkerHeartbeat hb = new WorkerHeartbeat(currtime, topologyId, task_ids, port);
 
-        LOG.debug("Doing heartbeat:" + worker_id + ",port:" + port + ",hb"
-                + hb.toString());
+        LOG.debug("Doing heartbeat:" + worker_id + ",port:" + port + ",hb" + hb.toString());
 
         LocalState state = getWorkerState();
         state.put(Common.LS_WORKER_HEARTBEAT, hb);

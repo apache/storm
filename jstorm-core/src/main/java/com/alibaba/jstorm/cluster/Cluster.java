@@ -32,7 +32,6 @@ import com.alibaba.jstorm.daemon.supervisor.SupervisorInfo;
 import com.alibaba.jstorm.schedule.Assignment;
 import com.alibaba.jstorm.task.TaskInfo;
 import com.alibaba.jstorm.task.error.TaskError;
-import com.alibaba.jstorm.task.heartbeat.TaskHeartbeat;
 import com.alibaba.jstorm.utils.TimeUtils;
 
 /**
@@ -61,6 +60,8 @@ public class Cluster {
     public static final String METRIC_ROOT = "metrics";
 
     public static final String LAST_ERROR = "last_error";
+    public static final String NIMBUS_SLAVE_DETAIL_ROOT= "nimbus_slave_detail";
+    public static final String BACKPRESSURE_ROOT = "backpressure";
 
     public static final String ASSIGNMENTS_SUBTREE;
     public static final String ASSIGNMENTS_BAK_SUBTREE;
@@ -72,6 +73,8 @@ public class Cluster {
     public static final String MASTER_SUBTREE;
     public static final String NIMBUS_SLAVE_SUBTREE;
     public static final String METRIC_SUBTREE;
+    public static final String NIMBUS_SLAVE_DETAIL_SUBTREE;
+    public static final String BACKPRESSURE_SUBTREE;
 
     static {
         ASSIGNMENTS_SUBTREE = ZK_SEPERATOR + ASSIGNMENTS_ROOT;
@@ -84,6 +87,8 @@ public class Cluster {
         MASTER_SUBTREE = ZK_SEPERATOR + MASTER_ROOT;
         NIMBUS_SLAVE_SUBTREE = ZK_SEPERATOR + NIMBUS_SLAVE_ROOT;
         METRIC_SUBTREE = ZK_SEPERATOR + METRIC_ROOT;
+        NIMBUS_SLAVE_DETAIL_SUBTREE = ZK_SEPERATOR + NIMBUS_SLAVE_DETAIL_ROOT;
+        BACKPRESSURE_SUBTREE = ZK_SEPERATOR + BACKPRESSURE_ROOT;
     }
 
     public static String supervisor_path(String id) {
@@ -106,10 +111,6 @@ public class Cluster {
         return TASKBEATS_SUBTREE + ZK_SEPERATOR + topology_id;
     }
 
-    public static String taskbeat_path(String topology_id, int task_id) {
-        return taskbeat_storm_root(topology_id) + ZK_SEPERATOR + task_id;
-    }
-
     public static String taskerror_storm_root(String topology_id) {
         return TASKERRORS_SUBTREE + ZK_SEPERATOR + topology_id;
     }
@@ -130,97 +131,71 @@ public class Cluster {
         return ASSIGNMENTS_BAK_SUBTREE + ZK_SEPERATOR + id;
     }
 
+    public static String backpressure_path(String topology_id) {
+        return BACKPRESSURE_SUBTREE + ZK_SEPERATOR + topology_id;
+    }
+
     @SuppressWarnings("rawtypes")
-    public static StormClusterState mk_storm_cluster_state(
-            Map cluster_state_spec) throws Exception {
+    public static StormClusterState mk_storm_cluster_state(Map cluster_state_spec) throws Exception {
         return new StormZkClusterState(cluster_state_spec);
     }
 
-    public static StormClusterState mk_storm_cluster_state(
-            ClusterState cluster_state_spec) throws Exception {
+    public static StormClusterState mk_storm_cluster_state(ClusterState cluster_state_spec) throws Exception {
         return new StormZkClusterState(cluster_state_spec);
     }
 
-    public static Map<Integer, TaskInfo> get_all_taskInfo(
-            StormClusterState zkCluster, String topologyId) throws Exception {
-        return  zkCluster.task_all_info(topologyId);
+    public static Map<Integer, TaskInfo> get_all_taskInfo(StormClusterState zkCluster, String topologyId) throws Exception {
+        return zkCluster.task_all_info(topologyId);
     }
-    
-    
-    public static Map<Integer, String> get_all_task_component(
-    		StormClusterState zkCluster, String topologyId, 
-    		Map<Integer, TaskInfo> taskInfoMap) throws Exception {
+
+    public static Map<Integer, String> get_all_task_component(StormClusterState zkCluster, String topologyId, Map<Integer, TaskInfo> taskInfoMap)
+            throws Exception {
         if (taskInfoMap == null) {
             taskInfoMap = get_all_taskInfo(zkCluster, topologyId);
         }
-        
+
         if (taskInfoMap == null) {
             return null;
         }
-        
+
         return Common.getTaskToComponent(taskInfoMap);
     }
-    
-    public static  Map<Integer, String> get_all_task_type(
-    		StormClusterState zkCluster, String topologyId, 
-    		Map<Integer, TaskInfo> taskInfoMap) throws Exception {
+
+    public static Map<Integer, String> get_all_task_type(StormClusterState zkCluster, String topologyId, Map<Integer, TaskInfo> taskInfoMap) throws Exception {
         if (taskInfoMap == null) {
             taskInfoMap = get_all_taskInfo(zkCluster, topologyId);
         }
-        
+
         if (taskInfoMap == null) {
             return null;
         }
-        
+
         return Common.getTaskToType(taskInfoMap);
     }
 
-    public static Map<String, TaskHeartbeat> get_all_task_heartbeat(
-            StormClusterState zkCluster, String topologyId) throws Exception {
-        Map<String, TaskHeartbeat> ret = new HashMap<String, TaskHeartbeat>();
-
-        List<String> taskList = zkCluster.heartbeat_tasks(topologyId);
-        for (String taskId : taskList) {
-            TaskHeartbeat hb =
-                    zkCluster.task_heartbeat(topologyId,
-                            Integer.valueOf(taskId));
-            if (hb == null) {
-                LOG.error("Failed to get hearbeat of " + topologyId + ":"
-                        + taskId);
-                continue;
-            }
-
-            ret.put(taskId, hb);
-        }
-
-        return ret;
-    }
-
     /**
-     * if one topology's name equal the input storm_name, then return the
-     * topology id, otherwise return null
+     * if one topology's name equal the input storm_name, then return the topology id, otherwise return null
      * 
      * @param zkCluster
      * @param storm_name
      * @return
      * @throws Exception
      */
-    public static String get_topology_id(StormClusterState zkCluster,
-            String storm_name) throws Exception {
+    public static String get_topology_id(StormClusterState zkCluster, String storm_name) throws Exception {
         List<String> active_storms = zkCluster.active_storms();
         String rtn = null;
         if (active_storms != null) {
             for (String topology_id : active_storms) {
-                
+
                 if (topology_id.indexOf(storm_name) < 0) {
                     continue;
                 }
-
-                String zkTopologyName = Common.topologyIdToName(topology_id);
-                if (storm_name.endsWith(zkTopologyName)) {
-                    return topology_id;
+                StormBase base = zkCluster.storm_base(topology_id, null);
+                if (base != null && storm_name.equals(Common.getTopologyNameById(topology_id))) {
+                    rtn = topology_id;
+                    break;
                 }
-                
+
             }
         }
         return rtn;
@@ -233,8 +208,7 @@ public class Cluster {
      * @return <topology_id, StormBase>
      * @throws Exception
      */
-    public static HashMap<String, StormBase> get_all_StormBase(
-            StormClusterState zkCluster) throws Exception {
+    public static HashMap<String, StormBase> get_all_StormBase(StormClusterState zkCluster) throws Exception {
         HashMap<String, StormBase> rtn = new HashMap<String, StormBase>();
         List<String> active_storms = zkCluster.active_storms();
         if (active_storms != null) {
@@ -253,25 +227,20 @@ public class Cluster {
      * 
      * @param stormClusterState
      * @param callback
-     * @return Map<String, SupervisorInfo> String: supervisorId SupervisorInfo:
-     *         [time-secs hostname worker-ports uptime-secs]
+     * @return Map<String, SupervisorInfo> String: supervisorId SupervisorInfo: [time-secs hostname worker-ports uptime-secs]
      * @throws Exception
      */
-    public static Map<String, SupervisorInfo> get_all_SupervisorInfo(
-            StormClusterState stormClusterState, RunnableCallback callback)
-            throws Exception {
+    public static Map<String, SupervisorInfo> get_all_SupervisorInfo(StormClusterState stormClusterState, RunnableCallback callback) throws Exception {
 
         Map<String, SupervisorInfo> rtn = new TreeMap<String, SupervisorInfo>();
         // get /ZK/supervisors
         List<String> supervisorIds = stormClusterState.supervisors(callback);
         if (supervisorIds != null) {
-            for (Iterator<String> iter = supervisorIds.iterator(); iter
-                    .hasNext();) {
+            for (Iterator<String> iter = supervisorIds.iterator(); iter.hasNext();) {
 
                 String supervisorId = iter.next();
                 // get /supervisors/supervisorid
-                SupervisorInfo supervisorInfo =
-                        stormClusterState.supervisor_info(supervisorId);
+                SupervisorInfo supervisorInfo = stormClusterState.supervisor_info(supervisorId);
                 if (supervisorInfo == null) {
                     LOG.warn("Failed to get SupervisorInfo of " + supervisorId);
                 } else {
@@ -286,9 +255,7 @@ public class Cluster {
         return rtn;
     }
 
-    public static Map<String, Assignment> get_all_assignment(
-            StormClusterState stormClusterState, RunnableCallback callback)
-            throws Exception {
+    public static Map<String, Assignment> get_all_assignment(StormClusterState stormClusterState, RunnableCallback callback) throws Exception {
         Map<String, Assignment> ret = new HashMap<String, Assignment>();
 
         // get /assignments {topology_id}
@@ -300,12 +267,10 @@ public class Cluster {
 
         for (String topology_id : assignments) {
 
-            Assignment assignment =
-                    stormClusterState.assignment_info(topology_id, callback);
+            Assignment assignment = stormClusterState.assignment_info(topology_id, callback);
 
             if (assignment == null) {
-                LOG.error("Failed to get Assignment of " + topology_id
-                        + " from ZK");
+                LOG.error("Failed to get Assignment of " + topology_id + " from ZK");
                 continue;
             }
 
@@ -315,8 +280,7 @@ public class Cluster {
         return ret;
     }
 
-    public static Map<String, String> get_all_nimbus_slave(
-            StormClusterState stormClusterState) throws Exception {
+    public static Map<String, String> get_all_nimbus_slave(StormClusterState stormClusterState) throws Exception {
         List<String> hosts = stormClusterState.get_nimbus_slaves();
         if (hosts == null || hosts.size() == 0) {
             return null;
@@ -331,11 +295,8 @@ public class Cluster {
         return ret;
     }
 
-    public static String get_supervisor_hostname(
-            StormClusterState stormClusterState, String supervisorId)
-            throws Exception {
-        SupervisorInfo supervisorInfo =
-                stormClusterState.supervisor_info(supervisorId);
+    public static String get_supervisor_hostname(StormClusterState stormClusterState, String supervisorId) throws Exception {
+        SupervisorInfo supervisorInfo = stormClusterState.supervisor_info(supervisorId);
         if (supervisorInfo == null) {
             return null;
         } else {
@@ -343,12 +304,9 @@ public class Cluster {
         }
     }
 
-    public static boolean is_topology_exist_error(
-            StormClusterState stormClusterState, String topologyId)
-            throws Exception {
+    public static boolean is_topology_exist_error(StormClusterState stormClusterState, String topologyId) throws Exception {
 
-        Map<Integer, String> lastErrMap =
-                stormClusterState.topo_lastErr_time(topologyId);
+        Map<Integer, String> lastErrMap = stormClusterState.topo_lastErr_time(topologyId);
         if (lastErrMap == null || lastErrMap.size() == 0) {
             return false;
         }
@@ -365,34 +323,33 @@ public class Cluster {
 
         return false;
     }
-    
-	public static Map<Integer, List<TaskError>> get_all_task_errors(
-			StormClusterState stormClusterState, String topologyId) {
-		Map<Integer, List<TaskError>> ret = new HashMap<Integer, List<TaskError>>();
-		try {
-			List<String> errorTasks = stormClusterState.task_error_ids(topologyId);
-			if (errorTasks == null || errorTasks.size() == 0) {
-				return ret;
-			}
 
-			for (String taskIdStr : errorTasks) {
-				Integer taskId = -1;
-				try {
-					taskId = Integer.valueOf(taskIdStr);
-				}catch(Exception e) {
-					// skip last_error
-					continue;
-				}
-				
-				List<TaskError> taskErrorList = stormClusterState.task_errors(topologyId, taskId);
-				ret.put(taskId, taskErrorList);
-			}
-			return ret;
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			return ret;
-		}
+    public static Map<Integer, List<TaskError>> get_all_task_errors(StormClusterState stormClusterState, String topologyId) {
+        Map<Integer, List<TaskError>> ret = new HashMap<Integer, List<TaskError>>();
+        try {
+            List<String> errorTasks = stormClusterState.task_error_ids(topologyId);
+            if (errorTasks == null || errorTasks.size() == 0) {
+                return ret;
+            }
 
-	}
+            for (String taskIdStr : errorTasks) {
+                Integer taskId = -1;
+                try {
+                    taskId = Integer.valueOf(taskIdStr);
+                } catch (Exception e) {
+                    // skip last_error
+                    continue;
+                }
+
+                List<TaskError> taskErrorList = stormClusterState.task_errors(topologyId, taskId);
+                ret.put(taskId, taskErrorList);
+            }
+            return ret;
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            return ret;
+        }
+
+    }
 
 }

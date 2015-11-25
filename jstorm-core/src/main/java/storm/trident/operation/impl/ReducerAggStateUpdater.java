@@ -30,11 +30,10 @@ import storm.trident.tuple.TridentTuple;
 
 public class ReducerAggStateUpdater implements StateUpdater<Snapshottable> {
     ReducerAggregator _agg;
-    
+
     public ReducerAggStateUpdater(ReducerAggregator agg) {
         _agg = agg;
     }
-    
 
     @Override
     public void updateState(Snapshottable state, List<TridentTuple> tuples, TridentCollector collector) {
@@ -43,11 +42,11 @@ public class ReducerAggStateUpdater implements StateUpdater<Snapshottable> {
     }
 
     @Override
-    public void prepare(Map conf, TridentOperationContext context) {        
+    public void prepare(Map conf, TridentOperationContext context) {
     }
 
     @Override
     public void cleanup() {
     }
-    
+
 }

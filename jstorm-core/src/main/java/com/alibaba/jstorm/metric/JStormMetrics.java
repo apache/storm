@@ -15,267 +15,441 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.metric;
 
-import java.io.Serializable;
-import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryMXBean;
-import java.lang.management.MemoryUsage;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
+import backtype.storm.generated.MetricInfo;
+import com.alibaba.jstorm.common.metric.*;
+import com.alibaba.jstorm.common.metric.snapshot.AsmSnapshot;
+import com.alibaba.jstorm.utils.NetWorkUtils;
+import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import backtype.storm.generated.MetricInfo;
+import java.io.Serializable;
+import java.util.*;
 
-import com.alibaba.jstorm.common.metric.Counter;
-import com.alibaba.jstorm.common.metric.Gauge;
-import com.alibaba.jstorm.common.metric.Histogram;
-import com.alibaba.jstorm.common.metric.Meter;
-import com.alibaba.jstorm.common.metric.MetricRegistry;
-import com.alibaba.jstorm.common.metric.Timer;
-import com.alibaba.jstorm.common.metric.window.Metric;
-import com.alibaba.jstorm.utils.JStormUtils;
-
+/**
+ * @author Cody (weiyue.wy@alibaba-inc.com)
+ * @since 2.0.5
+ */
 public class JStormMetrics implements Serializable {
-    private static final Logger LOG = LoggerFactory
-            .getLogger(JStormMetrics.class);
-    private static final long serialVersionUID = 2046603514943797241L;
+    private static final long serialVersionUID = -2580242512743243267L;
+
+    public static final String NIMBUS_METRIC_KEY = "__NIMBUS__";
+    public static final String CLUSTER_METRIC_KEY = "__CLUSTER__";
+    public static final String SUPERVISOR_METRIC_KEY = "__SUPERVISOR__";
+
+    protected static final Logger LOG = LoggerFactory.getLogger(JStormMetrics.class);
 
     /**
      * Metrics in this object will be uploaded to nimbus
      */
-    static MetricRegistry workerMetrics = new MetricRegistry();
-    static Map<Integer, MetricRegistry> taskMetrics =
-            new ConcurrentHashMap<Integer, MetricRegistry>();
-    /**
-     * Metrics in this object will be just be output to log, won't be uploaded
-     * to nimbus
-     */
-    static MetricRegistry skipMetrics = new MetricRegistry();
+    protected static final AsmMetricRegistry workerMetrics = new AsmMetricRegistry();
+    protected static final AsmMetricRegistry nettyMetrics = new AsmMetricRegistry();
+    protected static final AsmMetricRegistry componentMetrics = new AsmMetricRegistry();
+    protected static final AsmMetricRegistry taskMetrics = new AsmMetricRegistry();
+    protected static final AsmMetricRegistry streamMetrics = new AsmMetricRegistry();
+    protected static final AsmMetricRegistry topologyMetrics = new AsmMetricRegistry();
 
-    protected static MetricInfo exposeWorkerMetrics;
-    protected static Map<String, MetricInfo> exposeNettyMetrics;
-    protected static Map<Integer, MetricInfo> exposeTaskMetrics;
+    protected static final AsmMetricRegistry[] allRegistries = {
+            streamMetrics, taskMetrics, componentMetrics, workerMetrics, nettyMetrics, topologyMetrics};
+
+    protected static String topologyId;
+    protected static String host;
+    protected static int port;
+    protected static boolean debug;
+
+    public static final String DEFAULT_GROUP = "sys";
+    public static final String NETTY_GROUP = "netty";
+
+    protected static Set<String> debugMetricNames = new HashSet<String>();
 
     static {
-        registerWorkerGauge(new com.codahale.metrics.Gauge<Double>() {
-
-            @Override
-            public Double getValue() {
-                // TODO Auto-generated method stub
-                return JStormUtils.getCpuUsage();
-            }
-
-        }, MetricDef.CPU_USED_RATIO);
-
-        registerWorkerGauge(new com.codahale.metrics.Gauge<Double>() {
-
-            @Override
-            public Double getValue() {
-                // TODO Auto-generated method stub
-                return JStormUtils.getMemUsage();
-            }
-
-        }, MetricDef.MEMORY_USED);
+        host = NetWorkUtils.ip();
     }
 
-    public static MetricRegistry registerTask(int taskId) {
-        MetricRegistry ret = taskMetrics.get(taskId);
-        if (ret == null) {
-            ret = new MetricRegistry();
-            taskMetrics.put(taskId, ret);
-            LOG.info("Register task MetricRegistry " + taskId);
-        }
+    private static boolean enabled = true;
 
-        return ret;
+    public static int getPort() {
+        return port;
     }
 
-    public static void unregisterTask(int taskId) {
-    	taskMetrics.remove(taskId);
+    public static void setPort(int port) {
+        JStormMetrics.port = port;
     }
 
-    // the Metric should be one of metrics of task
-    // if register this metric through this function,
-    // the web UI would do sum operation for the metric
-    // the metric will display in component/topology level in web UI
-    public static void registerSumMetric(String name) {
-        MetricDef.MERGE_SUM_TAG.add(name);
+    public static String getHost() {
+        return host;
     }
 
-    public static void unregisterSumMetric(String name) {
-        MetricDef.MERGE_SUM_TAG.remove(name);
+    public static void setHost(String host) {
+        JStormMetrics.host = host;
     }
 
-    // the Metric should be one of metrics of task
-    // if register this metric through this function,
-    // the web UI would do sum operation for the metric
-    // the metric will display in component/topology level in web UI
-    public static void registerAvgMetric(String name) {
-        MetricDef.MERGE_AVG_TAG.add(name);
+    public static String getTopologyId() {
+        return topologyId;
     }
 
-    public static void unregisterAvgMetric(String name) {
-        MetricDef.MERGE_AVG_TAG.remove(name);
+    public static void setTopologyId(String topologyId) {
+        JStormMetrics.topologyId = topologyId;
     }
 
-    public static <T extends Metric> T registerWorkerMetric(T metric,
-            String name, String... args) throws IllegalArgumentException {
-        String registerName = MetricRegistry.name(name, args);
-
-        return workerMetrics.register(registerName, metric);
+    public static boolean isDebug() {
+        return debug;
     }
 
-    public static void unregisterWorkerMetric(String name, String... args) {
-        String registerName = MetricRegistry.name(name, args);
-
-        workerMetrics.remove(registerName);
+    public static void setDebug(boolean debug) {
+        JStormMetrics.debug = debug;
+        LOG.info("topology metrics debug enabled:{}", debug);
     }
 
-    public static <T extends Metric> T registerTaskMetric(T metric, int taskId,
-            String name, String... args) throws IllegalArgumentException {
-        MetricRegistry metrics = taskMetrics.get(taskId);
-        if (metrics == null) {
-            throw new IllegalArgumentException("Invalid taskId " + taskId);
-        }
-
-        String registerName = MetricRegistry.name(name, args);
-
-        return metrics.register(registerName, metric);
+    public static void setEnabled(boolean enabled) {
+        JStormMetrics.enabled = enabled;
     }
 
-    public static void unregisterTaskMetric(int taskId, String name,
-            String... args) throws IllegalArgumentException {
-        String registerName = MetricRegistry.name(name, args);
-        MetricRegistry metrics = taskMetrics.get(taskId);
-        if (metrics == null) {
-            throw new IllegalArgumentException("Invalid taskId");
-        }
-        metrics.remove(registerName);
+    public static boolean isEnabled() {
+        return enabled;
     }
 
-    public static Gauge<Double> registerWorkerGauge(
-            com.codahale.metrics.Gauge<Double> rawGauge, String name,
-            String... args) {
-        Gauge<Double> ret = new Gauge<Double>(rawGauge);
-        registerWorkerMetric(ret, name, args);
-        return ret;
+    public static String workerMetricName(String name, MetricType type) {
+        return MetricUtils.workerMetricName(topologyId, host, port, name, type);
     }
 
-    public static Gauge<Double> registerTaskGauge(
-            com.codahale.metrics.Gauge<Double> rawGauge, int taskId,
-            String name, String... args) {
-        Gauge<Double> ret = new Gauge<Double>(rawGauge);
-        registerTaskMetric(ret, taskId, name, args);
-        return ret;
-    }
-
-    public static Counter<Double> registerWorkerCounter(String name,
-            String... args) throws IllegalArgumentException {
-        Counter<Double> ret =
-                (Counter<Double>) Builder.mkInstance(Builder.COUNTER);
-        registerWorkerMetric(ret, name, args);
-        return ret;
-    }
-
-    public static Counter<Double> registerTaskCounter(int taskId, String name,
-            String... args) {
-        Counter<Double> ret =
-                (Counter<Double>) Builder.mkInstance(Builder.COUNTER);
-        registerTaskMetric(ret, taskId, name, args);
-        return ret;
-    }
-
-    public static Meter registerWorkerMeter(String name, String... args)
-            throws IllegalArgumentException {
-        Meter ret = (Meter) Builder.mkInstance(Builder.METER);
-        registerWorkerMetric(ret, name, args);
-        return ret;
-    }
-
-    public static Meter registerTaskMeter(int taskId, String name,
-            String... args) {
-        Meter ret = (Meter) Builder.mkInstance(Builder.METER);
-        registerTaskMetric(ret, taskId, name, args);
-        return ret;
-    }
-
-    public static Histogram registerWorkerHistogram(String name, String... args)
-            throws IllegalArgumentException {
-        Histogram ret = (Histogram) Builder.mkInstance(Builder.HISTOGRAM);
-        registerWorkerMetric(ret, name, args);
-        return ret;
-    }
-
-    public static Histogram registerTaskHistogram(int taskId, String name,
-            String... args) {
-        Histogram ret = (Histogram) Builder.mkInstance(Builder.HISTOGRAM);
-        registerTaskMetric(ret, taskId, name, args);
-        return ret;
-    }
-
-    public static Timer registerWorkerTimer(String name, String... args)
-            throws IllegalArgumentException {
-        Timer ret = (Timer) Builder.mkInstance(Builder.TIMER);
-        registerWorkerMetric(ret, name, args);
-        return ret;
-    }
-
-    public static Timer registerTaskTimer(int taskId, String name,
-            String... args) {
-        Timer ret = (Timer) Builder.mkInstance(Builder.TIMER);
-        registerTaskMetric(ret, taskId, name, args);
-        return ret;
-    }
-
-    public static class Builder {
-        public static final int COUNTER = 1;
-        public static final int METER = 2;
-        public static final int HISTOGRAM = 3;
-        public static final int TIMER = 4;
-
-        public static Metric mkInstance(int type) {
-            if (type == COUNTER) {
-                return new Counter<Double>(Double.valueOf(0));
-            } else if (type == METER) {
-                return new Meter();
-            } else if (type == HISTOGRAM) {
-                return new Histogram();
-            } else if (type == TIMER) {
-                return new Timer();
-            } else {
-                throw new IllegalArgumentException();
+    public static void addDebugMetrics(String names) {
+        String[] metrics = names.split(",");
+        for (String metric : metrics) {
+            metric = metric.trim();
+            if (!StringUtils.isBlank(metric)) {
+                debugMetricNames.add(metric);
             }
         }
+        LOG.info("debug metric names:{}", Joiner.on(",").join(debugMetricNames));
     }
 
-    public static MetricInfo getExposeWorkerMetrics() {
-        return exposeWorkerMetrics;
+    /**
+     * reserve for debug purposes
+     */
+    public static AsmMetric find(String name) {
+        for (AsmMetricRegistry registry : allRegistries) {
+            AsmMetric metric = registry.getMetric(name);
+            if (metric != null) {
+                return metric;
+            }
+        }
+        return null;
     }
 
-    public static void setExposeWorkerMetrics(MetricInfo exposeWorkerMetrics) {
-        JStormMetrics.exposeWorkerMetrics = exposeWorkerMetrics;
+    public static AsmMetric registerStreamMetric(String name, AsmMetric metric, boolean mergeTopology) {
+        name = fixNameIfPossible(name);
+        LOG.info("register stream metric:{}", name);
+        AsmMetric ret = streamMetrics.register(name, metric);
+
+        if (metric.isAggregate()) {
+            List<AsmMetric> assocMetrics = new ArrayList<>();
+
+            String taskMetricName = MetricUtils.stream2taskName(name);
+            AsmMetric taskMetric = taskMetrics.register(taskMetricName, metric.clone());
+            assocMetrics.add(taskMetric);
+
+            String compMetricName = MetricUtils.task2compName(taskMetricName);
+            AsmMetric componentMetric = componentMetrics.register(compMetricName, taskMetric.clone());
+            assocMetrics.add(componentMetric);
+
+            String metricName = MetricUtils.getMetricName(name);
+            if (metricName.contains(".")){
+                compMetricName = MetricUtils.task2MergeCompName(taskMetricName);
+                AsmMetric mergeCompMetric = componentMetrics.register(compMetricName, taskMetric.clone());
+                assocMetrics.add(mergeCompMetric);
+            }
+
+            if (mergeTopology){
+                String topologyMetricName = MetricUtils.comp2topologyName(compMetricName);
+                AsmMetric topologyMetric = topologyMetrics.register(topologyMetricName, ret.clone());
+                assocMetrics.add(topologyMetric);
+            }
+
+            ret.addAssocMetrics(assocMetrics.toArray(new AsmMetric[assocMetrics.size()]));
+        }
+
+        return ret;
     }
 
-    public static Map<Integer, MetricInfo> getExposeTaskMetrics() {
-        return exposeTaskMetrics;
+    public static AsmMetric registerTaskMetric(String name, AsmMetric metric) {
+        name = fixNameIfPossible(name);
+        AsmMetric ret = taskMetrics.register(name, metric);
+
+        if (metric.isAggregate()) {
+            String compMetricName = MetricUtils.task2compName(name);
+            AsmMetric componentMetric = componentMetrics.register(compMetricName, ret.clone());
+
+            ret.addAssocMetrics(componentMetric);
+        }
+
+        return ret;
     }
 
-    public static void setExposeTaskMetrics(
-            Map<Integer, MetricInfo> exposeTaskMetrics) {
-        JStormMetrics.exposeTaskMetrics = exposeTaskMetrics;
+//    public static AsmMetric registerStreamTopologyMetric(String name, AsmMetric metric) {
+//        name = fixNameIfPossible(name);
+//        LOG.info("register stream metric:{}", name);
+//        AsmMetric ret = streamMetrics.register(name, metric);
+//
+//        if (metric.isAggregate()) {
+//            String taskMetricName = MetricUtils.stream2taskName(name);
+//            AsmMetric taskMetric = taskMetrics.register(taskMetricName, ret.clone());
+//
+//            String compMetricName = MetricUtils.task2compName(taskMetricName);
+//            AsmMetric componentMetric = componentMetrics.register(compMetricName, ret.clone());
+//
+//            String topologyMetricName = MetricUtils.comp2topologyName(compMetricName);
+//            AsmMetric topologyMetric = topologyMetrics.register(topologyMetricName, ret.clone());
+//
+//            ret.addAssocMetrics(taskMetric, componentMetric, topologyMetric);
+//        }
+//
+//        return ret;
+//    }
+
+    public static AsmMetric registerWorkerMetric(String name, AsmMetric metric) {
+        name = fixNameIfPossible(name);
+        return workerMetrics.register(name, metric);
     }
 
-    public static Map<String, MetricInfo> getExposeNettyMetrics() {
-        return exposeNettyMetrics;
+    public static AsmMetric registerWorkerTopologyMetric(String name, AsmMetric metric) {
+        name = fixNameIfPossible(name);
+        AsmMetric ret = workerMetrics.register(name, metric);
+
+        String topologyMetricName = MetricUtils.worker2topologyName(name);
+        AsmMetric topologyMetric = topologyMetrics.register(topologyMetricName, ret.clone());
+
+        ret.addAssocMetrics(topologyMetric);
+
+        return ret;
     }
 
-    public static void setExposeNettyMetrics(Map<String, MetricInfo> exposeNettyMetrics) {
-        JStormMetrics.exposeNettyMetrics = exposeNettyMetrics;
+    public static AsmMetric registerNettyMetric(String name, AsmMetric metric) {
+        name = fixNameIfPossible(name, NETTY_GROUP);
+        return nettyMetrics.register(name, metric);
     }
 
-    
+    /**
+     * simplified helper method to register a worker histogram
+     *
+     * @param topologyId topology id
+     * @param name       metric name, NOTE it's not a full-qualified name.
+     * @param histogram  histogram
+     * @return registered histogram
+     */
+    public static AsmHistogram registerWorkerHistogram(String topologyId, String name, AsmHistogram histogram) {
+        return (AsmHistogram) registerWorkerMetric(
+                MetricUtils.workerMetricName(topologyId, host, 0, name, MetricType.HISTOGRAM), histogram);
+    }
 
-    
+    /**
+     * simplified helper method to register a worker gauge
+     */
+    public static AsmGauge registerWorkerGauge(String topologyId, String name, AsmGauge gauge) {
+        return (AsmGauge) registerWorkerMetric(
+                MetricUtils.workerMetricName(topologyId, host, 0, name, MetricType.GAUGE), gauge);
+    }
+
+    /**
+     * simplified helper method to register a worker meter
+     */
+    public static AsmMeter registerWorkerMeter(String topologyId, String name, AsmMeter meter) {
+        return (AsmMeter) registerWorkerMetric(
+                MetricUtils.workerMetricName(topologyId, host, 0, name, MetricType.METER), meter);
+    }
+
+    /**
+     * simplified helper method to register a worker counter
+     */
+    public static AsmCounter registerWorkerCounter(String topologyId, String name, AsmCounter counter) {
+        return (AsmCounter) registerWorkerMetric(
+                MetricUtils.workerMetricName(topologyId, host, 0, name, MetricType.COUNTER), counter);
+    }
+
+    /**
+     * simplified helper method to register a worker timer
+     */
+    public static AsmTimer registerWorkerTimer(String topologyId, String name, AsmTimer timer) {
+        return (AsmTimer) registerWorkerMetric(
+                MetricUtils.workerMetricName(topologyId, host, 0, name, MetricType.TIMER), timer);
+    }
+
+    public static AsmMetric getStreamMetric(String name) {
+        name = fixNameIfPossible(name);
+        return streamMetrics.getMetric(name);
+    }
+
+    public static AsmMetric getTaskMetric(String name) {
+        name = fixNameIfPossible(name);
+        return taskMetrics.getMetric(name);
+    }
+
+    public static AsmMetric getComponentMetric(String name) {
+        name = fixNameIfPossible(name);
+        return componentMetrics.getMetric(name);
+    }
+
+    public static AsmMetric getWorkerMetric(String name) {
+        name = fixNameIfPossible(name);
+        return workerMetrics.getMetric(name);
+    }
+
+    public static void unregisterWorkerMetric(String name) {
+        name = fixNameIfPossible(name);
+        workerMetrics.remove(name);
+    }
+
+    public static void unregisterNettyMetric(String name) {
+        name = fixNameIfPossible(name, NETTY_GROUP);
+        nettyMetrics.remove(name);
+    }
+
+    public static void unregisterTaskMetric(String name) {
+        name = fixNameIfPossible(name);
+        taskMetrics.remove(name);
+    }
+
+    public static AsmMetricRegistry getNettyMetrics() {
+        return nettyMetrics;
+    }
+
+    public static AsmMetricRegistry getWorkerMetrics() {
+        return workerMetrics;
+    }
+
+    public static AsmMetricRegistry getComponentMetrics() {
+        return componentMetrics;
+    }
+
+    public static AsmMetricRegistry getTaskMetrics() {
+        return taskMetrics;
+    }
+
+    public static AsmMetricRegistry getStreamMetrics() {
+        return streamMetrics;
+    }
+
+    /**
+     * convert snapshots to thrift objects, note that timestamps are aligned to min during the conversion,
+     * so nimbus server will get snapshots with aligned timestamps (still in ms as TDDL will use it).
+     */
+    public static MetricInfo computeAllMetrics() {
+        long start = System.currentTimeMillis();
+        MetricInfo metricInfo = MetricUtils.mkMetricInfo();
+
+        List<Map.Entry<String, AsmMetric>> entries = Lists.newArrayList();
+        entries.addAll(streamMetrics.metrics.entrySet());
+        entries.addAll(taskMetrics.metrics.entrySet());
+        entries.addAll(componentMetrics.metrics.entrySet());
+        entries.addAll(workerMetrics.metrics.entrySet());
+        entries.addAll(nettyMetrics.metrics.entrySet());
+        entries.addAll(topologyMetrics.metrics.entrySet());
+
+        for (Map.Entry<String, AsmMetric> entry : entries) {
+            String name = entry.getKey();
+            AsmMetric metric = entry.getValue();
+            Map<Integer, AsmSnapshot> snapshots = metric.getSnapshots();
+
+            int op = metric.getOp();
+            if ((op & AsmMetric.MetricOp.LOG) == AsmMetric.MetricOp.LOG) {
+                MetricUtils.printMetricSnapshot(metric, snapshots);
+            }
+
+            if ((op & AsmMetric.MetricOp.REPORT) == AsmMetric.MetricOp.REPORT) {
+                MetaType metaType = MetricUtils.metaType(metric.getMetricName());
+                try {
+                    if (metric instanceof AsmCounter) {
+                        Map data = MetricUtils.toThriftCounterSnapshots(snapshots);
+                        putIfNotEmpty(metricInfo.get_metrics(), name, data);
+                    } else if (metric instanceof AsmGauge) {
+                        Map data = MetricUtils.toThriftGaugeSnapshots(snapshots);
+                        putIfNotEmpty(metricInfo.get_metrics(), name, data);
+                    } else if (metric instanceof AsmMeter) {
+                        Map data = MetricUtils.toThriftMeterSnapshots(snapshots);
+                        putIfNotEmpty(metricInfo.get_metrics(), name, data);
+                    } else if (metric instanceof AsmHistogram) {
+                        Map data = MetricUtils.toThriftHistoSnapshots(metaType, snapshots);
+                        putIfNotEmpty(metricInfo.get_metrics(), name, data);
+                    } else if (metric instanceof AsmTimer) {
+                        Map data = MetricUtils.toThriftTimerSnapshots(metaType, snapshots);
+                        putIfNotEmpty(metricInfo.get_metrics(), name, data);
+                    }
+                } catch (Exception ex) {
+                    LOG.error("Error", ex);
+                }
+            }
+        }
+
+        if (debug) {
+            MetricUtils.printMetricInfo(metricInfo, debugMetricNames);
+        }
+        LOG.info("compute all metrics, cost:{}", System.currentTimeMillis() - start);
+
+        return metricInfo;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T extends Map> void putIfNotEmpty(Map base, String name, T data) {
+        if (data != null && data.size() > 0) {
+            base.put(name, data);
+        }
+    }
+
+    public static String fixNameIfPossible(String name) {
+        return fixNameIfPossible(name, DEFAULT_GROUP);
+    }
+
+    public static String fixNameIfPossible(String name, String group) {
+        MetaType type = MetricUtils.metaType(name);
+        String[] parts = name.split(MetricUtils.DELIM);
+        if (parts[1].equals("")) {
+            parts[1] = topologyId;
+        }
+        if (type != MetaType.WORKER && parts[5].equals("")) {
+            parts[5] = group;
+        } else if (parts[2].equals("")) {
+            parts[2] = host;
+            parts[3] = port + "";
+            if (parts[4].equals("")) {
+                parts[4] = group;
+            }
+        }
+        return MetricUtils.concat(parts);
+    }
+
+    public static void main(String[] args) throws Exception {
+        JStormMetrics.topologyId = "topologyId";
+        JStormMetrics.host = "127.0.0.1";
+        JStormMetrics.port = 6800;
+
+        String tpId = "test";
+        String compName = "bolt";
+        int taskId = 1;
+        String streamId = "defaultStream";
+        String type = MetaType.STREAM.getV() + MetricType.COUNTER.getV();
+        String metricName = "counter1";
+        String group = "udf";
+
+        String name = MetricUtils.metricName(type, tpId, compName, taskId, streamId, group, metricName);
+        System.out.println(name);
+
+        AsmCounter counter = new AsmCounter();
+        AsmMetric ret1 = JStormMetrics.registerStreamMetric(name, counter, false);
+        AsmMetric ret2 = JStormMetrics.registerStreamMetric(name, counter, false);
+        System.out.println(ret1 == ret2);
+
+        counter.update(1L);
+
+        metricName = MetricUtils.workerMetricName("metric1", MetricType.COUNTER);
+        System.out.println(metricName);
+        metricName = fixNameIfPossible(metricName);
+        System.out.println(metricName);
+        System.out.println(fixNameIfPossible(metricName));
+    }
+
 }

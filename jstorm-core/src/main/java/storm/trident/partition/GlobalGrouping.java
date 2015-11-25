@@ -28,8 +28,7 @@ import java.util.List;
 public class GlobalGrouping implements CustomStreamGrouping {
 
     List<Integer> target;
-    
-    
+
     @Override
     public void prepare(WorkerTopologyContext context, GlobalStreamId stream, List<Integer> targets) {
         List<Integer> sorted = new ArrayList<Integer>(targets);
@@ -41,5 +40,5 @@ public class GlobalGrouping implements CustomStreamGrouping {
     public List<Integer> chooseTasks(int i, List<Object> list) {
         return target;
     }
-    
+
 }

@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
 import backtype.storm.security.auth.AuthUtils;
 
 /**
- *  client side callback handler.
+ * client side callback handler.
  */
 public class ClientCallbackHandler implements CallbackHandler {
     private static final String USERNAME = "username";
@@ -51,28 +51,29 @@ public class ClientCallbackHandler implements CallbackHandler {
      * @throws IOException
      */
     public ClientCallbackHandler(Configuration configuration) throws IOException {
-        if (configuration == null) return;
+        if (configuration == null)
+            return;
         AppConfigurationEntry configurationEntries[] = configuration.getAppConfigurationEntry(AuthUtils.LOGIN_CONTEXT_CLIENT);
         if (configurationEntries == null) {
-            String errorMessage = "Could not find a '"+AuthUtils.LOGIN_CONTEXT_CLIENT
-                    + "' entry in this configuration: Client cannot start.";
+            String errorMessage = "Could not find a '" + AuthUtils.LOGIN_CONTEXT_CLIENT + "' entry in this configuration: Client cannot start.";
             throw new IOException(errorMessage);
         }
 
         _password = "";
-        for(AppConfigurationEntry entry: configurationEntries) {
+        for (AppConfigurationEntry entry : configurationEntries) {
             if (entry.getOptions().get(USERNAME) != null) {
-                _username = (String)entry.getOptions().get(USERNAME);
+                _username = (String) entry.getOptions().get(USERNAME);
             }
             if (entry.getOptions().get(PASSWORD) != null) {
-                _password = (String)entry.getOptions().get(PASSWORD);
+                _password = (String) entry.getOptions().get(PASSWORD);
             }
         }
     }
 
     /**
      * This method is invoked by SASL for authentication challenges
-     * @param callbacks a collection of challenge callbacks 
+     * 
+     * @param callbacks a collection of challenge callbacks
      */
     public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
         for (Callback c : callbacks) {
@@ -82,10 +83,10 @@ public class ClientCallbackHandler implements CallbackHandler {
                 nc.setName(_username);
             } else if (c instanceof PasswordCallback) {
                 LOG.debug("password callback");
-                PasswordCallback pc = (PasswordCallback)c;
+                PasswordCallback pc = (PasswordCallback) c;
                 if (_password != null) {
                     pc.setPassword(_password.toCharArray());
-                } 
+                }
             } else if (c instanceof AuthorizeCallback) {
                 LOG.debug("authorization callback");
                 AuthorizeCallback ac = (AuthorizeCallback) c;

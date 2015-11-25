@@ -28,10 +28,10 @@ public class MultiReducedMetric implements IMetric {
     public MultiReducedMetric(IReducer reducer) {
         _reducer = reducer;
     }
-    
+
     public ReducedMetric scope(String key) {
         ReducedMetric val = _value.get(key);
-        if(val == null) {
+        if (val == null) {
             _value.put(key, val = new ReducedMetric(_reducer));
         }
         return val;
@@ -39,9 +39,9 @@ public class MultiReducedMetric implements IMetric {
 
     public Object getValueAndReset() {
         Map ret = new HashMap();
-        for(Map.Entry<String, ReducedMetric> e : _value.entrySet()) {
+        for (Map.Entry<String, ReducedMetric> e : _value.entrySet()) {
             Object val = e.getValue().getValueAndReset();
-            if(val != null) {
+            if (val != null) {
                 ret.put(e.getKey(), val);
             }
         }

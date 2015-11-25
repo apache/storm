@@ -36,15 +36,13 @@ import com.alibaba.jstorm.utils.JStormUtils;
 /**
  * 
  * 
- * The action when nimbus receive kill command 1. set the topology status as
- * target 2. wait 2 * Timeout seconds later, do removing topology from ZK
+ * The action when nimbus receive kill command 1. set the topology status as target 2. wait 2 * Timeout seconds later, do removing topology from ZK
  * 
  * @author Longda
  */
 public class DelayStatusTransitionCallback extends BaseCallback {
 
-    private static Logger LOG = LoggerFactory
-            .getLogger(DelayStatusTransitionCallback.class);
+    private static Logger LOG = LoggerFactory.getLogger(DelayStatusTransitionCallback.class);
 
     public static final int DEFAULT_DELAY_SECONDS = 30;
 
@@ -54,8 +52,7 @@ public class DelayStatusTransitionCallback extends BaseCallback {
     protected StatusType newType;
     protected StatusType nextAction;
 
-    public DelayStatusTransitionCallback(NimbusData data, String topologyid,
-            StormStatus oldStatus, StatusType newType, StatusType nextAction) {
+    public DelayStatusTransitionCallback(NimbusData data, String topologyid, StormStatus oldStatus, StatusType newType, StatusType nextAction) {
         this.data = data;
         this.topologyid = topologyid;
         this.oldStatus = oldStatus;
@@ -73,13 +70,8 @@ public class DelayStatusTransitionCallback extends BaseCallback {
             Map<?, ?> map = null;
             try {
 
-                map =
-                        StormConfig.read_nimbus_topology_conf(data.getConf(),
-                                topologyid);
-                delaySecs =
-                        JStormUtils.parseInt(
-                                map.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS),
-                                DEFAULT_DELAY_SECONDS);
+                map = StormConfig.read_nimbus_topology_conf(data.getConf(), topologyid);
+                delaySecs = JStormUtils.parseInt(map.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS), DEFAULT_DELAY_SECONDS);
             } catch (Exception e) {
                 LOG.info("Failed to get topology configuration " + topologyid);
             }
@@ -98,12 +90,9 @@ public class DelayStatusTransitionCallback extends BaseCallback {
     @Override
     public <T> Object execute(T... args) {
         int delaySecs = getDelaySeconds(args);
-        LOG.info("Delaying event " + newType + " for " + delaySecs
-                + " secs for " + topologyid);
+        LOG.info("Delaying event " + newType + " for " + delaySecs + " secs for " + topologyid);
 
-        data.getScheduExec().schedule(
-                new DelayEventRunnable(data, topologyid, nextAction, args),
-                delaySecs, TimeUnit.SECONDS);
+        data.getScheduExec().schedule(new DelayEventRunnable(data, topologyid, nextAction, args), delaySecs, TimeUnit.SECONDS);
 
         return new StormStatus(delaySecs, newType);
     }

@@ -21,7 +21,7 @@ import java.util.Map;
 
 public class NothingEmptyEmitStrategy implements ISpoutWaitStrategy {
     @Override
-    public void emptyEmit(long streak) {        
+    public void emptyEmit(long streak) {
     }
 
     @Override

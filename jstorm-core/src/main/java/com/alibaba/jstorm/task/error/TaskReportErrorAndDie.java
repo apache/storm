@@ -29,15 +29,20 @@ public class TaskReportErrorAndDie implements ITaskReportErr {
     private ITaskReportErr reporterror;
     private RunnableCallback haltfn;
 
-    public TaskReportErrorAndDie(ITaskReportErr _reporterror,
-            RunnableCallback _haltfn) {
+    public TaskReportErrorAndDie(ITaskReportErr _reporterror, RunnableCallback _haltfn) {
         this.reporterror = _reporterror;
         this.haltfn = _haltfn;
     }
 
+    // If throwable error was caught, a error will be reported and current task will be shutdown.
     @Override
     public void report(Throwable error) {
         this.reporterror.report(error);
         this.haltfn.run();
+    }
+
+    @Override
+    public void report(String error) {
+        this.reporterror.report(error);
     }
 }

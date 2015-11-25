@@ -35,8 +35,7 @@ import com.alibaba.jstorm.utils.JStormUtils;
 
 /**
  * 
- * tuple sending object, which get which task should tuple be send to, and
- * update statics
+ * tuple sending object, which get which task should tuple be send to, and update statics
  * 
  * @author yannian/Longda
  * 
@@ -58,8 +57,7 @@ public class TaskSendTargets {
     private boolean isDebuging = false;
     private String debugIdStr;
 
-    public TaskSendTargets(Map<Object, Object> _storm_conf, String _component,
-            Map<String, Map<String, MkGrouper>> _stream_component_grouper,
+    public TaskSendTargets(Map<Object, Object> _storm_conf, String _component, Map<String, Map<String, MkGrouper>> _stream_component_grouper,
             TopologyContext _topology_context, TaskBaseMetric _task_stats) {
         this.stormConf = _storm_conf;
         this.componentId = _component;
@@ -67,17 +65,14 @@ public class TaskSendTargets {
         this.topologyContext = _topology_context;
         this.taskStats = _task_stats;
 
-        isDebuging =
-                JStormUtils.parseBoolean(stormConf.get(Config.TOPOLOGY_DEBUG),
-                        false);
+        isDebuging = JStormUtils.parseBoolean(stormConf.get(Config.TOPOLOGY_DEBUG), false);
 
         taskId = topologyContext.getThisTaskId();
         debugIdStr = " Emit from " + componentId + ":" + taskId + " ";
     }
 
     // direct send tuple to special task
-    public java.util.List<Integer> get(Integer out_task_id, String stream,
-            List<Object> tuple) {
+    public List<Integer> get(Integer out_task_id, String stream, List<Object> tuple) {
 
         // in order to improve acker's speed, skip checking
         // String target_component =
@@ -92,29 +87,26 @@ public class TaskSendTargets {
         // }
 
         if (isDebuging) {
-            LOG.info(debugIdStr + stream + " to " + out_task_id + ":"
-                    + tuple.toString());
+            LOG.info(debugIdStr + stream + " to " + out_task_id + ":" + tuple.toString());
         }
 
         taskStats.send_tuple(stream, 1);
 
-        java.util.List<Integer> out_tasks = new ArrayList<Integer>();
+        List<Integer> out_tasks = new ArrayList<Integer>();
         out_tasks.add(out_task_id);
         return out_tasks;
     }
 
     // send tuple according to grouping
-    public java.util.List<Integer> get(String stream, List<Object> tuple) {
-        java.util.List<Integer> out_tasks = new ArrayList<Integer>();
+    public List<Integer> get(String stream, List<Object> tuple) {
+        List<Integer> out_tasks = new ArrayList<Integer>();
 
         // get grouper, then get which task should tuple be sent to.
-        Map<String, MkGrouper> componentCrouping =
-                streamComponentgrouper.get(stream);
+        Map<String, MkGrouper> componentCrouping = streamComponentgrouper.get(stream);
         if (componentCrouping == null) {
             // if the target component's parallelism is 0, don't need send to
             // them
-            LOG.debug("Failed to get Grouper of " + stream + " in "
-                    + debugIdStr);
+            LOG.debug("Failed to get Grouper of " + stream + " in " + debugIdStr);
             return out_tasks;
         }
 
@@ -123,8 +115,7 @@ public class TaskSendTargets {
             MkGrouper g = ee.getValue();
 
             if (GrouperType.direct.equals(g.gettype())) {
-                throw new IllegalArgumentException(
-                        "Cannot do regular emit to direct stream");
+                throw new IllegalArgumentException("Cannot do regular emit to direct stream");
             }
 
             out_tasks.addAll(g.grouper(tuple));
@@ -133,8 +124,7 @@ public class TaskSendTargets {
 
         if (isDebuging) {
 
-            LOG.info(debugIdStr + stream + " to " + out_tasks + ":"
-                    + tuple.toString());
+            LOG.info(debugIdStr + stream + " to " + out_tasks + ":" + tuple.toString());
         }
 
         int num_out_tasks = out_tasks.size();
@@ -144,8 +134,7 @@ public class TaskSendTargets {
         return out_tasks;
     }
 
-    public void updateStreamCompGrouper(
-            Map<String, Map<String, MkGrouper>> streamComponentgrouper) {
+    public void updateStreamCompGrouper(Map<String, Map<String, MkGrouper>> streamComponentgrouper) {
         this.streamComponentgrouper = streamComponentgrouper;
     }
 }

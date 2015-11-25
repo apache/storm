@@ -28,8 +28,7 @@ public class DelayEventRunnable implements Runnable {
     private StatusType status;
     private Object[] args;
 
-    public DelayEventRunnable(NimbusData data, String topologyid,
-            StatusType status, Object[] args) {
+    public DelayEventRunnable(NimbusData data, String topologyid, StatusType status, Object[] args) {
         this.data = data;
         this.topologyid = topologyid;
         this.status = status;

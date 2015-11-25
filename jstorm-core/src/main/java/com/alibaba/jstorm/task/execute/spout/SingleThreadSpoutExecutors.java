@@ -17,15 +17,9 @@
  */
 package com.alibaba.jstorm.task.execute.spout;
 
-import java.util.Map;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import backtype.storm.task.TopologyContext;
 import backtype.storm.utils.DisruptorQueue;
-import backtype.storm.utils.WorkerClassLoader;
-
+import com.alibaba.jstorm.metric.JStormMetricsReporter;
 import com.alibaba.jstorm.task.Task;
 import com.alibaba.jstorm.task.TaskBaseMetric;
 import com.alibaba.jstorm.task.TaskStatus;
@@ -35,35 +29,30 @@ import com.alibaba.jstorm.task.comm.TaskSendTargets;
 import com.alibaba.jstorm.task.comm.TupleInfo;
 import com.alibaba.jstorm.task.error.ITaskReportErr;
 import com.alibaba.jstorm.utils.RotatingMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Map;
 
 /**
  * spout executor
- * 
+ * <p/>
  * All spout actions will be done here
  * 
  * @author yannian/Longda
- * 
  */
 public class SingleThreadSpoutExecutors extends SpoutExecutors {
-    private static Logger LOG = LoggerFactory
-            .getLogger(SingleThreadSpoutExecutors.class);
+    private static Logger LOG = LoggerFactory.getLogger(SingleThreadSpoutExecutors.class);
 
-    public SingleThreadSpoutExecutors(Task task,
-            backtype.storm.spout.ISpout _spout, TaskTransfer _transfer_fn,
-            Map<Integer, DisruptorQueue> innerTaskTransfer, Map _storm_conf,
-            TaskSendTargets sendTargets, TaskStatus taskStatus,
-            TopologyContext topology_context, TopologyContext _user_context,
-            TaskBaseMetric _task_stats, ITaskReportErr _report_error) {
-        super(task, _spout, _transfer_fn, innerTaskTransfer, _storm_conf,
-                sendTargets, taskStatus, topology_context, _user_context,
-                _task_stats, _report_error);
+    public SingleThreadSpoutExecutors(Task task) {
+        super(task);
 
-        // sending Tuple's TimeCacheMap
-        pending =
-                new RotatingMap<Long, TupleInfo>(Acker.TIMEOUT_BUCKET_NUM,
-                        null, true);
-
-        super.prepare(sendTargets, _transfer_fn, topology_context);
+    }
+    
+    @Override
+    public void mkPending() {
+    	// sending Tuple's TimeCacheMap
+        pending = new RotatingMap<Long, TupleInfo>(Acker.TIMEOUT_BUCKET_NUM, null, true);
     }
 
     @Override
@@ -73,10 +62,14 @@ public class SingleThreadSpoutExecutors extends SpoutExecutors {
 
     @Override
     public void run() {
+    	if (isFinishInit == false ) {
+    		initWrapper();
+    	}
+    	
         executeEvent();
 
         super.nextTuple();
-            
+
         processControlEvent();
 
     }

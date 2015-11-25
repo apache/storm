@@ -33,8 +33,7 @@ import org.slf4j.LoggerFactory;
 import backtype.storm.messaging.TaskMessage;
 
 class StormServerHandler extends SimpleChannelUpstreamHandler {
-    private static final Logger LOG = LoggerFactory
-            .getLogger(StormServerHandler.class);
+    private static final Logger LOG = LoggerFactory.getLogger(StormServerHandler.class);
     private NettyServer server;
     private Map<Channel, Integer> failureCounters;
 
@@ -71,29 +70,28 @@ class StormServerHandler extends SimpleChannelUpstreamHandler {
         LOG.info("Connection established {}", e.getChannel().getRemoteAddress());
         server.addChannel(e.getChannel());
     }
-    
+
     @Override
-    public void childChannelClosed(
-            ChannelHandlerContext ctx, ChildChannelStateEvent e) throws Exception {
+    public void childChannelClosed(ChannelHandlerContext ctx, ChildChannelStateEvent e) throws Exception {
         super.childChannelClosed(ctx, e);
         LOG.info("Connection closed {}", e.getChildChannel().getRemoteAddress());
-        
+
         MessageDecoder.removeTransmitHistogram(e.getChildChannel());
     }
-    
+
     @Override
     public void channelDisconnected(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
         super.channelDisconnected(ctx, e);
         LOG.info("Connection channelDisconnected {}", e.getChannel().getRemoteAddress());
-        
+
         MessageDecoder.removeTransmitHistogram(e.getChannel());
     };
-    
+
     @Override
     public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
         super.channelClosed(ctx, e);
         LOG.info("Connection channelClosed {}", e.getChannel().getRemoteAddress());
-        
+
         MessageDecoder.removeTransmitHistogram(e.getChannel());
     };
 
@@ -131,8 +129,7 @@ class StormServerHandler extends SimpleChannelUpstreamHandler {
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
         // removeFailureCounter(e.getChannel());
         if (e.getChannel() != null) {
-            LOG.info("Channel occur exception {}", e.getChannel()
-                    .getRemoteAddress());
+            LOG.info("Channel occur exception {}", e.getChannel().getRemoteAddress());
         }
 
         server.closeChannel(e.getChannel());

@@ -77,6 +77,8 @@ class Client(Iface):
     result = result_result()
     result.read(iprot)
     iprot.readMessageEnd()
+    if result.aze is not None:
+      raise result.aze
     return
 
   def fetchRequest(self, functionName):
@@ -108,6 +110,8 @@ class Client(Iface):
     iprot.readMessageEnd()
     if result.success is not None:
       return result.success
+    if result.aze is not None:
+      raise result.aze
     raise TApplicationException(TApplicationException.MISSING_RESULT, "fetchRequest failed: unknown result");
 
   def failRequest(self, id):
@@ -137,6 +141,8 @@ class Client(Iface):
     result = failRequest_result()
     result.read(iprot)
     iprot.readMessageEnd()
+    if result.aze is not None:
+      raise result.aze
     return
 
 
@@ -168,7 +174,10 @@ class Processor(Iface, TProcessor):
     args.read(iprot)
     iprot.readMessageEnd()
     result = result_result()
-    self._handler.result(args.id, args.result)
+    try:
+      self._handler.result(args.id, args.result)
+    except AuthorizationException, aze:
+      result.aze = aze
     oprot.writeMessageBegin("result", TMessageType.REPLY, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
@@ -179,7 +188,10 @@ class Processor(Iface, TProcessor):
     args.read(iprot)
     iprot.readMessageEnd()
     result = fetchRequest_result()
-    result.success = self._handler.fetchRequest(args.functionName)
+    try:
+      result.success = self._handler.fetchRequest(args.functionName)
+    except AuthorizationException, aze:
+      result.aze = aze
     oprot.writeMessageBegin("fetchRequest", TMessageType.REPLY, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
@@ -190,7 +202,10 @@ class Processor(Iface, TProcessor):
     args.read(iprot)
     iprot.readMessageEnd()
     result = failRequest_result()
-    self._handler.failRequest(args.id)
+    try:
+      self._handler.failRequest(args.id)
+    except AuthorizationException, aze:
+      result.aze = aze
     oprot.writeMessageBegin("failRequest", TMessageType.REPLY, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
@@ -278,9 +293,18 @@ class result_args:
     return not (self == other)
 
 class result_result:
+  """
+  Attributes:
+   - aze
+  """
 
   thrift_spec = (
+    None, # 0
+    (1, TType.STRUCT, 'aze', (AuthorizationException, AuthorizationException.thrift_spec), None, ), # 1
   )
+
+  def __init__(self, aze=None,):
+    self.aze = aze
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -291,6 +315,12 @@ class result_result:
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
         break
+      if fid == 1:
+        if ftype == TType.STRUCT:
+          self.aze = AuthorizationException()
+          self.aze.read(iprot)
+        else:
+          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -301,6 +331,10 @@ class result_result:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
     oprot.writeStructBegin('result_result')
+    if self.aze is not None:
+      oprot.writeFieldBegin('aze', TType.STRUCT, 1)
+      self.aze.write(oprot)
+      oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
@@ -310,6 +344,7 @@ class result_result:
 
   def __hash__(self):
     value = 17
+    value = (value * 31) ^ hash(self.aze)
     return value
 
   def __repr__(self):
@@ -392,14 +427,17 @@ class fetchRequest_result:
   """
   Attributes:
    - success
+   - aze
   """
 
   thrift_spec = (
     (0, TType.STRUCT, 'success', (DRPCRequest, DRPCRequest.thrift_spec), None, ), # 0
+    (1, TType.STRUCT, 'aze', (AuthorizationException, AuthorizationException.thrift_spec), None, ), # 1
   )
 
-  def __init__(self, success=None,):
+  def __init__(self, success=None, aze=None,):
     self.success = success
+    self.aze = aze
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -416,6 +454,12 @@ class fetchRequest_result:
           self.success.read(iprot)
         else:
           iprot.skip(ftype)
+      elif fid == 1:
+        if ftype == TType.STRUCT:
+          self.aze = AuthorizationException()
+          self.aze.read(iprot)
+        else:
+          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -430,6 +474,10 @@ class fetchRequest_result:
       oprot.writeFieldBegin('success', TType.STRUCT, 0)
       self.success.write(oprot)
       oprot.writeFieldEnd()
+    if self.aze is not None:
+      oprot.writeFieldBegin('aze', TType.STRUCT, 1)
+      self.aze.write(oprot)
+      oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
@@ -440,6 +488,7 @@ class fetchRequest_result:
   def __hash__(self):
     value = 17
     value = (value * 31) ^ hash(self.success)
+    value = (value * 31) ^ hash(self.aze)
     return value
 
   def __repr__(self):
@@ -519,9 +568,18 @@ class failRequest_args:
     return not (self == other)
 
 class failRequest_result:
+  """
+  Attributes:
+   - aze
+  """
 
   thrift_spec = (
+    None, # 0
+    (1, TType.STRUCT, 'aze', (AuthorizationException, AuthorizationException.thrift_spec), None, ), # 1
   )
+
+  def __init__(self, aze=None,):
+    self.aze = aze
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -532,6 +590,12 @@ class failRequest_result:
       (fname, ftype, fid) = iprot.readFieldBegin()
       if ftype == TType.STOP:
         break
+      if fid == 1:
+        if ftype == TType.STRUCT:
+          self.aze = AuthorizationException()
+          self.aze.read(iprot)
+        else:
+          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -542,6 +606,10 @@ class failRequest_result:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
     oprot.writeStructBegin('failRequest_result')
+    if self.aze is not None:
+      oprot.writeFieldBegin('aze', TType.STRUCT, 1)
+      self.aze.write(oprot)
+      oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
@@ -551,6 +619,7 @@ class failRequest_result:
 
   def __hash__(self):
     value = 17
+    value = (value * 31) ^ hash(self.aze)
     return value
 
   def __repr__(self):

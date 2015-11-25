@@ -28,11 +28,11 @@ import storm.trident.tuple.TridentTuple;
 public class CombinerAggregatorInitImpl implements Function {
 
     CombinerAggregator _agg;
-    
+
     public CombinerAggregatorInitImpl(CombinerAggregator agg) {
         _agg = agg;
     }
-    
+
     @Override
     public void execute(TridentTuple tuple, TridentCollector collector) {
         collector.emit(new Values(_agg.init(tuple)));
@@ -45,5 +45,5 @@ public class CombinerAggregatorInitImpl implements Function {
     @Override
     public void cleanup() {
     }
-    
+
 }

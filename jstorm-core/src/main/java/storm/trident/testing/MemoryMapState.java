@@ -153,14 +153,14 @@ public class MemoryMapState<T> implements Snapshottable<T>, ITupleCollection, Ma
         public Iterator<List<Object>> getTuples() {
             return new Iterator<List<Object>>() {
 
-                private Iterator<Map.Entry<List<Object>, T>> it = db.entrySet().iterator();
+                private Iterator<Entry<List<Object>, T>> it = db.entrySet().iterator();
 
                 public boolean hasNext() {
                     return it.hasNext();
                 }
 
                 public List<Object> next() {
-                    Map.Entry<List<Object>, T> e = it.next();
+                    Entry<List<Object>, T> e = it.next();
                     List<Object> ret = new ArrayList<Object>();
                     ret.addAll(e.getKey());
                     ret.add(((OpaqueValue)e.getValue()).getCurr());

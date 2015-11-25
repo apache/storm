@@ -35,10 +35,8 @@ import com.alibaba.jstorm.container.cgroup.core.NetPrioCore;
 
 public class CgroupCoreFactory {
 
-    public static Map<SubSystemType, CgroupCore> getInstance(
-            Set<SubSystemType> types, String dir) {
-        Map<SubSystemType, CgroupCore> result =
-                new HashMap<SubSystemType, CgroupCore>();
+    public static Map<SubSystemType, CgroupCore> getInstance(Set<SubSystemType> types, String dir) {
+        Map<SubSystemType, CgroupCore> result = new HashMap<SubSystemType, CgroupCore>();
         for (SubSystemType type : types) {
             switch (type) {
             case blkio:

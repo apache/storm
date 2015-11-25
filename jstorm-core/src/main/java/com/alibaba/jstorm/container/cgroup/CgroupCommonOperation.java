@@ -42,7 +42,6 @@ public interface CgroupCommonOperation {
 
     public boolean getCgroupCloneChildren() throws IOException;
 
-    public void setEventControl(String eventFd, String controlFd,
-            String... args) throws IOException;
+    public void setEventControl(String eventFd, String controlFd, String... args) throws IOException;
 
 }

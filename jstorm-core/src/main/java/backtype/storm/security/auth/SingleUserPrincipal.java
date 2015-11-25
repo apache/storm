@@ -34,7 +34,7 @@ public class SingleUserPrincipal implements Principal {
     @Override
     public boolean equals(Object another) {
         if (another instanceof SingleUserPrincipal) {
-            return _userName.equals(((SingleUserPrincipal)another)._userName);
+            return _userName.equals(((SingleUserPrincipal) another)._userName);
         }
         return false;
     }

@@ -22,7 +22,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;
 
-
 public class BufferFileInputStream {
     byte[] buffer;
     FileInputStream stream;
@@ -33,15 +32,15 @@ public class BufferFileInputStream {
     }
 
     public BufferFileInputStream(String file) throws FileNotFoundException {
-        this(file, 15*1024);
+        this(file, 15 * 1024);
     }
 
     public byte[] read() throws IOException {
         int length = stream.read(buffer);
-        if(length==-1) {
+        if (length == -1) {
             close();
             return new byte[0];
-        } else if(length==buffer.length) {
+        } else if (length == buffer.length) {
             return buffer;
         } else {
             return Arrays.copyOf(buffer, length);

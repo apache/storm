@@ -31,19 +31,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
-
 abstract public class ShellUtils {
     public static Logger LOG = LoggerFactory.getLogger(ShellUtils.class);
 
     // OSType detection
     public enum OSType {
-        OS_TYPE_LINUX,
-        OS_TYPE_WIN,
-        OS_TYPE_SOLARIS,
-        OS_TYPE_MAC,
-        OS_TYPE_FREEBSD,
-        OS_TYPE_OTHER
+        OS_TYPE_LINUX, OS_TYPE_WIN, OS_TYPE_SOLARIS, OS_TYPE_MAC, OS_TYPE_FREEBSD, OS_TYPE_OTHER
     }
 
     public static final OSType osType = getOSType();
@@ -69,29 +62,27 @@ abstract public class ShellUtils {
     // Helper static vars for each platform
     public static final boolean WINDOWS = (osType == OSType.OS_TYPE_WIN);
     public static final boolean SOLARIS = (osType == OSType.OS_TYPE_SOLARIS);
-    public static final boolean MAC     = (osType == OSType.OS_TYPE_MAC);
+    public static final boolean MAC = (osType == OSType.OS_TYPE_MAC);
     public static final boolean FREEBSD = (osType == OSType.OS_TYPE_FREEBSD);
-    public static final boolean LINUX   = (osType == OSType.OS_TYPE_LINUX);
-    public static final boolean OTHER   = (osType == OSType.OS_TYPE_OTHER);
-
+    public static final boolean LINUX = (osType == OSType.OS_TYPE_LINUX);
+    public static final boolean OTHER = (osType == OSType.OS_TYPE_OTHER);
 
     /** Token separator regex used to parse Shell tool outputs */
-    public static final String TOKEN_SEPARATOR_REGEX
-        = WINDOWS ? "[|\n\r]" : "[ \t\n\r\f]";
+    public static final String TOKEN_SEPARATOR_REGEX = WINDOWS ? "[|\n\r]" : "[ \t\n\r\f]";
 
-    private long    interval;   // refresh interval in msec
-    private long    lastTime;   // last time the command was performed
+    private long interval; // refresh interval in msec
+    private long lastTime; // last time the command was performed
     final private boolean redirectErrorStream; // merge stdout and stderr
     private Map<String, String> environment; // env for the command execution
     private File dir;
     private Process process; // sub process used to execute the command
     private int exitCode;
-    /**Time after which the executing script would be timedout*/
+    /** Time after which the executing script would be timedout */
     protected long timeOutInterval = 0L;
-    /** If or not script timed out*/
+    /** If or not script timed out */
     private AtomicBoolean timedOut;
 
-    /**If or not script finished executing*/
+    /** If or not script finished executing */
     private volatile AtomicBoolean completed;
 
     public ShellUtils() {
@@ -103,23 +94,26 @@ abstract public class ShellUtils {
     }
 
     /**
-     * @param interval the minimum duration to wait before re-executing the
-     *        command.
+     * @param interval the minimum duration to wait before re-executing the command.
      */
     public ShellUtils(long interval, boolean redirectErrorStream) {
         this.interval = interval;
-        this.lastTime = (interval<0) ? 0 : -interval;
+        this.lastTime = (interval < 0) ? 0 : -interval;
         this.redirectErrorStream = redirectErrorStream;
     }
 
-    /** set the environment for the command
+    /**
+     * set the environment for the command
+     * 
      * @param env Mapping of environment variables
      */
     protected void setEnvironment(Map<String, String> env) {
         this.environment = env;
     }
 
-    /** set the working directory
+    /**
+     * set the working directory
+     * 
      * @param dir The directory where the command would be executed
      */
     protected void setWorkingDirectory(File dir) {
@@ -128,22 +122,17 @@ abstract public class ShellUtils {
 
     /** a Unix command to get the current user's groups list */
     public static String[] getGroupsCommand() {
-        return (WINDOWS)? new String[]{"cmd", "/c", "groups"}
-        : new String[]{"bash", "-c", "groups"};
+        return (WINDOWS) ? new String[] { "cmd", "/c", "groups" } : new String[] { "bash", "-c", "groups" };
     }
 
     /**
-     * a Unix command to get a given user's groups list.
-     * If the OS is not WINDOWS, the command will get the user's primary group
-     * first and finally get the groups list which includes the primary group.
-     * i.e. the user's primary group will be included twice.
+     * a Unix command to get a given user's groups list. If the OS is not WINDOWS, the command will get the user's primary group first and finally get the
+     * groups list which includes the primary group. i.e. the user's primary group will be included twice.
      */
     public static String[] getGroupsForUserCommand(final String user) {
-        //'groups username' command return is non-consistent across different unixes
-        return new String [] {"bash", "-c", "id -gn " + user
-                         + "&& id -Gn " + user};
+        // 'groups username' command return is non-consistent across different unixes
+        return new String[] { "bash", "-c", "id -gn " + user + "&& id -Gn " + user };
     }
-
 
     /** check to see if a command needs to be executed and execute if needed */
     protected void run() throws IOException {
@@ -174,51 +163,48 @@ abstract public class ShellUtils {
         if (timeOutInterval > 0) {
             timeOutTimer = new Timer("Shell command timeout");
             timeoutTimerTask = new ShellTimeoutTimerTask(this);
-            //One time scheduling.
+            // One time scheduling.
             timeOutTimer.schedule(timeoutTimerTask, timeOutInterval);
         }
-        final BufferedReader errReader =
-            new BufferedReader(new InputStreamReader(process
-                                                     .getErrorStream()));
-        BufferedReader inReader =
-            new BufferedReader(new InputStreamReader(process
-                                                     .getInputStream()));
+        final BufferedReader errReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+        BufferedReader inReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
         final StringBuffer errMsg = new StringBuffer();
 
         // read error and input streams as this would free up the buffers
         // free the error stream buffer
         Thread errThread = new Thread() {
-                @Override
-                public void run() {
-                    try {
-                        String line = errReader.readLine();
-                        while((line != null) && !isInterrupted()) {
-                            errMsg.append(line);
-                            errMsg.append(System.getProperty("line.separator"));
-                            line = errReader.readLine();
-                        }
-                    } catch(IOException ioe) {
-                        LOG.warn("Error reading the error stream", ioe);
+            @Override
+            public void run() {
+                try {
+                    String line = errReader.readLine();
+                    while ((line != null) && !isInterrupted()) {
+                        errMsg.append(line);
+                        errMsg.append(System.getProperty("line.separator"));
+                        line = errReader.readLine();
                     }
+                } catch (IOException ioe) {
+                    LOG.warn("Error reading the error stream", ioe);
                 }
-            };
+            }
+        };
         try {
             errThread.start();
-        } catch (IllegalStateException ise) { }
+        } catch (IllegalStateException ise) {
+        }
         try {
             parseExecResult(inReader); // parse the output
             // clear the input stream buffer
             String line = inReader.readLine();
-            while(line != null) {
+            while (line != null) {
                 line = inReader.readLine();
             }
             // wait for the process to finish and check the exit code
-            exitCode  = process.waitFor();
+            exitCode = process.waitFor();
             // make sure that the error thread exits
             joinThread(errThread);
             completed.set(true);
-            //the timeout thread handling
-            //taken care in finally block
+            // the timeout thread handling
+            // taken care in finally block
             if (exitCode != 0) {
                 throw new ExitCodeException(exitCode, errMsg.toString());
             }
@@ -233,10 +219,10 @@ abstract public class ShellUtils {
                 // JDK 7 tries to automatically drain the input streams for us
                 // when the process exits, but since close is not synchronized,
                 // it creates a race if we close the stream first and the same
-                // fd is recycled.  the stream draining thread will attempt to
-                // drain that fd!!  it may block, OOM, or cause bizarre behavior
+                // fd is recycled. the stream draining thread will attempt to
+                // drain that fd!! it may block, OOM, or cause bizarre behavior
                 // see: https://bugs.openjdk.java.net/browse/JDK-8024521
-                //      issue is fixed in build 7u60
+                // issue is fixed in build 7u60
                 InputStream stdout = process.getInputStream();
                 synchronized (stdout) {
                     inReader.close();
@@ -278,10 +264,11 @@ abstract public class ShellUtils {
     protected abstract String[] getExecString();
 
     /** Parse the execution result */
-    protected abstract void parseExecResult(BufferedReader lines)
-        throws IOException;
+    protected abstract void parseExecResult(BufferedReader lines) throws IOException;
 
-    /** get the current sub-process executing the given command
+    /**
+     * get the current sub-process executing the given command
+     * 
      * @return process executing the command
      */
     public Process getProcess() {
@@ -306,17 +293,14 @@ abstract public class ShellUtils {
 
     /**
      * A simple shell command executor.
-     *
-     * <code>ShellCommandExecutor</code>should be used in cases where the output
-     * of the command needs no explicit parsing and where the command, working
-     * directory and the environment remains unchanged. The output of the command
-     * is stored as-is and is expected to be small.
+     * 
+     * <code>ShellCommandExecutor</code>should be used in cases where the output of the command needs no explicit parsing and where the command, working
+     * directory and the environment remains unchanged. The output of the command is stored as-is and is expected to be small.
      */
     public static class ShellCommandExecutor extends ShellUtils {
 
         private String[] command;
         private StringBuffer output;
-
 
         public ShellCommandExecutor(String[] execString) {
             this(execString, null);
@@ -326,27 +310,22 @@ abstract public class ShellUtils {
             this(execString, dir, null);
         }
 
-        public ShellCommandExecutor(String[] execString, File dir,
-                                    Map<String, String> env) {
-            this(execString, dir, env , 0L);
+        public ShellCommandExecutor(String[] execString, File dir, Map<String, String> env) {
+            this(execString, dir, env, 0L);
         }
 
         /**
          * Create a new instance of the ShellCommandExecutor to execute a command.
-         *
+         * 
          * @param execString The command to execute with arguments
-         * @param dir If not-null, specifies the directory which should be set
-         *            as the current working directory for the command.
-         *            If null, the current working directory is not modified.
-         * @param env If not-null, environment of the command will include the
-         *            key-value pairs specified in the map. If null, the current
-         *            environment is not modified.
-         * @param timeout Specifies the time in milliseconds, after which the
-         *                command will be killed and the status marked as timedout.
-         *                If 0, the command will not be timed out.
+         * @param dir If not-null, specifies the directory which should be set as the current working directory for the command. If null, the current working
+         *            directory is not modified.
+         * @param env If not-null, environment of the command will include the key-value pairs specified in the map. If null, the current environment is not
+         *            modified.
+         * @param timeout Specifies the time in milliseconds, after which the command will be killed and the status marked as timedout. If 0, the command will
+         *            not be timed out.
          */
-        public ShellCommandExecutor(String[] execString, File dir,
-                                    Map<String, String> env, long timeout) {
+        public ShellCommandExecutor(String[] execString, File dir, Map<String, String> env, long timeout) {
             command = execString.clone();
             if (dir != null) {
                 setWorkingDirectory(dir);
@@ -356,7 +335,6 @@ abstract public class ShellUtils {
             }
             timeOutInterval = timeout;
         }
-
 
         /** Execute the shell command. */
         public void execute() throws IOException {
@@ -373,21 +351,19 @@ abstract public class ShellUtils {
             output = new StringBuffer();
             char[] buf = new char[512];
             int nRead;
-            while ( (nRead = lines.read(buf, 0, buf.length)) > 0 ) {
+            while ((nRead = lines.read(buf, 0, buf.length)) > 0) {
                 output.append(buf, 0, nRead);
             }
         }
 
-        /** Get the output of the shell command.*/
+        /** Get the output of the shell command. */
         public String getOutput() {
             return (output == null) ? "" : output.toString();
         }
 
         /**
-         * Returns the commands of this instance.
-         * Arguments with spaces in are presented with quotes round; other
-         * arguments are presented raw
-         *
+         * Returns the commands of this instance. Arguments with spaces in are presented with quotes round; other arguments are presented raw
+         * 
          * @return a string representation of the object.
          */
         @Override
@@ -407,9 +383,8 @@ abstract public class ShellUtils {
     }
 
     /**
-     * To check if the passed script to shell command executor timed out or
-     * not.
-     *
+     * To check if the passed script to shell command executor timed out or not.
+     * 
      * @return if the script timed out.
      */
     public boolean isTimedOut() {
@@ -418,52 +393,45 @@ abstract public class ShellUtils {
 
     /**
      * Set if the command has timed out.
-     *
+     * 
      */
     private void setTimedOut() {
         this.timedOut.set(true);
     }
 
-
     /**
-     * Static method to execute a shell command.
-     * Covers most of the simple cases without requiring the user to implement
-     * the <code>Shell</code> interface.
+     * Static method to execute a shell command. Covers most of the simple cases without requiring the user to implement the <code>Shell</code> interface.
+     * 
      * @param cmd shell command to execute.
      * @return the output of the executed command.
      */
-    public static String execCommand(String ... cmd) throws IOException {
+    public static String execCommand(String... cmd) throws IOException {
         return execCommand(null, cmd, 0L);
     }
 
     /**
-     * Static method to execute a shell command.
-     * Covers most of the simple cases without requiring the user to implement
-     * the <code>Shell</code> interface.
+     * Static method to execute a shell command. Covers most of the simple cases without requiring the user to implement the <code>Shell</code> interface.
+     * 
      * @param env the map of environment key=value
      * @param cmd shell command to execute.
      * @param timeout time in milliseconds after which script should be marked timeout
      * @return the output of the executed command.o
      */
 
-    public static String execCommand(Map<String, String> env, String[] cmd,
-                                     long timeout) throws IOException {
-        ShellCommandExecutor exec = new ShellCommandExecutor(cmd, null, env,
-                                                             timeout);
+    public static String execCommand(Map<String, String> env, String[] cmd, long timeout) throws IOException {
+        ShellCommandExecutor exec = new ShellCommandExecutor(cmd, null, env, timeout);
         exec.execute();
         return exec.getOutput();
     }
 
     /**
-     * Static method to execute a shell command.
-     * Covers most of the simple cases without requiring the user to implement
-     * the <code>Shell</code> interface.
+     * Static method to execute a shell command. Covers most of the simple cases without requiring the user to implement the <code>Shell</code> interface.
+     * 
      * @param env the map of environment key=value
      * @param cmd shell command to execute.
      * @return the output of the executed command.
      */
-    public static String execCommand(Map<String,String> env, String ... cmd)
-        throws IOException {
+    public static String execCommand(Map<String, String> env, String... cmd) throws IOException {
         return execCommand(env, cmd, 0L);
     }
 
@@ -484,9 +452,9 @@ abstract public class ShellUtils {
             try {
                 p.exitValue();
             } catch (Exception e) {
-                //Process has not terminated.
-                //So check if it has completed
-                //if not just destroy it.
+                // Process has not terminated.
+                // So check if it has completed
+                // if not just destroy it.
                 if (p != null && !shell.completed.get()) {
                     shell.setTimedOut();
                     p.destroy();

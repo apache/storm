@@ -17,36 +17,31 @@
  */
 package com.alibaba.jstorm.task;
 
-import java.util.List;
-import java.util.Map;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import backtype.storm.spout.ISpout;
 import backtype.storm.task.IBolt;
-import backtype.storm.topology.IConfig;
+import backtype.storm.topology.IDynamicComponent;
 import backtype.storm.utils.WorkerClassLoader;
-
 import com.alibaba.jstorm.callback.AsyncLoopThread;
 import com.alibaba.jstorm.cluster.StormClusterState;
 import com.alibaba.jstorm.daemon.worker.ShutdownableDameon;
-import com.alibaba.jstorm.metric.JStormMetrics;
-import com.alibaba.jstorm.task.heartbeat.TaskHeartbeatRunable;
 import com.alibaba.jstorm.utils.JStormUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * shutdown one task
  * 
  * @author yannian/Longda
- * 
  */
 public class TaskShutdownDameon implements ShutdownableDameon {
-    private static Logger LOG = LoggerFactory
-            .getLogger(TaskShutdownDameon.class);
+    private static Logger LOG = LoggerFactory.getLogger(TaskShutdownDameon.class);
 
     public static final byte QUIT_MSG = (byte) 0xff;
 
+    private Task task;
     private TaskStatus taskStatus;
     private String topology_id;
     private Integer task_id;
@@ -55,16 +50,15 @@ public class TaskShutdownDameon implements ShutdownableDameon {
     private Object task_obj;
     private boolean isClosed = false;
 
-    public TaskShutdownDameon(TaskStatus taskStatus, String topology_id,
-            Integer task_id, List<AsyncLoopThread> all_threads,
-            StormClusterState zkCluster, Object task_obj) {
+    public TaskShutdownDameon(TaskStatus taskStatus, String topology_id, Integer task_id, List<AsyncLoopThread> all_threads, StormClusterState zkCluster,
+            Object task_obj, Task task) {
         this.taskStatus = taskStatus;
         this.topology_id = topology_id;
         this.task_id = task_id;
         this.all_threads = all_threads;
         this.zkCluster = zkCluster;
         this.task_obj = task_obj;
-
+        this.task = task;
     }
 
     @Override
@@ -104,18 +98,9 @@ public class TaskShutdownDameon implements ShutdownableDameon {
         closeComponent(task_obj);
 
         try {
-        	JStormMetrics.unregisterTask(task_id);
-            TaskHeartbeatRunable.unregisterTaskStats(task_id);
-            zkCluster.remove_task_heartbeat(topology_id, task_id);
+            zkCluster.disconnect();
         } catch (Exception e) {
-            // TODO Auto-generated catch block
-            LOG.info("Failed to cleanup");
-        } finally {
-            try {
-                zkCluster.disconnect();
-            } catch (Exception e) {
-                LOG.info("Failed to disconnect", e);
-            }
+            LOG.error("Failed to disconnect zk for task-" + task_id);
         }
 
         LOG.info("Successfully shutdown task " + topology_id + ":" + task_id);
@@ -170,19 +155,22 @@ public class TaskShutdownDameon implements ShutdownableDameon {
         }
     }
 
-    public void updateConf(Map conf) {
-        if (task_obj instanceof IConfig) {
-            ((IConfig) task_obj).updateConf(conf);
+    public void update(Map conf) {
+        if (task_obj instanceof IDynamicComponent) {
+            ((IDynamicComponent) task_obj).update(conf);
         }
     }
 
     @Override
     public void run() {
-        // TODO Auto-generated method stub
         shutdown();
     }
 
     public int getTaskId() {
         return this.task_id;
+    }
+
+    public Task getTask() {
+        return this.task;
     }
 }

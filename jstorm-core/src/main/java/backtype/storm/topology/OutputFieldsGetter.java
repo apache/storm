@@ -39,12 +39,11 @@ public class OutputFieldsGetter implements OutputFieldsDeclarer {
     }
 
     public void declareStream(String streamId, boolean direct, Fields fields) {
-        if(_fields.containsKey(streamId)) {
+        if (_fields.containsKey(streamId)) {
             throw new IllegalArgumentException("Fields for " + streamId + " already set");
         }
         _fields.put(streamId, new StreamInfo(fields.toList(), direct));
     }
-
 
     public Map<String, StreamInfo> getFieldsDeclaration() {
         return _fields;

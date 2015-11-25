@@ -17,80 +17,99 @@
  */
 package com.alibaba.jstorm.metric;
 
-import java.util.Map;
-import java.util.Map.Entry;
+import com.alibaba.jstorm.common.metric.*;
+import com.codahale.metrics.Gauge;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+/**
+ * simplified metrics, only for worker metrics. all metrics are logged locally without reporting to TM or nimbus.
+ *
+ * @author Cody (weiyue.wy@alibaba-inc.com)
+ * @since 2.0.5
+ */
+public class SimpleJStormMetric extends JStormMetrics {
+    private static final long serialVersionUID = 7468005641982249536L;
 
-import com.alibaba.jstorm.common.metric.Histogram;
-import com.alibaba.jstorm.common.metric.MetricRegistry;
-import com.alibaba.jstorm.common.metric.window.Metric;
+    protected static final AsmMetricRegistry metrics = JStormMetrics.getWorkerMetrics();
 
-public class SimpleJStormMetric extends JStormMetrics implements Runnable{
-    private static final Logger LOG = LoggerFactory.getLogger(SimpleJStormMetric.class);
-    
-    protected static MetricRegistry metrics = JStormMetrics.workerMetrics;
-    static {
-        Metric.setEnable(true);
+    public static void updateNimbusHistogram(String name, Number obj) {
+        updateHistogram(NIMBUS_METRIC_KEY, name, obj);
     }
-    
-    protected static SimpleJStormMetric instance = null;
-    
-    
-    public static SimpleJStormMetric mkInstance() {
-        synchronized (SimpleJStormMetric.class) {
-            if (instance == null) {
-                instance = new SimpleJStormMetric();
-            }
-            
-            return instance;
-        }
+
+    public static void updateSupervisorHistogram(String name, Number obj) {
+        updateHistogram(SUPERVISOR_METRIC_KEY, name, obj);
     }
-    
-    protected SimpleJStormMetric() {
-        
+
+    public static void updateNimbusMeter(String name, Number obj) {
+        updateMeter(NIMBUS_METRIC_KEY, name, obj);
     }
-    
-    public static Histogram registerHistorgram(String name) {
-        return JStormMetrics.registerWorkerHistogram(name);
+
+    public static void updateSupervisorMeter(String name, Number obj) {
+        updateMeter(SUPERVISOR_METRIC_KEY, name, obj);
     }
-    
-    public static void updateHistorgram(String name, Number obj) {
-        LOG.debug(name  + ":" + obj.doubleValue());
-        Histogram histogram =  (Histogram)metrics.getMetric(name);
+
+    public static void updateNimbusCounter(String name, Number obj) {
+        updateCounter(NIMBUS_METRIC_KEY, name, obj);
+    }
+
+    public static void updateSupervisorCounter(String name, Number obj) {
+        updateCounter(SUPERVISOR_METRIC_KEY, name, obj);
+    }
+
+    public static void updateHistogram(String key, String name, Number obj) {
+        String formalName = MetricUtils.workerMetricName(key, host, 0, name, MetricType.HISTOGRAM);
+        AsmHistogram histogram = (AsmHistogram) metrics.getMetric(formalName);
         if (histogram == null) {
-        	try {
-        		histogram = registerHistorgram(name);
-        	}catch(Exception e) {
-        		LOG.info("{} has been register", name);
-        		return;
-        	}
+            histogram = registerHistogram(name);
         }
-        
+
         histogram.update(obj);
-        
     }
 
-    @Override
-    public void run() {
-        // TODO Auto-generated method stub
-        Map<String, Metric> map = metrics.getMetrics();
-        
-        for (Entry<String, Metric> entry : map.entrySet()) {
-            String key = entry.getKey();
-            Metric metric = entry.getValue();
-            
-            LOG.info(key + ":" +  metric.getSnapshot());
+    public static void updateMeter(String key, String name, Number obj) {
+        String formalName = MetricUtils.workerMetricName(key, host, 0, name, MetricType.METER);
+        AsmMeter meter = (AsmMeter) metrics.getMetric(formalName);
+        if (meter == null) {
+            meter = registerMeter(name);
         }
+
+        meter.update(obj);
     }
-    
-    
-    public static void main(String[] args) {
-        updateHistorgram("test", 11100.0);
-        
-        SimpleJStormMetric instance = new SimpleJStormMetric();
-        
-        instance.run();
+
+    public static void updateCounter(String key, String name, Number obj) {
+        String formalName = MetricUtils.workerMetricName(key, host, 0, name, MetricType.COUNTER);
+        AsmCounter counter = (AsmCounter) metrics.getMetric(formalName);
+        if (counter == null) {
+            counter = registerCounter(name);
+        }
+
+        counter.update(obj);
+    }
+
+    private static AsmGauge registerGauge(Gauge<Double> gauge, String name) {
+        AsmGauge gauge1 = new AsmGauge(gauge);
+        gauge1.setOp(AsmMetric.MetricOp.LOG);
+
+        return registerWorkerGauge(topologyId, name, gauge1);
+    }
+
+    private static AsmHistogram registerHistogram(String name) {
+        AsmHistogram histogram = new AsmHistogram();
+        histogram.setOp(AsmMetric.MetricOp.LOG);
+
+        return registerWorkerHistogram(NIMBUS_METRIC_KEY, name, histogram);
+    }
+
+    public static AsmMeter registerMeter(String name) {
+        AsmMeter meter = new AsmMeter();
+        meter.setOp(AsmMetric.MetricOp.LOG);
+
+        return registerWorkerMeter(NIMBUS_METRIC_KEY, name, meter);
+    }
+
+    public static AsmCounter registerCounter(String name) {
+        AsmCounter counter = new AsmCounter();
+        counter.setOp(AsmMetric.MetricOp.LOG);
+
+        return registerWorkerCounter(NIMBUS_METRIC_KEY, name, counter);
     }
 }

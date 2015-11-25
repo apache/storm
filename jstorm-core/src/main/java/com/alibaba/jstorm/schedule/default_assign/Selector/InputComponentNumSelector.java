@@ -40,12 +40,8 @@ public class InputComponentNumSelector extends AbstractSelector {
             @Override
             public int compare(ResourceWorkerSlot o1, ResourceWorkerSlot o2) {
                 // TODO Auto-generated method stub
-                int o1Num =
-                        context.getInputComponentNumOnSupervisor(
-                                o1.getNodeId(), name);
-                int o2Num =
-                        context.getInputComponentNumOnSupervisor(
-                                o2.getNodeId(), name);
+                int o1Num = context.getInputComponentNumOnSupervisor(o1.getNodeId(), name);
+                int o2Num = context.getInputComponentNumOnSupervisor(o2.getNodeId(), name);
                 if (o1Num == o2Num)
                     return 0;
                 return o1Num > o2Num ? -1 : 1;

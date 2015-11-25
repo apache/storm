@@ -30,7 +30,7 @@ public class CountingBatchBolt extends BaseBatchBolt {
     BatchOutputCollector _collector;
     Object _id;
     int _count = 0;
-    
+
     @Override
     public void prepare(Map conf, TopologyContext context, BatchOutputCollector collector, Object id) {
         _collector = collector;
@@ -44,12 +44,12 @@ public class CountingBatchBolt extends BaseBatchBolt {
 
     @Override
     public void finishBatch() {
-        _collector.emit(new Values(_id, _count));        
-    }   
+        _collector.emit(new Values(_id, _count));
+    }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(new Fields("tx", "count"));
     }
-    
+
 }

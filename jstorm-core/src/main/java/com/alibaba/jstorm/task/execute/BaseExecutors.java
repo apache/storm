@@ -17,43 +17,40 @@
  */
 package com.alibaba.jstorm.task.execute;
 
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingDeque;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import backtype.storm.Config;
-import backtype.storm.serialization.KryoTupleDeserializer;
+import backtype.storm.Constants;
+import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
-import backtype.storm.tuple.Tuple;
 import backtype.storm.utils.DisruptorQueue;
 import backtype.storm.utils.Utils;
 import backtype.storm.utils.WorkerClassLoader;
-
-import com.alibaba.jstorm.callback.AsyncLoopRunnable;
-import com.alibaba.jstorm.callback.AsyncLoopThread;
 import com.alibaba.jstorm.callback.RunnableCallback;
 import com.alibaba.jstorm.client.ConfigExtension;
-import com.alibaba.jstorm.common.metric.Histogram;
+import com.alibaba.jstorm.common.metric.AsmGauge;
 import com.alibaba.jstorm.common.metric.QueueGauge;
 import com.alibaba.jstorm.daemon.worker.timer.RotatingMapTrigger;
+import com.alibaba.jstorm.daemon.worker.timer.TaskBatchFlushTrigger;
 import com.alibaba.jstorm.daemon.worker.timer.TaskHeartbeatTrigger;
-import com.alibaba.jstorm.metric.JStormHealthCheck;
-import com.alibaba.jstorm.metric.JStormMetrics;
-import com.alibaba.jstorm.metric.MetricDef;
+import com.alibaba.jstorm.metric.*;
 import com.alibaba.jstorm.task.Task;
 import com.alibaba.jstorm.task.TaskBaseMetric;
+import com.alibaba.jstorm.task.TaskBatchTransfer;
 import com.alibaba.jstorm.task.TaskStatus;
 import com.alibaba.jstorm.task.TaskTransfer;
 import com.alibaba.jstorm.task.error.ITaskReportErr;
 import com.alibaba.jstorm.utils.JStormServerUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
-import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.WaitStrategy;
 import com.lmax.disruptor.dsl.ProducerType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.TimeUnit;
 
 //import com.alibaba.jstorm.message.zeroMq.IRecvConnection;
 
@@ -67,15 +64,17 @@ import com.lmax.disruptor.dsl.ProducerType;
 public class BaseExecutors extends RunnableCallback {
     private static Logger LOG = LoggerFactory.getLogger(BaseExecutors.class);
 
-    protected final String component_id;
+    protected final String topologyId;
+    protected final String componentId;
     protected final int taskId;
     protected final String idStr;
 
     protected Map storm_conf;
-    
+
     protected final boolean isDebug;
 
     protected TopologyContext userTopologyCtx;
+    protected TopologyContext sysTopologyCtx;
     protected TaskBaseMetric task_stats;
 
     protected volatile TaskStatus taskStatus;
@@ -93,74 +92,91 @@ public class BaseExecutors extends RunnableCallback {
     protected Task task;
     protected long assignmentTs;
     protected TaskTransfer taskTransfer;
+   
+    protected JStormMetricsReporter metricsReporter;
+    
+    protected boolean isFinishInit = false;
+
+    protected RotatingMapTrigger rotatingMapTrigger;
+    protected TaskHeartbeatTrigger taskHbTrigger;
 
     // protected IntervalCheck intervalCheck = new IntervalCheck();
 
-    public BaseExecutors(Task task, TaskTransfer _transfer_fn, Map _storm_conf,
-            Map<Integer, DisruptorQueue> innerTaskTransfer,
-            TopologyContext topology_context, TopologyContext _user_context,
-            TaskBaseMetric _task_stats, TaskStatus taskStatus,
-            ITaskReportErr _report_error) {
+    public BaseExecutors(Task task) {
 
         this.task = task;
-        this.storm_conf = _storm_conf;
+        this.storm_conf = task.getStormConf();
 
-        this.userTopologyCtx = _user_context;
-        this.task_stats = _task_stats;
-        this.taskId = topology_context.getThisTaskId();
-        this.innerTaskTransfer = innerTaskTransfer;
-        this.component_id = topology_context.getThisComponentId();
-        this.idStr = JStormServerUtils.getName(component_id, taskId);
+        this.userTopologyCtx = task.getUserContext();
+        this.sysTopologyCtx = task.getTopologyContext();
+        this.task_stats = task.getTaskStats();
+        this.taskId = sysTopologyCtx.getThisTaskId();
+        this.innerTaskTransfer = task.getInnerTaskTransfer();
+        this.topologyId = sysTopologyCtx.getTopologyId();
+        this.componentId = sysTopologyCtx.getThisComponentId();
+        this.idStr = JStormServerUtils.getName(componentId, taskId);
 
-        this.taskStatus = taskStatus;
-        this.report_error = _report_error;
+        this.taskStatus = task.getTaskStatus();
+        this.report_error = task.getReportErrorDie();
+        this.taskTransfer = task.getTaskTransfer();
+        this.metricsReporter = task.getWorkerData().getMetricsReporter();
 
-        this.isDebug =
-                JStormUtils.parseBoolean(storm_conf.get(Config.TOPOLOGY_DEBUG),
-                        false);
+        this.isDebug = JStormUtils.parseBoolean(storm_conf.get(Config.TOPOLOGY_DEBUG), false);
 
-        message_timeout_secs =
-                JStormUtils.parseInt(
-                        storm_conf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS),
-                        30);
+        message_timeout_secs = JStormUtils.parseInt(storm_conf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS), 30);
 
-        int queue_size =
-                Utils.getInt(storm_conf
-                        .get(Config.TOPOLOGY_EXECUTOR_RECEIVE_BUFFER_SIZE), 256);
-        WaitStrategy waitStrategy =
-                (WaitStrategy) JStormUtils.createDisruptorWaitStrategy(storm_conf);
-        this.exeQueue =
-                DisruptorQueue.mkInstance(idStr, ProducerType.MULTI,
-                        queue_size, waitStrategy);
+        int queue_size = Utils.getInt(storm_conf.get(Config.TOPOLOGY_EXECUTOR_RECEIVE_BUFFER_SIZE), 256);
+        WaitStrategy waitStrategy = (WaitStrategy) JStormUtils.createDisruptorWaitStrategy(storm_conf);
+        this.exeQueue = DisruptorQueue.mkInstance(idStr, ProducerType.MULTI, queue_size, waitStrategy);
         this.exeQueue.consumerStarted();
-        this.controlQueue = new LinkedBlockingDeque<Object>(8);
+        this.controlQueue = new LinkedBlockingDeque<Object>();
 
         this.registerInnerTransfer(exeQueue);
 
-        QueueGauge exeQueueGauge =
-                new QueueGauge(idStr + MetricDef.EXECUTE_QUEUE, exeQueue);
-        JStormMetrics.registerTaskGauge(exeQueueGauge, taskId,
-                MetricDef.EXECUTE_QUEUE);
-        JStormHealthCheck.registerTaskHealthCheck(taskId,
-                MetricDef.EXECUTE_QUEUE, exeQueueGauge);
+        QueueGauge exeQueueGauge = new QueueGauge(exeQueue, idStr, MetricDef.EXECUTE_QUEUE);
+        JStormMetrics.registerTaskMetric(MetricUtils.taskMetricName(topologyId, componentId, taskId, MetricDef.EXECUTE_QUEUE, MetricType.GAUGE), new AsmGauge(
+                exeQueueGauge));
+        JStormHealthCheck.registerTaskHealthCheck(taskId, MetricDef.EXECUTE_QUEUE, exeQueueGauge);
 
-        RotatingMapTrigger rotatingMapTrigger =
-                new RotatingMapTrigger(storm_conf, idStr + "_rotating",
-                        exeQueue);
+        rotatingMapTrigger = new RotatingMapTrigger(storm_conf, idStr + "_rotating", exeQueue);
         rotatingMapTrigger.register();
-        TaskHeartbeatTrigger taskHbTrigger =
-                new TaskHeartbeatTrigger(storm_conf, idStr + "_taskHeartbeat",
-                        exeQueue, controlQueue, taskId);
+        taskHbTrigger = new TaskHeartbeatTrigger(storm_conf, idStr + "_taskHeartbeat", exeQueue, controlQueue, taskId, componentId, sysTopologyCtx, report_error);
         taskHbTrigger.register();
-
+        
         assignmentTs = System.currentTimeMillis();
         
-        this.taskTransfer = _transfer_fn;
+    }
+    
+    public void init() throws Exception {
+    	// this function will be override by SpoutExecutor or BoltExecutor
+        throw new RuntimeException("Should implement this function");
+    }
+    
+    public void initWrapper() {
+    	try {
+            LOG.info("{} begin to init", idStr);
+            
+            init();
+            
+            if (taskId == getMinTaskIdOfWorker()) {
+                metricsReporter.setOutputCollector(getOutputCollector());
+            }
+            
+            isFinishInit = true;
+        } catch (Throwable e) {
+            error = e;
+            LOG.error("Init error ", e);
+            report_error.report(e);
+        } finally {
+
+            LOG.info("{} initialization finished", idStr);
+            
+        }
     }
 
     @Override
     public void preRun() {
-        WorkerClassLoader.switchThreadContext();  
+        WorkerClassLoader.switchThreadContext();
     }
 
     @Override
@@ -174,28 +190,11 @@ public class BaseExecutors extends RunnableCallback {
         throw new RuntimeException("Should implement this function");
     }
 
-    // @Override
-    // public Object getResult() {
-    // if (taskStatus.isRun()) {
-    // return 0;
-    // } else if (taskStatus.isPause()) {
-    // return 0;
-    // } else if (taskStatus.isShutdown()) {
-    // this.shutdown();
-    // return -1;
-    // } else {
-    // LOG.info("Unknow TaskStatus, shutdown executing thread of " + idStr);
-    // this.shutdown();
-    // return -1;
-    // }
-    // }
-
     @Override
     public Exception error() {
         if (error == null) {
             return null;
         }
-
         return new Exception(error);
     }
 
@@ -213,12 +212,9 @@ public class BaseExecutors extends RunnableCallback {
         LOG.info("Registor inner transfer for executor thread of " + idStr);
         DisruptorQueue existInnerTransfer = innerTaskTransfer.get(taskId);
         if (existInnerTransfer != null) {
-            LOG.info("Exist inner task transfer for executing thread of "
-                    + idStr);
+            LOG.info("Exist inner task transfer for executing thread of " + idStr);
             if (existInnerTransfer != disruptorQueue) {
-                throw new RuntimeException(
-                        "Inner task transfer must be only one in executing thread of "
-                                + idStr);
+                throw new RuntimeException("Inner task transfer must be only one in executing thread of " + idStr);
             }
         }
         innerTaskTransfer.put(taskId, disruptorQueue);
@@ -229,4 +225,12 @@ public class BaseExecutors extends RunnableCallback {
         innerTaskTransfer.remove(taskId);
     }
 
+    protected int getMinTaskIdOfWorker() {
+        SortedSet<Integer> tasks = new TreeSet<Integer>(sysTopologyCtx.getThisWorkerTasks());
+        return tasks.first();
+    }
+    
+    public Object getOutputCollector() {
+    	return null;
+    }
 }

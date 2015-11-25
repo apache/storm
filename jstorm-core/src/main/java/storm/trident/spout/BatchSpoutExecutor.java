@@ -43,14 +43,14 @@ public class BatchSpoutExecutor implements ITridentSpout {
             return true;
         }
     }
-    
+
     public class BatchSpoutEmitter implements Emitter {
 
         @Override
         public void emitBatch(TransactionAttempt tx, Object coordinatorMeta, TridentCollector collector) {
             _spout.emitBatch(tx.getTransactionId(), collector);
-        }        
-        
+        }
+
         @Override
         public void success(TransactionAttempt tx) {
             _spout.ack(tx.getTransactionId());
@@ -59,15 +59,15 @@ public class BatchSpoutExecutor implements ITridentSpout {
         @Override
         public void close() {
             _spout.close();
-        }        
+        }
     }
-    
+
     IBatchSpout _spout;
-    
+
     public BatchSpoutExecutor(IBatchSpout spout) {
         _spout = spout;
     }
-    
+
     @Override
     public BatchCoordinator getCoordinator(String txStateId, Map conf, TopologyContext context) {
         return new EmptyCoordinator();
@@ -88,5 +88,5 @@ public class BatchSpoutExecutor implements ITridentSpout {
     public Fields getOutputFields() {
         return _spout.getOutputFields();
     }
-    
+
 }

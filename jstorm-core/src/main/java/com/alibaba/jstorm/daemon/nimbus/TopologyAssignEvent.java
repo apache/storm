@@ -25,7 +25,7 @@ import com.alibaba.jstorm.cluster.StormStatus;
 public class TopologyAssignEvent {
 
     // unit is minutes
-    private static final int DEFAULT_WAIT_TIME = 2;
+    private static final int DEFAULT_WAIT_TIME = 5;
     private String topologyId;
     private String topologyName; // if this field has been set, it is create
     private String group;
@@ -37,6 +37,14 @@ public class TopologyAssignEvent {
     private CountDownLatch latch = new CountDownLatch(1);
     private boolean isSuccess = false;
     private String errorMsg;
+    private boolean isScaleTopology = false;
+
+    public void setScaleTopology(boolean isScaleTopology){
+        this.isScaleTopology = isScaleTopology;
+    }
+    public boolean isScaleTopology(){
+        return isScaleTopology;
+    }
 
     public String getTopologyId() {
         return topologyId;

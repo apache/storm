@@ -28,12 +28,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-
 public class SpoutTracker extends BaseRichSpout {
     IRichSpout _delegate;
     SpoutTrackOutputCollector _tracker;
     String _trackId;
-
 
     private class SpoutTrackOutputCollector implements ISpoutOutputCollector {
         public int transferred = 0;
@@ -43,11 +41,11 @@ public class SpoutTracker extends BaseRichSpout {
         public SpoutTrackOutputCollector(SpoutOutputCollector collector) {
             _collector = collector;
         }
-        
+
         private void recordSpoutEmit() {
             Map stats = (Map) RegisteredGlobalState.getState(_trackId);
             ((AtomicInteger) stats.get("spout-emitted")).incrementAndGet();
-            
+
         }
 
         public List<Integer> emit(String streamId, List<Object> tuple, Object messageId) {
@@ -63,10 +61,9 @@ public class SpoutTracker extends BaseRichSpout {
 
         @Override
         public void reportError(Throwable error) {
-        	_collector.reportError(error);
+            _collector.reportError(error);
         }
     }
-
 
     public SpoutTracker(IRichSpout delegate, String trackId) {
         _delegate = delegate;
@@ -95,7 +92,7 @@ public class SpoutTracker extends BaseRichSpout {
     public void fail(Object msgId) {
         _delegate.fail(msgId);
         Map stats = (Map) RegisteredGlobalState.getState(_trackId);
-        ((AtomicInteger) stats.get("processed")).incrementAndGet();        
+        ((AtomicInteger) stats.get("processed")).incrementAndGet();
     }
 
     public void declareOutputFields(OutputFieldsDeclarer declarer) {

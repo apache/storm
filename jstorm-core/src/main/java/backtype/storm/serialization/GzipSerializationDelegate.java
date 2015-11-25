@@ -54,10 +54,10 @@ public class GzipSerializationDelegate implements SerializationDelegate {
             ObjectInputStream ois = new ObjectInputStream(gis);
             Object ret = ois.readObject();
             ois.close();
-            return (T)ret;
-        } catch(IOException ioe) {
+            return (T) ret;
+        } catch (IOException ioe) {
             throw new RuntimeException(ioe);
-        } catch(ClassNotFoundException e) {
+        } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
     }

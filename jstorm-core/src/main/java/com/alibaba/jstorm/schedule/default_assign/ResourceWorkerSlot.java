@@ -39,8 +39,7 @@ import com.alibaba.jstorm.utils.NetWorkUtils;
 //one worker 's assignment
 public class ResourceWorkerSlot extends WorkerSlot implements Serializable {
 
-    public static Logger LOG = LoggerFactory
-            .getLogger(ResourceWorkerSlot.class);
+    public static Logger LOG = LoggerFactory.getLogger(ResourceWorkerSlot.class);
     private static final long serialVersionUID = 9138386287559932411L;
 
     private String hostname;
@@ -58,16 +57,14 @@ public class ResourceWorkerSlot extends WorkerSlot implements Serializable {
         super(supervisorId, port);
     }
 
-    public ResourceWorkerSlot(WorkerAssignment worker,
-            Map<String, List<Integer>> componentToTask) {
+    public ResourceWorkerSlot(WorkerAssignment worker, Map<String, List<Integer>> componentToTask) {
         super(worker.getNodeId(), worker.getPort());
         this.hostname = worker.getHostName();
         this.tasks = new HashSet<Integer>();
         this.cpu = worker.getCpu();
         this.memSize = worker.getMem();
         this.jvm = worker.getJvm();
-        for (Entry<String, Integer> entry : worker.getComponentToNum()
-                .entrySet()) {
+        for (Entry<String, Integer> entry : worker.getComponentToNum().entrySet()) {
             List<Integer> tasks = componentToTask.get(entry.getKey());
             if (tasks == null || tasks.size() == 0)
                 continue;
@@ -121,12 +118,10 @@ public class ResourceWorkerSlot extends WorkerSlot implements Serializable {
 
     @Override
     public String toString() {
-        return ToStringBuilder.reflectionToString(this,
-                ToStringStyle.SHORT_PREFIX_STYLE);
+        return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
 
-    public boolean compareToUserDefineWorker(WorkerAssignment worker,
-            Map<Integer, String> taskToComponent) {
+    public boolean compareToUserDefineWorker(WorkerAssignment worker, Map<Integer, String> taskToComponent) {
         int cpu = worker.getCpu();
         if (cpu != 0 && this.cpu != cpu)
             return false;

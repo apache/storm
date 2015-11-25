@@ -34,76 +34,75 @@ import storm.trident.operation.impl.SingleEmitAggregator;
 import storm.trident.operation.impl.SingleEmitAggregator.BatchToPartition;
 import storm.trident.tuple.ComboList;
 
-
-public class ChainedAggregatorDeclarer implements ChainedFullAggregatorDeclarer, ChainedPartitionAggregatorDeclarer {    
+public class ChainedAggregatorDeclarer implements ChainedFullAggregatorDeclarer, ChainedPartitionAggregatorDeclarer {
     public static interface AggregationPartition {
         Stream partition(Stream input);
     }
-    
+
     private static enum AggType {
-        PARTITION,
-        FULL,
-        FULL_COMBINE
+        PARTITION, FULL, FULL_COMBINE
     }
-    
+
     // inputFields can be equal to outFields, but multiple aggregators cannot have intersection outFields
     private static class AggSpec {
         Fields inFields;
         Aggregator agg;
         Fields outFields;
-        
+
         public AggSpec(Fields inFields, Aggregator agg, Fields outFields) {
             this.inFields = inFields;
             this.agg = agg;
             this.outFields = outFields;
         }
     }
-    
+
     List<AggSpec> _aggs = new ArrayList<AggSpec>();
     IAggregatableStream _stream;
     AggType _type = null;
     GlobalAggregationScheme _globalScheme;
-    
+
     public ChainedAggregatorDeclarer(IAggregatableStream stream, GlobalAggregationScheme globalScheme) {
         _stream = stream;
         _globalScheme = globalScheme;
     }
-    
+
     public Stream chainEnd() {
         Fields[] inputFields = new Fields[_aggs.size()];
         Aggregator[] aggs = new Aggregator[_aggs.size()];
         int[] outSizes = new int[_aggs.size()];
         List<String> allOutFields = new ArrayList<String>();
         Set<String> allInFields = new HashSet<String>();
-        for(int i=0; i<_aggs.size(); i++) {
+        for (int i = 0; i < _aggs.size(); i++) {
             AggSpec spec = _aggs.get(i);
             Fields infields = spec.inFields;
-            if(infields==null) infields = new Fields();
+            if (infields == null)
+                infields = new Fields();
             Fields outfields = spec.outFields;
-            if(outfields==null) outfields = new Fields();
+            if (outfields == null)
+                outfields = new Fields();
 
             inputFields[i] = infields;
             aggs[i] = spec.agg;
-            outSizes[i] = outfields.size();  
+            outSizes[i] = outfields.size();
             allOutFields.addAll(outfields.toList());
             allInFields.addAll(infields.toList());
         }
-        if(new HashSet(allOutFields).size() != allOutFields.size()) {
+        if (new HashSet(allOutFields).size() != allOutFields.size()) {
             throw new IllegalArgumentException("Output fields for chained aggregators must be distinct: " + allOutFields.toString());
         }
-        
+
         Fields inFields = new Fields(new ArrayList<String>(allInFields));
         Fields outFields = new Fields(allOutFields);
         Aggregator combined = new ChainedAggregatorImpl(aggs, inputFields, new ComboList.Factory(outSizes));
-        
-        if(_type!=AggType.FULL) {
+
+        if (_type != AggType.FULL) {
             _stream = _stream.partitionAggregate(inFields, combined, outFields);
         }
-        if(_type!=AggType.PARTITION) {
+        if (_type != AggType.PARTITION) {
             _stream = _globalScheme.aggPartition(_stream);
             BatchToPartition singleEmit = _globalScheme.singleEmitPartitioner();
             Aggregator toAgg = combined;
-            if(singleEmit!=null) {
+            if (singleEmit != null) {
                 toAgg = new SingleEmitAggregator(combined, singleEmit);
             }
             // this assumes that inFields and outFields are the same for combineragg
@@ -130,28 +129,28 @@ public class ChainedAggregatorDeclarer implements ChainedFullAggregatorDeclarer,
     public ChainedPartitionAggregatorDeclarer partitionAggregate(Fields inputFields, CombinerAggregator agg, Fields functionFields) {
         initCombiner(inputFields, agg, functionFields);
         return partitionAggregate(functionFields, new CombinerAggregatorCombineImpl(agg), functionFields);
-    }  
-    
+    }
+
     public ChainedPartitionAggregatorDeclarer partitionAggregate(ReducerAggregator agg, Fields functionFields) {
         return partitionAggregate(null, agg, functionFields);
     }
 
     public ChainedPartitionAggregatorDeclarer partitionAggregate(Fields inputFields, ReducerAggregator agg, Fields functionFields) {
         return partitionAggregate(inputFields, new ReducerAggregatorImpl(agg), functionFields);
-    }  
-    
+    }
+
     public ChainedFullAggregatorDeclarer aggregate(Aggregator agg, Fields functionFields) {
         return aggregate(null, agg, functionFields);
     }
-    
+
     public ChainedFullAggregatorDeclarer aggregate(Fields inputFields, Aggregator agg, Fields functionFields) {
         return aggregate(inputFields, agg, functionFields, false);
     }
-    
+
     private ChainedFullAggregatorDeclarer aggregate(Fields inputFields, Aggregator agg, Fields functionFields, boolean isCombiner) {
-        if(isCombiner) {
-            if(_type == null) {
-                _type = AggType.FULL_COMBINE;            
+        if (isCombiner) {
+            if (_type == null) {
+                _type = AggType.FULL_COMBINE;
             }
         } else {
             _type = AggType.FULL;
@@ -176,8 +175,8 @@ public class ChainedAggregatorDeclarer implements ChainedFullAggregatorDeclarer,
     public ChainedFullAggregatorDeclarer aggregate(Fields inputFields, ReducerAggregator agg, Fields functionFields) {
         return aggregate(inputFields, new ReducerAggregatorImpl(agg), functionFields);
     }
-    
+
     private void initCombiner(Fields inputFields, CombinerAggregator agg, Fields functionFields) {
-        _stream = _stream.each(inputFields, new CombinerAggregatorInitImpl(agg), functionFields);        
+        _stream = _stream.each(inputFields, new CombinerAggregatorInitImpl(agg), functionFields);
     }
 }

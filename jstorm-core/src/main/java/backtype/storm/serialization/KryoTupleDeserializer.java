@@ -40,55 +40,65 @@ import java.util.Map;
 
 public class KryoTupleDeserializer implements ITupleDeserializer {
     private static final Logger LOG = LoggerFactory.getLogger(KryoTupleDeserializer.class);
-    
+
     public static final boolean USE_RAW_PACKET = true;
-    
+
     GeneralTopologyContext _context;
     KryoValuesDeserializer _kryo;
     SerializationFactory.IdDictionary _ids;
     Input _kryoInput;
-    
+
     public KryoTupleDeserializer(final Map conf, final GeneralTopologyContext context) {
         _kryo = new KryoValuesDeserializer(conf);
         _context = context;
         _ids = new SerializationFactory.IdDictionary(context.getRawTopology());
         _kryoInput = new Input(1);
     }
-    
+
     public Tuple deserialize(byte[] ser) {
-        
+        _kryoInput.setBuffer(ser);
+        return deserialize(_kryoInput);
+    }
+
+    public Tuple deserialize(byte[] ser, int offset, int count) {
+        _kryoInput.setBuffer(ser, offset, count);
+        return deserialize(_kryoInput);
+    }
+
+    public Tuple deserialize(Input input) {
         int targetTaskId = 0;
+        long timeStamp = 0l;
         int taskId = 0;
         int streamId = 0;
         String componentName = null;
         String streamName = null;
         MessageId id = null;
-        
+
         try {
-            
-            _kryoInput.setBuffer(ser);
-            
-            targetTaskId = _kryoInput.readInt();
-            taskId = _kryoInput.readInt(true);
-            streamId = _kryoInput.readInt(true);
+            targetTaskId = input.readInt();
+            timeStamp = input.readLong();
+            taskId = input.readInt(true);
+            streamId = input.readInt(true);
             componentName = _context.getComponentId(taskId);
             streamName = _ids.getStreamName(componentName, streamId);
-            id = MessageId.deserialize(_kryoInput);
-            List<Object> values = _kryo.deserializeFrom(_kryoInput);
+            id = MessageId.deserialize(input);
+            List<Object> values = _kryo.deserializeFrom(input);
             TupleImplExt tuple = new TupleImplExt(_context, values, taskId, streamName, id);
             tuple.setTargetTaskId(targetTaskId);
+            tuple.setCreationTimeStamp(timeStamp);
             return tuple;
         } catch (Throwable e) {
             StringBuilder sb = new StringBuilder();
-            
+
             sb.append("Deserialize error:");
             sb.append("targetTaskId:").append(targetTaskId);
+            sb.append(",creationTimeStamp:").append(timeStamp);
             sb.append(",taskId:").append(taskId);
             sb.append(",streamId:").append(streamId);
             sb.append(",componentName:").append(componentName);
             sb.append(",streamName:").append(streamName);
             sb.append(",MessageId").append(id);
-            
+
             LOG.info(sb.toString(), e);
             throw new RuntimeException(e);
         }
@@ -99,15 +109,14 @@ public class KryoTupleDeserializer implements ITupleDeserializer {
         
         int offset = 0;
         while(offset < ser.length) {
-            int tupleSize = Utils.readIntFromByteArray(ser, offset);
+            _kryoInput.setBuffer(ser, offset, offset + 4);
+            int tupleSize = _kryoInput.readInt();
             offset += 4;
 
-            ByteBuffer buff = ByteBuffer.allocate(tupleSize);
-            buff.put(ser, offset, tupleSize);
-            ret.addToBatch(deserialize(buff.array()));
+            ret.addToBatch(deserialize(ser, offset, offset + tupleSize));
             offset += tupleSize;
         }
-        
+
         return ret;
     }
 

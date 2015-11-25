@@ -62,8 +62,7 @@ public class CleanRunnable implements Runnable {
                 try {
                     f.delete();
                 } catch (Exception e) {
-                    log.error("Cleaning inbox ... error deleting:"
-                            + f.getName() + "," + e);
+                    log.error("Cleaning inbox ... error deleting:" + f.getName() + "," + e);
                 }
             } else {
                 clean(f);
@@ -72,8 +71,7 @@ public class CleanRunnable implements Runnable {
                     try {
                         f.delete();
                     } catch (Exception e) {
-                        log.error("Cleaning inbox ... error deleting:"
-                                + f.getName() + "," + e);
+                        log.error("Cleaning inbox ... error deleting:" + f.getName() + "," + e);
                     }
                 }
             }

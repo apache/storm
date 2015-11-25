@@ -20,36 +20,36 @@ package backtype.storm.scheduler;
 import java.io.Serializable;
 
 public class WorkerSlot implements Comparable<WorkerSlot>, Serializable {
-    
+
     private static final long serialVersionUID = -4451854497340313268L;
     String nodeId;
     int port;
-    
+
     public WorkerSlot(String nodeId, Number port) {
         this.nodeId = nodeId;
         this.port = port.intValue();
     }
-    
+
     public WorkerSlot() {
-        
+
     }
-    
+
     public String getNodeId() {
         return nodeId;
     }
-    
+
     public int getPort() {
         return port;
     }
-    
+
     public void setNodeId(String nodeId) {
         this.nodeId = nodeId;
     }
-    
+
     public void setPort(int port) {
         this.port = port;
     }
-    
+
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -58,7 +58,7 @@ public class WorkerSlot implements Comparable<WorkerSlot>, Serializable {
         result = prime * result + port;
         return result;
     }
-    
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -77,12 +77,12 @@ public class WorkerSlot implements Comparable<WorkerSlot>, Serializable {
             return false;
         return true;
     }
-    
+
     @Override
     public String toString() {
         return this.nodeId + ":" + this.port;
     }
-    
+
     @Override
     public int compareTo(WorkerSlot o) {
         String otherNode = o.getNodeId();

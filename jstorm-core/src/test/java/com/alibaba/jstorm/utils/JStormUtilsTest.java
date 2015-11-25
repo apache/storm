@@ -29,8 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class JStormUtilsTest {
-    private static final Logger LOG = LoggerFactory
-            .getLogger(JStormUtilsTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(JStormUtilsTest.class);
 
     private static final int RESTART_TIMES = 1000;
 
@@ -54,12 +53,10 @@ public class JStormUtilsTest {
                 while (forkTimes < RESTART_TIMES) {
 
                     try {
-                        JStormUtils.launch_process(cmd + " " + forkTimes,
-                                environment, true);
+                        JStormUtils.launch_process(cmd + " " + forkTimes, environment, true);
                     } catch (IOException e) {
                         // TODO Auto-generated catch block
-                        LOG.error("Failed to fork process " + cmd + forkTimes,
-                                e);
+                        LOG.error("Failed to fork process " + cmd + forkTimes, e);
                         continue;
                     }
 
@@ -144,9 +141,7 @@ public class JStormUtilsTest {
         }
         try {
 
-            DataOutputStream raf =
-                    new DataOutputStream(new BufferedOutputStream(
-                            new FileOutputStream(new File(pidFile), true)));
+            DataOutputStream raf = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(new File(pidFile), true)));
 
             raf.writeBytes(pid);
         } catch (Exception e) {
@@ -161,6 +156,7 @@ public class JStormUtilsTest {
     }
 
     public static void main(String[] args) {
+
         if (args.length == 0) {
             testRestartProcess();
         } else {

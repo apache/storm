@@ -33,7 +33,7 @@ public class KeyedSummingBatchBolt extends BaseBatchBolt {
     BatchOutputCollector _collector;
     Object _id;
     Map<Object, Number> _sums = new HashMap<Object, Number>();
-    
+
     @Override
     public void prepare(Map conf, TopologyContext context, BatchOutputCollector collector, Object id) {
         _collector = collector;
@@ -43,19 +43,19 @@ public class KeyedSummingBatchBolt extends BaseBatchBolt {
     @Override
     public void execute(Tuple tuple) {
         Object key = tuple.getValue(1);
-        Number curr = Utils.get(_sums, key, 0);        
+        Number curr = Utils.get(_sums, key, 0);
         _sums.put(key, Numbers.add(curr, tuple.getValue(2)));
     }
 
     @Override
     public void finishBatch() {
-        for(Object key: _sums.keySet()) {
+        for (Object key : _sums.keySet()) {
             _collector.emit(new Values(_id, key, _sums.get(key)));
         }
-    }   
+    }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(new Fields("tx", "key", "sum"));
-    }    
+    }
 }

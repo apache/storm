@@ -37,8 +37,7 @@ public class StormBase implements Serializable {
     private boolean enableMonitor = true;
     private String group;
 
-    public StormBase(String stormName, int lanchTimeSecs, StormStatus status,
-            String group) {
+    public StormBase(String stormName, int lanchTimeSecs, StormStatus status, String group) {
         this.stormName = stormName;
         this.lanchTimeSecs = lanchTimeSecs;
         this.status = status;
@@ -98,9 +97,7 @@ public class StormBase implements Serializable {
         result = prime * result + ((group == null) ? 0 : group.hashCode());
         result = prime * result + lanchTimeSecs;
         result = prime * result + ((status == null) ? 0 : status.hashCode());
-        result =
-                prime * result
-                        + ((stormName == null) ? 0 : stormName.hashCode());
+        result = prime * result + ((stormName == null) ? 0 : stormName.hashCode());
         return result;
     }
 
@@ -137,8 +134,7 @@ public class StormBase implements Serializable {
 
     @Override
     public String toString() {
-        return ToStringBuilder.reflectionToString(this,
-                ToStringStyle.SHORT_PREFIX_STYLE);
+        return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
 
 }

@@ -50,8 +50,7 @@ import com.alibaba.jstorm.cluster.StormConfig;
  * @version
  */
 public class SandBoxMaker {
-    private static final Logger LOG = LoggerFactory
-            .getLogger(SandBoxMaker.class);
+    private static final Logger LOG = LoggerFactory.getLogger(SandBoxMaker.class);
 
     public static final String SANBOX_TEMPLATE_NAME = "sandbox.policy";
 
@@ -66,8 +65,7 @@ public class SandBoxMaker {
 
     private final boolean isEnable;
 
-    private final Map<String, String> replaceBaseMap =
-            new HashMap<String, String>();
+    private final Map<String, String> replaceBaseMap = new HashMap<String, String>();
 
     public SandBoxMaker(Map conf) {
         this.conf = conf;
@@ -83,8 +81,7 @@ public class SandBoxMaker {
 
         replaceBaseMap.put(JSTORM_HOME_KEY, jstormHome);
 
-        replaceBaseMap.put(LOCAL_DIR_KEY,
-                (String) conf.get(Config.STORM_LOCAL_DIR));
+        replaceBaseMap.put(LOCAL_DIR_KEY, (String) conf.get(Config.STORM_LOCAL_DIR));
 
         LOG.info("JSTORM_HOME is " + jstormHome);
     }
@@ -127,26 +124,19 @@ public class SandBoxMaker {
         return line;
     }
 
-    public String generatePolicyFile(Map<String, String> replaceMap)
-            throws IOException {
+    public String generatePolicyFile(Map<String, String> replaceMap) throws IOException {
         // dynamic generate policy file, no static file
-        String tmpPolicy =
-                StormConfig.supervisorTmpDir(conf) + File.separator
-                        + UUID.randomUUID().toString();
+        String tmpPolicy = StormConfig.supervisorTmpDir(conf) + File.separator + UUID.randomUUID().toString();
 
-        InputStream inputStream =
-                SandBoxMaker.class.getClassLoader().getResourceAsStream(
-                        SANBOX_TEMPLATE_NAME);
+        InputStream inputStream = SandBoxMaker.class.getClassLoader().getResourceAsStream(SANBOX_TEMPLATE_NAME);
 
-        PrintWriter writer =
-                new PrintWriter(new BufferedWriter(new FileWriter(tmpPolicy)));
+        PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(tmpPolicy)));
 
         try {
 
             InputStreamReader inputReader = new InputStreamReader(inputStream);
 
-            BufferedReader reader =
-                    new BufferedReader(new LineNumberReader(inputReader));
+            BufferedReader reader = new BufferedReader(new LineNumberReader(inputReader));
 
             String line = null;
             while ((line = reader.readLine()) != null) {
@@ -177,8 +167,7 @@ public class SandBoxMaker {
      * @return
      * @throws IOException
      */
-    public String sandboxPolicy(String workerId, Map<String, String> replaceMap)
-            throws IOException {
+    public String sandboxPolicy(String workerId, Map<String, String> replaceMap) throws IOException {
         if (isEnable == false) {
             return "";
         }
@@ -188,9 +177,7 @@ public class SandBoxMaker {
         String tmpPolicy = generatePolicyFile(replaceMap);
 
         File file = new File(tmpPolicy);
-        String policyPath =
-                StormConfig.worker_root(conf, workerId) + File.separator
-                        + SANBOX_TEMPLATE_NAME;
+        String policyPath = StormConfig.worker_root(conf, workerId) + File.separator + SANBOX_TEMPLATE_NAME;
         File dest = new File(policyPath);
         file.renameTo(dest);
 
@@ -210,9 +197,7 @@ public class SandBoxMaker {
         SandBoxMaker maker = new SandBoxMaker(conf);
 
         try {
-            System.out.println("sandboxPolicy:"
-                    + maker.sandboxPolicy("simple",
-                            new HashMap<String, String>()));
+            System.out.println("sandboxPolicy:" + maker.sandboxPolicy("simple", new HashMap<String, String>()));
         } catch (IOException e) {
             e.printStackTrace();
         }

@@ -67,6 +67,8 @@ class Client(Iface):
       return result.success
     if result.e is not None:
       raise result.e
+    if result.aze is not None:
+      raise result.aze
     raise TApplicationException(TApplicationException.MISSING_RESULT, "execute failed: unknown result");
 
 
@@ -100,6 +102,8 @@ class Processor(Iface, TProcessor):
       result.success = self._handler.execute(args.functionName, args.funcArgs)
     except DRPCExecutionException, e:
       result.e = e
+    except AuthorizationException, aze:
+      result.aze = aze
     oprot.writeMessageBegin("execute", TMessageType.REPLY, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
@@ -191,16 +195,19 @@ class execute_result:
   Attributes:
    - success
    - e
+   - aze
   """
 
   thrift_spec = (
     (0, TType.STRING, 'success', None, None, ), # 0
     (1, TType.STRUCT, 'e', (DRPCExecutionException, DRPCExecutionException.thrift_spec), None, ), # 1
+    (2, TType.STRUCT, 'aze', (AuthorizationException, AuthorizationException.thrift_spec), None, ), # 2
   )
 
-  def __init__(self, success=None, e=None,):
+  def __init__(self, success=None, e=None, aze=None,):
     self.success = success
     self.e = e
+    self.aze = aze
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -222,6 +229,12 @@ class execute_result:
           self.e.read(iprot)
         else:
           iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.STRUCT:
+          self.aze = AuthorizationException()
+          self.aze.read(iprot)
+        else:
+          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -240,6 +253,10 @@ class execute_result:
       oprot.writeFieldBegin('e', TType.STRUCT, 1)
       self.e.write(oprot)
       oprot.writeFieldEnd()
+    if self.aze is not None:
+      oprot.writeFieldBegin('aze', TType.STRUCT, 2)
+      self.aze.write(oprot)
+      oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
@@ -251,6 +268,7 @@ class execute_result:
     value = 17
     value = (value * 31) ^ hash(self.success)
     value = (value * 31) ^ hash(self.e)
+    value = (value * 31) ^ hash(self.aze)
     return value
 
   def __repr__(self):

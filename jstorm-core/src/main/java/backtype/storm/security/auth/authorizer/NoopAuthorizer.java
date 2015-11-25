@@ -34,24 +34,24 @@ public class NoopAuthorizer implements IAuthorizer {
 
     /**
      * Invoked once immediately after construction
-     * @param conf Storm configuration 
+     * 
+     * @param conf Storm configuration
      */
-    public void prepare(Map conf) {        
+    public void prepare(Map conf) {
     }
 
     /**
      * permit() method is invoked for each incoming Thrift request
-     * @param context request context includes info about 
+     * 
+     * @param context request context includes info about
      * @param operation operation name
-     * @param topology_storm configuration of targeted topology 
+     * @param topology_storm configuration of targeted topology
      * @return true if the request is authorized, false if reject
      */
     public boolean permit(ReqContext context, String operation, Map topology_conf) {
-        LOG.info("[req "+ context.requestID()+ "] Access "
-                + " from: " + (context.remoteAddress() == null? "null" : context.remoteAddress().toString())
-                + (context.principal() == null? "" : (" principal:"+ context.principal()))
-                +" op:"+operation
-                + (topology_conf == null? "" : (" topoology:"+topology_conf.get(Config.TOPOLOGY_NAME))));
+        LOG.info("[req " + context.requestID() + "] Access " + " from: " + (context.remoteAddress() == null ? "null" : context.remoteAddress().toString())
+                + (context.principal() == null ? "" : (" principal:" + context.principal())) + " op:" + operation
+                + (topology_conf == null ? "" : (" topoology:" + topology_conf.get(Config.TOPOLOGY_NAME))));
         return true;
     }
 }

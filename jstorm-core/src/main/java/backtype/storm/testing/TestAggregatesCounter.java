@@ -29,7 +29,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import static backtype.storm.utils.Utils.tuple;
 
-
 public class TestAggregatesCounter extends BaseRichBolt {
     public static Logger LOG = LoggerFactory.getLogger(TestWordCounter.class);
 
@@ -46,8 +45,8 @@ public class TestAggregatesCounter extends BaseRichBolt {
         int count = (Integer) input.getValues().get(1);
         _counts.put(word, count);
         int globalCount = 0;
-        for(String w: _counts.keySet()) {
-            globalCount+=_counts.get(w);
+        for (String w : _counts.keySet()) {
+            globalCount += _counts.get(w);
         }
         _collector.emit(tuple(globalCount));
         _collector.ack(input);

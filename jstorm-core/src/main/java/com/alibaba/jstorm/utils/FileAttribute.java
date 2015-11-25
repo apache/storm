@@ -77,8 +77,7 @@ public class FileAttribute implements Serializable, JSONAware {
 
     @Override
     public String toString() {
-        return ToStringBuilder.reflectionToString(this,
-                ToStringStyle.SHORT_PREFIX_STYLE);
+        return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
 
     @Override
@@ -122,8 +121,7 @@ public class FileAttribute implements Serializable, JSONAware {
 
         String jsonString = JStormUtils.to_json(map);
 
-        Map<String, Map> map2 =
-                (Map<String, Map>) JStormUtils.from_json(jsonString);
+        Map<String, Map> map2 = (Map<String, Map>) JStormUtils.from_json(jsonString);
 
         Map jObject = map2.get("test");
 

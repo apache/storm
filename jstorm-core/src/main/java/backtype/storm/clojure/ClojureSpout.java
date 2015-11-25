@@ -39,37 +39,38 @@ public class ClojureSpout implements IRichSpout {
     List<String> _fnSpec;
     List<String> _confSpec;
     List<Object> _params;
-    
+
     ISpout _spout;
-    
+
     public ClojureSpout(List fnSpec, List confSpec, List<Object> params, Map<String, StreamInfo> fields) {
         _fnSpec = fnSpec;
         _confSpec = confSpec;
         _params = params;
         _fields = fields;
     }
-    
 
     @Override
     public void open(final Map conf, final TopologyContext context, final SpoutOutputCollector collector) {
         IFn hof = Utils.loadClojureFn(_fnSpec.get(0), _fnSpec.get(1));
         try {
             IFn preparer = (IFn) hof.applyTo(RT.seq(_params));
-            final Map<Keyword,Object> collectorMap = new PersistentArrayMap( new Object[] {
-                Keyword.intern(Symbol.create("output-collector")), collector,
-                Keyword.intern(Symbol.create("context")), context});
-            List<Object> args = new ArrayList<Object>() {{
-                add(conf);
-                add(context);
-                add(collectorMap);
-            }};
-            
+            final Map<Keyword, Object> collectorMap =
+                    new PersistentArrayMap(new Object[] { Keyword.intern(Symbol.create("output-collector")), collector,
+                            Keyword.intern(Symbol.create("context")), context });
+            List<Object> args = new ArrayList<Object>() {
+                {
+                    add(conf);
+                    add(context);
+                    add(collectorMap);
+                }
+            };
+
             _spout = (ISpout) preparer.applyTo(RT.seq(args));
-            //this is kind of unnecessary for clojure
+            // this is kind of unnecessary for clojure
             try {
                 _spout.open(conf, context, collector);
-            } catch(AbstractMethodError ame) {
-                
+            } catch (AbstractMethodError ame) {
+
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -80,8 +81,8 @@ public class ClojureSpout implements IRichSpout {
     public void close() {
         try {
             _spout.close();
-        } catch(AbstractMethodError ame) {
-                
+        } catch (AbstractMethodError ame) {
+
         }
     }
 
@@ -89,8 +90,8 @@ public class ClojureSpout implements IRichSpout {
     public void nextTuple() {
         try {
             _spout.nextTuple();
-        } catch(AbstractMethodError ame) {
-                
+        } catch (AbstractMethodError ame) {
+
         }
 
     }
@@ -99,8 +100,8 @@ public class ClojureSpout implements IRichSpout {
     public void ack(Object msgId) {
         try {
             _spout.ack(msgId);
-        } catch(AbstractMethodError ame) {
-                
+        } catch (AbstractMethodError ame) {
+
         }
 
     }
@@ -109,20 +110,20 @@ public class ClojureSpout implements IRichSpout {
     public void fail(Object msgId) {
         try {
             _spout.fail(msgId);
-        } catch(AbstractMethodError ame) {
-                
+        } catch (AbstractMethodError ame) {
+
         }
 
     }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        for(String stream: _fields.keySet()) {
+        for (String stream : _fields.keySet()) {
             StreamInfo info = _fields.get(stream);
             declarer.declareStream(stream, info.is_direct(), new Fields(info.get_output_fields()));
         }
     }
-    
+
     @Override
     public Map<String, Object> getComponentConfiguration() {
         IFn hof = Utils.loadClojureFn(_confSpec.get(0), _confSpec.get(1));
@@ -137,8 +138,8 @@ public class ClojureSpout implements IRichSpout {
     public void activate() {
         try {
             _spout.activate();
-        } catch(AbstractMethodError ame) {
-                
+        } catch (AbstractMethodError ame) {
+
         }
     }
 
@@ -146,8 +147,8 @@ public class ClojureSpout implements IRichSpout {
     public void deactivate() {
         try {
             _spout.deactivate();
-        } catch(AbstractMethodError ame) {
-                
+        } catch (AbstractMethodError ame) {
+
         }
     }
 }

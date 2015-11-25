@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 import org.json.simple.JSONValue;
 
-
 public class JSONOpaqueSerializer implements Serializer<OpaqueValue> {
 
     @Override
@@ -48,5 +47,5 @@ public class JSONOpaqueSerializer implements Serializer<OpaqueValue> {
             throw new RuntimeException(e);
         }
     }
-    
+
 }

@@ -79,8 +79,8 @@ union ComponentObject {
 }
 
 struct ComponentCommon {
-  1: required map<GlobalStreamId, Grouping> inputs; // input source
-  2: required map<string, StreamInfo> streams; //key is stream id, output stream
+  1: required map<GlobalStreamId, Grouping> inputs;
+  2: required map<string, StreamInfo> streams; //key is stream id
   3: optional i32 parallelism_hint; //how many threads across the cluster should be dedicated to this component
 
   // component specific configuration respects:
@@ -120,41 +120,61 @@ struct StormTopology {
   3: required map<string, StateSpoutSpec> state_spouts;
 }
 
+exception AlreadyAliveException {
+  1: required string msg;
+}
+
+exception NotAliveException {
+  1: required string msg;
+}
+
+exception AuthorizationException {
+  1: required string msg;
+}
+
+exception InvalidTopologyException {
+  1: required string msg;
+}
+
+exception TopologyAssignException {
+  1: required string msg;
+}
+
 struct TopologySummary {
   1: required string id;
   2: required string name;
   3: required string status;
-  4: required i32 uptime_secs;
-  5: required i32 num_tasks;
-  6: required i32 num_workers;
-  7: optional string error_info;
+  4: required i32 uptimeSecs;
+  5: required i32 numTasks;
+  6: required i32 numWorkers;
+  7: optional string errorInfo;
 }
 
 struct SupervisorSummary {
   1: required string host;
-  2: required string supervisor_id;
-  3: required i32 uptime_secs;
-  4: required i32 num_workers;
-  5: required i32 num_used_workers;
+  2: required string supervisorId;
+  3: required i32 uptimeSecs;
+  4: required i32 numWorkers;
+  5: required i32 numUsedWorkers;
 }
 
 struct NimbusStat {
   1: required string host;
-  2: required string uptime_secs;
+  2: required string uptimeSecs;
 }
 
 struct NimbusSummary {
-  1: required NimbusStat nimbus_master;
-  2: required list<NimbusStat> nimbus_slaves;
-  3: required i32 supervisor_num;
-  4: required i32 total_port_num;
-  5: required i32 used_port_num;
-  6: required i32 free_port_num;
+  1: required NimbusStat nimbusMaster;
+  2: required list<NimbusStat> nimbusSlaves;
+  3: required i32 supervisorNum;
+  4: required i32 totalPortNum;
+  5: required i32 usedPortNum;
+  6: required i32 freePortNum;
   7: required string version;
 }
 
 struct ClusterSummary {
-  1: required NimbusSummary  nimbus;
+  1: required NimbusSummary nimbus;
   2: required list<SupervisorSummary> supervisors;
   3: required list<TopologySummary> topologies;
 }
@@ -176,52 +196,69 @@ struct MetricWindow {
   1: required map<i32, double> metricWindow;
 }
 
-struct MetricInfo {
-  // map<metricName, MetricWindow>
-  1: required map<string, MetricWindow> baseMetric;
-  // map<metricName, <inputId, MetricWindow >
-  2: optional map<string, map<string, MetricWindow> > inputMetric;
-  // map<metricName, <outputId, MetricWindow> >
-  3: optional map<string, map<string, MetricWindow> > outputMetric;
+// a union type for counter, gauge, meter, histogram and timer
+struct MetricSnapshot {
+  1: required i64 metricId;
+  2: required i64 ts;
+  3: required i32 metricType;
+  4: optional i64 longValue;
+  5: optional double doubleValue;
+  6: optional double m1;
+  7: optional double m5;
+  8: optional double m15;
+  9: optional double mean;
+  10: optional i64 min;
+  11: optional i64 max;
+  12: optional double p50;
+  13: optional double p75;
+  14: optional double p95;
+  15: optional double p98;
+  16: optional double p99;
+  17: optional double p999;
+  18: optional double stddev;
+  19: optional list<i64> points;
 }
 
-// due to NettyMetric is too huge to store in workerMetric
-struct TopologyMetric {
-  1: required MetricInfo topologyMetric;
-  // map<ComponentName, MetricInfo>
-  2: required map<string, MetricInfo> componentMetric;
-  // map<nodePort, MetricInfo>
-  3: required map<string, MetricInfo> workerMetric;
-  // map<taskId, MetricInfo>
-  4: required map<i32, MetricInfo> taskMetric;
+struct MetricInfo {
+  // map<metricName, map<window, snapshot>>
+  1: optional map<string, map<i32, MetricSnapshot>> metrics;
 }
 
 struct SupervisorWorkers {
   1: required SupervisorSummary supervisor;
   2: required list<WorkerSummary> workers;
-  3: required map<string, MetricInfo> workerMetric;
+  3: required map<string,MetricInfo> workerMetric;
 }
 
 struct ErrorInfo {
   1: required string error;
-  2: required i32 error_time_secs;
+  2: required i32 errorTimeSecs;
 }
 
 struct ComponentSummary {
   1: required string name;
   2: required i32 parallel;
   3: required string type;
-  4: required list<i32> task_ids;
+  4: required list<i32> taskIds;
   5: optional list<ErrorInfo>  errors;
 }
 
 struct TaskSummary {
-  1: required i32 task_id;
+  1: required i32 taskId;
   2: required i32 uptime;
   3: required string status;
   4: required string host;
   5: required i32 port;
   6: optional list<ErrorInfo>  errors;
+}
+
+struct TopologyMetric {
+  1: required MetricInfo topologyMetric;
+  2: required MetricInfo componentMetric;
+  3: required MetricInfo workerMetric;
+  4: required MetricInfo taskMetric;
+  5: required MetricInfo streamMetric;
+  6: required MetricInfo nettyMetric;
 }
 
 struct TopologyInfo {
@@ -231,24 +268,11 @@ struct TopologyInfo {
   4: required TopologyMetric metrics;
 }
 
-exception TopologyAssignException {
-  1: required string msg;
-}
-
-exception AlreadyAliveException {
-  1: required string msg;
-}
-
-exception NotAliveException {
-  1: required string msg;
-}
-
-exception InvalidTopologyException {
-  1: required string msg;
-}
-
-exception AuthorizationException {
-  1: required string msg;
+struct WorkerUploadMetrics {
+  1: required string topologyId;
+  2: required string supervisorId;
+  3: required i32 port;
+  4: required MetricInfo allMetrics;
 }
 
 struct KillOptions {
@@ -261,21 +285,24 @@ struct RebalanceOptions {
   3: optional string conf;
 }
 
+struct Credentials {
+  1: required map<string,string> creds;
+}
+
 enum TopologyInitialStatus {
     ACTIVE = 1,
     INACTIVE = 2
 }
 struct SubmitOptions {
   1: required TopologyInitialStatus initial_status;
+  2: optional Credentials creds;
 }
 
 struct MonitorOptions {
   1: optional bool isEnable;
 }
 
-struct Credentials {
-  1: required map<string,string> creds;
-}
+
 
 struct ThriftSerializedObject {
   1: required string name;
@@ -286,18 +313,15 @@ struct LocalStateData {
    1: required map<string, ThriftSerializedObject> serialized_parts;
 }
 
-struct NettyMetric {
-    1: required map<string, MetricInfo> connections;
-    2: required i32 connectionNum;
+struct TaskHeartbeat {
+    1: required i32 time;
+    2: required i32 uptime;
 }
 
-struct WorkerUploadMetrics {
-  1: required string topology_id;
-  2: required string supervisor_id;
-  3: required i32 port;
-  4: required MetricInfo workerMetric;
-  5: required NettyMetric nettyMetric;
-  6: required map<i32, MetricInfo> taskMetric;
+struct TopologyTaskHbInfo {
+    1: required string topologyId;
+    2: required i32 topologyMasterId;
+    3: optional map<i32, TaskHeartbeat> taskHbs;
 }
 
 service Nimbus {
@@ -317,7 +341,7 @@ service Nimbus {
   string beginFileUpload();
   void uploadChunk(1: string location, 2: binary chunk);
   void finishFileUpload(1: string location);
-  
+
   string beginFileDownload(1: string file);
   //can stop downloading chunks when receive 0-length byte array back
   binary downloadChunk(1: string id);
@@ -328,25 +352,40 @@ service Nimbus {
   //returns json
   string getTopologyConf(1: string id) throws (1: NotAliveException e);
   string getTopologyId(1: string topologyName) throws (1: NotAliveException e);
-  
+
   // stats functions
   ClusterSummary getClusterInfo();
   SupervisorWorkers getSupervisorWorkers(1: string host) throws (1: NotAliveException e);
   TopologyInfo getTopologyInfo(1: string id) throws (1: NotAliveException e);
   TopologyInfo getTopologyInfoByName(1: string topologyName) throws (1: NotAliveException e);
-  
+
   StormTopology getTopology(1: string id) throws (1: NotAliveException e);
   StormTopology getUserTopology(1: string id) throws (1: NotAliveException e);
-  
+
   // relate metric
-  void workerUploadMetric(1: WorkerUploadMetrics uploadMetrics);
-  TopologyMetric getTopologyMetric(1: string topologyName);
-  NettyMetric getNettyMetric(1: string topologyName, 2: i32 pos);
-  NettyMetric getServerNettyMetric(1: string topologyName, 2: string serverName);
+  void uploadTopologyMetrics(1: string topologyId, 2: TopologyMetric topologyMetrics);
+  map<string,i64> registerMetrics(1: string topologyId, 2: set<string> metrics);
+  TopologyMetric getTopologyMetrics(1: string topologyId);
+
+  // get metrics by type: component/task/stream/worker/topology
+  list<MetricInfo> getMetrics(1: string topologyId, 2: i32 type);
+
+  MetricInfo getNettyMetrics(1:string topologyId);
+  MetricInfo getNettyMetricsByHost(1: string topologyId, 2: string host);
+  MetricInfo getPagingNettyMetrics(1: string topologyId, 2: string host, 3: i32 page);
+  i32 getNettyMetricSizeByHost(1: string topologyId, 2: string host);
+
+  MetricInfo getTaskMetrics(1:string topologyId, 2:string component);
+  list<MetricInfo> getTaskAndStreamMetrics(1:string topologyId, 2: i32 taskId);
+
+  // get only topology level metrics
+  list<MetricInfo> getSummarizedTopologyMetrics(1: string topologyId);
 
   string getVersion();
 
-  void updateConf(1: string name, 2: string conf) throws (1: NotAliveException e, 2: InvalidTopologyException ite);
+  void updateTopology(1: string name, 2: string uploadedLocation, 3: string updateConf) throws (1: NotAliveException e, 2: InvalidTopologyException ite);
+
+  void updateTaskHeartbeat(1: TopologyTaskHbInfo taskHbs);
 }
 
 struct DRPCRequest {
@@ -359,11 +398,11 @@ exception DRPCExecutionException {
 }
 
 service DistributedRPC {
-  string execute(1: string functionName, 2: string funcArgs) throws (1: DRPCExecutionException e);
+  string execute(1: string functionName, 2: string funcArgs) throws (1: DRPCExecutionException e, 2: AuthorizationException aze);
 }
 
 service DistributedRPCInvocations {
-  void result(1: string id, 2: string result);
-  DRPCRequest fetchRequest(1: string functionName);
-  void failRequest(1: string id);  
+  void result(1: string id, 2: string result) throws (1: AuthorizationException aze);
+  DRPCRequest fetchRequest(1: string functionName) throws (1: AuthorizationException aze);
+  void failRequest(1: string id) throws (1: AuthorizationException aze);  
 }

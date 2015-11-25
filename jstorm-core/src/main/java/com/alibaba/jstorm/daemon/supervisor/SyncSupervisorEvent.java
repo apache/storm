@@ -17,33 +17,11 @@
  */
 package com.alibaba.jstorm.daemon.supervisor;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-
-import org.apache.commons.io.FileExistsException;
-import org.apache.commons.io.FileUtils;
-import org.apache.thrift.TException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import backtype.storm.Config;
 import backtype.storm.utils.LocalState;
-
 import com.alibaba.jstorm.callback.RunnableCallback;
 import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.cluster.Cluster;
 import com.alibaba.jstorm.cluster.Common;
-import com.alibaba.jstorm.cluster.StormBase;
 import com.alibaba.jstorm.cluster.StormClusterState;
 import com.alibaba.jstorm.cluster.StormConfig;
 import com.alibaba.jstorm.daemon.worker.LocalAssignment;
@@ -55,16 +33,26 @@ import com.alibaba.jstorm.utils.JStormServerUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.PathUtils;
 import com.alibaba.jstorm.utils.TimeUtils;
+import org.apache.commons.io.FileExistsException;
+import org.apache.commons.io.FileUtils;
+import org.apache.thrift.TException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.util.*;
+import java.util.Map.Entry;
 
 /**
- * supervisor SynchronizeSupervisor workflow (1) writer local assignment to
- * LocalState (2) download new Assignment's topology (3) remove useless Topology
- * (4) push one SyncProcessEvent to SyncProcessEvent's EventManager
+ * supervisor SynchronizeSupervisor workflow (1) writer local assignment to LocalState (2) download new Assignment's topology (3) remove useless Topology (4)
+ * push one SyncProcessEvent to SyncProcessEvent's EventManager
+ * @author Johnfang (xiaojian.fxj@alibaba-inc.com)
  */
 class SyncSupervisorEvent extends RunnableCallback {
 
-    private static final Logger LOG = LoggerFactory
-            .getLogger(SyncSupervisorEvent.class);
+    private static final Logger LOG = LoggerFactory.getLogger(SyncSupervisorEvent.class);
 
     // private Supervisor supervisor;
 
@@ -95,10 +83,8 @@ class SyncSupervisorEvent extends RunnableCallback {
      * @param localState
      * @param syncProcesses
      */
-    public SyncSupervisorEvent(String supervisorId, Map conf,
-            EventManager processEventManager, EventManager syncSupEventManager,
-            StormClusterState stormClusterState, LocalState localState,
-            SyncProcessEvent syncProcesses, Heartbeat heartbeat) {
+    public SyncSupervisorEvent(String supervisorId, Map conf, EventManager processEventManager, EventManager syncSupEventManager,
+            StormClusterState stormClusterState, LocalState localState, SyncProcessEvent syncProcesses, Heartbeat heartbeat) {
 
         this.syncProcesses = syncProcesses;
         this.processEventManager = processEventManager;
@@ -112,38 +98,30 @@ class SyncSupervisorEvent extends RunnableCallback {
 
     @Override
     public void run() {
-        LOG.debug("Synchronizing supervisor, interval seconds:"
-                + TimeUtils.time_delta(lastTime));
+        LOG.debug("Synchronizing supervisor, interval seconds:" + TimeUtils.time_delta(lastTime));
         lastTime = TimeUtils.current_time_secs();
 
         try {
 
-            RunnableCallback syncCallback =
-                    new EventManagerZkPusher(this, syncSupEventManager);
+            RunnableCallback syncCallback = new EventManagerZkPusher(this, syncSupEventManager);
 
             /**
-             * Step 1: get all assignments and register /ZK-dir/assignment and
-             * every assignment watch
+             * Step 1: get all assignments and register /ZK-dir/assignment and every assignment watch
              * 
              */
-            Map<String, Assignment> assignments =
-                    Cluster.get_all_assignment(stormClusterState, syncCallback);
+            Map<String, Assignment> assignments = Cluster.get_all_assignment(stormClusterState, syncCallback);
             LOG.debug("Get all assignments " + assignments);
 
             /**
-             * Step 2: get topologyIds list from
-             * STORM-LOCAL-DIR/supervisor/stormdist/
+             * Step 2: get topologyIds list from STORM-LOCAL-DIR/supervisor/stormdist/
              */
-            List<String> downloadedTopologyIds =
-                    StormConfig.get_supervisor_toplogy_list(conf);
+            List<String> downloadedTopologyIds = StormConfig.get_supervisor_toplogy_list(conf);
             LOG.debug("Downloaded storm ids: " + downloadedTopologyIds);
 
             /**
-             * Step 3: get <port,LocalAssignments> from ZK local node's
-             * assignment
+             * Step 3: get <port,LocalAssignments> from ZK local node's assignment
              */
-            Map<Integer, LocalAssignment> zkAssignment =
-                    getLocalAssign(stormClusterState, supervisorId, assignments);
+            Map<Integer, LocalAssignment> zkAssignment = getLocalAssign(stormClusterState, supervisorId, assignments);
             Map<Integer, LocalAssignment> localAssignment;
             Set<String> updateTopologys;
 
@@ -152,35 +130,31 @@ class SyncSupervisorEvent extends RunnableCallback {
              */
             try {
                 LOG.debug("Writing local assignment " + zkAssignment);
-                localAssignment =
-                        (Map<Integer, LocalAssignment>) localState
-                                .get(Common.LS_LOCAL_ASSIGNMENTS);
+                localAssignment = (Map<Integer, LocalAssignment>) localState.get(Common.LS_LOCAL_ASSIGNMENTS);
                 if (localAssignment == null) {
                     localAssignment = new HashMap<Integer, LocalAssignment>();
                 }
                 localState.put(Common.LS_LOCAL_ASSIGNMENTS, zkAssignment);
 
-                updateTopologys =
-                        getUpdateTopologys(localAssignment, zkAssignment);
-                Set<String> reDownloadTopologys =
-                        getNeedReDownloadTopologys(localAssignment);
+                updateTopologys = getUpdateTopologys(localAssignment, zkAssignment, assignments);
+                Set<String> reDownloadTopologys = getNeedReDownloadTopologys(localAssignment);
                 if (reDownloadTopologys != null) {
                     updateTopologys.addAll(reDownloadTopologys);
                 }
             } catch (IOException e) {
-                LOG.error("put LS_LOCAL_ASSIGNMENTS " + zkAssignment
-                        + " of localState failed");
+                LOG.error("put LS_LOCAL_ASSIGNMENTS " + zkAssignment + " of localState failed");
                 throw e;
             }
 
             /**
              * Step 5: download code from ZK
              */
-            Map<String, String> topologyCodes =
-                    getTopologyCodeLocations(assignments, supervisorId);
+            Map<String, String> topologyCodes = getTopologyCodeLocations(assignments, supervisorId);
 
-            downloadTopology(topologyCodes, downloadedTopologyIds,
-                    updateTopologys, assignments);
+            //  downloadFailedTopologyIds which can't finished download binary from nimbus
+            Set<String> downloadFailedTopologyIds = new HashSet<String>();
+
+            downloadTopology(topologyCodes, downloadedTopologyIds, updateTopologys, assignments, downloadFailedTopologyIds);
 
             /**
              * Step 6: remove any downloaded useless topology
@@ -191,7 +165,7 @@ class SyncSupervisorEvent extends RunnableCallback {
              * Step 7: push syncProcesses Event
              */
             // processEventManager.add(syncProcesses);
-            syncProcesses.run(zkAssignment);
+            syncProcesses.run(zkAssignment, downloadFailedTopologyIds);
 
             // If everything is OK, set the trigger to update heartbeat of
             // supervisor
@@ -209,11 +183,9 @@ class SyncSupervisorEvent extends RunnableCallback {
      * @param conf
      * @param topologyId
      * @param masterCodeDir
-     * @param clusterMode
      * @throws IOException
      */
-    private void downloadStormCode(Map conf, String topologyId,
-            String masterCodeDir) throws IOException, TException {
+    private void downloadStormCode(Map conf, String topologyId, String masterCodeDir) throws IOException, TException {
         String clusterMode = StormConfig.cluster_mode(conf);
 
         if (clusterMode.endsWith("distributed")) {
@@ -224,17 +196,14 @@ class SyncSupervisorEvent extends RunnableCallback {
         }
     }
 
-    private void downloadLocalStormCode(Map conf, String topologyId,
-            String masterCodeDir) throws IOException, TException {
+    private void downloadLocalStormCode(Map conf, String topologyId, String masterCodeDir) throws IOException, TException {
 
         // STORM-LOCAL-DIR/supervisor/stormdist/storm-id
-        String stormroot =
-                StormConfig.supervisor_stormdist_root(conf, topologyId);
+        String stormroot = StormConfig.supervisor_stormdist_root(conf, topologyId);
 
         FileUtils.copyDirectory(new File(masterCodeDir), new File(stormroot));
 
-        ClassLoader classloader =
-                Thread.currentThread().getContextClassLoader();
+        ClassLoader classloader = Thread.currentThread().getContextClassLoader();
 
         String resourcesJar = resourcesJar();
 
@@ -244,20 +213,16 @@ class SyncSupervisorEvent extends RunnableCallback {
 
         if (resourcesJar != null) {
 
-            LOG.info("Extracting resources from jar at " + resourcesJar
-                    + " to " + targetDir);
+            LOG.info("Extracting resources from jar at " + resourcesJar + " to " + targetDir);
 
-            JStormUtils.extract_dir_from_jar(resourcesJar,
-                    StormConfig.RESOURCES_SUBDIR, stormroot);// extract dir
+            JStormUtils.extract_dir_from_jar(resourcesJar, StormConfig.RESOURCES_SUBDIR, stormroot);// extract dir
             // from jar;;
             // util.clj
         } else if (url != null) {
 
-            LOG.info("Copying resources at " + url.toString() + " to "
-                    + targetDir);
+            LOG.info("Copying resources at " + url.toString() + " to " + targetDir);
 
-            FileUtils.copyDirectory(new File(url.getFile()), (new File(
-                    targetDir)));
+            FileUtils.copyDirectory(new File(url.getFile()), (new File(targetDir)));
 
         }
     }
@@ -271,27 +236,21 @@ class SyncSupervisorEvent extends RunnableCallback {
      * @throws IOException
      * @throws TException
      */
-    private void downloadDistributeStormCode(Map conf, String topologyId,
-            String masterCodeDir) throws IOException, TException {
+    private void downloadDistributeStormCode(Map conf, String topologyId, String masterCodeDir) throws IOException, TException {
 
         // STORM_LOCAL_DIR/supervisor/tmp/(UUID)
-        String tmproot =
-                StormConfig.supervisorTmpDir(conf) + File.separator
-                        + UUID.randomUUID().toString();
+        String tmproot = StormConfig.supervisorTmpDir(conf) + File.separator + UUID.randomUUID().toString();
 
         // STORM_LOCAL_DIR/supervisor/stormdist/topologyId
-        String stormroot =
-                StormConfig.supervisor_stormdist_root(conf, topologyId);
+        String stormroot = StormConfig.supervisor_stormdist_root(conf, topologyId);
 
-        JStormServerUtils.downloadCodeFromMaster(conf, tmproot, masterCodeDir,
-                topologyId, true);
+        JStormServerUtils.downloadCodeFromMaster(conf, tmproot, masterCodeDir, topologyId, true);
 
         // tmproot/stormjar.jar
         String localFileJarTmp = StormConfig.stormjar_path(tmproot);
 
         // extract dir from jar
-        JStormUtils.extract_dir_from_jar(localFileJarTmp,
-                StormConfig.RESOURCES_SUBDIR, tmproot);
+        JStormUtils.extract_dir_from_jar(localFileJarTmp, StormConfig.RESOURCES_SUBDIR, tmproot);
 
         File srcDir = new File(tmproot);
         File destDir = new File(stormroot);
@@ -325,8 +284,7 @@ class SyncSupervisorEvent extends RunnableCallback {
         List<String> rtn = new ArrayList<String>();
         int size = jarPaths.size();
         for (int i = 0; i < size; i++) {
-            if (JStormUtils.zipContainsDir(jarPaths.get(i),
-                    StormConfig.RESOURCES_SUBDIR)) {
+            if (JStormUtils.zipContainsDir(jarPaths.get(i), StormConfig.RESOURCES_SUBDIR)) {
                 rtn.add(jarPaths.get(i));
             }
         }
@@ -342,24 +300,19 @@ class SyncSupervisorEvent extends RunnableCallback {
      * 
      * @param stormClusterState
      * @param supervisorId
-     * @param callback
      * @throws Exception
      * @returns map: {port,LocalAssignment}
      */
-    private Map<Integer, LocalAssignment> getLocalAssign(
-            StormClusterState stormClusterState, String supervisorId,
-            Map<String, Assignment> assignments) throws Exception {
+    private Map<Integer, LocalAssignment> getLocalAssign(StormClusterState stormClusterState, String supervisorId, Map<String, Assignment> assignments)
+            throws Exception {
 
-        Map<Integer, LocalAssignment> portLA =
-                new HashMap<Integer, LocalAssignment>();
+        Map<Integer, LocalAssignment> portLA = new HashMap<Integer, LocalAssignment>();
 
         for (Entry<String, Assignment> assignEntry : assignments.entrySet()) {
             String topologyId = assignEntry.getKey();
             Assignment assignment = assignEntry.getValue();
 
-            Map<Integer, LocalAssignment> portTasks =
-                    readMyTasks(stormClusterState, topologyId, supervisorId,
-                            assignment);
+            Map<Integer, LocalAssignment> portTasks = readMyTasks(stormClusterState, topologyId, supervisorId, assignment);
             if (portTasks == null) {
                 continue;
             }
@@ -374,8 +327,7 @@ class SyncSupervisorEvent extends RunnableCallback {
                 if (!portLA.containsKey(port)) {
                     portLA.put(port, la);
                 } else {
-                    throw new RuntimeException(
-                            "Should not have multiple topologys assigned to one port");
+                    throw new RuntimeException("Should not have multiple topologys assigned to one port");
                 }
             }
         }
@@ -389,30 +341,27 @@ class SyncSupervisorEvent extends RunnableCallback {
      * @param stormClusterState
      * @param topologyId
      * @param supervisorId
-     * @param callback
      * @return Map: {port, LocalAssignment}
      * @throws Exception
      */
-    private Map<Integer, LocalAssignment> readMyTasks(
-            StormClusterState stormClusterState, String topologyId,
-            String supervisorId, Assignment assignmenInfo) throws Exception {
+    private Map<Integer, LocalAssignment> readMyTasks(StormClusterState stormClusterState, String topologyId, String supervisorId, Assignment assignmentInfo)
+            throws Exception {
 
-        Map<Integer, LocalAssignment> portTasks =
-                new HashMap<Integer, LocalAssignment>();
+        Map<Integer, LocalAssignment> portTasks = new HashMap<Integer, LocalAssignment>();
 
-        Set<ResourceWorkerSlot> workers = assignmenInfo.getWorkers();
+        Set<ResourceWorkerSlot> workers = assignmentInfo.getWorkers();
         if (workers == null) {
-            LOG.error("No worker of assignement's " + assignmenInfo);
+            LOG.error("No worker of assignment's " + assignmentInfo);
             return portTasks;
         }
 
         for (ResourceWorkerSlot worker : workers) {
             if (!supervisorId.equals(worker.getNodeId()))
                 continue;
-            portTasks.put(worker.getPort(), new LocalAssignment(topologyId,
-                    worker.getTasks(), Common.topologyIdToName(topologyId),
-                    worker.getMemSize(), worker.getCpu(), worker.getJvm(),
-                    assignmenInfo.getTimeStamp()));
+            portTasks.put(
+                    worker.getPort(),
+                    new LocalAssignment(topologyId, worker.getTasks(), Common.topologyIdToName(topologyId), worker.getMemSize(), worker.getCpu(), worker
+                            .getJvm(), assignmentInfo.getTimeStamp()));
         }
 
         return portTasks;
@@ -421,14 +370,10 @@ class SyncSupervisorEvent extends RunnableCallback {
     /**
      * get mastercodedir for every topology
      * 
-     * @param stormClusterState
-     * @param callback
      * @throws Exception
      * @returns Map: <topologyId, master-code-dir> from zookeeper
      */
-    public static Map<String, String> getTopologyCodeLocations(
-            Map<String, Assignment> assignments, String supervisorId)
-            throws Exception {
+    public static Map<String, String> getTopologyCodeLocations(Map<String, Assignment> assignments, String supervisorId) throws Exception {
 
         Map<String, String> rtn = new HashMap<String, String>();
         for (Entry<String, Assignment> entry : assignments.entrySet()) {
@@ -448,9 +393,8 @@ class SyncSupervisorEvent extends RunnableCallback {
         return rtn;
     }
 
-    public void downloadTopology(Map<String, String> topologyCodes,
-            List<String> downloadedTopologyIds, Set<String> updateTopologys,
-            Map<String, Assignment> assignments) throws Exception {
+    public void downloadTopology(Map<String, String> topologyCodes, List<String> downloadedTopologyIds, Set<String> updateTopologys,
+                                 Map<String, Assignment> assignments, Set<String> downloadFailedTopologyIds) throws Exception {
 
         Set<String> downloadTopologys = new HashSet<String>();
 
@@ -459,38 +403,53 @@ class SyncSupervisorEvent extends RunnableCallback {
             String topologyId = entry.getKey();
             String masterCodeDir = entry.getValue();
 
-            if (!downloadedTopologyIds.contains(topologyId)
-                    || updateTopologys.contains(topologyId)) {
+            if (!downloadedTopologyIds.contains(topologyId) || updateTopologys.contains(topologyId)) {
 
-                LOG.info("Downloading code for storm id " + topologyId
-                        + " from " + masterCodeDir);
+                LOG.info("Downloading code for storm id " + topologyId + " from " + masterCodeDir);
 
-                try {
-                    downloadStormCode(conf, topologyId, masterCodeDir);
-                    // Update assignment timeStamp
-                    StormConfig.write_supervisor_topology_timestamp(conf,
-                            topologyId, assignments.get(topologyId)
-                                    .getTimeStamp());
-                } catch (IOException e) {
-                    LOG.error(e + " downloadStormCode failed " + "topologyId:"
-                            + topologyId + "masterCodeDir:" + masterCodeDir);
+                int retry = 0;
+                while (retry < 3) {
+                    try {
+                        downloadStormCode(conf, topologyId, masterCodeDir);
+                        // Update assignment timeStamp
+                        StormConfig.write_supervisor_topology_timestamp(conf, topologyId, assignments.get(topologyId).getTimeStamp());
+                        break;
+                    } catch (IOException e) {
+                        LOG.error(e + " downloadStormCode failed " + "topologyId:" + topologyId + "masterCodeDir:" + masterCodeDir);
 
-                } catch (TException e) {
-                    LOG.error(e + " downloadStormCode failed " + "topologyId:"
-                            + topologyId + "masterCodeDir:" + masterCodeDir);
+                    } catch (TException e) {
+                        LOG.error(e + " downloadStormCode failed " + "topologyId:" + topologyId + "masterCodeDir:" + masterCodeDir);
+                    }
+                    retry++;
                 }
-                LOG.info("Finished downloading code for storm id " + topologyId
-                        + " from " + masterCodeDir);
+                if (retry < 3) {
+                    LOG.info("Finished downloading code for storm id " + topologyId + " from " + masterCodeDir);
+                    downloadTopologys.add(topologyId);
+                } else {
+                    LOG.error("Cann't  download code for storm id " + topologyId + " from " + masterCodeDir);
+                    downloadFailedTopologyIds.add(topologyId);
+                }
 
-                downloadTopologys.add(topologyId);
+            }
+        }
+        // clear directory of topologyId is dangerous , so it only clear the topologyId which
+        // isn't contained by downloadedTopologyIds
+        for (String topologyId : downloadFailedTopologyIds) {
+            if (!downloadedTopologyIds.contains(topologyId)) {
+                try {
+                    String stormroot = StormConfig.supervisor_stormdist_root(conf, topologyId);
+                    File destDir = new File(stormroot);
+                    FileUtils.deleteQuietly(destDir);
+                } catch (Exception e) {
+                    LOG.error("Cann't  clear directory about storm id " + topologyId + " on supervisor ");
+                }
             }
         }
 
         updateTaskCleanupTimeout(downloadTopologys);
     }
 
-    public void removeUselessTopology(Map<String, String> topologyCodes,
-            List<String> downloadedTopologyIds) {
+    public void removeUselessTopology(Map<String, String> topologyCodes, List<String> downloadedTopologyIds) {
         for (String topologyId : downloadedTopologyIds) {
 
             if (!topologyCodes.containsKey(topologyId)) {
@@ -499,9 +458,7 @@ class SyncSupervisorEvent extends RunnableCallback {
 
                 String path = null;
                 try {
-                    path =
-                            StormConfig.supervisor_stormdist_root(conf,
-                                    topologyId);
+                    path = StormConfig.supervisor_stormdist_root(conf, topologyId);
                     PathUtils.rmr(path);
                 } catch (IOException e) {
                     String errMsg = "rmr the path:" + path + "failed\n";
@@ -511,13 +468,11 @@ class SyncSupervisorEvent extends RunnableCallback {
         }
     }
 
-    private Set<String> getUpdateTopologys(
-            Map<Integer, LocalAssignment> localAssignments,
-            Map<Integer, LocalAssignment> zkAssignments) {
+    private Set<String> getUpdateTopologys(Map<Integer, LocalAssignment> localAssignments, Map<Integer, LocalAssignment> zkAssignments,
+            Map<String, Assignment> assignments) {
         Set<String> ret = new HashSet<String>();
         if (localAssignments != null && zkAssignments != null) {
-            for (Entry<Integer, LocalAssignment> entry : localAssignments
-                    .entrySet()) {
+            for (Entry<Integer, LocalAssignment> entry : localAssignments.entrySet()) {
                 Integer port = entry.getKey();
                 LocalAssignment localAssignment = entry.getValue();
 
@@ -526,14 +481,11 @@ class SyncSupervisorEvent extends RunnableCallback {
                 if (localAssignment == null || zkAssignment == null)
                     continue;
 
-                if (localAssignment.getTopologyId().equals(
-                        zkAssignment.getTopologyId())
-                        && localAssignment.getTimeStamp() < zkAssignment
-                                .getTimeStamp())
+                Assignment assignment = assignments.get(localAssignment.getTopologyId());
+                if (localAssignment.getTopologyId().equals(zkAssignment.getTopologyId()) && assignment != null
+                        && assignment.isTopologyChange(localAssignment.getTimeStamp()))
                     if (ret.add(localAssignment.getTopologyId())) {
-                        LOG.info("Topology-" + localAssignment.getTopologyId()
-                                + " has been updated. LocalTs="
-                                + localAssignment.getTimeStamp() + ", ZkTs="
+                        LOG.info("Topology-" + localAssignment.getTopologyId() + " has been updated. LocalTs=" + localAssignment.getTimeStamp() + ", ZkTs="
                                 + zkAssignment.getTimeStamp());
                     }
             }
@@ -542,49 +494,37 @@ class SyncSupervisorEvent extends RunnableCallback {
         return ret;
     }
 
-    private Set<String> getNeedReDownloadTopologys(
-            Map<Integer, LocalAssignment> localAssignment) {
-        Set<String> reDownloadTopologys =
-                syncProcesses.getTopologyIdNeedDownload().getAndSet(null);
+    private Set<String> getNeedReDownloadTopologys(Map<Integer, LocalAssignment> localAssignment) {
+        Set<String> reDownloadTopologys = syncProcesses.getTopologyIdNeedDownload().getAndSet(null);
         if (reDownloadTopologys == null || reDownloadTopologys.size() == 0)
             return null;
         Set<String> needRemoveTopologys = new HashSet<String>();
-        Map<Integer, String> portToStartWorkerId =
-                syncProcesses.getPortToWorkerId();
-        for (Entry<Integer, LocalAssignment> entry : localAssignment
-                .entrySet()) {
+        Map<Integer, String> portToStartWorkerId = syncProcesses.getPortToWorkerId();
+        for (Entry<Integer, LocalAssignment> entry : localAssignment.entrySet()) {
             if (portToStartWorkerId.containsKey(entry.getKey()))
                 needRemoveTopologys.add(entry.getValue().getTopologyId());
         }
-        LOG.debug(
-                "worker is starting on these topology, so delay download topology binary: "
-                        + needRemoveTopologys);
+        LOG.debug("worker is starting on these topology, so delay download topology binary: " + needRemoveTopologys);
         reDownloadTopologys.removeAll(needRemoveTopologys);
         if (reDownloadTopologys.size() > 0)
-            LOG.info("Following topologys is going to re-download the jars, "
-                    + reDownloadTopologys);
+            LOG.info("Following topologys is going to re-download the jars, " + reDownloadTopologys);
         return reDownloadTopologys;
     }
 
     private void updateTaskCleanupTimeout(Set<String> topologys) {
         Map topologyConf = null;
-        Map<String, Integer> taskCleanupTimeouts =
-                new HashMap<String, Integer>();
+        Map<String, Integer> taskCleanupTimeouts = new HashMap<String, Integer>();
 
         for (String topologyId : topologys) {
             try {
-                topologyConf =
-                        StormConfig.read_supervisor_topology_conf(conf,
-                                topologyId);
+                topologyConf = StormConfig.read_supervisor_topology_conf(conf, topologyId);
             } catch (IOException e) {
                 LOG.info("Failed to read conf for " + topologyId);
             }
 
             Integer cleanupTimeout = null;
             if (topologyConf != null) {
-                cleanupTimeout =
-                        JStormUtils.parseInt(topologyConf
-                                .get(ConfigExtension.TASK_CLEANUP_TIMEOUT_SEC));
+                cleanupTimeout = JStormUtils.parseInt(topologyConf.get(ConfigExtension.TASK_CLEANUP_TIMEOUT_SEC));
             }
 
             if (cleanupTimeout == null) {
@@ -596,9 +536,7 @@ class SyncSupervisorEvent extends RunnableCallback {
 
         Map<String, Integer> localTaskCleanupTimeouts = null;
         try {
-            localTaskCleanupTimeouts =
-                    (Map<String, Integer>) localState
-                            .get(Common.LS_TASK_CLEANUP_TIMEOUT);
+            localTaskCleanupTimeouts = (Map<String, Integer>) localState.get(Common.LS_TASK_CLEANUP_TIMEOUT);
         } catch (IOException e) {
             LOG.error("Failed to read local task cleanup timeout map", e);
         }
@@ -609,8 +547,7 @@ class SyncSupervisorEvent extends RunnableCallback {
             localTaskCleanupTimeouts.putAll(taskCleanupTimeouts);
 
         try {
-            localState.put(Common.LS_TASK_CLEANUP_TIMEOUT,
-                    localTaskCleanupTimeouts);
+            localState.put(Common.LS_TASK_CLEANUP_TIMEOUT, localTaskCleanupTimeouts);
         } catch (IOException e) {
             LOG.error("Failed to write local task cleanup timeout map", e);
         }

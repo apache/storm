@@ -32,8 +32,7 @@ public interface IConnection {
     public Object recv(Integer taskId, int flags);
 
     /**
-     * In the new design, receive flow is through registerQueue, then push
-     * message into queue
+     * In the new design, receive flow is through registerQueue, then push message into queue
      * 
      * @param recvQueu
      */
@@ -44,6 +43,8 @@ public interface IConnection {
     public void send(List<TaskMessage> messages);
 
     public void send(TaskMessage message);
+
+    public boolean available();
 
     /**
      * close this connection

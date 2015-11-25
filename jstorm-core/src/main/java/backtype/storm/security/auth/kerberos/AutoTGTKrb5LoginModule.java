@@ -29,7 +29,6 @@ import javax.security.auth.kerberos.KerberosTicket;
 import javax.security.auth.login.LoginException;
 import javax.security.auth.spi.LoginModule;
 
-
 /**
  * Custom LoginModule to enable Auto Login based on cached ticket
  */
@@ -41,10 +40,7 @@ public class AutoTGTKrb5LoginModule implements LoginModule {
 
     protected KerberosTicket kerbTicket = null;
 
-    public void initialize(Subject subject,
-                           CallbackHandler callbackHandler,
-                           Map<String, ?> sharedState,
-                           Map<String, ?> options) {
+    public void initialize(Subject subject, CallbackHandler callbackHandler, Map<String, ?> sharedState, Map<String, ?> options) {
 
         this.subject = subject;
     }

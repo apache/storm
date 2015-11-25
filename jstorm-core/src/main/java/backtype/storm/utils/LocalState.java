@@ -25,12 +25,9 @@ import java.util.HashMap;
 import java.io.IOException;
 
 /**
- * A simple, durable, atomic K/V database. *Very inefficient*, should only be
- * used for occasional reads/writes. Every read/write hits disk.
+ * A simple, durable, atomic K/V database. *Very inefficient*, should only be used for occasional reads/writes. Every read/write hits disk.
  * 
- * @@@ 
- * Right now, This class hasn't upgrade to storm's LocalState
- * It is need define every type in thrift, it is too complicated to do
+ * @@@ Right now, This class hasn't upgrade to storm's LocalState It is need define every type in thrift, it is too complicated to do
  */
 public class LocalState {
     private VersionedStore _vs;
@@ -46,8 +43,7 @@ public class LocalState {
             if (latestPath == null)
                 return new HashMap<Object, Object>();
             try {
-                return (Map<Object, Object>) Utils.javaDeserialize(FileUtils
-                        .readFileToByteArray(new File(latestPath)));
+                return (Map<Object, Object>) Utils.javaDeserialize(FileUtils.readFileToByteArray(new File(latestPath)));
             } catch (IOException e) {
                 attempts++;
                 if (attempts >= 10) {
@@ -65,8 +61,7 @@ public class LocalState {
         put(key, val, true);
     }
 
-    public synchronized void put(Object key, Object val, boolean cleanup)
-            throws IOException {
+    public synchronized void put(Object key, Object val, boolean cleanup) throws IOException {
         Map<Object, Object> curr = snapshot();
         curr.put(key, val);
         persist(curr, cleanup);
@@ -76,8 +71,7 @@ public class LocalState {
         remove(key, true);
     }
 
-    public synchronized void remove(Object key, boolean cleanup)
-            throws IOException {
+    public synchronized void remove(Object key, boolean cleanup) throws IOException {
         Map<Object, Object> curr = snapshot();
         curr.remove(key);
         persist(curr, cleanup);
@@ -87,8 +81,7 @@ public class LocalState {
         _vs.cleanup(keepVersions);
     }
 
-    private void persist(Map<Object, Object> val, boolean cleanup)
-            throws IOException {
+    private void persist(Map<Object, Object> val, boolean cleanup) throws IOException {
         byte[] toWrite = Utils.serialize(val);
         String newPath = _vs.createVersion();
         FileUtils.writeByteArrayToFile(new File(newPath), toWrite);

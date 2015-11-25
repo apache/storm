@@ -28,8 +28,7 @@ public interface IBatchSpout extends IBasicBolt, ICommitter, Serializable {
      * 
      * execute only receive trigger message
      * 
-     * do emitBatch operation in execute whose streamID is
-     * "batch/compute-stream"
+     * do emitBatch operation in execute whose streamID is "batch/compute-stream"
      */
     // void execute(Tuple input, IBasicOutputCollector collector);
     /**
@@ -44,8 +43,7 @@ public interface IBatchSpout extends IBasicBolt, ICommitter, Serializable {
     /**
      * begin to revert batchId's data
      * 
-     * If current task fails to commit batchId, it won't call revert(batchId) If
-     * current task fails to revert batchId, JStorm won't call revert again.
+     * If current task fails to commit batchId, it won't call revert(batchId) If current task fails to revert batchId, JStorm won't call revert again.
      * 
      * if not transaction, it can don't care revert
      * 

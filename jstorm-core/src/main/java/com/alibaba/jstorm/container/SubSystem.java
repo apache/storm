@@ -27,8 +27,7 @@ public class SubSystem {
 
     private boolean enable;
 
-    public SubSystem(SubSystemType type, int hierarchyID, int cgroupNum,
-            boolean enable) {
+    public SubSystem(SubSystemType type, int hierarchyID, int cgroupNum, boolean enable) {
         this.type = type;
         this.hierarchyID = hierarchyID;
         this.cgroupsNum = cgroupNum;

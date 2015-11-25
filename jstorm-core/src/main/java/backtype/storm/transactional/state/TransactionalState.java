@@ -40,25 +40,23 @@ public class TransactionalState {
     KryoValuesSerializer _ser;
     KryoValuesDeserializer _des;
     List<ACL> _zkAcls = null;
-    
+
     public static TransactionalState newUserState(Map conf, String id, Map componentConf) {
         return new TransactionalState(conf, id, componentConf, "user");
     }
-    
+
     public static TransactionalState newCoordinatorState(Map conf, String id, Map componentConf) {
-        return new TransactionalState(conf, id, componentConf, "coordinator");        
+        return new TransactionalState(conf, id, componentConf, "coordinator");
     }
-    
+
     protected TransactionalState(Map conf, String id, Map componentConf, String subroot) {
         try {
             conf = new HashMap(conf);
             // ensure that the serialization registrations are consistent with the declarations in this spout
-            if(componentConf!=null) {
-                conf.put(Config.TOPOLOGY_KRYO_REGISTER,
-                         componentConf
-                              .get(Config.TOPOLOGY_KRYO_REGISTER));
+            if (componentConf != null) {
+                conf.put(Config.TOPOLOGY_KRYO_REGISTER, componentConf.get(Config.TOPOLOGY_KRYO_REGISTER));
             }
-            String transactionalRoot = (String)conf.get(Config.TRANSACTIONAL_ZOOKEEPER_ROOT);
+            String transactionalRoot = (String) conf.get(Config.TRANSACTIONAL_ZOOKEEPER_ROOT);
             String rootDir = transactionalRoot + "/" + id + "/" + subroot;
             List<String> servers = (List<String>) getWithBackup(conf, Config.TRANSACTIONAL_ZOOKEEPER_SERVERS, Config.STORM_ZOOKEEPER_SERVERS);
             Object port = getWithBackup(conf, Config.TRANSACTIONAL_ZOOKEEPER_PORT, Config.STORM_ZOOKEEPER_PORT);
@@ -74,29 +72,24 @@ public class TransactionalState {
             } catch (KeeperException.NodeExistsException e) {
             }
             initter.close();
-                                    
+
             _curator = Utils.newCuratorStarted(conf, servers, port, rootDir, auth);
             _ser = new KryoValuesSerializer(conf);
             _des = new KryoValuesDeserializer(conf);
         } catch (Exception e) {
-           throw new RuntimeException(e);
+            throw new RuntimeException(e);
         }
     }
 
-    protected static String forPath(PathAndBytesable<String> builder, 
-            String path, byte[] data) throws Exception {
-        return (data == null) 
-            ? builder.forPath(path) 
-            : builder.forPath(path, data);
+    protected static String forPath(PathAndBytesable<String> builder, String path, byte[] data) throws Exception {
+        return (data == null) ? builder.forPath(path) : builder.forPath(path, data);
     }
 
-    protected static void createNode(CuratorFramework curator, String path,
-            byte[] data, List<ACL> acls, CreateMode mode) throws Exception {
-        ProtectACLCreateModePathAndBytesable<String> builder =
-            curator.create().creatingParentsIfNeeded();
-    
+    protected static void createNode(CuratorFramework curator, String path, byte[] data, List<ACL> acls, CreateMode mode) throws Exception {
+        ProtectACLCreateModePathAndBytesable<String> builder = curator.create().creatingParentsIfNeeded();
+
         if (acls == null) {
-            if (mode == null ) {
+            if (mode == null) {
                 TransactionalState.forPath(builder, path, data);
             } else {
                 TransactionalState.forPath(builder.withMode(mode), path, data);
@@ -111,17 +104,16 @@ public class TransactionalState {
         path = "/" + path;
         byte[] ser = _ser.serializeObject(obj);
         try {
-            if(_curator.checkExists().forPath(path)!=null) {
+            if (_curator.checkExists().forPath(path) != null) {
                 _curator.setData().forPath(path, ser);
             } else {
-                TransactionalState.createNode(_curator, path, ser, _zkAcls,
-                        CreateMode.PERSISTENT);
+                TransactionalState.createNode(_curator, path, ser, _zkAcls, CreateMode.PERSISTENT);
             }
-        } catch(Exception e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
-        }        
+        }
     }
-    
+
     public void delete(String path) {
         path = "/" + path;
         try {
@@ -130,44 +122,45 @@ public class TransactionalState {
             throw new RuntimeException(e);
         }
     }
-    
+
     public List<String> list(String path) {
         path = "/" + path;
         try {
-            if(_curator.checkExists().forPath(path)==null) {
+            if (_curator.checkExists().forPath(path) == null) {
                 return new ArrayList<String>();
             } else {
                 return _curator.getChildren().forPath(path);
             }
-        } catch(Exception e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
-        }   
+        }
     }
-    
+
     public void mkdir(String path) {
         setData(path, 7);
     }
-    
+
     public Object getData(String path) {
         path = "/" + path;
         try {
-            if(_curator.checkExists().forPath(path)!=null) {
+            if (_curator.checkExists().forPath(path) != null) {
                 return _des.deserializeObject(_curator.getData().forPath(path));
             } else {
                 return null;
             }
-        } catch(Exception e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
-    
+
     public void close() {
         _curator.close();
     }
-    
+
     private Object getWithBackup(Map amap, Object primary, Object backup) {
         Object ret = amap.get(primary);
-        if(ret==null) return amap.get(backup);
+        if (ret == null)
+            return amap.get(backup);
         return ret;
     }
 }

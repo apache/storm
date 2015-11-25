@@ -49,8 +49,7 @@ public class DisruptorTest {
 
     @Test
     public void testMultipleConsume() {
-        final DisruptorQueue disruptorQueue =
-                createQueue("test", ProducerType.MULTI, 1024);
+        final DisruptorQueue disruptorQueue = createQueue("test", ProducerType.MULTI, 1024);
 
         // new Thread(new Runnable() {
         //
@@ -116,22 +115,19 @@ public class DisruptorTest {
 
     @Test
     public void testLaterStartConsumer() throws InterruptedException {
-        System.out
-                .println("!!!!!!!!!!!!!!!Begin testLaterStartConsumer!!!!!!!!!!");
+        System.out.println("!!!!!!!!!!!!!!!Begin testLaterStartConsumer!!!!!!!!!!");
         final AtomicBoolean messageConsumed = new AtomicBoolean(false);
 
         // Set queue length to 1, so that the RingBuffer can be easily full
         // to trigger consumer blocking
-        DisruptorQueue queue =
-                createQueue("consumerHang", ProducerType.MULTI, 2);
+        DisruptorQueue queue = createQueue("consumerHang", ProducerType.MULTI, 2);
         push(queue, 1);
         Runnable producer = new Producer(queue);
         Runnable consumer = new Consumer(queue, new EventHandler<Object>() {
             long count = 0;
 
             @Override
-            public void onEvent(Object obj, long sequence, boolean endOfBatch)
-                    throws Exception {
+            public void onEvent(Object obj, long sequence, boolean endOfBatch) throws Exception {
 
                 messageConsumed.set(true);
                 System.out.println("Consume " + count++);
@@ -139,24 +135,19 @@ public class DisruptorTest {
         });
 
         run(producer, 0, 0, consumer, 50);
-        Assert.assertTrue(
-                "disruptor message is never consumed due to consumer thread hangs",
-                messageConsumed.get());
+        Assert.assertTrue("disruptor message is never consumed due to consumer thread hangs", messageConsumed.get());
 
-        System.out
-                .println("!!!!!!!!!!!!!!!!End testLaterStartConsumer!!!!!!!!!!");
+        System.out.println("!!!!!!!!!!!!!!!!End testLaterStartConsumer!!!!!!!!!!");
     }
 
     @Test
     public void testBeforeStartConsumer() throws InterruptedException {
-        System.out
-                .println("!!!!!!!!!!!!Begin testBeforeStartConsumer!!!!!!!!!");
+        System.out.println("!!!!!!!!!!!!Begin testBeforeStartConsumer!!!!!!!!!");
         final AtomicBoolean messageConsumed = new AtomicBoolean(false);
 
         // Set queue length to 1, so that the RingBuffer can be easily full
         // to trigger consumer blocking
-        DisruptorQueue queue =
-                createQueue("consumerHang", ProducerType.MULTI, 2);
+        DisruptorQueue queue = createQueue("consumerHang", ProducerType.MULTI, 2);
         queue.consumerStarted();
         push(queue, 1);
         Runnable producer = new Producer(queue);
@@ -164,8 +155,7 @@ public class DisruptorTest {
             long count = 0;
 
             @Override
-            public void onEvent(Object obj, long sequence, boolean endOfBatch)
-                    throws Exception {
+            public void onEvent(Object obj, long sequence, boolean endOfBatch) throws Exception {
 
                 messageConsumed.set(true);
                 System.out.println("Consume " + count++);
@@ -173,32 +163,26 @@ public class DisruptorTest {
         });
 
         run(producer, 0, 0, consumer, 50);
-        Assert.assertTrue(
-                "disruptor message is never consumed due to consumer thread hangs",
-                messageConsumed.get());
+        Assert.assertTrue("disruptor message is never consumed due to consumer thread hangs", messageConsumed.get());
 
-        System.out
-                .println("!!!!!!!!!!!!!End testBeforeStartConsumer!!!!!!!!!!");
+        System.out.println("!!!!!!!!!!!!!End testBeforeStartConsumer!!!!!!!!!!");
     }
 
     @Test
     public void testSingleProducer() throws InterruptedException {
-        System.out
-                .println("!!!!!!!!!!!!!!Begin testSingleProducer!!!!!!!!!!!!!!");
+        System.out.println("!!!!!!!!!!!!!!Begin testSingleProducer!!!!!!!!!!!!!!");
         final AtomicBoolean messageConsumed = new AtomicBoolean(false);
 
         // Set queue length to 1, so that the RingBuffer can be easily full
         // to trigger consumer blocking
-        DisruptorQueue queue =
-                createQueue("consumerHang", ProducerType.SINGLE, 1);
+        DisruptorQueue queue = createQueue("consumerHang", ProducerType.SINGLE, 1);
         push(queue, 1);
         Runnable producer = new Producer(queue);
         Runnable consumer = new Consumer(queue, new EventHandler<Object>() {
             long count = 0;
 
             @Override
-            public void onEvent(Object obj, long sequence, boolean endOfBatch)
-                    throws Exception {
+            public void onEvent(Object obj, long sequence, boolean endOfBatch) throws Exception {
 
                 messageConsumed.set(true);
                 System.out.println("Consume " + count++);
@@ -206,12 +190,9 @@ public class DisruptorTest {
         });
 
         run(producer, 0, 0, consumer, 50);
-        Assert.assertTrue(
-                "disruptor message is never consumed due to consumer thread hangs",
-                messageConsumed.get());
+        Assert.assertTrue("disruptor message is never consumed due to consumer thread hangs", messageConsumed.get());
 
-        System.out
-                .println("!!!!!!!!!!!!!!End testSingleProducer!!!!!!!!!!!!!!");
+        System.out.println("!!!!!!!!!!!!!!End testSingleProducer!!!!!!!!!!!!!!");
     }
 
     public static AtomicLong produceNum = new AtomicLong(0);
@@ -229,11 +210,9 @@ public class DisruptorTest {
     @Test
     public void testMessageDisorder() throws InterruptedException {
 
-        System.out
-                .println("!!!!!!!!!!!!!!!!Begin testMessageDisorder!!!!!!!!!!");
+        System.out.println("!!!!!!!!!!!!!!!!Begin testMessageDisorder!!!!!!!!!!");
         // Set queue length to bigger enough
-        DisruptorQueue queue =
-                createQueue("messageOrder", ProducerType.MULTI, 128);
+        DisruptorQueue queue = createQueue("messageOrder", ProducerType.MULTI, 128);
 
         queue.publish("1");
 
@@ -245,8 +224,7 @@ public class DisruptorTest {
             private Map<String, Long> lastIdMap = new HashMap<String, Long>();
 
             @Override
-            public void onEvent(Object obj, long sequence, boolean endOfBatch)
-                    throws Exception {
+            public void onEvent(Object obj, long sequence, boolean endOfBatch) throws Exception {
                 consumerNum.incrementAndGet();
                 if (head) {
                     head = false;
@@ -258,15 +236,10 @@ public class DisruptorTest {
                     Long last = lastIdMap.get(item[0]);
                     if (last != null) {
                         if (current <= last) {
-                            String msg =
-                                    "Consume disorder of " + item[0]
-                                            + ", current" + current + ",last:"
-                                            + last;
-                            System.err
-                                    .println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                            String msg = "Consume disorder of " + item[0] + ", current" + current + ",last:" + last;
+                            System.err.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
                             System.err.println(msg);
-                            System.err
-                                    .println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                            System.err.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
                             Assert.fail(msg);
                         }
                     }
@@ -278,12 +251,9 @@ public class DisruptorTest {
         });
 
         run(producer, PRODUCER_NUM, 1000, consumer, 30000);
-        Assert.assertEquals(
-                "We expect to receive first published message first, but received "
-                        + result[0], "1", result[0]);
+        Assert.assertEquals("We expect to receive first published message first, but received " + result[0], "1", result[0]);
         produceNum.incrementAndGet();
-        Assert.assertEquals("produce: " + produceNum.get() + ", consume:"
-                + consumerNum.get(), produceNum.get(), consumerNum.get());
+        Assert.assertEquals("produce: " + produceNum.get() + ", consume:" + consumerNum.get(), produceNum.get(), consumerNum.get());
         System.out.println("!!!!!!!!!!!!!!End testMessageDisorder!!!!!!!!!!!!");
     }
 
@@ -299,38 +269,32 @@ public class DisruptorTest {
 
     public void push(DisruptorQueue queue, int num) {
         for (int i = 0; i < num; i++) {
-            String msg =
-                    String.valueOf(Thread.currentThread().getId()) + "@" + i;
+            String msg = String.valueOf(Thread.currentThread().getId()) + "@" + i;
             try {
                 queue.publish(msg, false);
             } catch (InsufficientCapacityException e) {
                 e.printStackTrace();
             }
             produceNum.incrementAndGet();
-            System.out.println(Thread.currentThread().getId()
-                    + " Publish one :" + i);
+            System.out.println(Thread.currentThread().getId() + " Publish one :" + i);
         }
     }
 
     @Test
     public void testConsumeBatchWhenAvailable() {
-        System.out
-                .println("!!!!!!!!!!!!!!!Begin testConsumeBatchWhenAvailable!!!!!!!!!!!!");
+        System.out.println("!!!!!!!!!!!!!!!Begin testConsumeBatchWhenAvailable!!!!!!!!!!!!");
 
         resetNum();
 
         // Set queue length to bigger enough
-        DisruptorQueue queue =
-                createQueue("messageOrder", ProducerType.MULTI, 128);
+        DisruptorQueue queue = createQueue("messageOrder", ProducerType.MULTI, 128);
 
         push(queue, 128);
 
         queue.consumeBatchWhenAvailable(handler);
 
-        Assert.assertEquals("produce: " + produceNum.get() + ", consume:"
-                + consumerNum.get(), produceNum.get(), consumerNum.get());
-        System.out
-                .println("!!!!!! finish testConsumeBatchWhenAvailable test 1");
+        Assert.assertEquals("produce: " + produceNum.get() + ", consume:" + consumerNum.get(), produceNum.get(), consumerNum.get());
+        System.out.println("!!!!!! finish testConsumeBatchWhenAvailable test 1");
         resetNum();
 
         queue.consumerStarted();
@@ -339,27 +303,21 @@ public class DisruptorTest {
 
         queue.consumeBatchWhenAvailable(handler);
 
-        Assert.assertEquals("produce: " + produceNum.get() + ", consume:"
-                + consumerNum.get(), produceNum.get(), consumerNum.get());
-        System.out
-                .println("!!!!!! finish testConsumeBatchWhenAvailable test 2");
+        Assert.assertEquals("produce: " + produceNum.get() + ", consume:" + consumerNum.get(), produceNum.get(), consumerNum.get());
+        System.out.println("!!!!!! finish testConsumeBatchWhenAvailable test 2");
 
-        System.out
-                .println("!!!!!!!!!!!!!!!Finsh testConsumeBatchWhenAvailable for MULTI!!!!!!!!!!!!");
+        System.out.println("!!!!!!!!!!!!!!!Finsh testConsumeBatchWhenAvailable for MULTI!!!!!!!!!!!!");
 
         resetNum();
         // Set queue length to bigger enough
-        DisruptorQueue queue2 =
-                createQueue("messageOrder", ProducerType.SINGLE, 128);
+        DisruptorQueue queue2 = createQueue("messageOrder", ProducerType.SINGLE, 128);
 
         push(queue2, 128);
 
         queue2.consumeBatchWhenAvailable(handler);
 
-        Assert.assertEquals("produce: " + produceNum.get() + ", consume:"
-                + consumerNum.get(), produceNum.get(), consumerNum.get());
-        System.out
-                .println("!!!!!! finish testConsumeBatchWhenAvailable test 3");
+        Assert.assertEquals("produce: " + produceNum.get() + ", consume:" + consumerNum.get(), produceNum.get(), consumerNum.get());
+        System.out.println("!!!!!! finish testConsumeBatchWhenAvailable test 3");
         resetNum();
 
         queue2.consumerStarted();
@@ -368,15 +326,11 @@ public class DisruptorTest {
 
         queue2.consumeBatchWhenAvailable(handler);
 
-        Assert.assertEquals("produce: " + produceNum.get() + ", consume:"
-                + consumerNum.get(), produceNum.get(), consumerNum.get());
-        System.out
-                .println("!!!!!! finish testConsumeBatchWhenAvailable test 4");
+        Assert.assertEquals("produce: " + produceNum.get() + ", consume:" + consumerNum.get(), produceNum.get(), consumerNum.get());
+        System.out.println("!!!!!! finish testConsumeBatchWhenAvailable test 4");
 
-        System.out
-                .println("!!!!!!!!!!!!!!!Finsh testConsumeBatchWhenAvailable for single !!!!!!!!!!!!");
-        System.out
-                .println("!!!!!!!!!!!!!End testConsumeBatchWhenAvailable!!!!!!!!!!!");
+        System.out.println("!!!!!!!!!!!!!!!Finsh testConsumeBatchWhenAvailable for single !!!!!!!!!!!!");
+        System.out.println("!!!!!!!!!!!!!End testConsumeBatchWhenAvailable!!!!!!!!!!!");
     }
 
     @Test
@@ -385,15 +339,13 @@ public class DisruptorTest {
 
         resetNum();
         // Set queue length to bigger enough
-        DisruptorQueue queue =
-                createQueue("messageOrder", ProducerType.MULTI, 128);
+        DisruptorQueue queue = createQueue("messageOrder", ProducerType.MULTI, 128);
 
         push(queue, 128);
 
         queue.consumeBatch(handler);
 
-        Assert.assertEquals("produce: " + produceNum.get() + ", consume:"
-                + consumerNum.get(), produceNum.get(), consumerNum.get());
+        Assert.assertEquals("produce: " + produceNum.get() + ", consume:" + consumerNum.get(), produceNum.get(), consumerNum.get());
         System.out.println("!!!!!! finish testTryConsume test 1");
         resetNum();
 
@@ -403,21 +355,18 @@ public class DisruptorTest {
 
         queue.consumeBatch(handler);
 
-        Assert.assertEquals("produce: " + produceNum.get() + ", consume:"
-                + consumerNum.get(), produceNum.get(), consumerNum.get());
+        Assert.assertEquals("produce: " + produceNum.get() + ", consume:" + consumerNum.get(), produceNum.get(), consumerNum.get());
         System.out.println("!!!!!! finish testTryConsume test 2");
 
         resetNum();
         // Set queue length to bigger enough
-        DisruptorQueue queue2 =
-                createQueue("messageOrder", ProducerType.SINGLE, 128);
+        DisruptorQueue queue2 = createQueue("messageOrder", ProducerType.SINGLE, 128);
 
         push(queue2, 128);
 
         queue2.consumeBatch(handler);
 
-        Assert.assertEquals("produce: " + produceNum.get() + ", consume:"
-                + consumerNum.get(), produceNum.get(), consumerNum.get());
+        Assert.assertEquals("produce: " + produceNum.get() + ", consume:" + consumerNum.get(), produceNum.get(), consumerNum.get());
         System.out.println("!!!!!! finish testTryConsume test 3");
         resetNum();
 
@@ -427,15 +376,13 @@ public class DisruptorTest {
 
         queue2.consumeBatch(handler);
 
-        Assert.assertEquals("produce: " + produceNum.get() + ", consume:"
-                + consumerNum.get(), produceNum.get(), consumerNum.get());
+        Assert.assertEquals("produce: " + produceNum.get() + ", consume:" + consumerNum.get(), produceNum.get(), consumerNum.get());
         System.out.println("!!!!!! finish testTryConsume test 4");
 
         System.out.println("!!!!!!!!!!!!!!!!!End testTryConsume!!!!!!!!!!!!!!");
     }
 
-    private void run(Runnable producer, int producerNum, long produceMs,
-            Runnable consumer, long waitMs) {
+    private void run(Runnable producer, int producerNum, long produceMs, Runnable consumer, long waitMs) {
         try {
 
             resetNum();
@@ -483,21 +430,17 @@ public class DisruptorTest {
             try {
                 while (true) {
 
-                    String msg =
-                            String.valueOf(Thread.currentThread().getId())
-                                    + "@" + count;
+                    String msg = String.valueOf(Thread.currentThread().getId()) + "@" + count;
                     queue.publish(msg, false);
                     produceNum.incrementAndGet();
                     System.out.println(msg);
                     count++;
                 }
             } catch (InsufficientCapacityException e) {
-                System.out.println(Thread.currentThread().getId()
-                        + " quit, insufficientCapacityException " + count);
+                System.out.println(Thread.currentThread().getId() + " quit, insufficientCapacityException " + count);
                 return;
             } catch (Exception e) {
-                System.out.println(Thread.currentThread().getId()
-                        + " quit, Exception " + count);
+                System.out.println(Thread.currentThread().getId() + " quit, Exception " + count);
                 return;
             }
         }
@@ -533,8 +476,7 @@ public class DisruptorTest {
         }
 
         @Override
-        public void onEvent(Object obj, long sequence, boolean endOfBatch)
-                throws Exception {
+        public void onEvent(Object obj, long sequence, boolean endOfBatch) throws Exception {
 
             String event = (String) obj;
             String[] item = event.split("@");
@@ -542,9 +484,7 @@ public class DisruptorTest {
             Long last = lastIdMap.get(item[0]);
             if (last != null) {
                 if (current <= last) {
-                    String msg =
-                            "Consume disorder of " + item[0] + ", current"
-                                    + current + ",last:" + last;
+                    String msg = "Consume disorder of " + item[0] + ", current" + current + ",last:" + last;
                     System.err.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
                     System.err.println(msg + "," + event);
                     System.err.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
@@ -557,10 +497,8 @@ public class DisruptorTest {
         }
     };
 
-    private static DisruptorQueue createQueue(String name, ProducerType type,
-            int queueSize) {
+    private static DisruptorQueue createQueue(String name, ProducerType type, int queueSize) {
 
-        return DisruptorQueue.mkInstance(name, type, queueSize,
-                new BlockingWaitStrategy());
+        return DisruptorQueue.mkInstance(name, type, queueSize, new BlockingWaitStrategy());
     }
 }

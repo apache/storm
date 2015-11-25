@@ -27,12 +27,12 @@ import com.alibaba.jstorm.client.ConfigExtension;
 
 class StormClientPipelineFactory implements ChannelPipelineFactory {
     private NettyClient client;
-    private Map         conf;
+    private Map conf;
 
     StormClientPipelineFactory(NettyClient client, Map conf) {
         this.client = client;
         this.conf = conf;
-        
+
     }
 
     public ChannelPipeline getPipeline() throws Exception {

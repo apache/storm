@@ -17,19 +17,13 @@
  */
 package com.alibaba.jstorm.task.execute.spout;
 
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import backtype.storm.task.TopologyContext;
 import backtype.storm.utils.DisruptorQueue;
 import backtype.storm.utils.WorkerClassLoader;
-
 import com.alibaba.jstorm.callback.AsyncLoopRunnable;
 import com.alibaba.jstorm.callback.AsyncLoopThread;
 import com.alibaba.jstorm.callback.RunnableCallback;
+import com.alibaba.jstorm.metric.JStormMetricsReporter;
 import com.alibaba.jstorm.task.Task;
 import com.alibaba.jstorm.task.TaskBaseMetric;
 import com.alibaba.jstorm.task.TaskStatus;
@@ -39,35 +33,36 @@ import com.alibaba.jstorm.task.comm.TaskSendTargets;
 import com.alibaba.jstorm.task.comm.TupleInfo;
 import com.alibaba.jstorm.task.error.ITaskReportErr;
 import com.alibaba.jstorm.utils.RotatingMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * spout executor
- * 
+ * <p/>
  * All spout actions will be done here
  * 
  * @author yannian/Longda
- * 
  */
 public class MultipleThreadSpoutExecutors extends SpoutExecutors {
-    private static Logger LOG = LoggerFactory
-            .getLogger(MultipleThreadSpoutExecutors.class);
+    private static Logger LOG = LoggerFactory.getLogger(MultipleThreadSpoutExecutors.class);
 
-    public MultipleThreadSpoutExecutors(Task task,
-            backtype.storm.spout.ISpout _spout, TaskTransfer _transfer_fn,
-            Map<Integer, DisruptorQueue> innerTaskTransfer, Map _storm_conf,
-            TaskSendTargets sendTargets, TaskStatus taskStatus,
-            TopologyContext topology_context, TopologyContext _user_context,
-            TaskBaseMetric _task_stats, ITaskReportErr _report_error) {
-        super(task, _spout, _transfer_fn, innerTaskTransfer, _storm_conf,
-                sendTargets, taskStatus, topology_context, _user_context,
-                _task_stats, _report_error);
+    public MultipleThreadSpoutExecutors(Task task) {
+        super(task);
 
-        ackerRunnableThread = new AsyncLoopThread(new AckerRunnable());
-        pending =
-                new RotatingMap<Long, TupleInfo>(Acker.TIMEOUT_BUCKET_NUM,
-                        null, false);
-
-        super.prepare(sendTargets, _transfer_fn, topology_context);
+        ackerRunnableThread = new AsyncLoopThread(new AckerRunnable(), false, Thread.NORM_PRIORITY, false);
+    }
+    
+    public void mkPending() {
+    	pending = new RotatingMap<Long, TupleInfo>(Acker.TIMEOUT_BUCKET_NUM, null, false);
+    }
+    
+    @Override 
+    public void init() throws Exception {
+    	super.init();
+    	ackerRunnableThread.start();
     }
 
     @Override
@@ -75,11 +70,14 @@ public class MultipleThreadSpoutExecutors extends SpoutExecutors {
         return idStr + "-" + MultipleThreadSpoutExecutors.class.getSimpleName();
     }
 
-    @Override
-    public void run() {
+	@Override
+	public void run() {
+		if (isFinishInit == false) {
+			initWrapper();
+		}
 
-        super.nextTuple();
-    }
+		super.nextTuple();
+	}
 
     class AckerRunnable extends RunnableCallback {
 
@@ -117,7 +115,7 @@ public class MultipleThreadSpoutExecutors extends SpoutExecutors {
                 }
 
             }
-            
+
             LOG.info("Successfully shutdown Spout's acker thread " + idStr);
         }
 

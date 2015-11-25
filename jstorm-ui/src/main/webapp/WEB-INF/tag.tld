@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The ASF licenses this file to You under the Apache License, Version 2.0
+ (the "License"); you may not use this file except in compliance with
+ the License.  You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<taglib xmlns="http://java.sun.com/xml/ns/j2ee"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-jsptaglibrary_2_0.xsd"
+        version="2.0">
+    <description>JStorm Custom Tag</description>
+    <tlib-version>1.0</tlib-version>
+    <short-name>ct</short-name>
+    <uri>http://jstorm.alibaba.com/jsp/tags</uri>
+    <tag>
+        <name>status</name>
+        <tag-class>com.alibaba.jstorm.ui.tags.StatusTag</tag-class>
+        <body-content>empty</body-content>
+        <attribute>
+            <name>status</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+    </tag>
+    <tag>
+        <name>error</name>
+        <tag-class>com.alibaba.jstorm.ui.tags.ErrorTag</tag-class>
+        <body-content>empty</body-content>
+        <attribute>
+            <name>e</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+    </tag>
+    <tag>
+        <name>host</name>
+        <tag-class>com.alibaba.jstorm.ui.tags.HostTag</tag-class>
+        <body-content>empty</body-content>
+        <attribute>
+            <name>ip</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+    </tag>
+    <tag>
+        <name>pretty</name>
+        <tag-class>com.alibaba.jstorm.ui.tags.PrettyTag</tag-class>
+        <body-content>empty</body-content>
+        <attribute>
+            <name>input</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>type</name>
+            <required>true</required>
+        </attribute>
+    </tag>
+    <tag>
+        <name>submetric</name>
+        <tag-class>com.alibaba.jstorm.ui.tags.SubMetricTag</tag-class>
+        <body-content>empty</body-content>
+        <attribute>
+            <name>metric</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>parentComp</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>metricName</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>isHidden</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>clazz</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+    </tag>
+    <tag>
+        <name>page</name>
+        <tag-class>com.alibaba.jstorm.ui.tags.PaginationTag</tag-class>
+        <body-content>empty</body-content>
+        <attribute>
+            <name>pageSize</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>curPage</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>urlBase</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+    </tag>
+    <tag>
+        <name>cpu</name>
+        <tag-class>com.alibaba.jstorm.ui.tags.CpuTag</tag-class>
+        <body-content>empty</body-content>
+        <attribute>
+            <name>ratio</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>workers</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+    </tag>
+</taglib>

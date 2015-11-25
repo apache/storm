@@ -32,8 +32,7 @@ public class ZkEventTypes {
         map.put(Watcher.Event.EventType.NodeCreated, ":node-created");
         map.put(Watcher.Event.EventType.NodeDeleted, ":node-deleted");
         map.put(Watcher.Event.EventType.NodeDataChanged, ":node-data-changed");
-        map.put(Watcher.Event.EventType.NodeChildrenChanged,
-                ":node-children-changed");
+        map.put(Watcher.Event.EventType.NodeChildrenChanged, ":node-children-changed");
 
     }
 

@@ -29,5 +29,5 @@ public abstract class BaseBasicBolt extends BaseComponent implements IBasicBolt 
 
     @Override
     public void cleanup() {
-    }    
+    }
 }

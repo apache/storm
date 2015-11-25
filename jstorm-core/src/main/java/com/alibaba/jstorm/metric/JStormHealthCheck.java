@@ -27,19 +27,14 @@ import com.codahale.metrics.health.HealthCheck;
 import com.codahale.metrics.health.HealthCheckRegistry;
 
 public class JStormHealthCheck {
-    private static final Logger LOG = LoggerFactory
-            .getLogger(JStormHealthCheck.class);
+    private static final Logger LOG = LoggerFactory.getLogger(JStormHealthCheck.class);
 
-    private final static Map<Integer, HealthCheckRegistry> taskHealthCheckMap =
-            new ConcurrentHashMap<Integer, HealthCheckRegistry>();
+    private final static Map<Integer, HealthCheckRegistry> taskHealthCheckMap = new ConcurrentHashMap<Integer, HealthCheckRegistry>();
 
-    private final static HealthCheckRegistry workerHealthCheck =
-            new HealthCheckRegistry();
+    private final static HealthCheckRegistry workerHealthCheck = new HealthCheckRegistry();
 
-    public static void registerTaskHealthCheck(int taskId, String name,
-            HealthCheck healthCheck) {
-        HealthCheckRegistry healthCheckRegister =
-                taskHealthCheckMap.get(taskId);
+    public static void registerTaskHealthCheck(int taskId, String name, HealthCheck healthCheck) {
+        HealthCheckRegistry healthCheckRegister = taskHealthCheckMap.get(taskId);
 
         if (healthCheckRegister == null) {
             healthCheckRegister = new HealthCheckRegistry();
@@ -49,14 +44,12 @@ public class JStormHealthCheck {
         healthCheckRegister.register(name, healthCheck);
     }
 
-    public static void registerWorkerHealthCheck(String name,
-            HealthCheck healthCheck) {
+    public static void registerWorkerHealthCheck(String name, HealthCheck healthCheck) {
         workerHealthCheck.register(name, healthCheck);
     }
 
     public static void unregisterTaskHealthCheck(int taskId, String name) {
-        HealthCheckRegistry healthCheckRegister =
-                taskHealthCheckMap.get(taskId);
+        HealthCheckRegistry healthCheckRegister = taskHealthCheckMap.get(taskId);
 
         if (healthCheckRegister != null) {
             healthCheckRegister.unregister(name);

@@ -22,7 +22,6 @@ import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
-
 public class RichSpoutBatchIdSerializer extends Serializer<RichSpoutBatchId> {
 
     @Override
@@ -34,5 +33,5 @@ public class RichSpoutBatchIdSerializer extends Serializer<RichSpoutBatchId> {
     public RichSpoutBatchId read(Kryo kryo, Input input, Class type) {
         long l = input.readLong();
         return new RichSpoutBatchId(l);
-    }    
+    }
 }

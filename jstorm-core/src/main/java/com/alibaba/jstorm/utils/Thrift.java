@@ -17,34 +17,22 @@
  */
 package com.alibaba.jstorm.utils;
 
+import backtype.storm.generated.*;
+import backtype.storm.generated.StormTopology._Fields;
+import backtype.storm.grouping.CustomStreamGrouping;
+import backtype.storm.task.IBolt;
+import backtype.storm.utils.Utils;
+import com.alibaba.jstorm.cluster.StormStatus;
+import com.alibaba.jstorm.daemon.nimbus.StatusType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.lang.reflect.Constructor;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import backtype.storm.generated.Bolt;
-import backtype.storm.generated.ComponentCommon;
-import backtype.storm.generated.ComponentObject;
-import backtype.storm.generated.GlobalStreamId;
-import backtype.storm.generated.Grouping;
-import backtype.storm.generated.JavaObject;
-import backtype.storm.generated.JavaObjectArg;
-import backtype.storm.generated.NullStruct;
-import backtype.storm.generated.StormTopology;
-import backtype.storm.generated.StormTopology._Fields;
-import backtype.storm.generated.StreamInfo;
-import backtype.storm.generated.TopologyInitialStatus;
-import backtype.storm.grouping.CustomStreamGrouping;
-import backtype.storm.task.IBolt;
-import backtype.storm.utils.Utils;
-
-import com.alibaba.jstorm.cluster.StormStatus;
-import com.alibaba.jstorm.daemon.nimbus.StatusType;
 
 /**
  * Thrift utils
@@ -57,8 +45,7 @@ import com.alibaba.jstorm.daemon.nimbus.StatusType;
 public class Thrift {
     private static Logger LOG = LoggerFactory.getLogger(Thrift.class);
 
-    public static StormStatus topologyInitialStatusToStormStatus(
-            TopologyInitialStatus tStatus) {
+    public static StormStatus topologyInitialStatusToStormStatus(TopologyInitialStatus tStatus) {
         if (tStatus.equals(TopologyInitialStatus.ACTIVE)) {
             return new StormStatus(StatusType.active);
         } else {
@@ -79,16 +66,13 @@ public class Thrift {
                 paraTypes[i] = Integer.class;
             } else if (arg.getSetField().equals(JavaObjectArg._Fields.LONG_ARG)) {
                 paraTypes[i] = Long.class;
-            } else if (arg.getSetField().equals(
-                    JavaObjectArg._Fields.STRING_ARG)) {
+            } else if (arg.getSetField().equals(JavaObjectArg._Fields.STRING_ARG)) {
                 paraTypes[i] = String.class;
             } else if (arg.getSetField().equals(JavaObjectArg._Fields.BOOL_ARG)) {
                 paraTypes[i] = Boolean.class;
-            } else if (arg.getSetField().equals(
-                    JavaObjectArg._Fields.BINARY_ARG)) {
+            } else if (arg.getSetField().equals(JavaObjectArg._Fields.BINARY_ARG)) {
                 paraTypes[i] = ByteBuffer.class;
-            } else if (arg.getSetField().equals(
-                    JavaObjectArg._Fields.DOUBLE_ARG)) {
+            } else if (arg.getSetField().equals(JavaObjectArg._Fields.DOUBLE_ARG)) {
                 paraTypes[i] = Double.class;
             } else {
                 paraTypes[i] = Object.class;
@@ -113,8 +97,7 @@ public class Thrift {
 
     public static List<String> fieldGrouping(Grouping grouping) {
         if (!Grouping._Fields.FIELDS.equals(groupingType(grouping))) {
-            throw new IllegalArgumentException(
-                    "Tried to get grouping fields from non fields grouping");
+            throw new IllegalArgumentException("Tried to get grouping fields from non fields grouping");
         }
 
         return grouping.get_fields();
@@ -152,9 +135,11 @@ public class Thrift {
         return Grouping.direct(new NullStruct());
     }
 
-    private static ComponentCommon mkComponentcommon(
-            Map<GlobalStreamId, Grouping> inputs,
-            HashMap<String, StreamInfo> output_spec, Integer parallelism_hint) {
+    public static Grouping mkAllGrouping() {
+        return Grouping.all(new NullStruct());
+    }
+
+    private static ComponentCommon mkComponentcommon(Map<GlobalStreamId, Grouping> inputs, HashMap<String, StreamInfo> output_spec, Integer parallelism_hint) {
         ComponentCommon ret = new ComponentCommon(inputs, output_spec);
         if (parallelism_hint != null) {
             ret.set_parallelism_hint(parallelism_hint);
@@ -162,8 +147,7 @@ public class Thrift {
         return ret;
     }
 
-    public static Bolt mkBolt(Map<GlobalStreamId, Grouping> inputs, IBolt bolt,
-            HashMap<String, StreamInfo> output, Integer p) {
+    public static Bolt mkBolt(Map<GlobalStreamId, Grouping> inputs, IBolt bolt, HashMap<String, StreamInfo> output, Integer p) {
         ComponentCommon common = mkComponentcommon(inputs, output, p);
         byte[] boltSer = Utils.serialize(bolt);
         ComponentObject component = ComponentObject.serialized_java(boltSer);
@@ -171,8 +155,7 @@ public class Thrift {
     }
 
     public static StormTopology._Fields[] STORM_TOPOLOGY_FIELDS = null;
-    public static StormTopology._Fields[] SPOUT_FIELDS = {
-            StormTopology._Fields.SPOUTS, StormTopology._Fields.STATE_SPOUTS };
+    public static StormTopology._Fields[] SPOUT_FIELDS = { StormTopology._Fields.SPOUTS, StormTopology._Fields.STATE_SPOUTS };
     static {
         Set<_Fields> keys = StormTopology.metaDataMap.keySet();
         STORM_TOPOLOGY_FIELDS = new StormTopology._Fields[keys.size()];

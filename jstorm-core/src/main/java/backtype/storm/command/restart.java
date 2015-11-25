@@ -45,26 +45,26 @@ public class restart {
         if (args == null || args.length == 0) {
             throw new InvalidParameterException("Should input topology name");
         }
-        
+
         String topologyName = args[0];
-        
+
         NimbusClient client = null;
         try {
             Map conf = Utils.readStormConfig();
             client = NimbusClient.getConfiguredClient(conf);
-            
+
             System.out.println("It will take 15 ~ 100 seconds to restart, please wait patiently\n");
-            
+
             if (args.length == 1) {
                 client.getClient().restart(topologyName, null);
             } else {
                 Map loadConf = Utils.loadConf(args[1]);
                 String jsonConf = Utils.to_json(loadConf);
                 System.out.println("New configuration:\n" + jsonConf);
-                
+
                 client.getClient().restart(topologyName, jsonConf);
             }
-            
+
             System.out.println("Successfully submit command restart " + topologyName);
         } catch (Exception e) {
             System.out.println(e.getMessage());
@@ -76,5 +76,5 @@ public class restart {
             }
         }
     }
-    
+
 }

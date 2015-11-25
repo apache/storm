@@ -1,22 +1,93 @@
 [JStorm English introduction](http://42.121.19.155/jstorm/JStorm-introduce-en.pptx)
 [JStorm Chinese introduction](http://42.121.19.155/jstorm/JStorm-introduce.pptx)
 
-#Release 2.0.4-SNAPSHOT
+# Release 2.1.0
+
 ## New features
-1.Redesign Metric/Monitor system, new RollingWindow/Metrics/NettyMetrics, all data will send/recv through thrift
-2.Redesign Web-UI, the new Web-UI code is clear and clean
-3.Add NimbusCache Layer, using RocksDB and TimeCacheWindow
-4.Refactoring all ZK structure and ZK operation
-5.Refactoring all thrift structure
-6.Merge jstorm-client/jstorm-client-extension/jstorm-core 3 modules into jstorm－core
-7.set the dependency version same as storm
-8.Sync apache-storm-0.10.0-beta1 all java code
-9.Switch log system to logback
-10.Upgrade thrift to apache thrift 0.9.2
+
+1. Totally redesign Web UI
+	1.	Make the UI more beatiful
+	1.	Improve Web UI speed much.
+	1.	Add Cluster/Topology Level Summarized Metrics in recent 30 minutes.
+	1.	Add DAG in the Web UI, support Uer Interaction to get key information such as emit, tuple lifecycle, tps
+1. Redesign Metrics/Monitor System
+	1.	New metrics core, support sample with more metric, avoid noise, merge metrics automatically for user.
+	1.	No metrics will be stored in ZK
+	1.	Support metrics HA
+	1.	Add more useful metrics, such as tuple lifecycle, netty metrics, disk space etc. accurately get worker memory
+	1.	Support external storage plugin to store metrics.
+1. Implement Smart BackPressure 
+	1.	Smart Backpressure, the dataflow will be more stable, avoid noise to trigger
+	1.	Easy to manual control Backpressure
+1. Implement TopologyMaster
+	1.	Redesign hearbeat mechanism, easily support 6000+ tasks
+	1.	Collect all task's metrics, do merge job, release Nimbus pressure.
+	1.	Central Control Coordinator, issue control command
+1. Redesign ZK usage, one set of ZK support more 2000+ hardware nodes.
+	1.	No dynamic data in ZK, such as heartbeat, metrics, monitor status.
+	1.	Nimbus reduce visiting ZK frequence when serve thrift API.
+	1.	Reduce visiting ZK frequence, merge some task level ZK node.
+	1.	Reduce visiting ZK frequence, remove useless ZK node, such as empty taskerror node
+	1.	Tuning ZK cache  
+	1.  Optimize ZK reconnect mechanism
+1. Tuning Executor Batch performance
+	1.	Add smart batch size setting
+	1.	Remove memory copy
+	1.	Directly issue tuple without batch for internal channel
+	1.	Set the default Serialize/Deserialize method as Kryo
+1. Set the default Serialized/Deserialized method as Kryo  to improve performance.
+1. Support dynamic reload binary/configuration
+1. Tuning LocalShuffle performance, Set 3 level priority, local worker, local node, other node, add dynamic check queue status, connection status.
+1. Optimize Nimbus HA, only the highest priority nimbuses can be promoted as master 
+
+## Improvement
+1. Supervisor automatically dump worker jstack/jmap, when worker's status is invalid.
+1. Supervisor can generate more ports according to memory.
+1. Supervisor can download binary more time.
+1. Support set logdir in configuration
+1. Add configuration "nimbus.host.start.supervisor"
+1. Add supervisor/nimbus/drpc gc log
+1. Adjust jvm parameter 1. set -Xmn 1/2 of heap memory 2. set PermSize to 1/32 and MaxPermSize 1/16 of heap memory; 3. set -Xms by "worker.memory.min.size"。
+1. Refine ZK error schema, when worker is dead, UI will report error
+1. Add function to zktool utility, support remove all topology znodes, support list 
+1. Optimize netty client.
+1. Dynamic update connected task status by network connection, not by ZK znode.
+1. Add configuration "topology.enable.metrics".
+1. Classify all topology log into one directory by topologyName.
+
+## Bug fix
+1. Skip download same binary when assigment has been changed.
+1. Skip start worker when binary is invalid.
+1. Use correct configuration map in a lot of worker thread
+1. In the first step Nimbus will check topologyName or not when submit topology
+1. Support fieldGrouping for Object[]
+1. For drpc single instance under one configuration
+1. In the client topologyNameExists interface，directly use trhift api
+1. Fix failed to restart due to topology cleanup thread's competition
+1. Fix the bug that backpressure might be lost when trigger bolt was failed.
+1. Fixed the bug that DefaultMetricUploader doesn't delete metrics data in rocksdb, causing new metrics data cannot be appended.
+
+## Deploy and scripts
+1. Optimize cleandisk.sh, avoid delete useful worker log
+
+# Release 2.0.4-SNAPSHOT
+
+## New features
+1. Redesign Metric/Monitor system, new RollingWindow/Metrics/NettyMetrics, all data will send/recv through thrift
+2. Redesign Web-UI, the new Web-UI code is clear and clean
+3. Add NimbusCache Layer, using RocksDB and TimeCacheWindow
+4. Refactoring all ZK structure and ZK operation
+5. Refactoring all thrift structure
+6. Merge jstorm-client/jstorm-client-extension/jstorm-core 3 modules into jstorm－core
+7. Set the dependency version same as storm
+8. Sync apache-storm-0.10.0-beta1 all java code
+9. Switch log system to logback
+10. Upgrade thrift to apache thrift 0.9.2
 11. Performance tuning Huge topology more than 600 workers or 2000 tasks
 12. Require jdk7 or higher
 
-#Release 0.9.7.1
+# Release 0.9.7.1
+
 ## New Features
 1. Batch the tuples whose target task is same, before sending out（task.batch.tuple=true，task.msg.batch.size=4）.  
 2. LocalFirst grouping is updated. If all local tasks are busy, the tasks of outside nodes will be chosen as target task instead of waiting on the busy local task.
@@ -29,21 +100,25 @@
 9. Nimbus or Supervisor suicide when the local ip is 127.0.0.0
 10. Add user-define-scheduler example
 11. Merge Supervisor's syncSupervisor and syncProcess
+
 ## Bug Fix
 1. Improve the GC setting.
 2. Fix the bug that task heartbeat might not be updated timely in some scenarioes.  
 3. Fix the bug that the reconnection operation might be stick for a unexpected period when the connection to remote worker is shutdown and some messages are buffer in netty.   
 4. Reuse thrift client when submit topology
 5. Avoid repeatedly download binary when failed to start worker.
+
 ## Changed setting
 1. Change task's heartbeat timeout to 4 minutes
 2. Set the netty client thread pool(clientScheduleService) size as 5 
+
 ## Deploy and scripts
 1. Improve cleandisk.sh, avoid delete current directory and /tmp/hsperfdata_admin
 2. Add executable attribute for the script under example
 3. Add parameter to stat.sh, which can be used to start supervisor or not. This is useful under virtual 
 
-#Release 0.9.7
+# Release 0.9.7
+
 ## New Features
 1. Support dynamic scale-out/scale-in of worker, spout, bolt or acker without stopping the service of topology.
 2. When enable cgroup, Support the upper limit control of cpu core usage. Default setting is 3 cpu cores.
@@ -56,6 +131,7 @@
 9. Add thrift api getVersion, it will be used check between the client jstorm version and the server jstorm version.  
 10. Update the metrics' structure to Alimonitor
 11. Add exclude-jar parameter into jstorm.py, which avoid class conflict when submit topology
+
 ## Bug Fix
 1. Fix the no response problem of supervisor process when subimtting big amout topologys in a short time
 2. When submitting two or more topologys at the same time, the later one might be failed.
@@ -67,17 +143,20 @@
 8. Fix failed to read ZK monitor znode through zktool
 9. Fix exception when enable classload and local mode
 10. Fix duplicate log when enable user-defined logback in local mode
+
 ## Changed Setting
 1. Set Nimbus jvm memory size as 4G
 2. Set hearbeat from supervisor to nimbus timeout from 60s to 180s
 3. In order to avoid OOM, set storm.messaging.netty.max.pending as 4
 4. Set task queue size as 1024, worker's total send/receive queue size as 2048
+
 ## Deploy and scripts
 1. Add rpm build spec
 2. Add deploy files of jstorm for rpm package building
 3. Enable the cleandisk cronjob every hour, reserve coredump for only one hour.
 
-#Release 0.9.6.3
+# Release 0.9.6.3
+
 ## New features
 1. Implement tick tuple
 2. Support logback
@@ -87,6 +166,7 @@
 6. Support the use of ip and hostname at the same for user defined schedule
 7. Support junit test for local mode
 8. Enable client command(e.g. jstorm jar) to load self-defined storm.yaml
+
 ## Bug fix
 1. Add activate and deactivate api of spout, which are used in nextTuple prepare phase
 2. Update the support of multi language
@@ -115,7 +195,7 @@
 25. Config local temporay ports when rpm installation
 26. Add noarch rpm package
 
-#Release 0.9.6.2
+# Release 0.9.6.2
 1. Add option to switch between BlockingQueue and Disruptor
 2. Fix the bug which under sync netty mode, client failed to send message to server 
 3. Fix the bug let web UI can dispaly 0.9.6.1 cluster
@@ -125,7 +205,7 @@
 7. Add the validation of topology name, component name... Only A-Z, a-z, 0-9, '_', '-', '.' are valid now.
 8. Fix the bug close thrift client
 
-#Release 0.9.6.2-rc
+# Release 0.9.6.2-rc
 1. Improve user experience from Web UI
 1.1 Add jstack link
 1.2 Add worker log link in supervisor page
@@ -145,7 +225,7 @@
 11. Add tcp option "reuseAddress" in netty framework
 12. Fix the bug: When spout does not implement the ICommitterTrident interface, MasterCoordinatorSpout will stick on commit phase.
 
-#Release 0.9.6.2-rc
+# Release 0.9.6.2-rc
 1. Improve user experience from Web UI
 1.1 Add jstack link
 1.2 Add worker log link in supervisor page
@@ -165,7 +245,7 @@
 11. Add tcp option "reuseAddress" in netty framework
 12. Fix the bug: When spout does not implement the ICommitterTrident interface, MasterCoordinatorSpout will stick on commit phase.
 
-#Release 0.9.6.1
+# Release 0.9.6.1
 1. Add management of multiclusters to Web UI. Added management tools for multiclusters in WebUI.
 2. Merged Trident API from storm-0.9.3
 3. Replaced gson with fastjson
@@ -191,7 +271,7 @@
 23. Support assign topology to user-defined supervisors
 
 
-#Release 0.9.6
+# Release 0.9.6
 1. Update UI 
   - Display the metrics information of task and worker
   - Add warning flag when errors occur for a topology
@@ -205,7 +285,7 @@
 8. Add closing channel check in netty client to avoid double close
 9. Add connecting check in netty client to avoid connecting one server twice at one time 
 
-#Release 0.9.5.1
+# Release 0.9.5.1
 1. Add netty sync mode
 2. Add block operation in netty async mode
 3. Replace exception with Throwable in executor layer
@@ -213,16 +293,18 @@
 5. Add more netty junit test
 6. Add log when queue is full
 
-#Release 0.9.5
-##Big feature:
+# Release 0.9.5
+
+## Big feature:
 1. Redesign scheduler arithmetic, basing worker not task .
 
 ## Bug fix
 1. Fix disruptor use too much cpu
 2. Add target NettyServer log when f1ail to send data by netty
 
-#Release 0.9.4.1
-##Bug fix:
+# Release 0.9.4.1
+
+## Bug fix:
 1. Improve speed between tasks who is running in one worker
 2. Fix wrong timeout seconds
 3. Add checking port when worker initialize and begin to kill old worker
@@ -241,7 +323,7 @@
 
 
 
-#Release 0.9.4
+# Release 0.9.4
 
 ## Big features
 1. Add transaction programming mode
@@ -257,7 +339,7 @@
 
 
 
-##Bug fix:
+## Bug fix:
 1. Setting buffer size  when upload jar
 2. Add lock between ZK watch and timer thread when refresh connection
 3. Enable nimbus monitor thread only when topology is running in cluster mode
@@ -265,7 +347,7 @@
 5. classloader fix when both parent and current classloader load the same class
 6. Fix log view null pointer exception
 
-#Release 0.9.3.1
+# Release 0.9.3.1
 
 ## Enhancement
 1. switch apache thrift7 to storm thrift7
@@ -276,7 +358,8 @@
 6. Set gc dump dir as log's dir
 
 
-#Release 0.9.3
+# Release 0.9.3
+
 ## New feature
 1. Support Aliyun Apsara/Hadoop Yarn
 
@@ -308,7 +391,8 @@
  
 
 
-#Release 0.9.2
+# Release 0.9.2
+
 ## New feature
 1. Support LocalCluster/LocalDrpc mode, support debugging topology under local mode
 2. Support CGroups, assigning CPU in hardware level.

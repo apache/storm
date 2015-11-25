@@ -46,17 +46,12 @@ import backtype.storm.tuple.Values;
 import com.alibaba.jstorm.utils.JStormUtils;
 
 /**
- * This class defines a more involved transactional topology then
- * TransactionalGlobalCount. This topology processes a stream of words and
- * produces two outputs:
+ * This class defines a more involved transactional topology then TransactionalGlobalCount. This topology processes a stream of words and produces two outputs:
  * <p/>
- * 1. A count for each word (stored in a database) 2. The number of words for
- * every bucket of 10 counts. So it stores in the database how many words have
+ * 1. A count for each word (stored in a database) 2. The number of words for every bucket of 10 counts. So it stores in the database how many words have
  * appeared 0-9 times, how many have appeared 10-19 times, and so on.
  * <p/>
- * A batch of words can cause the bucket counts to decrement for some buckets
- * and increment for others as words move between buckets as their counts
- * accumulate.
+ * A batch of words can cause the bucket counts to decrement for some buckets and increment for others as words move between buckets as their counts accumulate.
  */
 public class TransactionalWordsTest {
     public static class CountValue {
@@ -72,52 +67,48 @@ public class TransactionalWordsTest {
 
     public static final int BUCKET_SIZE = 10;
 
-    public static Map<String, CountValue> COUNT_DATABASE =
-            new HashMap<String, CountValue>();
-    public static Map<Integer, BucketValue> BUCKET_DATABASE =
-            new HashMap<Integer, BucketValue>();
+    public static Map<String, CountValue> COUNT_DATABASE = new HashMap<String, CountValue>();
+    public static Map<Integer, BucketValue> BUCKET_DATABASE = new HashMap<Integer, BucketValue>();
 
     public static final int PARTITION_TAKE_PER_BATCH = 3;
 
-    public static final Map<Integer, List<List<Object>>> DATA =
-            new HashMap<Integer, List<List<Object>>>() {
+    public static final Map<Integer, List<List<Object>>> DATA = new HashMap<Integer, List<List<Object>>>() {
+        {
+            put(0, new ArrayList<List<Object>>() {
                 {
-                    put(0, new ArrayList<List<Object>>() {
-                        {
-                            add(new Values("cat"));
-                            add(new Values("dog"));
-                            add(new Values("chicken"));
-                            add(new Values("cat"));
-                            add(new Values("dog"));
-                            add(new Values("apple"));
-                        }
-                    });
-                    put(1, new ArrayList<List<Object>>() {
-                        {
-                            add(new Values("cat"));
-                            add(new Values("dog"));
-                            add(new Values("apple"));
-                            add(new Values("banana"));
-                        }
-                    });
-                    put(2, new ArrayList<List<Object>>() {
-                        {
-                            add(new Values("cat"));
-                            add(new Values("cat"));
-                            add(new Values("cat"));
-                            add(new Values("cat"));
-                            add(new Values("cat"));
-                            add(new Values("dog"));
-                            add(new Values("dog"));
-                            add(new Values("dog"));
-                            add(new Values("dog"));
-                        }
-                    });
+                    add(new Values("cat"));
+                    add(new Values("dog"));
+                    add(new Values("chicken"));
+                    add(new Values("cat"));
+                    add(new Values("dog"));
+                    add(new Values("apple"));
                 }
-            };
+            });
+            put(1, new ArrayList<List<Object>>() {
+                {
+                    add(new Values("cat"));
+                    add(new Values("dog"));
+                    add(new Values("apple"));
+                    add(new Values("banana"));
+                }
+            });
+            put(2, new ArrayList<List<Object>>() {
+                {
+                    add(new Values("cat"));
+                    add(new Values("cat"));
+                    add(new Values("cat"));
+                    add(new Values("cat"));
+                    add(new Values("cat"));
+                    add(new Values("dog"));
+                    add(new Values("dog"));
+                    add(new Values("dog"));
+                    add(new Values("dog"));
+                }
+            });
+        }
+    };
 
-    public static class KeyedCountUpdater extends BaseTransactionalBolt
-            implements ICommitter {
+    public static class KeyedCountUpdater extends BaseTransactionalBolt implements ICommitter {
         Map<String, Integer> _counts = new HashMap<String, Integer>();
         BatchOutputCollector _collector;
         TransactionAttempt _id;
@@ -125,8 +116,7 @@ public class TransactionalWordsTest {
         int _count = 0;
 
         @Override
-        public void prepare(Map conf, TopologyContext context,
-                BatchOutputCollector collector, TransactionAttempt id) {
+        public void prepare(Map conf, TopologyContext context, BatchOutputCollector collector, TransactionAttempt id) {
             _collector = collector;
             _id = id;
         }
@@ -157,8 +147,7 @@ public class TransactionalWordsTest {
                 } else {
                     newVal = val;
                 }
-                _collector.emit(new Values(_id, key, newVal.count,
-                        newVal.prev_count));
+                _collector.emit(new Values(_id, key, newVal.count, newVal.prev_count));
             }
         }
 
@@ -203,8 +192,7 @@ public class TransactionalWordsTest {
         int _count = 0;
 
         @Override
-        public void prepare(Map conf, TopologyContext context,
-                BatchOutputCollector collector, TransactionAttempt attempt) {
+        public void prepare(Map conf, TopologyContext context, BatchOutputCollector collector, TransactionAttempt attempt) {
             _collector = collector;
             _attempt = attempt;
         }
@@ -224,8 +212,7 @@ public class TransactionalWordsTest {
             for (Integer bucket : _accum.keySet()) {
                 BucketValue currVal = BUCKET_DATABASE.get(bucket);
                 BucketValue newVal;
-                if (currVal == null
-                        || !currVal.txid.equals(_attempt.getTransactionId())) {
+                if (currVal == null || !currVal.txid.equals(_attempt.getTransactionId())) {
                     newVal = new BucketValue();
                     newVal.txid = _attempt.getTransactionId();
                     newVal.count = _accum.get(bucket);
@@ -248,18 +235,11 @@ public class TransactionalWordsTest {
     @Test
     public void test_transaction_word() {
         try {
-            MemoryTransactionalSpout spout =
-                    new MemoryTransactionalSpout(DATA, new Fields("word"),
-                            PARTITION_TAKE_PER_BATCH);
-            TransactionalTopologyBuilder builder =
-                    new TransactionalTopologyBuilder("top-n-words", "spout",
-                            spout, 2);
-            builder.setBolt("count", new KeyedCountUpdater(), 5)
-                    .fieldsGrouping("spout", new Fields("word"));
-            builder.setBolt("bucketize", new Bucketize()).shuffleGrouping(
-                    "count");
-            builder.setBolt("buckets", new BucketCountUpdater(), 5)
-                    .fieldsGrouping("bucketize", new Fields("bucket"));
+            MemoryTransactionalSpout spout = new MemoryTransactionalSpout(DATA, new Fields("word"), PARTITION_TAKE_PER_BATCH);
+            TransactionalTopologyBuilder builder = new TransactionalTopologyBuilder("top-n-words", "spout", spout, 2);
+            builder.setBolt("count", new KeyedCountUpdater(), 5).fieldsGrouping("spout", new Fields("word"));
+            builder.setBolt("bucketize", new Bucketize()).shuffleGrouping("count");
+            builder.setBolt("buckets", new BucketCountUpdater(), 5).fieldsGrouping("bucketize", new Fields("bucket"));
 
             LocalCluster cluster = new LocalCluster();
 
@@ -267,8 +247,7 @@ public class TransactionalWordsTest {
             config.setDebug(true);
             config.setMaxSpoutPending(3);
 
-            cluster.submitTopology("top-n-topology", config,
-                    builder.buildTopology());
+            cluster.submitTopology("top-n-topology", config, builder.buildTopology());
 
             JStormUtils.sleepMs(60 * 1000);
             cluster.shutdown();

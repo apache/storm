@@ -82,8 +82,7 @@ public class CgroupUtils {
         return CgroupUtils.fileExists(Constants.CGROUP_STATUS_FILE);
     }
 
-    public static List<String> readFileByLine(String fileDir)
-            throws IOException {
+    public static List<String> readFileByLine(String fileDir) throws IOException {
         List<String> result = new ArrayList<String>();
         FileReader fileReader = null;
         BufferedReader reader = null;
@@ -101,8 +100,7 @@ public class CgroupUtils {
         return result;
     }
 
-    public static void writeFileByLine(String fileDir, List<String> strings)
-            throws IOException {
+    public static void writeFileByLine(String fileDir, List<String> strings) throws IOException {
         FileWriter writer = null;
         BufferedWriter bw = null;
         try {
@@ -123,8 +121,7 @@ public class CgroupUtils {
         }
     }
 
-    public static void writeFileByLine(String fileDir, String string)
-            throws IOException {
+    public static void writeFileByLine(String fileDir, String string) throws IOException {
         FileWriter writer = null;
         BufferedWriter bw = null;
         try {

@@ -22,7 +22,6 @@ import backtype.storm.topology.OutputFieldsDeclarer;
 import java.util.HashMap;
 import java.util.Map;
 
-
 public class BoltTracker extends NonRichBoltTracker implements IRichBolt {
     IRichBolt _richDelegate;
 

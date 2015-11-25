@@ -26,7 +26,7 @@ import org.jboss.netty.channel.Channels;
 class StormServerPipelineFactory implements ChannelPipelineFactory {
     private NettyServer server;
     private Map conf;
-    
+
     StormServerPipelineFactory(NettyServer server, Map conf) {
         this.server = server;
         this.conf = conf;

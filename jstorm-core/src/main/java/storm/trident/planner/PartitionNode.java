@@ -26,16 +26,15 @@ import java.util.ArrayList;
 import java.util.List;
 import storm.trident.util.TridentUtils;
 
-
 public class PartitionNode extends Node {
     public transient Grouping thriftGrouping;
-    
-    //has the streamid/outputFields of the node it's doing the partitioning on
+
+    // has the streamid/outputFields of the node it's doing the partitioning on
     public PartitionNode(String streamId, String name, Fields allOutputFields, Grouping grouping) {
         super(streamId, name, allOutputFields);
         this.thriftGrouping = grouping;
     }
-    
+
     private void writeObject(ObjectOutputStream oos) throws IOException {
         oos.defaultWriteObject();
         byte[] ser = TridentUtils.thriftSerialize(thriftGrouping);

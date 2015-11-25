@@ -36,7 +36,7 @@ import backtype.storm.tuple.Values;
 
 public class TestEventOrderCheckBolt extends BaseRichBolt {
     public static Logger LOG = LoggerFactory.getLogger(TestEventOrderCheckBolt.class);
-    
+
     private int _count;
     OutputCollector _collector;
     Map<Integer, Long> recentEventId = new HashMap<Integer, Long>();
@@ -52,8 +52,9 @@ public class TestEventOrderCheckBolt extends BaseRichBolt {
         Long recentEvent = recentEventId.get(sourceId);
 
         if (null != recentEvent && eventId <= recentEvent) {
-            String error = "Error: event id is not in strict order! event source Id: "
-                    + sourceId + ", last event Id: " + recentEvent + ", current event Id: " + eventId;
+            String error =
+                    "Error: event id is not in strict order! event source Id: " + sourceId + ", last event Id: " + recentEvent + ", current event Id: "
+                            + eventId;
 
             _collector.emit(input, new Values(error));
         }

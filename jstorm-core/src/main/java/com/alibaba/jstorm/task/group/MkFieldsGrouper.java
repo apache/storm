@@ -26,17 +26,16 @@ import com.alibaba.jstorm.utils.JStormUtils;
 
 /**
  * field grouping
- * 
+ *
  * @author yannian
- * 
+ *
  */
 public class MkFieldsGrouper {
     private Fields out_fields;
     private Fields group_fields;
     private List<Integer> out_tasks;
 
-    public MkFieldsGrouper(Fields _out_fields, Fields _group_fields,
-            List<Integer> _out_tasks) {
+    public MkFieldsGrouper(Fields _out_fields, Fields _group_fields, List<Integer> _out_tasks) {
 
         for (Iterator<String> it = _group_fields.iterator(); it.hasNext();) {
             String groupField = it.next();
@@ -52,8 +51,7 @@ public class MkFieldsGrouper {
     }
 
     public List<Integer> grouper(List<Object> values) {
-        int hashcode =
-                this.out_fields.select(this.group_fields, values).hashCode();
+        int hashcode = this.out_fields.select(this.group_fields, values).hashCode();
         int group = Math.abs(hashcode % this.out_tasks.size());
         return JStormUtils.mk_list(out_tasks.get(group));
     }

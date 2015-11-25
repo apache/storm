@@ -17,6 +17,7 @@
  */
 package com.alibaba.jstorm.common.metric;
 
+import com.google.common.base.Joiner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,10 +35,10 @@ public class QueueGauge extends HealthCheck implements Gauge<Double> {
     String name;
     Result healthy;
 
-    public QueueGauge(String name, DisruptorQueue queue) {
+    public QueueGauge(DisruptorQueue queue, String... names) {
         this.queue = queue;
-        this.name = name;
-        this.healthy = HealthCheck.Result.healthy();
+        this.name = Joiner.on("-").join(names);
+        this.healthy = Result.healthy();
     }
 
     @Override
@@ -52,7 +53,7 @@ public class QueueGauge extends HealthCheck implements Gauge<Double> {
         // TODO Auto-generated method stub
         Double ret = (double) queue.pctFull();
         if (ret > 0.9) {
-            return HealthCheck.Result.unhealthy(name + QUEUE_IS_FULL);
+            return Result.unhealthy(name + QUEUE_IS_FULL);
         } else {
             return healthy;
         }

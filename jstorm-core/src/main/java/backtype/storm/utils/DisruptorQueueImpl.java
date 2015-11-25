@@ -45,30 +45,30 @@ import com.lmax.disruptor.dsl.ProducerType;
 public class DisruptorQueueImpl extends DisruptorQueue {
     private static final Logger LOG = LoggerFactory.getLogger(DisruptorQueueImpl.class);
     static boolean useSleep = true;
-    
+
     public static void setUseSleep(boolean useSleep) {
         AbstractSequencerExt.setWaitSleep(useSleep);
     }
-    
+
     private static final Object FLUSH_CACHE = new Object();
     private static final Object INTERRUPT = new Object();
     private static final String PREFIX = "disruptor-";
-    
+
     private final String _queueName;
     private final RingBuffer<MutableObject> _buffer;
     private final Sequence _consumer;
     private final SequenceBarrier _barrier;
-    
+
     // TODO: consider having a threadlocal cache of this variable to speed up
     // reads?
     volatile boolean consumerStartedFlag = false;
-    
+
     private final HashMap<String, Object> state = new HashMap<String, Object>(4);
     private final ConcurrentLinkedQueue<Object> _cache = new ConcurrentLinkedQueue<Object>();
     private final ReentrantReadWriteLock cacheLock = new ReentrantReadWriteLock();
     private final Lock readLock = cacheLock.readLock();
     private final Lock writeLock = cacheLock.writeLock();
-    
+
     public DisruptorQueueImpl(String queueName, ProducerType producerType, int bufferSize, WaitStrategy wait) {
         this._queueName = PREFIX + queueName;
         _buffer = RingBuffer.create(producerType, new ObjectEventFactory(), bufferSize, wait);
@@ -89,19 +89,19 @@ public class DisruptorQueueImpl extends DisruptorQueue {
             }
         }
     }
-    
+
     public String getName() {
         return _queueName;
     }
-    
+
     public void consumeBatch(EventHandler<Object> handler) {
         consumeBatchToCursor(_barrier.getCursor(), handler);
     }
-    
+
     public void haltWithInterrupt() {
         publish(INTERRUPT);
     }
-    
+
     public Object poll() {
         // @@@
         // should use _cache.isEmpty, but it is slow
@@ -109,7 +109,7 @@ public class DisruptorQueueImpl extends DisruptorQueue {
         if (consumerStartedFlag == false) {
             return _cache.poll();
         }
-        
+
         final long nextSequence = _consumer.get() + 1;
         if (nextSequence <= _barrier.getCursor()) {
             MutableObject mo = _buffer.get(nextSequence);
@@ -120,7 +120,7 @@ public class DisruptorQueueImpl extends DisruptorQueue {
         }
         return null;
     }
-    
+
     public Object take() {
         // @@@
         // should use _cache.isEmpty, but it is slow
@@ -128,7 +128,7 @@ public class DisruptorQueueImpl extends DisruptorQueue {
         if (consumerStartedFlag == false) {
             return _cache.poll();
         }
-        
+
         final long nextSequence = _consumer.get() + 1;
         // final long availableSequence;
         try {
@@ -141,7 +141,7 @@ public class DisruptorQueueImpl extends DisruptorQueue {
             // throw new RuntimeException(e);
             return null;
         } catch (TimeoutException e) {
-            //LOG.error(e.getCause(), e);
+            // LOG.error(e.getCause(), e);
             return null;
         }
         MutableObject mo = _buffer.get(nextSequence);
@@ -150,7 +150,7 @@ public class DisruptorQueueImpl extends DisruptorQueue {
         mo.setObject(null);
         return ret;
     }
-    
+
     public void consumeBatchWhenAvailable(EventHandler<Object> handler) {
         try {
             final long nextSequence = _consumer.get() + 1;
@@ -165,11 +165,11 @@ public class DisruptorQueueImpl extends DisruptorQueue {
             LOG.error("InterruptedException " + e.getCause());
             return;
         } catch (TimeoutException e) {
-            //LOG.error(e.getCause(), e);
+            // LOG.error(e.getCause(), e);
             return;
         }
     }
-    
+
     public void consumeBatchToCursor(long cursor, EventHandler<Object> handler) {
         for (long curr = _consumer.get() + 1; curr <= cursor; curr++) {
             try {
@@ -202,7 +202,7 @@ public class DisruptorQueueImpl extends DisruptorQueue {
         // TODO: only set this if the consumer cursor has changed?
         _consumer.set(cursor);
     }
-    
+
     /*
      * Caches until consumerStarted is called, upon which the cache is flushed to the consumer
      */
@@ -213,15 +213,15 @@ public class DisruptorQueueImpl extends DisruptorQueue {
             throw new RuntimeException("This code should be unreachable!");
         }
     }
-    
+
     public void tryPublish(Object obj) throws InsufficientCapacityException {
         publish(obj, false);
     }
-    
+
     public void publish(Object obj, boolean block) throws InsufficientCapacityException {
-        
+
         boolean publishNow = consumerStartedFlag;
-        
+
         if (!publishNow) {
             readLock.lock();
             try {
@@ -233,12 +233,12 @@ public class DisruptorQueueImpl extends DisruptorQueue {
                 readLock.unlock();
             }
         }
-        
+
         if (publishNow) {
             publishDirect(obj, block);
         }
     }
-    
+
     protected void publishDirect(Object obj, boolean block) throws InsufficientCapacityException {
         final long id;
         if (block) {
@@ -250,41 +250,41 @@ public class DisruptorQueueImpl extends DisruptorQueue {
         m.setObject(obj);
         _buffer.publish(id);
     }
-    
+
     public void consumerStarted() {
-        
+
         writeLock.lock();
         consumerStartedFlag = true;
-        
+
         writeLock.unlock();
     }
-    
+
     public void clear() {
         while (population() != 0L) {
             poll();
         }
     }
-    
+
     public long population() {
         return (writePos() - readPos());
     }
-    
+
     public long capacity() {
         return _buffer.getBufferSize();
     }
-    
+
     public long writePos() {
         return _buffer.getCursor();
     }
-    
+
     public long readPos() {
         return _consumer.get();
     }
-    
+
     public float pctFull() {
         return (1.0F * population() / capacity());
     }
-    
+
     @Override
     public Object getState() {
         // get readPos then writePos so it's never an under-estimate
@@ -296,7 +296,7 @@ public class DisruptorQueueImpl extends DisruptorQueue {
         state.put("read_pos", rp);
         return state;
     }
-    
+
     public static class ObjectEventFactory implements EventFactory<MutableObject> {
         @Override
         public MutableObject newInstance() {

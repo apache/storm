@@ -17,6 +17,26 @@
  */
 package com.alibaba.jstorm.message.netty;
 
+import backtype.storm.Config;
+import backtype.storm.messaging.IConnection;
+import backtype.storm.messaging.TaskMessage;
+import backtype.storm.utils.DisruptorQueue;
+import backtype.storm.utils.Utils;
+import com.alibaba.jstorm.client.ConfigExtension;
+import com.alibaba.jstorm.common.metric.*;
+import com.alibaba.jstorm.metric.*;
+import com.alibaba.jstorm.utils.JStormServerUtils;
+import com.alibaba.jstorm.utils.JStormUtils;
+import com.alibaba.jstorm.utils.NetWorkUtils;
+import com.codahale.metrics.health.HealthCheck;
+import org.jboss.netty.bootstrap.ClientBootstrap;
+import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelFactory;
+import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.channel.ChannelFutureListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.HashSet;
@@ -29,35 +49,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.jboss.netty.bootstrap.ClientBootstrap;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFactory;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import backtype.storm.Config;
-import backtype.storm.messaging.IConnection;
-import backtype.storm.messaging.TaskMessage;
-import backtype.storm.utils.DisruptorQueue;
-import backtype.storm.utils.Utils;
-
-import com.alibaba.jstorm.client.ConfigExtension;
-import com.alibaba.jstorm.common.metric.Histogram;
-import com.alibaba.jstorm.common.metric.Meter;
-import com.alibaba.jstorm.common.metric.QueueGauge;
-import com.alibaba.jstorm.metric.JStormHealthCheck;
-import com.alibaba.jstorm.metric.JStormMetrics;
-import com.alibaba.jstorm.metric.MetricDef;
-import com.alibaba.jstorm.utils.JStormServerUtils;
-import com.alibaba.jstorm.utils.JStormUtils;
-import com.alibaba.jstorm.utils.NetWorkUtils;
-import com.codahale.metrics.health.HealthCheck;
-
 class NettyClient implements IConnection {
-    private static final Logger LOG = LoggerFactory
-            .getLogger(NettyClient.class);
+    private static final Logger LOG = LoggerFactory.getLogger(NettyClient.class);
+
     protected String name;
 
     protected final int max_retries;
@@ -84,9 +78,11 @@ class NettyClient implements IConnection {
 
     protected String address;
     // doesn't use timer, due to competition
-    protected Histogram sendTimer;
-    protected Histogram batchSizeHistogram;
-    protected Meter     sendSpeed;
+    protected AsmHistogram sendTimer;
+    protected AsmHistogram batchSizeHistogram;
+    protected AsmMeter sendSpeed;
+    protected static AsmMeter totalSendSpeed = (AsmMeter) JStormMetrics.registerWorkerMetric(MetricUtils.workerMetricName(
+            MetricDef.NETTY_CLI_SEND_SPEED, MetricType.METER), new AsmMeter());
 
     protected ReconnectRunnable reconnector;
     protected ChannelFactory clientChannelFactory;
@@ -94,19 +90,19 @@ class NettyClient implements IConnection {
     protected Set<Channel> closingChannel;
 
     protected AtomicBoolean isConnecting = new AtomicBoolean(false);
-    
+
     protected NettyConnection nettyConnection;
-    
+
     protected Map stormConf;
-    
+
     protected boolean connectMyself;
 
     protected Object channelClosing = new Object();
 
+    protected boolean enableNettyMetrics;
+
     @SuppressWarnings("rawtypes")
-    NettyClient(Map storm_conf, ChannelFactory factory,
-            ScheduledExecutorService scheduler, String host, int port,
-            ReconnectRunnable reconnector) {
+    NettyClient(Map storm_conf, ChannelFactory factory, ScheduledExecutorService scheduler, String host, int port, ReconnectRunnable reconnector) {
         this.stormConf = storm_conf;
         this.factory = factory;
         this.scheduler = scheduler;
@@ -116,34 +112,21 @@ class NettyClient implements IConnection {
         channelRef = new AtomicReference<Channel>(null);
         being_closed = new AtomicBoolean(false);
         pendings = new AtomicLong(0);
-        
+
         nettyConnection = new NettyConnection();
-        nettyConnection.setClientPort(NetWorkUtils.ip(), 
-                ConfigExtension.getLocalWorkerPort(storm_conf));
+        nettyConnection.setClientPort(NetWorkUtils.ip(), ConfigExtension.getLocalWorkerPort(storm_conf));
         nettyConnection.setServerPort(host, port);
 
         // Configure
-        buffer_size =
-                Utils.getInt(storm_conf
-                        .get(Config.STORM_MESSAGING_NETTY_BUFFER_SIZE));
-        max_retries =
-                Math.min(30, Utils.getInt(storm_conf
-                        .get(Config.STORM_MESSAGING_NETTY_MAX_RETRIES)));
-        base_sleep_ms =
-                Utils.getInt(storm_conf
-                        .get(Config.STORM_MESSAGING_NETTY_MIN_SLEEP_MS));
-        max_sleep_ms =
-                Utils.getInt(storm_conf
-                        .get(Config.STORM_MESSAGING_NETTY_MAX_SLEEP_MS));
+        buffer_size = Utils.getInt(storm_conf.get(Config.STORM_MESSAGING_NETTY_BUFFER_SIZE));
+        max_retries = Math.min(30, Utils.getInt(storm_conf.get(Config.STORM_MESSAGING_NETTY_MAX_RETRIES)));
+        base_sleep_ms = Utils.getInt(storm_conf.get(Config.STORM_MESSAGING_NETTY_MIN_SLEEP_MS));
+        max_sleep_ms = Utils.getInt(storm_conf.get(Config.STORM_MESSAGING_NETTY_MAX_SLEEP_MS));
 
         timeoutMs = ConfigExtension.getNettyPendingBufferTimeout(storm_conf);
-        MAX_SEND_PENDING =
-                (int) ConfigExtension.getNettyMaxSendPending(storm_conf);
+        MAX_SEND_PENDING = (int) ConfigExtension.getNettyMaxSendPending(storm_conf);
 
-        this.messageBatchSize =
-                Utils.getInt(
-                        storm_conf.get(Config.STORM_NETTY_MESSAGE_BATCH_SIZE),
-                        262144);
+        this.messageBatchSize = Utils.getInt(storm_conf.get(Config.STORM_NETTY_MESSAGE_BATCH_SIZE), 262144);
         messageBatchRef = new AtomicReference<MessageBatch>();
 
         // Start the connection attempt.
@@ -152,56 +135,62 @@ class NettyClient implements IConnection {
         connectMyself = isConnectMyself(stormConf, host, port);
 
         address = JStormServerUtils.getName(host, port);
-        
-        if (connectMyself == false) {
+
+        this.enableNettyMetrics = MetricUtils.isEnableNettyMetrics(storm_conf);
+        LOG.info("** enable netty metrics: {}", this.enableNettyMetrics);
+        if (!connectMyself) {
             registerMetrics();
         }
         closingChannel = new HashSet<Channel>();
     }
-    
+
     public void registerMetrics() {
-        sendTimer =
-                JStormMetrics.registerWorkerHistogram(
-                        MetricDef.NETTY_CLI_SEND_TIME, nettyConnection.toString());
-        batchSizeHistogram =
-                JStormMetrics.registerWorkerHistogram(
-                        MetricDef.NETTY_CLI_BATCH_SIZE, nettyConnection.toString());
-        sendSpeed = JStormMetrics.registerWorkerMeter(MetricDef.NETTY_CLI_SEND_SPEED, 
-                nettyConnection.toString());
+        if (this.enableNettyMetrics) {
+            sendTimer = (AsmHistogram) JStormMetrics.registerNettyMetric(
+                    MetricUtils.nettyMetricName(AsmMetric.mkName(MetricDef.NETTY_CLI_SEND_TIME, nettyConnection),
+                            MetricType.HISTOGRAM),
+                    new AsmHistogram());
+            batchSizeHistogram = (AsmHistogram) JStormMetrics.registerNettyMetric(
+                    MetricUtils.nettyMetricName(AsmMetric.mkName(MetricDef.NETTY_CLI_BATCH_SIZE, nettyConnection),
+                            MetricType.HISTOGRAM),
+                    new AsmHistogram());
+            sendSpeed = (AsmMeter) JStormMetrics.registerNettyMetric(MetricUtils.nettyMetricName(
+                    AsmMetric.mkName(MetricDef.NETTY_CLI_SEND_SPEED, nettyConnection), MetricType.METER), new AsmMeter());
 
-        CacheGaugeHealthCheck cacheGauge =
-                new CacheGaugeHealthCheck(messageBatchRef,
-                        MetricDef.NETTY_CLI_CACHE_SIZE + ":" + nettyConnection.toString());
-        JStormMetrics.registerWorkerGauge(cacheGauge,
-                MetricDef.NETTY_CLI_CACHE_SIZE, nettyConnection.toString());
-        JStormHealthCheck.registerWorkerHealthCheck(
-                MetricDef.NETTY_CLI_CACHE_SIZE + ":" + nettyConnection.toString(), cacheGauge);
+            CacheGaugeHealthCheck cacheGauge = new CacheGaugeHealthCheck(messageBatchRef,
+                    MetricDef.NETTY_CLI_CACHE_SIZE + ":" + nettyConnection.toString());
+            JStormMetrics.registerNettyMetric(MetricUtils
+                            .nettyMetricName(AsmMetric.mkName(MetricDef.NETTY_CLI_CACHE_SIZE, nettyConnection), MetricType.GAUGE),
+                    new AsmGauge(cacheGauge));
 
-        JStormMetrics.registerWorkerGauge(
-                new com.codahale.metrics.Gauge<Double>() {
+            JStormMetrics.registerNettyMetric(MetricUtils
+                            .nettyMetricName(AsmMetric.mkName(MetricDef.NETTY_CLI_SEND_PENDING, nettyConnection), MetricType.GAUGE),
+                    new AsmGauge(new com.codahale.metrics.Gauge<Double>() {
+                        @Override
+                        public Double getValue() {
+                            return ((Long) pendings.get()).doubleValue();
+                        }
+                    }));
 
-                    @Override
-                    public Double getValue() {
-                        return ((Long) pendings.get()).doubleValue();
-                    }
-                }, MetricDef.NETTY_CLI_SEND_PENDING, nettyConnection.toString());
-        
-        JStormHealthCheck.registerWorkerHealthCheck(
-                MetricDef.NETTY_CLI_CONNECTION + ":" + nettyConnection.toString(), 
+            JStormHealthCheck.registerWorkerHealthCheck(MetricDef.NETTY_CLI_CACHE_SIZE + ":" + nettyConnection.toString(),
+                    cacheGauge);
+        }
+
+        JStormHealthCheck.registerWorkerHealthCheck(MetricDef.NETTY_CLI_CONNECTION + ":" + nettyConnection.toString(),
                 new HealthCheck() {
-                    HealthCheck.Result healthy = HealthCheck.Result.healthy();
-                    HealthCheck.Result unhealthy = HealthCheck.Result.unhealthy
-                            ("NettyConnection " + nettyConnection.toString() + " is broken.");
+                    Result healthy = Result.healthy();
+                    Result unhealthy = Result
+                            .unhealthy("NettyConnection " + nettyConnection.toString() + " is broken.");
+
                     @Override
                     protected Result check() throws Exception {
-                        // TODO Auto-generated method stub
                         if (isChannelReady() == null) {
                             return unhealthy;
-                        }else {
+                        } else {
                             return healthy;
                         }
                     }
-                    
+
                 });
     }
 
@@ -216,23 +205,28 @@ class NettyClient implements IConnection {
         bootstrap.setPipelineFactory(new StormClientPipelineFactory(this, stormConf));
         reconnect();
     }
-    
+
     public boolean isConnectMyself(Map conf, String host, int port) {
         String localIp = NetWorkUtils.ip();
         String remoteIp = NetWorkUtils.host2Ip(host);
         int localPort = ConfigExtension.getLocalWorkerPort(conf);
-        
-        if (localPort == port && 
-                localIp.equals(remoteIp)) {
+
+        if (localPort == port && localIp.equals(remoteIp)) {
             return true;
         }
-        
+
         return false;
+    }
+
+    public void notifyInterestChanged(Channel channel) {
+        if (channel.isWritable()) {
+            MessageBatch messageBatch = messageBatchRef.getAndSet(null);
+            flushRequest(channel, messageBatch);
+        }
     }
 
     /**
      * The function can't be synchronized, otherwise it will be deadlock
-     * 
      */
     public void doReconnect() {
         if (channelRef.get() != null) {
@@ -255,12 +249,10 @@ class NettyClient implements IConnection {
         }
 
         long sleepMs = getSleepTimeMs();
-        LOG.info("Reconnect ... [{}], {}, sleep {}ms", retries.get(), name,
-                sleepMs);
+        LOG.info("Reconnect ... [{}], {}, sleep {}ms", retries.get(), name, sleepMs);
         ChannelFuture future = bootstrap.connect(remote_addr);
         future.addListener(new ChannelFutureListener() {
-            public void operationComplete(ChannelFuture future)
-                    throws Exception {
+            public void operationComplete(ChannelFuture future) throws Exception {
                 isConnecting.set(false);
                 Channel channel = future.getChannel();
                 if (future.isSuccess()) {
@@ -269,17 +261,12 @@ class NettyClient implements IConnection {
                     setChannel(channel);
                     // handleResponse();
                 } else {
-                    LOG.info(
-                            "Failed to reconnect ... [{}], {}, channel = {}, cause = {}",
-                            retries.get(), name, channel, future.getCause());
+                    LOG.info("Failed to reconnect ... [{}], {}, channel = {}, cause = {}", retries.get(), name, channel, future.getCause());
                     reconnect();
                 }
             }
         });
         JStormUtils.sleepMs(sleepMs);
-
-        return;
-
     }
 
     public void reconnect() {
@@ -290,7 +277,6 @@ class NettyClient implements IConnection {
      * # of milliseconds to wait per exponential back-off policy
      */
     private int getSleepTimeMs() {
-
         int sleepMs = base_sleep_ms * retries.incrementAndGet();
         if (sleepMs > 1000) {
             sleepMs = 1000;
@@ -310,7 +296,7 @@ class NettyClient implements IConnection {
     public void send(TaskMessage message) {
         LOG.warn("Should be overload");
     }
-    
+
     Channel isChannelReady() {
         Channel channel = channelRef.get();
         if (channel == null) {
@@ -325,26 +311,28 @@ class NettyClient implements IConnection {
         return channel;
     }
 
-    protected synchronized void flushRequest(Channel channel,
-            final MessageBatch requests) {
+    protected synchronized void flushRequest(Channel channel, final MessageBatch requests) {
         if (requests == null || requests.isEmpty())
             return;
 
-        Double batchSize = Double.valueOf(requests.getEncoded_length());
-        batchSizeHistogram.update(batchSize);
+        Long batchSize = (long) requests.getEncoded_length();
+        if (batchSizeHistogram != null) {
+            batchSizeHistogram.update(batchSize);
+        }
         pendings.incrementAndGet();
-        sendSpeed.update(batchSize);
+        if (sendSpeed != null) {
+            sendSpeed.update(batchSize);
+        }
+        totalSendSpeed.update(batchSize);
         ChannelFuture future = channel.write(requests);
         future.addListener(new ChannelFutureListener() {
-            public void operationComplete(ChannelFuture future)
-                    throws Exception {
+            public void operationComplete(ChannelFuture future) throws Exception {
 
                 pendings.decrementAndGet();
                 if (!future.isSuccess()) {
                     Channel channel = future.getChannel();
                     if (isClosed() == false) {
-                        LOG.info("Failed to send requests to " + name + ": "
-                                + channel.toString() + ":", future.getCause());
+                        LOG.info("Failed to send requests to " + name + ": " + channel.toString() + ":", future.getCause());
                     }
 
                     if (null != channel) {
@@ -357,32 +345,29 @@ class NettyClient implements IConnection {
             }
         });
     }
-    
-    public void unregisterMetrics() {
-        JStormMetrics.unregisterWorkerMetric(MetricDef.NETTY_CLI_SEND_TIME,
-                nettyConnection.toString());
-        JStormMetrics.unregisterWorkerMetric(MetricDef.NETTY_CLI_BATCH_SIZE,
-                nettyConnection.toString());
-        JStormMetrics.unregisterWorkerMetric(MetricDef.NETTY_CLI_SEND_PENDING,
-                nettyConnection.toString());
-        JStormMetrics.unregisterWorkerMetric(MetricDef.NETTY_CLI_CACHE_SIZE,
-                nettyConnection.toString());
-        JStormMetrics.unregisterWorkerMetric(MetricDef.NETTY_CLI_SEND_SPEED, 
-                nettyConnection.toString());
 
-        JStormHealthCheck
-                .unregisterWorkerHealthCheck(MetricDef.NETTY_CLI_CACHE_SIZE
-                        + ":" + nettyConnection.toString());
-        
-        JStormHealthCheck.unregisterWorkerHealthCheck(
-                MetricDef.NETTY_CLI_CONNECTION + ":" + nettyConnection.toString()); 
+    public void unregisterMetrics() {
+        if (this.enableNettyMetrics) {
+            JStormMetrics.unregisterNettyMetric(MetricUtils.nettyMetricName(
+                    AsmMetric.mkName(MetricDef.NETTY_CLI_SEND_TIME, nettyConnection), MetricType.HISTOGRAM));
+            JStormMetrics.unregisterNettyMetric(MetricUtils.nettyMetricName(
+                    AsmMetric.mkName(MetricDef.NETTY_CLI_BATCH_SIZE, nettyConnection), MetricType.HISTOGRAM));
+            JStormMetrics.unregisterNettyMetric(MetricUtils.nettyMetricName(
+                    AsmMetric.mkName(MetricDef.NETTY_CLI_SEND_PENDING, nettyConnection), MetricType.GAUGE));
+            JStormMetrics.unregisterNettyMetric(MetricUtils
+                    .nettyMetricName(AsmMetric.mkName(MetricDef.NETTY_CLI_CACHE_SIZE, nettyConnection), MetricType.GAUGE));
+            JStormMetrics.unregisterNettyMetric(MetricUtils
+                    .nettyMetricName(AsmMetric.mkName(MetricDef.NETTY_CLI_SEND_SPEED, nettyConnection), MetricType.METER));
+        }
+        JStormHealthCheck.unregisterWorkerHealthCheck(MetricDef.NETTY_CLI_CACHE_SIZE + ":" + nettyConnection.toString());
+
+        JStormHealthCheck.unregisterWorkerHealthCheck(MetricDef.NETTY_CLI_CONNECTION + ":" + nettyConnection.toString());
     }
 
     /**
      * gracefully close this client.
-     * 
-     * We will send all existing requests, and then invoke close_n_release()
-     * method
+     * <p/>
+     * We will send all existing requests, and then invoke close_n_release() method
      */
     public void close() {
         LOG.info("Close netty connection to {}", name());
@@ -391,7 +376,7 @@ class NettyClient implements IConnection {
             return;
         }
 
-        if (connectMyself == false) {
+        if (!connectMyself) {
             unregisterMetrics();
         }
 
@@ -410,17 +395,13 @@ class NettyClient implements IConnection {
         final long timeoutMilliSeconds = 10 * 1000;
         final long start = System.currentTimeMillis();
 
-        LOG.info("Waiting for pending batchs to be sent with " + name()
-                + "..., timeout: {}ms, pendings: {}", timeoutMilliSeconds,
-                pendings.get());
+        LOG.info("Waiting for pending batchs to be sent with " + name() + "..., timeout: {}ms, pendings: {}", timeoutMilliSeconds, pendings.get());
 
         while (pendings.get() != 0) {
             try {
                 long delta = System.currentTimeMillis() - start;
                 if (delta > timeoutMilliSeconds) {
-                    LOG.error(
-                            "Timeout when sending pending batchs with {}..., there are still {} pending batchs not sent",
-                            name(), pendings.get());
+                    LOG.error("Timeout when sending pending batchs with {}..., there are still {} pending batchs not sent", name(), pendings.get());
                     break;
                 }
                 Thread.sleep(1000); // sleep 1s
@@ -445,7 +426,7 @@ class NettyClient implements IConnection {
 
     /**
      * Avoid channel double close
-     * 
+     *
      * @param channel
      */
     void closeChannel(final Channel channel) {
@@ -461,8 +442,7 @@ class NettyClient implements IConnection {
         LOG.debug(channel.toString() + " begin to closed");
         ChannelFuture closeFuture = channel.close();
         closeFuture.addListener(new ChannelFutureListener() {
-            public void operationComplete(ChannelFuture future)
-                    throws Exception {
+            public void operationComplete(ChannelFuture future) throws Exception {
 
                 synchronized (channelClosing) {
                     closingChannel.remove(channel);
@@ -501,14 +481,9 @@ class NettyClient implements IConnection {
             retries.set(0);
         }
 
-        final String oldLocalAddres =
-                (oldChannel == null) ? "null" : oldChannel.getLocalAddress()
-                        .toString();
-        String newLocalAddress =
-                (newChannel == null) ? "null" : newChannel.getLocalAddress()
-                        .toString();
-        LOG.info("Use new channel {} replace old channel {}", newLocalAddress,
-                oldLocalAddres);
+        final String oldLocalAddres = (oldChannel == null) ? "null" : oldChannel.getLocalAddress().toString();
+        String newLocalAddress = (newChannel == null) ? "null" : newChannel.getLocalAddress().toString();
+        LOG.info("Use new channel {} replace old channel {}", newLocalAddress, oldLocalAddres);
 
         // avoid one netty client use too much connection, close old one
         if (oldChannel != newChannel && oldChannel != null) {
@@ -555,60 +530,56 @@ class NettyClient implements IConnection {
 
     @Override
     public Object recv(Integer taskId, int flags) {
-        throw new UnsupportedOperationException(
-                "recvTask: Client connection should not receive any messages");
+        throw new UnsupportedOperationException("recvTask: Client connection should not receive any messages");
     }
 
     @Override
     public void registerQueue(Integer taskId, DisruptorQueue recvQueu) {
-        throw new UnsupportedOperationException(
-                "recvTask: Client connection should not receive any messages");
+        throw new UnsupportedOperationException("recvTask: Client connection should not receive any messages");
     }
 
     @Override
     public void enqueue(TaskMessage message) {
-        throw new UnsupportedOperationException(
-                "recvTask: Client connection should not receive any messages");
+        throw new UnsupportedOperationException("recvTask: Client connection should not receive any messages");
     }
 
-    public static class CacheGaugeHealthCheck extends HealthCheck implements
-            com.codahale.metrics.Gauge<Double> {
+    public static class CacheGaugeHealthCheck extends HealthCheck implements com.codahale.metrics.Gauge<Double> {
 
         AtomicReference<MessageBatch> messageBatchRef;
         String name;
         Result healthy;
 
-        public CacheGaugeHealthCheck(
-                AtomicReference<MessageBatch> messageBatchRef, String name) {
+        public CacheGaugeHealthCheck(AtomicReference<MessageBatch> messageBatchRef, String name) {
             this.messageBatchRef = messageBatchRef;
             this.name = name;
-            this.healthy = HealthCheck.Result.healthy();
+            this.healthy = Result.healthy();
         }
 
         @Override
         public Double getValue() {
-            // TODO Auto-generated method stub
             MessageBatch messageBatch = messageBatchRef.get();
             if (messageBatch == null) {
                 return 0.0;
             } else {
-                Double ret = (double) messageBatch.getEncoded_length();
-                return ret;
+                return (double) messageBatch.getEncoded_length();
             }
 
         }
 
         @Override
         protected Result check() throws Exception {
-            // TODO Auto-generated method stub
             Double size = getValue();
             if (size > 8 * JStormUtils.SIZE_1_M) {
-                return HealthCheck.Result.unhealthy(name
-                        + QueueGauge.QUEUE_IS_FULL);
+                return Result.unhealthy(name + QueueGauge.QUEUE_IS_FULL);
             } else {
                 return healthy;
             }
         }
 
+    }
+
+    @Override
+    public boolean available() {
+        return (isChannelReady() != null);
     }
 }

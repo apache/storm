@@ -23,27 +23,26 @@ import java.util.Map;
 
 import com.alibaba.jstorm.client.ConfigExtension;
 
-
-
 public interface JStormCache extends Serializable {
     public static final String TAG_TIMEOUT_LIST = ConfigExtension.CACHE_TIMEOUT_LIST;
-    
-    void init(Map<Object, Object> conf)throws Exception;
+
+    void init(Map<Object, Object> conf) throws Exception;
+
     void cleanup();
-    
-    Object get(String key) ;
-    
+
+    Object get(String key);
+
     void getBatch(Map<String, Object> map);
 
     void remove(String key);
-    
+
     void removeBatch(Collection<String> keys);
 
     void put(String key, Object value, int timeoutSecond);
 
     void put(String key, Object value);
-    
-    void putBatch(Map<String, Object> map) ;
-    
+
+    void putBatch(Map<String, Object> map);
+
     void putBatch(Map<String, Object> map, int timeoutSeconds);
 }

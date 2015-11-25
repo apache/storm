@@ -40,8 +40,7 @@ import com.alibaba.jstorm.metric.MetricDef;
 import com.alibaba.jstorm.utils.JStormUtils;
 
 public class NettyContext implements IContext {
-    private final static Logger LOG = LoggerFactory
-            .getLogger(NettyContext.class);
+    private final static Logger LOG = LoggerFactory.getLogger(NettyContext.class);
     @SuppressWarnings("rawtypes")
     private Map storm_conf;
 
@@ -65,36 +64,19 @@ public class NettyContext implements IContext {
     public void prepare(Map storm_conf) {
         this.storm_conf = storm_conf;
 
-        int maxWorkers =
-                Utils.getInt(storm_conf
-                        .get(Config.STORM_MESSAGING_NETTY_CLIENT_WORKER_THREADS));
-        ThreadFactory bossFactory =
-                new NettyRenameThreadFactory(MetricDef.NETTY_CLI + "boss");
-        ThreadFactory workerFactory =
-                new NettyRenameThreadFactory(MetricDef.NETTY_CLI + "worker");
+        int maxWorkers = Utils.getInt(storm_conf.get(Config.STORM_MESSAGING_NETTY_CLIENT_WORKER_THREADS));
+        ThreadFactory bossFactory = new NettyRenameThreadFactory(MetricDef.NETTY_CLI + "boss");
+        ThreadFactory workerFactory = new NettyRenameThreadFactory(MetricDef.NETTY_CLI + "worker");
 
         if (maxWorkers > 0) {
             clientChannelFactory =
-                    new NioClientSocketChannelFactory(
-                            Executors.newCachedThreadPool(bossFactory),
-                            Executors.newCachedThreadPool(workerFactory),
-                            maxWorkers);
+                    new NioClientSocketChannelFactory(Executors.newCachedThreadPool(bossFactory), Executors.newCachedThreadPool(workerFactory), maxWorkers);
         } else {
-            clientChannelFactory =
-                    new NioClientSocketChannelFactory(
-                            Executors.newCachedThreadPool(bossFactory),
-                            Executors.newCachedThreadPool(workerFactory));
+            clientChannelFactory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(bossFactory), Executors.newCachedThreadPool(workerFactory));
         }
-        int otherWorkers =
-                Utils.getInt(storm_conf.get(Config.TOPOLOGY_WORKERS), 1) - 1;
-        int poolSize =
-                Math.min(Math.max(1, otherWorkers),
-                        MAX_CLIENT_SCHEDULER_THREAD_POOL_SIZE);
-        clientScheduleService =
-                Executors
-                        .newScheduledThreadPool(poolSize,
-                                new NettyRenameThreadFactory(
-                                        "client-schedule-service"));
+        int otherWorkers = Utils.getInt(storm_conf.get(Config.TOPOLOGY_WORKERS), 1) - 1;
+        int poolSize = Math.min(Math.max(1, otherWorkers), MAX_CLIENT_SCHEDULER_THREAD_POOL_SIZE);
+        clientScheduleService = Executors.newScheduledThreadPool(poolSize, new NettyRenameThreadFactory("client-schedule-service"));
 
         reconnector = new ReconnectRunnable();
         new AsyncLoopThread(reconnector, true, Thread.MIN_PRIORITY, true);
@@ -119,11 +101,9 @@ public class NettyContext implements IContext {
     @Override
     public IConnection connect(String topology_id, String host, int port) {
         if (isSyncMode == true) {
-            return new NettyClientSync(storm_conf, clientChannelFactory,
-                    clientScheduleService, host, port, reconnector);
+            return new NettyClientSync(storm_conf, clientChannelFactory, clientScheduleService, host, port, reconnector);
         } else {
-            return new NettyClientAsync(storm_conf, clientChannelFactory,
-                    clientScheduleService, host, port, reconnector);
+            return new NettyClientAsync(storm_conf, clientChannelFactory, clientScheduleService, host, port, reconnector);
         }
     }
 

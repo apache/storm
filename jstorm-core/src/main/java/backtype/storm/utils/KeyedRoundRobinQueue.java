@@ -33,9 +33,9 @@ public class KeyedRoundRobinQueue<V> {
     private int _currIndex = 0;
 
     public void add(Object key, V val) {
-        synchronized(_lock) {
+        synchronized (_lock) {
             Queue<V> queue = _queues.get(key);
-            if(queue==null) {
+            if (queue == null) {
                 queue = new LinkedList<V>();
                 _queues.put(key, queue);
                 _keyOrder.add(key);
@@ -47,14 +47,14 @@ public class KeyedRoundRobinQueue<V> {
 
     public V take() throws InterruptedException {
         _size.acquire();
-        synchronized(_lock) {
+        synchronized (_lock) {
             Object key = _keyOrder.get(_currIndex);
             Queue<V> queue = _queues.get(key);
             V ret = queue.remove();
-            if(queue.isEmpty()) {
+            if (queue.isEmpty()) {
                 _keyOrder.remove(_currIndex);
                 _queues.remove(key);
-                if(_keyOrder.size()==0) {
+                if (_keyOrder.size() == 0) {
                     _currIndex = 0;
                 } else {
                     _currIndex = _currIndex % _keyOrder.size();

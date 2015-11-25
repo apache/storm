@@ -103,41 +103,39 @@ public class NetWorkUtils {
         try {
             address = InetAddress.getByName(host);
         } catch (UnknownHostException e) {
-            LOG.warn("NetWorkUtil can't transfer hostname(" + host
-                    + ") to ip, return hostname", e);
+            LOG.warn("NetWorkUtil can't transfer hostname(" + host + ") to ip, return hostname", e);
             return host;
         }
         return address.getHostAddress();
     }
-    
-    public static List<String>  host2Ip(List<String> servers) {
-    	if (servers == null || servers.size() == 0) {
-    		return new ArrayList<String>();
-    	}
-    	
-    	Set<String> ret = new HashSet<String>();
-    	for (String server : servers) {
-    		if (StringUtils.isBlank(server)) {
-    			continue;
-    		}
-    		
-    		InetAddress ia;
-			try {
-				ia = InetAddress.getByName(server);
-			} catch (UnknownHostException e) {
-				// TODO Auto-generated catch block
-				LOG.info("Fail to get address of ", server);
-				continue;
-			}
-    		if (ia.isLoopbackAddress() || ia.isAnyLocalAddress()) {
-    			ret.add(NetWorkUtils.ip());
-    		}else {
-    			ret.add(ia.getHostAddress());
-    		}
-    	}
-    	
-    	
-    	return JStormUtils.mk_list(ret);
+
+    public static List<String> host2Ip(List<String> servers) {
+        if (servers == null || servers.size() == 0) {
+            return new ArrayList<String>();
+        }
+
+        Set<String> ret = new HashSet<String>();
+        for (String server : servers) {
+            if (StringUtils.isBlank(server)) {
+                continue;
+            }
+
+            InetAddress ia;
+            try {
+                ia = InetAddress.getByName(server);
+            } catch (UnknownHostException e) {
+                // TODO Auto-generated catch block
+                LOG.info("Fail to get address of ", server);
+                continue;
+            }
+            if (ia.isLoopbackAddress() || ia.isAnyLocalAddress()) {
+                ret.add(NetWorkUtils.ip());
+            } else {
+                ret.add(ia.getHostAddress());
+            }
+        }
+
+        return JStormUtils.mk_list(ret);
     }
 
     public static String ip2Host(String ip) {
@@ -145,8 +143,7 @@ public class NetWorkUtils {
         try {
             address = InetAddress.getByName(ip);
         } catch (UnknownHostException e) {
-            LOG.warn("NetWorkUtil can't transfer ip(" + ip
-                    + ") to hostname, return ip", e);
+            LOG.warn("NetWorkUtil can't transfer ip(" + ip + ") to hostname, return ip", e);
             return ip;
         }
         return address.getHostName();
@@ -168,13 +165,13 @@ public class NetWorkUtils {
         return StringUtils.equalsIgnoreCase(ip1, ip2);
 
     }
-    
+
     public static void main(String[] args) {
-    	List<String> servers = new ArrayList<String>();
-    	servers.add("localhost");
-    	
-    	System.out.println(host2Ip(servers));
-    	
+        List<String> servers = new ArrayList<String>();
+        servers.add("localhost");
+
+        System.out.println(host2Ip(servers));
+
     }
 
 }

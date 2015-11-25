@@ -24,9 +24,8 @@ import com.alibaba.jstorm.daemon.nimbus.TopologyAssign;
 import com.alibaba.jstorm.daemon.nimbus.TopologyAssignEvent;
 
 /**
- * 1. every Config.NIMBUS_MONITOR_FREQ_SECS will call MonitorRunnable 2.
- * MonitorRunnable will call NimbusData.transition 3. NimbusData.transition will
- * this callback
+ * 1. every Config.NIMBUS_MONITOR_FREQ_SECS will call MonitorRunnable 2. MonitorRunnable will call NimbusData.transition 3. NimbusData.transition will this
+ * callback
  * 
  * 
  */
@@ -42,8 +41,7 @@ public class ReassignTransitionCallback extends BaseCallback {
         this.oldStatus = null;
     }
 
-    public ReassignTransitionCallback(NimbusData data, String topologyid,
-            StormStatus oldStatus) {
+    public ReassignTransitionCallback(NimbusData data, String topologyid, StormStatus oldStatus) {
         this.data = data;
         this.topologyid = topologyid;
         this.oldStatus = oldStatus;
@@ -59,6 +57,7 @@ public class ReassignTransitionCallback extends BaseCallback {
         assignEvent.setOldStatus(oldStatus);
 
         TopologyAssign.push(assignEvent);
+        assignEvent.waitFinish();
 
         return null;
     }

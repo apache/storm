@@ -35,5 +35,5 @@ public class BatchProcessWord extends BaseBasicBolt {
     public void execute(Tuple input, BasicOutputCollector collector) {
         collector.emit(new Values(input.getValue(0), input.getString(1).length()));
     }
-    
+
 }

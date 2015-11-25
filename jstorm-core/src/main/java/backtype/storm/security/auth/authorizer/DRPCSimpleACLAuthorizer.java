@@ -19,8 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class DRPCSimpleACLAuthorizer extends DRPCAuthorizerBase {
-    public static Logger LOG =
-        LoggerFactory.getLogger(DRPCSimpleACLAuthorizer.class);
+    public static Logger LOG = LoggerFactory.getLogger(DRPCSimpleACLAuthorizer.class);
 
     public static final String CLIENT_USERS_KEY = "client.users";
     public static final String INVOCATION_USER_KEY = "invocation.user";
@@ -33,44 +32,35 @@ public class DRPCSimpleACLAuthorizer extends DRPCAuthorizerBase {
     protected class AclFunctionEntry {
         final public Set<String> clientUsers;
         final public String invocationUser;
-        public AclFunctionEntry(Collection<String> clientUsers,
-                String invocationUser) {
-            this.clientUsers = (clientUsers != null) ?
-                new HashSet<String>(clientUsers) : new HashSet<String>();
+
+        public AclFunctionEntry(Collection<String> clientUsers, String invocationUser) {
+            this.clientUsers = (clientUsers != null) ? new HashSet<String>(clientUsers) : new HashSet<String>();
             this.invocationUser = invocationUser;
         }
     }
 
-    private volatile Map<String,AclFunctionEntry> _acl = null;
+    private volatile Map<String, AclFunctionEntry> _acl = null;
     private volatile long _lastUpdate = 0;
 
-    protected Map<String,AclFunctionEntry> readAclFromConfig() {
-        //Thread safety is mostly around _acl.  If _acl needs to be updated it is changed atomically
-        //More then one thread may be trying to update it at a time, but that is OK, because the
-        //change is atomic
+    protected Map<String, AclFunctionEntry> readAclFromConfig() {
+        // Thread safety is mostly around _acl. If _acl needs to be updated it is changed atomically
+        // More then one thread may be trying to update it at a time, but that is OK, because the
+        // change is atomic
         long now = System.currentTimeMillis();
         if ((now - 5000) > _lastUpdate || _acl == null) {
-            Map<String,AclFunctionEntry> acl = new HashMap<String,AclFunctionEntry>();
+            Map<String, AclFunctionEntry> acl = new HashMap<String, AclFunctionEntry>();
             Map conf = Utils.findAndReadConfigFile(_aclFileName);
             if (conf.containsKey(Config.DRPC_AUTHORIZER_ACL)) {
-                Map<String,Map<String,?>> confAcl =
-                    (Map<String,Map<String,?>>)
-                    conf.get(Config.DRPC_AUTHORIZER_ACL);
+                Map<String, Map<String, ?>> confAcl = (Map<String, Map<String, ?>>) conf.get(Config.DRPC_AUTHORIZER_ACL);
 
                 for (String function : confAcl.keySet()) {
-                    Map<String,?> val = confAcl.get(function);
-                    Collection<String> clientUsers =
-                        val.containsKey(CLIENT_USERS_KEY) ?
-                        (Collection<String>) val.get(CLIENT_USERS_KEY) : null;
-                    String invocationUser =
-                        val.containsKey(INVOCATION_USER_KEY) ?
-                        (String) val.get(INVOCATION_USER_KEY) : null;
-                    acl.put(function,
-                            new AclFunctionEntry(clientUsers, invocationUser));
+                    Map<String, ?> val = confAcl.get(function);
+                    Collection<String> clientUsers = val.containsKey(CLIENT_USERS_KEY) ? (Collection<String>) val.get(CLIENT_USERS_KEY) : null;
+                    String invocationUser = val.containsKey(INVOCATION_USER_KEY) ? (String) val.get(INVOCATION_USER_KEY) : null;
+                    acl.put(function, new AclFunctionEntry(clientUsers, invocationUser));
                 }
             } else if (!_permitWhenMissingFunctionEntry) {
-                LOG.warn("Requiring explicit ACL entries, but none given. " +
-                        "Therefore, all operiations will be denied.");
+                LOG.warn("Requiring explicit ACL entries, but none given. " + "Therefore, all operiations will be denied.");
             }
             _acl = acl;
             _lastUpdate = System.currentTimeMillis();
@@ -80,10 +70,8 @@ public class DRPCSimpleACLAuthorizer extends DRPCAuthorizerBase {
 
     @Override
     public void prepare(Map conf) {
-        Boolean isStrict = 
-                (Boolean) conf.get(Config.DRPC_AUTHORIZER_ACL_STRICT);
-        _permitWhenMissingFunctionEntry = 
-                (isStrict != null && !isStrict) ? true : false;
+        Boolean isStrict = (Boolean) conf.get(Config.DRPC_AUTHORIZER_ACL_STRICT);
+        _permitWhenMissingFunctionEntry = (isStrict != null && !isStrict) ? true : false;
         _aclFileName = (String) conf.get(Config.DRPC_AUTHORIZER_ACL_FILENAME);
         _ptol = AuthUtils.GetPrincipalToLocalPlugin(conf);
     }
@@ -105,11 +93,10 @@ public class DRPCSimpleACLAuthorizer extends DRPCAuthorizerBase {
         return null;
     }
 
-    protected boolean permitClientOrInvocationRequest(ReqContext context, Map params,
-            String fieldName) {
-        Map<String,AclFunctionEntry> acl = readAclFromConfig();
+    protected boolean permitClientOrInvocationRequest(ReqContext context, Map params, String fieldName) {
+        Map<String, AclFunctionEntry> acl = readAclFromConfig();
         String function = (String) params.get(FUNCTION_KEY);
-        if (function != null && ! function.isEmpty()) {
+        if (function != null && !function.isEmpty()) {
             AclFunctionEntry entry = acl.get(function);
             if (entry == null && _permitWhenMissingFunctionEntry) {
                 return true;
@@ -126,16 +113,11 @@ public class DRPCSimpleACLAuthorizer extends DRPCAuthorizerBase {
                 String principal = getUserFromContext(context);
                 String user = getLocalUserFromContext(context);
                 if (value == null) {
-                    LOG.warn("Configuration for function '"+function+"' is "+
-                            "invalid: it should have both an invocation user "+
-                            "and a list of client users defined.");
-                } else if (value instanceof Set && 
-                        (((Set<String>)value).contains(principal) ||
-                        ((Set<String>)value).contains(user))) {
+                    LOG.warn("Configuration for function '" + function + "' is " + "invalid: it should have both an invocation user "
+                            + "and a list of client users defined.");
+                } else if (value instanceof Set && (((Set<String>) value).contains(principal) || ((Set<String>) value).contains(user))) {
                     return true;
-                } else if (value instanceof String && 
-                        (value.equals(principal) ||
-                         value.equals(user))) {
+                } else if (value instanceof String && (value.equals(principal) || value.equals(user))) {
                     return true;
                 }
             }
@@ -144,14 +126,12 @@ public class DRPCSimpleACLAuthorizer extends DRPCAuthorizerBase {
     }
 
     @Override
-    protected boolean permitClientRequest(ReqContext context, String operation,
-            Map params) {
+    protected boolean permitClientRequest(ReqContext context, String operation, Map params) {
         return permitClientOrInvocationRequest(context, params, "clientUsers");
     }
 
     @Override
-    protected boolean permitInvocationRequest(ReqContext context, String operation,
-            Map params) {
+    protected boolean permitInvocationRequest(ReqContext context, String operation, Map params) {
         return permitClientOrInvocationRequest(context, params, "invocationUser");
     }
 }

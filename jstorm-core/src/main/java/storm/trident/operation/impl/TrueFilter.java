@@ -36,5 +36,5 @@ public class TrueFilter implements Filter {
     @Override
     public void cleanup() {
     }
-    
+
 }

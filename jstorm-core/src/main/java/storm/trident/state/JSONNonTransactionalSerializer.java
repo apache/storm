@@ -20,7 +20,6 @@ package storm.trident.state;
 import java.io.UnsupportedEncodingException;
 import org.json.simple.JSONValue;
 
-
 public class JSONNonTransactionalSerializer implements Serializer {
 
     @Override
@@ -40,5 +39,5 @@ public class JSONNonTransactionalSerializer implements Serializer {
             throw new RuntimeException(e);
         }
     }
-    
+
 }

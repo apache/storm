@@ -17,67 +17,59 @@
  */
 package com.alibaba.jstorm.utils;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
+import backtype.storm.utils.DisruptorQueue;
+import com.alibaba.jstorm.callback.AsyncLoopRunnable;
+import com.alibaba.jstorm.callback.RunnableCallback;
+import com.alibaba.jstorm.common.metric.*;
+import com.alibaba.jstorm.metric.JStormMetrics;
+import com.alibaba.jstorm.metric.MetricType;
+import com.alibaba.jstorm.metric.MetricUtils;
+import com.alibaba.jstorm.metric.JStormHealthCheck;
+import com.alibaba.jstorm.metric.MetricDef;
+import com.lmax.disruptor.EventHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import backtype.storm.utils.DisruptorQueue;
-
-import com.alibaba.jstorm.callback.AsyncLoopRunnable;
-import com.alibaba.jstorm.callback.RunnableCallback;
-import com.alibaba.jstorm.common.metric.QueueGauge;
-import com.alibaba.jstorm.common.metric.Timer;
-import com.alibaba.jstorm.metric.JStormHealthCheck;
-import com.alibaba.jstorm.metric.JStormMetrics;
-import com.alibaba.jstorm.metric.MetricDef;
-import com.lmax.disruptor.EventHandler;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 //import com.alibaba.jstorm.message.zeroMq.ISendConnection;
 
 /**
- * 
  * Disruptor Consumer thread
  * 
  * @author yannian
- * 
  */
-public abstract class DisruptorRunable extends RunnableCallback implements
-        EventHandler {
-    private final static Logger LOG = LoggerFactory
-            .getLogger(DisruptorRunable.class);
+public abstract class DisruptorRunable extends RunnableCallback implements EventHandler {
+    private final static Logger LOG = LoggerFactory.getLogger(DisruptorRunable.class);
 
     protected DisruptorQueue queue;
     protected String idStr;
-    protected Timer timer;
+    protected AsmHistogram timer;
     protected AtomicBoolean shutdown = AsyncLoopRunnable.getShutdown();
 
     public DisruptorRunable(DisruptorQueue queue, String idStr) {
         this.queue = queue;
-        this.timer =
-                JStormMetrics.registerWorkerTimer(idStr + MetricDef.TIME_TYPE);
         this.idStr = idStr;
 
-        QueueGauge queueGauge =
-                new QueueGauge(idStr + MetricDef.QUEUE_TYPE, queue);
-        JStormMetrics.registerWorkerGauge(queueGauge, idStr
-                + MetricDef.QUEUE_TYPE);
+        this.timer =
+                (AsmHistogram) JStormMetrics.registerWorkerMetric(MetricUtils.workerMetricName(idStr + MetricDef.TIME_TYPE, MetricType.HISTOGRAM),
+                        new AsmHistogram());
+
+        QueueGauge queueGauge = new QueueGauge(queue, idStr, MetricDef.QUEUE_TYPE);
+        JStormMetrics.registerWorkerMetric(MetricUtils.workerMetricName(idStr + MetricDef.QUEUE_TYPE, MetricType.GAUGE), new AsmGauge(queueGauge));
 
         JStormHealthCheck.registerWorkerHealthCheck(idStr, queueGauge);
     }
 
-    public abstract void handleEvent(Object event, boolean endOfBatch)
-            throws Exception;
+    public abstract void handleEvent(Object event, boolean endOfBatch) throws Exception;
 
     /**
      * This function need to be implements
      * 
-     * @see com.lmax.disruptor.EventHandler#onEvent(java.lang.Object, long,
-     *      boolean)
+     * @see EventHandler#onEvent(Object, long, boolean)
      */
     @Override
-    public void onEvent(Object event, long sequence, boolean endOfBatch)
-            throws Exception {
+    public void onEvent(Object event, long sequence, boolean endOfBatch) throws Exception {
         if (event == null) {
             return;
         }
@@ -87,7 +79,7 @@ public abstract class DisruptorRunable extends RunnableCallback implements
             handleEvent(event, endOfBatch);
         } finally {
             long end = System.nanoTime();
-            timer.update((end - start)/1000000.0d);
+            timer.update((end - start) / TimeUtils.NS_PER_US);
         }
     }
 
@@ -96,17 +88,15 @@ public abstract class DisruptorRunable extends RunnableCallback implements
         LOG.info("Successfully start thread " + idStr);
         queue.consumerStarted();
 
-        while (shutdown.get() == false) {
+        while (!shutdown.get()) {
             queue.consumeBatchWhenAvailable(this);
-
         }
-
         LOG.info("Successfully exit thread " + idStr);
     }
 
     @Override
     public void shutdown() {
-        JStormMetrics.unregisterWorkerMetric(idStr + MetricDef.QUEUE_TYPE);
+        JStormMetrics.unregisterWorkerMetric(MetricUtils.workerMetricName(idStr + MetricDef.QUEUE_TYPE, MetricType.GAUGE));
         JStormHealthCheck.unregisterWorkerHealthCheck(idStr);
     }
 

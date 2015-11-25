@@ -34,9 +34,7 @@ public class MkCustomGrouper {
 
     private int myTaskId;
 
-    public MkCustomGrouper(TopologyContext context,
-            CustomStreamGrouping _grouping, GlobalStreamId stream,
-            List<Integer> targetTask, int myTaskId) {
+    public MkCustomGrouper(TopologyContext context, CustomStreamGrouping _grouping, GlobalStreamId stream, List<Integer> targetTask, int myTaskId) {
         this.myTaskId = myTaskId;
         this.grouping = _grouping;
         this.grouping.prepare(context, stream, targetTask);

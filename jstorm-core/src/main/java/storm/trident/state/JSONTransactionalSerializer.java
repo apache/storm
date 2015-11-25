@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 import org.json.simple.JSONValue;
 
-
 public class JSONTransactionalSerializer implements Serializer<TransactionalValue> {
     @Override
     public byte[] serialize(TransactionalValue obj) {
@@ -46,5 +45,5 @@ public class JSONTransactionalSerializer implements Serializer<TransactionalValu
             throw new RuntimeException(e);
         }
     }
-    
+
 }

@@ -26,7 +26,6 @@ import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
 import java.util.Map;
 
-
 public class TestConfBolt extends BaseBasicBolt {
     Map<String, Object> _componentConf;
     Map<String, Object> _conf;
@@ -34,16 +33,16 @@ public class TestConfBolt extends BaseBasicBolt {
     public TestConfBolt() {
         this(null);
     }
-        
+
     public TestConfBolt(Map<String, Object> componentConf) {
         _componentConf = componentConf;
-    }        
+    }
 
     @Override
     public void prepare(Map conf, TopologyContext context) {
         _conf = conf;
-    }    
-    
+    }
+
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(new Fields("conf", "value"));
@@ -58,5 +57,5 @@ public class TestConfBolt extends BaseBasicBolt {
     @Override
     public Map<String, Object> getComponentConfiguration() {
         return _componentConf;
-    }    
+    }
 }

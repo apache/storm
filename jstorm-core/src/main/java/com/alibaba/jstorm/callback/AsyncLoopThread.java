@@ -28,16 +28,14 @@ import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.SmartThread;
 
 /**
- * Wrapper Timer thread Every several seconds execute afn, if something is run,
- * run kill_fn
+ * Wrapper Timer thread Every several seconds execute afn, if something is run, run kill_fn
  * 
  * 
  * @author yannian
  * 
  */
 public class AsyncLoopThread implements SmartThread {
-    private static final Logger LOG = LoggerFactory
-            .getLogger(AsyncLoopThread.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AsyncLoopThread.class);
 
     private Thread thread;
 
@@ -47,18 +45,15 @@ public class AsyncLoopThread implements SmartThread {
         this.init(afn, false, Thread.NORM_PRIORITY, true);
     }
 
-    public AsyncLoopThread(RunnableCallback afn, boolean daemon, int priority,
-            boolean start) {
+    public AsyncLoopThread(RunnableCallback afn, boolean daemon, int priority, boolean start) {
         this.init(afn, daemon, priority, start);
     }
 
-    public AsyncLoopThread(RunnableCallback afn, boolean daemon,
-            RunnableCallback kill_fn, int priority, boolean start) {
+    public AsyncLoopThread(RunnableCallback afn, boolean daemon, RunnableCallback kill_fn, int priority, boolean start) {
         this.init(afn, daemon, kill_fn, priority, start);
     }
 
-    public void init(RunnableCallback afn, boolean daemon, int priority,
-            boolean start) {
+    public void init(RunnableCallback afn, boolean daemon, int priority, boolean start) {
         RunnableCallback kill_fn = new AsyncLoopDefaultKill();
         this.init(afn, daemon, kill_fn, priority, start);
     }
@@ -72,8 +67,7 @@ public class AsyncLoopThread implements SmartThread {
      * @param args_fn
      * @param start
      */
-    private void init(RunnableCallback afn, boolean daemon,
-            RunnableCallback kill_fn, int priority, boolean start) {
+    private void init(RunnableCallback afn, boolean daemon, RunnableCallback kill_fn, int priority, boolean start) {
         if (kill_fn == null) {
             kill_fn = new AsyncLoopDefaultKill();
         }

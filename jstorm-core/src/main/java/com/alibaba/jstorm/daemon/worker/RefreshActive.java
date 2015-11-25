@@ -34,8 +34,7 @@ import com.alibaba.jstorm.task.TaskShutdownDameon;
 import com.alibaba.jstorm.utils.JStormUtils;
 
 /**
- * Timely check whether topology is active or not and whether the metrics
- * monitor is enable or disable from ZK
+ * Timely check whether topology is active or not and whether the metrics monitor is enable or disable from ZK
  * 
  * @author yannian/Longda
  * 
@@ -63,9 +62,7 @@ public class RefreshActive extends RunnableCallback {
         this.conf = workerData.getStormConf();
         this.zkCluster = workerData.getZkCluster();
         this.topologyId = workerData.getTopologyId();
-        this.frequence =
-                JStormUtils.parseInt(conf.get(Config.TASK_REFRESH_POLL_SECS),
-                        10);
+        this.frequence = JStormUtils.parseInt(conf.get(Config.TASK_REFRESH_POLL_SECS), 10);
     }
 
     @Override
@@ -91,8 +88,7 @@ public class RefreshActive extends RunnableCallback {
                 return;
             }
 
-            LOG.info("Old TopologyStatus:" + oldTopologyStatus
-                    + ", new TopologyStatus:" + newTopologyStatus);
+            LOG.info("Old TopologyStatus:" + oldTopologyStatus + ", new TopologyStatus:" + newTopologyStatus);
 
             List<TaskShutdownDameon> tasks = workerData.getShutdownTasks();
             if (tasks == null) {
@@ -120,8 +116,7 @@ public class RefreshActive extends RunnableCallback {
             boolean newMonitorEnable = base.isEnableMonitor();
             boolean oldMonitorEnable = monitorEnable.get();
             if (newMonitorEnable != oldMonitorEnable) {
-                LOG.info("Change MonitorEnable from " + oldMonitorEnable
-                        + " to " + newMonitorEnable);
+                LOG.info("Change MonitorEnable from " + oldMonitorEnable + " to " + newMonitorEnable);
                 monitorEnable.set(newMonitorEnable);
             }
         } catch (Exception e) {

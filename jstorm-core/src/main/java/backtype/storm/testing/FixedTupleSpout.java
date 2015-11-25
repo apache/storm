@@ -35,17 +35,17 @@ public class FixedTupleSpout implements IRichSpout {
     private static final Map<String, Integer> failed = new HashMap<String, Integer>();
 
     public static int getNumAcked(String stormId) {
-        synchronized(acked) {
+        synchronized (acked) {
             return get(acked, stormId, 0);
         }
     }
 
     public static int getNumFailed(String stormId) {
-        synchronized(failed) {
+        synchronized (failed) {
             return get(failed, stormId, 0);
         }
     }
-    
+
     public static void clear(String stormId) {
         acked.remove(stormId);
         failed.remove(stormId);
@@ -67,16 +67,16 @@ public class FixedTupleSpout implements IRichSpout {
 
     public FixedTupleSpout(List tuples, String fieldName) {
         _id = UUID.randomUUID().toString();
-        synchronized(acked) {
+        synchronized (acked) {
             acked.put(_id, 0);
         }
-        synchronized(failed) {
+        synchronized (failed) {
             failed.put(_id, 0);
         }
         _tuples = new ArrayList<FixedTuple>();
-        for(Object o: tuples) {
+        for (Object o : tuples) {
             FixedTuple ft;
-            if(o instanceof FixedTuple) {
+            if (o instanceof FixedTuple) {
                 ft = (FixedTuple) o;
             } else {
                 ft = new FixedTuple((List) o);
@@ -89,25 +89,25 @@ public class FixedTupleSpout implements IRichSpout {
     public List<FixedTuple> getSourceTuples() {
         return _tuples;
     }
-    
+
     public int getCompleted() {
         int ackedAmt;
         int failedAmt;
-        
-        synchronized(acked) {
+
+        synchronized (acked) {
             ackedAmt = acked.get(_id);
         }
-        synchronized(failed) {
+        synchronized (failed) {
             failedAmt = failed.get(_id);
         }
         return ackedAmt + failedAmt;
     }
-    
+
     public void cleanup() {
-        synchronized(acked) {            
+        synchronized (acked) {
             acked.remove(_id);
-        } 
-        synchronized(failed) {            
+        }
+        synchronized (failed) {
             failed.remove(_id);
         }
     }
@@ -116,15 +116,15 @@ public class FixedTupleSpout implements IRichSpout {
         _context = context;
         List<Integer> tasks = context.getComponentTasks(context.getThisComponentId());
         int startIndex;
-        for(startIndex=0; startIndex<tasks.size(); startIndex++) {
-            if(tasks.get(startIndex)==context.getThisTaskId()) {
+        for (startIndex = 0; startIndex < tasks.size(); startIndex++) {
+            if (tasks.get(startIndex) == context.getThisTaskId()) {
                 break;
             }
         }
         _collector = collector;
         _pending = new HashMap<String, FixedTuple>();
         _serveTuples = new ArrayList<FixedTuple>();
-        for(int i=startIndex; i<_tuples.size(); i+=tasks.size()) {
+        for (int i = startIndex; i < _tuples.size(); i += tasks.size()) {
             _serveTuples.add(_tuples.get(i));
         }
     }
@@ -133,7 +133,7 @@ public class FixedTupleSpout implements IRichSpout {
     }
 
     public void nextTuple() {
-        if(_serveTuples.size()>0) {
+        if (_serveTuples.size() > 0) {
             FixedTuple ft = _serveTuples.remove(0);
             String id = UUID.randomUUID().toString();
             _pending.put(id, ft);
@@ -144,16 +144,16 @@ public class FixedTupleSpout implements IRichSpout {
     }
 
     public void ack(Object msgId) {
-        synchronized(acked) {
+        synchronized (acked) {
             int curr = get(acked, _id, 0);
-            acked.put(_id, curr+1);
+            acked.put(_id, curr + 1);
         }
     }
 
     public void fail(Object msgId) {
-        synchronized(failed) {
+        synchronized (failed) {
             int curr = get(failed, _id, 0);
-            failed.put(_id, curr+1);
+            failed.put(_id, curr + 1);
         }
     }
 
@@ -166,7 +166,7 @@ public class FixedTupleSpout implements IRichSpout {
     }
 
     @Override
-    public void declareOutputFields(OutputFieldsDeclarer declarer) { 
+    public void declareOutputFields(OutputFieldsDeclarer declarer) {
         if (_fieldName != null) {
             declarer.declare(new Fields(_fieldName));
         }

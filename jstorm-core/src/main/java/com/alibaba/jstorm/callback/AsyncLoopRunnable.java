@@ -33,8 +33,7 @@ import com.alibaba.jstorm.utils.JStormUtils;
  * 
  */
 public class AsyncLoopRunnable implements Runnable {
-    private static Logger LOG = LoggerFactory
-            .getLogger(AsyncLoopRunnable.class);
+    private static Logger LOG = LoggerFactory.getLogger(AsyncLoopRunnable.class);
 
     // set shutdown as false is to
     private static AtomicBoolean shutdown = new AtomicBoolean(false);

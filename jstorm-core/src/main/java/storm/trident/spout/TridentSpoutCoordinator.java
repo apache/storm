@@ -33,7 +33,6 @@ import storm.trident.topology.MasterBatchCoordinator;
 import storm.trident.topology.state.RotatingTransactionalState;
 import storm.trident.topology.state.TransactionalState;
 
-
 public class TridentSpoutCoordinator implements IBasicBolt {
     public static final Logger LOG = LoggerFactory.getLogger(TridentSpoutCoordinator.class);
     private static final String META_DIR = "meta";
@@ -44,12 +43,11 @@ public class TridentSpoutCoordinator implements IBasicBolt {
     TransactionalState _underlyingState;
     String _id;
 
-    
     public TridentSpoutCoordinator(String id, ITridentSpout spout) {
         _spout = spout;
         _id = id;
     }
-    
+
     @Override
     public void prepare(Map conf, TopologyContext context) {
         _coord = _spout.getCoordinator(_id, conf, context);
@@ -61,7 +59,7 @@ public class TridentSpoutCoordinator implements IBasicBolt {
     public void execute(Tuple tuple, BasicOutputCollector collector) {
         TransactionAttempt attempt = (TransactionAttempt) tuple.getValue(0);
 
-        if(tuple.getSourceStreamId().equals(MasterBatchCoordinator.SUCCESS_STREAM_ID)) {
+        if (tuple.getSourceStreamId().equals(MasterBatchCoordinator.SUCCESS_STREAM_ID)) {
             _state.cleanupBefore(attempt.getTransactionId());
             _coord.success(attempt.getTransactionId());
         } else {
@@ -71,7 +69,7 @@ public class TridentSpoutCoordinator implements IBasicBolt {
             _state.overrideState(txid, meta);
             collector.emit(MasterBatchCoordinator.BATCH_STREAM_ID, new Values(attempt, meta));
         }
-                
+
     }
 
     @Override
@@ -90,5 +88,5 @@ public class TridentSpoutCoordinator implements IBasicBolt {
         Config ret = new Config();
         ret.setMaxTaskParallelism(1);
         return ret;
-    }   
+    }
 }

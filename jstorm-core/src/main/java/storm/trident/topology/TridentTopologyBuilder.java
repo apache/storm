@@ -22,33 +22,15 @@ import backtype.storm.generated.Grouping;
 import backtype.storm.generated.StormTopology;
 import backtype.storm.grouping.CustomStreamGrouping;
 import backtype.storm.grouping.PartialKeyGrouping;
-import backtype.storm.topology.BaseConfigurationDeclarer;
-import backtype.storm.topology.BoltDeclarer;
-import backtype.storm.topology.IRichSpout;
-import backtype.storm.topology.InputDeclarer;
-import backtype.storm.topology.SpoutDeclarer;
-import backtype.storm.topology.TopologyBuilder;
+import backtype.storm.topology.*;
 import backtype.storm.tuple.Fields;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
-
-import storm.trident.spout.BatchSpoutExecutor;
-import storm.trident.spout.IBatchSpout;
-import storm.trident.spout.ICommitterTridentSpout;
-import storm.trident.spout.ITridentSpout;
-import storm.trident.spout.RichSpoutBatchTriggerer;
-import storm.trident.spout.TridentSpoutCoordinator;
-import storm.trident.spout.TridentSpoutExecutor;
+import storm.trident.spout.*;
 import storm.trident.topology.TridentBoltExecutor.CoordSpec;
 import storm.trident.topology.TridentBoltExecutor.CoordType;
+
+import java.util.*;
 
 // based on transactional topologies
 public class TridentTopologyBuilder {
@@ -168,7 +150,7 @@ public class TridentTopologyBuilder {
                     scd.addConfigurations(m);
                 }
                 
-                Map<String, TridentBoltExecutor.CoordSpec> specs = new HashMap();
+                Map<String, CoordSpec> specs = new HashMap();
                 specs.put(c.batchGroupId, new CoordSpec());
                 BoltDeclarer bd = builder.setBolt(id,
                         new TridentBoltExecutor(

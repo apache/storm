@@ -36,15 +36,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-
 public class ClojureBolt implements IRichBolt, FinishedCallback {
     Map<String, StreamInfo> _fields;
     List<String> _fnSpec;
     List<String> _confSpec;
     List<Object> _params;
-    
+
     IBolt _bolt;
-    
+
     public ClojureBolt(List fnSpec, List confSpec, List<Object> params, Map<String, StreamInfo> fields) {
         _fnSpec = fnSpec;
         _confSpec = confSpec;
@@ -57,21 +56,23 @@ public class ClojureBolt implements IRichBolt, FinishedCallback {
         IFn hof = Utils.loadClojureFn(_fnSpec.get(0), _fnSpec.get(1));
         try {
             IFn preparer = (IFn) hof.applyTo(RT.seq(_params));
-            final Map<Keyword,Object> collectorMap = new PersistentArrayMap( new Object[] {
-                Keyword.intern(Symbol.create("output-collector")), collector,
-                Keyword.intern(Symbol.create("context")), context});
-            List<Object> args = new ArrayList<Object>() {{
-                add(stormConf);
-                add(context);
-                add(collectorMap);
-            }};
-            
+            final Map<Keyword, Object> collectorMap =
+                    new PersistentArrayMap(new Object[] { Keyword.intern(Symbol.create("output-collector")), collector,
+                            Keyword.intern(Symbol.create("context")), context });
+            List<Object> args = new ArrayList<Object>() {
+                {
+                    add(stormConf);
+                    add(context);
+                    add(collectorMap);
+                }
+            };
+
             _bolt = (IBolt) preparer.applyTo(RT.seq(args));
-            //this is kind of unnecessary for clojure
+            // this is kind of unnecessary for clojure
             try {
                 _bolt.prepare(stormConf, context, collector);
-            } catch(AbstractMethodError ame) {
-                
+            } catch (AbstractMethodError ame) {
+
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -85,16 +86,16 @@ public class ClojureBolt implements IRichBolt, FinishedCallback {
 
     @Override
     public void cleanup() {
-            try {
-                _bolt.cleanup();
-            } catch(AbstractMethodError ame) {
-                
-            }
+        try {
+            _bolt.cleanup();
+        } catch (AbstractMethodError ame) {
+
+        }
     }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        for(String stream: _fields.keySet()) {
+        for (String stream : _fields.keySet()) {
             StreamInfo info = _fields.get(stream);
             declarer.declareStream(stream, info.is_direct(), new Fields(info.get_output_fields()));
         }
@@ -102,7 +103,7 @@ public class ClojureBolt implements IRichBolt, FinishedCallback {
 
     @Override
     public void finishedId(Object id) {
-        if(_bolt instanceof FinishedCallback) {
+        if (_bolt instanceof FinishedCallback) {
             ((FinishedCallback) _bolt).finishedId(id);
         }
     }

@@ -41,13 +41,13 @@ else
 fi
 echo "JSTORM_HOME =" $JSTORM_HOME
 
-if [ "x$JSTORM_CONF_DIR_PATH" != "x" ]
+if [ "x$JSTORM_CONF_DIR" != "x" ]
 then
-    echo "JSTORM_CONF_DIR_PATH has been set " 
+    echo "JSTORM_CONF_DIR has been set " 
 else
-    export JSTORM_CONF_DIR_PATH=$JSTORM_HOME/conf
+    export JSTORM_CONF_DIR=$JSTORM_HOME/conf
 fi
-echo "JSTORM_CONF_DIR_PATH =" $JSTORM_CONF_DIR_PATH
+echo "JSTORM_CONF_DIR =" $JSTORM_CONF_DIR
 
 
 
@@ -77,16 +77,18 @@ function startJStorm()
 
 
 HOSTNAME=`hostname -i`
-NIMBUS_HOST=`grep "nimbus.host:" $JSTORM_CONF_DIR_PATH/storm.yaml  | grep -w $HOSTNAME`
-SUPERVISOR_HOST_START=`grep "supervisor.host.start:" $JSTORM_CONF_DIR_PATH/storm.yaml  | grep -w "false"`
+NIMBUS_HOST=`grep "nimbus.host:" $JSTORM_CONF_DIR/storm.yaml |grep -v "#" | grep -w $HOSTNAME`
+NIMBUS_HOST_START_SUPERVISOR=`grep "nimbus.host.start.supervisor:" $JSTORM_CONF_DIR/storm.yaml |grep -v "#" | grep -wi "false"`
 
 if [ "X${NIMBUS_HOST}" != "X" ]
 then
 	startJStorm "nimbus" "NimbusServer"
 fi
 
-if [ "X${SUPERVISOR_HOST_START}" == "X" ]
+if [ "X${NIMBUS_HOST}" != "X" ] && [ "X${NIMBUS_HOST_START_SUPERVISOR}" != "X" ]
 then
+	echo "Skip start Supervisor on nimbus host"
+else
 	startJStorm "supervisor" "Supervisor"
 fi
 

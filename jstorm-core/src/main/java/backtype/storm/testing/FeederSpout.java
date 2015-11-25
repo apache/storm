@@ -29,7 +29,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
-
 public class FeederSpout extends BaseRichSpout {
     private int _id;
     private Fields _outFields;
@@ -44,15 +43,15 @@ public class FeederSpout extends BaseRichSpout {
     public void setAckFailDelegate(AckFailDelegate d) {
         _ackFailDelegate = d;
     }
-    
+
     public void feed(List<Object> tuple) {
         feed(tuple, UUID.randomUUID().toString());
     }
 
     public void feed(List<Object> tuple, Object msgId) {
         InprocMessaging.sendMessage(_id, new Values(tuple, msgId));
-    }    
-    
+    }
+
     public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
         _collector = collector;
     }
@@ -63,10 +62,10 @@ public class FeederSpout extends BaseRichSpout {
 
     public void nextTuple() {
         List<Object> toEmit = (List<Object>) InprocMessaging.pollMessage(_id);
-        if(toEmit!=null) {
+        if (toEmit != null) {
             List<Object> tuple = (List<Object>) toEmit.get(0);
             Object msgId = toEmit.get(1);
-            
+
             _collector.emit(tuple, msgId);
         } else {
             try {
@@ -78,13 +77,13 @@ public class FeederSpout extends BaseRichSpout {
     }
 
     public void ack(Object msgId) {
-        if(_ackFailDelegate!=null) {
+        if (_ackFailDelegate != null) {
             _ackFailDelegate.ack(msgId);
         }
     }
 
     public void fail(Object msgId) {
-        if(_ackFailDelegate!=null) {
+        if (_ackFailDelegate != null) {
             _ackFailDelegate.fail(msgId);
         }
     }
@@ -96,5 +95,5 @@ public class FeederSpout extends BaseRichSpout {
     @Override
     public Map<String, Object> getComponentConfiguration() {
         return new HashMap<String, Object>();
-    }    
+    }
 }

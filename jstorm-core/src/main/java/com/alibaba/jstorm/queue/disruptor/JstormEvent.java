@@ -31,11 +31,10 @@ public class JstormEvent {
         this.msgId = msgId;
     }
 
-    public final static EventFactory<JstormEvent> EVENT_FACTORY =
-            new EventFactory<JstormEvent>() {
-                public JstormEvent newInstance() {
-                    return new JstormEvent();
-                }
-            };
+    public final static EventFactory<JstormEvent> EVENT_FACTORY = new EventFactory<JstormEvent>() {
+        public JstormEvent newInstance() {
+            return new JstormEvent();
+        }
+    };
 
 }

@@ -21,15 +21,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * ShellMsg is an object that represents the data sent to a shell component from
- * a process that implements a multi-language protocol. It is the union of all
+ * ShellMsg is an object that represents the data sent to a shell component from a process that implements a multi-language protocol. It is the union of all
  * data types that a component can send to Storm.
- *
+ * 
  * <p>
- * ShellMsgs are objects received from the ISerializer interface, after the
- * serializer has deserialized the data from the underlying wire protocol. The
- * ShellMsg class allows for a decoupling between the serialized representation
- * of the data and the data itself.
+ * ShellMsgs are objects received from the ISerializer interface, after the serializer has deserialized the data from the underlying wire protocol. The ShellMsg
+ * class allows for a decoupling between the serialized representation of the data and the data itself.
  * </p>
  */
 public class ShellMsg {
@@ -42,22 +39,28 @@ public class ShellMsg {
     private List<Object> tuple;
     private boolean needTaskIds;
 
-    //metrics rpc 
+    // metrics rpc
     private String metricName;
     private Object metricParams;
 
-    //logLevel
+    // logLevel
     public enum ShellLogLevel {
         TRACE, DEBUG, INFO, WARN, ERROR;
 
         public static ShellLogLevel fromInt(int i) {
             switch (i) {
-                case 0: return TRACE;
-                case 1: return DEBUG;
-                case 2: return INFO;
-                case 3: return WARN;
-                case 4: return ERROR;
-                default: return INFO;
+            case 0:
+                return TRACE;
+            case 1:
+                return DEBUG;
+            case 2:
+                return INFO;
+            case 3:
+                return WARN;
+            case 4:
+                return ERROR;
+            default:
+                return INFO;
             }
         }
     }
@@ -168,18 +171,8 @@ public class ShellMsg {
 
     @Override
     public String toString() {
-        return "ShellMsg{" +
-                "command='" + command + '\'' +
-                ", id=" + id +
-                ", anchors=" + anchors +
-                ", stream='" + stream + '\'' +
-                ", task=" + task +
-                ", msg='" + msg + '\'' +
-                ", tuple=" + tuple +
-                ", needTaskIds=" + needTaskIds +
-                ", metricName='" + metricName + '\'' +
-                ", metricParams=" + metricParams +
-                ", logLevel=" + logLevel +
-                '}';
+        return "ShellMsg{" + "command='" + command + '\'' + ", id=" + id + ", anchors=" + anchors + ", stream='" + stream + '\'' + ", task=" + task + ", msg='"
+                + msg + '\'' + ", tuple=" + tuple + ", needTaskIds=" + needTaskIds + ", metricName='" + metricName + '\'' + ", metricParams=" + metricParams
+                + ", logLevel=" + logLevel + '}';
     }
 }

@@ -17,7 +17,6 @@
  */
 package backtype.storm.utils;
 
-
 import clojure.lang.ILookup;
 import clojure.lang.ISeq;
 import clojure.lang.AFn;
@@ -65,16 +64,17 @@ public class IndifferentAccessMap extends AFn implements ILookup, IPersistentMap
 
     @Override
     public Object valAt(Object o) {
-        if(o instanceof Keyword) {
+        if (o instanceof Keyword) {
             return valAt(((Keyword) o).getName());
         }
         return getMap().valAt(o);
     }
-    
+
     @Override
     public Object valAt(Object o, Object def) {
         Object ret = valAt(o);
-        if(ret==null) ret = def;
+        if (ret == null)
+            ret = def;
         return ret;
     }
 
@@ -92,30 +92,35 @@ public class IndifferentAccessMap extends AFn implements ILookup, IPersistentMap
     /* IPersistentMap */
     /* Naive implementation, but it might be good enough */
     public IPersistentMap assoc(Object k, Object v) {
-        if(k instanceof Keyword) return assoc(((Keyword) k).getName(), v);
-        
+        if (k instanceof Keyword)
+            return assoc(((Keyword) k).getName(), v);
+
         return new IndifferentAccessMap(getMap().assoc(k, v));
     }
 
     public IPersistentMap assocEx(Object k, Object v) {
-        if(k instanceof Keyword) return assocEx(((Keyword) k).getName(), v);
+        if (k instanceof Keyword)
+            return assocEx(((Keyword) k).getName(), v);
 
         return new IndifferentAccessMap(getMap().assocEx(k, v));
     }
 
     public IPersistentMap without(Object k) {
-        if(k instanceof Keyword) return without(((Keyword) k).getName());
+        if (k instanceof Keyword)
+            return without(((Keyword) k).getName());
 
         return new IndifferentAccessMap(getMap().without(k));
     }
 
     public boolean containsKey(Object k) {
-        if(k instanceof Keyword) return containsKey(((Keyword) k).getName());
+        if (k instanceof Keyword)
+            return containsKey(((Keyword) k).getName());
         return getMap().containsKey(k);
     }
 
     public IMapEntry entryAt(Object k) {
-        if(k instanceof Keyword) return entryAt(((Keyword) k).getName());
+        if (k instanceof Keyword)
+            return entryAt(((Keyword) k).getName());
 
         return getMap().entryAt(k);
     }
@@ -160,17 +165,20 @@ public class IndifferentAccessMap extends AFn implements ILookup, IPersistentMap
     public Collection values() {
         return ((Map) getMap()).values();
     }
-    
+
     /* Not implemented */
     public void clear() {
         throw new UnsupportedOperationException();
     }
+
     public Object put(Object k, Object v) {
         throw new UnsupportedOperationException();
     }
+
     public void putAll(Map m) {
         throw new UnsupportedOperationException();
     }
+
     public Object remove(Object k) {
         throw new UnsupportedOperationException();
     }

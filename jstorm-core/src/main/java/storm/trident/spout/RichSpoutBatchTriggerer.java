@@ -38,7 +38,6 @@ import storm.trident.topology.TridentBoltExecutor;
 import storm.trident.tuple.ConsList;
 import storm.trident.util.TridentUtils;
 
-
 public class RichSpoutBatchTriggerer implements IRichSpout {
 
     String _stream;
@@ -46,20 +45,18 @@ public class RichSpoutBatchTriggerer implements IRichSpout {
     List<Integer> _outputTasks;
     Random _rand;
     String _coordStream;
-    
+
     public RichSpoutBatchTriggerer(IRichSpout delegate, String streamName, String batchGroup) {
         _delegate = delegate;
         _stream = streamName;
         _coordStream = TridentBoltExecutor.COORD_STREAM(batchGroup);
     }
-    
+
     @Override
     public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
         _delegate.open(conf, context, new SpoutOutputCollector(new StreamOverrideCollector(collector)));
         _outputTasks = new ArrayList<Integer>();
-        for(String component: Utils.get(context.getThisTargets(),
-                                        _coordStream,
-                                        new HashMap<String, Grouping>()).keySet()) {
+        for (String component : Utils.get(context.getThisTargets(), _coordStream, new HashMap<String, Grouping>()).keySet()) {
             _outputTasks.addAll(context.getComponentTasks(component));
         }
         _rand = new Random(Utils.secureRandomLong());
@@ -89,9 +86,9 @@ public class RichSpoutBatchTriggerer implements IRichSpout {
     public void ack(Object msgId) {
         Long batchId = _msgIdToBatchId.remove((Long) msgId);
         FinishCondition cond = _finishConditions.get(batchId);
-        if(cond!=null) {
+        if (cond != null) {
             cond.vals.remove((Long) msgId);
-            if(cond.vals.isEmpty()) {
+            if (cond.vals.isEmpty()) {
                 _finishConditions.remove(batchId);
                 _delegate.ack(cond.msgId);
             }
@@ -102,8 +99,8 @@ public class RichSpoutBatchTriggerer implements IRichSpout {
     public void fail(Object msgId) {
         Long batchId = _msgIdToBatchId.remove((Long) msgId);
         FinishCondition cond = _finishConditions.remove(batchId);
-        if(cond!=null) {
-            _delegate.fail(cond.msgId);            
+        if (cond != null) {
+            _delegate.fail(cond.msgId);
         }
     }
 
@@ -119,25 +116,27 @@ public class RichSpoutBatchTriggerer implements IRichSpout {
     @Override
     public Map<String, Object> getComponentConfiguration() {
         Map<String, Object> conf = _delegate.getComponentConfiguration();
-        if(conf==null) conf = new HashMap();
-        else conf = new HashMap(conf);
+        if (conf == null)
+            conf = new HashMap();
+        else
+            conf = new HashMap(conf);
         Config.registerSerialization(conf, RichSpoutBatchId.class, RichSpoutBatchIdSerializer.class);
         return conf;
     }
-    
+
     static class FinishCondition {
         Set<Long> vals = new HashSet<Long>();
         Object msgId;
     }
-    
+
     Map<Long, Long> _msgIdToBatchId = new HashMap();
-    
+
     Map<Long, FinishCondition> _finishConditions = new HashMap();
-    
+
     class StreamOverrideCollector implements ISpoutOutputCollector {
-        
+
         SpoutOutputCollector _collector;
-        
+
         public StreamOverrideCollector(SpoutOutputCollector collector) {
             _collector = collector;
         }
@@ -150,9 +149,9 @@ public class RichSpoutBatchTriggerer implements IRichSpout {
             finish.msgId = msgId;
             List<Integer> tasks = _collector.emit(_stream, new ConsList(batchId, values));
             Set<Integer> outTasksSet = new HashSet<Integer>(tasks);
-            for(Integer t: _outputTasks) {
+            for (Integer t : _outputTasks) {
                 int count = 0;
-                if(outTasksSet.contains(t)) {
+                if (outTasksSet.contains(t)) {
                     count = 1;
                 }
                 long r = _rand.nextLong();
@@ -173,6 +172,6 @@ public class RichSpoutBatchTriggerer implements IRichSpout {
         public void reportError(Throwable t) {
             _collector.reportError(t);
         }
-        
+
     }
 }

@@ -63,7 +63,7 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer {
 
     private static KerberosTicket getTGT(Subject subject) {
         Set<KerberosTicket> tickets = subject.getPrivateCredentials(KerberosTicket.class);
-        for(KerberosTicket ticket: tickets) {
+        for (KerberosTicket ticket : tickets) {
             KerberosPrincipal server = ticket.getServer();
             if (server.getName().equals("krbtgt/" + server.getRealm() + "@" + server.getRealm())) {
                 tickets = null;
@@ -72,26 +72,26 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer {
         }
         tickets = null;
         return null;
-    } 
+    }
 
     @Override
     public void populateCredentials(Map<String, String> credentials) {
-        //Log the user in and get the TGT
+        // Log the user in and get the TGT
         try {
             Configuration login_conf = AuthUtils.GetConfiguration(conf);
             ClientCallbackHandler client_callback_handler = new ClientCallbackHandler(login_conf);
-        
-            //login our user
-            Configuration.setConfiguration(login_conf); 
+
+            // login our user
+            Configuration.setConfiguration(login_conf);
             LoginContext lc = new LoginContext(AuthUtils.LOGIN_CONTEXT_CLIENT, client_callback_handler);
             try {
                 lc.login();
                 final Subject subject = lc.getSubject();
                 KerberosTicket tgt = getTGT(subject);
 
-                if (tgt == null) { //error
-                    throw new RuntimeException("Fail to verify user principal with section \""
-                            +AuthUtils.LOGIN_CONTEXT_CLIENT+"\" in login configuration file "+ login_conf);
+                if (tgt == null) { // error
+                    throw new RuntimeException("Fail to verify user principal with section \"" + AuthUtils.LOGIN_CONTEXT_CLIENT
+                            + "\" in login configuration file " + login_conf);
                 }
 
                 if (!tgt.isForwardable()) {
@@ -102,7 +102,7 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer {
                     throw new RuntimeException("The TGT found is not renewable");
                 }
 
-                LOG.info("Pushing TGT for "+tgt.getClient()+" to topology.");
+                LOG.info("Pushing TGT for " + tgt.getClient() + " to topology.");
                 saveTGT(tgt, credentials);
             } finally {
                 lc.logout();
@@ -131,7 +131,7 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer {
             try {
                 ByteArrayInputStream bin = new ByteArrayInputStream(DatatypeConverter.parseBase64Binary(credentials.get("TGT")));
                 ObjectInputStream in = new ObjectInputStream(bin);
-                ret = (KerberosTicket)in.readObject();
+                ret = (KerberosTicket) in.readObject();
                 in.close();
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -155,16 +155,16 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer {
         KerberosTicket tgt = getTGT(credentials);
         if (tgt != null) {
             Set<Object> creds = subject.getPrivateCredentials();
-            synchronized(creds) {
+            synchronized (creds) {
                 Iterator<Object> iterator = creds.iterator();
                 while (iterator.hasNext()) {
                     Object o = iterator.next();
                     if (o instanceof KerberosTicket) {
-                        KerberosTicket t = (KerberosTicket)o;
+                        KerberosTicket t = (KerberosTicket) o;
                         iterator.remove();
                         try {
                             t.destroy();
-                        } catch (DestroyFailedException  e) {
+                        } catch (DestroyFailedException e) {
                             LOG.warn("Failed to destory ticket ", e);
                         }
                     }
@@ -179,8 +179,8 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer {
     }
 
     /**
-     * Hadoop does not just go off of a TGT, it needs a bit more.  This
-     * should fill in the rest.
+     * Hadoop does not just go off of a TGT, it needs a bit more. This should fill in the rest.
+     * 
      * @param subject the subject that should have a TGT in it.
      */
     private void loginHadoopUser(Subject subject) {
@@ -193,23 +193,21 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer {
         }
         try {
             Method isSecEnabled = ugi.getMethod("isSecurityEnabled");
-            if (!((Boolean)isSecEnabled.invoke(null))) {
-                LOG.warn("Hadoop is on the classpath but not configured for " +
-                  "security, if you want security you need to be sure that " +
-                  "hadoop.security.authentication=kerberos in core-site.xml " +
-                  "in your jar");
+            if (!((Boolean) isSecEnabled.invoke(null))) {
+                LOG.warn("Hadoop is on the classpath but not configured for " + "security, if you want security you need to be sure that "
+                        + "hadoop.security.authentication=kerberos in core-site.xml " + "in your jar");
                 return;
             }
- 
+
             try {
                 Method login = ugi.getMethod("loginUserFromSubject", Subject.class);
                 login.invoke(null, subject);
             } catch (NoSuchMethodException me) {
-                //The version of Hadoop does not have the needed client changes.
+                // The version of Hadoop does not have the needed client changes.
                 // So don't look now, but do something really ugly to work around it.
                 // This is because we are reaching into the hidden bits of Hadoop security, and it works for now, but may stop at any point in time.
 
-                //We are just trying to do the following
+                // We are just trying to do the following
                 // Configuration conf = new Configuration();
                 // HadoopKerberosName.setConfiguration(conf);
                 // subject.getPrincipals().add(new User(tgt.getClient().toString(), AuthenticationMethod.KERBEROS, null));
@@ -220,7 +218,7 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer {
                 Constructor confCons = confClass.getConstructor();
                 Object conf = confCons.newInstance();
                 Class<?> hknClass = Class.forName("org.apache.hadoop.security.HadoopKerberosName");
-                Method hknSetConf = hknClass.getMethod("setConfiguration",confClass);
+                Method hknSetConf = hknClass.getMethod("setConfiguration", confClass);
                 hknSetConf.invoke(null, conf);
 
                 Class<?> authMethodClass = Class.forName("org.apache.hadoop.security.UserGroupInformation$AuthenticationMethod");
@@ -236,7 +234,7 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer {
                 Constructor userCons = userClass.getConstructor(String.class, authMethodClass, LoginContext.class);
                 userCons.setAccessible(true);
                 Object user = userCons.newInstance(name, kerbAuthMethod, null);
-                subject.getPrincipals().add((Principal)user);
+                subject.getPrincipals().add((Principal) user);
             }
         } catch (Exception e) {
             LOG.warn("Something went wrong while trying to initialize Hadoop through reflection. This version of hadoop may not be compatible.", e);
@@ -250,14 +248,14 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer {
     }
 
     @Override
-    public void renew(Map<String,String> credentials, Map topologyConf) {
+    public void renew(Map<String, String> credentials, Map topologyConf) {
         KerberosTicket tgt = getTGT(credentials);
         if (tgt != null) {
             long refreshTime = getRefreshTime(tgt);
             long now = System.currentTimeMillis();
             if (now >= refreshTime) {
                 try {
-                    LOG.info("Renewing TGT for "+tgt.getClient());
+                    LOG.info("Renewing TGT for " + tgt.getClient());
                     tgt.refresh();
                     saveTGT(tgt, credentials);
                 } catch (RefreshFailedException e) {
@@ -272,10 +270,10 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer {
         Map conf = new java.util.HashMap();
         conf.put("java.security.auth.login.config", args[0]);
         at.prepare(conf);
-        Map<String,String> creds = new java.util.HashMap<String,String>();
+        Map<String, String> creds = new java.util.HashMap<String, String>();
         at.populateCredentials(creds);
         Subject s = new Subject();
         at.populateSubject(s, creds);
-        LOG.info("Got a Subject "+s);
+        LOG.info("Got a Subject " + s);
     }
 }

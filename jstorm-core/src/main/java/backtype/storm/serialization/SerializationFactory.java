@@ -21,7 +21,6 @@ import backtype.storm.Config;
 import backtype.storm.generated.ComponentCommon;
 import backtype.storm.generated.StormTopology;
 import backtype.storm.serialization.types.ArrayListSerializer;
-import backtype.storm.serialization.types.ListDelegateSerializer;
 import backtype.storm.serialization.types.HashMapSerializer;
 import backtype.storm.serialization.types.HashSetSerializer;
 import backtype.storm.transactional.TransactionAttempt;
@@ -33,27 +32,22 @@ import carbonite.JavaBridge;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.serializers.DefaultSerializers.BigIntegerSerializer;
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigInteger;
+import java.util.*;
+
 public class SerializationFactory {
     public static final Logger LOG = LoggerFactory.getLogger(SerializationFactory.class);
-    
+
     public static Kryo getKryo(Map conf) {
         IKryoFactory kryoFactory = (IKryoFactory) Utils.newInstance((String) conf.get(Config.TOPOLOGY_KRYO_FACTORY));
         Kryo k = kryoFactory.getKryo(conf);
         if (WorkerClassLoader.getInstance() != null)
             k.setClassLoader(WorkerClassLoader.getInstance());
         k.register(byte[].class);
-        
+
         /* tuple payload serializer is specified via configuration */
         String payloadSerializerName = (String) conf.get(Config.TOPOLOGY_TUPLE_SERIALIZER);
         try {
@@ -63,7 +57,7 @@ public class SerializationFactory {
         } catch (ClassNotFoundException ex) {
             throw new RuntimeException(ex);
         }
-        
+
         k.register(ArrayList.class, new ArrayListSerializer());
         k.register(HashMap.class, new HashMapSerializer());
         k.register(HashSet.class, new HashSetSerializer());
@@ -78,17 +72,17 @@ public class SerializationFactory {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        
+
         Map<String, String> registrations = normalizeKryoRegister(conf);
-        
+
         kryoFactory.preRegister(k, conf);
-        
+
         boolean skipMissing = (Boolean) conf.get(Config.TOPOLOGY_SKIP_MISSING_KRYO_REGISTRATIONS);
         for (String klassName : registrations.keySet()) {
             String serializerClassName = registrations.get(klassName);
             try {
                 Class klass = Class.forName(klassName, true, k.getClassLoader());
-                
+
                 Class serializerClass = null;
                 if (serializerClassName != null)
                     serializerClass = Class.forName(serializerClassName, true, k.getClassLoader());
@@ -105,9 +99,9 @@ public class SerializationFactory {
                 }
             }
         }
-        
+
         kryoFactory.postRegister(k, conf);
-        
+
         if (conf.get(Config.TOPOLOGY_KRYO_DECORATORS) != null) {
             for (String klassName : (List<String>) conf.get(Config.TOPOLOGY_KRYO_DECORATORS)) {
                 try {
@@ -127,21 +121,21 @@ public class SerializationFactory {
                 }
             }
         }
-        
+
         kryoFactory.postDecorate(k, conf);
-        
+
         return k;
     }
-    
+
     public static class IdDictionary {
         Map<String, Map<String, Integer>> streamNametoId = new HashMap<String, Map<String, Integer>>();
         Map<String, Map<Integer, String>> streamIdToName = new HashMap<String, Map<Integer, String>>();
-        
+
         public IdDictionary(StormTopology topology) {
             List<String> componentNames = new ArrayList<String>(topology.get_spouts().keySet());
             componentNames.addAll(topology.get_bolts().keySet());
             componentNames.addAll(topology.get_state_spouts().keySet());
-            
+
             for (String name : componentNames) {
                 ComponentCommon common = Utils.getComponentCommon(topology, name);
                 List<String> streams = new ArrayList<String>(common.get_streams().keySet());
@@ -149,15 +143,15 @@ public class SerializationFactory {
                 streamIdToName.put(name, Utils.reverseMap(streamNametoId.get(name)));
             }
         }
-        
+
         public int getStreamId(String component, String stream) {
             return streamNametoId.get(component).get(stream);
         }
-        
+
         public String getStreamName(String component, int stream) {
             return streamIdToName.get(component).get(stream);
         }
-        
+
         private static Map<String, Integer> idify(List<String> names) {
             Collections.sort(names);
             Map<String, Integer> ret = new HashMap<String, Integer>();
@@ -169,7 +163,7 @@ public class SerializationFactory {
             return ret;
         }
     }
-    
+
     private static Serializer resolveSerializerInstance(Kryo k, Class superClass, Class<? extends Serializer> serializerClass, Map conf) {
         try {
             try {
@@ -201,7 +195,7 @@ public class SerializationFactory {
             throw new IllegalArgumentException("Unable to create serializer \"" + serializerClass.getName() + "\" for class: " + superClass.getName(), ex);
         }
     }
-    
+
     private static Map<String, String> normalizeKryoRegister(Map conf) {
         // TODO: de-duplicate this logic with the code in nimbus
         Object res = conf.get(Config.TOPOLOGY_KRYO_REGISTER);
@@ -219,7 +213,7 @@ public class SerializationFactory {
                 }
             }
         }
-        
+
         // ensure always same order for registrations with TreeMap
         return new TreeMap<String, String>(ret);
     }

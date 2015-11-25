@@ -38,8 +38,7 @@ public class LocalAssignment implements Serializable {
     private String jvm;
     private long timeStamp;
 
-    public LocalAssignment(String topologyId, Set<Integer> taskIds,
-            String topologyName, long mem, int cpu, String jvm, long timeStamp) {
+    public LocalAssignment(String topologyId, Set<Integer> taskIds, String topologyName, long mem, int cpu, String jvm, long timeStamp) {
         this.topologyId = topologyId;
         this.taskIds = new HashSet<Integer>(taskIds);
         this.topologyName = topologyName;
@@ -105,13 +104,8 @@ public class LocalAssignment implements Serializable {
         result = prime * result + ((jvm == null) ? 0 : jvm.hashCode());
         result = prime * result + (int) (mem ^ (mem >>> 32));
         result = prime * result + ((taskIds == null) ? 0 : taskIds.hashCode());
-        result =
-                prime * result
-                        + ((topologyId == null) ? 0 : topologyId.hashCode());
-        result =
-                prime
-                        * result
-                        + ((topologyName == null) ? 0 : topologyName.hashCode());
+        result = prime * result + ((topologyId == null) ? 0 : topologyId.hashCode());
+        result = prime * result + ((topologyName == null) ? 0 : topologyName.hashCode());
         result = prime * result + (int) (timeStamp & 0xffffffff);
         return result;
     }
@@ -156,7 +150,6 @@ public class LocalAssignment implements Serializable {
 
     @Override
     public String toString() {
-        return ToStringBuilder.reflectionToString(this,
-                ToStringStyle.SHORT_PREFIX_STYLE);
+        return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
 }

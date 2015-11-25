@@ -36,33 +36,33 @@ import com.lmax.disruptor.dsl.ProducerType;
  */
 public class DisruptorWrapBlockingQueue extends DisruptorQueue {
     private static final Logger LOG = LoggerFactory.getLogger(DisruptorWrapBlockingQueue.class);
-    
+
     private static final long QUEUE_CAPACITY = 512;
     private LinkedBlockingDeque<Object> queue;
-    
+
     private String queueName;
-    
+
     public DisruptorWrapBlockingQueue(String queueName, ProducerType producerType, int bufferSize, WaitStrategy wait) {
         this.queueName = queueName;
         queue = new LinkedBlockingDeque<Object>();
     }
-    
+
     public String getName() {
         return queueName;
     }
-    
+
     // poll method
     public void consumeBatch(EventHandler<Object> handler) {
         consumeBatchToCursor(0, handler);
     }
-    
+
     public void haltWithInterrupt() {
     }
-    
+
     public Object poll() {
         return queue.poll();
     }
-    
+
     public Object take() {
         try {
             return queue.take();
@@ -70,7 +70,7 @@ public class DisruptorWrapBlockingQueue extends DisruptorQueue {
             return null;
         }
     }
-    
+
     public void drainQueue(Object object, EventHandler<Object> handler) {
         while (object != null) {
             try {
@@ -84,7 +84,7 @@ public class DisruptorWrapBlockingQueue extends DisruptorQueue {
             }
         }
     }
-    
+
     public void consumeBatchWhenAvailable(EventHandler<Object> handler) {
         Object object = queue.poll();
         if (object == null) {
@@ -96,16 +96,16 @@ public class DisruptorWrapBlockingQueue extends DisruptorQueue {
                 throw new RuntimeException(e);
             }
         }
-        
+
         drainQueue(object, handler);
-        
+
     }
-    
+
     public void consumeBatchToCursor(long cursor, EventHandler<Object> handler) {
         Object object = queue.poll();
         drainQueue(object, handler);
     }
-    
+
     /*
      * Caches until consumerStarted is called, upon which the cache is flushed to the consumer
      */
@@ -118,17 +118,17 @@ public class DisruptorWrapBlockingQueue extends DisruptorQueue {
             }
             isSuccess = queue.offer(obj);
         }
-        
+
     }
-    
+
     public void tryPublish(Object obj) throws InsufficientCapacityException {
         boolean isSuccess = queue.offer(obj);
         if (isSuccess == false) {
             throw InsufficientCapacityException.INSTANCE;
         }
-        
+
     }
-    
+
     public void publish(Object obj, boolean block) throws InsufficientCapacityException {
         if (block == true) {
             publish(obj);
@@ -136,21 +136,21 @@ public class DisruptorWrapBlockingQueue extends DisruptorQueue {
             tryPublish(obj);
         }
     }
-    
+
     public void consumerStarted() {
     }
-    
+
     private void flushCache() {
     }
-    
+
     public void clear() {
         queue.clear();
     }
-    
+
     public long population() {
         return queue.size();
     }
-    
+
     public long capacity() {
         long used = queue.size();
         if (used < QUEUE_CAPACITY) {
@@ -159,15 +159,15 @@ public class DisruptorWrapBlockingQueue extends DisruptorQueue {
             return used;
         }
     }
-    
+
     public long writePos() {
         return 0;
     }
-    
+
     public long readPos() {
         return queue.size();
     }
-    
+
     public float pctFull() {
         long used = queue.size();
         if (used < QUEUE_CAPACITY) {
@@ -176,7 +176,7 @@ public class DisruptorWrapBlockingQueue extends DisruptorQueue {
             return 1.0f;
         }
     }
-    
+
     @Override
     public Object getState() {
         Map state = new HashMap<String, Object>();
@@ -189,12 +189,12 @@ public class DisruptorWrapBlockingQueue extends DisruptorQueue {
         state.put("read_pos", rp);
         return state;
     }
-    
+
     public static class ObjectEventFactory implements EventFactory<MutableObject> {
         @Override
         public MutableObject newInstance() {
             return new MutableObject();
         }
     }
-    
+
 }

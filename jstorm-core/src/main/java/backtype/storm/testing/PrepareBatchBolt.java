@@ -26,10 +26,9 @@ import backtype.storm.utils.Utils;
 import java.util.ArrayList;
 import java.util.List;
 
-
 public class PrepareBatchBolt extends BaseBasicBolt {
     Fields _outFields;
-    
+
     public PrepareBatchBolt(Fields outFields) {
         _outFields = outFields;
     }
@@ -47,6 +46,5 @@ public class PrepareBatchBolt extends BaseBasicBolt {
         toEmit.addAll(input.getValues());
         collector.emit(toEmit);
     }
-    
-    
+
 }

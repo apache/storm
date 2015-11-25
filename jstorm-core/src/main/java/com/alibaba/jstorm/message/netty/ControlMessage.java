@@ -24,11 +24,10 @@ import org.jboss.netty.buffer.ChannelBuffers;
 public enum ControlMessage {
     EOB_MESSAGE((short) -201), OK_RESPONSE((short) -200);
 
-
     private short code;
     private long timeStamp;
     protected static int port;
-    
+
     static public void setPort(int port) {
         ControlMessage.port = port;
     }
@@ -62,9 +61,7 @@ public enum ControlMessage {
      * @throws Exception
      */
     ChannelBuffer buffer() throws Exception {
-        ChannelBufferOutputStream bout =
-                new ChannelBufferOutputStream(
-                        ChannelBuffers.directBuffer(encodeLength()));
+        ChannelBufferOutputStream bout = new ChannelBufferOutputStream(ChannelBuffers.directBuffer(encodeLength()));
         write(bout);
         bout.close();
         return bout.buffer();

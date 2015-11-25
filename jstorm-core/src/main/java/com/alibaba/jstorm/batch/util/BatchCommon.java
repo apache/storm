@@ -31,8 +31,7 @@ import com.alibaba.jstorm.cluster.DistributedClusterState;
 import com.alibaba.jstorm.utils.JStormUtils;
 
 public class BatchCommon {
-    private static final Logger LOG = LoggerFactory
-            .getLogger(BatchCommon.class);
+    private static final Logger LOG = LoggerFactory.getLogger(BatchCommon.class);
 
     private static ClusterState zkClient = null;
 
@@ -44,26 +43,18 @@ public class BatchCommon {
 
             List<String> zkServers = null;
             if (conf.get(Config.TRANSACTIONAL_ZOOKEEPER_SERVERS) != null) {
-                zkServers =
-                        (List<String>) conf
-                                .get(Config.TRANSACTIONAL_ZOOKEEPER_SERVERS);
+                zkServers = (List<String>) conf.get(Config.TRANSACTIONAL_ZOOKEEPER_SERVERS);
             } else if (conf.get(Config.STORM_ZOOKEEPER_SERVERS) != null) {
-                zkServers =
-                        (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS);
+                zkServers = (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS);
             } else {
                 throw new RuntimeException("No setting zk");
             }
 
             int port = 2181;
             if (conf.get(Config.TRANSACTIONAL_ZOOKEEPER_PORT) != null) {
-                port =
-                        JStormUtils.parseInt(
-                                conf.get(Config.TRANSACTIONAL_ZOOKEEPER_PORT),
-                                2181);
+                port = JStormUtils.parseInt(conf.get(Config.TRANSACTIONAL_ZOOKEEPER_PORT), 2181);
             } else if (conf.get(Config.STORM_ZOOKEEPER_PORT) != null) {
-                port =
-                        JStormUtils.parseInt(
-                                conf.get(Config.STORM_ZOOKEEPER_PORT), 2181);
+                port = JStormUtils.parseInt(conf.get(Config.STORM_ZOOKEEPER_PORT), 2181);
             }
 
             String root = BatchDef.BATCH_ZK_ROOT;
@@ -71,9 +62,7 @@ public class BatchCommon {
                 root = (String) conf.get(Config.TRANSACTIONAL_ZOOKEEPER_ROOT);
             }
 
-            root =
-                    root + BatchDef.ZK_SEPERATOR
-                            + conf.get(Config.TOPOLOGY_NAME);
+            root = root + BatchDef.ZK_SEPERATOR + conf.get(Config.TOPOLOGY_NAME);
 
             Map<Object, Object> tmpConf = new HashMap<Object, Object>();
             tmpConf.putAll(conf);

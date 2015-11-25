@@ -35,15 +35,13 @@ public class TBackoffConnect {
     public TBackoffConnect(int retryTimes, int retryInterval, int retryIntervalCeiling) {
 
         _retryTimes = retryTimes;
-        waitGrabber = new StormBoundedExponentialBackoffRetry(retryInterval,
-                                                              retryIntervalCeiling,
-                                                              retryTimes);
+        waitGrabber = new StormBoundedExponentialBackoffRetry(retryInterval, retryIntervalCeiling, retryTimes);
     }
 
     public TTransport doConnectWithRetry(ITransportPlugin transportPlugin, TTransport underlyingTransport, String host, String asUser) throws IOException {
         boolean connected = false;
         TTransport transportResult = null;
-        while(!connected) {
+        while (!connected) {
             try {
                 transportResult = transportPlugin.connect(underlyingTransport, host, asUser);
                 connected = true;
@@ -55,13 +53,13 @@ public class TBackoffConnect {
     }
 
     private void retryNext(TTransportException ex) {
-        if(!canRetry()) {
+        if (!canRetry()) {
             throw new RuntimeException(ex);
         }
         try {
             int sleeptime = waitGrabber.getSleepTimeMs(_completedRetries, 0);
 
-            LOG.debug("Failed to connect. Retrying... (" + Integer.toString( _completedRetries) + ") in " + Integer.toString(sleeptime) + "ms");
+            LOG.debug("Failed to connect. Retrying... (" + Integer.toString(_completedRetries) + ") in " + Integer.toString(sleeptime) + "ms");
 
             Thread.sleep(sleeptime);
         } catch (InterruptedException e) {

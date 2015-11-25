@@ -29,13 +29,11 @@ import backtype.storm.utils.DisruptorQueue;
 import com.alibaba.jstorm.utils.TimeUtils;
 
 public class TickTupleTrigger extends TimerTrigger {
-    private static final Logger LOG = LoggerFactory
-            .getLogger(TickTupleTrigger.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TickTupleTrigger.class);
 
     TopologyContext topologyContext;
 
-    public TickTupleTrigger(TopologyContext topologyContext, int frequence,
-            String name, DisruptorQueue queue) {
+    public TickTupleTrigger(TopologyContext topologyContext, int frequence, String name, DisruptorQueue queue) {
         this.name = name;
         this.queue = queue;
         this.opCode = TimerConstants.TICK_TUPLE;
@@ -53,10 +51,7 @@ public class TickTupleTrigger extends TimerTrigger {
     @Override
     public void updateObject() {
         this.object =
-                new TupleImplExt(topologyContext, new Values(
-                        TimeUtils.current_time_secs()),
-                        (int) Constants.SYSTEM_TASK_ID,
-                        Constants.SYSTEM_TICK_STREAM_ID);
+                new TupleImplExt(topologyContext, new Values(TimeUtils.current_time_secs()), (int) Constants.SYSTEM_TASK_ID, Constants.SYSTEM_TICK_STREAM_ID);
     }
 
 }

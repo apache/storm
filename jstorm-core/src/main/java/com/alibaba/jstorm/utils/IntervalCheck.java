@@ -20,10 +20,6 @@ package com.alibaba.jstorm.utils;
 import java.io.Serializable;
 
 public class IntervalCheck implements Serializable {
-
-    /**
-	 * 
-	 */
     private static final long serialVersionUID = 8952971673547362883L;
 
     long lastCheck = System.currentTimeMillis();
@@ -32,17 +28,12 @@ public class IntervalCheck implements Serializable {
     long interval = 1000;
 
     /*
-     * if last check time is before interval seconds, return true, otherwise
-     * return false
+     * if last check time is before interval seconds, return true, otherwise return false
      */
     public boolean check() {
         return checkAndGet() != null;
     }
 
-    /**
-     * 
-     * @return
-     */
     public Double checkAndGet() {
         long now = System.currentTimeMillis();
 
@@ -58,9 +49,9 @@ public class IntervalCheck implements Serializable {
     }
 
     public long getInterval() {
-        return interval/1000;
+        return interval / 1000;
     }
-    
+
     public long getIntervalMs() {
         return interval;
     }
@@ -68,7 +59,7 @@ public class IntervalCheck implements Serializable {
     public void setInterval(long interval) {
         this.interval = interval * 1000;
     }
-    
+
     public void setIntervalMs(long interval) {
         this.interval = interval;
     }

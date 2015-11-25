@@ -24,108 +24,102 @@ import java.util.Properties;
 
 public class VersionInfo {
 
-  private Properties info;
+    private Properties info;
 
-  protected VersionInfo(String component) {
-    info = new Properties();
-    String versionInfoFile = component + "-version-info.properties";
-    InputStream is = null;
-    try {
-      is = Thread.currentThread().getContextClassLoader()
-        .getResourceAsStream(versionInfoFile);
-      if (is == null) {
-        throw new IOException("Resource not found");
-      }
-      info.load(is);
-    } catch (IOException ex) {
-    } finally {
-      if (is != null) {
-      try {
+    protected VersionInfo(String component) {
+        info = new Properties();
+        String versionInfoFile = component + "-version-info.properties";
+        InputStream is = null;
+        try {
+            is = Thread.currentThread().getContextClassLoader().getResourceAsStream(versionInfoFile);
+            if (is == null) {
+                throw new IOException("Resource not found");
+            }
+            info.load(is);
+        } catch (IOException ex) {
+        } finally {
+            if (is != null) {
+                try {
 
-         is.close();
-     } catch (IOException ioex) {
-     }
+                    is.close();
+                } catch (IOException ioex) {
+                }
 
-     }
+            }
+        }
     }
-  }
 
-  protected String _getVersion() {
-    return info.getProperty("version", "Unknown");
-  }
+    protected String _getVersion() {
+        return info.getProperty("version", "Unknown");
+    }
 
-  protected String _getRevision() {
-    return info.getProperty("revision", "Unknown");
-  }
+    protected String _getRevision() {
+        return info.getProperty("revision", "Unknown");
+    }
 
-  protected String _getBranch() {
-    return info.getProperty("branch", "Unknown");
-  }
+    protected String _getBranch() {
+        return info.getProperty("branch", "Unknown");
+    }
 
-  protected String _getDate() {
-    return info.getProperty("date", "Unknown");
-  }
+    protected String _getDate() {
+        return info.getProperty("date", "Unknown");
+    }
 
-  protected String _getUser() {
-    return info.getProperty("user", "Unknown");
-  }
+    protected String _getUser() {
+        return info.getProperty("user", "Unknown");
+    }
 
-  protected String _getUrl() {
-    return info.getProperty("url", "Unknown");
-  }
+    protected String _getUrl() {
+        return info.getProperty("url", "Unknown");
+    }
 
-  protected String _getSrcChecksum() {
-    return info.getProperty("srcChecksum", "Unknown");
-  }
+    protected String _getSrcChecksum() {
+        return info.getProperty("srcChecksum", "Unknown");
+    }
 
-  protected String _getBuildVersion(){
-    return getVersion() +
-      " from " + _getRevision() +
-      " by " + _getUser() +
-      " source checksum " + _getSrcChecksum();
-  }
+    protected String _getBuildVersion() {
+        return getVersion() + " from " + _getRevision() + " by " + _getUser() + " source checksum " + _getSrcChecksum();
+    }
 
+    private static VersionInfo COMMON_VERSION_INFO = new VersionInfo("storm-core");
 
-  private static VersionInfo COMMON_VERSION_INFO = new VersionInfo("storm-core");
+    public static String getVersion() {
+        return COMMON_VERSION_INFO._getVersion();
+    }
 
-  public static String getVersion() {
-    return COMMON_VERSION_INFO._getVersion();
-  }
-  
-  public static String getRevision() {
-    return COMMON_VERSION_INFO._getRevision();
-  }
+    public static String getRevision() {
+        return COMMON_VERSION_INFO._getRevision();
+    }
 
-  public static String getBranch() {
-    return COMMON_VERSION_INFO._getBranch();
-  }
+    public static String getBranch() {
+        return COMMON_VERSION_INFO._getBranch();
+    }
 
-  public static String getDate() {
-    return COMMON_VERSION_INFO._getDate();
-  }
-  
-  public static String getUser() {
-    return COMMON_VERSION_INFO._getUser();
-  }
-  
-  public static String getUrl() {
-    return COMMON_VERSION_INFO._getUrl();
-  }
+    public static String getDate() {
+        return COMMON_VERSION_INFO._getDate();
+    }
 
-  public static String getSrcChecksum() {
-    return COMMON_VERSION_INFO._getSrcChecksum();
-  }
+    public static String getUser() {
+        return COMMON_VERSION_INFO._getUser();
+    }
 
-  public static String getBuildVersion(){
-    return COMMON_VERSION_INFO._getBuildVersion();
-  }
+    public static String getUrl() {
+        return COMMON_VERSION_INFO._getUrl();
+    }
 
+    public static String getSrcChecksum() {
+        return COMMON_VERSION_INFO._getSrcChecksum();
+    }
 
-  public static void main(String[] args) {
-    System.out.println("Storm " + getVersion());
-    System.out.println("URL " + getUrl() + " -r " + getRevision());
-    System.out.println("Branch " + getBranch());
-    System.out.println("Compiled by " + getUser() + " on " + getDate());
-    System.out.println("From source with checksum " + getSrcChecksum());
-  }
+    public static String getBuildVersion() {
+        return COMMON_VERSION_INFO._getBuildVersion();
+    }
+
+    public static void main(String[] args) {
+        System.out.println("Storm " + getVersion());
+        System.out.println("URL " + getUrl() + " -r " + getRevision());
+        System.out.println("Branch " + getBranch());
+        System.out.println("Compiled by " + getUser() + " on " + getDate());
+        System.out.println("From source with checksum " + getSrcChecksum());
+    }
 }

@@ -23,7 +23,6 @@ import backtype.storm.tuple.Tuple;
 import backtype.storm.utils.Utils;
 import java.util.List;
 
-
 public class BasicOutputCollector implements IBasicOutputCollector {
     private OutputCollector out;
     private Tuple inputTuple;

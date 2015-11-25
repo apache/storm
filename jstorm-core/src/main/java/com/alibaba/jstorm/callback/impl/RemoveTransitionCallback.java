@@ -35,8 +35,7 @@ import com.alibaba.jstorm.daemon.nimbus.NimbusUtils;
  */
 public class RemoveTransitionCallback extends BaseCallback {
 
-    private static Logger LOG = LoggerFactory
-            .getLogger(RemoveTransitionCallback.class);
+    private static Logger LOG = LoggerFactory.getLogger(RemoveTransitionCallback.class);
 
     private NimbusData data;
     private String topologyid;
@@ -51,13 +50,13 @@ public class RemoveTransitionCallback extends BaseCallback {
         LOG.info("Begin to remove topology: " + topologyid);
         try {
 
-            StormBase stormBase =
-                    data.getStormClusterState().storm_base(topologyid, null);
+            StormBase stormBase = data.getStormClusterState().storm_base(topologyid, null);
             if (stormBase == null) {
                 LOG.info("Topology " + topologyid + " has been removed ");
                 return null;
             }
             data.getStormClusterState().remove_storm(topologyid);
+            data.getTasksHeartbeat().remove(topologyid);
             NimbusUtils.removeTopologyTaskTimeout(data, topologyid);
             LOG.info("Successfully removed ZK items topology: " + topologyid);
 

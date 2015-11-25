@@ -33,6 +33,5 @@ public interface IPrepareCommit {
      * @param id
      * @param collector
      */
-    void prepareCommit(BatchId id, BasicOutputCollector collector)
-            throws FailedException;
+    void prepareCommit(BatchId id, BasicOutputCollector collector) throws FailedException;
 }

@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.util.*;
 
-
 public class ImpersonationAuthorizer implements IAuthorizer {
     private static final Logger LOG = LoggerFactory.getLogger(ImpersonationAuthorizer.class);
     protected static final String WILD_CARD = "*";
@@ -49,16 +48,16 @@ public class ImpersonationAuthorizer implements IAuthorizer {
         String userBeingImpersonated = _ptol.toLocal(context.principal());
         InetAddress remoteAddress = context.remoteAddress();
 
-        LOG.info("user = {}, principal = {} is attmepting to impersonate user = {} for operation = {} from host = {}",
-                impersonatingUser, impersonatingPrincipal, userBeingImpersonated, operation, remoteAddress);
+        LOG.info("user = {}, principal = {} is attmepting to impersonate user = {} for operation = {} from host = {}", impersonatingUser,
+                impersonatingPrincipal, userBeingImpersonated, operation, remoteAddress);
 
         /**
          * no config is present for impersonating principal or user, do not permit impersonation.
          */
         if (!userImpersonationACL.containsKey(impersonatingPrincipal) && !userImpersonationACL.containsKey(impersonatingUser)) {
-            LOG.info("user = {}, principal = {} is trying to impersonate user {}, but config {} does not have entry for impersonating user or principal." +
-                    "Please see SECURITY.MD to learn how to configure users for impersonation."
-                    , impersonatingUser, impersonatingPrincipal, userBeingImpersonated, Config.NIMBUS_IMPERSONATION_ACL);
+            LOG.info("user = {}, principal = {} is trying to impersonate user {}, but config {} does not have entry for impersonating user or principal."
+                    + "Please see SECURITY.MD to learn how to configure users for impersonation.", impersonatingUser, impersonatingPrincipal,
+                    userBeingImpersonated, Config.NIMBUS_IMPERSONATION_ACL);
             return false;
         }
 
@@ -78,18 +77,17 @@ public class ImpersonationAuthorizer implements IAuthorizer {
             authorizedGroups.addAll(userACL.authorizedGroups);
         }
 
-        LOG.debug("user = {}, principal = {} is allowed to impersonate groups = {} from hosts = {} ",
-                impersonatingUser, impersonatingPrincipal, authorizedGroups, authorizedHosts);
+        LOG.debug("user = {}, principal = {} is allowed to impersonate groups = {} from hosts = {} ", impersonatingUser, impersonatingPrincipal,
+                authorizedGroups, authorizedHosts);
 
         if (!isAllowedToImpersonateFromHost(authorizedHosts, remoteAddress)) {
-            LOG.info("user = {}, principal = {} is not allowed to impersonate from host {} ",
-                    impersonatingUser, impersonatingPrincipal, remoteAddress);
+            LOG.info("user = {}, principal = {} is not allowed to impersonate from host {} ", impersonatingUser, impersonatingPrincipal, remoteAddress);
             return false;
         }
 
         if (!isAllowedToImpersonateUser(authorizedGroups, userBeingImpersonated)) {
-            LOG.info("user = {}, principal = {} is not allowed to impersonate any group that user {} is part of.",
-                    impersonatingUser, impersonatingPrincipal, userBeingImpersonated);
+            LOG.info("user = {}, principal = {} is not allowed to impersonate any group that user {} is part of.", impersonatingUser, impersonatingPrincipal,
+                    userBeingImpersonated);
             return false;
         }
 
@@ -98,14 +96,12 @@ public class ImpersonationAuthorizer implements IAuthorizer {
     }
 
     private boolean isAllowedToImpersonateFromHost(Set<String> authorizedHosts, InetAddress remoteAddress) {
-        return authorizedHosts.contains(WILD_CARD) ||
-                authorizedHosts.contains(remoteAddress.getCanonicalHostName()) ||
-                authorizedHosts.contains(remoteAddress.getHostName()) ||
-                authorizedHosts.contains(remoteAddress.getHostAddress());
+        return authorizedHosts.contains(WILD_CARD) || authorizedHosts.contains(remoteAddress.getCanonicalHostName())
+                || authorizedHosts.contains(remoteAddress.getHostName()) || authorizedHosts.contains(remoteAddress.getHostAddress());
     }
 
     private boolean isAllowedToImpersonateUser(Set<String> authorizedGroups, String userBeingImpersonated) {
-        if(authorizedGroups.contains(WILD_CARD)) {
+        if (authorizedGroups.contains(WILD_CARD)) {
             return true;
         }
 
@@ -131,9 +127,9 @@ public class ImpersonationAuthorizer implements IAuthorizer {
 
     protected class ImpersonationACL {
         public String impersonatingUser;
-        //Groups this user is authorized to impersonate.
+        // Groups this user is authorized to impersonate.
         public Set<String> authorizedGroups;
-        //Hosts this user is authorized to impersonate from.
+        // Hosts this user is authorized to impersonate from.
         public Set<String> authorizedHosts;
 
         private ImpersonationACL(String impersonatingUser, Set<String> authorizedGroups, Set<String> authorizedHosts) {
@@ -144,11 +140,8 @@ public class ImpersonationAuthorizer implements IAuthorizer {
 
         @Override
         public String toString() {
-            return "ImpersonationACL{" +
-                    "impersonatingUser='" + impersonatingUser + '\'' +
-                    ", authorizedGroups=" + authorizedGroups +
-                    ", authorizedHosts=" + authorizedHosts +
-                    '}';
+            return "ImpersonationACL{" + "impersonatingUser='" + impersonatingUser + '\'' + ", authorizedGroups=" + authorizedGroups + ", authorizedHosts="
+                    + authorizedHosts + '}';
         }
     }
 }

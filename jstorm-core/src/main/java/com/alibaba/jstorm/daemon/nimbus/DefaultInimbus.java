@@ -37,9 +37,8 @@ public class DefaultInimbus implements INimbus {
     }
 
     @Override
-    public Collection<WorkerSlot> allSlotsAvailableForScheduling(
-            Collection<SupervisorDetails> existingSupervisors,
-            Topologies topologies, Set<String> topologiesMissingAssignments) {
+    public Collection<WorkerSlot> allSlotsAvailableForScheduling(Collection<SupervisorDetails> existingSupervisors, Topologies topologies,
+            Set<String> topologiesMissingAssignments) {
         // TODO Auto-generated method stub
         Collection<WorkerSlot> result = new HashSet<WorkerSlot>();
         for (SupervisorDetails detail : existingSupervisors) {
@@ -50,15 +49,13 @@ public class DefaultInimbus implements INimbus {
     }
 
     @Override
-    public void assignSlots(Topologies topologies,
-            Map<String, Collection<WorkerSlot>> newSlotsByTopologyId) {
+    public void assignSlots(Topologies topologies, Map<String, Collection<WorkerSlot>> newSlotsByTopologyId) {
         // TODO Auto-generated method stub
 
     }
 
     @Override
-    public String getHostName(
-            Map<String, SupervisorDetails> existingSupervisors, String nodeId) {
+    public String getHostName(Map<String, SupervisorDetails> existingSupervisors, String nodeId) {
         // TODO Auto-generated method stub
         return null;
     }

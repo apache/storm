@@ -17,116 +17,110 @@
  */
 package com.alibaba.jstorm.task;
 
-import java.io.Serializable;
-
+import com.alibaba.jstorm.cluster.Common;
+import com.alibaba.jstorm.common.metric.AsmMetric;
+import com.alibaba.jstorm.metric.JStormMetrics;
+import com.alibaba.jstorm.metric.MetricDef;
+import com.alibaba.jstorm.metric.MetricType;
+import com.alibaba.jstorm.metric.MetricUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.alibaba.jstorm.cluster.Common;
-import com.alibaba.jstorm.common.metric.MetricRegistry;
-import com.alibaba.jstorm.common.metric.window.Metric;
-import com.alibaba.jstorm.metric.JStormMetrics;
-import com.alibaba.jstorm.metric.MetricDef;
+import java.io.Serializable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 public class TaskBaseMetric implements Serializable {
-	private static final Logger LOG = LoggerFactory.getLogger(TaskBaseMetric.class);
-    private static final long serialVersionUID = -7157987126460293444L;
-    protected MetricRegistry metrics;
-    private int taskId;
+    private static final Logger logger = LoggerFactory.getLogger(JStormMetrics.class);
 
-    public TaskBaseMetric(int taskId) {
-        metrics = JStormMetrics.registerTask(taskId);
+    private static final long serialVersionUID = -7157987126460293444L;
+    private String topologyId;
+    private String componentId;
+    private int taskId;
+    private boolean enableMetrics;
+
+    /**
+     * local metric name cache to avoid frequent metric name concatenation streamId + name ==> full metric name
+     */
+    private static final ConcurrentMap<String, AsmMetric> metricCache = new ConcurrentHashMap<String, AsmMetric>();
+
+    public TaskBaseMetric(String topologyId, String componentId, int taskId, boolean enableMetrics) {
+        this.topologyId = topologyId;
+        this.componentId = componentId;
         this.taskId = taskId;
+        this.enableMetrics = enableMetrics;
+        logger.info("init task base metric, tp id:{}, comp id:{}, task id:{}", topologyId, componentId, taskId);
     }
 
-    public void update(String name, Number value, int type) {
-        Metric metric = metrics.getMetric(name);
-        if (metric == null) {
-            metric = JStormMetrics.Builder.mkInstance(type);
-            try {
-            	/**
-            	 * Here use one hack method to handle competition register metric
-            	 * if duplicated metric, just skip it.
-            	 * 
-            	 * this will improve performance
-            	 */
-            	JStormMetrics.registerTaskMetric(metric, taskId, name);
-            }catch(Exception e) {
-            	LOG.warn("Duplicated metrics of {}, taskId:{}", name, taskId);
-            	return ;
+    public void update(final String streamId, final String name, final Number value, final MetricType metricType,
+                       boolean mergeTopology) {
+        String key = taskId + streamId + name;
+        AsmMetric existingMetric = metricCache.get(key);
+        if (existingMetric == null) {
+            String fullName = MetricUtils.streamMetricName(topologyId, componentId, taskId, streamId, name, metricType);
+            existingMetric = JStormMetrics.getStreamMetric(fullName);
+            if (existingMetric == null) {
+                existingMetric = AsmMetric.Builder.build(metricType);
+                JStormMetrics.registerStreamMetric(fullName, existingMetric, mergeTopology);
             }
-            
+            metricCache.putIfAbsent(key, existingMetric);
         }
-        metric.update(value);
+
+        existingMetric.update(value);
+    }
+
+    public void update(final String streamId, final String name, final Number value, final MetricType metricType) {
+        update(streamId, name, value, metricType, true);
     }
 
     public void send_tuple(String stream, int num_out_tasks) {
-        if (num_out_tasks <= 0) {
-            return;
+        if (enableMetrics && num_out_tasks > 0) {
+            update(stream, MetricDef.EMMITTED_NUM, num_out_tasks, MetricType.COUNTER);
+            update(stream, MetricDef.SEND_TPS, num_out_tasks, MetricType.METER);
         }
-
-        String emmitedName =
-                MetricRegistry.name(MetricDef.EMMITTED_NUM, stream);
-        update(emmitedName, Double.valueOf(num_out_tasks),
-                JStormMetrics.Builder.COUNTER);
-
-        String sendTpsName = MetricRegistry.name(MetricDef.SEND_TPS, stream);
-        update(sendTpsName, Double.valueOf(num_out_tasks),
-                JStormMetrics.Builder.METER);
     }
 
     public void recv_tuple(String component, String stream) {
-
-        String name =
-                MetricRegistry.name(MetricDef.RECV_TPS, component, stream);
-        update(name, Double.valueOf(1), JStormMetrics.Builder.METER);
-
+        if (enableMetrics) {
+            update(stream, AsmMetric.mkName(component, MetricDef.RECV_TPS), 1, MetricType.METER);
+//            update(stream, MetricDef.RECV_TPS, 1, MetricType.METER);
+        }
     }
 
-    public void bolt_acked_tuple(String component, String stream,
-            Double latency_ms) {
+    public void bolt_acked_tuple(String component, String stream, Long latency, Long lifeCycle) {
+        if (enableMetrics) {
+//            update(stream, AsmMetric.mkName(component, MetricDef.ACKED_NUM), 1, MetricType.COUNTER);
+//            update(stream, AsmMetric.mkName(component, MetricDef.PROCESS_LATENCY), latency_ms, MetricType.HISTOGRAM);
+            update(stream, MetricDef.ACKED_NUM, 1, MetricType.COUNTER);
+            update(stream, MetricDef.PROCESS_LATENCY, latency, MetricType.HISTOGRAM, false);
 
-        if (latency_ms == null) {
-            return;
+            if (lifeCycle > 0) {
+                update(stream, AsmMetric.mkName(component, MetricDef.TUPLE_LIEF_CYCLE), lifeCycle, MetricType.HISTOGRAM, false);
+            }
         }
-
-        String ackNumName =
-                MetricRegistry.name(MetricDef.ACKED_NUM, component, stream);
-        update(ackNumName, Double.valueOf(1), JStormMetrics.Builder.COUNTER);
-
-        String processName =
-                MetricRegistry.name(MetricDef.PROCESS_LATENCY, component,
-                        stream);
-        update(processName, latency_ms,
-                JStormMetrics.Builder.HISTOGRAM);
     }
 
     public void bolt_failed_tuple(String component, String stream) {
-
-        String failNumName =
-                MetricRegistry.name(MetricDef.FAILED_NUM, component, stream);
-        update(failNumName, Double.valueOf(1), JStormMetrics.Builder.COUNTER);
+        if (enableMetrics) {
+            //update(stream, AsmMetric.mkName(component, MetricDef.FAILED_NUM), 1, MetricType.COUNTER);
+            update(stream, MetricDef.FAILED_NUM, 1, MetricType.COUNTER);
+        }
     }
 
-    public void spout_acked_tuple(String stream, long st) {
+    public void spout_acked_tuple(String stream, long st, Long lifeCycle) {
+        if (enableMetrics) {
+            update(stream, MetricDef.ACKED_NUM, 1, MetricType.COUNTER);
+            update(stream, MetricDef.PROCESS_LATENCY, st, MetricType.HISTOGRAM, true);
 
-        String ackNumName =
-                MetricRegistry.name(MetricDef.ACKED_NUM,
-                        Common.ACKER_COMPONENT_ID, stream);
-        update(ackNumName, Double.valueOf(1), JStormMetrics.Builder.COUNTER);
-
-        String processName =
-                MetricRegistry.name(MetricDef.PROCESS_LATENCY,
-                        Common.ACKER_COMPONENT_ID, stream);
-        update(processName, Double.valueOf(st), JStormMetrics.Builder.HISTOGRAM);
-
+            if (lifeCycle > 0) {
+                update(stream, AsmMetric.mkName(Common.ACKER_COMPONENT_ID, MetricDef.TUPLE_LIEF_CYCLE), lifeCycle, MetricType.HISTOGRAM, false);
+            }
+        }
     }
 
     public void spout_failed_tuple(String stream) {
-        String failNumName =
-                MetricRegistry.name(MetricDef.FAILED_NUM,
-                        Common.ACKER_COMPONENT_ID, stream);
-        update(failNumName, Double.valueOf(1), JStormMetrics.Builder.COUNTER);
-
+        if (enableMetrics) {
+            update(stream, MetricDef.FAILED_NUM, 1, MetricType.COUNTER);
+        }
     }
 }

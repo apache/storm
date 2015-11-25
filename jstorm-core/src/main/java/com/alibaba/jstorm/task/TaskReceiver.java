@@ -17,31 +17,31 @@
  */
 package com.alibaba.jstorm.task;
 
-import java.util.Map;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import backtype.storm.Config;
 import backtype.storm.serialization.KryoTupleDeserializer;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.utils.DisruptorQueue;
-import backtype.storm.utils.Utils;
 import backtype.storm.utils.WorkerClassLoader;
 
 import com.alibaba.jstorm.callback.AsyncLoopThread;
 import com.alibaba.jstorm.callback.RunnableCallback;
 import com.alibaba.jstorm.client.ConfigExtension;
-import com.alibaba.jstorm.common.metric.Histogram;
+import com.alibaba.jstorm.common.metric.AsmGauge;
+import com.alibaba.jstorm.common.metric.AsmHistogram;
 import com.alibaba.jstorm.common.metric.QueueGauge;
-import com.alibaba.jstorm.metric.JStormHealthCheck;
-import com.alibaba.jstorm.metric.JStormMetrics;
-import com.alibaba.jstorm.metric.MetricDef;
+import com.alibaba.jstorm.metric.*;
 import com.alibaba.jstorm.utils.JStormUtils;
+import com.alibaba.jstorm.utils.TimeUtils;
+import com.esotericsoftware.kryo.KryoException;
 import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.WaitStrategy;
 import com.lmax.disruptor.dsl.ProducerType;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Map;
 
 public class TaskReceiver {
     private static Logger LOG = LoggerFactory.getLogger(TaskReceiver.class);
@@ -58,13 +58,11 @@ public class TaskReceiver {
     protected DisruptorQueue deserializeQueue;
     protected KryoTupleDeserializer deserializer;
     protected AsyncLoopThread deserializeThread;
-    protected Histogram deserializeTimer;
+    protected AsmHistogram deserializeTimer;
 
     protected TaskStatus taskStatus;
 
-    public TaskReceiver(Task task, int taskId, Map stormConf,
-            TopologyContext topologyContext,
-            Map<Integer, DisruptorQueue> innerTaskTransfer,
+    public TaskReceiver(Task task, int taskId, Map stormConf, TopologyContext topologyContext, Map<Integer, DisruptorQueue> innerTaskTransfer,
             TaskStatus taskStatus, String taskName) {
         this.task = task;
         this.taskId = taskId;
@@ -77,34 +75,24 @@ public class TaskReceiver {
 
         this.isDebugRecv = ConfigExtension.isTopologyDebugRecvTuple(stormConf);
 
-        int queueSize =
-                JStormUtils
-                        .parseInt(
-                                stormConf
-                                        .get(Config.TOPOLOGY_EXECUTOR_RECEIVE_BUFFER_SIZE),
-                                256);
+        int queueSize = JStormUtils.parseInt(stormConf.get(Config.TOPOLOGY_EXECUTOR_RECEIVE_BUFFER_SIZE), 256);
 
-        WaitStrategy waitStrategy =
-                (WaitStrategy) JStormUtils
-                        .createDisruptorWaitStrategy(stormConf);
-        this.deserializeQueue =
-                DisruptorQueue.mkInstance("TaskDeserialize",
-                        ProducerType.MULTI, queueSize, waitStrategy);
+        WaitStrategy waitStrategy = (WaitStrategy) JStormUtils.createDisruptorWaitStrategy(stormConf);
+        this.deserializeQueue = DisruptorQueue.mkInstance("TaskDeserialize", ProducerType.MULTI, queueSize, waitStrategy);
         setDeserializeThread();
-        this.deserializer =
-                new KryoTupleDeserializer(stormConf, topologyContext);
+        this.deserializer = new KryoTupleDeserializer(stormConf, topologyContext);
+
+        String topologyId = topologyContext.getTopologyId();
+        String component = topologyContext.getThisComponentId();
 
         deserializeTimer =
-                JStormMetrics.registerTaskHistogram(taskId,
-                        MetricDef.DESERIALIZE_TIME);
+                (AsmHistogram) JStormMetrics.registerTaskMetric(
+                        MetricUtils.taskMetricName(topologyId, component, taskId, MetricDef.DESERIALIZE_TIME, MetricType.HISTOGRAM), new AsmHistogram());
 
-        QueueGauge deserializeQueueGauge =
-                new QueueGauge(idStr + MetricDef.DESERIALIZE_QUEUE,
-                        deserializeQueue);
-        JStormMetrics.registerTaskGauge(deserializeQueueGauge, taskId,
-                MetricDef.DESERIALIZE_QUEUE);
-        JStormHealthCheck.registerTaskHealthCheck(taskId,
-                MetricDef.DESERIALIZE_QUEUE, deserializeQueueGauge);
+        QueueGauge deserializeQueueGauge = new QueueGauge(deserializeQueue, idStr, MetricDef.DESERIALIZE_QUEUE);
+        JStormMetrics.registerTaskMetric(MetricUtils.taskMetricName(topologyId, component, taskId, MetricDef.DESERIALIZE_QUEUE, MetricType.GAUGE),
+                new AsmGauge(deserializeQueueGauge));
+        JStormHealthCheck.registerTaskHealthCheck(taskId, MetricDef.DESERIALIZE_QUEUE, deserializeQueueGauge);
     }
 
     public AsyncLoopThread getDeserializeThread() {
@@ -112,9 +100,7 @@ public class TaskReceiver {
     }
 
     protected void setDeserializeThread() {
-        this.deserializeThread =
-                new AsyncLoopThread(new DeserializeRunnable(deserializeQueue,
-                        innerTaskTransfer.get(taskId)));
+        this.deserializeThread = new AsyncLoopThread(new DeserializeRunnable(deserializeQueue, innerTaskTransfer.get(taskId)));
     }
 
     public DisruptorQueue getDeserializeQueue() {
@@ -126,8 +112,7 @@ public class TaskReceiver {
         DisruptorQueue deserializeQueue;
         DisruptorQueue exeQueue;
 
-        DeserializeRunnable(DisruptorQueue deserializeQueue,
-                DisruptorQueue exeQueue) {
+        DeserializeRunnable(DisruptorQueue deserializeQueue, DisruptorQueue exeQueue) {
             this.deserializeQueue = deserializeQueue;
             this.exeQueue = exeQueue;
         }
@@ -162,24 +147,22 @@ public class TaskReceiver {
                 }
 
                 return tuple;
+            } catch (KryoException e) {
+                throw new RuntimeException(e);
             } catch (Throwable e) {
                 if (taskStatus.isShutdown() == false) {
-                    LOG.error(
-                            idStr + " recv thread error "
-                                    + JStormUtils.toPrintableString(ser_msg)
-                                    + "\n", e);
+                    LOG.error(idStr + " recv thread error " + JStormUtils.toPrintableString(ser_msg) + "\n", e);
                 }
             } finally {
                 long end = System.nanoTime();
-                deserializeTimer.update((end - start)/1000000.0d);
+                deserializeTimer.update((end - start) / TimeUtils.NS_PER_US);
             }
 
             return null;
         }
 
         @Override
-        public void onEvent(Object event, long sequence, boolean endOfBatch)
-                throws Exception {
+        public void onEvent(Object event, long sequence, boolean endOfBatch) throws Exception {
             Object tuple = deserialize((byte[]) event);
 
             if (tuple != null) {
@@ -189,7 +172,7 @@ public class TaskReceiver {
 
         @Override
         public void preRun() {
-            WorkerClassLoader.switchThreadContext();  
+            WorkerClassLoader.switchThreadContext();
         }
 
         @Override

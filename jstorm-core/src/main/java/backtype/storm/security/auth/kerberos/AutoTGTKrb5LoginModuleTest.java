@@ -31,7 +31,7 @@ public class AutoTGTKrb5LoginModuleTest extends AutoTGTKrb5LoginModule {
     public void setKerbTicket(KerberosTicket ticket) {
         this.kerbTicket = ticket;
     }
-    
+
     @Override
     protected void getKerbTicketFromCache() {
         // Do nothing.

@@ -29,7 +29,7 @@ import org.apache.commons.lang.builder.ToStringStyle;
 
 /**
  * Object stored in ZK /ZK-DIR/supervisors
- *
+ * 
  * @author Xin.Zhou/Longda
  */
 public class SupervisorInfo implements Serializable {
@@ -46,8 +46,7 @@ public class SupervisorInfo implements Serializable {
 
     private transient Set<Integer> availableWorkerPorts;
 
-    public SupervisorInfo(String hostName, String supervisorId,
-                          Set<Integer> workerPorts) {
+    public SupervisorInfo(String hostName, String supervisorId, Set<Integer> workerPorts) {
         this.hostName = hostName;
         this.supervisorId = supervisorId;
         this.workerPorts = workerPorts;
@@ -80,16 +79,19 @@ public class SupervisorInfo implements Serializable {
     public Set<Integer> getWorkerPorts() {
         return workerPorts;
     }
-    public void setAvailableWorkerPorts(Set<Integer> workerPorts){
+
+    public void setAvailableWorkerPorts(Set<Integer> workerPorts) {
         if (availableWorkerPorts == null)
             availableWorkerPorts = new HashSet<Integer>();
         availableWorkerPorts.addAll(workerPorts);
     }
+
     public Set<Integer> getAvailableWorkerPorts() {
         if (availableWorkerPorts == null)
             availableWorkerPorts = new HashSet<Integer>();
         return availableWorkerPorts;
     }
+
     public void setWorkerPorts(Set<Integer> workerPorts) {
         this.workerPorts = workerPorts;
     }
@@ -98,20 +100,11 @@ public class SupervisorInfo implements Serializable {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result =
-                prime * result + ((hostName == null) ? 0 : hostName.hashCode());
-        result =
-                prime
-                        * result
-                        + ((supervisorId == null) ? 0 : supervisorId.hashCode());
-        result =
-                prime * result + ((timeSecs == null) ? 0 : timeSecs.hashCode());
-        result =
-                prime * result
-                        + ((uptimeSecs == null) ? 0 : uptimeSecs.hashCode());
-        result =
-                prime * result
-                        + ((workerPorts == null) ? 0 : workerPorts.hashCode());
+        result = prime * result + ((hostName == null) ? 0 : hostName.hashCode());
+        result = prime * result + ((supervisorId == null) ? 0 : supervisorId.hashCode());
+        result = prime * result + ((timeSecs == null) ? 0 : timeSecs.hashCode());
+        result = prime * result + ((uptimeSecs == null) ? 0 : uptimeSecs.hashCode());
+        result = prime * result + ((workerPorts == null) ? 0 : workerPorts.hashCode());
         return result;
     }
 
@@ -154,19 +147,17 @@ public class SupervisorInfo implements Serializable {
 
     @Override
     public String toString() {
-        return ToStringBuilder.reflectionToString(this,
-                ToStringStyle.SHORT_PREFIX_STYLE);
+        return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
 
     /**
      * get Map<supervisorId, hostname>
-     *
+     * 
      * @param stormClusterState
      * @param callback
      * @return
      */
-    public static Map<String, String> getNodeHost(
-            Map<String, SupervisorInfo> supInfos) {
+    public static Map<String, String> getNodeHost(Map<String, SupervisorInfo> supInfos) {
 
         Map<String, String> rtn = new HashMap<String, String>();
 

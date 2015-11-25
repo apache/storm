@@ -49,12 +49,20 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
   print('  TopologyInfo getTopologyInfoByName(string topologyName)')
   print('  StormTopology getTopology(string id)')
   print('  StormTopology getUserTopology(string id)')
-  print('  void workerUploadMetric(WorkerUploadMetrics uploadMetrics)')
-  print('  TopologyMetric getTopologyMetric(string topologyName)')
-  print('  NettyMetric getNettyMetric(string topologyName, i32 pos)')
-  print('  NettyMetric getServerNettyMetric(string topologyName, string serverName)')
+  print('  void uploadTopologyMetrics(string topologyId, TopologyMetric topologyMetrics)')
+  print('   registerMetrics(string topologyId,  metrics)')
+  print('  TopologyMetric getTopologyMetrics(string topologyId)')
+  print('   getMetrics(string topologyId, i32 type)')
+  print('  MetricInfo getNettyMetrics(string topologyId)')
+  print('  MetricInfo getNettyMetricsByHost(string topologyId, string host)')
+  print('  MetricInfo getPagingNettyMetrics(string topologyId, string host, i32 page)')
+  print('  i32 getNettyMetricSizeByHost(string topologyId, string host)')
+  print('  MetricInfo getTaskMetrics(string topologyId, string component)')
+  print('   getTaskAndStreamMetrics(string topologyId, i32 taskId)')
+  print('   getSummarizedTopologyMetrics(string topologyId)')
   print('  string getVersion()')
-  print('  void updateConf(string name, string conf)')
+  print('  void updateTopology(string name, string uploadedLocation, string updateConf)')
+  print('  void updateTaskHeartbeat(TopologyTaskHbInfo taskHbs)')
   print('')
   sys.exit(0)
 
@@ -261,29 +269,71 @@ elif cmd == 'getUserTopology':
     sys.exit(1)
   pp.pprint(client.getUserTopology(args[0],))
 
-elif cmd == 'workerUploadMetric':
-  if len(args) != 1:
-    print('workerUploadMetric requires 1 args')
-    sys.exit(1)
-  pp.pprint(client.workerUploadMetric(eval(args[0]),))
-
-elif cmd == 'getTopologyMetric':
-  if len(args) != 1:
-    print('getTopologyMetric requires 1 args')
-    sys.exit(1)
-  pp.pprint(client.getTopologyMetric(args[0],))
-
-elif cmd == 'getNettyMetric':
+elif cmd == 'uploadTopologyMetrics':
   if len(args) != 2:
-    print('getNettyMetric requires 2 args')
+    print('uploadTopologyMetrics requires 2 args')
     sys.exit(1)
-  pp.pprint(client.getNettyMetric(args[0],eval(args[1]),))
+  pp.pprint(client.uploadTopologyMetrics(args[0],eval(args[1]),))
 
-elif cmd == 'getServerNettyMetric':
+elif cmd == 'registerMetrics':
   if len(args) != 2:
-    print('getServerNettyMetric requires 2 args')
+    print('registerMetrics requires 2 args')
     sys.exit(1)
-  pp.pprint(client.getServerNettyMetric(args[0],args[1],))
+  pp.pprint(client.registerMetrics(args[0],eval(args[1]),))
+
+elif cmd == 'getTopologyMetrics':
+  if len(args) != 1:
+    print('getTopologyMetrics requires 1 args')
+    sys.exit(1)
+  pp.pprint(client.getTopologyMetrics(args[0],))
+
+elif cmd == 'getMetrics':
+  if len(args) != 2:
+    print('getMetrics requires 2 args')
+    sys.exit(1)
+  pp.pprint(client.getMetrics(args[0],eval(args[1]),))
+
+elif cmd == 'getNettyMetrics':
+  if len(args) != 1:
+    print('getNettyMetrics requires 1 args')
+    sys.exit(1)
+  pp.pprint(client.getNettyMetrics(args[0],))
+
+elif cmd == 'getNettyMetricsByHost':
+  if len(args) != 2:
+    print('getNettyMetricsByHost requires 2 args')
+    sys.exit(1)
+  pp.pprint(client.getNettyMetricsByHost(args[0],args[1],))
+
+elif cmd == 'getPagingNettyMetrics':
+  if len(args) != 3:
+    print('getPagingNettyMetrics requires 3 args')
+    sys.exit(1)
+  pp.pprint(client.getPagingNettyMetrics(args[0],args[1],eval(args[2]),))
+
+elif cmd == 'getNettyMetricSizeByHost':
+  if len(args) != 2:
+    print('getNettyMetricSizeByHost requires 2 args')
+    sys.exit(1)
+  pp.pprint(client.getNettyMetricSizeByHost(args[0],args[1],))
+
+elif cmd == 'getTaskMetrics':
+  if len(args) != 2:
+    print('getTaskMetrics requires 2 args')
+    sys.exit(1)
+  pp.pprint(client.getTaskMetrics(args[0],args[1],))
+
+elif cmd == 'getTaskAndStreamMetrics':
+  if len(args) != 2:
+    print('getTaskAndStreamMetrics requires 2 args')
+    sys.exit(1)
+  pp.pprint(client.getTaskAndStreamMetrics(args[0],eval(args[1]),))
+
+elif cmd == 'getSummarizedTopologyMetrics':
+  if len(args) != 1:
+    print('getSummarizedTopologyMetrics requires 1 args')
+    sys.exit(1)
+  pp.pprint(client.getSummarizedTopologyMetrics(args[0],))
 
 elif cmd == 'getVersion':
   if len(args) != 0:
@@ -291,11 +341,17 @@ elif cmd == 'getVersion':
     sys.exit(1)
   pp.pprint(client.getVersion())
 
-elif cmd == 'updateConf':
-  if len(args) != 2:
-    print('updateConf requires 2 args')
+elif cmd == 'updateTopology':
+  if len(args) != 3:
+    print('updateTopology requires 3 args')
     sys.exit(1)
-  pp.pprint(client.updateConf(args[0],args[1],))
+  pp.pprint(client.updateTopology(args[0],args[1],args[2],))
+
+elif cmd == 'updateTaskHeartbeat':
+  if len(args) != 1:
+    print('updateTaskHeartbeat requires 1 args')
+    sys.exit(1)
+  pp.pprint(client.updateTaskHeartbeat(eval(args[0]),))
 
 else:
   print('Unrecognized method %s' % cmd)

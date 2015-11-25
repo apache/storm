@@ -31,10 +31,7 @@ import java.security.Principal;
 import javax.security.auth.Subject;
 
 /**
- * context request context includes info about 
- *      	   (1) remote address, 
- *             (2) remote subject and primary principal
- *             (3) request ID 
+ * context request context includes info about (1) remote address, (2) remote subject and primary principal (3) request ID
  */
 public class ReqContext {
     private static final AtomicInteger uniqueId = new AtomicInteger(0);
@@ -46,38 +43,36 @@ public class ReqContext {
 
     private static final Logger LOG = LoggerFactory.getLogger(ReqContext.class);
 
-
     /**
      * Get a request context associated with current thread
+     * 
      * @return
      */
     public static ReqContext context() {
         return ctxt.get();
     }
 
-    //each thread will have its own request context
-    private static final ThreadLocal < ReqContext > ctxt = 
-            new ThreadLocal < ReqContext > () {
-        @Override 
+    // each thread will have its own request context
+    private static final ThreadLocal<ReqContext> ctxt = new ThreadLocal<ReqContext>() {
+        @Override
         protected ReqContext initialValue() {
             return new ReqContext(AccessController.getContext());
         }
     };
 
-    //private constructor
+    // private constructor
     @VisibleForTesting
     public ReqContext(AccessControlContext acl_ctxt) {
         _subject = Subject.getSubject(acl_ctxt);
         _reqID = uniqueId.incrementAndGet();
     }
 
-    //private constructor
+    // private constructor
     @VisibleForTesting
     public ReqContext(Subject sub) {
         _subject = sub;
         _reqID = uniqueId.incrementAndGet();
     }
-
 
     /**
      * client address
@@ -108,15 +103,18 @@ public class ReqContext {
      * The primary principal associated current subject
      */
     public Principal principal() {
-        if (_subject == null) return null;
+        if (_subject == null)
+            return null;
         Set<Principal> princs = _subject.getPrincipals();
-        if (princs.size()==0) return null;
+        if (princs.size() == 0)
+            return null;
         return (Principal) (princs.toArray()[0]);
     }
 
     public void setRealPrincipal(Principal realPrincipal) {
         this.realPrincipal = realPrincipal;
     }
+
     /**
      * The real principal associated with the subject.
      */
@@ -126,12 +124,13 @@ public class ReqContext {
 
     /**
      * Returns true if this request is an impersonation request.
+     * 
      * @return
      */
     public boolean isImpersonating() {
         return this.realPrincipal != null;
     }
-    
+
     /**
      * request ID of this request
      */

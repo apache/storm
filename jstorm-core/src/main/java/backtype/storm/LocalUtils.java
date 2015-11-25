@@ -39,32 +39,32 @@ import com.alibaba.jstorm.zk.Factory;
 import com.alibaba.jstorm.zk.Zookeeper;
 
 public class LocalUtils {
-    
+
     public static Logger LOG = LoggerFactory.getLogger(LocalUtils.class);
-    
+
     public static LocalClusterMap prepareLocalCluster() {
         LocalClusterMap state = new LocalClusterMap();
         try {
             List<String> tmpDirs = new ArrayList();
-            
+
             String zkDir = getTmpDir();
             tmpDirs.add(zkDir);
             Factory zookeeper = startLocalZookeeper(zkDir);
             Map conf = getLocalConf(zookeeper.getZooKeeperServer().getClientPort());
-            
+
             String nimbusDir = getTmpDir();
             tmpDirs.add(nimbusDir);
             Map nimbusConf = deepCopyMap(conf);
             nimbusConf.put(Config.STORM_LOCAL_DIR, nimbusDir);
             NimbusServer instance = new NimbusServer();
-            
+
             Map supervisorConf = deepCopyMap(conf);
             String supervisorDir = getTmpDir();
             tmpDirs.add(supervisorDir);
             supervisorConf.put(Config.STORM_LOCAL_DIR, supervisorDir);
             Supervisor supervisor = new Supervisor();
             IContext context = getLocalContext(supervisorConf);
-            
+
             state.setNimbusServer(instance);
             state.setNimbus(instance.launcherLocalServer(nimbusConf, new DefaultInimbus()));
             state.setZookeeper(zookeeper);
@@ -75,11 +75,11 @@ public class LocalUtils {
         } catch (Exception e) {
             LOG.error("prepare cluster error!", e);
             state.clean();
-            
+
         }
         return null;
     }
-    
+
     private static Factory startLocalZookeeper(String tmpDir) {
         for (int i = 2000; i < 65535; i++) {
             try {
@@ -90,11 +90,11 @@ public class LocalUtils {
         }
         throw new RuntimeException("No port is available to launch an inprocess zookeeper.");
     }
-    
+
     private static String getTmpDir() {
         return System.getProperty("java.io.tmpdir") + File.separator + UUID.randomUUID();
     }
-    
+
     private static Map getLocalConf(int port) {
         List<String> zkServers = new ArrayList<String>(1);
         zkServers.add("localhost");
@@ -110,7 +110,7 @@ public class LocalUtils {
         ConfigExtension.setTaskCleanupTimeoutSec(conf, 0);
         return conf;
     }
-    
+
     private static IContext getLocalContext(Map conf) {
         if (!(Boolean) conf.get(Config.STORM_LOCAL_MODE_ZMQ)) {
             IContext result = new NettyContext();
@@ -120,7 +120,7 @@ public class LocalUtils {
         }
         return null;
     }
-    
+
     private static Map deepCopyMap(Map map) {
         return new HashMap(map);
     }

@@ -33,7 +33,7 @@ public class ThriftSerializationDelegate implements SerializationDelegate {
     @Override
     public byte[] serialize(Object object) {
         try {
-            return  new TSerializer().serialize((TBase) object);
+            return new TSerializer().serialize((TBase) object);
         } catch (TException e) {
             throw new RuntimeException(e);
         }
@@ -44,7 +44,7 @@ public class ThriftSerializationDelegate implements SerializationDelegate {
         try {
             TBase instance = (TBase) clazz.newInstance();
             new TDeserializer().deserialize(instance, bytes);
-            return (T)instance;
+            return (T) instance;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

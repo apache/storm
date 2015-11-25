@@ -20,8 +20,7 @@ package com.alibaba.jstorm.task.error;
 import com.alibaba.jstorm.callback.RunnableCallback;
 
 /**
- * The callback will be called, when task occur error It just call
- * TaskReportErrorAndDie
+ * The callback will be called, when task occur error It just call TaskReportErrorAndDie
  * 
  * @author yannian
  * 

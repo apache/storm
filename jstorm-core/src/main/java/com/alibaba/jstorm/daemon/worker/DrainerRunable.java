@@ -46,8 +46,7 @@ import com.alibaba.jstorm.utils.Pair;
  * 
  */
 public class DrainerRunable extends DisruptorRunable {
-    private final static Logger LOG = LoggerFactory
-            .getLogger(DrainerRunable.class);
+    private final static Logger LOG = LoggerFactory.getLogger(DrainerRunable.class);
 
     private DisruptorQueue transferQueue;
     private ConcurrentHashMap<WorkerSlot, IConnection> nodeportSocket;
@@ -92,8 +91,7 @@ public class DrainerRunable extends DisruptorRunable {
 
         if (conn.isClosed() == true) {
             // if connection has been closed, just skip the package
-            LOG.debug("Skip one tuple of " + taskId
-                    + ", due to close connection of " + nodePort);
+            LOG.debug("Skip one tuple of " + taskId + ", due to close connection of " + nodePort);
             return;
         }
 
@@ -113,11 +111,8 @@ public class DrainerRunable extends DisruptorRunable {
     }
 
     public void handleFinish() {
-        for (Entry<IConnection, List<TaskMessage>> entry : dispatchMap
-                .entrySet()) {
-            Pair<IConnection, List<TaskMessage>> pair =
-                    new Pair<IConnection, List<TaskMessage>>(entry.getKey(),
-                            entry.getValue());
+        for (Entry<IConnection, List<TaskMessage>> entry : dispatchMap.entrySet()) {
+            Pair<IConnection, List<TaskMessage>> pair = new Pair<IConnection, List<TaskMessage>>(entry.getKey(), entry.getValue());
 
             sendingQueue.publish(pair);
         }

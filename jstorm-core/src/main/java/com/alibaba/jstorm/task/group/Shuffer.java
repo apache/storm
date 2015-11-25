@@ -38,8 +38,7 @@ public abstract class Shuffer {
         int i = 0;
 
         for (i = 0; i < size; i++) {
-            if (workerData.isOutboundTaskActive(Integer.valueOf(outTasks
-                    .get(index))))
+            if (workerData.isOutboundTaskActive(Integer.valueOf(outTasks.get(index))))
                 break;
             else
                 index = randomrange.nextInt();

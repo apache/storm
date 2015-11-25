@@ -39,9 +39,9 @@ import com.alibaba.jstorm.utils.PathUtils;
 
 /**
  * supervisor shutdown manager which can shutdown supervisor
+ * @author Johnfang (xiaojian.fxj@alibaba-inc.com)
  */
-public class SupervisorManger extends ShutdownWork implements SupervisorDaemon,
-        DaemonCommon, Runnable {
+public class SupervisorManger extends ShutdownWork implements SupervisorDaemon, DaemonCommon, Runnable {
 
     private static Logger LOG = LoggerFactory.getLogger(SupervisorManger.class);
 
@@ -67,11 +67,8 @@ public class SupervisorManger extends ShutdownWork implements SupervisorDaemon,
 
     private volatile boolean isFinishShutdown = false;
 
-    public SupervisorManger(Map conf, String supervisorId,
-            Vector<AsyncLoopThread> threads,
-            EventManager processesEventManager, EventManager eventManager,
-            Httpserver httpserver, StormClusterState stormClusterState,
-            ConcurrentHashMap<String, String> workerThreadPidsAtom) {
+    public SupervisorManger(Map conf, String supervisorId, Vector<AsyncLoopThread> threads, EventManager processesEventManager, EventManager eventManager,
+            Httpserver httpserver, StormClusterState stormClusterState, ConcurrentHashMap<String, String> workerThreadPidsAtom) {
         this.conf = conf;
         this.supervisorId = supervisorId;
         this.shutdown = new AtomicBoolean(false);
@@ -104,8 +101,7 @@ public class SupervisorManger extends ShutdownWork implements SupervisorDaemon,
             // } catch (InterruptedException e) {
             // LOG.error(e.getMessage(), e);
             // }
-            LOG.info("Successfully shutdown thread:"
-                    + thread.getThread().getName());
+            LOG.info("Successfully shutdown thread:" + thread.getThread().getName());
         }
         eventManager.shutdown();
         processesEventManager.shutdown();
@@ -144,15 +140,13 @@ public class SupervisorManger extends ShutdownWork implements SupervisorDaemon,
             return;
         }
         List<String> myWorkerIds = PathUtils.read_dir_contents(path);
-        HashMap<String, String> workerId2topologyIds =
-                new HashMap<String, String>();
+        HashMap<String, String> workerId2topologyIds = new HashMap<String, String>();
 
         for (String workerId : myWorkerIds) {
             workerId2topologyIds.put(workerId, null);
         }
 
-        shutWorker(conf, supervisorId, workerId2topologyIds,
-                workerThreadPidsAtom, null, true, null, null);
+        shutWorker(conf, supervisorId, workerId2topologyIds, workerThreadPidsAtom, null, true, null, null);
     }
 
     @Override

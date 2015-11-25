@@ -32,6 +32,8 @@ import backtype.storm.utils.Utils;
  * href="{@docRoot} to parse the <a href="{@docRoot} to parse the <a href="{@docRoot} to parse the <a
  * href="{@docRoot}
  * to parse the <a href="{@docRoot} to parse the <a href="{@docRoot} to parse the <a href="{@docRoot} to parse the <a href="{@docRoot}
+ * to parse the <a href="{@docRoot} to parse the <a href="{@docRoot} to parse the <a href="{@docRoot} to parse the <a href="{@docRoot} to parse the <a
+ * href="{@docRoot} to parse the <a href="{@docRoot} to parse the <a href="{@docRoot} to parse the <a href="{@docRoot}
  * /backtype/storm/GenericOptionsParser.html#GenericOptions"> generic storm command line arguments</a> and modifies the <code>Config</code> of the
  * <code>Tool</code>. The application-specific options are passed along without being modified.
  * 
@@ -41,21 +43,22 @@ import backtype.storm.utils.Utils;
 
 public class ToolRunner {
     static final Logger LOG = LoggerFactory.getLogger(ToolRunner.class);
-    
+
     public static void run(Tool tool, String[] args) {
         run(tool.getConf(), tool, args);
     }
-    
+
     public static void run(Config conf, Tool tool, String[] args) {
         try {
             if (conf == null) {
                 conf = new Config();
                 conf.putAll(Utils.readStormConfig());
             }
-            
+
             GenericOptionsParser parser = new GenericOptionsParser(conf, args);
+            LOG.info(conf.toString());
             tool.setConf(conf);
-            
+
             System.exit(tool.run(parser.getRemainingArgs()));
         } catch (ParseException e) {
             LOG.error("Error parsing generic options: {}", e.getMessage());

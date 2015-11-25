@@ -17,14 +17,6 @@
  */
 package com.alibaba.jstorm.task.group;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import backtype.storm.generated.GlobalStreamId;
 import backtype.storm.generated.Grouping;
 import backtype.storm.generated.JavaObject;
@@ -32,11 +24,17 @@ import backtype.storm.grouping.CustomStreamGrouping;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.tuple.Fields;
 import backtype.storm.utils.Utils;
-
 import com.alibaba.jstorm.daemon.worker.WorkerData;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.RandomRange;
 import com.alibaba.jstorm.utils.Thrift;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
 
 /**
  * Grouper, get which task should be send to for one tuple
@@ -66,9 +64,8 @@ public class MkGrouper {
     private MkLocalShuffer local_shuffer_grouper;
     private MkLocalFirst localFirst;
 
-    public MkGrouper(TopologyContext _topology_context, Fields _out_fields,
-            Grouping _thrift_grouping, List<Integer> _outTasks,
-            String streamId, WorkerData workerData) {
+    public MkGrouper(TopologyContext _topology_context, Fields _out_fields, Grouping _thrift_grouping, List<Integer> _outTasks, String streamId,
+            WorkerData workerData) {
         this.topology_context = _topology_context;
         this.out_fields = _out_fields;
         this.thrift_grouping = _thrift_grouping;
@@ -83,8 +80,7 @@ public class MkGrouper {
         this.grouptype = this.parseGroupType(workerData);
 
         String id = _topology_context.getThisTaskId() + ":" + streamId;
-        LOG.info(id + " grouptype is " + grouptype + ", out_tasks is "
-                + out_tasks + ", local_tasks" + local_tasks);
+        LOG.info(id + " grouptype is " + grouptype + ", out_tasks is " + out_tasks + ", local_tasks" + local_tasks);
 
     }
 
@@ -104,12 +100,10 @@ public class MkGrouper {
                 grouperType = GrouperType.global;
             } else {
 
-                List<String> fields_group =
-                        Thrift.fieldGrouping(thrift_grouping);
+                List<String> fields_group = Thrift.fieldGrouping(thrift_grouping);
                 Fields fields = new Fields(fields_group);
 
-                fields_grouper =
-                        new MkFieldsGrouper(out_fields, fields, out_tasks);
+                fields_grouper = new MkFieldsGrouper(out_fields, fields, out_tasks);
 
                 // hashcode by fields
                 grouperType = GrouperType.fields;
@@ -132,29 +126,23 @@ public class MkGrouper {
             int myTaskId = topology_context.getThisTaskId();
             String componentId = topology_context.getComponentId(myTaskId);
             GlobalStreamId stream = new GlobalStreamId(componentId, streamId);
-            custom_grouper =
-                    new MkCustomGrouper(topology_context, g, stream, out_tasks,
-                            myTaskId);
+            custom_grouper = new MkCustomGrouper(topology_context, g, stream, out_tasks, myTaskId);
             grouperType = GrouperType.custom_obj;
         } else if (Grouping._Fields.CUSTOM_SERIALIZED.equals(fields)) {
             // user custom group by serialized Object
             byte[] obj = thrift_grouping.get_custom_serialized();
-            CustomStreamGrouping g =
-                    (CustomStreamGrouping) Utils.javaDeserialize(obj);
+            CustomStreamGrouping g = (CustomStreamGrouping) Utils.javaDeserialize(obj);
             int myTaskId = topology_context.getThisTaskId();
             String componentId = topology_context.getComponentId(myTaskId);
             GlobalStreamId stream = new GlobalStreamId(componentId, streamId);
-            custom_grouper =
-                    new MkCustomGrouper(topology_context, g, stream, out_tasks,
-                            myTaskId);
+            custom_grouper = new MkCustomGrouper(topology_context, g, stream, out_tasks, myTaskId);
             grouperType = GrouperType.custom_serialized;
         } else if (Grouping._Fields.DIRECT.equals(fields)) {
             // directly send to a special task
             grouperType = GrouperType.direct;
         } else if (Grouping._Fields.LOCAL_OR_SHUFFLE.equals(fields)) {
             grouperType = GrouperType.local_or_shuffle;
-            local_shuffer_grouper =
-                    new MkLocalShuffer(local_tasks, out_tasks, workerData);
+            local_shuffer_grouper = new MkLocalShuffer(local_tasks, out_tasks, workerData);
         } else if (Grouping._Fields.LOCAL_FIRST.equals(fields)) {
             grouperType = GrouperType.localFirst;
             localFirst = new MkLocalFirst(local_tasks, out_tasks, workerData);

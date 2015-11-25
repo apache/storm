@@ -25,5 +25,5 @@ public class IndexHashBatchToPartition implements SingleEmitAggregator.BatchToPa
     public int partitionIndex(Object batchId, int numPartitions) {
         return IndexHashGrouping.objectToIndex(batchId, numPartitions);
     }
-    
+
 }

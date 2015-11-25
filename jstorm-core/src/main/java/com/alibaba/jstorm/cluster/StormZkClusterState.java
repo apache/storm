@@ -17,18 +17,8 @@
  */
 package com.alibaba.jstorm.cluster;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
-
-import org.apache.commons.lang.StringUtils;
-import org.apache.zookeeper.KeeperException.NodeExistsException;
-import org.apache.zookeeper.Watcher.Event.EventType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import backtype.storm.generated.TopologyTaskHbInfo;
 import backtype.storm.utils.Utils;
-
 import com.alibaba.jstorm.cache.JStormCache;
 import com.alibaba.jstorm.callback.ClusterStateCallback;
 import com.alibaba.jstorm.callback.RunnableCallback;
@@ -38,14 +28,22 @@ import com.alibaba.jstorm.schedule.Assignment;
 import com.alibaba.jstorm.schedule.AssignmentBak;
 import com.alibaba.jstorm.task.TaskInfo;
 import com.alibaba.jstorm.task.error.TaskError;
-import com.alibaba.jstorm.task.heartbeat.TaskHeartbeat;
+import com.alibaba.jstorm.task.backpressure.SourceBackpressureInfo;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.PathUtils;
 import com.alibaba.jstorm.utils.TimeUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.zookeeper.KeeperException.NodeExistsException;
+import org.apache.zookeeper.Watcher.Event.EventType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class StormZkClusterState implements StormClusterState {
-    private static Logger LOG = LoggerFactory
-            .getLogger(StormZkClusterState.class);
+    private static Logger LOG = LoggerFactory.getLogger(StormZkClusterState.class);
 
     private ClusterState cluster_state;
 
@@ -67,12 +65,10 @@ public class StormZkClusterState implements StormClusterState {
         } else {
 
             solo = true;
-            cluster_state =
-                    new DistributedClusterState((Map) cluster_state_spec);
+            cluster_state = new DistributedClusterState((Map) cluster_state_spec);
         }
 
-        assignment_info_callback =
-                new ConcurrentHashMap<String, RunnableCallback>();
+        assignment_info_callback = new ConcurrentHashMap<String, RunnableCallback>();
         supervisors_callback = new AtomicReference<RunnableCallback>(null);
         assignments_callback = new AtomicReference<RunnableCallback>(null);
         storm_base_callback = new ConcurrentHashMap<String, RunnableCallback>();
@@ -85,8 +81,7 @@ public class StormZkClusterState implements StormClusterState {
                     LOG.warn("Input args is null");
                     return null;
                 } else if (args.length < 2) {
-                    LOG.warn("Input args is invalid, args length:"
-                            + args.length);
+                    LOG.warn("Input args is invalid, args length:" + args.length);
                     return null;
                 }
 
@@ -132,11 +127,8 @@ public class StormZkClusterState implements StormClusterState {
         });
 
         String[] pathlist =
-                JStormUtils.mk_arr(Cluster.SUPERVISORS_SUBTREE,
-                        Cluster.STORMS_SUBTREE, Cluster.ASSIGNMENTS_SUBTREE,
-                        Cluster.ASSIGNMENTS_BAK_SUBTREE, Cluster.TASKS_SUBTREE,
-                        Cluster.TASKBEATS_SUBTREE, Cluster.TASKERRORS_SUBTREE,
-                        Cluster.METRIC_SUBTREE);
+                JStormUtils.mk_arr(Cluster.SUPERVISORS_SUBTREE, Cluster.STORMS_SUBTREE, Cluster.ASSIGNMENTS_SUBTREE, Cluster.ASSIGNMENTS_BAK_SUBTREE,
+                        Cluster.TASKS_SUBTREE, Cluster.TASKBEATS_SUBTREE, Cluster.TASKERRORS_SUBTREE, Cluster.METRIC_SUBTREE, Cluster.BACKPRESSURE_SUBTREE);
         for (String path : pathlist) {
             cluster_state.mkdirs(path);
         }
@@ -146,8 +138,7 @@ public class StormZkClusterState implements StormClusterState {
     /**
      * @@@ TODO
      * 
-     *     Just add cache in lower ZK level In fact, for some Object
-     *     Assignment/TaskInfo/StormBase These object can be cache for long time
+     *     Just add cache in lower ZK level In fact, for some Object Assignment/TaskInfo/StormBase These object can be cache for long time
      * 
      * @param simpleCache
      */
@@ -221,10 +212,10 @@ public class StormZkClusterState implements StormClusterState {
             deleteObject(Cluster.storm_task_root(topologyId));
             teardown_heartbeats(topologyId);
             teardown_task_errors(topologyId);
+			teardown_backpressure(topologyId);
             deleteObject(Cluster.metric_path(topologyId));
         } catch (Exception e) {
-            LOG.warn("Failed to delete task root and monitor root for" 
-                    + topologyId);
+            LOG.warn("Failed to delete task root and monitor root for" + topologyId);
         }
         remove_storm_base(topologyId);
     }
@@ -240,8 +231,7 @@ public class StormZkClusterState implements StormClusterState {
     }
 
     @Override
-    public Assignment assignment_info(String topologyId,
-            RunnableCallback callback) throws Exception {
+    public Assignment assignment_info(String topologyId, RunnableCallback callback) throws Exception {
         if (callback != null) {
             assignment_info_callback.put(topologyId, callback);
         }
@@ -257,13 +247,11 @@ public class StormZkClusterState implements StormClusterState {
         if (callback != null) {
             assignments_callback.set(callback);
         }
-        return cluster_state.get_children(Cluster.ASSIGNMENTS_SUBTREE,
-                callback != null);
+        return cluster_state.get_children(Cluster.ASSIGNMENTS_SUBTREE, callback != null);
     }
 
     @Override
-    public void set_assignment(String topologyId, Assignment info)
-            throws Exception {
+    public void set_assignment(String topologyId, Assignment info) throws Exception {
         setObject(Cluster.assignment_path(topologyId), info);
     }
 
@@ -276,26 +264,22 @@ public class StormZkClusterState implements StormClusterState {
     }
 
     @Override
-    public void backup_assignment(String topologyName, AssignmentBak info)
-            throws Exception {
+    public void backup_assignment(String topologyName, AssignmentBak info) throws Exception {
         setObject(Cluster.assignment_bak_path(topologyName), info);
     }
 
     @Override
-    public StormBase storm_base(String topologyId, RunnableCallback callback)
-            throws Exception {
+    public StormBase storm_base(String topologyId, RunnableCallback callback) throws Exception {
         if (callback != null) {
             storm_base_callback.put(topologyId, callback);
         }
 
-        return (StormBase) getObject(Cluster.storm_path(topologyId),
-                callback != null);
+        return (StormBase) getObject(Cluster.storm_path(topologyId), callback != null);
 
     }
 
     @Override
-    public void activate_storm(String topologyId, StormBase stormBase)
-            throws Exception {
+    public void activate_storm(String topologyId, StormBase stormBase) throws Exception {
         String stormPath = Cluster.storm_path(topologyId);
 
         setObject(stormPath, stormBase);
@@ -307,8 +291,7 @@ public class StormZkClusterState implements StormClusterState {
     }
 
     @Override
-    public void update_storm(String topologyId, StormStatus newElems)
-            throws Exception {
+    public void update_storm(String topologyId, StormStatus newElems) throws Exception {
         /**
          * FIXME, maybe overwrite old callback
          */
@@ -323,8 +306,7 @@ public class StormZkClusterState implements StormClusterState {
     }
 
     @Override
-    public void set_storm_monitor(String topologyId, boolean isEnable)
-            throws Exception {
+    public void set_storm_monitor(String topologyId, boolean isEnable) throws Exception {
         // TODO Auto-generated method stub
         StormBase base = this.storm_base(topologyId, null);
 
@@ -340,30 +322,20 @@ public class StormZkClusterState implements StormClusterState {
     }
 
     @Override
-    public void setup_heartbeats(String topologyId) throws Exception {
-        String taskbeatPath = Cluster.taskbeat_storm_root(topologyId);
+    public void topology_heartbeat(String topologyId, TopologyTaskHbInfo info) throws Exception {
+        String taskPath = Cluster.taskbeat_storm_root(topologyId);
+        setObject(taskPath, info);
+    }
 
-        cluster_state.mkdirs(taskbeatPath);
+    @Override
+    public TopologyTaskHbInfo topology_heartbeat(String topologyId) throws Exception {
+        String taskPath = Cluster.taskbeat_storm_root(topologyId);
+        return (TopologyTaskHbInfo) getObject(taskPath, false);
     }
 
     @Override
     public List<String> heartbeat_storms() throws Exception {
         return cluster_state.get_children(Cluster.TASKBEATS_SUBTREE, false);
-    }
-
-    @Override
-    public List<String> heartbeat_tasks(String topologyId) throws Exception {
-        String taskbeatPath = Cluster.taskbeat_storm_root(topologyId);
-
-        return cluster_state.get_children(taskbeatPath, false);
-    }
-
-    @Override
-    public void remove_task_heartbeat(String topologyId, int taskId)
-            throws Exception {
-        String taskbeatPath = Cluster.taskbeat_path(topologyId, taskId);
-
-        deleteObject(taskbeatPath);
     }
 
     @Override
@@ -379,14 +351,11 @@ public class StormZkClusterState implements StormClusterState {
     }
 
     @Override
-    public void report_task_error(String topologyId, int taskId, Throwable error)
-            throws Exception {
-        report_task_error(topologyId, taskId,
-                new String(JStormUtils.getErrorInfo(error)));
+    public void report_task_error(String topologyId, int taskId, Throwable error) throws Exception {
+        report_task_error(topologyId, taskId, new String(JStormUtils.getErrorInfo(error)), null);
     }
 
-    public void report_task_error(String topologyId, int taskId, String error)
-            throws Exception {
+    public void report_task_error(String topologyId, int taskId, String error, String tag) throws Exception {
         boolean found = false;
         String path = Cluster.taskerror_path(topologyId, taskId);
         cluster_state.mkdirs(path);
@@ -403,9 +372,10 @@ public class StormZkClusterState implements StormClusterState {
                 deleteObject(errorPath);
                 continue;
             }
-            if (errorInfo.equals(error)) {
-                deleteObject(errorPath);
-                setObject(timestampPath, error);
+            if (errorInfo.equals(error)
+                    || (tag != null && errorInfo.startsWith(tag))) {
+                cluster_state.delete_node(errorPath);
+                cluster_state.set_data(timestampPath, error.getBytes());
                 found = true;
                 break;
             }
@@ -429,8 +399,7 @@ public class StormZkClusterState implements StormClusterState {
     private static final String TASK_IS_DEAD = "is dead on"; // Full string is
                                                              // "task-id is dead on hostname:port"
 
-    private void setLastErrInfo(String topologyId, String error,
-            String timeStamp) throws Exception {
+    private void setLastErrInfo(String topologyId, String error, String timeStamp) throws Exception {
         // Set error information in task error topology patch
         // Last Error information format in ZK: map<report_duration, timestamp>
         // report_duration means only the errors will presented in web ui if the
@@ -440,13 +409,10 @@ public class StormZkClusterState implements StormClusterState {
         String lastErrTopoPath = Cluster.lasterror_path(topologyId);
         Map<Integer, String> lastErrInfo = null;
         try {
-            lastErrInfo =
-                    (Map<Integer, String>) getObject(lastErrTopoPath, false);
+            lastErrInfo = (Map<Integer, String>) getObject(lastErrTopoPath, false);
 
         } catch (Exception e) {
-            LOG.error(
-                    "Failed to get last error time. Remove the corrupt node for "
-                            + topologyId, e);
+            LOG.error("Failed to get last error time. Remove the corrupt node for " + topologyId, e);
             remove_lastErr_time(topologyId);
             lastErrInfo = null;
         }
@@ -466,15 +432,13 @@ public class StormZkClusterState implements StormClusterState {
     }
 
     @Override
-    public void remove_task_error(String topologyId, int taskId)
-            throws Exception {
+    public void remove_task_error(String topologyId, int taskId) throws Exception {
         String path = Cluster.taskerror_path(topologyId, taskId);
         cluster_state.delete_node(path);
     }
 
     @Override
-    public Map<Integer, String> topo_lastErr_time(String topologyId)
-            throws Exception {
+    public Map<Integer, String> topo_lastErr_time(String topologyId) throws Exception {
         String path = Cluster.lasterror_path(topologyId);
 
         return (Map<Integer, String>) getObject(path, false);
@@ -490,17 +454,18 @@ public class StormZkClusterState implements StormClusterState {
     public List<String> task_error_storms() throws Exception {
         return cluster_state.get_children(Cluster.TASKERRORS_SUBTREE, false);
     }
-    
+
     @Override
     public List<String> task_error_ids(String topologyId) throws Exception {
-    	return cluster_state.get_children(Cluster.taskerror_storm_root(topologyId), false);
+        return cluster_state.get_children(Cluster.taskerror_storm_root(topologyId), false);
     }
 
     @Override
-    public List<String> task_error_time(String topologyId, int taskId)
-            throws Exception {
+    public List<String> task_error_time(String topologyId, int taskId) throws Exception {
         String path = Cluster.taskerror_path(topologyId, taskId);
-        cluster_state.mkdirs(path);
+        if (cluster_state.node_existed(path, false) == false) {
+        	return new ArrayList<String>();
+        }
         return cluster_state.get_children(path, false);
     }
 
@@ -509,38 +474,37 @@ public class StormZkClusterState implements StormClusterState {
         String tasksPath = Cluster.storm_task_root(topologyId);
         Object data = getObject(tasksPath, false);
         if (data != null) {
-            Map<Integer, TaskInfo> taskInfoMap = ((Map<Integer, TaskInfo>)data);
-            for (Integer taskId : taskIds){
+            Map<Integer, TaskInfo> taskInfoMap = ((Map<Integer, TaskInfo>) data);
+            for (Integer taskId : taskIds) {
                 taskInfoMap.remove(taskId);
             }
-            //update zk node of tasks
+            // update zk node of tasks
             setObject(tasksPath, taskInfoMap);
         }
     }
 
     @Override
-    public String task_error_info(String topologyId, int taskId, long timeStamp)
-            throws Exception {
+    public String task_error_info(String topologyId, int taskId, long timeStamp) throws Exception {
         String path = Cluster.taskerror_path(topologyId, taskId);
-        cluster_state.mkdirs(path);
         path = path + "/" + timeStamp;
         return getString(path, false);
     }
 
     @Override
-    public List<TaskError> task_errors(String topologyId, int taskId)
-            throws Exception {
-        String path = Cluster.taskerror_path(topologyId, taskId);
-        cluster_state.mkdirs(path);
+    public List<TaskError> task_errors(String topologyId, int taskId) throws Exception {
+    	List<TaskError> errors = new ArrayList<TaskError>();
+    	String path = Cluster.taskerror_path(topologyId, taskId);
+    	if (cluster_state.node_existed(path, false) == false) {
+        	return errors;
+        }
 
         List<String> children = cluster_state.get_children(path, false);
-        List<TaskError> errors = new ArrayList<TaskError>();
+        
 
         for (String str : children) {
             byte[] v = cluster_state.get_data(path + "/" + str, false);
             if (v != null) {
-                TaskError error =
-                        new TaskError(new String(v), Integer.parseInt(str));
+                TaskError error = new TaskError(new String(v), Integer.parseInt(str));
                 errors.add(error);
             }
         }
@@ -572,42 +536,25 @@ public class StormZkClusterState implements StormClusterState {
             LOG.error("Could not teardown errors for " + topologyId, e);
         }
     }
+
     @Override
-    public void set_task(String topologyId, Map<Integer, TaskInfo>  taskInfoMap)
-            throws Exception {
+    public void set_task(String topologyId, Map<Integer, TaskInfo> taskInfoMap) throws Exception {
         String stormTaskPath = Cluster.storm_task_root(topologyId);
-        if (taskInfoMap != null){
-            //reupdate zk node of tasks
+        if (taskInfoMap != null) {
+            // reupdate zk node of tasks
             setObject(stormTaskPath, taskInfoMap);
         }
     }
+
     @Override
-    public void add_task(String topologyId, Map<Integer, TaskInfo> taskInfoMap)
-            throws Exception {
+    public void add_task(String topologyId, Map<Integer, TaskInfo> taskInfoMap) throws Exception {
         String stormTaskPath = Cluster.storm_task_root(topologyId);
         Object data = getObject(stormTaskPath, false);
-        if (data != null){
-            ((Map<Integer, TaskInfo>)data).putAll(taskInfoMap);
-            //reupdate zk node of tasks
+        if (data != null) {
+            ((Map<Integer, TaskInfo>) data).putAll(taskInfoMap);
+            // reupdate zk node of tasks
             setObject(stormTaskPath, data);
         }
-    }
-
-    @Override
-    public TaskHeartbeat task_heartbeat(String topologyId, int taskId)
-            throws Exception {
-        String taskbeatPath = Cluster.taskbeat_path(topologyId, taskId);
-
-        return (TaskHeartbeat) getObjectSync(taskbeatPath, false);
-
-    }
-
-    @Override
-    public void task_heartbeat(String topologyId, int taskId, TaskHeartbeat info)
-            throws Exception {
-        String taskPath = Cluster.taskbeat_path(topologyId, taskId);
-
-        setObject(taskPath, info);
     }
 
     @Override
@@ -623,23 +570,22 @@ public class StormZkClusterState implements StormClusterState {
         if (data == null) {
             return null;
         }
-        return ((Map<Integer, TaskInfo>)data).keySet();
+        return ((Map<Integer, TaskInfo>) data).keySet();
     }
 
     @Override
-    public Set<Integer> task_ids_by_componentId(String topologyId,
-            String componentId) throws Exception {
+    public Set<Integer> task_ids_by_componentId(String topologyId, String componentId) throws Exception {
         String stormTaskPath = Cluster.storm_task_root(topologyId);
         Object data = getObject(stormTaskPath, false);
         if (data == null) {
             return null;
         }
-        Map<Integer, TaskInfo> taskInfoMap = (Map<Integer, TaskInfo>)data;
+        Map<Integer, TaskInfo> taskInfoMap = (Map<Integer, TaskInfo>) data;
         Set<Integer> rtn = new HashSet<Integer>();
         Set<Integer> taskIds = taskInfoMap.keySet();
-        for(Integer taskId : taskIds){
+        for (Integer taskId : taskIds) {
             TaskInfo taskInfo = taskInfoMap.get(taskId);
-            if (taskInfo != null){
+            if (taskInfo != null) {
                 if (taskInfo.getComponentId().equalsIgnoreCase(componentId))
                     rtn.add(taskId);
             }
@@ -672,13 +618,11 @@ public class StormZkClusterState implements StormClusterState {
         if (callback != null) {
             supervisors_callback.set(callback);
         }
-        return cluster_state.get_children(Cluster.SUPERVISORS_SUBTREE,
-                callback != null);
+        return cluster_state.get_children(Cluster.SUPERVISORS_SUBTREE, callback != null);
     }
 
     @Override
-    public void supervisor_heartbeat(String supervisorId, SupervisorInfo info)
-            throws Exception {
+    public void supervisor_heartbeat(String supervisorId, SupervisorInfo info) throws Exception {
 
         String supervisorPath = Cluster.supervisor_path(supervisorId);
 
@@ -703,15 +647,13 @@ public class StormZkClusterState implements StormClusterState {
     }
 
     public String get_nimbus_slave_time(String host) throws Exception {
-        String path =
-                Cluster.NIMBUS_SLAVE_SUBTREE + Cluster.ZK_SEPERATOR + host;
-        return (String) getObject(path, false);
+        String path = Cluster.NIMBUS_SLAVE_SUBTREE + Cluster.ZK_SEPERATOR + host;
+        return getString(path, false);
     }
 
     @Override
     public void update_nimbus_slave(String host, int time) throws Exception {
-        setTempObject(Cluster.NIMBUS_SLAVE_SUBTREE + Cluster.ZK_SEPERATOR
-                + host, String.valueOf(time));
+        setTempObject(Cluster.NIMBUS_SLAVE_SUBTREE + Cluster.ZK_SEPERATOR + host, String.valueOf(time));
     }
 
     @Override
@@ -720,8 +662,24 @@ public class StormZkClusterState implements StormClusterState {
     }
 
     @Override
-    public boolean try_to_be_leader(String path, String host,
-            RunnableCallback callback) throws Exception {
+    public void update_nimbus_detail(String hostPort, Map map) throws Exception {
+        // TODO Auto-generated method stub
+        cluster_state.set_ephemeral_node(Cluster.NIMBUS_SLAVE_DETAIL_SUBTREE + Cluster.ZK_SEPERATOR + hostPort, Utils.serialize(map));
+    }
+
+    @Override
+    public Map get_nimbus_detail(String hostPort, boolean watch) throws Exception {
+        byte[] data = cluster_state.get_data(Cluster.NIMBUS_SLAVE_DETAIL_SUBTREE + Cluster.ZK_SEPERATOR + hostPort, watch);
+        return (Map) Utils.maybe_deserialize(data);
+    }
+    @Override
+    public void unregister_nimbus_detail(String hostPort) throws Exception {
+        cluster_state.delete_node(Cluster.NIMBUS_SLAVE_DETAIL_SUBTREE + Cluster.ZK_SEPERATOR + hostPort);
+    }
+
+
+    @Override
+    public boolean try_to_be_leader(String path, String host, RunnableCallback callback) throws Exception {
         // TODO Auto-generated method stub
         if (callback != null)
             this.master_callback.set(callback);
@@ -736,24 +694,53 @@ public class StormZkClusterState implements StormClusterState {
     }
 
     @Override
-    public void set_topology_metric(String topologyId, Object metric)
-            throws Exception {
-        // TODO Auto-generated method stub
+    public void set_topology_metric(String topologyId, Object metric) throws Exception {
         String path = Cluster.metric_path(topologyId);
-
         setObject(path, metric);
     }
 
     @Override
     public Object get_topology_metric(String topologyId) throws Exception {
-        // TODO Auto-generated method stub
         return getObject(Cluster.metric_path(topologyId), false);
     }
 
-	@Override
-	public List<String> get_metrics() throws Exception {
-		// TODO Auto-generated method stub
-		return cluster_state.get_children(Cluster.METRIC_SUBTREE, false);
-	}
+    @Override
+    public List<String> get_metrics() throws Exception {
+        return cluster_state.get_children(Cluster.METRIC_SUBTREE, false);
+    }
+    @Override
+    public List<String> list_dirs(String path, boolean watch) throws  Exception {
+        List<String> subDirs = null;
+        subDirs = cluster_state.get_children(path, watch);
+        return subDirs;
+    }
 
+    @Override
+    public List<String> backpressureInfos() throws Exception {
+        return cluster_state.get_children(Cluster.BACKPRESSURE_SUBTREE, false);
+    }
+
+    @Override
+    public void set_backpressure_info(String topologyId, Map<String, SourceBackpressureInfo> sourceToBackpressureInfo) throws Exception {
+        String path = Cluster.backpressure_path(topologyId);
+        cluster_state.set_data(path, Utils.serialize(sourceToBackpressureInfo));
+    }
+
+    @Override
+    public Map<String, SourceBackpressureInfo> get_backpressure_info(String topologyId) throws Exception {
+        String path = Cluster.backpressure_path(topologyId);
+        byte[] data = cluster_state.get_data(path, false);
+        return (Map<String, SourceBackpressureInfo>) Utils.maybe_deserialize(data);
+    }
+
+    @Override
+    public void teardown_backpressure(String topologyId) {
+        try {
+            String backpressurePath = Cluster.backpressure_path(topologyId);
+
+            cluster_state.delete_node(backpressurePath);
+        } catch (Exception e) {
+            LOG.warn("Could not teardown backpressure info for " + topologyId, e);
+        }
+    }
 }

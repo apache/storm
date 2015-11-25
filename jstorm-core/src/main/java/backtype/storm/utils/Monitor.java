@@ -17,16 +17,17 @@
  */
 package backtype.storm.utils;
 
-import backtype.storm.generated.*;
+import backtype.storm.generated.ClusterSummary;
+import backtype.storm.generated.Nimbus;
+import backtype.storm.generated.TopologySummary;
 
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Deprecated in JStorm
+ * 
  * @author zhongyan.feng
- *
+ * 
  */
 @Deprecated
 public class Monitor {
@@ -106,17 +107,17 @@ public class Monitor {
     /**
      * @@@ Don't be compatible with Storm
      * 
-     * Here skip the logic
+     *     Here skip the logic
      * @param client
      * @param topology
      * @return
      * @throws Exception
      */
-    private HashSet<String> getComponents(Nimbus.Client client, String topology) throws Exception{
+    private HashSet<String> getComponents(Nimbus.Client client, String topology) throws Exception {
         HashSet<String> components = new HashSet<String>();
         ClusterSummary clusterSummary = client.getClusterInfo();
         TopologySummary topologySummary = null;
-        for (TopologySummary ts: clusterSummary.get_topologies()) {
+        for (TopologySummary ts : clusterSummary.get_topologies()) {
             if (topology.equals(ts.get_name())) {
                 topologySummary = ts;
                 break;
@@ -126,12 +127,12 @@ public class Monitor {
             throw new IllegalArgumentException("topology: " + topology + " not found");
         } else {
             String id = topologySummary.get_id();
-//            GetInfoOptions getInfoOpts = new GetInfoOptions();
-//            getInfoOpts.set_num_err_choice(NumErrorsChoice.NONE);
-//            TopologyInfo info = client.getTopologyInfoWithOpts(id, getInfoOpts);
-//            for (ExecutorSummary es: info.get_executors()) {
-//                components.add(es.get_component_id());
-//            }
+            // GetInfoOptions getInfoOpts = new GetInfoOptions();
+            // getInfoOpts.set_num_err_choice(NumErrorsChoice.NONE);
+            // TopologyInfo info = client.getTopologyInfoWithOpts(id, getInfoOpts);
+            // for (ExecutorSummary es: info.get_executors()) {
+            // components.add(es.get_component_id());
+            // }
         }
         return components;
     }
@@ -161,7 +162,7 @@ public class Monitor {
             throw new IllegalArgumentException("stream name must be something");
         }
 
-        if ( !WATCH_TRANSFERRED.equals(_watch) && !WATCH_EMITTED.equals(_watch)) {
+        if (!WATCH_TRANSFERRED.equals(_watch) && !WATCH_EMITTED.equals(_watch)) {
             throw new IllegalArgumentException("watch item must either be transferred or emitted");
         }
         System.out.println("topology\tcomponent\tparallelism\tstream\ttime-diff ms\t" + _watch + "\tthroughput (Kt/s)");
@@ -189,7 +190,7 @@ public class Monitor {
         boolean streamFound = false;
         ClusterSummary clusterSummary = client.getClusterInfo();
         TopologySummary topologySummary = null;
-        for (TopologySummary ts: clusterSummary.get_topologies()) {
+        for (TopologySummary ts : clusterSummary.get_topologies()) {
             if (_topology.equals(ts.get_name())) {
                 topologySummary = ts;
                 break;
@@ -198,30 +199,30 @@ public class Monitor {
         if (topologySummary == null) {
             throw new IllegalArgumentException("topology: " + _topology + " not found");
         } else {
-//            String id = topologySummary.get_id();
-//            GetInfoOptions getInfoOpts = new GetInfoOptions();
-//            getInfoOpts.set_num_err_choice(NumErrorsChoice.NONE);
-//            TopologyInfo info = client.getTopologyInfoWithOpts(id, getInfoOpts);
-//            for (ExecutorSummary es: info.get_executors()) {
-//                if (_component.equals(es.get_component_id())) {
-//                    componentParallelism ++;
-//                    ExecutorStats stats = es.get_stats();
-//                    if (stats != null) {
-//                        Map<String,Map<String,Long>> statted =
-//                                WATCH_EMITTED.equals(_watch) ? stats.get_emitted() : stats.get_transferred();
-//                        if ( statted != null) {
-//                            Map<String, Long> e2 = statted.get(":all-time");
-//                            if (e2 != null) {
-//                                Long stream = e2.get(_stream);
-//                                if (stream != null){
-//                                    streamFound = true;
-//                                    totalStatted += stream;
-//                                }
-//                            }
-//                        }
-//                    }
-//                }
-//            }
+            // String id = topologySummary.get_id();
+            // GetInfoOptions getInfoOpts = new GetInfoOptions();
+            // getInfoOpts.set_num_err_choice(NumErrorsChoice.NONE);
+            // TopologyInfo info = client.getTopologyInfoWithOpts(id, getInfoOpts);
+            // for (ExecutorSummary es: info.get_executors()) {
+            // if (_component.equals(es.get_component_id())) {
+            // componentParallelism ++;
+            // ExecutorStats stats = es.get_stats();
+            // if (stats != null) {
+            // Map<String,Map<String,Long>> statted =
+            // WATCH_EMITTED.equals(_watch) ? stats.get_emitted() : stats.get_transferred();
+            // if ( statted != null) {
+            // Map<String, Long> e2 = statted.get(":all-time");
+            // if (e2 != null) {
+            // Long stream = e2.get(_stream);
+            // if (stream != null){
+            // streamFound = true;
+            // totalStatted += stream;
+            // }
+            // }
+            // }
+            // }
+            // }
+            // }
         }
 
         if (componentParallelism <= 0) {
@@ -242,8 +243,9 @@ public class Monitor {
         long stattedDelta = totalStatted - state.getLastStatted();
         state.setLastTime(now);
         state.setLastStatted(totalStatted);
-        double throughput = (stattedDelta == 0 || timeDelta == 0) ? 0.0 : ((double)stattedDelta/(double)timeDelta);
-        System.out.println(_topology+"\t"+_component+"\t"+componentParallelism+"\t"+_stream+"\t"+timeDelta+"\t"+stattedDelta+"\t"+throughput);
+        double throughput = (stattedDelta == 0 || timeDelta == 0) ? 0.0 : ((double) stattedDelta / (double) timeDelta);
+        System.out.println(_topology + "\t" + _component + "\t" + componentParallelism + "\t" + _stream + "\t" + timeDelta + "\t" + stattedDelta + "\t"
+                + throughput);
     }
 
     public void set_interval(int _interval) {

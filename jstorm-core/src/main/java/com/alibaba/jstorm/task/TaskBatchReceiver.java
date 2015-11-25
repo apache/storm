@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import com.alibaba.jstorm.callback.AsyncLoopThread;
 import com.alibaba.jstorm.task.TaskReceiver.DeserializeRunnable;
 import com.alibaba.jstorm.utils.JStormUtils;
+import com.alibaba.jstorm.utils.TimeUtils;
 
 import backtype.storm.task.TopologyContext;
 import backtype.storm.tuple.BatchTuple;
@@ -32,27 +33,20 @@ import backtype.storm.tuple.Tuple;
 import backtype.storm.utils.DisruptorQueue;
 
 public class TaskBatchReceiver extends TaskReceiver {
-    private static Logger LOG = LoggerFactory
-            .getLogger(TaskBatchReceiver.class);
+    private static Logger LOG = LoggerFactory.getLogger(TaskBatchReceiver.class);
 
-    public TaskBatchReceiver(Task task, int taskId, Map stormConf,
-            TopologyContext topologyContext,
-            Map<Integer, DisruptorQueue> innerTaskTransfer,
+    public TaskBatchReceiver(Task task, int taskId, Map stormConf, TopologyContext topologyContext, Map<Integer, DisruptorQueue> innerTaskTransfer,
             TaskStatus taskStatus, String taskName) {
-        super(task, taskId, stormConf, topologyContext, innerTaskTransfer,
-                taskStatus, taskName);
+        super(task, taskId, stormConf, topologyContext, innerTaskTransfer, taskStatus, taskName);
     }
 
     @Override
     protected void setDeserializeThread() {
-        this.deserializeThread =
-                new AsyncLoopThread(new DeserializeBatchRunnable(
-                        deserializeQueue, innerTaskTransfer.get(taskId)));
+        this.deserializeThread = new AsyncLoopThread(new DeserializeBatchRunnable(deserializeQueue, innerTaskTransfer.get(taskId)));
     }
 
     public class DeserializeBatchRunnable extends DeserializeRunnable {
-        public DeserializeBatchRunnable(DisruptorQueue deserializeQueue,
-                DisruptorQueue exeQueue) {
+        public DeserializeBatchRunnable(DisruptorQueue deserializeQueue, DisruptorQueue exeQueue) {
             super(deserializeQueue, exeQueue);
         }
 
@@ -83,14 +77,11 @@ public class TaskBatchReceiver extends TaskReceiver {
                 return tuple;
             } catch (Throwable e) {
                 if (taskStatus.isShutdown() == false) {
-                    LOG.error(
-                            idStr + " recv thread error "
-                                    + JStormUtils.toPrintableString(ser_msg)
-                                    + "\n", e);
+                    LOG.error(idStr + " recv thread error " + JStormUtils.toPrintableString(ser_msg) + "\n", e);
                 }
             } finally {
                 long end = System.nanoTime();
-                deserializeTimer.update((end - start)/1000000.0d);
+                deserializeTimer.update((end - start) / TimeUtils.NS_PER_US);
             }
 
             return null;

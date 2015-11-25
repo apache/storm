@@ -29,8 +29,7 @@ import backtype.storm.topology.FailedException;
  */
 public interface ICommitter extends Serializable {
     /**
-     * begin to commit batchId's data, then return the commit result The
-     * commitResult will store into outside storage
+     * begin to commit batchId's data, then return the commit result The commitResult will store into outside storage
      * 
      * if failed to commit, please throw FailedException
      * 
@@ -43,8 +42,7 @@ public interface ICommitter extends Serializable {
     /**
      * begin to revert batchId's data
      * 
-     * If current task fails to commit batchId, it won't call revert(batchId) If
-     * current task fails to revert batchId, JStorm won't call revert again.
+     * If current task fails to commit batchId, it won't call revert(batchId) If current task fails to revert batchId, JStorm won't call revert again.
      * 
      * @param id
      */

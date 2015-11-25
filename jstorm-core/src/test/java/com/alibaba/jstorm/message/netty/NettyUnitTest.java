@@ -48,8 +48,7 @@ import com.lmax.disruptor.dsl.ProducerType;
 
 public class NettyUnitTest {
 
-    private static final Logger LOG = LoggerFactory
-            .getLogger(NettyUnitTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(NettyUnitTest.class);
 
     private static int port = 6700;
     private static int task = 1;
@@ -76,20 +75,17 @@ public class NettyUnitTest {
         // Check whether context can be reused or not
         context = TransportFactory.makeContext(storm_conf);
     }
-    
+
     private IConnection initNettyServer() {
         return initNettyServer(port);
     }
-    
+
     private IConnection initNettyServer(int port) {
         ConcurrentHashMap<Integer, DisruptorQueue> deserializeQueues = new ConcurrentHashMap<Integer, DisruptorQueue>();
         IConnection server = context.bind(null, port, deserializeQueues);
-        
-        WaitStrategy waitStrategy =
-                (WaitStrategy) JStormUtils.createDisruptorWaitStrategy(storm_conf);
-        DisruptorQueue recvQueue =
-                DisruptorQueue.mkInstance("NettyUnitTest", ProducerType.SINGLE,
-                        1024, waitStrategy);
+
+        WaitStrategy waitStrategy = (WaitStrategy) JStormUtils.createDisruptorWaitStrategy(storm_conf);
+        DisruptorQueue recvQueue = DisruptorQueue.mkInstance("NettyUnitTest", ProducerType.SINGLE, 1024, waitStrategy);
         server.registerQueue(task, recvQueue);
 
         return server;
@@ -110,7 +106,7 @@ public class NettyUnitTest {
         List<TaskMessage> list = new ArrayList<TaskMessage>();
         TaskMessage message = new TaskMessage(task, req_msg.getBytes());
         list.add(message);
-        
+
         client.send(message);
 
         byte[] recv = (byte[]) server.recv(task, 0);
@@ -137,8 +133,7 @@ public class NettyUnitTest {
     public void test_large_msg() {
         System.out.println("!!!!!!!!!!start large message test!!!!!!!!");
         String req_msg = setupLargMsg();
-        System.out.println("!!!!Finish batch data, size:" + req_msg.length()
-                + "!!!!");
+        System.out.println("!!!!Finish batch data, size:" + req_msg.length() + "!!!!");
 
         IConnection server = null;
         IConnection client = null;
@@ -239,7 +234,7 @@ public class NettyUnitTest {
         Assert.assertEquals(req_msg, new String(recv));
 
         System.out.println("Finished to receive message");
-        
+
         lock.lock();
         clientClose.signal();
         server.close();
@@ -249,13 +244,13 @@ public class NettyUnitTest {
 
         System.out.println("!!!!!!!!!!!!End test_first_client!!!!!!!!!!!!!");
     }
-    
+
     @Test
     public void test_msg_buffer_timeout() throws InterruptedException {
         System.out.println("!!!!!!!!Start test_msg_buffer_timeout !!!!!!!!!!!");
         final String req_msg = setupLargMsg();
 
-        ConfigExtension.setNettyPendingBufferTimeout(storm_conf, 10*1000l);
+        ConfigExtension.setNettyPendingBufferTimeout(storm_conf, 10 * 1000l);
         final IContext context = TransportFactory.makeContext(storm_conf);
 
         new Thread(new Runnable() {
@@ -300,7 +295,7 @@ public class NettyUnitTest {
         Assert.assertEquals(null, recv);
 
         System.out.println("Pending message was timouout:" + (recv == null));
-        
+
         lock.lock();
         clientClose.signal();
         server.close();
@@ -322,8 +317,7 @@ public class NettyUnitTest {
         new Thread(new Runnable() {
 
             public void send() {
-                final IConnection client =
-                        context.connect(null, "localhost", port);
+                final IConnection client = context.connect(null, "localhost", port);
 
                 List<TaskMessage> list = new ArrayList<TaskMessage>();
 
@@ -331,8 +325,7 @@ public class NettyUnitTest {
 
                     String req_msg = String.valueOf(i + base);
 
-                    TaskMessage message =
-                            new TaskMessage(task, req_msg.getBytes());
+                    TaskMessage message = new TaskMessage(task, req_msg.getBytes());
                     list.add(message);
 
                 }
@@ -367,11 +360,10 @@ public class NettyUnitTest {
         for (int i = 1; i < Short.MAX_VALUE; i++) {
             byte[] message = (byte[]) server.recv(task, 0);
 
-            Assert.assertEquals(String.valueOf(i + base),
-                    new String(message));
+            Assert.assertEquals(String.valueOf(i + base), new String(message));
 
             if (i % 1000 == 0) {
-                //System.out.println("Receive " + new String(message));
+                // System.out.println("Receive " + new String(message));
             }
         }
 
@@ -388,8 +380,7 @@ public class NettyUnitTest {
 
     @Test
     public void test_slow_receive() throws InterruptedException {
-        System.out
-                .println("!!!!!!!!!!Start test_slow_receive message test!!!!!!!!");
+        System.out.println("!!!!!!!!!!Start test_slow_receive message test!!!!!!!!");
         final int base = 100000;
 
         final IContext context = TransportFactory.makeContext(storm_conf);
@@ -411,8 +402,7 @@ public class NettyUnitTest {
 
                     String req_msg = String.valueOf(i + base);
 
-                    TaskMessage message =
-                            new TaskMessage(task, req_msg.getBytes());
+                    TaskMessage message = new TaskMessage(task, req_msg.getBytes());
                     list.add(message);
 
                     if (i % 1000 == 0) {
@@ -444,11 +434,10 @@ public class NettyUnitTest {
             byte[] message = (byte[]) server.recv(task, 0);
             JStormUtils.sleepMs(1);
 
-            Assert.assertEquals(String.valueOf(i + base),
-                    new String(message));
+            Assert.assertEquals(String.valueOf(i + base), new String(message));
 
             if (i % 1000 == 0) {
-                //System.out.println("Receive " + new String(message));
+                // System.out.println("Receive " + new String(message));
             }
         }
 
@@ -460,14 +449,12 @@ public class NettyUnitTest {
         contextClose.await();
         context.term();
         lock.unlock();
-        System.out
-                .println("!!!!!!!!!!End test_slow_receive message test!!!!!!!!");
+        System.out.println("!!!!!!!!!!End test_slow_receive message test!!!!!!!!");
     }
 
     @Test
     public void test_slow_receive_big() throws InterruptedException {
-        System.out
-                .println("!!!!!!!!!!Start test_slow_receive_big message test!!!!!!!!");
+        System.out.println("!!!!!!!!!!Start test_slow_receive_big message test!!!!!!!!");
         final int base = 100;
         final String req_msg = setupLargMsg();
 
@@ -478,14 +465,12 @@ public class NettyUnitTest {
 
             @Override
             public void run() {
-                final IConnection client =
-                        context.connect(null, "localhost", port);
+                final IConnection client = context.connect(null, "localhost", port);
 
                 lock.lock();
                 for (int i = 1; i < base; i++) {
 
-                    TaskMessage message =
-                            new TaskMessage(task, req_msg.getBytes());
+                    TaskMessage message = new TaskMessage(task, req_msg.getBytes());
                     System.out.println("send " + i);
                     client.send(message);
 
@@ -524,8 +509,7 @@ public class NettyUnitTest {
         contextClose.await();
         context.term();
         lock.unlock();
-        System.out
-                .println("!!!!!!!!!!End test_slow_receive_big message test!!!!!!!!");
+        System.out.println("!!!!!!!!!!End test_slow_receive_big message test!!!!!!!!");
     }
 
     @Test
@@ -610,8 +594,7 @@ public class NettyUnitTest {
 
             @Override
             public void run() {
-                final IConnection client =
-                        context.connect(null, "localhost", port);
+                final IConnection client = context.connect(null, "localhost", port);
 
                 lock.lock();
 
@@ -673,8 +656,7 @@ public class NettyUnitTest {
     }
 
     /**
-     * Due to there is only one client to one server in one jvm It can't do this
-     * test
+     * Due to there is only one client to one server in one jvm It can't do this test
      * 
      * @throws InterruptedException
      */
@@ -692,12 +674,10 @@ public class NettyUnitTest {
                 @Override
                 public void run() {
 
-                    IConnection client =
-                            context.connect(null, "localhost", port);
+                    IConnection client = context.connect(null, "localhost", port);
 
                     List<TaskMessage> list = new ArrayList<TaskMessage>();
-                    TaskMessage message =
-                            new TaskMessage(task, req_msg.getBytes());
+                    TaskMessage message = new TaskMessage(task, req_msg.getBytes());
                     list.add(message);
 
                     client.send(message);

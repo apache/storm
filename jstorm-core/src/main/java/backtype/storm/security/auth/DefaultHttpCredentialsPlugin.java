@@ -31,11 +31,11 @@ import org.slf4j.LoggerFactory;
 import backtype.storm.security.auth.ReqContext;
 
 public class DefaultHttpCredentialsPlugin implements IHttpCredentialsPlugin {
-    private static final Logger LOG =
-            LoggerFactory.getLogger(DefaultHttpCredentialsPlugin.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultHttpCredentialsPlugin.class);
 
     /**
      * No-op
+     * 
      * @param storm_conf Storm configuration
      */
     @Override
@@ -45,6 +45,7 @@ public class DefaultHttpCredentialsPlugin implements IHttpCredentialsPlugin {
 
     /**
      * Gets the user name from the request principal.
+     * 
      * @param req the servlet request
      * @return the authenticated user, or null if none is authenticated
      */
@@ -54,7 +55,7 @@ public class DefaultHttpCredentialsPlugin implements IHttpCredentialsPlugin {
         if (req != null && (princ = req.getUserPrincipal()) != null) {
             String userName = princ.getName();
             if (userName != null && !userName.isEmpty()) {
-                LOG.debug("HTTP request had user ("+userName+")");
+                LOG.debug("HTTP request had user (" + userName + ")");
                 return userName;
             }
         }
@@ -62,29 +63,28 @@ public class DefaultHttpCredentialsPlugin implements IHttpCredentialsPlugin {
     }
 
     /**
-     * Populates a given context with a new Subject derived from the
-     * credentials in a servlet request.
+     * Populates a given context with a new Subject derived from the credentials in a servlet request.
+     * 
      * @param context the context to be populated
      * @param req the servlet request
      * @return the context
      */
     @Override
-    public ReqContext populateContext(ReqContext context,
-            HttpServletRequest req) {
+    public ReqContext populateContext(ReqContext context, HttpServletRequest req) {
         String userName = getUserName(req);
 
         String doAsUser = req.getHeader("doAsUser");
-        if(doAsUser == null) {
+        if (doAsUser == null) {
             doAsUser = req.getParameter("doAsUser");
         }
 
-        if(doAsUser != null) {
+        if (doAsUser != null) {
             context.setRealPrincipal(new SingleUserPrincipal(userName));
             userName = doAsUser;
         }
 
         Set<Principal> principals = new HashSet<Principal>();
-        if(userName != null) {
+        if (userName != null) {
             Principal p = new SingleUserPrincipal(userName);
             principals.add(p);
         }

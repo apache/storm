@@ -54,11 +54,8 @@ public class TaskInfo implements Serializable {
 
     @Override
     public boolean equals(Object assignment) {
-        if (assignment instanceof TaskInfo
-                && ((TaskInfo) assignment).getComponentId().equals(
-                        getComponentId())
-                && ((TaskInfo) assignment).getComponentType().equals(
-                        componentType)) {
+        if (assignment instanceof TaskInfo && ((TaskInfo) assignment).getComponentId().equals(getComponentId())
+                && ((TaskInfo) assignment).getComponentType().equals(componentType)) {
             return true;
         }
         return false;
@@ -66,13 +63,11 @@ public class TaskInfo implements Serializable {
 
     @Override
     public int hashCode() {
-        return this.getComponentId().hashCode()
-                + this.getComponentType().hashCode();
+        return this.getComponentId().hashCode() + this.getComponentType().hashCode();
     }
 
     @Override
     public String toString() {
-        return ToStringBuilder.reflectionToString(this,
-                ToStringStyle.SHORT_PREFIX_STYLE);
+        return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
 }

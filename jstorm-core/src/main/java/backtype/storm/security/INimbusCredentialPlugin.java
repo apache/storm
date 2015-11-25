@@ -22,23 +22,23 @@ import backtype.storm.daemon.Shutdownable;
 import java.util.Map;
 
 /**
- * Nimbus auto credential plugin that will be called on nimbus host
- * during submit topology option. User can specify a list of implementation using config key
+ * Nimbus auto credential plugin that will be called on nimbus host during submit topology option. User can specify a list of implementation using config key
  * nimbus.autocredential.plugins.classes.
  */
 public interface INimbusCredentialPlugin extends Shutdownable {
 
     /**
      * this method will be called when nimbus initializes.
+     * 
      * @param conf
      */
     void prepare(Map conf);
 
     /**
-     * Method that will be called on nimbus as part of submit topology. This plugin will be called
-     * at least once during the submit Topology action. It will be not be called during activate instead
-     * the credentials return by this method will be merged with the other credentials in the topology
-     * and stored in zookeeper.
+     * Method that will be called on nimbus as part of submit topology. This plugin will be called at least once during the submit Topology action. It will be
+     * not be called during activate instead the credentials return by this method will be merged with the other credentials in the topology and stored in
+     * zookeeper.
+     * 
      * @param credentials credentials map where more credentials will be added.
      * @param conf topology configuration
      * @return

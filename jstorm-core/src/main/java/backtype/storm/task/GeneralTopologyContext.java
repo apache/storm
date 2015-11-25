@@ -17,14 +17,6 @@
  */
 package backtype.storm.task;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.json.simple.JSONAware;
-
 import backtype.storm.Config;
 import backtype.storm.Constants;
 import backtype.storm.generated.ComponentCommon;
@@ -34,6 +26,9 @@ import backtype.storm.generated.StormTopology;
 import backtype.storm.tuple.Fields;
 import backtype.storm.utils.ThriftTopologyUtils;
 import backtype.storm.utils.Utils;
+import org.json.simple.JSONAware;
+
+import java.util.*;
 
 public class GeneralTopologyContext implements JSONAware {
     private StormTopology _topology;
@@ -42,11 +37,10 @@ public class GeneralTopologyContext implements JSONAware {
     private Map<String, Map<String, Fields>> _componentToStreamToFields;
     private String _topologyId;
     protected Map _stormConf;
-    
+
     // pass in componentToSortedTasks for the case of running tons of tasks in single executor
-    public GeneralTopologyContext(StormTopology topology, Map stormConf, 
-            Map<Integer, String> taskToComponent, Map<String, List<Integer>> componentToSortedTasks, 
-			Map<String, Map<String, Fields>> componentToStreamToFields, String topologyId) {
+    public GeneralTopologyContext(StormTopology topology, Map stormConf, Map<Integer, String> taskToComponent,
+            Map<String, List<Integer>> componentToSortedTasks, Map<String, Map<String, Fields>> componentToStreamToFields, String topologyId) {
         _topology = topology;
         _stormConf = stormConf;
         _taskToComponent = taskToComponent;
@@ -54,7 +48,7 @@ public class GeneralTopologyContext implements JSONAware {
         _componentToTasks = componentToSortedTasks;
         _componentToStreamToFields = componentToStreamToFields;
     }
-    
+
     /**
      * Gets the unique id assigned to this topology. The id is the storm name with a unique nonce appended to it.
      * 
@@ -63,7 +57,7 @@ public class GeneralTopologyContext implements JSONAware {
     public String getTopologyId() {
         return _topologyId;
     }
-    
+
     /**
      * Please use the getTopologId() instead.
      * 
@@ -73,7 +67,7 @@ public class GeneralTopologyContext implements JSONAware {
     public String getStormId() {
         return _topologyId;
     }
-    
+
     /**
      * Gets the Thrift object representing the topology.
      * 
@@ -82,7 +76,7 @@ public class GeneralTopologyContext implements JSONAware {
     public StormTopology getRawTopology() {
         return _topology;
     }
-    
+
     /**
      * Gets the component id for the specified task id. The component id maps to a component id specified for a Spout or Bolt in the topology definition.
      * 
@@ -96,14 +90,14 @@ public class GeneralTopologyContext implements JSONAware {
             return _taskToComponent.get(taskId);
         }
     }
-    
+
     /**
      * Gets the set of streams declared for the specified component.
      */
     public Set<String> getComponentStreams(String componentId) {
         return getComponentCommon(componentId).get_streams().keySet();
     }
-    
+
     /**
      * Gets the task ids allocated for the given component id. The task ids are always returned in ascending order.
      */
@@ -114,7 +108,7 @@ public class GeneralTopologyContext implements JSONAware {
         else
             return new ArrayList<Integer>(ret);
     }
-    
+
     /**
      * Gets the declared output fields for the specified component/stream.
      */
@@ -125,14 +119,14 @@ public class GeneralTopologyContext implements JSONAware {
         }
         return ret;
     }
-    
+
     /**
      * Gets the declared output fields for the specified global stream id.
      */
     public Fields getComponentOutputFields(GlobalStreamId id) {
         return getComponentOutputFields(id.get_componentId(), id.get_streamId());
     }
-    
+
     /**
      * Gets the declared inputs to the specified component.
      * 
@@ -141,7 +135,7 @@ public class GeneralTopologyContext implements JSONAware {
     public Map<GlobalStreamId, Grouping> getSources(String componentId) {
         return getComponentCommon(componentId).get_inputs();
     }
-    
+
     /**
      * Gets information about who is consuming the outputs of the specified component, and how.
      * 
@@ -163,7 +157,7 @@ public class GeneralTopologyContext implements JSONAware {
         }
         return ret;
     }
-    
+
     @Override
     public String toJSONString() {
         Map obj = new HashMap();
@@ -172,25 +166,25 @@ public class GeneralTopologyContext implements JSONAware {
         // at the minimum should send source info
         return Utils.to_json(obj);
     }
-    
+
     /**
      * Gets a map from task id to component id.
      */
     public Map<Integer, String> getTaskToComponent() {
         return _taskToComponent;
     }
-    
+
     /**
      * Gets a list of all component ids in this topology
      */
     public Set<String> getComponentIds() {
         return ThriftTopologyUtils.getComponentIds(getRawTopology());
     }
-    
+
     public ComponentCommon getComponentCommon(String componentId) {
         return ThriftTopologyUtils.getComponentCommon(getRawTopology(), componentId);
     }
-    
+
     public int maxTopologyMessageTimeout() {
         Integer max = Utils.getInt(_stormConf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS));
         for (String spout : getRawTopology().get_spouts().keySet()) {
@@ -205,5 +199,9 @@ public class GeneralTopologyContext implements JSONAware {
             }
         }
         return max;
+    }
+
+    public Map getStormConf() {
+        return _stormConf;
     }
 }

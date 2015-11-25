@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-
 public class TupleCaptureBolt implements IRichBolt {
     public static transient Map<String, Map<String, List<FixedTuple>>> emitted_tuples = new HashMap<String, Map<String, List<FixedTuple>>>();
 
@@ -47,8 +46,8 @@ public class TupleCaptureBolt implements IRichBolt {
     public void execute(Tuple input) {
         String component = input.getSourceComponent();
         Map<String, List<FixedTuple>> captured = emitted_tuples.get(_name);
-        if(!captured.containsKey(component)) {
-           captured.put(component, new ArrayList<FixedTuple>());
+        if (!captured.containsKey(component)) {
+            captured.put(component, new ArrayList<FixedTuple>());
         }
         captured.get(component).add(new FixedTuple(input.getSourceStreamId(), input.getValues()));
         _collector.ack(input);
@@ -60,7 +59,7 @@ public class TupleCaptureBolt implements IRichBolt {
 
     public void cleanup() {
     }
-    
+
     public Map<String, List<FixedTuple>> getAndRemoveResults() {
         return emitted_tuples.remove(_name);
     }
@@ -70,7 +69,7 @@ public class TupleCaptureBolt implements IRichBolt {
         emitted_tuples.get(_name).clear();
         return ret;
     }
-    
+
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
     }

@@ -17,390 +17,300 @@
  */
 package com.alibaba.jstorm.metric;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
-import org.apache.thrift.TException;
+import backtype.storm.Config;
+import backtype.storm.generated.MetricInfo;
+import backtype.storm.generated.TopologyMetric;
+import backtype.storm.generated.WorkerUploadMetrics;
+import backtype.storm.spout.SpoutOutputCollector;
+import backtype.storm.task.OutputCollector;
+import backtype.storm.tuple.Values;
+import backtype.storm.utils.NimbusClient;
+import com.alibaba.jstorm.callback.AsyncLoopThread;
+import com.alibaba.jstorm.callback.RunnableCallback;
+import com.alibaba.jstorm.client.ConfigExtension;
+import com.alibaba.jstorm.cluster.Common;
+import com.alibaba.jstorm.cluster.StormConfig;
+import com.alibaba.jstorm.common.metric.AsmMetric;
+import com.alibaba.jstorm.daemon.nimbus.NimbusData;
+import com.alibaba.jstorm.daemon.nimbus.TopologyMetricsRunnable.Update;
+import com.alibaba.jstorm.daemon.worker.WorkerData;
+import com.alibaba.jstorm.utils.JStormServerUtils;
+import com.alibaba.jstorm.utils.TimeUtils;
+import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import backtype.storm.Config;
-import backtype.storm.LocalCluster;
-import backtype.storm.generated.MetricInfo;
-import backtype.storm.generated.MetricWindow;
-import backtype.storm.generated.NettyMetric;
-import backtype.storm.generated.WorkerUploadMetrics;
-import backtype.storm.utils.NimbusClient;
-import backtype.storm.utils.Utils;
+import java.util.*;
 
-import com.alibaba.jstorm.callback.RunnableCallback;
-import com.alibaba.jstorm.client.ConfigExtension;
-import com.alibaba.jstorm.cluster.StormClusterState;
-import com.alibaba.jstorm.cluster.StormConfig;
-import com.alibaba.jstorm.common.metric.Gauge;
-import com.alibaba.jstorm.common.metric.MetricFilter;
-import com.alibaba.jstorm.common.metric.MetricRegistry;
-import com.alibaba.jstorm.common.metric.window.Metric;
-import com.alibaba.jstorm.daemon.worker.WorkerData;
-import com.alibaba.jstorm.utils.JStormUtils;
-import com.codahale.metrics.health.HealthCheck;
-import com.codahale.metrics.health.HealthCheckRegistry;
-
-public class JStormMetricsReporter extends RunnableCallback {
-    private static final Logger LOG = LoggerFactory
-            .getLogger(JStormMetricsReporter.class);
-
-    private MetricRegistry workerMetrics = JStormMetrics.workerMetrics;
-    private Map<Integer, MetricRegistry> taskMetrics =
-            JStormMetrics.taskMetrics;
-    private MetricRegistry skipMetrics = JStormMetrics.skipMetrics;
-
-    private JStormMetricFilter inputFilter;
-
-    private JStormMetricFilter outputFilter;
+/**
+ * report metrics from worker to nimbus server. this class serves as an object in Worker/Nimbus/Supervisor.
+ * when in Worker, it reports data via netty transport; otherwise reports via thrift.
+ * <p/>
+ * there are 2 threads:
+ * 1.flush thread: check every 1 sec, when current time is aligned to 1 min, flush all metrics to snapshots
+ * 2.check meta thread: use thrift to get metric id from nimbus server.
+ *
+ * @author Cody (weiyue.wy@alibaba-inc.com)
+ * @since 2.0.5
+ */
+public class JStormMetricsReporter {
+    private static final Logger LOG = LoggerFactory.getLogger(JStormMetricsReporter.class);
 
     private Map conf;
-    private String topologyId;
-    private String supervisorId;
-    private int port;
-    private int frequence;
+    protected String clusterName;
+    protected String topologyId;
+    protected String host;
+    protected int port;
 
-    private StormClusterState clusterState;
-    private boolean localMode = false;
-    private NimbusClient client;
+    protected boolean localMode = false;
 
-    public JStormMetricsReporter(WorkerData workerData) {
-        this.conf = workerData.getStormConf();
-        this.topologyId = (String) conf.get(Config.TOPOLOGY_ID);
-        this.supervisorId = workerData.getSupervisorId();
-        this.port = workerData.getPort();
-        this.frequence = ConfigExtension.getWorkerMetricReportFrequency(conf);
-        this.clusterState = workerData.getZkCluster();
+    private AsyncLoopThread checkMetricMetaThread;
+    protected final int checkMetaThreadCycle;
 
-        outputFilter = new JStormMetricFilter(MetricDef.OUTPUT_TAG);
-        inputFilter = new JStormMetricFilter(MetricDef.INPUT_TAG);
-        localMode = StormConfig.local_mode(conf);
-        LOG.info("Successfully start ");
+    private AsyncLoopThread flushMetricThread;
+    protected final int flushMetricThreadCycle;
+
+    private boolean test = false;
+
+    private boolean isInWorker = false;
+
+    private SpoutOutputCollector spoutOutput;
+    private OutputCollector boltOutput;
+
+    private boolean enableMetrics;
+    private NimbusClient client = null;
+
+    public JStormMetricsReporter(Object role) {
+        LOG.info("starting jstorm metrics reporter");
+        if (role instanceof WorkerData) {
+            WorkerData workerData = (WorkerData) role;
+            this.conf = workerData.getStormConf();
+            this.topologyId = (String) conf.get(Config.TOPOLOGY_ID);
+            this.port = workerData.getPort();
+            this.isInWorker = true;
+        } else if (role instanceof NimbusData) {
+            NimbusData nimbusData = (NimbusData) role;
+            this.conf = nimbusData.getConf();
+            this.topologyId = JStormMetrics.NIMBUS_METRIC_KEY;
+        }
+        this.host = JStormMetrics.getHost();
+        this.enableMetrics = JStormMetrics.isEnabled();
+        if (!enableMetrics) {
+            LOG.warn("***** topology metrics is disabled! *****");
+        } else {
+            LOG.info("topology metrics is enabled.");
+        }
+
+        this.checkMetaThreadCycle = 30;
+        // flush metric snapshots when time is aligned, check every sec.
+        this.flushMetricThreadCycle = 1;
+
+        LOG.info("check meta thread freq:{}, flush metrics thread freq:{}", checkMetaThreadCycle, flushMetricThreadCycle);
+
+        this.localMode = StormConfig.local_mode(conf);
+        this.clusterName = ConfigExtension.getClusterName(conf);
+        LOG.info("done.");
     }
 
-    protected boolean getMoreMetric(
-            Map<String, Map<String, MetricWindow>> extraMap,
-            JStormMetricFilter metricFilter, String metricFullName,
-            Map<Integer, Double> metricWindow) {
-        if (metricFilter.matches(metricFullName, null) == false) {
-            return false;
-        }
-
-        int pos = metricFullName.indexOf(MetricRegistry.NAME_SEPERATOR);
-        if (pos <= 0 || pos >= metricFullName.length() - 1) {
-            return false;
-        }
-
-        String metricName = metricFullName.substring(0, pos);
-        String extraName = metricFullName.substring(pos + 1);
-
-        Map<String, MetricWindow> item = extraMap.get(metricName);
-        if (item == null) {
-            item = new HashMap<String, MetricWindow>();
-            extraMap.put(metricName, item);
-        }
-
-        MetricWindow metricWindowThrift = new MetricWindow();
-        metricWindowThrift.set_metricWindow(metricWindow);
-
-        item.put(extraName, metricWindowThrift);
-
-        return true;
+    @VisibleForTesting
+    JStormMetricsReporter() {
+        LOG.info("Successfully started jstorm metrics reporter for test.");
+        this.test = true;
+        this.flushMetricThreadCycle = 1;
+        this.checkMetaThreadCycle = 30;
     }
-    
-    protected void insertNettyMetrics(Map<String, MetricInfo> nettyMetricInfo, 
-                    Map<Integer, Double> snapshot,
-                    String metricFullName) {
-        int pos = metricFullName.indexOf(MetricRegistry.NAME_SEPERATOR);
-        if (pos < 0 || pos >= metricFullName.length() - 1) {
-            return ;
-        }
-        
-        String realHeader = metricFullName.substring(0, pos);
-        String nettyConnection = metricFullName.substring(pos + 1);
-        
-        MetricInfo metricInfo = nettyMetricInfo.get(nettyConnection);
-        if (metricInfo == null) {
-            metricInfo = MetricThrift.mkMetricInfo();
-            
-            nettyMetricInfo.put(nettyConnection, metricInfo);
-        }
-        
-        MetricThrift.insert(metricInfo, realHeader, snapshot);
-    }
-    
-    protected void insertMergeList(Map<String, List<Map<Integer, Double> > > mergeMap, 
-                    List<String> mergeList, 
-                    Map<Integer, Double> snapshot,
-                    String name) {
-        for (String tag : mergeList) {
-            if (name.startsWith(tag) == false) {
-                continue;
-            }
-            List<Map<Integer, Double> > list = mergeMap.get(tag);
-            if (list == null) {
-                list = new ArrayList<Map<Integer,Double>>();
-                mergeMap.put(tag, list);
-            }
-            
-            list.add(snapshot);
-            
-        }
-    }
-    
-    protected void doMergeList(MetricInfo workerMetricInfo, 
-                    Map<String, List<Map<Integer, Double> > > mergeMap) {
-        for (Entry<String, List<Map<Integer, Double> > > entry : mergeMap.entrySet()) {
-            String name = entry.getKey();
-            List<Map<Integer, Double>> list = entry.getValue();
-            
-            Map<Integer, Double> merged = JStormUtils.mergeMapList(list);
-            
-            MetricThrift.insert(workerMetricInfo, name, merged);
+
+    public void init() {
+        if (!localMode && enableMetrics) {
+            this.checkMetricMetaThread = new AsyncLoopThread(new CheckMetricMetaThread());
+            this.flushMetricThread = new AsyncLoopThread(new FlushMetricThread());
         }
     }
 
-    public MetricInfo computWorkerMetrics() {
-        MetricInfo workerMetricInfo = MetricThrift.mkMetricInfo();
-        Map<String, MetricInfo> nettyMetricInfo = new HashMap<String, MetricInfo>();
-
-        Map<String, List<Map<Integer, Double> > > mergeMap = 
-                new HashMap<String, List<Map<Integer,Double> > >();
-        List<String> mergeList = new ArrayList<String>();
-        mergeList.add(MetricDef.NETTY_CLI_SEND_SPEED);
-        
-        Map<String, Metric> workerMetricMap = workerMetrics.getMetrics();
-        for (Entry<String, Metric> entry : workerMetricMap.entrySet()) {
-            String name = entry.getKey();
-            Map<Integer, Double> snapshot = entry.getValue().getSnapshot();
-
-            if (MetricDef.isNettyDetails(name) == false) {
-                MetricThrift.insert(workerMetricInfo, name, snapshot);
-                continue;
-            }
-            
-            insertNettyMetrics(nettyMetricInfo, snapshot, name);
-            
-            insertMergeList(mergeMap, mergeList, snapshot, name);
-            
+    private Map<String, Long> registerMetrics(Set<String> names) {
+        if (test || !enableMetrics) {
+            return new HashMap<>();
         }
-        
-        doMergeList(workerMetricInfo, mergeMap);
-        
-        JStormMetrics.setExposeWorkerMetrics(workerMetricInfo);
-        JStormMetrics.setExposeNettyMetrics(nettyMetricInfo);
-        return workerMetricInfo;
-    }
-
-    public boolean isTaskQueueFull(Metric metric,
-            Map<Integer, Double> snapshot, String name) {
-        if (metric instanceof Gauge) {
-            if (MetricDef.TASK_QUEUE_SET.contains(name)) {
-                for (Entry<Integer, Double> entry : snapshot.entrySet()) {
-                    if (entry.getValue() == MetricDef.FULL_RATIO) {
-                        return true;
-                    }
-                }
-            }
-        }
-
-        return false;
-    }
-
-    public Map<Integer, MetricInfo> computeTaskMetrics() {
-        Map<Integer, MetricInfo> ret = new HashMap<Integer, MetricInfo>();
-
-        for (Entry<Integer, MetricRegistry> entry : taskMetrics.entrySet()) {
-            Integer taskId = entry.getKey();
-            MetricRegistry taskMetrics = entry.getValue();
-
-            Map<String, Map<String, MetricWindow>> inputMap =
-                    new HashMap<String, Map<String, MetricWindow>>();
-            Map<String, Map<String, MetricWindow>> outputMap =
-                    new HashMap<String, Map<String, MetricWindow>>();
-
-            MetricInfo taskMetricInfo = MetricThrift.mkMetricInfo();
-            taskMetricInfo.set_inputMetric(inputMap);
-            taskMetricInfo.set_outputMetric(outputMap);
-            ret.put(taskId, taskMetricInfo);
-
-            for (Entry<String, Metric> metricEntry : taskMetrics.getMetrics()
-                    .entrySet()) {
-                String name = metricEntry.getKey();
-                Metric metric = metricEntry.getValue();
-                Map<Integer, Double> snapshot = metric.getSnapshot();
-
-                boolean isInput =
-                        getMoreMetric(inputMap, inputFilter, name, snapshot);
-                boolean isOutput =
-                        getMoreMetric(outputMap, outputFilter, name, snapshot);
-
-                if (isInput == false && isOutput == false) {
-                    MetricThrift.insert(taskMetricInfo, name, snapshot);
-                }
-            }
-
-            MetricThrift.merge(taskMetricInfo, inputMap);
-            MetricThrift.merge(taskMetricInfo, outputMap);
-
-        }
-
-        JStormMetrics.setExposeTaskMetrics(ret);
-        return ret;
-    }
-    
-    public void healthCheck(Integer taskId, HealthCheckRegistry healthCheck) {
-    	if (taskId == null) {
-    		return ;
-    	}
-    	
-    	final Map<String, HealthCheck.Result> results =
-    			healthCheck.runHealthChecks();
-        for (Entry<String, HealthCheck.Result> resultEntry : results
-                .entrySet()) {
-            HealthCheck.Result result = resultEntry.getValue();
-            if (result.isHealthy() == false) {
-                LOG.warn("{}:{}", taskId, result.getMessage());
-                try {
-                    clusterState.report_task_error(topologyId, taskId,
-                            result.getMessage());
-                } catch (Exception e) {
-                    // TODO Auto-generated catch block
-                    LOG.error(e.getMessage(), e);
-                }
-
-            }
-        }
-    }
-
-    public void healthCheck() {
-        Integer firstTask = null;
-
-        Map<Integer, HealthCheckRegistry> taskHealthCheckMap =
-                JStormHealthCheck.getTaskhealthcheckmap();
-
-        for (Entry<Integer, HealthCheckRegistry> entry : taskHealthCheckMap
-                .entrySet()) {
-            Integer taskId = entry.getKey();
-            HealthCheckRegistry taskHealthCheck = entry.getValue();
-
-            healthCheck(taskId, taskHealthCheck);
-
-            if (firstTask != null) {
-                firstTask = taskId;
-            }
-        }
-
-        HealthCheckRegistry workerHealthCheck =
-                JStormHealthCheck.getWorkerhealthcheck();
-        healthCheck(firstTask, workerHealthCheck);
-        
-
-    }
-
-    @Override
-    public void run() {
-
         try {
-            // TODO Auto-generated method stub
-            MetricInfo workerMetricInfo = computWorkerMetrics();
-            
-            Map<Integer, MetricInfo> taskMetricMap = computeTaskMetrics();
+            if (client == null) {
+                client = NimbusClient.getConfiguredClient(conf);
+            }
+
+            return client.getClient().registerMetrics(topologyId, names);
+        } catch (Exception e) {
+            LOG.error("Failed to gen metric ids", e);
+            if (client != null) {
+                client.close();
+                client = NimbusClient.getConfiguredClient(conf);
+            }
+        }
+
+        return null;
+    }
+
+    public void shutdown() {
+        if (!localMode && enableMetrics) {
+            this.checkMetricMetaThread.cleanup();
+            this.flushMetricThread.cleanup();
+        }
+    }
+
+    public void doUpload() {
+        if (test) {
+            return;
+        }
+        try {
+            long start = System.currentTimeMillis();
+            MetricInfo workerMetricInfo = JStormMetrics.computeAllMetrics();
 
             WorkerUploadMetrics upload = new WorkerUploadMetrics();
-            upload.set_topology_id(topologyId);
-            upload.set_supervisor_id(supervisorId);
+            upload.set_topologyId(topologyId);
+            upload.set_supervisorId(host);
             upload.set_port(port);
-            upload.set_workerMetric(workerMetricInfo);
-            upload.set_nettyMetric(
-                            new NettyMetric(
-                                   JStormMetrics.getExposeNettyMetrics(), 
-                                   JStormMetrics.getExposeNettyMetrics().size()));
-            upload.set_taskMetric(taskMetricMap);
-            
-            uploadMetric(upload);
-            
-            healthCheck();
+            upload.set_allMetrics(workerMetricInfo);
 
-            LOG.info("Successfully upload worker's metrics");
-            LOG.info(Utils.toPrettyJsonString(workerMetricInfo));
-            LOG.info(Utils.toPrettyJsonString(JStormMetrics.getExposeNettyMetrics()));
-            LOG.info(Utils.toPrettyJsonString(taskMetricMap));
+            if (workerMetricInfo.get_metrics_size() > 0) {
+                uploadMetric(upload);
+                LOG.info("Successfully upload worker metrics, size:{}, cost:{}",
+                        workerMetricInfo.get_metrics_size(), System.currentTimeMillis() - start);
+            } else {
+                LOG.info("No metrics to upload.");
+            }
         } catch (Exception e) {
             LOG.error("Failed to upload worker metrics", e);
         }
-
     }
 
-    public void uploadMetric(WorkerUploadMetrics upload) {
-        if (StormConfig.local_mode(conf)) {
-            try {
-                byte[] temp = Utils.serialize(upload);
 
-                LocalCluster.getInstance().getLocalClusterMap().getNimbus()
-                        .workerUploadMetric(upload);
-            } catch (TException e) {
-                // TODO Auto-generated catch block
-                LOG.error("Failed to upload worker metrics", e);
+    public void uploadMetric(WorkerUploadMetrics metrics) {
+        if (isInWorker) {
+        //in Worker, we upload data via netty transport
+            if (boltOutput != null) {
+                LOG.info("emit metrics through bolt collector.");
+                boltOutput.emit(Common.TOPOLOGY_MASTER_METRICS_STREAM_ID,
+                        new Values(JStormServerUtils.getName(host, port), metrics));
+            } else if (spoutOutput != null) {
+                LOG.info("emit metrics through spout collector.");
+                spoutOutput.emit(Common.TOPOLOGY_MASTER_METRICS_STREAM_ID,
+                        new Values(JStormServerUtils.getName(host, port), metrics));
             }
-        } else {
+        }else {
+        // in supervisor or nimbus, we upload metric data via thrift
+            LOG.info("emit metrics through nimbus client.");
+            Update event = new Update();
+            TopologyMetric tpMetric = MetricUtils.mkTopologyMetric();
+            tpMetric.set_workerMetric(metrics.get_allMetrics());
+
+            event.topologyMetrics = tpMetric;
+            event.topologyId = topologyId;
+
             try {
-            	if (client == null) {
-            		client = NimbusClient.getConfiguredClient(conf);
-            	}
-                client.getClient().workerUploadMetric(upload);
-            } catch (Exception e) {
-                LOG.error("Failed to upload worker metrics", e);
+                if (client == null) {
+                    client = NimbusClient.getConfiguredClient(conf);
+                }
+                client.getClient().uploadTopologyMetrics(topologyId, tpMetric);
+            } catch (Exception ex) {
+                LOG.error("upload metric error:", ex);
                 if (client != null) {
                     client.close();
-                    client = null;
+                    client = NimbusClient.getConfiguredClient(conf);
                 }
-            } finally {
-                
             }
         }
+        //MetricUtils.logMetrics(metrics.get_allMetrics());
     }
 
-    @Override
-    public Object getResult() {
-        return frequence;
-    }
-    
-    @Override
-    public void shutdown() {
-    	if (client != null) {
-            client.close();
-            client = null;
+
+    public void setOutputCollector(Object outputCollector) {
+        if (outputCollector instanceof OutputCollector) {
+            this.boltOutput = (OutputCollector) outputCollector;
+        } else if (outputCollector instanceof SpoutOutputCollector) {
+            this.spoutOutput = (SpoutOutputCollector) outputCollector;
         }
+
     }
 
-    public static class JStormMetricFilter implements MetricFilter {
-        private static final long serialVersionUID = -8886536175626248855L;
-        private String[] tags;
 
-        public JStormMetricFilter(String[] tags) {
-            this.tags = tags;
+    class FlushMetricThread extends RunnableCallback {
+        @Override
+        public void run() {
+            if (TimeUtils.isTimeAligned()) {
+                int cnt = 0;
+                try {
+                    for (AsmMetricRegistry registry : JStormMetrics.allRegistries) {
+                        for (Map.Entry<String, AsmMetric> entry : registry.getMetrics().entrySet()) {
+                            entry.getValue().flush();
+                            cnt++;
+                        }
+                    }
+                    LOG.info("flush metrics, total:{}.", cnt);
+
+                    doUpload();
+                } catch (Exception ex) {
+                    LOG.error("Error", ex);
+                }
+            }
         }
 
         @Override
-        public boolean matches(String name, Metric metric) {
-            // TODO Auto-generated method stub
-            for (String tag : tags) {
-                if (name.startsWith(tag)) {
-                    return true;
-                }
-            }
-            return false;
+        public Object getResult() {
+            return flushMetricThreadCycle;
         }
-
     }
 
+    class CheckMetricMetaThread extends RunnableCallback {
+        private volatile boolean processing = false;
+        private final long start = TimeUtils.current_time_secs();
+        private final long initialDelay = 30 + new Random().nextInt(15);
+
+        @Override
+        public void run() {
+            if (TimeUtils.current_time_secs() - start < initialDelay) {
+                return;
+            }
+
+            if (processing) {
+                LOG.info("still processing, skip...");
+            } else {
+                processing = true;
+                long start = System.currentTimeMillis();
+                try {
+                    Set<String> names = new HashSet<>();
+                    for (AsmMetricRegistry registry : JStormMetrics.allRegistries) {
+                        Map<String, AsmMetric> metricMap = registry.getMetrics();
+                        for (Map.Entry<String, AsmMetric> metricEntry : metricMap.entrySet()) {
+                            AsmMetric metric = metricEntry.getValue();
+                            if (((metric.getOp() & AsmMetric.MetricOp.REPORT) == AsmMetric.MetricOp.REPORT) &&
+                                    metric.getMetricId() == 0L) {
+                                names.add(metricEntry.getKey());
+                            }
+                        }
+                    }
+
+                    if (names.size() > 0) {
+                        Map<String, Long> nameIdMap = registerMetrics(names);
+                        if (nameIdMap != null) {
+                            for (String name : nameIdMap.keySet()) {
+                                AsmMetric metric = JStormMetrics.find(name);
+                                if (metric != null) {
+                                    long id = nameIdMap.get(name);
+                                    metric.setMetricId(id);
+                                    LOG.info("set metric id, {}:{}", name, id);
+                                }
+                            }
+                        }
+                        LOG.info("register metrics, size:{}, cost:{}", names.size(), System.currentTimeMillis() - start);
+                    }
+                } catch (Exception ex) {
+                    LOG.error("Error", ex);
+                }
+                processing = false;
+            }
+        }
+
+        @Override
+        public Object getResult() {
+            return checkMetaThreadCycle;
+        }
+    }
 }

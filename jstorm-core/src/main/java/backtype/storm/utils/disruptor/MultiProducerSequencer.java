@@ -33,19 +33,19 @@ import com.lmax.disruptor.util.Util;
  * Suitable for use for sequencing across multiple publisher threads.
  */
 public class MultiProducerSequencer extends AbstractSequencerExt {
-    
+
     private static final Unsafe UNSAFE = Util.getUnsafe();
     private static final long BASE = UNSAFE.arrayBaseOffset(int[].class);
     private static final long SCALE = UNSAFE.arrayIndexScale(int[].class);
-    
+
     private final Sequence gatingSequenceCache = new Sequence(Sequencer.INITIAL_CURSOR_VALUE);
-    
+
     // availableBuffer tracks the state of each ringbuffer slot
     // see below for more details on the approach
     private final int[] availableBuffer;
     private final int indexMask;
     private final int indexShift;
-    
+
     /**
      * Construct a Sequencer with the selected wait strategy and buffer size.
      * 
@@ -59,7 +59,7 @@ public class MultiProducerSequencer extends AbstractSequencerExt {
         indexShift = Util.log2(bufferSize);
         initialiseAvailableBuffer();
     }
-    
+
     /**
      * @see Sequencer#hasAvailableCapacity(int)
      */
@@ -67,23 +67,23 @@ public class MultiProducerSequencer extends AbstractSequencerExt {
     public boolean hasAvailableCapacity(final int requiredCapacity) {
         return hasAvailableCapacity(gatingSequences, requiredCapacity, cursor.get());
     }
-    
+
     private boolean hasAvailableCapacity(Sequence[] gatingSequences, final int requiredCapacity, long cursorValue) {
         long wrapPoint = (cursorValue + requiredCapacity) - bufferSize;
         long cachedGatingSequence = gatingSequenceCache.get();
-        
+
         if (wrapPoint > cachedGatingSequence || cachedGatingSequence > cursorValue) {
             long minSequence = Util.getMinimumSequence(gatingSequences, cursorValue);
             gatingSequenceCache.set(minSequence);
-            
+
             if (wrapPoint > minSequence) {
                 return false;
             }
         }
-        
+
         return true;
     }
-    
+
     /**
      * @see Sequencer#claim(long)
      */
@@ -91,7 +91,7 @@ public class MultiProducerSequencer extends AbstractSequencerExt {
     public void claim(long sequence) {
         cursor.set(sequence);
     }
-    
+
     /**
      * @see Sequencer#next()
      */
@@ -99,7 +99,7 @@ public class MultiProducerSequencer extends AbstractSequencerExt {
     public long next() {
         return next(1);
     }
-    
+
     /**
      * @see Sequencer#next(int)
      */
@@ -108,20 +108,20 @@ public class MultiProducerSequencer extends AbstractSequencerExt {
         if (n < 1) {
             throw new IllegalArgumentException("n must be > 0");
         }
-        
+
         long current;
         long next;
-        
+
         do {
             current = cursor.get();
             next = current + n;
-            
+
             long wrapPoint = next - bufferSize;
             long cachedGatingSequence = gatingSequenceCache.get();
-            
+
             if (wrapPoint > cachedGatingSequence || cachedGatingSequence > current) {
                 long gatingSequence = Util.getMinimumSequence(gatingSequences, current);
-                
+
                 if (wrapPoint > gatingSequence) {
                     if (AbstractSequencerExt.isWaitSleep()) {
                         try {
@@ -133,16 +133,16 @@ public class MultiProducerSequencer extends AbstractSequencerExt {
                     }
                     continue;
                 }
-                
+
                 gatingSequenceCache.set(gatingSequence);
             } else if (cursor.compareAndSet(current, next)) {
                 break;
             }
         } while (true);
-        
+
         return next;
     }
-    
+
     /**
      * @see Sequencer#tryNext()
      */
@@ -150,7 +150,7 @@ public class MultiProducerSequencer extends AbstractSequencerExt {
     public long tryNext() throws InsufficientCapacityException {
         return tryNext(1);
     }
-    
+
     /**
      * @see Sequencer#tryNext(int)
      */
@@ -159,22 +159,22 @@ public class MultiProducerSequencer extends AbstractSequencerExt {
         if (n < 1) {
             throw new IllegalArgumentException("n must be > 0");
         }
-        
+
         long current;
         long next;
-        
+
         do {
             current = cursor.get();
             next = current + n;
-            
+
             if (!hasAvailableCapacity(gatingSequences, n, current)) {
                 throw InsufficientCapacityException.INSTANCE;
             }
         } while (!cursor.compareAndSet(current, next));
-        
+
         return next;
     }
-    
+
     /**
      * @see Sequencer#remainingCapacity()
      */
@@ -184,15 +184,15 @@ public class MultiProducerSequencer extends AbstractSequencerExt {
         long produced = cursor.get();
         return getBufferSize() - (produced - consumed);
     }
-    
+
     private void initialiseAvailableBuffer() {
         for (int i = availableBuffer.length - 1; i != 0; i--) {
             setAvailableBufferValue(i, -1);
         }
-        
+
         setAvailableBufferValue(0, -1);
     }
-    
+
     /**
      * @see Sequencer#publish(long)
      */
@@ -201,7 +201,7 @@ public class MultiProducerSequencer extends AbstractSequencerExt {
         setAvailable(sequence);
         waitStrategy.signalAllWhenBlocking();
     }
-    
+
     /**
      * @see Sequencer#publish(long, long)
      */
@@ -212,7 +212,7 @@ public class MultiProducerSequencer extends AbstractSequencerExt {
         }
         waitStrategy.signalAllWhenBlocking();
     }
-    
+
     /**
      * The below methods work on the availableBuffer flag.
      * 
@@ -229,12 +229,12 @@ public class MultiProducerSequencer extends AbstractSequencerExt {
     private void setAvailable(final long sequence) {
         setAvailableBufferValue(calculateIndex(sequence), calculateAvailabilityFlag(sequence));
     }
-    
+
     private void setAvailableBufferValue(int index, int flag) {
         long bufferAddress = (index * SCALE) + BASE;
         UNSAFE.putOrderedInt(availableBuffer, bufferAddress, flag);
     }
-    
+
     /**
      * @see Sequencer#isAvailable(long)
      */
@@ -245,7 +245,7 @@ public class MultiProducerSequencer extends AbstractSequencerExt {
         long bufferAddress = (index * SCALE) + BASE;
         return UNSAFE.getIntVolatile(availableBuffer, bufferAddress) == flag;
     }
-    
+
     @Override
     public long getHighestPublishedSequence(long lowerBound, long availableSequence) {
         for (long sequence = lowerBound; sequence <= availableSequence; sequence++) {
@@ -253,14 +253,14 @@ public class MultiProducerSequencer extends AbstractSequencerExt {
                 return sequence - 1;
             }
         }
-        
+
         return availableSequence;
     }
-    
+
     private int calculateAvailabilityFlag(final long sequence) {
         return (int) (sequence >>> indexShift);
     }
-    
+
     private int calculateIndex(final long sequence) {
         return ((int) sequence) & indexMask;
     }

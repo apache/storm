@@ -55,8 +55,7 @@ public class MetricJstack implements Gauge<String> {
             writer.append("\n");
         }
 
-        long[] deadLockMonitorTids =
-                threadMXBean.findMonitorDeadlockedThreads();
+        long[] deadLockMonitorTids = threadMXBean.findMonitorDeadlockedThreads();
         if (deadLockMonitorTids != null) {
             writer.append(threadIds.length + " deadlocked monitor threads:");
             for (long tid : deadLockMonitorTids) {
@@ -66,60 +65,38 @@ public class MetricJstack implements Gauge<String> {
         }
 
         for (long tid : threadIds) {
-            ThreadInfo info =
-                    threadMXBean.getThreadInfo(tid, Integer.MAX_VALUE);
+            ThreadInfo info = threadMXBean.getThreadInfo(tid, Integer.MAX_VALUE);
             if (info == null) {
                 writer.append("  Inactive").append("\n");
                 continue;
             }
-            writer.append(
-                    "Thread "
-                            + getTaskName(info.getThreadId(),
-                                    info.getThreadName()) + ":").append("\n");
+            writer.append("Thread " + getTaskName(info.getThreadId(), info.getThreadName()) + ":").append("\n");
             Thread.State state = info.getThreadState();
             writer.append("  State: " + state).append("\n");
-            writer.append("  Blocked count: " + info.getBlockedCount()).append(
-                    "\n");
-            writer.append("  Waited count: " + info.getWaitedCount()).append(
-                    "\n");
-            writer.append(" Cpu time:")
-                    .append(threadMXBean.getThreadCpuTime(tid) / 1000000)
-                    .append("ms").append("\n");
-            writer.append(" User time:")
-                    .append(threadMXBean.getThreadUserTime(tid) / 1000000)
-                    .append("ms").append("\n");
+            writer.append("  Blocked count: " + info.getBlockedCount()).append("\n");
+            writer.append("  Waited count: " + info.getWaitedCount()).append("\n");
+            writer.append(" Cpu time:").append(threadMXBean.getThreadCpuTime(tid) / 1000000).append("ms").append("\n");
+            writer.append(" User time:").append(threadMXBean.getThreadUserTime(tid) / 1000000).append("ms").append("\n");
             if (contention) {
-                writer.append("  Blocked time: " + info.getBlockedTime())
-                        .append("\n");
-                writer.append("  Waited time: " + info.getWaitedTime()).append(
-                        "\n");
+                writer.append("  Blocked time: " + info.getBlockedTime()).append("\n");
+                writer.append("  Waited time: " + info.getWaitedTime()).append("\n");
             }
             if (state == Thread.State.WAITING) {
-                writer.append("  Waiting on " + info.getLockName())
-                        .append("\n");
+                writer.append("  Waiting on " + info.getLockName()).append("\n");
             } else if (state == Thread.State.BLOCKED) {
-                writer.append("  Blocked on " + info.getLockName())
-                        .append("\n");
-                writer.append(
-                        "  Blocked by "
-                                + getTaskName(info.getLockOwnerId(),
-                                        info.getLockOwnerName())).append("\n");
+                writer.append("  Blocked on " + info.getLockName()).append("\n");
+                writer.append("  Blocked by " + getTaskName(info.getLockOwnerId(), info.getLockOwnerName())).append("\n");
             }
 
         }
         for (long tid : threadIds) {
-            ThreadInfo info =
-                    threadMXBean.getThreadInfo(tid, Integer.MAX_VALUE);
+            ThreadInfo info = threadMXBean.getThreadInfo(tid, Integer.MAX_VALUE);
             if (info == null) {
                 writer.append("  Inactive").append("\n");
                 continue;
             }
 
-            writer.append(
-                    "Thread "
-                            + getTaskName(info.getThreadId(),
-                                    info.getThreadName()) + ": Stack").append(
-                    "\n");
+            writer.append("Thread " + getTaskName(info.getThreadId(), info.getThreadName()) + ": Stack").append("\n");
             for (StackTraceElement frame : info.getStackTrace()) {
                 writer.append("    " + frame.toString()).append("\n");
             }

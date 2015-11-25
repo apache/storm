@@ -17,23 +17,10 @@
  */
 package com.alibaba.jstorm.daemon.worker;
 
-import java.io.FileNotFoundException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import backtype.storm.Config;
 import backtype.storm.messaging.IConnection;
 import backtype.storm.messaging.IContext;
 import backtype.storm.scheduler.WorkerSlot;
-
 import com.alibaba.jstorm.callback.RunnableCallback;
 import com.alibaba.jstorm.cluster.StormClusterState;
 import com.alibaba.jstorm.cluster.StormConfig;
@@ -42,9 +29,15 @@ import com.alibaba.jstorm.schedule.Assignment.AssignmentType;
 import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
 import com.alibaba.jstorm.task.Task;
 import com.alibaba.jstorm.task.TaskShutdownDameon;
-import com.alibaba.jstorm.task.heartbeat.TaskHeartbeat;
 import com.alibaba.jstorm.utils.JStormUtils;
-import com.alibaba.jstorm.utils.TimeUtils;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.FileNotFoundException;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * 
@@ -56,8 +49,7 @@ import com.alibaba.jstorm.utils.TimeUtils;
  * 
  */
 public class RefreshConnections extends RunnableCallback {
-    private static Logger LOG = LoggerFactory
-            .getLogger(RefreshConnections.class);
+    private static Logger LOG = LoggerFactory.getLogger(RefreshConnections.class);
 
     private WorkerData workerData;
 
@@ -102,13 +94,9 @@ public class RefreshConnections extends RunnableCallback {
         this.supervisorId = workerData.getSupervisorId();
 
         // this.endpoint_socket_lock = endpoint_socket_lock;
-        frequence =
-                JStormUtils
-                        .parseInt(conf.get(Config.TASK_REFRESH_POLL_SECS), 5);
+        frequence = JStormUtils.parseInt(conf.get(Config.TASK_REFRESH_POLL_SECS), 5);
 
-        taskTimeoutSecs =
-                JStormUtils.parseInt(
-                        conf.get(Config.TASK_HEARTBEAT_FREQUENCY_SECS), 10);
+        taskTimeoutSecs = JStormUtils.parseInt(conf.get(Config.TASK_HEARTBEAT_FREQUENCY_SECS), 10);
         taskTimeoutSecs = taskTimeoutSecs * 3;
     }
 
@@ -122,8 +110,7 @@ public class RefreshConnections extends RunnableCallback {
             //
 
             synchronized (this) {
-                Assignment assignment =
-                        zkCluster.assignment_info(topologyId, this);
+                Assignment assignment = zkCluster.assignment_info(topologyId, this);
                 if (assignment == null) {
                     String errMsg = "Failed to get Assignment of " + topologyId;
                     LOG.error(errMsg);
@@ -137,47 +124,39 @@ public class RefreshConnections extends RunnableCallback {
                 // updated. If so, the outbound
                 // task map should be updated accordingly.
                 try {
-                    Long localAssignmentTS =
-                            StormConfig.read_supervisor_topology_timestamp(
-                                    conf, topologyId);
-                    if (localAssignmentTS.longValue() > workerData
-                            .getAssignmentTs().longValue()) {
+                    Long localAssignmentTS = StormConfig.read_supervisor_topology_timestamp(conf, topologyId);
+                    if (localAssignmentTS.longValue() > workerData.getAssignmentTs().longValue()) {
                         try {
-                            if (assignment.getAssignmentType() == AssignmentType.Config) {
+                            if (assignment.getAssignmentType() == AssignmentType.UpdateTopology) {
                                 LOG.info("Get config reload request for " + topologyId);
                                 // If config was updated, notify all tasks
                                 List<TaskShutdownDameon> taskShutdowns = workerData.getShutdownTasks();
                                 Map newConf = StormConfig.read_supervisor_topology_conf(conf, topologyId);
                                 workerData.getStormConf().putAll(newConf);
                                 for (TaskShutdownDameon taskSD : taskShutdowns) {
-                                    taskSD.updateConf(newConf);
+                                    taskSD.update(newConf);
                                 }
-                                workerData.setAssignmentType(AssignmentType.Config);
+                                workerData.setAssignmentType(AssignmentType.UpdateTopology);
                             } else {
                                 Set<Integer> addedTasks = getAddedTasks(assignment);
-                                Set<Integer> removedTasks =
-                                        getRemovedTasks(assignment);
-                                
+                                Set<Integer> removedTasks = getRemovedTasks(assignment);
+                                Set<Integer> updatedTasks = getUpdatedTasks(assignment);
+
                                 workerData.updateWorkerData(assignment);
-                                
-                                if (removedTasks.size() > 0)
-                                    shutdownTasks(removedTasks);
-                                if (addedTasks.size() > 0)
-                                    createTasks(addedTasks);
-                                
-                                Set<Integer> tmpOutboundTasks =
-                                        Worker.worker_output_tasks(workerData);
+
+                                shutdownTasks(removedTasks);
+                                createTasks(addedTasks);
+                                updateTasks(updatedTasks);
+
+                                Set<Integer> tmpOutboundTasks = Worker.worker_output_tasks(workerData);
                                 if (outboundTasks.equals(tmpOutboundTasks) == false) {
                                     for (int taskId : tmpOutboundTasks) {
                                         if (outboundTasks.contains(taskId) == false)
-                                            workerData
-                                                    .addOutboundTaskStatusIfAbsent(taskId);
+                                            workerData.addOutboundTaskStatusIfAbsent(taskId);
                                     }
-                                    for (int taskId : workerData
-                                            .getOutboundTaskStatus().keySet()) {
+                                    for (int taskId : workerData.getOutboundTaskStatus().keySet()) {
                                         if (tmpOutboundTasks.contains(taskId) == false) {
-                                            workerData
-                                                    .removeOutboundTaskStatus(taskId);
+                                            workerData.removeOutboundTaskStatus(taskId);
                                         }
                                     }
                                     workerData.setOutboundTasks(tmpOutboundTasks);
@@ -196,23 +175,19 @@ public class RefreshConnections extends RunnableCallback {
                     }
 
                 } catch (FileNotFoundException e) {
-                    LOG.warn(
-                            "Failed to read supervisor topology timeStamp for "
-                                    + topologyId + " port="
-                                    + workerData.getPort(), e);
+                    LOG.warn("Failed to read supervisor topology timeStamp for " + topologyId + " port=" + workerData.getPort(), e);
                 }
 
                 Set<ResourceWorkerSlot> workers = assignment.getWorkers();
                 if (workers == null) {
-                    String errMsg =
-                            "Failed to get taskToResource of " + topologyId;
+                    String errMsg = "Failed to get taskToResource of " + topologyId;
                     LOG.error(errMsg);
                     return;
                 }
-                workerData.getWorkerToResource().addAll(workers);
 
-                Map<Integer, WorkerSlot> my_assignment =
-                        new HashMap<Integer, WorkerSlot>();
+                workerData.updateWorkerToResource(workers);
+
+                Map<Integer, WorkerSlot> my_assignment = new HashMap<Integer, WorkerSlot>();
 
                 Map<String, String> node = assignment.getNodeHost();
 
@@ -220,11 +195,13 @@ public class RefreshConnections extends RunnableCallback {
                 Set<WorkerSlot> need_connections = new HashSet<WorkerSlot>();
 
                 Set<Integer> localTasks = new HashSet<Integer>();
+                Set<Integer> localNodeTasks = new HashSet<Integer>();
 
                 if (workers != null && outboundTasks != null) {
                     for (ResourceWorkerSlot worker : workers) {
-                        if (supervisorId.equals(worker.getNodeId())
-                                && worker.getPort() == workerData.getPort())
+                        if (supervisorId.equals(worker.getNodeId()))
+                            localNodeTasks.addAll(worker.getTasks());
+                        if (supervisorId.equals(worker.getNodeId()) && worker.getPort() == workerData.getPort())
                             localTasks.addAll(worker.getTasks());
                         for (Integer id : worker.getTasks()) {
                             if (outboundTasks.contains(id)) {
@@ -236,6 +213,7 @@ public class RefreshConnections extends RunnableCallback {
                 }
                 taskNodeport.putAll(my_assignment);
                 workerData.setLocalTasks(localTasks);
+                workerData.setLocalNodeTasks(localNodeTasks);
 
                 // get which connection need to be remove or add
                 Set<WorkerSlot> current_connections = nodeportSocket.keySet();
@@ -274,18 +252,9 @@ public class RefreshConnections extends RunnableCallback {
                     nodeportSocket.remove(node_port).close();
                 }
 
-                // Update the status of all outbound tasks
+                // check the status of connections to all outbound tasks
                 for (Integer taskId : outboundTasks) {
-                    boolean isActive = false;
-                    int currentTime = TimeUtils.current_time_secs();
-                    TaskHeartbeat tHB =
-                            zkCluster.task_heartbeat(topologyId, taskId);
-                    if (tHB != null) {
-                        int taskReportTime = tHB.getTimeSecs();
-                        if ((currentTime - taskReportTime) < taskTimeoutSecs)
-                            isActive = true;
-                    }
-                    workerData.updateOutboundTaskStatus(taskId, isActive);
+                    workerData.updateOutboundTaskStatus(taskId, isOutTaskConnected(taskId));
                 }
             }
         } catch (Exception e) {
@@ -307,16 +276,13 @@ public class RefreshConnections extends RunnableCallback {
     private Set<Integer> getAddedTasks(Assignment assignment) {
         Set<Integer> ret = new HashSet<Integer>();
         try {
-            Set<Integer> taskIds =
-                    assignment.getCurrentWorkerTasks(
-                            workerData.getSupervisorId(), workerData.getPort());
+            Set<Integer> taskIds = assignment.getCurrentWorkerTasks(workerData.getSupervisorId(), workerData.getPort());
             for (Integer taskId : taskIds) {
                 if (!(workerData.getTaskids().contains(taskId)))
                     ret.add(taskId);
             }
         } catch (Exception e) {
-            LOG.warn("Failed to get added task list for"
-                    + workerData.getTopologyId());
+            LOG.warn("Failed to get added task list for" + workerData.getTopologyId());
             ;
         }
         return ret;
@@ -325,22 +291,36 @@ public class RefreshConnections extends RunnableCallback {
     private Set<Integer> getRemovedTasks(Assignment assignment) {
         Set<Integer> ret = new HashSet<Integer>();
         try {
-            Set<Integer> taskIds =
-                    assignment.getCurrentWorkerTasks(
-                            workerData.getSupervisorId(), workerData.getPort());
+            Set<Integer> taskIds = assignment.getCurrentWorkerTasks(workerData.getSupervisorId(), workerData.getPort());
             for (Integer taskId : workerData.getTaskids()) {
                 if (!(taskIds.contains(taskId)))
                     ret.add(taskId);
             }
         } catch (Exception e) {
-            LOG.warn("Failed to get removed task list for"
-                    + workerData.getTopologyId());
+            LOG.warn("Failed to get removed task list for" + workerData.getTopologyId());
             ;
         }
         return ret;
     }
 
+    private Set<Integer> getUpdatedTasks(Assignment assignment) {
+        Set<Integer> ret = new HashSet<Integer>();
+        try {
+            Set<Integer> taskIds = assignment.getCurrentWorkerTasks(workerData.getSupervisorId(), workerData.getPort());
+            for (Integer taskId : taskIds) {
+                if ((workerData.getTaskids().contains(taskId)))
+                    ret.add(taskId);
+            }
+        } catch (Exception e) {
+            LOG.warn("Failed to get updated task list for" + workerData.getTopologyId());
+        }
+        return ret;
+    }
+
     private void createTasks(Set<Integer> tasks) {
+        if (tasks == null)
+            return;
+
         for (Integer taskId : tasks) {
             try {
                 TaskShutdownDameon shutdown = Task.mk_task(workerData, taskId);
@@ -352,17 +332,50 @@ public class RefreshConnections extends RunnableCallback {
     }
 
     private void shutdownTasks(Set<Integer> tasks) {
-        for (Integer taskId : tasks) {
+        if (tasks == null)
+            return;
+
+        List<TaskShutdownDameon> shutdowns = workerData.getShutdownDaemonbyTaskIds(tasks);
+        for (TaskShutdownDameon shutdown : shutdowns) {
             try {
-                List<TaskShutdownDameon> shutdowns =
-                        workerData.getShutdownDaemonbyTaskIds(tasks);
-                for (TaskShutdownDameon shutdown : shutdowns) {
-                    shutdown.shutdown();
-                }
+                shutdown.shutdown();
             } catch (Exception e) {
-                LOG.error("Failed to shutdown task-" + taskId, e);
+                LOG.error("Failed to shutdown task-" + shutdown.getTaskId(), e);
             }
         }
     }
 
+    private void updateTasks(Set<Integer> tasks) {
+        if (tasks == null)
+            return;
+
+        List<TaskShutdownDameon> shutdowns = workerData.getShutdownDaemonbyTaskIds(tasks);
+        for (TaskShutdownDameon shutdown : shutdowns) {
+            try {
+                shutdown.getTask().updateTaskData();
+            } catch (Exception e) {
+                LOG.error("Failed to update task-" + shutdown.getTaskId(), e);
+            }
+        }
+    }
+
+    private boolean isOutTaskConnected(int taskId) {
+        boolean ret = false;
+
+        if (workerData.getInnerTaskTransfer().get(taskId) != null) {
+            // Connections to inner tasks should be done after initialization. 
+            // So return true here for all inner tasks.
+            ret = true;
+        } else {
+            WorkerSlot slot = taskNodeport.get(taskId);
+            if (slot != null) {
+                IConnection connection = nodeportSocket.get(slot);
+                if (connection != null) {
+                    ret = connection.available();
+                }
+            }
+        }
+
+        return ret;
+    }
 }

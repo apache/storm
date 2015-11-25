@@ -23,7 +23,6 @@ import storm.trident.operation.TridentCollector;
 import storm.trident.operation.TridentMultiReducerContext;
 import storm.trident.tuple.TridentTuple;
 
-
 public class IdentityMultiReducer implements MultiReducer {
 
     @Override
@@ -47,5 +46,5 @@ public class IdentityMultiReducer implements MultiReducer {
     @Override
     public void cleanup() {
     }
-    
+
 }

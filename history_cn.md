@@ -1,21 +1,96 @@
 [JStorm English introduction](http://42.121.19.155/jstorm/JStorm-introduce-en.pptx)
 [JStorm Chinese introduction](http://42.121.19.155/jstorm/JStorm-introduce.pptx)
-#Release 2.0.4-SNAPSHOT
+
+# Release 2.1.0
+
 ## New features
-1.完全重构采样系统， 使用全新的Rollingwindow和Metric计算方式，尤其是netty采样数据，另外metric 发送和接收将不通过zk
-2.完全重构web-ui
-3.引入rocketdb，增加nimbus cache layer
-4.梳理所有的zk节点和zk操作， 去掉无用的zk 操作
-5.梳理所有的thrift 数据结构和函数， 去掉无用的rpc函数
-6.将jstorm-client/jstorm-client-extension/jstorm-core整合为jstorm－core
-7.同步依赖和storm一样
-8.同步apache-storm-0.10.0-beta1 java 代码
-9.切换日志系统到logback
-10.升级thrift 到apache thrift 0.9.2
+* 完全重构web ui
+	*	 大量美化界面
+	*	 大幅提高web ui展示速度
+	*	 增加topology和集群基本的最近30分钟的汇总信息
+	*	 增加拓扑图， 并增加一些交互功能来直观获取拓扑的一些关键信息(例如emit， tuple lifecycle time， tps)
+* 重构采样系统, 全新采样引擎和监控系统
+	*	 新采样不再存储数据到zk
+	*	 底层采样引擎更新， 支持抗噪处理, 合并计算更加方便
+	*	 支持metrics的高可用
+	*	 增加tuple生命周期, netty，disk空间 采样， worker内存采样更准确
+	*	 支持外接数据库插件存储监控数据
+* 实现智能反压(backpressure) 功能
+	*	 自动进行限流控制
+	*	 可以手动人工干预限流控制状态
+* 实现中央控制单元TopologyMaster
+	*	 重构心跳检查机制， 支持6000+ task
+	*	 收集所有metrics，并做合并计算
+	*	 中央控制流协调器
+	*	 HA 状态存储
+* 重新定义zk 数据结构和使用方式， 使一套zookeeper可以支撑2000+物理机器
+	*	 不再存储任何动态数据
+	*	 nimbus 获取topology／supervisor／cluster info时， 减少对zk访问次数
+	*	 合并大量task级别znode，降低对zk的访问
+	*	 优化task error节点，降低对zk的访问
+	*	 优化zk cache操作
+* 优化应用层batch功能， 提高性能
+	*	 增加自动调整batch size功能
+	*	 修复内存拷贝问题
+	*	 内部通道数据，无需batch
+	*	 默认kryo序列化
+* 增加动态binary更新功能和配置更新功能 
+* localShuffle 功能优化，提高性能，本worker，本节点，其他节点 3级shuffle，并动态探测队列负荷， 网络连接状态。
+* 默认打开kryo， 提高性能
+* 优化nimbus HA 机制， 优先级最高的nimbus 才能被promote成master，增加稳定性
+
+
+
+## 优化
+* supervisor自动dump worker jstack和jmap, 当worker处于invalid状态时.
+* supervisor可以对内存超卖设置
+* supervisor增加topology相关文件的下载重试机制。
+* 增加配置logdir设置
+* 增加配置，可使nimbus机器不自动启动supervisor
+* 增加supervisor/nimbus/drpc gc日志
+* 优化jvm参数  1. set -Xmn 1/2 of heap memory 2. set PermSize to 1/32 and MaxPermSize 1/16 of heap memory; 3. 增加最小内存设置-Xms "worker.memory.min.size"。
+* ZK error 重新定义， 并且当worker死去时会，会在web ui报错, 
+* 更新zktool，支持清理不干净的topology，并支持list功能
+* 优化netty client和zk连接重试的时间间隔获取机制
+* 修改out task状态更新机制，从zk上读取心跳信息，改为根据网络连接状态。以减少zk的依赖
+* 增加配置参数 topology.enable.metrics: true/false, 用来启用或禁用metric
+* 日志归类，相同topologyName的日志归类到对应目录下
+
+
+## Bug fix
+* Fix supervisor在调度有变化时，重复的下载任务jar包
+* Fix supervisor下载失败，不会尝试用错误的jar去启动worker
+* 大量的线程使用了错误的conf， 应该使用worker的conf
+* 提交拓扑时，服务端会首先检测拓扑名字的合法性
+* Fix fieldGrouping方式之前对Object[]数据结构不支持
+* Fix 使drpc 单例模式
+* 客户端topologyNameExists改进，直接使用trhift api
+* Fix restart 过程中， 因定时清理线程清理导致的restart失败
+* Fix 当trigger bolt失败时,反压可能丢失
+* Fix DefaultMetricUploader没有删除rocksdb中的数据,导致新的metrics数据无法添加
+
+
+## 运维和脚本
+* 优化cleandisk.sh脚本, 防止误删worker日志
+
+# Release 2.0.4-SNAPSHOT
+
+## New features
+1. 完全重构采样系统， 使用全新的Rollingwindow和Metric计算方式，尤其是netty采样数据，另外metric 发送和接收将不通过zk
+2. 完全重构web-ui
+3. 引入rocketdb，增加nimbus cache layer
+4. 梳理所有的zk节点和zk操作， 去掉无用的zk 操作
+5. 梳理所有的thrift 数据结构和函数， 去掉无用的rpc函数
+6. 将jstorm-client/jstorm-client-extension/jstorm-core整合为jstorm－core
+7. 同步依赖和storm一样
+8. 同步apache-storm-0.10.0-beta1 java 代码
+9. 切换日志系统到logback
+10. 升级thrift 到apache thrift 0.9.2
 11. 针对超大型任务600个worker／2000个task以上任务进行优化
 12. 要求 jdk7 or higher
 
-#Release 0.9.7.1
+# Release 0.9.7.1
+
 ## New features
 1. 增加Tuple自动batch的支持，以提高TPS以及降低消息处理延迟（task.batch.tuple=true，task.msg.batch.size=4）
 2. localFirst在本地节点处理能力跟不上时，自动对外部节点进行扩容
@@ -28,21 +103,25 @@
 9. 启动nimbus/supervisor时， 如果取得的是127.0.0.0地址时， 拒绝启动
 10. 增加自定义样例
 11. 合并supervisor 的zk同步线程syncSupervisor和worker同步线程syncProcess
+
 ## 配置变更
 1. 默认超时心跳时间设置为4分钟
 2. 修改netty 线程池clientScheduleService大小为5
+
 ## Bug fix
 1. 优化gc参数，4g以下内存的worker默认4个gc线程，4g以上内存， 按内存大小/1g * 1.5原则设置gc线程数量
 2. Fix在bolt处理速度慢时，可能出现的task心跳更新不及时的bug
 3. Fix在一些情况下，netty连接重连时的异常等待bug
 4. 提交任务时， 避免重复创建thrift client
 5. Fix 启动worker失败时，重复下载binary问题
-##运维和脚本
+
+## 运维和脚本
 1. 优化cleandisk.sh脚本， 防止把当前目录删除和/tmp/hsperfdata_admin/
 2. 增加example下脚本执行权限
 3. 添加参数supervisor.host.start: true/false，可以通过脚本start.sh批量控制启动supervisor或不启动supervisor，默认是启动supervisor
 
-#Release 0.9.7
+# Release 0.9.7
+
 ## New features
 1. 实现topology任务并发动态调整的功能。在任务不下线的情况下，可以动态的对worker，spout, bolt或者ack进行扩容或缩容。rebalance命令被扩展用于支持动态扩容/缩容功能。
 2. 当打开资源隔离时，增加worker对cpu核使用上限的控制
@@ -56,11 +135,13 @@
 10. 增加supervisor 心跳检查， 会拒绝分配任务到supervisor心跳超时的supervisor
 11. 更新发送到Alimonitor的user defined metrics 数据结构
 12. 增加客户端exclude-jar 功能， 当客户端提交任务时，可以通过exclude-jar和classloader来解决jar冲突问题。
+
 ## 配置变更
 1. 修改supervisor到nimbus的心跳 超时时间到180秒
 2. 为避免内存outofmemory， 设置storm.messaging.netty.max.pending默认值为4
 3. 设置Nimbus 内存至4G
 4. 调大队列大小 task 队列大小为1024， 总发送队列和总接收队列为2048
+
 ## Bug fix
 1. 短时间能多次restart worker配置多的任务时，由于Nimbus thrift thread的OOM导致，Supervisor可能出现假死的情况
 2. 同时提交任务，后续的任务可能会失败
@@ -73,12 +154,14 @@
 9. 解决 zkTool 读取 monitor的 znode 失败问题
 10.解决 本地模式和打开classloader模式下， 出现异常问题
 11.解决使用自定义日志logback时， 本地模式下，打印双份日志问题
+
 ## 运维& 脚本
 1. Add rpm build spec
 2. Add deploy files of jstorm for rpm package building
 3. cronjob改成每小时运行一次， 并且coredump 改成保留1个小时
 
-#Release 0.9.6.3
+# Release 0.9.6.3
+
 ## New features
 1. 实现tick tuple
 2. 支持logbak
@@ -88,6 +171,7 @@
 6. 所有底层使用ip，自定义调度的时候，支持自定义调度中ip和hostname混用
 7. 本地模式支持junit test
 8. 客户端命令（比如提交jar时）可以指定storm.yaml 配置文件
+
 ## Bug fix
 1. 在spout 的prepare里面增加active动作
 2. 多语言支持
@@ -116,7 +200,7 @@
 25. rpm安装包中，设置本地临时端口区间
 26. 需要一个noarch的rpm包
 
-#Release 0.9.6.2
+# Release 0.9.6.2
 1. Add option to switch between BlockingQueue and Disruptor
 2. Fix the bug which under sync netty mode, client failed to send message to server 
 3. Fix the bug let web UI can dispaly 0.9.6.1 cluster
@@ -126,7 +210,7 @@
 7. Add the validation of topology name, component name... Only A-Z, a-z, 0-9, '_', '-', '.' are valid now.
 8. Fix the bug close thrift client
 
-#Release 0.9.6.2-rc
+# Release 0.9.6.2-rc
 1. Improve user experience from Web UI
 1.1 Add jstack link
 1.2 Add worker log link in supervisor page
@@ -146,7 +230,7 @@
 11. Add tcp option "reuseAddress" in netty framework
 12. Fix the bug: When spout does not implement the ICommitterTrident interface, MasterCoordinatorSpout will stick on commit phase.
 
-#Release 0.9.6.2-rc
+# Release 0.9.6.2-rc
 1. Improve user experience from Web UI
 1.1 Add jstack link
 1.2 Add worker log link in supervisor page
@@ -166,7 +250,7 @@
 11. Add tcp option "reuseAddress" in netty framework
 12. Fix the bug: When spout does not implement the ICommitterTrident interface, MasterCoordinatorSpout will stick on commit phase.
 
-#Release 0.9.6.1
+# Release 0.9.6.1
 1. Add management of multiclusters to Web UI. Added management tools for multiclusters in WebUI.
 2. Merged Trident API from storm-0.9.3
 3. Replaced gson with fastjson
@@ -192,7 +276,7 @@
 23. Support assign topology to user-defined supervisors
 
 
-#Release 0.9.6
+# Release 0.9.6
 1. Update UI 
   - Display the metrics information of task and worker
   - Add warning flag when errors occur for a topology
@@ -206,7 +290,7 @@
 8. Add closing channel check in netty client to avoid double close
 9. Add connecting check in netty client to avoid connecting one server twice at one time 
 
-#Release 0.9.5.1
+# Release 0.9.5.1
 1. Add netty sync mode
 2. Add block operation in netty async mode
 3. Replace exception with Throwable in executor layer
@@ -214,16 +298,18 @@
 5. Add more netty junit test
 6. Add log when queue is full
 
-#Release 0.9.5
-##Big feature:
+# Release 0.9.5
+
+## Big feature:
 1. Redesign scheduler arithmetic, basing worker not task .
 
 ## Bug fix
 1. Fix disruptor use too much cpu
 2. Add target NettyServer log when f1ail to send data by netty
 
-#Release 0.9.4.1
-##Bug fix:
+# Release 0.9.4.1
+
+## Bug fix:
 1. Improve speed between tasks who is running in one worker
 2. Fix wrong timeout seconds
 3. Add checking port when worker initialize and begin to kill old worker
@@ -242,7 +328,7 @@
 
 
 
-#Release 0.9.4
+# Release 0.9.4
 
 ## Big features
 1. Add transaction programming mode
@@ -258,7 +344,7 @@
 
 
 
-##Bug fix:
+## Bug fix:
 1. Setting buffer size  when upload jar
 2. Add lock between ZK watch and timer thread when refresh connection
 3. Enable nimbus monitor thread only when topology is running in cluster mode
@@ -266,7 +352,7 @@
 5. classloader fix when both parent and current classloader load the same class
 6. Fix log view null pointer exception
 
-#Release 0.9.3.1
+# Release 0.9.3.1
 
 ## Enhancement
 1. switch apache thrift7 to storm thrift7
@@ -277,7 +363,8 @@
 6. Set gc dump dir as log's dir
 
 
-#Release 0.9.3
+# Release 0.9.3
+
 ## New feature
 1. Support Aliyun Apsara/Hadoop Yarn
 
@@ -309,7 +396,8 @@
  
 
 
-#Release 0.9.2
+# Release 0.9.2
+
 ## New feature
 1. Support LocalCluster/LocalDrpc mode, support debugging topology under local mode
 2. Support CGroups, assigning CPU in hardware level.

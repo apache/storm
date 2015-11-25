@@ -25,7 +25,7 @@ import backtype.storm.tuple.Tuple;
 
 public class IdentityBolt extends BaseBasicBolt {
     Fields _fields;
-    
+
     public IdentityBolt(Fields fields) {
         _fields = fields;
     }
@@ -38,5 +38,5 @@ public class IdentityBolt extends BaseBasicBolt {
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(_fields);
-    }    
+    }
 }

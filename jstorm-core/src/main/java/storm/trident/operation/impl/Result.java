@@ -23,5 +23,5 @@ public class Result {
     @Override
     public String toString() {
         return "" + obj;
-    }    
+    }
 }

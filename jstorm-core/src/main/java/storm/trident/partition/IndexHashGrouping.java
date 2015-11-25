@@ -25,20 +25,20 @@ import java.util.List;
 
 public class IndexHashGrouping implements CustomStreamGrouping {
     public static int objectToIndex(Object val, int numPartitions) {
-        if(val==null) return 0;
+        if (val == null)
+            return 0;
         else {
             return Math.abs(val.hashCode()) % numPartitions;
         }
     }
-    
+
     int _index;
     List<Integer> _targets;
-    
+
     public IndexHashGrouping(int index) {
         _index = index;
     }
-    
-    
+
     @Override
     public void prepare(WorkerTopologyContext context, GlobalStreamId stream, List<Integer> targetTasks) {
         _targets = targetTasks;
@@ -49,5 +49,5 @@ public class IndexHashGrouping implements CustomStreamGrouping {
         int i = objectToIndex(values.get(_index), _targets.size());
         return Arrays.asList(_targets.get(i));
     }
-    
+
 }

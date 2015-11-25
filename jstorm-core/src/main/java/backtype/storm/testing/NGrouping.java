@@ -27,17 +27,17 @@ import java.util.List;
 public class NGrouping implements CustomStreamGrouping {
     int _n;
     List<Integer> _outTasks;
-    
+
     public NGrouping(int n) {
         _n = n;
     }
-    
+
     @Override
     public void prepare(WorkerTopologyContext context, GlobalStreamId stream, List<Integer> targetTasks) {
         targetTasks = new ArrayList<Integer>(targetTasks);
         Collections.sort(targetTasks);
         _outTasks = new ArrayList<Integer>();
-        for(int i=0; i<_n; i++) {
+        for (int i = 0; i < _n; i++) {
             _outTasks.add(targetTasks.get(i));
         }
     }
@@ -46,5 +46,5 @@ public class NGrouping implements CustomStreamGrouping {
     public List<Integer> chooseTasks(int taskId, List<Object> values) {
         return _outTasks;
     }
-    
+
 }

@@ -23,9 +23,10 @@ import java.util.Map;
 
 public class DefaultTopologyValidator implements ITopologyValidator {
     @Override
-    public void prepare(Map StormConf){
+    public void prepare(Map StormConf) {
     }
+
     @Override
-    public void validate(String topologyName, Map topologyConf, StormTopology topology) throws InvalidTopologyException {        
-    }    
+    public void validate(String topologyName, Map topologyConf, StormTopology topology) throws InvalidTopologyException {
+    }
 }

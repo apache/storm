@@ -1,0 +1,197 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+.navbar-brand{
+    font-size: 25px;
+}
+
+.navbar{
+    margin-bottom: 0;
+}
+.popover{
+    max-width: none;
+}
+.label{
+    line-height: inherit;
+}
+.breadcrumb{
+    margin-top: 20px;
+}
+
+table th, table td{
+    white-space: nowrap;
+}
+
+table.text-wrap th{
+    white-space: pre-wrap;
+}
+
+.nav-tabs>li.active>a, .nav-tabs>li.active>a:focus, .nav-tabs>li.active>a:hover{
+    outline: none;
+}
+
+/*** sort table ***/
+.sorttable_sorted,.sorttable_sorted_reverse{
+    background-color: #E0EBF5;
+}
+
+.center, thead.center tr th, table.center tr th, tbody.center tr th{
+    text-align: center;
+}
+
+table.sortable th{
+    cursor: pointer;
+}
+
+/*** json pretty ***/
+pre { padding: 5px; margin: 5px; font: 13px/18px monospace; line-height: 20px;}
+.string { color: #0B7500; }
+.number,.boolean,.null { font-weight: bold; color: #1A01CC; }
+.key { color: #000; }
+
+.tip-msg{
+    outline: none;
+    cursor: pointer;
+}
+
+.error-msg, .error-msg:hover, .error-msg:active, .error-msg:focus{
+    color: #d9534f;
+}
+
+.ok-msg{
+    color: #5cb85c;
+}
+
+.warning-msg{
+    color: #f0ad4e;
+}
+
+.path{
+    font-size: 60%;
+}
+
+.pagination{
+    float: right;
+    margin-top: 0;
+    margin-bottom: 40px;
+}
+
+.view-plain{
+    background-color: #fff;
+    border: none;
+    margin-top: -15px;
+    margin-bottom: -15px;
+}
+
+.comp-type{
+    margin-right: 5px;
+}
+
+.sub-comp, .comp-sub{
+    border-top: 1px solid #ddd;
+    padding: 2px;
+    margin-top: 5px;
+    font-size: 14px;
+    text-align: right;
+}
+
+.middle{
+    text-align: center;
+    vertical-align: middle !important;
+}
+
+.more-metrics{
+    color: #337ab7;
+    font-size: 25px;
+    cursor: pointer;
+}
+
+.window{
+    font-size: 23px;
+}
+
+#logo{
+    border: 0;
+    height: 50px;
+    float: left;
+    padding-top: 0;
+    margin-top: -15px;
+}
+
+.netty-pagination .pagination .previous, .netty-pagination .pagination .next{
+    padding: 9px 12px;
+}
+
+#topology-graph{
+    border: 1px solid lightgray;
+    float: left;
+}
+
+#graph-event{
+    float: left;
+}
+
+.nav-menu{
+    margin-top: 20px;
+}
+
+.cpu-ratio-bar{
+    margin-bottom: 0;
+}
+
+.nav-tabs .badge{
+    background-color: #bbb;
+}
+
+.popover-content pre{
+    background-color: transparent;
+    margin: 0;
+    padding: 0;
+    border: none;
+    max-width: 1000px;
+}
+
+.tab-pane{
+    margin-bottom: 30px;
+}
+
+td.stream{
+    position: relative;
+    text-align: center;
+}
+
+td.stream .detail{
+    position: absolute;
+    right: 12px;
+    top: 12px;
+    color: #999;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+td.stream .detail:hover{
+    color: #337ab7;
+}
+
+.table>tbody>tr>td.topo-chart{
+    padding: 8px 0 0 0;
+}
+
+.topo-chart .chart-canvas{
+    margin: 0 auto;
+}
+

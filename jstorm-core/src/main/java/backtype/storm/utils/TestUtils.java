@@ -25,9 +25,7 @@ import java.util.Map;
 
 public class TestUtils extends Utils {
 
-    public static void testSetupBuilder(CuratorFrameworkFactory.Builder
-            builder, String zkStr, Map conf, ZookeeperAuthInfo auth)
-    {
+    public static void testSetupBuilder(CuratorFrameworkFactory.Builder builder, String zkStr, Map conf, ZookeeperAuthInfo auth) {
         setupBuilder(builder, zkStr, conf, auth);
     }
 

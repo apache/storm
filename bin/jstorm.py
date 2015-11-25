@@ -69,7 +69,9 @@ def get_client_childopts():
     return ret
 
 def get_server_childopts(log_name):
-    ret = (" -Dlogfile.name=%s -Dlogback.configurationFile=%s"  %(log_name, LOGBACK_CONF))
+    jstorm_log_dir = get_log_dir()
+    gc_log_path = jstorm_log_dir + "/" + log_name + ".gc"
+    ret = (" -Xloggc:%s -Dlogfile.name=%s -Dlogback.configurationFile=%s -Djstorm.log.dir=%s "  %(gc_log_path, log_name, LOGBACK_CONF, jstorm_log_dir))
     return ret
 
 if not os.path.exists(JSTORM_DIR + "/RELEASE"):
@@ -103,8 +105,8 @@ def get_classpath(extrajars):
     ret.extend(get_jars_full(JSTORM_DIR))
     ret.extend(get_jars_full(JSTORM_DIR + "/lib"))
     ret.extend(INCLUDE_JARS)
-    
     return normclasspath(":".join(ret))
+    
 
 def confvalue(name, extrapaths):
     command = [
@@ -130,6 +132,18 @@ def print_localconfvalue(name):
     """
     print name + ": " + confvalue(name, [JSTORM_CONF_DIR])
 
+def get_log_dir():
+    cppaths = [JSTORM_CONF_DIR]
+    jstorm_log_dir = confvalue("jstorm.log.dir", cppaths)
+    if not jstorm_log_dir == "null":
+       if not os.path.exists(jstorm_log_dir):
+          os.mkdir(jstorm_log_dir)
+    else:
+       jstorm_log_dir = JSTORM_DIR + "/logs"
+       if not os.path.exists(jstorm_log_dir):
+          os.mkdir(jstorm_log_dir)
+    return jstorm_log_dir
+
 def print_remoteconfvalue(name):
     """Syntax: [jstorm remoteconfvalue conf-name]
 
@@ -141,11 +155,17 @@ def print_remoteconfvalue(name):
     """
     print name + ": " + confvalue(name, [JSTORM_CONF_DIR])
 
+
 def exec_storm_class(klass, jvmtype="-server", childopts="", extrajars=[], args=[]):
     nativepath = confvalue("java.library.path", extrajars)
     args_str = " ".join(map(lambda s: "\"" + s + "\"", args))
-    command = "java " + jvmtype + " -Djstorm.home=" + JSTORM_DIR + " " + get_config_opts() + " -Djava.library.path=" + nativepath + " " + childopts + " -cp " + get_classpath(extrajars) + " " + klass + " " + args_str
-    print "Running: " + command    
+    print args_str
+    if "NimbusServer" in klass:
+        # fix cmd > 4096, use dir in cp, only for nimbus server
+        command = "java " + jvmtype + " -Djstorm.home=" + JSTORM_DIR + " " + get_config_opts() + " -Djava.library.path=" + nativepath + " " + childopts + " -cp " + get_classpath(extrajars) + ":" + JSTORM_DIR + "/lib/ext/* " + klass + " " + args_str
+    else:
+        command = "java " + jvmtype + " -Djstorm.home=" + JSTORM_DIR + " " + get_config_opts() + " -Djava.library.path=" + nativepath + " " + childopts + " -cp " + get_classpath(extrajars) + " " + klass + " " + args_str
+    print "Running: " + command
     global STATUS
     STATUS = os.system(command)
 
@@ -263,12 +283,12 @@ def restart(*args):
         extrajars=[JSTORM_CONF_DIR, JSTORM_DIR + "/bin", CLIENT_CONF_FILE],
         childopts=childopts)
 
-def update_config(*args):
-    """Syntax: [jstorm restart topology-name [conf]]
+def update_topology(*args):
+    """Syntax: [jstorm update_topology topology-name -jar [jarpath] -conf [confpath]]
     """
     childopts = get_client_childopts()
     exec_storm_class(
-        "backtype.storm.command.update_config",
+        "backtype.storm.command.update_topology",
         args=args,
         jvmtype="-client -Xms256m -Xmx256m",
         extrajars=[JSTORM_CONF_DIR, JSTORM_DIR + "/bin", CLIENT_CONF_FILE],
@@ -308,7 +328,6 @@ def supervisor():
         jvmtype="-server", 
         extrajars=cppaths, 
         childopts=childopts)
-
 
 def drpc():
     """Syntax: [jstorm drpc]
@@ -388,7 +407,7 @@ COMMANDS = {"jar": jar, "kill": kill, "nimbus": nimbus, "zktool": zktool,
             "drpc": drpc, "supervisor": supervisor, "localconfvalue": print_localconfvalue,
             "remoteconfvalue": print_remoteconfvalue, "classpath": print_classpath,
             "activate": activate, "deactivate": deactivate, "rebalance": rebalance, "help": print_usage,
-            "metricsMonitor": metrics_Monitor, "list": list, "restart": restart, "update_config": update_config}
+            "metricsMonitor": metrics_Monitor, "list": list, "restart": restart, "update_topology": update_topology}
 
 def parse_config(config_list):
     global CONFIG_OPTS

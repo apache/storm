@@ -17,16 +17,20 @@
  */
 package com.alibaba.jstorm.message.netty;
 
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-
+import backtype.storm.Config;
+import backtype.storm.messaging.TaskMessage;
+import backtype.storm.utils.DisruptorQueue;
+import backtype.storm.utils.Utils;
+import com.alibaba.jstorm.common.metric.AsmGauge;
+import com.alibaba.jstorm.common.metric.QueueGauge;
+import com.alibaba.jstorm.metric.*;
+import com.alibaba.jstorm.utils.JStormServerUtils;
+import com.alibaba.jstorm.utils.JStormUtils;
+import com.alibaba.jstorm.utils.TimeUtils;
+import com.codahale.metrics.Gauge;
+import com.lmax.disruptor.EventHandler;
+import com.lmax.disruptor.WaitStrategy;
+import com.lmax.disruptor.dsl.ProducerType;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.jboss.netty.channel.Channel;
@@ -35,25 +39,13 @@ import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import backtype.storm.Config;
-import backtype.storm.messaging.TaskMessage;
-import backtype.storm.utils.DisruptorQueue;
-import backtype.storm.utils.Utils;
-
-import com.alibaba.jstorm.common.metric.QueueGauge;
-import com.alibaba.jstorm.metric.JStormHealthCheck;
-import com.alibaba.jstorm.metric.JStormMetrics;
-import com.alibaba.jstorm.metric.MetricDef;
-import com.alibaba.jstorm.utils.JStormServerUtils;
-import com.alibaba.jstorm.utils.JStormUtils;
-import com.codahale.metrics.Gauge;
-import com.lmax.disruptor.EventHandler;
-import com.lmax.disruptor.WaitStrategy;
-import com.lmax.disruptor.dsl.ProducerType;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 class NettyClientSync extends NettyClient implements EventHandler {
-    private static final Logger LOG = LoggerFactory
-            .getLogger(NettyClientSync.class);
+    private static final Logger LOG = LoggerFactory.getLogger(NettyClientSync.class);
 
     private ConcurrentLinkedQueue<MessageBatch> batchQueue;
     private DisruptorQueue disruptorQueue;
@@ -63,20 +55,14 @@ class NettyClientSync extends NettyClient implements EventHandler {
     private AtomicLong emitTs = new AtomicLong(0);
 
     @SuppressWarnings("rawtypes")
-    NettyClientSync(Map storm_conf, ChannelFactory factory,
-            ScheduledExecutorService scheduler, String host, int port,
-            ReconnectRunnable reconnector) {
+    NettyClientSync(Map storm_conf, ChannelFactory factory, ScheduledExecutorService scheduler, String host, int port, ReconnectRunnable reconnector) {
         super(storm_conf, factory, scheduler, host, port, reconnector);
 
         batchQueue = new ConcurrentLinkedQueue<MessageBatch>();
 
-        WaitStrategy waitStrategy =
-                (WaitStrategy) JStormUtils
-                        .createDisruptorWaitStrategy(storm_conf);
+        WaitStrategy waitStrategy = (WaitStrategy) Utils.newInstance((String) storm_conf.get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
 
-        disruptorQueue =
-                DisruptorQueue.mkInstance(name, ProducerType.MULTI,
-                        MAX_SEND_PENDING * 8, waitStrategy);
+        disruptorQueue = DisruptorQueue.mkInstance(name, ProducerType.MULTI, MAX_SEND_PENDING * 8, waitStrategy);
         disruptorQueue.consumerStarted();
 
         if (connectMyself == false) {
@@ -93,21 +79,14 @@ class NettyClientSync extends NettyClient implements EventHandler {
         scheduler.scheduleAtFixedRate(trigger, 10, 1, TimeUnit.SECONDS);
 
         /**
-         * In sync mode, it can't directly use common factory, it will occur
-         * problem when client close and restart
+         * In sync mode, it can't directly use common factory, it will occur problem when client close and restart
          */
-        ThreadFactory bossFactory =
-                new NettyRenameThreadFactory(MetricDef.NETTY_CLI
-                        + JStormServerUtils.getName(host, port) + "-boss");
+        ThreadFactory bossFactory = new NettyRenameThreadFactory(MetricDef.NETTY_CLI + JStormServerUtils.getName(host, port) + "-boss");
         bossExecutor = Executors.newCachedThreadPool(bossFactory);
-        ThreadFactory workerFactory =
-                new NettyRenameThreadFactory(MetricDef.NETTY_CLI
-                        + JStormServerUtils.getName(host, port) + "-worker");
+        ThreadFactory workerFactory = new NettyRenameThreadFactory(MetricDef.NETTY_CLI + JStormServerUtils.getName(host, port) + "-worker");
         workerExecutor = Executors.newCachedThreadPool(workerFactory);
 
-        clientChannelFactory =
-                new NioClientSocketChannelFactory(bossExecutor, workerExecutor,
-                        1);
+        clientChannelFactory = new NioClientSocketChannelFactory(bossExecutor, workerExecutor, 1);
 
         start();
 
@@ -115,24 +94,24 @@ class NettyClientSync extends NettyClient implements EventHandler {
     }
 
     public void registerSyncMetrics() {
-        JStormMetrics.registerWorkerGauge(new Gauge<Double>() {
-            @Override
-            public Double getValue() {
-                return Double.valueOf(batchQueue.size());
-            }
-        }, MetricDef.NETTY_CLI_SYNC_BATCH_QUEUE, nettyConnection.toString());
+        if (enableNettyMetrics) {
+            JStormMetrics.registerNettyMetric(MetricUtils
+                            .nettyMetricName(MetricDef.NETTY_CLI_SYNC_BATCH_QUEUE + nettyConnection.toString(), MetricType.GAUGE),
+                    new AsmGauge(new Gauge<Double>() {
+                        @Override
+                        public Double getValue() {
+                            return (double) batchQueue.size();
+                        }
+                    }));
 
-        QueueGauge cacheQueueGauge =
-                new QueueGauge(MetricDef.NETTY_CLI_SYNC_DISR_QUEUE
-                        + nettyConnection.toString(), disruptorQueue);
+            QueueGauge cacheQueueGauge = new QueueGauge(disruptorQueue, MetricDef.NETTY_CLI_SYNC_DISR_QUEUE, nettyConnection.toString());
 
-        JStormMetrics
-                .registerWorkerGauge(cacheQueueGauge,
-                        MetricDef.NETTY_CLI_SYNC_DISR_QUEUE,
-                        nettyConnection.toString());
-        JStormHealthCheck.registerWorkerHealthCheck(
-                MetricDef.NETTY_CLI_SYNC_DISR_QUEUE + ":"
-                        + nettyConnection.toString(), cacheQueueGauge);
+            JStormMetrics.registerNettyMetric(MetricUtils
+                            .nettyMetricName(MetricDef.NETTY_CLI_SYNC_DISR_QUEUE + nettyConnection.toString(), MetricType.GAUGE),
+                    new AsmGauge(cacheQueueGauge));
+            JStormHealthCheck.registerWorkerHealthCheck(
+                    MetricDef.NETTY_CLI_SYNC_DISR_QUEUE + ":" + nettyConnection.toString(), cacheQueueGauge);
+        }
     }
 
     /**
@@ -166,8 +145,6 @@ class NettyClientSync extends NettyClient implements EventHandler {
 
     /**
      * Don't take care of competition
-     * 
-     * @param blocked
      */
     public void sendData() {
         long start = System.nanoTime();
@@ -188,12 +165,13 @@ class NettyClientSync extends NettyClient implements EventHandler {
             JStormUtils.halt_process(-1, err);
         } finally {
             long end = System.nanoTime();
-            sendTimer.update((end - start) / 1000000.0d);
+            if (sendTimer != null) {
+                sendTimer.update((end - start) / TimeUtils.NS_PER_US);
+            }
         }
     }
 
     public void sendAllData() {
-
         long start = System.nanoTime();
         try {
             disruptorQueue.consumeBatch(this);
@@ -216,7 +194,9 @@ class NettyClientSync extends NettyClient implements EventHandler {
             JStormUtils.halt_process(-1, err);
         } finally {
             long end = System.nanoTime();
-            sendTimer.update((end - start) / 1000000.0d);
+            if (sendTimer != null) {
+                sendTimer.update((end - start) / TimeUtils.NS_PER_US);
+            }
         }
     }
 
@@ -227,8 +207,7 @@ class NettyClientSync extends NettyClient implements EventHandler {
     }
 
     @Override
-    public void onEvent(Object event, long sequence, boolean endOfBatch)
-            throws Exception {
+    public void onEvent(Object event, long sequence, boolean endOfBatch) throws Exception {
         if (event == null) {
             return;
         }
@@ -296,22 +275,19 @@ class NettyClientSync extends NettyClient implements EventHandler {
     }
 
     public void unregisterSyncMetrics() {
-        JStormMetrics.unregisterWorkerMetric(
-                MetricDef.NETTY_CLI_SYNC_BATCH_QUEUE,
-                nettyConnection.toString());
-        JStormMetrics
-                .unregisterWorkerMetric(MetricDef.NETTY_CLI_SYNC_DISR_QUEUE,
-                        nettyConnection.toString());
-        JStormHealthCheck
-                .unregisterWorkerHealthCheck(MetricDef.NETTY_CLI_SYNC_DISR_QUEUE
-                        + ":" + nettyConnection.toString());
+        if (enableNettyMetrics) {
+            JStormMetrics.unregisterNettyMetric(MetricUtils
+                    .nettyMetricName(MetricDef.NETTY_CLI_SYNC_BATCH_QUEUE + nettyConnection.toString(), MetricType.GAUGE));
+            JStormMetrics.unregisterNettyMetric(MetricUtils
+                    .nettyMetricName(MetricDef.NETTY_CLI_SYNC_DISR_QUEUE + nettyConnection.toString(), MetricType.GAUGE));
+            JStormHealthCheck
+                    .unregisterWorkerHealthCheck(MetricDef.NETTY_CLI_SYNC_DISR_QUEUE + ":" + nettyConnection.toString());
+        }
     }
 
     @Override
     public void close() {
-        LOG.info(
-                "Begin to close connection to {} and flush all data, batchQueue {}, disruptor {}",
-                name, batchQueue.size(), disruptorQueue.population());
+        LOG.info("Begin to close connection to {} and flush all data, batchQueue {}, disruptor {}", name, batchQueue.size(), disruptorQueue.population());
         sendAllData();
         disruptorQueue.haltWithInterrupt();
         if (connectMyself == false) {
@@ -326,7 +302,6 @@ class NettyClientSync extends NettyClient implements EventHandler {
 
     @Override
     public String toString() {
-        return ToStringBuilder.reflectionToString(this,
-                ToStringStyle.SHORT_PREFIX_STYLE);
+        return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
 }

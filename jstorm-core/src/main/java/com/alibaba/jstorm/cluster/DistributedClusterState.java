@@ -49,8 +49,7 @@ import com.alibaba.jstorm.zk.Zookeeper;
  */
 public class DistributedClusterState implements ClusterState {
 
-    private static Logger LOG = LoggerFactory
-            .getLogger(DistributedClusterState.class);
+    private static Logger LOG = LoggerFactory.getLogger(DistributedClusterState.class);
 
     private Zookeeper zkobj = new Zookeeper();
     private CuratorFramework zk;
@@ -59,8 +58,7 @@ public class DistributedClusterState implements ClusterState {
     /**
      * why run all callbacks, when receive one event
      */
-    private ConcurrentHashMap<UUID, ClusterStateCallback> callbacks =
-            new ConcurrentHashMap<UUID, ClusterStateCallback>();
+    private ConcurrentHashMap<UUID, ClusterStateCallback> callbacks = new ConcurrentHashMap<UUID, ClusterStateCallback>();
 
     private Map<Object, Object> conf;
     private AtomicBoolean active;
@@ -83,16 +81,13 @@ public class DistributedClusterState implements ClusterState {
             public void execute(KeeperState state, EventType type, String path) {
                 if (active.get()) {
                     if (!(state.equals(KeeperState.SyncConnected))) {
-                        LOG.warn("Received event " + state + ":" + type + ":"
-                                + path + " with disconnected Zookeeper.");
+                        LOG.warn("Received event " + state + ":" + type + ":" + path + " with disconnected Zookeeper.");
                     } else {
-                        LOG.info("Received event " + state + ":" + type + ":"
-                                + path);
+                        LOG.info("Received event " + state + ":" + type + ":" + path);
                     }
 
                     if (!type.equals(EventType.None)) {
-                        for (Entry<UUID, ClusterStateCallback> e : callbacks
-                                .entrySet()) {
+                        for (Entry<UUID, ClusterStateCallback> e : callbacks.entrySet()) {
                             ClusterStateCallback fn = e.getValue();
                             fn.execute(type, path);
                         }
@@ -107,17 +102,12 @@ public class DistributedClusterState implements ClusterState {
 
     @SuppressWarnings("unchecked")
     private CuratorFramework mkZk() throws IOException {
-        return zkobj.mkClient(conf,
-                (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS),
-                conf.get(Config.STORM_ZOOKEEPER_PORT), "");
+        return zkobj.mkClient(conf, (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS), conf.get(Config.STORM_ZOOKEEPER_PORT), "");
     }
 
     @SuppressWarnings("unchecked")
-    private CuratorFramework mkZk(WatcherCallBack watcher)
-            throws NumberFormatException, IOException {
-        return zkobj.mkClient(conf,
-                (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS),
-                conf.get(Config.STORM_ZOOKEEPER_PORT),
+    private CuratorFramework mkZk(WatcherCallBack watcher) throws NumberFormatException, IOException {
+        return zkobj.mkClient(conf, (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS), conf.get(Config.STORM_ZOOKEEPER_PORT),
                 String.valueOf(conf.get(Config.STORM_ZOOKEEPER_ROOT)), watcher);
     }
 
@@ -136,8 +126,7 @@ public class DistributedClusterState implements ClusterState {
     }
 
     @Override
-    public List<String> get_children(String path, boolean watch)
-            throws Exception {
+    public List<String> get_children(String path, boolean watch) throws Exception {
         return zkobj.getChildren(zk, path, watch);
     }
 

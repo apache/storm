@@ -29,14 +29,12 @@ import com.alibaba.jstorm.callback.RunnableCallback;
  * Event Manager, drop one event from queue, then execute the event.
  */
 public class EventManagerImp extends RunnableCallback implements EventManager {
-    private static final Logger LOG = LoggerFactory
-            .getLogger(EventManagerImp.class);
+    private static final Logger LOG = LoggerFactory.getLogger(EventManagerImp.class);
 
     private AtomicInteger added = new AtomicInteger();
     private AtomicInteger processed = new AtomicInteger();
 
-    private LinkedBlockingQueue<RunnableCallback> queue =
-            new LinkedBlockingQueue<RunnableCallback>();
+    private LinkedBlockingQueue<RunnableCallback> queue = new LinkedBlockingQueue<RunnableCallback>();
 
     private Exception e;
 

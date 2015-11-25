@@ -39,8 +39,25 @@ public class OlderFileFilter implements FileFilter {
 
         long current_time = System.currentTimeMillis();
 
-        return (pathname.isFile() && (pathname.lastModified() + seconds * 1000 <= current_time))
-                || pathname.isDirectory();
+        return (pathname.lastModified() + seconds * 1000 <= current_time) ;
+    }
+    
+    
+    public static void main(String[] args) {
+    	long current_time = System.currentTimeMillis();
+    	String test = "test";
+    	
+    	
+    	File file = new File(test);
+    	file.delete();
+    	file.mkdir();
+    	file.setLastModified(current_time);
+    	
+    	JStormUtils.sleepMs(10 * 1000);
+
+    	File newFile = new File(test);
+    	System.out.println("modify time: " + newFile.lastModified() + ", raw:" + current_time);
+    	
     }
 
 }

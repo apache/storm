@@ -17,30 +17,20 @@
  */
 package com.alibaba.jstorm.schedule.default_assign;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
-
 import backtype.storm.Config;
-import backtype.storm.generated.Bolt;
-import backtype.storm.generated.ComponentCommon;
-import backtype.storm.generated.SpoutSpec;
-import backtype.storm.generated.StateSpoutSpec;
-import backtype.storm.generated.StormTopology;
+import backtype.storm.generated.*;
 import backtype.storm.utils.ThriftTopologyUtils;
-
+import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.cluster.Common;
 import com.alibaba.jstorm.daemon.supervisor.SupervisorInfo;
 import com.alibaba.jstorm.schedule.TopologyAssignContext;
 import com.alibaba.jstorm.utils.FailedAssignTopologyException;
 import com.alibaba.jstorm.utils.JStormUtils;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
+
+import java.util.*;
+import java.util.Map.Entry;
 
 public class DefaultTopologyAssignContext extends TopologyAssignContext {
 
@@ -49,19 +39,16 @@ public class DefaultTopologyAssignContext extends TopologyAssignContext {
     private final Map<String, List<String>> hostToSid;
     private final Set<ResourceWorkerSlot> oldWorkers;
     private final Map<String, List<Integer>> componentTasks;
-    private final Set<ResourceWorkerSlot> unstoppedWorkers =
-            new HashSet<ResourceWorkerSlot>();
+    private final Set<ResourceWorkerSlot> unstoppedWorkers = new HashSet<ResourceWorkerSlot>();
     private final int totalWorkerNum;
     private final int unstoppedWorkerNum;
 
     private int computeWorkerNum() {
-        Integer settingNum =
-                JStormUtils.parseInt(stormConf.get(Config.TOPOLOGY_WORKERS));
+        Integer settingNum = JStormUtils.parseInt(stormConf.get(Config.TOPOLOGY_WORKERS));
 
-        int hintSum = 0;
+        int ret = 0, hintSum = 0, tmCount = 0;
 
-        Map<String, Object> components =
-                ThriftTopologyUtils.getComponents(sysTopology);
+        Map<String, Object> components = ThriftTopologyUtils.getComponents(sysTopology);
         for (Entry<String, Object> entry : components.entrySet()) {
             String componentName = entry.getKey();
             Object component = entry.getValue();
@@ -78,14 +65,35 @@ public class DefaultTopologyAssignContext extends TopologyAssignContext {
             }
 
             int hint = common.get_parallelism_hint();
+            if (componentName.equals(Common.TOPOLOGY_MASTER_COMPONENT_ID)) {
+                tmCount += hint;
+                continue;
+            }
             hintSum += hint;
         }
 
         if (settingNum == null) {
-            return hintSum;
+            ret = hintSum;
         } else {
-            return Math.min(settingNum, hintSum);
+            ret =  Math.min(settingNum, hintSum);
         }
+
+        Boolean isTmSingleWorker = ConfigExtension.getTopologyMasterSingleWorker(stormConf);
+        if (isTmSingleWorker != null) {
+            if (isTmSingleWorker == true) {
+                // Assign a single worker for topology master
+                ret += tmCount;
+                setAssignSingleWorkerForTM(true);
+            }
+        } else {
+            // If not configured, judge this config by worker number
+            if (ret >= 10) {
+                ret += tmCount;
+                setAssignSingleWorkerForTM(true);
+            }
+        }
+
+        return ret;
     }
 
     public int computeUnstoppedAssignments() {
@@ -149,8 +157,7 @@ public class DefaultTopologyAssignContext extends TopologyAssignContext {
         try {
             sysTopology = Common.system_topology(stormConf, rawTopology);
         } catch (Exception e) {
-            throw new FailedAssignTopologyException(
-                    "Failed to generate system topology");
+            throw new FailedAssignTopologyException("Failed to generate system topology");
         }
 
         sidToHostname = generateSidToHost();
@@ -215,7 +222,6 @@ public class DefaultTopologyAssignContext extends TopologyAssignContext {
     }
 
     public String toDetailString() {
-        return ToStringBuilder.reflectionToString(this,
-                ToStringStyle.SHORT_PREFIX_STYLE);
+        return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
 }

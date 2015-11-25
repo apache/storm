@@ -43,11 +43,11 @@ public class Pair<F, S> {
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("first:"+ first);
+        sb.append("first:" + first);
         sb.append(":");
-        sb.append("sencond:"+ second);
+        sb.append("sencond:" + second);
         return sb.toString();
     }
 }

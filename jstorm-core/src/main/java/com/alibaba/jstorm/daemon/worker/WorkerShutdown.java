@@ -86,14 +86,13 @@ public class WorkerShutdown implements ShutdownableDameon {
             LOG.info("Worker has been shutdown already");
             return;
         }
-        
-        if(recvConnection != null) {
-        	recvConnection.close();
+
+        if (recvConnection != null) {
+            recvConnection.close();
         }
 
         AsyncLoopRunnable.getShutdown().set(true);
         threadPool.shutdown();
-        
 
         // shutdown tasks
         for (ShutdownableDameon task : shutdowntasks) {

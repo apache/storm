@@ -22,8 +22,8 @@ import java.util.zip.GZIPInputStream;
 
 /**
  * Always writes gzip out, but tests incoming to see if it's gzipped. If it is, deserializes with gzip. If not, uses
- * {@link backtype.storm.serialization.DefaultSerializationDelegate} to deserialize. Any logic needing to be enabled
- * via {@link #prepare(java.util.Map)} is passed through to both delegates.
+ * {@link DefaultSerializationDelegate} to deserialize. Any logic needing to be enabled via {@link #prepare(Map)} is
+ * passed through to both delegates.
  */
 @Deprecated
 public class GzipBridgeSerializationDelegate implements SerializationDelegate {
@@ -47,7 +47,7 @@ public class GzipBridgeSerializationDelegate implements SerializationDelegate {
         if (isGzipped(bytes)) {
             return gzipDelegate.deserialize(bytes, clazz);
         } else {
-            return defaultDelegate.deserialize(bytes,clazz);
+            return defaultDelegate.deserialize(bytes, clazz);
         }
     }
 
@@ -59,7 +59,6 @@ public class GzipBridgeSerializationDelegate implements SerializationDelegate {
      * Looks ahead to see if the GZIP magic constant is heading {@code bytes}
      */
     private boolean isGzipped(byte[] bytes) {
-        return (bytes.length > 1) && (bytes[0] == GZIP_MAGIC_FIRST_BYTE)
-               && (bytes[1] == GZIP_MAGIC_SECOND_BYTE);
+        return (bytes.length > 1) && (bytes[0] == GZIP_MAGIC_FIRST_BYTE) && (bytes[1] == GZIP_MAGIC_SECOND_BYTE);
     }
 }

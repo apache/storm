@@ -29,7 +29,6 @@ import backtype.storm.utils.KeyedRoundRobinQueue;
 import java.util.HashMap;
 import java.util.Map;
 
-
 public class KeyedFairBolt implements IRichBolt, FinishedCallback {
     IRichBolt _delegate;
     KeyedRoundRobinQueue<Tuple> _rrQueue;
@@ -39,14 +38,13 @@ public class KeyedFairBolt implements IRichBolt, FinishedCallback {
     public KeyedFairBolt(IRichBolt delegate) {
         _delegate = delegate;
     }
-    
+
     public KeyedFairBolt(IBasicBolt delegate) {
         this(new BasicBoltExecutor(delegate));
     }
-    
-    
+
     public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
-        if(_delegate instanceof FinishedCallback) {
+        if (_delegate instanceof FinishedCallback) {
             _callback = (FinishedCallback) _delegate;
         }
         _delegate.prepare(stormConf, context, collector);
@@ -54,7 +52,7 @@ public class KeyedFairBolt implements IRichBolt, FinishedCallback {
         _executor = new Thread(new Runnable() {
             public void run() {
                 try {
-                    while(true) {
+                    while (true) {
                         _delegate.execute(_rrQueue.take());
                     }
                 } catch (InterruptedException e) {
@@ -81,7 +79,7 @@ public class KeyedFairBolt implements IRichBolt, FinishedCallback {
     }
 
     public void finishedId(Object id) {
-        if(_callback!=null) {
+        if (_callback != null) {
             _callback.finishedId(id);
         }
     }

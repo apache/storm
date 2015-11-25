@@ -20,6 +20,7 @@ package backtype.storm.grouping;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import backtype.storm.generated.GlobalStreamId;
@@ -40,7 +41,7 @@ public class PartialKeyGrouping implements CustomStreamGrouping, Serializable {
     private Fields outFields = null;
 
     public PartialKeyGrouping() {
-        //Empty
+        // Empty
     }
 
     public PartialKeyGrouping(Fields fields) {
@@ -65,12 +66,37 @@ public class PartialKeyGrouping implements CustomStreamGrouping, Serializable {
                 List<Object> selectedFields = outFields.select(fields, values);
                 ByteBuffer out = ByteBuffer.allocate(selectedFields.size() * 4);
                 for (Object o: selectedFields) {
-                    out.putInt(o.hashCode());
+                    if (o instanceof List) {
+                        out.putInt(Arrays.deepHashCode(((List) o).toArray()));
+                    } else if (o instanceof Object[]) {
+                        out.putInt(Arrays.deepHashCode((Object[])o));
+                    } else if (o instanceof byte[]) {
+                        out.putInt(Arrays.hashCode((byte[]) o));
+                    } else if (o instanceof short[]) {
+                        out.putInt(Arrays.hashCode((short[]) o));
+                    } else if (o instanceof int[]) {
+                        out.putInt(Arrays.hashCode((int[]) o));
+                    } else if (o instanceof long[]) {
+                        out.putInt(Arrays.hashCode((long[]) o));
+                    } else if (o instanceof char[]) {
+                        out.putInt(Arrays.hashCode((char[]) o));
+                    } else if (o instanceof float[]) {
+                        out.putInt(Arrays.hashCode((float[]) o));
+                    } else if (o instanceof double[]) {
+                        out.putInt(Arrays.hashCode((double[]) o));
+                    } else if (o instanceof boolean[]) {
+                        out.putInt(Arrays.hashCode((boolean[]) o));
+                    } else if (o != null) {
+                        out.putInt(o.hashCode());
+                    } else {
+                        out.putInt(0);
+                    }
                 }
                 raw = out.array();
             } else {
                 raw = values.get(0).toString().getBytes(); // assume key is the first field
             }
+
             int firstChoice = (int) (Math.abs(h1.hashBytes(raw).asLong()) % this.targetTasks.size());
             int secondChoice = (int) (Math.abs(h2.hashBytes(raw).asLong()) % this.targetTasks.size());
             int selected = targetTaskStats[firstChoice] > targetTaskStats[secondChoice] ? secondChoice : firstChoice;

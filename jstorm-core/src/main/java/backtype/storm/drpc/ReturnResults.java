@@ -37,15 +37,14 @@ import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
 import org.json.simple.JSONValue;
 
-
 public class ReturnResults extends BaseRichBolt {
-    //ANY CHANGE TO THIS CODE MUST BE SERIALIZABLE COMPATIBLE OR THERE WILL BE PROBLEMS
+    // ANY CHANGE TO THIS CODE MUST BE SERIALIZABLE COMPATIBLE OR THERE WILL BE PROBLEMS
     static final long serialVersionUID = -774882142710631591L;
 
     public static final Logger LOG = LoggerFactory.getLogger(ReturnResults.class);
     OutputCollector _collector;
     boolean local;
-    Map _conf; 
+    Map _conf;
     Map<List, DRPCInvocationsClient> _clients = new HashMap<List, DRPCInvocationsClient>();
 
     @Override
@@ -59,22 +58,24 @@ public class ReturnResults extends BaseRichBolt {
     public void execute(Tuple input) {
         String result = (String) input.getValue(0);
         String returnInfo = (String) input.getValue(1);
-        //LOG.info("Receive one message, resultInfo:{}, result:{}", returnInfo, result);
-        if(returnInfo!=null) {
+        // LOG.info("Receive one message, resultInfo:{}, result:{}", returnInfo, result);
+        if (returnInfo != null) {
             Map retMap = (Map) JSONValue.parse(returnInfo);
             final String host = (String) retMap.get("host");
             final int port = Utils.getInt(retMap.get("port"));
             String id = (String) retMap.get("id");
             DistributedRPCInvocations.Iface client;
-            if(local) {
+            if (local) {
                 client = (DistributedRPCInvocations.Iface) ServiceRegistry.getService(host);
             } else {
-                List server = new ArrayList() {{
-                    add(host);
-                    add(port);
-                }};
-            
-                if(!_clients.containsKey(server)) {
+                List server = new ArrayList() {
+                    {
+                        add(host);
+                        add(port);
+                    }
+                };
+
+                if (!_clients.containsKey(server)) {
                     try {
                         _clients.put(server, new DRPCInvocationsClient(_conf, host, port));
                     } catch (TTransportException ex) {
@@ -83,7 +84,7 @@ public class ReturnResults extends BaseRichBolt {
                 }
                 client = _clients.get(server);
             }
- 
+
             try {
                 client.result(id, result);
                 _collector.ack(input);
@@ -93,29 +94,29 @@ public class ReturnResults extends BaseRichBolt {
                 if (client instanceof DRPCInvocationsClient) {
                     try {
                         LOG.info("reconnecting... ");
-                        ((DRPCInvocationsClient)client).reconnectClient(); //Blocking call
+                        ((DRPCInvocationsClient) client).reconnectClient(); // Blocking call
                     } catch (TException e2) {
                         throw new RuntimeException(e2);
                     }
                 }
-            } catch(TException e) {
+            } catch (TException e) {
                 LOG.error("Failed to return results to DRPC server", e);
                 _collector.fail(input);
                 if (client instanceof DRPCInvocationsClient) {
                     try {
                         LOG.info("reconnecting... ");
-                        ((DRPCInvocationsClient)client).reconnectClient(); //Blocking call
+                        ((DRPCInvocationsClient) client).reconnectClient(); // Blocking call
                     } catch (TException e2) {
                         throw new RuntimeException(e2);
                     }
                 }
             }
         }
-    }    
+    }
 
     @Override
     public void cleanup() {
-        for(DRPCInvocationsClient c: _clients.values()) {
+        for (DRPCInvocationsClient c : _clients.values()) {
             c.close();
         }
     }

@@ -32,8 +32,7 @@ public class AssignmentBak implements Serializable {
     private final Map<String, List<Integer>> componentTasks;
     private final Assignment assignment;
 
-    public AssignmentBak(Map<String, List<Integer>> componentTasks,
-            Assignment assignment) {
+    public AssignmentBak(Map<String, List<Integer>> componentTasks, Assignment assignment) {
         super();
         this.componentTasks = componentTasks;
         this.assignment = assignment;
@@ -49,7 +48,6 @@ public class AssignmentBak implements Serializable {
 
     @Override
     public String toString() {
-        return ToStringBuilder.reflectionToString(this,
-                ToStringStyle.SHORT_PREFIX_STYLE);
+        return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
 }
