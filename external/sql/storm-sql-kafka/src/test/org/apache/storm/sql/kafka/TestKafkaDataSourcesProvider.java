@@ -21,6 +21,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import kafka.javaapi.producer.Producer;
 import kafka.producer.KeyedMessage;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.storm.sql.kafka.KafkaDataSourcesProvider.KafkaTridentSink;
 import org.apache.storm.sql.runtime.DataSourcesRegistry;
 import org.apache.storm.sql.runtime.FieldInfo;
@@ -37,6 +39,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Future;
 
 import static org.mockito.Mockito.*;
 
@@ -56,7 +59,8 @@ public class TestKafkaDataSourcesProvider {
     KafkaTridentSink sink = (KafkaTridentSink) ds.getConsumer();
     sink.prepare(null, null);
     TridentKafkaState state = (TridentKafkaState) Whitebox.getInternalState(sink, "state");
-    Producer producer = mock(Producer.class);
+    KafkaProducer producer = mock(KafkaProducer.class);
+    doReturn(mock(Future.class)).when(producer).send(any(ProducerRecord.class));
     Whitebox.setInternalState(state, "producer", producer);
     List<TridentTuple> tupleList = mockTupleList();
     for (TridentTuple t : tupleList) {
@@ -79,7 +83,7 @@ public class TestKafkaDataSourcesProvider {
     return tupleList;
   }
 
-  private static class KafkaMessageMatcher extends ArgumentMatcher<KeyedMessage> {
+  private static class KafkaMessageMatcher extends ArgumentMatcher<ProducerRecord> {
     private static final int PRIMARY_INDEX = 0;
     private final TridentTuple tuple;
 
@@ -90,11 +94,11 @@ public class TestKafkaDataSourcesProvider {
     @SuppressWarnings("unchecked")
     @Override
     public boolean matches(Object o) {
-      KeyedMessage<Object, ByteBuffer> m = (KeyedMessage<Object,ByteBuffer>)o;
+      ProducerRecord<Object, ByteBuffer> m = (ProducerRecord<Object,ByteBuffer>)o;
       if (m.key() != tuple.get(PRIMARY_INDEX)) {
         return false;
       }
-      ByteBuffer buf = m.message();
+      ByteBuffer buf = m.value();
       ByteBuffer b = SERIALIZER.write(tuple.getValues(), null);
       return b.equals(buf);
     }

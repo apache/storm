@@ -365,6 +365,7 @@ object by calling the constructor that takes a single string as an argument:
     className: "storm.kafka.ZkHosts"
     constructorArgs:
       - "localhost:2181"
+      - true
 ```
 
 ####References
@@ -432,6 +433,8 @@ bolts:
       - name: "withFoo"
         args:
           - "foo"
+      - name: "withNone"
+      # no args needed, so no "args" line
       - name: "withBar"
         args:
           - "bar"
@@ -445,6 +448,7 @@ The signatures of the corresponding methods are as follows:
 
 ```java
     public void withFoo(String foo);
+    public void withNone(); // method with zero arguments
     public void withBar(String bar);
     public void withFooBar(String foo, String bar);
 ```

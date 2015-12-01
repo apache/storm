@@ -79,7 +79,7 @@ public class KafkaBoltTest {
     }
 
     private void setupKafkaConsumer() {
-        GlobalPartitionInformation globalPartitionInformation = new GlobalPartitionInformation();
+        GlobalPartitionInformation globalPartitionInformation = new GlobalPartitionInformation(TEST_TOPIC);
         globalPartitionInformation.addPartition(0, Broker.fromString(broker.getBrokerConnectionString()));
         BrokerHosts brokerHosts = new StaticHosts(globalPartitionInformation);
         kafkaConfig = new KafkaConfig(brokerHosts, TEST_TOPIC);
@@ -184,8 +184,7 @@ public class KafkaBoltTest {
 
     private KafkaBolt generateStringSerializerBolt() {
         Properties props = new Properties();
-        props.put("request.required.acks", "1");
-        props.put("serializer.class", "kafka.serializer.StringEncoder");
+        props.put("acks", "1");
         props.put("bootstrap.servers", broker.getBrokerConnectionString());
         props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
@@ -198,8 +197,7 @@ public class KafkaBoltTest {
 
     private KafkaBolt generateDefaultSerializerBolt(boolean async, boolean fireAndForget) {
         Properties props = new Properties();
-        props.put("request.required.acks", "1");
-        props.put("serializer.class", "kafka.serializer.StringEncoder");
+        props.put("acks", "1");
         props.put("bootstrap.servers", broker.getBrokerConnectionString());
         props.put("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
         props.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
@@ -214,8 +212,7 @@ public class KafkaBoltTest {
 
     private KafkaBolt defaultSerializerBoltWithSpecifiedProperties(boolean async, boolean fireAndForget) {
         Properties props = new Properties();
-        props.put("request.required.acks", "1");
-        props.put("serializer.class", "kafka.serializer.StringEncoder");
+        props.put("acks", "1");
         props.put("bootstrap.servers", broker.getBrokerConnectionString());
         props.put("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
         props.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
@@ -250,7 +247,7 @@ public class KafkaBoltTest {
     private boolean verifyMessage(String key, String message) {
         long lastMessageOffset = KafkaUtils.getOffset(simpleConsumer, kafkaConfig.topic, 0, OffsetRequest.LatestTime()) - 1;
         ByteBufferMessageSet messageAndOffsets = KafkaUtils.fetchMessages(kafkaConfig, simpleConsumer,
-                new Partition(Broker.fromString(broker.getBrokerConnectionString()), 0), lastMessageOffset);
+                new Partition(Broker.fromString(broker.getBrokerConnectionString()),kafkaConfig.topic, 0), lastMessageOffset);
         MessageAndOffset messageAndOffset = messageAndOffsets.iterator().next();
         Message kafkaMessage = messageAndOffset.message();
         ByteBuffer messageKeyBuffer = kafkaMessage.key();

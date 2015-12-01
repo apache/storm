@@ -28,7 +28,7 @@ import storm.kafka.bolt.KafkaBolt;
 import storm.kafka.trident.GlobalPartitionInformation;
 
 import java.nio.ByteBuffer;
-import java.util.Properties;
+import java.util.*;
 
 import static org.junit.Assert.assertEquals;
 
@@ -85,7 +85,7 @@ public class TestUtils {
     public static boolean verifyMessage(String key, String message, KafkaTestBroker broker, SimpleConsumer simpleConsumer) {
         long lastMessageOffset = KafkaUtils.getOffset(simpleConsumer, TestUtils.TOPIC, 0, OffsetRequest.LatestTime()) - 1;
         ByteBufferMessageSet messageAndOffsets = KafkaUtils.fetchMessages(TestUtils.getKafkaConfig(broker), simpleConsumer,
-                new Partition(Broker.fromString(broker.getBrokerConnectionString()), 0), lastMessageOffset);
+                new Partition(Broker.fromString(broker.getBrokerConnectionString()),TestUtils.TOPIC, 0), lastMessageOffset);
         MessageAndOffset messageAndOffset = messageAndOffsets.iterator().next();
         Message kafkaMessage = messageAndOffset.message();
         ByteBuffer messageKeyBuffer = kafkaMessage.key();

@@ -218,7 +218,7 @@ def jar(jarfile, klass, *args):
     Runs the main method of class with the specified arguments.
     The storm jars and configs in ~/.storm are put on the classpath.
     The process is configured so that StormSubmitter
-    (http://storm.incubator.apache.org/apidocs/backtype/storm/StormSubmitter.html)
+    (http://storm.apache.org/apidocs/backtype/storm/StormSubmitter.html)
     will upload the jar at topology-jar-path when the topology is submitted.
     """
     exec_storm_class(
@@ -263,6 +263,18 @@ def upload_credentials(*args):
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
 
+def heartbeats(*args):
+    """Syntax: [storm heartbeats [cmd]]
+
+    list PATH - lists heartbeats nodes under PATH currently in the ClusterState.
+    get  PATH - Get the heartbeat data at PATH
+    """
+    exec_storm_class(
+        "backtype.storm.command.heartbeats",
+        args=args,
+        jvmtype="-client",
+        extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
+    
 def activate(*args):
     """Syntax: [storm activate topology-name]
 
@@ -273,6 +285,39 @@ def activate(*args):
         sys.exit(2)
     exec_storm_class(
         "backtype.storm.command.activate",
+        args=args,
+        jvmtype="-client",
+        extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
+
+def set_log_level(*args):
+    """
+    Dynamically change topology log levels
+
+    Syntax: [storm set_log_level -l [logger name]=[log level][:optional timeout] -r [logger name]
+    where log level is one of:
+        ALL, TRACE, DEBUG, INFO, WARN, ERROR, FATAL, OFF
+    and timeout is integer seconds.
+
+    e.g.
+        ./bin/storm set_log_level -l ROOT=DEBUG:30
+
+        Set the root logger's level to DEBUG for 30 seconds
+
+        ./bin/storm set_log_level -l com.myapp=WARN
+
+        Set the com.myapp logger's level to WARN for 30 seconds
+
+        ./bin/storm set_log_level -l com.myapp=WARN -l com.myOtherLogger=ERROR:123
+
+        Set the com.myapp logger's level to WARN indifinitely, and com.myOtherLogger
+        to ERROR for 123 seconds
+
+        ./bin/storm set_log_level -r com.myOtherLogger
+
+        Clears settings, resetting back to the original level
+    """
+    exec_storm_class(
+        "backtype.storm.command.set_log_level",
         args=args,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
@@ -348,6 +393,30 @@ def get_errors(*args):
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, os.path.join(STORM_DIR, "bin")])
 
+def healthcheck(*args):
+    """Syntax: [storm node-health-check]
+
+    Run health checks on the local supervisor.
+    """
+    exec_storm_class(
+        "backtype.storm.command.healthcheck",
+        args=args,
+        jvmtype="-client",
+        extrajars=[USER_CONF_DIR, os.path.join(STORM_DIR, "bin")])
+
+def kill_workers(*args):
+    """Syntax: [storm kill_workers]
+
+    Kill the workers running on this supervisor. This command should be run
+    on a supervisor node. If the cluster is running in secure mode, then user needs
+    to have admin rights on the node to be able to successfully kill all workers.
+    """
+    exec_storm_class(
+        "backtype.storm.command.kill_workers",
+        args=args,
+        jvmtype="-client",
+        extrajars=[USER_CONF_DIR, os.path.join(STORM_DIR, "bin")])
+
 def shell(resourcesdir, command, *args):
     tmpjarpath = "stormshell" + str(random.randint(0, 10000000)) + ".jar"
     os.system("jar cf %s %s" % (tmpjarpath, resourcesdir))
@@ -375,6 +444,8 @@ def get_log4j2_conf_dir():
     storm_log4j2_conf_dir = confvalue("storm.log4j2.conf.dir", cppaths)
     if(storm_log4j2_conf_dir == None or storm_log4j2_conf_dir == "nil"):
         storm_log4j2_conf_dir = STORM_LOG4J2_CONF_DIR
+    elif(not os.path.isabs(storm_log4j2_conf_dir)):
+        storm_log4j2_conf_dir = os.path.join(STORM_DIR, storm_log4j2_conf_dir)
     return storm_log4j2_conf_dir
 
 def nimbus(klass="backtype.storm.daemon.nimbus"):
@@ -384,17 +455,39 @@ def nimbus(klass="backtype.storm.daemon.nimbus"):
     supervision with a tool like daemontools or monit.
 
     See Setting up a Storm cluster for more information.
-    (http://storm.incubator.apache.org/documentation/Setting-up-a-Storm-cluster)
+    (http://storm.apache.org/documentation/Setting-up-a-Storm-cluster)
     """
     cppaths = [CLUSTER_CONF_DIR]
     jvmopts = parse_args(confvalue("nimbus.childopts", cppaths)) + [
         "-Dlogfile.name=nimbus.log",
+        "-DLog4jContextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector",
         "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(), "cluster.xml"),
     ]
     exec_storm_class(
         klass,
         jvmtype="-server",
         daemonName="nimbus",
+        extrajars=cppaths,
+        jvmopts=jvmopts)
+
+def pacemaker(klass="org.apache.storm.pacemaker.pacemaker"):
+    """Syntax: [storm pacemaker]
+
+    Launches the Pacemaker daemon. This command should be run under
+    supervision with a tool like daemontools or monit.
+
+    See Setting up a Storm cluster for more information.
+    (http://storm.apache.org/documentation/Setting-up-a-Storm-cluster)
+    """
+    cppaths = [CLUSTER_CONF_DIR]
+    jvmopts = parse_args(confvalue("pacemaker.childopts", cppaths)) + [
+        "-Dlogfile.name=pacemaker.log",
+        "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(), "cluster.xml"),
+    ]
+    exec_storm_class(
+        klass,
+        jvmtype="-server",
+        daemonName="pacemaker",
         extrajars=cppaths,
         jvmopts=jvmopts)
 
@@ -405,11 +498,12 @@ def supervisor(klass="backtype.storm.daemon.supervisor"):
     under supervision with a tool like daemontools or monit.
 
     See Setting up a Storm cluster for more information.
-    (http://storm.incubator.apache.org/documentation/Setting-up-a-Storm-cluster)
+    (http://storm.apache.org/documentation/Setting-up-a-Storm-cluster)
     """
     cppaths = [CLUSTER_CONF_DIR]
     jvmopts = parse_args(confvalue("supervisor.childopts", cppaths)) + [
         "-Dlogfile.name=" + STORM_SUPERVISOR_LOG_FILE,
+        "-DLog4jContextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector",
         "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(), "cluster.xml"),
     ]
     exec_storm_class(
@@ -427,11 +521,12 @@ def ui():
     should be run under supervision with a tool like daemontools or monit.
 
     See Setting up a Storm cluster for more information.
-    (http://storm.incubator.apache.org/documentation/Setting-up-a-Storm-cluster)
+    (http://storm.apache.org/documentation/Setting-up-a-Storm-cluster)
     """
     cppaths = [CLUSTER_CONF_DIR]
     jvmopts = parse_args(confvalue("ui.childopts", cppaths)) + [
         "-Dlogfile.name=ui.log",
+        "-DLog4jContextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector",
         "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(), "cluster.xml")
     ]
     exec_storm_class(
@@ -449,11 +544,12 @@ def logviewer():
     tool like daemontools or monit.
 
     See Setting up a Storm cluster for more information.
-    (http://storm.incubator.apache.org/documentation/Setting-up-a-Storm-cluster)
+    (http://storm.apache.org/documentation/Setting-up-a-Storm-cluster)
     """
     cppaths = [CLUSTER_CONF_DIR]
     jvmopts = parse_args(confvalue("logviewer.childopts", cppaths)) + [
         "-Dlogfile.name=logviewer.log",
+        "-DLog4jContextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector",
         "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(), "cluster.xml")
     ]
     exec_storm_class(
@@ -470,11 +566,12 @@ def drpc():
     with a tool like daemontools or monit.
 
     See Distributed RPC for more information.
-    (http://storm.incubator.apache.org/documentation/Distributed-RPC)
+    (http://storm.apache.org/documentation/Distributed-RPC)
     """
     cppaths = [CLUSTER_CONF_DIR]
     jvmopts = parse_args(confvalue("drpc.childopts", cppaths)) + [
         "-Dlogfile.name=drpc.log",
+        "-DLog4jContextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector",
         "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(), "cluster.xml")
     ]
     exec_storm_class(
@@ -537,7 +634,7 @@ def print_commands():
     """Print all client commands and link to documentation"""
     print("Commands:\n\t" +  "\n\t".join(sorted(COMMANDS.keys())))
     print("\nHelp: \n\thelp \n\thelp <command>")
-    print("\nDocumentation for the storm client can be found at http://storm.incubator.apache.org/documentation/Command-line-client.html\n")
+    print("\nDocumentation for the storm client can be found at http://storm.apache.org/documentation/Command-line-client.html\n")
     print("Configs can be overridden using one or more -c flags, e.g. \"storm list -c nimbus.host=nimbus.mycompany.com\"\n")
 
 def print_usage(command=None):
@@ -561,7 +658,9 @@ COMMANDS = {"jar": jar, "kill": kill, "shell": shell, "nimbus": nimbus, "ui": ui
             "remoteconfvalue": print_remoteconfvalue, "repl": repl, "classpath": print_classpath,
             "activate": activate, "deactivate": deactivate, "rebalance": rebalance, "help": print_usage,
             "list": listtopos, "dev-zookeeper": dev_zookeeper, "version": version, "monitor": monitor,
-            "upload-credentials": upload_credentials, "get-errors": get_errors }
+            "upload-credentials": upload_credentials, "pacemaker": pacemaker, "heartbeats": heartbeats,
+            "get-errors": get_errors, "set_log_level": set_log_level, "kill_workers": kill_workers,
+            "node-health-check": healthcheck}
 
 def parse_config(config_list):
     global CONFIG_OPTS
