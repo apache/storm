@@ -232,6 +232,17 @@ under the License.
 * Matthias J. Sax ([@mjsax](https://github.com/mjsax))
 * Erik Weathers ([@erikdw](https://github.com/erikdw))
 * Bryan Shell ([@shellbj](https://github.com/shellbj))
+* Dmytro Dragan ([@3Dragan](https://github.com/3Dragan))
+* Ningyu An ([@jetan9](https://github.com/jetan9))
+* Pete Prokopowicz ([@prokopowicz](https://github.com/prokopowicz))
+* Priyank Shah ([@priyank5485](https://github.com/priyank5485))
+* Joshua Martell ([@jmartell7](https://github.com/jmartell7))
+* Matthew Tieman ([@mjtieman](https://github.com/mjtieman))
+* Chuck Burgess ([@ashnazg](https://github.com/ashnazg))
+* Tom Graves ([@tgravescs](https://github.com/tgravescs))
+* Dror Weiss ([@drorweiss](https://github.com/drorweiss))
+* Victor Wong ([@victor-wong](https://github.com/victor-wong))
+* David Wimsey ([@dwimsey](https://github.com/dwimsey))
 
 ## Acknowledgements
 

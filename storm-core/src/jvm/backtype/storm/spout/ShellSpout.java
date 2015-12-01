@@ -41,11 +41,11 @@ import org.slf4j.LoggerFactory;
 
 
 public class ShellSpout implements ISpout {
-    public static Logger LOG = LoggerFactory.getLogger(ShellSpout.class);
+    public static final Logger LOG = LoggerFactory.getLogger(ShellSpout.class);
 
     private SpoutOutputCollector _collector;
     private String[] _command;
-    private Map<String, String> env = new HashMap<String, String>();
+    private Map<String, String> env = new HashMap<>();
     private ShellProcess _process;
     
     private TopologyContext _context;
@@ -74,7 +74,11 @@ public class ShellSpout implements ISpout {
         _collector = collector;
         _context = context;
 
-        workerTimeoutMills = 1000 * RT.intCast(stormConf.get(Config.SUPERVISOR_WORKER_TIMEOUT_SECS));
+        if (stormConf.containsKey(Config.TOPOLOGY_SUBPROCESS_TIMEOUT_SECS)) {
+            workerTimeoutMills = 1000 * RT.intCast(stormConf.get(Config.TOPOLOGY_SUBPROCESS_TIMEOUT_SECS));
+        } else {
+            workerTimeoutMills = 1000 * RT.intCast(stormConf.get(Config.SUPERVISOR_WORKER_TIMEOUT_SECS));
+        }
 
         _process = new ShellProcess(_command);
         if (!env.isEmpty()) {
