@@ -196,7 +196,7 @@ class Bolt(object):
                     sync()
                 else:
                     self.process(tup)
-        except Exception, e:
+        except Exception as e:
             reportError(traceback.format_exc(e))
 
 class BasicBolt(object):
@@ -222,10 +222,10 @@ class BasicBolt(object):
                     try:
                         self.process(tup)
                         ack(tup)
-                    except Exception, e:
+                    except Exception as e:
                         reportError(traceback.format_exc(e))
                         fail(tup)
-        except Exception, e:
+        except Exception as e:
             reportError(traceback.format_exc(e))
 
 class Spout(object):
@@ -256,5 +256,5 @@ class Spout(object):
                 if msg["command"] == "fail":
                     self.fail(msg["id"])
                 sync()
-        except Exception, e:
+        except Exception as e:
             reportError(traceback.format_exc(e))
