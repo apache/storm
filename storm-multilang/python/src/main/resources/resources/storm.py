@@ -75,8 +75,8 @@ def readTuple():
     return Tuple(cmd["id"], cmd["comp"], cmd["stream"], cmd["task"], cmd["tuple"])
 
 def sendMsgToParent(msg):
-    print json_encode(msg)
-    print "end"
+    print(json_encode(msg))
+    print("end")
     sys.stdout.flush()
 
 def sync():
