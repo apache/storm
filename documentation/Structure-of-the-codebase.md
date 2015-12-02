@@ -78,7 +78,7 @@ Here's a summary of the purpose of the main Java packages and Clojure namespace:
 
 [backtype.storm.hooks](https://github.com/apache/storm/tree/master/storm-core/src/jvm/backtype/storm/hooks): Interfaces for hooking into various events in Storm, such as when tasks emit tuples, when tuples are acked, etc. User guide for hooks is [here](https://github.com/apache/storm/wiki/Hooks).
 
-[backtype.storm.serialization](https://github.com/apache/storm/tree/master/storm-core/src/jvm/backtype/storm/serialization): Implementation of how Storm serializes/deserializes tuples. Built on top of [Kryo](http://code.google.com/p/kryo/).
+[backtype.storm.serialization](https://github.com/apache/storm/tree/master/storm-core/src/jvm/backtype/storm/serialization): Implementation of how Storm serializes/deserializes tuples. Built on top of [Kryo](https://github.com/EsotericSoftware/kryo).
 
 [backtype.storm.spout](https://github.com/apache/storm/tree/master/storm-core/src/jvm/backtype/storm/spout): Definition of spout and associated interfaces (like the `SpoutOutputCollector`). Also contains `ShellSpout` which implements the protocol for defining spouts in non-JVM languages.
 
