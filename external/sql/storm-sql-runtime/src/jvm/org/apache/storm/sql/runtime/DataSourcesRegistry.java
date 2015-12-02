@@ -20,7 +20,6 @@
 
 package org.apache.storm.sql.runtime;
 
-import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,19 +60,18 @@ public class DataSourcesRegistry {
 
   public static ISqlTridentDataSource constructTridentDataSource(
       URI uri, String inputFormatClass, String outputFormatClass,
-      List<FieldInfo> fields) {
+      String properties, List<FieldInfo> fields) {
     DataSourcesProvider provider = providers.get(uri.getScheme());
     if (provider == null) {
       return null;
     }
 
-    return provider.constructTrident(uri, inputFormatClass, outputFormatClass, fields);
+    return provider.constructTrident(uri, inputFormatClass, outputFormatClass, properties, fields);
   }
 
   /**
    * Allow unit tests to inject data sources.
    */
-  @VisibleForTesting
   public static Map<String, DataSourcesProvider> providerMap() {
     return providers;
   }
