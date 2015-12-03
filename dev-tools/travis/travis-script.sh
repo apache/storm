@@ -47,4 +47,23 @@ do
   python ${TRAVIS_SCRIPT_DIR}/ratprint.py "${rat}"
 done
 
+# try the python3 test... use PATH hack to make "python" point to python3
+alias python2=`which python`
+mkdir ~/bin
+ln -s /usr/bin/python3 ~/bin/python
+export PATH=~/bin:$PATH
+python2 ${TRAVIS_SCRIPT_DIR}/save-logs.py "python3.txt" mvn test -DfailIfNoTests=false -Dtest=backtype.storm.multilang-test
+BUILD_RET_VAL=$?
+
+if [[ "$BUILD_RET_VAL" != "0" ]];
+then
+  cat "python3.txt"
+  for dir in `find . -type d -and -wholename \*/target/\*-reports`;
+  do
+    echo "Looking for errors in ${dir}"
+    python2 ${TRAVIS_SCRIPT_DIR}/print-errors-from-test-reports.py "${dir}"
+  done
+  exit ${BUILD_RET_VAL}
+fi
+
 exit ${BUILD_RET_VAL}
