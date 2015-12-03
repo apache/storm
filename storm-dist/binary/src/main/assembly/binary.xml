@@ -245,7 +245,20 @@
                 <include>README.*</include>
             </includes>
         </fileSet>
-
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-cassandra/target</directory>
+            <outputDirectory>external/storm-cassandra</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-cassandra</directory>
+            <outputDirectory>external/storm-cassandra</outputDirectory>
+            <includes>
+                <include>README.*</include>
+            </includes>
+        </fileSet>
 
         <!-- $STORM_HOME/extlib -->
         <fileSet>
@@ -316,11 +329,6 @@
             <source>${project.basedir}/../../README.markdown</source>
             <outputDirectory>/</outputDirectory>
         </file>
-        <file>
-            <source>${project.basedir}/../../DISCLAIMER</source>
-            <outputDirectory>/</outputDirectory>
-        </file>
-
         <file>
             <source>${project.basedir}/../../CHANGELOG.md</source>
             <outputDirectory>/</outputDirectory>

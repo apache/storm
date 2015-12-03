@@ -26,11 +26,14 @@
   (:import [java.util.zip ZipFile])
   (:import [java.util.concurrent.locks ReentrantReadWriteLock])
   (:import [java.util.concurrent Semaphore])
+  (:import [java.nio.file Files Paths])
+  (:import [java.nio.file.attribute FileAttribute])
   (:import [java.io File FileOutputStream RandomAccessFile StringWriter
             PrintWriter BufferedReader InputStreamReader IOException])
   (:import [java.lang.management ManagementFactory])
   (:import [org.apache.commons.exec DefaultExecutor CommandLine])
   (:import [org.apache.commons.io FileUtils])
+  (:import [backtype.storm.logging ThriftAccessLogger])
   (:import [org.apache.commons.exec ExecuteException])
   (:import [org.json.simple JSONValue])
   (:import [org.yaml.snakeyaml Yaml]
@@ -514,11 +517,17 @@
     (map #(str \' (clojure.string/escape % {\' "'\"'\"'"}) \'))
       (clojure.string/join " ")))
 
+(defn script-file-path [dir]
+  (str dir file-path-separator "storm-worker-script.sh"))
+
+(defn container-file-path [dir]
+  (str dir file-path-separator "launch_container.sh"))
+
 (defnk write-script
   [dir command :environment {}]
   (let [script-src (str "#!/bin/bash\n" (clojure.string/join "" (map (fn [[k v]] (str (shell-cmd ["export" (str k "=" v)]) ";\n")) environment)) "\nexec " (shell-cmd command) ";")
-        script-path (str dir "/storm-worker-script.sh")
-        - (spit script-path script-src)]
+        script-path (script-file-path dir)
+        _ (spit script-path script-src)]
     script-path
   ))
 
@@ -578,6 +587,21 @@
                    (.createNewFile (File. path)))]
     (when-not success?
       (throw (RuntimeException. (str "Failed to touch " path))))))
+
+(defn create-symlink!
+  "Create symlink is to the target"
+  ([path-dir target-dir file-name]
+    (create-symlink! path-dir target-dir file-name file-name))
+  ([path-dir target-dir from-file-name to-file-name]
+    (let [path (str path-dir file-path-separator from-file-name)
+          target (str target-dir file-path-separator to-file-name)
+          empty-array (make-array String 0)
+          attrs (make-array FileAttribute 0)
+          abs-path (.toAbsolutePath (Paths/get path empty-array))
+          abs-target (.toAbsolutePath (Paths/get target empty-array))]
+      (log-debug "Creating symlink [" abs-path "] to [" abs-target "]")
+      (if (not (.exists (.toFile abs-path)))
+        (Files/createSymbolicLink abs-path abs-target attrs)))))
 
 (defn read-dir-contents
   [dir]
@@ -1015,30 +1039,19 @@
   ([x form & more] `(-<> (-<> ~x ~form) ~@more)))
 
 (def LOG-DIR
-  (.getCanonicalPath 
-                (clojure.java.io/file (System/getProperty "storm.home") "logs")))
+  (.getCanonicalPath
+    (clojure.java.io/file (or (System/getProperty "storm.log.dir") (str (System/getProperty "storm.home") "logs")))))
 
-(defn- logs-rootname
-  ([storm-id port] (logs-rootname storm-id port "-worker-"))
-  ([storm-id port type] (str storm-id type port)))
 
 (defn logs-filename
-  ([storm-id port] (str (logs-rootname storm-id port) ".log"))
-  ([storm-id port type] (str (logs-rootname storm-id port type) ".log")))
+  [storm-id port]
+  (str storm-id file-path-separator port file-path-separator "worker.log"))
 
-(defn event-logs-filename [storm-id port] (logs-filename storm-id port "-events-"))
+(def worker-log-filename-pattern #"^worker.log(.*)")
 
-(defn logs-metadata-filename [storm-id port]
-  (str (logs-rootname storm-id port) ".yaml"))
-
-(def worker-log-filename-pattern #"^((.*-\d+-\d+)-worker-(\d+))\.log")
-
-(defn get-log-metadata-file
-  ([fname]
-    (if-let [[_ _ id port] (re-matches worker-log-filename-pattern fname)]
-      (get-log-metadata-file id port)))
-  ([id port]
-    (clojure.java.io/file LOG-DIR "metadata" (logs-metadata-filename id port))))
+(defn event-logs-filename
+  [storm-id port]
+  (str storm-id file-path-separator port file-path-separator "events.log"))
 
 (defn clojure-from-yaml-file [yamlFile]
   (try
@@ -1049,6 +1062,22 @@
 
 (defn hashmap-to-persistent [^HashMap m]
   (zipmap (.keySet m) (.values m)))
+
+(defn retry-on-exception
+  "Retries specific function on exception based on retries count"
+  [retries task-description f & args]
+  (let [res (try {:value (apply f args)}
+              (catch Exception e
+                (if (<= 0 retries)
+                  (throw e)
+                  {:exception e})))]
+    (if (:exception res)
+      (do 
+        (log-error (:exception res) (str "Failed to " task-description ". Will make [" retries "] more attempts."))
+        (recur (dec retries) task-description f args))
+      (do 
+        (log-debug (str "Successful " task-description "."))
+        (:value res)))))
 
 (defn setup-default-uncaught-exception-handler
   "Set a default uncaught exception handler to handle exceptions not caught in other threads."
@@ -1070,3 +1099,7 @@
     (assoc coll k (apply str (repeat (count (coll k)) "#")))
     coll))
 
+(defn log-thrift-access [request-id remoteAddress principal operation]
+  (doto
+    (ThriftAccessLogger.)
+    (.log (str "Request ID: " request-id " access from: " remoteAddress " principal: " principal " operation: " operation))))

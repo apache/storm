@@ -31,7 +31,15 @@
   (:use compojure.core)
   (:use ring.middleware.reload)
   (:require [compojure.handler :as handler])
+  (:require [metrics.meters :refer [defmeter mark!]])
   (:gen-class))
+
+(defmeter drpc:num-execute-http-requests)
+(defmeter drpc:num-execute-calls)
+(defmeter drpc:num-result-calls)
+(defmeter drpc:num-failRequest-calls)
+(defmeter drpc:num-fetchRequest-calls)
+(defmeter drpc:num-shutdown-calls)
 
 (defn timeout-check-secs [] 5)
 
@@ -45,6 +53,8 @@
 
 (defn check-authorization
   ([aclHandler mapping operation context]
+    (if (not-nil? context)
+      (log-thrift-access (.requestID context) (.remoteAddress context) (.principal context) operation))
     (if aclHandler
       (let [context (or context (ReqContext/context))]
         (if-not (.permit aclHandler context operation mapping)
@@ -85,6 +95,7 @@
     (reify DistributedRPC$Iface
       (^String execute
         [this ^String function ^String args]
+        (mark! drpc:num-execute-calls)
         (log-debug "Received DRPC request for " function " (" args ") at " (System/currentTimeMillis))
         (check-authorization drpc-acl-handler
                              {DRPCAuthorizerBase/FUNCTION_NAME function}
@@ -114,6 +125,7 @@
 
       (^void result
         [this ^String id ^String result]
+        (mark! drpc:num-result-calls)
         (when-let [func (@id->function id)]
           (check-authorization drpc-acl-handler
                                {DRPCAuthorizerBase/FUNCTION_NAME func}
@@ -127,6 +139,7 @@
 
       (^void failRequest
         [this ^String id]
+        (mark! drpc:num-failRequest-calls)
         (when-let [func (@id->function id)]
           (check-authorization drpc-acl-handler
                                {DRPCAuthorizerBase/FUNCTION_NAME func}
@@ -138,6 +151,7 @@
 
       (^DRPCRequest fetchRequest
         [this ^String func]
+        (mark! drpc:num-fetchRequest-calls)
         (check-authorization drpc-acl-handler
                              {DRPCAuthorizerBase/FUNCTION_NAME func}
                              "fetchRequest")
@@ -152,6 +166,7 @@
 
       (shutdown
         [this]
+        (mark! drpc:num-shutdown-calls)
         (.interrupt clear-thread)))))
 
 (defn handle-request [handler]
@@ -165,6 +180,7 @@
       (.populateContext http-creds-handler (ReqContext/context) servlet-request)))
 
 (defn webapp [handler http-creds-handler]
+  (mark! drpc:num-execute-http-requests)
   (->
     (routes
       (POST "/drpc/:func" [:as {:keys [body servlet-request]} func & m]
@@ -213,7 +229,8 @@
       (log-message "Starting Distributed RPC servers...")
       (future (.serve invoke-server))
       (when (> drpc-http-port 0)
-        (let [app (webapp drpc-service-handler http-creds-handler)
+        (let [app (-> (webapp drpc-service-handler http-creds-handler)
+                    requests-middleware)
               filter-class (conf DRPC-HTTP-FILTER)
               filter-params (conf DRPC-HTTP-FILTER-PARAMS)
               filters-confs [{:filter-class filter-class
@@ -244,6 +261,7 @@
                                         https-need-client-auth
                                         https-want-client-auth)
                             (config-filter server app filters-confs))})))
+      (start-metrics-reporters)
       (when handler-server
         (.serve handler-server)))))
 

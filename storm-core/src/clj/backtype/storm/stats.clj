@@ -23,217 +23,138 @@
             ComponentPageInfo ComponentType BoltAggregateStats
             ExecutorAggregateStats SpecificAggregateStats
             SpoutAggregateStats TopologyPageInfo TopologyStats])
+  (:import [backtype.storm.utils Utils])
+  (:import [backtype.storm.metric.internal MultiCountStatAndMetric MultiLatencyStatAndMetric])
   (:use [backtype.storm log util])
-  (:use [clojure.math.numeric-tower :only [ceil]])
-  (:use [backtype.storm.daemon [common :only [system-id?]]]))
-
-;;TODO: consider replacing this with some sort of RRD
+  (:use [clojure.math.numeric-tower :only [ceil]]))
 
 (def TEN-MIN-IN-SECONDS (* 10 60))
 
-(defn curr-time-bucket
-  [^Integer time-secs ^Integer bucket-size-secs]
-  (* bucket-size-secs (unchecked-divide-int time-secs bucket-size-secs)))
-
-(defrecord RollingWindow
-  [updater merger extractor bucket-size-secs num-buckets buckets])
-
-(defn rolling-window
-  [updater merger extractor bucket-size-secs num-buckets]
-  (RollingWindow. updater merger extractor bucket-size-secs num-buckets {}))
-
-(defn update-rolling-window
-  ([^RollingWindow rw time-secs & args]
-   ;; this is 2.5x faster than using update-in...
-   (let [time-bucket (curr-time-bucket time-secs (:bucket-size-secs rw))
-         buckets (:buckets rw)
-         curr (get buckets time-bucket)
-         curr (apply (:updater rw) curr args)]
-     (assoc rw :buckets (assoc buckets time-bucket curr)))))
-
-(defn value-rolling-window
-  [^RollingWindow rw]
-  ((:extractor rw)
-   (let [values (vals (:buckets rw))]
-     (apply (:merger rw) values))))
-
-(defn cleanup-rolling-window
-  [^RollingWindow rw]
-  (let [buckets (:buckets rw)
-        cutoff (- (current-time-secs)
-                  (* (:num-buckets rw)
-                     (:bucket-size-secs rw)))
-        to-remove (filter #(< % cutoff) (keys buckets))
-        buckets (apply dissoc buckets to-remove)]
-    (assoc rw :buckets buckets)))
-
-(defn rolling-window-size
-  [^RollingWindow rw]
-  (* (:bucket-size-secs rw) (:num-buckets rw)))
-
-(defrecord RollingWindowSet [updater extractor windows all-time])
-
-(defn rolling-window-set [updater merger extractor num-buckets & bucket-sizes]
-  (RollingWindowSet. updater extractor (dofor [s bucket-sizes] (rolling-window updater merger extractor s num-buckets)) nil)
-  )
-
-(defn update-rolling-window-set
-  ([^RollingWindowSet rws & args]
-   (let [now (current-time-secs)
-         new-windows (dofor [w (:windows rws)]
-                            (apply update-rolling-window w now args))]
-     (assoc rws
-       :windows new-windows
-       :all-time (apply (:updater rws) (:all-time rws) args)))))
-
-(defn cleanup-rolling-window-set
-  ([^RollingWindowSet rws]
-   (let [windows (:windows rws)]
-     (assoc rws :windows (map cleanup-rolling-window windows)))))
-
-(defn value-rolling-window-set
-  [^RollingWindowSet rws]
-  (merge
-    (into {}
-          (for [w (:windows rws)]
-            {(rolling-window-size w) (value-rolling-window w)}
-            ))
-    {:all-time ((:extractor rws) (:all-time rws))}))
-
-(defn- incr-val
-  ([amap key]
-   (incr-val amap key 1))
-  ([amap key amt]
-   (let [val (get amap key (long 0))]
-     (assoc amap key (+ val amt)))))
-
-(defn- update-avg
-  [curr val]
-  (if curr
-    [(+ (first curr) val) (inc (second curr))]
-    [val (long 1)]))
-
-(defn- merge-avg
-  [& avg]
-  [(apply + (map first avg))
-   (apply + (map second avg))
-   ])
-
-(defn- extract-avg
-  [pair]
-  (double (/ (first pair) (second pair))))
-
-(defn- update-keyed-avg
-  [amap key val]
-  (assoc amap key (update-avg (get amap key) val)))
-
-(defn- merge-keyed-avg [& vals]
-  (apply merge-with merge-avg vals))
-
-(defn- extract-keyed-avg [vals]
-  (map-val extract-avg vals))
-
-(defn- counter-extract [v]
-  (if v v {}))
-
-(defn keyed-counter-rolling-window-set
-  [num-buckets & bucket-sizes]
-  (apply rolling-window-set incr-val (partial merge-with +) counter-extract num-buckets bucket-sizes))
-
-(defn avg-rolling-window-set
-  [num-buckets & bucket-sizes]
-  (apply rolling-window-set update-avg merge-avg extract-avg num-buckets bucket-sizes))
-
-(defn keyed-avg-rolling-window-set
-  [num-buckets & bucket-sizes]
-  (apply rolling-window-set update-keyed-avg merge-keyed-avg extract-keyed-avg num-buckets bucket-sizes))
-
 (def COMMON-FIELDS [:emitted :transferred])
-(defrecord CommonStats [emitted transferred rate])
+(defrecord CommonStats [^MultiCountStatAndMetric emitted
+                        ^MultiCountStatAndMetric transferred
+                        rate])
 
 (def BOLT-FIELDS [:acked :failed :process-latencies :executed :execute-latencies])
 ;;acked and failed count individual tuples
-(defrecord BoltExecutorStats [common acked failed process-latencies executed execute-latencies])
+(defrecord BoltExecutorStats [^CommonStats common
+                              ^MultiCountStatAndMetric acked
+                              ^MultiCountStatAndMetric failed
+                              ^MultiLatencyStatAndMetric process-latencies
+                              ^MultiCountStatAndMetric executed
+                              ^MultiLatencyStatAndMetric execute-latencies])
 
 (def SPOUT-FIELDS [:acked :failed :complete-latencies])
 ;;acked and failed count tuple completion
-(defrecord SpoutExecutorStats [common acked failed complete-latencies])
+(defrecord SpoutExecutorStats [^CommonStats common
+                               ^MultiCountStatAndMetric acked
+                               ^MultiCountStatAndMetric failed
+                               ^MultiLatencyStatAndMetric complete-latencies])
 
 (def NUM-STAT-BUCKETS 20)
-;; 10 minutes, 3 hours, 1 day
-(def STAT-BUCKETS [30 540 4320])
 
 (defn- mk-common-stats
   [rate]
   (CommonStats.
-    (atom (apply keyed-counter-rolling-window-set NUM-STAT-BUCKETS STAT-BUCKETS))
-    (atom (apply keyed-counter-rolling-window-set NUM-STAT-BUCKETS STAT-BUCKETS))
+    (MultiCountStatAndMetric. NUM-STAT-BUCKETS)
+    (MultiCountStatAndMetric. NUM-STAT-BUCKETS)
     rate))
 
 (defn mk-bolt-stats
   [rate]
   (BoltExecutorStats.
     (mk-common-stats rate)
-    (atom (apply keyed-counter-rolling-window-set NUM-STAT-BUCKETS STAT-BUCKETS))
-    (atom (apply keyed-counter-rolling-window-set NUM-STAT-BUCKETS STAT-BUCKETS))
-    (atom (apply keyed-avg-rolling-window-set NUM-STAT-BUCKETS STAT-BUCKETS))
-    (atom (apply keyed-counter-rolling-window-set NUM-STAT-BUCKETS STAT-BUCKETS))
-    (atom (apply keyed-avg-rolling-window-set NUM-STAT-BUCKETS STAT-BUCKETS))))
+    (MultiCountStatAndMetric. NUM-STAT-BUCKETS)
+    (MultiCountStatAndMetric. NUM-STAT-BUCKETS)
+    (MultiLatencyStatAndMetric. NUM-STAT-BUCKETS)
+    (MultiCountStatAndMetric. NUM-STAT-BUCKETS)
+    (MultiLatencyStatAndMetric. NUM-STAT-BUCKETS)))
 
 (defn mk-spout-stats
   [rate]
   (SpoutExecutorStats.
     (mk-common-stats rate)
-    (atom (apply keyed-counter-rolling-window-set NUM-STAT-BUCKETS STAT-BUCKETS))
-    (atom (apply keyed-counter-rolling-window-set NUM-STAT-BUCKETS STAT-BUCKETS))
-    (atom (apply keyed-avg-rolling-window-set NUM-STAT-BUCKETS STAT-BUCKETS))))
-
-(defmacro update-executor-stat!
-  [stats path & args]
-  (let [path (collectify path)]
-    `(swap! (-> ~stats ~@path) update-rolling-window-set ~@args)))
+    (MultiCountStatAndMetric. NUM-STAT-BUCKETS)
+    (MultiCountStatAndMetric. NUM-STAT-BUCKETS)
+    (MultiLatencyStatAndMetric. NUM-STAT-BUCKETS)))
 
 (defmacro stats-rate
   [stats]
   `(-> ~stats :common :rate))
 
+(defmacro stats-emitted
+  [stats]
+  `(-> ~stats :common :emitted))
+
+(defmacro stats-transferred
+  [stats]
+  `(-> ~stats :common :transferred))
+
+(defmacro stats-executed
+  [stats]
+  `(:executed ~stats))
+
+(defmacro stats-acked
+  [stats]
+  `(:acked ~stats))
+
+(defmacro stats-failed
+  [stats]
+  `(:failed ~stats))
+
+(defmacro stats-execute-latencies
+  [stats]
+  `(:execute-latencies ~stats))
+
+(defmacro stats-process-latencies
+  [stats]
+  `(:process-latencies ~stats))
+
+(defmacro stats-complete-latencies
+  [stats]
+  `(:complete-latencies ~stats))
+
 (defn emitted-tuple!
   [stats stream]
-  (update-executor-stat! stats [:common :emitted] stream (stats-rate stats)))
+  (.incBy ^MultiCountStatAndMetric (stats-emitted stats) ^Object stream ^long (stats-rate stats)))
 
 (defn transferred-tuples!
   [stats stream amt]
-  (update-executor-stat! stats [:common :transferred] stream (* (stats-rate stats) amt)))
+  (.incBy ^MultiCountStatAndMetric (stats-transferred stats) ^Object stream ^long (* (stats-rate stats) amt)))
 
 (defn bolt-execute-tuple!
   [^BoltExecutorStats stats component stream latency-ms]
-  (let [key [component stream]]
-    (update-executor-stat! stats :executed key (stats-rate stats))
-    (update-executor-stat! stats :execute-latencies key latency-ms)))
+  (let [key [component stream]
+        ^MultiCountStatAndMetric executed (stats-executed stats)
+        ^MultiLatencyStatAndMetric exec-lat (stats-execute-latencies stats)]
+    (.incBy executed key (stats-rate stats))
+    (.record exec-lat key latency-ms)))
 
 (defn bolt-acked-tuple!
   [^BoltExecutorStats stats component stream latency-ms]
-  (let [key [component stream]]
-    (update-executor-stat! stats :acked key (stats-rate stats))
-    (update-executor-stat! stats :process-latencies key latency-ms)))
+  (let [key [component stream]
+        ^MultiCountStatAndMetric acked (stats-acked stats)
+        ^MultiLatencyStatAndMetric process-lat (stats-process-latencies stats)]
+    (.incBy acked key (stats-rate stats))
+    (.record process-lat key latency-ms)))
 
 (defn bolt-failed-tuple!
   [^BoltExecutorStats stats component stream latency-ms]
-  (let [key [component stream]]
-    (update-executor-stat! stats :failed key (stats-rate stats))))
+  (let [key [component stream]
+        ^MultiCountStatAndMetric failed (stats-failed stats)]
+    (.incBy failed key (stats-rate stats))))
 
 (defn spout-acked-tuple!
   [^SpoutExecutorStats stats stream latency-ms]
-  (update-executor-stat! stats :acked stream (stats-rate stats))
-  (update-executor-stat! stats :complete-latencies stream latency-ms))
+  (.incBy ^MultiCountStatAndMetric (stats-acked stats) stream (stats-rate stats))
+  (.record ^MultiLatencyStatAndMetric (stats-complete-latencies stats) stream latency-ms))
 
 (defn spout-failed-tuple!
   [^SpoutExecutorStats stats stream latency-ms]
-  (update-executor-stat! stats :failed stream (stats-rate stats))
-  )
+  (.incBy ^MultiCountStatAndMetric (stats-failed stats) stream (stats-rate stats)))
 
 (defn- cleanup-stat! [stat]
-  (swap! stat cleanup-rolling-window-set))
+  (.close stat))
 
 (defn- cleanup-common-stats!
   [^CommonStats stats]
@@ -255,7 +176,9 @@
 (defn- value-stats
   [stats fields]
   (into {} (dofor [f fields]
-                  [f (value-rolling-window-set @(f stats))])))
+                  [f (if (instance? MultiCountStatAndMetric (f stats))
+                         (.getTimeCounts ^MultiCountStatAndMetric (f stats))
+                         (.getTimeLatAvg ^MultiLatencyStatAndMetric (f stats)))])))
 
 (defn- value-common-stats
   [^CommonStats stats]
@@ -364,18 +287,43 @@
       specific-stats
       rate)))
 
+(defn valid-number?
+  "Returns true if x is a number that is not NaN or Infinity, false otherwise"
+  [x]
+  (and (number? x)
+       (not (Double/isNaN x))
+       (not (Double/isInfinite x))))
+
+(defn apply-default
+  [f defaulting-fn & args]
+  (apply f (map defaulting-fn args)))
+
+(defn apply-or-0
+  [f & args]
+  (apply apply-default
+         f
+         #(if (valid-number? %) % 0)
+         args))
+
+(defn sum-or-0
+  [& args]
+  (apply apply-or-0 + args))
+
+(defn product-or-0
+  [& args]
+  (apply apply-or-0 * args))
+
+(defn max-or-0
+  [& args]
+  (apply apply-or-0 max args))
+
 (defn- agg-bolt-lat-and-count
   "Aggregates number executed, process latency, and execute latency across all
   streams."
   [idk->exec-avg idk->proc-avg idk->num-executed]
-  {:pre (apply = (map #(set (keys %))
-                      [idk->exec-avg
-                       idk->proc-avg
-                       idk->num-executed]))}
-  (letfn [(weight-avg [[id avg]] (let [num-e (get idk->num-executed id)]
-                                   (if (and avg num-e)
-                                     (* avg num-e)
-                                     0)))]
+  (letfn [(weight-avg [[id avg]]
+            (let [num-e (get idk->num-executed id)]
+              (product-or-0 avg num-e)))]
     {:executeLatencyTotal (sum (map weight-avg idk->exec-avg))
      :processLatencyTotal (sum (map weight-avg idk->proc-avg))
      :executed (sum (vals idk->num-executed))}))
@@ -383,10 +331,8 @@
 (defn- agg-spout-lat-and-count
   "Aggregates number acked and complete latencies across all streams."
   [sid->comp-avg sid->num-acked]
-  {:pre (apply = (map #(set (keys %))
-                      [sid->comp-avg
-                       sid->num-acked]))}
-  (letfn [(weight-avg [[id avg]] (* avg (get sid->num-acked id)))]
+  (letfn [(weight-avg [[id avg]]
+            (product-or-0 avg (get sid->num-acked id)))]
     {:completeLatencyTotal (sum (map weight-avg sid->comp-avg))
      :acked (sum (vals sid->num-acked))}))
 
@@ -399,7 +345,7 @@
   [include-sys?]
   (if include-sys?
     (fn [_] true)
-    (fn [stream] (and (string? stream) (not (system-id? stream))))))
+    (fn [stream] (and (string? stream) (not (Utils/isSystemId stream))))))
 
 (defn mk-include-sys-filter
   "Returns a function that includes or excludes map entries whose keys are
@@ -412,30 +358,21 @@
 (defn- agg-bolt-streams-lat-and-count
   "Aggregates number executed and process & execute latencies."
   [idk->exec-avg idk->proc-avg idk->executed]
-  {:pre (apply = (map #(set (keys %))
-                      [idk->exec-avg
-                       idk->proc-avg
-                       idk->executed]))}
-  (letfn [(weight-avg [id avg] (let [num-e (idk->executed id)]
-                                   (if (and avg num-e)
-                                     (* avg num-e)
-                                     0)))]
+  (letfn [(weight-avg [id avg]
+            (let [num-e (idk->executed id)]
+              (product-or-0 avg num-e)))]
     (into {}
       (for [k (keys idk->exec-avg)]
-        [k {:executeLatencyTotal (weight-avg k (idk->exec-avg k))
-            :processLatencyTotal (weight-avg k (idk->proc-avg k))
+        [k {:executeLatencyTotal (weight-avg k (get idk->exec-avg k))
+            :processLatencyTotal (weight-avg k (get idk->proc-avg k))
             :executed (idk->executed k)}]))))
 
 (defn- agg-spout-streams-lat-and-count
   "Aggregates number acked and complete latencies."
   [idk->comp-avg idk->acked]
-  {:pre (apply = (map #(set (keys %))
-                      [idk->comp-avg
-                       idk->acked]))}
-  (letfn [(weight-avg [id avg] (let [num-e (get idk->acked id)]
-                                   (if (and avg num-e)
-                                     (* avg num-e)
-                                     0)))]
+  (letfn [(weight-avg [id avg]
+            (let [num-e (get idk->acked id)]
+              (product-or-0 avg num-e)))]
     (into {}
       (for [k (keys idk->comp-avg)]
         [k {:completeLatencyTotal (weight-avg k (get idk->comp-avg k))
@@ -673,22 +610,6 @@
                     vals
                     sum)})}))
 
-(defn apply-default
-  [f defaulting-fn & args]
-  (apply f (map defaulting-fn args)))
-
-(defn apply-or-0
-  [f & args]
-  (apply apply-default f #(or % 0) args))
-
-(defn sum-or-0
-  [& args]
-  (apply apply-or-0 + args))
-
-(defn max-or-0
-  [& args]
-  (apply apply-or-0 max args))
-
 (defn merge-agg-comp-stats-comp-page-bolt
   [{acc-in :cid+sid->input-stats
     acc-out :sid->output-stats
@@ -883,8 +804,18 @@
   (let [bolts (.get_bolts topology)
         spouts (.get_spouts topology)]
     (cond
+      (Utils/isSystemId id) :bolt
       (.containsKey bolts id) :bolt
       (.containsKey spouts id) :spout)))
+
+(defn extract-nodeinfos-from-hb-for-comp
+  ([exec->host+port task->component include-sys? comp-id]
+   (distinct (for [[[start end :as executor] [host port]] exec->host+port
+         :let [id (task->component start)]
+         :when (and (or (nil? comp-id) (= comp-id id))
+                 (or include-sys? (not (Utils/isSystemId id))))]
+     {:host host
+      :port port}))))
 
 (defn extract-data-from-hb
   ([exec->host+port task->component beats include-sys? topology comp-id]
@@ -892,7 +823,7 @@
          :let [beat (beats executor)
                id (task->component start)]
          :when (and (or (nil? comp-id) (= comp-id id))
-                    (or include-sys? (not (system-id? id))))]
+                    (or include-sys? (not (Utils/isSystemId id))))]
      {:exec-id executor
       :comp-id id
       :num-tasks (count (range start (inc end)))

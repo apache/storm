@@ -85,6 +85,7 @@ under the License.
 * Kyle Nusbaum ([@knusbaum](https://github.com/knusbaum))
 * Parth Brahmbhatt ([@Parth-Brahmbhatt](https://github.com/Parth-Brahmbhatt))
 * Jungtaek Lim ([@HeartSaVioR](https://github.com/HeartSaVioR))
+* Aaron Dossett ([@dossett](https://github.com/dossett))
 
 ## Contributors
 
@@ -206,7 +207,6 @@ under the License.
 * Reza Farivar ([@rfarivar](https://github.com/rfarivar))
 * Hugo Louro ([@hmcl](https://github.com/hmcl))
 * Xin Wang ([@vesense](https://github.com/vesense))
-* Aaron Dossett ([@dossett](https://github.com/dossett))
 * Charles Chan ([@charleswhchan](https://github.com/charleswhchan))
 * Chuanlei Ni ([@chuanlei](https://github.com/chuanlei))
 * Xingyu Su ([@errordaiwa](https://github.com/errordaiwa))
@@ -235,6 +235,15 @@ under the License.
 * Dmytro Dragan ([@3Dragan](https://github.com/3Dragan))
 * Ningyu An ([@jetan9](https://github.com/jetan9))
 * Pete Prokopowicz ([@prokopowicz](https://github.com/prokopowicz))
+* Priyank Shah ([@priyank5485](https://github.com/priyank5485))
+* Joshua Martell ([@jmartell7](https://github.com/jmartell7))
+* Matthew Tieman ([@mjtieman](https://github.com/mjtieman))
+* Chuck Burgess ([@ashnazg](https://github.com/ashnazg))
+* Tom Graves ([@tgravescs](https://github.com/tgravescs))
+* Dror Weiss ([@drorweiss](https://github.com/drorweiss))
+* Victor Wong ([@victor-wong](https://github.com/victor-wong))
+* David Wimsey ([@dwimsey](https://github.com/dwimsey))
+* Florian Hussonnois ([@fhussonnois](https://github.com/fhussonnois))
 
 ## Acknowledgements
 
