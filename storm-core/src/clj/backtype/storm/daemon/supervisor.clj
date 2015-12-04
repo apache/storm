@@ -14,7 +14,8 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.daemon.supervisor
-  (:import [java.io OutputStreamWriter BufferedWriter IOException])
+  (:import [java.io OutputStreamWriter BufferedWriter IOException]
+           [backtype.storm.generated LSSupervisorAssignments])
   (:import [backtype.storm.scheduler ISupervisor]
            [backtype.storm.utils LocalState Time Utils]
            [backtype.storm.daemon Shutdownable]
@@ -26,7 +27,7 @@
   (:use [backtype.storm config util log timer local-state])
   (:import [backtype.storm.utils VersionInfo])
   (:import [backtype.storm Config])
-  (:import [backtype.storm.generated WorkerResources ProfileAction])
+  (:import [backtype.storm.generated WorkerResources ProfileAction LSWorkerHeartbeat])
   (:use [backtype.storm.daemon common])
   (:require [backtype.storm.command [healthcheck :as healthcheck]])
   (:require [backtype.storm.daemon [worker :as worker]]
@@ -157,13 +158,19 @@
   (> (- now (:time-secs hb))
      (conf SUPERVISOR-WORKER-TIMEOUT-SECS)))
 
+
+(defn get-latest-topology-version-from-zk [cluster-state storm-id]
+  (:version (.storm-base cluster-state storm-id nil)))
+
 (defn read-allocated-workers
   "Returns map from worker id to worker heartbeat. if the heartbeat is nil, then the worker is dead (timed out or never wrote heartbeat)"
   [supervisor assigned-executors now]
   (let [conf (:conf supervisor)
         ^LocalState local-state (:local-state supervisor)
         id->heartbeat (read-worker-heartbeats conf)
-        approved-ids (set (keys (ls-approved-workers local-state)))]
+        approved-ids (set (keys (ls-approved-workers local-state)))
+        worker-set-to-be-updated (atom false)
+        ]
     (into
      {}
      (dofor [[id hb] id->heartbeat]
@@ -173,6 +180,14 @@
                          (or (not (contains? approved-ids id))
                              (not (matches-an-assignment? hb assigned-executors)))
                            :disallowed
+                          (let [worker-topo-version (:topology-version hb)
+                               latest-topo-version (get-latest-topology-version-from-zk (:storm-cluster-state supervisor) (:storm-id hb))
+                               needs-update (not (= worker-topo-version latest-topo-version))]
+                             (when needs-update
+                               (log-message "Worker Process " id " with outdated topology-version " (:topology-version hb)
+                                                  " needs to be updated to latest-version " latest-topo-version)
+                             needs-update))
+                           :update
                          (or
                           (when (get (get-dead-workers) id)
                             (log-message "Worker Process " id " has died!")
@@ -333,6 +348,14 @@
    :stormid->profiler-actions (atom {})
    })
 
+;(defn get-latest-topology-versions-from-zk [cluster-state supervisor-assignments]
+;  "Returns a map of storm-id/topology-id -> latest version of topology from zookeeper"
+;  (let [topology-ids (set (map-val (fn[^LocalAssignment assignment](.get_topology_id assignment)) supervisor-assignments))]
+;  (into {}
+;    (for [topology-id topology-ids])
+;      [topology-id (:version (.storm-base cluster-state topology-id nil))])))
+
+
 (defn sync-processes [supervisor]
   (let [conf (:conf supervisor)
         download-lock (:download-lock supervisor)
@@ -345,6 +368,9 @@
                  (fn [[state _]] (= state :valid))
                  allocated)
         keep-ports (set (for [[id [_ hb]] keepers] (:port hb)))
+        storm-ids-needing-update (into #{}
+                                   (map-val (fn [[state hb]] (:storm-id hb))
+                                      (filter-val (fn [[state hb]] (= state :update)) allocated)))
         reassign-executors (select-keys-pred (complement keep-ports) assigned-executors)
         new-worker-ids (into
                         {}
@@ -352,7 +378,7 @@
                           [port (uuid)]))
         ]
     ;; 1. to kill are those in allocated that are dead or disallowed
-    ;; 2. kill the ones that should be dead
+    ;; 2. kill the ones that should be dead or needs topology-version-updates
     ;;     - read pids, kill -9 and individually remove file
     ;;     - rmr heartbeat dir, rmdir pid dir, rmdir id dir (catch exception and log)
     ;; 3. of the rest, figure out what assignments aren't yet satisfied
@@ -362,8 +388,11 @@
     ;; 6. wait for workers launch
 
     (log-debug "Syncing processes")
+    (log-debug "Reassign-executors: "  reassign-executors )
     (log-debug "Assigned executors: " assigned-executors)
+    (log-debug "Storm ids needing update: " storm-ids-needing-update)
     (log-debug "Allocated: " allocated)
+
     (doseq [[id [state heartbeat]] allocated]
       (when (not= :valid state)
         (log-message
@@ -394,12 +423,14 @@
             assignment-info (if (and (not-nil? cached-assignment-info) (contains? cached-assignment-info storm-id ))
                               (get cached-assignment-info storm-id)
                               (.assignment-info-with-version storm-cluster-state storm-id nil))
-	    storm-code-map (read-storm-code-locations assignment-info)
+	          storm-code-map (read-storm-code-locations assignment-info)
             master-code-dir (if (contains? storm-code-map :data) (storm-code-map :data))
             stormroot (supervisor-stormdist-root conf storm-id)]
-        (if-not (or (contains? downloaded-storm-ids storm-id) (.exists (File. stormroot)) (nil? master-code-dir))
+        (if-not (and (or (contains? downloaded-storm-ids storm-id) (.exists (File. stormroot)) (nil? master-code-dir))
+                       (not (contains? storm-ids-needing-update storm-id)))
           (download-storm-code conf storm-id master-code-dir supervisor download-lock))
         ))
+
 
     (wait-for-workers-launch
      conf
@@ -422,7 +453,8 @@
                                (:storm-id assignment)
                                port
                                id
-                               mem-onheap)
+                               mem-onheap
+                  (get-latest-topology-version-from-zk storm-cluster-state (:storm-id assignment)));;TODO
                 (mark! supervisor:num-workers-launched)
                 (catch java.io.FileNotFoundException e
                   (log-message "Unable to launch worker due to "
@@ -453,6 +485,15 @@
     (doseq [id disallowed]
       (shutdown-worker supervisor id))
     ))
+
+
+;(defn update-topology[conf cluster-state]
+;  (doseq [storm-id (.active-storms cluster-state )]
+;    (let [storm-base (.storm-base cluster-state storm-id (fn[] (update-topology conf cluster-state)))
+;          topology-version-in-zk (.get_topology_version storm-base)
+;          worker-hb (read-worker-heartbeat conf storm-id)
+;          ])
+;    ))
 
 (defn mk-synchronize-supervisor [supervisor sync-processes event-manager processes-event-manager]
   (fn this []
@@ -822,7 +863,7 @@
       (create-symlink! worker-dir topo-dir "artifacts" port))))
 
 (defmethod launch-worker
-    :distributed [supervisor storm-id port worker-id mem-onheap]
+    :distributed [supervisor storm-id port worker-id mem-onheap topology-version]
     (let [conf (:conf supervisor)
           run-worker-as-user (conf SUPERVISOR-RUN-WORKER-AS-USER)
           storm-home (System/getProperty "storm.home")
@@ -901,7 +942,8 @@
                      storm-id
                      (:assignment-id supervisor)
                      port
-                     worker-id])
+                     worker-id
+                     topology-version])
           command (->> command (map str) (filter (complement empty?)))]
       (log-message "Launching worker with command: " (shell-cmd command))
       (write-log-metadata! storm-conf user worker-id storm-id port conf)

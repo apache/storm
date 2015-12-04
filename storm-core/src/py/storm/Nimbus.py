@@ -58,6 +58,14 @@ class Iface:
     """
     pass
 
+  def updateTopology(self, name, options):
+    """
+    Parameters:
+     - name
+     - options
+    """
+    pass
+
   def killTopology(self, name):
     """
     Parameters:
@@ -341,6 +349,43 @@ class Client(Iface):
     iprot.readMessageEnd()
     if result.e is not None:
       raise result.e
+    if result.ite is not None:
+      raise result.ite
+    if result.aze is not None:
+      raise result.aze
+    return
+
+  def updateTopology(self, name, options):
+    """
+    Parameters:
+     - name
+     - options
+    """
+    self.send_updateTopology(name, options)
+    self.recv_updateTopology()
+
+  def send_updateTopology(self, name, options):
+    self._oprot.writeMessageBegin('updateTopology', TMessageType.CALL, self._seqid)
+    args = updateTopology_args()
+    args.name = name
+    args.options = options
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_updateTopology(self):
+    iprot = self._iprot
+    (fname, mtype, rseqid) = iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(iprot)
+      iprot.readMessageEnd()
+      raise x
+    result = updateTopology_result()
+    result.read(iprot)
+    iprot.readMessageEnd()
+    if result.nae is not None:
+      raise result.nae
     if result.ite is not None:
       raise result.ite
     if result.aze is not None:
@@ -1243,6 +1288,7 @@ class Processor(Iface, TProcessor):
     self._processMap = {}
     self._processMap["submitTopology"] = Processor.process_submitTopology
     self._processMap["submitTopologyWithOpts"] = Processor.process_submitTopologyWithOpts
+    self._processMap["updateTopology"] = Processor.process_updateTopology
     self._processMap["killTopology"] = Processor.process_killTopology
     self._processMap["killTopologyWithOpts"] = Processor.process_killTopologyWithOpts
     self._processMap["activate"] = Processor.process_activate
@@ -1337,6 +1383,34 @@ class Processor(Iface, TProcessor):
       logging.exception(ex)
       result = TApplicationException(TApplicationException.INTERNAL_ERROR, 'Internal error')
     oprot.writeMessageBegin("submitTopologyWithOpts", msg_type, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_updateTopology(self, seqid, iprot, oprot):
+    args = updateTopology_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = updateTopology_result()
+    try:
+      self._handler.updateTopology(args.name, args.options)
+      msg_type = TMessageType.REPLY
+    except (TTransport.TTransportException, KeyboardInterrupt, SystemExit):
+      raise
+    except NotAliveException as nae:
+      msg_type = TMessageType.REPLY
+      result.nae = nae
+    except InvalidTopologyException as ite:
+      msg_type = TMessageType.REPLY
+      result.ite = ite
+    except AuthorizationException as aze:
+      msg_type = TMessageType.REPLY
+      result.aze = aze
+    except Exception as ex:
+      msg_type = TMessageType.EXCEPTION
+      logging.exception(ex)
+      result = TApplicationException(TApplicationException.INTERNAL_ERROR, 'Internal error')
+    oprot.writeMessageBegin("updateTopology", msg_type, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
@@ -2349,6 +2423,179 @@ class submitTopologyWithOpts_result:
   def __hash__(self):
     value = 17
     value = (value * 31) ^ hash(self.e)
+    value = (value * 31) ^ hash(self.ite)
+    value = (value * 31) ^ hash(self.aze)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class updateTopology_args:
+  """
+  Attributes:
+   - name
+   - options
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'name', None, None, ), # 1
+    (2, TType.STRUCT, 'options', (UpdateOptions, UpdateOptions.thrift_spec), None, ), # 2
+  )
+
+  def __init__(self, name=None, options=None,):
+    self.name = name
+    self.options = options
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRING:
+          self.name = iprot.readString().decode('utf-8')
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.STRUCT:
+          self.options = UpdateOptions()
+          self.options.read(iprot)
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('updateTopology_args')
+    if self.name is not None:
+      oprot.writeFieldBegin('name', TType.STRING, 1)
+      oprot.writeString(self.name.encode('utf-8'))
+      oprot.writeFieldEnd()
+    if self.options is not None:
+      oprot.writeFieldBegin('options', TType.STRUCT, 2)
+      self.options.write(oprot)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.name)
+    value = (value * 31) ^ hash(self.options)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class updateTopology_result:
+  """
+  Attributes:
+   - nae
+   - ite
+   - aze
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRUCT, 'nae', (NotAliveException, NotAliveException.thrift_spec), None, ), # 1
+    (2, TType.STRUCT, 'ite', (InvalidTopologyException, InvalidTopologyException.thrift_spec), None, ), # 2
+    (3, TType.STRUCT, 'aze', (AuthorizationException, AuthorizationException.thrift_spec), None, ), # 3
+  )
+
+  def __init__(self, nae=None, ite=None, aze=None,):
+    self.nae = nae
+    self.ite = ite
+    self.aze = aze
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRUCT:
+          self.nae = NotAliveException()
+          self.nae.read(iprot)
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.STRUCT:
+          self.ite = InvalidTopologyException()
+          self.ite.read(iprot)
+        else:
+          iprot.skip(ftype)
+      elif fid == 3:
+        if ftype == TType.STRUCT:
+          self.aze = AuthorizationException()
+          self.aze.read(iprot)
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('updateTopology_result')
+    if self.nae is not None:
+      oprot.writeFieldBegin('nae', TType.STRUCT, 1)
+      self.nae.write(oprot)
+      oprot.writeFieldEnd()
+    if self.ite is not None:
+      oprot.writeFieldBegin('ite', TType.STRUCT, 2)
+      self.ite.write(oprot)
+      oprot.writeFieldEnd()
+    if self.aze is not None:
+      oprot.writeFieldBegin('aze', TType.STRUCT, 3)
+      self.aze.write(oprot)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.nae)
     value = (value * 31) ^ hash(self.ite)
     value = (value * 31) ^ hash(self.aze)
     return value

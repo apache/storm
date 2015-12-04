@@ -118,8 +118,10 @@
         (.get_assignments thrift-local-assignments))))
 
 (defn ls-worker-heartbeat!
-  [^LocalState local-state time-secs storm-id executors port]
-  (.put local-state LS-WORKER-HEARTBEAT (LSWorkerHeartbeat. time-secs storm-id (->ExecutorInfo-list executors) port) false))
+  [^LocalState local-state time-secs storm-id executors port topology-version]
+  (let [worker-hb (LSWorkerHeartbeat. time-secs storm-id (->ExecutorInfo-list executors) port)]
+    (.set_topology_version worker-hb topology-version)
+    (.put local-state LS-WORKER-HEARTBEAT worker-hb false)))
 
 (defn ls-worker-heartbeat 
   [^LocalState local-state]
@@ -127,5 +129,6 @@
     {:time-secs (.get_time_secs worker-hb)
      :storm-id (.get_topology_id worker-hb)
      :executors (->executor-list (.get_executors worker-hb))
-     :port (.get_port worker-hb)}))
+     :port (.get_port worker-hb)
+     :topology-version (.get_topology_version worker-hb)}))
 

@@ -14,7 +14,9 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.daemon.nimbus
-  (:import [org.apache.thrift.server THsHaServer THsHaServer$Args])
+  (:import [org.apache.thrift.server THsHaServer THsHaServer$Args]
+           [backtype.storm.generated UpdateOptions]
+           [java.util UUID])
   (:import [org.apache.thrift.protocol TBinaryProtocol TBinaryProtocol$Factory])
   (:import [org.apache.thrift.exception])
   (:import [org.apache.thrift.transport TNonblockingServerTransport TNonblockingServerSocket])
@@ -58,6 +60,7 @@
 
 (defmeter nimbus:num-submitTopologyWithOpts-calls)
 (defmeter nimbus:num-submitTopology-calls)
+(defmeter nimbus:num-updateTopology-calls)
 (defmeter nimbus:num-killTopologyWithOpts-calls)
 (defmeter nimbus:num-killTopology-calls)
 (defmeter nimbus:num-rebalance-calls)
@@ -232,11 +235,25 @@
             :activate nil
             :rebalance (rebalance-transition nimbus storm-id status)
             :kill (kill-transition nimbus storm-id)
+;            :updating :update
             }
+;   :updating {:startup (fn [] (delay-event nimbus
+;                                storm-id
+;                                (-> storm-base
+;                                  :topology-action-options
+;                                  :delay-secs)
+;                                :do-rebalance)
+;                         nil)
+;              :kill (kill-transition nimbus storm-id)
+;              :do-update (fn []
+;                              (do-update nimbus storm-id status storm-base)
+;                              (:type (:prev-status storm-base)))
+;            }
    :inactive {:activate :active
               :inactivate nil
               :rebalance (rebalance-transition nimbus storm-id status)
               :kill (kill-transition nimbus storm-id)
+;              :update (update-transition nimbus storm-id)
               }
    :killed {:startup (fn [] (delay-event nimbus
                                          storm-id
@@ -392,15 +409,25 @@
       )))
 
 (defn- setup-storm-code [nimbus conf storm-id tmp-jar-location storm-conf topology]
+  (let [ tmproot (str (master-tmp-dir conf) file-path-separator storm-id)
+         stormroot (master-stormdist-root conf storm-id)]
+    (log-message "nimbus file location:" stormroot)
+    (FileUtils/forceMkdir (File. tmproot))
+    (FileUtils/cleanDirectory (File. tmproot))
+
+    (setup-jar conf tmp-jar-location tmproot)
+    (FileUtils/writeByteArrayToFile (File. (master-stormcode-path tmproot)) (Utils/serialize topology))
+    (FileUtils/writeByteArrayToFile (File. (master-stormconf-path tmproot)) (Utils/toCompressedJsonConf storm-conf))
+
+    (FileUtils/deleteDirectory (File. stormroot))
+    (FileUtils/moveDirectory (File. tmproot) (File. stormroot))
+
+    (if (:code-distributor nimbus) (.upload (:code-distributor nimbus) stormroot storm-id))))
+
+
+(defn- get-topology [nimbus conf storm-id]
   (let [stormroot (master-stormdist-root conf storm-id)]
-   (log-message "nimbus file location:" stormroot)
-   (FileUtils/forceMkdir (File. stormroot))
-   (FileUtils/cleanDirectory (File. stormroot))
-   (setup-jar conf tmp-jar-location stormroot)
-   (FileUtils/writeByteArrayToFile (File. (master-stormcode-path stormroot)) (Utils/serialize topology))
-   (FileUtils/writeByteArrayToFile (File. (master-stormconf-path stormroot)) (Utils/toCompressedJsonConf storm-conf))
-   (if (:code-distributor nimbus) (.upload (:code-distributor nimbus) stormroot storm-id))
-   ))
+    (Utils/deserialize (FileUtils/readFileToByteArray (File. (master-stormcode-path stormroot))) StormTopology)))
 
 (defn- wait-for-desired-code-replication [nimbus conf storm-id]
   (let [min-replication-count (conf TOPOLOGY-MIN-REPLICATION-COUNT)
@@ -878,7 +905,7 @@
         storm-conf (read-storm-conf conf storm-id)
         topology (system-topology! storm-conf (read-storm-topology conf storm-id))
         num-executors (->> (all-components topology) (map-val num-start-executors))]
-    (log-message "Activating " storm-name ": " storm-id)
+    (log-message "Activating " storm-name ": " storm-id " with initial status of " topology-initial-status)
     (.activate-storm! storm-cluster-state
                       storm-id
                       (StormBase. storm-name
@@ -889,8 +916,9 @@
                                   (storm-conf TOPOLOGY-SUBMITTER-USER)
                                   nil
                                   nil
-                                  {}))
-    (notify-topology-action-listener nimbus storm-name "activate")))
+                                  {}
+                                  0))
+    (notify-topology-action-listener nimbus storm-name (if (= :active topology-initial-status) "activate" "deactivate"))))
 
 ;; Master:
 ;; job submit:
@@ -1210,6 +1238,17 @@
      (.set_reset_log_level_timeout_epoch log-config (coerce/to-long timeout))
      (.unset_reset_log_level_timeout_epoch log-config))))
 
+(defn- validate-conf-and-topology [nimbus storm-name serializedConf topology]
+  (let [topo-conf (from-json serializedConf)]
+    (try
+      (validate-configs-with-schemas topo-conf)
+      (catch IllegalArgumentException ex
+        (throw (InvalidTopologyException. (.getMessage ex)))))
+    (.validate ^backtype.storm.nimbus.ITopologyValidator (:validator nimbus)
+      storm-name
+      topo-conf
+      topology)))
+
 (defserverfn service-handler [conf inimbus]
   (.prepare inimbus conf (master-inimbus-dir conf))
   (log-message "Starting Nimbus with conf " conf)
@@ -1325,15 +1364,7 @@
           (validate-topology-name! storm-name)
           (check-authorization! nimbus storm-name nil "submitTopology")
           (check-storm-active! nimbus storm-name false)
-          (let [topo-conf (from-json serializedConf)]
-            (try
-              (validate-configs-with-schemas topo-conf)
-              (catch IllegalArgumentException ex
-                (throw (InvalidTopologyException. (.getMessage ex)))))
-            (.validate ^backtype.storm.nimbus.ITopologyValidator (:validator nimbus)
-                       storm-name
-                       topo-conf
-                       topology))
+          (validate-conf-and-topology nimbus storm-name serializedConf topology)
           (swap! (:submitted-count nimbus) inc)
           (let [storm-id (str storm-name "-" @(:submitted-count nimbus) "-" (current-time-secs))
                 credentials (.get_creds submitOptions)
@@ -1398,6 +1429,41 @@
         (mark! nimbus:num-submitTopology-calls)
         (.submitTopologyWithOpts this storm-name uploadedJarLocation serializedConf topology
                                  (SubmitOptions. TopologyInitialStatus/ACTIVE)))
+
+      (^void updateTopology
+        [this ^String storm-name ^UpdateOptions updateOptions]
+        (mark! nimbus:num-updateTopology-calls)
+        (check-authorization! nimbus storm-name nil "updateTopology")
+        (is-leader nimbus)
+        (locking (:submit-lock nimbus)
+          (check-storm-active! nimbus storm-name true)
+          (let [storm-cluster-state (:storm-cluster-state nimbus)
+                storm-id (get-storm-id storm-cluster-state storm-name)
+                storm-root-dir (master-stormdist-root conf storm-id)
+                storm-base (.storm-base storm-cluster-state storm-id nil)
+                topo-conf (merge (try-read-storm-conf-from-name conf storm-name nimbus)
+                       (if (.is_set_jsonConf updateOptions) (from-json (.get_jsonConf updateOptions)) {}))
+                total-storm-conf (merge conf topo-conf)
+                topology (if (.is_set_topology updateOptions) (.get_topology updateOptions) (get-topology nimbus conf storm-id))
+                topology (normalize-topology topo-conf topology)
+                jar-location (if (.is_set_uploadedJarLocation updateOptions) (.get_uploadedJarLocation updateOptions) (master-stormjar-path storm-root-dir))
+                version (inc (:version storm-base))]
+            (validate-conf-and-topology nimbus storm-name (to-json topo-conf) topology)
+            (system-topology! topo-conf topology)
+            (validate-topology-size topo-conf conf topology)
+            (setup-storm-code nimbus conf storm-id jar-location topo-conf topology)
+            (.setup-code-distributor! storm-cluster-state storm-id (:nimbus-host-port-info nimbus))
+            (wait-for-desired-code-replication nimbus total-storm-conf storm-id)
+            (notify-topology-action-listener nimbus storm-name "updateTopology")
+
+            ;;update the storm base with the new version.
+            (.update-storm! storm-cluster-state storm-id {:version version})
+
+            ;;TODO: Re-assignment will mean all the supervisor may end up killing their workers and restarting,
+            ;;What we really want is each supervisor should kill one worker at a time and restart it.
+
+            (when (.is_set_topology updateOptions) (mk-assignments nimbus :scratch-topology-id storm-id))
+            )))
       
       (^void killTopology [this ^String name]
         (mark! nimbus:num-killTopology-calls)

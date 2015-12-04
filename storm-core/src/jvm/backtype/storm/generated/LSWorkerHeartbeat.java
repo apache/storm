@@ -59,6 +59,7 @@ public class LSWorkerHeartbeat implements org.apache.thrift.TBase<LSWorkerHeartb
   private static final org.apache.thrift.protocol.TField TOPOLOGY_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("topology_id", org.apache.thrift.protocol.TType.STRING, (short)2);
   private static final org.apache.thrift.protocol.TField EXECUTORS_FIELD_DESC = new org.apache.thrift.protocol.TField("executors", org.apache.thrift.protocol.TType.LIST, (short)3);
   private static final org.apache.thrift.protocol.TField PORT_FIELD_DESC = new org.apache.thrift.protocol.TField("port", org.apache.thrift.protocol.TType.I32, (short)4);
+  private static final org.apache.thrift.protocol.TField TOPOLOGY_VERSION_FIELD_DESC = new org.apache.thrift.protocol.TField("topology_version", org.apache.thrift.protocol.TType.I32, (short)5);
 
   private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
   static {
@@ -70,13 +71,15 @@ public class LSWorkerHeartbeat implements org.apache.thrift.TBase<LSWorkerHeartb
   private String topology_id; // required
   private List<ExecutorInfo> executors; // required
   private int port; // required
+  private int topology_version; // optional
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift.TFieldIdEnum {
     TIME_SECS((short)1, "time_secs"),
     TOPOLOGY_ID((short)2, "topology_id"),
     EXECUTORS((short)3, "executors"),
-    PORT((short)4, "port");
+    PORT((short)4, "port"),
+    TOPOLOGY_VERSION((short)5, "topology_version");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -99,6 +102,8 @@ public class LSWorkerHeartbeat implements org.apache.thrift.TBase<LSWorkerHeartb
           return EXECUTORS;
         case 4: // PORT
           return PORT;
+        case 5: // TOPOLOGY_VERSION
+          return TOPOLOGY_VERSION;
         default:
           return null;
       }
@@ -141,7 +146,9 @@ public class LSWorkerHeartbeat implements org.apache.thrift.TBase<LSWorkerHeartb
   // isset id assignments
   private static final int __TIME_SECS_ISSET_ID = 0;
   private static final int __PORT_ISSET_ID = 1;
+  private static final int __TOPOLOGY_VERSION_ISSET_ID = 2;
   private byte __isset_bitfield = 0;
+  private static final _Fields optionals[] = {_Fields.TOPOLOGY_VERSION};
   public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
   static {
     Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
@@ -154,11 +161,15 @@ public class LSWorkerHeartbeat implements org.apache.thrift.TBase<LSWorkerHeartb
             new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, ExecutorInfo.class))));
     tmpMap.put(_Fields.PORT, new org.apache.thrift.meta_data.FieldMetaData("port", org.apache.thrift.TFieldRequirementType.REQUIRED, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
+    tmpMap.put(_Fields.TOPOLOGY_VERSION, new org.apache.thrift.meta_data.FieldMetaData("topology_version", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
     metaDataMap = Collections.unmodifiableMap(tmpMap);
     org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(LSWorkerHeartbeat.class, metaDataMap);
   }
 
   public LSWorkerHeartbeat() {
+    this.topology_version = 0;
+
   }
 
   public LSWorkerHeartbeat(
@@ -193,6 +204,7 @@ public class LSWorkerHeartbeat implements org.apache.thrift.TBase<LSWorkerHeartb
       this.executors = __this__executors;
     }
     this.port = other.port;
+    this.topology_version = other.topology_version;
   }
 
   public LSWorkerHeartbeat deepCopy() {
@@ -207,6 +219,8 @@ public class LSWorkerHeartbeat implements org.apache.thrift.TBase<LSWorkerHeartb
     this.executors = null;
     set_port_isSet(false);
     this.port = 0;
+    this.topology_version = 0;
+
   }
 
   public int get_time_secs() {
@@ -314,6 +328,28 @@ public class LSWorkerHeartbeat implements org.apache.thrift.TBase<LSWorkerHeartb
     __isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __PORT_ISSET_ID, value);
   }
 
+  public int get_topology_version() {
+    return this.topology_version;
+  }
+
+  public void set_topology_version(int topology_version) {
+    this.topology_version = topology_version;
+    set_topology_version_isSet(true);
+  }
+
+  public void unset_topology_version() {
+    __isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __TOPOLOGY_VERSION_ISSET_ID);
+  }
+
+  /** Returns true if field topology_version is set (has been assigned a value) and false otherwise */
+  public boolean is_set_topology_version() {
+    return EncodingUtils.testBit(__isset_bitfield, __TOPOLOGY_VERSION_ISSET_ID);
+  }
+
+  public void set_topology_version_isSet(boolean value) {
+    __isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __TOPOLOGY_VERSION_ISSET_ID, value);
+  }
+
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case TIME_SECS:
@@ -348,6 +384,14 @@ public class LSWorkerHeartbeat implements org.apache.thrift.TBase<LSWorkerHeartb
       }
       break;
 
+    case TOPOLOGY_VERSION:
+      if (value == null) {
+        unset_topology_version();
+      } else {
+        set_topology_version((Integer)value);
+      }
+      break;
+
     }
   }
 
@@ -364,6 +408,9 @@ public class LSWorkerHeartbeat implements org.apache.thrift.TBase<LSWorkerHeartb
 
     case PORT:
       return get_port();
+
+    case TOPOLOGY_VERSION:
+      return get_topology_version();
 
     }
     throw new IllegalStateException();
@@ -384,6 +431,8 @@ public class LSWorkerHeartbeat implements org.apache.thrift.TBase<LSWorkerHeartb
       return is_set_executors();
     case PORT:
       return is_set_port();
+    case TOPOLOGY_VERSION:
+      return is_set_topology_version();
     }
     throw new IllegalStateException();
   }
@@ -437,6 +486,15 @@ public class LSWorkerHeartbeat implements org.apache.thrift.TBase<LSWorkerHeartb
         return false;
     }
 
+    boolean this_present_topology_version = true && this.is_set_topology_version();
+    boolean that_present_topology_version = true && that.is_set_topology_version();
+    if (this_present_topology_version || that_present_topology_version) {
+      if (!(this_present_topology_version && that_present_topology_version))
+        return false;
+      if (this.topology_version != that.topology_version)
+        return false;
+    }
+
     return true;
   }
 
@@ -463,6 +521,11 @@ public class LSWorkerHeartbeat implements org.apache.thrift.TBase<LSWorkerHeartb
     list.add(present_port);
     if (present_port)
       list.add(port);
+
+    boolean present_topology_version = true && (is_set_topology_version());
+    list.add(present_topology_version);
+    if (present_topology_version)
+      list.add(topology_version);
 
     return list.hashCode();
   }
@@ -515,6 +578,16 @@ public class LSWorkerHeartbeat implements org.apache.thrift.TBase<LSWorkerHeartb
         return lastComparison;
       }
     }
+    lastComparison = Boolean.valueOf(is_set_topology_version()).compareTo(other.is_set_topology_version());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_topology_version()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.topology_version, other.topology_version);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
     return 0;
   }
 
@@ -558,6 +631,12 @@ public class LSWorkerHeartbeat implements org.apache.thrift.TBase<LSWorkerHeartb
     sb.append("port:");
     sb.append(this.port);
     first = false;
+    if (is_set_topology_version()) {
+      if (!first) sb.append(", ");
+      sb.append("topology_version:");
+      sb.append(this.topology_version);
+      first = false;
+    }
     sb.append(")");
     return sb.toString();
   }
@@ -662,6 +741,14 @@ public class LSWorkerHeartbeat implements org.apache.thrift.TBase<LSWorkerHeartb
               org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
             break;
+          case 5: // TOPOLOGY_VERSION
+            if (schemeField.type == org.apache.thrift.protocol.TType.I32) {
+              struct.topology_version = iprot.readI32();
+              struct.set_topology_version_isSet(true);
+            } else { 
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+            }
+            break;
           default:
             org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
         }
@@ -698,6 +785,11 @@ public class LSWorkerHeartbeat implements org.apache.thrift.TBase<LSWorkerHeartb
       oprot.writeFieldBegin(PORT_FIELD_DESC);
       oprot.writeI32(struct.port);
       oprot.writeFieldEnd();
+      if (struct.is_set_topology_version()) {
+        oprot.writeFieldBegin(TOPOLOGY_VERSION_FIELD_DESC);
+        oprot.writeI32(struct.topology_version);
+        oprot.writeFieldEnd();
+      }
       oprot.writeFieldStop();
       oprot.writeStructEnd();
     }
@@ -725,6 +817,14 @@ public class LSWorkerHeartbeat implements org.apache.thrift.TBase<LSWorkerHeartb
         }
       }
       oprot.writeI32(struct.port);
+      BitSet optionals = new BitSet();
+      if (struct.is_set_topology_version()) {
+        optionals.set(0);
+      }
+      oprot.writeBitSet(optionals, 1);
+      if (struct.is_set_topology_version()) {
+        oprot.writeI32(struct.topology_version);
+      }
     }
 
     @Override
@@ -748,6 +848,11 @@ public class LSWorkerHeartbeat implements org.apache.thrift.TBase<LSWorkerHeartb
       struct.set_executors_isSet(true);
       struct.port = iprot.readI32();
       struct.set_port_isSet(true);
+      BitSet incoming = iprot.readBitSet(1);
+      if (incoming.get(0)) {
+        struct.topology_version = iprot.readI32();
+        struct.set_topology_version_isSet(true);
+      }
     }
   }
 

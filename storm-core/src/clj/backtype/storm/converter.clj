@@ -188,7 +188,8 @@
     (.set_owner (:owner storm-base))
     (.set_topology_action_options (thriftify-topology-action-options storm-base))
     (.set_prev_status (convert-to-status-from-symbol (:prev-status storm-base)))
-    (.set_component_debug (map-val thriftify-debugoptions (:component->debug storm-base)))))
+    (.set_component_debug (map-val thriftify-debugoptions (:component->debug storm-base)))
+    (.set_version (:version storm-base))))
 
 (defn clojurify-storm-base [^StormBase storm-base]
   (if storm-base
@@ -201,7 +202,8 @@
       (.get_owner storm-base)
       (clojurify-topology-action-options (.get_topology_action_options storm-base))
       (convert-to-symbol-from-status (.get_prev_status storm-base))
-      (map-val clojurify-debugoptions (.get_component_debug storm-base)))))
+      (map-val clojurify-debugoptions (.get_component_debug storm-base))
+      (.get_version storm-base))))
 
 (defn thriftify-stats [stats]
   (if stats
