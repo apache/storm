@@ -23,7 +23,6 @@ import backtype.storm.spout.SpoutOutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.base.BaseRichSpout;
-import kafka.message.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import storm.kafka.PartitionManager.KafkaMessageId;
