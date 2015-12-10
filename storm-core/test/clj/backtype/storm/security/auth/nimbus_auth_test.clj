@@ -33,6 +33,8 @@
 
 (def nimbus-timeout (Integer. 30))
 
+(def cluster-lock (Object.))
+
 (defn launch-test-cluster [nimbus-port login-cfg aznClass transportPluginClass] 
   (let [conf {NIMBUS-AUTHORIZER aznClass 
               NIMBUS-THRIFT-PORT nimbus-port
@@ -50,7 +52,9 @@
     [cluster-map nimbus-server]))
 
 (defmacro with-test-cluster [args & body]
-  `(let [[cluster-map#  nimbus-server#] (launch-test-cluster  ~@args)]
+  `(let [[cluster-map#  nimbus-server#]
+         (locking cluster-lock
+                  (launch-test-cluster  ~@args))]
       ~@body
       (log-debug "Shutdown cluster from macro")
       (testing/kill-local-storm-cluster cluster-map#)
