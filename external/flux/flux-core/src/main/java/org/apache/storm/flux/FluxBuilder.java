@@ -395,6 +395,7 @@ public class FluxBuilder {
                     eligibleCount++;
                 }
                 LOG.debug("** invokable --> {}", invokable);
+                break;
             } else {
                 LOG.debug("Skipping constructor with wrong number of arguments.");
             }
