@@ -393,9 +393,9 @@ public class FluxBuilder {
                 if (invokable) {
                     retval = con;
                     eligibleCount++;
+                    break;
                 }
                 LOG.debug("** invokable --> {}", invokable);
-                break;
             } else {
                 LOG.debug("Skipping constructor with wrong number of arguments.");
             }
