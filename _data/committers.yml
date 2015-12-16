@@ -103,3 +103,13 @@
   asfid: mjsax
   github: mjsax
 
+- name: Boyang Jerry Peng
+  roles: Committer, PMC
+  asfid: jerrypeng
+  github: jerrypeng
+
+- name: Zhuo Liu
+  roles: Committer, PMC
+  asfid: zhuoliu
+  github: zhuoliu
+
