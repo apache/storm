@@ -85,16 +85,18 @@ public class KafkaSpout extends BaseRichSpout {
 
         _connections = new DynamicPartitionConnections(_spoutConfig, KafkaUtils.makeBrokerReader(conf, _spoutConfig));
 
+        FailedMsgRetryManager failedMsgRetryManager = _spoutConfig.failedMsgRetryManagerFactory.construct();
+
         // using TransactionalState like this is a hack
         int totalTasks = context.getComponentTasks(context.getThisComponentId()).size();
         if (_spoutConfig.hosts instanceof StaticHosts) {
             _coordinator = new StaticCoordinator(_connections, conf,
                     _spoutConfig, _state, context.getThisTaskIndex(),
-                    totalTasks, topologyInstanceId);
+                    totalTasks, topologyInstanceId, failedMsgRetryManager);
         } else {
             _coordinator = new ZkCoordinator(_connections, conf,
                     _spoutConfig, _state, context.getThisTaskIndex(),
-                    totalTasks, topologyInstanceId);
+                    totalTasks, topologyInstanceId, failedMsgRetryManager);
         }
 
         context.registerMetric("kafkaOffset", new IMetric() {
