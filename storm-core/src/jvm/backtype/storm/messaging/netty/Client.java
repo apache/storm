@@ -179,14 +179,10 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
     }
 
     private boolean connectionEstablished(Channel channel) {
-        // Because we are using TCP (which is a connection-oriented transport unlike UDP), a connection is only fully
-        // established iff the channel is connected.  That is, a TCP-based channel must be in the CONNECTED state before
-        // anything can be read or written to the channel.
-        //
+        // since netty 4.x, the state model has been simplified
         // See:
-        // - http://netty.io/3.9/api/org/jboss/netty/channel/ChannelEvent.html
-        // - http://stackoverflow.com/questions/13356622/what-are-the-netty-channel-state-transitions
-        return channel != null && channel.isOpen();
+        // - http://netty.io/wiki/new-and-noteworthy-in-4.0.html#wiki-h4-19
+        return channel != null && channel.isActive();
     }
 
     /**
