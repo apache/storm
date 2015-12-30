@@ -2066,6 +2066,21 @@ public class Config extends HashMap<String, Object> {
     @isInteger
     public static final String NIMBUS_CODE_SYNC_FREQ_SECS = "nimbus.code.sync.freq.secs";
 
+    /**
+     * Kafka spout config
+     * The time, in milliseconds, spent waiting in poll if data is not available. If 0, returns
+     *            immediately with any records available now. Must not be negative.
+     */
+    @isInteger
+    public static final String KAFKA_POLL_TIMEOUT = "kafka.poll.timeout";
+
+    /**
+     * Kafka spout config
+     * Maximum count of re-emit attempts per tuple. It decrements by each fail() method called with this tuple.
+     */
+    @isInteger
+    public static final String KAFKA_MAX_FAIL_ATTEMPTS_COUNT = "kafka.max.fails";
+
     public static void setClasspath(Map conf, String cp) {
         conf.put(Config.TOPOLOGY_CLASSPATH, cp);
     }

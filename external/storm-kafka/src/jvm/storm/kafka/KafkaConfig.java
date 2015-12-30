@@ -21,12 +21,14 @@ import backtype.storm.spout.MultiScheme;
 import backtype.storm.spout.RawMultiScheme;
 
 import java.io.Serializable;
+import java.util.List;
 
 public class KafkaConfig implements Serializable {
     private static final long serialVersionUID = 5276718734571623855L;
     
     public final BrokerHosts hosts;
     public final String topic;
+    public final List<String> topics;
     public final String clientId;
 
     public int fetchSizeBytes = 1024 * 1024;
@@ -44,9 +46,21 @@ public class KafkaConfig implements Serializable {
         this(hosts, topic, kafka.api.OffsetRequest.DefaultClientId());
     }
 
+    public KafkaConfig(BrokerHosts hosts, List<String> topics) {
+        this(hosts, topics, kafka.api.OffsetRequest.DefaultClientId());
+    }
+
     public KafkaConfig(BrokerHosts hosts, String topic, String clientId) {
         this.hosts = hosts;
         this.topic = topic;
+        this.topics = null;
+        this.clientId = clientId;
+    }
+
+    public KafkaConfig(BrokerHosts hosts, List<String> topics, String clientId) {
+        this.hosts = hosts;
+        this.topic = null;
+        this.topics = topics;
         this.clientId = clientId;
     }
 
