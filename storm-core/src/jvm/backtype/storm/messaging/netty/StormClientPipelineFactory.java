@@ -22,12 +22,15 @@ import backtype.storm.Config;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
+import java.util.Map;
 
 class StormClientPipelineFactory extends ChannelInitializer {
     private Client client;
+    private Map conf;
 
-    StormClientPipelineFactory(Client client) {
+    StormClientPipelineFactory(Client client, Map conf) {
         this.client = client;
+        this.conf = conf;
     }
 
     @Override
@@ -40,13 +43,13 @@ class StormClientPipelineFactory extends ChannelInitializer {
         // Encoder
         pipeline.addLast("encoder", new MessageEncoder());
 
-        boolean isNettyAuth = (Boolean) this.client.getStormConf().get(Config.STORM_MESSAGING_NETTY_AUTHENTICATION);
+        boolean isNettyAuth = (Boolean) conf
+                .get(Config.STORM_MESSAGING_NETTY_AUTHENTICATION);
         if (isNettyAuth) {
             // Authenticate: Removed after authentication completes
-            pipeline.addLast("saslClientHandler", new SaslStormClientHandler(
-                    client));
+            pipeline.addLast("saslClientHandler", new SaslStormClientHandler(client));
         }
         // business logic.
-        pipeline.addLast("handler", new StormClientHandler(client));
+        pipeline.addLast("handler", new StormClientHandler(client, conf));
     }
 }

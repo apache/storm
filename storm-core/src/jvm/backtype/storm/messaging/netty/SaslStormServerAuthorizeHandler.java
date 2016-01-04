@@ -29,8 +29,7 @@ import org.slf4j.LoggerFactory;
  */
 public class SaslStormServerAuthorizeHandler extends ChannelInboundHandlerAdapter {
 
-	private static final Logger LOG = LoggerFactory
-			.getLogger(SaslStormServerHandler.class);
+	private static final Logger LOG = LoggerFactory.getLogger(SaslStormServerAuthorizeHandler.class);
 
 	/**
 	 * Constructor.

@@ -32,7 +32,7 @@ class MessageBatch {
 
     MessageBatch(int buffer_size) {
         this.buffer_size = buffer_size;
-        msgs = new ArrayList<TaskMessage>();
+        msgs = new ArrayList<>();
         encoded_length = ControlMessage.EOB_MESSAGE.encodeLength();
     }
 
@@ -55,24 +55,21 @@ class MessageBatch {
     }
 
     /**
-     * Has this batch used up allowed buffer size
-     * @return
+     * @return true if this batch used up allowed buffer size
      */
     boolean isFull() {
         return encoded_length >= buffer_size;
     }
 
     /**
-     * true if this batch doesn't have any messages 
-     * @return
+     * @return true if this batch doesn't have any messages
      */
     boolean isEmpty() {
         return msgs.isEmpty();
     }
 
     /**
-     * # of msgs in this batch
-     * @return
+     * @return number of msgs in this batch
      */
     int size() {
         return msgs.size();
@@ -84,8 +81,9 @@ class MessageBatch {
     ByteBuf buffer(ByteBufAllocator allocator) throws Exception {
         ByteBufOutputStream bout = new ByteBufOutputStream(allocator.ioBuffer(encoded_length));
         
-        for (TaskMessage msg : msgs)
+        for (TaskMessage msg : msgs) {
             writeTaskMessage(bout, msg);
+        }
 
         //add a END_OF_BATCH indicator
         ControlMessage.EOB_MESSAGE.write(bout);

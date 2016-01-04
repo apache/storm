@@ -24,16 +24,12 @@ import backtype.storm.utils.Utils;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.HashedWheelTimer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ThreadFactory;
 
 public class Context implements IContext {
-    private static final Logger LOG = LoggerFactory.getLogger(Context.class);
-        
     @SuppressWarnings("rawtypes")
     private Map storm_conf;
     private Map<String, IConnection> connections;
@@ -49,7 +45,7 @@ public class Context implements IContext {
     @SuppressWarnings("rawtypes")
     public void prepare(Map storm_conf) {
         this.storm_conf = storm_conf;
-        connections = new HashMap<String, IConnection>();
+        connections = new HashMap<>();
 
         //each context will have a single client channel workerEventLoopGroup
         int maxWorkers = Utils.getInt(storm_conf.get(Config.STORM_MESSAGING_NETTY_CLIENT_WORKER_THREADS));
@@ -92,7 +88,9 @@ public class Context implements IContext {
     }
 
     synchronized void removeClient(String host, int port) {
-        connections.remove(key(host, port));
+        if (connections != null) {
+            connections.remove(key(host, port));
+        }
     }
 
     /**

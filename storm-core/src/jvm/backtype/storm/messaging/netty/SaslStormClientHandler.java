@@ -17,27 +17,25 @@
  */
 package backtype.storm.messaging.netty;
 
-import java.io.IOException;
-
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import backtype.storm.Config;
+import java.io.IOException;
 
 public class SaslStormClientHandler extends ChannelInboundHandlerAdapter {
 
-    private static final Logger LOG = LoggerFactory
-            .getLogger(SaslStormClientHandler.class);
-    private Client client;
+    private static final Logger LOG = LoggerFactory.getLogger(SaslStormClientHandler.class);
+
+    private ISaslClient client;
     long start_time;
     /** Used for client or server's token to send or receive from each other. */
     private byte[] token;
-    private String topologyName;
+    private String name;
 
-    public SaslStormClientHandler(Client client) throws IOException {
+    public SaslStormClientHandler(ISaslClient client) throws IOException {
         this.client = client;
         start_time = System.currentTimeMillis();
         getSASLCredentials();
@@ -57,7 +55,7 @@ public class SaslStormClientHandler extends ChannelInboundHandlerAdapter {
             if (saslNettyClient == null) {
                 LOG.debug("Creating saslNettyClient now " + "for channel: "
                         + channel);
-                saslNettyClient = new SaslNettyClient(topologyName, token);
+                saslNettyClient = new SaslNettyClient(name, token);
                 ctx.attr(SaslNettyClientState.SASL_NETTY_CLIENT).set(saslNettyClient);
             }
             channel.writeAndFlush(ControlMessage.SASL_TOKEN_MESSAGE_REQUEST);
@@ -86,7 +84,7 @@ public class SaslStormClientHandler extends ChannelInboundHandlerAdapter {
             ControlMessage controlMessage = (ControlMessage) msg;
             if (controlMessage == ControlMessage.SASL_COMPLETE_REQUEST) {
                 LOG.debug("Server has sent us the SaslComplete "
-                        + "message. Allowing normal work to proceed.");
+                          + "message. Allowing normal work to proceed.");
 
                 if (!saslNettyClient.isComplete()) {
                     LOG.error("Server returned a Sasl-complete message, "
@@ -96,6 +94,8 @@ public class SaslStormClientHandler extends ChannelInboundHandlerAdapter {
                             + "we can tell, we are not authenticated yet.");
                 }
                 ctx.pipeline().remove(this);
+                this.client.channelReady();
+
                 // We call fireMessageReceived since the client is allowed to
                 // perform this request. The client's request will now proceed
                 // to the next pipeline component namely StormClientHandler.
@@ -106,7 +106,7 @@ public class SaslStormClientHandler extends ChannelInboundHandlerAdapter {
 
         SaslMessageToken saslTokenMessage = (SaslMessageToken) msg;
         LOG.debug("Responding to server's token of length: "
-                + saslTokenMessage.getSaslToken().length);
+                  + saslTokenMessage.getSaslToken().length);
 
         // Generate SASL response (but we only actually send the response if
         // it's non-null.
@@ -117,17 +117,18 @@ public class SaslStormClientHandler extends ChannelInboundHandlerAdapter {
             // (if not, warn), and return without sending a response back to the
             // server.
             LOG.debug("Response to server is null: "
-                    + "authentication should now be complete.");
+                      + "authentication should now be complete.");
             if (!saslNettyClient.isComplete()) {
                 LOG.warn("Generated a null response, "
                         + "but authentication is not complete.");
-                throw new Exception("Server reponse is null, but as far as "
+                throw new Exception("Server response is null, but as far as "
                         + "we can tell, we are not authenticated yet.");
             }
+            this.client.channelReady();
             return;
         } else {
             LOG.debug("Response to server token has length:"
-                    + responseToServer.length);
+                      + responseToServer.length);
         }
         // Construct a message containing the SASL response and send it to the
         // server.
@@ -136,12 +137,14 @@ public class SaslStormClientHandler extends ChannelInboundHandlerAdapter {
     }
 
     private void getSASLCredentials() throws IOException {
-        topologyName = (String) this.client.getStormConf().get(Config.TOPOLOGY_NAME);
-        String secretKey = SaslUtils.getSecretKey(this.client.getStormConf());
+        String secretKey;
+        name = client.name();
+        secretKey = client.secretKey();
+
         if (secretKey != null) {
             token = secretKey.getBytes();
         }
-        LOG.debug("SASL credentials for storm topology " + topologyName
+        LOG.debug("SASL credentials for storm topology " + name
                 + " is " + secretKey);
     }
 }

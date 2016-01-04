@@ -24,7 +24,7 @@ import io.netty.buffer.Unpooled;
 
 import java.io.IOException;
 
-enum ControlMessage {
+public enum ControlMessage implements INettySerializable {
     CLOSE_MESSAGE((short)-100),
     EOB_MESSAGE((short)-201),
     OK_RESPONSE((short)-200),
@@ -40,18 +40,17 @@ enum ControlMessage {
     }
 
     /**
-     * Return a control message per an encoded status code
-     * @param encoded
-     * @return
+     * @param encoded status code
+     * @return a control message per an encoded status code
      */
-    static ControlMessage mkMessage(short encoded) {
+    public static ControlMessage mkMessage(short encoded) {
         for(ControlMessage cm: ControlMessage.values()) {
           if(encoded == cm.code) return cm;
         }
         return null;
     }
 
-    int encodeLength() {
+    public int encodeLength() {
         return 2; //short
     }
     
@@ -59,7 +58,7 @@ enum ControlMessage {
      * encode the current Control Message into a channel buffer
      * @throws Exception if failed to write to buffer
      */
-    ByteBuf buffer(ByteBufAllocator allocator) throws IOException {
+    public ByteBuf buffer(ByteBufAllocator allocator) throws IOException {
         ByteBufOutputStream bout = new ByteBufOutputStream(allocator.ioBuffer(encodeLength()));
         write(bout);
         bout.close();
@@ -67,6 +66,12 @@ enum ControlMessage {
     }
 
     void write(ByteBufOutputStream bout) throws IOException {
-        bout.writeShort(code);        
-    } 
+        bout.writeShort(code);
+    }
+
+    public static ControlMessage read(byte[] serial) {
+        // TODO: fix allocation
+        ByteBuf cm_buffer = Unpooled.copiedBuffer(serial);
+        return mkMessage(cm_buffer.getShort(0));
+    }
 }

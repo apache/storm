@@ -19,6 +19,7 @@ package backtype.storm.messaging.netty;
 
 import backtype.storm.messaging.TaskMessage;
 import com.google.common.collect.ImmutableList;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.slf4j.Logger;
@@ -26,19 +27,21 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-class StormServerHandler extends ChannelInboundHandlerAdapter {
+public class StormServerHandler extends ChannelInboundHandlerAdapter {
+
     private static final Logger LOG = LoggerFactory.getLogger(StormServerHandler.class);
-    Server server;
+    IServer server;
     private AtomicInteger failure_count; 
+    private Channel channel;
     
-    StormServerHandler(Server server) {
+    public StormServerHandler(IServer server) {
         this.server = server;
         failure_count = new AtomicInteger(0);
     }
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) {
-        server.addChannel(ctx.channel());
+        server.channelConnected(ctx.channel());
     }
 
     @Override
@@ -46,7 +49,7 @@ class StormServerHandler extends ChannelInboundHandlerAdapter {
       TaskMessage taskMessage = (TaskMessage) msg;
 
       try {
-        server.enqueue(ImmutableList.of(taskMessage), ctx.channel().remoteAddress().toString());
+        server.received(ImmutableList.of(taskMessage), ctx.channel().remoteAddress().toString(), ctx.channel());
       } catch (InterruptedException e1) {
         LOG.info("failed to enqueue a request message", e1);
         failure_count.incrementAndGet();

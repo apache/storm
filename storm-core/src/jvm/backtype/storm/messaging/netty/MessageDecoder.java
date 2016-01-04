@@ -69,7 +69,7 @@ public class MessageDecoder extends ByteToMessageDecoder {
             }
             
             //case 2: SaslTokenMessageRequest
-            if(code==-500) {
+            if(code == SaslMessageToken.IDENTIFIER) {
             	// Make sure that we have received at least an integer (length) 
                 if (buf.readableBytes() < 4) {
                     //need more data
@@ -101,7 +101,6 @@ public class MessageDecoder extends ByteToMessageDecoder {
             }
 
             // case 3: task Message
-            short task = code;
 
             // Make sure that we have received at least an integer (length)
             if (available < 4) {
@@ -116,7 +115,7 @@ public class MessageDecoder extends ByteToMessageDecoder {
             available -= 4;
 
             if (length <= 0) {
-                out.add(new TaskMessage(task, null));
+                out.add(new TaskMessage(code, null));
                 break;
             }
 
@@ -134,7 +133,7 @@ public class MessageDecoder extends ByteToMessageDecoder {
 
             // Successfully decoded a frame.
             // Return a TaskMessage object
-            out.add(new TaskMessage(task, payload.array()));
+            out.add(new TaskMessage(code, payload.array()));
         }
     }
 
