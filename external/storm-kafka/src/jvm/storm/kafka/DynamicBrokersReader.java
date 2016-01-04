@@ -56,7 +56,7 @@ public class DynamicBrokersReader {
 
         _zkPath = zkPath;
         _topic = topic;
-        _isWildcardTopic = Utils.getBoolean(conf.get("kafka.topic.wildcard.match"), false);
+        _isWildcardTopic = getBoolean(conf.get("kafka.topic.wildcard.match"), false);
         try {
             _curator = CuratorFrameworkFactory.newClient(
                     zkStr,
@@ -208,6 +208,16 @@ public class DynamicBrokersReader {
                 "%s cannot be null", Config.STORM_ZOOKEEPER_RETRY_TIMES);
         Preconditions.checkNotNull(conf.get(Config.STORM_ZOOKEEPER_RETRY_INTERVAL),
                 "%s cannot be null", Config.STORM_ZOOKEEPER_RETRY_INTERVAL);
+    }
+
+    public static boolean getBoolean(Object o, boolean defaultValue) {
+        if(null == o) {
+            return defaultValue;
+        } else if(o instanceof Boolean) {
+            return ((Boolean)o).booleanValue();
+        } else {
+            throw new IllegalArgumentException("Don\'t know how to convert " + o + " + to boolean");
+        }
     }
 
 }

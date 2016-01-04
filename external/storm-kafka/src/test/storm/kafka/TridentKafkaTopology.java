@@ -79,6 +79,7 @@ public class TridentKafkaTopology {
     public static void main(String[] args) throws Exception {
         if(args.length < 1) {
             System.out.println("Please provide kafka broker url ,e.g. localhost:9092");
+            System.exit(1);
         }
 
         LocalCluster cluster = new LocalCluster();

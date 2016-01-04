@@ -17,7 +17,6 @@
  */
 package storm.kafka;
 
-import backtype.storm.Config;
 import backtype.storm.utils.Utils;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -33,20 +32,29 @@ import java.util.List;
 import java.util.Map;
 
 public class ZkState {
+
+    public static final String TRANSACTIONAL_ZOOKEEPER_SERVERS = "transactional.zookeeper.servers";
+    public static final String TRANSACTIONAL_ZOOKEEPER_PORT = "transactional.zookeeper.port";
+    public static final String STORM_ZOOKEEPER_SESSION_TIMEOUT = "storm.zookeeper.session.timeout";
+    public static final String STORM_ZOOKEEPER_CONNECTION_TIMEOUT = "storm.zookeeper.connection.timeout";
+    public static final String STORM_ZOOKEEPER_RETRY_TIMES = "storm.zookeeper.retry.times";
+    public static final String STORM_ZOOKEEPER_RETRY_INTERVAL = "storm.zookeeper.retry.interval";
+
+
     public static final Logger LOG = LoggerFactory.getLogger(ZkState.class);
     CuratorFramework _curator;
 
     private CuratorFramework newCurator(Map stateConf) throws Exception {
-        Integer port = (Integer) stateConf.get(Config.TRANSACTIONAL_ZOOKEEPER_PORT);
+        Integer port = (Integer) stateConf.get(TRANSACTIONAL_ZOOKEEPER_PORT);
         String serverPorts = "";
-        for (String server : (List<String>) stateConf.get(Config.TRANSACTIONAL_ZOOKEEPER_SERVERS)) {
+        for (String server : (List<String>) stateConf.get(TRANSACTIONAL_ZOOKEEPER_SERVERS)) {
             serverPorts = serverPorts + server + ":" + port + ",";
         }
         return CuratorFrameworkFactory.newClient(serverPorts,
-                Utils.getInt(stateConf.get(Config.STORM_ZOOKEEPER_SESSION_TIMEOUT)),
-                Utils.getInt(stateConf.get(Config.STORM_ZOOKEEPER_CONNECTION_TIMEOUT)),
-                new RetryNTimes(Utils.getInt(stateConf.get(Config.STORM_ZOOKEEPER_RETRY_TIMES)),
-                        Utils.getInt(stateConf.get(Config.STORM_ZOOKEEPER_RETRY_INTERVAL))));
+                Utils.getInt(stateConf.get(STORM_ZOOKEEPER_SESSION_TIMEOUT)),
+                Utils.getInt(stateConf.get(STORM_ZOOKEEPER_CONNECTION_TIMEOUT)),
+                new RetryNTimes(Utils.getInt(stateConf.get(STORM_ZOOKEEPER_RETRY_TIMES)),
+                        Utils.getInt(stateConf.get(STORM_ZOOKEEPER_RETRY_INTERVAL))));
     }
 
     public CuratorFramework getCurator() {
