@@ -50,13 +50,13 @@ public class SaslStormClientHandler extends ChannelInboundHandlerAdapter {
                 + " to " + channel.remoteAddress());
 
         try {
-            SaslNettyClient saslNettyClient = ctx.attr(SaslNettyClientState.SASL_NETTY_CLIENT).get();
+            SaslNettyClient saslNettyClient = ctx.channel().attr(SaslNettyClientState.SASL_NETTY_CLIENT).get();
 
             if (saslNettyClient == null) {
                 LOG.debug("Creating saslNettyClient now " + "for channel: "
                         + channel);
                 saslNettyClient = new SaslNettyClient(name, token);
-                ctx.attr(SaslNettyClientState.SASL_NETTY_CLIENT).set(saslNettyClient);
+                ctx.channel().attr(SaslNettyClientState.SASL_NETTY_CLIENT).set(saslNettyClient);
             }
             channel.writeAndFlush(ControlMessage.SASL_TOKEN_MESSAGE_REQUEST);
         } catch (Exception e) {
@@ -73,7 +73,7 @@ public class SaslStormClientHandler extends ChannelInboundHandlerAdapter {
         Channel channel = ctx.channel();
 
         // Generate SASL response to server using Channel-local SASL client.
-        SaslNettyClient saslNettyClient = ctx.attr(SaslNettyClientState.SASL_NETTY_CLIENT).get();
+        SaslNettyClient saslNettyClient = ctx.channel().attr(SaslNettyClientState.SASL_NETTY_CLIENT).get();
         if (saslNettyClient == null) {
             throw new Exception("saslNettyClient was unexpectedly "
                     + "null for channel: " + channel);

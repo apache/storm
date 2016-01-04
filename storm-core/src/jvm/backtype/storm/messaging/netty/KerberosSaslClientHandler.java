@@ -64,7 +64,7 @@ public class KerberosSaslClientHandler extends ChannelInboundHandlerAdapter {
             LOG.debug("Going to initiate Kerberos negotiations.");
             byte[] initialChallenge = saslNettyClient.saslResponse(new SaslMessageToken(new byte[0]));
             LOG.debug("Sending initial challenge: {}", initialChallenge);
-            channel.write(new SaslMessageToken(initialChallenge));
+            channel.writeAndFlush(new SaslMessageToken(initialChallenge));
         } catch (Exception e) {
             LOG.error("Failed to authenticate with server due to error: ",
                       e);
@@ -132,7 +132,7 @@ public class KerberosSaslClientHandler extends ChannelInboundHandlerAdapter {
             // Construct a message containing the SASL response and send it to the
             // server.
             SaslMessageToken saslResponse = new SaslMessageToken(responseToServer);
-            channel.write(saslResponse);
+            channel.writeAndFlush(saslResponse);
         } else {
             LOG.error("Unexpected message from server: {}", rawMsg);
         }

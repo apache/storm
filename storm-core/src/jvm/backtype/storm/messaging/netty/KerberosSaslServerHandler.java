@@ -61,12 +61,12 @@ public class KerberosSaslServerHandler extends ChannelInboundHandlerAdapter {
             try {
                 LOG.debug("Got SaslMessageToken!");
 
-                KerberosSaslNettyServer saslNettyServer = ctx.attr(KerberosSaslNettyServerState.KERBOROS_SAS_NETTY_SERVER).get();
+                KerberosSaslNettyServer saslNettyServer = ctx.attr(KerberosSaslNettyServerState.KERBOROS_SASL_NETTY_SERVER).get();
                 if (saslNettyServer == null) {
                     LOG.debug("No saslNettyServer for {}  yet; creating now, with topology token: ", channel);
                     try {
                         saslNettyServer = new KerberosSaslNettyServer(storm_conf, jaas_section, authorizedUsers);
-                        ctx.attr(KerberosSaslNettyServerState.KERBOROS_SAS_NETTY_SERVER).set(saslNettyServer);
+                        ctx.attr(KerberosSaslNettyServerState.KERBOROS_SASL_NETTY_SERVER).set(saslNettyServer);
                     } catch (RuntimeException ioe) {
                         LOG.error("Error occurred while creating saslNettyServer on server {} for client {}",
                                   channel.localAddress(), channel.remoteAddress());
@@ -83,10 +83,10 @@ public class KerberosSaslServerHandler extends ChannelInboundHandlerAdapter {
                 SaslMessageToken saslTokenMessageRequest = new SaslMessageToken(responseBytes);
 
                 if(saslTokenMessageRequest.getSaslToken() == null) {
-                    channel.write(ControlMessage.SASL_COMPLETE_REQUEST);
+                    channel.writeAndFlush(ControlMessage.SASL_COMPLETE_REQUEST);
                 } else {
                     // Send response to client.
-                    channel.write(saslTokenMessageRequest);
+                    channel.writeAndFlush(saslTokenMessageRequest);
                 }
 
                 if (saslNettyServer.isComplete()) {
@@ -94,7 +94,7 @@ public class KerberosSaslServerHandler extends ChannelInboundHandlerAdapter {
                     // SASL-Complete message to the client.
                     LOG.info("SASL authentication is complete for client with username: {}",
                              saslNettyServer.getUserName());
-                    channel.write(ControlMessage.SASL_COMPLETE_REQUEST);
+                    channel.writeAndFlush(ControlMessage.SASL_COMPLETE_REQUEST);
                     LOG.debug("Removing SaslServerHandler from pipeline since SASL authentication is complete.");
                     ctx.pipeline().remove(this);
                     server.authenticated(channel);

@@ -22,5 +22,5 @@ import io.netty.util.AttributeKey;
 
 final class SaslNettyServerState {
 
-	public static final AttributeKey<SaslNettyServer> SAS_NETTY_SERVER = AttributeKey.valueOf("sas.netty.server");
+	public static final AttributeKey<SaslNettyServer> SASL_NETTY_SERVER = AttributeKey.valueOf("sasl.netty.server");
 }

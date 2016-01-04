@@ -19,7 +19,6 @@ package backtype.storm.messaging.netty;
 
 import backtype.storm.messaging.TaskMessage;
 import com.google.common.collect.ImmutableList;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.slf4j.Logger;
@@ -32,8 +31,7 @@ public class StormServerHandler extends ChannelInboundHandlerAdapter {
     private static final Logger LOG = LoggerFactory.getLogger(StormServerHandler.class);
     IServer server;
     private AtomicInteger failure_count; 
-    private Channel channel;
-    
+
     public StormServerHandler(IServer server) {
         this.server = server;
         failure_count = new AtomicInteger(0);

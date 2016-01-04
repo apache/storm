@@ -47,14 +47,14 @@ public class SaslStormServerHandler extends ChannelInboundHandlerAdapter {
 
         Channel channel = ctx.channel();
 
-        if (msg instanceof ControlMessage && ((ControlMessage) msg) == ControlMessage.SASL_TOKEN_MESSAGE_REQUEST) {
+        if (msg instanceof ControlMessage && msg == ControlMessage.SASL_TOKEN_MESSAGE_REQUEST) {
             // initialize server-side SASL functionality, if we haven't yet
             // (in which case we are looking at the first SASL message from the
             // client).
-            SaslNettyServer saslNettyServer = ctx.attr(SaslNettyServerState.SAS_NETTY_SERVER).get();
+            SaslNettyServer saslNettyServer = ctx.channel().attr(SaslNettyServerState.SASL_NETTY_SERVER).get();
             if (saslNettyServer == null) {
                 LOG.debug("No saslNettyServer for " + channel
-                        + " yet; creating now, with topology token: ");
+                        + " yet; creating now, with topology token: " + topologyName);
                 try {
                     saslNettyServer = new SaslNettyServer(topologyName, token);
                 } catch (IOException ioe) {
@@ -65,7 +65,17 @@ public class SaslStormServerHandler extends ChannelInboundHandlerAdapter {
                     saslNettyServer = null;
                 }
 
-                ctx.attr(SaslNettyServerState.SAS_NETTY_SERVER).set(saslNettyServer);
+                ctx.channel().attr(SaslNettyServerState.SASL_NETTY_SERVER).set(saslNettyServer);
+                if (ctx.channel().attr(SaslNettyServerState.SASL_NETTY_SERVER).get() == null) {
+                    throw new IllegalStateException("Failed to set SaslNettyServerState.SASL_NETTY_SERVER");
+                } else {
+                    LOG.debug("SaslNettyServer for " + channel
+                            + "created with topology token: " + topologyName);
+                    LOG.debug("context is: " + ctx);
+                    LOG.debug("channel is: " + ctx.channel());
+                    LOG.debug("context attributes are: " + ctx.channel().attr(SaslNettyServerState.SASL_NETTY_SERVER));
+                }
+
             } else {
                 LOG.debug("Found existing saslNettyServer on server:"
                         + channel.localAddress() + " for client "
@@ -89,7 +99,7 @@ public class SaslStormServerHandler extends ChannelInboundHandlerAdapter {
             // initialize server-side SASL functionality, if we haven't yet
             // (in which case we are looking at the first SASL message from the
             // client).
-            SaslNettyServer saslNettyServer = ctx.attr(SaslNettyServerState.SAS_NETTY_SERVER).get();
+            SaslNettyServer saslNettyServer = ctx.channel().attr(SaslNettyServerState.SASL_NETTY_SERVER).get();
             if (saslNettyServer == null) {
                 throw new Exception("saslNettyServer was unexpectedly "
                         + "null for channel: " + channel);

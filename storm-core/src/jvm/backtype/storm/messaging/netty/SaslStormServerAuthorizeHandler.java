@@ -17,7 +17,6 @@
  */
 package backtype.storm.messaging.netty;
 
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.slf4j.Logger;
@@ -42,12 +41,15 @@ public class SaslStormServerAuthorizeHandler extends ChannelInboundHandlerAdapte
 		if (msg == null)
 			return;
 
-		Channel channel = ctx.channel();
 		LOG.debug("messageReceived: Checking whether the client is authorized to send messages to the server ");
+
+		LOG.debug("context is: " + ctx);
+		LOG.debug("channel is: " + ctx.channel());
+		LOG.debug("context attributes are: " + ctx.channel().attr(SaslNettyServerState.SASL_NETTY_SERVER));
 
 		// Authorize: client is allowed to doRequest() if and only if the client
 		// has successfully authenticated with this server.
-		SaslNettyServer saslNettyServer = ctx.attr(SaslNettyServerState.SAS_NETTY_SERVER).get();
+		SaslNettyServer saslNettyServer = ctx.channel().attr(SaslNettyServerState.SASL_NETTY_SERVER).get();
 
 		if (saslNettyServer == null) {
 			LOG.warn("messageReceived: This client is *NOT* authorized to perform "

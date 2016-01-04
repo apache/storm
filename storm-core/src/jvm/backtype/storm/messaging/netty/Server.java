@@ -176,7 +176,7 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
         try {
             MessageBatch mb = new MessageBatch(1);
             mb.add(new TaskMessage(-1, _ser.serialize(Arrays.asList((Object)taskToLoad))));
-            allChannels.write(mb);
+            allChannels.writeAndFlush(mb);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

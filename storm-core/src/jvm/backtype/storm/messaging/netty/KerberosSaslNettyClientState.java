@@ -21,5 +21,5 @@ import io.netty.util.AttributeKey;
 
 final class KerberosSaslNettyClientState {
 
-    public static final AttributeKey<KerberosSaslNettyClient> KERBEROS_SASL_NETTY_CLIENT = AttributeKey.valueOf("kerberos.sas.netty.client");
+    public static final AttributeKey<KerberosSaslNettyClient> KERBEROS_SASL_NETTY_CLIENT = AttributeKey.valueOf("kerberos.sasl.netty.client");
 }
