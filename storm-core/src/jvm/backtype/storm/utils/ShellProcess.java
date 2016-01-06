@@ -24,6 +24,7 @@ import backtype.storm.multilang.NoOutputException;
 import backtype.storm.multilang.ShellMsg;
 import backtype.storm.multilang.SpoutMsg;
 import backtype.storm.task.TopologyContext;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -142,34 +143,15 @@ public class ShellProcess implements Serializable {
     }
 
     public void logErrorStream() {
-        try {
-            while (processErrorStream.available() > 0) {
-                int bufferSize = processErrorStream.available();
-                byte[] errorReadingBuffer = new byte[bufferSize];
-                processErrorStream.read(errorReadingBuffer, 0, bufferSize);
-                ShellLogger.info(new String(errorReadingBuffer));
-            }
-        } catch (Exception e) {
+        final String errorsString = getErrorStreamMessage();
+        if (errorsString != null) {
+            ShellLogger.info(errorsString);
         }
     }
 
     public String getErrorsString() {
-        if (processErrorStream != null) {
-            try {
-                StringBuilder sb = new StringBuilder();
-                while (processErrorStream.available() > 0) {
-                    int bufferSize = processErrorStream.available();
-                    byte[] errorReadingBuffer = new byte[bufferSize];
-                    processErrorStream.read(errorReadingBuffer, 0, bufferSize);
-                    sb.append(new String(errorReadingBuffer));
-                }
-                return sb.toString();
-            } catch (IOException e) {
-                return "(Unable to capture error stream)";
-            }
-        } else {
-            return "";
-        }
+        final String message = getErrorStreamMessage();
+        return message != null ? message : "";
     }
 
     /**
@@ -206,5 +188,37 @@ public class ShellProcess implements Serializable {
 
     public String getProcessTerminationInfoString() {
         return String.format(" exitCode:%s, errorString:%s ", getExitCode(), getErrorsString());
+    }
+
+    /**
+     * Must never block since part of critical shutdown sequence
+     * @return error message or null if not currently available
+     */
+    private String getErrorStreamMessage() {
+        if (processErrorStream != null) {
+            ByteArrayOutputStream out = null;
+            try {
+                int bufferSize, offset = 0;
+                while ((bufferSize = processErrorStream.available()) > 0){
+                    if (out == null) {
+                        out = new ByteArrayOutputStream();
+                    }
+                    final byte[] buffer = new byte[bufferSize];
+                    final int read = processErrorStream.read(buffer, 0, bufferSize);
+                    out.write(buffer, offset, bufferSize);
+                    offset += read;
+                }
+
+                if (offset > 0)
+                    return new String(out.toByteArray());
+            } catch (Exception e) {
+                return "(Unable to capture error stream, error: [" + e.getMessage() + "])";
+            } finally {
+                if (out != null) {
+                    IOUtils.closeQuietly(out);
+                }
+            }
+        }
+        return null;
     }
 }
