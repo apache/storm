@@ -162,8 +162,8 @@ public class KafkaUtilsTest {
     }
 
     @Test
-    public void generateTuplesWithValueAndStringMultiSchemeWithTopic() {
-        config.scheme = new StringMultiSchemeWithTopic();
+    public void generateTuplesWithValueAndTopic() {
+        config.scheme = new SchemeAsMultiSchemeWithTopic(new StringScheme());
         String value = "value";
         createTopicAndSendMessage(value);
         ByteBufferMessageSet messageAndOffsets = getLastMessage();
