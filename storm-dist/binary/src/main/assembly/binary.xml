@@ -125,7 +125,12 @@
             <outputDirectory>external/storm-hdfs</outputDirectory>
             <includes>
                 <include>storm*jar</include>
+				<include>hadoop-aws*jar</include>
+				<include>hadoop-azure*jar</include>
             </includes>
+            <excludes>
+              <exclude>*-test*.jar</exclude>
+            </excludes>
         </fileSet>
         <fileSet>
             <directory>${project.basedir}/../../external/storm-hdfs</directory>
@@ -140,6 +145,9 @@
             <includes>
                 <include>storm*jar</include>
             </includes>
+            <excludes>
+              <exclude>*-test*.jar</exclude>
+            </excludes>
         </fileSet>
         <fileSet>
             <directory>${project.basedir}/../../external/storm-hbase</directory>
@@ -154,6 +162,9 @@
             <includes>
                 <include>storm*jar</include>
             </includes>
+            <excludes>
+              <exclude>*-test*.jar</exclude>
+            </excludes>
         </fileSet>
         <fileSet>
             <directory>${project.basedir}/../../external/storm-jdbc</directory>
@@ -168,6 +179,9 @@
             <includes>
                 <include>storm*jar</include>
             </includes>
+            <excludes>
+              <exclude>*-test*.jar</exclude>
+            </excludes>
         </fileSet>
         <fileSet>
             <directory>${project.basedir}/../../external/storm-hive</directory>
@@ -177,11 +191,31 @@
             </includes>
         </fileSet>
         <fileSet>
+            <directory>${project.basedir}/../../external/storm-jmxetric</directory>
+            <outputDirectory>external/storm-jmxetric</outputDirectory>
+            <includes>
+                <include>*/**</include>
+            </includes>
+        </fileSet>
+               <fileSet>
+           <directory>${project.basedir}/../../external/storm-jms/target</directory>
+           <outputDirectory>external/storm-jms</outputDirectory>
+           <includes>
+                <include>storm*jar</include>
+           </includes>
+            <excludes>
+              <exclude>*-test*.jar</exclude>
+            </excludes>
+       </fileSet>
+        <fileSet>
             <directory>${project.basedir}/../../external/storm-eventhubs/target</directory>
             <outputDirectory>external/storm-eventhubs</outputDirectory>
             <includes>
                 <include>storm*jar</include>
             </includes>
+            <excludes>
+              <exclude>*-test*.jar</exclude>
+            </excludes>
         </fileSet>
         <fileSet>
             <directory>${project.basedir}/../../external/storm-eventhubs</directory>
@@ -204,7 +238,11 @@
             <includes>
                 <include>storm*jar</include>
             </includes>
+            <excludes>
+              <exclude>*-test*.jar</exclude>
+            </excludes>
         </fileSet>
+
         <fileSet>
             <directory>${project.basedir}/../../external/storm-elasticsearch</directory>
             <outputDirectory>external/storm-elasticsearch</outputDirectory>
@@ -219,6 +257,9 @@
             <includes>
                 <include>flux*jar</include>
             </includes>
+            <excludes>
+              <exclude>*-test*.jar</exclude>
+            </excludes>
         </fileSet>
         <fileSet>
             <directory>${project.basedir}/../../external/flux/flux-wrappers/target</directory>
@@ -226,6 +267,9 @@
             <includes>
                 <include>flux*jar</include>
             </includes>
+            <excludes>
+              <exclude>*-test*.jar</exclude>
+            </excludes>
         </fileSet>
         <fileSet>
             <directory>${project.basedir}/../../external/flux/flux-examples/target</directory>
@@ -233,6 +277,9 @@
             <includes>
                 <include>flux*jar</include>
             </includes>
+            <excludes>
+              <exclude>*-test*.jar</exclude>
+            </excludes>
         </fileSet>
         <fileSet>
             <directory>${project.basedir}/../../external/flux/flux-examples</directory>
@@ -261,6 +308,9 @@
             <includes>
                 <include>storm*jar</include>
             </includes>
+            <excludes>
+              <exclude>*-test*.jar</exclude>
+            </excludes>
         </fileSet>
         <fileSet>
             <directory>${project.basedir}/../../external/storm-redis</directory>
@@ -347,6 +397,9 @@
             <includes>
                 <include>README.*</include>
             </includes>
+            <excludes>
+              <exclude>*-test*.jar</exclude>
+            </excludes>
         </fileSet>
         <fileSet>
             <directory>${project.basedir}/../../external/storm-mqtt/core/target</directory>
