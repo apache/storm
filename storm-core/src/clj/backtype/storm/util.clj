@@ -22,6 +22,8 @@
   (:import [backtype.storm Config])
   (:import [backtype.storm.utils Time Container ClojureTimerTask Utils
             MutableObject MutableInt])
+  (:import [backtype.storm.security.auth NimbusPrincipal])
+  (:import [javax.security.auth Subject])
   (:import [java.util UUID Random ArrayList List Collections])
   (:import [java.util.zip ZipFile])
   (:import [java.util.concurrent.locks ReentrantReadWriteLock])
@@ -1028,6 +1030,10 @@
   (let [klass (if (string? klass) (Class/forName klass) klass)]
     (.newInstance klass)))
 
+(defn get-configured-class
+  [conf config-key]
+  (if (.get conf config-key) (new-instance (.get conf config-key)) nil))
+
 (defmacro -<>
   ([x] x)
   ([x form] (if (seq? form)
@@ -1037,10 +1043,6 @@
                 (meta form))
               (list form x)))
   ([x form & more] `(-<> (-<> ~x ~form) ~@more)))
-
-(def LOG-DIR
-  (.getCanonicalPath 
-                (clojure.java.io/file (System/getProperty "storm.home") "logs")))
 
 (defn logs-filename
   [storm-id port]
@@ -1062,6 +1064,22 @@
 (defn hashmap-to-persistent [^HashMap m]
   (zipmap (.keySet m) (.values m)))
 
+(defn retry-on-exception
+  "Retries specific function on exception based on retries count"
+  [retries task-description f & args]
+  (let [res (try {:value (apply f args)}
+              (catch Exception e
+                (if (<= 0 retries)
+                  (throw e)
+                  {:exception e})))]
+    (if (:exception res)
+      (do 
+        (log-error (:exception res) (str "Failed to " task-description ". Will make [" retries "] more attempts."))
+        (recur (dec retries) task-description f args))
+      (do 
+        (log-debug (str "Successful " task-description "."))
+        (:value res)))))
+
 (defn setup-default-uncaught-exception-handler
   "Set a default uncaught exception handler to handle exceptions not caught in other threads."
   []
@@ -1082,7 +1100,19 @@
     (assoc coll k (apply str (repeat (count (coll k)) "#")))
     coll))
 
-(defn log-thrift-access [request-id remoteAddress principal operation]
+(defn log-thrift-access
+  [request-id remoteAddress principal operation]
   (doto
     (ThriftAccessLogger.)
     (.log (str "Request ID: " request-id " access from: " remoteAddress " principal: " principal " operation: " operation))))
+
+(def DISALLOWED-KEY-NAME-STRS #{"/" "." ":" "\\"})
+
+(defn validate-key-name!
+  [name]
+  (if (some #(.contains name %) DISALLOWED-KEY-NAME-STRS)
+    (throw (RuntimeException.
+             (str "Key name cannot contain any of the following: " (pr-str DISALLOWED-KEY-NAME-STRS))))
+    (if (clojure.string/blank? name)
+      (throw (RuntimeException.
+               ("Key name cannot be blank"))))))

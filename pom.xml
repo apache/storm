@@ -147,6 +147,24 @@
             </roles>
             <timezone>+1</timezone>
         </developer>
+        <developer>
+            <id>dossett</id>
+            <name>Aaron Dossett</name>
+            <email>dossett@apache.org</email>
+            <roles>
+                <role>Committer</role>
+            </roles>
+            <timezone>-6</timezone>
+        </developer>
+        <developer>
+            <id>jerrypeng</id>
+            <name>Boyang Jerry Peng</name>
+            <email>jerrypeng@apache.org</email>
+            <roles>
+                <role>Committer</role>
+            </roles>
+            <timezone>-6</timezone>
+        </developer>
     </developers>
 
 
@@ -172,8 +190,10 @@
 
         <!-- dependency versions -->
         <clojure.version>1.7.0</clojure.version>
+        <java_jmx.version>0.3.1</java_jmx.version>
         <compojure.version>1.1.3</compojure.version>
         <hiccup.version>0.3.6</hiccup.version>
+        <commons-compress.version>1.4.1</commons-compress.version>
         <commons-io.version>2.4</commons-io.version>
         <commons-lang.version>2.5</commons-lang.version>
         <commons-exec.version>1.1</commons-exec.version>
@@ -216,6 +236,15 @@
         <junit.version>4.11</junit.version>
         <metrics-clojure.version>2.5.1</metrics-clojure.version>
         <hdrhistogram.version>2.1.7</hdrhistogram.version>
+        <calcite.version>1.4.0-incubating</calcite.version>
+        <jackson.version>2.6.3</jackson.version>
+        <maven-surefire.version>2.18.1</maven-surefire.version>
+
+        <!-- Java and clojure build lifecycle test properties are defined here to avoid having to create a default profile -->
+        <java.unit.test.exclude>backtype.storm.testing.IntegrationTest</java.unit.test.exclude>
+        <java.unit.test.include>**/Test*.java, **/*Test.java, **/*TestCase.java</java.unit.test.include>    <!--maven surefire plugin default test list-->
+        <!-- by default the clojure test set are all clojure tests that are not integration tests. This property is overridden in the profiles -->
+        <clojure.test.set>!integration.*</clojure.test.set>
     </properties>
 
     <modules>
@@ -233,12 +262,23 @@
         <module>external/storm-redis</module>
         <module>external/storm-eventhubs</module>
         <module>external/flux</module>
+        <module>external/sql</module>
         <module>external/storm-elasticsearch</module>
         <module>external/storm-solr</module>
         <module>external/storm-metrics</module>
+        <module>external/storm-cassandra</module>
         <module>examples/storm-starter</module>
     </modules>
 
+    <dependencies>
+        <!-- The JUnit dependency is required for submodules by the maven-surefire-plugin <excludedGroups> configuration -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 
     <profiles>
         <profile>
@@ -319,7 +359,26 @@
                 </plugins>
             </build>
         </profile>
-
+        <profile>
+            <id>all-tests</id>
+            <properties>
+                <java.integration.test.include>**/*.java</java.integration.test.include>
+                <java.integration.test.group>backtype.storm.testing.IntegrationTest</java.integration.test.group>
+                <clojure.test.set>*.*</clojure.test.set>
+            </properties>
+        </profile>
+        <profile>
+            <id>integration-tests-only</id>
+            <properties>
+                <!--Java-->
+                <java.unit.test.include>no.unit.tests</java.unit.test.include>
+                <java.integration.test.include>**/*.java</java.integration.test.include>
+                <java.integration.test.group>backtype.storm.testing.IntegrationTest</java.integration.test.group>
+                <!--Clojure-->
+                <clojure.test.set>integration.*</clojure.test.set>
+                <clojure.test.declared.namespace.only>true</clojure.test.declared.namespace.only>
+            </properties>
+        </profile>
     </profiles>
 
     <distributionManagement>
@@ -351,6 +410,11 @@
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
                 <version>${commons-io.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-compress</artifactId>
+                <version>${commons-compress.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -468,7 +532,12 @@
                 <artifactId>curator-client</artifactId>
                 <version>${curator.version}</version>
             </dependency>
-
+            <dependency>
+                <groupId>org.apache.curator</groupId>
+                <artifactId>curator-test</artifactId>
+                <version>${curator.version}</version>
+                <scope>test</scope>
+            </dependency>
             <dependency>
                 <groupId>com.googlecode.json-simple</groupId>
                 <artifactId>json-simple</artifactId>
@@ -658,11 +727,22 @@
                 <version>${thrift.version}</version>
                 <scope>compile</scope>
             </dependency>
+			<!-- used by examples/storm-starter -->
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>${junit.version}</version>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+              <groupId>org.apache.calcite</groupId>
+              <artifactId>calcite-core</artifactId>
+              <version>${calcite.version}</version>
+            </dependency>
+            <dependency>
+              <groupId>com.fasterxml.jackson.core</groupId>
+              <artifactId>jackson-databind</artifactId>
+              <version>${jackson.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -691,16 +771,38 @@
     </repositories>
 
     <build>
-
         <pluginManagement>
             <plugins>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>2.18.1</version>
+                    <version>${maven-surefire.version}</version>
                     <configuration>
-                      <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                        <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                        <excludedGroups>${java.unit.test.exclude}</excludedGroups>
+                        <includes>
+                            <include>${java.unit.test.include}</include>
+                        </includes>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>${maven-surefire.version}</version>
+                    <configuration>
+                        <includes>
+                            <include>${java.integration.test.include}</include>
+                        </includes>
+                        <groups>${java.integration.test.group}</groups>  <!--set in integration-test the profile-->
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>integration-test</goal>
+                                <goal>verify</goal>
+                            </goals>
+                        </execution>
+                    </executions>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -814,8 +916,11 @@
                         <exclude>**/target/**</exclude>
                         <!-- exclude intellij projects -->
                         <exclude>**/*.iml</exclude>
+                        <exclude>**/.idea/**</exclude>
                         <!-- module specific testing artifacts -->
                         <exclude>**/metastore_db/**</exclude>
+                        <!-- anything written into build should be ignored -->
+                        <exclude>**/build/**</exclude>
 
                         <!-- exclude CHANGELOG, VERSION, AND TODO files -->
                         <exclude>**/CHANGELOG.md</exclude>
@@ -858,7 +963,24 @@
                         <exclude>**/.git/**</exclude>
                         <exclude>**/derby.log</exclude>
                         <exclude>**/src/dev/**</exclude>
+
+                        <!-- StormSQL -->
+                        <exclude>**/src/codegen/config.fmpp</exclude>
+                        <exclude>**/src/codegen/data/Parser.tdd</exclude>
                     </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <configuration>
+                    <doclet>ch.raffael.doclets.pegdown.PegdownDoclet</doclet>
+                    <docletArtifact>
+                        <groupId>ch.raffael.pegdown-doclet</groupId>
+                        <artifactId>pegdown-doclet</artifactId>
+                        <version>1.1</version>
+                    </docletArtifact>
+                    <useStandardDocletOptions>true</useStandardDocletOptions>
                 </configuration>
             </plugin>
         </plugins>

@@ -21,7 +21,7 @@
         ring.middleware.multipart-params)
   (:use [ring.middleware.json :only [wrap-json-params]])
   (:use [hiccup core page-helpers])
-  (:use [backtype.storm config util log stats tuple zookeeper converter])
+  (:use [backtype.storm config util log stats zookeeper converter])
   (:use [backtype.storm.ui helpers])
   (:use [backtype.storm.daemon [common :only [ACKER-COMPONENT-ID ACKER-INIT-STREAM-ID ACKER-ACK-STREAM-ID
                                               ACKER-FAIL-STREAM-ID mk-authorization-handler
@@ -42,6 +42,7 @@
   (:import [backtype.storm.generated AuthorizationException ProfileRequest ProfileAction NodeInfo])
   (:import [backtype.storm.security.auth AuthUtils])
   (:import [backtype.storm.utils VersionInfo])
+  (:import [backtype.storm Config])
   (:import [java.io File])
   (:require [compojure.route :as route]
             [compojure.handler :as handler]
@@ -56,6 +57,7 @@
 (def ^:dynamic *UI-ACL-HANDLER* (mk-authorization-handler (*STORM-CONF* NIMBUS-AUTHORIZER) *STORM-CONF*))
 (def ^:dynamic *UI-IMPERSONATION-HANDLER* (mk-authorization-handler (*STORM-CONF* NIMBUS-IMPERSONATION-AUTHORIZER) *STORM-CONF*))
 (def http-creds-handler (AuthUtils/GetUiHttpCredentialsPlugin *STORM-CONF*))
+(def STORM-VERSION (VersionInfo/getVersion))
 
 (defmeter ui:num-cluster-configuration-http-requests)
 (defmeter ui:num-cluster-summary-http-requests)
@@ -375,7 +377,7 @@
                                 (map #(.get_num_executors ^TopologySummary %))
                                 (reduce +))]
        {"user" user
-        "stormVersion" (str (VersionInfo/getVersion))
+        "stormVersion" STORM-VERSION
         "supervisors" (count sups)
         "topologies" topologies
         "slotsTotal" total-slots
@@ -433,7 +435,12 @@
        "uptimeSeconds" (.get_uptime_secs s)
        "slotsTotal" (.get_num_workers s)
        "slotsUsed" (.get_num_used_workers s)
-       "version" (.get_version s)})}))
+       "totalMem" (get (.get_total_resources s) Config/SUPERVISOR_MEMORY_CAPACITY_MB)
+       "totalCpu" (get (.get_total_resources s) Config/SUPERVISOR_CPU_CAPACITY)
+       "usedMem" (.get_used_mem s)
+       "usedCpu" (.get_used_cpu s)
+       "version" (.get_version s)})
+    "schedulerDisplayResource" (*STORM-CONF* Config/SCHEDULER_DISPLAY_RESOURCE)}))
 
 (defn all-topologies-summary
   ([]
@@ -459,12 +466,13 @@
        "schedulerInfo" (.get_sched_status t)
        "requestedMemOnHeap" (.get_requested_memonheap t)
        "requestedMemOffHeap" (.get_requested_memoffheap t)
-       "requestedMem" (+ (.get_requested_memonheap t) (.get_requested_memoffheap t))
+       "requestedTotalMem" (+ (.get_requested_memonheap t) (.get_requested_memoffheap t))
        "requestedCpu" (.get_requested_cpu t)
        "assignedMemOnHeap" (.get_assigned_memonheap t)
        "assignedMemOffHeap" (.get_assigned_memoffheap t)
        "assignedTotalMem" (+ (.get_assigned_memonheap t) (.get_assigned_memoffheap t))
-       "assignedCpu" (.get_assigned_cpu t)})}))
+       "assignedCpu" (.get_assigned_cpu t)})
+    "schedulerDisplayResource" (*STORM-CONF* Config/SCHEDULER_DISPLAY_RESOURCE)}))
 
 (defn topology-stats [window stats]
   (let [times (stats-times (:emitted stats))
@@ -587,6 +595,7 @@
      "requestedCpu" (.get_requested_cpu topo-info)
      "assignedMemOnHeap" (.get_assigned_memonheap topo-info)
      "assignedMemOffHeap" (.get_assigned_memoffheap topo-info)
+     "assignedTotalMem" (+ (.get_assigned_memonheap topo-info) (.get_assigned_memoffheap topo-info))
      "assignedCpu" (.get_assigned_cpu topo-info)
      "topologyStats" topo-stats
      "spouts" (map (partial comp-agg-stats-json id secure?)
@@ -627,7 +636,8 @@
         "windowHint" window-hint
         "msgTimeout" msg-timeout
         "configuration" topology-conf
-        "visualizationTable" []}))))
+        "visualizationTable" []
+        "schedulerDisplayResource" (*STORM-CONF* Config/SCHEDULER_DISPLAY_RESOURCE)}))))
 
 (defn component-errors
   [errors-list topology-id secure?]
@@ -1276,4 +1286,7 @@
    (catch Exception ex
      (log-error ex))))
 
-(defn -main [] (start-server!))
+(defn -main
+  []
+  (log-message "Starting ui server for storm version '" STORM-VERSION "'")
+  (start-server!))

@@ -18,7 +18,6 @@
 package storm.kafka;
 
 import backtype.storm.metric.api.IMetric;
-import backtype.storm.utils.Utils;
 import com.google.common.base.Preconditions;
 import kafka.api.FetchRequest;
 import kafka.api.FetchRequestBuilder;
@@ -221,12 +220,12 @@ public class KafkaUtils {
         }
         ByteBuffer key = msg.key();
         if (key != null && kafkaConfig.scheme instanceof KeyValueSchemeAsMultiScheme) {
-            tups = ((KeyValueSchemeAsMultiScheme) kafkaConfig.scheme).deserializeKeyAndValue(Utils.toByteArray(key), Utils.toByteArray(payload));
+            tups = ((KeyValueSchemeAsMultiScheme) kafkaConfig.scheme).deserializeKeyAndValue(key, payload);
         } else {
             if (kafkaConfig.scheme instanceof StringMultiSchemeWithTopic) {
-                tups = ((StringMultiSchemeWithTopic)kafkaConfig.scheme).deserializeWithTopic(topic, Utils.toByteArray(payload));
+                tups = ((StringMultiSchemeWithTopic)kafkaConfig.scheme).deserializeWithTopic(topic, payload);
             } else {
-                tups = kafkaConfig.scheme.deserialize(Utils.toByteArray(payload));
+                tups = kafkaConfig.scheme.deserialize(payload);
             }
         }
         return tups;
@@ -237,7 +236,7 @@ public class KafkaUtils {
         if (payload == null) {
             return null;
         }
-        return scheme.deserializeMessageWithMetadata(Utils.toByteArray(payload), partition, offset);
+        return scheme.deserializeMessageWithMetadata(payload, partition, offset);
     }
 
 

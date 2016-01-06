@@ -20,7 +20,7 @@
   (:use [hiccup core page-helpers form-helpers])
   (:use [backtype.storm config util log timer])
   (:use [backtype.storm.ui helpers])
-  (:import [backtype.storm.utils Utils])
+  (:import [backtype.storm.utils Utils VersionInfo])
   (:import [org.slf4j LoggerFactory])
   (:import [java.util Arrays])
   (:import [java.util.zip GZIPInputStream])
@@ -46,6 +46,7 @@
   (:gen-class))
 
 (def ^:dynamic *STORM-CONF* (read-storm-config))
+(def STORM-VERSION (VersionInfo/getVersion))
 
 (defmeter logviewer:num-log-page-http-requests)
 (defmeter logviewer:num-daemonlog-page-http-requests)
@@ -438,49 +439,43 @@
       (unauthorized-user-html user))))
 
 (defn daemonlog-page [fname start length grep user root-dir]
-  (if (or (blank? (*STORM-CONF* UI-FILTER))
-        (authorized-log-user? user fname *STORM-CONF*))
-    (let [file (.getCanonicalFile (File. root-dir fname))
-          file-length (.length file)
-          path (.getCanonicalPath file)
-          zip-file? (.endsWith path ".gz")]
-      (if (and (= (.getCanonicalFile (File. root-dir))
-                 (.getParentFile file))
-            (.exists file))
-        (let [file-length (if zip-file? (Utils/zipFileSize (clojure.java.io/file path)) (.length (clojure.java.io/file path)))
-              length (if length
-                       (min 10485760 length)
-                       default-bytes-per-page)
-              log-files (into [] (filter #(.isFile %) (.listFiles (File. root-dir)))) ;all types of files included
-              files-str (for [file log-files]
-                          (.getName file))
-              reordered-files-str (conj (filter #(not= fname %) files-str) fname)
-              log-string (escape-html
-                           (if (is-txt-file fname)
-                             (if start
-                               (page-file path start length)
-                               (page-file path length))
-                             "This is a binary file and cannot display! You may download the full file."))
-              start (or start (- file-length length))]
-          (if grep
-            (html [:pre#logContent
-                   (if grep
-                     (->> (.split log-string "\n")
-                       (filter #(.contains % grep))
-                       (string/join "\n"))
-                     log-string)])
-            (let [pager-data (if (is-txt-file fname) (pager-links fname start length file-length) nil)]
-              (html (concat (log-file-selection-form reordered-files-str "daemonlog") ; list all daemon logs
-                      pager-data
-                      (daemon-download-link fname)
-                      [[:pre#logContent log-string]]
-                      pager-data)))))
-        (-> (resp/response "Page not found")
-          (resp/status 404))))
-    (if (nil? (get-log-user-group-whitelist fname))
+  (let [file (.getCanonicalFile (File. root-dir fname))
+        file-length (.length file)
+        path (.getCanonicalPath file)
+        zip-file? (.endsWith path ".gz")]
+    (if (and (= (.getCanonicalFile (File. root-dir))
+                (.getParentFile file))
+             (.exists file))
+      (let [file-length (if zip-file? (Utils/zipFileSize (clojure.java.io/file path)) (.length (clojure.java.io/file path)))
+            length (if length
+                     (min 10485760 length)
+                     default-bytes-per-page)
+            log-files (into [] (filter #(.isFile %) (.listFiles (File. root-dir)))) ;all types of files included
+            files-str (for [file log-files]
+                        (.getName file))
+            reordered-files-str (conj (filter #(not= fname %) files-str) fname)
+            log-string (escape-html
+                         (if (is-txt-file fname)
+                           (if start
+                             (page-file path start length)
+                             (page-file path length))
+                           "This is a binary file and cannot display! You may download the full file."))
+            start (or start (- file-length length))]
+        (if grep
+          (html [:pre#logContent
+                 (if grep
+                   (->> (.split log-string "\n")
+                        (filter #(.contains % grep))
+                        (string/join "\n"))
+                   log-string)])
+          (let [pager-data (if (is-txt-file fname) (pager-links fname start length file-length) nil)]
+            (html (concat (log-file-selection-form reordered-files-str "daemonlog") ; list all daemon logs
+                          pager-data
+                          (daemon-download-link fname)
+                          [[:pre#logContent log-string]]
+                          pager-data)))))
       (-> (resp/response "Page not found")
-        (resp/status 404))
-      (unauthorized-user-html user))))
+          (resp/status 404)))))
 
 (defn download-log-file [fname req resp user ^String root-dir]
   (let [file (.getCanonicalFile (File. root-dir fname))]
@@ -1182,5 +1177,8 @@
         daemonlog-root (log-root-dir (conf LOGVIEWER-APPENDER-NAME))]
     (setup-default-uncaught-exception-handler)
     (start-log-cleaner! conf log-root)
+    (log-message "Starting logviewer server for storm version '"
+                 STORM-VERSION
+                 "'")
     (start-logviewer! conf log-root daemonlog-root)
     (start-metrics-reporters)))

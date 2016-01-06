@@ -146,13 +146,6 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-        	<groupId>org.scala-lang</groupId>
-        	<artifactId>scala-library</artifactId>
-        	<version>2.10.5</version>
-            <!-- use provided scope, so users can pull in whichever scala version they choose -->
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>commons-lang</groupId>
             <artifactId>commons-lang</artifactId>
         </dependency>

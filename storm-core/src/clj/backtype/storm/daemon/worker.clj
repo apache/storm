@@ -22,7 +22,8 @@
   (:require [backtype.storm [disruptor :as disruptor] [cluster :as cluster]])
   (:require [clojure.set :as set])
   (:require [backtype.storm.messaging.loader :as msg-loader])
-  (:import [java.util.concurrent Executors])
+  (:import [java.util.concurrent Executors]
+           [backtype.storm.hooks IWorkerHook BaseWorkerHook])
   (:import [java.util ArrayList HashMap])
   (:import [backtype.storm.utils Utils TransferDrainer ThriftTopologyUtils WorkerBackpressureThread DisruptorQueue])
   (:import [backtype.storm.grouping LoadMapping])
@@ -35,6 +36,7 @@
   (:import [backtype.storm.task WorkerTopologyContext])
   (:import [backtype.storm Constants])
   (:import [backtype.storm.security.auth AuthUtils])
+  (:import [backtype.storm.cluster ClusterStateContext DaemonType])
   (:import [javax.security.auth Subject])
   (:import [java.security PrivilegedExceptionAction])
   (:import [org.apache.logging.log4j LogManager])
@@ -469,11 +471,6 @@
     (.shutdownNow (get dr WorkerTopologyContext/SHARED_EXECUTOR))
     (log-message "Shut down default resources")))
 
-(defn- override-login-config-with-system-property [conf]
-  (if-let [login_conf_file (System/getProperty "java.security.auth.login.config")]
-    (assoc conf "java.security.auth.login.config" login_conf_file)
-    conf))
-
 (defn- get-logger-levels []
   (into {}
     (let [logger-config (.getConfiguration (LogManager/getContext false))]
@@ -553,6 +550,24 @@
       (reset! latest-log-config new-log-configs)
       (log-debug "New merged log config is " @latest-log-config))))
 
+(defn run-worker-start-hooks [worker]
+  (let [topology (:topology worker)
+        topo-conf (:storm-conf worker)
+        worker-topology-context (worker-context worker)
+        hooks (.get_worker_hooks topology)]
+    (dofor [hook hooks]
+      (let [hook-bytes (Utils/toByteArray hook)
+            deser-hook (Utils/javaDeserialize hook-bytes BaseWorkerHook)]
+        (.start deser-hook topo-conf worker-topology-context)))))
+
+(defn run-worker-shutdown-hooks [worker]
+  (let [topology (:topology worker)
+        hooks (.get_worker_hooks topology)]
+    (dofor [hook hooks]
+      (let [hook-bytes (Utils/toByteArray hook)
+            deser-hook (Utils/javaDeserialize hook-bytes BaseWorkerHook)]
+        (.shutdown deser-hook)))))
+
 ;; TODO: should worker even take the storm-id as input? this should be
 ;; deducable from cluster state (by searching through assignments)
 ;; what about if there's inconsistency in assignments? -> but nimbus
@@ -578,7 +593,7 @@
   (let [storm-conf (read-supervisor-storm-conf conf storm-id)
         storm-conf (override-login-config-with-system-property storm-conf)
         acls (Utils/getWorkerACL storm-conf)
-        cluster-state (cluster/mk-distributed-cluster-state conf :auth-conf storm-conf :acls acls)
+        cluster-state (cluster/mk-distributed-cluster-state conf :auth-conf storm-conf :acls acls :context (ClusterStateContext. DaemonType/WORKER))
         storm-cluster-state (cluster/mk-storm-cluster-state cluster-state :acls acls)
         initial-credentials (.credentials storm-cluster-state storm-id nil)
         auto-creds (AuthUtils/GetAutoCredentials storm-conf)
@@ -609,6 +624,7 @@
 
         _ (refresh-storm-active worker nil)
 
+        _ (run-worker-start-hooks worker)
 
         _ (reset! executors (dofor [e (:executors worker)] (executor/mk-executor worker e initial-credentials)))
 
@@ -664,7 +680,8 @@
 
                     (close-resources worker)
 
-                    ;; TODO: here need to invoke the "shutdown" method of WorkerHook
+                    (log-message "Trigger any worker shutdown hooks")
+                    (run-worker-shutdown-hooks worker)
 
                     (.remove-worker-heartbeat! (:storm-cluster-state worker) storm-id assignment-id port)
                     (log-message "Disconnecting from storm cluster state context")

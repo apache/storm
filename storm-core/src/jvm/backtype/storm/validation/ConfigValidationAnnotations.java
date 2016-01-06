@@ -25,7 +25,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * Note: every annotation interface must have method validatorClass()
+ * Note: every annotation interface must have method `validatorClass()`
  * For every annotation there must validator class to do the validation
  * To add another annotation for config validation, add another annotation @interface class.  Implement the corresponding
  * validator logic in a class in ConfigValidation.  Make sure validateField method in ConfigValidation knows how to use the validator
@@ -46,12 +46,12 @@ public class ConfigValidationAnnotations {
         static final String VALUE_TYPE = "valueType";
         static final String INCLUDE_ZERO = "includeZero";
         static final String ACCEPTED_VALUES = "acceptedValues";
+        static final String IMPLEMENTS_CLASS = "implementsClass";
     }
 
     /**
      * Validators with fields: validatorClass and type
      */
-
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
     public @interface isType {
@@ -82,7 +82,6 @@ public class ConfigValidationAnnotations {
     /**
      * Validators with fields: validatorClass
      */
-
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
     public @interface isString {
@@ -109,7 +108,7 @@ public class ConfigValidationAnnotations {
     }
 
     /**
-     * validates on object is not null
+     * Validates on object is not null
      */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
@@ -118,7 +117,7 @@ public class ConfigValidationAnnotations {
     }
 
     /**
-     * validates that there are no duplicates in a list
+     * Validates that there are no duplicates in a list
      */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
@@ -142,7 +141,6 @@ public class ConfigValidationAnnotations {
      * Validates the type of each key and value in a map
      * Validator with fields: validatorClass, keyValidatorClass, valueValidatorClass
      */
-
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
     public @interface isMapEntryType {
@@ -168,7 +166,7 @@ public class ConfigValidationAnnotations {
     }
 
     /**
-     * checks if a number is positive and whether zero inclusive
+     * Checks if a number is positive and whether zero inclusive
      * Validator with fields: validatorClass, includeZero
      */
     @Retention(RetentionPolicy.RUNTIME)
@@ -179,10 +177,17 @@ public class ConfigValidationAnnotations {
         boolean includeZero() default false;
     }
 
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.FIELD)
+    public @interface isImplementationOfClass {
+        Class validatorClass() default ConfigValidation.ImplementsClassValidator.class;
+
+        Class implementsClass();
+    }
+
     /**
      * Complex/custom type validators
      */
-
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
     public @interface isStringOrStringList {
@@ -204,7 +209,6 @@ public class ConfigValidationAnnotations {
     /**
      * For custom validators
      */
-
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
     public @interface CustomValidator {

@@ -324,7 +324,8 @@
                      set-worker-user! nil
                      supervisor/jlp nil
                      worker-artifacts-root "/tmp/workers-artifacts"
-                     supervisor/write-log-metadata! nil]
+                     supervisor/write-log-metadata! nil
+                     supervisor/create-blobstore-links nil]
             (supervisor/launch-worker mock-supervisor
                                       mock-storm-id
                                       mock-port
@@ -346,8 +347,9 @@
                      launch-process nil
                      set-worker-user! nil
                      supervisor/jlp nil
-                     worker-artifacts-root "/tmp/workers-artifacts"
-                     supervisor/write-log-metadata! nil]
+                     supervisor/write-log-metadata! nil
+                     supervisor/create-blobstore-links nil
+                     worker-artifacts-root "/tmp/workers-artifacts"]
             (supervisor/launch-worker mock-supervisor
                                       mock-storm-id
                                       mock-port
@@ -367,7 +369,8 @@
                      set-worker-user! nil
                      supervisor/write-log-metadata! nil
                      launch-process nil
-                     current-classpath (str file-path-separator "base")]
+                     current-classpath (str file-path-separator "base")
+                     supervisor/create-blobstore-links nil]
                     (supervisor/launch-worker mock-supervisor
                                               mock-storm-id
                                               mock-port
@@ -388,7 +391,8 @@
                      launch-process nil
                      set-worker-user! nil
                      supervisor/write-log-metadata! nil
-                     current-classpath (str file-path-separator "base")]
+                     current-classpath (str file-path-separator "base")
+                     supervisor/create-blobstore-links nil]
                     (supervisor/launch-worker mock-supervisor
                                               mock-storm-id
                                               mock-port
@@ -457,6 +461,7 @@
                 _ (.mkdirs (io/file storm-local "workers" mock-worker-id))
                 mock-supervisor {:conf {STORM-CLUSTER-MODE :distributed
                                         STORM-LOCAL-DIR storm-local
+                                        STORM-WORKERS-ARTIFACTS-DIR (str storm-local "/workers-artifacts")
                                         SUPERVISOR-RUN-WORKER-AS-USER true
                                         WORKER-CHILDOPTS string-opts}}]
             (stubbing [read-supervisor-storm-conf {TOPOLOGY-WORKER-CHILDOPTS
@@ -487,6 +492,7 @@
                 exp-script (exp-script-fn list-opts topo-list-opts)
                 mock-supervisor {:conf {STORM-CLUSTER-MODE :distributed
                                         STORM-LOCAL-DIR storm-local
+                                        STORM-WORKERS-ARTIFACTS-DIR (str storm-local "/workers-artifacts")
                                         SUPERVISOR-RUN-WORKER-AS-USER true
                                         WORKER-CHILDOPTS list-opts}}]
             (stubbing [read-supervisor-storm-conf {TOPOLOGY-WORKER-CHILDOPTS
@@ -540,8 +546,8 @@
                  cluster/mk-storm-cluster-state nil
                  supervisor-state nil
                  local-hostname nil
-                 supervisor/mk-code-distributor nil
-                 mk-timer nil]
+                 mk-timer nil
+                 supervisor-local-dir nil]
         (supervisor/supervisor-data auth-conf nil fake-isupervisor)
         (verify-call-times-for cluster/mk-storm-cluster-state 1)
         (verify-first-call-args-for-indices cluster/mk-storm-cluster-state [2]
