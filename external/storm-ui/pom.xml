@@ -55,6 +55,16 @@
 			<version>${project.version}</version>
 			<scope>${scope.type}</scope>
 		</dependency>
+    <dependency>
+       <groupId>compojure</groupId>
+       <artifactId>compojure</artifactId>
+       <version>${compojure.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>hiccup</groupId>
+        <artifactId>hiccup</artifactId>
+        <version>${hiccup.version}</version>
+    </dependency>
 	</dependencies>
   <build>      
        <plugins>
