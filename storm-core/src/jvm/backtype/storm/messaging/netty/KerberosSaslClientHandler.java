@@ -53,13 +53,13 @@ public class KerberosSaslClientHandler extends ChannelInboundHandlerAdapter {
                  channel.localAddress(), channel.localAddress());
 
         try {
-            KerberosSaslNettyClient saslNettyClient = ctx.attr(KerberosSaslNettyClientState.KERBEROS_SASL_NETTY_CLIENT).get();
+            KerberosSaslNettyClient saslNettyClient = channel.attr(KerberosSaslNettyClientState.KERBEROS_SASL_NETTY_CLIENT).get();
 
             if (saslNettyClient == null) {
                 LOG.debug("Creating saslNettyClient now for channel: {}",
                           channel);
                 saslNettyClient = new KerberosSaslNettyClient(storm_conf, jaas_section);
-                ctx.attr(KerberosSaslNettyClientState.KERBEROS_SASL_NETTY_CLIENT).set(saslNettyClient);
+                channel.attr(KerberosSaslNettyClientState.KERBEROS_SASL_NETTY_CLIENT).set(saslNettyClient);
             }
             LOG.debug("Going to initiate Kerberos negotiations.");
             byte[] initialChallenge = saslNettyClient.saslResponse(new SaslMessageToken(new byte[0]));
@@ -78,7 +78,7 @@ public class KerberosSaslClientHandler extends ChannelInboundHandlerAdapter {
         Channel channel = ctx.channel();
 
         // Generate SASL response to server using Channel-local SASL client.
-        KerberosSaslNettyClient saslNettyClient = ctx.attr(KerberosSaslNettyClientState.KERBEROS_SASL_NETTY_CLIENT).get();
+        KerberosSaslNettyClient saslNettyClient = channel.attr(KerberosSaslNettyClientState.KERBEROS_SASL_NETTY_CLIENT).get();
         if (saslNettyClient == null) {
             throw new Exception("saslNettyClient was unexpectedly null for channel:" + channel);
         }

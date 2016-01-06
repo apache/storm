@@ -20,7 +20,6 @@ package backtype.storm.messaging.netty;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufOutputStream;
-import io.netty.buffer.Unpooled;
 
 import java.io.IOException;
 
@@ -70,8 +69,8 @@ public enum ControlMessage implements INettySerializable {
     }
 
     public static ControlMessage read(byte[] serial) {
-        // TODO: fix allocation
-        ByteBuf cm_buffer = Unpooled.copiedBuffer(serial);
+        ByteBuf cm_buffer = ByteBufAllocator.DEFAULT.ioBuffer(serial.length);
+        cm_buffer.writeBytes(serial);
         return mkMessage(cm_buffer.getShort(0));
     }
 }

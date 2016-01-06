@@ -61,12 +61,12 @@ public class KerberosSaslServerHandler extends ChannelInboundHandlerAdapter {
             try {
                 LOG.debug("Got SaslMessageToken!");
 
-                KerberosSaslNettyServer saslNettyServer = ctx.attr(KerberosSaslNettyServerState.KERBOROS_SASL_NETTY_SERVER).get();
+                KerberosSaslNettyServer saslNettyServer = channel.attr(KerberosSaslNettyServerState.KERBOROS_SASL_NETTY_SERVER).get();
                 if (saslNettyServer == null) {
                     LOG.debug("No saslNettyServer for {}  yet; creating now, with topology token: ", channel);
                     try {
                         saslNettyServer = new KerberosSaslNettyServer(storm_conf, jaas_section, authorizedUsers);
-                        ctx.attr(KerberosSaslNettyServerState.KERBOROS_SASL_NETTY_SERVER).set(saslNettyServer);
+                        channel.attr(KerberosSaslNettyServerState.KERBOROS_SASL_NETTY_SERVER).set(saslNettyServer);
                     } catch (RuntimeException ioe) {
                         LOG.error("Error occurred while creating saslNettyServer on server {} for client {}",
                                   channel.localAddress(), channel.remoteAddress());

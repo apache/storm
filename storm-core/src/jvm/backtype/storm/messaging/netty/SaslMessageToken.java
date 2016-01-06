@@ -20,7 +20,6 @@ package backtype.storm.messaging.netty;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufOutputStream;
-import io.netty.buffer.Unpooled;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -103,8 +102,8 @@ public class SaslMessageToken implements INettySerializable {
     }
     
     public static SaslMessageToken read(byte[] serial) {
-        // TODO: fix allocation
-        ByteBuf sm_buffer = Unpooled.copiedBuffer(serial);
+        ByteBuf sm_buffer = ByteBufAllocator.DEFAULT.ioBuffer(serial.length);
+        sm_buffer.writeBytes(serial);
         short identifier = sm_buffer.readShort();
         int payload_len = sm_buffer.readInt();
         if(identifier != IDENTIFIER) {

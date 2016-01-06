@@ -21,7 +21,6 @@ import backtype.storm.messaging.TaskMessage;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufOutputStream;
-import io.netty.buffer.Unpooled;
 
 import java.util.ArrayList;
 

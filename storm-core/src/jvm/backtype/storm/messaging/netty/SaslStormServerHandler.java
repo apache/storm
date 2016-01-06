@@ -51,7 +51,7 @@ public class SaslStormServerHandler extends ChannelInboundHandlerAdapter {
             // initialize server-side SASL functionality, if we haven't yet
             // (in which case we are looking at the first SASL message from the
             // client).
-            SaslNettyServer saslNettyServer = ctx.channel().attr(SaslNettyServerState.SASL_NETTY_SERVER).get();
+            SaslNettyServer saslNettyServer = channel.attr(SaslNettyServerState.SASL_NETTY_SERVER).get();
             if (saslNettyServer == null) {
                 LOG.debug("No saslNettyServer for " + channel
                         + " yet; creating now, with topology token: " + topologyName);
@@ -65,15 +65,12 @@ public class SaslStormServerHandler extends ChannelInboundHandlerAdapter {
                     saslNettyServer = null;
                 }
 
-                ctx.channel().attr(SaslNettyServerState.SASL_NETTY_SERVER).set(saslNettyServer);
-                if (ctx.channel().attr(SaslNettyServerState.SASL_NETTY_SERVER).get() == null) {
+                channel.attr(SaslNettyServerState.SASL_NETTY_SERVER).set(saslNettyServer);
+                if (channel.attr(SaslNettyServerState.SASL_NETTY_SERVER).get() == null) {
                     throw new IllegalStateException("Failed to set SaslNettyServerState.SASL_NETTY_SERVER");
                 } else {
                     LOG.debug("SaslNettyServer for " + channel
                             + "created with topology token: " + topologyName);
-                    LOG.debug("context is: " + ctx);
-                    LOG.debug("channel is: " + ctx.channel());
-                    LOG.debug("context attributes are: " + ctx.channel().attr(SaslNettyServerState.SASL_NETTY_SERVER));
                 }
 
             } else {
@@ -86,8 +83,7 @@ public class SaslStormServerHandler extends ChannelInboundHandlerAdapter {
                     + " and token length: " + token.length);
 
             SaslMessageToken saslTokenMessageRequest;
-            saslTokenMessageRequest = new SaslMessageToken(
-                    saslNettyServer.response(new byte[0]));
+            saslTokenMessageRequest = new SaslMessageToken(saslNettyServer.response(new byte[0]));
             // Send response to client.
             channel.writeAndFlush(saslTokenMessageRequest);
             // do not send upstream to other handlers: no further action needs
@@ -99,7 +95,7 @@ public class SaslStormServerHandler extends ChannelInboundHandlerAdapter {
             // initialize server-side SASL functionality, if we haven't yet
             // (in which case we are looking at the first SASL message from the
             // client).
-            SaslNettyServer saslNettyServer = ctx.channel().attr(SaslNettyServerState.SASL_NETTY_SERVER).get();
+            SaslNettyServer saslNettyServer = channel.attr(SaslNettyServerState.SASL_NETTY_SERVER).get();
             if (saslNettyServer == null) {
                 throw new Exception("saslNettyServer was unexpectedly "
                         + "null for channel: " + channel);

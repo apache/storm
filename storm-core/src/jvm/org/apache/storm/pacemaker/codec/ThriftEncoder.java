@@ -26,7 +26,6 @@ import backtype.storm.messaging.netty.SaslMessageToken;
 import backtype.storm.utils.Utils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageEncoder;
 import org.slf4j.Logger;
@@ -95,8 +94,7 @@ public class ThriftEncoder extends MessageToMessageEncoder {
 
         try {
             byte serialized[] = Utils.thriftSerialize(m);
-            // TODO: fix allocation
-            ByteBuf ret = Unpooled.directBuffer(serialized.length + 4);
+            ByteBuf ret = ByteBufAllocator.DEFAULT.ioBuffer(serialized.length + 4);
 
             ret.writeInt(serialized.length);
             ret.writeBytes(serialized);

@@ -43,10 +43,6 @@ public class SaslStormServerAuthorizeHandler extends ChannelInboundHandlerAdapte
 
 		LOG.debug("messageReceived: Checking whether the client is authorized to send messages to the server ");
 
-		LOG.debug("context is: " + ctx);
-		LOG.debug("channel is: " + ctx.channel());
-		LOG.debug("context attributes are: " + ctx.channel().attr(SaslNettyServerState.SASL_NETTY_SERVER));
-
 		// Authorize: client is allowed to doRequest() if and only if the client
 		// has successfully authenticated with this server.
 		SaslNettyServer saslNettyServer = ctx.channel().attr(SaslNettyServerState.SASL_NETTY_SERVER).get();
