@@ -1,4 +1,20 @@
 ## 0.11.0
+ * STORM-706: Clarify examples README for IntelliJ.
+ * STORM-1396: Added backward compatibility method for File Download
+ * STORM-695: storm CLI tool reports zero exit code on error scenario
+ * STORM-1416: Documentation for state store
+ * STORM-1426: keep backtype.storm.tuple.AddressedTuple and delete duplicated backtype.storm.messaging.AddressedTuple
+ * STORM-1417: fixed equals/hashCode contract in CoordType
+ * STORM-1422: broken example in storm-starter tutorial
+ * STORM-1429: LocalizerTest fix
+ * STORM-1401: removes multilang-test
+ * STORM-1424: Removed unused topology-path variable
+ * STORM-1427: add TupleUtils/listHashCode method and delete tuple.clj
+ * STORM-1413: remove unused variables for some tests
+ * STORM-1412: null check should be done in the first place
+ * STORM-1210: Set Output Stream id in KafkaSpout
+ * STORM-1397: Merge conflict from Pacemaker merge
+ * STORM-1373: Blobstore API sample example usage
  * STORM-1409: StormClientErrorHandler is not used
  * STORM-1411: Some fixes for storm-windowing
  * STORM-1399: Blobstore tests should write data to `target` so it gets removed when running `mvn clean`

@@ -38,7 +38,7 @@
   (:import [backtype.storm.scheduler INimbus SupervisorDetails WorkerSlot TopologyDetails
             Cluster Topologies SchedulerAssignment SchedulerAssignmentImpl DefaultScheduler ExecutorDetails])
   (:import [backtype.storm.nimbus NimbusInfo])
-  (:import [backtype.storm.utils TimeCacheMap TimeCacheMap$ExpiredCallback Utils ThriftTopologyUtils
+  (:import [backtype.storm.utils TimeCacheMap TimeCacheMap$ExpiredCallback Utils TupleUtils ThriftTopologyUtils
             BufferFileInputStream BufferInputStream])
   (:import [backtype.storm.generated NotAliveException AlreadyAliveException StormTopology ErrorInfo
             ExecutorInfo InvalidTopologyException Nimbus$Iface Nimbus$Processor SubmitOptions TopologyInitialStatus
@@ -47,11 +47,11 @@
             BeginDownloadResult ListBlobsResult ComponentPageInfo TopologyPageInfo LogConfig LogLevel LogLevelAction
             ProfileRequest ProfileAction NodeInfo])
   (:import [backtype.storm.daemon Shutdownable])
+  (:import [backtype.storm.cluster ClusterStateContext DaemonType])
   (:use [backtype.storm util config log timer zookeeper local-state])
   (:require [backtype.storm [cluster :as cluster]
                             [converter :as converter]
-                            [stats :as stats]
-                            [tuple :as tuple]])
+                            [stats :as stats]])
   (:require [clojure.set :as set])
   (:import [backtype.storm.daemon.common StormBase Assignment])
   (:use [backtype.storm.daemon common])
@@ -175,7 +175,8 @@
      :storm-cluster-state (cluster/mk-storm-cluster-state conf :acls (when
                                                                        (Utils/isZkAuthenticationConfiguredStormServer
                                                                          conf)
-                                                                       NIMBUS-ZK-ACLS) :separate-zk-writer? true)
+                                                                       NIMBUS-ZK-ACLS)
+                                                          :context (ClusterStateContext. DaemonType/NIMBUS))
      :submit-lock (Object.)
      :cred-update-lock (Object.)
      :log-update-lock (Object.)
@@ -1720,15 +1721,16 @@
           (.remove uploaders location)
           ))
 
-      (^String beginFileDownload [this ^String file]
+      (^String beginFileDownload
+        [this ^String file]
         (mark! nimbus:num-beginFileDownload-calls)
         (check-authorization! nimbus nil nil "fileDownload")
-        (check-file-access (:conf nimbus) file)
-        (let [is (BufferFileInputStream. file)
+        (let [is (BufferInputStream. (.getBlob (:blob-store nimbus) file nil) 
+              ^Integer (Utils/getInt (conf STORM-BLOBSTORE-INPUTSTREAM-BUFFER-SIZE-BYTES) 
+              (int 65536)))
               id (uuid)]
           (.put (:downloaders nimbus) id is)
-          id
-          ))
+          id))
 
       (^ByteBuffer downloadChunk [this ^String id]
         (mark! nimbus:num-downloadChunk-calls)
@@ -2143,7 +2145,7 @@
                 eventlogger-tasks (sort (get component->tasks
                                              EVENTLOGGER-COMPONENT-ID))
                 ;; Find the task the events from this component route to.
-                task-index (mod (tuple/list-hash-code [component-id])
+                task-index (mod (TupleUtils/listHashCode [component-id])
                                 (count eventlogger-tasks))
                 task-id (nth eventlogger-tasks task-index)
                 eventlogger-exec (first (filter (fn [[start stop]]
