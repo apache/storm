@@ -6,36 +6,35 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package backtype.storm.messaging.netty;
 
-import java.net.ConnectException;
+package backtype.storm.scheduler.resource;
 
-import org.jboss.netty.channel.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.EnumSet;
 
-public class StormClientErrorHandler extends SimpleChannelUpstreamHandler  {
-    private static final Logger LOG = LoggerFactory.getLogger(StormClientErrorHandler.class);
-    private String name;
-    
-    StormClientErrorHandler(String name) {
-        this.name = name;
+public enum SchedulingStatus {
+    SUCCESS,
+    FAIL_NOT_ENOUGH_RESOURCES,
+    FAIL_INVALID_TOPOLOGY,
+    FAIL_OTHER;
+
+    public static EnumSet<SchedulingStatus> success = EnumSet.of(SUCCESS);
+    public static EnumSet<SchedulingStatus> failure = EnumSet.of(FAIL_INVALID_TOPOLOGY, FAIL_NOT_ENOUGH_RESOURCES, FAIL_OTHER);
+
+    public static boolean isStatusSuccess(SchedulingStatus status) {
+        return success.contains(status);
     }
 
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent event) {
-        Throwable cause = event.getCause();
-        if (!(cause instanceof ConnectException)) {
-            LOG.info("Connection failed " + name, cause);
-        } 
+    public static boolean isStatusFailure(SchedulingStatus status) {
+        return failure.contains(status);
     }
+
 }

@@ -23,6 +23,7 @@ import backtype.storm.spout.SpoutOutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.base.BaseRichSpout;
+import com.google.common.base.Strings;
 import kafka.message.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,16 +34,6 @@ import java.util.*;
 // TODO: need to add blacklisting
 // TODO: need to make a best effort to not re-emit messages if don't have to
 public class KafkaSpout extends BaseRichSpout {
-    public static class MessageAndRealOffset {
-        public Message msg;
-        public long offset;
-
-        public MessageAndRealOffset(Message msg, long offset) {
-            this.msg = msg;
-            this.offset = offset;
-        }
-    }
-
     static enum EmitState {
         EMITTED_MORE_LEFT,
         EMITTED_END,
@@ -190,8 +181,8 @@ public class KafkaSpout extends BaseRichSpout {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        if (_spoutConfig.topicAsStreamId) {
-            declarer.declareStream(_spoutConfig.topic, _spoutConfig.scheme.getOutputFields());
+       if (!Strings.isNullOrEmpty(_spoutConfig.outputStreamId)) {
+            declarer.declareStream(_spoutConfig.outputStreamId, _spoutConfig.scheme.getOutputFields());
         } else {
             declarer.declare(_spoutConfig.scheme.getOutputFields());
         }

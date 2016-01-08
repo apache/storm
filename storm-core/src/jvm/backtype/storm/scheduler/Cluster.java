@@ -90,6 +90,21 @@ public class Cluster {
         }
         this.conf = storm_conf;
     }
+
+    /**
+     * Get a copy of this cluster object
+     */
+    public static Cluster getCopy(Cluster cluster) {
+        HashMap<String, SchedulerAssignmentImpl> newAssignments = new HashMap<String, SchedulerAssignmentImpl>();
+        for (Map.Entry<String, SchedulerAssignmentImpl> entry : cluster.assignments.entrySet()) {
+            newAssignments.put(entry.getKey(), new SchedulerAssignmentImpl(entry.getValue().getTopologyId(), entry.getValue().getExecutorToSlot()));
+        }
+        Map newConf = new HashMap<String, Object>();
+        newConf.putAll(cluster.conf);
+        Cluster copy = new Cluster(cluster.inimbus, cluster.supervisors, newAssignments, newConf);
+        copy.status = new HashMap<>(cluster.status);
+        return copy;
+    }
     
     public void setBlacklistedHosts(Set<String> hosts) {
         blackListedHosts = hosts;
@@ -379,6 +394,16 @@ public class Cluster {
     }
 
     /**
+     * get slots used by a topology
+     */
+    public Collection<WorkerSlot> getUsedSlotsByTopologyId(String topologyId) {
+        if (!this.assignments.containsKey(topologyId)) {
+            return null;
+        }
+        return this.assignments.get(topologyId).getSlots();
+    }
+
+    /**
      * Get a specific supervisor with the <code>nodeId</code>
      */
     public SupervisorDetails getSupervisorById(String nodeId) {
@@ -430,10 +455,42 @@ public class Cluster {
     }
 
     /**
+     * set assignments for cluster
+     */
+    public void setAssignments(Map<String, SchedulerAssignment> newAssignments) {
+        this.assignments = new HashMap<String, SchedulerAssignmentImpl>(newAssignments.size());
+        for (Map.Entry<String, SchedulerAssignment> entry : newAssignments.entrySet()) {
+            this.assignments.put(entry.getKey(), new SchedulerAssignmentImpl(entry.getValue().getTopologyId(), entry.getValue().getExecutorToSlot()));
+        }
+    }
+
+    /**
      * Get all the supervisors.
      */
     public Map<String, SupervisorDetails> getSupervisors() {
         return this.supervisors;
+    }
+
+    /**
+     * Get the total amount of CPU resources in cluster
+     */
+    public double getClusterTotalCPUResource() {
+        double sum = 0.0;
+        for (SupervisorDetails sup : this.supervisors.values()) {
+            sum += sup.getTotalCPU();
+        }
+        return sum;
+    }
+
+    /**
+     * Get the total amount of memory resources in cluster
+     */
+    public double getClusterTotalMemoryResource() {
+        double sum = 0.0;
+        for (SupervisorDetails sup : this.supervisors.values()) {
+            sum += sup.getTotalMemory();
+        }
+        return sum;
     }
 
     /*
@@ -480,6 +537,27 @@ public class Cluster {
     * */
     private Double getAssignedMemoryForSlot(Map topConf) {
         Double totalWorkerMemory = 0.0;
+        final Integer TOPOLOGY_WORKER_DEFAULT_MEMORY_ALLOCATION = 768;
+
+        String topologyWorkerGcChildopts = null;
+        if (topConf.get(Config.TOPOLOGY_WORKER_GC_CHILDOPTS) instanceof List) {
+            topologyWorkerGcChildopts = getStringFromStringList(topConf.get(Config.TOPOLOGY_WORKER_GC_CHILDOPTS));
+        } else {
+            topologyWorkerGcChildopts = Utils.getString(topConf.get(Config.TOPOLOGY_WORKER_GC_CHILDOPTS), null);
+        }
+
+        String workerGcChildopts = null;
+        if (topConf.get(Config.WORKER_GC_CHILDOPTS) instanceof List) {
+            workerGcChildopts = getStringFromStringList(topConf.get(Config.WORKER_GC_CHILDOPTS));
+        } else {
+            workerGcChildopts = Utils.getString(topConf.get(Config.WORKER_GC_CHILDOPTS), null);
+        }
+
+        Double memGcChildopts = null;
+        memGcChildopts = Utils.parseJvmHeapMemByChildOpts(topologyWorkerGcChildopts, null);
+        if (memGcChildopts == null) {
+            memGcChildopts = Utils.parseJvmHeapMemByChildOpts(workerGcChildopts, null);
+        }
 
         String topologyWorkerChildopts = null;
         if (topConf.get(Config.TOPOLOGY_WORKER_CHILDOPTS) instanceof List) {
@@ -497,12 +575,14 @@ public class Cluster {
         }
         Double memWorkerChildopts = Utils.parseJvmHeapMemByChildOpts(workerChildopts, null);
 
-        if (memTopologyWorkerChildopts != null) {
+        if (memGcChildopts != null) {
+            totalWorkerMemory += memGcChildopts;
+        } else if (memTopologyWorkerChildopts != null) {
             totalWorkerMemory += memTopologyWorkerChildopts;
         } else if (memWorkerChildopts != null) {
             totalWorkerMemory += memWorkerChildopts;
         } else {
-            totalWorkerMemory += Utils.getInt(topConf.get(Config.WORKER_HEAP_MEMORY_MB));
+            totalWorkerMemory += Utils.getInt(topConf.get(Config.WORKER_HEAP_MEMORY_MB), TOPOLOGY_WORKER_DEFAULT_MEMORY_ALLOCATION);
         }
 
         String topoWorkerLwChildopts = null;
@@ -560,12 +640,26 @@ public class Cluster {
         }
     }
 
+    /**
+     * set scheduler status for a topology
+     */
     public void setStatus(String topologyId, String status) {
         this.status.put(topologyId, status);
     }
 
+    /**
+     * Get all topology scheduler statuses
+     */
     public Map<String, String> getStatusMap() {
         return this.status;
+    }
+
+    /**
+     * set scheduler status map
+     */
+    public void setStatusMap(Map<String, String> statusMap) {
+        this.status.clear();
+        this.status.putAll(statusMap);
     }
 
     public void setResources(String topologyId, Double[] resources) {

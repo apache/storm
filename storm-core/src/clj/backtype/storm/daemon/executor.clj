@@ -28,15 +28,16 @@
   (:import [backtype.storm.grouping CustomStreamGrouping])
   (:import [backtype.storm.task WorkerTopologyContext IBolt OutputCollector IOutputCollector])
   (:import [backtype.storm.generated GlobalStreamId])
-  (:import [backtype.storm.utils Utils MutableObject RotatingMap RotatingMap$ExpiredCallback MutableLong Time DisruptorQueue WorkerBackpressureThread])
+  (:import [backtype.storm.utils Utils TupleUtils MutableObject RotatingMap RotatingMap$ExpiredCallback MutableLong Time DisruptorQueue WorkerBackpressureThread])
   (:import [com.lmax.disruptor InsufficientCapacityException])
   (:import [backtype.storm.serialization KryoTupleSerializer])
   (:import [backtype.storm.daemon Shutdownable])
   (:import [backtype.storm.metric.api IMetric IMetricsConsumer$TaskInfo IMetricsConsumer$DataPoint StateMetric])
   (:import [backtype.storm Config Constants])
+  (:import [backtype.storm.cluster ClusterStateContext DaemonType])
   (:import [backtype.storm.grouping LoadAwareCustomStreamGrouping LoadAwareShuffleGrouping LoadMapping ShuffleGrouping])
   (:import [java.util.concurrent ConcurrentLinkedQueue])
-  (:require [backtype.storm [tuple :as tuple] [thrift :as thrift]
+  (:require [backtype.storm [thrift :as thrift]
              [cluster :as cluster] [disruptor :as disruptor] [stats :as stats]])
   (:require [backtype.storm.daemon [task :as task]])
   (:require [backtype.storm.daemon.builtin-metrics :as builtin-metrics])
@@ -48,7 +49,7 @@
         task-getter (fn [i] (.get target-tasks i))]
     (fn [task-id ^List values load]
       (-> (.select out-fields group-fields values)
-          tuple/list-hash-code
+          (TupleUtils/listHashCode)
           (mod num-tasks)
           task-getter))))
 
@@ -171,6 +172,8 @@
                         TOPOLOGY-BOLTS-WINDOW-LENGTH-DURATION-MS
                         TOPOLOGY-BOLTS-SLIDING-INTERVAL-COUNT
                         TOPOLOGY-BOLTS-SLIDING-INTERVAL-DURATION-MS
+                        TOPOLOGY-BOLTS-TUPLE-TIMESTAMP-FIELD-NAME
+                        TOPOLOGY-BOLTS-TUPLE-TIMESTAMP-MAX-LAG-MS
                         )
         spec-conf (-> general-context
                       (.getComponentCommon component-id)
@@ -247,7 +250,8 @@
      :transfer-fn (mk-executor-transfer-fn batch-transfer->worker storm-conf)
      :suicide-fn (:suicide-fn worker)
      :storm-cluster-state (cluster/mk-storm-cluster-state (:cluster-state worker) 
-                                                          :acls (Utils/getWorkerACL storm-conf))
+                                                          :acls (Utils/getWorkerACL storm-conf)
+                                                          :context (ClusterStateContext. DaemonType/WORKER))
      :type executor-type
      ;; TODO: should refactor this to be part of the executor specific map (spout or bolt with :common field)
      :stats (mk-executor-stats <> (sampling-rate storm-conf))

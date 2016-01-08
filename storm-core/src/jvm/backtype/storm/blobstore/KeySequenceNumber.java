@@ -117,7 +117,7 @@ import java.util.List;
  *  synchronization happens appropriately and all nimbodes have the same blob.
  */
 public class KeySequenceNumber {
-    private static final Logger LOG = LoggerFactory.getLogger(Utils.class);
+    private static final Logger LOG = LoggerFactory.getLogger(KeySequenceNumber.class);
     private final String BLOBSTORE_SUBTREE="/blobstore";
     private final String BLOBSTORE_MAX_KEY_SEQUENCE_SUBTREE="/blobstoremaxkeysequencenumber";
     private final String key;
@@ -130,7 +130,7 @@ public class KeySequenceNumber {
         this.nimbusInfo = nimbusInfo;
     }
 
-    public int getKeySequenceNumber(Map conf) {
+    public synchronized int getKeySequenceNumber(Map conf) {
         TreeSet<Integer> sequenceNumbers = new TreeSet<Integer>();
         CuratorFramework zkClient = BlobStoreUtils.createZKClient(conf);
         try {

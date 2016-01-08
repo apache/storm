@@ -17,7 +17,7 @@
  */
 package backtype.storm.windowing;
 
-class EventImpl<T> implements Event<T> {
+public class EventImpl<T> implements Event<T> {
     private final T event;
     private long ts;
 
@@ -34,5 +34,18 @@ class EventImpl<T> implements Event<T> {
     @Override
     public T get() {
         return event;
+    }
+
+    @Override
+    public boolean isWatermark() {
+        return false;
+    }
+
+    @Override
+    public String toString() {
+        return "EventImpl{" +
+                "event=" + event +
+                ", ts=" + ts +
+                '}';
     }
 }

@@ -6,41 +6,36 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package backtype.storm.messaging;
 
-import backtype.storm.tuple.Tuple;
+package backtype.storm.scheduler.resource.strategies.priority;
 
-/**
- * A Tuple that is addressed to a destination.
- */
-public class AddressedTuple {
-    public final Tuple tuple;
-    public final int dest;
+import backtype.storm.scheduler.Cluster;
+import backtype.storm.scheduler.Topologies;
+import backtype.storm.scheduler.TopologyDetails;
+import backtype.storm.scheduler.resource.RAS_Nodes;
+import backtype.storm.scheduler.resource.User;
 
-    public AddressedTuple(int dest, Tuple tuple) {
-        this.dest = dest;
-        this.tuple = tuple;
-    }
+import java.util.Map;
 
-    public Tuple getTuple() {
-        return tuple;
-    }
+public interface ISchedulingPriorityStrategy {
 
-    public int getDest() {
-        return dest;
-    }
+    /**
+     * initializes
+     */
+    public void prepare(Topologies topologies, Cluster cluster, Map<String, User> userMap, RAS_Nodes nodes);
 
-    @Override
-    public String toString() {
-        return "[dest: "+dest+" tuple: "+tuple+"]";
-    }
+    /**
+     * Gets the next topology to schedule
+     * @return return the next topology to schedule.  If there is no topologies left to schedule, return null
+     */
+    public TopologyDetails getNextTopologyToSchedule();
 }

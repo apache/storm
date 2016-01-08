@@ -38,7 +38,7 @@
   (:import [backtype.storm.scheduler INimbus SupervisorDetails WorkerSlot TopologyDetails
             Cluster Topologies SchedulerAssignment SchedulerAssignmentImpl DefaultScheduler ExecutorDetails])
   (:import [backtype.storm.nimbus NimbusInfo])
-  (:import [backtype.storm.utils TimeCacheMap TimeCacheMap$ExpiredCallback Utils ThriftTopologyUtils
+  (:import [backtype.storm.utils TimeCacheMap TimeCacheMap$ExpiredCallback Utils TupleUtils ThriftTopologyUtils
             BufferFileInputStream BufferInputStream])
   (:import [backtype.storm.generated NotAliveException AlreadyAliveException StormTopology ErrorInfo
             ExecutorInfo InvalidTopologyException Nimbus$Iface Nimbus$Processor SubmitOptions TopologyInitialStatus
@@ -47,11 +47,11 @@
             BeginDownloadResult ListBlobsResult ComponentPageInfo TopologyPageInfo LogConfig LogLevel LogLevelAction
             ProfileRequest ProfileAction NodeInfo])
   (:import [backtype.storm.daemon Shutdownable])
+  (:import [backtype.storm.cluster ClusterStateContext DaemonType])
   (:use [backtype.storm util config log timer zookeeper local-state])
   (:require [backtype.storm [cluster :as cluster]
                             [converter :as converter]
-                            [stats :as stats]
-                            [tuple :as tuple]])
+                            [stats :as stats]])
   (:require [clojure.set :as set])
   (:import [backtype.storm.daemon.common StormBase Assignment])
   (:use [backtype.storm.daemon common])
@@ -111,11 +111,11 @@
                     forced-scheduler
                     (do (log-message "Using forced scheduler from INimbus " (class forced-scheduler))
                         forced-scheduler)
-    
+
                     (conf STORM-SCHEDULER)
                     (do (log-message "Using custom scheduler: " (conf STORM-SCHEDULER))
                         (-> (conf STORM-SCHEDULER) new-instance))
-    
+
                     :else
                     (do (log-message "Using default scheduler")
                         (DefaultScheduler.)))]
@@ -133,7 +133,7 @@
           (throw (RuntimeException. (str "not a leader, current leader is " leader-address))))))))
 
 (def NIMBUS-ZK-ACLS
-  [(first ZooDefs$Ids/CREATOR_ALL_ACL) 
+  [(first ZooDefs$Ids/CREATOR_ALL_ACL)
    (ACL. (bit-or ZooDefs$Perms/READ ZooDefs$Perms/CREATE) ZooDefs$Ids/ANYONE_ID_UNSAFE)])
 
 (defn mk-blob-cache-map
@@ -175,7 +175,8 @@
      :storm-cluster-state (cluster/mk-storm-cluster-state conf :acls (when
                                                                        (Utils/isZkAuthenticationConfiguredStormServer
                                                                          conf)
-                                                                       NIMBUS-ZK-ACLS) :separate-zk-writer? true)
+                                                                       NIMBUS-ZK-ACLS)
+                                                          :context (ClusterStateContext. DaemonType/NIMBUS))
      :submit-lock (Object.)
      :cred-update-lock (Object.)
      :log-update-lock (Object.)
@@ -535,9 +536,10 @@
       (.readBlob blob-store (master-stormconf-key storm-id) nimbus-subject))))
 
 (defn read-topology-details [nimbus storm-id]
-  (let [conf (:conf nimbus)
-        blob-store (:blob-store nimbus)
-        storm-base (.storm-base (:storm-cluster-state nimbus) storm-id nil)
+  (let [blob-store (:blob-store nimbus)
+        storm-base (or
+                     (.storm-base (:storm-cluster-state nimbus) storm-id nil)
+                     (throw (NotAliveException. storm-id)))
         topology-conf (read-storm-conf-as-nimbus storm-id blob-store)
         topology (read-storm-topology-as-nimbus storm-id blob-store)
         executor->component (->> (compute-executor->component nimbus storm-id)
@@ -548,7 +550,7 @@
                       topology
                       (:num-workers storm-base)
                       executor->component
-                      )))
+                      (:launch-time-secs storm-base))))
 
 ;; Does not assume that clocks are synchronized. Executor heartbeat is only used so that
 ;; nimbus knows when it's received a new heartbeat. All timing is done by nimbus and
@@ -845,13 +847,14 @@
 
         supervisors (read-all-supervisor-details nimbus all-scheduling-slots supervisor->dead-ports)
         cluster (Cluster. (:inimbus nimbus) supervisors topology->scheduler-assignment conf)
-
+        _ (.setStatusMap cluster (deref (:id->sched-status nimbus)))
         ;; call scheduler.schedule to schedule all the topologies
         ;; the new assignments for all the topologies are in the cluster object.
         _ (.schedule (:scheduler nimbus) topologies cluster)
         _ (.setResourcesMap cluster @(:id->resources nimbus))
         _ (if-not (conf SCHEDULER-DISPLAY-RESOURCE) (.updateAssignedMemoryForTopologyAndSupervisor cluster topologies))
-        _ (reset! (:id->sched-status nimbus) (.getStatusMap cluster))
+        ;;merge with existing statuses
+        _ (reset! (:id->sched-status nimbus) (merge (deref (:id->sched-status nimbus)) (.getStatusMap cluster)))
         _ (reset! (:node-id->resources nimbus) (.getSupervisorsResourcesMap cluster))
         _ (reset! (:id->resources nimbus) (.getResourcesMap cluster))]
     (.getAssignments cluster)))
@@ -1015,7 +1018,7 @@
       (throw (AlreadyAliveException. (str storm-name " is already active"))))
     ))
 
-(defn check-authorization! 
+(defn check-authorization!
   ([nimbus storm-name storm-conf operation context]
      (let [aclHandler (:authorization-handler nimbus)
            impersonation-authorizer (:impersonation-authorization-handler nimbus)
@@ -1210,8 +1213,8 @@
   (if (some #(.contains name %) DISALLOWED-TOPOLOGY-NAME-STRS)
     (throw (InvalidTopologyException.
             (str "Topology name cannot contain any of the following: " (pr-str DISALLOWED-TOPOLOGY-NAME-STRS))))
-  (if (clojure.string/blank? name) 
-    (throw (InvalidTopologyException. 
+  (if (clojure.string/blank? name)
+    (throw (InvalidTopologyException.
             ("Topology name cannot be blank"))))))
 
 ;; We will only file at <Storm dist root>/<Topology ID>/<File>
@@ -1315,17 +1318,17 @@
         num-executors (->> (all-components topology) (map-val num-start-executors))
         executors-count (reduce + (vals num-executors))
         executors-allowed (get nimbus-conf NIMBUS-EXECUTORS-PER-TOPOLOGY)]
-    (when (and 
+    (when (and
            (not (nil? executors-allowed))
            (> executors-count executors-allowed))
-      (throw 
-       (InvalidTopologyException. 
+      (throw
+       (InvalidTopologyException.
         (str "Failed to submit topology. Topology requests more than " executors-allowed " executors."))))
     (when (and
            (not (nil? workers-allowed))
            (> workers-count workers-allowed))
-      (throw 
-       (InvalidTopologyException. 
+      (throw
+       (InvalidTopologyException.
         (str "Failed to submit topology. Topology requests more than " workers-allowed " workers."))))))
 
 (defn- set-logger-timeouts [log-config]
@@ -1504,7 +1507,7 @@
                 storm-cluster-state (:storm-cluster-state nimbus)]
             (when credentials (doseq [nimbus-autocred-plugin (:nimbus-autocred-plugins nimbus)]
               (.populateCredentials nimbus-autocred-plugin credentials (Collections/unmodifiableMap storm-conf))))
-            (if (and (conf SUPERVISOR-RUN-WORKER-AS-USER) (or (nil? submitter-user) (.isEmpty (.trim submitter-user)))) 
+            (if (and (conf SUPERVISOR-RUN-WORKER-AS-USER) (or (nil? submitter-user) (.isEmpty (.trim submitter-user))))
               (throw (AuthorizationException. "Could not determine the user to run this topology as.")))
             (system-topology! total-storm-conf topology) ;; this validates the structure of the topology
             (validate-topology-size topo-conf conf topology)
@@ -1533,13 +1536,13 @@
           (catch Throwable e
             (log-warn-error e "Topology submission exception. (topology name='" storm-name "')")
             (throw e))))
-      
+
       (^void submitTopology
         [this ^String storm-name ^String uploadedJarLocation ^String serializedConf ^StormTopology topology]
         (mark! nimbus:num-submitTopology-calls)
         (.submitTopologyWithOpts this storm-name uploadedJarLocation serializedConf topology
                                  (SubmitOptions. TopologyInitialStatus/ACTIVE)))
-      
+
       (^void killTopology [this ^String name]
         (mark! nimbus:num-killTopology-calls)
         (.killTopologyWithOpts this name (KillOptions.)))
@@ -1554,7 +1557,9 @@
                            (.get_wait_secs options)
                            )]
             (transition-name! nimbus storm-name [:kill wait-amt] true)
-            (notify-topology-action-listener nimbus storm-name operation))))
+            (notify-topology-action-listener nimbus storm-name operation))
+          (add-topology-to-history-log (get-storm-id (:storm-cluster-state nimbus) storm-name)
+            nimbus topology-conf)))
 
       (^void rebalance [this ^String storm-name ^RebalanceOptions options]
         (mark! nimbus:num-rebalance-calls)
@@ -1716,15 +1721,16 @@
           (.remove uploaders location)
           ))
 
-      (^String beginFileDownload [this ^String file]
+      (^String beginFileDownload
+        [this ^String file]
         (mark! nimbus:num-beginFileDownload-calls)
         (check-authorization! nimbus nil nil "fileDownload")
-        (check-file-access (:conf nimbus) file)
-        (let [is (BufferFileInputStream. file)
+        (let [is (BufferInputStream. (.getBlob (:blob-store nimbus) file nil) 
+              ^Integer (Utils/getInt (conf STORM-BLOBSTORE-INPUTSTREAM-BUFFER-SIZE-BYTES) 
+              (int 65536)))
               id (uuid)]
           (.put (:downloaders nimbus) id is)
-          id
-          ))
+          id))
 
       (^ByteBuffer downloadChunk [this ^String id]
         (mark! nimbus:num-downloadChunk-calls)
@@ -2139,7 +2145,7 @@
                 eventlogger-tasks (sort (get component->tasks
                                              EVENTLOGGER-COMPONENT-ID))
                 ;; Find the task the events from this component route to.
-                task-index (mod (tuple/list-hash-code [component-id])
+                task-index (mod (TupleUtils/listHashCode [component-id])
                                 (count eventlogger-tasks))
                 task-id (nth eventlogger-tasks task-index)
                 eventlogger-exec (first (filter (fn [[start stop]]
@@ -2157,7 +2163,7 @@
               bases (topology-bases storm-cluster-state)
               assigned-topology-ids (.assignments storm-cluster-state nil)
               user-group-match-fn (fn [topo-id user conf]
-                                    (let [topology-conf (try-read-storm-conf conf topo-id)
+                                    (let [topology-conf (try-read-storm-conf conf topo-id (:blob-store nimbus))
                                           groups (get-topo-logs-groups topology-conf)]
                                       (or (nil? user)
                                           (some #(= % user) admin-users)
@@ -2186,7 +2192,7 @@
 (defn launch-server! [conf nimbus]
   (validate-distributed-mode! conf)
   (let [service-handler (service-handler conf nimbus)
-        server (ThriftServer. conf (Nimbus$Processor. service-handler) 
+        server (ThriftServer. conf (Nimbus$Processor. service-handler)
                               ThriftConnectionType/NIMBUS)]
     (add-shutdown-hook-with-force-kill-in-1-sec (fn []
                                                   (.shutdown service-handler)

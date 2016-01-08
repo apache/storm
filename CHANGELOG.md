@@ -1,4 +1,39 @@
 ## 0.11.0
+ * STORM-1379: Removed Redundant Structure
+ * STORM-706: Clarify examples README for IntelliJ.
+ * STORM-1396: Added backward compatibility method for File Download
+ * STORM-695: storm CLI tool reports zero exit code on error scenario
+ * STORM-1416: Documentation for state store
+ * STORM-1426: keep backtype.storm.tuple.AddressedTuple and delete duplicated backtype.storm.messaging.AddressedTuple
+ * STORM-1417: fixed equals/hashCode contract in CoordType
+ * STORM-1422: broken example in storm-starter tutorial
+ * STORM-1429: LocalizerTest fix
+ * STORM-1401: removes multilang-test
+ * STORM-1424: Removed unused topology-path variable
+ * STORM-1427: add TupleUtils/listHashCode method and delete tuple.clj
+ * STORM-1413: remove unused variables for some tests
+ * STORM-1412: null check should be done in the first place
+ * STORM-1210: Set Output Stream id in KafkaSpout
+ * STORM-1397: Merge conflict from Pacemaker merge
+ * STORM-1373: Blobstore API sample example usage
+ * STORM-1409: StormClientErrorHandler is not used
+ * STORM-1411: Some fixes for storm-windowing
+ * STORM-1399: Blobstore tests should write data to `target` so it gets removed when running `mvn clean`
+ * STORM-1398: Add back in TopologyDetails.getTopology
+ * STORM-898: Add priorities and per user resource guarantees to Resource Aware Scheduler
+ * STORM-1187: Support windowing based on tuple ts.
+ * STORM-1400: Netty Context removeClient() called after term() causes NullPointerException.
+ * STORM-1383: Supervisors should not crash if nimbus is unavailable
+ * STORM-1381: Client side topology submission hook.
+ * STORM-1376: Performance slowdown due excessive zk connections and log-debugging
+ * STORM-1395: Move JUnit dependency to top-level pom
+ * STORM-1372: Merging design and usage documents for distcache
+ * STORM-1393: Update the storm.log.dir function, add doc for logs
+ * STORM-1377: nimbus_auth_test: very short timeouts causing spurious failures
+ * STORM-1388: Fix url and email links in README file
+ * STORM-1389: Removed creation of projection tuples as they are already available
+ * STORM-1179: Create Maven Profiles for Integration Tests.
+ * STORM-1387: workers-artifacts directory configurable, and default to be under storm.log.dir.
  * STORM-1211: Add trident state and query support for cassandra connector
  * STORM-1359: Change kryo links from google code to github
  * STORM-1385: Divide by zero exception in stats.clj
@@ -938,4 +973,3 @@ NOTE: The change from 0.7.0 in which OutputCollector no longer assumes immutable
 ## 0.5.0
  
  * Initial release!
-

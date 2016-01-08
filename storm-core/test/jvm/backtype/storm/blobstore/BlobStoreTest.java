@@ -65,7 +65,7 @@ public class BlobStoreTest {
   @Before
   public void init() {
     initializeConfigs();
-    baseFile = new File("/tmp/blob-store-test-"+UUID.randomUUID());
+    baseFile = new File("target/blob-store-test-"+UUID.randomUUID());
     base = baseFile.toURI();
   }
 
@@ -149,7 +149,6 @@ public class BlobStoreTest {
     Map conf = Utils.readStormConfig();
     conf.put(Config.STORM_LOCAL_DIR, baseFile.getAbsolutePath());
     conf.put(Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN,"backtype.storm.security.auth.DefaultPrincipalToLocal");
-    ArrayList<String> zookeeper_list = new ArrayList<>();
     spy.prepare(conf, null, null);
     return spy;
   }

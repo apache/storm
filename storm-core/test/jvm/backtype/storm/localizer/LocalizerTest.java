@@ -56,7 +56,7 @@ public class LocalizerTest {
   private final String user2 = "user2";
   private final String user3 = "user3";
 
-  ClientBlobStore mockblobstore = mock(ClientBlobStore.class);
+  private ClientBlobStore mockblobstore = mock(ClientBlobStore.class);
 
 
   class TestLocalizer extends Localizer {
@@ -73,10 +73,6 @@ public class LocalizerTest {
 
   class TestInputStreamWithMeta extends InputStreamWithMeta {
     private InputStream iostream;
-    private byte[] buffer = null;
-    private int offset = 0;
-    private int end = 0;
-    private boolean eof = false;
 
     public TestInputStreamWithMeta() {
       iostream = IOUtils.toInputStream("some test data for my input stream");
@@ -118,7 +114,6 @@ public class LocalizerTest {
     if (!baseDir.mkdir()) {
       throw new IOException("failed to create base directory");
     }
-    ClientBlobStore mockblobstore = mock(ClientBlobStore.class);
   }
 
   @After
@@ -339,7 +334,6 @@ public class LocalizerTest {
 
   }
 
-
   @Test
   public void testBasic() throws Exception {
     Map conf = new HashMap();
@@ -476,6 +470,10 @@ public class LocalizerTest {
 
     lrsrcSet = localizer.getUserResources().get(user1);
     assertEquals("local resource set size wrong", 2, lrsrcSet.getSize());
+    long end = System.currentTimeMillis() + 100;
+    while ((end - System.currentTimeMillis()) >= 0 && keyFile2.exists()) {
+      Thread.sleep(1);
+    }
     assertFalse("blob not deleted", keyFile2.exists());
     assertTrue("blob deleted", keyFile.exists());
     assertTrue("blob deleted", keyFile3.exists());
@@ -518,11 +516,9 @@ public class LocalizerTest {
 
   @Test(expected = KeyNotFoundException.class)
   public void testKeyNotFoundException() throws Exception {
-    Map conf = new HashMap();
+    Map conf = Utils.readStormConfig();
     String key1 = "key1";
-    conf.put(Config.STORM_LOCAL_DIR, "local");
-    conf.put(Config.BLOBSTORE_SUPERUSER, "superuser");
-    conf.put(Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN, "backtype.storm.security.auth.DefaultPrincipalToLocal");
+    conf.put(Config.STORM_LOCAL_DIR, "target");
     LocalFsBlobStore bs = new LocalFsBlobStore();
     LocalFsBlobStore spy = spy(bs);
     Mockito.doReturn(true).when(spy).checkForBlobOrDownload(key1);

@@ -99,7 +99,7 @@ def get_config_opts():
 if not os.path.exists(STORM_LIB_DIR):
     print("******************************************")
     print("The storm client can only be run from within a release. You appear to be trying to run the client from a checkout of Storm's source code.")
-    print("\nYou can download a Storm release at http://storm-project.net/downloads.html")
+    print("\nYou can download a Storm release at http://storm.apache.org/downloads.html")
     print("******************************************")
     sys.exit(1)
 
@@ -208,9 +208,14 @@ def exec_storm_class(klass, jvmtype="-server", jvmopts=[], extrajars=[], args=[]
         os.spawnvp(os.P_WAIT, JAVA_CMD, all_args)
     elif is_windows():
         # handling whitespaces in JAVA_CMD
-        sub.call(all_args)
+        try:
+            ret = sub.check_output(all_args, stderr=sub.STDOUT)
+            print(ret)
+        except sub.CalledProcessor as e:
+            sys.exit(e.returncode)
     else:
         os.execvp(JAVA_CMD, all_args)
+        os._exit()
 
 def jar(jarfile, klass, *args):
     """Syntax: [storm jar topology-jar-path class ...]
