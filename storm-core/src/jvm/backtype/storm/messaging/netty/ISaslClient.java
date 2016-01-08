@@ -19,7 +19,6 @@ package backtype.storm.messaging.netty;
 
 public interface ISaslClient {
 
-    // void channelConnected(Channel channel);
     void channelReady();
     String name();
     String secretKey();

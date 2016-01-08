@@ -21,24 +21,6 @@ import backtype.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/*
-public class StormClientErrorHandler extends ChannelInboundHandlerAdapter {
-    private static final Logger LOG = LoggerFactory.getLogger(StormClientErrorHandler.class);
-    private String name;
-
-    StormClientErrorHandler(String name) {
-        this.name = name;
-    }
-
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        if (!(cause instanceof ConnectException)) {
-            LOG.info("Connection failed " + name, cause);
-        }
-    }
-}
-*/
-
 public class NettyUncaughtExceptionHandler implements Thread.UncaughtExceptionHandler {
     private static final Logger LOG = LoggerFactory.getLogger(NettyUncaughtExceptionHandler.class);
     @Override
