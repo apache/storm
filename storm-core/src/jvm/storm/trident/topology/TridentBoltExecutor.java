@@ -47,7 +47,7 @@ import org.apache.commons.lang.builder.ToStringBuilder;
 import storm.trident.spout.IBatchID;
 
 public class TridentBoltExecutor implements IRichBolt {
-    public static String COORD_STREAM_PREFIX = "$coord-";
+    public static final String COORD_STREAM_PREFIX = "$coord-";
     
     public static String COORD_STREAM(String batch) {
         return COORD_STREAM_PREFIX + batch;
@@ -70,9 +70,19 @@ public class TridentBoltExecutor implements IRichBolt {
 
         @Override
         public boolean equals(Object o) {
-            return singleCount == ((CoordType) o).singleCount;
-        }        
-        
+            if (this == o) return true;
+            if (!(o instanceof CoordType)) return false;
+
+            CoordType coordType = (CoordType) o;
+
+            return singleCount == coordType.singleCount;
+        }
+
+        @Override
+        public int hashCode() {
+            return (singleCount ? 1 : 0);
+        }
+
         @Override
         public String toString() {
             return "<Single: " + singleCount + ">";
@@ -81,7 +91,7 @@ public class TridentBoltExecutor implements IRichBolt {
     
     public static class CoordSpec implements Serializable {
         public GlobalStreamId commitStream = null;
-        public Map<String, CoordType> coords = new HashMap<String, CoordType>();
+        public Map<String, CoordType> coords = new HashMap<>();
         
         public CoordSpec() {
         }
@@ -307,7 +317,7 @@ public class TridentBoltExecutor implements IRichBolt {
             }
             return;
         }
-        String batchGroup = _batchGroupIds.get(tuple.getSourceGlobalStreamid());
+        String batchGroup = _batchGroupIds.get(tuple.getSourceGlobalStreamId());
         if(batchGroup==null) {
             // this is so we can do things like have simple DRPC that doesn't need to use batch processing
             _coordCollector.setCurrBatch(null);
@@ -317,7 +327,7 @@ public class TridentBoltExecutor implements IRichBolt {
         }
         IBatchID id = (IBatchID) tuple.getValue(0);
         //get transaction id
-        //if it already exissts and attempt id is greater than the attempt there
+        //if it already exists and attempt id is greater than the attempt there
         
         
         TrackedBatch tracked = (TrackedBatch) _batches.get(id.getId());
@@ -407,7 +417,7 @@ public class TridentBoltExecutor implements IRichBolt {
     private TupleType getTupleType(Tuple tuple, TrackedBatch batch) {
         CoordCondition cond = batch.condition;
         if(cond.commitStream!=null
-                && tuple.getSourceGlobalStreamid().equals(cond.commitStream)) {
+                && tuple.getSourceGlobalStreamId().equals(cond.commitStream)) {
             return TupleType.COMMIT;
         } else if(cond.expectedTaskReports > 0
                 && tuple.getSourceStreamId().startsWith(COORD_STREAM_PREFIX)) {
