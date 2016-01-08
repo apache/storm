@@ -50,7 +50,7 @@ public class KerberosSaslClientHandler extends ChannelInboundHandlerAdapter {
         client.channelReady();
 
         LOG.info("Connection established from {} to {}",
-                 channel.localAddress(), channel.localAddress());
+                 channel.localAddress(), channel.remoteAddress());
 
         try {
             KerberosSaslNettyClient saslNettyClient = channel.attr(KerberosSaslNettyClientState.KERBEROS_SASL_NETTY_CLIENT).get();
