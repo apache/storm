@@ -96,7 +96,7 @@ in a storm topology.</p>
 
 <p><strong>Note</strong>: Throughout the examples below, we make use of com.google.common.collect.Lists and com.google.common.collect.Maps.</p>
 
-<h2 id="inserting-into-a-database.">Inserting into a database.</h2>
+<h2 id="inserting-into-a-database">Inserting into a database.</h2>
 
 <p>The bolt and trident state included in this package for inserting data into a database tables are tied to a single table.</p>
 
@@ -104,21 +104,21 @@ in a storm topology.</p>
 
 <p>An interface that should be implemented by different connection pooling mechanism <code>org.apache.storm.jdbc.common.ConnectionProvider</code></p>
 <div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">ConnectionProvider</span> <span class="kd">extends</span> <span class="n">Serializable</span> <span class="o">{</span>
-    <span class="cm">/**</span>
-<span class="cm">     * method must be idempotent.</span>
-<span class="cm">     */</span>
-    <span class="kt">void</span> <span class="nf">prepare</span><span class="o">();</span>
+    <span class="cm">/**
+     * method must be idempotent.
+     */</span>
+    <span class="kt">void</span> <span class="n">prepare</span><span class="o">();</span>
 
-    <span class="cm">/**</span>
-<span class="cm">     *</span>
-<span class="cm">     * @return a DB connection over which the queries can be executed.</span>
-<span class="cm">     */</span>
-    <span class="n">Connection</span> <span class="nf">getConnection</span><span class="o">();</span>
+    <span class="cm">/**
+     *
+     * @return a DB connection over which the queries can be executed.
+     */</span>
+    <span class="n">Connection</span> <span class="n">getConnection</span><span class="o">();</span>
 
-    <span class="cm">/**</span>
-<span class="cm">     * called once when the system is shutting down, should be idempotent.</span>
-<span class="cm">     */</span>
-    <span class="kt">void</span> <span class="nf">cleanup</span><span class="o">();</span>
+    <span class="cm">/**
+     * called once when the system is shutting down, should be idempotent.
+     */</span>
+    <span class="kt">void</span> <span class="n">cleanup</span><span class="o">();</span>
 <span class="o">}</span>
 </code></pre></div>
 <p>Out of the box we support <code>org.apache.storm.jdbc.common.HikariCPConnectionProvider</code> which is an implementation that uses HikariCP.</p>
@@ -127,7 +127,7 @@ in a storm topology.</p>
 
 <p>The main API for inserting data in a table using JDBC is the <code>org.apache.storm.jdbc.mapper.JdbcMapper</code> interface:</p>
 <div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">JdbcMapper</span>  <span class="kd">extends</span> <span class="n">Serializable</span> <span class="o">{</span>
-    <span class="n">List</span><span class="o">&lt;</span><span class="n">Column</span><span class="o">&gt;</span> <span class="nf">getColumns</span><span class="o">(</span><span class="n">ITuple</span> <span class="n">tuple</span><span class="o">);</span>
+    <span class="n">List</span><span class="o">&lt;</span><span class="n">Column</span><span class="o">&gt;</span> <span class="n">getColumns</span><span class="o">(</span><span class="n">ITuple</span> <span class="n">tuple</span><span class="o">);</span>
 <span class="o">}</span>
 </code></pre></div>
 <p>The <code>getColumns()</code> method defines how a storm tuple maps to a list of columns representing a row in a database. 
@@ -147,21 +147,21 @@ You can optionally specify a query timeout seconds param that specifies max seco
 The default is set to value of topology.message.timeout.secs and a value of -1 will indicate not to set any query timeout.
 You should set the query timeout value to be &lt;= topology.message.timeout.secs.</p>
 <div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">Map</span> <span class="n">hikariConfigMap</span> <span class="o">=</span> <span class="n">Maps</span><span class="o">.</span><span class="na">newHashMap</span><span class="o">();</span>
-<span class="n">hikariConfigMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&quot;dataSourceClassName&quot;</span><span class="o">,</span><span class="s">&quot;com.mysql.jdbc.jdbc2.optional.MysqlDataSource&quot;</span><span class="o">);</span>
-<span class="n">hikariConfigMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&quot;dataSource.url&quot;</span><span class="o">,</span> <span class="s">&quot;jdbc:mysql://localhost/test&quot;</span><span class="o">);</span>
-<span class="n">hikariConfigMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&quot;dataSource.user&quot;</span><span class="o">,</span><span class="s">&quot;root&quot;</span><span class="o">);</span>
-<span class="n">hikariConfigMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&quot;dataSource.password&quot;</span><span class="o">,</span><span class="s">&quot;password&quot;</span><span class="o">);</span>
-<span class="n">ConnectionProvider</span> <span class="n">connectionProvider</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">HikariCPConnectionProvider</span><span class="o">(</span><span class="n">hikariConfigMap</span><span class="o">);</span>
+<span class="n">hikariConfigMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">"dataSourceClassName"</span><span class="o">,</span><span class="s">"com.mysql.jdbc.jdbc2.optional.MysqlDataSource"</span><span class="o">);</span>
+<span class="n">hikariConfigMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">"dataSource.url"</span><span class="o">,</span> <span class="s">"jdbc:mysql://localhost/test"</span><span class="o">);</span>
+<span class="n">hikariConfigMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">"dataSource.user"</span><span class="o">,</span><span class="s">"root"</span><span class="o">);</span>
+<span class="n">hikariConfigMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">"dataSource.password"</span><span class="o">,</span><span class="s">"password"</span><span class="o">);</span>
+<span class="n">ConnectionProvider</span> <span class="n">connectionProvider</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HikariCPConnectionProvider</span><span class="o">(</span><span class="n">hikariConfigMap</span><span class="o">);</span>
 
-<span class="n">String</span> <span class="n">tableName</span> <span class="o">=</span> <span class="s">&quot;user_details&quot;</span><span class="o">;</span>
-<span class="n">JdbcMapper</span> <span class="n">simpleJdbcMapper</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">SimpleJdbcMapper</span><span class="o">(</span><span class="n">tableName</span><span class="o">,</span> <span class="n">connectionProvider</span><span class="o">);</span>
+<span class="n">String</span> <span class="n">tableName</span> <span class="o">=</span> <span class="s">"user_details"</span><span class="o">;</span>
+<span class="n">JdbcMapper</span> <span class="n">simpleJdbcMapper</span> <span class="o">=</span> <span class="k">new</span> <span class="n">SimpleJdbcMapper</span><span class="o">(</span><span class="n">tableName</span><span class="o">,</span> <span class="n">connectionProvider</span><span class="o">);</span>
 
-<span class="n">JdbcInsertBolt</span> <span class="n">userPersistanceBolt</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">JdbcInsertBolt</span><span class="o">(</span><span class="n">connectionProvider</span><span class="o">,</span> <span class="n">simpleJdbcMapper</span><span class="o">)</span>
-                                    <span class="o">.</span><span class="na">withTableName</span><span class="o">(</span><span class="s">&quot;user&quot;</span><span class="o">)</span>
+<span class="n">JdbcInsertBolt</span> <span class="n">userPersistanceBolt</span> <span class="o">=</span> <span class="k">new</span> <span class="n">JdbcInsertBolt</span><span class="o">(</span><span class="n">connectionProvider</span><span class="o">,</span> <span class="n">simpleJdbcMapper</span><span class="o">)</span>
+                                    <span class="o">.</span><span class="na">withTableName</span><span class="o">(</span><span class="s">"user"</span><span class="o">)</span>
                                     <span class="o">.</span><span class="na">withQueryTimeoutSecs</span><span class="o">(</span><span class="mi">30</span><span class="o">);</span>
                                     <span class="n">Or</span>
-<span class="n">JdbcInsertBolt</span> <span class="n">userPersistanceBolt</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">JdbcInsertBolt</span><span class="o">(</span><span class="n">connectionProvider</span><span class="o">,</span> <span class="n">simpleJdbcMapper</span><span class="o">)</span>
-                                    <span class="o">.</span><span class="na">withInsertQuery</span><span class="o">(</span><span class="s">&quot;insert into user values (?,?)&quot;</span><span class="o">)</span>
+<span class="n">JdbcInsertBolt</span> <span class="n">userPersistanceBolt</span> <span class="o">=</span> <span class="k">new</span> <span class="n">JdbcInsertBolt</span><span class="o">(</span><span class="n">connectionProvider</span><span class="o">,</span> <span class="n">simpleJdbcMapper</span><span class="o">)</span>
+                                    <span class="o">.</span><span class="na">withInsertQuery</span><span class="o">(</span><span class="s">"insert into user values (?,?)"</span><span class="o">)</span>
                                     <span class="o">.</span><span class="na">withQueryTimeoutSecs</span><span class="o">(</span><span class="mi">30</span><span class="o">);</span>                                    
 </code></pre></div>
 <h3 id="simplejdbcmapper">SimpleJdbcMapper</h3>
@@ -181,13 +181,13 @@ automatically figure out the column names and corresponding data types of the ta
 Please see <a href="https://github.com/brettwooldridge/HikariCP#configuration-knobs-baby">https://github.com/brettwooldridge/HikariCP#configuration-knobs-baby</a> to learn more about hikari configuration properties.</li>
 </ol>
 <div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">Map</span> <span class="n">hikariConfigMap</span> <span class="o">=</span> <span class="n">Maps</span><span class="o">.</span><span class="na">newHashMap</span><span class="o">();</span>
-<span class="n">hikariConfigMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&quot;dataSourceClassName&quot;</span><span class="o">,</span><span class="s">&quot;com.mysql.jdbc.jdbc2.optional.MysqlDataSource&quot;</span><span class="o">);</span>
-<span class="n">hikariConfigMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&quot;dataSource.url&quot;</span><span class="o">,</span> <span class="s">&quot;jdbc:mysql://localhost/test&quot;</span><span class="o">);</span>
-<span class="n">hikariConfigMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&quot;dataSource.user&quot;</span><span class="o">,</span><span class="s">&quot;root&quot;</span><span class="o">);</span>
-<span class="n">hikariConfigMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&quot;dataSource.password&quot;</span><span class="o">,</span><span class="s">&quot;password&quot;</span><span class="o">);</span>
-<span class="n">ConnectionProvider</span> <span class="n">connectionProvider</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">HikariCPConnectionProvider</span><span class="o">(</span><span class="n">hikariConfigMap</span><span class="o">);</span>
-<span class="n">String</span> <span class="n">tableName</span> <span class="o">=</span> <span class="s">&quot;user_details&quot;</span><span class="o">;</span>
-<span class="n">JdbcMapper</span> <span class="n">simpleJdbcMapper</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">SimpleJdbcMapper</span><span class="o">(</span><span class="n">tableName</span><span class="o">,</span> <span class="n">connectionProvider</span><span class="o">);</span>
+<span class="n">hikariConfigMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">"dataSourceClassName"</span><span class="o">,</span><span class="s">"com.mysql.jdbc.jdbc2.optional.MysqlDataSource"</span><span class="o">);</span>
+<span class="n">hikariConfigMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">"dataSource.url"</span><span class="o">,</span> <span class="s">"jdbc:mysql://localhost/test"</span><span class="o">);</span>
+<span class="n">hikariConfigMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">"dataSource.user"</span><span class="o">,</span><span class="s">"root"</span><span class="o">);</span>
+<span class="n">hikariConfigMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">"dataSource.password"</span><span class="o">,</span><span class="s">"password"</span><span class="o">);</span>
+<span class="n">ConnectionProvider</span> <span class="n">connectionProvider</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HikariCPConnectionProvider</span><span class="o">(</span><span class="n">hikariConfigMap</span><span class="o">);</span>
+<span class="n">String</span> <span class="n">tableName</span> <span class="o">=</span> <span class="s">"user_details"</span><span class="o">;</span>
+<span class="n">JdbcMapper</span> <span class="n">simpleJdbcMapper</span> <span class="o">=</span> <span class="k">new</span> <span class="n">SimpleJdbcMapper</span><span class="o">(</span><span class="n">tableName</span><span class="o">,</span> <span class="n">connectionProvider</span><span class="o">);</span>
 </code></pre></div>
 <p>The mapper initialized in the example above assumes a storm tuple has value for all the columns of the table you intend to insert data into and its <code>getColumn</code>
 method will return the columns in the order in which Jdbc connection instance&#39;s <code>connection.getMetaData().getColumns();</code> method returns them.</p>
@@ -206,10 +206,10 @@ JdbcMapper simpleJdbcMapper = new SimpleJdbcMapper(columnSchema);
 In this table the create_time column has a default value. To ensure only the columns with no default values are inserted 
 you can initialize the <code>jdbcMapper</code> as below:</p>
 <div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">List</span><span class="o">&lt;</span><span class="n">Column</span><span class="o">&gt;</span> <span class="n">columnSchema</span> <span class="o">=</span> <span class="n">Lists</span><span class="o">.</span><span class="na">newArrayList</span><span class="o">(</span>
-    <span class="k">new</span> <span class="nf">Column</span><span class="o">(</span><span class="s">&quot;user_id&quot;</span><span class="o">,</span> <span class="n">java</span><span class="o">.</span><span class="na">sql</span><span class="o">.</span><span class="na">Types</span><span class="o">.</span><span class="na">INTEGER</span><span class="o">),</span>
-    <span class="k">new</span> <span class="nf">Column</span><span class="o">(</span><span class="s">&quot;user_name&quot;</span><span class="o">,</span> <span class="n">java</span><span class="o">.</span><span class="na">sql</span><span class="o">.</span><span class="na">Types</span><span class="o">.</span><span class="na">VARCHAR</span><span class="o">),</span>
-    <span class="k">new</span> <span class="nf">Column</span><span class="o">(</span><span class="s">&quot;dept_name&quot;</span><span class="o">,</span> <span class="n">java</span><span class="o">.</span><span class="na">sql</span><span class="o">.</span><span class="na">Types</span><span class="o">.</span><span class="na">VARCHAR</span><span class="o">));</span>
-<span class="n">JdbcMapper</span> <span class="n">simpleJdbcMapper</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">SimpleJdbcMapper</span><span class="o">(</span><span class="n">columnSchema</span><span class="o">);</span>
+    <span class="k">new</span> <span class="n">Column</span><span class="o">(</span><span class="s">"user_id"</span><span class="o">,</span> <span class="n">java</span><span class="o">.</span><span class="na">sql</span><span class="o">.</span><span class="na">Types</span><span class="o">.</span><span class="na">INTEGER</span><span class="o">),</span>
+    <span class="k">new</span> <span class="n">Column</span><span class="o">(</span><span class="s">"user_name"</span><span class="o">,</span> <span class="n">java</span><span class="o">.</span><span class="na">sql</span><span class="o">.</span><span class="na">Types</span><span class="o">.</span><span class="na">VARCHAR</span><span class="o">),</span>
+    <span class="k">new</span> <span class="n">Column</span><span class="o">(</span><span class="s">"dept_name"</span><span class="o">,</span> <span class="n">java</span><span class="o">.</span><span class="na">sql</span><span class="o">.</span><span class="na">Types</span><span class="o">.</span><span class="na">VARCHAR</span><span class="o">));</span>
+<span class="n">JdbcMapper</span> <span class="n">simpleJdbcMapper</span> <span class="o">=</span> <span class="k">new</span> <span class="n">SimpleJdbcMapper</span><span class="o">(</span><span class="n">columnSchema</span><span class="o">);</span>
 </code></pre></div>
 <h3 id="jdbctridentstate">JdbcTridentState</h3>
 
@@ -219,9 +219,9 @@ See the example below:</p>
 <div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">JdbcState</span><span class="o">.</span><span class="na">Options</span> <span class="n">options</span> <span class="o">=</span> <span class="k">new</span> <span class="n">JdbcState</span><span class="o">.</span><span class="na">Options</span><span class="o">()</span>
         <span class="o">.</span><span class="na">withConnectionProvider</span><span class="o">(</span><span class="n">connectionProvider</span><span class="o">)</span>
         <span class="o">.</span><span class="na">withMapper</span><span class="o">(</span><span class="n">jdbcMapper</span><span class="o">)</span>
-        <span class="o">.</span><span class="na">withTableName</span><span class="o">(</span><span class="s">&quot;user_details&quot;</span><span class="o">)</span>
+        <span class="o">.</span><span class="na">withTableName</span><span class="o">(</span><span class="s">"user_details"</span><span class="o">)</span>
         <span class="o">.</span><span class="na">withQueryTimeoutSecs</span><span class="o">(</span><span class="mi">30</span><span class="o">);</span>
-<span class="n">JdbcStateFactory</span> <span class="n">jdbcStateFactory</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">JdbcStateFactory</span><span class="o">(</span><span class="n">options</span><span class="o">);</span>
+<span class="n">JdbcStateFactory</span> <span class="n">jdbcStateFactory</span> <span class="o">=</span> <span class="k">new</span> <span class="n">JdbcStateFactory</span><span class="o">(</span><span class="n">options</span><span class="o">);</span>
 </code></pre></div>
 <p>similar to <code>JdbcInsertBolt</code> you can specify a custom insert query using <code>withInsertQuery</code> instead of specifying a table name.</p>
 
@@ -229,9 +229,9 @@ See the example below:</p>
 
 <p>We support <code>select</code> queries from databases to allow enrichment of storm tuples in a topology. The main API for 
 executing select queries against a database using JDBC is the <code>org.apache.storm.jdbc.mapper.JdbcLookupMapper</code> interface:</p>
-<div class="highlight"><pre><code class="language-java" data-lang="java">    <span class="kt">void</span> <span class="nf">declareOutputFields</span><span class="o">(</span><span class="n">OutputFieldsDeclarer</span> <span class="n">declarer</span><span class="o">);</span>
-    <span class="n">List</span><span class="o">&lt;</span><span class="n">Column</span><span class="o">&gt;</span> <span class="nf">getColumns</span><span class="o">(</span><span class="n">ITuple</span> <span class="n">tuple</span><span class="o">);</span>
-    <span class="n">List</span><span class="o">&lt;</span><span class="n">Values</span><span class="o">&gt;</span> <span class="nf">toTuple</span><span class="o">(</span><span class="n">ITuple</span> <span class="n">input</span><span class="o">,</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">Column</span><span class="o">&gt;</span> <span class="n">columns</span><span class="o">);</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java">    <span class="kt">void</span> <span class="nf">declareOutputFields</span><span class="p">(</span><span class="n">OutputFieldsDeclarer</span> <span class="n">declarer</span><span class="o">);</span>
+    <span class="n">List</span><span class="o">&lt;</span><span class="n">Column</span><span class="o">&gt;</span> <span class="n">getColumns</span><span class="o">(</span><span class="n">ITuple</span> <span class="n">tuple</span><span class="o">);</span>
+    <span class="n">List</span><span class="o">&lt;</span><span class="n">Values</span><span class="o">&gt;</span> <span class="n">toTuple</span><span class="o">(</span><span class="n">ITuple</span> <span class="n">input</span><span class="o">,</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">Column</span><span class="o">&gt;</span> <span class="n">columns</span><span class="o">);</span>
 </code></pre></div>
 <p>The <code>declareOutputFields</code> method is used to indicate what fields will be emitted as part of output tuple of processing a storm 
 tuple. </p>
@@ -265,18 +265,18 @@ So in the example below if the input tuple had fields <code>user_id, create_date
 will return the value of <code>tuple.getValueByField(&quot;user_id&quot;)</code> which will be used as the value in <code>?</code> of select query. 
 For each output row from DB, <code>SimpleJdbcLookupMapper.toTuple()</code> will use the <code>user_id, create_date</code> from the input tuple as 
 is adding only <code>user_name</code> from the resulting row and returning these 3 fields as a single output tuple.</p>
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">Fields</span> <span class="n">outputFields</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;user_id&quot;</span><span class="o">,</span> <span class="s">&quot;user_name&quot;</span><span class="o">,</span> <span class="s">&quot;create_date&quot;</span><span class="o">);</span>
-<span class="n">List</span><span class="o">&lt;</span><span class="n">Column</span><span class="o">&gt;</span> <span class="n">queryParamColumns</span> <span class="o">=</span> <span class="n">Lists</span><span class="o">.</span><span class="na">newArrayList</span><span class="o">(</span><span class="k">new</span> <span class="nf">Column</span><span class="o">(</span><span class="s">&quot;user_id&quot;</span><span class="o">,</span> <span class="n">Types</span><span class="o">.</span><span class="na">INTEGER</span><span class="o">));</span>
-<span class="k">this</span><span class="o">.</span><span class="na">jdbcLookupMapper</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">SimpleJdbcLookupMapper</span><span class="o">(</span><span class="n">outputFields</span><span class="o">,</span> <span class="n">queryParamColumns</span><span class="o">);</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">Fields</span> <span class="n">outputFields</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Fields</span><span class="o">(</span><span class="s">"user_id"</span><span class="o">,</span> <span class="s">"user_name"</span><span class="o">,</span> <span class="s">"create_date"</span><span class="o">);</span>
+<span class="n">List</span><span class="o">&lt;</span><span class="n">Column</span><span class="o">&gt;</span> <span class="n">queryParamColumns</span> <span class="o">=</span> <span class="n">Lists</span><span class="o">.</span><span class="na">newArrayList</span><span class="o">(</span><span class="k">new</span> <span class="n">Column</span><span class="o">(</span><span class="s">"user_id"</span><span class="o">,</span> <span class="n">Types</span><span class="o">.</span><span class="na">INTEGER</span><span class="o">));</span>
+<span class="k">this</span><span class="o">.</span><span class="na">jdbcLookupMapper</span> <span class="o">=</span> <span class="k">new</span> <span class="n">SimpleJdbcLookupMapper</span><span class="o">(</span><span class="n">outputFields</span><span class="o">,</span> <span class="n">queryParamColumns</span><span class="o">);</span>
 </code></pre></div>
 <h3 id="jdbclookupbolt">JdbcLookupBolt</h3>
 
 <p>To use the <code>JdbcLookupBolt</code>, construct an instance of it using a <code>ConnectionProvider</code> instance, <code>JdbcLookupMapper</code> instance and the select query to execute.
 You can optionally specify a query timeout seconds param that specifies max seconds the select query can take. 
 The default is set to value of topology.message.timeout.secs. You should set this value to be &lt;= topology.message.timeout.secs.</p>
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">String</span> <span class="n">selectSql</span> <span class="o">=</span> <span class="s">&quot;select user_name from user_details where user_id = ?&quot;</span><span class="o">;</span>
-<span class="n">SimpleJdbcLookupMapper</span> <span class="n">lookupMapper</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">SimpleJdbcLookupMapper</span><span class="o">(</span><span class="n">outputFields</span><span class="o">,</span> <span class="n">queryParamColumns</span><span class="o">)</span>
-<span class="n">JdbcLookupBolt</span> <span class="n">userNameLookupBolt</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">JdbcLookupBolt</span><span class="o">(</span><span class="n">connectionProvider</span><span class="o">,</span> <span class="n">selectSql</span><span class="o">,</span> <span class="n">lookupMapper</span><span class="o">)</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">String</span> <span class="n">selectSql</span> <span class="o">=</span> <span class="s">"select user_name from user_details where user_id = ?"</span><span class="o">;</span>
+<span class="n">SimpleJdbcLookupMapper</span> <span class="n">lookupMapper</span> <span class="o">=</span> <span class="k">new</span> <span class="n">SimpleJdbcLookupMapper</span><span class="o">(</span><span class="n">outputFields</span><span class="o">,</span> <span class="n">queryParamColumns</span><span class="o">)</span>
+<span class="n">JdbcLookupBolt</span> <span class="n">userNameLookupBolt</span> <span class="o">=</span> <span class="k">new</span> <span class="n">JdbcLookupBolt</span><span class="o">(</span><span class="n">connectionProvider</span><span class="o">,</span> <span class="n">selectSql</span><span class="o">,</span> <span class="n">lookupMapper</span><span class="o">)</span>
         <span class="o">.</span><span class="na">withQueryTimeoutSecs</span><span class="o">(</span><span class="mi">30</span><span class="o">);</span>
 </code></pre></div>
 <h3 id="jdbctridentstate-for-lookup">JdbcTridentState for lookup</h3>
@@ -284,11 +284,11 @@ The default is set to value of topology.message.timeout.secs. You should set thi
 <p>We also support a trident query state that can be used with trident topologies. </p>
 <div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">JdbcState</span><span class="o">.</span><span class="na">Options</span> <span class="n">options</span> <span class="o">=</span> <span class="k">new</span> <span class="n">JdbcState</span><span class="o">.</span><span class="na">Options</span><span class="o">()</span>
         <span class="o">.</span><span class="na">withConnectionProvider</span><span class="o">(</span><span class="n">connectionProvider</span><span class="o">)</span>
-        <span class="o">.</span><span class="na">withJdbcLookupMapper</span><span class="o">(</span><span class="k">new</span> <span class="nf">SimpleJdbcLookupMapper</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;user_name&quot;</span><span class="o">),</span> <span class="n">Lists</span><span class="o">.</span><span class="na">newArrayList</span><span class="o">(</span><span class="k">new</span> <span class="nf">Column</span><span class="o">(</span><span class="s">&quot;user_id&quot;</span><span class="o">,</span> <span class="n">Types</span><span class="o">.</span><span class="na">INTEGER</span><span class="o">))))</span>
-        <span class="o">.</span><span class="na">withSelectQuery</span><span class="o">(</span><span class="s">&quot;select user_name from user_details where user_id = ?&quot;</span><span class="o">);</span>
+        <span class="o">.</span><span class="na">withJdbcLookupMapper</span><span class="o">(</span><span class="k">new</span> <span class="n">SimpleJdbcLookupMapper</span><span class="o">(</span><span class="k">new</span> <span class="n">Fields</span><span class="o">(</span><span class="s">"user_name"</span><span class="o">),</span> <span class="n">Lists</span><span class="o">.</span><span class="na">newArrayList</span><span class="o">(</span><span class="k">new</span> <span class="n">Column</span><span class="o">(</span><span class="s">"user_id"</span><span class="o">,</span> <span class="n">Types</span><span class="o">.</span><span class="na">INTEGER</span><span class="o">))))</span>
+        <span class="o">.</span><span class="na">withSelectQuery</span><span class="o">(</span><span class="s">"select user_name from user_details where user_id = ?"</span><span class="o">);</span>
         <span class="o">.</span><span class="na">withQueryTimeoutSecs</span><span class="o">(</span><span class="mi">30</span><span class="o">);</span>
 </code></pre></div>
-<h2 id="example:">Example:</h2>
+<h2 id="example">Example:</h2>
 
 <p>A runnable example can be found in the <code>src/test/java/topology</code> directory.</p>
 
@@ -318,7 +318,7 @@ storm jar org.apache.storm.jdbc.topology.UserPersistanceTopology <dataSourceClas
 </ul>
 
 <p>To make it work with Mysql, you can add the following to the pom.xml</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">&lt;dependency&gt;
+<div class="highlight"><pre><code class="language-" data-lang="">&lt;dependency&gt;
     &lt;groupId&gt;mysql&lt;/groupId&gt;
     &lt;artifactId&gt;mysql-connector-java&lt;/artifactId&gt;
     &lt;version&gt;5.1.31&lt;/version&gt;
@@ -326,7 +326,7 @@ storm jar org.apache.storm.jdbc.topology.UserPersistanceTopology <dataSourceClas
 </code></pre></div>
 <p>You can generate a single jar with dependencies using mvn assembly plugin. To use the plugin add the following to your pom.xml and execute 
 <code>mvn clean compile assembly:single</code></p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">&lt;plugin&gt;
+<div class="highlight"><pre><code class="language-" data-lang="">&lt;plugin&gt;
     &lt;artifactId&gt;maven-assembly-plugin&lt;/artifactId&gt;
     &lt;configuration&gt;
         &lt;archive&gt;
@@ -346,7 +346,7 @@ storm jar ~/repo/incubator-storm/external/storm-jdbc/target/storm-jdbc-0.10.0-SN
 </code></p>
 
 <p>You can execute a select query against the user table which should show newly inserted rows:</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">select * from user;
+<div class="highlight"><pre><code class="language-" data-lang="">select * from user;
 </code></pre></div>
 <p>For trident you can view <code>org.apache.storm.jdbc.topology.UserPersistanceTridentTopology</code>.</p>
 

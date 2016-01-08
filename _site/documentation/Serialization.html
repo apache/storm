@@ -94,7 +94,7 @@
 
 <p>Tuples can be comprised of objects of any types. Since Storm is a distributed system, it needs to know how to serialize and deserialize objects when they&#39;re passed between tasks.</p>
 
-<p>Storm uses <a href="http://code.google.com/p/kryo/">Kryo</a> for serialization. Kryo is a flexible and fast serialization library that produces small serializations.</p>
+<p>Storm uses <a href="https://github.com/EsotericSoftware/kryo">Kryo</a> for serialization. Kryo is a flexible and fast serialization library that produces small serializations.</p>
 
 <p>By default, Storm can serialize primitive types, strings, byte arrays, ArrayList, HashMap, HashSet, and the Clojure collection types. If you want to use another type in your tuples, you&#39;ll need to register a custom serializer.</p>
 
@@ -110,17 +110,17 @@
 
 <h3 id="custom-serialization">Custom serialization</h3>
 
-<p>As mentioned, Storm uses Kryo for serialization. To implement custom serializers, you need to register new serializers with Kryo. It&#39;s highly recommended that you read over <a href="http://code.google.com/p/kryo/">Kryo&#39;s home page</a> to understand how it handles custom serialization.</p>
+<p>As mentioned, Storm uses Kryo for serialization. To implement custom serializers, you need to register new serializers with Kryo. It&#39;s highly recommended that you read over <a href="https://github.com/EsotericSoftware/kryo">Kryo&#39;s home page</a> to understand how it handles custom serialization.</p>
 
 <p>Adding custom serializers is done through the &quot;topology.kryo.register&quot; property in your topology config. It takes a list of registrations, where each registration can take one of two forms:</p>
 
 <ol>
 <li>The name of a class to register. In this case, Storm will use Kryo&#39;s <code>FieldsSerializer</code> to serialize the class. This may or may not be optimal for the class -- see the Kryo docs for more details.</li>
-<li>A map from the name of a class to register to an implementation of <a href="http://code.google.com/p/kryo/source/browse/trunk/src/com/esotericsoftware/kryo/Serializer.java">com.esotericsoftware.kryo.Serializer</a>.</li>
+<li>A map from the name of a class to register to an implementation of <a href="https://github.com/EsotericSoftware/kryo/blob/master/src/com/esotericsoftware/kryo/Serializer.java">com.esotericsoftware.kryo.Serializer</a>.</li>
 </ol>
 
 <p>Let&#39;s look at an example.</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">topology.kryo.register:
+<div class="highlight"><pre><code class="language-" data-lang="">topology.kryo.register:
   - com.mycompany.CustomType1
   - com.mycompany.CustomType2: com.mycompany.serializer.CustomType2Serializer
   - com.mycompany.CustomType3

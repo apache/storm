@@ -97,9 +97,9 @@
 <p>The main API for interacting with HBase is the <code>org.apache.storm.hbase.bolt.mapper.HBaseMapper</code>
 interface:</p>
 <div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">HBaseMapper</span> <span class="kd">extends</span> <span class="n">Serializable</span> <span class="o">{</span>
-    <span class="kt">byte</span><span class="o">[]</span> <span class="nf">rowKey</span><span class="o">(</span><span class="n">Tuple</span> <span class="n">tuple</span><span class="o">);</span>
+    <span class="kt">byte</span><span class="o">[]</span> <span class="n">rowKey</span><span class="o">(</span><span class="n">Tuple</span> <span class="n">tuple</span><span class="o">);</span>
 
-    <span class="n">ColumnList</span> <span class="nf">columns</span><span class="o">(</span><span class="n">Tuple</span> <span class="n">tuple</span><span class="o">);</span>
+    <span class="n">ColumnList</span> <span class="n">columns</span><span class="o">(</span><span class="n">Tuple</span> <span class="n">tuple</span><span class="o">);</span>
 <span class="o">}</span>
 </code></pre></div>
 <p>The <code>rowKey()</code> method is straightforward: given a Storm tuple, return a byte array representing the
@@ -109,23 +109,23 @@ row key.</p>
 to add both standard HBase columns as well as HBase counter columns.</p>
 
 <p>To add a standard column, use one of the <code>addColumn()</code> methods:</p>
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">ColumnList</span> <span class="n">cols</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">ColumnList</span><span class="o">();</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">ColumnList</span> <span class="n">cols</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ColumnList</span><span class="o">();</span>
 <span class="n">cols</span><span class="o">.</span><span class="na">addColumn</span><span class="o">(</span><span class="k">this</span><span class="o">.</span><span class="na">columnFamily</span><span class="o">,</span> <span class="n">field</span><span class="o">.</span><span class="na">getBytes</span><span class="o">(),</span> <span class="n">toBytes</span><span class="o">(</span><span class="n">tuple</span><span class="o">.</span><span class="na">getValueByField</span><span class="o">(</span><span class="n">field</span><span class="o">)));</span>
 </code></pre></div>
 <p>To add a counter column, use one of the <code>addCounter()</code> methods:</p>
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">ColumnList</span> <span class="n">cols</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">ColumnList</span><span class="o">();</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">ColumnList</span> <span class="n">cols</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ColumnList</span><span class="o">();</span>
 <span class="n">cols</span><span class="o">.</span><span class="na">addCounter</span><span class="o">(</span><span class="k">this</span><span class="o">.</span><span class="na">columnFamily</span><span class="o">,</span> <span class="n">field</span><span class="o">.</span><span class="na">getBytes</span><span class="o">(),</span> <span class="n">toLong</span><span class="o">(</span><span class="n">tuple</span><span class="o">.</span><span class="na">getValueByField</span><span class="o">(</span><span class="n">field</span><span class="o">)));</span>
 </code></pre></div>
 <p>When the remote HBase is security enabled, a kerberos keytab and the corresponding principal name need to be
 provided for the storm-hbase connector. Specifically, the Config object passed into the topology should contain
 {(“storm.keytab.file”, “$keytab”), (&quot;storm.kerberos.principal&quot;, “$principal”)}. Example:</p>
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">Config</span> <span class="n">config</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">Config</span><span class="o">();</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">Config</span> <span class="n">config</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Config</span><span class="o">();</span>
 <span class="o">...</span>
-<span class="n">config</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&quot;storm.keytab.file&quot;</span><span class="o">,</span> <span class="s">&quot;$keytab&quot;</span><span class="o">);</span>
-<span class="n">config</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">&quot;storm.kerberos.principal&quot;</span><span class="o">,</span> <span class="s">&quot;$principle&quot;</span><span class="o">);</span>
-<span class="n">StormSubmitter</span><span class="o">.</span><span class="na">submitTopology</span><span class="o">(</span><span class="s">&quot;$topologyName&quot;</span><span class="o">,</span> <span class="n">config</span><span class="o">,</span> <span class="n">builder</span><span class="o">.</span><span class="na">createTopology</span><span class="o">());</span>
+<span class="n">config</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">"storm.keytab.file"</span><span class="o">,</span> <span class="s">"$keytab"</span><span class="o">);</span>
+<span class="n">config</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="s">"storm.kerberos.principal"</span><span class="o">,</span> <span class="s">"$principle"</span><span class="o">);</span>
+<span class="n">StormSubmitter</span><span class="o">.</span><span class="na">submitTopology</span><span class="o">(</span><span class="s">"$topologyName"</span><span class="o">,</span> <span class="n">config</span><span class="o">,</span> <span class="n">builder</span><span class="o">.</span><span class="na">createTopology</span><span class="o">());</span>
 </code></pre></div>
-<h2 id="working-with-secure-hbase-using-delegation-tokens.">Working with Secure HBASE using delegation tokens.</h2>
+<h2 id="working-with-secure-hbase-using-delegation-tokens">Working with Secure HBASE using delegation tokens.</h2>
 
 <p>If your topology is going to interact with secure HBase, your bolts/states needs to be authenticated by HBase. 
 The approach described above requires that all potential worker hosts have &quot;storm.keytab.file&quot; on them. If you have 
@@ -176,16 +176,16 @@ tuples to both regular HBase columns as well as counter columns.</p>
 <li>Adds an HBase counter column for the tuple field <code>count</code>.</li>
 <li>Writes values to the <code>cf</code> column family.</li>
 </ol>
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">SimpleHBaseMapper</span> <span class="n">mapper</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">SimpleHBaseMapper</span><span class="o">()</span> 
-        <span class="o">.</span><span class="na">withRowKeyField</span><span class="o">(</span><span class="s">&quot;word&quot;</span><span class="o">)</span>
-        <span class="o">.</span><span class="na">withColumnFields</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;word&quot;</span><span class="o">))</span>
-        <span class="o">.</span><span class="na">withCounterFields</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;count&quot;</span><span class="o">))</span>
-        <span class="o">.</span><span class="na">withColumnFamily</span><span class="o">(</span><span class="s">&quot;cf&quot;</span><span class="o">);</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">SimpleHBaseMapper</span> <span class="n">mapper</span> <span class="o">=</span> <span class="k">new</span> <span class="n">SimpleHBaseMapper</span><span class="o">()</span> 
+        <span class="o">.</span><span class="na">withRowKeyField</span><span class="o">(</span><span class="s">"word"</span><span class="o">)</span>
+        <span class="o">.</span><span class="na">withColumnFields</span><span class="o">(</span><span class="k">new</span> <span class="n">Fields</span><span class="o">(</span><span class="s">"word"</span><span class="o">))</span>
+        <span class="o">.</span><span class="na">withCounterFields</span><span class="o">(</span><span class="k">new</span> <span class="n">Fields</span><span class="o">(</span><span class="s">"count"</span><span class="o">))</span>
+        <span class="o">.</span><span class="na">withColumnFamily</span><span class="o">(</span><span class="s">"cf"</span><span class="o">);</span>
 </code></pre></div>
 <h3 id="hbasebolt">HBaseBolt</h3>
 
 <p>To use the <code>HBaseBolt</code>, construct it with the name of the table to write to, an a <code>HBaseMapper</code> implementation:</p>
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">HBaseBolt</span> <span class="n">hbase</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">HBaseBolt</span><span class="o">(</span><span class="s">&quot;WordCount&quot;</span><span class="o">,</span> <span class="n">mapper</span><span class="o">);</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">HBaseBolt</span> <span class="n">hbase</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HBaseBolt</span><span class="o">(</span><span class="s">"WordCount"</span><span class="o">,</span> <span class="n">mapper</span><span class="o">);</span>
 </code></pre></div>
 <p>The <code>HBaseBolt</code> will delegate to the <code>mapper</code> instance to figure out how to persist tuple data to HBase.</p>
 
@@ -193,8 +193,8 @@ tuples to both regular HBase columns as well as counter columns.</p>
 
 <p>This class allows you to transform the HBase lookup result into storm Values that will be emitted by the <code>HBaseLookupBolt</code>.</p>
 <div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">HBaseValueMapper</span> <span class="kd">extends</span> <span class="n">Serializable</span> <span class="o">{</span>
-    <span class="kd">public</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">Values</span><span class="o">&gt;</span> <span class="nf">toTuples</span><span class="o">(</span><span class="n">Result</span> <span class="n">result</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span><span class="o">;</span>
-    <span class="kt">void</span> <span class="nf">declareOutputFields</span><span class="o">(</span><span class="n">OutputFieldsDeclarer</span> <span class="n">declarer</span><span class="o">);</span>
+    <span class="kd">public</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">Values</span><span class="o">&gt;</span> <span class="n">toTuples</span><span class="o">(</span><span class="n">Result</span> <span class="n">result</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span><span class="o">;</span>
+    <span class="kt">void</span> <span class="n">declareOutputFields</span><span class="o">(</span><span class="n">OutputFieldsDeclarer</span> <span class="n">declarer</span><span class="o">);</span>
 <span class="o">}</span>
 </code></pre></div>
 <p>The <code>toTuples</code> method takes in a HBase <code>Result</code> instance and expects a List of <code>Values</code> instant. 
@@ -209,8 +209,8 @@ Each of the value returned by this function will be emitted by the <code>HBaseLo
 <p>This class allows you to specify the projection criteria for your HBase Get function. This is optional parameter
 for the lookupBolt and if you do not specify this instance all the columns will be returned by <code>HBaseLookupBolt</code>.</p>
 <div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">HBaseProjectionCriteria</span> <span class="kd">implements</span> <span class="n">Serializable</span> <span class="o">{</span>
-    <span class="kd">public</span> <span class="n">HBaseProjectionCriteria</span> <span class="nf">addColumnFamily</span><span class="o">(</span><span class="n">String</span> <span class="n">columnFamily</span><span class="o">);</span>
-    <span class="kd">public</span> <span class="n">HBaseProjectionCriteria</span> <span class="nf">addColumn</span><span class="o">(</span><span class="n">ColumnMetaData</span> <span class="n">column</span><span class="o">);</span>
+    <span class="kd">public</span> <span class="n">HBaseProjectionCriteria</span> <span class="n">addColumnFamily</span><span class="o">(</span><span class="n">String</span> <span class="n">columnFamily</span><span class="o">);</span>
+    <span class="kd">public</span> <span class="n">HBaseProjectionCriteria</span> <span class="n">addColumn</span><span class="o">(</span><span class="n">ColumnMetaData</span> <span class="n">column</span><span class="o">);</span>
 </code></pre></div>
 <p><code>addColumnFamily</code> takes in columnFamily. Setting this parameter means all columns for this family will be included
  in the projection.</p>
@@ -223,9 +223,9 @@ The following code creates a projectionCriteria which specifies a projection cri
 <li>includes count column from column family cf.</li>
 <li>includes all columns from column family cf2.</li>
 </ol>
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">HBaseProjectionCriteria</span> <span class="n">projectionCriteria</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">HBaseProjectionCriteria</span><span class="o">()</span>
-    <span class="o">.</span><span class="na">addColumn</span><span class="o">(</span><span class="k">new</span> <span class="n">HBaseProjectionCriteria</span><span class="o">.</span><span class="na">ColumnMetaData</span><span class="o">(</span><span class="s">&quot;cf&quot;</span><span class="o">,</span> <span class="s">&quot;count&quot;</span><span class="o">))</span>
-    <span class="o">.</span><span class="na">addColumnFamily</span><span class="o">(</span><span class="s">&quot;cf2&quot;</span><span class="o">);</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">HBaseProjectionCriteria</span> <span class="n">projectionCriteria</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HBaseProjectionCriteria</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">addColumn</span><span class="o">(</span><span class="k">new</span> <span class="n">HBaseProjectionCriteria</span><span class="o">.</span><span class="na">ColumnMetaData</span><span class="o">(</span><span class="s">"cf"</span><span class="o">,</span> <span class="s">"count"</span><span class="o">))</span>
+    <span class="o">.</span><span class="na">addColumnFamily</span><span class="o">(</span><span class="s">"cf2"</span><span class="o">);</span>
 </code></pre></div>
 <h3 id="hbaselookupbolt">HBaseLookupBolt</h3>
 
@@ -238,7 +238,7 @@ values to be emitted by the bolt.</p>
 
 <p>You can look at an example topology LookupWordCount.java under <code>src/test/java</code>.</p>
 
-<h2 id="example:-persistent-word-count">Example: Persistent Word Count</h2>
+<h2 id="example-persistent-word-count">Example: Persistent Word Count</h2>
 
 <p>A runnable example can be found in the <code>src/test/java</code> directory.</p>
 
@@ -248,7 +248,7 @@ values to be emitted by the bolt.</p>
 classpath pointing to your HBase cluster.</p>
 
 <p>Use the <code>hbase shell</code> command to create the schema:</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">&gt; create &#39;WordCount&#39;, &#39;cf&#39;
+<div class="highlight"><pre><code class="language-" data-lang="">&gt; create 'WordCount', 'cf'
 </code></pre></div>
 <h3 id="execution">Execution</h3>
 
@@ -256,47 +256,47 @@ classpath pointing to your HBase cluster.</p>
 
 <p>After (or while) the word count topology is running, run the <code>org.apache.storm.hbase.topology.WordCountClient</code> class
 to view the counter values stored in HBase. You should see something like to following:</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">Word: &#39;apple&#39;, Count: 6867
-Word: &#39;orange&#39;, Count: 6645
-Word: &#39;pineapple&#39;, Count: 6954
-Word: &#39;banana&#39;, Count: 6787
-Word: &#39;watermelon&#39;, Count: 6806
+<div class="highlight"><pre><code class="language-" data-lang="">Word: 'apple', Count: 6867
+Word: 'orange', Count: 6645
+Word: 'pineapple', Count: 6954
+Word: 'banana', Count: 6787
+Word: 'watermelon', Count: 6806
 </code></pre></div>
 <p>For reference, the sample topology is listed below:</p>
 <div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">PersistentWordCount</span> <span class="o">{</span>
-    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">WORD_SPOUT</span> <span class="o">=</span> <span class="s">&quot;WORD_SPOUT&quot;</span><span class="o">;</span>
-    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">COUNT_BOLT</span> <span class="o">=</span> <span class="s">&quot;COUNT_BOLT&quot;</span><span class="o">;</span>
-    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">HBASE_BOLT</span> <span class="o">=</span> <span class="s">&quot;HBASE_BOLT&quot;</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">WORD_SPOUT</span> <span class="o">=</span> <span class="s">"WORD_SPOUT"</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">COUNT_BOLT</span> <span class="o">=</span> <span class="s">"COUNT_BOLT"</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">HBASE_BOLT</span> <span class="o">=</span> <span class="s">"HBASE_BOLT"</span><span class="o">;</span>
 
 
-    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
-        <span class="n">Config</span> <span class="n">config</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">Config</span><span class="o">();</span>
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="n">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+        <span class="n">Config</span> <span class="n">config</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Config</span><span class="o">();</span>
 
-        <span class="n">WordSpout</span> <span class="n">spout</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">WordSpout</span><span class="o">();</span>
-        <span class="n">WordCounter</span> <span class="n">bolt</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">WordCounter</span><span class="o">();</span>
+        <span class="n">WordSpout</span> <span class="n">spout</span> <span class="o">=</span> <span class="k">new</span> <span class="n">WordSpout</span><span class="o">();</span>
+        <span class="n">WordCounter</span> <span class="n">bolt</span> <span class="o">=</span> <span class="k">new</span> <span class="n">WordCounter</span><span class="o">();</span>
 
-        <span class="n">SimpleHBaseMapper</span> <span class="n">mapper</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">SimpleHBaseMapper</span><span class="o">()</span>
-                <span class="o">.</span><span class="na">withRowKeyField</span><span class="o">(</span><span class="s">&quot;word&quot;</span><span class="o">)</span>
-                <span class="o">.</span><span class="na">withColumnFields</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;word&quot;</span><span class="o">))</span>
-                <span class="o">.</span><span class="na">withCounterFields</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;count&quot;</span><span class="o">))</span>
-                <span class="o">.</span><span class="na">withColumnFamily</span><span class="o">(</span><span class="s">&quot;cf&quot;</span><span class="o">);</span>
+        <span class="n">SimpleHBaseMapper</span> <span class="n">mapper</span> <span class="o">=</span> <span class="k">new</span> <span class="n">SimpleHBaseMapper</span><span class="o">()</span>
+                <span class="o">.</span><span class="na">withRowKeyField</span><span class="o">(</span><span class="s">"word"</span><span class="o">)</span>
+                <span class="o">.</span><span class="na">withColumnFields</span><span class="o">(</span><span class="k">new</span> <span class="n">Fields</span><span class="o">(</span><span class="s">"word"</span><span class="o">))</span>
+                <span class="o">.</span><span class="na">withCounterFields</span><span class="o">(</span><span class="k">new</span> <span class="n">Fields</span><span class="o">(</span><span class="s">"count"</span><span class="o">))</span>
+                <span class="o">.</span><span class="na">withColumnFamily</span><span class="o">(</span><span class="s">"cf"</span><span class="o">);</span>
 
-        <span class="n">HBaseBolt</span> <span class="n">hbase</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">HBaseBolt</span><span class="o">(</span><span class="s">&quot;WordCount&quot;</span><span class="o">,</span> <span class="n">mapper</span><span class="o">);</span>
+        <span class="n">HBaseBolt</span> <span class="n">hbase</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HBaseBolt</span><span class="o">(</span><span class="s">"WordCount"</span><span class="o">,</span> <span class="n">mapper</span><span class="o">);</span>
 
 
         <span class="c1">// wordSpout ==&gt; countBolt ==&gt; HBaseBolt</span>
-        <span class="n">TopologyBuilder</span> <span class="n">builder</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">TopologyBuilder</span><span class="o">();</span>
+        <span class="n">TopologyBuilder</span> <span class="n">builder</span> <span class="o">=</span> <span class="k">new</span> <span class="n">TopologyBuilder</span><span class="o">();</span>
 
         <span class="n">builder</span><span class="o">.</span><span class="na">setSpout</span><span class="o">(</span><span class="n">WORD_SPOUT</span><span class="o">,</span> <span class="n">spout</span><span class="o">,</span> <span class="mi">1</span><span class="o">);</span>
         <span class="n">builder</span><span class="o">.</span><span class="na">setBolt</span><span class="o">(</span><span class="n">COUNT_BOLT</span><span class="o">,</span> <span class="n">bolt</span><span class="o">,</span> <span class="mi">1</span><span class="o">).</span><span class="na">shuffleGrouping</span><span class="o">(</span><span class="n">WORD_SPOUT</span><span class="o">);</span>
-        <span class="n">builder</span><span class="o">.</span><span class="na">setBolt</span><span class="o">(</span><span class="n">HBASE_BOLT</span><span class="o">,</span> <span class="n">hbase</span><span class="o">,</span> <span class="mi">1</span><span class="o">).</span><span class="na">fieldsGrouping</span><span class="o">(</span><span class="n">COUNT_BOLT</span><span class="o">,</span> <span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;word&quot;</span><span class="o">));</span>
+        <span class="n">builder</span><span class="o">.</span><span class="na">setBolt</span><span class="o">(</span><span class="n">HBASE_BOLT</span><span class="o">,</span> <span class="n">hbase</span><span class="o">,</span> <span class="mi">1</span><span class="o">).</span><span class="na">fieldsGrouping</span><span class="o">(</span><span class="n">COUNT_BOLT</span><span class="o">,</span> <span class="k">new</span> <span class="n">Fields</span><span class="o">(</span><span class="s">"word"</span><span class="o">));</span>
 
 
         <span class="k">if</span> <span class="o">(</span><span class="n">args</span><span class="o">.</span><span class="na">length</span> <span class="o">==</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{</span>
-            <span class="n">LocalCluster</span> <span class="n">cluster</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">LocalCluster</span><span class="o">();</span>
-            <span class="n">cluster</span><span class="o">.</span><span class="na">submitTopology</span><span class="o">(</span><span class="s">&quot;test&quot;</span><span class="o">,</span> <span class="n">config</span><span class="o">,</span> <span class="n">builder</span><span class="o">.</span><span class="na">createTopology</span><span class="o">());</span>
+            <span class="n">LocalCluster</span> <span class="n">cluster</span> <span class="o">=</span> <span class="k">new</span> <span class="n">LocalCluster</span><span class="o">();</span>
+            <span class="n">cluster</span><span class="o">.</span><span class="na">submitTopology</span><span class="o">(</span><span class="s">"test"</span><span class="o">,</span> <span class="n">config</span><span class="o">,</span> <span class="n">builder</span><span class="o">.</span><span class="na">createTopology</span><span class="o">());</span>
             <span class="n">Thread</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="mi">10000</span><span class="o">);</span>
-            <span class="n">cluster</span><span class="o">.</span><span class="na">killTopology</span><span class="o">(</span><span class="s">&quot;test&quot;</span><span class="o">);</span>
+            <span class="n">cluster</span><span class="o">.</span><span class="na">killTopology</span><span class="o">(</span><span class="s">"test"</span><span class="o">);</span>
             <span class="n">cluster</span><span class="o">.</span><span class="na">shutdown</span><span class="o">();</span>
             <span class="n">System</span><span class="o">.</span><span class="na">exit</span><span class="o">(</span><span class="mi">0</span><span class="o">);</span>
         <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>

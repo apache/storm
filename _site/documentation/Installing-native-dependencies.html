@@ -95,7 +95,7 @@
 <p>Installing ZeroMQ and JZMQ is usually straightforward. Sometimes, however, people run into issues with autoconf and get strange errors. If you run into any issues, please email the <a href="http://groups.google.com/group/storm-user">Storm mailing list</a> or come get help in the #storm-user room on freenode. </p>
 
 <p>Storm has been tested with ZeroMQ 2.1.7, and this is the recommended ZeroMQ release that you install. You can download a ZeroMQ release <a href="http://download.zeromq.org/">here</a>. Installing ZeroMQ should look something like this:</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">wget http://download.zeromq.org/zeromq-2.1.7.tar.gz
+<div class="highlight"><pre><code class="language-" data-lang="">wget http://download.zeromq.org/zeromq-2.1.7.tar.gz
 tar -xzf zeromq-2.1.7.tar.gz
 cd zeromq-2.1.7
 ./configure
@@ -103,7 +103,7 @@ make
 sudo make install
 </code></pre></div>
 <p>JZMQ is the Java bindings for ZeroMQ. JZMQ doesn&#39;t have any releases (we&#39;re working with them on that), so there is risk of a regression if you always install from the master branch. To prevent a regression from happening, you should instead install from <a href="http://github.com/nathanmarz/jzmq">this fork</a> which is tested to work with Storm. Installing JZMQ should look something like this:</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">#install jzmq
+<div class="highlight"><pre><code class="language-" data-lang="">#install jzmq
 git clone https://github.com/nathanmarz/jzmq.git
 cd jzmq
 ./autogen.sh

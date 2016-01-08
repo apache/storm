@@ -121,15 +121,15 @@
 <h2 id="add-items-to-kestrel">Add items to Kestrel</h2>
 
 <p>At first, we need to have a program that can add items to a Kestrel queue. The following method takes benefit of the KestrelClient implementation in <a href="https://github.com/nathanmarz/storm-kestrel">storm-kestrel</a>. It adds sentences into a Kestrel queue randomly chosen out of an array that holds five possible sentences.</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">    private static void queueSentenceItems(KestrelClient kestrelClient, String queueName)
+<div class="highlight"><pre><code class="language-" data-lang="">    private static void queueSentenceItems(KestrelClient kestrelClient, String queueName)
             throws ParseError, IOException {
 
         String[] sentences = new String[] {
-                &quot;the cow jumped over the moon&quot;,
-                &quot;an apple a day keeps the doctor away&quot;,
-                &quot;four score and seven years ago&quot;,
-                &quot;snow white and the seven dwarfs&quot;,
-                &quot;i am at two with nature&quot;};
+                "the cow jumped over the moon",
+                "an apple a day keeps the doctor away",
+                "four score and seven years ago",
+                "snow white and the seven dwarfs",
+                "i am at two with nature"};
 
         Random _rand = new Random();
 
@@ -137,11 +137,11 @@
 
             String sentence = sentences[_rand.nextInt(sentences.length)];
 
-            String val = &quot;ID &quot; + i + &quot; &quot; + sentence;
+            String val = "ID " + i + " " + sentence;
 
             boolean queueSucess = kestrelClient.queue(queueName, val);
 
-            System.out.println(&quot;queueSucess=&quot; +queueSucess+ &quot; [&quot; + val +&quot;]&quot;);
+            System.out.println("queueSucess=" +queueSucess+ " [" + val +"]");
         }
     }
 </code></pre></div>
@@ -152,10 +152,10 @@
     private static void dequeueItems(KestrelClient kestrelClient, String queueName) throws IOException, ParseError
              {
         for(int i=1; i&lt;=12; i++){</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">        Item item = kestrelClient.dequeue(queueName);
+<div class="highlight"><pre><code class="language-" data-lang="">        Item item = kestrelClient.dequeue(queueName);
 
         if(item==null){
-            System.out.println(&quot;The queue (&quot; + queueName + &quot;) contains no items.&quot;);
+            System.out.println("The queue (" + queueName + ") contains no items.");
         }
         else
         {
@@ -163,11 +163,12 @@
 
             String receivedVal = new String(data);
 
-            System.out.println(&quot;receivedItem=&quot; + receivedVal);
+            System.out.println("receivedItem=" + receivedVal);
         }
     }
-</code></pre></div><div class="highlight"><pre><code class="language-text" data-lang="text">This method dequeues items from a queue and then removes them.
-</code></pre></div><div class="highlight"><pre><code class="language-text" data-lang="text">private static void dequeueAndRemoveItems(KestrelClient kestrelClient, String queueName)
+</code></pre></div><div class="highlight"><pre><code class="language-" data-lang="">
+This method dequeues items from a queue and then removes them.
+</code></pre></div><div class="highlight"><pre><code class="language-" data-lang="">private static void dequeueAndRemoveItems(KestrelClient kestrelClient, String queueName)
 throws IOException, ParseError
      {
         for(int i=1; i&lt;=12; i++){
@@ -176,7 +177,7 @@ throws IOException, ParseError
 
 
             if(item==null){
-                System.out.println(&quot;The queue (&quot; + queueName + &quot;) contains no items.&quot;);
+                System.out.println("The queue (" + queueName + ") contains no items.");
             }
             else
             {
@@ -189,16 +190,18 @@ throws IOException, ParseError
 
                 kestrelClient.ack(queueName, itemID);
 
-                System.out.println(&quot;receivedItem=&quot; + receivedVal);
+                System.out.println("receivedItem=" + receivedVal);
             }
         }
 }
-</code></pre></div><div class="highlight"><pre><code class="language-text" data-lang="text">## Add Items continuously to Kestrel
+</code></pre></div><div class="highlight"><pre><code class="language-" data-lang="">
+## Add Items continuously to Kestrel
 
 This is our final program to run in order to add continuously sentence items to a queue called **sentence_queue** of a locally running Kestrel server.
 
-In order to stop it type a closing bracket char &#39;]&#39; in console and hit &#39;Enter&#39;.
-</code></pre></div><div class="highlight"><pre><code class="language-text" data-lang="text">import java.io.IOException;
+In order to stop it type a closing bracket char ']' in console and hit 'Enter'.
+
+</code></pre></div><div class="highlight"><pre><code class="language-" data-lang="">import java.io.IOException;
 import java.io.InputStream;
 import java.util.Random;
 
@@ -215,7 +218,7 @@ public class AddSentenceItemsToKestrel {
 
         InputStream is = System.in;
 
-        char closing_bracket = &#39;]&#39;;
+        char closing_bracket = ']';
 
         int val = closing_bracket;
 
@@ -224,11 +227,11 @@ public class AddSentenceItemsToKestrel {
         try {
 
             KestrelClient kestrelClient = null;
-            String queueName = &quot;sentence_queue&quot;;
+            String queueName = "sentence_queue";
 
             while(aux){
 
-                kestrelClient = new KestrelClient(&quot;localhost&quot;,22133);
+                kestrelClient = new KestrelClient("localhost",22133);
 
                 queueSentenceItems(kestrelClient, queueName);
 
@@ -253,20 +256,22 @@ public class AddSentenceItemsToKestrel {
             e.printStackTrace();
         }
 
-        System.out.println(&quot;end&quot;);
+        System.out.println("end");
 
     }
 }
-</code></pre></div><div class="highlight"><pre><code class="language-text" data-lang="text">## Using KestrelSpout
+</code></pre></div><div class="highlight"><pre><code class="language-" data-lang="">## Using KestrelSpout
 
 This topology reads sentences off of a Kestrel queue using KestrelSpout, splits the sentences into its constituent words (Bolt: SplitSentence), and then emits for each word the number of times it has seen that word before (Bolt: WordCount). How data is processed is described in detail in [Guaranteeing message processing](Guaranteeing-message-processing.html).
-</code></pre></div><div class="highlight"><pre><code class="language-text" data-lang="text">TopologyBuilder builder = new TopologyBuilder();
-builder.setSpout(&quot;sentences&quot;, new KestrelSpout(&quot;localhost&quot;,22133,&quot;sentence_queue&quot;,new StringScheme()));
-builder.setBolt(&quot;split&quot;, new SplitSentence(), 10)
-            .shuffleGrouping(&quot;sentences&quot;);
-builder.setBolt(&quot;count&quot;, new WordCount(), 20)
-        .fieldsGrouping(&quot;split&quot;, new Fields(&quot;word&quot;));
-</code></pre></div><div class="highlight"><pre><code class="language-text" data-lang="text">## Execution
+
+</code></pre></div><div class="highlight"><pre><code class="language-" data-lang="">TopologyBuilder builder = new TopologyBuilder();
+builder.setSpout("sentences", new KestrelSpout("localhost",22133,"sentence_queue",new StringScheme()));
+builder.setBolt("split", new SplitSentence(), 10)
+            .shuffleGrouping("sentences");
+builder.setBolt("count", new WordCount(), 20)
+        .fieldsGrouping("split", new Fields("word"));
+</code></pre></div><div class="highlight"><pre><code class="language-" data-lang="">
+## Execution
 
 At first, start your local kestrel server in production or development mode.
 

@@ -104,28 +104,28 @@ responsible for making the update calls to Solr, thus updating the index of the 
 describe in detail the two key components of the Storm Solr integration, the <code>SolrUpdateBolt</code>, and the <code>Mappers</code>, <code>SolrFieldsMapper</code>, and <code>SolrJsonMapper</code>.</p>
 
 <h2 id="storm-bolt-with-json-mapper-and-count-based-commit-strategy">Storm Bolt With JSON Mapper and Count Based Commit Strategy</h2>
-<div class="highlight"><pre><code class="language-java" data-lang="java">    <span class="k">new</span> <span class="nf">SolrUpdateBolt</span><span class="o">(</span><span class="n">solrConfig</span><span class="o">,</span> <span class="n">solrMapper</span><span class="o">,</span> <span class="n">solrCommitStgy</span><span class="o">)</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java">    <span class="k">new</span> <span class="nf">SolrUpdateBolt</span><span class="p">(</span><span class="n">solrConfig</span><span class="o">,</span> <span class="n">solrMapper</span><span class="o">,</span> <span class="n">solrCommitStgy</span><span class="o">)</span>
 
-    <span class="c1">// zkHostString for Solr &#39;gettingstarted&#39; example</span>
-    <span class="n">SolrConfig</span> <span class="n">solrConfig</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">SolrConfig</span><span class="o">(</span><span class="s">&quot;127.0.0.1:9983&quot;</span><span class="o">);</span>
+    <span class="c1">// zkHostString for Solr 'gettingstarted' example</span>
+    <span class="n">SolrConfig</span> <span class="n">solrConfig</span> <span class="o">=</span> <span class="k">new</span> <span class="n">SolrConfig</span><span class="o">(</span><span class="s">"127.0.0.1:9983"</span><span class="o">);</span>
 
-    <span class="c1">// JSON Mapper used to generate &#39;SolrRequest&#39; requests to update the &quot;gettingstarted&quot; Solr collection with JSON content declared the tuple field with name &quot;JSON&quot;</span>
-    <span class="n">SolrMapper</span> <span class="n">solrMapper</span> <span class="o">=</span> <span class="k">new</span> <span class="n">SolrJsonMapper</span><span class="o">.</span><span class="na">Builder</span><span class="o">(</span><span class="s">&quot;gettingstarted&quot;</span><span class="o">,</span> <span class="s">&quot;JSON&quot;</span><span class="o">).</span><span class="na">build</span><span class="o">();</span> 
+    <span class="c1">// JSON Mapper used to generate 'SolrRequest' requests to update the "gettingstarted" Solr collection with JSON content declared the tuple field with name "JSON"</span>
+    <span class="n">SolrMapper</span> <span class="n">solrMapper</span> <span class="o">=</span> <span class="k">new</span> <span class="n">SolrJsonMapper</span><span class="o">.</span><span class="na">Builder</span><span class="o">(</span><span class="s">"gettingstarted"</span><span class="o">,</span> <span class="s">"JSON"</span><span class="o">).</span><span class="na">build</span><span class="o">();</span> 
 
     <span class="c1">// Acks every other five tuples. Setting to null acks every tuple</span>
-    <span class="n">SolrCommitStrategy</span> <span class="n">solrCommitStgy</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">CountBasedCommit</span><span class="o">(</span><span class="mi">5</span><span class="o">);</span>          
+    <span class="n">SolrCommitStrategy</span> <span class="n">solrCommitStgy</span> <span class="o">=</span> <span class="k">new</span> <span class="n">CountBasedCommit</span><span class="o">(</span><span class="mi">5</span><span class="o">);</span>          
 </code></pre></div>
 <h2 id="trident-topology-with-fields-mapper">Trident Topology With Fields Mapper</h2>
-<div class="highlight"><pre><code class="language-java" data-lang="java">    <span class="k">new</span> <span class="nf">SolrStateFactory</span><span class="o">(</span><span class="n">solrConfig</span><span class="o">,</span> <span class="n">solrMapper</span><span class="o">);</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java">    <span class="k">new</span> <span class="nf">SolrStateFactory</span><span class="p">(</span><span class="n">solrConfig</span><span class="o">,</span> <span class="n">solrMapper</span><span class="o">);</span>
 
-    <span class="c1">// zkHostString for Solr &#39;gettingstarted&#39; example</span>
-    <span class="n">SolrConfig</span> <span class="n">solrConfig</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">SolrConfig</span><span class="o">(</span><span class="s">&quot;127.0.0.1:9983&quot;</span><span class="o">);</span>
+    <span class="c1">// zkHostString for Solr 'gettingstarted' example</span>
+    <span class="n">SolrConfig</span> <span class="n">solrConfig</span> <span class="o">=</span> <span class="k">new</span> <span class="n">SolrConfig</span><span class="o">(</span><span class="s">"127.0.0.1:9983"</span><span class="o">);</span>
 
-    <span class="cm">/* Solr Fields Mapper used to generate &#39;SolrRequest&#39; requests to update the &quot;gettingstarted&quot; Solr collection. The Solr index is updated using the field values of the tuple fields that match static or dynamic fields declared in the schema object build using schemaBuilder */</span> 
-    <span class="n">SolrMapper</span> <span class="n">solrMapper</span> <span class="o">=</span> <span class="k">new</span> <span class="n">SolrFieldsMapper</span><span class="o">.</span><span class="na">Builder</span><span class="o">(</span><span class="n">schemaBuilder</span><span class="o">,</span> <span class="s">&quot;gettingstarted&quot;</span><span class="o">).</span><span class="na">build</span><span class="o">();</span>
+    <span class="cm">/* Solr Fields Mapper used to generate 'SolrRequest' requests to update the "gettingstarted" Solr collection. The Solr index is updated using the field values of the tuple fields that match static or dynamic fields declared in the schema object build using schemaBuilder */</span> 
+    <span class="n">SolrMapper</span> <span class="n">solrMapper</span> <span class="o">=</span> <span class="k">new</span> <span class="n">SolrFieldsMapper</span><span class="o">.</span><span class="na">Builder</span><span class="o">(</span><span class="n">schemaBuilder</span><span class="o">,</span> <span class="s">"gettingstarted"</span><span class="o">).</span><span class="na">build</span><span class="o">();</span>
 
     <span class="c1">// builds the Schema object from the JSON representation of the schema as returned by the URL http://localhost:8983/solr/gettingstarted/schema/ </span>
-    <span class="n">SchemaBuilder</span> <span class="n">schemaBuilder</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">RestJsonSchemaBuilder</span><span class="o">(</span><span class="s">&quot;localhost&quot;</span><span class="o">,</span> <span class="s">&quot;8983&quot;</span><span class="o">,</span> <span class="s">&quot;gettingstarted&quot;</span><span class="o">)</span>
+    <span class="n">SchemaBuilder</span> <span class="n">schemaBuilder</span> <span class="o">=</span> <span class="k">new</span> <span class="n">RestJsonSchemaBuilder</span><span class="o">(</span><span class="s">"localhost"</span><span class="o">,</span> <span class="s">"8983"</span><span class="o">,</span> <span class="s">"gettingstarted"</span><span class="o">)</span>
 </code></pre></div>
 <h2 id="solrupdatebolt">SolrUpdateBolt</h2>
 
@@ -179,8 +179,8 @@ that is part of the <code>SolrFieldsMapper.Builder</code> builder class. </p>
 field separates each value with the token % instead of the default | . To use the default token you can ommit the call to the method
 <code>setMultiValueFieldToken</code>.</p>
 <div class="highlight"><pre><code class="language-java" data-lang="java">    <span class="k">new</span> <span class="n">SolrFieldsMapper</span><span class="o">.</span><span class="na">Builder</span><span class="o">(</span>
-            <span class="k">new</span> <span class="nf">RestJsonSchemaBuilder</span><span class="o">(</span><span class="s">&quot;localhost&quot;</span><span class="o">,</span> <span class="s">&quot;8983&quot;</span><span class="o">,</span> <span class="s">&quot;gettingstarted&quot;</span><span class="o">),</span> <span class="s">&quot;gettingstarted&quot;</span><span class="o">)</span>
-                <span class="o">.</span><span class="na">setMultiValueFieldToken</span><span class="o">(</span><span class="s">&quot;%&quot;</span><span class="o">).</span><span class="na">build</span><span class="o">();</span>
+            <span class="k">new</span> <span class="n">RestJsonSchemaBuilder</span><span class="o">(</span><span class="s">"localhost"</span><span class="o">,</span> <span class="s">"8983"</span><span class="o">,</span> <span class="s">"gettingstarted"</span><span class="o">),</span> <span class="s">"gettingstarted"</span><span class="o">)</span>
+                <span class="o">.</span><span class="na">setMultiValueFieldToken</span><span class="o">(</span><span class="s">"%"</span><span class="o">).</span><span class="na">build</span><span class="o">();</span>
 </code></pre></div>
 <h1 id="build-and-run-bundled-examples">Build And Run Bundled Examples</h1>
 
@@ -194,7 +194,7 @@ and then generate an uber jar with all the dependencies.</p>
 <h2 id="use-the-maven-shade-plugin-to-build-the-uber-jar">Use the Maven Shade Plugin to Build the Uber Jar</h2>
 
 <p>Add the following to <code>REPO_HOME/storm/external/storm-solr/pom.xml</code></p>
-<div class="highlight"><pre><code class="language-text" data-lang="text"> &lt;plugin&gt;
+<div class="highlight"><pre><code class="language-" data-lang=""> &lt;plugin&gt;
      &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
      &lt;artifactId&gt;maven-shade-plugin&lt;/artifactId&gt;
      &lt;version&gt;2.4.1&lt;/version&gt;
@@ -206,7 +206,7 @@ and then generate an uber jar with all the dependencies.</p>
              &lt;/goals&gt;
              &lt;configuration&gt;
                  &lt;transformers&gt;
-                     &lt;transformer implementation=&quot;org.apache.maven.plugins.shade.resource.ManifestResourceTransformer&quot;&gt;
+                     &lt;transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"&gt;
                          &lt;mainClass&gt;org.apache.storm.solr.topology.SolrJsonTopology&lt;/mainClass&gt;
                      &lt;/transformer&gt;
                  &lt;/transformers&gt;

@@ -141,44 +141,44 @@ STDIN and STDOUT.</li>
 <ul>
 <li>STDIN: Setup info. This is a JSON object with the Storm configuration, a PID directory, and a topology context, like this:</li>
 </ul>
-<div class="highlight"><pre><code class="language-text" data-lang="text">{
-    &quot;conf&quot;: {
-        &quot;topology.message.timeout.secs&quot;: 3,
-        // etc
-    },
-    &quot;pidDir&quot;: &quot;...&quot;,
-    &quot;context&quot;: {
-        &quot;task-&gt;component&quot;: {
-            &quot;1&quot;: &quot;example-spout&quot;,
-            &quot;2&quot;: &quot;__acker&quot;,
-            &quot;3&quot;: &quot;example-bolt1&quot;,
-            &quot;4&quot;: &quot;example-bolt2&quot;
-        },
-        &quot;taskid&quot;: 3,
-        // Everything below this line is only available in Storm 0.10.0+
-        &quot;componentid&quot;: &quot;example-bolt&quot;
-        &quot;stream-&gt;target-&gt;grouping&quot;: {
-            &quot;default&quot;: {
-                &quot;example-bolt2&quot;: {
-                    &quot;type&quot;: &quot;SHUFFLE&quot;}}},
-        &quot;streams&quot;: [&quot;default&quot;],
-        &quot;stream-&gt;outputfields&quot;: {&quot;default&quot;: [&quot;word&quot;]},
-        &quot;source-&gt;stream-&gt;grouping&quot;: {
-            &quot;example-spout&quot;: {
-                &quot;default&quot;: {
-                    &quot;type&quot;: &quot;FIELDS&quot;,
-                    &quot;fields&quot;: [&quot;word&quot;]
-                }
-            }
-        }
-        &quot;source-&gt;stream-&gt;fields&quot;: {
-            &quot;example-spout&quot;: {
-                &quot;default&quot;: [&quot;word&quot;]
-            }
-        }
-    }
-}
-</code></pre></div>
+<div class="highlight"><pre><code class="language-" data-lang=""><span class="p">{</span><span class="w">
+    </span><span class="nt">"conf"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nt">"topology.message.timeout.secs"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w">
+        </span><span class="err">//</span><span class="w"> </span><span class="err">etc</span><span class="w">
+    </span><span class="err">}</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"pidDir"</span><span class="p">:</span><span class="w"> </span><span class="s2">"..."</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"context"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nt">"task-&gt;component"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nt">"1"</span><span class="p">:</span><span class="w"> </span><span class="s2">"example-spout"</span><span class="p">,</span><span class="w">
+            </span><span class="nt">"2"</span><span class="p">:</span><span class="w"> </span><span class="s2">"__acker"</span><span class="p">,</span><span class="w">
+            </span><span class="nt">"3"</span><span class="p">:</span><span class="w"> </span><span class="s2">"example-bolt1"</span><span class="p">,</span><span class="w">
+            </span><span class="nt">"4"</span><span class="p">:</span><span class="w"> </span><span class="s2">"example-bolt2"</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nt">"taskid"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w">
+        </span><span class="err">//</span><span class="w"> </span><span class="err">Everything</span><span class="w"> </span><span class="err">below</span><span class="w"> </span><span class="err">this</span><span class="w"> </span><span class="err">line</span><span class="w"> </span><span class="err">is</span><span class="w"> </span><span class="err">only</span><span class="w"> </span><span class="err">available</span><span class="w"> </span><span class="err">in</span><span class="w"> </span><span class="err">Storm</span><span class="w"> </span><span class="err">0.10.0+</span><span class="w">
+        </span><span class="nt">"componentid"</span><span class="p">:</span><span class="w"> </span><span class="s2">"example-bolt"</span><span class="w">
+        </span><span class="s2">"stream-&gt;target-&gt;grouping"</span><span class="err">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nt">"default"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nt">"example-bolt2"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                    </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"SHUFFLE"</span><span class="p">}}},</span><span class="w">
+        </span><span class="nt">"streams"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"default"</span><span class="p">],</span><span class="w">
+        </span><span class="nt">"stream-&gt;outputfields"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"default"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"word"</span><span class="p">]},</span><span class="w">
+        </span><span class="nt">"source-&gt;stream-&gt;grouping"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nt">"example-spout"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nt">"default"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                    </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"FIELDS"</span><span class="p">,</span><span class="w">
+                    </span><span class="nt">"fields"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"word"</span><span class="p">]</span><span class="w">
+                </span><span class="p">}</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+        </span><span class="s2">"source-&gt;stream-&gt;fields"</span><span class="err">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nt">"example-spout"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nt">"default"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"word"</span><span class="p">]</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div>
 <p>Your script should create an empty file named with its PID in this directory. e.g.
 the PID is 1234, so an empty file named 1234 is created in the directory. This
 file lets the supervisor know the PID so it can shutdown the process later on.</p>
@@ -207,47 +207,47 @@ to specify which fields are involved in a <code>FIELDS</code> grouping.</p>
 </ul>
 
 <p>&quot;next&quot; is the equivalent of ISpout&#39;s <code>nextTuple</code>. It looks like:</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">{&quot;command&quot;: &quot;next&quot;}
-</code></pre></div>
+<div class="highlight"><pre><code class="language-" data-lang=""><span class="p">{</span><span class="nt">"command"</span><span class="p">:</span><span class="w"> </span><span class="s2">"next"</span><span class="p">}</span><span class="w">
+</span></code></pre></div>
 <p>&quot;ack&quot; looks like:</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">{&quot;command&quot;: &quot;ack&quot;, &quot;id&quot;: &quot;1231231&quot;}
-</code></pre></div>
+<div class="highlight"><pre><code class="language-" data-lang=""><span class="p">{</span><span class="nt">"command"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ack"</span><span class="p">,</span><span class="w"> </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1231231"</span><span class="p">}</span><span class="w">
+</span></code></pre></div>
 <p>&quot;fail&quot; looks like:</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">{&quot;command&quot;: &quot;fail&quot;, &quot;id&quot;: &quot;1231231&quot;}
-</code></pre></div>
+<div class="highlight"><pre><code class="language-" data-lang=""><span class="p">{</span><span class="nt">"command"</span><span class="p">:</span><span class="w"> </span><span class="s2">"fail"</span><span class="p">,</span><span class="w"> </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1231231"</span><span class="p">}</span><span class="w">
+</span></code></pre></div>
 <ul>
 <li>STDOUT: The results of your spout for the previous command. This can
 be a sequence of emits and logs.</li>
 </ul>
 
 <p>An emit looks like:</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">{
-    &quot;command&quot;: &quot;emit&quot;,
-    // The id for the tuple. Leave this out for an unreliable emit. The id can
-    // be a string or a number.
-    &quot;id&quot;: &quot;1231231&quot;,
-    // The id of the stream this tuple was emitted to. Leave this empty to emit to default stream.
-    &quot;stream&quot;: &quot;1&quot;,
-    // If doing an emit direct, indicate the task to send the tuple to
-    &quot;task&quot;: 9,
-    // All the values in this tuple
-    &quot;tuple&quot;: [&quot;field1&quot;, 2, 3]
-}
-</code></pre></div>
+<div class="highlight"><pre><code class="language-" data-lang=""><span class="p">{</span><span class="w">
+    </span><span class="nt">"command"</span><span class="p">:</span><span class="w"> </span><span class="s2">"emit"</span><span class="p">,</span><span class="w">
+    </span><span class="err">//</span><span class="w"> </span><span class="err">The</span><span class="w"> </span><span class="err">id</span><span class="w"> </span><span class="err">for</span><span class="w"> </span><span class="err">the</span><span class="w"> </span><span class="err">tuple.</span><span class="w"> </span><span class="err">Leave</span><span class="w"> </span><span class="err">this</span><span class="w"> </span><span class="err">out</span><span class="w"> </span><span class="err">for</span><span class="w"> </span><span class="err">an</span><span class="w"> </span><span class="err">unreliable</span><span class="w"> </span><span class="err">emit.</span><span class="w"> </span><span class="err">The</span><span class="w"> </span><span class="err">id</span><span class="w"> </span><span class="err">can</span><span class="w">
+    </span><span class="err">//</span><span class="w"> </span><span class="err">be</span><span class="w"> </span><span class="err">a</span><span class="w"> </span><span class="err">string</span><span class="w"> </span><span class="err">or</span><span class="w"> </span><span class="err">a</span><span class="w"> </span><span class="err">number.</span><span class="w">
+    </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1231231"</span><span class="p">,</span><span class="w">
+    </span><span class="err">//</span><span class="w"> </span><span class="err">The</span><span class="w"> </span><span class="err">id</span><span class="w"> </span><span class="err">of</span><span class="w"> </span><span class="err">the</span><span class="w"> </span><span class="err">stream</span><span class="w"> </span><span class="err">this</span><span class="w"> </span><span class="err">tuple</span><span class="w"> </span><span class="err">was</span><span class="w"> </span><span class="err">emitted</span><span class="w"> </span><span class="err">to.</span><span class="w"> </span><span class="err">Leave</span><span class="w"> </span><span class="err">this</span><span class="w"> </span><span class="err">empty</span><span class="w"> </span><span class="err">to</span><span class="w"> </span><span class="err">emit</span><span class="w"> </span><span class="err">to</span><span class="w"> </span><span class="err">default</span><span class="w"> </span><span class="err">stream.</span><span class="w">
+    </span><span class="nt">"stream"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1"</span><span class="p">,</span><span class="w">
+    </span><span class="err">//</span><span class="w"> </span><span class="err">If</span><span class="w"> </span><span class="err">doing</span><span class="w"> </span><span class="err">an</span><span class="w"> </span><span class="err">emit</span><span class="w"> </span><span class="err">direct,</span><span class="w"> </span><span class="err">indicate</span><span class="w"> </span><span class="err">the</span><span class="w"> </span><span class="err">task</span><span class="w"> </span><span class="err">to</span><span class="w"> </span><span class="err">send</span><span class="w"> </span><span class="err">the</span><span class="w"> </span><span class="err">tuple</span><span class="w"> </span><span class="err">to</span><span class="w">
+    </span><span class="nt">"task"</span><span class="p">:</span><span class="w"> </span><span class="mi">9</span><span class="p">,</span><span class="w">
+    </span><span class="err">//</span><span class="w"> </span><span class="err">All</span><span class="w"> </span><span class="err">the</span><span class="w"> </span><span class="err">values</span><span class="w"> </span><span class="err">in</span><span class="w"> </span><span class="err">this</span><span class="w"> </span><span class="err">tuple</span><span class="w">
+    </span><span class="nt">"tuple"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"field1"</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">]</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div>
 <p>If not doing an emit direct, you will immediately receive the task ids to which the tuple was emitted on STDIN as a JSON array.</p>
 
 <p>A &quot;log&quot; will log a message in the worker log. It looks like:</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">{
-    &quot;command&quot;: &quot;log&quot;,
-    // the message to log
-    &quot;msg&quot;: &quot;hello world!&quot;
-}
-</code></pre></div>
+<div class="highlight"><pre><code class="language-" data-lang=""><span class="p">{</span><span class="w">
+    </span><span class="nt">"command"</span><span class="p">:</span><span class="w"> </span><span class="s2">"log"</span><span class="p">,</span><span class="w">
+    </span><span class="err">//</span><span class="w"> </span><span class="err">the</span><span class="w"> </span><span class="err">message</span><span class="w"> </span><span class="err">to</span><span class="w"> </span><span class="err">log</span><span class="w">
+    </span><span class="nt">"msg"</span><span class="p">:</span><span class="w"> </span><span class="s2">"hello world!"</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div>
 <ul>
 <li>STDOUT: a &quot;sync&quot; command ends the sequence of emits and logs. It looks like:</li>
 </ul>
-<div class="highlight"><pre><code class="language-text" data-lang="text">{&quot;command&quot;: &quot;sync&quot;}
-</code></pre></div>
+<div class="highlight"><pre><code class="language-" data-lang=""><span class="p">{</span><span class="nt">"command"</span><span class="p">:</span><span class="w"> </span><span class="s2">"sync"</span><span class="p">}</span><span class="w">
+</span></code></pre></div>
 <p>After you sync, ShellSpout will not read your output until it sends another next, ack, or fail command.</p>
 
 <p>Note that, similarly to ISpout, all of the spouts in the worker will be locked up after a next, ack, or fail, until you sync. Also like ISpout, if you have no tuples to emit for a next, you should sleep for a small amount of time before syncing. ShellSpout will not automatically sleep for you.</p>
@@ -259,34 +259,34 @@ be a sequence of emits and logs.</li>
 <ul>
 <li>STDIN: A tuple! This is a JSON encoded structure like this:</li>
 </ul>
-<div class="highlight"><pre><code class="language-text" data-lang="text">{
-    // The tuple&#39;s id - this is a string to support languages lacking 64-bit precision
-    &quot;id&quot;: &quot;-6955786537413359385&quot;,
-    // The id of the component that created this tuple
-    &quot;comp&quot;: &quot;1&quot;,
-    // The id of the stream this tuple was emitted to
-    &quot;stream&quot;: &quot;1&quot;,
-    // The id of the task that created this tuple
-    &quot;task&quot;: 9,
-    // All the values in this tuple
-    &quot;tuple&quot;: [&quot;snow white and the seven dwarfs&quot;, &quot;field2&quot;, 3]
-}
-</code></pre></div>
+<div class="highlight"><pre><code class="language-" data-lang=""><span class="p">{</span><span class="w">
+    </span><span class="err">//</span><span class="w"> </span><span class="err">The</span><span class="w"> </span><span class="err">tuple's</span><span class="w"> </span><span class="err">id</span><span class="w"> </span><span class="err">-</span><span class="w"> </span><span class="err">this</span><span class="w"> </span><span class="err">is</span><span class="w"> </span><span class="err">a</span><span class="w"> </span><span class="err">string</span><span class="w"> </span><span class="err">to</span><span class="w"> </span><span class="err">support</span><span class="w"> </span><span class="err">languages</span><span class="w"> </span><span class="err">lacking</span><span class="w"> </span><span class="err">64-bit</span><span class="w"> </span><span class="err">precision</span><span class="w">
+    </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"-6955786537413359385"</span><span class="p">,</span><span class="w">
+    </span><span class="err">//</span><span class="w"> </span><span class="err">The</span><span class="w"> </span><span class="err">id</span><span class="w"> </span><span class="err">of</span><span class="w"> </span><span class="err">the</span><span class="w"> </span><span class="err">component</span><span class="w"> </span><span class="err">that</span><span class="w"> </span><span class="err">created</span><span class="w"> </span><span class="err">this</span><span class="w"> </span><span class="err">tuple</span><span class="w">
+    </span><span class="nt">"comp"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1"</span><span class="p">,</span><span class="w">
+    </span><span class="err">//</span><span class="w"> </span><span class="err">The</span><span class="w"> </span><span class="err">id</span><span class="w"> </span><span class="err">of</span><span class="w"> </span><span class="err">the</span><span class="w"> </span><span class="err">stream</span><span class="w"> </span><span class="err">this</span><span class="w"> </span><span class="err">tuple</span><span class="w"> </span><span class="err">was</span><span class="w"> </span><span class="err">emitted</span><span class="w"> </span><span class="err">to</span><span class="w">
+    </span><span class="nt">"stream"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1"</span><span class="p">,</span><span class="w">
+    </span><span class="err">//</span><span class="w"> </span><span class="err">The</span><span class="w"> </span><span class="err">id</span><span class="w"> </span><span class="err">of</span><span class="w"> </span><span class="err">the</span><span class="w"> </span><span class="err">task</span><span class="w"> </span><span class="err">that</span><span class="w"> </span><span class="err">created</span><span class="w"> </span><span class="err">this</span><span class="w"> </span><span class="err">tuple</span><span class="w">
+    </span><span class="nt">"task"</span><span class="p">:</span><span class="w"> </span><span class="mi">9</span><span class="p">,</span><span class="w">
+    </span><span class="err">//</span><span class="w"> </span><span class="err">All</span><span class="w"> </span><span class="err">the</span><span class="w"> </span><span class="err">values</span><span class="w"> </span><span class="err">in</span><span class="w"> </span><span class="err">this</span><span class="w"> </span><span class="err">tuple</span><span class="w">
+    </span><span class="nt">"tuple"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"snow white and the seven dwarfs"</span><span class="p">,</span><span class="w"> </span><span class="s2">"field2"</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">]</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div>
 <ul>
 <li>STDOUT: An ack, fail, emit, or log. Emits look like:</li>
 </ul>
-<div class="highlight"><pre><code class="language-text" data-lang="text">{
-    &quot;command&quot;: &quot;emit&quot;,
-    // The ids of the tuples this output tuples should be anchored to
-    &quot;anchors&quot;: [&quot;1231231&quot;, &quot;-234234234&quot;],
-    // The id of the stream this tuple was emitted to. Leave this empty to emit to default stream.
-    &quot;stream&quot;: &quot;1&quot;,
-    // If doing an emit direct, indicate the task to send the tuple to
-    &quot;task&quot;: 9,
-    // All the values in this tuple
-    &quot;tuple&quot;: [&quot;field1&quot;, 2, 3]
-}
-</code></pre></div>
+<div class="highlight"><pre><code class="language-" data-lang=""><span class="p">{</span><span class="w">
+    </span><span class="nt">"command"</span><span class="p">:</span><span class="w"> </span><span class="s2">"emit"</span><span class="p">,</span><span class="w">
+    </span><span class="err">//</span><span class="w"> </span><span class="err">The</span><span class="w"> </span><span class="err">ids</span><span class="w"> </span><span class="err">of</span><span class="w"> </span><span class="err">the</span><span class="w"> </span><span class="err">tuples</span><span class="w"> </span><span class="err">this</span><span class="w"> </span><span class="err">output</span><span class="w"> </span><span class="err">tuples</span><span class="w"> </span><span class="err">should</span><span class="w"> </span><span class="err">be</span><span class="w"> </span><span class="err">anchored</span><span class="w"> </span><span class="err">to</span><span class="w">
+    </span><span class="nt">"anchors"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"1231231"</span><span class="p">,</span><span class="w"> </span><span class="s2">"-234234234"</span><span class="p">],</span><span class="w">
+    </span><span class="err">//</span><span class="w"> </span><span class="err">The</span><span class="w"> </span><span class="err">id</span><span class="w"> </span><span class="err">of</span><span class="w"> </span><span class="err">the</span><span class="w"> </span><span class="err">stream</span><span class="w"> </span><span class="err">this</span><span class="w"> </span><span class="err">tuple</span><span class="w"> </span><span class="err">was</span><span class="w"> </span><span class="err">emitted</span><span class="w"> </span><span class="err">to.</span><span class="w"> </span><span class="err">Leave</span><span class="w"> </span><span class="err">this</span><span class="w"> </span><span class="err">empty</span><span class="w"> </span><span class="err">to</span><span class="w"> </span><span class="err">emit</span><span class="w"> </span><span class="err">to</span><span class="w"> </span><span class="err">default</span><span class="w"> </span><span class="err">stream.</span><span class="w">
+    </span><span class="nt">"stream"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1"</span><span class="p">,</span><span class="w">
+    </span><span class="err">//</span><span class="w"> </span><span class="err">If</span><span class="w"> </span><span class="err">doing</span><span class="w"> </span><span class="err">an</span><span class="w"> </span><span class="err">emit</span><span class="w"> </span><span class="err">direct,</span><span class="w"> </span><span class="err">indicate</span><span class="w"> </span><span class="err">the</span><span class="w"> </span><span class="err">task</span><span class="w"> </span><span class="err">to</span><span class="w"> </span><span class="err">send</span><span class="w"> </span><span class="err">the</span><span class="w"> </span><span class="err">tuple</span><span class="w"> </span><span class="err">to</span><span class="w">
+    </span><span class="nt">"task"</span><span class="p">:</span><span class="w"> </span><span class="mi">9</span><span class="p">,</span><span class="w">
+    </span><span class="err">//</span><span class="w"> </span><span class="err">All</span><span class="w"> </span><span class="err">the</span><span class="w"> </span><span class="err">values</span><span class="w"> </span><span class="err">in</span><span class="w"> </span><span class="err">this</span><span class="w"> </span><span class="err">tuple</span><span class="w">
+    </span><span class="nt">"tuple"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"field1"</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">]</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div>
 <p>If not doing an emit direct, you will receive the task ids to which
 the tuple was emitted on STDIN as a JSON array. Note that, due to the
 asynchronous nature of the shell bolt protocol, when you read after
@@ -296,32 +296,32 @@ receive the task id lists in the same order as their corresponding
 emits, however.</p>
 
 <p>An ack looks like:</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">{
-    &quot;command&quot;: &quot;ack&quot;,
-    // the id of the tuple to ack
-    &quot;id&quot;: &quot;123123&quot;
-}
-</code></pre></div>
+<div class="highlight"><pre><code class="language-" data-lang=""><span class="p">{</span><span class="w">
+    </span><span class="nt">"command"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ack"</span><span class="p">,</span><span class="w">
+    </span><span class="err">//</span><span class="w"> </span><span class="err">the</span><span class="w"> </span><span class="err">id</span><span class="w"> </span><span class="err">of</span><span class="w"> </span><span class="err">the</span><span class="w"> </span><span class="err">tuple</span><span class="w"> </span><span class="err">to</span><span class="w"> </span><span class="err">ack</span><span class="w">
+    </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"123123"</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div>
 <p>A fail looks like:</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">{
-    &quot;command&quot;: &quot;fail&quot;,
-    // the id of the tuple to fail
-    &quot;id&quot;: &quot;123123&quot;
-}
-</code></pre></div>
+<div class="highlight"><pre><code class="language-" data-lang=""><span class="p">{</span><span class="w">
+    </span><span class="nt">"command"</span><span class="p">:</span><span class="w"> </span><span class="s2">"fail"</span><span class="p">,</span><span class="w">
+    </span><span class="err">//</span><span class="w"> </span><span class="err">the</span><span class="w"> </span><span class="err">id</span><span class="w"> </span><span class="err">of</span><span class="w"> </span><span class="err">the</span><span class="w"> </span><span class="err">tuple</span><span class="w"> </span><span class="err">to</span><span class="w"> </span><span class="err">fail</span><span class="w">
+    </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"123123"</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div>
 <p>A &quot;log&quot; will log a message in the worker log. It looks like:</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">{
-    &quot;command&quot;: &quot;log&quot;,
-    // the message to log
-    &quot;msg&quot;: &quot;hello world!&quot;
-}
-</code></pre></div>
+<div class="highlight"><pre><code class="language-" data-lang=""><span class="p">{</span><span class="w">
+    </span><span class="nt">"command"</span><span class="p">:</span><span class="w"> </span><span class="s2">"log"</span><span class="p">,</span><span class="w">
+    </span><span class="err">//</span><span class="w"> </span><span class="err">the</span><span class="w"> </span><span class="err">message</span><span class="w"> </span><span class="err">to</span><span class="w"> </span><span class="err">log</span><span class="w">
+    </span><span class="nt">"msg"</span><span class="p">:</span><span class="w"> </span><span class="s2">"hello world!"</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div>
 <ul>
 <li>Note that, as of version 0.7.1, there is no longer any need for a
 shell bolt to &#39;sync&#39;.</li>
 </ul>
 
-<h3 id="handling-heartbeats-(0.9.3-and-later)">Handling Heartbeats (0.9.3 and later)</h3>
+<h3 id="handling-heartbeats-0-9-3-and-later">Handling Heartbeats (0.9.3 and later)</h3>
 
 <p>As of Storm 0.9.3, heartbeats have been between ShellSpout/ShellBolt and their
 multi-lang subprocesses to detect hanging/zombie subprocesses.  Any libraries
@@ -339,15 +339,15 @@ timeout during <code>next()</code>.</p>
 
 <p>Shell bolts are asynchronous, so a ShellBolt will send heartbeat tuples to its
 subprocess periodically.  Heartbeat tuple looks like:</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">{
-    &quot;id&quot;: &quot;-6955786537413359385&quot;,
-    &quot;comp&quot;: &quot;1&quot;,
-    &quot;stream&quot;: &quot;__heartbeat&quot;,
-    // this shell bolt&#39;s system task id
-    &quot;task&quot;: -1,
-    &quot;tuple&quot;: []
-}
-</code></pre></div>
+<div class="highlight"><pre><code class="language-" data-lang=""><span class="p">{</span><span class="w">
+    </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"-6955786537413359385"</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"comp"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1"</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"stream"</span><span class="p">:</span><span class="w"> </span><span class="s2">"__heartbeat"</span><span class="p">,</span><span class="w">
+    </span><span class="err">//</span><span class="w"> </span><span class="err">this</span><span class="w"> </span><span class="err">shell</span><span class="w"> </span><span class="err">bolt's</span><span class="w"> </span><span class="err">system</span><span class="w"> </span><span class="err">task</span><span class="w"> </span><span class="err">id</span><span class="w">
+    </span><span class="nt">"task"</span><span class="p">:</span><span class="w"> </span><span class="mi">-1</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"tuple"</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div>
 <p>When subprocess receives heartbeat tuple, it must send a <code>sync</code> command back to
 ShellBolt.</p>
 

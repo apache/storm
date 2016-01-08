@@ -95,7 +95,7 @@
 <p>To create an in-process cluster, simply use the <code>LocalCluster</code> class. For example:</p>
 <div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kn">import</span> <span class="nn">backtype.storm.LocalCluster</span><span class="o">;</span>
 
-<span class="n">LocalCluster</span> <span class="n">cluster</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">LocalCluster</span><span class="o">();</span>
+<span class="n">LocalCluster</span> <span class="n">cluster</span> <span class="o">=</span> <span class="k">new</span> <span class="n">LocalCluster</span><span class="o">();</span>
 </code></pre></div>
 <p>You can then submit topologies using the <code>submitTopology</code> method on the <code>LocalCluster</code> object. Just like the corresponding method on <a href="/javadoc/apidocs/backtype/storm/StormSubmitter.html">StormSubmitter</a>, <code>submitTopology</code> takes a name, a topology configuration, and the topology object. You can then kill a topology using the <code>killTopology</code> method which takes the topology name as an argument.</p>
 

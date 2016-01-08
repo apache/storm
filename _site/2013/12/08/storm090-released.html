@@ -165,7 +165,7 @@
 <p>The Netty transport offers a pure Java alternative that eliminates Storm&#39;s dependency on native libraries. The Netty transport&#39;s performance is up to twice as fast as 0MQ, and it will open the door for authorization and authentication between worker processes. For an in-depth performance comparison of the 0MQ and Netty transports, see <a href="http://yahooeng.tumblr.com/post/64758709722/making-storm-fly-with-netty">this blog post</a> by Storm contributor <a href="https://github.com/revans2">Bobby Evans</a>.</p>
 
 <p>To configure Storm to use the Netty transport simply add the following to your <code>storm.yaml</code> configuration and adjust the values to best suit your use-case:</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">storm.messaging.transport: &quot;backtype.storm.messaging.netty.Context&quot;
+<div class="highlight"><pre><code class="language-" data-lang="">storm.messaging.transport: "backtype.storm.messaging.netty.Context"
 storm.messaging.netty.server_worker_threads: 1
 storm.messaging.netty.client_worker_threads: 1
 storm.messaging.netty.buffer_size: 5242880
@@ -182,7 +182,7 @@ storm.messaging.netty.min_wait_ms: 100
 <p>In earlier versions of Storm, viewing worker logs involved determining a worker&#39;s location (host/port), typically through Storm UI, then <code>ssh</code>ing to that host and <code>tail</code>ing the corresponding worker log file. With the new log viewer. You can now easily access a specific worker&#39;s log in a web browser by clicking on a worker&#39;s port number right from Storm UI.</p>
 
 <p>The <code>logviewer</code> daemon runs as a separate process on Storm supervisor nodes. To enable the <code>logviewer</code> run the following command (under supervision) on your cluster&#39;s supervisor nodes:</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">$ storm logviewer
+<div class="highlight"><pre><code class="language-" data-lang="">$ storm logviewer
 </code></pre></div>
 <h2 id="improved-windows-support">Improved Windows Support</h2>
 

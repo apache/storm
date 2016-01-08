@@ -97,8 +97,8 @@
 <h3 id="high-level-overview">High level overview</h3>
 
 <p>Distributed RPC is coordinated by a &quot;DRPC server&quot; (Storm comes packaged with an implementation of this). The DRPC server coordinates receiving an RPC request, sending the request to the Storm topology, receiving the results from the Storm topology, and sending the results back to the waiting client. From a client&#39;s perspective, a distributed RPC call looks just like a regular RPC call. For example, here&#39;s how a client would compute the results for the &quot;reach&quot; function with the argument &quot;<a href="http://twitter.com%22:">http://twitter.com&quot;:</a></p>
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">DRPCClient</span> <span class="n">client</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">DRPCClient</span><span class="o">(</span><span class="s">&quot;drpc-host&quot;</span><span class="o">,</span> <span class="mi">3772</span><span class="o">);</span>
-<span class="n">String</span> <span class="n">result</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="na">execute</span><span class="o">(</span><span class="s">&quot;reach&quot;</span><span class="o">,</span> <span class="s">&quot;http://twitter.com&quot;</span><span class="o">);</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">DRPCClient</span> <span class="n">client</span> <span class="o">=</span> <span class="k">new</span> <span class="n">DRPCClient</span><span class="o">(</span><span class="s">"drpc-host"</span><span class="o">,</span> <span class="mi">3772</span><span class="o">);</span>
+<span class="n">String</span> <span class="n">result</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="na">execute</span><span class="o">(</span><span class="s">"reach"</span><span class="o">,</span> <span class="s">"http://twitter.com"</span><span class="o">);</span>
 </code></pre></div>
 <p>The distributed RPC workflow looks like this:</p>
 
@@ -118,19 +118,19 @@
 
 <p>Let&#39;s look at a simple example. Here&#39;s the implementation of a DRPC topology that returns its input argument with a &quot;!&quot; appended:</p>
 <div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">static</span> <span class="kd">class</span> <span class="nc">ExclaimBolt</span> <span class="kd">extends</span> <span class="n">BaseBasicBolt</span> <span class="o">{</span>
-    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">execute</span><span class="o">(</span><span class="n">Tuple</span> <span class="n">tuple</span><span class="o">,</span> <span class="n">BasicOutputCollector</span> <span class="n">collector</span><span class="o">)</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="n">execute</span><span class="o">(</span><span class="n">Tuple</span> <span class="n">tuple</span><span class="o">,</span> <span class="n">BasicOutputCollector</span> <span class="n">collector</span><span class="o">)</span> <span class="o">{</span>
         <span class="n">String</span> <span class="n">input</span> <span class="o">=</span> <span class="n">tuple</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="mi">1</span><span class="o">);</span>
-        <span class="n">collector</span><span class="o">.</span><span class="na">emit</span><span class="o">(</span><span class="k">new</span> <span class="nf">Values</span><span class="o">(</span><span class="n">tuple</span><span class="o">.</span><span class="na">getValue</span><span class="o">(</span><span class="mi">0</span><span class="o">),</span> <span class="n">input</span> <span class="o">+</span> <span class="s">&quot;!&quot;</span><span class="o">));</span>
+        <span class="n">collector</span><span class="o">.</span><span class="na">emit</span><span class="o">(</span><span class="k">new</span> <span class="n">Values</span><span class="o">(</span><span class="n">tuple</span><span class="o">.</span><span class="na">getValue</span><span class="o">(</span><span class="mi">0</span><span class="o">),</span> <span class="n">input</span> <span class="o">+</span> <span class="s">"!"</span><span class="o">));</span>
     <span class="o">}</span>
 
-    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">declareOutputFields</span><span class="o">(</span><span class="n">OutputFieldsDeclarer</span> <span class="n">declarer</span><span class="o">)</span> <span class="o">{</span>
-        <span class="n">declarer</span><span class="o">.</span><span class="na">declare</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;id&quot;</span><span class="o">,</span> <span class="s">&quot;result&quot;</span><span class="o">));</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="n">declareOutputFields</span><span class="o">(</span><span class="n">OutputFieldsDeclarer</span> <span class="n">declarer</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">declarer</span><span class="o">.</span><span class="na">declare</span><span class="o">(</span><span class="k">new</span> <span class="n">Fields</span><span class="o">(</span><span class="s">"id"</span><span class="o">,</span> <span class="s">"result"</span><span class="o">));</span>
     <span class="o">}</span>
 <span class="o">}</span>
 
-<span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
-    <span class="n">LinearDRPCTopologyBuilder</span> <span class="n">builder</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">LinearDRPCTopologyBuilder</span><span class="o">(</span><span class="s">&quot;exclamation&quot;</span><span class="o">);</span>
-    <span class="n">builder</span><span class="o">.</span><span class="na">addBolt</span><span class="o">(</span><span class="k">new</span> <span class="nf">ExclaimBolt</span><span class="o">(),</span> <span class="mi">3</span><span class="o">);</span>
+<span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="p">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+    <span class="n">LinearDRPCTopologyBuilder</span> <span class="n">builder</span> <span class="o">=</span> <span class="k">new</span> <span class="n">LinearDRPCTopologyBuilder</span><span class="o">(</span><span class="s">"exclamation"</span><span class="o">);</span>
+    <span class="n">builder</span><span class="o">.</span><span class="na">addBolt</span><span class="o">(</span><span class="k">new</span> <span class="n">ExclaimBolt</span><span class="o">(),</span> <span class="mi">3</span><span class="o">);</span>
     <span class="c1">// ...</span>
 <span class="o">}</span>
 </code></pre></div>
@@ -141,12 +141,12 @@
 <h3 id="local-mode-drpc">Local mode DRPC</h3>
 
 <p>DRPC can be run in local mode. Here&#39;s how to run the above example in local mode:</p>
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">LocalDRPC</span> <span class="n">drpc</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">LocalDRPC</span><span class="o">();</span>
-<span class="n">LocalCluster</span> <span class="n">cluster</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">LocalCluster</span><span class="o">();</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">LocalDRPC</span> <span class="n">drpc</span> <span class="o">=</span> <span class="k">new</span> <span class="n">LocalDRPC</span><span class="o">();</span>
+<span class="n">LocalCluster</span> <span class="n">cluster</span> <span class="o">=</span> <span class="k">new</span> <span class="n">LocalCluster</span><span class="o">();</span>
 
-<span class="n">cluster</span><span class="o">.</span><span class="na">submitTopology</span><span class="o">(</span><span class="s">&quot;drpc-demo&quot;</span><span class="o">,</span> <span class="n">conf</span><span class="o">,</span> <span class="n">builder</span><span class="o">.</span><span class="na">createLocalTopology</span><span class="o">(</span><span class="n">drpc</span><span class="o">));</span>
+<span class="n">cluster</span><span class="o">.</span><span class="na">submitTopology</span><span class="o">(</span><span class="s">"drpc-demo"</span><span class="o">,</span> <span class="n">conf</span><span class="o">,</span> <span class="n">builder</span><span class="o">.</span><span class="na">createLocalTopology</span><span class="o">(</span><span class="n">drpc</span><span class="o">));</span>
 
-<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;Results for &#39;hello&#39;:&quot;</span> <span class="o">+</span> <span class="n">drpc</span><span class="o">.</span><span class="na">execute</span><span class="o">(</span><span class="s">&quot;exclamation&quot;</span><span class="o">,</span> <span class="s">&quot;hello&quot;</span><span class="o">));</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Results for 'hello':"</span> <span class="o">+</span> <span class="n">drpc</span><span class="o">.</span><span class="na">execute</span><span class="o">(</span><span class="s">"exclamation"</span><span class="o">,</span> <span class="s">"hello"</span><span class="o">));</span>
 
 <span class="n">cluster</span><span class="o">.</span><span class="na">shutdown</span><span class="o">();</span>
 <span class="n">drpc</span><span class="o">.</span><span class="na">shutdown</span><span class="o">();</span>
@@ -166,15 +166,15 @@
 </ol>
 
 <p>Launching a DRPC server can be done with the <code>storm</code> script and is just like launching Nimbus or the UI:</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">bin/storm drpc
+<div class="highlight"><pre><code class="language-" data-lang="">bin/storm drpc
 </code></pre></div>
 <p>Next, you need to configure your Storm cluster to know the locations of the DRPC server(s). This is how <code>DRPCSpout</code> knows from where to read function invocations. This can be done through the <code>storm.yaml</code> file or the topology configurations. Configuring this through the <code>storm.yaml</code> looks something like this:</p>
-<div class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="l-Scalar-Plain">drpc.servers</span><span class="p-Indicator">:</span>
-  <span class="p-Indicator">-</span> <span class="s">&quot;drpc1.foo.com&quot;</span>
-  <span class="p-Indicator">-</span> <span class="s">&quot;drpc2.foo.com&quot;</span>
+<div class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="s">drpc.servers</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s2">"</span><span class="s">drpc1.foo.com"</span>
+  <span class="pi">-</span> <span class="s2">"</span><span class="s">drpc2.foo.com"</span>
 </code></pre></div>
 <p>Finally, you launch DRPC topologies using <code>StormSubmitter</code> just like you launch any other topology. To run the above example in remote mode, you do something like this:</p>
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">StormSubmitter</span><span class="o">.</span><span class="na">submitTopology</span><span class="o">(</span><span class="s">&quot;exclamation-drpc&quot;</span><span class="o">,</span> <span class="n">conf</span><span class="o">,</span> <span class="n">builder</span><span class="o">.</span><span class="na">createRemoteTopology</span><span class="o">());</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">StormSubmitter</span><span class="o">.</span><span class="na">submitTopology</span><span class="o">(</span><span class="s">"exclamation-drpc"</span><span class="o">,</span> <span class="n">conf</span><span class="o">,</span> <span class="n">builder</span><span class="o">.</span><span class="na">createRemoteTopology</span><span class="o">());</span>
 </code></pre></div>
 <p><code>createRemoteTopology</code> is used to create topologies suitable for Storm clusters.</p>
 
@@ -194,14 +194,14 @@
 <p>A single reach computation can involve thousands of database calls and tens of millions of follower records during the computation. It&#39;s a really, really intense computation. As you&#39;re about to see, implementing this function on top of Storm is dead simple. On a single machine, reach can take minutes to compute; on a Storm cluster, you can compute reach for even the hardest URLs in a couple seconds.</p>
 
 <p>A sample reach topology is defined in storm-starter <a href="https://github.com/apache/storm/blob/master/examples/storm-starter/src/jvm/storm/starter/ReachTopology.java">here</a>. Here&#39;s how you define the reach topology:</p>
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">LinearDRPCTopologyBuilder</span> <span class="n">builder</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">LinearDRPCTopologyBuilder</span><span class="o">(</span><span class="s">&quot;reach&quot;</span><span class="o">);</span>
-<span class="n">builder</span><span class="o">.</span><span class="na">addBolt</span><span class="o">(</span><span class="k">new</span> <span class="nf">GetTweeters</span><span class="o">(),</span> <span class="mi">3</span><span class="o">);</span>
-<span class="n">builder</span><span class="o">.</span><span class="na">addBolt</span><span class="o">(</span><span class="k">new</span> <span class="nf">GetFollowers</span><span class="o">(),</span> <span class="mi">12</span><span class="o">)</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">LinearDRPCTopologyBuilder</span> <span class="n">builder</span> <span class="o">=</span> <span class="k">new</span> <span class="n">LinearDRPCTopologyBuilder</span><span class="o">(</span><span class="s">"reach"</span><span class="o">);</span>
+<span class="n">builder</span><span class="o">.</span><span class="na">addBolt</span><span class="o">(</span><span class="k">new</span> <span class="n">GetTweeters</span><span class="o">(),</span> <span class="mi">3</span><span class="o">);</span>
+<span class="n">builder</span><span class="o">.</span><span class="na">addBolt</span><span class="o">(</span><span class="k">new</span> <span class="n">GetFollowers</span><span class="o">(),</span> <span class="mi">12</span><span class="o">)</span>
         <span class="o">.</span><span class="na">shuffleGrouping</span><span class="o">();</span>
-<span class="n">builder</span><span class="o">.</span><span class="na">addBolt</span><span class="o">(</span><span class="k">new</span> <span class="nf">PartialUniquer</span><span class="o">(),</span> <span class="mi">6</span><span class="o">)</span>
-        <span class="o">.</span><span class="na">fieldsGrouping</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;id&quot;</span><span class="o">,</span> <span class="s">&quot;follower&quot;</span><span class="o">));</span>
-<span class="n">builder</span><span class="o">.</span><span class="na">addBolt</span><span class="o">(</span><span class="k">new</span> <span class="nf">CountAggregator</span><span class="o">(),</span> <span class="mi">2</span><span class="o">)</span>
-        <span class="o">.</span><span class="na">fieldsGrouping</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;id&quot;</span><span class="o">));</span>
+<span class="n">builder</span><span class="o">.</span><span class="na">addBolt</span><span class="o">(</span><span class="k">new</span> <span class="n">PartialUniquer</span><span class="o">(),</span> <span class="mi">6</span><span class="o">)</span>
+        <span class="o">.</span><span class="na">fieldsGrouping</span><span class="o">(</span><span class="k">new</span> <span class="n">Fields</span><span class="o">(</span><span class="s">"id"</span><span class="o">,</span> <span class="s">"follower"</span><span class="o">));</span>
+<span class="n">builder</span><span class="o">.</span><span class="na">addBolt</span><span class="o">(</span><span class="k">new</span> <span class="n">CountAggregator</span><span class="o">(),</span> <span class="mi">2</span><span class="o">)</span>
+        <span class="o">.</span><span class="na">fieldsGrouping</span><span class="o">(</span><span class="k">new</span> <span class="n">Fields</span><span class="o">(</span><span class="s">"id"</span><span class="o">));</span>
 </code></pre></div>
 <p>The topology executes as four steps:</p>
 
@@ -219,24 +219,24 @@
     <span class="n">Set</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">_followers</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HashSet</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;();</span>
 
     <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">prepare</span><span class="o">(</span><span class="n">Map</span> <span class="n">conf</span><span class="o">,</span> <span class="n">TopologyContext</span> <span class="n">context</span><span class="o">,</span> <span class="n">BatchOutputCollector</span> <span class="n">collector</span><span class="o">,</span> <span class="n">Object</span> <span class="n">id</span><span class="o">)</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="n">prepare</span><span class="o">(</span><span class="n">Map</span> <span class="n">conf</span><span class="o">,</span> <span class="n">TopologyContext</span> <span class="n">context</span><span class="o">,</span> <span class="n">BatchOutputCollector</span> <span class="n">collector</span><span class="o">,</span> <span class="n">Object</span> <span class="n">id</span><span class="o">)</span> <span class="o">{</span>
         <span class="n">_collector</span> <span class="o">=</span> <span class="n">collector</span><span class="o">;</span>
         <span class="n">_id</span> <span class="o">=</span> <span class="n">id</span><span class="o">;</span>
     <span class="o">}</span>
 
     <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">execute</span><span class="o">(</span><span class="n">Tuple</span> <span class="n">tuple</span><span class="o">)</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="n">execute</span><span class="o">(</span><span class="n">Tuple</span> <span class="n">tuple</span><span class="o">)</span> <span class="o">{</span>
         <span class="n">_followers</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">tuple</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="mi">1</span><span class="o">));</span>
     <span class="o">}</span>
 
     <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">finishBatch</span><span class="o">()</span> <span class="o">{</span>
-        <span class="n">_collector</span><span class="o">.</span><span class="na">emit</span><span class="o">(</span><span class="k">new</span> <span class="nf">Values</span><span class="o">(</span><span class="n">_id</span><span class="o">,</span> <span class="n">_followers</span><span class="o">.</span><span class="na">size</span><span class="o">()));</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="n">finishBatch</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">_collector</span><span class="o">.</span><span class="na">emit</span><span class="o">(</span><span class="k">new</span> <span class="n">Values</span><span class="o">(</span><span class="n">_id</span><span class="o">,</span> <span class="n">_followers</span><span class="o">.</span><span class="na">size</span><span class="o">()));</span>
     <span class="o">}</span>
 
     <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">declareOutputFields</span><span class="o">(</span><span class="n">OutputFieldsDeclarer</span> <span class="n">declarer</span><span class="o">)</span> <span class="o">{</span>
-        <span class="n">declarer</span><span class="o">.</span><span class="na">declare</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;id&quot;</span><span class="o">,</span> <span class="s">&quot;partial-count&quot;</span><span class="o">));</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="n">declareOutputFields</span><span class="o">(</span><span class="n">OutputFieldsDeclarer</span> <span class="n">declarer</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">declarer</span><span class="o">.</span><span class="na">declare</span><span class="o">(</span><span class="k">new</span> <span class="n">Fields</span><span class="o">(</span><span class="s">"id"</span><span class="o">,</span> <span class="s">"partial-count"</span><span class="o">));</span>
     <span class="o">}</span>
 <span class="o">}</span>
 </code></pre></div>

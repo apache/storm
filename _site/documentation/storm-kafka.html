@@ -120,14 +120,14 @@ should set host.refreshFreqSecs to your chosen value.</p>
 
 <p>This is an alternative implementation where broker -&gt; partition information is static. In order to construct an instance
 of this class, you need to first construct an instance of GlobalPartitionInformation.</p>
-<div class="highlight"><pre><code class="language-java" data-lang="java">    <span class="n">Broker</span> <span class="n">brokerForPartition0</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">Broker</span><span class="o">(</span><span class="s">&quot;localhost&quot;</span><span class="o">);</span><span class="c1">//localhost:9092</span>
-    <span class="n">Broker</span> <span class="n">brokerForPartition1</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">Broker</span><span class="o">(</span><span class="s">&quot;localhost&quot;</span><span class="o">,</span> <span class="mi">9092</span><span class="o">);</span><span class="c1">//localhost:9092 but we specified the port explicitly</span>
-    <span class="n">Broker</span> <span class="n">brokerForPartition2</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">Broker</span><span class="o">(</span><span class="s">&quot;localhost:9092&quot;</span><span class="o">);</span><span class="c1">//localhost:9092 specified as one string.</span>
-    <span class="n">GlobalPartitionInformation</span> <span class="n">partitionInfo</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">GlobalPartitionInformation</span><span class="o">();</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java">    <span class="n">Broker</span> <span class="n">brokerForPartition0</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Broker</span><span class="o">(</span><span class="s">"localhost"</span><span class="o">);</span><span class="c1">//localhost:9092</span>
+    <span class="n">Broker</span> <span class="n">brokerForPartition1</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Broker</span><span class="o">(</span><span class="s">"localhost"</span><span class="o">,</span> <span class="mi">9092</span><span class="o">);</span><span class="c1">//localhost:9092 but we specified the port explicitly</span>
+    <span class="n">Broker</span> <span class="n">brokerForPartition2</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Broker</span><span class="o">(</span><span class="s">"localhost:9092"</span><span class="o">);</span><span class="c1">//localhost:9092 specified as one string.</span>
+    <span class="n">GlobalPartitionInformation</span> <span class="n">partitionInfo</span> <span class="o">=</span> <span class="k">new</span> <span class="n">GlobalPartitionInformation</span><span class="o">();</span>
     <span class="n">partitionInfo</span><span class="o">.</span><span class="na">addPartition</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="n">brokerForPartition0</span><span class="o">);</span><span class="c1">//mapping from partition 0 to brokerForPartition0</span>
     <span class="n">partitionInfo</span><span class="o">.</span><span class="na">addPartition</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="n">brokerForPartition1</span><span class="o">);</span><span class="c1">//mapping from partition 1 to brokerForPartition1</span>
     <span class="n">partitionInfo</span><span class="o">.</span><span class="na">addPartition</span><span class="o">(</span><span class="mi">2</span><span class="o">,</span> <span class="n">brokerForPartition2</span><span class="o">);</span><span class="c1">//mapping from partition 2 to brokerForPartition2</span>
-    <span class="n">StaticHosts</span> <span class="n">hosts</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">StaticHosts</span><span class="o">(</span><span class="n">partitionInfo</span><span class="o">);</span>
+    <span class="n">StaticHosts</span> <span class="n">hosts</span> <span class="o">=</span> <span class="k">new</span> <span class="n">StaticHosts</span><span class="o">(</span><span class="n">partitionInfo</span><span class="o">);</span>
 </code></pre></div>
 <h3 id="kafkaconfig">KafkaConfig</h3>
 
@@ -153,7 +153,7 @@ In addition to these parameters, SpoutConfig contains the following fields that 
 ```java
     // setting for how often to save the current Kafka offset to ZooKeeper
     public long stateUpdateIntervalMs = 2000;</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">// Exponential back-off retry settings.  These are used when retrying messages after a bolt
+<div class="highlight"><pre><code class="language-" data-lang="">// Exponential back-off retry settings.  These are used when retrying messages after a bolt
 // calls OutputCollector.fail().
 // Note: be sure to set backtype.storm.Config.MESSAGE_TIMEOUT_SECS appropriately to prevent
 // resubmitting the message while still retrying.
@@ -163,12 +163,12 @@ public long retryDelayMaxMs = 60 * 1000;
 
 // if set to true, spout will set Kafka topic as the emitted Stream ID
 public boolean topicAsStreamId = false;
-</code></pre></div><div class="highlight"><pre><code class="language-text" data-lang="text">Core KafkaSpout only accepts an instance of SpoutConfig.
+</code></pre></div><div class="highlight"><pre><code class="language-" data-lang="">Core KafkaSpout only accepts an instance of SpoutConfig.
 
 TridentKafkaConfig is another extension of KafkaConfig.
 TridentKafkaEmitter only accepts TridentKafkaConfig.
 
-The KafkaConfig class also has bunch of public variables that controls your application&#39;s behavior. Here are defaults:
+The KafkaConfig class also has bunch of public variables that controls your application's behavior. Here are defaults:
 ```java
     public int fetchSizeBytes = 1024 * 1024;
     public int socketTimeoutMs = 10000;
@@ -187,8 +187,8 @@ The KafkaConfig class also has bunch of public variables that controls your appl
 
 <p>MultiScheme is an interface that dictates how the byte[] consumed from Kafka gets transformed into a storm tuple. It
 also controls the naming of your output field.</p>
-<div class="highlight"><pre><code class="language-java" data-lang="java">  <span class="kd">public</span> <span class="n">Iterable</span><span class="o">&lt;</span><span class="n">List</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;&gt;</span> <span class="nf">deserialize</span><span class="o">(</span><span class="kt">byte</span><span class="o">[]</span> <span class="n">ser</span><span class="o">);</span>
-  <span class="kd">public</span> <span class="n">Fields</span> <span class="nf">getOutputFields</span><span class="o">();</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java">  <span class="kd">public</span> <span class="n">Iterable</span><span class="o">&lt;</span><span class="n">List</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;&gt;</span> <span class="n">deserialize</span><span class="o">(</span><span class="kt">byte</span><span class="o">[]</span> <span class="n">ser</span><span class="o">);</span>
+  <span class="kd">public</span> <span class="n">Fields</span> <span class="n">getOutputFields</span><span class="o">();</span>
 </code></pre></div>
 <p>The default <code>RawMultiScheme</code> just takes the <code>byte[]</code> and returns a tuple with <code>byte[]</code> as is. The name of the
 outputField is &quot;bytes&quot;.  There are alternative implementation like <code>SchemeAsMultiScheme</code> and
@@ -197,17 +197,17 @@ outputField is &quot;bytes&quot;.  There are alternative implementation like <co
 <h3 id="examples">Examples</h3>
 
 <h4 id="core-spout">Core Spout</h4>
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">BrokerHosts</span> <span class="n">hosts</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">ZkHosts</span><span class="o">(</span><span class="n">zkConnString</span><span class="o">);</span>
-<span class="n">SpoutConfig</span> <span class="n">spoutConfig</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">SpoutConfig</span><span class="o">(</span><span class="n">hosts</span><span class="o">,</span> <span class="n">topicName</span><span class="o">,</span> <span class="s">&quot;/&quot;</span> <span class="o">+</span> <span class="n">topicName</span><span class="o">,</span> <span class="n">UUID</span><span class="o">.</span><span class="na">randomUUID</span><span class="o">().</span><span class="na">toString</span><span class="o">());</span>
-<span class="n">spoutConfig</span><span class="o">.</span><span class="na">scheme</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">SchemeAsMultiScheme</span><span class="o">(</span><span class="k">new</span> <span class="nf">StringScheme</span><span class="o">());</span>
-<span class="n">KafkaSpout</span> <span class="n">kafkaSpout</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">KafkaSpout</span><span class="o">(</span><span class="n">spoutConfig</span><span class="o">);</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">BrokerHosts</span> <span class="n">hosts</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ZkHosts</span><span class="o">(</span><span class="n">zkConnString</span><span class="o">);</span>
+<span class="n">SpoutConfig</span> <span class="n">spoutConfig</span> <span class="o">=</span> <span class="k">new</span> <span class="n">SpoutConfig</span><span class="o">(</span><span class="n">hosts</span><span class="o">,</span> <span class="n">topicName</span><span class="o">,</span> <span class="s">"/"</span> <span class="o">+</span> <span class="n">topicName</span><span class="o">,</span> <span class="n">UUID</span><span class="o">.</span><span class="na">randomUUID</span><span class="o">().</span><span class="na">toString</span><span class="o">());</span>
+<span class="n">spoutConfig</span><span class="o">.</span><span class="na">scheme</span> <span class="o">=</span> <span class="k">new</span> <span class="n">SchemeAsMultiScheme</span><span class="o">(</span><span class="k">new</span> <span class="n">StringScheme</span><span class="o">());</span>
+<span class="n">KafkaSpout</span> <span class="n">kafkaSpout</span> <span class="o">=</span> <span class="k">new</span> <span class="n">KafkaSpout</span><span class="o">(</span><span class="n">spoutConfig</span><span class="o">);</span>
 </code></pre></div>
 <h4 id="trident-spout">Trident Spout</h4>
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">TridentTopology</span> <span class="n">topology</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">TridentTopology</span><span class="o">();</span>
-<span class="n">BrokerHosts</span> <span class="n">zk</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">ZkHosts</span><span class="o">(</span><span class="s">&quot;localhost&quot;</span><span class="o">);</span>
-<span class="n">TridentKafkaConfig</span> <span class="n">spoutConf</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">TridentKafkaConfig</span><span class="o">(</span><span class="n">zk</span><span class="o">,</span> <span class="s">&quot;test-topic&quot;</span><span class="o">);</span>
-<span class="n">spoutConf</span><span class="o">.</span><span class="na">scheme</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">SchemeAsMultiScheme</span><span class="o">(</span><span class="k">new</span> <span class="nf">StringScheme</span><span class="o">());</span>
-<span class="n">OpaqueTridentKafkaSpout</span> <span class="n">spout</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">OpaqueTridentKafkaSpout</span><span class="o">(</span><span class="n">spoutConf</span><span class="o">);</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">TridentTopology</span> <span class="n">topology</span> <span class="o">=</span> <span class="k">new</span> <span class="n">TridentTopology</span><span class="o">();</span>
+<span class="n">BrokerHosts</span> <span class="n">zk</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ZkHosts</span><span class="o">(</span><span class="s">"localhost"</span><span class="o">);</span>
+<span class="n">TridentKafkaConfig</span> <span class="n">spoutConf</span> <span class="o">=</span> <span class="k">new</span> <span class="n">TridentKafkaConfig</span><span class="o">(</span><span class="n">zk</span><span class="o">,</span> <span class="s">"test-topic"</span><span class="o">);</span>
+<span class="n">spoutConf</span><span class="o">.</span><span class="na">scheme</span> <span class="o">=</span> <span class="k">new</span> <span class="n">SchemeAsMultiScheme</span><span class="o">(</span><span class="k">new</span> <span class="n">StringScheme</span><span class="o">());</span>
+<span class="n">OpaqueTridentKafkaSpout</span> <span class="n">spout</span> <span class="o">=</span> <span class="k">new</span> <span class="n">OpaqueTridentKafkaSpout</span><span class="o">(</span><span class="n">spoutConf</span><span class="o">);</span>
 </code></pre></div>
 <h3 id="how-kafkaspout-stores-offsets-of-a-kafka-topic-and-recovers-in-case-of-failures">How KafkaSpout stores offsets of a Kafka topic and recovers in case of failures</h3>
 
@@ -274,8 +274,8 @@ storm.kafka.trident.TridentKafkaUpdater.</p>
 <h3 id="tupletokafkamapper-and-tridenttupletokafkamapper">TupleToKafkaMapper and TridentTupleToKafkaMapper</h3>
 
 <p>These interfaces have 2 methods defined:</p>
-<div class="highlight"><pre><code class="language-java" data-lang="java">    <span class="n">K</span> <span class="nf">getKeyFromTuple</span><span class="o">(</span><span class="n">Tuple</span><span class="o">/</span><span class="n">TridentTuple</span> <span class="n">tuple</span><span class="o">);</span>
-    <span class="n">V</span> <span class="nf">getMessageFromTuple</span><span class="o">(</span><span class="n">Tuple</span><span class="o">/</span><span class="n">TridentTuple</span> <span class="n">tuple</span><span class="o">);</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java">    <span class="n">K</span> <span class="nf">getKeyFromTuple</span><span class="p">(</span><span class="n">Tuple</span><span class="o">/</span><span class="n">TridentTuple</span> <span class="n">tuple</span><span class="o">);</span>
+    <span class="n">V</span> <span class="n">getMessageFromTuple</span><span class="o">(</span><span class="n">Tuple</span><span class="o">/</span><span class="n">TridentTuple</span> <span class="n">tuple</span><span class="o">);</span>
 </code></pre></div>
 <p>As the name suggests, these methods are called to map a tuple to Kafka key and Kafka message. If you just want one field
 as key and one field as value, then you can use the provided FieldNameBasedTupleToKafkaMapper.java 
@@ -308,57 +308,58 @@ map with key kafka.broker.properties.</p>
 <p>For the bolt :
 ```java
         TopologyBuilder builder = new TopologyBuilder();</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">    Fields fields = new Fields(&quot;key&quot;, &quot;message&quot;);
+<div class="highlight"><pre><code class="language-" data-lang="">    Fields fields = new Fields("key", "message");
     FixedBatchSpout spout = new FixedBatchSpout(fields, 4,
-                new Values(&quot;storm&quot;, &quot;1&quot;),
-                new Values(&quot;trident&quot;, &quot;1&quot;),
-                new Values(&quot;needs&quot;, &quot;1&quot;),
-                new Values(&quot;javadoc&quot;, &quot;1&quot;)
+                new Values("storm", "1"),
+                new Values("trident", "1"),
+                new Values("needs", "1"),
+                new Values("javadoc", "1")
     );
     spout.setCycle(true);
-    builder.setSpout(&quot;spout&quot;, spout, 5);
+    builder.setSpout("spout", spout, 5);
     KafkaBolt bolt = new KafkaBolt()
-            .withTopicSelector(new DefaultTopicSelector(&quot;test&quot;))
+            .withTopicSelector(new DefaultTopicSelector("test"))
             .withTupleToKafkaMapper(new FieldNameBasedTupleToKafkaMapper());
-    builder.setBolt(&quot;forwardToKafka&quot;, bolt, 8).shuffleGrouping(&quot;spout&quot;);
+    builder.setBolt("forwardToKafka", bolt, 8).shuffleGrouping("spout");
 
     Config conf = new Config();
     //set producer properties.
     Properties props = new Properties();
-    props.put(&quot;metadata.broker.list&quot;, &quot;localhost:9092&quot;);
-    props.put(&quot;request.required.acks&quot;, &quot;1&quot;);
-    props.put(&quot;serializer.class&quot;, &quot;kafka.serializer.StringEncoder&quot;);
+    props.put("metadata.broker.list", "localhost:9092");
+    props.put("request.required.acks", "1");
+    props.put("serializer.class", "kafka.serializer.StringEncoder");
     conf.put(KafkaBolt.KAFKA_BROKER_PROPERTIES, props);
 
-    StormSubmitter.submitTopology(&quot;kafkaboltTest&quot;, conf, builder.createTopology());
-</code></pre></div><div class="highlight"><pre><code class="language-text" data-lang="text">For Trident:
+    StormSubmitter.submitTopology("kafkaboltTest", conf, builder.createTopology());
+</code></pre></div><div class="highlight"><pre><code class="language-" data-lang="">
+For Trident:
 
 ```java
-        Fields fields = new Fields(&quot;word&quot;, &quot;count&quot;);
+        Fields fields = new Fields("word", "count");
         FixedBatchSpout spout = new FixedBatchSpout(fields, 4,
-                new Values(&quot;storm&quot;, &quot;1&quot;),
-                new Values(&quot;trident&quot;, &quot;1&quot;),
-                new Values(&quot;needs&quot;, &quot;1&quot;),
-                new Values(&quot;javadoc&quot;, &quot;1&quot;)
+                new Values("storm", "1"),
+                new Values("trident", "1"),
+                new Values("needs", "1"),
+                new Values("javadoc", "1")
         );
         spout.setCycle(true);
 
         TridentTopology topology = new TridentTopology();
-        Stream stream = topology.newStream(&quot;spout1&quot;, spout);
+        Stream stream = topology.newStream("spout1", spout);
 
         TridentKafkaStateFactory stateFactory = new TridentKafkaStateFactory()
-                .withKafkaTopicSelector(new DefaultTopicSelector(&quot;test&quot;))
-                .withTridentTupleToKafkaMapper(new FieldNameBasedTupleToKafkaMapper(&quot;word&quot;, &quot;count&quot;));
+                .withKafkaTopicSelector(new DefaultTopicSelector("test"))
+                .withTridentTupleToKafkaMapper(new FieldNameBasedTupleToKafkaMapper("word", "count"));
         stream.partitionPersist(stateFactory, fields, new TridentKafkaUpdater(), new Fields());
 
         Config conf = new Config();
         //set producer properties.
         Properties props = new Properties();
-        props.put(&quot;metadata.broker.list&quot;, &quot;localhost:9092&quot;);
-        props.put(&quot;request.required.acks&quot;, &quot;1&quot;);
-        props.put(&quot;serializer.class&quot;, &quot;kafka.serializer.StringEncoder&quot;);
+        props.put("metadata.broker.list", "localhost:9092");
+        props.put("request.required.acks", "1");
+        props.put("serializer.class", "kafka.serializer.StringEncoder");
         conf.put(TridentKafkaState.KAFKA_BROKER_PROPERTIES, props);
-        StormSubmitter.submitTopology(&quot;kafkaTridentTest&quot;, conf, topology.build());
+        StormSubmitter.submitTopology("kafkaTridentTest", conf, topology.build());
 </code></pre></div>
 
 

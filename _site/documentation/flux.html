@@ -114,12 +114,13 @@ order to change configuration.</p>
 deveoper-intensive.</p>
 
 <p>Have you ever found yourself repeating this pattern?:</p>
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
-    <span class="c1">// logic to determine if we&#39;re running locally or not...</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java">
+<span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="p">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+    <span class="c1">// logic to determine if we're running locally or not...</span>
     <span class="c1">// create necessary config options...</span>
     <span class="kt">boolean</span> <span class="n">runLocal</span> <span class="o">=</span> <span class="n">shouldRunLocal</span><span class="o">();</span>
     <span class="k">if</span><span class="o">(</span><span class="n">runLocal</span><span class="o">){</span>
-        <span class="n">LocalCluster</span> <span class="n">cluster</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">LocalCluster</span><span class="o">();</span>
+        <span class="n">LocalCluster</span> <span class="n">cluster</span> <span class="o">=</span> <span class="k">new</span> <span class="n">LocalCluster</span><span class="o">();</span>
         <span class="n">cluster</span><span class="o">.</span><span class="na">submitTopology</span><span class="o">(</span><span class="n">name</span><span class="o">,</span> <span class="n">conf</span><span class="o">,</span> <span class="n">topology</span><span class="o">);</span>
     <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
         <span class="n">StormSubmitter</span><span class="o">.</span><span class="na">submitTopology</span><span class="o">(</span><span class="n">name</span><span class="o">,</span> <span class="n">conf</span><span class="o">,</span> <span class="n">topology</span><span class="o">);</span>
@@ -167,19 +168,19 @@ on your system:</p>
 <li>Node.js 0.10.x or later</li>
 </ul>
 
-<h4 id="building-with-unit-tests-enabled:">Building with unit tests enabled:</h4>
-<div class="highlight"><pre><code class="language-text" data-lang="text">mvn clean install
+<h4 id="building-with-unit-tests-enabled">Building with unit tests enabled:</h4>
+<div class="highlight"><pre><code class="language-" data-lang="">mvn clean install
 </code></pre></div>
-<h4 id="building-with-unit-tests-disabled:">Building with unit tests disabled:</h4>
+<h4 id="building-with-unit-tests-disabled">Building with unit tests disabled:</h4>
 
 <p>If you would like to build Flux without installing Python or Node.js you can simply skip the unit tests:</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">mvn clean install -DskipTests=true
+<div class="highlight"><pre><code class="language-" data-lang="">mvn clean install -DskipTests=true
 </code></pre></div>
 <p>Note that if you plan on using Flux to deploy topologies to a remote cluster, you will still need to have Python
 installed since it is required by Apache Storm.</p>
 
-<h4 id="building-with-integration-tests-enabled:">Building with integration tests enabled:</h4>
-<div class="highlight"><pre><code class="language-text" data-lang="text">mvn clean install -DskipIntegration=false
+<h4 id="building-with-integration-tests-enabled">Building with integration tests enabled:</h4>
+<div class="highlight"><pre><code class="language-" data-lang="">mvn clean install -DskipIntegration=false
 </code></pre></div>
 <h3 id="packaging-with-maven">Packaging with Maven</h3>
 
@@ -232,9 +233,9 @@ recommended).</p>
                     <span class="nt">&lt;configuration&gt;</span>
                         <span class="nt">&lt;transformers&gt;</span>
                             <span class="nt">&lt;transformer</span>
-                                    <span class="na">implementation=</span><span class="s">&quot;org.apache.maven.plugins.shade.resource.ServicesResourceTransformer&quot;</span><span class="nt">/&gt;</span>
+                                    <span class="na">implementation=</span><span class="s">"org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"</span><span class="nt">/&gt;</span>
                             <span class="nt">&lt;transformer</span>
-                                    <span class="na">implementation=</span><span class="s">&quot;org.apache.maven.plugins.shade.resource.ManifestResourceTransformer&quot;</span><span class="nt">&gt;</span>
+                                    <span class="na">implementation=</span><span class="s">"org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"</span><span class="nt">&gt;</span>
                                 <span class="nt">&lt;mainClass&gt;</span>org.apache.storm.flux.Flux<span class="nt">&lt;/mainClass&gt;</span>
                             <span class="nt">&lt;/transformer&gt;</span>
                         <span class="nt">&lt;/transformers&gt;</span>
@@ -251,9 +252,10 @@ recommended).</p>
 or remotely using the <code>storm jar</code> command. For example, if your fat jar is named <code>myTopology-0.1.0-SNAPSHOT.jar</code> you
 could run it locally with the command:</p>
 <div class="highlight"><pre><code class="language-bash" data-lang="bash">storm jar myTopology-0.1.0-SNAPSHOT.jar org.apache.storm.flux.Flux --local my_config.yaml
+
 </code></pre></div>
 <h3 id="command-line-options">Command line options</h3>
-<div class="highlight"><pre><code class="language-text" data-lang="text">usage: storm jar &lt;my_topology_uber_jar.jar&gt; org.apache.storm.flux.Flux
+<div class="highlight"><pre><code class="language-" data-lang="">usage: storm jar &lt;my_topology_uber_jar.jar&gt; org.apache.storm.flux.Flux
              [options] &lt;topology-config.yaml&gt;
  -d,--dry-run                 Do not run or deploy the topology. Just
                               build, validate, and print information about
@@ -290,7 +292,7 @@ example command will run Flux and override the <code>nimus.host</code> configura
 <div class="highlight"><pre><code class="language-bash" data-lang="bash">storm jar myTopology-0.1.0-SNAPSHOT.jar org.apache.storm.flux.Flux --remote my_config.yaml -c nimbus.host<span class="o">=</span>localhost
 </code></pre></div>
 <h3 id="sample-output">Sample output</h3>
-<div class="highlight"><pre><code class="language-text" data-lang="text">███████╗██╗     ██╗   ██╗██╗  ██╗
+<div class="highlight"><pre><code class="language-" data-lang="">███████╗██╗     ██╗   ██╗██╗  ██╗
 ██╔════╝██║     ██║   ██║╚██╗██╔╝
 █████╗  ██║     ██║   ██║ ╚███╔╝
 ██╔══╝  ██║     ██║   ██║ ██╔██╗
@@ -313,7 +315,7 @@ sentence-spout --SHUFFLE--&gt; splitsentence
 splitsentence --FIELDS--&gt; count
 count --SHUFFLE--&gt; log
 --------------------------------------
-Submitting topology: &#39;shell-topology&#39; to remote cluster...
+Submitting topology: 'shell-topology' to remote cluster...
 </code></pre></div>
 <h2 id="yaml-configuration">YAML Configuration</h2>
 
@@ -338,41 +340,43 @@ definition consists of the following:</p>
 </ol>
 
 <p>For example, here is a simple definition of a wordcount topology using the YAML DSL:</p>
-<div class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="s">&quot;yaml-topology&quot;</span>
-<span class="l-Scalar-Plain">config</span><span class="p-Indicator">:</span>
-  <span class="l-Scalar-Plain">topology.workers</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">1</span>
+<div class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="s">name</span><span class="pi">:</span> <span class="s2">"</span><span class="s">yaml-topology"</span>
+<span class="s">config</span><span class="pi">:</span>
+  <span class="s">topology.workers</span><span class="pi">:</span> <span class="s">1</span>
 
 <span class="c1"># spout definitions</span>
-<span class="l-Scalar-Plain">spouts</span><span class="p-Indicator">:</span>
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">id</span><span class="p-Indicator">:</span> <span class="s">&quot;spout-1&quot;</span>
-    <span class="l-Scalar-Plain">className</span><span class="p-Indicator">:</span> <span class="s">&quot;backtype.storm.testing.TestWordSpout&quot;</span>
-    <span class="l-Scalar-Plain">parallelism</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">1</span>
+<span class="s">spouts</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">id</span><span class="pi">:</span> <span class="s2">"</span><span class="s">spout-1"</span>
+    <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">backtype.storm.testing.TestWordSpout"</span>
+    <span class="s">parallelism</span><span class="pi">:</span> <span class="s">1</span>
 
 <span class="c1"># bolt definitions</span>
-<span class="l-Scalar-Plain">bolts</span><span class="p-Indicator">:</span>
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">id</span><span class="p-Indicator">:</span> <span class="s">&quot;bolt-1&quot;</span>
-    <span class="l-Scalar-Plain">className</span><span class="p-Indicator">:</span> <span class="s">&quot;backtype.storm.testing.TestWordCounter&quot;</span>
-    <span class="l-Scalar-Plain">parallelism</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">1</span>
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">id</span><span class="p-Indicator">:</span> <span class="s">&quot;bolt-2&quot;</span>
-    <span class="l-Scalar-Plain">className</span><span class="p-Indicator">:</span> <span class="s">&quot;org.apache.storm.flux.wrappers.bolts.LogInfoBolt&quot;</span>
-    <span class="l-Scalar-Plain">parallelism</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">1</span>
+<span class="s">bolts</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">id</span><span class="pi">:</span> <span class="s2">"</span><span class="s">bolt-1"</span>
+    <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">backtype.storm.testing.TestWordCounter"</span>
+    <span class="s">parallelism</span><span class="pi">:</span> <span class="s">1</span>
+  <span class="pi">-</span> <span class="s">id</span><span class="pi">:</span> <span class="s2">"</span><span class="s">bolt-2"</span>
+    <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">org.apache.storm.flux.wrappers.bolts.LogInfoBolt"</span>
+    <span class="s">parallelism</span><span class="pi">:</span> <span class="s">1</span>
 
 <span class="c1">#stream definitions</span>
-<span class="l-Scalar-Plain">streams</span><span class="p-Indicator">:</span>
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="s">&quot;spout-1</span><span class="nv"> </span><span class="s">--&gt;</span><span class="nv"> </span><span class="s">bolt-1&quot;</span> <span class="c1"># name isn&#39;t used (placeholder for logging, UI, etc.)</span>
-    <span class="l-Scalar-Plain">from</span><span class="p-Indicator">:</span> <span class="s">&quot;spout-1&quot;</span>
-    <span class="l-Scalar-Plain">to</span><span class="p-Indicator">:</span> <span class="s">&quot;bolt-1&quot;</span>
-    <span class="l-Scalar-Plain">grouping</span><span class="p-Indicator">:</span>
-      <span class="l-Scalar-Plain">type</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">FIELDS</span>
-      <span class="l-Scalar-Plain">args</span><span class="p-Indicator">:</span> <span class="p-Indicator">[</span><span class="s">&quot;word&quot;</span><span class="p-Indicator">]</span>
+<span class="s">streams</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">name</span><span class="pi">:</span> <span class="s2">"</span><span class="s">spout-1</span><span class="nv"> </span><span class="s">--&gt;</span><span class="nv"> </span><span class="s">bolt-1"</span> <span class="c1"># name isn't used (placeholder for logging, UI, etc.)</span>
+    <span class="s">from</span><span class="pi">:</span> <span class="s2">"</span><span class="s">spout-1"</span>
+    <span class="s">to</span><span class="pi">:</span> <span class="s2">"</span><span class="s">bolt-1"</span>
+    <span class="s">grouping</span><span class="pi">:</span>
+      <span class="s">type</span><span class="pi">:</span> <span class="s">FIELDS</span>
+      <span class="s">args</span><span class="pi">:</span> <span class="pi">[</span><span class="s2">"</span><span class="s">word"</span><span class="pi">]</span>
 
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="s">&quot;bolt-1</span><span class="nv"> </span><span class="s">--&gt;</span><span class="nv"> </span><span class="s">bolt2&quot;</span>
-    <span class="l-Scalar-Plain">from</span><span class="p-Indicator">:</span> <span class="s">&quot;bolt-1&quot;</span>
-    <span class="l-Scalar-Plain">to</span><span class="p-Indicator">:</span> <span class="s">&quot;bolt-2&quot;</span>
-    <span class="l-Scalar-Plain">grouping</span><span class="p-Indicator">:</span>
-      <span class="l-Scalar-Plain">type</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">SHUFFLE</span>
+  <span class="pi">-</span> <span class="s">name</span><span class="pi">:</span> <span class="s2">"</span><span class="s">bolt-1</span><span class="nv"> </span><span class="s">--&gt;</span><span class="nv"> </span><span class="s">bolt2"</span>
+    <span class="s">from</span><span class="pi">:</span> <span class="s2">"</span><span class="s">bolt-1"</span>
+    <span class="s">to</span><span class="pi">:</span> <span class="s2">"</span><span class="s">bolt-2"</span>
+    <span class="s">grouping</span><span class="pi">:</span>
+      <span class="s">type</span><span class="pi">:</span> <span class="s">SHUFFLE</span>
+
+
 </code></pre></div>
-<h2 id="property-substitution/filtering">Property Substitution/Filtering</h2>
+<h2 id="property-substitution-filtering">Property Substitution/Filtering</h2>
 
 <p>It&#39;s common for developers to want to easily switch between configurations, for example switching deployment between
 a development environment and a production environment. This can be accomplished by using separate YAML configuration
@@ -387,21 +391,21 @@ if you invoked flux like so:</p>
 <div class="highlight"><pre><code class="language-bash" data-lang="bash">storm jar myTopology-0.1.0-SNAPSHOT.jar org.apache.storm.flux.Flux --local my_config.yaml --filter dev.properties
 </code></pre></div>
 <p>With the following <code>dev.properties</code> file:</p>
-<div class="highlight"><pre><code class="language-properties" data-lang="properties"><span class="na">kafka.zookeeper.hosts</span><span class="o">:</span> <span class="s">localhost:2181</span>
+<div class="highlight"><pre><code class="language-properties" data-lang="properties"><span class="py">kafka.zookeeper.hosts</span><span class="p">:</span> <span class="s">localhost:2181</span>
 </code></pre></div>
 <p>You would then be able to reference those properties by key in your <code>.yaml</code> file using <code>${}</code> syntax:</p>
-<div class="highlight"><pre><code class="language-yaml" data-lang="yaml">  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">id</span><span class="p-Indicator">:</span> <span class="s">&quot;zkHosts&quot;</span>
-    <span class="l-Scalar-Plain">className</span><span class="p-Indicator">:</span> <span class="s">&quot;storm.kafka.ZkHosts&quot;</span>
-    <span class="l-Scalar-Plain">constructorArgs</span><span class="p-Indicator">:</span>
-      <span class="p-Indicator">-</span> <span class="s">&quot;${kafka.zookeeper.hosts}&quot;</span>
+<div class="highlight"><pre><code class="language-yaml" data-lang="yaml">  <span class="pi">-</span> <span class="s">id</span><span class="pi">:</span> <span class="s2">"</span><span class="s">zkHosts"</span>
+    <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">storm.kafka.ZkHosts"</span>
+    <span class="s">constructorArgs</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">${kafka.zookeeper.hosts}"</span>
 </code></pre></div>
 <p>In this case, Flux would replace <code>${kafka.zookeeper.hosts}</code> with <code>localhost:2181</code> before parsing the YAML contents.</p>
 
-<h3 id="environment-variable-substitution/filtering">Environment Variable Substitution/Filtering</h3>
+<h3 id="environment-variable-substitution-filtering">Environment Variable Substitution/Filtering</h3>
 
 <p>Flux also allows environment variable substitution. For example, if an environment variable named <code>ZK_HOSTS</code> if defined,
 you can reference it in a Flux YAML file with the following syntax:</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">${ENV-ZK_HOSTS}
+<div class="highlight"><pre><code class="language-" data-lang="">${ENV-ZK_HOSTS}
 </code></pre></div>
 <h2 id="components">Components</h2>
 
@@ -411,21 +415,21 @@ bolts. If you are familiar with the Spring framework, components are roughly ana
 <p>Every component is identified, at a minimum, by a unique identifier (String) and a class name (String). For example,
 the following will make an instance of the <code>storm.kafka.StringScheme</code> class available as a reference under the key
 <code>&quot;stringScheme&quot;</code> . This assumes the <code>storm.kafka.StringScheme</code> has a default constructor.</p>
-<div class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="l-Scalar-Plain">components</span><span class="p-Indicator">:</span>
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">id</span><span class="p-Indicator">:</span> <span class="s">&quot;stringScheme&quot;</span>
-    <span class="l-Scalar-Plain">className</span><span class="p-Indicator">:</span> <span class="s">&quot;storm.kafka.StringScheme&quot;</span>
+<div class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="s">components</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">id</span><span class="pi">:</span> <span class="s2">"</span><span class="s">stringScheme"</span>
+    <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">storm.kafka.StringScheme"</span>
 </code></pre></div>
-<h3 id="contructor-arguments,-references,-properties-and-configuration-methods">Contructor Arguments, References, Properties and Configuration Methods</h3>
+<h3 id="contructor-arguments-references-properties-and-configuration-methods">Contructor Arguments, References, Properties and Configuration Methods</h3>
 
 <h4 id="constructor-arguments">Constructor Arguments</h4>
 
 <p>Arguments to a class constructor can be configured by adding a <code>contructorArgs</code> element to a components.
 <code>constructorArgs</code> is a list of objects that will be passed to the class&#39; constructor. The following example creates an
 object by calling the constructor that takes a single string as an argument:</p>
-<div class="highlight"><pre><code class="language-yaml" data-lang="yaml">  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">id</span><span class="p-Indicator">:</span> <span class="s">&quot;zkHosts&quot;</span>
-    <span class="l-Scalar-Plain">className</span><span class="p-Indicator">:</span> <span class="s">&quot;storm.kafka.ZkHosts&quot;</span>
-    <span class="l-Scalar-Plain">constructorArgs</span><span class="p-Indicator">:</span>
-      <span class="p-Indicator">-</span> <span class="s">&quot;localhost:2181&quot;</span>
+<div class="highlight"><pre><code class="language-yaml" data-lang="yaml">  <span class="pi">-</span> <span class="s">id</span><span class="pi">:</span> <span class="s2">"</span><span class="s">zkHosts"</span>
+    <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">storm.kafka.ZkHosts"</span>
+    <span class="s">constructorArgs</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">localhost:2181"</span>
 </code></pre></div>
 <h4 id="references">References</h4>
 
@@ -434,14 +438,14 @@ reference an existing component, you specify the id of the component with the <c
 
 <p>In the following example, a component with the id <code>&quot;stringScheme&quot;</code> is created, and later referenced, as a an argument
 to another component&#39;s constructor:</p>
-<div class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="l-Scalar-Plain">components</span><span class="p-Indicator">:</span>
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">id</span><span class="p-Indicator">:</span> <span class="s">&quot;stringScheme&quot;</span>
-    <span class="l-Scalar-Plain">className</span><span class="p-Indicator">:</span> <span class="s">&quot;storm.kafka.StringScheme&quot;</span>
+<div class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="s">components</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">id</span><span class="pi">:</span> <span class="s2">"</span><span class="s">stringScheme"</span>
+    <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">storm.kafka.StringScheme"</span>
 
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">id</span><span class="p-Indicator">:</span> <span class="s">&quot;stringMultiScheme&quot;</span>
-    <span class="l-Scalar-Plain">className</span><span class="p-Indicator">:</span> <span class="s">&quot;backtype.storm.spout.SchemeAsMultiScheme&quot;</span>
-    <span class="l-Scalar-Plain">constructorArgs</span><span class="p-Indicator">:</span>
-      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">ref</span><span class="p-Indicator">:</span> <span class="s">&quot;stringScheme&quot;</span> <span class="c1"># component with id &quot;stringScheme&quot; must be declared above.</span>
+  <span class="pi">-</span> <span class="s">id</span><span class="pi">:</span> <span class="s2">"</span><span class="s">stringMultiScheme"</span>
+    <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">backtype.storm.spout.SchemeAsMultiScheme"</span>
+    <span class="s">constructorArgs</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">ref</span><span class="pi">:</span> <span class="s2">"</span><span class="s">stringScheme"</span> <span class="c1"># component with id "stringScheme" must be declared above.</span>
 </code></pre></div>
 <p><strong>N.B.:</strong> References can only be used after (below) the object they point to has been declared.</p>
 
@@ -449,22 +453,22 @@ to another component&#39;s constructor:</p>
 
 <p>In addition to calling constructors with different arguments, Flux also allows you to configure components using
 JavaBean-like setter methods and fields declared as <code>public</code>:</p>
-<div class="highlight"><pre><code class="language-yaml" data-lang="yaml">  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">id</span><span class="p-Indicator">:</span> <span class="s">&quot;spoutConfig&quot;</span>
-    <span class="l-Scalar-Plain">className</span><span class="p-Indicator">:</span> <span class="s">&quot;storm.kafka.SpoutConfig&quot;</span>
-    <span class="l-Scalar-Plain">constructorArgs</span><span class="p-Indicator">:</span>
+<div class="highlight"><pre><code class="language-yaml" data-lang="yaml">  <span class="pi">-</span> <span class="s">id</span><span class="pi">:</span> <span class="s2">"</span><span class="s">spoutConfig"</span>
+    <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">storm.kafka.SpoutConfig"</span>
+    <span class="s">constructorArgs</span><span class="pi">:</span>
       <span class="c1"># brokerHosts</span>
-      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">ref</span><span class="p-Indicator">:</span> <span class="s">&quot;zkHosts&quot;</span>
+      <span class="pi">-</span> <span class="s">ref</span><span class="pi">:</span> <span class="s2">"</span><span class="s">zkHosts"</span>
       <span class="c1"># topic</span>
-      <span class="p-Indicator">-</span> <span class="s">&quot;myKafkaTopic&quot;</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">myKafkaTopic"</span>
       <span class="c1"># zkRoot</span>
-      <span class="p-Indicator">-</span> <span class="s">&quot;/kafkaSpout&quot;</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">/kafkaSpout"</span>
       <span class="c1"># id</span>
-      <span class="p-Indicator">-</span> <span class="s">&quot;myId&quot;</span>
-    <span class="l-Scalar-Plain">properties</span><span class="p-Indicator">:</span>
-      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="s">&quot;forceFromStart&quot;</span>
-        <span class="l-Scalar-Plain">value</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
-      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="s">&quot;scheme&quot;</span>
-        <span class="l-Scalar-Plain">ref</span><span class="p-Indicator">:</span> <span class="s">&quot;stringMultiScheme&quot;</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">myId"</span>
+    <span class="s">properties</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">name</span><span class="pi">:</span> <span class="s2">"</span><span class="s">forceFromStart"</span>
+        <span class="s">value</span><span class="pi">:</span> <span class="s">true</span>
+      <span class="pi">-</span> <span class="s">name</span><span class="pi">:</span> <span class="s2">"</span><span class="s">scheme"</span>
+        <span class="s">ref</span><span class="pi">:</span> <span class="s2">"</span><span class="s">stringMultiScheme"</span>
 </code></pre></div>
 <p>In the example above, the <code>properties</code> declaration will cause Flux to look for a public method in the <code>SpoutConfig</code> with
 the signature <code>setForceFromStart(boolean b)</code> and attempt to invoke it. If a setter method is not found, Flux will then
@@ -480,31 +484,31 @@ don&#39;t expose JavaBean methods or have constructors that can fully configure 
 that use the builder pattern for configuration/composition.</p>
 
 <p>The following YAML example creates a bolt and configures it by calling several methods:</p>
-<div class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="l-Scalar-Plain">bolts</span><span class="p-Indicator">:</span>
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">id</span><span class="p-Indicator">:</span> <span class="s">&quot;bolt-1&quot;</span>
-    <span class="l-Scalar-Plain">className</span><span class="p-Indicator">:</span> <span class="s">&quot;org.apache.storm.flux.test.TestBolt&quot;</span>
-    <span class="l-Scalar-Plain">parallelism</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">1</span>
-    <span class="l-Scalar-Plain">configMethods</span><span class="p-Indicator">:</span>
-      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="s">&quot;withFoo&quot;</span>
-        <span class="l-Scalar-Plain">args</span><span class="p-Indicator">:</span>
-          <span class="p-Indicator">-</span> <span class="s">&quot;foo&quot;</span>
-      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="s">&quot;withBar&quot;</span>
-        <span class="l-Scalar-Plain">args</span><span class="p-Indicator">:</span>
-          <span class="p-Indicator">-</span> <span class="s">&quot;bar&quot;</span>
-      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="s">&quot;withFooBar&quot;</span>
-        <span class="l-Scalar-Plain">args</span><span class="p-Indicator">:</span>
-          <span class="p-Indicator">-</span> <span class="s">&quot;foo&quot;</span>
-          <span class="p-Indicator">-</span> <span class="s">&quot;bar&quot;</span>
+<div class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="s">bolts</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">id</span><span class="pi">:</span> <span class="s2">"</span><span class="s">bolt-1"</span>
+    <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">org.apache.storm.flux.test.TestBolt"</span>
+    <span class="s">parallelism</span><span class="pi">:</span> <span class="s">1</span>
+    <span class="s">configMethods</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">name</span><span class="pi">:</span> <span class="s2">"</span><span class="s">withFoo"</span>
+        <span class="s">args</span><span class="pi">:</span>
+          <span class="pi">-</span> <span class="s2">"</span><span class="s">foo"</span>
+      <span class="pi">-</span> <span class="s">name</span><span class="pi">:</span> <span class="s2">"</span><span class="s">withBar"</span>
+        <span class="s">args</span><span class="pi">:</span>
+          <span class="pi">-</span> <span class="s2">"</span><span class="s">bar"</span>
+      <span class="pi">-</span> <span class="s">name</span><span class="pi">:</span> <span class="s2">"</span><span class="s">withFooBar"</span>
+        <span class="s">args</span><span class="pi">:</span>
+          <span class="pi">-</span> <span class="s2">"</span><span class="s">foo"</span>
+          <span class="pi">-</span> <span class="s2">"</span><span class="s">bar"</span>
 </code></pre></div>
 <p>The signatures of the corresponding methods are as follows:</p>
-<div class="highlight"><pre><code class="language-java" data-lang="java">    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">withFoo</span><span class="o">(</span><span class="n">String</span> <span class="n">foo</span><span class="o">);</span>
-    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">withBar</span><span class="o">(</span><span class="n">String</span> <span class="n">bar</span><span class="o">);</span>
-    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">withFooBar</span><span class="o">(</span><span class="n">String</span> <span class="n">foo</span><span class="o">,</span> <span class="n">String</span> <span class="n">bar</span><span class="o">);</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java">    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">withFoo</span><span class="p">(</span><span class="n">String</span> <span class="n">foo</span><span class="o">);</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="n">withBar</span><span class="o">(</span><span class="n">String</span> <span class="n">bar</span><span class="o">);</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="n">withFooBar</span><span class="o">(</span><span class="n">String</span> <span class="n">foo</span><span class="o">,</span> <span class="n">String</span> <span class="n">bar</span><span class="o">);</span>
 </code></pre></div>
 <p>Arguments passed to configuration methods work much the same way as constructor arguments, and support references as
 well.</p>
 
-<h3 id="using-java-enums-in-contructor-arguments,-references,-properties-and-configuration-methods">Using Java <code>enum</code>s in Contructor Arguments, References, Properties and Configuration Methods</h3>
+<h3 id="using-java-enums-in-contructor-arguments-references-properties-and-configuration-methods">Using Java <code>enum</code>s in Contructor Arguments, References, Properties and Configuration Methods</h3>
 
 <p>You can easily use Java <code>enum</code> values as arguments in a Flux YAML file, simply by referencing the name of the <code>enum</code>.</p>
 
@@ -514,27 +518,28 @@ well.</p>
 <span class="o">}</span>
 </code></pre></div>
 <p>And the <code>org.apache.storm.hdfs.bolt.rotation.FileSizeRotationPolicy</code> class has the following constructor:</p>
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="nf">FileSizeRotationPolicy</span><span class="o">(</span><span class="kt">float</span> <span class="n">count</span><span class="o">,</span> <span class="n">Units</span> <span class="n">units</span><span class="o">)</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="nf">FileSizeRotationPolicy</span><span class="p">(</span><span class="kt">float</span> <span class="n">count</span><span class="o">,</span> <span class="n">Units</span> <span class="n">units</span><span class="o">)</span>
+
 </code></pre></div>
 <p>The following Flux <code>component</code> definition could be used to call the constructor:</p>
-<div class="highlight"><pre><code class="language-yaml" data-lang="yaml">  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">id</span><span class="p-Indicator">:</span> <span class="s">&quot;rotationPolicy&quot;</span>
-    <span class="l-Scalar-Plain">className</span><span class="p-Indicator">:</span> <span class="s">&quot;org.apache.storm.hdfs.bolt.rotation.FileSizeRotationPolicy&quot;</span>
-    <span class="l-Scalar-Plain">constructorArgs</span><span class="p-Indicator">:</span>
-      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">5.0</span>
-      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">MB</span>
+<div class="highlight"><pre><code class="language-yaml" data-lang="yaml">  <span class="pi">-</span> <span class="s">id</span><span class="pi">:</span> <span class="s2">"</span><span class="s">rotationPolicy"</span>
+    <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">org.apache.storm.hdfs.bolt.rotation.FileSizeRotationPolicy"</span>
+    <span class="s">constructorArgs</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">5.0</span>
+      <span class="pi">-</span> <span class="s">MB</span>
 </code></pre></div>
 <p>The above definition is functionally equivalent to the following Java code:</p>
 <div class="highlight"><pre><code class="language-java" data-lang="java"><span class="c1">// rotate files when they reach 5MB</span>
-<span class="n">FileRotationPolicy</span> <span class="n">rotationPolicy</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">FileSizeRotationPolicy</span><span class="o">(</span><span class="mf">5.0f</span><span class="o">,</span> <span class="n">Units</span><span class="o">.</span><span class="na">MB</span><span class="o">);</span>
+<span class="n">FileRotationPolicy</span> <span class="n">rotationPolicy</span> <span class="o">=</span> <span class="k">new</span> <span class="n">FileSizeRotationPolicy</span><span class="o">(</span><span class="mf">5.0f</span><span class="o">,</span> <span class="n">Units</span><span class="o">.</span><span class="na">MB</span><span class="o">);</span>
 </code></pre></div>
 <h2 id="topology-config">Topology Config</h2>
 
 <p>The <code>config</code> section is simply a map of Storm topology configuration parameters that will be passed to the
 <code>backtype.storm.StormSubmitter</code> as an instance of the <code>backtype.storm.Config</code> class:</p>
-<div class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="l-Scalar-Plain">config</span><span class="p-Indicator">:</span>
-  <span class="l-Scalar-Plain">topology.workers</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">4</span>
-  <span class="l-Scalar-Plain">topology.max.spout.pending</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">1000</span>
-  <span class="l-Scalar-Plain">topology.message.timeout.secs</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">30</span>
+<div class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="s">config</span><span class="pi">:</span>
+  <span class="s">topology.workers</span><span class="pi">:</span> <span class="s">4</span>
+  <span class="s">topology.max.spout.pending</span><span class="pi">:</span> <span class="s">1000</span>
+  <span class="s">topology.message.timeout.secs</span><span class="pi">:</span> <span class="s">30</span>
 </code></pre></div>
 <h1 id="existing-topologies">Existing Topologies</h1>
 
@@ -544,22 +549,22 @@ classes.</p>
 
 <p>The easiest way to use an existing topology class is to define
 a <code>getTopology()</code> instance method with one of the following signatures:</p>
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="n">StormTopology</span> <span class="nf">getTopology</span><span class="o">(</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Object</span><span class="o">&gt;</span> <span class="n">config</span><span class="o">)</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="n">StormTopology</span> <span class="nf">getTopology</span><span class="p">(</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Object</span><span class="o">&gt;</span> <span class="n">config</span><span class="o">)</span>
 </code></pre></div>
 <p>or:</p>
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="n">StormTopology</span> <span class="nf">getTopology</span><span class="o">(</span><span class="n">Config</span> <span class="n">config</span><span class="o">)</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="n">StormTopology</span> <span class="nf">getTopology</span><span class="p">(</span><span class="n">Config</span> <span class="n">config</span><span class="o">)</span>
 </code></pre></div>
 <p>You could then use the following YAML to configure your topology:</p>
-<div class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="s">&quot;existing-topology&quot;</span>
-<span class="l-Scalar-Plain">topologySource</span><span class="p-Indicator">:</span>
-  <span class="l-Scalar-Plain">className</span><span class="p-Indicator">:</span> <span class="s">&quot;org.apache.storm.flux.test.SimpleTopology&quot;</span>
+<div class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="s">name</span><span class="pi">:</span> <span class="s2">"</span><span class="s">existing-topology"</span>
+<span class="s">topologySource</span><span class="pi">:</span>
+  <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">org.apache.storm.flux.test.SimpleTopology"</span>
 </code></pre></div>
 <p>If the class you would like to use as a topology source has a different method name (i.e. not <code>getTopology</code>), you can
 override it:</p>
-<div class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="s">&quot;existing-topology&quot;</span>
-<span class="l-Scalar-Plain">topologySource</span><span class="p-Indicator">:</span>
-  <span class="l-Scalar-Plain">className</span><span class="p-Indicator">:</span> <span class="s">&quot;org.apache.storm.flux.test.SimpleTopology&quot;</span>
-  <span class="l-Scalar-Plain">methodName</span><span class="p-Indicator">:</span> <span class="s">&quot;getTopologyWithDifferentMethodName&quot;</span>
+<div class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="s">name</span><span class="pi">:</span> <span class="s2">"</span><span class="s">existing-topology"</span>
+<span class="s">topologySource</span><span class="pi">:</span>
+  <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">org.apache.storm.flux.test.SimpleTopology"</span>
+  <span class="s">methodName</span><span class="pi">:</span> <span class="s2">"</span><span class="s">getTopologyWithDifferentMethodName"</span>
 </code></pre></div>
 <p><strong>N.B.:</strong> The specified method must accept a single argument of type <code>java.util.Map&lt;String, Object&gt;</code> or
 <code>backtype.storm.Config</code>, and return a <code>backtype.storm.generated.StormTopology</code> object.</p>
@@ -576,91 +581,92 @@ component when the topology is deployed.</p>
 well.</p>
 
 <p>Shell spout example:</p>
-<div class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="l-Scalar-Plain">spouts</span><span class="p-Indicator">:</span>
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">id</span><span class="p-Indicator">:</span> <span class="s">&quot;sentence-spout&quot;</span>
-    <span class="l-Scalar-Plain">className</span><span class="p-Indicator">:</span> <span class="s">&quot;org.apache.storm.flux.spouts.GenericShellSpout&quot;</span>
+<div class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="s">spouts</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">id</span><span class="pi">:</span> <span class="s2">"</span><span class="s">sentence-spout"</span>
+    <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">org.apache.storm.flux.spouts.GenericShellSpout"</span>
     <span class="c1"># shell spout constructor takes 2 arguments: String[], String[]</span>
-    <span class="l-Scalar-Plain">constructorArgs</span><span class="p-Indicator">:</span>
+    <span class="s">constructorArgs</span><span class="pi">:</span>
       <span class="c1"># command line</span>
-      <span class="p-Indicator">-</span> <span class="p-Indicator">[</span><span class="s">&quot;node&quot;</span><span class="p-Indicator">,</span> <span class="s">&quot;randomsentence.js&quot;</span><span class="p-Indicator">]</span>
+      <span class="pi">-</span> <span class="pi">[</span><span class="s2">"</span><span class="s">node"</span><span class="pi">,</span> <span class="s2">"</span><span class="s">randomsentence.js"</span><span class="pi">]</span>
       <span class="c1"># output fields</span>
-      <span class="p-Indicator">-</span> <span class="p-Indicator">[</span><span class="s">&quot;word&quot;</span><span class="p-Indicator">]</span>
-    <span class="l-Scalar-Plain">parallelism</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">1</span>
+      <span class="pi">-</span> <span class="pi">[</span><span class="s2">"</span><span class="s">word"</span><span class="pi">]</span>
+    <span class="s">parallelism</span><span class="pi">:</span> <span class="s">1</span>
 </code></pre></div>
 <p>Kafka spout example:</p>
-<div class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="l-Scalar-Plain">components</span><span class="p-Indicator">:</span>
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">id</span><span class="p-Indicator">:</span> <span class="s">&quot;stringScheme&quot;</span>
-    <span class="l-Scalar-Plain">className</span><span class="p-Indicator">:</span> <span class="s">&quot;storm.kafka.StringScheme&quot;</span>
+<div class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="s">components</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">id</span><span class="pi">:</span> <span class="s2">"</span><span class="s">stringScheme"</span>
+    <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">storm.kafka.StringScheme"</span>
 
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">id</span><span class="p-Indicator">:</span> <span class="s">&quot;stringMultiScheme&quot;</span>
-    <span class="l-Scalar-Plain">className</span><span class="p-Indicator">:</span> <span class="s">&quot;backtype.storm.spout.SchemeAsMultiScheme&quot;</span>
-    <span class="l-Scalar-Plain">constructorArgs</span><span class="p-Indicator">:</span>
-      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">ref</span><span class="p-Indicator">:</span> <span class="s">&quot;stringScheme&quot;</span>
+  <span class="pi">-</span> <span class="s">id</span><span class="pi">:</span> <span class="s2">"</span><span class="s">stringMultiScheme"</span>
+    <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">backtype.storm.spout.SchemeAsMultiScheme"</span>
+    <span class="s">constructorArgs</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">ref</span><span class="pi">:</span> <span class="s2">"</span><span class="s">stringScheme"</span>
 
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">id</span><span class="p-Indicator">:</span> <span class="s">&quot;zkHosts&quot;</span>
-    <span class="l-Scalar-Plain">className</span><span class="p-Indicator">:</span> <span class="s">&quot;storm.kafka.ZkHosts&quot;</span>
-    <span class="l-Scalar-Plain">constructorArgs</span><span class="p-Indicator">:</span>
-      <span class="p-Indicator">-</span> <span class="s">&quot;localhost:2181&quot;</span>
+  <span class="pi">-</span> <span class="s">id</span><span class="pi">:</span> <span class="s2">"</span><span class="s">zkHosts"</span>
+    <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">storm.kafka.ZkHosts"</span>
+    <span class="s">constructorArgs</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">localhost:2181"</span>
 
 <span class="c1"># Alternative kafka config</span>
-<span class="c1">#  - id: &quot;kafkaConfig&quot;</span>
-<span class="c1">#    className: &quot;storm.kafka.KafkaConfig&quot;</span>
+<span class="c1">#  - id: "kafkaConfig"</span>
+<span class="c1">#    className: "storm.kafka.KafkaConfig"</span>
 <span class="c1">#    constructorArgs:</span>
 <span class="c1">#      # brokerHosts</span>
-<span class="c1">#      - ref: &quot;zkHosts&quot;</span>
+<span class="c1">#      - ref: "zkHosts"</span>
 <span class="c1">#      # topic</span>
-<span class="c1">#      - &quot;myKafkaTopic&quot;</span>
+<span class="c1">#      - "myKafkaTopic"</span>
 <span class="c1">#      # clientId (optional)</span>
-<span class="c1">#      - &quot;myKafkaClientId&quot;</span>
+<span class="c1">#      - "myKafkaClientId"</span>
 
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">id</span><span class="p-Indicator">:</span> <span class="s">&quot;spoutConfig&quot;</span>
-    <span class="l-Scalar-Plain">className</span><span class="p-Indicator">:</span> <span class="s">&quot;storm.kafka.SpoutConfig&quot;</span>
-    <span class="l-Scalar-Plain">constructorArgs</span><span class="p-Indicator">:</span>
+  <span class="pi">-</span> <span class="s">id</span><span class="pi">:</span> <span class="s2">"</span><span class="s">spoutConfig"</span>
+    <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">storm.kafka.SpoutConfig"</span>
+    <span class="s">constructorArgs</span><span class="pi">:</span>
       <span class="c1"># brokerHosts</span>
-      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">ref</span><span class="p-Indicator">:</span> <span class="s">&quot;zkHosts&quot;</span>
+      <span class="pi">-</span> <span class="s">ref</span><span class="pi">:</span> <span class="s2">"</span><span class="s">zkHosts"</span>
       <span class="c1"># topic</span>
-      <span class="p-Indicator">-</span> <span class="s">&quot;myKafkaTopic&quot;</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">myKafkaTopic"</span>
       <span class="c1"># zkRoot</span>
-      <span class="p-Indicator">-</span> <span class="s">&quot;/kafkaSpout&quot;</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">/kafkaSpout"</span>
       <span class="c1"># id</span>
-      <span class="p-Indicator">-</span> <span class="s">&quot;myId&quot;</span>
-    <span class="l-Scalar-Plain">properties</span><span class="p-Indicator">:</span>
-      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="s">&quot;forceFromStart&quot;</span>
-        <span class="l-Scalar-Plain">value</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
-      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="s">&quot;scheme&quot;</span>
-        <span class="l-Scalar-Plain">ref</span><span class="p-Indicator">:</span> <span class="s">&quot;stringMultiScheme&quot;</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">myId"</span>
+    <span class="s">properties</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">name</span><span class="pi">:</span> <span class="s2">"</span><span class="s">forceFromStart"</span>
+        <span class="s">value</span><span class="pi">:</span> <span class="s">true</span>
+      <span class="pi">-</span> <span class="s">name</span><span class="pi">:</span> <span class="s2">"</span><span class="s">scheme"</span>
+        <span class="s">ref</span><span class="pi">:</span> <span class="s2">"</span><span class="s">stringMultiScheme"</span>
 
-<span class="l-Scalar-Plain">config</span><span class="p-Indicator">:</span>
-  <span class="l-Scalar-Plain">topology.workers</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">1</span>
+<span class="s">config</span><span class="pi">:</span>
+  <span class="s">topology.workers</span><span class="pi">:</span> <span class="s">1</span>
 
 <span class="c1"># spout definitions</span>
-<span class="l-Scalar-Plain">spouts</span><span class="p-Indicator">:</span>
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">id</span><span class="p-Indicator">:</span> <span class="s">&quot;kafka-spout&quot;</span>
-    <span class="l-Scalar-Plain">className</span><span class="p-Indicator">:</span> <span class="s">&quot;storm.kafka.KafkaSpout&quot;</span>
-    <span class="l-Scalar-Plain">constructorArgs</span><span class="p-Indicator">:</span>
-      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">ref</span><span class="p-Indicator">:</span> <span class="s">&quot;spoutConfig&quot;</span>
+<span class="s">spouts</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">id</span><span class="pi">:</span> <span class="s2">"</span><span class="s">kafka-spout"</span>
+    <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">storm.kafka.KafkaSpout"</span>
+    <span class="s">constructorArgs</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">ref</span><span class="pi">:</span> <span class="s2">"</span><span class="s">spoutConfig"</span>
+
 </code></pre></div>
 <p>Bolt Examples:</p>
 <div class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="c1"># bolt definitions</span>
-<span class="l-Scalar-Plain">bolts</span><span class="p-Indicator">:</span>
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">id</span><span class="p-Indicator">:</span> <span class="s">&quot;splitsentence&quot;</span>
-    <span class="l-Scalar-Plain">className</span><span class="p-Indicator">:</span> <span class="s">&quot;org.apache.storm.flux.bolts.GenericShellBolt&quot;</span>
-    <span class="l-Scalar-Plain">constructorArgs</span><span class="p-Indicator">:</span>
+<span class="s">bolts</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">id</span><span class="pi">:</span> <span class="s2">"</span><span class="s">splitsentence"</span>
+    <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">org.apache.storm.flux.bolts.GenericShellBolt"</span>
+    <span class="s">constructorArgs</span><span class="pi">:</span>
       <span class="c1"># command line</span>
-      <span class="p-Indicator">-</span> <span class="p-Indicator">[</span><span class="s">&quot;python&quot;</span><span class="p-Indicator">,</span> <span class="s">&quot;splitsentence.py&quot;</span><span class="p-Indicator">]</span>
+      <span class="pi">-</span> <span class="pi">[</span><span class="s2">"</span><span class="s">python"</span><span class="pi">,</span> <span class="s2">"</span><span class="s">splitsentence.py"</span><span class="pi">]</span>
       <span class="c1"># output fields</span>
-      <span class="p-Indicator">-</span> <span class="p-Indicator">[</span><span class="s">&quot;word&quot;</span><span class="p-Indicator">]</span>
-    <span class="l-Scalar-Plain">parallelism</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">1</span>
+      <span class="pi">-</span> <span class="pi">[</span><span class="s2">"</span><span class="s">word"</span><span class="pi">]</span>
+    <span class="s">parallelism</span><span class="pi">:</span> <span class="s">1</span>
     <span class="c1"># ...</span>
 
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">id</span><span class="p-Indicator">:</span> <span class="s">&quot;log&quot;</span>
-    <span class="l-Scalar-Plain">className</span><span class="p-Indicator">:</span> <span class="s">&quot;org.apache.storm.flux.wrappers.bolts.LogInfoBolt&quot;</span>
-    <span class="l-Scalar-Plain">parallelism</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">1</span>
+  <span class="pi">-</span> <span class="s">id</span><span class="pi">:</span> <span class="s2">"</span><span class="s">log"</span>
+    <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">org.apache.storm.flux.wrappers.bolts.LogInfoBolt"</span>
+    <span class="s">parallelism</span><span class="pi">:</span> <span class="s">1</span>
     <span class="c1"># ...</span>
 
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">id</span><span class="p-Indicator">:</span> <span class="s">&quot;count&quot;</span>
-    <span class="l-Scalar-Plain">className</span><span class="p-Indicator">:</span> <span class="s">&quot;backtype.storm.testing.TestWordCounter&quot;</span>
-    <span class="l-Scalar-Plain">parallelism</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">1</span>
+  <span class="pi">-</span> <span class="s">id</span><span class="pi">:</span> <span class="s2">"</span><span class="s">count"</span>
+    <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">backtype.storm.testing.TestWordCounter"</span>
+    <span class="s">parallelism</span><span class="pi">:</span> <span class="s">1</span>
     <span class="c1"># ...</span>
 </code></pre></div>
 <h2 id="streams-and-stream-groupings">Streams and Stream Groupings</h2>
@@ -689,31 +695,31 @@ a topology, with an associated Grouping definition.</p>
 <p><strong><code>customClass</code></strong> For the <code>CUSTOM</code> grouping, a definition of custom grouping class instance</p>
 
 <p>The <code>streams</code> definition example below sets up a topology with the following wiring:</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">    kafka-spout --&gt; splitsentence --&gt; count --&gt; log
+<div class="highlight"><pre><code class="language-" data-lang="">    kafka-spout --&gt; splitsentence --&gt; count --&gt; log
 </code></pre></div><div class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="c1">#stream definitions</span>
 <span class="c1"># stream definitions define connections between spouts and bolts.</span>
 <span class="c1"># note that such connections can be cyclical</span>
 <span class="c1"># custom stream groupings are also supported</span>
 
-<span class="l-Scalar-Plain">streams</span><span class="p-Indicator">:</span>
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="s">&quot;kafka</span><span class="nv"> </span><span class="s">--&gt;</span><span class="nv"> </span><span class="s">split&quot;</span> <span class="c1"># name isn&#39;t used (placeholder for logging, UI, etc.)</span>
-    <span class="l-Scalar-Plain">from</span><span class="p-Indicator">:</span> <span class="s">&quot;kafka-spout&quot;</span>
-    <span class="l-Scalar-Plain">to</span><span class="p-Indicator">:</span> <span class="s">&quot;splitsentence&quot;</span>
-    <span class="l-Scalar-Plain">grouping</span><span class="p-Indicator">:</span>
-      <span class="l-Scalar-Plain">type</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">SHUFFLE</span>
+<span class="s">streams</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">name</span><span class="pi">:</span> <span class="s2">"</span><span class="s">kafka</span><span class="nv"> </span><span class="s">--&gt;</span><span class="nv"> </span><span class="s">split"</span> <span class="c1"># name isn't used (placeholder for logging, UI, etc.)</span>
+    <span class="s">from</span><span class="pi">:</span> <span class="s2">"</span><span class="s">kafka-spout"</span>
+    <span class="s">to</span><span class="pi">:</span> <span class="s2">"</span><span class="s">splitsentence"</span>
+    <span class="s">grouping</span><span class="pi">:</span>
+      <span class="s">type</span><span class="pi">:</span> <span class="s">SHUFFLE</span>
 
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="s">&quot;split</span><span class="nv"> </span><span class="s">--&gt;</span><span class="nv"> </span><span class="s">count&quot;</span>
-    <span class="l-Scalar-Plain">from</span><span class="p-Indicator">:</span> <span class="s">&quot;splitsentence&quot;</span>
-    <span class="l-Scalar-Plain">to</span><span class="p-Indicator">:</span> <span class="s">&quot;count&quot;</span>
-    <span class="l-Scalar-Plain">grouping</span><span class="p-Indicator">:</span>
-      <span class="l-Scalar-Plain">type</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">FIELDS</span>
-      <span class="l-Scalar-Plain">args</span><span class="p-Indicator">:</span> <span class="p-Indicator">[</span><span class="s">&quot;word&quot;</span><span class="p-Indicator">]</span>
+  <span class="pi">-</span> <span class="s">name</span><span class="pi">:</span> <span class="s2">"</span><span class="s">split</span><span class="nv"> </span><span class="s">--&gt;</span><span class="nv"> </span><span class="s">count"</span>
+    <span class="s">from</span><span class="pi">:</span> <span class="s2">"</span><span class="s">splitsentence"</span>
+    <span class="s">to</span><span class="pi">:</span> <span class="s2">"</span><span class="s">count"</span>
+    <span class="s">grouping</span><span class="pi">:</span>
+      <span class="s">type</span><span class="pi">:</span> <span class="s">FIELDS</span>
+      <span class="s">args</span><span class="pi">:</span> <span class="pi">[</span><span class="s2">"</span><span class="s">word"</span><span class="pi">]</span>
 
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="s">&quot;count</span><span class="nv"> </span><span class="s">--&gt;</span><span class="nv"> </span><span class="s">log&quot;</span>
-    <span class="l-Scalar-Plain">from</span><span class="p-Indicator">:</span> <span class="s">&quot;count&quot;</span>
-    <span class="l-Scalar-Plain">to</span><span class="p-Indicator">:</span> <span class="s">&quot;log&quot;</span>
-    <span class="l-Scalar-Plain">grouping</span><span class="p-Indicator">:</span>
-      <span class="l-Scalar-Plain">type</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">SHUFFLE</span>
+  <span class="pi">-</span> <span class="s">name</span><span class="pi">:</span> <span class="s2">"</span><span class="s">count</span><span class="nv"> </span><span class="s">--&gt;</span><span class="nv"> </span><span class="s">log"</span>
+    <span class="s">from</span><span class="pi">:</span> <span class="s2">"</span><span class="s">count"</span>
+    <span class="s">to</span><span class="pi">:</span> <span class="s2">"</span><span class="s">log"</span>
+    <span class="s">grouping</span><span class="pi">:</span>
+      <span class="s">type</span><span class="pi">:</span> <span class="s">SHUFFLE</span>
 </code></pre></div>
 <h3 id="custom-stream-groupings">Custom Stream Groupings</h3>
 
@@ -723,15 +729,15 @@ constructor arguments, references, and properties as well.</p>
 
 <p>The example below creates a Stream with an instance of the <code>backtype.storm.testing.NGrouping</code> custom stream grouping
 class.</p>
-<div class="highlight"><pre><code class="language-yaml" data-lang="yaml">  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="s">&quot;bolt-1</span><span class="nv"> </span><span class="s">--&gt;</span><span class="nv"> </span><span class="s">bolt2&quot;</span>
-    <span class="l-Scalar-Plain">from</span><span class="p-Indicator">:</span> <span class="s">&quot;bolt-1&quot;</span>
-    <span class="l-Scalar-Plain">to</span><span class="p-Indicator">:</span> <span class="s">&quot;bolt-2&quot;</span>
-    <span class="l-Scalar-Plain">grouping</span><span class="p-Indicator">:</span>
-      <span class="l-Scalar-Plain">type</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">CUSTOM</span>
-      <span class="l-Scalar-Plain">customClass</span><span class="p-Indicator">:</span>
-        <span class="l-Scalar-Plain">className</span><span class="p-Indicator">:</span> <span class="s">&quot;backtype.storm.testing.NGrouping&quot;</span>
-        <span class="l-Scalar-Plain">constructorArgs</span><span class="p-Indicator">:</span>
-          <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">1</span>
+<div class="highlight"><pre><code class="language-yaml" data-lang="yaml">  <span class="pi">-</span> <span class="s">name</span><span class="pi">:</span> <span class="s2">"</span><span class="s">bolt-1</span><span class="nv"> </span><span class="s">--&gt;</span><span class="nv"> </span><span class="s">bolt2"</span>
+    <span class="s">from</span><span class="pi">:</span> <span class="s2">"</span><span class="s">bolt-1"</span>
+    <span class="s">to</span><span class="pi">:</span> <span class="s2">"</span><span class="s">bolt-2"</span>
+    <span class="s">grouping</span><span class="pi">:</span>
+      <span class="s">type</span><span class="pi">:</span> <span class="s">CUSTOM</span>
+      <span class="s">customClass</span><span class="pi">:</span>
+        <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">backtype.storm.testing.NGrouping"</span>
+        <span class="s">constructorArgs</span><span class="pi">:</span>
+          <span class="pi">-</span> <span class="s">1</span>
 </code></pre></div>
 <h2 id="includes-and-overrides">Includes and Overrides</h2>
 
@@ -739,10 +745,10 @@ class.</p>
 same file. Includes may be either files, or classpath resources.</p>
 
 <p>Includes are specified as a list of maps:</p>
-<div class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="l-Scalar-Plain">includes</span><span class="p-Indicator">:</span>
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">resource</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">false</span>
-    <span class="l-Scalar-Plain">file</span><span class="p-Indicator">:</span> <span class="s">&quot;src/test/resources/configs/shell_test.yaml&quot;</span>
-    <span class="l-Scalar-Plain">override</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">false</span>
+<div class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="s">includes</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">resource</span><span class="pi">:</span> <span class="s">false</span>
+    <span class="s">file</span><span class="pi">:</span> <span class="s2">"</span><span class="s">src/test/resources/configs/shell_test.yaml"</span>
+    <span class="s">override</span><span class="pi">:</span> <span class="s">false</span>
 </code></pre></div>
 <p>If the <code>resource</code> property is set to <code>true</code>, the include will be loaded as a classpath resource from the value of the
 <code>file</code> attribute, otherwise it will be treated as a regular file.</p>
@@ -759,80 +765,80 @@ same file. Includes may be either files, or classpath resources.</p>
 
 <p>Topology YAML config:</p>
 <div class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="nn">---</span>
-<span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="s">&quot;shell-topology&quot;</span>
-<span class="l-Scalar-Plain">config</span><span class="p-Indicator">:</span>
-  <span class="l-Scalar-Plain">topology.workers</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">1</span>
+<span class="s">name</span><span class="pi">:</span> <span class="s2">"</span><span class="s">shell-topology"</span>
+<span class="s">config</span><span class="pi">:</span>
+  <span class="s">topology.workers</span><span class="pi">:</span> <span class="s">1</span>
 
 <span class="c1"># spout definitions</span>
-<span class="l-Scalar-Plain">spouts</span><span class="p-Indicator">:</span>
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">id</span><span class="p-Indicator">:</span> <span class="s">&quot;sentence-spout&quot;</span>
-    <span class="l-Scalar-Plain">className</span><span class="p-Indicator">:</span> <span class="s">&quot;org.apache.storm.flux.spouts.GenericShellSpout&quot;</span>
+<span class="s">spouts</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">id</span><span class="pi">:</span> <span class="s2">"</span><span class="s">sentence-spout"</span>
+    <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">org.apache.storm.flux.spouts.GenericShellSpout"</span>
     <span class="c1"># shell spout constructor takes 2 arguments: String[], String[]</span>
-    <span class="l-Scalar-Plain">constructorArgs</span><span class="p-Indicator">:</span>
+    <span class="s">constructorArgs</span><span class="pi">:</span>
       <span class="c1"># command line</span>
-      <span class="p-Indicator">-</span> <span class="p-Indicator">[</span><span class="s">&quot;node&quot;</span><span class="p-Indicator">,</span> <span class="s">&quot;randomsentence.js&quot;</span><span class="p-Indicator">]</span>
+      <span class="pi">-</span> <span class="pi">[</span><span class="s2">"</span><span class="s">node"</span><span class="pi">,</span> <span class="s2">"</span><span class="s">randomsentence.js"</span><span class="pi">]</span>
       <span class="c1"># output fields</span>
-      <span class="p-Indicator">-</span> <span class="p-Indicator">[</span><span class="s">&quot;word&quot;</span><span class="p-Indicator">]</span>
-    <span class="l-Scalar-Plain">parallelism</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">1</span>
+      <span class="pi">-</span> <span class="pi">[</span><span class="s2">"</span><span class="s">word"</span><span class="pi">]</span>
+    <span class="s">parallelism</span><span class="pi">:</span> <span class="s">1</span>
 
 <span class="c1"># bolt definitions</span>
-<span class="l-Scalar-Plain">bolts</span><span class="p-Indicator">:</span>
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">id</span><span class="p-Indicator">:</span> <span class="s">&quot;splitsentence&quot;</span>
-    <span class="l-Scalar-Plain">className</span><span class="p-Indicator">:</span> <span class="s">&quot;org.apache.storm.flux.bolts.GenericShellBolt&quot;</span>
-    <span class="l-Scalar-Plain">constructorArgs</span><span class="p-Indicator">:</span>
+<span class="s">bolts</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">id</span><span class="pi">:</span> <span class="s2">"</span><span class="s">splitsentence"</span>
+    <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">org.apache.storm.flux.bolts.GenericShellBolt"</span>
+    <span class="s">constructorArgs</span><span class="pi">:</span>
       <span class="c1"># command line</span>
-      <span class="p-Indicator">-</span> <span class="p-Indicator">[</span><span class="s">&quot;python&quot;</span><span class="p-Indicator">,</span> <span class="s">&quot;splitsentence.py&quot;</span><span class="p-Indicator">]</span>
+      <span class="pi">-</span> <span class="pi">[</span><span class="s2">"</span><span class="s">python"</span><span class="pi">,</span> <span class="s2">"</span><span class="s">splitsentence.py"</span><span class="pi">]</span>
       <span class="c1"># output fields</span>
-      <span class="p-Indicator">-</span> <span class="p-Indicator">[</span><span class="s">&quot;word&quot;</span><span class="p-Indicator">]</span>
-    <span class="l-Scalar-Plain">parallelism</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">1</span>
+      <span class="pi">-</span> <span class="pi">[</span><span class="s2">"</span><span class="s">word"</span><span class="pi">]</span>
+    <span class="s">parallelism</span><span class="pi">:</span> <span class="s">1</span>
 
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">id</span><span class="p-Indicator">:</span> <span class="s">&quot;log&quot;</span>
-    <span class="l-Scalar-Plain">className</span><span class="p-Indicator">:</span> <span class="s">&quot;org.apache.storm.flux.wrappers.bolts.LogInfoBolt&quot;</span>
-    <span class="l-Scalar-Plain">parallelism</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">1</span>
+  <span class="pi">-</span> <span class="s">id</span><span class="pi">:</span> <span class="s2">"</span><span class="s">log"</span>
+    <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">org.apache.storm.flux.wrappers.bolts.LogInfoBolt"</span>
+    <span class="s">parallelism</span><span class="pi">:</span> <span class="s">1</span>
 
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">id</span><span class="p-Indicator">:</span> <span class="s">&quot;count&quot;</span>
-    <span class="l-Scalar-Plain">className</span><span class="p-Indicator">:</span> <span class="s">&quot;backtype.storm.testing.TestWordCounter&quot;</span>
-    <span class="l-Scalar-Plain">parallelism</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">1</span>
+  <span class="pi">-</span> <span class="s">id</span><span class="pi">:</span> <span class="s2">"</span><span class="s">count"</span>
+    <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">backtype.storm.testing.TestWordCounter"</span>
+    <span class="s">parallelism</span><span class="pi">:</span> <span class="s">1</span>
 
 <span class="c1">#stream definitions</span>
 <span class="c1"># stream definitions define connections between spouts and bolts.</span>
 <span class="c1"># note that such connections can be cyclical</span>
 <span class="c1"># custom stream groupings are also supported</span>
 
-<span class="l-Scalar-Plain">streams</span><span class="p-Indicator">:</span>
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="s">&quot;spout</span><span class="nv"> </span><span class="s">--&gt;</span><span class="nv"> </span><span class="s">split&quot;</span> <span class="c1"># name isn&#39;t used (placeholder for logging, UI, etc.)</span>
-    <span class="l-Scalar-Plain">from</span><span class="p-Indicator">:</span> <span class="s">&quot;sentence-spout&quot;</span>
-    <span class="l-Scalar-Plain">to</span><span class="p-Indicator">:</span> <span class="s">&quot;splitsentence&quot;</span>
-    <span class="l-Scalar-Plain">grouping</span><span class="p-Indicator">:</span>
-      <span class="l-Scalar-Plain">type</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">SHUFFLE</span>
+<span class="s">streams</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">name</span><span class="pi">:</span> <span class="s2">"</span><span class="s">spout</span><span class="nv"> </span><span class="s">--&gt;</span><span class="nv"> </span><span class="s">split"</span> <span class="c1"># name isn't used (placeholder for logging, UI, etc.)</span>
+    <span class="s">from</span><span class="pi">:</span> <span class="s2">"</span><span class="s">sentence-spout"</span>
+    <span class="s">to</span><span class="pi">:</span> <span class="s2">"</span><span class="s">splitsentence"</span>
+    <span class="s">grouping</span><span class="pi">:</span>
+      <span class="s">type</span><span class="pi">:</span> <span class="s">SHUFFLE</span>
 
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="s">&quot;split</span><span class="nv"> </span><span class="s">--&gt;</span><span class="nv"> </span><span class="s">count&quot;</span>
-    <span class="l-Scalar-Plain">from</span><span class="p-Indicator">:</span> <span class="s">&quot;splitsentence&quot;</span>
-    <span class="l-Scalar-Plain">to</span><span class="p-Indicator">:</span> <span class="s">&quot;count&quot;</span>
-    <span class="l-Scalar-Plain">grouping</span><span class="p-Indicator">:</span>
-      <span class="l-Scalar-Plain">type</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">FIELDS</span>
-      <span class="l-Scalar-Plain">args</span><span class="p-Indicator">:</span> <span class="p-Indicator">[</span><span class="s">&quot;word&quot;</span><span class="p-Indicator">]</span>
+  <span class="pi">-</span> <span class="s">name</span><span class="pi">:</span> <span class="s2">"</span><span class="s">split</span><span class="nv"> </span><span class="s">--&gt;</span><span class="nv"> </span><span class="s">count"</span>
+    <span class="s">from</span><span class="pi">:</span> <span class="s2">"</span><span class="s">splitsentence"</span>
+    <span class="s">to</span><span class="pi">:</span> <span class="s2">"</span><span class="s">count"</span>
+    <span class="s">grouping</span><span class="pi">:</span>
+      <span class="s">type</span><span class="pi">:</span> <span class="s">FIELDS</span>
+      <span class="s">args</span><span class="pi">:</span> <span class="pi">[</span><span class="s2">"</span><span class="s">word"</span><span class="pi">]</span>
 
-  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="s">&quot;count</span><span class="nv"> </span><span class="s">--&gt;</span><span class="nv"> </span><span class="s">log&quot;</span>
-    <span class="l-Scalar-Plain">from</span><span class="p-Indicator">:</span> <span class="s">&quot;count&quot;</span>
-    <span class="l-Scalar-Plain">to</span><span class="p-Indicator">:</span> <span class="s">&quot;log&quot;</span>
-    <span class="l-Scalar-Plain">grouping</span><span class="p-Indicator">:</span>
-      <span class="l-Scalar-Plain">type</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">SHUFFLE</span>
+  <span class="pi">-</span> <span class="s">name</span><span class="pi">:</span> <span class="s2">"</span><span class="s">count</span><span class="nv"> </span><span class="s">--&gt;</span><span class="nv"> </span><span class="s">log"</span>
+    <span class="s">from</span><span class="pi">:</span> <span class="s2">"</span><span class="s">count"</span>
+    <span class="s">to</span><span class="pi">:</span> <span class="s2">"</span><span class="s">log"</span>
+    <span class="s">grouping</span><span class="pi">:</span>
+      <span class="s">type</span><span class="pi">:</span> <span class="s">SHUFFLE</span>
 </code></pre></div>
-<h2 id="micro-batching-(trident)-api-support">Micro-Batching (Trident) API Support</h2>
+<h2 id="micro-batching-trident-api-support">Micro-Batching (Trident) API Support</h2>
 
 <p>Currenty, the Flux YAML DSL only supports the Core Storm API, but support for Storm&#39;s micro-batching API is planned.</p>
 
 <p>To use Flux with a Trident topology, define a topology getter method and reference it in your YAML config:</p>
-<div class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="s">&quot;my-trident-topology&quot;</span>
+<div class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="s">name</span><span class="pi">:</span> <span class="s2">"</span><span class="s">my-trident-topology"</span>
 
-<span class="l-Scalar-Plain">config</span><span class="p-Indicator">:</span>
-  <span class="l-Scalar-Plain">topology.workers</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">1</span>
+<span class="s">config</span><span class="pi">:</span>
+  <span class="s">topology.workers</span><span class="pi">:</span> <span class="s">1</span>
 
-<span class="l-Scalar-Plain">topologySource</span><span class="p-Indicator">:</span>
-  <span class="l-Scalar-Plain">className</span><span class="p-Indicator">:</span> <span class="s">&quot;org.apache.storm.flux.test.TridentTopologySource&quot;</span>
-  <span class="c1"># Flux will look for &quot;getTopology&quot;, this will override that.</span>
-  <span class="l-Scalar-Plain">methodName</span><span class="p-Indicator">:</span> <span class="s">&quot;getTopologyWithDifferentMethodName&quot;</span>
+<span class="s">topologySource</span><span class="pi">:</span>
+  <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">org.apache.storm.flux.test.TridentTopologySource"</span>
+  <span class="c1"># Flux will look for "getTopology", this will override that.</span>
+  <span class="s">methodName</span><span class="pi">:</span> <span class="s2">"</span><span class="s">getTopologyWithDifferentMethodName"</span>
 </code></pre></div>
 
 
