@@ -26,6 +26,7 @@ import backtype.storm.metric.api.IStatefulObject;
 import backtype.storm.serialization.KryoValuesSerializer;
 import backtype.storm.utils.Utils;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelOption;
@@ -100,6 +101,9 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
                 .childOption(ChannelOption.TCP_NODELAY, true)
                 .childOption(ChannelOption.SO_RCVBUF, buffer_size)
                 .childOption(ChannelOption.SO_KEEPALIVE, true)
+                .childOption(ChannelOption.WRITE_BUFFER_HIGH_WATER_MARK, 32 * 1024)
+                .childOption(ChannelOption.WRITE_BUFFER_LOW_WATER_MARK, 8 * 1024)
+                .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
                 .childHandler(new StormServerPipelineFactory(this));
 
         // Bind and start to accept incoming connections.

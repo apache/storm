@@ -24,6 +24,7 @@ import backtype.storm.messaging.netty.NettyRenameThreadFactory;
 import backtype.storm.security.auth.AuthUtils;
 import backtype.storm.utils.StormBoundedExponentialBackoffRetry;
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
@@ -117,6 +118,9 @@ public class PacemakerClient implements ISaslClient {
                 .option(ChannelOption.TCP_NODELAY, true)
                 .option(ChannelOption.SO_SNDBUF, 5242880)
                 .option(ChannelOption.SO_KEEPALIVE, true)
+                .option(ChannelOption.WRITE_BUFFER_HIGH_WATER_MARK, 32 * 1024)
+                .option(ChannelOption.WRITE_BUFFER_LOW_WATER_MARK, 8 * 1024)
+                .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
                 .handler(new ThriftNettyClientCodec(this, config, authMethod));
 
         remote_addr = new InetSocketAddress(host, port);
