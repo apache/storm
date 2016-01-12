@@ -17,7 +17,7 @@
  */
 package org.apache.storm.metrics.hdrhistogram;
 
-import org.apache.storm.metric.api.IMetric;
+import backtype.storm.metric.api.IMetric;
 import org.HdrHistogram.Histogram;
 
 /**

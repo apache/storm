@@ -19,7 +19,7 @@
  */
 package org.apache.storm.sql.runtime;
 
-import org.apache.storm.tuple.Values;
+import backtype.storm.tuple.Values;
 
 /**
  * DataListener provides an event-driven interface for the user to process

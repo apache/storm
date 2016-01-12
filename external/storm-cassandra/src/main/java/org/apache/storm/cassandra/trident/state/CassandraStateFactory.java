@@ -18,12 +18,12 @@
  */
 package org.apache.storm.cassandra.trident.state;
 
-import org.apache.storm.task.IMetricsContext;
+import backtype.storm.task.IMetricsContext;
 import org.apache.storm.cassandra.CassandraContext;
 import org.apache.storm.cassandra.query.CQLResultSetValuesMapper;
 import org.apache.storm.cassandra.query.CQLStatementTupleMapper;
-import org.apache.storm.trident.state.State;
-import org.apache.storm.trident.state.StateFactory;
+import storm.trident.state.State;
+import storm.trident.state.StateFactory;
 
 import java.util.Map;
 

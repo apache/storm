@@ -17,7 +17,7 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.bolt;
 
-import org.apache.storm.tuple.Tuple;
+import backtype.storm.tuple.Tuple;
 
 /**
  * A default implementation of IEventDataFormat that converts the tuple

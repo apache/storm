@@ -17,10 +17,10 @@
  */
 package org.apache.storm.jdbc.topology;
 
-import org.apache.storm.Config;
-import org.apache.storm.StormSubmitter;
-import org.apache.storm.generated.StormTopology;
-import org.apache.storm.tuple.Fields;
+import backtype.storm.Config;
+import backtype.storm.StormSubmitter;
+import backtype.storm.generated.StormTopology;
+import backtype.storm.tuple.Fields;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.storm.jdbc.common.Column;
@@ -32,7 +32,7 @@ import org.apache.storm.jdbc.mapper.JdbcLookupMapper;
 import org.apache.storm.jdbc.mapper.SimpleJdbcMapper;
 import org.apache.storm.jdbc.mapper.SimpleJdbcLookupMapper;
 import org.apache.storm.jdbc.spout.UserSpout;
-import org.apache.storm.LocalCluster;
+import backtype.storm.LocalCluster;
 
 import java.sql.Types;
 import java.util.List;

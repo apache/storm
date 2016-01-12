@@ -39,24 +39,17 @@ import static org.apache.storm.cassandra.DynamicStatementBuilder.*
 ```java
 
     new CassandraWriterBolt(
-        async(
-            simpleQuery("INSERT INTO album (title,year,performer,genre,tracks) VALUES (?, ?, ?, ?, ?);")
-                .with(
-                    fields("title", "year", "performer", "genre", "tracks")
-                 )
-            )
-    );
+        insertInto("album")
+            .values(
+                with(fields("title", "year", "performer", "genre", "tracks")
+                ).build());
 ```
-
 ##### Insert query including all tuple fields.
 ```java
 
     new CassandraWriterBolt(
-        async(
-            simpleQuery("INSERT INTO album (title,year,performer,genre,tracks) VALUES (?, ?, ?, ?, ?);")
-                .with( all() )
-            )
-    );
+        insertInto("album")
+            .values(all()).build());
 ```
 
 ##### Insert multiple queries from one input tuple.
@@ -64,49 +57,32 @@ import static org.apache.storm.cassandra.DynamicStatementBuilder.*
 
     new CassandraWriterBolt(
         async(
-            simpleQuery("INSERT INTO titles_per_album (title,year,performer,genre,tracks) VALUES (?, ?, ?, ?, ?);").with(all())),
-            simpleQuery("INSERT INTO titles_per_performer (title,year,performer,genre,tracks) VALUES (?, ?, ?, ?, ?);").with(all()))
+        insertInto("titles_per_album").values(all()),
+        insertInto("titles_per_performer").values(all())
         )
     );
 ```
 
-##### Insert query using QueryBuilder
+##### Insert query including some fields with aliases
 ```java
 
     new CassandraWriterBolt(
-        async(
-            simpleQuery("INSERT INTO album (title,year,perfomer,genre,tracks) VALUES (?, ?, ?, ?, ?);")
-                .with(all()))
-            )
-    )
+        insertInto("album")
+            .values(
+                with(field("ti"),as("title",
+                     field("ye").as("year")),
+                     field("pe").as("performer")),
+                     field("ge").as("genre")),
+                     field("tr").as("tracks")),
+                     ).build());
 ```
 
 ##### Insert query with static bound query
 ```java
 
     new CassandraWriterBolt(
-         async(
-            boundQuery("INSERT INTO album (title,year,performer,genre,tracks) VALUES (?, ?, ?, ?, ?);")
-                .bind(all());
-         )
-    );
-```
-
-##### Insert query with static bound query using named setters and aliases
-```java
-
-    new CassandraWriterBolt(
-         async(
-            boundQuery("INSERT INTO album (title,year,performer,genre,tracks) VALUES (:ti, :ye, :pe, :ge, :tr);")
-                .bind(
-                    field("ti"),as("title"),
-                    field("ye").as("year")),
-                    field("pe").as("performer")),
-                    field("ge").as("genre")),
-                    field("tr").as("tracks"))
-                ).byNamedSetters()
-         )
-    );
+         boundQuery("INSERT INTO album (\"title\", \"year\", \"performer\", \"genre\", \"tracks\") VALUES(?, ?, ?, ?, ?);")
+            .bind(all());
 ```
 
 ##### Insert query with bound statement load from storm configuration
@@ -130,14 +106,14 @@ import static org.apache.storm.cassandra.DynamicStatementBuilder.*
 
     // Logged
     new CassandraWriterBolt(loggedBatch(
-            simpleQuery("INSERT INTO titles_per_album (title,year,performer,genre,tracks) VALUES (?, ?, ?, ?, ?);").with(all())),
-            simpleQuery("INSERT INTO titles_per_performer (title,year,performer,genre,tracks) VALUES (?, ?, ?, ?, ?);").with(all()))
+        insertInto("title_per_album").values(all())
+        insertInto("title_per_performer").values(all())
         )
     );
 // UnLogged
     new CassandraWriterBolt(unLoggedBatch(
-            simpleQuery("INSERT INTO titles_per_album (title,year,performer,genre,tracks) VALUES (?, ?, ?, ?, ?);").with(all())),
-            simpleQuery("INSERT INTO titles_per_performer (title,year,performer,genre,tracks) VALUES (?, ?, ?, ?, ?);").with(all()))
+        insertInto("title_per_album").values(all())
+        insertInto("title_per_performer").values(all())
         )
     );
 ```

@@ -19,7 +19,7 @@ package org.apache.storm.eventhubs.trident;
 
 import java.util.List;
 
-import org.apache.storm.trident.operation.TridentCollector;
+import storm.trident.operation.TridentCollector;
 
 /**
  * A mock of TridentCollector

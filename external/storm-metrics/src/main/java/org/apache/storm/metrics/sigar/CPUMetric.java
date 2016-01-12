@@ -20,7 +20,7 @@ package org.apache.storm.metrics.sigar;
 import org.hyperic.sigar.Sigar;
 import org.hyperic.sigar.ProcCpu;
 
-import org.apache.storm.metric.api.IMetric;
+import backtype.storm.metric.api.IMetric;
 
 import java.util.HashMap;
 

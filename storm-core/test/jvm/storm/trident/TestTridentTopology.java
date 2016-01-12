@@ -16,19 +16,19 @@
  * limitations under the License.
  */
 
-package org.apache.storm.trident;
+package storm.trident;
 
-import org.apache.storm.generated.Bolt;
-import org.apache.storm.generated.StormTopology;
-import org.apache.storm.tuple.Fields;
-import org.apache.storm.tuple.Values;
+import backtype.storm.generated.Bolt;
+import backtype.storm.generated.StormTopology;
+import backtype.storm.tuple.Fields;
+import backtype.storm.tuple.Values;
 import org.junit.Assert;
 import org.junit.Test;
-import org.apache.storm.trident.operation.builtin.Count;
-import org.apache.storm.trident.operation.builtin.Sum;
-import org.apache.storm.trident.testing.FixedBatchSpout;
-import org.apache.storm.trident.testing.Split;
-import org.apache.storm.trident.testing.StringLength;
+import storm.trident.operation.builtin.Count;
+import storm.trident.operation.builtin.Sum;
+import storm.trident.testing.FixedBatchSpout;
+import storm.trident.testing.Split;
+import storm.trident.testing.StringLength;
 
 import java.util.Map;
 import java.util.Set;

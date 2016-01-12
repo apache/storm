@@ -49,14 +49,14 @@ config:
 # spout definitions
 spouts:
   - id: "spout-1"
-    className: "org.apache.storm.testing.TestWordSpout"
+    className: "backtype.storm.testing.TestWordSpout"
     parallelism: 1
     # ...
 
 # bolt definitions
 bolts:
   - id: "bolt-1"
-    className: "org.apache.storm.testing.TestWordCounter"
+    className: "backtype.storm.testing.TestWordCounter"
     parallelism: 1
     # ...
 
@@ -83,7 +83,7 @@ streams:
     grouping:
       type: CUSTOM
       customClass:
-        className: "org.apache.storm.testing.NGrouping"
+        className: "backtype.storm.testing.NGrouping"
         constructorArgs:
           - 1
 

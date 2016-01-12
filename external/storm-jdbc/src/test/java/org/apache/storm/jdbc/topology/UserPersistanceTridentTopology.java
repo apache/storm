@@ -17,8 +17,8 @@
  */
 package org.apache.storm.jdbc.topology;
 
-import org.apache.storm.generated.StormTopology;
-import org.apache.storm.tuple.Fields;
+import backtype.storm.generated.StormTopology;
+import backtype.storm.tuple.Fields;
 import com.google.common.collect.Lists;
 import org.apache.storm.jdbc.common.Column;
 import org.apache.storm.jdbc.mapper.SimpleJdbcLookupMapper;
@@ -27,9 +27,9 @@ import org.apache.storm.jdbc.trident.state.JdbcQuery;
 import org.apache.storm.jdbc.trident.state.JdbcState;
 import org.apache.storm.jdbc.trident.state.JdbcStateFactory;
 import org.apache.storm.jdbc.trident.state.JdbcUpdater;
-import org.apache.storm.trident.Stream;
-import org.apache.storm.trident.TridentState;
-import org.apache.storm.trident.TridentTopology;
+import storm.trident.Stream;
+import storm.trident.TridentState;
+import storm.trident.TridentTopology;
 
 import java.sql.Types;
 

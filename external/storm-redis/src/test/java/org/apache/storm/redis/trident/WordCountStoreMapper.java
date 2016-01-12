@@ -17,7 +17,7 @@
  */
 package org.apache.storm.redis.trident;
 
-import org.apache.storm.tuple.ITuple;
+import backtype.storm.tuple.ITuple;
 import org.apache.storm.redis.common.mapper.RedisDataTypeDescription;
 import org.apache.storm.redis.common.mapper.RedisStoreMapper;
 

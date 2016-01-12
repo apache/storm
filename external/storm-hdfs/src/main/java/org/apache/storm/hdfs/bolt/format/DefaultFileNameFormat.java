@@ -17,7 +17,7 @@
  */
 package org.apache.storm.hdfs.bolt.format;
 
-import org.apache.storm.task.TopologyContext;
+import backtype.storm.task.TopologyContext;
 
 import java.util.Map;
 

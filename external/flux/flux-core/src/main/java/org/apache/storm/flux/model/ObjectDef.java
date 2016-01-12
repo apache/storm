@@ -17,7 +17,7 @@
  */
 package org.apache.storm.flux.model;
 
-import org.apache.storm.Config;
+import backtype.storm.Config;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

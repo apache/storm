@@ -248,7 +248,6 @@ under the License.
 * Ilya Ostrovskiy ([@iostat](https://github.com/iostat))
 * Satish Duggana ([@satishd](https://github.com/satishd))
 * Seth Ammons ([@sethgrid](https://github.com/sethgrid))
-* Aaron Dixon ([@atdixon](https://github.com/atdixon))
 
 ## Acknowledgements
 

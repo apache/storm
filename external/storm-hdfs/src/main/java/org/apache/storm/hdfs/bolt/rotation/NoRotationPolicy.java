@@ -17,7 +17,7 @@
  */
 package org.apache.storm.hdfs.bolt.rotation;
 
-import org.apache.storm.tuple.Tuple;
+import backtype.storm.tuple.Tuple;
 
 /**
  * File rotation policy that will never rotate...

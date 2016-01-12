@@ -19,9 +19,9 @@ package org.apache.storm.hbase.trident;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.storm.trident.operation.BaseFunction;
-import org.apache.storm.trident.operation.TridentCollector;
-import org.apache.storm.trident.tuple.TridentTuple;
+import storm.trident.operation.BaseFunction;
+import storm.trident.operation.TridentCollector;
+import storm.trident.tuple.TridentTuple;
 
 import java.util.Random;
 
