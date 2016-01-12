@@ -17,7 +17,7 @@
  */
 package org.apache.storm.hdfs.bolt.sync;
 
-import org.apache.storm.tuple.Tuple;
+import backtype.storm.tuple.Tuple;
 
 import java.io.Serializable;
 

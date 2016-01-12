@@ -17,7 +17,7 @@
  */
 package org.apache.storm.pacemaker;
 
-import org.apache.storm.generated.HBMessage;
+import backtype.storm.generated.HBMessage;
 
 public interface IServerMessageHandler {
 

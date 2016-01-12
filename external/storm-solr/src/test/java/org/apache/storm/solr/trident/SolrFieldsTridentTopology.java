@@ -18,13 +18,13 @@
 
 package org.apache.storm.solr.trident;
 
-import org.apache.storm.generated.StormTopology;
-import org.apache.storm.tuple.Fields;
+import backtype.storm.generated.StormTopology;
+import backtype.storm.tuple.Fields;
 import org.apache.storm.solr.spout.SolrFieldsSpout;
 import org.apache.storm.solr.topology.SolrFieldsTopology;
-import org.apache.storm.trident.Stream;
-import org.apache.storm.trident.TridentTopology;
-import org.apache.storm.trident.state.StateFactory;
+import storm.trident.Stream;
+import storm.trident.TridentTopology;
+import storm.trident.state.StateFactory;
 
 import java.io.IOException;
 

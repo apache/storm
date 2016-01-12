@@ -17,7 +17,7 @@
  */
 package org.apache.storm.hdfs.trident.rotation;
 
-import org.apache.storm.trident.tuple.TridentTuple;
+import storm.trident.tuple.TridentTuple;
 
 import java.io.Serializable;
 

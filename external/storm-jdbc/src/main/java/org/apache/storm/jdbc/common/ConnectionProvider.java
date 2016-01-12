@@ -19,6 +19,7 @@ package org.apache.storm.jdbc.common;
 
 import java.io.Serializable;
 import java.sql.Connection;
+import java.util.Map;
 
 /**
  * Provides a database connection.

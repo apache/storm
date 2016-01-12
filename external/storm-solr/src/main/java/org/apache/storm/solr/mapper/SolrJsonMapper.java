@@ -18,7 +18,7 @@
 
 package org.apache.storm.solr.mapper;
 
-import org.apache.storm.tuple.ITuple;
+import backtype.storm.tuple.ITuple;
 import com.google.gson.Gson;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrRequest;

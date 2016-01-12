@@ -17,7 +17,7 @@
  */
 package org.apache.storm.hdfs.bolt.format;
 
-import org.apache.storm.tuple.Tuple;
+import backtype.storm.tuple.Tuple;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;

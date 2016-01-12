@@ -19,7 +19,7 @@
  */
 package org.apache.storm.sql.runtime;
 
-import org.apache.storm.tuple.Values;
+import backtype.storm.tuple.Values;
 
 public class Channels {
   private static final ChannelContext VOID_CTX = new ChannelContext() {

@@ -17,8 +17,8 @@
  */
 package org.apache.storm.hdfs.bolt.format;
 
-import org.apache.storm.tuple.Fields;
-import org.apache.storm.tuple.Tuple;
+import backtype.storm.tuple.Fields;
+import backtype.storm.tuple.Tuple;
 
 /**
  * RecordFormat implementation that uses field and record delimiters.

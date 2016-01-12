@@ -20,7 +20,7 @@
 
 package org.apache.storm.sql.runtime;
 
-import org.apache.storm.tuple.Values;
+import backtype.storm.tuple.Values;
 import org.apache.storm.sql.runtime.ChannelHandler;
 import org.apache.storm.sql.runtime.DataSource;
 

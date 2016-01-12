@@ -19,7 +19,7 @@
  */
 package org.apache.storm.sql.runtime;
 
-import org.apache.storm.tuple.Values;
+import backtype.storm.tuple.Values;
 
 public abstract class AbstractChannelHandler implements ChannelHandler {
   @Override

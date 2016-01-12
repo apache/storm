@@ -17,7 +17,7 @@
  */
 package org.apache.storm.redis.common.mapper;
 
-import org.apache.storm.tuple.ITuple;
+import backtype.storm.tuple.ITuple;
 
 import java.io.Serializable;
 

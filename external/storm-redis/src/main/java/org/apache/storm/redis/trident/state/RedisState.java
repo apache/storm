@@ -17,14 +17,14 @@
  */
 package org.apache.storm.redis.trident.state;
 
-import org.apache.storm.task.IMetricsContext;
+import backtype.storm.task.IMetricsContext;
 import org.apache.storm.redis.common.config.JedisPoolConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
-import org.apache.storm.trident.state.State;
-import org.apache.storm.trident.state.StateFactory;
+import storm.trident.state.State;
+import storm.trident.state.StateFactory;
 
 import java.util.Map;
 

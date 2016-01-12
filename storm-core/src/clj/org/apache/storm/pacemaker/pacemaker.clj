@@ -18,11 +18,11 @@
   (:import [org.apache.storm.pacemaker PacemakerServer IServerMessageHandler]
            [java.util.concurrent ConcurrentHashMap]
            [java.util.concurrent.atomic AtomicInteger]
-           [org.apache.storm.generated HBNodes
+           [backtype.storm.generated HBNodes
                                      HBServerMessageType HBMessage HBMessageData HBPulse]
-           [org.apache.storm.utils VersionInfo])
+           [backtype.storm.utils VersionInfo])
   (:use [clojure.string :only [replace-first split]]
-        [org.apache.storm log config util])
+        [backtype.storm log config util])
   (:require [clojure.java.jmx :as jmx])
   (:gen-class))
 

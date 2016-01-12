@@ -17,7 +17,7 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.spout;
 
-import org.apache.storm.spout.SpoutOutputCollector;
+import backtype.storm.spout.SpoutOutputCollector;
 
 /**
  * Mocks EventHubSpout's caller (storm framework)

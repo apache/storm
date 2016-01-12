@@ -18,7 +18,7 @@
  */
 package org.apache.storm.cassandra.query;
 
-import org.apache.storm.tuple.ITuple;
+import backtype.storm.tuple.ITuple;
 
 import java.io.Serializable;
 import java.util.Map;
