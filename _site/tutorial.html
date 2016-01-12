@@ -113,7 +113,7 @@
 <p>To do realtime computation on Storm, you create what are called &quot;topologies&quot;. A topology is a graph of computation. Each node in a topology contains processing logic, and links between nodes indicate how data should be passed around between nodes.</p>
 
 <p>Running a topology is straightforward. First, you package all your code and dependencies into a single jar. Then, you run a command like the following:</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">storm jar all-my-code.jar backtype.storm.MyTopology arg1 arg2
+<div class="highlight"><pre><code class="language-" data-lang="">storm jar all-my-code.jar backtype.storm.MyTopology arg1 arg2
 </code></pre></div>
 <p>This runs the class <code>backtype.storm.MyTopology</code> with the arguments <code>arg1</code> and <code>arg2</code>. The main function of the class defines the topology and submits it to Nimbus. The <code>storm jar</code> part takes care of connecting to Nimbus and uploading the jar.</p>
 
@@ -148,20 +148,20 @@
     <span class="kd">private</span> <span class="n">OutputCollectorBase</span> <span class="n">_collector</span><span class="o">;</span>
 
     <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">prepare</span><span class="o">(</span><span class="n">Map</span> <span class="n">conf</span><span class="o">,</span> <span class="n">TopologyContext</span> <span class="n">context</span><span class="o">,</span> <span class="n">OutputCollectorBase</span> <span class="n">collector</span><span class="o">)</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="n">prepare</span><span class="o">(</span><span class="n">Map</span> <span class="n">conf</span><span class="o">,</span> <span class="n">TopologyContext</span> <span class="n">context</span><span class="o">,</span> <span class="n">OutputCollectorBase</span> <span class="n">collector</span><span class="o">)</span> <span class="o">{</span>
         <span class="n">_collector</span> <span class="o">=</span> <span class="n">collector</span><span class="o">;</span>
     <span class="o">}</span>
 
     <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">execute</span><span class="o">(</span><span class="n">Tuple</span> <span class="n">input</span><span class="o">)</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="n">execute</span><span class="o">(</span><span class="n">Tuple</span> <span class="n">input</span><span class="o">)</span> <span class="o">{</span>
         <span class="kt">int</span> <span class="n">val</span> <span class="o">=</span> <span class="n">input</span><span class="o">.</span><span class="na">getInteger</span><span class="o">(</span><span class="mi">0</span><span class="o">);</span>        
-        <span class="n">_collector</span><span class="o">.</span><span class="na">emit</span><span class="o">(</span><span class="n">input</span><span class="o">,</span> <span class="k">new</span> <span class="nf">Values</span><span class="o">(</span><span class="n">val</span><span class="o">*</span><span class="mi">2</span><span class="o">,</span> <span class="n">val</span><span class="o">*</span><span class="mi">3</span><span class="o">));</span>
+        <span class="n">_collector</span><span class="o">.</span><span class="na">emit</span><span class="o">(</span><span class="n">input</span><span class="o">,</span> <span class="k">new</span> <span class="n">Values</span><span class="o">(</span><span class="n">val</span><span class="o">*</span><span class="mi">2</span><span class="o">,</span> <span class="n">val</span><span class="o">*</span><span class="mi">3</span><span class="o">));</span>
         <span class="n">_collector</span><span class="o">.</span><span class="na">ack</span><span class="o">(</span><span class="n">input</span><span class="o">);</span>
     <span class="o">}</span>
 
     <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">declareOutputFields</span><span class="o">(</span><span class="n">OutputFieldsDeclarer</span> <span class="n">declarer</span><span class="o">)</span> <span class="o">{</span>
-        <span class="n">declarer</span><span class="o">.</span><span class="na">declare</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;double&quot;</span><span class="o">,</span> <span class="s">&quot;triple&quot;</span><span class="o">));</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="n">declareOutputFields</span><span class="o">(</span><span class="n">OutputFieldsDeclarer</span> <span class="n">declarer</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">declarer</span><span class="o">.</span><span class="na">declare</span><span class="o">(</span><span class="k">new</span> <span class="n">Fields</span><span class="o">(</span><span class="s">"double"</span><span class="o">,</span> <span class="s">"triple"</span><span class="o">));</span>
     <span class="o">}</span>    
 <span class="o">}</span>
 </code></pre></div>
@@ -170,12 +170,12 @@
 <h2 id="a-simple-topology">A simple topology</h2>
 
 <p>Let&#39;s take a look at a simple topology to explore the concepts more and see how the code shapes up. Let&#39;s look at the <code>ExclamationTopology</code> definition from storm-starter:</p>
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">TopologyBuilder</span> <span class="n">builder</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">TopologyBuilder</span><span class="o">();</span>        
-<span class="n">builder</span><span class="o">.</span><span class="na">setSpout</span><span class="o">(</span><span class="s">&quot;words&quot;</span><span class="o">,</span> <span class="k">new</span> <span class="nf">TestWordSpout</span><span class="o">(),</span> <span class="mi">10</span><span class="o">);</span>        
-<span class="n">builder</span><span class="o">.</span><span class="na">setBolt</span><span class="o">(</span><span class="s">&quot;exclaim1&quot;</span><span class="o">,</span> <span class="k">new</span> <span class="nf">ExclamationBolt</span><span class="o">(),</span> <span class="mi">3</span><span class="o">)</span>
-        <span class="o">.</span><span class="na">shuffleGrouping</span><span class="o">(</span><span class="s">&quot;words&quot;</span><span class="o">);</span>
-<span class="n">builder</span><span class="o">.</span><span class="na">setBolt</span><span class="o">(</span><span class="s">&quot;exclaim2&quot;</span><span class="o">,</span> <span class="k">new</span> <span class="nf">ExclamationBolt</span><span class="o">(),</span> <span class="mi">2</span><span class="o">)</span>
-        <span class="o">.</span><span class="na">shuffleGrouping</span><span class="o">(</span><span class="s">&quot;exclaim1&quot;</span><span class="o">);</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">TopologyBuilder</span> <span class="n">builder</span> <span class="o">=</span> <span class="k">new</span> <span class="n">TopologyBuilder</span><span class="o">();</span>        
+<span class="n">builder</span><span class="o">.</span><span class="na">setSpout</span><span class="o">(</span><span class="s">"words"</span><span class="o">,</span> <span class="k">new</span> <span class="n">TestWordSpout</span><span class="o">(),</span> <span class="mi">10</span><span class="o">);</span>        
+<span class="n">builder</span><span class="o">.</span><span class="na">setBolt</span><span class="o">(</span><span class="s">"exclaim1"</span><span class="o">,</span> <span class="k">new</span> <span class="n">ExclamationBolt</span><span class="o">(),</span> <span class="mi">3</span><span class="o">)</span>
+        <span class="o">.</span><span class="na">shuffleGrouping</span><span class="o">(</span><span class="s">"words"</span><span class="o">);</span>
+<span class="n">builder</span><span class="o">.</span><span class="na">setBolt</span><span class="o">(</span><span class="s">"exclaim2"</span><span class="o">,</span> <span class="k">new</span> <span class="n">ExclamationBolt</span><span class="o">(),</span> <span class="mi">2</span><span class="o">)</span>
+        <span class="o">.</span><span class="na">shuffleGrouping</span><span class="o">(</span><span class="s">"exclaim1"</span><span class="o">);</span>
 </code></pre></div>
 <p>This topology contains a spout and two bolts. The spout emits words, and each bolt appends the string &quot;!!!&quot; to its input. The nodes are arranged in a line: the spout emits to the first bolt which then emits to the second bolt. If the spout emits the tuples [&quot;bob&quot;] and [&quot;john&quot;], then the second bolt will emit the words [&quot;bob!!!!!!&quot;] and [&quot;john!!!!!!&quot;].</p>
 
@@ -188,19 +188,19 @@
 <p><code>setBolt</code> returns an <a href="/javadoc/apidocs/backtype/storm/topology/InputDeclarer.html">InputDeclarer</a> object that is used to define the inputs to the Bolt. Here, component &quot;exclaim1&quot; declares that it wants to read all the tuples emitted by component &quot;words&quot; using a shuffle grouping, and component &quot;exclaim2&quot; declares that it wants to read all the tuples emitted by component &quot;exclaim1&quot; using a shuffle grouping. &quot;shuffle grouping&quot; means that tuples should be randomly distributed from the input tasks to the bolt&#39;s tasks. There are many ways to group data between components. These will be explained in a few sections.</p>
 
 <p>If you wanted component &quot;exclaim2&quot; to read all the tuples emitted by both component &quot;words&quot; and component &quot;exclaim1&quot;, you would write component &quot;exclaim2&quot;&#39;s definition like this:</p>
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">builder</span><span class="o">.</span><span class="na">setBolt</span><span class="o">(</span><span class="s">&quot;exclaim2&quot;</span><span class="o">,</span> <span class="k">new</span> <span class="nf">ExclamationBolt</span><span class="o">(),</span> <span class="mi">5</span><span class="o">)</span>
-            <span class="o">.</span><span class="na">shuffleGrouping</span><span class="o">(</span><span class="s">&quot;words&quot;</span><span class="o">)</span>
-            <span class="o">.</span><span class="na">shuffleGrouping</span><span class="o">(</span><span class="s">&quot;exclaim1&quot;</span><span class="o">);</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">builder</span><span class="o">.</span><span class="na">setBolt</span><span class="o">(</span><span class="s">"exclaim2"</span><span class="o">,</span> <span class="k">new</span> <span class="n">ExclamationBolt</span><span class="o">(),</span> <span class="mi">5</span><span class="o">)</span>
+            <span class="o">.</span><span class="na">shuffleGrouping</span><span class="o">(</span><span class="s">"words"</span><span class="o">)</span>
+            <span class="o">.</span><span class="na">shuffleGrouping</span><span class="o">(</span><span class="s">"exclaim1"</span><span class="o">);</span>
 </code></pre></div>
 <p>As you can see, input declarations can be chained to specify multiple sources for the Bolt.</p>
 
 <p>Let&#39;s dig into the implementations of the spouts and bolts in this topology. Spouts are responsible for emitting new messages into the topology. <code>TestWordSpout</code> in this topology emits a random word from the list [&quot;nathan&quot;, &quot;mike&quot;, &quot;jackson&quot;, &quot;golda&quot;, &quot;bertels&quot;] as a 1-tuple every 100ms. The implementation of <code>nextTuple()</code> in TestWordSpout looks like this:</p>
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kt">void</span> <span class="nf">nextTuple</span><span class="o">()</span> <span class="o">{</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kt">void</span> <span class="nf">nextTuple</span><span class="p">(</span><span class="o">)</span> <span class="o">{</span>
     <span class="n">Utils</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="mi">100</span><span class="o">);</span>
-    <span class="kd">final</span> <span class="n">String</span><span class="o">[]</span> <span class="n">words</span> <span class="o">=</span> <span class="k">new</span> <span class="n">String</span><span class="o">[]</span> <span class="o">{</span><span class="s">&quot;nathan&quot;</span><span class="o">,</span> <span class="s">&quot;mike&quot;</span><span class="o">,</span> <span class="s">&quot;jackson&quot;</span><span class="o">,</span> <span class="s">&quot;golda&quot;</span><span class="o">,</span> <span class="s">&quot;bertels&quot;</span><span class="o">};</span>
-    <span class="kd">final</span> <span class="n">Random</span> <span class="n">rand</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">Random</span><span class="o">();</span>
+    <span class="kd">final</span> <span class="n">String</span><span class="o">[]</span> <span class="n">words</span> <span class="o">=</span> <span class="k">new</span> <span class="n">String</span><span class="o">[]</span> <span class="o">{</span><span class="s">"nathan"</span><span class="o">,</span> <span class="s">"mike"</span><span class="o">,</span> <span class="s">"jackson"</span><span class="o">,</span> <span class="s">"golda"</span><span class="o">,</span> <span class="s">"bertels"</span><span class="o">};</span>
+    <span class="kd">final</span> <span class="n">Random</span> <span class="n">rand</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Random</span><span class="o">();</span>
     <span class="kd">final</span> <span class="n">String</span> <span class="n">word</span> <span class="o">=</span> <span class="n">words</span><span class="o">[</span><span class="n">rand</span><span class="o">.</span><span class="na">nextInt</span><span class="o">(</span><span class="n">words</span><span class="o">.</span><span class="na">length</span><span class="o">)];</span>
-    <span class="n">_collector</span><span class="o">.</span><span class="na">emit</span><span class="o">(</span><span class="k">new</span> <span class="nf">Values</span><span class="o">(</span><span class="n">word</span><span class="o">));</span>
+    <span class="n">_collector</span><span class="o">.</span><span class="na">emit</span><span class="o">(</span><span class="k">new</span> <span class="n">Values</span><span class="o">(</span><span class="n">word</span><span class="o">));</span>
 <span class="o">}</span>
 </code></pre></div>
 <p>As you can see, the implementation is very straightforward.</p>
@@ -210,27 +210,27 @@
     <span class="n">OutputCollector</span> <span class="n">_collector</span><span class="o">;</span>
 
     <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">prepare</span><span class="o">(</span><span class="n">Map</span> <span class="n">conf</span><span class="o">,</span> <span class="n">TopologyContext</span> <span class="n">context</span><span class="o">,</span> <span class="n">OutputCollector</span> <span class="n">collector</span><span class="o">)</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="n">prepare</span><span class="o">(</span><span class="n">Map</span> <span class="n">conf</span><span class="o">,</span> <span class="n">TopologyContext</span> <span class="n">context</span><span class="o">,</span> <span class="n">OutputCollector</span> <span class="n">collector</span><span class="o">)</span> <span class="o">{</span>
         <span class="n">_collector</span> <span class="o">=</span> <span class="n">collector</span><span class="o">;</span>
     <span class="o">}</span>
 
     <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">execute</span><span class="o">(</span><span class="n">Tuple</span> <span class="n">tuple</span><span class="o">)</span> <span class="o">{</span>
-        <span class="n">_collector</span><span class="o">.</span><span class="na">emit</span><span class="o">(</span><span class="n">tuple</span><span class="o">,</span> <span class="k">new</span> <span class="nf">Values</span><span class="o">(</span><span class="n">tuple</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="mi">0</span><span class="o">)</span> <span class="o">+</span> <span class="s">&quot;!!!&quot;</span><span class="o">));</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="n">execute</span><span class="o">(</span><span class="n">Tuple</span> <span class="n">tuple</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">_collector</span><span class="o">.</span><span class="na">emit</span><span class="o">(</span><span class="n">tuple</span><span class="o">,</span> <span class="k">new</span> <span class="n">Values</span><span class="o">(</span><span class="n">tuple</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="mi">0</span><span class="o">)</span> <span class="o">+</span> <span class="s">"!!!"</span><span class="o">));</span>
         <span class="n">_collector</span><span class="o">.</span><span class="na">ack</span><span class="o">(</span><span class="n">tuple</span><span class="o">);</span>
     <span class="o">}</span>
 
     <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">cleanup</span><span class="o">()</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="n">cleanup</span><span class="o">()</span> <span class="o">{</span>
     <span class="o">}</span>
 
     <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">declareOutputFields</span><span class="o">(</span><span class="n">OutputFieldsDeclarer</span> <span class="n">declarer</span><span class="o">)</span> <span class="o">{</span>
-        <span class="n">declarer</span><span class="o">.</span><span class="na">declare</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;word&quot;</span><span class="o">));</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="n">declareOutputFields</span><span class="o">(</span><span class="n">OutputFieldsDeclarer</span> <span class="n">declarer</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">declarer</span><span class="o">.</span><span class="na">declare</span><span class="o">(</span><span class="k">new</span> <span class="n">Fields</span><span class="o">(</span><span class="s">"word"</span><span class="o">));</span>
     <span class="o">}</span>
 
     <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="n">Map</span> <span class="nf">getComponentConfiguration</span><span class="o">()</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="n">Map</span> <span class="n">getComponentConfiguration</span><span class="o">()</span> <span class="o">{</span>
         <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
     <span class="o">}</span>
 <span class="o">}</span>
@@ -252,19 +252,19 @@
     <span class="n">OutputCollector</span> <span class="n">_collector</span><span class="o">;</span>
 
     <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">prepare</span><span class="o">(</span><span class="n">Map</span> <span class="n">conf</span><span class="o">,</span> <span class="n">TopologyContext</span> <span class="n">context</span><span class="o">,</span> <span class="n">OutputCollector</span> <span class="n">collector</span><span class="o">)</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="n">prepare</span><span class="o">(</span><span class="n">Map</span> <span class="n">conf</span><span class="o">,</span> <span class="n">TopologyContext</span> <span class="n">context</span><span class="o">,</span> <span class="n">OutputCollector</span> <span class="n">collector</span><span class="o">)</span> <span class="o">{</span>
         <span class="n">_collector</span> <span class="o">=</span> <span class="n">collector</span><span class="o">;</span>
     <span class="o">}</span>
 
     <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">execute</span><span class="o">(</span><span class="n">Tuple</span> <span class="n">tuple</span><span class="o">)</span> <span class="o">{</span>
-        <span class="n">_collector</span><span class="o">.</span><span class="na">emit</span><span class="o">(</span><span class="n">tuple</span><span class="o">,</span> <span class="k">new</span> <span class="nf">Values</span><span class="o">(</span><span class="n">tuple</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="mi">0</span><span class="o">)</span> <span class="o">+</span> <span class="s">&quot;!!!&quot;</span><span class="o">));</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="n">execute</span><span class="o">(</span><span class="n">Tuple</span> <span class="n">tuple</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">_collector</span><span class="o">.</span><span class="na">emit</span><span class="o">(</span><span class="n">tuple</span><span class="o">,</span> <span class="k">new</span> <span class="n">Values</span><span class="o">(</span><span class="n">tuple</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="mi">0</span><span class="o">)</span> <span class="o">+</span> <span class="s">"!!!"</span><span class="o">));</span>
         <span class="n">_collector</span><span class="o">.</span><span class="na">ack</span><span class="o">(</span><span class="n">tuple</span><span class="o">);</span>
     <span class="o">}</span>
 
     <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">declareOutputFields</span><span class="o">(</span><span class="n">OutputFieldsDeclarer</span> <span class="n">declarer</span><span class="o">)</span> <span class="o">{</span>
-        <span class="n">declarer</span><span class="o">.</span><span class="na">declare</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;word&quot;</span><span class="o">));</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="n">declareOutputFields</span><span class="o">(</span><span class="n">OutputFieldsDeclarer</span> <span class="n">declarer</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">declarer</span><span class="o">.</span><span class="na">declare</span><span class="o">(</span><span class="k">new</span> <span class="n">Fields</span><span class="o">(</span><span class="s">"word"</span><span class="o">));</span>
     <span class="o">}</span>    
 <span class="o">}</span>
 </code></pre></div>
@@ -277,14 +277,14 @@
 <p>In distributed mode, Storm operates as a cluster of machines. When you submit a topology to the master, you also submit all the code necessary to run the topology. The master will take care of distributing your code and allocating workers to run your topology. If workers go down, the master will reassign them somewhere else. You can read more about running topologies on a cluster on <a href="/documentation/Running-topologies-on-a-production-cluster.html">Running topologies on a production cluster</a>. </p>
 
 <p>Here&#39;s the code that runs <code>ExclamationTopology</code> in local mode:</p>
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">Config</span> <span class="n">conf</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">Config</span><span class="o">();</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">Config</span> <span class="n">conf</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Config</span><span class="o">();</span>
 <span class="n">conf</span><span class="o">.</span><span class="na">setDebug</span><span class="o">(</span><span class="kc">true</span><span class="o">);</span>
 <span class="n">conf</span><span class="o">.</span><span class="na">setNumWorkers</span><span class="o">(</span><span class="mi">2</span><span class="o">);</span>
 
-<span class="n">LocalCluster</span> <span class="n">cluster</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">LocalCluster</span><span class="o">();</span>
-<span class="n">cluster</span><span class="o">.</span><span class="na">submitTopology</span><span class="o">(</span><span class="s">&quot;test&quot;</span><span class="o">,</span> <span class="n">conf</span><span class="o">,</span> <span class="n">builder</span><span class="o">.</span><span class="na">createTopology</span><span class="o">());</span>
+<span class="n">LocalCluster</span> <span class="n">cluster</span> <span class="o">=</span> <span class="k">new</span> <span class="n">LocalCluster</span><span class="o">();</span>
+<span class="n">cluster</span><span class="o">.</span><span class="na">submitTopology</span><span class="o">(</span><span class="s">"test"</span><span class="o">,</span> <span class="n">conf</span><span class="o">,</span> <span class="n">builder</span><span class="o">.</span><span class="na">createTopology</span><span class="o">());</span>
 <span class="n">Utils</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="mi">10000</span><span class="o">);</span>
-<span class="n">cluster</span><span class="o">.</span><span class="na">killTopology</span><span class="o">(</span><span class="s">&quot;test&quot;</span><span class="o">);</span>
+<span class="n">cluster</span><span class="o">.</span><span class="na">killTopology</span><span class="o">(</span><span class="s">"test"</span><span class="o">);</span>
 <span class="n">cluster</span><span class="o">.</span><span class="na">shutdown</span><span class="o">();</span>
 </code></pre></div>
 <p>First, the code defines an in-process cluster by creating a <code>LocalCluster</code> object. Submitting topologies to this virtual cluster is identical to submitting topologies to distributed clusters. It submits a topology to the <code>LocalCluster</code> by calling <code>submitTopology</code>, which takes as arguments a name for the running topology, a configuration for the topology, and then the topology itself.</p>
@@ -311,13 +311,13 @@
 <p>When a task for Bolt A emits a tuple to Bolt B, which task should it send the tuple to?</p>
 
 <p>A &quot;stream grouping&quot; answers this question by telling Storm how to send tuples between sets of tasks. Before we dig into the different kinds of stream groupings, let&#39;s take a look at another topology from <a href="http://github.com/apache/storm/blob/master/examples/storm-starter">storm-starter</a>. This <a href="https://github.com/apache/storm/blob/master/examples/storm-starter/src/jvm/storm/starter/WordCountTopology.java">WordCountTopology</a> reads sentences off of a spout and streams out of <code>WordCountBolt</code> the total number of times it has seen that word before:</p>
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">TopologyBuilder</span> <span class="n">builder</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">TopologyBuilder</span><span class="o">();</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">TopologyBuilder</span> <span class="n">builder</span> <span class="o">=</span> <span class="k">new</span> <span class="n">TopologyBuilder</span><span class="o">();</span>
 
-<span class="n">builder</span><span class="o">.</span><span class="na">setSpout</span><span class="o">(</span><span class="s">&quot;sentences&quot;</span><span class="o">,</span> <span class="k">new</span> <span class="nf">RandomSentenceSpout</span><span class="o">(),</span> <span class="mi">5</span><span class="o">);</span>        
-<span class="n">builder</span><span class="o">.</span><span class="na">setBolt</span><span class="o">(</span><span class="s">&quot;split&quot;</span><span class="o">,</span> <span class="k">new</span> <span class="nf">SplitSentence</span><span class="o">(),</span> <span class="mi">8</span><span class="o">)</span>
-        <span class="o">.</span><span class="na">shuffleGrouping</span><span class="o">(</span><span class="s">&quot;sentences&quot;</span><span class="o">);</span>
-<span class="n">builder</span><span class="o">.</span><span class="na">setBolt</span><span class="o">(</span><span class="s">&quot;count&quot;</span><span class="o">,</span> <span class="k">new</span> <span class="nf">WordCount</span><span class="o">(),</span> <span class="mi">12</span><span class="o">)</span>
-        <span class="o">.</span><span class="na">fieldsGrouping</span><span class="o">(</span><span class="s">&quot;split&quot;</span><span class="o">,</span> <span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;word&quot;</span><span class="o">));</span>
+<span class="n">builder</span><span class="o">.</span><span class="na">setSpout</span><span class="o">(</span><span class="s">"sentences"</span><span class="o">,</span> <span class="k">new</span> <span class="n">RandomSentenceSpout</span><span class="o">(),</span> <span class="mi">5</span><span class="o">);</span>        
+<span class="n">builder</span><span class="o">.</span><span class="na">setBolt</span><span class="o">(</span><span class="s">"split"</span><span class="o">,</span> <span class="k">new</span> <span class="n">SplitSentence</span><span class="o">(),</span> <span class="mi">8</span><span class="o">)</span>
+        <span class="o">.</span><span class="na">shuffleGrouping</span><span class="o">(</span><span class="s">"sentences"</span><span class="o">);</span>
+<span class="n">builder</span><span class="o">.</span><span class="na">setBolt</span><span class="o">(</span><span class="s">"count"</span><span class="o">,</span> <span class="k">new</span> <span class="n">WordCount</span><span class="o">(),</span> <span class="mi">12</span><span class="o">)</span>
+        <span class="o">.</span><span class="na">fieldsGrouping</span><span class="o">(</span><span class="s">"split"</span><span class="o">,</span> <span class="k">new</span> <span class="n">Fields</span><span class="o">(</span><span class="s">"word"</span><span class="o">));</span>
 </code></pre></div>
 <p><code>SplitSentence</code> emits a tuple for each word in each sentence it receives, and <code>WordCount</code> keeps a map in memory from word to count. Each time <code>WordCount</code> receives a word, it updates its state and emits the new word count.</p>
 
@@ -337,12 +337,12 @@
 
 <p>Here&#39;s the definition of the <code>SplitSentence</code> bolt from <code>WordCountTopology</code>:</p>
 <div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">static</span> <span class="kd">class</span> <span class="nc">SplitSentence</span> <span class="kd">extends</span> <span class="n">ShellBolt</span> <span class="kd">implements</span> <span class="n">IRichBolt</span> <span class="o">{</span>
-    <span class="kd">public</span> <span class="nf">SplitSentence</span><span class="o">()</span> <span class="o">{</span>
-        <span class="kd">super</span><span class="o">(</span><span class="s">&quot;python&quot;</span><span class="o">,</span> <span class="s">&quot;splitsentence.py&quot;</span><span class="o">);</span>
+    <span class="kd">public</span> <span class="n">SplitSentence</span><span class="o">()</span> <span class="o">{</span>
+        <span class="kd">super</span><span class="o">(</span><span class="s">"python"</span><span class="o">,</span> <span class="s">"splitsentence.py"</span><span class="o">);</span>
     <span class="o">}</span>
 
-    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">declareOutputFields</span><span class="o">(</span><span class="n">OutputFieldsDeclarer</span> <span class="n">declarer</span><span class="o">)</span> <span class="o">{</span>
-        <span class="n">declarer</span><span class="o">.</span><span class="na">declare</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;word&quot;</span><span class="o">));</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="n">declareOutputFields</span><span class="o">(</span><span class="n">OutputFieldsDeclarer</span> <span class="n">declarer</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">declarer</span><span class="o">.</span><span class="na">declare</span><span class="o">(</span><span class="k">new</span> <span class="n">Fields</span><span class="o">(</span><span class="s">"word"</span><span class="o">));</span>
     <span class="o">}</span>
 <span class="o">}</span>
 </code></pre></div>
@@ -351,7 +351,7 @@
 
 <span class="k">class</span> <span class="nc">SplitSentenceBolt</span><span class="p">(</span><span class="n">storm</span><span class="o">.</span><span class="n">BasicBolt</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tup</span><span class="p">):</span>
-        <span class="n">words</span> <span class="o">=</span> <span class="n">tup</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot; &quot;</span><span class="p">)</span>
+        <span class="n">words</span> <span class="o">=</span> <span class="n">tup</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">" "</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">words</span><span class="p">:</span>
           <span class="n">storm</span><span class="o">.</span><span class="n">emit</span><span class="p">([</span><span class="n">word</span><span class="p">])</span>
 

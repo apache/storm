@@ -112,9 +112,9 @@
 
 <p>The interface looks like this:</p>
 <div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">ISerialization</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="o">{</span>
-    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">accept</span><span class="o">(</span><span class="n">Class</span> <span class="n">c</span><span class="o">);</span>
-    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">serialize</span><span class="o">(</span><span class="n">T</span> <span class="n">object</span><span class="o">,</span> <span class="n">DataOutputStream</span> <span class="n">stream</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">IOException</span><span class="o">;</span>
-    <span class="kd">public</span> <span class="n">T</span> <span class="nf">deserialize</span><span class="o">(</span><span class="n">DataInputStream</span> <span class="n">stream</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">IOException</span><span class="o">;</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="n">accept</span><span class="o">(</span><span class="n">Class</span> <span class="n">c</span><span class="o">);</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="n">serialize</span><span class="o">(</span><span class="n">T</span> <span class="n">object</span><span class="o">,</span> <span class="n">DataOutputStream</span> <span class="n">stream</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">IOException</span><span class="o">;</span>
+    <span class="kd">public</span> <span class="n">T</span> <span class="n">deserialize</span><span class="o">(</span><span class="n">DataInputStream</span> <span class="n">stream</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">IOException</span><span class="o">;</span>
 <span class="o">}</span>
 </code></pre></div>
 <p>Storm uses the <code>accept</code> method to determine if a type can be serialized by this serializer. Remember, Storm&#39;s tuples are dynamically typed so Storm determines what serializer to use at runtime.</p>

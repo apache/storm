@@ -94,7 +94,7 @@
 
 <p>You can read a bit more about the <a href="Guaranteeing-message-processing.html#what-is-storms-reliability-api">reliability mechanism</a> elsewhere on the wiki -- this explains the internal details.</p>
 
-<h3 id="acker-execute()">acker <code>execute()</code></h3>
+<h3 id="acker-execute">acker <code>execute()</code></h3>
 
 <p>The acker is actually a regular bolt, with its  <a href="https://github.com/apache/storm/blob/46c3ba7/storm-core/src/clj/backtype/storm/daemon/acker.clj#L36">execute method</a> defined withing <code>mk-acker-bolt</code>.  When a new tupletree is born, the spout sends the XORed edge-ids of each tuple recipient, which the acker records in its <code>pending</code> ledger. Every time an executor acks a tuple, the acker receives a partial checksum that is the XOR of the tuple&#39;s own edge-id (clearing it from the ledger) and the edge-id of each downstream tuple the executor emitted (thus entering them into the ledger).</p>
 

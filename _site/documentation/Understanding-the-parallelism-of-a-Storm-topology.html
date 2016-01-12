@@ -90,7 +90,7 @@
 
 <p class="post-meta"></p>
 
-<h2 id="what-makes-a-running-topology:-worker-processes,-executors-and-tasks">What makes a running topology: worker processes, executors and tasks</h2>
+<h2 id="what-makes-a-running-topology-worker-processes-executors-and-tasks">What makes a running topology: worker processes, executors and tasks</h2>
 
 <p>Storm distinguishes between the following three main entities that are used to actually run a topology in a Storm cluster:</p>
 
@@ -128,7 +128,7 @@
 </ul></li>
 </ul>
 
-<h3 id="number-of-executors-(threads)">Number of executors (threads)</h3>
+<h3 id="number-of-executors-threads">Number of executors (threads)</h3>
 
 <ul>
 <li>Description: How many executors to spawn <em>per component</em>.</li>
@@ -155,9 +155,9 @@
 </ul>
 
 <p>Here is an example code snippet to show these settings in practice:</p>
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">topologyBuilder</span><span class="o">.</span><span class="na">setBolt</span><span class="o">(</span><span class="s">&quot;green-bolt&quot;</span><span class="o">,</span> <span class="k">new</span> <span class="nf">GreenBolt</span><span class="o">(),</span> <span class="mi">2</span><span class="o">)</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">topologyBuilder</span><span class="o">.</span><span class="na">setBolt</span><span class="o">(</span><span class="s">"green-bolt"</span><span class="o">,</span> <span class="k">new</span> <span class="n">GreenBolt</span><span class="o">(),</span> <span class="mi">2</span><span class="o">)</span>
                <span class="o">.</span><span class="na">setNumTasks</span><span class="o">(</span><span class="mi">4</span><span class="o">)</span>
-               <span class="o">.</span><span class="na">shuffleGrouping</span><span class="o">(</span><span class="s">&quot;blue-spout&quot;</span><span class="o">);</span>
+               <span class="o">.</span><span class="na">shuffleGrouping</span><span class="o">(</span><span class="s">"blue-spout"</span><span class="o">);</span>
 </code></pre></div>
 <p>In the above code we configured Storm to run the bolt <code>GreenBolt</code> with an initial number of two executors and four associated tasks. Storm will run two tasks per executor (thread). If you do not explicitly configure the number of tasks, Storm will run by default one task per executor.</p>
 
@@ -168,20 +168,20 @@
 <p><img src="images/example-of-a-running-topology.png" alt="Example of a running topology in Storm"></p>
 
 <p>The <code>GreenBolt</code> was configured as per the code snippet above whereas <code>BlueSpout</code> and <code>YellowBolt</code> only set the parallelism hint (number of executors). Here is the relevant code:</p>
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">Config</span> <span class="n">conf</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">Config</span><span class="o">();</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">Config</span> <span class="n">conf</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Config</span><span class="o">();</span>
 <span class="n">conf</span><span class="o">.</span><span class="na">setNumWorkers</span><span class="o">(</span><span class="mi">2</span><span class="o">);</span> <span class="c1">// use two worker processes</span>
 
-<span class="n">topologyBuilder</span><span class="o">.</span><span class="na">setSpout</span><span class="o">(</span><span class="s">&quot;blue-spout&quot;</span><span class="o">,</span> <span class="k">new</span> <span class="nf">BlueSpout</span><span class="o">(),</span> <span class="mi">2</span><span class="o">);</span> <span class="c1">// set parallelism hint to 2</span>
+<span class="n">topologyBuilder</span><span class="o">.</span><span class="na">setSpout</span><span class="o">(</span><span class="s">"blue-spout"</span><span class="o">,</span> <span class="k">new</span> <span class="n">BlueSpout</span><span class="o">(),</span> <span class="mi">2</span><span class="o">);</span> <span class="c1">// set parallelism hint to 2</span>
 
-<span class="n">topologyBuilder</span><span class="o">.</span><span class="na">setBolt</span><span class="o">(</span><span class="s">&quot;green-bolt&quot;</span><span class="o">,</span> <span class="k">new</span> <span class="nf">GreenBolt</span><span class="o">(),</span> <span class="mi">2</span><span class="o">)</span>
+<span class="n">topologyBuilder</span><span class="o">.</span><span class="na">setBolt</span><span class="o">(</span><span class="s">"green-bolt"</span><span class="o">,</span> <span class="k">new</span> <span class="n">GreenBolt</span><span class="o">(),</span> <span class="mi">2</span><span class="o">)</span>
                <span class="o">.</span><span class="na">setNumTasks</span><span class="o">(</span><span class="mi">4</span><span class="o">)</span>
-               <span class="o">.</span><span class="na">shuffleGrouping</span><span class="o">(</span><span class="s">&quot;blue-spout&quot;</span><span class="o">);</span>
+               <span class="o">.</span><span class="na">shuffleGrouping</span><span class="o">(</span><span class="s">"blue-spout"</span><span class="o">);</span>
 
-<span class="n">topologyBuilder</span><span class="o">.</span><span class="na">setBolt</span><span class="o">(</span><span class="s">&quot;yellow-bolt&quot;</span><span class="o">,</span> <span class="k">new</span> <span class="nf">YellowBolt</span><span class="o">(),</span> <span class="mi">6</span><span class="o">)</span>
-               <span class="o">.</span><span class="na">shuffleGrouping</span><span class="o">(</span><span class="s">&quot;green-bolt&quot;</span><span class="o">);</span>
+<span class="n">topologyBuilder</span><span class="o">.</span><span class="na">setBolt</span><span class="o">(</span><span class="s">"yellow-bolt"</span><span class="o">,</span> <span class="k">new</span> <span class="n">YellowBolt</span><span class="o">(),</span> <span class="mi">6</span><span class="o">)</span>
+               <span class="o">.</span><span class="na">shuffleGrouping</span><span class="o">(</span><span class="s">"green-bolt"</span><span class="o">);</span>
 
 <span class="n">StormSubmitter</span><span class="o">.</span><span class="na">submitTopology</span><span class="o">(</span>
-        <span class="s">&quot;mytopology&quot;</span><span class="o">,</span>
+        <span class="s">"mytopology"</span><span class="o">,</span>
         <span class="n">conf</span><span class="o">,</span>
         <span class="n">topologyBuilder</span><span class="o">.</span><span class="na">createTopology</span><span class="o">()</span>
     <span class="o">);</span>
@@ -204,9 +204,9 @@
 </ol>
 
 <p>Here is an example of using the CLI tool:</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">## Reconfigure the topology &quot;mytopology&quot; to use 5 worker processes,
-## the spout &quot;blue-spout&quot; to use 3 executors and
-## the bolt &quot;yellow-bolt&quot; to use 10 executors.
+<div class="highlight"><pre><code class="language-" data-lang="">## Reconfigure the topology "mytopology" to use 5 worker processes,
+## the spout "blue-spout" to use 3 executors and
+## the bolt "yellow-bolt" to use 10 executors.
 
 $ storm rebalance mytopology -n 5 -e blue-spout=3 -e yellow-bolt=10
 </code></pre></div>

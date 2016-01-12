@@ -97,8 +97,8 @@
 <p>There is an inextricable link between how you source your data streams and how you update state (e.g. databases) based on those data streams. See <a href="Trident-state.html">Trident state doc</a> for an explanation of this – understanding this link is imperative for understanding the spout options available.</p>
 
 <p>Regular Storm spouts will be non-transactional spouts in a Trident topology. To use a regular Storm IRichSpout, create the stream like this in a TridentTopology:</p>
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">TridentTopology</span> <span class="n">topology</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">TridentTopology</span><span class="o">();</span>
-<span class="n">topology</span><span class="o">.</span><span class="na">newStream</span><span class="o">(</span><span class="s">&quot;myspoutid&quot;</span><span class="o">,</span> <span class="k">new</span> <span class="nf">MyRichSpout</span><span class="o">());</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">TridentTopology</span> <span class="n">topology</span> <span class="o">=</span> <span class="k">new</span> <span class="n">TridentTopology</span><span class="o">();</span>
+<span class="n">topology</span><span class="o">.</span><span class="na">newStream</span><span class="o">(</span><span class="s">"myspoutid"</span><span class="o">,</span> <span class="k">new</span> <span class="n">MyRichSpout</span><span class="o">());</span>
 </code></pre></div>
 <p>All spouts in a Trident topology are required to be given a unique identifier for the stream – this identifier must be unique across all topologies run on the cluster. Trident will use this identifier to store metadata about what the spout has consumed in Zookeeper, including the txid and any metadata associated with the spout.</p>
 

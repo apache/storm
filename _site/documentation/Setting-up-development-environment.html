@@ -99,7 +99,7 @@
 
 <p>More detail on each of these steps is below.</p>
 
-<h3 id="what-is-a-development-environment?">What is a development environment?</h3>
+<h3 id="what-is-a-development-environment">What is a development environment?</h3>
 
 <p>Storm has two modes of operation: local mode and remote mode. In local mode, you can develop and test topologies completely in process on your local machine. In remote mode, you submit topologies for execution on a cluster of machines.</p>
 
@@ -116,10 +116,10 @@
 <h3 id="starting-and-stopping-topologies-on-a-remote-cluster">Starting and stopping topologies on a remote cluster</h3>
 
 <p>The previous step installed the <code>storm</code> client on your machine which is used to communicate with remote Storm clusters. Now all you have to do is tell the client which Storm cluster to talk to. To do this, all you have to do is put the host address of the master in the <code>~/.storm/storm.yaml</code> file. It should look something like this:</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">nimbus.host: &quot;123.45.678.890&quot;
+<div class="highlight"><pre><code class="language-" data-lang="">nimbus.host: "123.45.678.890"
 </code></pre></div>
 <p>Alternatively, if you use the <a href="https://github.com/nathanmarz/storm-deploy">storm-deploy</a> project to provision Storm clusters on AWS, it will automatically set up your ~/.storm/storm.yaml file. You can manually attach to a Storm cluster (or switch between multiple clusters) using the &quot;attach&quot; command, like so:</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">lein run :deploy --attach --name mystormcluster
+<div class="highlight"><pre><code class="language-" data-lang="">lein run :deploy --attach --name mystormcluster
 </code></pre></div>
 <p>More information is on the storm-deploy <a href="https://github.com/nathanmarz/storm-deploy/wiki">wiki</a></p>
 

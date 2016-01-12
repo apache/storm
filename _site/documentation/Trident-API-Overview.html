@@ -110,23 +110,23 @@
 
 <p>A function takes in a set of input fields and emits zero or more tuples as output. The fields of the output tuple are appended to the original input tuple in the stream. If a function emits no tuples, the original input tuple is filtered out. Otherwise, the input tuple is duplicated for each output tuple. Suppose you have this function:</p>
 <div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">MyFunction</span> <span class="kd">extends</span> <span class="n">BaseFunction</span> <span class="o">{</span>
-    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">execute</span><span class="o">(</span><span class="n">TridentTuple</span> <span class="n">tuple</span><span class="o">,</span> <span class="n">TridentCollector</span> <span class="n">collector</span><span class="o">)</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="n">execute</span><span class="o">(</span><span class="n">TridentTuple</span> <span class="n">tuple</span><span class="o">,</span> <span class="n">TridentCollector</span> <span class="n">collector</span><span class="o">)</span> <span class="o">{</span>
         <span class="k">for</span><span class="o">(</span><span class="kt">int</span> <span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">tuple</span><span class="o">.</span><span class="na">getInteger</span><span class="o">(</span><span class="mi">0</span><span class="o">);</span> <span class="n">i</span><span class="o">++)</span> <span class="o">{</span>
-            <span class="n">collector</span><span class="o">.</span><span class="na">emit</span><span class="o">(</span><span class="k">new</span> <span class="nf">Values</span><span class="o">(</span><span class="n">i</span><span class="o">));</span>
+            <span class="n">collector</span><span class="o">.</span><span class="na">emit</span><span class="o">(</span><span class="k">new</span> <span class="n">Values</span><span class="o">(</span><span class="n">i</span><span class="o">));</span>
         <span class="o">}</span>
     <span class="o">}</span>
 <span class="o">}</span>
 </code></pre></div>
 <p>Now suppose you have a stream in the variable &quot;mystream&quot; with the fields [&quot;a&quot;, &quot;b&quot;, &quot;c&quot;] with the following tuples:</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">[1, 2, 3]
+<div class="highlight"><pre><code class="language-" data-lang="">[1, 2, 3]
 [4, 1, 6]
 [3, 0, 8]
 </code></pre></div>
 <p>If you run this code:</p>
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">mystream</span><span class="o">.</span><span class="na">each</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;b&quot;</span><span class="o">),</span> <span class="k">new</span> <span class="nf">MyFunction</span><span class="o">(),</span> <span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;d&quot;</span><span class="o">)))</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">mystream</span><span class="o">.</span><span class="na">each</span><span class="o">(</span><span class="k">new</span> <span class="n">Fields</span><span class="o">(</span><span class="s">"b"</span><span class="o">),</span> <span class="k">new</span> <span class="n">MyFunction</span><span class="o">(),</span> <span class="k">new</span> <span class="n">Fields</span><span class="o">(</span><span class="s">"d"</span><span class="o">)))</span>
 </code></pre></div>
 <p>The resulting tuples would have fields [&quot;a&quot;, &quot;b&quot;, &quot;c&quot;, &quot;d&quot;] and look like this:</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">[1, 2, 3, 0]
+<div class="highlight"><pre><code class="language-" data-lang="">[1, 2, 3, 0]
 [1, 2, 3, 1]
 [4, 1, 6, 0]
 </code></pre></div>
@@ -134,43 +134,43 @@
 
 <p>Filters take in a tuple as input and decide whether or not to keep that tuple or not. Suppose you had this filter:</p>
 <div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">MyFilter</span> <span class="kd">extends</span> <span class="n">BaseFilter</span> <span class="o">{</span>
-    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">isKeep</span><span class="o">(</span><span class="n">TridentTuple</span> <span class="n">tuple</span><span class="o">)</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="n">isKeep</span><span class="o">(</span><span class="n">TridentTuple</span> <span class="n">tuple</span><span class="o">)</span> <span class="o">{</span>
         <span class="k">return</span> <span class="n">tuple</span><span class="o">.</span><span class="na">getInteger</span><span class="o">(</span><span class="mi">0</span><span class="o">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="o">&amp;&amp;</span> <span class="n">tuple</span><span class="o">.</span><span class="na">getInteger</span><span class="o">(</span><span class="mi">1</span><span class="o">)</span> <span class="o">==</span> <span class="mi">2</span><span class="o">;</span>
     <span class="o">}</span>
 <span class="o">}</span>
 </code></pre></div>
 <p>Now suppose you had these tuples with fields [&quot;a&quot;, &quot;b&quot;, &quot;c&quot;]:</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">[1, 2, 3]
+<div class="highlight"><pre><code class="language-" data-lang="">[1, 2, 3]
 [2, 1, 1]
 [2, 3, 4]
 </code></pre></div>
 <p>If you ran this code:</p>
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">mystream</span><span class="o">.</span><span class="na">each</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;b&quot;</span><span class="o">,</span> <span class="s">&quot;a&quot;</span><span class="o">),</span> <span class="k">new</span> <span class="nf">MyFilter</span><span class="o">())</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">mystream</span><span class="o">.</span><span class="na">each</span><span class="o">(</span><span class="k">new</span> <span class="n">Fields</span><span class="o">(</span><span class="s">"b"</span><span class="o">,</span> <span class="s">"a"</span><span class="o">),</span> <span class="k">new</span> <span class="n">MyFilter</span><span class="o">())</span>
 </code></pre></div>
 <p>The resulting tuples would be:</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">[2, 1, 1]
+<div class="highlight"><pre><code class="language-" data-lang="">[2, 1, 1]
 </code></pre></div>
 <h3 id="partitionaggregate">partitionAggregate</h3>
 
 <p>partitionAggregate runs a function on each partition of a batch of tuples. Unlike functions, the tuples emitted by partitionAggregate replace the input tuples given to it. Consider this example:</p>
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">mystream</span><span class="o">.</span><span class="na">partitionAggregate</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;b&quot;</span><span class="o">),</span> <span class="k">new</span> <span class="nf">Sum</span><span class="o">(),</span> <span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;sum&quot;</span><span class="o">))</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">mystream</span><span class="o">.</span><span class="na">partitionAggregate</span><span class="o">(</span><span class="k">new</span> <span class="n">Fields</span><span class="o">(</span><span class="s">"b"</span><span class="o">),</span> <span class="k">new</span> <span class="n">Sum</span><span class="o">(),</span> <span class="k">new</span> <span class="n">Fields</span><span class="o">(</span><span class="s">"sum"</span><span class="o">))</span>
 </code></pre></div>
 <p>Suppose the input stream contained fields [&quot;a&quot;, &quot;b&quot;] and the following partitions of tuples:</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">Partition 0:
-[&quot;a&quot;, 1]
-[&quot;b&quot;, 2]
+<div class="highlight"><pre><code class="language-" data-lang="">Partition 0:
+["a", 1]
+["b", 2]
 
 Partition 1:
-[&quot;a&quot;, 3]
-[&quot;c&quot;, 8]
+["a", 3]
+["c", 8]
 
 Partition 2:
-[&quot;e&quot;, 1]
-[&quot;d&quot;, 9]
-[&quot;d&quot;, 10]
+["e", 1]
+["d", 9]
+["d", 10]
 </code></pre></div>
 <p>Then the output stream of that code would contain these tuples with one field called &quot;sum&quot;:</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">Partition 0:
+<div class="highlight"><pre><code class="language-" data-lang="">Partition 0:
 [3]
 
 Partition 1:
@@ -183,22 +183,22 @@ Partition 2:
 
 <p>Here&#39;s the interface for CombinerAggregator:</p>
 <div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">CombinerAggregator</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="kd">extends</span> <span class="n">Serializable</span> <span class="o">{</span>
-    <span class="n">T</span> <span class="nf">init</span><span class="o">(</span><span class="n">TridentTuple</span> <span class="n">tuple</span><span class="o">);</span>
-    <span class="n">T</span> <span class="nf">combine</span><span class="o">(</span><span class="n">T</span> <span class="n">val1</span><span class="o">,</span> <span class="n">T</span> <span class="n">val2</span><span class="o">);</span>
-    <span class="n">T</span> <span class="nf">zero</span><span class="o">();</span>
+    <span class="n">T</span> <span class="n">init</span><span class="o">(</span><span class="n">TridentTuple</span> <span class="n">tuple</span><span class="o">);</span>
+    <span class="n">T</span> <span class="n">combine</span><span class="o">(</span><span class="n">T</span> <span class="n">val1</span><span class="o">,</span> <span class="n">T</span> <span class="n">val2</span><span class="o">);</span>
+    <span class="n">T</span> <span class="n">zero</span><span class="o">();</span>
 <span class="o">}</span>
 </code></pre></div>
 <p>A CombinerAggregator returns a single tuple with a single field as output. CombinerAggregators run the init function on each input tuple and use the combine function to combine values until there&#39;s only one value left. If there&#39;s no tuples in the partition, the CombinerAggregator emits the output of the zero function. For example, here&#39;s the implementation of Count:</p>
 <div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">Count</span> <span class="kd">implements</span> <span class="n">CombinerAggregator</span><span class="o">&lt;</span><span class="n">Long</span><span class="o">&gt;</span> <span class="o">{</span>
-    <span class="kd">public</span> <span class="n">Long</span> <span class="nf">init</span><span class="o">(</span><span class="n">TridentTuple</span> <span class="n">tuple</span><span class="o">)</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="n">Long</span> <span class="n">init</span><span class="o">(</span><span class="n">TridentTuple</span> <span class="n">tuple</span><span class="o">)</span> <span class="o">{</span>
         <span class="k">return</span> <span class="mi">1L</span><span class="o">;</span>
     <span class="o">}</span>
 
-    <span class="kd">public</span> <span class="n">Long</span> <span class="nf">combine</span><span class="o">(</span><span class="n">Long</span> <span class="n">val1</span><span class="o">,</span> <span class="n">Long</span> <span class="n">val2</span><span class="o">)</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="n">Long</span> <span class="n">combine</span><span class="o">(</span><span class="n">Long</span> <span class="n">val1</span><span class="o">,</span> <span class="n">Long</span> <span class="n">val2</span><span class="o">)</span> <span class="o">{</span>
         <span class="k">return</span> <span class="n">val1</span> <span class="o">+</span> <span class="n">val2</span><span class="o">;</span>
     <span class="o">}</span>
 
-    <span class="kd">public</span> <span class="n">Long</span> <span class="nf">zero</span><span class="o">()</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="n">Long</span> <span class="n">zero</span><span class="o">()</span> <span class="o">{</span>
         <span class="k">return</span> <span class="mi">0L</span><span class="o">;</span>
     <span class="o">}</span>
 <span class="o">}</span>
@@ -207,17 +207,17 @@ Partition 2:
 
 <p>A ReducerAggregator has the following interface:</p>
 <div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">ReducerAggregator</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="kd">extends</span> <span class="n">Serializable</span> <span class="o">{</span>
-    <span class="n">T</span> <span class="nf">init</span><span class="o">();</span>
-    <span class="n">T</span> <span class="nf">reduce</span><span class="o">(</span><span class="n">T</span> <span class="n">curr</span><span class="o">,</span> <span class="n">TridentTuple</span> <span class="n">tuple</span><span class="o">);</span>
+    <span class="n">T</span> <span class="n">init</span><span class="o">();</span>
+    <span class="n">T</span> <span class="n">reduce</span><span class="o">(</span><span class="n">T</span> <span class="n">curr</span><span class="o">,</span> <span class="n">TridentTuple</span> <span class="n">tuple</span><span class="o">);</span>
 <span class="o">}</span>
 </code></pre></div>
 <p>A ReducerAggregator produces an initial value with init, and then it iterates on that value for each input tuple to produce a single tuple with a single value as output. For example, here&#39;s how you would define Count as a ReducerAggregator:</p>
 <div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">Count</span> <span class="kd">implements</span> <span class="n">ReducerAggregator</span><span class="o">&lt;</span><span class="n">Long</span><span class="o">&gt;</span> <span class="o">{</span>
-    <span class="kd">public</span> <span class="n">Long</span> <span class="nf">init</span><span class="o">()</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="n">Long</span> <span class="n">init</span><span class="o">()</span> <span class="o">{</span>
         <span class="k">return</span> <span class="mi">0L</span><span class="o">;</span>
     <span class="o">}</span>
 
-    <span class="kd">public</span> <span class="n">Long</span> <span class="nf">reduce</span><span class="o">(</span><span class="n">Long</span> <span class="n">curr</span><span class="o">,</span> <span class="n">TridentTuple</span> <span class="n">tuple</span><span class="o">)</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="n">Long</span> <span class="n">reduce</span><span class="o">(</span><span class="n">Long</span> <span class="n">curr</span><span class="o">,</span> <span class="n">TridentTuple</span> <span class="n">tuple</span><span class="o">)</span> <span class="o">{</span>
         <span class="k">return</span> <span class="n">curr</span> <span class="o">+</span> <span class="mi">1</span><span class="o">;</span>
     <span class="o">}</span>
 <span class="o">}</span>
@@ -226,9 +226,9 @@ Partition 2:
 
 <p>The most general interface for performing aggregations is Aggregator, which looks like this:</p>
 <div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">Aggregator</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="kd">extends</span> <span class="n">Operation</span> <span class="o">{</span>
-    <span class="n">T</span> <span class="nf">init</span><span class="o">(</span><span class="n">Object</span> <span class="n">batchId</span><span class="o">,</span> <span class="n">TridentCollector</span> <span class="n">collector</span><span class="o">);</span>
-    <span class="kt">void</span> <span class="nf">aggregate</span><span class="o">(</span><span class="n">T</span> <span class="n">state</span><span class="o">,</span> <span class="n">TridentTuple</span> <span class="n">tuple</span><span class="o">,</span> <span class="n">TridentCollector</span> <span class="n">collector</span><span class="o">);</span>
-    <span class="kt">void</span> <span class="nf">complete</span><span class="o">(</span><span class="n">T</span> <span class="n">state</span><span class="o">,</span> <span class="n">TridentCollector</span> <span class="n">collector</span><span class="o">);</span>
+    <span class="n">T</span> <span class="n">init</span><span class="o">(</span><span class="n">Object</span> <span class="n">batchId</span><span class="o">,</span> <span class="n">TridentCollector</span> <span class="n">collector</span><span class="o">);</span>
+    <span class="kt">void</span> <span class="n">aggregate</span><span class="o">(</span><span class="n">T</span> <span class="n">state</span><span class="o">,</span> <span class="n">TridentTuple</span> <span class="n">tuple</span><span class="o">,</span> <span class="n">TridentCollector</span> <span class="n">collector</span><span class="o">);</span>
+    <span class="kt">void</span> <span class="n">complete</span><span class="o">(</span><span class="n">T</span> <span class="n">state</span><span class="o">,</span> <span class="n">TridentCollector</span> <span class="n">collector</span><span class="o">);</span>
 <span class="o">}</span>
 </code></pre></div>
 <p>Aggregators can emit any number of tuples with any number of fields. They can emit tuples at any point during execution. Aggregators execute in the following way:</p>
@@ -245,23 +245,23 @@ Partition 2:
         <span class="kt">long</span> <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span>
     <span class="o">}</span>
 
-    <span class="kd">public</span> <span class="n">CountState</span> <span class="nf">init</span><span class="o">(</span><span class="n">Object</span> <span class="n">batchId</span><span class="o">,</span> <span class="n">TridentCollector</span> <span class="n">collector</span><span class="o">)</span> <span class="o">{</span>
-        <span class="k">return</span> <span class="k">new</span> <span class="nf">CountState</span><span class="o">();</span>
+    <span class="kd">public</span> <span class="n">CountState</span> <span class="n">init</span><span class="o">(</span><span class="n">Object</span> <span class="n">batchId</span><span class="o">,</span> <span class="n">TridentCollector</span> <span class="n">collector</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="k">new</span> <span class="n">CountState</span><span class="o">();</span>
     <span class="o">}</span>
 
-    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">aggregate</span><span class="o">(</span><span class="n">CountState</span> <span class="n">state</span><span class="o">,</span> <span class="n">TridentTuple</span> <span class="n">tuple</span><span class="o">,</span> <span class="n">TridentCollector</span> <span class="n">collector</span><span class="o">)</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="n">aggregate</span><span class="o">(</span><span class="n">CountState</span> <span class="n">state</span><span class="o">,</span> <span class="n">TridentTuple</span> <span class="n">tuple</span><span class="o">,</span> <span class="n">TridentCollector</span> <span class="n">collector</span><span class="o">)</span> <span class="o">{</span>
         <span class="n">state</span><span class="o">.</span><span class="na">count</span><span class="o">+=</span><span class="mi">1</span><span class="o">;</span>
     <span class="o">}</span>
 
-    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">complete</span><span class="o">(</span><span class="n">CountState</span> <span class="n">state</span><span class="o">,</span> <span class="n">TridentCollector</span> <span class="n">collector</span><span class="o">)</span> <span class="o">{</span>
-        <span class="n">collector</span><span class="o">.</span><span class="na">emit</span><span class="o">(</span><span class="k">new</span> <span class="nf">Values</span><span class="o">(</span><span class="n">state</span><span class="o">.</span><span class="na">count</span><span class="o">));</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="n">complete</span><span class="o">(</span><span class="n">CountState</span> <span class="n">state</span><span class="o">,</span> <span class="n">TridentCollector</span> <span class="n">collector</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">collector</span><span class="o">.</span><span class="na">emit</span><span class="o">(</span><span class="k">new</span> <span class="n">Values</span><span class="o">(</span><span class="n">state</span><span class="o">.</span><span class="na">count</span><span class="o">));</span>
     <span class="o">}</span>
 <span class="o">}</span>
 </code></pre></div>
 <p>Sometimes you want to execute multiple aggregators at the same time. This is called chaining and can be accomplished like this:</p>
 <div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">mystream</span><span class="o">.</span><span class="na">chainedAgg</span><span class="o">()</span>
-        <span class="o">.</span><span class="na">partitionAggregate</span><span class="o">(</span><span class="k">new</span> <span class="nf">Count</span><span class="o">(),</span> <span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;count&quot;</span><span class="o">))</span>
-        <span class="o">.</span><span class="na">partitionAggregate</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;b&quot;</span><span class="o">),</span> <span class="k">new</span> <span class="nf">Sum</span><span class="o">(),</span> <span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;sum&quot;</span><span class="o">))</span>
+        <span class="o">.</span><span class="na">partitionAggregate</span><span class="o">(</span><span class="k">new</span> <span class="n">Count</span><span class="o">(),</span> <span class="k">new</span> <span class="n">Fields</span><span class="o">(</span><span class="s">"count"</span><span class="o">))</span>
+        <span class="o">.</span><span class="na">partitionAggregate</span><span class="o">(</span><span class="k">new</span> <span class="n">Fields</span><span class="o">(</span><span class="s">"b"</span><span class="o">),</span> <span class="k">new</span> <span class="n">Sum</span><span class="o">(),</span> <span class="k">new</span> <span class="n">Fields</span><span class="o">(</span><span class="s">"sum"</span><span class="o">))</span>
         <span class="o">.</span><span class="na">chainEnd</span><span class="o">()</span>
 </code></pre></div>
 <p>This code will run the Count and Sum aggregators on each partition. The output will contain a single tuple with the fields [&quot;count&quot;, &quot;sum&quot;].</p>
@@ -273,7 +273,7 @@ Partition 2:
 <h3 id="projection">projection</h3>
 
 <p>The projection method on Stream keeps only the fields specified in the operation. If you had a Stream with fields [&quot;a&quot;, &quot;b&quot;, &quot;c&quot;, &quot;d&quot;] and you ran this code:</p>
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">mystream</span><span class="o">.</span><span class="na">project</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;b&quot;</span><span class="o">,</span> <span class="s">&quot;d&quot;</span><span class="o">))</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">mystream</span><span class="o">.</span><span class="na">project</span><span class="o">(</span><span class="k">new</span> <span class="n">Fields</span><span class="o">(</span><span class="s">"b"</span><span class="o">,</span> <span class="s">"d"</span><span class="o">))</span>
 </code></pre></div>
 <p>The output stream would contain only the fields [&quot;b&quot;, &quot;d&quot;].</p>
 
@@ -297,7 +297,7 @@ Partition 2:
 <p>Running aggregate on a Stream does a global aggregation. When you use a ReducerAggregator or an Aggregator, the stream is first repartitioned into a single partition, and then the aggregation function is run on that partition. When you use a CombinerAggregator, on the other hand, first Trident will compute partial aggregations of each partition, then repartition to a single partition, and then finish the aggregation after the network transfer. CombinerAggregator&#39;s are far more efficient and should be used when possible.</p>
 
 <p>Here&#39;s an example of using aggregate to get a global count for a batch:</p>
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">mystream</span><span class="o">.</span><span class="na">aggregate</span><span class="o">(</span><span class="k">new</span> <span class="nf">Count</span><span class="o">(),</span> <span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;count&quot;</span><span class="o">))</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">mystream</span><span class="o">.</span><span class="na">aggregate</span><span class="o">(</span><span class="k">new</span> <span class="n">Count</span><span class="o">(),</span> <span class="k">new</span> <span class="n">Fields</span><span class="o">(</span><span class="s">"count"</span><span class="o">))</span>
 </code></pre></div>
 <p>Like partitionAggregate, aggregators for aggregate can be chained. However, if you chain a CombinerAggregator with a non-CombinerAggregator, Trident is unable to do the partial aggregation optimization.</p>
 
@@ -323,7 +323,7 @@ Partition 2:
 <p>Another way to combine streams is with a join. Now, a standard join, like the kind from SQL, require finite input. So they don&#39;t make sense with infinite streams. Joins in Trident only apply within each small batch that comes off of the spout. </p>
 
 <p>Here&#39;s an example join between a stream containing fields [&quot;key&quot;, &quot;val1&quot;, &quot;val2&quot;] and another stream containing [&quot;x&quot;, &quot;val1&quot;]:</p>
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">topology</span><span class="o">.</span><span class="na">join</span><span class="o">(</span><span class="n">stream1</span><span class="o">,</span> <span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;key&quot;</span><span class="o">),</span> <span class="n">stream2</span><span class="o">,</span> <span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;x&quot;</span><span class="o">),</span> <span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;key&quot;</span><span class="o">,</span> <span class="s">&quot;a&quot;</span><span class="o">,</span> <span class="s">&quot;b&quot;</span><span class="o">,</span> <span class="s">&quot;c&quot;</span><span class="o">));</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">topology</span><span class="o">.</span><span class="na">join</span><span class="o">(</span><span class="n">stream1</span><span class="o">,</span> <span class="k">new</span> <span class="n">Fields</span><span class="o">(</span><span class="s">"key"</span><span class="o">),</span> <span class="n">stream2</span><span class="o">,</span> <span class="k">new</span> <span class="n">Fields</span><span class="o">(</span><span class="s">"x"</span><span class="o">),</span> <span class="k">new</span> <span class="n">Fields</span><span class="o">(</span><span class="s">"key"</span><span class="o">,</span> <span class="s">"a"</span><span class="o">,</span> <span class="s">"b"</span><span class="o">,</span> <span class="s">"c"</span><span class="o">));</span>
 </code></pre></div>
 <p>This joins stream1 and stream2 together using &quot;key&quot; and &quot;x&quot; as the join fields for each respective stream. Then, Trident requires that all the output fields of the new stream be named, since the input streams could have overlapping field names. The tuples emitted from the join will contain:</p>
 

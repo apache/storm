@@ -96,7 +96,7 @@
 
 <h2 id="usage">Usage</h2>
 
-<h3 id="how-do-i-use-it?">How do I use it?</h3>
+<h3 id="how-do-i-use-it">How do I use it?</h3>
 
 <p>use it as a maven dependency:</p>
 <div class="highlight"><pre><code class="language-xml" data-lang="xml"><span class="nt">&lt;dependency&gt;</span>
@@ -117,111 +117,117 @@
 <p>These interfaces are combined with <code>RedisLookupMapper</code> and <code>RedisStoreMapper</code> which fit <code>RedisLookupBolt</code> and <code>RedisStoreBolt</code> respectively.</p>
 
 <h4 id="redislookupbolt-example">RedisLookupBolt example</h4>
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">class</span> <span class="nc">WordCountRedisLookupMapper</span> <span class="kd">implements</span> <span class="n">RedisLookupMapper</span> <span class="o">{</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java">
+<span class="kd">class</span> <span class="nc">WordCountRedisLookupMapper</span> <span class="kd">implements</span> <span class="n">RedisLookupMapper</span> <span class="o">{</span>
     <span class="kd">private</span> <span class="n">RedisDataTypeDescription</span> <span class="n">description</span><span class="o">;</span>
-    <span class="kd">private</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">hashKey</span> <span class="o">=</span> <span class="s">&quot;wordCount&quot;</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">hashKey</span> <span class="o">=</span> <span class="s">"wordCount"</span><span class="o">;</span>
 
-    <span class="kd">public</span> <span class="nf">WordCountRedisLookupMapper</span><span class="o">()</span> <span class="o">{</span>
-        <span class="n">description</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">RedisDataTypeDescription</span><span class="o">(</span>
+    <span class="kd">public</span> <span class="n">WordCountRedisLookupMapper</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">description</span> <span class="o">=</span> <span class="k">new</span> <span class="n">RedisDataTypeDescription</span><span class="o">(</span>
                 <span class="n">RedisDataTypeDescription</span><span class="o">.</span><span class="na">RedisDataType</span><span class="o">.</span><span class="na">HASH</span><span class="o">,</span> <span class="n">hashKey</span><span class="o">);</span>
     <span class="o">}</span>
 
     <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">Values</span><span class="o">&gt;</span> <span class="nf">toTuple</span><span class="o">(</span><span class="n">ITuple</span> <span class="n">input</span><span class="o">,</span> <span class="n">Object</span> <span class="n">value</span><span class="o">)</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">Values</span><span class="o">&gt;</span> <span class="n">toTuple</span><span class="o">(</span><span class="n">ITuple</span> <span class="n">input</span><span class="o">,</span> <span class="n">Object</span> <span class="n">value</span><span class="o">)</span> <span class="o">{</span>
         <span class="n">String</span> <span class="n">member</span> <span class="o">=</span> <span class="n">getKeyFromTuple</span><span class="o">(</span><span class="n">input</span><span class="o">);</span>
         <span class="n">List</span><span class="o">&lt;</span><span class="n">Values</span><span class="o">&gt;</span> <span class="n">values</span> <span class="o">=</span> <span class="n">Lists</span><span class="o">.</span><span class="na">newArrayList</span><span class="o">();</span>
-        <span class="n">values</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="k">new</span> <span class="nf">Values</span><span class="o">(</span><span class="n">member</span><span class="o">,</span> <span class="n">value</span><span class="o">));</span>
+        <span class="n">values</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="k">new</span> <span class="n">Values</span><span class="o">(</span><span class="n">member</span><span class="o">,</span> <span class="n">value</span><span class="o">));</span>
         <span class="k">return</span> <span class="n">values</span><span class="o">;</span>
     <span class="o">}</span>
 
     <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">declareOutputFields</span><span class="o">(</span><span class="n">OutputFieldsDeclarer</span> <span class="n">declarer</span><span class="o">)</span> <span class="o">{</span>
-        <span class="n">declarer</span><span class="o">.</span><span class="na">declare</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;wordName&quot;</span><span class="o">,</span> <span class="s">&quot;count&quot;</span><span class="o">));</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="n">declareOutputFields</span><span class="o">(</span><span class="n">OutputFieldsDeclarer</span> <span class="n">declarer</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">declarer</span><span class="o">.</span><span class="na">declare</span><span class="o">(</span><span class="k">new</span> <span class="n">Fields</span><span class="o">(</span><span class="s">"wordName"</span><span class="o">,</span> <span class="s">"count"</span><span class="o">));</span>
     <span class="o">}</span>
 
     <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="n">RedisDataTypeDescription</span> <span class="nf">getDataTypeDescription</span><span class="o">()</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="n">RedisDataTypeDescription</span> <span class="n">getDataTypeDescription</span><span class="o">()</span> <span class="o">{</span>
         <span class="k">return</span> <span class="n">description</span><span class="o">;</span>
     <span class="o">}</span>
 
     <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="n">String</span> <span class="nf">getKeyFromTuple</span><span class="o">(</span><span class="n">ITuple</span> <span class="n">tuple</span><span class="o">)</span> <span class="o">{</span>
-        <span class="k">return</span> <span class="n">tuple</span><span class="o">.</span><span class="na">getStringByField</span><span class="o">(</span><span class="s">&quot;word&quot;</span><span class="o">);</span>
+    <span class="kd">public</span> <span class="n">String</span> <span class="n">getKeyFromTuple</span><span class="o">(</span><span class="n">ITuple</span> <span class="n">tuple</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">tuple</span><span class="o">.</span><span class="na">getStringByField</span><span class="o">(</span><span class="s">"word"</span><span class="o">);</span>
     <span class="o">}</span>
 
     <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="n">String</span> <span class="nf">getValueFromTuple</span><span class="o">(</span><span class="n">ITuple</span> <span class="n">tuple</span><span class="o">)</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="n">String</span> <span class="n">getValueFromTuple</span><span class="o">(</span><span class="n">ITuple</span> <span class="n">tuple</span><span class="o">)</span> <span class="o">{</span>
         <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
     <span class="o">}</span>
 <span class="o">}</span>
-</code></pre></div><div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">JedisPoolConfig</span> <span class="n">poolConfig</span> <span class="o">=</span> <span class="k">new</span> <span class="n">JedisPoolConfig</span><span class="o">.</span><span class="na">Builder</span><span class="o">()</span>
+
+</code></pre></div><div class="highlight"><pre><code class="language-java" data-lang="java">
+<span class="n">JedisPoolConfig</span> <span class="n">poolConfig</span> <span class="o">=</span> <span class="k">new</span> <span class="n">JedisPoolConfig</span><span class="o">.</span><span class="na">Builder</span><span class="o">()</span>
         <span class="o">.</span><span class="na">setHost</span><span class="o">(</span><span class="n">host</span><span class="o">).</span><span class="na">setPort</span><span class="o">(</span><span class="n">port</span><span class="o">).</span><span class="na">build</span><span class="o">();</span>
-<span class="n">RedisLookupMapper</span> <span class="n">lookupMapper</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">WordCountRedisLookupMapper</span><span class="o">();</span>
-<span class="n">RedisLookupBolt</span> <span class="n">lookupBolt</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">RedisLookupBolt</span><span class="o">(</span><span class="n">poolConfig</span><span class="o">,</span> <span class="n">lookupMapper</span><span class="o">);</span>
+<span class="n">RedisLookupMapper</span> <span class="n">lookupMapper</span> <span class="o">=</span> <span class="k">new</span> <span class="n">WordCountRedisLookupMapper</span><span class="o">();</span>
+<span class="n">RedisLookupBolt</span> <span class="n">lookupBolt</span> <span class="o">=</span> <span class="k">new</span> <span class="n">RedisLookupBolt</span><span class="o">(</span><span class="n">poolConfig</span><span class="o">,</span> <span class="n">lookupMapper</span><span class="o">);</span>
 </code></pre></div>
 <h4 id="redisstorebolt-example">RedisStoreBolt example</h4>
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">class</span> <span class="nc">WordCountStoreMapper</span> <span class="kd">implements</span> <span class="n">RedisStoreMapper</span> <span class="o">{</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java">
+<span class="kd">class</span> <span class="nc">WordCountStoreMapper</span> <span class="kd">implements</span> <span class="n">RedisStoreMapper</span> <span class="o">{</span>
     <span class="kd">private</span> <span class="n">RedisDataTypeDescription</span> <span class="n">description</span><span class="o">;</span>
-    <span class="kd">private</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">hashKey</span> <span class="o">=</span> <span class="s">&quot;wordCount&quot;</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">hashKey</span> <span class="o">=</span> <span class="s">"wordCount"</span><span class="o">;</span>
 
-    <span class="kd">public</span> <span class="nf">WordCountStoreMapper</span><span class="o">()</span> <span class="o">{</span>
-        <span class="n">description</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">RedisDataTypeDescription</span><span class="o">(</span>
+    <span class="kd">public</span> <span class="n">WordCountStoreMapper</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">description</span> <span class="o">=</span> <span class="k">new</span> <span class="n">RedisDataTypeDescription</span><span class="o">(</span>
             <span class="n">RedisDataTypeDescription</span><span class="o">.</span><span class="na">RedisDataType</span><span class="o">.</span><span class="na">HASH</span><span class="o">,</span> <span class="n">hashKey</span><span class="o">);</span>
     <span class="o">}</span>
 
     <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="n">RedisDataTypeDescription</span> <span class="nf">getDataTypeDescription</span><span class="o">()</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="n">RedisDataTypeDescription</span> <span class="n">getDataTypeDescription</span><span class="o">()</span> <span class="o">{</span>
         <span class="k">return</span> <span class="n">description</span><span class="o">;</span>
     <span class="o">}</span>
 
     <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="n">String</span> <span class="nf">getKeyFromTuple</span><span class="o">(</span><span class="n">ITuple</span> <span class="n">tuple</span><span class="o">)</span> <span class="o">{</span>
-        <span class="k">return</span> <span class="n">tuple</span><span class="o">.</span><span class="na">getStringByField</span><span class="o">(</span><span class="s">&quot;word&quot;</span><span class="o">);</span>
+    <span class="kd">public</span> <span class="n">String</span> <span class="n">getKeyFromTuple</span><span class="o">(</span><span class="n">ITuple</span> <span class="n">tuple</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">tuple</span><span class="o">.</span><span class="na">getStringByField</span><span class="o">(</span><span class="s">"word"</span><span class="o">);</span>
     <span class="o">}</span>
 
     <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="n">String</span> <span class="nf">getValueFromTuple</span><span class="o">(</span><span class="n">ITuple</span> <span class="n">tuple</span><span class="o">)</span> <span class="o">{</span>
-        <span class="k">return</span> <span class="n">tuple</span><span class="o">.</span><span class="na">getStringByField</span><span class="o">(</span><span class="s">&quot;count&quot;</span><span class="o">);</span>
+    <span class="kd">public</span> <span class="n">String</span> <span class="n">getValueFromTuple</span><span class="o">(</span><span class="n">ITuple</span> <span class="n">tuple</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">tuple</span><span class="o">.</span><span class="na">getStringByField</span><span class="o">(</span><span class="s">"count"</span><span class="o">);</span>
     <span class="o">}</span>
 <span class="o">}</span>
-</code></pre></div><div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">JedisPoolConfig</span> <span class="n">poolConfig</span> <span class="o">=</span> <span class="k">new</span> <span class="n">JedisPoolConfig</span><span class="o">.</span><span class="na">Builder</span><span class="o">()</span>
+</code></pre></div><div class="highlight"><pre><code class="language-java" data-lang="java">
+<span class="n">JedisPoolConfig</span> <span class="n">poolConfig</span> <span class="o">=</span> <span class="k">new</span> <span class="n">JedisPoolConfig</span><span class="o">.</span><span class="na">Builder</span><span class="o">()</span>
                 <span class="o">.</span><span class="na">setHost</span><span class="o">(</span><span class="n">host</span><span class="o">).</span><span class="na">setPort</span><span class="o">(</span><span class="n">port</span><span class="o">).</span><span class="na">build</span><span class="o">();</span>
-<span class="n">RedisStoreMapper</span> <span class="n">storeMapper</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">WordCountStoreMapper</span><span class="o">();</span>
-<span class="n">RedisStoreBolt</span> <span class="n">storeBolt</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">RedisStoreBolt</span><span class="o">(</span><span class="n">poolConfig</span><span class="o">,</span> <span class="n">storeMapper</span><span class="o">);</span>
+<span class="n">RedisStoreMapper</span> <span class="n">storeMapper</span> <span class="o">=</span> <span class="k">new</span> <span class="n">WordCountStoreMapper</span><span class="o">();</span>
+<span class="n">RedisStoreBolt</span> <span class="n">storeBolt</span> <span class="o">=</span> <span class="k">new</span> <span class="n">RedisStoreBolt</span><span class="o">(</span><span class="n">poolConfig</span><span class="o">,</span> <span class="n">storeMapper</span><span class="o">);</span>
 </code></pre></div>
 <h3 id="for-non-simple-bolt">For non-simple Bolt</h3>
 
 <p>If your scenario doesn&#39;t fit <code>RedisStoreBolt</code> and <code>RedisLookupBolt</code>, storm-redis also provides <code>AbstractRedisBolt</code> to let you extend and apply your business logic.</p>
-<div class="highlight"><pre><code class="language-java" data-lang="java">    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">class</span> <span class="nc">LookupWordTotalCountBolt</span> <span class="kd">extends</span> <span class="n">AbstractRedisBolt</span> <span class="o">{</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java">
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">class</span> <span class="nc">LookupWordTotalCountBolt</span> <span class="kd">extends</span> <span class="n">AbstractRedisBolt</span> <span class="o">{</span>
         <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">Logger</span> <span class="n">LOG</span> <span class="o">=</span> <span class="n">LoggerFactory</span><span class="o">.</span><span class="na">getLogger</span><span class="o">(</span><span class="n">LookupWordTotalCountBolt</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
-        <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">Random</span> <span class="n">RANDOM</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">Random</span><span class="o">();</span>
+        <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">Random</span> <span class="n">RANDOM</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Random</span><span class="o">();</span>
 
-        <span class="kd">public</span> <span class="nf">LookupWordTotalCountBolt</span><span class="o">(</span><span class="n">JedisPoolConfig</span> <span class="n">config</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kd">public</span> <span class="n">LookupWordTotalCountBolt</span><span class="o">(</span><span class="n">JedisPoolConfig</span> <span class="n">config</span><span class="o">)</span> <span class="o">{</span>
             <span class="kd">super</span><span class="o">(</span><span class="n">config</span><span class="o">);</span>
         <span class="o">}</span>
 
-        <span class="kd">public</span> <span class="nf">LookupWordTotalCountBolt</span><span class="o">(</span><span class="n">JedisClusterConfig</span> <span class="n">config</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kd">public</span> <span class="n">LookupWordTotalCountBolt</span><span class="o">(</span><span class="n">JedisClusterConfig</span> <span class="n">config</span><span class="o">)</span> <span class="o">{</span>
             <span class="kd">super</span><span class="o">(</span><span class="n">config</span><span class="o">);</span>
         <span class="o">}</span>
 
         <span class="nd">@Override</span>
-        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">execute</span><span class="o">(</span><span class="n">Tuple</span> <span class="n">input</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kd">public</span> <span class="kt">void</span> <span class="n">execute</span><span class="o">(</span><span class="n">Tuple</span> <span class="n">input</span><span class="o">)</span> <span class="o">{</span>
             <span class="n">JedisCommands</span> <span class="n">jedisCommands</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
             <span class="k">try</span> <span class="o">{</span>
                 <span class="n">jedisCommands</span> <span class="o">=</span> <span class="n">getInstance</span><span class="o">();</span>
-                <span class="n">String</span> <span class="n">wordName</span> <span class="o">=</span> <span class="n">input</span><span class="o">.</span><span class="na">getStringByField</span><span class="o">(</span><span class="s">&quot;word&quot;</span><span class="o">);</span>
+                <span class="n">String</span> <span class="n">wordName</span> <span class="o">=</span> <span class="n">input</span><span class="o">.</span><span class="na">getStringByField</span><span class="o">(</span><span class="s">"word"</span><span class="o">);</span>
                 <span class="n">String</span> <span class="n">countStr</span> <span class="o">=</span> <span class="n">jedisCommands</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">wordName</span><span class="o">);</span>
                 <span class="k">if</span> <span class="o">(</span><span class="n">countStr</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
                     <span class="kt">int</span> <span class="n">count</span> <span class="o">=</span> <span class="n">Integer</span><span class="o">.</span><span class="na">parseInt</span><span class="o">(</span><span class="n">countStr</span><span class="o">);</span>
-                    <span class="k">this</span><span class="o">.</span><span class="na">collector</span><span class="o">.</span><span class="na">emit</span><span class="o">(</span><span class="k">new</span> <span class="nf">Values</span><span class="o">(</span><span class="n">wordName</span><span class="o">,</span> <span class="n">count</span><span class="o">));</span>
+                    <span class="k">this</span><span class="o">.</span><span class="na">collector</span><span class="o">.</span><span class="na">emit</span><span class="o">(</span><span class="k">new</span> <span class="n">Values</span><span class="o">(</span><span class="n">wordName</span><span class="o">,</span> <span class="n">count</span><span class="o">));</span>
 
                     <span class="c1">// print lookup result with low probability</span>
                     <span class="k">if</span><span class="o">(</span><span class="n">RANDOM</span><span class="o">.</span><span class="na">nextInt</span><span class="o">(</span><span class="mi">1000</span><span class="o">)</span> <span class="o">&gt;</span> <span class="mi">995</span><span class="o">)</span> <span class="o">{</span>
-                        <span class="n">LOG</span><span class="o">.</span><span class="na">info</span><span class="o">(</span><span class="s">&quot;Lookup result - word : &quot;</span> <span class="o">+</span> <span class="n">wordName</span> <span class="o">+</span> <span class="s">&quot; / count : &quot;</span> <span class="o">+</span> <span class="n">count</span><span class="o">);</span>
+                        <span class="n">LOG</span><span class="o">.</span><span class="na">info</span><span class="o">(</span><span class="s">"Lookup result - word : "</span> <span class="o">+</span> <span class="n">wordName</span> <span class="o">+</span> <span class="s">" / count : "</span> <span class="o">+</span> <span class="n">count</span><span class="o">);</span>
                     <span class="o">}</span>
                 <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
                     <span class="c1">// skip</span>
-                    <span class="n">LOG</span><span class="o">.</span><span class="na">warn</span><span class="o">(</span><span class="s">&quot;Word not found in Redis - word : &quot;</span> <span class="o">+</span> <span class="n">wordName</span><span class="o">);</span>
+                    <span class="n">LOG</span><span class="o">.</span><span class="na">warn</span><span class="o">(</span><span class="s">"Word not found in Redis - word : "</span> <span class="o">+</span> <span class="n">wordName</span><span class="o">);</span>
                 <span class="o">}</span>
             <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
                 <span class="k">if</span> <span class="o">(</span><span class="n">jedisCommands</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
@@ -232,11 +238,12 @@
         <span class="o">}</span>
 
         <span class="nd">@Override</span>
-        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">declareOutputFields</span><span class="o">(</span><span class="n">OutputFieldsDeclarer</span> <span class="n">declarer</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kd">public</span> <span class="kt">void</span> <span class="n">declareOutputFields</span><span class="o">(</span><span class="n">OutputFieldsDeclarer</span> <span class="n">declarer</span><span class="o">)</span> <span class="o">{</span>
             <span class="c1">// wordName, count</span>
-            <span class="n">declarer</span><span class="o">.</span><span class="na">declare</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;wordName&quot;</span><span class="o">,</span> <span class="s">&quot;count&quot;</span><span class="o">));</span>
+            <span class="n">declarer</span><span class="o">.</span><span class="na">declare</span><span class="o">(</span><span class="k">new</span> <span class="n">Fields</span><span class="o">(</span><span class="s">"wordName"</span><span class="o">,</span> <span class="s">"count"</span><span class="o">));</span>
         <span class="o">}</span>
     <span class="o">}</span>
+
 </code></pre></div>
 <h3 id="trident-state-usage">Trident State usage</h3>
 
@@ -253,8 +260,8 @@
         RedisStoreMapper storeMapper = new WordCountStoreMapper();
         RedisLookupMapper lookupMapper = new WordCountLookupMapper();
         RedisState.Factory factory = new RedisState.Factory(poolConfig);</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">    TridentTopology topology = new TridentTopology();
-    Stream stream = topology.newStream(&quot;spout1&quot;, spout);
+<div class="highlight"><pre><code class="language-" data-lang="">    TridentTopology topology = new TridentTopology();
+    Stream stream = topology.newStream("spout1", spout);
 
     stream.partitionPersist(factory,
                             fields,
@@ -262,14 +269,15 @@
                             new Fields());
 
     TridentState state = topology.newStaticState(factory);
-    stream = stream.stateQuery(state, new Fields(&quot;word&quot;),
+    stream = stream.stateQuery(state, new Fields("word"),
                             new RedisStateQuerier(lookupMapper),
-                            new Fields(&quot;columnName&quot;,&quot;columnValue&quot;));
-</code></pre></div><div class="highlight"><pre><code class="language-text" data-lang="text">RedisClusterState
+                            new Fields("columnName","columnValue"));
+</code></pre></div><div class="highlight"><pre><code class="language-" data-lang="">
+RedisClusterState
 ```java
         Set&lt;InetSocketAddress&gt; nodes = new HashSet&lt;InetSocketAddress&gt;();
-        for (String hostPort : redisHostPort.split(&quot;,&quot;)) {
-            String[] host_port = hostPort.split(&quot;:&quot;);
+        for (String hostPort : redisHostPort.split(",")) {
+            String[] host_port = hostPort.split(":");
             nodes.add(new InetSocketAddress(host_port[0], Integer.valueOf(host_port[1])));
         }
         JedisClusterConfig clusterConfig = new JedisClusterConfig.Builder().setNodes(nodes)
@@ -279,7 +287,7 @@
         RedisClusterState.Factory factory = new RedisClusterState.Factory(clusterConfig);
 
         TridentTopology topology = new TridentTopology();
-        Stream stream = topology.newStream(&quot;spout1&quot;, spout);
+        Stream stream = topology.newStream("spout1", spout);
 
         stream.partitionPersist(factory,
                                 fields,
@@ -287,9 +295,9 @@
                                 new Fields());
 
         TridentState state = topology.newStaticState(factory);
-        stream = stream.stateQuery(state, new Fields(&quot;word&quot;),
+        stream = stream.stateQuery(state, new Fields("word"),
                                 new RedisClusterStateQuerier(lookupMapper),
-                                new Fields(&quot;columnName&quot;,&quot;columnValue&quot;));
+                                new Fields("columnName","columnValue"));
 </code></pre></div>
 <h2 id="license">License</h2>
 

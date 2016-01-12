@@ -100,7 +100,7 @@
 
 <p>The following sections explain each of these layers in more detail.</p>
 
-<h3 id="storm.thrift">storm.thrift</h3>
+<h3 id="storm-thrift">storm.thrift</h3>
 
 <p>The first place to look to understand the structure of Storm&#39;s codebase is the <a href="https://github.com/apache/storm/blob/master/storm-core/src/storm.thrift">storm.thrift</a> file.</p>
 
@@ -172,7 +172,7 @@
 
 <p><a href="https://github.com/apache/storm/tree/master/storm-core/src/jvm/backtype/storm/hooks">backtype.storm.hooks</a>: Interfaces for hooking into various events in Storm, such as when tasks emit tuples, when tuples are acked, etc. User guide for hooks is <a href="https://github.com/apache/storm/wiki/Hooks">here</a>.</p>
 
-<p><a href="https://github.com/apache/storm/tree/master/storm-core/src/jvm/backtype/storm/serialization">backtype.storm.serialization</a>: Implementation of how Storm serializes/deserializes tuples. Built on top of <a href="http://code.google.com/p/kryo/">Kryo</a>.</p>
+<p><a href="https://github.com/apache/storm/tree/master/storm-core/src/jvm/backtype/storm/serialization">backtype.storm.serialization</a>: Implementation of how Storm serializes/deserializes tuples. Built on top of <a href="https://github.com/EsotericSoftware/kryo">Kryo</a>.</p>
 
 <p><a href="https://github.com/apache/storm/tree/master/storm-core/src/jvm/backtype/storm/spout">backtype.storm.spout</a>: Definition of spout and associated interfaces (like the <code>SpoutOutputCollector</code>). Also contains <code>ShellSpout</code> which implements the protocol for defining spouts in non-JVM languages.</p>
 

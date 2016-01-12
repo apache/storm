@@ -95,10 +95,10 @@
 <p>1) Define the topology (Use <a href="/javadoc/apidocs/backtype/storm/topology/TopologyBuilder.html">TopologyBuilder</a> if defining using Java)</p>
 
 <p>2) Use <a href="/javadoc/apidocs/backtype/storm/StormSubmitter.html">StormSubmitter</a> to submit the topology to the cluster. <code>StormSubmitter</code> takes as input the name of the topology, a configuration for the topology, and the topology itself. For example:</p>
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">Config</span> <span class="n">conf</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">Config</span><span class="o">();</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">Config</span> <span class="n">conf</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Config</span><span class="o">();</span>
 <span class="n">conf</span><span class="o">.</span><span class="na">setNumWorkers</span><span class="o">(</span><span class="mi">20</span><span class="o">);</span>
 <span class="n">conf</span><span class="o">.</span><span class="na">setMaxSpoutPending</span><span class="o">(</span><span class="mi">5000</span><span class="o">);</span>
-<span class="n">StormSubmitter</span><span class="o">.</span><span class="na">submitTopology</span><span class="o">(</span><span class="s">&quot;mytopology&quot;</span><span class="o">,</span> <span class="n">conf</span><span class="o">,</span> <span class="n">topology</span><span class="o">);</span>
+<span class="n">StormSubmitter</span><span class="o">.</span><span class="na">submitTopology</span><span class="o">(</span><span class="s">"mytopology"</span><span class="o">,</span> <span class="n">conf</span><span class="o">,</span> <span class="n">topology</span><span class="o">);</span>
 </code></pre></div>
 <p>3) Create a jar containing your code and all the dependencies of your code (except for Storm -- the Storm jars will be added to the classpath on the worker nodes).</p>
 

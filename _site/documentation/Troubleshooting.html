@@ -157,7 +157,7 @@
 <li>Try deleting the local dirs for the supervisors and restarting the daemons. Supervisors create a unique id for themselves and store it locally. When that id is copied to other nodes, Storm gets confused. </li>
 </ul>
 
-<h3 id="&quot;multiple-defaults.yaml-found&quot;-error">&quot;Multiple defaults.yaml found&quot; error</h3>
+<h3 id="quot-multiple-defaults-yaml-found-quot-error">&quot;Multiple defaults.yaml found&quot; error</h3>
 
 <p>Symptoms:</p>
 
@@ -171,7 +171,7 @@
 <li>You&#39;re most likely including the Storm jars inside your topology jar. When packaging your topology jar, don&#39;t include the Storm jars as Storm will put those on the classpath for you.</li>
 </ul>
 
-<h3 id="&quot;nosuchmethoderror&quot;-when-running-storm-jar">&quot;NoSuchMethodError&quot; when running storm jar</h3>
+<h3 id="quot-nosuchmethoderror-quot-when-running-storm-jar">&quot;NoSuchMethodError&quot; when running storm jar</h3>
 
 <p>Symptoms:</p>
 
@@ -192,7 +192,7 @@
 <ul>
 <li>At runtime, you get a stack trace like the following:</li>
 </ul>
-<div class="highlight"><pre><code class="language-text" data-lang="text">java.lang.RuntimeException: java.util.ConcurrentModificationException
+<div class="highlight"><pre><code class="language-" data-lang="">java.lang.RuntimeException: java.util.ConcurrentModificationException
     at backtype.storm.utils.DisruptorQueue.consumeBatchToCursor(DisruptorQueue.java:84)
     at backtype.storm.utils.DisruptorQueue.consumeBatchWhenAvailable(DisruptorQueue.java:55)
     at backtype.storm.disruptor$consume_batch_when_available.invoke(disruptor.clj:56)
@@ -233,7 +233,7 @@ Caused by: java.util.ConcurrentModificationException
 <ul>
 <li>You get a NullPointerException that looks something like:</li>
 </ul>
-<div class="highlight"><pre><code class="language-text" data-lang="text">java.lang.RuntimeException: java.lang.NullPointerException
+<div class="highlight"><pre><code class="language-" data-lang="">java.lang.RuntimeException: java.lang.NullPointerException
     at backtype.storm.utils.DisruptorQueue.consumeBatchToCursor(DisruptorQueue.java:84)
     at backtype.storm.utils.DisruptorQueue.consumeBatchWhenAvailable(DisruptorQueue.java:55)
     at backtype.storm.disruptor$consume_batch_when_available.invoke(disruptor.clj:56)
@@ -252,7 +252,7 @@ Caused by: java.lang.NullPointerException
     ... 6 more
 </code></pre></div>
 <p>or </p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">java.lang.RuntimeException: java.lang.NullPointerException
+<div class="highlight"><pre><code class="language-" data-lang="">java.lang.RuntimeException: java.lang.NullPointerException
         at
 backtype.storm.utils.DisruptorQueue.consumeBatchToCursor(DisruptorQueue.java:128)
 ~[storm-core-0.9.3.jar:0.9.3]

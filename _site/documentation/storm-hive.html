@@ -97,18 +97,18 @@
 
 <p>With the help of Hive Streaming API, HiveBolt and HiveState allows users to stream data from Storm into Hive directly.
   To use Hive streaming API users need to create a bucketed table with ORC format.  Example below</p>
-<div class="highlight"><pre><code class="language-sql" data-lang="sql">  <span class="k">create</span> <span class="k">table</span> <span class="n">test_table</span> <span class="p">(</span> <span class="n">id</span> <span class="nb">INT</span><span class="p">,</span> <span class="n">name</span> <span class="n">STRING</span><span class="p">,</span> <span class="n">phone</span> <span class="n">STRING</span><span class="p">,</span> <span class="n">street</span> <span class="n">STRING</span><span class="p">)</span> <span class="n">partitioned</span> <span class="k">by</span> <span class="p">(</span><span class="n">city</span> <span class="n">STRING</span><span class="p">,</span> <span class="k">state</span> <span class="n">STRING</span><span class="p">)</span> <span class="n">stored</span> <span class="k">as</span> <span class="n">orc</span> <span class="n">tblproperties</span> <span class="p">(</span><span class="ss">&quot;orc.compress&quot;</span><span class="o">=</span><span class="ss">&quot;NONE&quot;</span><span class="p">);</span>
+<div class="highlight"><pre><code class="language-sql" data-lang="sql">  <span class="k">create</span> <span class="k">table</span> <span class="n">test_table</span> <span class="p">(</span> <span class="n">id</span> <span class="n">INT</span><span class="p">,</span> <span class="n">name</span> <span class="n">STRING</span><span class="p">,</span> <span class="n">phone</span> <span class="n">STRING</span><span class="p">,</span> <span class="n">street</span> <span class="n">STRING</span><span class="p">)</span> <span class="n">partitioned</span> <span class="k">by</span> <span class="p">(</span><span class="n">city</span> <span class="n">STRING</span><span class="p">,</span> <span class="k">state</span> <span class="n">STRING</span><span class="p">)</span> <span class="n">stored</span> <span class="k">as</span> <span class="n">orc</span> <span class="n">tblproperties</span> <span class="p">(</span><span class="nv">"orc.compress"</span><span class="o">=</span><span class="nv">"NONE"</span><span class="p">);</span>
 </code></pre></div>
-<h2 id="hivebolt-(org.apache.storm.hive.bolt.hivebolt)">HiveBolt (org.apache.storm.hive.bolt.HiveBolt)</h2>
+<h2 id="hivebolt-org-apache-storm-hive-bolt-hivebolt">HiveBolt (org.apache.storm.hive.bolt.HiveBolt)</h2>
 
 <p>HiveBolt streams tuples directly into Hive. Tuples are written using Hive Transactions. 
 Partitions to which HiveBolt will stream to can either created or pre-created or optionally
 HiveBolt can create them if they are missing. Fields from Tuples are mapped to table columns.
 User should make sure that Tuple field names are matched to the table column names.</p>
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">DelimitedRecordHiveMapper</span> <span class="n">mapper</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">DelimitedRecordHiveMapper</span><span class="o">()</span>
-            <span class="o">.</span><span class="na">withColumnFields</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="n">colNames</span><span class="o">));</span>
-<span class="n">HiveOptions</span> <span class="n">hiveOptions</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">HiveOptions</span><span class="o">(</span><span class="n">metaStoreURI</span><span class="o">,</span><span class="n">dbName</span><span class="o">,</span><span class="n">tblName</span><span class="o">,</span><span class="n">mapper</span><span class="o">);</span>
-<span class="n">HiveBolt</span> <span class="n">hiveBolt</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">HiveBolt</span><span class="o">(</span><span class="n">hiveOptions</span><span class="o">);</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">DelimitedRecordHiveMapper</span> <span class="n">mapper</span> <span class="o">=</span> <span class="k">new</span> <span class="n">DelimitedRecordHiveMapper</span><span class="o">()</span>
+            <span class="o">.</span><span class="na">withColumnFields</span><span class="o">(</span><span class="k">new</span> <span class="n">Fields</span><span class="o">(</span><span class="n">colNames</span><span class="o">));</span>
+<span class="n">HiveOptions</span> <span class="n">hiveOptions</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HiveOptions</span><span class="o">(</span><span class="n">metaStoreURI</span><span class="o">,</span><span class="n">dbName</span><span class="o">,</span><span class="n">tblName</span><span class="o">,</span><span class="n">mapper</span><span class="o">);</span>
+<span class="n">HiveBolt</span> <span class="n">hiveBolt</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HiveBolt</span><span class="o">(</span><span class="n">hiveOptions</span><span class="o">);</span>
 </code></pre></div>
 <h3 id="recordhivemapper">RecordHiveMapper</h3>
 
@@ -119,13 +119,13 @@ User should make sure that Tuple field names are matched to the table column nam
 <li>DelimitedRecordHiveMapper (org.apache.storm.hive.bolt.mapper.DelimitedRecordHiveMapper)</li>
 <li>JsonRecordHiveMapper (org.apache.storm.hive.bolt.mapper.JsonRecordHiveMapper)</li>
 </ul>
-<div class="highlight"><pre><code class="language-java" data-lang="java">   <span class="n">DelimitedRecordHiveMapper</span> <span class="n">mapper</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">DelimitedRecordHiveMapper</span><span class="o">()</span>
-            <span class="o">.</span><span class="na">withColumnFields</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="n">colNames</span><span class="o">))</span>
-            <span class="o">.</span><span class="na">withPartitionFields</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="n">partNames</span><span class="o">));</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java">   <span class="n">DelimitedRecordHiveMapper</span> <span class="n">mapper</span> <span class="o">=</span> <span class="k">new</span> <span class="n">DelimitedRecordHiveMapper</span><span class="o">()</span>
+            <span class="o">.</span><span class="na">withColumnFields</span><span class="o">(</span><span class="k">new</span> <span class="n">Fields</span><span class="o">(</span><span class="n">colNames</span><span class="o">))</span>
+            <span class="o">.</span><span class="na">withPartitionFields</span><span class="o">(</span><span class="k">new</span> <span class="n">Fields</span><span class="o">(</span><span class="n">partNames</span><span class="o">));</span>
     <span class="n">or</span>
-   <span class="n">DelimitedRecordHiveMapper</span> <span class="n">mapper</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">DelimitedRecordHiveMapper</span><span class="o">()</span>
-            <span class="o">.</span><span class="na">withColumnFields</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="n">colNames</span><span class="o">))</span>
-            <span class="o">.</span><span class="na">withTimeAsPartitionField</span><span class="o">(</span><span class="s">&quot;YYYY/MM/DD&quot;</span><span class="o">);</span>
+   <span class="n">DelimitedRecordHiveMapper</span> <span class="n">mapper</span> <span class="o">=</span> <span class="k">new</span> <span class="n">DelimitedRecordHiveMapper</span><span class="o">()</span>
+            <span class="o">.</span><span class="na">withColumnFields</span><span class="o">(</span><span class="k">new</span> <span class="n">Fields</span><span class="o">(</span><span class="n">colNames</span><span class="o">))</span>
+            <span class="o">.</span><span class="na">withTimeAsPartitionField</span><span class="o">(</span><span class="s">"YYYY/MM/DD"</span><span class="o">);</span>
 </code></pre></div>
 <table><thead>
 <tr>
@@ -151,10 +151,10 @@ User should make sure that Tuple field names are matched to the table column nam
 </tr>
 </tbody></table>
 
-<h3 id="hiveoptions-(org.apache.storm.hive.common.hiveoptions)">HiveOptions (org.apache.storm.hive.common.HiveOptions)</h3>
+<h3 id="hiveoptions-org-apache-storm-hive-common-hiveoptions">HiveOptions (org.apache.storm.hive.common.HiveOptions)</h3>
 
 <p>HiveBolt takes in HiveOptions as a constructor arg.</p>
-<div class="highlight"><pre><code class="language-java" data-lang="java">  <span class="n">HiveOptions</span> <span class="n">hiveOptions</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">HiveOptions</span><span class="o">(</span><span class="n">metaStoreURI</span><span class="o">,</span><span class="n">dbName</span><span class="o">,</span><span class="n">tblName</span><span class="o">,</span><span class="n">mapper</span><span class="o">)</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java">  <span class="n">HiveOptions</span> <span class="n">hiveOptions</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HiveOptions</span><span class="o">(</span><span class="n">metaStoreURI</span><span class="o">,</span><span class="n">dbName</span><span class="o">,</span><span class="n">tblName</span><span class="o">,</span><span class="n">mapper</span><span class="o">)</span>
                                 <span class="o">.</span><span class="na">withTxnsPerBatch</span><span class="o">(</span><span class="mi">10</span><span class="o">)</span>
                                 <span class="o">.</span><span class="na">withBatchSize</span><span class="o">(</span><span class="mi">1000</span><span class="o">)</span>
                                 <span class="o">.</span><span class="na">withIdleTimeout</span><span class="o">(</span><span class="mi">10</span><span class="o">)</span>
@@ -235,20 +235,20 @@ User should make sure that Tuple field names are matched to the table column nam
 </tr>
 </tbody></table>
 
-<h2 id="hivestate-(org.apache.storm.hive.trident.hivetrident)">HiveState (org.apache.storm.hive.trident.HiveTrident)</h2>
+<h2 id="hivestate-org-apache-storm-hive-trident-hivetrident">HiveState (org.apache.storm.hive.trident.HiveTrident)</h2>
 
 <p>Hive Trident state also follows similar pattern to HiveBolt it takes in HiveOptions as an arg.</p>
-<div class="highlight"><pre><code class="language-java" data-lang="java">   <span class="n">DelimitedRecordHiveMapper</span> <span class="n">mapper</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">DelimitedRecordHiveMapper</span><span class="o">()</span>
-            <span class="o">.</span><span class="na">withColumnFields</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="n">colNames</span><span class="o">))</span>
-            <span class="o">.</span><span class="na">withTimeAsPartitionField</span><span class="o">(</span><span class="s">&quot;YYYY/MM/DD&quot;</span><span class="o">);</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java">   <span class="n">DelimitedRecordHiveMapper</span> <span class="n">mapper</span> <span class="o">=</span> <span class="k">new</span> <span class="n">DelimitedRecordHiveMapper</span><span class="o">()</span>
+            <span class="o">.</span><span class="na">withColumnFields</span><span class="o">(</span><span class="k">new</span> <span class="n">Fields</span><span class="o">(</span><span class="n">colNames</span><span class="o">))</span>
+            <span class="o">.</span><span class="na">withTimeAsPartitionField</span><span class="o">(</span><span class="s">"YYYY/MM/DD"</span><span class="o">);</span>
 
-   <span class="n">HiveOptions</span> <span class="n">hiveOptions</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">HiveOptions</span><span class="o">(</span><span class="n">metaStoreURI</span><span class="o">,</span><span class="n">dbName</span><span class="o">,</span><span class="n">tblName</span><span class="o">,</span><span class="n">mapper</span><span class="o">)</span>
+   <span class="n">HiveOptions</span> <span class="n">hiveOptions</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HiveOptions</span><span class="o">(</span><span class="n">metaStoreURI</span><span class="o">,</span><span class="n">dbName</span><span class="o">,</span><span class="n">tblName</span><span class="o">,</span><span class="n">mapper</span><span class="o">)</span>
                                 <span class="o">.</span><span class="na">withTxnsPerBatch</span><span class="o">(</span><span class="mi">10</span><span class="o">)</span>
                                 <span class="o">.</span><span class="na">withBatchSize</span><span class="o">(</span><span class="mi">1000</span><span class="o">)</span>
                                 <span class="o">.</span><span class="na">withIdleTimeout</span><span class="o">(</span><span class="mi">10</span><span class="o">)</span>
 
-   <span class="n">StateFactory</span> <span class="n">factory</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">HiveStateFactory</span><span class="o">().</span><span class="na">withOptions</span><span class="o">(</span><span class="n">hiveOptions</span><span class="o">);</span>
-   <span class="n">TridentState</span> <span class="n">state</span> <span class="o">=</span> <span class="n">stream</span><span class="o">.</span><span class="na">partitionPersist</span><span class="o">(</span><span class="n">factory</span><span class="o">,</span> <span class="n">hiveFields</span><span class="o">,</span> <span class="k">new</span> <span class="nf">HiveUpdater</span><span class="o">(),</span> <span class="k">new</span> <span class="nf">Fields</span><span class="o">());</span>
+   <span class="n">StateFactory</span> <span class="n">factory</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HiveStateFactory</span><span class="o">().</span><span class="na">withOptions</span><span class="o">(</span><span class="n">hiveOptions</span><span class="o">);</span>
+   <span class="n">TridentState</span> <span class="n">state</span> <span class="o">=</span> <span class="n">stream</span><span class="o">.</span><span class="na">partitionPersist</span><span class="o">(</span><span class="n">factory</span><span class="o">,</span> <span class="n">hiveFields</span><span class="o">,</span> <span class="k">new</span> <span class="n">HiveUpdater</span><span class="o">(),</span> <span class="k">new</span> <span class="n">Fields</span><span class="o">());</span>
 </code></pre></div>
 
 

@@ -141,7 +141,7 @@
 
 <p>After bolt 1 finishes its portion of the processing, it will be idle until the rest of the bolts finish and the next batch can be emitted from the spout.</p>
 
-<h3 id="design-3-(storm&#39;s-design)">Design 3 (Storm&#39;s design)</h3>
+<h3 id="design-3-storm-39-s-design">Design 3 (Storm&#39;s design)</h3>
 
 <p>A key realization is that not all the work for processing batches of tuples needs to be strongly ordered. For example, when computing a global count, there&#39;s two parts to the computation:</p>
 
@@ -177,12 +177,12 @@
 <h2 id="the-basics-through-example">The basics through example</h2>
 
 <p>You build transactional topologies by using <a href="/javadoc/apidocs/backtype/storm/transactional/TransactionalTopologyBuilder.html">TransactionalTopologyBuilder</a>. Here&#39;s the transactional topology definition for a topology that computes the global count of tuples from the input stream. This code comes from <a href="https://github.com/apache/storm/blob/master/examples/storm-starter/src/jvm/storm/starter/TransactionalGlobalCount.java">TransactionalGlobalCount</a> in storm-starter.</p>
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">MemoryTransactionalSpout</span> <span class="n">spout</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">MemoryTransactionalSpout</span><span class="o">(</span><span class="n">DATA</span><span class="o">,</span> <span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;word&quot;</span><span class="o">),</span> <span class="n">PARTITION_TAKE_PER_BATCH</span><span class="o">);</span>
-<span class="n">TransactionalTopologyBuilder</span> <span class="n">builder</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">TransactionalTopologyBuilder</span><span class="o">(</span><span class="s">&quot;global-count&quot;</span><span class="o">,</span> <span class="s">&quot;spout&quot;</span><span class="o">,</span> <span class="n">spout</span><span class="o">,</span> <span class="mi">3</span><span class="o">);</span>
-<span class="n">builder</span><span class="o">.</span><span class="na">setBolt</span><span class="o">(</span><span class="s">&quot;partial-count&quot;</span><span class="o">,</span> <span class="k">new</span> <span class="nf">BatchCount</span><span class="o">(),</span> <span class="mi">5</span><span class="o">)</span>
-        <span class="o">.</span><span class="na">shuffleGrouping</span><span class="o">(</span><span class="s">&quot;spout&quot;</span><span class="o">);</span>
-<span class="n">builder</span><span class="o">.</span><span class="na">setBolt</span><span class="o">(</span><span class="s">&quot;sum&quot;</span><span class="o">,</span> <span class="k">new</span> <span class="nf">UpdateGlobalCount</span><span class="o">())</span>
-        <span class="o">.</span><span class="na">globalGrouping</span><span class="o">(</span><span class="s">&quot;partial-count&quot;</span><span class="o">);</span>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">MemoryTransactionalSpout</span> <span class="n">spout</span> <span class="o">=</span> <span class="k">new</span> <span class="n">MemoryTransactionalSpout</span><span class="o">(</span><span class="n">DATA</span><span class="o">,</span> <span class="k">new</span> <span class="n">Fields</span><span class="o">(</span><span class="s">"word"</span><span class="o">),</span> <span class="n">PARTITION_TAKE_PER_BATCH</span><span class="o">);</span>
+<span class="n">TransactionalTopologyBuilder</span> <span class="n">builder</span> <span class="o">=</span> <span class="k">new</span> <span class="n">TransactionalTopologyBuilder</span><span class="o">(</span><span class="s">"global-count"</span><span class="o">,</span> <span class="s">"spout"</span><span class="o">,</span> <span class="n">spout</span><span class="o">,</span> <span class="mi">3</span><span class="o">);</span>
+<span class="n">builder</span><span class="o">.</span><span class="na">setBolt</span><span class="o">(</span><span class="s">"partial-count"</span><span class="o">,</span> <span class="k">new</span> <span class="n">BatchCount</span><span class="o">(),</span> <span class="mi">5</span><span class="o">)</span>
+        <span class="o">.</span><span class="na">shuffleGrouping</span><span class="o">(</span><span class="s">"spout"</span><span class="o">);</span>
+<span class="n">builder</span><span class="o">.</span><span class="na">setBolt</span><span class="o">(</span><span class="s">"sum"</span><span class="o">,</span> <span class="k">new</span> <span class="n">UpdateGlobalCount</span><span class="o">())</span>
+        <span class="o">.</span><span class="na">globalGrouping</span><span class="o">(</span><span class="s">"partial-count"</span><span class="o">);</span>
 </code></pre></div>
 <p><code>TransactionalTopologyBuilder</code> takes as input in the constructor an id for the transactional topology, an id for the spout within the topology, a transactional spout, and optionally the parallelism for the transactional spout. The id for the transactional topology is used to store state about the progress of topology in Zookeeper, so that if you restart the topology it will continue where it left off.</p>
 
@@ -198,24 +198,24 @@
     <span class="kt">int</span> <span class="n">_count</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span>
 
     <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">prepare</span><span class="o">(</span><span class="n">Map</span> <span class="n">conf</span><span class="o">,</span> <span class="n">TopologyContext</span> <span class="n">context</span><span class="o">,</span> <span class="n">BatchOutputCollector</span> <span class="n">collector</span><span class="o">,</span> <span class="n">Object</span> <span class="n">id</span><span class="o">)</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="n">prepare</span><span class="o">(</span><span class="n">Map</span> <span class="n">conf</span><span class="o">,</span> <span class="n">TopologyContext</span> <span class="n">context</span><span class="o">,</span> <span class="n">BatchOutputCollector</span> <span class="n">collector</span><span class="o">,</span> <span class="n">Object</span> <span class="n">id</span><span class="o">)</span> <span class="o">{</span>
         <span class="n">_collector</span> <span class="o">=</span> <span class="n">collector</span><span class="o">;</span>
         <span class="n">_id</span> <span class="o">=</span> <span class="n">id</span><span class="o">;</span>
     <span class="o">}</span>
 
     <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">execute</span><span class="o">(</span><span class="n">Tuple</span> <span class="n">tuple</span><span class="o">)</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="n">execute</span><span class="o">(</span><span class="n">Tuple</span> <span class="n">tuple</span><span class="o">)</span> <span class="o">{</span>
         <span class="n">_count</span><span class="o">++;</span>
     <span class="o">}</span>
 
     <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">finishBatch</span><span class="o">()</span> <span class="o">{</span>
-        <span class="n">_collector</span><span class="o">.</span><span class="na">emit</span><span class="o">(</span><span class="k">new</span> <span class="nf">Values</span><span class="o">(</span><span class="n">_id</span><span class="o">,</span> <span class="n">_count</span><span class="o">));</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="n">finishBatch</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">_collector</span><span class="o">.</span><span class="na">emit</span><span class="o">(</span><span class="k">new</span> <span class="n">Values</span><span class="o">(</span><span class="n">_id</span><span class="o">,</span> <span class="n">_count</span><span class="o">));</span>
     <span class="o">}</span>
 
     <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">declareOutputFields</span><span class="o">(</span><span class="n">OutputFieldsDeclarer</span> <span class="n">declarer</span><span class="o">)</span> <span class="o">{</span>
-        <span class="n">declarer</span><span class="o">.</span><span class="na">declare</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;id&quot;</span><span class="o">,</span> <span class="s">&quot;count&quot;</span><span class="o">));</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="n">declareOutputFields</span><span class="o">(</span><span class="n">OutputFieldsDeclarer</span> <span class="n">declarer</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">declarer</span><span class="o">.</span><span class="na">declare</span><span class="o">(</span><span class="k">new</span> <span class="n">Fields</span><span class="o">(</span><span class="s">"id"</span><span class="o">,</span> <span class="s">"count"</span><span class="o">));</span>
     <span class="o">}</span>
 <span class="o">}</span>
 </code></pre></div>
@@ -243,22 +243,22 @@
     <span class="kt">int</span> <span class="n">_sum</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span>
 
     <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">prepare</span><span class="o">(</span><span class="n">Map</span> <span class="n">conf</span><span class="o">,</span> <span class="n">TopologyContext</span> <span class="n">context</span><span class="o">,</span> <span class="n">BatchOutputCollector</span> <span class="n">collector</span><span class="o">,</span> <span class="n">TransactionAttempt</span> <span class="n">attempt</span><span class="o">)</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="n">prepare</span><span class="o">(</span><span class="n">Map</span> <span class="n">conf</span><span class="o">,</span> <span class="n">TopologyContext</span> <span class="n">context</span><span class="o">,</span> <span class="n">BatchOutputCollector</span> <span class="n">collector</span><span class="o">,</span> <span class="n">TransactionAttempt</span> <span class="n">attempt</span><span class="o">)</span> <span class="o">{</span>
         <span class="n">_collector</span> <span class="o">=</span> <span class="n">collector</span><span class="o">;</span>
         <span class="n">_attempt</span> <span class="o">=</span> <span class="n">attempt</span><span class="o">;</span>
     <span class="o">}</span>
 
     <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">execute</span><span class="o">(</span><span class="n">Tuple</span> <span class="n">tuple</span><span class="o">)</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="n">execute</span><span class="o">(</span><span class="n">Tuple</span> <span class="n">tuple</span><span class="o">)</span> <span class="o">{</span>
         <span class="n">_sum</span><span class="o">+=</span><span class="n">tuple</span><span class="o">.</span><span class="na">getInteger</span><span class="o">(</span><span class="mi">1</span><span class="o">);</span>
     <span class="o">}</span>
 
     <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">finishBatch</span><span class="o">()</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="n">finishBatch</span><span class="o">()</span> <span class="o">{</span>
         <span class="n">Value</span> <span class="n">val</span> <span class="o">=</span> <span class="n">DATABASE</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">GLOBAL_COUNT_KEY</span><span class="o">);</span>
         <span class="n">Value</span> <span class="n">newval</span><span class="o">;</span>
         <span class="k">if</span><span class="o">(</span><span class="n">val</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">||</span> <span class="o">!</span><span class="n">val</span><span class="o">.</span><span class="na">txid</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">_attempt</span><span class="o">.</span><span class="na">getTransactionId</span><span class="o">()))</span> <span class="o">{</span>
-            <span class="n">newval</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">Value</span><span class="o">();</span>
+            <span class="n">newval</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Value</span><span class="o">();</span>
             <span class="n">newval</span><span class="o">.</span><span class="na">txid</span> <span class="o">=</span> <span class="n">_attempt</span><span class="o">.</span><span class="na">getTransactionId</span><span class="o">();</span>
             <span class="k">if</span><span class="o">(</span><span class="n">val</span><span class="o">==</span><span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
                 <span class="n">newval</span><span class="o">.</span><span class="na">count</span> <span class="o">=</span> <span class="n">_sum</span><span class="o">;</span>
@@ -269,12 +269,12 @@
         <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
             <span class="n">newval</span> <span class="o">=</span> <span class="n">val</span><span class="o">;</span>
         <span class="o">}</span>
-        <span class="n">_collector</span><span class="o">.</span><span class="na">emit</span><span class="o">(</span><span class="k">new</span> <span class="nf">Values</span><span class="o">(</span><span class="n">_attempt</span><span class="o">,</span> <span class="n">newval</span><span class="o">.</span><span class="na">count</span><span class="o">));</span>
+        <span class="n">_collector</span><span class="o">.</span><span class="na">emit</span><span class="o">(</span><span class="k">new</span> <span class="n">Values</span><span class="o">(</span><span class="n">_attempt</span><span class="o">,</span> <span class="n">newval</span><span class="o">.</span><span class="na">count</span><span class="o">));</span>
     <span class="o">}</span>
 
     <span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">declareOutputFields</span><span class="o">(</span><span class="n">OutputFieldsDeclarer</span> <span class="n">declarer</span><span class="o">)</span> <span class="o">{</span>
-        <span class="n">declarer</span><span class="o">.</span><span class="na">declare</span><span class="o">(</span><span class="k">new</span> <span class="nf">Fields</span><span class="o">(</span><span class="s">&quot;id&quot;</span><span class="o">,</span> <span class="s">&quot;sum&quot;</span><span class="o">));</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="n">declareOutputFields</span><span class="o">(</span><span class="n">OutputFieldsDeclarer</span> <span class="n">declarer</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">declarer</span><span class="o">.</span><span class="na">declare</span><span class="o">(</span><span class="k">new</span> <span class="n">Fields</span><span class="o">(</span><span class="s">"id"</span><span class="o">,</span> <span class="s">"sum"</span><span class="o">));</span>
     <span class="o">}</span>
 <span class="o">}</span>
 </code></pre></div>
@@ -300,7 +300,7 @@
 <li>BatchBolt&#39;s that are marked as committers: The only difference between this bolt and a regular batch bolt is when <code>finishBatch</code> is called. A committer bolt has <code>finishedBatch</code> called during the commit phase. The commit phase is guaranteed to occur only after all prior batches have successfully committed, and it will be retried until all bolts in the topology succeed the commit for the batch. There are two ways to make a <code>BatchBolt</code> a committer, by having the <code>BatchBolt</code> implement the <a href="/javadoc/apidocs/backtype/storm/transactional/ICommitter.html">ICommitter</a> marker interface, or by using the <code>setCommiterBolt</code> method in <code>TransactionalTopologyBuilder</code>.</li>
 </ol>
 
-<h4 id="processing-phase-vs.-commit-phase-in-bolts">Processing phase vs. commit phase in bolts</h4>
+<h4 id="processing-phase-vs-commit-phase-in-bolts">Processing phase vs. commit phase in bolts</h4>
 
 <p>To nail down the difference between the processing phase and commit phase of a transaction, let&#39;s look at an example topology:</p>
 
@@ -351,7 +351,7 @@
 <li><em>Number of active batches permissible at once:</em> You must set a limit to the number of batches that can be processed at once. You configure this using the &quot;topology.max.spout.pending&quot; config. If you don&#39;t set this config, it will default to 1.</li>
 </ol>
 
-<h2 id="what-if-you-can&#39;t-emit-the-same-batch-of-tuples-for-a-given-transaction-id?">What if you can&#39;t emit the same batch of tuples for a given transaction id?</h2>
+<h2 id="what-if-you-can-39-t-emit-the-same-batch-of-tuples-for-a-given-transaction-id">What if you can&#39;t emit the same batch of tuples for a given transaction id?</h2>
 
 <p>So far the discussion around transactional topologies has assumed that you can always emit the exact same batch of tuples for the same transaction id. So what do you do if this is not possible?</p>
 
