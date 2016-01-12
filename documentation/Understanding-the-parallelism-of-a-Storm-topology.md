@@ -116,7 +116,7 @@ $ storm rebalance mytopology -n 5 -e blue-spout=3 -e yellow-bolt=10
 
 * [Concepts](Concepts.html)
 * [Configuration](Configuration.html)
-* [Running topologies on a production cluster](Running-topologies-on-a-production-cluster.html)
+* [Running topologies on a production cluster](Running-topologies-on-a-production-cluster.html)]
 * [Local mode](Local-mode.html)
-* [Tutorial](/tutorial.html)
+* [Tutorial](Tutorial.html)
 * [Storm API documentation](/javadoc/apidocs/), most notably the class ``Config``
