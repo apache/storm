@@ -68,10 +68,6 @@ public class KafkaJavaApiSpout extends BaseRichSpout {
     long pollTimeout;
     long maxFailCount;
 
-
-    protected KafkaJavaApiSpout() {
-    }
-
     public KafkaJavaApiSpout(SpoutConfig spoutConfig) {
         lock = new ReentrantLock();
         messages = new ConcurrentHashMap<>();
@@ -96,7 +92,6 @@ public class KafkaJavaApiSpout extends BaseRichSpout {
         }
 
         toBeCommitted = new HashMap<TopicPartition, OffsetAndMetadata>();
-        lock = new ReentrantLock();
         rebalanceFlag = new AtomicBoolean(false);
 
         // Subscribe to multiple topics. Check is multi-topic
@@ -275,8 +270,8 @@ class RebalanceListener implements ConsumerRebalanceListener {
     public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
         for (TopicPartition partition : partitions) {
             log.info("topic {} - partition {} revoked.", partition.topic(), partition.partition());
-            rebalanceFlag.set(true);
         }
+        rebalanceFlag.set(true);
     }
 
     public void onPartitionsAssigned(Collection<TopicPartition> partitions) {
