@@ -548,6 +548,10 @@ Response fields:
 |boltStats.processLatency| String (double value returned in String format)  |Average time of the bolt to ack a message after it was received|
 |boltStats.acked| Long |Number of messages acked|
 |boltStats.failed| Long |Number of messages failed|
+|profilingAndDebuggingCapable| Boolean |true if there is support for Profiling and Debugging Actions|
+|profilActionEnabled| Boolean |true if worker profiling (Java Flight Recorder) is enabled|
+|profilerActive| Array |Array of currently active Profiler Actions|
+
 
 Examples:
 
@@ -576,6 +580,16 @@ Sample response:
     "topologyId": "WordCount3-1-1402960825",
     "tasks": 5,
     "window": "600",
+    "profilerActive": [
+        {
+            "host": "10.11.1.70",
+            "port": "6701",
+            "dumplink":"http:\/\/10.11.1.70:8000\/dumps\/ex-1-1452718803\/10.11.1.70%3A6701",
+            "timestamp":"576328"
+        }
+    ],
+    "profilingAndDebuggingCapable": true,
+    "profileActionEnabled": true,
     "spoutSummary": [
         {
             "windowPretty": "10m 0s",
