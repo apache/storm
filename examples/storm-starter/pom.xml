@@ -20,7 +20,7 @@
   <parent>
       <artifactId>storm</artifactId>
       <groupId>org.apache.storm</groupId>
-      <version>0.11.0-SNAPSHOT</version>
+      <version>2.0.0-SNAPSHOT</version>
       <relativePath>../../pom.xml</relativePath>
   </parent>
 
@@ -30,8 +30,25 @@
 
   <name>storm-starter</name>
 
+  <properties>
+     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+     <!-- see comment below... This fixes an annoyance with intellij -->
+     <provided.scope>provided</provided.scope>
+  </properties>
+  <profiles>
+    <profile>
+        <id>intellij</id>
+        <properties>
+            <provided.scope>compile</provided.scope>
+        </properties>
+    </profile>
+  </profiles>
 
   <dependencies>
+    <dependency>
+      <groupId>org.hdrhistogram</groupId>
+      <artifactId>HdrHistogram</artifactId>
+    </dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
@@ -69,9 +86,19 @@
       <groupId>org.apache.storm</groupId>
       <artifactId>storm-core</artifactId>
       <version>${project.version}</version>
-      <!-- keep storm out of the jar-with-dependencies -->
-      <scope>provided</scope>
+      <!--
+        Use "provided" scope to keep storm out of the jar-with-dependencies
+        For IntelliJ dev, intellij will load properly.
+      -->
+        <scope>${provided.scope}</scope>
     </dependency>
+      <dependency>
+          <groupId>org.apache.storm</groupId>
+          <artifactId>storm-core</artifactId>
+          <version>${project.version}</version>
+          <type>test-jar</type>
+          <scope>test</scope>
+      </dependency>
       <dependency>
           <groupId>org.apache.storm</groupId>
           <artifactId>multilang-javascript</artifactId>
@@ -96,6 +123,45 @@
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.apache.storm</groupId>
+      <artifactId>storm-metrics</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.storm</groupId>
+      <artifactId>storm-kafka</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.kafka</groupId>
+      <artifactId>kafka_2.10</artifactId>
+      <version>0.8.2.1</version>
+      <!-- use provided scope, so users can pull in whichever scala version they choose -->
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.zookeeper</groupId>
+          <artifactId>zookeeper</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>log4j</groupId>
+          <artifactId>log4j</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.kafka</groupId>
+      <artifactId>kafka-clients</artifactId>
+      <version>0.8.2.1</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.storm</groupId>
+      <artifactId>storm-redis</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
 
   <build>
@@ -111,7 +177,6 @@
         <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-shade-plugin</artifactId>
-            <version>1.4</version>
             <configuration>
                 <createDependencyReducedPom>true</createDependencyReducedPom>
             </configuration>

@@ -24,7 +24,7 @@ config:
 # spout definitions
 spouts:
   - id: "spout-1"
-    className: "backtype.storm.testing.TestWordSpout"
+    className: "org.apache.storm.testing.TestWordSpout"
     parallelism: 1
     # ...
 
@@ -36,10 +36,12 @@ bolts:
     constructorArgs:
       - FOO # enum class
       - 1.0
+      - true
     configMethods:
       - name: "withFoo"
         args:
           - "foo"
+      - name: "withNone"
       - name: "withBar"
         args:
           - "bar"

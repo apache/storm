@@ -17,9 +17,9 @@
  */
 package org.apache.storm.hdfs.bolt;
 
-import backtype.storm.task.OutputCollector;
-import backtype.storm.task.TopologyContext;
-import backtype.storm.tuple.Tuple;
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.tuple.Tuple;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
@@ -89,8 +89,18 @@ public class SequenceFileBolt extends AbstractHdfsBolt {
         return this;
     }
 
+    public SequenceFileBolt withTickTupleIntervalSeconds(int interval) {
+        this.tickTupleInterval = interval;
+        return this;
+    }
+
     public SequenceFileBolt addRotationAction(RotationAction action){
         this.rotationActions.add(action);
+        return this;
+    }
+
+    public SequenceFileBolt withRetryCount(int fileRetryCount) {
+        this.fileRetryCount = fileRetryCount;
         return this;
     }
 
@@ -104,29 +114,15 @@ public class SequenceFileBolt extends AbstractHdfsBolt {
     }
 
     @Override
-    public void execute(Tuple tuple) {
-        try {
-            long offset;
-            synchronized (this.writeLock) {
-                this.writer.append(this.format.key(tuple), this.format.value(tuple));
-                offset = this.writer.getLength();
+    void syncTuples() throws IOException {
+        LOG.debug("Attempting to sync all data to filesystem");
+        this.writer.hsync();
+    }
 
-                if (this.syncPolicy.mark(tuple, offset)) {
-                    this.writer.hsync();
-                    this.syncPolicy.reset();
-                }
-            }
-
-            this.collector.ack(tuple);
-            if (this.rotationPolicy.mark(tuple, offset)) {
-                rotateOutputFile(); // synchronized
-                this.rotationPolicy.reset();
-            }
-        } catch (IOException e) {
-            this.collector.reportError(e);
-            this.collector.fail(tuple);
-        }
-
+    @Override
+    void writeTuple(Tuple tuple) throws IOException {
+        this.writer.append(this.format.key(tuple), this.format.value(tuple));
+        this.offset = this.writer.getLength();
     }
 
     Path createOutputFile() throws IOException {
@@ -144,6 +140,4 @@ public class SequenceFileBolt extends AbstractHdfsBolt {
     void closeOutputFile() throws IOException {
         this.writer.close();
     }
-
-
 }

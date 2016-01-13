@@ -19,7 +19,7 @@ package org.apache.storm.eventhubs.spout;
 
 import java.util.List;
 
-import backtype.storm.spout.ISpoutOutputCollector;
+import org.apache.storm.spout.ISpoutOutputCollector;
 
 /**
  * Mock of ISpoutOutputCollector
@@ -57,5 +57,10 @@ public class SpoutOutputCollectorMock implements ISpoutOutputCollector {
 
   @Override
   public void reportError(Throwable arg0) {
+  }
+
+  @Override
+  public long getPendingCount() {
+    return 0;
   }
 }

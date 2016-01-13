@@ -28,7 +28,10 @@ documentation: true
 
 ### Halp! I cannot see:
 
-* **my logs** Logs by default go to $STORM_HOME/logs. Check that you have write permissions to that directory. They are configured in the logback/cluster.xml (0.9) and log4j/*.properties in earlier versions.
+* **my logs** Logs by default go to $STORM_HOME/logs. Check that you have write permissions to that directory. They are configured in 
+    * log4j2/{cluster, worker}.xml (> 0.9);
+    * logback/cluster.xml (0.9);
+    * log4j/*.properties in earlier versions (< 0.9).
 * **final JVM settings** Add the `-XX+PrintFlagsFinal` commandline option in the childopts (see the conf file)
 * **final Java system properties** Add `Properties props = System.getProperties(); props.list(System.out);` near where you build your topology.
 
@@ -61,6 +64,10 @@ A Trident "each" operator returns a Stream object, which you can store in a vari
 You can join streams with join, merge or multiReduce.
 
 At time of writing, you can't emit to multiple output streams from Trident -- see [STORM-68](https://issues.apache.org/jira/browse/STORM-68)
+
+### Why am I getting a NotSerializableException/IllegalStateException when my topology is being started up?
+
+Within the Storm lifecycle, the topology is instantiated and then serialized to byte format to be stored in ZooKeeper, prior to the topology being executed. Within this step, if a spout or bolt within the topology has an initialized unserializable property, serialization will fail. If there is a need for a field that is unserializable, initialize it within the bolt or spout's prepare method, which is run after the topology is delivered to the worker.
 
 ## Spouts
 
@@ -109,7 +116,7 @@ You can't change the overall batch size once generated, but you can change the n
 
 ### How do I aggregate events by time?
 
-If have records with an immutable timestamp, and you would like to count, average or otherwise aggregate them into discrete time buckets, Trident is an excellent and scalable solution.
+If you have records with an immutable timestamp, and you would like to count, average or otherwise aggregate them into discrete time buckets, Trident is an excellent and scalable solution.
 
 Write an `Each` function that turns the timestamp into a time bucket: if the bucket size was "by hour", then the timestamp `2013-08-08 12:34:56` would be mapped to the `2013-08-08 12:00:00` time bucket, and so would everything else in the twelve o'clock hour. Then group on that timebucket and use a grouped persistentAggregate. The persistentAggregate uses a local cacheMap backed by a data store. Groups with many records require very few reads from the data store, and use efficient bulk reads and writes; as long as your data feed is relatively prompt Trident will make very efficient use of memory and network. Even if a server drops off line for a day, then delivers that full day's worth of data in a rush, the old results will be calmly retrieved and updated -- and without interfering with calculating the current results.
 

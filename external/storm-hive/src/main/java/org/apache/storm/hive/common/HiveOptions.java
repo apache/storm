@@ -26,6 +26,11 @@ import org.apache.hive.hcatalog.streaming.*;
 
 
 public class HiveOptions implements Serializable {
+    /**
+     * Half of the default Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS
+     */
+    private static final int DEFAULT_TICK_TUPLE_INTERVAL_SECS = 15;
+
     protected HiveMapper mapper;
     protected String databaseName;
     protected String tableName;
@@ -39,12 +44,19 @@ public class HiveOptions implements Serializable {
     protected Boolean autoCreatePartitions = true;
     protected String kerberosPrincipal;
     protected String kerberosKeytab;
+    protected Integer tickTupleInterval = DEFAULT_TICK_TUPLE_INTERVAL_SECS;
 
     public HiveOptions(String metaStoreURI,String databaseName,String tableName,HiveMapper mapper) {
         this.metaStoreURI = metaStoreURI;
         this.databaseName = databaseName;
         this.tableName = tableName;
         this.mapper = mapper;
+    }
+
+    public HiveOptions withTickTupleInterval(Integer tickInterval)
+    {
+        this.tickTupleInterval = tickInterval;
+        return this;
     }
 
     public HiveOptions withTxnsPerBatch(Integer txnsPerBatch) {
@@ -142,5 +154,9 @@ public class HiveOptions implements Serializable {
 
     public String getKerberosKeytab() {
         return kerberosKeytab;
+    }
+
+    public Integer getTickTupleInterval() {
+        return tickTupleInterval;
     }
 }
