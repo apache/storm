@@ -41,6 +41,7 @@ import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 import java.io.*;
+import java.net.InetAddress;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.ByteBuffer;
@@ -51,6 +52,10 @@ import java.io.FileInputStream;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+import java.util.HashMap;
+import java.util.Map.Entry;
+
+
 
 public class Utils {
     private static final Logger LOG = LoggerFactory.getLogger(Utils.class);
@@ -259,7 +264,7 @@ public class Utils {
 
 
     public static Map findAndReadConfigFile(String name) {
-       return findAndReadConfigFile(name, true);
+        return findAndReadConfigFile(name, true);
     }
 
     public static Map readDefaultConfig() {
@@ -371,9 +376,9 @@ public class Utils {
 
     public static IFn loadClojureFn(String namespace, String name) {
         try {
-          clojure.lang.Compiler.eval(RT.readString("(require '" + namespace + ")"));
+            clojure.lang.Compiler.eval(RT.readString("(require '" + namespace + ")"));
         } catch (Exception e) {
-          //if playing from the repl and defining functions, file won't exist
+            //if playing from the repl and defining functions, file won't exist
         }
         return (IFn) RT.var(namespace, name).deref();
     }
@@ -404,44 +409,44 @@ public class Utils {
     }
 
     public static Integer getInt(Object o) {
-      Integer result = getInt(o, null);
-      if (null == result) {
-        throw new IllegalArgumentException("Don't know how to convert null to int");
-      }
-      return result;
+        Integer result = getInt(o, null);
+        if (null == result) {
+            throw new IllegalArgumentException("Don't know how to convert null to int");
+        }
+        return result;
     }
 
     public static Integer getInt(Object o, Integer defaultValue) {
-      if (null == o) {
-        return defaultValue;
-      }
+        if (null == o) {
+            return defaultValue;
+        }
 
-      if (o instanceof Integer ||
-          o instanceof Short ||
-          o instanceof Byte) {
-          return ((Number) o).intValue();
-      } else if (o instanceof Long) {
-          final long l = (Long) o;
-          if (l <= Integer.MAX_VALUE && l >= Integer.MIN_VALUE) {
-              return (int) l;
-          }
-      } else if (o instanceof String) {
-          return Integer.parseInt((String) o);
-      }
+        if (o instanceof Integer ||
+                o instanceof Short ||
+                o instanceof Byte) {
+            return ((Number) o).intValue();
+        } else if (o instanceof Long) {
+            final long l = (Long) o;
+            if (l <= Integer.MAX_VALUE && l >= Integer.MIN_VALUE) {
+                return (int) l;
+            }
+        } else if (o instanceof String) {
+            return Integer.parseInt((String) o);
+        }
 
-      throw new IllegalArgumentException("Don't know how to convert " + o + " to int");
+        throw new IllegalArgumentException("Don't know how to convert " + o + " to int");
     }
 
     public static boolean getBoolean(Object o, boolean defaultValue) {
-      if (null == o) {
-        return defaultValue;
-      }
+        if (null == o) {
+            return defaultValue;
+        }
 
-      if(o instanceof Boolean) {
-          return (Boolean) o;
-      } else {
-          throw new IllegalArgumentException("Don't know how to convert " + o + " + to boolean");
-      }
+        if(o instanceof Boolean) {
+            return (Boolean) o;
+        } else {
+            throw new IllegalArgumentException("Don't know how to convert " + o + " + to boolean");
+        }
     }
 
     public static long secureRandomLong() {
@@ -468,9 +473,9 @@ public class Utils {
     protected static void setupBuilder(CuratorFrameworkFactory.Builder builder, String zkStr, Map conf, ZookeeperAuthInfo auth)
     {
         builder.connectString(zkStr)
-            .connectionTimeoutMs(Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_CONNECTION_TIMEOUT)))
-            .sessionTimeoutMs(Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_SESSION_TIMEOUT)))
-            .retryPolicy(new StormBoundedExponentialBackoffRetry(
+                .connectionTimeoutMs(Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_CONNECTION_TIMEOUT)))
+                .sessionTimeoutMs(Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_SESSION_TIMEOUT)))
+                .retryPolicy(new StormBoundedExponentialBackoffRetry(
                         Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_RETRY_INTERVAL)),
                         Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_RETRY_INTERVAL_CEILING)),
                         Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_RETRY_TIMES))));
@@ -498,14 +503,14 @@ public class Utils {
 
     /**
      *
-(defn integer-divided [sum num-pieces]
-  (let [base (int (/ sum num-pieces))
-        num-inc (mod sum num-pieces)
-        num-bases (- num-pieces num-inc)]
-    (if (= num-inc 0)
-      {base num-bases}
-      {base num-bases (inc base) num-inc}
-      )))
+     (defn integer-divided [sum num-pieces]
+     (let [base (int (/ sum num-pieces))
+     num-inc (mod sum num-pieces)
+     num-bases (- num-pieces num-inc)]
+     (if (= num-inc 0)
+     {base num-bases}
+     {base num-bases (inc base) num-inc}
+     )))
      * @param sum
      * @param numPieces
      * @return
@@ -560,7 +565,7 @@ public class Utils {
      */
     public static boolean isZkAuthenticationConfiguredStormServer(Map conf) {
         return null != System.getProperty("java.security.auth.login.config")
-            || (conf != null
+                || (conf != null
                 && conf.get(Config.STORM_ZOOKEEPER_AUTH_SCHEME) != null
                 && ! ((String)conf.get(Config.STORM_ZOOKEEPER_AUTH_SCHEME)).isEmpty());
     }
@@ -583,37 +588,37 @@ public class Utils {
         }
         String stormZKUser = (String)conf.get(Config.STORM_ZOOKEEPER_SUPERACL);
         if (stormZKUser == null) {
-           throw new IllegalArgumentException("Authentication is enabled but "+Config.STORM_ZOOKEEPER_SUPERACL+" is not set");
+            throw new IllegalArgumentException("Authentication is enabled but "+Config.STORM_ZOOKEEPER_SUPERACL+" is not set");
         }
         String[] split = stormZKUser.split(":",2);
         if (split.length != 2) {
-          throw new IllegalArgumentException(Config.STORM_ZOOKEEPER_SUPERACL+" does not appear to be in the form scheme:acl, i.e. sasl:storm-user");
+            throw new IllegalArgumentException(Config.STORM_ZOOKEEPER_SUPERACL+" does not appear to be in the form scheme:acl, i.e. sasl:storm-user");
         }
         ArrayList<ACL> ret = new ArrayList<ACL>(ZooDefs.Ids.CREATOR_ALL_ACL);
         ret.add(new ACL(ZooDefs.Perms.ALL, new Id(split[0], split[1])));
         return ret;
     }
 
-   public static String threadDump() {
-       final StringBuilder dump = new StringBuilder();
-       final java.lang.management.ThreadMXBean threadMXBean =  java.lang.management.ManagementFactory.getThreadMXBean();
-       final java.lang.management.ThreadInfo[] threadInfos = threadMXBean.getThreadInfo(threadMXBean.getAllThreadIds(), 100);
-       for (java.lang.management.ThreadInfo threadInfo : threadInfos) {
-           dump.append('"');
-           dump.append(threadInfo.getThreadName());
-           dump.append("\" ");
-           final Thread.State state = threadInfo.getThreadState();
-           dump.append("\n   java.lang.Thread.State: ");
-           dump.append(state);
-           final StackTraceElement[] stackTraceElements = threadInfo.getStackTrace();
-           for (final StackTraceElement stackTraceElement : stackTraceElements) {
-               dump.append("\n        at ");
-               dump.append(stackTraceElement);
-           }
-           dump.append("\n\n");
-       }
-       return dump.toString();
-   }
+    public static String threadDump() {
+        final StringBuilder dump = new StringBuilder();
+        final java.lang.management.ThreadMXBean threadMXBean =  java.lang.management.ManagementFactory.getThreadMXBean();
+        final java.lang.management.ThreadInfo[] threadInfos = threadMXBean.getThreadInfo(threadMXBean.getAllThreadIds(), 100);
+        for (java.lang.management.ThreadInfo threadInfo : threadInfos) {
+            dump.append('"');
+            dump.append(threadInfo.getThreadName());
+            dump.append("\" ");
+            final Thread.State state = threadInfo.getThreadState();
+            dump.append("\n   java.lang.Thread.State: ");
+            dump.append(state);
+            final StackTraceElement[] stackTraceElements = threadInfo.getStackTrace();
+            for (final StackTraceElement stackTraceElement : stackTraceElements) {
+                dump.append("\n        at ");
+                dump.append(stackTraceElement);
+            }
+            dump.append("\n\n");
+        }
+        return dump.toString();
+    }
 
     // Assumes caller is synchronizing
     private static SerializationDelegate getSerializationDelegate(Map stormConf) {
@@ -636,20 +641,209 @@ public class Utils {
         return delegate;
     }
 
-  public static void handleUncaughtException(Throwable t) {
-    if (t != null && t instanceof Error) {
-      if (t instanceof OutOfMemoryError) {
-        try {
-          System.err.println("Halting due to Out Of Memory Error..." + Thread.currentThread().getName());
-        } catch (Throwable err) {
-          //Again we don't want to exit because of logging issues.
+    public static void handleUncaughtException(Throwable t) {
+        if (t != null && t instanceof Error) {
+            if (t instanceof OutOfMemoryError) {
+                try {
+                    System.err.println("Halting due to Out Of Memory Error..." + Thread.currentThread().getName());
+                } catch (Throwable err) {
+                    //Again we don't want to exit because of logging issues.
+                }
+                Runtime.getRuntime().halt(-1);
+            } else {
+                //Running in daemon mode, we would pass Error to calling thread.
+                throw (Error) t;
+            }
         }
-        Runtime.getRuntime().halt(-1);
-      } else {
-        //Running in daemon mode, we would pass Error to calling thread.
-        throw (Error) t;
-      }
     }
-  }
+
+    //Everything from here on is translated from the old util.clj (storm-core/src/clj/backtype.storm/util.clj)
+
+    //Wraps an exception in a RuntimeException if needed
+    public static Exception wrapInRuntime (Exception e) {
+        if (e instanceof RuntimeException) {
+            return e;
+        } else {
+            return (new RuntimeException(e));
+        }
+    }
+
+    public static boolean isOnWindows () {
+        return "Windows_NT".equals(System.getenv("OS"));
+    }
+
+    public static String filePathSeparator () {
+        return System.getProperty("file.separator");
+    }
+
+    public static String classPathSeparator () {
+        return System.getProperty("path.separator");
+    }
+
+    /*
+        Returns the first item of coll for which (pred item) returns logical true.
+        Consumes sequences up to the first match, will consume the entire sequence
+        and return nil if no match is found.
+     */
+    public static Object findFirst (Predicate pred, Collection coll) {
+        if (coll == null || pred == null) {
+            return null;
+        } else {
+            Iterator<Object> iter = coll.iterator();
+            if (iter==null || !iter.hasNext()) {
+                return null;
+            } else {
+                do {
+                    Object obj = iter.next();
+                    if (pred.test(obj)) {
+                        return obj;
+                    }
+                } while (iter.hasNext());
+                return null;
+            }
+        }
+    }
+
+    /*
+        Note: since the following functions are nowhere used in Storm, they were not translated:
+        dissoc-in
+        indexed
+        positions
+        assoc-conj
+        set-delta
+
+        clojurify-structure  because it wouldn't make sense without clojure
+     */
+
+    //Is this the correct translation?
+    public static boolean isExceptionCause(Class klass, Throwable t) {
+        if (klass == null || t == null)
+            return false;
+        Throwable cause = t;
+        do {
+            if (cause.getClass().isInstance(klass)) {
+                return true;
+            }
+            cause = t.getCause();
+        } while (cause != null);
+        return false;
+    }
+
+    public static String localHostname () throws java.net.UnknownHostException {
+        return InetAddress.getLocalHost().getCanonicalHostName();
+    }
+
+    static String memoizedLocalHostnameString;
+    public static String memoizedLocalHostname () throws java.net.UnknownHostException {
+        if (memoizedLocalHostnameString == null) {
+            memoizedLocalHostnameString = localHostname();
+        }
+        return memoizedLocalHostnameString;
+    }
+
+    /*
+        checks conf for STORM_LOCAL_HOSTNAME.
+        when unconfigured, falls back to (memoized) guess by `local-hostname`.
+    */
+    public static String hostname (Map<String, Object> conf) throws java.net.UnknownHostException {
+        Object hostnameString = conf.get(Config.STORM_LOCAL_HOSTNAME);
+        if (hostnameString == null | hostnameString.equals("")) {
+            return memoizedLocalHostname();
+        }
+        return hostnameString.toString();
+    }
+
+    public static String uuid() {
+        return UUID.randomUUID().toString();
+    }
+
+    public static int currentTimeSecs() {
+        return Time.currentTimeSecs();
+    }
+
+    public static long currentTimeMillis() {
+        return Time.currentTimeMillis();
+    }
+
+    public static long secsToMillisLong(int secs) {
+        return 1000*secs;
+    }
+
+    public static Vector<String> tokenizePath (String path) {
+        String[] tokens = path.split("/");
+        Vector<String> outputs = new Vector<String>();
+        if (tokens == null || tokens.length == 0) {
+            return null;
+        }
+        for (String tok: tokens) {
+            if (!tok.isEmpty()) {
+                outputs.add(tok);
+            }
+        }
+        return outputs;
+    }
+
+    public static String parentPath(String path) {
+        Vector<String> tokens = tokenizePath(path);
+        String output = "";
+        int length = tokens.size();
+        if (length < 1) {
+            return "";
+        }
+        for (int i = 0; i < length - 1; i++) {  //length - 1 to mimic "butlast" from the old clojure code
+            output = output + tokens.get(i);
+        }
+        return output;
+    }
+
+    public static String toksToPath (Vector<String> toks) {
+        String output = "";
+        int length = toks.size();
+        if (length < 1) {
+            return "";
+        }
+        for (int i = 0; i < length; i++) {
+            output = output + toks.get(i);
+        }
+        return output;
+    }
+    public static String normalizePath (String path) {
+        return toksToPath(tokenizePath(path));
+    }
+
+    public static Map mapVal (AFn aFn, Map amap) {
+        Map newMap = new HashMap();
+        for (Object key: amap.keySet()) {
+            Object value = amap.get(key);
+            Object newValue = aFn.eval(value);
+            newMap.put(key, newValue);
+        }
+        return newMap;
+    }
+
+    public static Map filterVal(Predicate aFn, Map amap) {
+        Map newMap = new HashMap();
+        for (Object key: amap.keySet()) {
+            Object value = amap.get(key);
+            if(aFn.test(value)) {
+                newMap.put(key, value);
+            }
+        }
+        return newMap;
+    }
+
+    public static Map filterKey(Predicate aFn, Map amap) {
+        Map newMap = new HashMap();
+        for (Object key: amap.keySet()) {
+            Object value = amap.get(key);
+            if(aFn.test(key)) {
+                newMap.put(key, value);
+            }
+        }
+        return newMap;
+    }
+
+
+
 }
 
