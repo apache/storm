@@ -45,9 +45,8 @@
                                         (get [supervisor-id port] ))]
                           (when executors [storm-id executors])
                           ))
-        pred (reify IPredicate (test [this x] (not= (x nil))))
-        ;ret (find-first not-nil? slot-assigns)]
-        ret (find-first pred slot-assigns)]
+        pred (reify IPredicate (test [this x] (not-nil? x)))
+        ret (Utils/findFirst pred slot-assigns)]
     (when-not ret
       (throw-runtime "Could not find assignment for worker"))
     ret

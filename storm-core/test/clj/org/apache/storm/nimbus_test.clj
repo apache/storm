@@ -780,7 +780,6 @@
       (check-executor-distribution slot-executors2 [2 2 2 3])
       (check-consistency cluster "test")
 
-      ;(bind common (first (find-first (fn [[k v]] (= 3 (count v))) slot-executors2)))
       (bind common (first (Utils/findFirst (reify IPredicate (test [this [k v]] (= 3 (count v)))) slot-executors2)))
 
       (is (not-nil? common))

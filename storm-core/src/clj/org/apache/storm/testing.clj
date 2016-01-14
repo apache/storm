@@ -172,16 +172,13 @@
     cluster-map))
 
 (defn get-supervisor [cluster-map supervisor-id]
-  (let [;finder-fn #(= (.get-id %) supervisor-id)
-        pred  (reify IPredicate (test [this x] (= (.get-id x) supervisor-id)))]
+  (let [pred  (reify IPredicate (test [this x] (= (.get-id x) supervisor-id)))]
     (Utils/findFirst pred @(:supervisors cluster-map))))
-    ;(find-first finder-fn @(:supervisors cluster-map))))
 
 (defn kill-supervisor [cluster-map supervisor-id]
   (let [finder-fn #(= (.get-id %) supervisor-id)
         pred  (reify IPredicate (test [this x] (= (.get-id x) supervisor-id)))
         supervisors @(:supervisors cluster-map)
-        ;sup (find-first finder-fn
         sup (Utils/findFirst pred
                         supervisors)]
     ;; tmp-dir will be taken care of by shutdown

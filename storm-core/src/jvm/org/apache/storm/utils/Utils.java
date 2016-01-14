@@ -1570,5 +1570,21 @@ public class Utils {
         }
         return newMap;
     }
+
+    public static Map mapKey (AFn aFn, Map amap) {
+        Map newMap = new HashMap();
+        for (Object key: amap.keySet()) {
+            Object value = amap.get(key);
+            Object newKey = aFn.eval(key);
+            newMap.put(newKey, value);
+        }
+        return newMap;
+    }
+
+    public static
+    (defn separate
+    [pred aseq]
+            [(filter pred aseq) (filter (complement pred) aseq)])
+
 }
 
