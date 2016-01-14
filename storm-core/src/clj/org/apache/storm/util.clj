@@ -48,21 +48,21 @@
   (:require [ring.util.codec :as codec])
   (:use [org.apache.storm log]))
 
-(defn wrap-in-runtime
-  "Wraps an exception in a RuntimeException if needed"
-  [^Exception e]
-  (if (instance? RuntimeException e)
-    e
-    (RuntimeException. e)))
+;(defn wrap-in-runtime
+;  "Wraps an exception in a RuntimeException if needed"
+;  [^Exception e]
+;  (if (instance? RuntimeException e)
+;    e
+;    (RuntimeException. e)))
 
 (def on-windows?
   (= "Windows_NT" (System/getenv "OS")))
 
-(def file-path-separator
-  (System/getProperty "file.separator"))
+;(def file-path-separator
+;  (System/getProperty "file.separator"))
 
-(def class-path-separator
-  (System/getProperty "path.separator"))
+;(def class-path-separator
+;  (System/getProperty "path.separator"))
 
 (defn is-absolute-path? [path]
   (.isAbsolute (Paths/get path (into-array String []))))
@@ -520,10 +520,10 @@
       (clojure.string/join " ")))
 
 (defn script-file-path [dir]
-  (str dir file-path-separator "storm-worker-script.sh"))
+  (str dir Utils/filePathSeparator "storm-worker-script.sh"))
 
 (defn container-file-path [dir]
-  (str dir file-path-separator "launch_container.sh"))
+  (str dir Utils/filePathSeparator "launch_container.sh"))
 
 (defnk write-script
   [dir command :environment {}]
@@ -595,8 +595,8 @@
   ([path-dir target-dir file-name]
     (create-symlink! path-dir target-dir file-name file-name))
   ([path-dir target-dir from-file-name to-file-name]
-    (let [path (str path-dir file-path-separator from-file-name)
-          target (str target-dir file-path-separator to-file-name)
+    (let [path (str path-dir Utils/filePathSeparator from-file-name)
+          target (str target-dir Utils/filePathSeparator to-file-name)
           empty-array (make-array String 0)
           attrs (make-array FileAttribute 0)
           abs-path (.toAbsolutePath (Paths/get path empty-array))
@@ -622,27 +622,27 @@
 
 (defn get-full-jars
   [dir]
-  (map #(str dir file-path-separator %) (filter #(.endsWith % ".jar") (read-dir-contents dir))))
+  (map #(str dir Utils/filePathSeparator %) (filter #(.endsWith % ".jar") (read-dir-contents dir))))
 
 (defn worker-classpath
   []
   (let [storm-dir (System/getProperty "storm.home")
-        storm-lib-dir (str storm-dir file-path-separator "lib")
+        storm-lib-dir (str storm-dir Utils/filePathSeparator "lib")
         storm-conf-dir (if-let [confdir (System/getenv "STORM_CONF_DIR")]
                          confdir 
-                         (str storm-dir file-path-separator "conf"))
-        storm-extlib-dir (str storm-dir file-path-separator "extlib")
+                         (str storm-dir Utils/filePathSeparator "conf"))
+        storm-extlib-dir (str storm-dir Utils/filePathSeparator "extlib")
         extcp (System/getenv "STORM_EXT_CLASSPATH")]
     (if (nil? storm-dir) 
       (current-classpath)
-      (str/join class-path-separator
+      (str/join Utils/classPathSeparator
                 (remove nil? (concat (get-full-jars storm-lib-dir) (get-full-jars storm-extlib-dir) [extcp] [storm-conf-dir]))))))
 
 (defn add-to-classpath
   [classpath paths]
   (if (empty? paths)
     classpath
-    (str/join class-path-separator (cons classpath paths))))
+    (str/join Utils/classPathSeparator (cons classpath paths))))
 
 (defn ^ReentrantReadWriteLock mk-rw-lock
   []
@@ -1046,13 +1046,13 @@
 
 (defn logs-filename
   [storm-id port]
-  (str storm-id file-path-separator port file-path-separator "worker.log"))
+  (str storm-id Utils/filePathSeparator port Utils/filePathSeparator "worker.log"))
 
 (def worker-log-filename-pattern #"^worker.log(.*)")
 
 (defn event-logs-filename
   [storm-id port]
-  (str storm-id file-path-separator port file-path-separator "events.log"))
+  (str storm-id Utils/filePathSeparator port Utils/filePathSeparator "events.log"))
 
 (defn clojure-from-yaml-file [yamlFile]
   (try

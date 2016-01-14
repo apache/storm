@@ -29,7 +29,7 @@
             LogConfig LogLevel LogLevelAction])
   (:import [java.util HashMap])
   (:import [java.io File])
-  (:import [org.apache.storm.utils Time Utils])
+  (:import [org.apache.storm.utils Time Utils IPredicate])
   (:import [org.apache.commons.io FileUtils])
   (:use [org.apache.storm testing MockAutoCred util config log timer zookeeper])
   (:use [org.apache.storm.daemon common])
@@ -780,7 +780,9 @@
       (check-executor-distribution slot-executors2 [2 2 2 3])
       (check-consistency cluster "test")
 
-      (bind common (first (find-first (fn [[k v]] (= 3 (count v))) slot-executors2)))
+      ;(bind common (first (find-first (fn [[k v]] (= 3 (count v))) slot-executors2)))
+      (bind common (first (Utils/findFirst (reify IPredicate (test [this [k v]] (= 3 (count v)))) slot-executors2)))
+
       (is (not-nil? common))
       (is (= (slot-executors2 common) (slot-executors common)))
 

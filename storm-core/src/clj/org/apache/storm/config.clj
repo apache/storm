@@ -91,25 +91,25 @@
   (let [storm-home (System/getProperty "storm.home")
         path (conf STORM-LOCAL-DIR)]
     (if path
-      (if (is-absolute-path? path) path (str storm-home file-path-separator path))
-      (str storm-home file-path-separator "storm-local"))))
+      (if (is-absolute-path? path) path (str storm-home Utils/filePathSeparator path))
+      (str storm-home Utils/filePathSeparator "storm-local"))))
 
 (def LOG-DIR
   (.getCanonicalPath
     (clojure.java.io/file (or (System/getProperty "storm.log.dir")
                               (get (read-storm-config) "storm.log.dir")
-                              (str (System/getProperty "storm.home") file-path-separator "logs")))))
+                              (str (System/getProperty "storm.home") Utils/filePathSeparator "logs")))))
 
 (defn absolute-healthcheck-dir [conf]
   (let [storm-home (System/getProperty "storm.home")
         path (conf STORM-HEALTH-CHECK-DIR)]
     (if path
-      (if (is-absolute-path? path) path (str storm-home file-path-separator path))
-      (str storm-home file-path-separator "healthchecks"))))
+      (if (is-absolute-path? path) path (str storm-home Utils/filePathSeparator path))
+      (str storm-home Utils/filePathSeparator "healthchecks"))))
 
 (defn master-local-dir
   [conf]
-  (let [ret (str (absolute-storm-local-dir conf) file-path-separator "nimbus")]
+  (let [ret (str (absolute-storm-local-dir conf) Utils/filePathSeparator "nimbus")]
     (FileUtils/forceMkdir (File. ret))
     ret))
 
@@ -127,13 +127,13 @@
 
 (defn master-stormdist-root
   ([conf]
-   (str (master-local-dir conf) file-path-separator "stormdist"))
+   (str (master-local-dir conf) Utils/filePathSeparator "stormdist"))
   ([conf storm-id]
-   (str (master-stormdist-root conf) file-path-separator storm-id)))
+   (str (master-stormdist-root conf) Utils/filePathSeparator storm-id)))
 
 (defn master-tmp-dir
   [conf]
-  (let [ret (str (master-local-dir conf) file-path-separator "tmp")]
+  (let [ret (str (master-local-dir conf) Utils/filePathSeparator "tmp")]
     (FileUtils/forceMkdir (File. ret))
     ret ))
 
@@ -142,77 +142,77 @@
   (merge conf (clojurify-structure (Utils/fromCompressedJsonConf (FileUtils/readFileToByteArray (File. stormconf-path))))))
 
 (defn master-storm-metafile-path [stormroot ]
-  (str stormroot file-path-separator "storm-code-distributor.meta"))
+  (str stormroot Utils/filePathSeparator "storm-code-distributor.meta"))
 
 (defn master-stormjar-path
   [stormroot]
-  (str stormroot file-path-separator "stormjar.jar"))
+  (str stormroot Utils/filePathSeparator "stormjar.jar"))
 
 (defn master-stormcode-path
   [stormroot]
-  (str stormroot file-path-separator "stormcode.ser"))
+  (str stormroot Utils/filePathSeparator "stormcode.ser"))
 
 (defn master-stormconf-path
   [stormroot]
-  (str stormroot file-path-separator "stormconf.ser"))
+  (str stormroot Utils/filePathSeparator "stormconf.ser"))
 
 (defn master-inbox
   [conf]
-  (let [ret (str (master-local-dir conf) file-path-separator "inbox")]
+  (let [ret (str (master-local-dir conf) Utils/filePathSeparator "inbox")]
     (FileUtils/forceMkdir (File. ret))
     ret ))
 
 (defn master-inimbus-dir
   [conf]
-  (str (master-local-dir conf) file-path-separator "inimbus"))
+  (str (master-local-dir conf) Utils/filePathSeparator "inimbus"))
 
 (defn supervisor-local-dir
   [conf]
-  (let [ret (str (absolute-storm-local-dir conf) file-path-separator "supervisor")]
+  (let [ret (str (absolute-storm-local-dir conf) Utils/filePathSeparator "supervisor")]
     (FileUtils/forceMkdir (File. ret))
     ret))
 
 (defn supervisor-isupervisor-dir
   [conf]
-  (str (supervisor-local-dir conf) file-path-separator "isupervisor"))
+  (str (supervisor-local-dir conf) Utils/filePathSeparator "isupervisor"))
 
 (defn supervisor-stormdist-root
   ([conf]
-   (str (supervisor-local-dir conf) file-path-separator "stormdist"))
+   (str (supervisor-local-dir conf) Utils/filePathSeparator "stormdist"))
   ([conf storm-id]
-   (str (supervisor-stormdist-root conf) file-path-separator (url-encode storm-id))))
+   (str (supervisor-stormdist-root conf) Utils/filePathSeparator (url-encode storm-id))))
 
 (defn supervisor-stormjar-path [stormroot]
-  (str stormroot file-path-separator "stormjar.jar"))
+  (str stormroot Utils/filePathSeparator "stormjar.jar"))
 
 (defn supervisor-storm-metafile-path [stormroot]
-  (str stormroot file-path-separator "storm-code-distributor.meta"))
+  (str stormroot Utils/filePathSeparator "storm-code-distributor.meta"))
 
 (defn supervisor-stormcode-path
   [stormroot]
-  (str stormroot file-path-separator "stormcode.ser"))
+  (str stormroot Utils/filePathSeparator "stormcode.ser"))
 
 (defn supervisor-stormconf-path
   [stormroot]
-  (str stormroot file-path-separator "stormconf.ser"))
+  (str stormroot Utils/filePathSeparator "stormconf.ser"))
 
 (defn supervisor-tmp-dir
   [conf]
-  (let [ret (str (supervisor-local-dir conf) file-path-separator "tmp")]
+  (let [ret (str (supervisor-local-dir conf) Utils/filePathSeparator "tmp")]
     (FileUtils/forceMkdir (File. ret))
     ret ))
 
 (defn supervisor-storm-resources-path
   [stormroot]
-  (str stormroot file-path-separator RESOURCES-SUBDIR))
+  (str stormroot Utils/filePathSeparator RESOURCES-SUBDIR))
 
 (defn ^LocalState supervisor-state
   [conf]
-  (LocalState. (str (supervisor-local-dir conf) file-path-separator "localstate")))
+  (LocalState. (str (supervisor-local-dir conf) Utils/filePathSeparator "localstate")))
 
 (defn ^LocalState nimbus-topo-history-state
   [conf]
-  (LocalState. (str (master-local-dir conf) file-path-separator "history")))
+  (LocalState. (str (master-local-dir conf) Utils/filePathSeparator "history")))
 
 (defn read-supervisor-storm-conf
   [conf storm-id]
@@ -263,45 +263,45 @@
      (if workers-artifacts-dir
        (if (is-absolute-path? workers-artifacts-dir)
          workers-artifacts-dir
-         (str LOG-DIR file-path-separator workers-artifacts-dir))
-       (str LOG-DIR file-path-separator "workers-artifacts"))))
+         (str LOG-DIR Utils/filePathSeparator workers-artifacts-dir))
+       (str LOG-DIR Utils/filePathSeparator "workers-artifacts"))))
   ([conf id]
-   (str (worker-artifacts-root conf) file-path-separator id))
+   (str (worker-artifacts-root conf) Utils/filePathSeparator id))
   ([conf id port]
-   (str (worker-artifacts-root conf id) file-path-separator port)))
+   (str (worker-artifacts-root conf id) Utils/filePathSeparator port)))
 
 (defn worker-artifacts-pid-path
   [conf id port]
-  (str (worker-artifacts-root conf id port) file-path-separator "worker.pid"))
+  (str (worker-artifacts-root conf id port) Utils/filePathSeparator "worker.pid"))
 
 (defn get-log-metadata-file
   ([fname]
-    (let [[id port & _] (str/split fname (re-pattern file-path-separator))]
+    (let [[id port & _] (str/split fname (re-pattern Utils/filePathSeparator))]
       (get-log-metadata-file (read-storm-config) id port)))
   ([conf id port]
-    (clojure.java.io/file (str (worker-artifacts-root conf id) file-path-separator port file-path-separator) "worker.yaml")))
+    (clojure.java.io/file (str (worker-artifacts-root conf id) Utils/filePathSeparator port Utils/filePathSeparator) "worker.yaml")))
 
 (defn get-worker-dir-from-root
   [log-root id port]
-  (clojure.java.io/file (str log-root file-path-separator id file-path-separator port)))
+  (clojure.java.io/file (str log-root Utils/filePathSeparator id Utils/filePathSeparator port)))
 
 (defn worker-root
   ([conf]
-   (str (absolute-storm-local-dir conf) file-path-separator "workers"))
+   (str (absolute-storm-local-dir conf) Utils/filePathSeparator "workers"))
   ([conf id]
-   (str (worker-root conf) file-path-separator id)))
+   (str (worker-root conf) Utils/filePathSeparator id)))
 
 (defn worker-pids-root
   [conf id]
-  (str (worker-root conf id) file-path-separator "pids"))
+  (str (worker-root conf id) Utils/filePathSeparator "pids"))
 
 (defn worker-pid-path
   [conf id pid]
-  (str (worker-pids-root conf id) file-path-separator pid))
+  (str (worker-pids-root conf id) Utils/filePathSeparator pid))
 
 (defn worker-heartbeats-root
   [conf id]
-  (str (worker-root conf id) file-path-separator "heartbeats"))
+  (str (worker-root conf id) Utils/filePathSeparator "heartbeats"))
 
 ;; workers heartbeat here with pid and timestamp
 ;; if supervisor stops receiving heartbeat, it kills and restarts the process

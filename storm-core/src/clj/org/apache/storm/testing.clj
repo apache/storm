@@ -27,7 +27,7 @@
   (:import [java.util HashMap ArrayList])
   (:import [java.util.concurrent.atomic AtomicInteger])
   (:import [java.util.concurrent ConcurrentHashMap])
-  (:import [org.apache.storm.utils Time Utils RegisteredGlobalState])
+  (:import [org.apache.storm.utils Time Utils IPredicate RegisteredGlobalState])
   (:import [org.apache.storm.tuple Fields Tuple TupleImpl])
   (:import [org.apache.storm.task TopologyContext])
   (:import [org.apache.storm.generated GlobalStreamId Bolt KillOptions])
@@ -172,13 +172,17 @@
     cluster-map))
 
 (defn get-supervisor [cluster-map supervisor-id]
-  (let [finder-fn #(= (.get-id %) supervisor-id)]
-    (find-first finder-fn @(:supervisors cluster-map))))
+  (let [;finder-fn #(= (.get-id %) supervisor-id)
+        pred  (reify IPredicate (test [this x] (= (.get-id x) supervisor-id)))]
+    (Utils/findFirst pred @(:supervisors cluster-map))))
+    ;(find-first finder-fn @(:supervisors cluster-map))))
 
 (defn kill-supervisor [cluster-map supervisor-id]
   (let [finder-fn #(= (.get-id %) supervisor-id)
+        pred  (reify IPredicate (test [this x] (= (.get-id x) supervisor-id)))
         supervisors @(:supervisors cluster-map)
-        sup (find-first finder-fn
+        ;sup (find-first finder-fn
+        sup (Utils/findFirst pred
                         supervisors)]
     ;; tmp-dir will be taken care of by shutdown
     (reset! (:supervisors cluster-map) (remove-first finder-fn supervisors))

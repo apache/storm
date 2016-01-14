@@ -85,7 +85,6 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1384,24 +1383,19 @@ public class Utils {
         }
     }
 
-    public static boolean isOnWindows () {
-        return "Windows_NT".equals(System.getenv("OS"));
-    }
+    public static final boolean isOnWindows = "Windows_NT".equals(System.getenv("OS"));
 
-    public static String filePathSeparator () {
-        return System.getProperty("file.separator");
-    }
+    public static final String filePathSeparator = System.getProperty("file.separator");
 
-    public static String classPathSeparator () {
-        return System.getProperty("path.separator");
-    }
+    public static final String classPathSeparator = System.getProperty("path.separator");
+
 
     /*
         Returns the first item of coll for which (pred item) returns logical true.
         Consumes sequences up to the first match, will consume the entire sequence
         and return nil if no match is found.
      */
-    public static Object findFirst (Predicate pred, Collection coll) {
+    public static Object findFirst (IPredicate pred, Collection coll) {
         if (coll == null || pred == null) {
             return null;
         } else {
@@ -1420,6 +1414,24 @@ public class Utils {
         }
     }
 
+    public static Object findFirst (IPredicate pred, Map map) {
+        if (map == null || pred == null) {
+            return null;
+        } else {
+            Iterator<Object> iter = map.entrySet().iterator();
+            if (iter==null || !iter.hasNext()) {
+                return null;
+            } else {
+                do {
+                    Object obj = iter.next();
+                    if (pred.test(obj)) {
+                        return obj;
+                    }
+                } while (iter.hasNext());
+                return null;
+            }
+        }
+    }
     /*
         Note: since the following functions are nowhere used in Storm, they were not translated:
         dissoc-in
@@ -1537,7 +1549,7 @@ public class Utils {
         return newMap;
     }
 
-    public static Map filterVal(Predicate aFn, Map amap) {
+    public static Map filterVal(IPredicate aFn, Map amap) {
         Map newMap = new HashMap();
         for (Object key: amap.keySet()) {
             Object value = amap.get(key);
@@ -1548,7 +1560,7 @@ public class Utils {
         return newMap;
     }
 
-    public static Map filterKey(Predicate aFn, Map amap) {
+    public static Map filterKey(IPredicate aFn, Map amap) {
         Map newMap = new HashMap();
         for (Object key: amap.keySet()) {
             Object value = amap.get(key);

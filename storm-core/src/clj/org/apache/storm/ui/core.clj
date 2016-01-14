@@ -328,12 +328,12 @@
   (let [tplg-main-class (if (not-nil? tplg-config) (trim (tplg-config "topologyMainClass")))
         tplg-main-class-args (if (not-nil? tplg-config) (tplg-config "topologyMainClassArgs"))
         storm-home (System/getProperty "storm.home")
-        storm-conf-dir (str storm-home file-path-separator "conf")
+        storm-conf-dir (str storm-home Utils/filePathSeparator "conf")
         storm-log-dir (if (not-nil? (*STORM-CONF* "storm.log.dir")) (*STORM-CONF* "storm.log.dir")
-                          (str storm-home file-path-separator "logs"))
-        storm-libs (str storm-home file-path-separator "lib" file-path-separator "*")
-        java-cmd (str (System/getProperty "java.home") file-path-separator "bin" file-path-separator "java")
-        storm-cmd (str storm-home file-path-separator "bin" file-path-separator "storm")
+                          (str storm-home Utils/filePathSeparator "logs"))
+        storm-libs (str storm-home Utils/filePathSeparator "lib" Utils/filePathSeparator "*")
+        java-cmd (str (System/getProperty "java.home") Utils/filePathSeparator "bin" Utils/filePathSeparator "java")
+        storm-cmd (str storm-home Utils/filePathSeparator "bin" Utils/filePathSeparator "storm")
         tplg-cmd-response (apply sh
                             (flatten
                               [storm-cmd "jar" tplg-jar-file tplg-main-class
