@@ -1,4 +1,35 @@
-## 0.11.0
+## 2.0.0
+## 1.0.0
+ * STORM-1466: Move the org.apache.thrift7 namespace to something correct/sensible
+ * STORM-1470: Applies shading to hadoop-auth, cleaner exclusions
+ * STORM-1467: Switch apache-rat plugin off by default, but enable for Travis-CI
+ * STORM-1468: move documentation to asf-site branch
+ * STORM-1199: HDFS Spout Implementation.
+ * STORM-1453: nimbus.clj/wait-for-desired-code-replication prints wrong log message
+ * STORM-1419: Solr bolt should handle tick tuples
+ * STORM-1175: State store for windowing operations
+ * STORM-1202: Migrate APIs to org.apache.storm, but try to provide some form of backwards compatability
+ * STORM-468: java.io.NotSerializableException should be explained
+ * STORM-1348: refactor API to remove Insert/Update builder in Cassandra connector
+ * STORM-1206: Reduce logviewer memory usage through directory stream
+ * STORM-1219: Fix HDFS and Hive bolt flush/acking
+ * STORM-1150: Fix the authorization of Logviewer in method authorized-log-user?
+ * STORM-1418: improve debug logs for some external modules
+ * STORM-1415: Some improvements for trident map StateUpdater
+ * STORM-1414: Some improvements for multilang JsonSerializer
+ * STORM-1408: clean up the build directory created by tests
+ * STORM-1425: Tick tuples should be acked like normal tuples
+ * STORM-1432: Spurious failure in storm-kafka test 
+ * STORM-1449: Fix Kafka spout to maintain backward compatibility
+ * STORM-1458: Add check to see if nimbus is already running.
+ * STORM-1462: Upgrade HikariCP to 2.4.3
+ * STORM-1457: Avoid collecting pending tuples if topology.debug is off
+ * STORM-1430: ui worker checkboxes
+ * STORM-1423: storm UI in a secure env shows error even when credentials are present
+ * STORM-702: Exhibitor support
+ * STORM-1160: Add hadoop-auth dependency needed for storm-core
+ * STORM-1404: Fix Mockito test failures in storm-kafka.
+ * STORM-1379: Removed Redundant Structure
  * STORM-706: Clarify examples README for IntelliJ.
  * STORM-1396: Added backward compatibility method for File Download
  * STORM-695: storm CLI tool reports zero exit code on error scenario

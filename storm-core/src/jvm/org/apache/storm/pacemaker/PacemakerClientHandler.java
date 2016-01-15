@@ -17,11 +17,11 @@
  */
 package org.apache.storm.pacemaker;
 
-import backtype.storm.generated.HBMessage;
-import backtype.storm.messaging.netty.ControlMessage;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import org.apache.storm.generated.HBMessage;
+import org.apache.storm.messaging.netty.ControlMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
