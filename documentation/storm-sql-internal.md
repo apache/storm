@@ -48,7 +48,7 @@ There are several constraints when querying tables that represent a real-time da
 * The `ORDER BY` clause cannot be applied to a stream.
 * There is at least one monotonic field in the `GROUP BY` clauses to allow StormSQL bounds the size of the buffer.
 
-For more information please refer to https://calcite.incubator.apache.org/docs/stream.html.
+For more information please refer to http://calcite.apache.org/docs/stream.html.
 
 ## Dependency
 
