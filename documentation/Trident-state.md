@@ -289,7 +289,9 @@ TridentState wordCounts =
         .persistentAggregate(new MemoryMapState.Factory(), new Count(), new Fields("count"))
 ```
 
-persistentAggregate is an additional abstraction built on top of partitionPersist that knows how to take a Trident aggregator and use it to apply updates to the source of state. In this case, since this is a grouped stream, Trident expects the state you provide to implement the "MapState" interface. The grouping fields will be the keys in the state, and the aggregation result will be the values in the state. The "MapState" interface looks like this:
+persistentAggregate is an additional abstraction built on top of partitionPersist that knows how to take a Trident aggregator and use it to apply updates to the source of state. It requires the use of a CombinerAggregator or ReducerAggregator and does not work with generic Aggregators.
+
+In this case, since this is a grouped stream, Trident expects the state you provide to implement the "MapState" interface. The grouping fields will be the keys in the state, and the aggregation result will be the values in the state. The "MapState" interface looks like this:
 
 ```java
 public interface MapState<T> extends State {
