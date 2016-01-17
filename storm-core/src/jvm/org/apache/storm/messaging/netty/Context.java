@@ -34,7 +34,6 @@ public class Context implements IContext {
     private Map storm_conf;
     private Map<String, IConnection> connections;
 
-    private EventLoopGroup bossEventLoopGroup;
     private EventLoopGroup workerEventLoopGroup;
 
     private HashedWheelTimer clientScheduleService;
@@ -49,14 +48,12 @@ public class Context implements IContext {
 
         //each context will have a single client channel workerEventLoopGroup
         int maxWorkers = Utils.getInt(storm_conf.get(Config.STORM_MESSAGING_NETTY_CLIENT_WORKER_THREADS));
-		ThreadFactory bossFactory = new NettyRenameThreadFactory("client" + "-boss");
         ThreadFactory workerFactory = new NettyRenameThreadFactory("client" + "-worker");
 
-        // 0 means DEFAULT_EVENT_LOOP_THREADS
-        bossEventLoopGroup = new NioEventLoopGroup(0, bossFactory);
         if (maxWorkers > 0) {
             workerEventLoopGroup = new NioEventLoopGroup(maxWorkers, workerFactory);
         } else {
+            // 0 means DEFAULT_EVENT_LOOP_THREADS
             workerEventLoopGroup = new NioEventLoopGroup(0, workerFactory);
         }
         
@@ -106,9 +103,7 @@ public class Context implements IContext {
         connections = null;
 
         //we need to release resources associated
-        bossEventLoopGroup.shutdownGracefully();
         workerEventLoopGroup.shutdownGracefully();
-
     }
 
     private String key(String host, int port) {

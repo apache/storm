@@ -28,17 +28,16 @@ import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.util.concurrent.GlobalEventExecutor;
-import org.apache.storm.pacemaker.codec.ThriftNettyServerCodec;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.security.auth.login.Configuration;
 import org.apache.storm.Config;
 import org.apache.storm.generated.HBMessage;
 import org.apache.storm.messaging.netty.ISaslServer;
 import org.apache.storm.messaging.netty.NettyRenameThreadFactory;
+import org.apache.storm.pacemaker.codec.ThriftNettyServerCodec;
 import org.apache.storm.security.auth.AuthUtils;
-import java.lang.InterruptedException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.security.auth.login.Configuration;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -56,6 +55,7 @@ class PacemakerServer implements ISaslServer {
     private volatile ChannelGroup allChannels = new DefaultChannelGroup("storm-server", GlobalEventExecutor.INSTANCE);
     private ConcurrentSkipListSet<Channel> authenticated_channels = new ConcurrentSkipListSet<>();
     private ThriftNettyServerCodec.AuthMethod authMethod;
+    private EventLoopGroup workerEventLoopGroup;
 
     public PacemakerServer(IServerMessageHandler handler, Map config){
         int maxWorkers = (int)config.get(Config.PACEMAKER_MAX_THREADS);
@@ -89,22 +89,21 @@ class PacemakerServer implements ISaslServer {
             throw new RuntimeException("Can't start pacemaker server without proper PACEMAKER_AUTH_METHOD.");
         }
 
-        ThreadFactory bossFactory = new NettyRenameThreadFactory("server-boss");
         ThreadFactory workerFactory = new NettyRenameThreadFactory("server-worker");
 
-        // 0 means DEFAULT_EVENT_LOOP_THREADS
-        EventLoopGroup bossEventLoopGroup = new NioEventLoopGroup(0, bossFactory);
-        EventLoopGroup workerEventLoopGroup;
+
         if (maxWorkers > 0) {
-            workerEventLoopGroup = new NioEventLoopGroup(maxWorkers, workerFactory);
+            // add extra one for boss
+            workerEventLoopGroup = new NioEventLoopGroup(maxWorkers + 1, workerFactory);
         } else {
+            // 0 means DEFAULT_EVENT_LOOP_THREADS
             workerEventLoopGroup = new NioEventLoopGroup(0, workerFactory);
         }
 
         LOG.info("Create Netty Server " + name() + ", buffer_size: " + FIVE_MB_IN_BYTES + ", maxWorkers: " + maxWorkers);
 
         ServerBootstrap bootstrap = new ServerBootstrap()
-                .group(bossEventLoopGroup, workerEventLoopGroup)
+                .group(workerEventLoopGroup, workerEventLoopGroup)
                 .channel(NioServerSocketChannel.class)
                 .childOption(ChannelOption.TCP_NODELAY, true)
                 .childOption(ChannelOption.SO_RCVBUF, FIVE_MB_IN_BYTES)
@@ -156,6 +155,7 @@ class PacemakerServer implements ISaslServer {
         c.close().awaitUninterruptibly();
         allChannels.remove(c);
         authenticated_channels.remove(c);
+        workerEventLoopGroup.shutdownGracefully();
     }
 
     public String name() {

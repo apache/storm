@@ -899,6 +899,15 @@ public class Config extends HashMap<String, Object> {
     public static final String PACEMAKER_MAX_THREADS = "pacemaker.max.threads";
 
     /**
+     * The maximum number of threads that should be used by the Pacemaker client.
+     * When Pacemaker gets loaded it will spawn new threads, up to
+     * this many total, to handle the load.
+     */
+    @isNumber
+    @isPositiveNumber
+    public static final String PACEMAKER_CLIENT_MAX_THREADS = "pacemaker.client.max.threads";
+
+    /**
      * This parameter is used by the storm-deploy project to configure the
      * jvm options for the pacemaker daemon.
      */

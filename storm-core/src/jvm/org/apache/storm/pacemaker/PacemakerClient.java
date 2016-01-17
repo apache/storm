@@ -67,6 +67,8 @@ public class PacemakerClient implements ISaslClient {
 
         String host = (String)config.get(Config.PACEMAKER_HOST);
         int port = (int)config.get(Config.PACEMAKER_PORT);
+        int maxWorkers = (int)config.get(Config.PACEMAKER_CLIENT_MAX_THREADS);
+
         topo_name = (String)config.get(Config.TOPOLOGY_NAME);
         if(topo_name == null) {
             topo_name = "pacemaker-client";
@@ -105,12 +107,15 @@ public class PacemakerClient implements ISaslClient {
         channelRef = new AtomicReference<Channel>(null);
         setupMessaging();
 
-        ThreadFactory bossFactory = new NettyRenameThreadFactory("client-boss");
         ThreadFactory workerFactory = new NettyRenameThreadFactory("client-worker");
 
-        // 0 means DEFAULT_EVENT_LOOP_THREADS
-        EventLoopGroup bossEventLoopGroup = new NioEventLoopGroup(0, bossFactory);
-        EventLoopGroup workerEventLoopGroup = new NioEventLoopGroup(0, workerFactory);
+        EventLoopGroup workerEventLoopGroup;
+        if (maxWorkers > 0) {
+            workerEventLoopGroup = new NioEventLoopGroup(maxWorkers, workerFactory);
+        } else {
+            // 0 means DEFAULT_EVENT_LOOP_THREADS
+            workerEventLoopGroup = new NioEventLoopGroup(0, workerFactory);
+        }
 
         bootstrap = new Bootstrap()
                 .group(workerEventLoopGroup)
