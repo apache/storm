@@ -29,13 +29,13 @@ public class MessageEncoder extends MessageToMessageEncoder {
     protected void encode(ChannelHandlerContext ctx, Object obj, List out) throws Exception {
 
         if (obj instanceof ControlMessage) {
-            out.add(((ControlMessage) obj).buffer(ctx.alloc()));
+            out.add(((ControlMessage) obj).buffer());
 
         } else if (obj instanceof MessageBatch) {
-            out.add(((MessageBatch)obj).buffer(ctx.alloc()));
+            out.add(((MessageBatch)obj).buffer());
 
         } else if (obj instanceof SaslMessageToken) {
-        	out.add(((SaslMessageToken)obj).buffer(ctx.alloc()));
+        	out.add(((SaslMessageToken)obj).buffer());
 
         } else {
             throw new RuntimeException("Unsupported encoding of object of class " + obj.getClass().getName());

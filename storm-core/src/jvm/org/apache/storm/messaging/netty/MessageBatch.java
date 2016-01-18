@@ -77,8 +77,8 @@ class MessageBatch {
     /**
      * create a buffer containing the encoding of this batch
      */
-    ByteBuf buffer(ByteBufAllocator allocator) throws Exception {
-        ByteBufOutputStream bout = new ByteBufOutputStream(allocator.ioBuffer(encoded_length));
+    ByteBuf buffer() throws Exception {
+        ByteBufOutputStream bout = new ByteBufOutputStream(ByteBufAllocator.DEFAULT.ioBuffer(encoded_length));
         
         for (TaskMessage msg : msgs) {
             writeTaskMessage(bout, msg);
@@ -98,7 +98,7 @@ class MessageBatch {
      * Each TaskMessage is encoded as:
      *  task ... short(2)
      *  len ... int(4)
-     *  payload ... byte[]     *  
+     *  payload ... byte[]
      */
     private void writeTaskMessage(ByteBufOutputStream bout, TaskMessage message) throws Exception {
         int payload_len = 0;

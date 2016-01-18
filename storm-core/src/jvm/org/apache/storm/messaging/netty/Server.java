@@ -77,6 +77,8 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
 
         // Configure the server.
         int buffer_size = Utils.getInt(storm_conf.get(Config.STORM_MESSAGING_NETTY_BUFFER_SIZE));
+        int write_buffer_high_water_mark = Utils.getInt(storm_conf.get(Config.STORM_MESSAGING_NETTY_WRITE_BUFFER_HIGH_WATER_MARK), 5242880);
+        int write_buffer_low_water_mark = Utils.getInt(storm_conf.get(Config.STORM_MESSAGING_NETTY_WRITE_BUFFER_LOW_WATER_MARK), 2097152);
         int backlog = Utils.getInt(storm_conf.get(Config.STORM_MESSAGING_NETTY_SOCKET_BACKLOG), 500);
         int maxWorkers = Utils.getInt(storm_conf.get(Config.STORM_MESSAGING_NETTY_SERVER_WORKER_THREADS));
 
@@ -99,8 +101,8 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
                 .childOption(ChannelOption.TCP_NODELAY, true)
                 .childOption(ChannelOption.SO_RCVBUF, buffer_size)
                 .childOption(ChannelOption.SO_KEEPALIVE, true)
-                .childOption(ChannelOption.WRITE_BUFFER_HIGH_WATER_MARK, 32 * 1024)
-                .childOption(ChannelOption.WRITE_BUFFER_LOW_WATER_MARK, 8 * 1024)
+                .childOption(ChannelOption.WRITE_BUFFER_HIGH_WATER_MARK, write_buffer_high_water_mark)
+                .childOption(ChannelOption.WRITE_BUFFER_LOW_WATER_MARK, write_buffer_low_water_mark)
                 .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
                 .childHandler(new StormServerPipelineFactory(this));
 
@@ -221,7 +223,7 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
     }
 
     private boolean connectionEstablished(Channel channel) {
-      return channel != null && channel.isOpen();
+      return channel != null && channel.isActive();
     }
 
     private boolean connectionEstablished(ChannelGroup allChannels) {

@@ -37,7 +37,7 @@ public class MessageDecoder extends ByteToMessageDecoder {
      */
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf buf, List<Object> out) throws Exception {
-        // Make sure that we have received at least a short 
+        // Make sure that we have received at least a short
         long available = buf.readableBytes();
         if (available < 2) {
             //need more data
@@ -68,33 +68,33 @@ public class MessageDecoder extends ByteToMessageDecoder {
                     return;
                 }
             }
-            
+
             //case 2: SaslTokenMessageRequest
-            if(code == SaslMessageToken.IDENTIFIER) {
-            	// Make sure that we have received at least an integer (length) 
+            if (code == SaslMessageToken.IDENTIFIER) {
+                // Make sure that we have received at least an integer (length)
                 if (buf.readableBytes() < 4) {
                     //need more data
                     buf.resetReaderIndex();
                     return;
                 }
-                
+
                 // Read the length field.
                 int length = buf.readInt();
-                if (length<=0) {
+                if (length <= 0) {
                     out.add(new SaslMessageToken(null));
                     return;
                 }
-                
+
                 // Make sure if there's enough bytes in the buffer.
                 if (buf.readableBytes() < length) {
                     // The whole bytes were not received yet - return null.
                     buf.resetReaderIndex();
                     return;
                 }
-                
-                // There's enough bytes in the buffer. Read it.  
+
+                // There's enough bytes in the buffer. Read it.
                 ByteBuf payload = buf.readBytes(length);
-                
+
                 // Successfully decoded a frame.
                 // Return a SaslTokenMessageRequest object
                 out.add(new SaslMessageToken(payload.array()));

@@ -138,6 +138,8 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
         this.scheduler = scheduler;
         this.context = context;
         int bufferSize = Utils.getInt(stormConf.get(Config.STORM_MESSAGING_NETTY_BUFFER_SIZE));
+        int write_buffer_high_water_mark = Utils.getInt(stormConf.get(Config.STORM_MESSAGING_NETTY_WRITE_BUFFER_HIGH_WATER_MARK), 5242880);
+        int write_buffer_low_water_mark = Utils.getInt(stormConf.get(Config.STORM_MESSAGING_NETTY_WRITE_BUFFER_LOW_WATER_MARK), 2097152);
         // if SASL authentication is disabled, saslChannelReady is initialized as true; otherwise false
         saslChannelReady.set(!Utils.getBoolean(stormConf.get(Config.STORM_MESSAGING_NETTY_AUTHENTICATION), false));
         LOG.info("creating Netty Client, connecting to {}:{}, bufferSize: {}", host, port, bufferSize);
@@ -149,25 +151,20 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
         retryPolicy = new StormBoundedExponentialBackoffRetry(minWaitMs, maxWaitMs, maxReconnectionAttempts);
 
         // Initiate connection to remote destination
-        bootstrap = createClientBootstrap(eventLoopGroup, bufferSize, stormConf);
+        bootstrap = new Bootstrap()
+                        .group(eventLoopGroup)
+                        .channel(NioSocketChannel.class)
+                        .option(ChannelOption.TCP_NODELAY, true)
+                        .option(ChannelOption.SO_SNDBUF, bufferSize)
+                        .option(ChannelOption.SO_KEEPALIVE, true)
+                        .option(ChannelOption.WRITE_BUFFER_HIGH_WATER_MARK, write_buffer_high_water_mark)
+                        .option(ChannelOption.WRITE_BUFFER_LOW_WATER_MARK, write_buffer_low_water_mark)
+                        .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
+                        .handler(new StormClientPipelineFactory(this, stormConf));
         dstAddress = new InetSocketAddress(host, port);
         dstAddressPrefixedName = prefixedName(dstAddress);
         scheduleConnect(NO_DELAY_MS);
         batcher = new MessageBuffer(messageBatchSize);
-    }
-
-    private Bootstrap createClientBootstrap(EventLoopGroup eventLoopGroup, int bufferSize, Map stormConf) {
-        Bootstrap bootstrap = new Bootstrap()
-                .group(eventLoopGroup)
-                .channel(NioSocketChannel.class)
-                .option(ChannelOption.TCP_NODELAY, true)
-                .option(ChannelOption.SO_SNDBUF, bufferSize)
-                .option(ChannelOption.SO_KEEPALIVE, true)
-                .option(ChannelOption.WRITE_BUFFER_HIGH_WATER_MARK, 32 * 1024)
-                .option(ChannelOption.WRITE_BUFFER_LOW_WATER_MARK, 8 * 1024)
-                .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
-                .handler(new StormClientPipelineFactory(this, stormConf));
-        return bootstrap;
     }
 
     private String prefixedName(InetSocketAddress dstAddress) {
@@ -288,7 +285,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
         } else {
             // Channel's buffer is full, meaning that we have time to wait other messages to arrive, and create a bigger
             // batch. This yields better throughput.
-            // We can rely on `notifyInterestChanged` to push these messages as soon as there is spece in Netty's buffer
+            // We can rely on `notifyChannelWritabilityChanged` to push these messages as soon as there is space in Netty's buffer
             // because we know `Channel.isWritable` was false after the messages were already in the buffer.
         }
     }
@@ -501,7 +498,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
      * Called by Netty thread on change in channel interest
      * @param channel channel
      */
-    public void notifyInterestChanged(Channel channel) {
+    public void notifyChannelWritabilityChanged(Channel channel) {
         if(channel.isWritable()){
             synchronized (writeLock) {
                 // Channel is writable again, write if there are any messages pending

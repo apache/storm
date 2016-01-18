@@ -18,11 +18,10 @@
 package org.apache.storm.messaging.netty;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
 
 import java.io.IOException;
 
 public interface INettySerializable {
-    ByteBuf buffer(ByteBufAllocator allocator) throws IOException;
+    ByteBuf buffer() throws IOException;
     int encodeLength();
 }

@@ -84,8 +84,8 @@ public class SaslMessageToken implements INettySerializable {
      * 
      * @throws IOException
      */
-    public ByteBuf buffer(ByteBufAllocator allocator) throws IOException {
-        ByteBufOutputStream bout = new ByteBufOutputStream(allocator.ioBuffer(encodeLength()));
+    public ByteBuf buffer() throws IOException {
+        ByteBufOutputStream bout = new ByteBufOutputStream(ByteBufAllocator.DEFAULT.ioBuffer(encodeLength()));
         short identifier = -500;
         int payload_len = 0;
         if (token != null)
@@ -103,14 +103,20 @@ public class SaslMessageToken implements INettySerializable {
     
     public static SaslMessageToken read(byte[] serial) {
         ByteBuf sm_buffer = ByteBufAllocator.DEFAULT.ioBuffer(serial.length);
-        sm_buffer.writeBytes(serial);
-        short identifier = sm_buffer.readShort();
-        int payload_len = sm_buffer.readInt();
-        if(identifier != IDENTIFIER) {
-            return null;
+        try {
+            sm_buffer.writeBytes(serial);
+            short identifier = sm_buffer.readShort();
+            int payload_len = sm_buffer.readInt();
+            if (identifier != IDENTIFIER) {
+                return null;
+            }
+            byte token[] = new byte[payload_len];
+            sm_buffer.readBytes(token, 0, payload_len);
+            return new SaslMessageToken(token);
+        } finally {
+            if (sm_buffer != null) {
+                sm_buffer.release();
+            }
         }
-        byte token[] = new byte[payload_len];
-        sm_buffer.readBytes(token, 0, payload_len);
-        return new SaslMessageToken(token);
     }
 }

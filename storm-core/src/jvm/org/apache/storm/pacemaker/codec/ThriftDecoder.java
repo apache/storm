@@ -32,7 +32,6 @@ public class ThriftDecoder extends ByteToMessageDecoder {
 
     @Override
     protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf buf, List<Object> list) throws Exception {
-
         long available = buf.readableBytes();
         if(available < 2) {
             return;

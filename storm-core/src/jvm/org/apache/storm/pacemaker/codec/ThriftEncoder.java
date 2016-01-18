@@ -44,18 +44,21 @@ public class ThriftEncoder extends MessageToMessageEncoder {
         HBMessageData message_data = new HBMessageData();
         HBMessage m = new HBMessage();
         try {
-            ByteBuf cbuffer = netty_message.buffer(ByteBufAllocator.DEFAULT);
-            if(cbuffer.hasArray()) {
-                message_data.set_message_blob(cbuffer.array());
+            ByteBuf cbuffer = netty_message.buffer();
+            try {
+                if (cbuffer.hasArray()) {
+                    message_data.set_message_blob(cbuffer.array());
+                } else {
+                    byte buff[] = new byte[netty_message.encodeLength()];
+                    cbuffer.readBytes(buff, 0, netty_message.encodeLength());
+                    message_data.set_message_blob(buff);
+                }
+                m.set_type(mType);
+                m.set_data(message_data);
+                return m;
+            } finally {
+                cbuffer.release();
             }
-            else {
-                byte buff[] = new byte[netty_message.encodeLength()];
-                cbuffer.readBytes(buff, 0, netty_message.encodeLength());
-                message_data.set_message_blob(buff);
-            }
-            m.set_type(mType);
-            m.set_data(message_data);
-            return m;
         }
         catch( IOException e) {
             LOG.error("Failed to encode NettySerializable: ", e);

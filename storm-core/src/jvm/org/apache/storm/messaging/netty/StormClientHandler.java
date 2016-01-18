@@ -66,8 +66,8 @@ public class StormClientHandler extends ChannelInboundHandlerAdapter {
     }
 
     @Override
-    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-        client.notifyInterestChanged(ctx.channel());
+    public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
+        client.notifyChannelWritabilityChanged(ctx.channel());
     }
 
     @Override

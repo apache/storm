@@ -73,6 +73,20 @@ public class Config extends HashMap<String, Object> {
     public static final String STORM_MESSAGING_NETTY_BUFFER_SIZE = "storm.messaging.netty.buffer_size";
 
     /**
+     * Netty based messaging: The write buffer high water mark for write buffer
+     */
+    @isInteger
+    @isPositiveNumber
+    public static final String STORM_MESSAGING_NETTY_WRITE_BUFFER_HIGH_WATER_MARK = "storm.messaging.netty.write.buffer.high.water.mark";
+
+    /**
+     * Netty based messaging: The write buffer low water mark for write buffer
+     */
+    @isInteger
+    @isPositiveNumber
+    public static final String STORM_MESSAGING_NETTY_WRITE_BUFFER_LOW_WATER_MARK = "storm.messaging.netty.write.buffer.low.water.mark";
+
+    /**
      * Netty based messaging: Sets the backlog value to specify when the channel binds to a local address
      */
     @isInteger

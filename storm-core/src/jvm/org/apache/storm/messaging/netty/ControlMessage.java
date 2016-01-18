@@ -57,8 +57,8 @@ public enum ControlMessage implements INettySerializable {
      * encode the current Control Message into a channel buffer
      * @throws Exception if failed to write to buffer
      */
-    public ByteBuf buffer(ByteBufAllocator allocator) throws IOException {
-        ByteBufOutputStream bout = new ByteBufOutputStream(allocator.ioBuffer(encodeLength()));
+    public ByteBuf buffer() throws IOException {
+        ByteBufOutputStream bout = new ByteBufOutputStream(ByteBufAllocator.DEFAULT.ioBuffer(encodeLength()));
         write(bout);
         bout.close();
         return bout.buffer();
@@ -69,8 +69,15 @@ public enum ControlMessage implements INettySerializable {
     }
 
     public static ControlMessage read(byte[] serial) {
-        ByteBuf cm_buffer = ByteBufAllocator.DEFAULT.ioBuffer(serial.length);
-        cm_buffer.writeBytes(serial);
-        return mkMessage(cm_buffer.getShort(0));
+        ByteBuf cm_buffer = ByteBufAllocator.DEFAULT.buffer(serial.length);
+        try {
+            cm_buffer.writeBytes(serial);
+            short messageCode = cm_buffer.getShort(0);
+            return mkMessage(messageCode);
+        } finally {
+            if (cm_buffer != null) {
+                cm_buffer.release();
+            }
+        }
     }
 }
