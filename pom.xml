@@ -214,7 +214,7 @@
         <disruptor.version>3.3.2</disruptor.version>
         <jgrapht.version>0.9.0</jgrapht.version>
         <guava.version>16.0.1</guava.version>
-        <netty.version>4.0.31.Final</netty.version>
+        <netty.version>4.0.33.Final</netty.version>
         <log4j-over-slf4j.version>1.6.6</log4j-over-slf4j.version>
         <log4j.version>2.1</log4j.version>
         <slf4j.version>1.7.7</slf4j.version>
