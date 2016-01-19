@@ -56,7 +56,7 @@ public class Context implements IContext {
             // 0 means DEFAULT_EVENT_LOOP_THREADS
             workerEventLoopGroup = new NioEventLoopGroup(0, workerFactory);
         }
-        
+
         clientScheduleService = new HashedWheelTimer(new NettyRenameThreadFactory("client-schedule-service"));
     }
 

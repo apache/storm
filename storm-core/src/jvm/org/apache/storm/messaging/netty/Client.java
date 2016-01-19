@@ -78,6 +78,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
 
     private final Map stormConf;
     private final StormBoundedExponentialBackoffRetry retryPolicy;
+    private final EventLoopGroup eventLoopGroup;
     private final Bootstrap bootstrap;
     private final InetSocketAddress dstAddress;
     protected final String dstAddressPrefixedName;
@@ -129,6 +130,8 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
 
     private final MessageBuffer batcher;
 
+    private final AtomicBoolean inFlush = new AtomicBoolean(false);
+
     private final Object writeLock = new Object();
 
     @SuppressWarnings("rawtypes")
@@ -150,9 +153,10 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
         int maxWaitMs = Utils.getInt(stormConf.get(Config.STORM_MESSAGING_NETTY_MAX_SLEEP_MS));
         retryPolicy = new StormBoundedExponentialBackoffRetry(minWaitMs, maxWaitMs, maxReconnectionAttempts);
 
+        this.eventLoopGroup = eventLoopGroup;
         // Initiate connection to remote destination
         bootstrap = new Bootstrap()
-                        .group(eventLoopGroup)
+                        .group(this.eventLoopGroup)
                         .channel(NioSocketChannel.class)
                         .option(ChannelOption.TCP_NODELAY, true)
                         .option(ChannelOption.SO_SNDBUF, bufferSize)
@@ -273,7 +277,8 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
             }
         }
 
-        if(channel.isWritable()){
+        // as channel.writeAndFlush is expensive, we don't want to call it every time
+        if(channel.isWritable() && !inFlush.get()){
             synchronized (writeLock) {
                 // Netty's internal buffer is not full and we still have message left in the buffer.
                 // We should write the unfilled MessageBatch immediately to reduce latency
@@ -285,7 +290,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
         } else {
             // Channel's buffer is full, meaning that we have time to wait other messages to arrive, and create a bigger
             // batch. This yields better throughput.
-            // We can rely on `notifyChannelWritabilityChanged` to push these messages as soon as there is space in Netty's buffer
+            // We can rely on `notifyChannelFlushabilityChanged` to push these messages as soon as there is space in Netty's buffer
             // because we know `Channel.isWritable` was false after the messages were already in the buffer.
         }
     }
@@ -335,7 +340,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
      *
      * If the write operation fails, then we will close the channel and trigger a reconnect.
      */
-    private void flushMessages(Channel channel, final MessageBatch batch) {
+    private void flushMessages(final Channel channel, final MessageBatch batch) {
         if (null == batch || batch.isEmpty()) {
             return;
         }
@@ -343,23 +348,35 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
         final int numMessages = batch.size();
         LOG.debug("writing {} messages to channel {}", batch.size(), channel.toString());
         pendingMessages.addAndGet(numMessages);
+        inFlush.set(true);
+        // call channel.writeAndFlush in the same eventloop suppose to be more efficient
+        eventLoopGroup.execute(new Runnable() {
+            @Override
+            public void run() {
 
-        ChannelFuture future = channel.writeAndFlush(batch);
-        future.addListener(new ChannelFutureListener() {
-            public void operationComplete(ChannelFuture future) throws Exception {
-                pendingMessages.addAndGet(0 - numMessages);
-                if (future.isSuccess()) {
-                    LOG.debug("sent {} messages to {}", numMessages, dstAddressPrefixedName);
-                    messagesSent.getAndAdd(batch.size());
-                } else {
-                    LOG.error("failed to send {} messages to {}: {}", numMessages, dstAddressPrefixedName,
-                            future.cause());
-                    closeChannelAndReconnect(future.channel());
-                    messagesLost.getAndAdd(numMessages);
-                }
+                ChannelFuture future = channel.writeAndFlush(batch);
+                inFlush.set(false);
+                future.addListener(new ChannelFutureListener() {
+                    public void operationComplete(ChannelFuture future) throws Exception {
+
+                        pendingMessages.addAndGet(0 - numMessages);
+                        if (future.isSuccess()) {
+                            LOG.debug("sent {} messages to {}", numMessages, dstAddressPrefixedName);
+                            messagesSent.getAndAdd(batch.size());
+                        } else {
+                            LOG.error("failed to send {} messages to {}: {}", numMessages, dstAddressPrefixedName,
+                                    future.cause());
+                            closeChannelAndReconnect(future.channel());
+                            messagesLost.getAndAdd(numMessages);
+                        }
+                    }
+                });
+
+                // need to call it so we can flush
+                notifyChannelFlushabilityChanged(channel);
             }
-
         });
+
     }
 
     /**
@@ -495,13 +512,13 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
     }
 
     /**
-     * Called by Netty thread on change in channel interest
+     * Called by Netty thread on change in channel writability or after channel.writeAndFlush call is done
      * @param channel channel
      */
-    public void notifyChannelWritabilityChanged(Channel channel) {
+    public void notifyChannelFlushabilityChanged(Channel channel) {
         if(channel.isWritable()){
             synchronized (writeLock) {
-                // Channel is writable again, write if there are any messages pending
+                // Channel is flushable again, write if there are any messages pending
                 MessageBatch pending = batcher.drain();
                 flushMessages(channel, pending);
             }
@@ -529,7 +546,6 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
             long nextDelayMs = retryPolicy.getSleepTimeMs(connectionAttempts.get(), 0);
             scheduleConnect(nextDelayMs);
         }
-
 
         @Override
         public void run(Timeout timeout) throws Exception {

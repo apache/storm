@@ -17,10 +17,8 @@
  */
 package org.apache.storm.messaging.netty;
 
-import com.google.common.collect.ImmutableList;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import org.apache.storm.messaging.TaskMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,10 +42,8 @@ public class StormServerHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
-      TaskMessage taskMessage = (TaskMessage) msg;
-
       try {
-        server.received(ImmutableList.of(taskMessage), ctx.channel().remoteAddress().toString(), ctx.channel());
+        server.received(msg, ctx.channel().remoteAddress().toString(), ctx.channel());
       } catch (InterruptedException e1) {
         LOG.info("failed to enqueue a request message", e1);
         failure_count.incrementAndGet();

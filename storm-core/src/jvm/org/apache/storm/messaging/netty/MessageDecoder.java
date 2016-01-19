@@ -21,11 +21,15 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import org.apache.storm.messaging.TaskMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class MessageDecoder extends ByteToMessageDecoder {
 
+    private static final Logger LOG = LoggerFactory.getLogger(MessageDecoder.class);
 
     /*
      * Each ControlMessage is encoded as:
@@ -44,6 +48,7 @@ public class MessageDecoder extends ByteToMessageDecoder {
             return;
         }
 
+        List<Object> ret = new ArrayList<>();
         // Use while loop, try to decode as more messages as possible in single call
         while (available >= 2) {
 
@@ -131,11 +136,14 @@ public class MessageDecoder extends ByteToMessageDecoder {
             // There's enough bytes in the buffer. Read it.
             ByteBuf payload = buf.readBytes(length);
 
-
             // Successfully decoded a frame.
             // Return a TaskMessage object
-            out.add(new TaskMessage(code, payload.array()));
+            ret.add(new TaskMessage(code, payload.array()));
+        }
+
+        LOG.debug("Decoded {} messages", ret.size());
+        if (ret.size() > 0) {
+            out.add(ret);
         }
     }
-
 }
