@@ -564,7 +564,7 @@
                             :else 0)
         nimbus-time (if (or (not last-nimbus-time)
                         (not= last-reported-time reported-time))
-                      (current-time-secs)
+                      (Utils/currentTimeSecs)
                       last-nimbus-time
                       )]
       {:is-timed-out (and
@@ -922,7 +922,7 @@
 
         topology->executor->node+port (merge (into {} (for [id assigned-topology-ids] {id nil})) topology->executor->node+port)
         new-assigned-worker->resources (convert-assignments-to-worker->resources new-scheduler-assignments)
-        now-secs (current-time-secs)
+        now-secs (Utils/currentTimeSecs)
 
         basic-supervisor-details-map (basic-supervisor-details-map storm-cluster-state)
 
@@ -990,7 +990,7 @@
     (.activate-storm! storm-cluster-state
                       storm-id
                       (StormBase. storm-name
-                                  (current-time-secs)
+                                  (Utils/currentTimeSecs)
                                   {:type topology-initial-status}
                                   (storm-conf TOPOLOGY-WORKERS)
                                   num-executors
@@ -1148,7 +1148,7 @@
 
 (defn clean-inbox [dir-location seconds]
   "Deletes jar files in dir older than seconds."
-  (let [now (current-time-secs)
+  (let [now (Utils/currentTimeSecs)
         pred #(and (.isFile %) (file-older-than? now seconds %))
         files (filter pred (file-seq (File. dir-location)))]
     (doseq [f files]
@@ -1161,7 +1161,7 @@
   "Deletes topologies from history older than minutes."
   [mins nimbus]
   (locking (:topology-history-lock nimbus)
-    (let [cutoff-age (- (current-time-secs) (* mins 60))
+    (let [cutoff-age (- (Utils/currentTimeSecs) (* mins 60))
           topo-history-state (:topo-history-state nimbus)
           curr-history (vec (ls-topo-hist topo-history-state))
           new-history (vec (filter (fn [line]
@@ -1258,7 +1258,7 @@
           users (get-topo-logs-users topology-conf)
           groups (get-topo-logs-groups topology-conf)
           curr-history (vec (ls-topo-hist topo-history-state))
-          new-history (conj curr-history {:topoid storm-id :timestamp (current-time-secs)
+          new-history (conj curr-history {:topoid storm-id :timestamp (Utils/currentTimeSecs)
                                           :users users :groups groups})]
       (ls-topo-hist! topo-history-state new-history))))
 
@@ -1404,7 +1404,7 @@
       (NimbusSummary.
         (.getHost (:nimbus-host-port-info nimbus))
         (.getPort (:nimbus-host-port-info nimbus))
-        (current-time-secs)
+        (Utils/currentTimeSecs)
         false ;is-leader
         STORM-VERSION))
 
@@ -1478,7 +1478,7 @@
                        topo-conf
                        topology))
           (swap! (:submitted-count nimbus) inc)
-          (let [storm-id (str storm-name "-" @(:submitted-count nimbus) "-" (current-time-secs))
+          (let [storm-id (str storm-name "-" @(:submitted-count nimbus) "-" (Utils/currentTimeSecs))
                 credentials (.get_creds submitOptions)
                 credentials (when credentials (.get_creds credentials))
                 topo-conf (from-json serializedConf)

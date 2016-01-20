@@ -175,8 +175,8 @@
           assignment2 (Assignment. "/aaa" {} {[2] ["2" 2002]} {} {})
           nimbusInfo1 (NimbusInfo. "nimbus1" 6667 false)
           nimbusInfo2 (NimbusInfo. "nimbus2" 6667 false)
-          nimbusSummary1 (NimbusSummary. "nimbus1" 6667 (current-time-secs) false "v1")
-          nimbusSummary2 (NimbusSummary. "nimbus2" 6667 (current-time-secs) false "v2")
+          nimbusSummary1 (NimbusSummary. "nimbus1" 6667 (Utils/currentTimeSecs) false "v1")
+          nimbusSummary2 (NimbusSummary. "nimbus2" 6667 (Utils/currentTimeSecs) false "v2")
           base1 (StormBase. "/tmp/storm1" 1 {:type :active} 2 {} "" nil nil {})
           base2 (StormBase. "/tmp/storm2" 2 {:type :active} 2 {} "" nil nil {})]
       (is (= [] (.assignments state nil)))

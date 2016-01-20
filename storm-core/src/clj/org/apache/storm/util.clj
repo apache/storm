@@ -239,17 +239,17 @@
 ;(defn uuid []
 ;  (str (UUID/randomUUID)))
 
-(defn current-time-secs
-  []
-  (Time/currentTimeSecs))
+;(defn current-time-secs
+;  []
+;  (Time/currentTimeSecs))
 
-(defn current-time-millis
-  []
-  (Time/currentTimeMillis))
+;(defn current-time-millis
+;  []
+;  (Time/currentTimeMillis))
 
-(defn secs-to-millis-long
-  [secs]
-  (long (* (long 1000) secs)))
+;(defn secs-to-millis-long
+;  [secs]
+;  (long (* (long 1000) secs)))
 
 (defn clojurify-structure
   [s]
@@ -274,34 +274,34 @@
          (.release lock#)
          (.close rf#)))))
 
-(defn tokenize-path
-  [^String path]
-  (let [toks (.split path "/")]
-    (vec (filter (complement empty?) toks))))
+;(defn tokenize-path
+;  [^String path]
+;  (let [toks (.split path "/")]
+;    (vec (filter (complement empty?) toks))))
 
-(defn assoc-conj
-  [m k v]
-  (merge-with concat m {k [v]}))
+;(defn assoc-conj
+;  [m k v]
+;  (merge-with concat m {k [v]}))
 
 ;; returns [ones in first set not in second, ones in second set not in first]
-(defn set-delta
-  [old curr]
-  (let [s1 (set old)
-        s2 (set curr)]
-    [(set/difference s1 s2) (set/difference s2 s1)]))
+;(defn set-delta
+;  [old curr]
+;  (let [s1 (set old)
+;        s2 (set curr)]
+;    [(set/difference s1 s2) (set/difference s2 s1)]))
 
-(defn parent-path
-  [path]
-  (let [toks (tokenize-path path)]
-    (str "/" (str/join "/" (butlast toks)))))
+;(defn parent-path
+;  [path]
+;  (let [toks (Utils/tokenizePath path)]
+;    (str "/" (str/join "/" (butlast toks)))))
 
-(defn toks->path
-  [toks]
-  (str "/" (str/join "/" toks)))
+;(defn toks->path
+;  [toks]
+;  (str "/" (str/join "/" toks)))
 
-(defn normalize-path
-  [^String path]
-  (toks->path (tokenize-path path)))
+;(defn normalize-path
+;  [^String path]
+;  (Utils/toksToPath (Utils/tokenizePath path)))
 
 (defn map-val
   [afn amap]
@@ -327,8 +327,8 @@
 
 (defn full-path
   [parent name]
-  (let [toks (tokenize-path parent)]
-    (toks->path (conj toks name))))
+  (let [toks (Utils/tokenizePath parent)]
+    (Utils/toksToPath (conj toks name))))
 
 (def not-nil? (complement nil?))
 
@@ -666,7 +666,7 @@
 
 (defn time-delta
   [time-secs]
-  (- (current-time-secs) time-secs))
+  (- (Utils/currentTimeSecs) time-secs))
 
 (defn time-delta-ms
   [time-ms]
@@ -831,7 +831,7 @@
   (class obj))
 
 (defn uptime-computer []
-  (let [start-time (current-time-secs)]
+  (let [start-time (Utils/currentTimeSecs)]
     (fn [] (time-delta start-time))))
 
 (defn stringify-error [error]

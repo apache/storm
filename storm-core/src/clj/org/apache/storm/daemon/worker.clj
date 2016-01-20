@@ -69,7 +69,7 @@
         zk-hb {:storm-id (:storm-id worker)
                :executor-stats stats
                :uptime ((:uptime worker))
-               :time-secs (current-time-secs)
+               :time-secs (Utils/currentTimeSecs)
                }]
     ;; do the zookeeper heartbeat
     (.worker-heartbeat! (:storm-cluster-state worker) (:storm-id worker) (:assignment-id worker) (:port worker) zk-hb)
@@ -79,7 +79,7 @@
   (let [conf (:conf worker)
         state (worker-state conf (:worker-id worker))]
     ;; do the local-file-system heartbeat.
-    (ls-worker-heartbeat! state (current-time-secs) (:storm-id worker) (:executors worker) (:port worker))
+    (ls-worker-heartbeat! state (Utils/currentTimeSecs) (:storm-id worker) (:executors worker) (:port worker))
     (.cleanup state 60) ; this is just in case supervisor is down so that disk doesn't fill up.
                          ; it shouldn't take supervisor 120 seconds between listing dir and reading it
 

@@ -188,7 +188,7 @@
   "Return a sorted set of java.io.Files that were written by workers that are
   now active"
   [conf root-dir]
-  (let [alive-ids (get-alive-ids conf (current-time-secs))
+  (let [alive-ids (get-alive-ids conf (Utils/currentTimeSecs))
         log-dirs (get-all-worker-dirs root-dir)
         id->dir (identify-worker-log-dirs log-dirs)]
     (apply sorted-set
@@ -232,7 +232,7 @@
 (defn cleanup-fn!
   "Delete old log dirs for which the workers are no longer alive"
   [log-root-dir]
-  (let [now-secs (current-time-secs)
+  (let [now-secs (Utils/currentTimeSecs)
         old-log-dirs (select-dirs-for-cleanup *STORM-CONF*
                                               (* now-secs 1000)
                                               log-root-dir)

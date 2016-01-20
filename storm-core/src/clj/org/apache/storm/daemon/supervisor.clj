@@ -198,7 +198,7 @@
         (when (and
                (not hb)
                (<
-                (- (current-time-secs) start-time)
+                (- (Utils/currentTimeSecs) start-time)
                 (conf SUPERVISOR-WORKER-START-TIMEOUT-SECS)
                 ))
           (log-message id " still hasn't started")
@@ -210,7 +210,7 @@
       )))
 
 (defn- wait-for-workers-launch [conf ids]
-  (let [start-time (current-time-secs)]
+  (let [start-time (Utils/currentTimeSecs)]
     (doseq [id ids]
       (wait-for-worker-launch conf id start-time))
     ))
@@ -392,7 +392,7 @@
         ^LocalState local-state (:local-state supervisor)
         storm-cluster-state (:storm-cluster-state supervisor)
         assigned-executors (defaulted (ls-local-assignments local-state) {})
-        now (current-time-secs)
+        now (Utils/currentTimeSecs)
         allocated (read-allocated-workers supervisor assigned-executors now)
         keepers (filter-val
                  (fn [[state _]] (= state :valid))
@@ -442,7 +442,7 @@
   (let [conf (:conf supervisor)
         ^LocalState local-state (:local-state supervisor)
         assigned-executors (defaulted (ls-local-assignments local-state) {})
-        now (current-time-secs)
+        now (Utils/currentTimeSecs)
         allocated (read-allocated-workers supervisor assigned-executors now)
         disallowed (keys (filter-val
                                   (fn [[state _]] (= state :disallowed))
@@ -775,7 +775,7 @@
         heartbeat-fn (fn [] (.supervisor-heartbeat!
                                (:storm-cluster-state supervisor)
                                (:supervisor-id supervisor)
-                               (->SupervisorInfo (current-time-secs)
+                               (->SupervisorInfo (Utils/currentTimeSecs)
                                                  (:my-hostname supervisor)
                                                  (:assignment-id supervisor)
                                                  (keys @(:curr-assignment supervisor))

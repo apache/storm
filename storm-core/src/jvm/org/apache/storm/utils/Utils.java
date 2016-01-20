@@ -29,7 +29,6 @@ import org.apache.storm.localizer.Localizer;
 import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.storm.serialization.DefaultSerializationDelegate;
 import org.apache.storm.serialization.SerializationDelegate;
-import clojure.lang.IFn;
 import clojure.lang.RT;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
@@ -622,13 +621,13 @@ public class Utils {
     }
 
 
-    public static synchronized IFn loadClojureFn(String namespace, String name) {
+    public static synchronized clojure.lang.IFn loadClojureFn(String namespace, String name) {
         try {
             clojure.lang.Compiler.eval(RT.readString("(require '" + namespace + ")"));
         } catch (Exception e) {
             //if playing from the repl and defining functions, file won't exist
         }
-        return (IFn) RT.var(namespace, name).deref();
+        return (clojure.lang.IFn) RT.var(namespace, name).deref();
     }
 
     public static boolean isSystemId(String id) {
@@ -1516,8 +1515,8 @@ public class Utils {
         return Time.currentTimeMillis();
     }
 
-    public static long secsToMillisLong(int secs) {
-        return 1000*secs;
+    public static long secsToMillisLong(double secs) {
+        return (long) (1000 * secs);
     }
 
     public static Vector<String> tokenizePath (String path) {
@@ -1535,26 +1534,32 @@ public class Utils {
     }
 
     public static String parentPath(String path) {
-        Vector<String> tokens = tokenizePath(path);
-        String output = "";
-        int length = tokens.size();
-        if (length < 1) {
-            return "";
+        if (path == null) {
+            return "/";
         }
+        Vector<String> tokens = tokenizePath(path);
+        int length = tokens.size();
+        if (length == 0) {
+            return "/";
+        }
+        String output = "";
         for (int i = 0; i < length - 1; i++) {  //length - 1 to mimic "butlast" from the old clojure code
-            output = output + tokens.get(i);
+            output = output + "/" + tokens.get(i);
         }
         return output;
     }
 
     public static String toksToPath (Vector<String> toks) {
-        String output = "";
-        int length = toks.size();
-        if (length < 1) {
-            return "";
+        if (toks == null) {
+            return "/";
         }
+        int length = toks.size();
+        if (length == 0) {
+            return "/";
+        }
+        String output = "";
         for (int i = 0; i < length; i++) {
-            output = output + toks.get(i);
+            output = output + "/" + toks.get(i);
         }
         return output;
     }
@@ -1562,7 +1567,7 @@ public class Utils {
         return toksToPath(tokenizePath(path));
     }
 
-    public static Map mapVal (AFn aFn, Map amap) {
+    public static Map mapVal (IFn aFn, Map amap) {
         Map newMap = new HashMap();
         for (Object key: amap.keySet()) {
             Object value = amap.get(key);
@@ -1594,7 +1599,7 @@ public class Utils {
         return newMap;
     }
 
-    public static Map mapKey (AFn aFn, Map amap) {
+    public static Map mapKey (IFn aFn, Map amap) {
         Map newMap = new HashMap();
         for (Object key: amap.keySet()) {
             Object value = amap.get(key);
@@ -1619,9 +1624,16 @@ public class Utils {
         outputVector.add(notPass);
         return outputVector;
     }
-//    (defn separate
-//    [pred aseq]
-//            [(filter pred aseq) (filter (complement pred) aseq)])
+
+//    (defn full-path
+//    [parent name]
+//            (let [toks (Utils/tokenizePath parent)]
+//            (toks->path (conj toks name))))
+
+//    public static String fullPath (String parent, String name) {
+//        Vector<String> toks = tokenizePath(parent);
+//
+//    }
 
 }
 

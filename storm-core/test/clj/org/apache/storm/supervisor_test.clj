@@ -230,7 +230,7 @@
 (defn check-heartbeat [cluster supervisor-id within-secs]
   (let [hb (get-heartbeat cluster supervisor-id)
         time-secs (:time-secs hb)
-        now (current-time-secs)
+        now (Utils/currentTimeSecs)
         delta (- now time-secs)]
     (is (>= delta 0))
     (is (<= delta within-secs))

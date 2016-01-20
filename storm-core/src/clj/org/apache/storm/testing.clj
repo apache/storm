@@ -22,7 +22,8 @@
              [worker :as worker]
              [executor :as executor]])
   (:require [org.apache.storm [process-simulator :as psim]])
-  (:import [org.apache.commons.io FileUtils])
+  (:import [org.apache.commons.io FileUtils]
+           [org.apache.storm.utils IFn])
   (:import [java.io File])
   (:import [java.util HashMap ArrayList])
   (:import [java.util.concurrent.atomic AtomicInteger])
@@ -523,12 +524,13 @@
         storm-name (or topology-name (str "topologytest-" (Utils/uuid)))
         state (:storm-cluster-state cluster-map)
         spouts (.get_spouts topology)
-        replacements (map-val (fn [v]
+        replacements (Utils/mapVal
+                       (reify IFn (eval [this v]
                                 (FixedTupleSpout.
                                   (for [tup v]
                                     (if (map? tup)
                                       (FixedTuple. (:stream tup) (:values tup))
-                                      tup))))
+                                      tup)))))
                               mock-sources)]
     (doseq [[id spout] replacements]
       (let [spout-spec (get spouts id)]

@@ -16,7 +16,8 @@
 (ns org.apache.storm.converter
   (:import [org.apache.storm.generated SupervisorInfo NodeInfo Assignment WorkerResources
             StormBase TopologyStatus ClusterWorkerHeartbeat ExecutorInfo ErrorInfo Credentials RebalanceOptions KillOptions
-            TopologyActionOptions DebugOptions ProfileRequest])
+            TopologyActionOptions DebugOptions ProfileRequest]
+           [org.apache.storm.utils Utils IFn])
   (:use [org.apache.storm util stats log])
   (:require [org.apache.storm.daemon [common :as common]]))
 
@@ -71,15 +72,26 @@
                                                           (:worker->resources assignment)))))
     thrift-assignment))
 
+;(defn clojurify-executor->node_port [executor->node_port]
+;  (into {}
+;    (map-val
+;      (fn [nodeInfo]
+;        (concat [(.get_node nodeInfo)] (.get_port nodeInfo))) ;nodeInfo should be converted to [node,port1,port2..]
+;      (map-key
+;        (fn [list-of-executors]
+;          (into [] list-of-executors)) ; list of executors must be coverted to clojure vector to ensure it is sortable.
+;        executor->node_port))))
 (defn clojurify-executor->node_port [executor->node_port]
   (into {}
-    (map-val
-      (fn [nodeInfo]
-        (concat [(.get_node nodeInfo)] (.get_port nodeInfo))) ;nodeInfo should be converted to [node,port1,port2..]
+    (Utils/mapVal
+      (reify IFn (eval [this nodeInfo]
+        (concat [(.get_node nodeInfo)] (.get_port nodeInfo)))) ;nodeInfo should be converted to [node,port1,port2..]
       (map-key
         (fn [list-of-executors]
           (into [] list-of-executors)) ; list of executors must be coverted to clojure vector to ensure it is sortable.
         executor->node_port))))
+
+
 
 (defn clojurify-worker->resources [worker->resources]
   "convert worker info to be [node, port]

@@ -41,7 +41,7 @@
                          (while @active
                            (try
                              (let [[time-millis _ _ :as elem] (locking lock (.peek queue))]
-                               (if (and elem (>= (current-time-millis) time-millis))
+                               (if (and elem (>= (Utils/currentTimeMillis) time-millis))
                                  ;; It is imperative to not run the function
                                  ;; inside the timer lock. Otherwise, it is
                                  ;; possible to deadlock if the fn deals with
@@ -57,7 +57,7 @@
                                    ;; an upper bound, e.g. 1000 millis, to the
                                    ;; sleeping time, to limit the response time
                                    ;; for detecting any new event within 1 secs.
-                                   (Time/sleep (min 1000 (- time-millis (current-time-millis))))
+                                   (Time/sleep (min 1000 (- time-millis (Utils/currentTimeMillis))))
                                    ;; Otherwise poll to see if any new event
                                    ;; was scheduled. This is, in essence, the
                                    ;; response time for detecting any new event
@@ -92,7 +92,7 @@
   (when check-active (check-active! timer))
   (let [id (Utils/uuid)
         ^PriorityQueue queue (:queue timer)
-        end-time-ms (+ (current-time-millis) (secs-to-millis-long delay-secs))
+        end-time-ms (+ (Utils/currentTimeMillis) (Utils/secsToMillisLong delay-secs))
         end-time-ms (if (< 0 jitter-ms) (+ (.nextInt (:random timer) jitter-ms) end-time-ms) end-time-ms)]
     (locking (:lock timer)
       (.add queue [end-time-ms afn id]))))
