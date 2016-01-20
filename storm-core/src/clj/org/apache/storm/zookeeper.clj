@@ -245,7 +245,7 @@
 (defn leader-latch-listener-impl
   "Leader latch listener that will be invoked when we either gain or lose leadership"
   [conf zk leader-latch]
-  (let [hostname (.getCanonicalHostName (InetAddress/getLocalHost))]
+  (let [hostname (Utils/localHostname)];(.getCanonicalHostName (InetAddress/getLocalHost))]
     (reify LeaderLatchListener
       (^void isLeader[this]
         (log-message (str hostname " gained leadership")))

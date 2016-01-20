@@ -55,7 +55,7 @@
 
 (defn local-temp-path
   []
-  (str (System/getProperty "java.io.tmpdir") (if-not on-windows? "/") (uuid)))
+  (str (System/getProperty "java.io.tmpdir") (if-not on-windows? "/") (Utils/uuid)))
 
 (defn delete-all
   [paths]
@@ -497,7 +497,7 @@
         capturer (TupleCaptureBolt.)]
     (.set_bolts topology
                 (assoc (clojurify-structure bolts)
-                  (uuid)
+                  (Utils/uuid)
                   (Bolt.
                     (serialize-component-object capturer)
                     (mk-plain-component-common (into {} (for [[id direct?] all-streams]
@@ -520,7 +520,7 @@
   ;; TODO: the idea of mocking for transactional topologies should be done an
   ;; abstraction level above... should have a complete-transactional-topology for this
   (let [{topology :topology capturer :capturer} (capture-topology topology)
-        storm-name (or topology-name (str "topologytest-" (uuid)))
+        storm-name (or topology-name (str "topologytest-" (Utils/uuid)))
         state (:storm-cluster-state cluster-map)
         spouts (.get_spouts topology)
         replacements (map-val (fn [v]
@@ -614,7 +614,7 @@
 
 (defmacro with-tracked-cluster
   [[cluster-sym & cluster-args] & body]
-  `(let [id# (uuid)]
+  `(let [id# (Utils/uuid)]
      (RegisteredGlobalState/setState
        id#
        (doto (ConcurrentHashMap.)

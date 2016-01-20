@@ -216,7 +216,7 @@
     ))
 
 (defn generate-supervisor-id []
-  (uuid))
+  (Utils/uuid))
 
 (defnk worker-launcher [conf user args :environment {} :log-prefix nil :exit-code-callback nil :directory nil]
   (let [_ (when (clojure.string/blank? user)
@@ -323,7 +323,7 @@
    :local-state (supervisor-state conf)
    :supervisor-id (.getSupervisorId isupervisor)
    :assignment-id (.getAssignmentId isupervisor)
-   :my-hostname (hostname conf)
+   :my-hostname (Utils/hostname conf)
    :curr-assignment (atom nil) ;; used for reporting used ports when heartbeating
    :heartbeat-timer (mk-timer :kill-fn (fn [t]
                                (log-error t "Error when processing event")
@@ -402,7 +402,7 @@
         new-worker-ids (into
                         {}
                         (for [port (keys reassign-executors)]
-                          [port (uuid)]))]
+                          [port (Utils/uuid)]))]
     ;; 1. to kill are those in allocated that are dead or disallowed
     ;; 2. kill the ones that should be dead
     ;;     - read pids, kill -9 and individually remove file
@@ -922,7 +922,7 @@
 (defmethod download-storm-code
   :distributed [conf storm-id master-code-dir localizer]
   ;; Downloading to permanent location is atomic
-  (let [tmproot (str (supervisor-tmp-dir conf) Utils/filePathSeparator (uuid))
+  (let [tmproot (str (supervisor-tmp-dir conf) Utils/filePathSeparator (Utils/uuid))
         stormroot (supervisor-stormdist-root conf storm-id)
         blobstore (Utils/getClientBlobStoreForSupervisor conf)]
     (FileUtils/forceMkdir (File. tmproot))
@@ -1138,7 +1138,7 @@
 
 (defmethod download-storm-code
   :local [conf storm-id master-code-dir localizer]
-  (let [tmproot (str (supervisor-tmp-dir conf) Utils/filePathSeparator (uuid))
+  (let [tmproot (str (supervisor-tmp-dir conf) Utils/filePathSeparator (Utils/uuid))
         stormroot (supervisor-stormdist-root conf storm-id)
         blob-store (Utils/getNimbusBlobStore conf master-code-dir nil)]
     (try
@@ -1166,7 +1166,7 @@
 (defmethod launch-worker
     :local [supervisor storm-id port worker-id mem-onheap]
     (let [conf (:conf supervisor)
-          pid (uuid)
+          pid (Utils/uuid)
           worker (worker/mk-worker conf
                                    (:shared-context supervisor)
                                    storm-id

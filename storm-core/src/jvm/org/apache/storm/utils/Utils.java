@@ -77,6 +77,7 @@ import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -105,6 +106,30 @@ import java.util.zip.ZipFile;
 import java.util.Vector;
 
 public class Utils {
+    // A singleton instance allows us to mock delegated static methods in our
+    // tests by subclassing.
+    private static final Utils UTILS_INSTANCE = new Utils();
+    private static Utils _instance = UTILS_INSTANCE;
+
+    /**
+     * Provide an instance of this class for delegates to use.  To mock out
+     * delegated methods, provide an instance of a subclass that overrides the
+     * implementation of the delegated method.
+     * @param u a Utils instance
+     */
+    public static void setInstance(Utils u) {
+        _instance = u;
+    }
+
+    /**
+     * Resets the singleton instance to the default. This is helpful to reset
+     * the class to its original functionality when mocking is no longer
+     * desired.
+     */
+    public static void resetInstance() {
+        _instance = UTILS_INSTANCE;
+    }
+
     private static final Logger LOG = LoggerFactory.getLogger(Utils.class);
     public static final String DEFAULT_STREAM_ID = "default";
     public static final String DEFAULT_BLOB_VERSION_SUFFIX = ".version";
@@ -1443,26 +1468,18 @@ public class Utils {
         clojurify-structure  because it wouldn't make sense without clojure
      */
 
-    //Is this the correct translation?
-    public static boolean isExceptionCause(Class klass, Throwable t) {
-        if (klass == null || t == null)
-            return false;
-        Throwable cause = t;
-        do {
-            if (cause.getClass().isInstance(klass)) {
-                return true;
-            }
-            cause = t.getCause();
-        } while (cause != null);
-        return false;
+
+    public static String localHostname () throws UnknownHostException {
+        return _instance.localHostnameImpl();
     }
 
-    public static String localHostname () throws java.net.UnknownHostException {
+    protected String localHostnameImpl () throws UnknownHostException {
         return InetAddress.getLocalHost().getCanonicalHostName();
     }
 
-    static String memoizedLocalHostnameString;
-    public static String memoizedLocalHostname () throws java.net.UnknownHostException {
+    private static String memoizedLocalHostnameString = null;
+
+    public static String memoizedLocalHostname () throws UnknownHostException {
         if (memoizedLocalHostnameString == null) {
             memoizedLocalHostnameString = localHostname();
         }
@@ -1473,9 +1490,15 @@ public class Utils {
         checks conf for STORM_LOCAL_HOSTNAME.
         when unconfigured, falls back to (memoized) guess by `local-hostname`.
     */
-    public static String hostname (Map<String, Object> conf) throws java.net.UnknownHostException {
+    public static String hostname (Map<String, Object> conf) throws UnknownHostException  {
+        if (conf == null) {
+            return memoizedLocalHostname();
+        }
         Object hostnameString = conf.get(Config.STORM_LOCAL_HOSTNAME);
-        if (hostnameString == null | hostnameString.equals("")) {
+        if (hostnameString == null ) {
+            return memoizedLocalHostname();
+        }
+        if (hostnameString.equals("")) {
             return memoizedLocalHostname();
         }
         return hostnameString.toString();
@@ -1581,10 +1604,24 @@ public class Utils {
         return newMap;
     }
 
-    public static
-    (defn separate
-    [pred aseq]
-            [(filter pred aseq) (filter (complement pred) aseq)])
+    public static Vector<Collection> separate (IPredicate pred, Collection aseq) {
+        Vector<Collection> outputVector = new Vector<Collection>();
+        Collection pass = new HashSet();
+        Collection notPass = new HashSet();
+        for (Object obj: aseq) {
+            if (pred.test(obj)) {
+                pass.add(obj);
+            } else {
+                notPass.add(obj);
+            }
+        }
+        outputVector.add(pass);
+        outputVector.add(notPass);
+        return outputVector;
+    }
+//    (defn separate
+//    [pred aseq]
+//            [(filter pred aseq) (filter (complement pred) aseq)])
 
 }
 

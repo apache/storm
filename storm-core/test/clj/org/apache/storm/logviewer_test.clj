@@ -21,7 +21,8 @@
   (:use [clojure test])
   (:use [conjure core])
   (:use [org.apache.storm.ui helpers])
-  (:import [org.apache.storm.daemon DirectoryCleaner])
+  (:import [org.apache.storm.daemon DirectoryCleaner]
+           [org.apache.storm.utils Utils])
   (:import [java.nio.file Files Path DirectoryStream])
   (:import [java.nio.file Files])
   (:import [java.nio.file.attribute FileAttribute])
@@ -360,10 +361,10 @@
         ;; match.
         exp-offset-fn #(- (/ logviewer/default-bytes-per-page 2) %)]
 
-    (stubbing [local-hostname expected-host
-               logviewer/logviewer-port expected-port]
-
+    ;(stubbing [local-hostname expected-host
+    (stubbing [logviewer/logviewer-port expected-port]
       (testing "Logviewer link centers the match in the page"
+        (Utils/setInstance (proxy [Utils] [] (localHostnameImpl [] expected-host)))
         (let [expected-fname "foobar.log"]
           (is (= (str "http://"
                    expected-host
@@ -661,7 +662,8 @@
                   (logviewer/substring-search file
                     pattern
                     :num-matches nil
-                    :start-byte-offset nil)))))))))
+                    :start-byte-offset nil)))))))
+    (Utils/resetInstance)))
 
 (deftest test-find-n-matches
   (testing "find-n-matches looks through logs properly"

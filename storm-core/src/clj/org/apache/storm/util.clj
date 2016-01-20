@@ -178,7 +178,7 @@
      ~@body
      false
      (catch Throwable t#
-       (exception-cause? ~klass t#))))
+       (Utils/exceptionCauseIsInstanceOf ~klass t#))))
 
 (defmacro thrown-cause-with-msg?
   [klass re & body]
@@ -203,7 +203,7 @@
         [code guards] (split-with checker body)
         error-local (gensym "t")
         guards (forcat [[_ klass local & guard-body] guards]
-                       `((exception-cause? ~klass ~error-local)
+                       `((Utils/exceptionCauseIsInstanceOf ~klass ~error-local)
                          (let [~local ~error-local]
                            ~@guard-body
                            )))]
@@ -213,17 +213,17 @@
                true (throw ~error-local)
                )))))
 
-(defn local-hostname
-  []
-  (.getCanonicalHostName (InetAddress/getLocalHost)))
-
-(def memoized-local-hostname (memoize local-hostname))
+;(defn local-hostname
+;  []
+;  (.getCanonicalHostName (InetAddress/getLocalHost)))
+;
+;(def memoized-local-hostname (memoize local-hostname))
 
 ;; checks conf for STORM_LOCAL_HOSTNAME.
 ;; when unconfigured, falls back to (memoized) guess by `local-hostname`.
-(defn hostname
-  [conf]
-  (conf Config/STORM_LOCAL_HOSTNAME (memoized-local-hostname)))
+;(defn hostname
+;  [conf]
+;  (conf Config/STORM_LOCAL_HOSTNAME (memoized-local-hostname)))
 
 (letfn [(try-port [port]
                   (with-open [socket (java.net.ServerSocket. port)]
@@ -236,8 +236,8 @@
        (catch java.io.IOException e
          (available-port))))))
 
-(defn uuid []
-  (str (UUID/randomUUID)))
+;(defn uuid []
+;  (str (UUID/randomUUID)))
 
 (defn current-time-secs
   []
