@@ -38,7 +38,7 @@
   (:import [org.apache.storm.scheduler INimbus SupervisorDetails WorkerSlot TopologyDetails
             Cluster Topologies SchedulerAssignment SchedulerAssignmentImpl DefaultScheduler ExecutorDetails])
   (:import [org.apache.storm.nimbus NimbusInfo])
-  (:import [org.apache.storm.utils TimeCacheMap TimeCacheMap$ExpiredCallback Utils TupleUtils ThriftTopologyUtils
+  (:import [org.apache.storm.utils Time TimeCacheMap TimeCacheMap$ExpiredCallback Utils TupleUtils ThriftTopologyUtils
             BufferFileInputStream BufferInputStream])
   (:import [org.apache.storm.generated NotAliveException AlreadyAliveException StormTopology ErrorInfo
             ExecutorInfo InvalidTopologyException Nimbus$Iface Nimbus$Processor SubmitOptions TopologyInitialStatus
@@ -57,7 +57,8 @@
   (:use [org.apache.storm.daemon common])
   (:use [org.apache.storm config])
   (:import [org.apache.zookeeper data.ACL ZooDefs$Ids ZooDefs$Perms])
-  (:import [org.apache.storm.utils VersionInfo])
+  (:import [org.apache.storm.utils VersionInfo]
+           [org.json.simple JSONValue])
   (:require [clj-time.core :as time])
   (:require [clj-time.coerce :as coerce])
   (:require [metrics.meters :refer [defmeter mark!]])
@@ -253,6 +254,10 @@
         :status {:type :killed}
         :topology-action-options {:delay-secs delay :action :kill}})
     ))
+
+(defn assoc-non-nil
+  [m k v]
+  (if v (assoc m k v) m))
 
 (defn rebalance-transition [nimbus storm-id status]
   (fn [time num-workers executor-overrides]
@@ -569,7 +574,7 @@
                       )]
       {:is-timed-out (and
                        nimbus-time
-                       (>= (time-delta nimbus-time) timeout))
+                       (>= (Time/delta nimbus-time) timeout))
        :nimbus-time nimbus-time
        :executor-reported-time reported-time
        :heartbeat hb}))
@@ -617,7 +622,7 @@
                 is-timed-out (-> heartbeats-cache (get executor) :is-timed-out)]
             (if (and start-time
                    (or
-                    (< (time-delta start-time)
+                    (< (Time/delta start-time)
                        (conf NIMBUS-TASK-LAUNCH-SECS))
                     (not is-timed-out)
                     ))
@@ -1083,7 +1088,7 @@
         (.get_common component)
         (->> {TOPOLOGY-TASKS (component-parallelism storm-conf component)}
              (merge (component-conf component))
-             to-json )))
+             JSONValue/toJSONString)))
     ret ))
 
 (defn normalize-conf [conf storm-conf ^StormTopology topology]
@@ -1092,7 +1097,8 @@
   (let [component-confs (map
                          #(-> (ThriftTopologyUtils/getComponentCommon topology %)
                               .get_json_conf
-                              from-json)
+                              ((fn [c] (if c (JSONValue/parse c))))
+                              clojurify-structure)
                          (ThriftTopologyUtils/getComponentIds topology))
         total-conf (merge conf storm-conf)
 
@@ -1138,7 +1144,7 @@
             (log-message "Cleaning up " id)
             (.teardown-heartbeats! storm-cluster-state id)
             (.teardown-topology-errors! storm-cluster-state id)
-            (rmr (master-stormdist-root conf id))
+            (Utils/forceDelete (master-stormdist-root conf id))
             (blob-rm-topology-keys id blob-store storm-cluster-state)
             (swap! (:heartbeats-cache nimbus) dissoc id)))))
     (log-message "not a leader, skipping cleanup")))
@@ -1468,7 +1474,8 @@
           (validate-topology-name! storm-name)
           (check-authorization! nimbus storm-name nil "submitTopology")
           (check-storm-active! nimbus storm-name false)
-          (let [topo-conf (from-json serializedConf)]
+          (let [topo-conf (if-let [parsed-json (JSONValue/parse serializedConf)]
+                            (clojurify-structure parsed-json))]
             (try
               (validate-configs-with-schemas topo-conf)
               (catch IllegalArgumentException ex
@@ -1481,7 +1488,8 @@
           (let [storm-id (str storm-name "-" @(:submitted-count nimbus) "-" (current-time-secs))
                 credentials (.get_creds submitOptions)
                 credentials (when credentials (.get_creds credentials))
-                topo-conf (from-json serializedConf)
+                topo-conf (if-let [parsed-json (JSONValue/parse serializedConf)]
+                            (clojurify-structure parsed-json))
                 storm-conf-submitted (normalize-conf
                             conf
                             (-> topo-conf
@@ -1750,7 +1758,7 @@
       (^String getNimbusConf [this]
         (mark! nimbus:num-getNimbusConf-calls)
         (check-authorization! nimbus nil nil "getNimbusConf")
-        (to-json (:conf nimbus)))
+        (JSONValue/toJSONString (:conf nimbus)))
 
       (^LogConfig getLogConfig [this ^String id]
         (mark! nimbus:num-getLogConfig-calls)
@@ -1766,7 +1774,7 @@
         (let [topology-conf (try-read-storm-conf conf id (:blob-store nimbus))
               storm-name (topology-conf TOPOLOGY-NAME)]
               (check-authorization! nimbus storm-name topology-conf "getTopologyConf")
-              (to-json topology-conf)))
+              (JSONValue/toJSONString topology-conf)))
 
       (^StormTopology getTopology [this ^String id]
         (mark! nimbus:num-getTopology-calls)
@@ -1811,7 +1819,7 @@
                       leader-host (.getHost leader)
                       leader-port (.getPort leader)]
                   (doseq [nimbus-summary nimbuses]
-                    (.set_uptime_secs nimbus-summary (time-delta (.get_uptime_secs nimbus-summary)))
+                    (.set_uptime_secs nimbus-summary (Time/delta (.get_uptime_secs nimbus-summary)))
                     (.set_isLeader nimbus-summary (and (= leader-host (.get_host nimbus-summary)) (= leader-port (.get_port nimbus-summary))))))
 
               topology-summaries (dofor [[id base] bases :when base]
@@ -1829,7 +1837,7 @@
                                                        vals
                                                        set
                                                        count)
-                                                     (time-delta (:launch-time-secs base))
+                                                     (Time/delta (:launch-time-secs base))
                                                      (extract-status-str base))]
                                      (when-let [owner (:owner base)] (.set_owner topo-summ owner))
                                      (when-let [sched-status (.get @(:id->sched-status nimbus) id)] (.set_sched_status topo-summ sched-status))
@@ -1891,7 +1899,7 @@
                                           ))
               topo-info  (TopologyInfo. storm-id
                            storm-name
-                           (time-delta launch-time-secs)
+                           (Time/delta launch-time-secs)
                            executor-summaries
                            (extract-status-str base)
                            errors
@@ -2098,9 +2106,11 @@
           (doto topo-page-info
             (.set_name (:storm-name info))
             (.set_status (extract-status-str (:base info)))
-            (.set_uptime_secs (time-delta (:launch-time-secs info)))
-            (.set_topology_conf (to-json (try-read-storm-conf conf
-                                                              topo-id (:blob-store nimbus))))
+            (.set_uptime_secs (Time/delta (:launch-time-secs info)))
+            (.set_topology_conf (JSONValue/toJSONString
+                                  (try-read-storm-conf conf
+                                                       topo-id
+                                                       (:blob-store nimbus))))
             (.set_replication_count (get-blob-replication-count (master-stormcode-key topo-id) nimbus)))
           (when-let [debug-options
                      (get-in info [:base :component->debug topo-id])]

@@ -26,7 +26,7 @@
   (:use [org.apache.storm.daemon [common :only [ACKER-COMPONENT-ID ACKER-INIT-STREAM-ID ACKER-ACK-STREAM-ID
                                               ACKER-FAIL-STREAM-ID mk-authorization-handler
                                               start-metrics-reporters]]])
-  (:import [org.apache.storm.utils Utils]
+  (:import [org.apache.storm.utils Time]
            [org.apache.storm.generated NimbusSummary])
   (:use [clojure.string :only [blank? lower-case trim split]])
   (:import [org.apache.storm.generated ExecutorSpecificStats
@@ -43,7 +43,7 @@
   (:import [org.apache.storm.security.auth AuthUtils])
   (:import [org.apache.storm.utils VersionInfo])
   (:import [org.apache.storm Config])
-  (:import [java.io File])
+  (:import [org.json.simple JSONValue])
   (:require [compojure.route :as route]
             [compojure.handler :as handler]
             [ring.util.response :as resp]
@@ -163,7 +163,7 @@
 (defn get-error-time
   [error]
   (if error
-    (time-delta (.get_error_time_secs ^ErrorInfo error))))
+    (Time/delta (.get_error_time_secs ^ErrorInfo error))))
 
 (defn get-error-data
   [error]
@@ -314,6 +314,13 @@
        (merge (hashmap-to-persistent spouts)
               (hashmap-to-persistent bolts))
        spout-comp-summs bolt-comp-summs window id))))
+
+(defn- from-json
+  [^String str]
+  (if str
+    (clojurify-structure
+      (JSONValue/parse str))
+    nil))
 
 (defn validate-tplg-submit-params [params]
   (let [tplg-jar-file (params :topologyJar)

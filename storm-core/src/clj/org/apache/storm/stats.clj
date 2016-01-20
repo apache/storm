@@ -24,7 +24,8 @@
             ExecutorAggregateStats SpecificAggregateStats
             SpoutAggregateStats TopologyPageInfo TopologyStats])
   (:import [org.apache.storm.utils Utils])
-  (:import [org.apache.storm.metric.internal MultiCountStatAndMetric MultiLatencyStatAndMetric])
+  (:import [org.apache.storm.metric.internal MultiCountStatAndMetric MultiLatencyStatAndMetric]
+           [java.util Collection])
   (:use [org.apache.storm log util])
   (:use [clojure.math.numeric-tower :only [ceil]]))
 
@@ -1375,6 +1376,12 @@
   [stats-seq]
   {:emitted (aggregate-counts (map #(.get_emitted ^ExecutorStats %) stats-seq))
    :transferred (aggregate-counts (map #(.get_transferred ^ExecutorStats %) stats-seq))})
+
+(defn- collectify
+  [obj]
+  (if (or (sequential? obj) (instance? Collection obj))
+    obj
+    [obj]))
 
 (defn aggregate-bolt-stats
   [stats-seq include-sys?]

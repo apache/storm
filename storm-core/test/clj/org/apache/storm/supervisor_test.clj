@@ -21,7 +21,8 @@
   (:require [clojure [string :as string] [set :as set]])
   (:import [org.apache.storm.testing TestWordCounter TestWordSpout TestGlobalCount TestAggregatesCounter TestPlannerSpout])
   (:import [org.apache.storm.scheduler ISupervisor])
-  (:import [org.apache.storm.generated RebalanceOptions])
+  (:import [org.apache.storm.generated RebalanceOptions]
+           [org.apache.storm.utils Utils])
   (:import [java.util UUID])
   (:import [java.io File])
   (:import [java.nio.file Files])
@@ -75,6 +76,18 @@
     (is (every? (partial = 1) counts))
     (is (= launched-supervisor->ports supervisor->ports))
     ))
+
+(defmacro letlocals
+  [& body]
+  (let [[tobind lexpr] (split-at (dec (count body)) body)
+        binded (vec (mapcat (fn [e]
+                              (if (and (list? e) (= 'bind (first e)))
+                                [(second e) (last e)]
+                                ['_ e]
+                                ))
+                            tobind))]
+    `(let ~binded
+       ~(first lexpr))))
 
 (deftest launches-assignment
   (with-simulated-time-local-cluster [cluster :supervisors 0
@@ -316,91 +329,97 @@
                                     mock-cp)
               mock-supervisor {:conf {STORM-CLUSTER-MODE :distributed
                                       WORKER-CHILDOPTS string-opts}}]
-          (stubbing [read-supervisor-storm-conf {TOPOLOGY-WORKER-CHILDOPTS
-                                                   topo-string-opts}
-                     add-to-classpath mock-cp
-                     supervisor-stormdist-root nil
-                     launch-process nil
-                     set-worker-user! nil
-                     supervisor/jlp nil
-                     worker-artifacts-root "/tmp/workers-artifacts"
-                     supervisor/write-log-metadata! nil
-                     supervisor/create-blobstore-links nil]
-            (supervisor/launch-worker mock-supervisor
-                                      mock-storm-id
-                                      mock-port
-                                      mock-worker-id
-                                      mock-mem-onheap)
-            (verify-first-call-args-for-indices launch-process
-                                                [0]
-                                                exp-args))))
+          (mock-java-static (proxy [Utils] []
+                               (addToClasspathImpl [classpath paths] mock-cp))
+            (stubbing [read-supervisor-storm-conf {TOPOLOGY-WORKER-CHILDOPTS
+                                                     topo-string-opts}
+                       supervisor-stormdist-root nil
+                       launch-process nil
+                       set-worker-user! nil
+                       supervisor/jlp nil
+                       worker-artifacts-root "/tmp/workers-artifacts"
+                       supervisor/write-log-metadata! nil
+                       supervisor/create-blobstore-links nil]
+              (supervisor/launch-worker mock-supervisor
+                                        mock-storm-id
+                                        mock-port
+                                        mock-worker-id
+                                        mock-mem-onheap)
+              (verify-first-call-args-for-indices launch-process
+                                                  [0]
+                                                  exp-args)))))
       (testing "testing *.worker.childopts as list of strings, with spaces in values"
         (let [list-opts '("-Dopt1='this has a space in it'" "-Xmx1024m")
               topo-list-opts '("-Dopt2='val with spaces'" "-Xmx2048m")
               exp-args (exp-args-fn list-opts topo-list-opts mock-cp)
               mock-supervisor {:conf {STORM-CLUSTER-MODE :distributed
                                       WORKER-CHILDOPTS list-opts}}]
-          (stubbing [read-supervisor-storm-conf {TOPOLOGY-WORKER-CHILDOPTS
-                                                   topo-list-opts}
-                     add-to-classpath mock-cp
-                     supervisor-stormdist-root nil
-                     launch-process nil
-                     set-worker-user! nil
-                     supervisor/jlp nil
-                     supervisor/write-log-metadata! nil
-                     supervisor/create-blobstore-links nil
-                     worker-artifacts-root "/tmp/workers-artifacts"]
-            (supervisor/launch-worker mock-supervisor
-                                      mock-storm-id
-                                      mock-port
-                                      mock-worker-id
-                                      mock-mem-onheap)
-            (verify-first-call-args-for-indices launch-process
-                                                [0]
-                                                exp-args))))
+          (mock-java-static (proxy [Utils] []
+                               (addToClasspathImpl [classpath paths] mock-cp))
+            (stubbing [read-supervisor-storm-conf {TOPOLOGY-WORKER-CHILDOPTS
+                                                     topo-list-opts}
+                       supervisor-stormdist-root nil
+                       launch-process nil
+                       set-worker-user! nil
+                       supervisor/jlp nil
+                       supervisor/write-log-metadata! nil
+                       supervisor/create-blobstore-links nil
+                       worker-artifacts-root "/tmp/workers-artifacts"]
+              (supervisor/launch-worker mock-supervisor
+                                        mock-storm-id
+                                        mock-port
+                                        mock-worker-id
+                                        mock-mem-onheap)
+              (verify-first-call-args-for-indices launch-process
+                                                  [0]
+                                                  exp-args)))))
       (testing "testing topology.classpath is added to classpath"
         (let [topo-cp (str file-path-separator "any" file-path-separator "path")
-              exp-args (exp-args-fn [] [] (add-to-classpath mock-cp [topo-cp]))
+              exp-args (exp-args-fn [] [] (Utils/addToClasspath mock-cp [topo-cp]))
               mock-supervisor {:conf {STORM-CLUSTER-MODE :distributed}}]
-          (stubbing [read-supervisor-storm-conf {TOPOLOGY-CLASSPATH topo-cp}
-                     supervisor-stormdist-root nil
-                     supervisor/jlp nil
-                     worker-artifacts-root "/tmp/workers-artifacts"
-                     set-worker-user! nil
-                     supervisor/write-log-metadata! nil
-                     launch-process nil
-                     current-classpath (str file-path-separator "base")
-                     supervisor/create-blobstore-links nil]
-                    (supervisor/launch-worker mock-supervisor
-                                              mock-storm-id
-                                              mock-port
-                                              mock-worker-id
-                                              mock-mem-onheap)
-                    (verify-first-call-args-for-indices launch-process
-                                                        [0]
-                                                        exp-args))))
+          (mock-java-static (proxy [Utils] []
+                               (currentClasspathImpl []
+                                 (str file-path-separator "base")))
+            (stubbing [read-supervisor-storm-conf {TOPOLOGY-CLASSPATH topo-cp}
+                       supervisor-stormdist-root nil
+                       supervisor/jlp nil
+                       worker-artifacts-root "/tmp/workers-artifacts"
+                       set-worker-user! nil
+                       supervisor/write-log-metadata! nil
+                       launch-process nil
+                       supervisor/create-blobstore-links nil]
+                      (supervisor/launch-worker mock-supervisor
+                                                mock-storm-id
+                                                mock-port
+                                                mock-worker-id
+                                                mock-mem-onheap)
+                      (verify-first-call-args-for-indices launch-process
+                                                          [0]
+                                                          exp-args)))))
       (testing "testing topology.environment is added to environment for worker launch"
         (let [topo-env {"THISVAR" "somevalue" "THATVAR" "someothervalue"}
               full-env (merge topo-env {"LD_LIBRARY_PATH" nil})
               exp-args (exp-args-fn [] [] mock-cp)
               mock-supervisor {:conf {STORM-CLUSTER-MODE :distributed}}]
-          (stubbing [read-supervisor-storm-conf {TOPOLOGY-ENVIRONMENT topo-env}
-                     supervisor-stormdist-root nil
-                     supervisor/jlp nil
-                     worker-artifacts-root "/tmp/workers-artifacts"
-                     launch-process nil
-                     set-worker-user! nil
-                     supervisor/write-log-metadata! nil
-                     current-classpath (str file-path-separator "base")
-                     supervisor/create-blobstore-links nil]
-                    (supervisor/launch-worker mock-supervisor
-                                              mock-storm-id
-                                              mock-port
-                                              mock-worker-id
-                                              mock-mem-onheap)
-                    (verify-first-call-args-for-indices launch-process
-                                                        [2]
-                                                        full-env)))))))
+          (mock-java-static (proxy [Utils] []
+                               (currentClasspathImpl []
+                                 (str file-path-separator "base")))
+            (stubbing [read-supervisor-storm-conf {TOPOLOGY-ENVIRONMENT topo-env}
+                       supervisor-stormdist-root nil
+                       supervisor/jlp nil
+                       worker-artifacts-root "/tmp/workers-artifacts"
+                       launch-process nil
+                       set-worker-user! nil
+                       supervisor/write-log-metadata! nil
+                       supervisor/create-blobstore-links nil]
+                      (supervisor/launch-worker mock-supervisor
+                                                mock-storm-id
+                                                mock-port
+                                                mock-worker-id
+                                                mock-mem-onheap)
+                      (verify-first-call-args-for-indices launch-process
+                                                          [2]
+                                                          full-env))))))))
 
 (deftest test-worker-launch-command-run-as-user
   (testing "*.worker.childopts configuration"
@@ -464,26 +483,29 @@
                                         STORM-WORKERS-ARTIFACTS-DIR (str storm-local "/workers-artifacts")
                                         SUPERVISOR-RUN-WORKER-AS-USER true
                                         WORKER-CHILDOPTS string-opts}}]
-            (stubbing [read-supervisor-storm-conf {TOPOLOGY-WORKER-CHILDOPTS
-                                                   topo-string-opts
-                                                   TOPOLOGY-SUBMITTER-USER "me"}
-                       add-to-classpath mock-cp
-                       supervisor-stormdist-root nil
-                       launch-process nil
-                       set-worker-user! nil
-                       supervisor/java-cmd "java"
-                       supervisor/jlp nil
-                       supervisor/write-log-metadata! nil]
-                      (supervisor/launch-worker mock-supervisor
-                                                mock-storm-id
-                                                mock-port
-                                                mock-worker-id
-                                                mock-mem-onheap)
-                      (verify-first-call-args-for-indices launch-process
-                                                          [0]
-                                                          exp-launch))
+            (mock-java-static (proxy [Utils] []
+                                 (addToClasspathImpl
+                                   [classpath paths]
+                                   mock-cp))
+              (stubbing [read-supervisor-storm-conf {TOPOLOGY-WORKER-CHILDOPTS
+                                                     topo-string-opts
+                                                     TOPOLOGY-SUBMITTER-USER "me"}
+                         supervisor-stormdist-root nil
+                         launch-process nil
+                         set-worker-user! nil
+                         supervisor/java-cmd "java"
+                         supervisor/jlp nil
+                         supervisor/write-log-metadata! nil]
+                        (supervisor/launch-worker mock-supervisor
+                                                  mock-storm-id
+                                                  mock-port
+                                                  mock-worker-id
+                                                  mock-mem-onheap)
+                        (verify-first-call-args-for-indices launch-process
+                                                            [0]
+                                                            exp-launch)))
             (is (= (slurp worker-script) exp-script))))
-        (finally (rmr storm-local)))
+        (finally (Utils/forceDelete storm-local)))
       (.mkdirs (io/file storm-local "workers" mock-worker-id))
       (try
         (testing "testing *.worker.childopts as list of strings, with spaces in values"
@@ -495,26 +517,29 @@
                                         STORM-WORKERS-ARTIFACTS-DIR (str storm-local "/workers-artifacts")
                                         SUPERVISOR-RUN-WORKER-AS-USER true
                                         WORKER-CHILDOPTS list-opts}}]
-            (stubbing [read-supervisor-storm-conf {TOPOLOGY-WORKER-CHILDOPTS
-                                                   topo-list-opts
-                                                   TOPOLOGY-SUBMITTER-USER "me"}
-                       add-to-classpath mock-cp
-                       supervisor-stormdist-root nil
-                       launch-process nil
-                       set-worker-user! nil
-                       supervisor/java-cmd "java"
-                       supervisor/jlp nil
-                       supervisor/write-log-metadata! nil]
-                      (supervisor/launch-worker mock-supervisor
-                                                mock-storm-id
-                                                mock-port
-                                                mock-worker-id
-                                                mock-mem-onheap)
-                      (verify-first-call-args-for-indices launch-process
-                                                          [0]
-                                                          exp-launch))
+            (mock-java-static (proxy [Utils] []
+                                 (addToClasspathImpl
+                                   [classpath paths]
+                                   mock-cp))
+              (stubbing [read-supervisor-storm-conf {TOPOLOGY-WORKER-CHILDOPTS
+                                                     topo-list-opts
+                                                     TOPOLOGY-SUBMITTER-USER "me"}
+                         supervisor-stormdist-root nil
+                         launch-process nil
+                         set-worker-user! nil
+                         supervisor/java-cmd "java"
+                         supervisor/jlp nil
+                         supervisor/write-log-metadata! nil]
+                        (supervisor/launch-worker mock-supervisor
+                                                  mock-storm-id
+                                                  mock-port
+                                                  mock-worker-id
+                                                  mock-mem-onheap)
+                        (verify-first-call-args-for-indices launch-process
+                                                            [0]
+                                                            exp-launch)))
             (is (= (slurp worker-script) exp-script))))
-        (finally (rmr storm-local))))))
+        (finally (Utils/forceDelete storm-local))))))
 
 (deftest test-workers-go-bananas
   ;; test that multiple workers are started for a port, and test that

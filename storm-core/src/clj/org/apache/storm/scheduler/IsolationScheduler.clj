@@ -19,7 +19,8 @@
   (:import [java.util HashSet Set List LinkedList ArrayList Map HashMap])
   (:import [org.apache.storm.scheduler IScheduler Topologies
             Cluster TopologyDetails WorkerSlot SchedulerAssignment
-            EvenScheduler ExecutorDetails])
+            EvenScheduler ExecutorDetails]
+           [org.apache.storm.utils Utils])
   (:gen-class
     :init init
     :constructors {[] []}
@@ -61,7 +62,8 @@
   (let [name->machines (get conf ISOLATION-SCHEDULER-MACHINES)
         machines (get name->machines (.getName topology))
         workers (.getNumWorkers topology)]
-    (-> (integer-divided workers machines)
+    (-> (Utils/integerDivided workers machines)
+        clojurify-structure
         (dissoc 0)
         (HashMap.)
         )))

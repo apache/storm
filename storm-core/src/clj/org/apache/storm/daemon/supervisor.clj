@@ -118,7 +118,7 @@
   (map-val :master-code-dir assignments-snapshot))
 
 (defn- read-downloaded-storm-ids [conf]
-  (map #(url-decode %) (read-dir-contents (supervisor-stormdist-root conf)))
+  (map #(url-decode %) (Utils/readDirContents (supervisor-stormdist-root conf)))
   )
 
 (defn read-worker-heartbeat [conf id]
@@ -131,7 +131,7 @@
 
 
 (defn my-worker-ids [conf]
-  (read-dir-contents (worker-root conf)))
+  (Utils/readDirContents (worker-root conf)))
 
 (defn read-worker-heartbeats
   "Returns map from worker id to heartbeat"
@@ -249,7 +249,7 @@
       user
       ["rmr" path]
       :log-prefix (str "rmr " id))
-    (if (exists-file? path)
+    (if (Utils/checkFileExists path)
       (throw (RuntimeException. (str path " was not deleted"))))))
 
 (defn try-cleanup-worker [conf id]
@@ -259,10 +259,10 @@
         (if (conf SUPERVISOR-RUN-WORKER-AS-USER)
           (rmr-as-user conf id (worker-root conf id))
           (do
-            (rmr (worker-heartbeats-root conf id))
+            (Utils/forceDelete (worker-heartbeats-root conf id))
             ;; this avoids a race condition with worker or subprocess writing pid around same time
-            (rmr (worker-pids-root conf id))
-            (rmr (worker-root conf id))))
+            (Utils/forceDelete (worker-pids-root conf id))
+            (Utils/forceDelete (worker-root conf id))))
         (remove-worker-user! conf id)
         (remove-dead-worker id)
       ))
@@ -277,7 +277,7 @@
 (defn shutdown-worker [supervisor id]
   (log-message "Shutting down " (:supervisor-id supervisor) ":" id)
   (let [conf (:conf supervisor)
-        pids (read-dir-contents (worker-pids-root conf id))
+        pids (Utils/readDirContents (worker-pids-root conf id))
         thread-pid (@(:worker-thread-pids-atom supervisor) id)
         shutdown-sleep-secs (conf SUPERVISOR-WORKER-SHUTDOWN-SLEEP-SECS)
         as-user (conf SUPERVISOR-RUN-WORKER-AS-USER)
@@ -295,11 +295,13 @@
       (if as-user
         (worker-launcher-and-wait conf user ["signal" pid "9"] :log-prefix (str "kill -9 " pid))
         (force-kill-process pid))
-      (if as-user
-        (rmr-as-user conf id (worker-pid-path conf id pid))
-        (try
-          (rmpath (worker-pid-path conf id pid))
-          (catch Exception e)))) ;; on windows, the supervisor may still holds the lock on the worker directory
+      (let [path (worker-pid-path conf id pid)]
+        (if as-user
+          (rmr-as-user conf id path)
+          (try
+            (log-debug "Removing path " path)
+            (.delete (File. path))
+            (catch Exception e))))) ;; on windows, the supervisor may still holds the lock on the worker directory
     (try-cleanup-worker conf id))
   (log-message "Shut down " (:supervisor-id supervisor) ":" id))
 
@@ -351,9 +353,9 @@
         stormjarpath (supervisor-stormjar-path stormroot)
         stormcodepath (supervisor-stormcode-path stormroot)
         stormconfpath (supervisor-stormconf-path stormroot)]
-    (and (every? exists-file? [stormroot stormconfpath stormcodepath])
+    (and (every? #(Utils/checkFileExists %) [stormroot stormconfpath stormcodepath])
          (or (local-mode? conf)
-             (exists-file? stormjarpath)))))
+             (Utils/checkFileExists stormjarpath)))))
 
 (defn get-worker-assignment-helper-msg
   [assignment supervisor port id]
@@ -371,11 +373,14 @@
               mem-onheap (.get_mem_on_heap resources)]
           ;; This condition checks for required files exist before launching the worker
           (if (required-topo-files-exist? conf storm-id)
-            (do
+            (let [pids-path (worker-pids-root conf id)
+                  hb-path (worker-heartbeats-root conf id)]
               (log-message "Launching worker with assignment "
                 (get-worker-assignment-helper-msg assignment supervisor port id))
-              (local-mkdirs (worker-pids-root conf id))
-              (local-mkdirs (worker-heartbeats-root conf id))
+              (log-debug "Making dirs at " pids-path)
+              (FileUtils/forceMkdir (File. pids-path))
+              (log-debug "Making dirs at " hb-path)
+              (FileUtils/forceMkdir (File. hb-path))
               (launch-worker supervisor
                 (:storm-id assignment)
                 port
@@ -507,7 +512,7 @@
         (remove-blob-references localizer storm-id conf))
       (if (conf SUPERVISOR-RUN-WORKER-AS-USER)
         (rmr-as-user conf storm-id path)
-        (rmr (supervisor-stormdist-root conf storm-id)))
+        (Utils/forceDelete (supervisor-stormdist-root conf storm-id)))
       (catch Exception e
         (log-message e (str "Exception removing: " storm-id))))))
 
@@ -683,8 +688,8 @@
     (let [container-file (container-file-path target-dir)
           script-file (script-file-path target-dir)]
       (log-message "Running as user:" user " command:" (shell-cmd command))
-      (if (exists-file? container-file) (rmr-as-user conf container-file container-file))
-      (if (exists-file? script-file) (rmr-as-user conf script-file script-file))
+      (if (Utils/checkFileExists container-file) (rmr-as-user conf container-file container-file))
+      (if (Utils/checkFileExists script-file) (rmr-as-user conf script-file script-file))
       (worker-launcher
         conf
         user
@@ -895,7 +900,7 @@
                   key-name (.getName rsrc-file-path)
                   blob-symlink-target-name (.getName (File. (.getCurrentSymlinkPath local-rsrc)))
                   symlink-name (get-blob-localname (get blobstore-map key-name) key-name)]
-              (create-symlink! tmproot (.getParent rsrc-file-path) symlink-name
+              (Utils/createSymlink tmproot (.getParent rsrc-file-path) symlink-name
                 blob-symlink-target-name))))
         (catch AuthorizationException authExp
           (log-error authExp))
@@ -949,7 +954,7 @@
         (setup-storm-code-dir conf (read-supervisor-storm-conf conf storm-id) stormroot))
       (do
         (log-message "Failed to download blob resources for storm-id " storm-id)
-        (rmr tmproot)))))
+        (Utils/forceDelete tmproot)))))
 
 (defn write-log-metadata-to-yaml-file! [storm-id port data conf]
   (let [file (get-log-metadata-file conf storm-id port)]
@@ -1016,9 +1021,9 @@
         resource-file-names (cons RESOURCES-SUBDIR blob-file-names)]
     (log-message "Creating symlinks for worker-id: " worker-id " storm-id: "
       storm-id " for files(" (count resource-file-names) "): " (pr-str resource-file-names))
-    (create-symlink! workerroot stormroot RESOURCES-SUBDIR)
+    (Utils/createSymlink workerroot stormroot RESOURCES-SUBDIR)
     (doseq [file-name blob-file-names]
-      (create-symlink! workerroot stormroot file-name file-name))))
+      (Utils/createSymlink workerroot stormroot file-name file-name))))
 
 (defn create-artifacts-link
   "Create a symlink from workder directory to its port artifacts directory"
@@ -1028,7 +1033,7 @@
     (log-message "Creating symlinks for worker-id: " worker-id " storm-id: "
                  storm-id " to its port artifacts directory")
     (if (.exists (File. worker-dir))
-      (create-symlink! worker-dir topo-dir "artifacts" port))))
+      (Utils/createSymlink worker-dir topo-dir "artifacts" port))))
 
 (defmethod launch-worker
     :distributed [supervisor storm-id port worker-id mem-onheap]
@@ -1051,9 +1056,9 @@
           topo-classpath (if-let [cp (storm-conf TOPOLOGY-CLASSPATH)]
                            [cp]
                            [])
-          classpath (-> (worker-classpath)
-                        (add-to-classpath [stormjar])
-                        (add-to-classpath topo-classpath))
+          classpath (-> (Utils/workerClasspath)
+                        (Utils/addToClasspath [stormjar])
+                        (Utils/addToClasspath topo-classpath))
           top-gc-opts (storm-conf TOPOLOGY-WORKER-GC-CHILDOPTS)
           mem-onheap (if (and mem-onheap (> mem-onheap 0)) ;; not nil and not zero
                        (int (Math/ceil mem-onheap)) ;; round up
@@ -1131,7 +1136,7 @@
 ;; local implementation
 
 (defn resources-jar []
-  (->> (.split (current-classpath) File/pathSeparator)
+  (->> (.split (Utils/currentClasspath) File/pathSeparator)
        (filter #(.endsWith  % ".jar"))
        (filter #(zip-contains-dir? % RESOURCES-SUBDIR))
        first ))

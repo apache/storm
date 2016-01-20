@@ -17,6 +17,7 @@
  */
 package org.apache.storm.utils;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.storm.Config;
 import org.apache.storm.blobstore.BlobStore;
 import org.apache.storm.blobstore.BlobStoreAclHandler;
@@ -64,6 +65,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -79,16 +81,17 @@ import java.net.URLDecoder;
 import java.nio.ByteBuffer;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -104,6 +107,30 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 public class Utils {
+    // A singleton instance allows us to mock delegated static methods in our
+    // tests by subclassing.
+    private static final Utils INSTANCE = new Utils();
+    private static Utils _instance = INSTANCE;
+
+    /**
+     * Provide an instance of this class for delegates to use.  To mock out
+     * delegated methods, provide an instance of a subclass that overrides the
+     * implementation of the delegated method.
+     * @param u a Utils instance
+     */
+    public static void setInstance(Utils u) {
+        _instance = u;
+    }
+
+    /**
+     * Resets the singleton instance to the default. This is helpful to reset
+     * the class to its original functionality when mocking is no longer
+     * desired.
+     */
+    public static void resetInstance() {
+        _instance = INSTANCE;
+    }
+
     private static final Logger LOG = LoggerFactory.getLogger(Utils.class);
     public static final String DEFAULT_STREAM_ID = "default";
     public static final String DEFAULT_BLOB_VERSION_SUFFIX = ".version";
@@ -528,6 +555,10 @@ public class Utils {
             }
         }
         return isSuccess;
+    }
+
+    public static boolean checkFileExists(String path) {
+        return Files.exists(new File(path).toPath());
     }
 
     public static boolean checkFileExists(String dir, String file) {
@@ -1050,6 +1081,12 @@ public class Utils {
         }
     }
 
+    public static void testSetupBuilder(CuratorFrameworkFactory.Builder
+                                                builder, String zkStr, Map conf, ZookeeperAuthInfo auth)
+    {
+        setupBuilder(builder, zkStr, conf, auth);
+    }
+
     public static CuratorFramework newCurator(Map conf, List<String> servers, Object port, ZookeeperAuthInfo auth) {
         return newCurator(conf, servers, port, "", auth);
     }
@@ -1369,5 +1406,138 @@ public class Utils {
         }
         return topologyInfo;
     }
-}
 
+    /**
+     * Deletes a file or directory and its contents if it exists. Does not
+     * complain if the input is null or does not exist.
+     * @param path the path to the file or directory
+     */
+    public static void forceDelete(String path) {
+        _instance.forceDeleteImpl(path);
+    }
+
+    protected void forceDeleteImpl(String path) {
+        LOG.debug("Deleting path {}", path);
+        if (checkFileExists(path)) {
+            try {
+                FileUtils.forceDelete(new File(path));
+            } catch (IOException ignored) {}
+        }
+    }
+
+    /**
+     * Creates a symbolic link to the target
+     * @param dir the parent directory of the link
+     * @param targetDir the parent directory of the link's target
+     * @param targetFilename the file name of the links target
+     * @param filename the file name of the link
+     * @return the path of the link if it did not exist, otherwise null
+     * @throws IOException
+     */
+    public static Path createSymlink(String dir, String targetDir,
+            String targetFilename, String filename) throws IOException {
+        Path path = Paths.get(dir, filename).toAbsolutePath();
+        Path target = Paths.get(targetDir, targetFilename).toAbsolutePath();
+        LOG.debug("Creating symlink [{}] to [{}]", path, target);
+        if (!path.toFile().exists()) {
+            return Files.createSymbolicLink(path, target);
+        }
+        return null;
+    }
+
+    /**
+     * Convenience method for the case when the link's file name should be the
+     * same as the file name of the target
+     */
+    public static Path createSymlink(String dir, String targetDir,
+                                     String targetFilename) throws IOException {
+        return Utils.createSymlink(dir, targetDir, targetFilename,
+                targetFilename);
+    }
+
+    /**
+     * Returns a Collection of file names found under the given directory.
+     * @param dir a directory
+     * @return the Collection of file names
+     */
+    public static Collection<String> readDirContents(String dir) {
+        Collection<String> ret = new HashSet<>();
+        File[] files = new File(dir).listFiles();
+        if (files != null) {
+            for (File f: files) {
+                ret.add(f.getName());
+            }
+        }
+        return ret;
+    }
+
+    /**
+     * Returns the value of java.class.path System property. Kept separate for
+     * testing.
+     * @return the classpath
+     */
+    public static String currentClasspath() {
+        return _instance.currentClasspathImpl();
+    }
+
+    public String currentClasspathImpl() {
+        return System.getProperty("java.class.path");
+    }
+
+    /**
+     * Returns a collection of jar file names found under the given directory.
+     * @param dir the directory to search
+     * @return the jar file names
+     */
+    private static Collection<String> getFullJars(String dir) {
+        File[] files = new File(dir).listFiles(new FilenameFilter() {
+            @Override
+            public boolean accept(File dir, String name) {
+                return name.endsWith(".jar");
+            }
+        });
+        Collection<String> ret = new HashSet<String>(files.length);
+        for (File f : files) {
+            ret.add(Paths.get(dir, f.getName()).toString());
+        }
+        return ret;
+    }
+
+    public static String workerClasspath() {
+        String stormDir = System.getProperty("storm.home");
+        String stormLibDir = Paths.get(stormDir, "lib").toString();
+        String stormConfDir =
+                System.getenv("STORM_CONF_DIR") != null ?
+                System.getenv("STORM_CONF_DIR") :
+                Paths.get(stormDir, "conf").toString();
+        String stormExtlibDir = Paths.get(stormDir, "extlib").toString();
+        String extcp = System.getenv("STORM_EXT_CLASSPATH");
+        if (stormDir == null) {
+            return Utils.currentClasspath();
+        }
+        List<String> pathElements = new LinkedList<>();
+        pathElements.addAll(Utils.getFullJars(stormLibDir));
+        pathElements.addAll(Utils.getFullJars(stormExtlibDir));
+        pathElements.add(extcp);
+        pathElements.add(stormConfDir);
+
+        return StringUtils.join(pathElements,
+                System.getProperty("path.separator"));
+    }
+
+    public static String addToClasspath(String classpath,
+                Collection<String> paths) {
+        return _instance.addToClasspathImpl(classpath, paths);
+    }
+
+    public String addToClasspathImpl(String classpath,
+                Collection<String> paths) {
+        if (paths == null || paths.isEmpty()) {
+            return classpath;
+        }
+        List<String> l = new LinkedList<>();
+        l.add(classpath);
+        l.addAll(paths);
+        return StringUtils.join(l, System.getProperty("path.separator"));
+    }
+}

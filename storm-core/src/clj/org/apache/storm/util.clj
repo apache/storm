@@ -26,7 +26,6 @@
   (:import [javax.security.auth Subject])
   (:import [java.util UUID Random ArrayList List Collections])
   (:import [java.util.zip ZipFile])
-  (:import [java.util.concurrent.locks ReentrantReadWriteLock])
   (:import [java.util.concurrent Semaphore])
   (:import [java.nio.file Files Paths])
   (:import [java.nio.file.attribute FileAttribute])
@@ -555,199 +554,6 @@
              (exit-code-callback (.exitValue process)))
            nil)))                    
       process)))
-   
-(defn exists-file?
-  [path]
-  (.exists (File. path)))
-
-(defn rmr
-  [path]
-  (log-debug "Rmr path " path)
-  (when (exists-file? path)
-    (try
-      (FileUtils/forceDelete (File. path))
-      (catch FileNotFoundException e))))
-
-(defn rmpath
-  "Removes file or directory at the path. Not recursive. Throws exception on failure"
-  [path]
-  (log-debug "Removing path " path)
-  (when (exists-file? path)
-    (let [deleted? (.delete (File. path))]
-      (when-not deleted?
-        (throw (RuntimeException. (str "Failed to delete " path)))))))
-
-(defn local-mkdirs
-  [path]
-  (log-debug "Making dirs at " path)
-  (FileUtils/forceMkdir (File. path)))
-
-(defn touch
-  [path]
-  (log-debug "Touching file at " path)
-  (let [success? (do (if on-windows? (.mkdirs (.getParentFile (File. path))))
-                   (.createNewFile (File. path)))]
-    (when-not success?
-      (throw (RuntimeException. (str "Failed to touch " path))))))
-
-(defn create-symlink!
-  "Create symlink is to the target"
-  ([path-dir target-dir file-name]
-    (create-symlink! path-dir target-dir file-name file-name))
-  ([path-dir target-dir from-file-name to-file-name]
-    (let [path (str path-dir file-path-separator from-file-name)
-          target (str target-dir file-path-separator to-file-name)
-          empty-array (make-array String 0)
-          attrs (make-array FileAttribute 0)
-          abs-path (.toAbsolutePath (Paths/get path empty-array))
-          abs-target (.toAbsolutePath (Paths/get target empty-array))]
-      (log-debug "Creating symlink [" abs-path "] to [" abs-target "]")
-      (if (not (.exists (.toFile abs-path)))
-        (Files/createSymbolicLink abs-path abs-target attrs)))))
-
-(defn read-dir-contents
-  [dir]
-  (if (exists-file? dir)
-    (let [content-files (.listFiles (File. dir))]
-      (map #(.getName ^File %) content-files))
-    []))
-
-(defn compact
-  [aseq]
-  (filter (complement nil?) aseq))
-
-(defn current-classpath
-  []
-  (System/getProperty "java.class.path"))
-
-(defn get-full-jars
-  [dir]
-  (map #(str dir file-path-separator %) (filter #(.endsWith % ".jar") (read-dir-contents dir))))
-
-(defn worker-classpath
-  []
-  (let [storm-dir (System/getProperty "storm.home")
-        storm-lib-dir (str storm-dir file-path-separator "lib")
-        storm-conf-dir (if-let [confdir (System/getenv "STORM_CONF_DIR")]
-                         confdir 
-                         (str storm-dir file-path-separator "conf"))
-        storm-extlib-dir (str storm-dir file-path-separator "extlib")
-        extcp (System/getenv "STORM_EXT_CLASSPATH")]
-    (if (nil? storm-dir) 
-      (current-classpath)
-      (str/join class-path-separator
-                (remove nil? (concat (get-full-jars storm-lib-dir) (get-full-jars storm-extlib-dir) [extcp] [storm-conf-dir]))))))
-
-(defn add-to-classpath
-  [classpath paths]
-  (if (empty? paths)
-    classpath
-    (str/join class-path-separator (cons classpath paths))))
-
-(defn ^ReentrantReadWriteLock mk-rw-lock
-  []
-  (ReentrantReadWriteLock.))
-
-(defmacro read-locked
-  [rw-lock & body]
-  (let [lock (with-meta rw-lock {:tag `ReentrantReadWriteLock})]
-    `(let [rlock# (.readLock ~lock)]
-       (try (.lock rlock#)
-         ~@body
-         (finally (.unlock rlock#))))))
-
-(defmacro write-locked
-  [rw-lock & body]
-  (let [lock (with-meta rw-lock {:tag `ReentrantReadWriteLock})]
-    `(let [wlock# (.writeLock ~lock)]
-       (try (.lock wlock#)
-         ~@body
-         (finally (.unlock wlock#))))))
-
-(defn time-delta
-  [time-secs]
-  (- (current-time-secs) time-secs))
-
-(defn time-delta-ms
-  [time-ms]
-  (- (System/currentTimeMillis) (long time-ms)))
-
-(defn parse-int
-  [str]
-  (Integer/valueOf str))
-
-(defn integer-divided
-  [sum num-pieces]
-  (clojurify-structure (Utils/integerDivided sum num-pieces)))
-
-(defn collectify
-  [obj]
-  (if (or (sequential? obj) (instance? Collection obj))
-    obj
-    [obj]))
-
-(defn to-json
-  [obj]
-  (JSONValue/toJSONString obj))
-
-(defn from-json
-  [^String str]
-  (if str
-    (clojurify-structure
-      (JSONValue/parse str))
-    nil))
-
-(defmacro letlocals
-  [& body]
-  (let [[tobind lexpr] (split-at (dec (count body)) body)
-        binded (vec (mapcat (fn [e]
-                              (if (and (list? e) (= 'bind (first e)))
-                                [(second e) (last e)]
-                                ['_ e]
-                                ))
-                            tobind))]
-    `(let ~binded
-       ~(first lexpr))))
-
-(defn remove-first
-  [pred aseq]
-  (let [[b e] (split-with (complement pred) aseq)]
-    (when (empty? e)
-      (throw (IllegalArgumentException. "Nothing to remove")))
-    (concat b (rest e))))
-
-(defn assoc-non-nil
-  [m k v]
-  (if v (assoc m k v) m))
-
-(defn multi-set
-  "Returns a map of elem to count"
-  [aseq]
-  (apply merge-with +
-         (map #(hash-map % 1) aseq)))
-
-(defn set-var-root*
-  [avar val]
-  (alter-var-root avar (fn [avar] val)))
-
-(defmacro set-var-root
-  [var-sym val]
-  `(set-var-root* (var ~var-sym) ~val))
-
-(defmacro with-var-roots
-  [bindings & body]
-  (let [settings (partition 2 bindings)
-        tmpvars (repeatedly (count settings) (partial gensym "old"))
-        vars (map first settings)
-        savevals (vec (mapcat (fn [t v] [t v]) tmpvars vars))
-        setters (for [[v s] settings] `(set-var-root ~v ~s))
-        restorers (map (fn [v s] `(set-var-root ~v ~s)) vars tmpvars)]
-    `(let ~savevals
-       ~@setters
-       (try
-         ~@body
-         (finally
-           ~@restorers)))))
 
 (defn map-diff
   "Returns mappings in m2 that aren't in m1"
@@ -781,12 +587,6 @@
           my-elems (map first colls)
           rest-elems (apply interleave-all (map rest colls))]
       (concat my-elems rest-elems))))
-
-(defn any-intersection
-  [& sets]
-  (let [elem->count (multi-set (apply concat sets))]
-    (-> (filter-val #(> % 1) elem->count)
-        keys)))
 
 (defn between?
   "val >= lower and val <= upper"
@@ -832,7 +632,7 @@
 
 (defn uptime-computer []
   (let [start-time (current-time-secs)]
-    (fn [] (time-delta start-time))))
+    (fn [] (Time/delta start-time))))
 
 (defn stringify-error [error]
   (let [result (StringWriter.)
@@ -913,7 +713,8 @@
   [max-num-chunks aseq]
   (if (zero? max-num-chunks)
     []
-    (let [chunks (->> (integer-divided (count aseq) max-num-chunks)
+    (let [chunks (->> (Utils/integerDivided (count aseq) max-num-chunks)
+                      clojurify-structure
                       (#(dissoc % 0))
                       (sort-by (comp - first))
                       (mapcat (fn [[size amt]] (repeat amt size)))

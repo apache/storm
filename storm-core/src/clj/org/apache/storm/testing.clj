@@ -43,7 +43,8 @@
   (:import [org.apache.storm.transactional.partitioned PartitionedTransactionalSpoutExecutor])
   (:import [org.apache.storm.tuple Tuple])
   (:import [org.apache.storm.generated StormTopology])
-  (:import [org.apache.storm.task TopologyContext])
+  (:import [org.apache.storm.task TopologyContext]
+           [org.json.simple JSONValue])
   (:require [org.apache.storm [zookeeper :as zk]])
   (:require [org.apache.storm.messaging.loader :as msg-loader])
   (:require [org.apache.storm.daemon.acker :as acker])
@@ -97,6 +98,29 @@
 
 (defn advance-time-secs! [secs]
   (advance-time-ms! (* (long secs) 1000)))
+
+(defn set-var-root*
+  [avar val]
+  (alter-var-root avar (fn [avar] val)))
+
+(defmacro set-var-root
+  [var-sym val]
+  `(set-var-root* (var ~var-sym) ~val))
+
+(defmacro with-var-roots
+  [bindings & body]
+  (let [settings (partition 2 bindings)
+        tmpvars (repeatedly (count settings) (partial gensym "old"))
+        vars (map first settings)
+        savevals (vec (mapcat (fn [t v] [t v]) tmpvars vars))
+        setters (for [[v s] settings] `(set-var-root ~v ~s))
+        restorers (map (fn [v s] `(set-var-root ~v ~s)) vars tmpvars)]
+    `(let ~savevals
+       ~@setters
+       (try
+         ~@body
+         (finally
+           ~@restorers)))))
 
 (defnk add-supervisor
   [cluster-map :ports 2 :conf {} :id nil]
@@ -175,6 +199,13 @@
   (let [finder-fn #(= (.get-id %) supervisor-id)]
     (find-first finder-fn @(:supervisors cluster-map))))
 
+(defn remove-first
+  [pred aseq]
+  (let [[b e] (split-with (complement pred) aseq)]
+    (when (empty? e)
+      (throw (IllegalArgumentException. "Nothing to remove")))
+    (concat b (rest e))))
+
 (defn kill-supervisor [cluster-map supervisor-id]
   (let [finder-fn #(= (.get-id %) supervisor-id)
         supervisors @(:supervisors cluster-map)
@@ -208,13 +239,13 @@
   (doseq [t @(:tmp-dirs cluster-map)]
     (log-message "Deleting temporary path " t)
     (try
-      (rmr t)
+      (Utils/forceDelete t)
       ;; on windows, the host process still holds lock on the logfile
       (catch Exception e (log-message (.getMessage e)))) ))
 
 (def TEST-TIMEOUT-MS
   (let [timeout (System/getenv "STORM_TEST_TIMEOUT_MS")]
-    (parse-int (if timeout timeout "5000"))))
+    (Integer/parseInt (if timeout timeout "5000"))))
 
 (defmacro while-timeout [timeout-ms condition & body]
   `(let [end-time# (+ (System/currentTimeMillis) ~timeout-ms)]
@@ -298,13 +329,13 @@
   [nimbus storm-name conf topology]
   (when-not (Utils/isValidConf conf)
     (throw (IllegalArgumentException. "Topology conf is not json-serializable")))
-  (.submitTopology nimbus storm-name nil (to-json conf) topology))
+  (.submitTopology nimbus storm-name nil (JSONValue/toJSONString conf) topology))
 
 (defn submit-local-topology-with-opts
   [nimbus storm-name conf topology submit-opts]
   (when-not (Utils/isValidConf conf)
     (throw (IllegalArgumentException. "Topology conf is not json-serializable")))
-  (.submitTopologyWithOpts nimbus storm-name nil (to-json conf) topology submit-opts))
+  (.submitTopologyWithOpts nimbus storm-name nil (JSONValue/toJSONString conf) topology submit-opts))
 
 (defn mocked-convert-assignments-to-worker->resources [storm-cluster-state storm-name worker->resources]
   (fn [existing-assignments]
@@ -397,7 +428,10 @@
         component->tasks (reverse-map
                            (common/storm-task-info
                              (.getUserTopology nimbus storm-id)
-                             (from-json (.getTopologyConf nimbus storm-id))))
+                             (->>
+                               (.getTopologyConf nimbus storm-id)
+                               (#(if % (JSONValue/parse %)))
+                               clojurify-structure)))
         component->tasks (if component-ids
                            (select-keys component->tasks component-ids)
                            component->tasks)
@@ -572,6 +606,12 @@
   ([results component-id]
    (read-tuples results component-id Utils/DEFAULT_STREAM_ID)))
 
+(defn multi-set
+  "Returns a map of elem to count"
+  [aseq]
+  (apply merge-with +
+         (map #(hash-map % 1) aseq)))
+
 (defn ms=
   [& args]
   (apply = (map multi-set args)))
@@ -699,3 +739,53 @@
      (try
        (.get f# ~millis ~unit)
        (finally (future-cancel f#)))))
+
+(defmacro mock-java-static
+  "Wraps the given form so that it is executed with a given mock. To mock
+  static methods in java, we use a singleton. The class to mock must implement:
+
+  * setInstance static method that accepts an instance of the selfsame class, or
+    a descendant
+  * resetInstance static method that sets the singlton instance to one of the
+    selfsame class
+
+  Example:
+
+  public class MyMockableClass {
+    private static final MyMockableClass INSTANCE = new MyMockableClass();
+    public static void setInstance(MyMockableClass c) {
+      this.instance = c;
+    }
+    public static void resetInstance() {
+      this.instance = INSTANCE;
+    }
+    // Any method that we wish to mock must delegate to the singleton instance's
+    // corresponding member method implementation
+    public static int mockableFunction(String arg) {
+      return this.instance.mockableFunctionImpl();
+    }
+    protected int mockableFunctionImpl(String arg) {
+      return arg.size();
+    }
+  }
+
+  To write a test with the mocked class, for example:
+
+  (mock-java-static [(proxy [MyMockableClass] []
+                       (mockableFunctionImpl [^String s] 42))]
+    (is (= 42 (MyMockableClass/mockableFunction \"not 42 characters\"))))
+
+  The resulting code remains thread-unsafe."
+  [mocked & body]
+  `(let [klass# (.getClass ~mocked)
+         getMethod-args# (into-array Class [(.getSuperclass klass#)])
+         invoke-args# (into-array Object [~mocked])]
+     (-> klass#
+         (.getMethod "setInstance" getMethod-args#)
+         (.invoke nil invoke-args#))
+     (try
+       ~@body
+       (finally
+         (-> klass#
+             (.getMethod "resetInstance" nil)
+             (.invoke nil nil))))))
