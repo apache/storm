@@ -248,8 +248,11 @@ under the License.
 * Ilya Ostrovskiy ([@iostat](https://github.com/iostat))
 * Satish Duggana ([@satishd](https://github.com/satishd))
 * Seth Ammons ([@sethgrid](https://github.com/sethgrid))
+* Aaron Dixon ([@atdixon](https://github.com/atdixon))
+* Roshan Naik([@roshannaik](https://github.com/roshannaik))
 
 ## Acknowledgements
 
 YourKit is kindly supporting open source projects with its full-featured Java Profiler. YourKit, LLC is the creator of innovative and intelligent tools for profiling Java and .NET applications. Take a look at YourKit's leading software products: [YourKit Java Profiler](http://www.yourkit.com/java/profiler/index.jsp) and [YourKit .NET Profiler](http://www.yourkit.com/.net/profiler/index.jsp).
+
 
