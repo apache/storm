@@ -16,6 +16,7 @@
 
 (ns org.apache.storm.cluster-state.zookeeper-state-factory
   (:import [org.apache.curator.framework.state ConnectionStateListener])
+  (:import [org.apache.storm.utils Utils])
   (:import [org.apache.zookeeper KeeperException$NoNodeException]
            [org.apache.storm.cluster ClusterState DaemonType])
   (:use [org.apache.storm cluster config log util])
@@ -61,7 +62,7 @@
 
      (register
        [this callback]
-       (let [id (uuid)]
+       (let [id (Utils/uuid)]
          (swap! callbacks assoc id callback)
          id))
 

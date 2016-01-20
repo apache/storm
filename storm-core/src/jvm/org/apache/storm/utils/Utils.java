@@ -1407,6 +1407,232 @@ public class Utils {
         return topologyInfo;
     }
 
+
+    //Everything from here on is translated from the old util.clj (storm-core/src/clj/backtype.storm/util.clj)
+
+    //Wraps an exception in a RuntimeException if needed
+    public static Exception wrapInRuntime (Exception e) {
+        if (e instanceof RuntimeException) {
+            return e;
+        } else {
+            return (new RuntimeException(e));
+        }
+    }
+
+    public static final boolean isOnWindows = "Windows_NT".equals(System.getenv("OS"));
+
+    public static final String filePathSeparator = System.getProperty("file.separator");
+
+    public static final String classPathSeparator = System.getProperty("path.separator");
+
+
+    /*
+        Returns the first item of coll for which (pred item) returns logical true.
+        Consumes sequences up to the first match, will consume the entire sequence
+        and return nil if no match is found.
+     */
+    public static Object findFirst (IPredicate pred, Collection coll) {
+        if (coll == null || pred == null) {
+            return null;
+        } else {
+            Iterator<Object> iter = coll.iterator();
+            if (iter==null || !iter.hasNext()) {
+                return null;
+            } else {
+                do {
+                    Object obj = iter.next();
+                    if (pred.test(obj)) {
+                        return obj;
+                    }
+                } while (iter.hasNext());
+                return null;
+            }
+        }
+    }
+
+    public static Object findFirst (IPredicate pred, Map map) {
+        if (map == null || pred == null) {
+            return null;
+        } else {
+            Iterator<Object> iter = map.entrySet().iterator();
+            if (iter==null || !iter.hasNext()) {
+                return null;
+            } else {
+                do {
+                    Object obj = iter.next();
+                    if (pred.test(obj)) {
+                        return obj;
+                    }
+                } while (iter.hasNext());
+                return null;
+            }
+        }
+    }
+    /*
+        Note: since the following functions are nowhere used in Storm, they were not translated:
+        dissoc-in
+        indexed
+        positions
+        assoc-conj
+        set-delta
+
+        clojurify-structure  because it wouldn't make sense without clojure
+     */
+
+
+    public static String localHostname () throws UnknownHostException {
+        return _instance.localHostnameImpl();
+    }
+
+    protected String localHostnameImpl () throws UnknownHostException {
+        return InetAddress.getLocalHost().getCanonicalHostName();
+    }
+
+    private static String memoizedLocalHostnameString = null;
+
+    public static String memoizedLocalHostname () throws UnknownHostException {
+        if (memoizedLocalHostnameString == null) {
+            memoizedLocalHostnameString = localHostname();
+        }
+        return memoizedLocalHostnameString;
+    }
+
+    /*
+        checks conf for STORM_LOCAL_HOSTNAME.
+        when unconfigured, falls back to (memoized) guess by `local-hostname`.
+    */
+    public static String hostname (Map<String, Object> conf) throws UnknownHostException  {
+        if (conf == null) {
+            return memoizedLocalHostname();
+        }
+        Object hostnameString = conf.get(Config.STORM_LOCAL_HOSTNAME);
+        if (hostnameString == null ) {
+            return memoizedLocalHostname();
+        }
+        if (hostnameString.equals("")) {
+            return memoizedLocalHostname();
+        }
+        return hostnameString.toString();
+    }
+
+    public static String uuid() {
+        return UUID.randomUUID().toString();
+    }
+
+    public static int currentTimeSecs() {
+        return Time.currentTimeSecs();
+    }
+
+    public static long currentTimeMillis() {
+        return Time.currentTimeMillis();
+    }
+
+    public static long secsToMillisLong(int secs) {
+        return 1000*secs;
+    }
+
+    public static Vector<String> tokenizePath (String path) {
+        String[] tokens = path.split("/");
+        Vector<String> outputs = new Vector<String>();
+        if (tokens == null || tokens.length == 0) {
+            return null;
+        }
+        for (String tok: tokens) {
+            if (!tok.isEmpty()) {
+                outputs.add(tok);
+            }
+        }
+        return outputs;
+    }
+
+    public static String parentPath(String path) {
+        Vector<String> tokens = tokenizePath(path);
+        String output = "";
+        int length = tokens.size();
+        if (length < 1) {
+            return "";
+        }
+        for (int i = 0; i < length - 1; i++) {  //length - 1 to mimic "butlast" from the old clojure code
+            output = output + tokens.get(i);
+        }
+        return output;
+    }
+
+    public static String toksToPath (Vector<String> toks) {
+        String output = "";
+        int length = toks.size();
+        if (length < 1) {
+            return "";
+        }
+        for (int i = 0; i < length; i++) {
+            output = output + toks.get(i);
+        }
+        return output;
+    }
+    public static String normalizePath (String path) {
+        return toksToPath(tokenizePath(path));
+    }
+
+    public static Map mapVal (AFn aFn, Map amap) {
+        Map newMap = new HashMap();
+        for (Object key: amap.keySet()) {
+            Object value = amap.get(key);
+            Object newValue = aFn.eval(value);
+            newMap.put(key, newValue);
+        }
+        return newMap;
+    }
+
+    public static Map filterVal(IPredicate aFn, Map amap) {
+        Map newMap = new HashMap();
+        for (Object key: amap.keySet()) {
+            Object value = amap.get(key);
+            if(aFn.test(value)) {
+                newMap.put(key, value);
+            }
+        }
+        return newMap;
+    }
+
+    public static Map filterKey(IPredicate aFn, Map amap) {
+        Map newMap = new HashMap();
+        for (Object key: amap.keySet()) {
+            Object value = amap.get(key);
+            if(aFn.test(key)) {
+                newMap.put(key, value);
+            }
+        }
+        return newMap;
+    }
+
+    public static Map mapKey (AFn aFn, Map amap) {
+        Map newMap = new HashMap();
+        for (Object key: amap.keySet()) {
+            Object value = amap.get(key);
+            Object newKey = aFn.eval(key);
+            newMap.put(newKey, value);
+        }
+        return newMap;
+    }
+
+    public static Vector<Collection> separate (IPredicate pred, Collection aseq) {
+        Vector<Collection> outputVector = new Vector<Collection>();
+        Collection pass = new HashSet();
+        Collection notPass = new HashSet();
+        for (Object obj: aseq) {
+            if (pred.test(obj)) {
+                pass.add(obj);
+            } else {
+                notPass.add(obj);
+            }
+        }
+        outputVector.add(pass);
+        outputVector.add(notPass);
+        return outputVector;
+    }
+//    (defn separate
+//    [pred aseq]
+//            [(filter pred aseq) (filter (complement pred) aseq)])
     /**
      * Deletes a file or directory and its contents if it exists. Does not
      * complain if the input is null or does not exist.

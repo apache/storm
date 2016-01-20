@@ -1696,7 +1696,7 @@
       (beginFileUpload [this]
         (mark! nimbus:num-beginFileUpload-calls)
         (check-authorization! nimbus nil nil "fileUpload")
-        (let [fileloc (str (inbox nimbus) "/stormjar-" (uuid) ".jar")]
+        (let [fileloc (str (inbox nimbus) "/stormjar-" (Utils/uuid) ".jar")]
           (.put (:uploaders nimbus)
                 fileloc
                 (Channels/newChannel (FileOutputStream. fileloc)))
@@ -1736,7 +1736,7 @@
         (let [is (BufferInputStream. (.getBlob (:blob-store nimbus) file nil) 
               ^Integer (Utils/getInt (conf STORM-BLOBSTORE-INPUTSTREAM-BUFFER-SIZE-BYTES) 
               (int 65536)))
-              id (uuid)]
+              id (Utils/uuid)]
           (.put (:downloaders nimbus) id is)
           id))
 
@@ -1927,7 +1927,7 @@
       (^String beginCreateBlob [this
                                 ^String blob-key
                                 ^SettableBlobMeta blob-meta]
-        (let [session-id (uuid)]
+        (let [session-id (Utils/uuid)]
           (.put (:blob-uploaders nimbus)
             session-id
             (.createBlob (:blob-store nimbus) blob-key blob-meta (get-subject)))
@@ -1938,7 +1938,7 @@
       (^String beginUpdateBlob [this ^String blob-key]
         (let [^AtomicOutputStream os (.updateBlob (:blob-store nimbus)
                                        blob-key (get-subject))]
-          (let [session-id (uuid)]
+          (let [session-id (Utils/uuid)]
             (.put (:blob-uploaders nimbus) session-id os)
             (log-message "Created upload session for " blob-key
               " with id " session-id)
@@ -2003,7 +2003,7 @@
       (^BeginDownloadResult beginBlobDownload [this ^String blob-key]
         (let [^InputStreamWithMeta is (.getBlob (:blob-store nimbus)
                                         blob-key (get-subject))]
-          (let [session-id (uuid)
+          (let [session-id (Utils/uuid)
                 ret (BeginDownloadResult. (.getVersion is) (str session-id))]
             (.set_data_size ret (.getFileLength is))
             (.put (:blob-downloaders nimbus) session-id (BufferInputStream. is (Utils/getInt (conf STORM-BLOBSTORE-INPUTSTREAM-BUFFER-SIZE-BYTES) (int 65536))))
@@ -2047,7 +2047,7 @@
               ;; This is the use case when the user wishes to list blobs
               ;; starting from the beginning.
               session (if (clojure.string/blank? session)
-                        (let [new-session (uuid)]
+                        (let [new-session (Utils/uuid)]
                           (log-message "Creating new session for downloading list " new-session)
                           new-session)
                         session)]

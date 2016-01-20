@@ -366,23 +366,24 @@
         ;; match.
         exp-offset-fn #(- (/ logviewer/default-bytes-per-page 2) %)]
 
-    (stubbing [local-hostname expected-host
-               logviewer/logviewer-port expected-port]
-
-      (testing "Logviewer link centers the match in the page"
-        (let [expected-fname "foobar.log"]
-          (is (= (str "http://"
-                   expected-host
-                   ":"
-                   expected-port
-                   "/log?file="
-                   expected-fname
-                   "&start=1947&length="
-                   logviewer/default-bytes-per-page)
-                (logviewer/url-to-match-centered-in-log-page (byte-array 42)
-                  expected-fname
-                  27526
-                  8888)))))
+    ;(stubbing [local-hostname expected-host
+    (stubbing [logviewer/logviewer-port expected-port]
+      (mock-java-static (proxy [Utils] []
+                          (localHostnameImpl [] expected-host))
+        (testing "Logviewer link centers the match in the page"
+          (let [expected-fname "foobar.log"]
+            (is (= (str "http://"
+                     expected-host
+                     ":"
+                     expected-port
+                     "/log?file="
+                     expected-fname
+                     "&start=1947&length="
+                     logviewer/default-bytes-per-page)
+                  (logviewer/url-to-match-centered-in-log-page (byte-array 42)
+                    expected-fname
+                    27526
+                    8888)))))
 
       (let [file (->> "logviewer-search-context-tests.log"
                    (clojure.java.io/file "src" "dev"))]
@@ -667,7 +668,7 @@
                   (logviewer/substring-search file
                     pattern
                     :num-matches nil
-                    :start-byte-offset nil)))))))))
+                    :start-byte-offset nil))))))))))
 
 (deftest test-find-n-matches
   (testing "find-n-matches looks through logs properly"

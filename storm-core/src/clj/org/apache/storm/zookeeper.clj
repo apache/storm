@@ -94,7 +94,7 @@
     (let [mode  (zk-create-modes mode)]
       (try
         (.. zk (create) (creatingParentsIfNeeded) (withMode mode) (withACL acls) (forPath (normalize-path path) data))
-        (catch Exception e (throw (wrap-in-runtime e))))))
+        (catch Exception e (throw (Utils/wrapInRuntime e))))))
   ([^CuratorFramework zk ^String path ^bytes data acls]
     (create-node zk path data :persistent acls)))
 
@@ -105,7 +105,7 @@
      (if watch?
        (.. zk (checkExists) (watched) (forPath (normalize-path path)))
        (.. zk (checkExists) (forPath (normalize-path path))))
-     (catch Exception e (throw (wrap-in-runtime e))))))
+     (catch Exception e (throw (Utils/wrapInRuntime e))))))
 
 (defnk delete-node
   [^CuratorFramework zk ^String path]
@@ -116,7 +116,7 @@
                     ;; do nothing
                     (log-message "exception" e)
                   )
-                  (catch Exception e (throw (wrap-in-runtime e)))))))
+                  (catch Exception e (throw (Utils/wrapInRuntime e)))))))
 
 (defn mkdirs
   [^CuratorFramework zk ^String path acls]
@@ -134,7 +134,7 @@
   [^CuratorFramework zk ^String path]
   (try
     (.. zk (sync) (forPath (normalize-path path)))
-    (catch Exception e (throw (wrap-in-runtime e)))))
+    (catch Exception e (throw (Utils/wrapInRuntime e)))))
 
 
 (defn add-listener [^CuratorFramework zk ^ConnectionStateListener listener]
@@ -151,7 +151,7 @@
       (catch KeeperException$NoNodeException e
         ;; this is fine b/c we still have a watch from the successful exists call
         nil )
-      (catch Exception e (throw (wrap-in-runtime e))))))
+      (catch Exception e (throw (Utils/wrapInRuntime e))))))
 
 (defn get-data-with-version 
   [^CuratorFramework zk ^String path watch?]
@@ -184,7 +184,7 @@
     (if watch?
       (.. zk (getChildren) (watched) (forPath (normalize-path path)))
       (.. zk (getChildren) (forPath (normalize-path path))))
-    (catch Exception e (throw (wrap-in-runtime e)))))
+    (catch Exception e (throw (Utils/wrapInRuntime e)))))
 
 (defn delete-node-blobstore
   "Deletes the state inside the zookeeper for a key, for which the
@@ -203,7 +203,7 @@
   [^CuratorFramework zk ^String path ^bytes data]
   (try
     (.. zk (setData) (forPath (normalize-path path) data))
-    (catch Exception e (throw (wrap-in-runtime e)))))
+    (catch Exception e (throw (Utils/wrapInRuntime e)))))
 
 (defn exists
   [^CuratorFramework zk ^String path watch?]
@@ -245,7 +245,7 @@
 (defn leader-latch-listener-impl
   "Leader latch listener that will be invoked when we either gain or lose leadership"
   [conf zk leader-latch]
-  (let [hostname (.getCanonicalHostName (InetAddress/getLocalHost))]
+  (let [hostname (Utils/localHostname)];(.getCanonicalHostName (InetAddress/getLocalHost))]
     (reify LeaderLatchListener
       (^void isLeader[this]
         (log-message (str hostname " gained leadership")))

@@ -26,6 +26,7 @@
   (:import [javax.security.auth Subject])
   (:import [java.util UUID Random ArrayList List Collections])
   (:import [java.util.zip ZipFile])
+  (:import [java.util.concurrent.locks ReentrantReadWriteLock])
   (:import [java.util.concurrent Semaphore])
   (:import [java.nio.file Files Paths])
   (:import [java.nio.file.attribute FileAttribute])
@@ -47,21 +48,21 @@
   (:require [ring.util.codec :as codec])
   (:use [org.apache.storm log]))
 
-(defn wrap-in-runtime
-  "Wraps an exception in a RuntimeException if needed"
-  [^Exception e]
-  (if (instance? RuntimeException e)
-    e
-    (RuntimeException. e)))
+;(defn wrap-in-runtime
+;  "Wraps an exception in a RuntimeException if needed"
+;  [^Exception e]
+;  (if (instance? RuntimeException e)
+;    e
+;    (RuntimeException. e)))
 
 (def on-windows?
   (= "Windows_NT" (System/getenv "OS")))
 
-(def file-path-separator
-  (System/getProperty "file.separator"))
+;(def file-path-separator
+;  (System/getProperty "file.separator"))
 
-(def class-path-separator
-  (System/getProperty "path.separator"))
+;(def class-path-separator
+;  (System/getProperty "path.separator"))
 
 (defn is-absolute-path? [path]
   (.isAbsolute (Paths/get path (into-array String []))))
@@ -177,7 +178,7 @@
      ~@body
      false
      (catch Throwable t#
-       (exception-cause? ~klass t#))))
+       (Utils/exceptionCauseIsInstanceOf ~klass t#))))
 
 (defmacro thrown-cause-with-msg?
   [klass re & body]
@@ -202,7 +203,7 @@
         [code guards] (split-with checker body)
         error-local (gensym "t")
         guards (forcat [[_ klass local & guard-body] guards]
-                       `((exception-cause? ~klass ~error-local)
+                       `((Utils/exceptionCauseIsInstanceOf ~klass ~error-local)
                          (let [~local ~error-local]
                            ~@guard-body
                            )))]
@@ -212,17 +213,17 @@
                true (throw ~error-local)
                )))))
 
-(defn local-hostname
-  []
-  (.getCanonicalHostName (InetAddress/getLocalHost)))
-
-(def memoized-local-hostname (memoize local-hostname))
+;(defn local-hostname
+;  []
+;  (.getCanonicalHostName (InetAddress/getLocalHost)))
+;
+;(def memoized-local-hostname (memoize local-hostname))
 
 ;; checks conf for STORM_LOCAL_HOSTNAME.
 ;; when unconfigured, falls back to (memoized) guess by `local-hostname`.
-(defn hostname
-  [conf]
-  (conf Config/STORM_LOCAL_HOSTNAME (memoized-local-hostname)))
+;(defn hostname
+;  [conf]
+;  (conf Config/STORM_LOCAL_HOSTNAME (memoized-local-hostname)))
 
 (letfn [(try-port [port]
                   (with-open [socket (java.net.ServerSocket. port)]
@@ -235,8 +236,8 @@
        (catch java.io.IOException e
          (available-port))))))
 
-(defn uuid []
-  (str (UUID/randomUUID)))
+;(defn uuid []
+;  (str (UUID/randomUUID)))
 
 (defn current-time-secs
   []
@@ -519,10 +520,10 @@
       (clojure.string/join " ")))
 
 (defn script-file-path [dir]
-  (str dir file-path-separator "storm-worker-script.sh"))
+  (str dir Utils/filePathSeparator "storm-worker-script.sh"))
 
 (defn container-file-path [dir]
-  (str dir file-path-separator "launch_container.sh"))
+  (str dir Utils/filePathSeparator "launch_container.sh"))
 
 (defnk write-script
   [dir command :environment {}]
@@ -847,13 +848,13 @@
 
 (defn logs-filename
   [storm-id port]
-  (str storm-id file-path-separator port file-path-separator "worker.log"))
+  (str storm-id Utils/filePathSeparator port Utils/filePathSeparator "worker.log"))
 
 (def worker-log-filename-pattern #"^worker.log(.*)")
 
 (defn event-logs-filename
   [storm-id port]
-  (str storm-id file-path-separator port file-path-separator "events.log"))
+  (str storm-id Utils/filePathSeparator port Utils/filePathSeparator "events.log"))
 
 (defn clojure-from-yaml-file [yamlFile]
   (try

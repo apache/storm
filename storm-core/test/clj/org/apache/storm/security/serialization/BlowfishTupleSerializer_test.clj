@@ -15,7 +15,7 @@
 ;; limitations under the License.
 (ns org.apache.storm.security.serialization.BlowfishTupleSerializer-test
   (:use [clojure test]
-        [org.apache.storm.util :only (exception-cause?)]
+        ;[org.apache.storm.util :only (exception-cause?)]
         [clojure.string :only (join split)]
   )
   (:import [org.apache.storm.security.serialization BlowfishTupleSerializer]

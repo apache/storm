@@ -29,7 +29,7 @@
             LogConfig LogLevel LogLevelAction])
   (:import [java.util HashMap])
   (:import [java.io File])
-  (:import [org.apache.storm.utils Time Utils])
+  (:import [org.apache.storm.utils Time Utils IPredicate])
   (:import [org.apache.commons.io FileUtils]
            [org.json.simple JSONValue])
   (:use [org.apache.storm testing MockAutoCred util config log timer zookeeper])

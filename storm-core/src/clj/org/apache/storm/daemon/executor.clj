@@ -209,7 +209,7 @@
 
       (when (<= @interval-errors max-per-interval)
         (cluster/report-error (:storm-cluster-state executor) (:storm-id executor) (:component-id executor)
-                              (hostname storm-conf)
+                              (Utils/hostname storm-conf)
                               (.getThisWorkerPort (:worker-context executor)) error)
         ))))
 
@@ -266,8 +266,8 @@
      :report-error-and-die (fn [error]
                              ((:report-error <>) error)
                              (if (or
-                                    (exception-cause? InterruptedException error)
-                                    (exception-cause? java.io.InterruptedIOException error))
+                                   (Utils/exceptionCauseIsInstanceOf InterruptedException error)
+                                   (Utils/exceptionCauseIsInstanceOf java.io.InterruptedIOException error))
                                (log-message "Got interrupted excpetion shutting thread down...")
                                ((:suicide-fn <>))))
      :sampler (mk-stats-sampler storm-conf)
@@ -330,7 +330,7 @@
          task-id (:task-id task-data)
          name->imetric (-> interval->task->metric-registry (get interval) (get task-id))
          task-info (IMetricsConsumer$TaskInfo.
-                     (hostname (:storm-conf executor-data))
+                     (Utils/hostname (:storm-conf executor-data))
                      (.getThisWorkerPort worker-context)
                      (:component-id executor-data)
                      task-id

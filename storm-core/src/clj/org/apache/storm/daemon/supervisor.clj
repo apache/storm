@@ -216,7 +216,7 @@
     ))
 
 (defn generate-supervisor-id []
-  (uuid))
+  (Utils/uuid))
 
 (defnk worker-launcher [conf user args :environment {} :log-prefix nil :exit-code-callback nil :directory nil]
   (let [_ (when (clojure.string/blank? user)
@@ -325,7 +325,7 @@
    :local-state (supervisor-state conf)
    :supervisor-id (.getSupervisorId isupervisor)
    :assignment-id (.getAssignmentId isupervisor)
-   :my-hostname (hostname conf)
+   :my-hostname (Utils/hostname conf)
    :curr-assignment (atom nil) ;; used for reporting used ports when heartbeating
    :heartbeat-timer (mk-timer :kill-fn (fn [t]
                                (log-error t "Error when processing event")
@@ -407,7 +407,7 @@
         new-worker-ids (into
                         {}
                         (for [port (keys reassign-executors)]
-                          [port (uuid)]))]
+                          [port (Utils/uuid)]))]
     ;; 1. to kill are those in allocated that are dead or disallowed
     ;; 2. kill the ones that should be dead
     ;;     - read pids, kill -9 and individually remove file
@@ -654,7 +654,7 @@
   (let [java-home (.get (System/getenv) "JAVA_HOME")]
     (if (nil? java-home)
       cmd
-      (str java-home file-path-separator "bin" file-path-separator cmd))))
+      (str java-home Utils/filePathSeparator "bin" Utils/filePathSeparator cmd))))
 
 (defn java-cmd []
   (jvm-cmd "java"))
@@ -927,7 +927,7 @@
 (defmethod download-storm-code
   :distributed [conf storm-id master-code-dir localizer]
   ;; Downloading to permanent location is atomic
-  (let [tmproot (str (supervisor-tmp-dir conf) file-path-separator (uuid))
+  (let [tmproot (str (supervisor-tmp-dir conf) Utils/filePathSeparator (Utils/uuid))
         stormroot (supervisor-stormdist-root conf storm-id)
         blobstore (Utils/getClientBlobStoreForSupervisor conf)]
     (FileUtils/forceMkdir (File. tmproot))
@@ -1045,10 +1045,10 @@
           storm-log-dir LOG-DIR
           storm-log-conf-dir (conf STORM-LOG4J2-CONF-DIR)
           storm-log4j2-conf-dir (if storm-log-conf-dir
-                                  (if (is-absolute-path? storm-log-conf-dir)
+                                  (if (.isAbsolute (File. storm-log-conf-dir)) ;(is-absolute-path? storm-log-conf-dir)
                                     storm-log-conf-dir
-                                    (str storm-home file-path-separator storm-log-conf-dir))
-                                  (str storm-home file-path-separator "log4j2"))
+                                    (str storm-home Utils/filePathSeparator storm-log-conf-dir))
+                                  (str storm-home Utils/filePathSeparator "log4j2"))
           stormroot (supervisor-stormdist-root conf storm-id)
           jlp (jlp stormroot conf)
           stormjar (supervisor-stormjar-path stormroot)
@@ -1089,7 +1089,7 @@
                      (str "-Dworker.id=" worker-id)
                      (str "-Dworker.port=" port)
                      (str "-Dstorm.log.dir=" storm-log-dir)
-                     (str "-Dlog4j.configurationFile=" storm-log4j2-conf-dir file-path-separator "worker.xml")
+                     (str "-Dlog4j.configurationFile=" storm-log4j2-conf-dir Utils/filePathSeparator "worker.xml")
                      (str "-DLog4jContextSelector=org.apache.logging.log4j.core.selector.BasicContextSelector")
                      "org.apache.storm.LogWriter"]
                     [(java-cmd) "-server"]
@@ -1105,7 +1105,7 @@
                      (str "-Dstorm.options=" storm-options)
                      (str "-Dstorm.log.dir=" storm-log-dir)
                      (str "-Dlogging.sensitivity=" logging-sensitivity)
-                     (str "-Dlog4j.configurationFile=" storm-log4j2-conf-dir file-path-separator "worker.xml")
+                     (str "-Dlog4j.configurationFile=" storm-log4j2-conf-dir Utils/filePathSeparator "worker.xml")
                      (str "-DLog4jContextSelector=org.apache.logging.log4j.core.selector.BasicContextSelector")
                      (str "-Dstorm.id=" storm-id)
                      (str "-Dworker.id=" worker-id)
@@ -1143,7 +1143,7 @@
 
 (defmethod download-storm-code
   :local [conf storm-id master-code-dir localizer]
-  (let [tmproot (str (supervisor-tmp-dir conf) file-path-separator (uuid))
+  (let [tmproot (str (supervisor-tmp-dir conf) Utils/filePathSeparator (Utils/uuid))
         stormroot (supervisor-stormdist-root conf storm-id)
         blob-store (Utils/getNimbusBlobStore conf master-code-dir nil)]
     (try
@@ -1157,7 +1157,7 @@
     (let [classloader (.getContextClassLoader (Thread/currentThread))
           resources-jar (resources-jar)
           url (.getResource classloader RESOURCES-SUBDIR)
-          target-dir (str stormroot file-path-separator RESOURCES-SUBDIR)]
+          target-dir (str stormroot Utils/filePathSeparator RESOURCES-SUBDIR)]
       (cond
         resources-jar
         (do
@@ -1171,7 +1171,7 @@
 (defmethod launch-worker
     :local [supervisor storm-id port worker-id mem-onheap]
     (let [conf (:conf supervisor)
-          pid (uuid)
+          pid (Utils/uuid)
           worker (worker/mk-worker conf
                                    (:shared-context supervisor)
                                    storm-id

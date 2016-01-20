@@ -26,6 +26,7 @@
   (:import [java.util UUID])
   (:import [java.io File])
   (:import [java.nio.file Files])
+  (:import [org.apache.storm.utils Utils IPredicate])
   (:import [java.nio.file.attribute FileAttribute])
   (:use [org.apache.storm config testing util timer])
   (:use [org.apache.storm.daemon common])
@@ -45,7 +46,8 @@
                                         (get [supervisor-id port] ))]
                           (when executors [storm-id executors])
                           ))
-        ret (find-first not-nil? slot-assigns)]
+        pred (reify IPredicate (test [this x] (not-nil? x)))
+        ret (Utils/findFirst pred slot-assigns)]
     (when-not ret
       (throw-runtime "Could not find assignment for worker"))
     ret
@@ -285,7 +287,7 @@
           mock-storm-id "fake-storm-id"
           mock-worker-id "fake-worker-id"
           mock-mem-onheap 512
-          mock-cp (str file-path-separator "base" class-path-separator file-path-separator "stormjar.jar")
+          mock-cp (str Utils/filePathSeparator "base" Utils/classPathSeparator Utils/filePathSeparator "stormjar.jar")
           mock-sensitivity "S3"
           mock-cp "/base:/stormjar.jar"
           exp-args-fn (fn [opts topo-opts classpath]
@@ -309,9 +311,9 @@
                                 "-Dworkers.artifacts=/tmp/workers-artifacts"
                                 "-Dstorm.conf.file="
                                 "-Dstorm.options="
-                                (str "-Dstorm.log.dir=" file-path-separator "logs")
+                                (str "-Dstorm.log.dir=" Utils/filePathSeparator "logs")
                                 (str "-Dlogging.sensitivity=" mock-sensitivity)
-                                (str "-Dlog4j.configurationFile=" file-path-separator "log4j2" file-path-separator "worker.xml")
+                                (str "-Dlog4j.configurationFile=" Utils/filePathSeparator "log4j2" Utils/filePathSeparator "worker.xml")
                                 "-DLog4jContextSelector=org.apache.logging.log4j.core.selector.BasicContextSelector"
                                 (str "-Dstorm.id=" mock-storm-id)
                                 (str "-Dworker.id=" mock-worker-id)
@@ -379,7 +381,7 @@
               mock-supervisor {:conf {STORM-CLUSTER-MODE :distributed}}]
           (mock-java-static (proxy [Utils] []
                                (currentClasspathImpl []
-                                 (str file-path-separator "base")))
+                                 (str Utils/filePathSeparator "base")))
             (stubbing [read-supervisor-storm-conf {TOPOLOGY-CLASSPATH topo-cp}
                        supervisor-stormdist-root nil
                        supervisor/jlp nil
@@ -403,7 +405,7 @@
               mock-supervisor {:conf {STORM-CLUSTER-MODE :distributed}}]
           (mock-java-static (proxy [Utils] []
                                (currentClasspathImpl []
-                                 (str file-path-separator "base")))
+                                 (str Utils/filePathSeparator "base")))
             (stubbing [read-supervisor-storm-conf {TOPOLOGY-ENVIRONMENT topo-env}
                        supervisor-stormdist-root nil
                        supervisor/jlp nil
@@ -570,13 +572,14 @@
       (stubbing [uptime-computer nil
                  cluster/mk-storm-cluster-state nil
                  supervisor-state nil
-                 local-hostname nil
+                 ;local-hostname nil
                  mk-timer nil
                  supervisor-local-dir nil]
-        (supervisor/supervisor-data auth-conf nil fake-isupervisor)
-        (verify-call-times-for cluster/mk-storm-cluster-state 1)
-        (verify-first-call-args-for-indices cluster/mk-storm-cluster-state [2]
-                                            expected-acls)))))
+        (mock-java-static (proxy [Utils] [] (localHostnameImpl [] nil))
+          (supervisor/supervisor-data auth-conf nil fake-isupervisor)
+          (verify-call-times-for cluster/mk-storm-cluster-state 1)
+          (verify-first-call-args-for-indices cluster/mk-storm-cluster-state [2]
+                                              expected-acls))))))
 
 (deftest test-write-log-metadata
   (testing "supervisor writes correct data to logs metadata file"

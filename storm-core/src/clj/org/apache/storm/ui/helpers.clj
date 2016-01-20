@@ -20,7 +20,7 @@
          [string :only [blank? join]]
          [walk :only [keywordize-keys]]])
   (:use [org.apache.storm config log])
-  (:use [org.apache.storm.util :only [clojurify-structure uuid defnk url-encode not-nil?]])
+  (:use [org.apache.storm.util :only [clojurify-structure defnk url-encode not-nil?]])
   (:use [clj-time coerce format])
   (:import [org.apache.storm.generated ExecutorInfo ExecutorSummary])
   (:import [org.apache.storm.logging.filters AccessLoggingFilter])
