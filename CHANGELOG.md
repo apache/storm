@@ -1,4 +1,5 @@
 ## 0.10.1
+ * STORM-1482: add missing 'break' for RedisStoreBolt
  * STORM-1481: avoid Math.abs(Integer) get a negative value
  * STORM-1121: Deprecate test only configuraton nimbus.reassign
  * STORM-1180: FLUX logo wasn't appearing quite right
