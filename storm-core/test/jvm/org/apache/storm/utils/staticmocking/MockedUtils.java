@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.testing.staticmocking;
+package org.apache.storm.utils.staticmocking;
 
 import org.apache.storm.utils.Utils;
 

@@ -19,14 +19,14 @@
   (:use [conjure core])
   (:require [clojure.contrib [string :as contrib-str]])
   (:require [clojure [string :as string] [set :as set]])
-  (:import [org.apache.storm.testing TestWordCounter TestWordSpout TestGlobalCount TestAggregatesCounter TestPlannerSpout]
-           [org.apache.storm.testing.staticmocking MockedUtils])
+  (:import [org.apache.storm.testing TestWordCounter TestWordSpout TestGlobalCount TestAggregatesCounter TestPlannerSpout])
   (:import [org.apache.storm.scheduler ISupervisor])
   (:import [org.apache.storm.generated RebalanceOptions])
   (:import [java.util UUID])
   (:import [java.io File])
   (:import [java.nio.file Files])
-  (:import [org.apache.storm.utils Utils IPredicate])
+  (:import [org.apache.storm.utils Utils IPredicate]
+           [org.apache.storm.utils.staticmocking MockedUtils])
   (:import [java.nio.file.attribute FileAttribute])
   (:use [org.apache.storm config testing util timer])
   (:use [org.apache.storm.daemon common])

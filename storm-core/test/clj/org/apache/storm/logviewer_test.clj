@@ -23,8 +23,8 @@
   (:use [org.apache.storm testing]
         [org.apache.storm.ui helpers])
   (:import [org.apache.storm.daemon DirectoryCleaner]
-           [org.apache.storm.testing.staticmocking MockedUtils]
-           [org.apache.storm.utils Utils])
+           [org.apache.storm.utils Utils]
+           [org.apache.storm.utils.staticmocking MockedUtils])
   (:import [java.nio.file Files Path DirectoryStream])
   (:import [java.nio.file Files])
   (:import [java.nio.file.attribute FileAttribute])
