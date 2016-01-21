@@ -93,7 +93,7 @@
   ([^CuratorFramework zk ^String path ^bytes data mode acls]
     (let [mode  (zk-create-modes mode)]
       (try
-        (.. zk (create) (creatingParentsIfNeeded) (withMode mode) (withACL acls) (forPath (normalize-path path) data))
+        (.. zk (create) (creatingParentsIfNeeded) (withMode mode) (withACL acls) (forPath (Utils/normalizePath path) data))
         (catch Exception e (throw (Utils/wrapInRuntime e))))))
   ([^CuratorFramework zk ^String path ^bytes data acls]
     (create-node zk path data :persistent acls)))
@@ -103,15 +103,15 @@
   ((complement nil?)
    (try
      (if watch?
-       (.. zk (checkExists) (watched) (forPath (normalize-path path)))
-       (.. zk (checkExists) (forPath (normalize-path path))))
+       (.. zk (checkExists) (watched) (forPath (Utils/normalizePath path)))
+       (.. zk (checkExists) (forPath (Utils/normalizePath path))))
      (catch Exception e (throw (Utils/wrapInRuntime e))))))
 
 (defnk delete-node
   [^CuratorFramework zk ^String path]
-  (let [path (normalize-path path)]
+  (let [path (Utils/normalizePath path)]
     (when (exists-node? zk path false)
-      (try-cause  (.. zk (delete) (deletingChildrenIfNeeded) (forPath (normalize-path path)))
+      (try-cause  (.. zk (delete) (deletingChildrenIfNeeded) (forPath (Utils/normalizePath path)))
                   (catch KeeperException$NoNodeException e
                     ;; do nothing
                     (log-message "exception" e)
@@ -120,9 +120,9 @@
 
 (defn mkdirs
   [^CuratorFramework zk ^String path acls]
-  (let [path (normalize-path path)]
+  (let [path (Utils/normalizePath path)]
     (when-not (or (= path "/") (exists-node? zk path false))
-      (mkdirs zk (parent-path path) acls)
+      (mkdirs zk (Utils/parentPath path) acls)
       (try-cause
         (create-node zk path (barr 7) :persistent acls)
         (catch KeeperException$NodeExistsException e
@@ -133,7 +133,7 @@
 (defn sync-path
   [^CuratorFramework zk ^String path]
   (try
-    (.. zk (sync) (forPath (normalize-path path)))
+    (.. zk (sync) (forPath (Utils/normalizePath path)))
     (catch Exception e (throw (Utils/wrapInRuntime e)))))
 
 
@@ -142,7 +142,7 @@
 
 (defn get-data
   [^CuratorFramework zk ^String path watch?]
-  (let [path (normalize-path path)]
+  (let [path (Utils/normalizePath path)]
     (try-cause
       (if (exists-node? zk path watch?)
         (if watch?
@@ -156,7 +156,7 @@
 (defn get-data-with-version 
   [^CuratorFramework zk ^String path watch?]
   (let [stats (org.apache.zookeeper.data.Stat. )
-        path (normalize-path path)]
+        path (Utils/normalizePath path)]
     (try-cause
      (if-let [data
               (if (exists-node? zk path watch?)
@@ -173,8 +173,8 @@
 [^CuratorFramework zk ^String path watch?]
   (if-let [stats
            (if watch?
-             (.. zk (checkExists) (watched) (forPath (normalize-path path)))
-             (.. zk (checkExists) (forPath (normalize-path path))))]
+             (.. zk (checkExists) (watched) (forPath (Utils/normalizePath path)))
+             (.. zk (checkExists) (forPath (Utils/normalizePath path))))]
     (.getVersion stats)
     nil))
 
@@ -182,15 +182,15 @@
   [^CuratorFramework zk ^String path watch?]
   (try
     (if watch?
-      (.. zk (getChildren) (watched) (forPath (normalize-path path)))
-      (.. zk (getChildren) (forPath (normalize-path path))))
+      (.. zk (getChildren) (watched) (forPath (Utils/normalizePath path)))
+      (.. zk (getChildren) (forPath (Utils/normalizePath path))))
     (catch Exception e (throw (Utils/wrapInRuntime e)))))
 
 (defn delete-node-blobstore
   "Deletes the state inside the zookeeper for a key, for which the
    contents of the key starts with nimbus host port information"
   [^CuratorFramework zk ^String parent-path ^String host-port-info]
-  (let [parent-path (normalize-path parent-path)
+  (let [parent-path (Utils/normalizePath parent-path)
         child-path-list (if (exists-node? zk parent-path false)
                           (into [] (get-children zk parent-path false))
                           [])]
@@ -202,7 +202,7 @@
 (defn set-data
   [^CuratorFramework zk ^String path ^bytes data]
   (try
-    (.. zk (setData) (forPath (normalize-path path) data))
+    (.. zk (setData) (forPath (Utils/normalizePath path) data))
     (catch Exception e (throw (Utils/wrapInRuntime e)))))
 
 (defn exists

@@ -71,7 +71,7 @@
         zk-hb {:storm-id (:storm-id worker)
                :executor-stats stats
                :uptime ((:uptime worker))
-               :time-secs (current-time-secs)
+               :time-secs (Utils/currentTimeSecs)
                }]
     ;; do the zookeeper heartbeat
     (.worker-heartbeat! (:storm-cluster-state worker) (:storm-id worker) (:assignment-id worker) (:port worker) zk-hb)
@@ -81,7 +81,7 @@
   (let [conf (:conf worker)
         state (worker-state conf (:worker-id worker))]
     ;; do the local-file-system heartbeat.
-    (ls-worker-heartbeat! state (current-time-secs) (:storm-id worker) (:executors worker) (:port worker))
+    (ls-worker-heartbeat! state (Utils/currentTimeSecs) (:storm-id worker) (:executors worker) (:port worker))
     (.cleanup state 60) ; this is just in case supervisor is down so that disk doesn't fill up.
                          ; it shouldn't take supervisor 120 seconds between listing dir and reading it
 
@@ -290,12 +290,14 @@
       :user-timer (mk-halting-timer "user-timer")
       :task->component (HashMap. (storm-task-info topology storm-conf)) ; for optimized access when used in tasks later on
       :component->stream->fields (component->stream->fields (:system-topology <>))
+      ;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
       :component->sorted-tasks (->> (:task->component <>) reverse-map (map-val sort))
       :endpoint-socket-lock (ReentrantReadWriteLock.)
       :cached-node+port->socket (atom {})
       :cached-task->node+port (atom {})
       :transfer-queue transfer-queue
       :executor-receive-queue-map executor-receive-queue-map
+      ;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
       :short-executor-receive-queue-map (map-key first executor-receive-queue-map)
       :task->short-executor (->> executors
                                  (mapcat (fn [e] (for [t (executor-id->tasks e)] [t (first e)])))
@@ -325,6 +327,7 @@
 
 (def LOAD-REFRESH-INTERVAL-MS 5000)
 
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn mk-refresh-load [worker]
   (let [local-tasks (set (:task-ids worker))
         remote-tasks (set/difference (worker-outbound-tasks worker) local-tasks)
@@ -361,6 +364,7 @@
          ~@body
          (finally (.unlock wlock#))))))
 
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn mk-refresh-connections [worker]
   (let [outbound-tasks (worker-outbound-tasks worker)
         conf (:conf worker)
@@ -380,8 +384,10 @@
                                 :executor->node+port
                                 to-task->node+port
                                 (select-keys outbound-tasks)
+                                ;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
                                 (#(map-val endpoint->string %)))
               ;; we dont need a connection for the local tasks anymore
+               ;TODO: when translating this function, you should replace the filter-val with a proper for loop + if condition HERE
               needed-assignment (->> my-assignment
                                       (filter-key (complement (-> worker :task-ids set))))
               needed-connections (-> needed-assignment vals set)

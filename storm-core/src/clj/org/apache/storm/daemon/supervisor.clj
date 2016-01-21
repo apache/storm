@@ -57,6 +57,7 @@
   (shutdown-all-workers [this])
   )
 
+;TODO: when translating this function, you should replace the filter-val with a proper for loop + if condition HERE
 (defn- assignments-snapshot [storm-cluster-state callback assignment-versions]
   (let [storm-ids (.assignments storm-cluster-state callback)]
     (let [new-assignments
@@ -113,6 +114,7 @@
             (log-warn (.getMessage e) ": retrying " @retries " of 3")
             existing-assignment))))
 
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn- read-storm-code-locations
   [assignments-snapshot]
   (map-val :master-code-dir assignments-snapshot))
@@ -198,7 +200,7 @@
         (when (and
                (not hb)
                (<
-                (- (current-time-secs) start-time)
+                (- (Utils/currentTimeSecs) start-time)
                 (conf SUPERVISOR-WORKER-START-TIMEOUT-SECS)
                 ))
           (log-message id " still hasn't started")
@@ -210,7 +212,7 @@
       )))
 
 (defn- wait-for-workers-launch [conf ids]
-  (let [start-time (current-time-secs)]
+  (let [start-time (Utils/currentTimeSecs)]
     (doseq [id ids]
       (wait-for-worker-launch conf id start-time))
     ))
@@ -392,12 +394,13 @@
                 (get-worker-assignment-helper-msg assignment supervisor port id))
               nil)))))))
 
+;TODO: when translating this function, you should replace the filter-val with a proper for loop + if condition HERE
 (defn sync-processes [supervisor]
   (let [conf (:conf supervisor)
         ^LocalState local-state (:local-state supervisor)
         storm-cluster-state (:storm-cluster-state supervisor)
         assigned-executors (defaulted (ls-local-assignments local-state) {})
-        now (current-time-secs)
+        now (Utils/currentTimeSecs)
         allocated (read-allocated-workers supervisor assigned-executors now)
         keepers (filter-val
                  (fn [[state _]] (= state :valid))
@@ -443,11 +446,12 @@
        (map :storm-id)
        set))
 
+;TODO: when translating this function, you should replace the filter-val with a proper for loop + if condition HERE
 (defn shutdown-disallowed-workers [supervisor]
   (let [conf (:conf supervisor)
         ^LocalState local-state (:local-state supervisor)
         assigned-executors (defaulted (ls-local-assignments local-state) {})
-        now (current-time-secs)
+        now (Utils/currentTimeSecs)
         allocated (read-allocated-workers supervisor assigned-executors now)
         disallowed (keys (filter-val
                                   (fn [[state _]] (= state :disallowed))
@@ -548,6 +552,7 @@
                                            (:assignment-id supervisor)
                                            existing-assignment
                                            (:sync-retry supervisor))
+          ;TODO: when translating this function, you should replace the filter-val with a proper for loop + if condition HERE
           new-assignment (->> all-assignment
                               (filter-key #(.confirmAssigned isupervisor %)))
           assigned-storm-ids (assigned-storm-ids-from-port-assignments new-assignment)
@@ -780,7 +785,7 @@
         heartbeat-fn (fn [] (.supervisor-heartbeat!
                                (:storm-cluster-state supervisor)
                                (:supervisor-id supervisor)
-                               (->SupervisorInfo (current-time-secs)
+                               (->SupervisorInfo (Utils/currentTimeSecs)
                                                  (:my-hostname supervisor)
                                                  (:assignment-id supervisor)
                                                  (keys @(:curr-assignment supervisor))

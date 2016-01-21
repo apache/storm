@@ -540,6 +540,7 @@
     (Utils/fromCompressedJsonConf
       (.readBlob blob-store (master-stormconf-key storm-id) nimbus-subject))))
 
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn read-topology-details [nimbus storm-id]
   (let [blob-store (:blob-store nimbus)
         storm-base (or
@@ -569,7 +570,7 @@
                             :else 0)
         nimbus-time (if (or (not last-nimbus-time)
                         (not= last-reported-time reported-time))
-                      (current-time-secs)
+                      (Utils/currentTimeSecs)
                       last-nimbus-time
                       )]
       {:is-timed-out (and
@@ -637,6 +638,7 @@
 (defn- to-executor-id [task-ids]
   [(first task-ids) (last task-ids)])
 
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn- compute-executors [nimbus storm-id]
   (let [conf (:conf nimbus)
         blob-store (:blob-store nimbus)
@@ -743,6 +745,7 @@
                 [sid (SupervisorDetails. sid nil ports)]))
            )))
 
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn- compute-topology->executor->node+port [scheduler-assignments]
   "convert {topology-id -> SchedulerAssignment} to
            {topology-id -> {executor [node port]}}"
@@ -780,6 +783,7 @@
     (count (.getSlots scheduler-assignment))
     0 ))
 
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn convert-assignments-to-worker->resources [new-scheduler-assignments]
   "convert {topology-id -> SchedulerAssignment} to
            {topology-id -> {[node port] [mem-on-heap mem-off-heap cpu]}}
@@ -927,7 +931,7 @@
 
         topology->executor->node+port (merge (into {} (for [id assigned-topology-ids] {id nil})) topology->executor->node+port)
         new-assigned-worker->resources (convert-assignments-to-worker->resources new-scheduler-assignments)
-        now-secs (current-time-secs)
+        now-secs (Utils/currentTimeSecs)
 
         basic-supervisor-details-map (basic-supervisor-details-map storm-cluster-state)
 
@@ -983,6 +987,7 @@
         (catch Exception e
         (log-warn-error e "Ignoring exception from Topology action notifier for storm-Id " storm-id))))))
 
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn- start-storm [nimbus storm-name storm-id topology-initial-status]
   {:pre [(#{:active :inactive} topology-initial-status)]}
   (let [storm-cluster-state (:storm-cluster-state nimbus)
@@ -995,7 +1000,7 @@
     (.activate-storm! storm-cluster-state
                       storm-id
                       (StormBase. storm-name
-                                  (current-time-secs)
+                                  (Utils/currentTimeSecs)
                                   {:type topology-initial-status}
                                   (storm-conf TOPOLOGY-WORKERS)
                                   num-executors
@@ -1154,7 +1159,7 @@
 
 (defn clean-inbox [dir-location seconds]
   "Deletes jar files in dir older than seconds."
-  (let [now (current-time-secs)
+  (let [now (Utils/currentTimeSecs)
         pred #(and (.isFile %) (file-older-than? now seconds %))
         files (filter pred (file-seq (File. dir-location)))]
     (doseq [f files]
@@ -1167,7 +1172,7 @@
   "Deletes topologies from history older than minutes."
   [mins nimbus]
   (locking (:topology-history-lock nimbus)
-    (let [cutoff-age (- (current-time-secs) (* mins 60))
+    (let [cutoff-age (- (Utils/currentTimeSecs) (* mins 60))
           topo-history-state (:topo-history-state nimbus)
           curr-history (vec (ls-topo-hist topo-history-state))
           new-history (vec (filter (fn [line]
@@ -1264,7 +1269,7 @@
           users (get-topo-logs-users topology-conf)
           groups (get-topo-logs-groups topology-conf)
           curr-history (vec (ls-topo-hist topo-history-state))
-          new-history (conj curr-history {:topoid storm-id :timestamp (current-time-secs)
+          new-history (conj curr-history {:topoid storm-id :timestamp (Utils/currentTimeSecs)
                                           :users users :groups groups})]
       (ls-topo-hist! topo-history-state new-history))))
 
@@ -1318,6 +1323,7 @@
                     ))))))))
     (log-message "not a leader skipping , credential renweal.")))
 
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn validate-topology-size [topo-conf nimbus-conf topology]
   (let [workers-count (get topo-conf TOPOLOGY-WORKERS)
         workers-allowed (get nimbus-conf NIMBUS-SLOTS-PER-TOPOLOGY)
@@ -1361,6 +1367,7 @@
 (defmethod blob-sync :local [conf nimbus]
   nil)
 
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defserverfn service-handler [conf inimbus]
   (.prepare inimbus conf (master-inimbus-dir conf))
   (log-message "Starting Nimbus with conf " conf)
@@ -1410,7 +1417,7 @@
       (NimbusSummary.
         (.getHost (:nimbus-host-port-info nimbus))
         (.getPort (:nimbus-host-port-info nimbus))
-        (current-time-secs)
+        (Utils/currentTimeSecs)
         false ;is-leader
         STORM-VERSION))
 
@@ -1485,7 +1492,7 @@
                        topo-conf
                        topology))
           (swap! (:submitted-count nimbus) inc)
-          (let [storm-id (str storm-name "-" @(:submitted-count nimbus) "-" (current-time-secs))
+          (let [storm-id (str storm-name "-" @(:submitted-count nimbus) "-" (Utils/currentTimeSecs))
                 credentials (.get_creds submitOptions)
                 credentials (when credentials (.get_creds credentials))
                 topo-conf (if-let [parsed-json (JSONValue/parse serializedConf)]
@@ -1642,6 +1649,7 @@
               storm-cluster-state (:storm-cluster-state info)
               task->component (:task->component info)
               {:keys [executor->node+port node->host]} (:assignment info)
+              ;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
               executor->host+port (map-val (fn [[node port]]
                                              [(node->host node) port])
                                     executor->node+port)
@@ -1804,6 +1812,7 @@
                                                      (count ports)
                                                      (count (:used-ports info))
                                                      id) ]
+                                       ;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
                                        (.set_total_resources sup-sum (map-val double (:resources-map info)))
                                        (when-let [[total-mem total-cpu used-mem used-cpu] (.get @(:node-id->resources nimbus) id)]
                                          (.set_used_mem sup-sum used-mem)
@@ -1914,6 +1923,7 @@
               (.set_assigned_memoffheap topo-info (get resources 4))
               (.set_assigned_cpu topo-info (get resources 5)))
             (when-let [component->debug (:component->debug base)]
+              ;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
               (.set_component_debug topo-info (map-val converter/thriftify-debugoptions component->debug)))
             (.set_replication_count topo-info (get-blob-replication-count (master-stormcode-key storm-id) nimbus))
           topo-info))
@@ -2128,6 +2138,7 @@
         (mark! nimbus:num-getComponentPageInfo-calls)
         (let [info (get-common-topo-info topo-id "getComponentPageInfo")
               {:keys [executor->node+port node->host]} (:assignment info)
+              ;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
               executor->host+port (map-val (fn [[node port]]
                                              [(node->host node) port])
                                            executor->node+port)

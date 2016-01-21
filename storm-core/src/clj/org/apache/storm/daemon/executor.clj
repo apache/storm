@@ -110,6 +110,7 @@
         :direct
       )))
 
+;TODO: when translating this function, you should replace the filter-val with a proper for loop + if condition HERE
 (defn- outbound-groupings
   [^WorkerTopologyContext worker-context this-component-id stream-id out-fields component->grouping topo-conf]
   (->> component->grouping
@@ -196,7 +197,7 @@
   (let [storm-conf (:storm-conf executor)
         error-interval-secs (storm-conf TOPOLOGY-ERROR-THROTTLE-INTERVAL-SECS)
         max-per-interval (storm-conf TOPOLOGY-MAX-ERROR-REPORT-PER-INTERVAL)
-        interval-start-time (atom (current-time-secs))
+        interval-start-time (atom (Utils/currentTimeSecs))
         interval-errors (atom 0)
         ]
     (fn [error]
@@ -204,7 +205,7 @@
       (when (> (Time/delta @interval-start-time)
                error-interval-secs)
         (reset! interval-errors 0)
-        (reset! interval-start-time (current-time-secs)))
+        (reset! interval-start-time (Utils/currentTimeSecs)))
       (swap! interval-errors inc)
 
       (when (<= @interval-errors max-per-interval)

@@ -22,7 +22,8 @@
              [worker :as worker]
              [executor :as executor]])
   (:require [org.apache.storm [process-simulator :as psim]])
-  (:import [org.apache.commons.io FileUtils])
+  (:import [org.apache.commons.io FileUtils]
+           [org.apache.storm.utils IFn])
   (:import [java.io File])
   (:import [java.util HashMap ArrayList])
   (:import [java.util.concurrent.atomic AtomicInteger])
@@ -544,6 +545,7 @@
      :capturer capturer}))
 
 ;; TODO: mock-sources needs to be able to mock out state spouts as well
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defnk complete-topology
   [cluster-map topology
    :mock-sources {}
@@ -558,6 +560,8 @@
         state (:storm-cluster-state cluster-map)
         spouts (.get_spouts topology)
         replacements (map-val (fn [v]
+;        replacements (Utils/mapVal
+;                       (reify IFn (eval [this v]
                                 (FixedTupleSpout.
                                   (for [tup v]
                                     (if (map? tup)

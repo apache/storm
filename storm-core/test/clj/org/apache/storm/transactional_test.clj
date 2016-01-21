@@ -72,6 +72,7 @@
 (defn normalize-tx-tuple [values]
   (-> values vec (update 0 #(-> % .getTransactionId .intValue))))
 
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn verify-and-reset! [expected-map emitted-map-atom]
   (let [results @emitted-map-atom]
     (dorun
@@ -356,6 +357,11 @@
      ~@body
      (RegisteredGlobalState/clearState id#)
     ))
+
+(defn separate
+  [pred aseq]
+  [(filter pred aseq) (filter (complement pred) aseq)])
+
 
 (deftest test-transactional-topology
   (with-tracked-cluster [cluster]

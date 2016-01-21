@@ -72,7 +72,7 @@
 
      (set-ephemeral-node
        [this path data acls]
-       (zk/mkdirs zk-writer (parent-path path) acls)
+       (zk/mkdirs zk-writer (Utils/parentPath path) acls)
        (if (zk/exists zk-writer path false)
          (try-cause
            (zk/set-data zk-writer path data) ; should verify that it's ephemeral
@@ -91,7 +91,7 @@
        (if (zk/exists zk-writer path false)
          (zk/set-data zk-writer path data)
          (do
-           (zk/mkdirs zk-writer (parent-path path) acls)
+           (zk/mkdirs zk-writer (Utils/parentPath path) acls)
            (zk/create-node zk-writer path data :persistent acls))))
 
      (set-worker-hb

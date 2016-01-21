@@ -68,6 +68,7 @@
         (heartbeat-worker sup p storm-id executors)
         ))))
 
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn validate-launched-once [launched supervisor->ports storm-id]
   (let [counts (map count (vals launched))
         launched-supervisor->ports (apply merge-with set/union
@@ -243,7 +244,7 @@
 (defn check-heartbeat [cluster supervisor-id within-secs]
   (let [hb (get-heartbeat cluster supervisor-id)
         time-secs (:time-secs hb)
-        now (current-time-secs)
+        now (Utils/currentTimeSecs)
         delta (- now time-secs)]
     (is (>= delta 0))
     (is (<= delta within-secs))

@@ -71,7 +71,7 @@
 (deftest test-get-size-for-logdir
   (testing "get the file sizes of a worker log directory"
   (stubbing [logviewer/get-stream-for-dir (fn [x] (map #(mk-mock-Path %) (.listFiles x)))]
-            (let [now-millis (current-time-millis)
+            (let [now-millis (Utils/currentTimeMillis)
                   files1 (into-array File (map #(mk-mock-File {:name (str %)
                                                                :type :file
                                                                :mtime (- now-millis (* 100 %))
@@ -85,7 +85,7 @@
 (deftest test-mk-FileFilter-for-log-cleanup
   (testing "log file filter selects the correct worker-log dirs for purge"
     (stubbing [logviewer/get-stream-for-dir (fn [x] (map #(mk-mock-Path %) (.listFiles x)))]
-    (let [now-millis (current-time-millis)
+    (let [now-millis (Utils/currentTimeMillis)
           conf {LOGVIEWER-CLEANUP-AGE-MINS 60
                 LOGVIEWER-CLEANUP-INTERVAL-SECS 300}
           cutoff-millis (logviewer/cleanup-cutoff-age-millis conf now-millis)
@@ -135,7 +135,7 @@
                           (mk-DirectoryStream
                             (ArrayList.
                               (map #(mk-mock-Path %) (.listFiles dir)))))))
-            now-millis (current-time-millis)
+            now-millis (Utils/currentTimeMillis)
             files1 (into-array File (map #(mk-mock-File {:name (str "A" %)
                                                          :type :file
                                                          :mtime (+ now-millis (* 100 %))
@@ -187,7 +187,7 @@
                                     (mk-DirectoryStream
                                       (ArrayList.
                                         (map #(mk-mock-Path %) (.listFiles dir)))))))
-                      now-millis (current-time-millis)
+                      now-millis (Utils/currentTimeMillis))
                       files1 (into-array File (map #(mk-mock-File {:name (str "A" % ".log")
                                                                    :type :file
                                                                    :mtime (+ now-millis (* 100 %))

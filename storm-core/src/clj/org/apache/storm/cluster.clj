@@ -259,7 +259,7 @@
         state-id (.register
                   cluster-state
                   (fn [type path]
-                    (let [[subtree & args] (tokenize-path path)]
+                    (let [[subtree & args] (Utils/tokenizePath path)]
                       (condp = subtree
                          ASSIGNMENTS-ROOT (if (empty? args)
                                              (issue-callback! assignments-callback)
@@ -580,7 +580,7 @@
          [this storm-id component-id node port error]
          (let [path (error-path storm-id component-id)
                last-error-path (last-error-path storm-id component-id)
-               data (thriftify-error {:time-secs (current-time-secs) :error (stringify-error error) :host node :port port})
+               data (thriftify-error {:time-secs (Utils/currentTimeSecs) :error (stringify-error error) :host node :port port})
                _ (.mkdirs cluster-state path acls)
                ser-data (Utils/serialize data)
                _ (.mkdirs cluster-state path acls)

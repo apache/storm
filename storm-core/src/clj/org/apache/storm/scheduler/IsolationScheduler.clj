@@ -16,7 +16,9 @@
 (ns org.apache.storm.scheduler.IsolationScheduler
   (:use [org.apache.storm util config log])
   (:require [org.apache.storm.scheduler.DefaultScheduler :as DefaultScheduler])
-  (:import [java.util HashSet Set List LinkedList ArrayList Map HashMap])
+  (:import [java.util HashSet Set List LinkedList ArrayList Map HashMap]
+           [org.apache.storm.utils IFn])
+  (:import [org.apache.storm.utils Utils])
   (:import [org.apache.storm.scheduler IScheduler Topologies
             Cluster TopologyDetails WorkerSlot SchedulerAssignment
             EvenScheduler ExecutorDetails]
@@ -33,6 +35,7 @@
 (defn -prepare [this conf]
   (container-set! (.state this) conf))
 
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn- compute-worker-specs "Returns mutable set of sets of executors"
   [^TopologyDetails details]
   (->> (.getExecutorToComponent details)
@@ -42,6 +45,7 @@
        (map vector (repeat-seq (range (.getNumWorkers details))))
        (group-by first)
        (map-val #(map second %))
+       ;(Utils/mapVal (reify IFn (eval [this x] (map second x))))
        vals
        (map set)
        (HashSet.)
