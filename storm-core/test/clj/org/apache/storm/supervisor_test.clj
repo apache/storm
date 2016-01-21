@@ -376,7 +376,7 @@
                                                   [0]
                                                   exp-args)))))
       (testing "testing topology.classpath is added to classpath"
-        (let [topo-cp (str file-path-separator "any" file-path-separator "path")
+        (let [topo-cp (str Utils/filePathSeparator "any" Utils/filePathSeparator "path")
               exp-args (exp-args-fn [] [] (Utils/addToClasspath mock-cp [topo-cp]))
               mock-supervisor {:conf {STORM-CLUSTER-MODE :distributed}}]
           (mock-java-static (proxy [Utils] []

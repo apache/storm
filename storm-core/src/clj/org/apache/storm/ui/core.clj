@@ -41,7 +41,7 @@
   (:import [org.apache.storm.security.auth AuthUtils ReqContext])
   (:import [org.apache.storm.generated AuthorizationException ProfileRequest ProfileAction NodeInfo])
   (:import [org.apache.storm.security.auth AuthUtils])
-  (:import [org.apache.storm.utils VersionInfo])
+  (:import [org.apache.storm.utils Utils VersionInfo])
   (:import [org.apache.storm Config])
   (:import [org.json.simple JSONValue])
   (:require [compojure.route :as route]
