@@ -72,24 +72,26 @@
                                                           (:worker->resources assignment)))))
     thrift-assignment))
 
-;(defn clojurify-executor->node_port [executor->node_port]
-;  (into {}
-;    (map-val
-;      (fn [nodeInfo]
-;        (concat [(.get_node nodeInfo)] (.get_port nodeInfo))) ;nodeInfo should be converted to [node,port1,port2..]
-;      (map-key
-;        (fn [list-of-executors]
-;          (into [] list-of-executors)) ; list of executors must be coverted to clojure vector to ensure it is sortable.
-;        executor->node_port))))
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
+;TODO: when translating this function, you should replace the map-key with a proper for loop HERE
 (defn clojurify-executor->node_port [executor->node_port]
   (into {}
-    (Utils/mapVal
-      (reify IFn (eval [this nodeInfo]
-        (concat [(.get_node nodeInfo)] (.get_port nodeInfo)))) ;nodeInfo should be converted to [node,port1,port2..]
+    (map-val
+      (fn [nodeInfo]
+        (concat [(.get_node nodeInfo)] (.get_port nodeInfo))) ;nodeInfo should be converted to [node,port1,port2..]
       (map-key
         (fn [list-of-executors]
           (into [] list-of-executors)) ; list of executors must be coverted to clojure vector to ensure it is sortable.
         executor->node_port))))
+;(defn clojurify-executor->node_port [executor->node_port]
+;  (into {}
+;    (Utils/mapVal
+;      (reify IFn (eval [this nodeInfo]
+;        (concat [(.get_node nodeInfo)] (.get_port nodeInfo)))) ;nodeInfo should be converted to [node,port1,port2..]
+;      (map-key
+;        (fn [list-of-executors]
+;          (into [] list-of-executors)) ; list of executors must be coverted to clojure vector to ensure it is sortable.
+;        executor->node_port))))
 
 
 
@@ -102,6 +104,7 @@
                 [(.get_mem_on_heap resources) (.get_mem_off_heap resources) (.get_cpu resources)]])
              worker->resources)))
 
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn clojurify-assignment [^Assignment assignment]
   (if assignment
     (org.apache.storm.daemon.common.Assignment.
@@ -135,6 +138,7 @@
     (assoc-non-nil :num-workers (if (.is_set_num_workers rebalance-options) (.get_num_workers rebalance-options)))
     (assoc-non-nil :component->executors (if (.is_set_num_executors rebalance-options) (into {} (.get_num_executors rebalance-options))))))
 
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn thriftify-rebalance-options [rebalance-options]
   (if rebalance-options
     (let [thrift-rebalance-options (RebalanceOptions.)]
@@ -143,6 +147,9 @@
       (if (:num-workers rebalance-options)
         (.set_num_workers thrift-rebalance-options (int (:num-workers rebalance-options))))
       (if (:component->executors rebalance-options)
+;        (.set_num_executors thrift-rebalance-options (Utils/mapVal
+;                                                       (reify IFn (eval [this x] (int x)))
+;                                                       (:component->executors rebalance-options))))
         (.set_num_executors thrift-rebalance-options (map-val int (:component->executors rebalance-options))))
       thrift-rebalance-options)))
 
@@ -190,18 +197,25 @@
     (.set_enable (get options :enable false))
     (.set_samplingpct (get options :samplingpct 10))))
 
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn thriftify-storm-base [storm-base]
   (doto (StormBase.)
     (.set_name (:storm-name storm-base))
     (.set_launch_time_secs (int (:launch-time-secs storm-base)))
     (.set_status (convert-to-status-from-symbol (:status storm-base)))
     (.set_num_workers (int (:num-workers storm-base)))
+    ;(.set_component_executors (Utils/mapVal (reify IFn (eval [this x] (int x))) (:component->executors storm-base)))
     (.set_component_executors (map-val int (:component->executors storm-base)))
     (.set_owner (:owner storm-base))
     (.set_topology_action_options (thriftify-topology-action-options storm-base))
     (.set_prev_status (convert-to-status-from-symbol (:prev-status storm-base)))
+;    (.set_component_debug
+;      (Utils/mapVal
+;        (reify IFn (eval [this x] (thriftify-debugoptions x)))
+;        (:component->debug storm-base)))))
     (.set_component_debug (map-val thriftify-debugoptions (:component->debug storm-base)))))
 
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn clojurify-storm-base [^StormBase storm-base]
   (if storm-base
     (org.apache.storm.daemon.common.StormBase.
@@ -213,17 +227,28 @@
       (.get_owner storm-base)
       (clojurify-topology-action-options (.get_topology_action_options storm-base))
       (convert-to-symbol-from-status (.get_prev_status storm-base))
+;      (Utils/mapVal
+;        (reify IFn (eval [this x] (clojurify-debugoptions x)))
+;        (.get_component_debug storm-base)))))
       (map-val clojurify-debugoptions (.get_component_debug storm-base)))))
 
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn thriftify-stats [stats]
   (if stats
+;    (Utils/mapVal
+;      (reify IFn (eval [this x] (thriftify-executor-stats x)))
     (map-val thriftify-executor-stats
       (map-key #(ExecutorInfo. (int (first %1)) (int (last %1)))
         stats))
     {}))
 
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn clojurify-stats [stats]
   (if stats
+;    (Utils/mapVal
+;      (reify IFn (eval [this x] (clojurify-executor-stats x)))
     (map-val clojurify-executor-stats
       (map-key (fn [x] (list (.get_task_start x) (.get_task_end x)))
         stats))

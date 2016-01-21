@@ -34,6 +34,7 @@
 (defn -prepare [this conf]
   (container-set! (.state this) conf))
 
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn- compute-worker-specs "Returns mutable set of sets of executors"
   [^TopologyDetails details]
   (->> (.getExecutorToComponent details)
@@ -42,8 +43,8 @@
        (apply concat)
        (map vector (repeat-seq (range (.getNumWorkers details))))
        (group-by first)
-       ;(map-val #(map second %))
-       (Utils/mapVal (reify IFn (eval [this x] (map second x))))
+       (map-val #(map second %))
+       ;(Utils/mapVal (reify IFn (eval [this x] (map second x))))
        vals
        (map set)
        (HashSet.)

@@ -535,6 +535,7 @@
     (Utils/fromCompressedJsonConf
       (.readBlob blob-store (master-stormconf-key storm-id) nimbus-subject))))
 
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn read-topology-details [nimbus storm-id]
   (let [blob-store (:blob-store nimbus)
         storm-base (or
@@ -632,6 +633,7 @@
 (defn- to-executor-id [task-ids]
   [(first task-ids) (last task-ids)])
 
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn- compute-executors [nimbus storm-id]
   (let [conf (:conf nimbus)
         blob-store (:blob-store nimbus)
@@ -738,6 +740,7 @@
                 [sid (SupervisorDetails. sid nil ports)]))
            )))
 
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn- compute-topology->executor->node+port [scheduler-assignments]
   "convert {topology-id -> SchedulerAssignment} to
            {topology-id -> {executor [node port]}}"
@@ -775,6 +778,7 @@
     (count (.getSlots scheduler-assignment))
     0 ))
 
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn convert-assignments-to-worker->resources [new-scheduler-assignments]
   "convert {topology-id -> SchedulerAssignment} to
            {topology-id -> {[node port] [mem-on-heap mem-off-heap cpu]}}
@@ -978,6 +982,7 @@
         (catch Exception e
         (log-warn-error e "Ignoring exception from Topology action notifier for storm-Id " storm-id))))))
 
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn- start-storm [nimbus storm-name storm-id topology-initial-status]
   {:pre [(#{:active :inactive} topology-initial-status)]}
   (let [storm-cluster-state (:storm-cluster-state nimbus)
@@ -1312,6 +1317,7 @@
                     ))))))))
     (log-message "not a leader skipping , credential renweal.")))
 
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn validate-topology-size [topo-conf nimbus-conf topology]
   (let [workers-count (get topo-conf TOPOLOGY-WORKERS)
         workers-allowed (get nimbus-conf NIMBUS-SLOTS-PER-TOPOLOGY)
@@ -1355,6 +1361,7 @@
 (defmethod blob-sync :local [conf nimbus]
   nil)
 
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defserverfn service-handler [conf inimbus]
   (.prepare inimbus conf (master-inimbus-dir conf))
   (log-message "Starting Nimbus with conf " conf)
@@ -1634,6 +1641,7 @@
               storm-cluster-state (:storm-cluster-state info)
               task->component (:task->component info)
               {:keys [executor->node+port node->host]} (:assignment info)
+              ;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
               executor->host+port (map-val (fn [[node port]]
                                              [(node->host node) port])
                                     executor->node+port)
@@ -1796,6 +1804,7 @@
                                                      (count ports)
                                                      (count (:used-ports info))
                                                      id) ]
+                                       ;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
                                        (.set_total_resources sup-sum (map-val double (:resources-map info)))
                                        (when-let [[total-mem total-cpu used-mem used-cpu] (.get @(:node-id->resources nimbus) id)]
                                          (.set_used_mem sup-sum used-mem)
@@ -1906,6 +1915,7 @@
               (.set_assigned_memoffheap topo-info (get resources 4))
               (.set_assigned_cpu topo-info (get resources 5)))
             (when-let [component->debug (:component->debug base)]
+              ;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
               (.set_component_debug topo-info (map-val converter/thriftify-debugoptions component->debug)))
             (.set_replication_count topo-info (get-blob-replication-count (master-stormcode-key storm-id) nimbus))
           topo-info))
@@ -2118,6 +2128,7 @@
         (mark! nimbus:num-getComponentPageInfo-calls)
         (let [info (get-common-topo-info topo-id "getComponentPageInfo")
               {:keys [executor->node+port node->host]} (:assignment info)
+              ;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
               executor->host+port (map-val (fn [[node port]]
                                              [(node->host node) port])
                                            executor->node+port)

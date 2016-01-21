@@ -67,6 +67,7 @@
         (heartbeat-worker sup p storm-id executors)
         ))))
 
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn validate-launched-once [launched supervisor->ports storm-id]
   (let [counts (map count (vals launched))
         launched-supervisor->ports (apply merge-with set/union

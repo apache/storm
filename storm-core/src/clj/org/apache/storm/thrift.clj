@@ -107,6 +107,7 @@
   [fields]
   (StreamInfo. fields false))
 
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn mk-output-spec
   [output-spec]
   (let [output-spec (if (map? output-spec)

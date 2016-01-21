@@ -288,12 +288,14 @@
       :user-timer (mk-halting-timer "user-timer")
       :task->component (HashMap. (storm-task-info topology storm-conf)) ; for optimized access when used in tasks later on
       :component->stream->fields (component->stream->fields (:system-topology <>))
+      ;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
       :component->sorted-tasks (->> (:task->component <>) reverse-map (map-val sort))
       :endpoint-socket-lock (mk-rw-lock)
       :cached-node+port->socket (atom {})
       :cached-task->node+port (atom {})
       :transfer-queue transfer-queue
       :executor-receive-queue-map executor-receive-queue-map
+      ;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
       :short-executor-receive-queue-map (map-key first executor-receive-queue-map)
       :task->short-executor (->> executors
                                  (mapcat (fn [e] (for [t (executor-id->tasks e)] [t (first e)])))
@@ -323,6 +325,7 @@
 
 (def LOAD-REFRESH-INTERVAL-MS 5000)
 
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn mk-refresh-load [worker]
   (let [local-tasks (set (:task-ids worker))
         remote-tasks (set/difference (worker-outbound-tasks worker) local-tasks)
@@ -343,6 +346,7 @@
             (.sendLoadMetrics (:receiver worker) local-pop)
             (reset! next-update (+ LOAD-REFRESH-INTERVAL-MS now))))))))
 
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn mk-refresh-connections [worker]
   (let [outbound-tasks (worker-outbound-tasks worker)
         conf (:conf worker)
@@ -362,8 +366,10 @@
                                 :executor->node+port
                                 to-task->node+port
                                 (select-keys outbound-tasks)
+                                ;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
                                 (#(map-val endpoint->string %)))
               ;; we dont need a connection for the local tasks anymore
+               ;TODO: when translating this function, you should replace the filter-val with a proper for loop + if condition HERE
               needed-assignment (->> my-assignment
                                       (filter-key (complement (-> worker :task-ids set))))
               needed-connections (-> needed-assignment vals set)

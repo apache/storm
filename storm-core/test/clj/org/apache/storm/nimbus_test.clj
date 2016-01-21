@@ -90,6 +90,7 @@
          set         
          )))
 
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn topology-node-distribution [state storm-name]
   (let [storm-id (get-storm-id state storm-name)
         assignment (.assignment-info state storm-id nil)]
@@ -352,6 +353,7 @@
       (is (= 2 (storm-num-workers state "mystorm"))) ;; because only 2 executors
       )))
 
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (deftest test-executor-assignments
   (with-simulated-time-local-cluster[cluster :daemon-conf {SUPERVISOR-ENABLE false TOPOLOGY-ACKER-EXECUTORS 0 TOPOLOGY-EVENTLOGGER-EXECUTORS 0}]
     (let [nimbus (:nimbus cluster)
@@ -840,6 +842,7 @@
                        ))))
       )))
 
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (deftest test-rebalance-change-parallelism
   (with-simulated-time-local-cluster [cluster :supervisors 4 :ports-per-supervisor 3
     :daemon-conf {SUPERVISOR-ENABLE false

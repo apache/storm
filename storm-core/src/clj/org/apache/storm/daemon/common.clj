@@ -351,6 +351,7 @@
 (defn num-start-executors [component]
   (thrift/parallelism-hint (.get_common component)))
 
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn storm-task-info
   "Returns map from task -> component id"
   [^StormTopology user-topology storm-conf]

@@ -1567,18 +1567,39 @@ public class Utils {
         return toksToPath(tokenizePath(path));
     }
 
+    /* TODO: This function was originally written to replace map-val in util.clj. But we decided to change the coding
+             style in the caller functions to a more Java style for loop. This is mentioned in TODOs across the clojure
+             files.
+     */
     public static Map mapVal (IFn aFn, Map amap) {
         Map newMap = new HashMap();
+        if (amap == null) {
+            return newMap;
+        }
+        if (amap.keySet()==null) {
+            return newMap;
+        }
         for (Object key: amap.keySet()) {
             Object value = amap.get(key);
-            Object newValue = aFn.eval(value);
-            newMap.put(key, newValue);
+            if (value == null) {
+                newMap.put(key, null);
+            } else {
+                Object newValue = aFn.eval(value);
+                newMap.put(key, newValue);
+            }
         }
         return newMap;
     }
 
+    /* TODO: This function was originally written to replace map-val in util.clj. But we decided to change the coding
+         style in the caller functions to a more Java style for loop. This is mentioned in TODOs across the clojure
+         files.
+    */
     public static Map filterVal(IPredicate aFn, Map amap) {
         Map newMap = new HashMap();
+        if (amap == null) {
+            return newMap;
+        }
         for (Object key: amap.keySet()) {
             Object value = amap.get(key);
             if(aFn.test(value)) {
@@ -1588,8 +1609,15 @@ public class Utils {
         return newMap;
     }
 
+    /* TODO: This function was originally written to replace filter-key in util.clj. But we decided to change the coding
+         style in the caller functions to a more Java style for loop + if conditionals. This is mentioned in TODOs
+         across the clojure files.
+    */
     public static Map filterKey(IPredicate aFn, Map amap) {
         Map newMap = new HashMap();
+        if (amap == null) {
+            return newMap;
+        }
         for (Object key: amap.keySet()) {
             Object value = amap.get(key);
             if(aFn.test(key)) {
@@ -1599,8 +1627,15 @@ public class Utils {
         return newMap;
     }
 
+    /* TODO: This function was originally written to replace map-key in util.clj. But we decided to change the coding
+         style in the caller functions to a more Java style for loop. This is mentioned in TODOs across the clojure
+         files.
+    */
     public static Map mapKey (IFn aFn, Map amap) {
         Map newMap = new HashMap();
+        if (amap == null) {
+            return newMap;
+        }
         for (Object key: amap.keySet()) {
             Object value = amap.get(key);
             Object newKey = aFn.eval(key);
@@ -1609,6 +1644,9 @@ public class Utils {
         return newMap;
     }
 
+    /* TODO: This function was originally written to replace separate in util.clj. But since it was only used in
+    transactional_test.clj, the separate function was moved there for now.
+    */
     public static Vector<Collection> separate (IPredicate pred, Collection aseq) {
         Vector<Collection> outputVector = new Vector<Collection>();
         Collection pass = new HashSet();

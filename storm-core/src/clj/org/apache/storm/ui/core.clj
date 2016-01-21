@@ -308,6 +308,7 @@
           bolt-summs (filter (partial bolt-summary? topology) execs)
           spout-comp-summs (group-by-comp spout-summs)
           bolt-comp-summs (group-by-comp bolt-summs)
+          ;TODO: when translating this function, you should replace the filter-val with a proper for loop + if condition HERE
           bolt-comp-summs (filter-key (mk-include-sys-fn include-sys?)
                                       bolt-comp-summs)]
       (visualization-data
@@ -501,6 +502,7 @@
           bolt-executor-summaries (filter (partial bolt-summary? storm-topology) (.get_executors topology-info))
           spout-comp-id->executor-summaries (group-by-comp spout-executor-summaries)
           bolt-comp-id->executor-summaries (group-by-comp bolt-executor-summaries)
+          ;TODO: when translating this function, you should replace the filter-val with a proper for loop + if condition HERE
           bolt-comp-id->executor-summaries (filter-key (mk-include-sys-fn include-sys?) bolt-comp-id->executor-summaries)
           id->spout-spec (.get_spouts storm-topology)
           id->bolt (.get_bolts storm-topology)

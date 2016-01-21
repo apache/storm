@@ -511,6 +511,7 @@
      :capturer capturer}))
 
 ;; TODO: mock-sources needs to be able to mock out state spouts as well
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defnk complete-topology
   [cluster-map topology
    :mock-sources {}
@@ -524,13 +525,14 @@
         storm-name (or topology-name (str "topologytest-" (Utils/uuid)))
         state (:storm-cluster-state cluster-map)
         spouts (.get_spouts topology)
-        replacements (Utils/mapVal
-                       (reify IFn (eval [this v]
+        replacements (map-val (fn [v]
+;        replacements (Utils/mapVal
+;                       (reify IFn (eval [this v]
                                 (FixedTupleSpout.
                                   (for [tup v]
                                     (if (map? tup)
                                       (FixedTuple. (:stream tup) (:values tup))
-                                      tup)))))
+                                      tup))))
                               mock-sources)]
     (doseq [[id spout] replacements]
       (let [spout-spec (get spouts id)]

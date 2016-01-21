@@ -54,6 +54,7 @@
 (def DEFAULT_SCHEDULING_STRATEGY "org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy")
 
 ;; get the super->mem HashMap by counting the eds' mem usage of all topos on each super
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn get-super->mem-usage [^Cluster cluster ^Topologies topologies]
   (let [assignments (.values (.getAssignments cluster))
         supers (.values (.getSupervisors cluster))
@@ -75,6 +76,7 @@
     super->mem-usage))
 
 ;; get the super->cpu HashMap by counting the eds' cpu usage of all topos on each super
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn get-super->cpu-usage [^Cluster cluster ^Topologies topologies]
   (let [assignments (.values (.getAssignments cluster))
         supers (.values (.getSupervisors cluster))

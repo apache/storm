@@ -57,6 +57,7 @@
   (shutdown-all-workers [this])
   )
 
+;TODO: when translating this function, you should replace the filter-val with a proper for loop + if condition HERE
 (defn- assignments-snapshot [storm-cluster-state callback assignment-versions]
   (let [storm-ids (.assignments storm-cluster-state callback)]
     (let [new-assignments
@@ -113,6 +114,7 @@
             (log-warn (.getMessage e) ": retrying " @retries " of 3")
             existing-assignment))))
 
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn- read-storm-code-locations
   [assignments-snapshot]
   (map-val :master-code-dir assignments-snapshot))
@@ -387,6 +389,7 @@
                 (get-worker-assignment-helper-msg assignment supervisor port id))
               nil)))))))
 
+;TODO: when translating this function, you should replace the filter-val with a proper for loop + if condition HERE
 (defn sync-processes [supervisor]
   (let [conf (:conf supervisor)
         ^LocalState local-state (:local-state supervisor)
@@ -438,6 +441,7 @@
        (map :storm-id)
        set))
 
+;TODO: when translating this function, you should replace the filter-val with a proper for loop + if condition HERE
 (defn shutdown-disallowed-workers [supervisor]
   (let [conf (:conf supervisor)
         ^LocalState local-state (:local-state supervisor)
@@ -543,6 +547,7 @@
                                            (:assignment-id supervisor)
                                            existing-assignment
                                            (:sync-retry supervisor))
+          ;TODO: when translating this function, you should replace the filter-val with a proper for loop + if condition HERE
           new-assignment (->> all-assignment
                               (filter-key #(.confirmAssigned isupervisor %)))
           assigned-storm-ids (assigned-storm-ids-from-port-assignments new-assignment)

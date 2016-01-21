@@ -303,27 +303,31 @@
 ;  [^String path]
 ;  (Utils/toksToPath (Utils/tokenizePath path)))
 
+;TODO: We're keeping this function around until all the code using it is properly tranlated to java
+;TODO: by properly having the for loop IN THE JAVA FUNCTION that originally used this function.
 (defn map-val
   [afn amap]
   (into {}
         (for [[k v] amap]
           [k (afn v)])))
 
+;TODO: We're keeping this function around until all the code using it is properly tranlated to java
+;TODO: by properly having the for loop IN THE JAVA FUNCTION that originally used this function.
 (defn filter-val
   [afn amap]
   (into {} (filter (fn [[k v]] (afn v)) amap)))
 
+;TODO: We're keeping this function around until all the code using it is properly tranlated to java
+;TODO: by properly having the for loop IN THE JAVA FUNCTION that originally used this function.
 (defn filter-key
   [afn amap]
   (into {} (filter (fn [[k v]] (afn k)) amap)))
 
+;TODO: We're keeping this function around until all the code using it is properly tranlated to java
+;TODO: by properly having the for loop IN THE JAVA FUNCTION that originally used this function.
 (defn map-key
   [afn amap]
   (into {} (for [[k v] amap] [(afn k) v])))
-
-(defn separate
-  [pred aseq]
-  [(filter pred aseq) (filter (complement pred) aseq)])
 
 (defn full-path
   [parent name]
@@ -782,6 +786,7 @@
           rest-elems (apply interleave-all (map rest colls))]
       (concat my-elems rest-elems))))
 
+;TODO: when translating this function, you should replace the filter-val with a proper for loop + if condition HERE
 (defn any-intersection
   [& sets]
   (let [elem->count (multi-set (apply concat sets))]
