@@ -19,10 +19,10 @@
   (:use [conjure core])
   (:require [clojure.contrib [string :as contrib-str]])
   (:require [clojure [string :as string] [set :as set]])
-  (:import [org.apache.storm.testing TestWordCounter TestWordSpout TestGlobalCount TestAggregatesCounter TestPlannerSpout])
+  (:import [org.apache.storm.testing TestWordCounter TestWordSpout TestGlobalCount TestAggregatesCounter TestPlannerSpout]
+           [org.apache.storm.testing.staticmocking MockedUtils])
   (:import [org.apache.storm.scheduler ISupervisor])
-  (:import [org.apache.storm.generated RebalanceOptions]
-           [org.apache.storm.utils Utils])
+  (:import [org.apache.storm.generated RebalanceOptions])
   (:import [java.util UUID])
   (:import [java.io File])
   (:import [java.nio.file Files])
@@ -331,8 +331,8 @@
                                     mock-cp)
               mock-supervisor {:conf {STORM-CLUSTER-MODE :distributed
                                       WORKER-CHILDOPTS string-opts}}]
-          (mock-java-static (proxy [Utils] []
-                               (addToClasspathImpl [classpath paths] mock-cp))
+          (with-open [_ (proxy [MockedUtils] []
+                          (addToClasspathImpl [classpath paths] mock-cp))]
             (stubbing [read-supervisor-storm-conf {TOPOLOGY-WORKER-CHILDOPTS
                                                      topo-string-opts}
                        supervisor-stormdist-root nil
@@ -356,8 +356,8 @@
               exp-args (exp-args-fn list-opts topo-list-opts mock-cp)
               mock-supervisor {:conf {STORM-CLUSTER-MODE :distributed
                                       WORKER-CHILDOPTS list-opts}}]
-          (mock-java-static (proxy [Utils] []
-                               (addToClasspathImpl [classpath paths] mock-cp))
+          (with-open [_ (proxy [MockedUtils] []
+                          (addToClasspathImpl [classpath paths] mock-cp))]
             (stubbing [read-supervisor-storm-conf {TOPOLOGY-WORKER-CHILDOPTS
                                                      topo-list-opts}
                        supervisor-stormdist-root nil
@@ -379,9 +379,9 @@
         (let [topo-cp (str Utils/filePathSeparator "any" Utils/filePathSeparator "path")
               exp-args (exp-args-fn [] [] (Utils/addToClasspath mock-cp [topo-cp]))
               mock-supervisor {:conf {STORM-CLUSTER-MODE :distributed}}]
-          (mock-java-static (proxy [Utils] []
-                               (currentClasspathImpl []
-                                 (str Utils/filePathSeparator "base")))
+          (with-open [_ (proxy [MockedUtils] []
+                          (currentClasspathImpl []
+                            (str Utils/filePathSeparator "base")))]
             (stubbing [read-supervisor-storm-conf {TOPOLOGY-CLASSPATH topo-cp}
                        supervisor-stormdist-root nil
                        supervisor/jlp nil
@@ -403,9 +403,9 @@
               full-env (merge topo-env {"LD_LIBRARY_PATH" nil})
               exp-args (exp-args-fn [] [] mock-cp)
               mock-supervisor {:conf {STORM-CLUSTER-MODE :distributed}}]
-          (mock-java-static (proxy [Utils] []
-                               (currentClasspathImpl []
-                                 (str Utils/filePathSeparator "base")))
+          (with-open [_ (proxy [MockedUtils] []
+                          (currentClasspathImpl []
+                            (str Utils/filePathSeparator "base")))]
             (stubbing [read-supervisor-storm-conf {TOPOLOGY-ENVIRONMENT topo-env}
                        supervisor-stormdist-root nil
                        supervisor/jlp nil
@@ -485,10 +485,8 @@
                                         STORM-WORKERS-ARTIFACTS-DIR (str storm-local "/workers-artifacts")
                                         SUPERVISOR-RUN-WORKER-AS-USER true
                                         WORKER-CHILDOPTS string-opts}}]
-            (mock-java-static (proxy [Utils] []
-                                 (addToClasspathImpl
-                                   [classpath paths]
-                                   mock-cp))
+            (with-open [_ (proxy [MockedUtils] []
+                            (addToClasspathImpl [classpath paths] mock-cp))]
               (stubbing [read-supervisor-storm-conf {TOPOLOGY-WORKER-CHILDOPTS
                                                      topo-string-opts
                                                      TOPOLOGY-SUBMITTER-USER "me"}
@@ -519,10 +517,8 @@
                                         STORM-WORKERS-ARTIFACTS-DIR (str storm-local "/workers-artifacts")
                                         SUPERVISOR-RUN-WORKER-AS-USER true
                                         WORKER-CHILDOPTS list-opts}}]
-            (mock-java-static (proxy [Utils] []
-                                 (addToClasspathImpl
-                                   [classpath paths]
-                                   mock-cp))
+            (with-open [_ (proxy [MockedUtils] []
+                            (addToClasspathImpl [classpath paths] mock-cp))]
               (stubbing [read-supervisor-storm-conf {TOPOLOGY-WORKER-CHILDOPTS
                                                      topo-list-opts
                                                      TOPOLOGY-SUBMITTER-USER "me"}
@@ -575,7 +571,7 @@
                  ;local-hostname nil
                  mk-timer nil
                  supervisor-local-dir nil]
-        (mock-java-static (proxy [Utils] [] (localHostnameImpl [] nil))
+        (with-open [- (proxy [MockedUtils] [] (localHostnameImpl [] nil))]
           (supervisor/supervisor-data auth-conf nil fake-isupervisor)
           (verify-call-times-for cluster/mk-storm-cluster-state 1)
           (verify-first-call-args-for-indices cluster/mk-storm-cluster-state [2]

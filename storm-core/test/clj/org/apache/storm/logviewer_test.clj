@@ -23,6 +23,7 @@
   (:use [org.apache.storm testing]
         [org.apache.storm.ui helpers])
   (:import [org.apache.storm.daemon DirectoryCleaner]
+           [org.apache.storm.testing.staticmocking MockedUtils]
            [org.apache.storm.utils Utils])
   (:import [java.nio.file Files Path DirectoryStream])
   (:import [java.nio.file Files])
@@ -127,7 +128,7 @@
 
 (deftest test-per-workerdir-cleanup!
   (testing "cleaner deletes oldest files in each worker dir if files are larger than per-dir quota."
-    (mock-java-static (proxy [Utils] [] (forceDeleteImpl [path]))
+    (with-open [_ (proxy [MockedUtils] [] (forceDeleteImpl [path]))]
       (let [cleaner (proxy [org.apache.storm.daemon.DirectoryCleaner] []
                       (getStreamForDirectory
                         ([^File dir]
@@ -179,7 +180,7 @@
 (deftest test-global-log-cleanup!
   (testing "cleaner deletes oldest when files' sizes are larger than the global quota."
     (stubbing [logviewer/get-alive-worker-dirs ["/workers-artifacts/topo1/port1"]]
-              (mock-java-static (proxy [Utils] [] (forceDeleteImpl [path]))
+              (with-open [_ (proxy [MockedUtils] [] (forceDeleteImpl [path]))]
                 (let [cleaner (proxy [org.apache.storm.daemon.DirectoryCleaner] []
                                 (getStreamForDirectory
                                   ([^File dir]
@@ -258,10 +259,10 @@
     (let [mockfile1 (mk-mock-File {:name "delete-me1" :type :file})
           mockfile2 (mk-mock-File {:name "delete-me2" :type :file})
           forceDelete-args (atom [])
-          mockUtils (proxy [Utils] []
+          mockUtils (proxy [MockedUtils] []
                       (forceDeleteImpl [path]
                         (swap! forceDelete-args conj path)))]
-      (mock-java-static mockUtils
+      (with-open [_ mockUtils]
         (stubbing [logviewer/select-dirs-for-cleanup nil
                    logviewer/get-dead-worker-dirs (sorted-set mockfile1 mockfile2)
                    logviewer/cleanup-empty-topodir! nil]
@@ -368,8 +369,8 @@
 
     ;(stubbing [local-hostname expected-host
     (stubbing [logviewer/logviewer-port expected-port]
-      (mock-java-static (proxy [Utils] []
-                          (localHostnameImpl [] expected-host))
+      (with-open [_ (proxy [MockedUtils] []
+                      (localHostnameImpl [] expected-host))]
         (testing "Logviewer link centers the match in the page"
           (let [expected-fname "foobar.log"]
             (is (= (str "http://"
