@@ -23,7 +23,8 @@
             DistributedRPCInvocations$Processor])
   (:import [java.util.concurrent Semaphore ConcurrentLinkedQueue
             ThreadPoolExecutor ArrayBlockingQueue TimeUnit])
-  (:import [org.apache.storm.daemon Shutdownable])
+  (:import [org.apache.storm.daemon Shutdownable]
+           [org.apache.storm.utils Time])
   (:import [java.net InetAddress])
   (:import [org.apache.storm.generated AuthorizationException]
            [org.apache.storm.utils VersionInfo])
@@ -89,7 +90,7 @@
         clear-thread (async-loop
                        (fn []
                          (doseq [[id start] @id->start]
-                           (when (> (time-delta start) (conf DRPC-REQUEST-TIMEOUT-SECS))
+                           (when (> (Time/delta start) (conf DRPC-REQUEST-TIMEOUT-SECS))
                              (when-let [sem (@id->sem id)]
                                (.remove (acquire-queue request-queues (@id->function id)) (@id->request id))
                                (log-warn "Timeout DRPC request id: " id " start at " start)

@@ -30,7 +30,8 @@
   (:import [java.util HashMap])
   (:import [java.io File])
   (:import [org.apache.storm.utils Time Utils IPredicate])
-  (:import [org.apache.commons.io FileUtils])
+  (:import [org.apache.commons.io FileUtils]
+           [org.json.simple JSONValue])
   (:use [org.apache.storm testing MockAutoCred util config log timer zookeeper])
   (:use [org.apache.storm.daemon common])
   (:require [conjure.core])
@@ -38,6 +39,13 @@
              [thrift :as thrift]
              [cluster :as cluster]])
   (:use [conjure core]))
+
+(defn- from-json
+       [^String str]
+       (if str
+         (clojurify-structure
+           (JSONValue/parse str))
+         nil))
 
 (defn storm-component->task-info [cluster storm-name]
   (let [storm-id (get-storm-id (:storm-cluster-state cluster) storm-name)
@@ -147,9 +155,8 @@
     ))
 
 (defn check-distribution [items distribution]
-  (let [dist (->> items (map count) multi-set)]
-    (is (= dist (multi-set distribution)))
-    ))
+  (let [counts (map count items)]
+    (is (ms= counts distribution))))
 
 (defn disjoint? [& sets]
   (let [combined (apply concat sets)]
@@ -279,6 +286,18 @@
       ;check that renewed credentials replace the original credential.
       (is (= (.get (getCredentials cluster topology-name) nimbus-cred-key) nimbus-cred-renew-val))
       (is (= (.get (getCredentials cluster topology-name) gateway-cred-key) gateway-cred-renew-val)))))
+
+(defmacro letlocals
+  [& body]
+  (let [[tobind lexpr] (split-at (dec (count body)) body)
+        binded (vec (mapcat (fn [e]
+                              (if (and (list? e) (= 'bind (first e)))
+                                [(second e) (last e)]
+                                ['_ e]
+                                ))
+                            tobind))]
+    `(let ~binded
+       ~(first lexpr))))
 
 (deftest test-isolated-assignment
   (with-simulated-time-local-cluster [cluster :supervisors 6
@@ -782,8 +801,7 @@
       (check-executor-distribution slot-executors2 [2 2 2 3])
       (check-consistency cluster "test")
 
-      (bind common (first (Utils/findFirst (reify IPredicate (test [this [k v]] (= 3 (count v)))) slot-executors2)))
-
+      (bind common (first (find-first (fn [[k v]] (= 3 (count v))) slot-executors2)))
       (is (not-nil? common))
       (is (= (slot-executors2 common) (slot-executors common)))
 
@@ -1202,21 +1220,23 @@
 
       (let [expected-name topology-name
             expected-conf {TOPOLOGY-NAME expected-name
-                           :foo :bar}]
+                           "foo" "bar"}]
 
         (testing "getTopologyConf calls check-authorization! with the correct parameters."
-          (let [expected-operation "getTopologyConf"]
+          (let [expected-operation "getTopologyConf"
+                expected-conf-json (JSONValue/toJSONString expected-conf)]
             (stubbing [nimbus/check-authorization! nil
-                       nimbus/try-read-storm-conf expected-conf
-                       util/to-json nil]
+                       nimbus/try-read-storm-conf expected-conf]
               (try
-                (.getTopologyConf nimbus "fake-id")
+                (is (= expected-conf
+                       (->> (.getTopologyConf nimbus "fake-id")
+                            JSONValue/parse 
+                            clojurify-structure)))
                 (catch NotAliveException e)
                 (finally
                   (verify-first-call-args-for-indices
                     nimbus/check-authorization!
-                      [1 2 3] expected-name expected-conf expected-operation)
-                  (verify-first-call-args-for util/to-json expected-conf))))))
+                      [1 2 3] expected-name expected-conf expected-operation))))))
 
         (testing "getTopology calls check-authorization! with the correct parameters."
           (let [expected-operation "getTopology"]

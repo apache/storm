@@ -14,27 +14,28 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns org.apache.storm.security.auth.auth-test
-  (:use [clojure test])
-  (:require [org.apache.storm.daemon [nimbus :as nimbus]])
-  (:import [org.apache.thrift TException]
+    (:use [clojure test])
+    (:require [org.apache.storm.daemon [nimbus :as nimbus]])
+    (:import [org.apache.thrift TException]
+             [org.json.simple JSONValue]
            [org.apache.storm.security.auth.authorizer ImpersonationAuthorizer]
            [java.net Inet4Address])
-  (:import [org.apache.thrift.transport TTransportException])
-  (:import [java.nio ByteBuffer])
-  (:import [java.security Principal AccessController])
-  (:import [javax.security.auth Subject])
-  (:import [java.net InetAddress])
-  (:import [org.apache.storm Config])
-  (:import [org.apache.storm.generated AuthorizationException])
-  (:import [org.apache.storm.utils NimbusClient])
-  (:import [org.apache.storm.security.auth.authorizer SimpleWhitelistAuthorizer SimpleACLAuthorizer])
-  (:import [org.apache.storm.security.auth AuthUtils ThriftServer ThriftClient ShellBasedGroupsMapping 
+    (:import [org.apache.thrift.transport TTransportException])
+    (:import [java.nio ByteBuffer])
+    (:import [java.security Principal AccessController])
+    (:import [javax.security.auth Subject])
+    (:import [java.net InetAddress])
+    (:import [org.apache.storm Config])
+    (:import [org.apache.storm.generated AuthorizationException])
+    (:import [org.apache.storm.utils NimbusClient])
+    (:import [org.apache.storm.security.auth.authorizer SimpleWhitelistAuthorizer SimpleACLAuthorizer])
+    (:import [org.apache.storm.security.auth AuthUtils ThriftServer ThriftClient ShellBasedGroupsMapping
             ReqContext SimpleTransportPlugin KerberosPrincipalToLocal ThriftConnectionType])
-  (:use [org.apache.storm util config])
-  (:use [org.apache.storm.daemon common])
-  (:use [org.apache.storm testing])
-  (:import [org.apache.storm.generated Nimbus Nimbus$Client Nimbus$Iface StormTopology SubmitOptions
-            KillOptions RebalanceOptions ClusterSummary TopologyInfo Nimbus$Processor]))
+    (:use [org.apache.storm util config])
+    (:use [org.apache.storm.daemon common])
+    (:use [org.apache.storm testing])
+    (:import [org.apache.storm.generated Nimbus Nimbus$Client Nimbus$Iface StormTopology SubmitOptions
+              KillOptions RebalanceOptions ClusterSummary TopologyInfo Nimbus$Processor] (org.json.simple JSONValue)))
 
 (defn mk-principal [name]
   (reify Principal
@@ -75,7 +76,7 @@
        (reify Nimbus$Iface
          (^void submitTopologyWithOpts [this ^String storm-name ^String uploadedJarLocation ^String serializedConf ^StormTopology topology
                                         ^SubmitOptions submitOptions]
-           (if (not (nil? serializedConf)) (swap! topo-conf (fn [prev new] new) (from-json serializedConf)))
+           (if (not (nil? serializedConf)) (swap! topo-conf (fn [prev new] new) (if serializedConf (clojurify-structure (JSONValue/parse serializedConf)))))
            (nimbus/check-authorization! nimbus-d storm-name @topo-conf "submitTopology" auth-context))
 
          (^void killTopology [this ^String storm-name]

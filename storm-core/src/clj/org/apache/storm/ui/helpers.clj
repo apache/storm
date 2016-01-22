@@ -20,7 +20,7 @@
          [string :only [blank? join]]
          [walk :only [keywordize-keys]]])
   (:use [org.apache.storm config log])
-  (:use [org.apache.storm.util :only [clojurify-structure defnk to-json url-encode not-nil?]])
+  (:use [org.apache.storm.util :only [clojurify-structure defnk url-encode not-nil?]])
   (:use [clj-time coerce format])
   (:import [org.apache.storm.generated ExecutorInfo ExecutorSummary])
   (:import [org.apache.storm.logging.filters AccessLoggingFilter])
@@ -29,9 +29,10 @@
            [org.eclipse.jetty.server.nio SelectChannelConnector]
            [org.eclipse.jetty.server.ssl SslSocketConnector]
            [org.eclipse.jetty.servlet ServletHolder FilterMapping]
-	   [org.eclipse.jetty.util.ssl SslContextFactory]
+           [org.eclipse.jetty.util.ssl SslContextFactory]
            [org.eclipse.jetty.server DispatcherType]
-           [org.eclipse.jetty.servlets CrossOriginFilter])
+           [org.eclipse.jetty.servlets CrossOriginFilter]
+           (org.json.simple JSONValue))
   (:require [ring.util servlet])
   (:require [compojure.route :as route]
             [compojure.handler :as handler])
@@ -219,7 +220,7 @@
   (str callback "(" response ");"))
 
 (defnk json-response
-  [data callback :serialize-fn to-json :status 200 :headers {}]
+  [data callback :serialize-fn #(JSONValue/toJSONString %) :status 200 :headers {}]
   {:status status
    :headers (merge {"Cache-Control" "no-cache, no-store"
                     "Access-Control-Allow-Origin" "*"

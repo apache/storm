@@ -44,7 +44,8 @@
   (:import [org.apache.storm.transactional.partitioned PartitionedTransactionalSpoutExecutor])
   (:import [org.apache.storm.tuple Tuple])
   (:import [org.apache.storm.generated StormTopology])
-  (:import [org.apache.storm.task TopologyContext])
+  (:import [org.apache.storm.task TopologyContext]
+           [org.json.simple JSONValue])
   (:require [org.apache.storm [zookeeper :as zk]])
   (:require [org.apache.storm.messaging.loader :as msg-loader])
   (:require [org.apache.storm.daemon.acker :as acker])
@@ -98,6 +99,29 @@
 
 (defn advance-time-secs! [secs]
   (advance-time-ms! (* (long secs) 1000)))
+
+(defn set-var-root*
+  [avar val]
+  (alter-var-root avar (fn [avar] val)))
+
+(defmacro set-var-root
+  [var-sym val]
+  `(set-var-root* (var ~var-sym) ~val))
+
+(defmacro with-var-roots
+  [bindings & body]
+  (let [settings (partition 2 bindings)
+        tmpvars (repeatedly (count settings) (partial gensym "old"))
+        vars (map first settings)
+        savevals (vec (mapcat (fn [t v] [t v]) tmpvars vars))
+        setters (for [[v s] settings] `(set-var-root ~v ~s))
+        restorers (map (fn [v s] `(set-var-root ~v ~s)) vars tmpvars)]
+    `(let ~savevals
+       ~@setters
+       (try
+         ~@body
+         (finally
+           ~@restorers)))))
 
 (defnk add-supervisor
   [cluster-map :ports 2 :conf {} :id nil]
@@ -176,6 +200,13 @@
   (let [pred  (reify IPredicate (test [this x] (= (.get-id x) supervisor-id)))]
     (Utils/findFirst pred @(:supervisors cluster-map))))
 
+(defn remove-first
+  [pred aseq]
+  (let [[b e] (split-with (complement pred) aseq)]
+    (when (empty? e)
+      (throw (IllegalArgumentException. "Nothing to remove")))
+    (concat b (rest e))))
+
 (defn kill-supervisor [cluster-map supervisor-id]
   (let [finder-fn #(= (.get-id %) supervisor-id)
         pred  (reify IPredicate (test [this x] (= (.get-id x) supervisor-id)))
@@ -210,13 +241,13 @@
   (doseq [t @(:tmp-dirs cluster-map)]
     (log-message "Deleting temporary path " t)
     (try
-      (rmr t)
+      (Utils/forceDelete t)
       ;; on windows, the host process still holds lock on the logfile
       (catch Exception e (log-message (.getMessage e)))) ))
 
 (def TEST-TIMEOUT-MS
   (let [timeout (System/getenv "STORM_TEST_TIMEOUT_MS")]
-    (parse-int (if timeout timeout "5000"))))
+    (Integer/parseInt (if timeout timeout "5000"))))
 
 (defmacro while-timeout [timeout-ms condition & body]
   `(let [end-time# (+ (System/currentTimeMillis) ~timeout-ms)]
@@ -300,13 +331,13 @@
   [nimbus storm-name conf topology]
   (when-not (Utils/isValidConf conf)
     (throw (IllegalArgumentException. "Topology conf is not json-serializable")))
-  (.submitTopology nimbus storm-name nil (to-json conf) topology))
+  (.submitTopology nimbus storm-name nil (JSONValue/toJSONString conf) topology))
 
 (defn submit-local-topology-with-opts
   [nimbus storm-name conf topology submit-opts]
   (when-not (Utils/isValidConf conf)
     (throw (IllegalArgumentException. "Topology conf is not json-serializable")))
-  (.submitTopologyWithOpts nimbus storm-name nil (to-json conf) topology submit-opts))
+  (.submitTopologyWithOpts nimbus storm-name nil (JSONValue/toJSONString conf) topology submit-opts))
 
 (defn mocked-convert-assignments-to-worker->resources [storm-cluster-state storm-name worker->resources]
   (fn [existing-assignments]
@@ -399,7 +430,10 @@
         component->tasks (reverse-map
                            (common/storm-task-info
                              (.getUserTopology nimbus storm-id)
-                             (from-json (.getTopologyConf nimbus storm-id))))
+                             (->>
+                               (.getTopologyConf nimbus storm-id)
+                               (#(if % (JSONValue/parse %)))
+                               clojurify-structure)))
         component->tasks (if component-ids
                            (select-keys component->tasks component-ids)
                            component->tasks)
@@ -576,6 +610,12 @@
      ))
   ([results component-id]
    (read-tuples results component-id Utils/DEFAULT_STREAM_ID)))
+
+(defn multi-set
+  "Returns a map of elem to count"
+  [aseq]
+  (apply merge-with +
+         (map #(hash-map % 1) aseq)))
 
 (defn ms=
   [& args]

@@ -36,7 +36,8 @@
   (:import [org.apache.storm Config Constants])
   (:import [org.apache.storm.cluster ClusterStateContext DaemonType])
   (:import [org.apache.storm.grouping LoadAwareCustomStreamGrouping LoadAwareShuffleGrouping LoadMapping ShuffleGrouping])
-  (:import [java.util.concurrent ConcurrentLinkedQueue])
+  (:import [java.util.concurrent ConcurrentLinkedQueue]
+           (org.json.simple JSONValue))
   (:require [org.apache.storm [thrift :as thrift]
              [cluster :as cluster] [disruptor :as disruptor] [stats :as stats]])
   (:require [org.apache.storm.daemon [task :as task]])
@@ -181,7 +182,8 @@
         spec-conf (-> general-context
                       (.getComponentCommon component-id)
                       .get_json_conf
-                      from-json)]
+                      (#(if % (JSONValue/parse %)))
+                      clojurify-structure)]
     (merge storm-conf (apply dissoc spec-conf to-remove))
     ))
 
@@ -200,7 +202,7 @@
         ]
     (fn [error]
       (log-error error)
-      (when (> (time-delta @interval-start-time)
+      (when (> (Time/delta @interval-start-time)
                error-interval-secs)
         (reset! interval-errors 0)
         (reset! interval-start-time (Utils/currentTimeSecs)))
@@ -506,7 +508,7 @@
                  2 ;; microoptimize for performance of .size method
                  (reify RotatingMap$ExpiredCallback
                    (expire [this id [task-id spout-id tuple-info start-time-ms]]
-                     (let [time-delta (if start-time-ms (time-delta-ms start-time-ms))]
+                     (let [time-delta (if start-time-ms (Time/deltaMs start-time-ms))]
                        (fail-spout-msg executor-data (get task-datas task-id) spout-id tuple-info time-delta "TIMEOUT" id)
                        ))))
         tuple-action-fn (fn [task-id ^TupleImpl tuple]
@@ -524,7 +526,7 @@
                                 (when spout-id
                                   (when-not (= stored-task-id task-id)
                                     (throw-runtime "Fatal error, mismatched task ids: " task-id " " stored-task-id))
-                                  (let [time-delta (if start-time-ms (time-delta-ms start-time-ms))]
+                                  (let [time-delta (if start-time-ms (Time/deltaMs start-time-ms))]
                                     (condp = stream-id
                                       ACKER-ACK-STREAM-ID (ack-spout-msg executor-data (get task-datas task-id)
                                                                          spout-id tuple-finished-info time-delta id)
@@ -668,12 +670,12 @@
 (defn- tuple-time-delta! [^TupleImpl tuple]
   (let [ms (.getProcessSampleStartTime tuple)]
     (if ms
-      (time-delta-ms ms))))
+      (Time/deltaMs ms))))
       
 (defn- tuple-execute-time-delta! [^TupleImpl tuple]
   (let [ms (.getExecuteSampleStartTime tuple)]
     (if ms
-      (time-delta-ms ms))))
+      (Time/deltaMs ms))))
 
 (defn put-xor! [^Map pending key id]
   (let [curr (or (.get pending key) (long 0))]

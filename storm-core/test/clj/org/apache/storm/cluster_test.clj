@@ -22,7 +22,7 @@
   (:import [org.mockito Mockito])
   (:import [org.mockito.exceptions.base MockitoAssertionError])
   (:import [org.apache.curator.framework CuratorFramework CuratorFrameworkFactory CuratorFrameworkFactory$Builder])
-  (:import [org.apache.storm.utils Utils TestUtils ZookeeperAuthInfo])
+  (:import [org.apache.storm.utils Utils ZookeeperAuthInfo])
   (:import [org.apache.storm.cluster ClusterState])
   (:require [org.apache.storm [zookeeper :as zk]])
   (:require [conjure.core])
@@ -295,7 +295,7 @@
       (. (Mockito/when (.connectString builder (Mockito/anyString))) (thenReturn builder))
       (. (Mockito/when (.connectionTimeoutMs builder (Mockito/anyInt))) (thenReturn builder))
       (. (Mockito/when (.sessionTimeoutMs builder (Mockito/anyInt))) (thenReturn builder))
-      (TestUtils/testSetupBuilder builder (str zk-port "/") conf (ZookeeperAuthInfo. conf))
+      (Utils/testSetupBuilder builder (str zk-port "/") conf (ZookeeperAuthInfo. conf))
       (is (nil?
            (try
              (. (Mockito/verify builder) (authorization "digest" (.getBytes (conf STORM-ZOOKEEPER-AUTH-PAYLOAD))))

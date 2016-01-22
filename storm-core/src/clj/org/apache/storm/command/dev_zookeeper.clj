@@ -14,6 +14,7 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns org.apache.storm.command.dev-zookeeper
+  (:import [org.apache.storm.utils Utils])
   (:use [org.apache.storm zookeeper util config])
   (:gen-class))
 
@@ -21,6 +22,6 @@
   (let [conf (read-storm-config)
         port (conf STORM-ZOOKEEPER-PORT)
         localpath (conf DEV-ZOOKEEPER-PATH)]
-    (rmr localpath)
+    (Utils/forceDelete localpath)
     (mk-inprocess-zookeeper localpath :port port)
     ))

@@ -102,6 +102,14 @@ public class Time {
     public static int currentTimeSecs() {
         return (int) (currentTimeMillis() / 1000);
     }
+
+    public static int delta(int timeInSeconds) {
+        return Time.currentTimeSecs() - timeInSeconds;
+    }
+
+    public static long deltaMs(long timeInMilliseconds) {
+        return System.currentTimeMillis() - timeInMilliseconds;
+    }
     
     public static void advanceTime(long ms) {
         if(!simulating.get()) throw new IllegalStateException("Cannot simulate time unless in simulation mode");

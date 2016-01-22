@@ -24,7 +24,9 @@
   (:require [org.apache.storm.messaging.loader :as msg-loader])
   (:import [java.util.concurrent Executors]
            [org.apache.storm.hooks IWorkerHook BaseWorkerHook])
-  (:import [java.util ArrayList HashMap])
+  (:import [java.util ArrayList HashMap]
+           [java.util.concurrent.locks ReentrantReadWriteLock])
+  (:import [org.apache.commons.io FileUtils])
   (:import [org.apache.storm.utils Utils TransferDrainer ThriftTopologyUtils WorkerBackpressureThread DisruptorQueue])
   (:import [org.apache.storm.grouping LoadMapping])
   (:import [org.apache.storm.messaging TransportFactory])
@@ -290,7 +292,7 @@
       :component->stream->fields (component->stream->fields (:system-topology <>))
       ;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
       :component->sorted-tasks (->> (:task->component <>) reverse-map (map-val sort))
-      :endpoint-socket-lock (mk-rw-lock)
+      :endpoint-socket-lock (ReentrantReadWriteLock.)
       :cached-node+port->socket (atom {})
       :cached-task->node+port (atom {})
       :transfer-queue transfer-queue
@@ -345,6 +347,22 @@
           (when (> now @next-update)
             (.sendLoadMetrics (:receiver worker) local-pop)
             (reset! next-update (+ LOAD-REFRESH-INTERVAL-MS now))))))))
+
+(defmacro read-locked
+  [rw-lock & body]
+  (let [lock (with-meta rw-lock {:tag `ReentrantReadWriteLock})]
+    `(let [rlock# (.readLock ~lock)]
+       (try (.lock rlock#)
+         ~@body
+         (finally (.unlock rlock#))))))
+
+(defmacro write-locked
+  [rw-lock & body]
+  (let [lock (with-meta rw-lock {:tag `ReentrantReadWriteLock})]
+    `(let [wlock# (.writeLock ~lock)]
+       (try (.lock wlock#)
+         ~@body
+         (finally (.unlock wlock#))))))
 
 ;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn mk-refresh-connections [worker]
@@ -587,7 +605,7 @@
   ;; process. supervisor will register it in this case
   (when (= :distributed (cluster-mode conf))
     (let [pid (process-pid)]
-      (touch (worker-pid-path conf worker-id pid))
+      (FileUtils/touch (worker-pid-path conf worker-id pid))
       (spit (worker-artifacts-pid-path conf storm-id port) pid)))
 
   (declare establish-log-setting-callback)

@@ -23,8 +23,9 @@
   (:import [org.apache.storm Constants])
   (:import [org.apache.storm.metric SystemBolt])
   (:import [org.apache.storm.metric EventLoggerBolt])
-  (:import [org.apache.storm.security.auth IAuthorizer]) 
-  (:import [java.io InterruptedIOException])
+  (:import [org.apache.storm.security.auth IAuthorizer])
+  (:import [java.io InterruptedIOException]
+           (org.json.simple JSONValue))
   (:require [clojure.set :as set])  
   (:require [org.apache.storm.daemon.acker :as acker])
   (:require [org.apache.storm.thrift :as thrift])
@@ -107,7 +108,7 @@
 
 (defn- validate-ids! [^StormTopology topology]
   (let [sets (map #(.getFieldValue topology %) thrift/STORM-TOPOLOGY-FIELDS)
-        offending (apply any-intersection sets)]
+        offending (apply set/intersection sets)]
     (if-not (empty? offending)
       (throw (InvalidTopologyException.
               (str "Duplicate component ids: " offending))))
@@ -133,9 +134,10 @@
 
 (defn component-conf [component]
   (->> component
-      .get_common
-      .get_json_conf
-      from-json))
+       .get_common
+       .get_json_conf
+       (#(if % (JSONValue/parse %)))
+       clojurify-structure))
 
 (defn validate-basic! [^StormTopology topology]
   (validate-ids! topology)
@@ -226,7 +228,7 @@
                                {TOPOLOGY-TICK-TUPLE-FREQ-SECS (storm-conf TOPOLOGY-MESSAGE-TIMEOUT-SECS)})]]
       (do
         ;; this set up tick tuples to cause timeouts to be triggered
-        (.set_json_conf common (to-json spout-conf))
+        (.set_json_conf common (JSONValue/toJSONString spout-conf))
         (.put_to_streams common ACKER-INIT-STREAM-ID (thrift/output-fields ["id" "init-val" "spout-task"]))
         (.put_to_inputs common
                         (GlobalStreamId. ACKER-COMPONENT-ID ACKER-ACK-STREAM-ID)

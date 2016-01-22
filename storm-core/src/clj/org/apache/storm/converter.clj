@@ -132,6 +132,10 @@
       :killed TopologyStatus/KILLED
       nil)))
 
+(defn assoc-non-nil
+  [m k v]
+  (if v (assoc m k v) m))
+
 (defn clojurify-rebalance-options [^RebalanceOptions rebalance-options]
   (-> {:action :rebalance}
     (assoc-non-nil :delay-secs (if (.is_set_wait_secs rebalance-options) (.get_wait_secs rebalance-options)))
