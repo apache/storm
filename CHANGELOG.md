@@ -1,4 +1,5 @@
 ## 1.0.0
+ * STORM-1486: Fix storm-kafa documentation
  * STORM-1214: add javadoc for Trident Streams and Operations
  * STORM-1450: Fix minor bugs and refactor code in ResourceAwareScheduler
  * STORM-1452: Fixes profiling/debugging out of the box
