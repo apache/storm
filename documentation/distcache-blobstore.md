@@ -1,3 +1,8 @@
+---
+title: Storm Distributed Cache API
+layout: documentation
+documentation: true
+---
 # Storm Distributed Cache API
 
 The distributed cache feature in storm is used to efficiently distribute files
@@ -237,7 +242,7 @@ In order to avoid workers/supervisors/ui talking to zookeeper for getting master
 which has a list of `supervisorSummary` and a list of `topologySummary` instances. We will add a list of `NimbusSummary` 
 to the `ClusterSummary`. See the structures below:
 
-```thrift
+```
 struct ClusterSummary {
   1: required list<SupervisorSummary> supervisors;
   3: required list<TopologySummary> topologies;
@@ -650,7 +655,7 @@ public abstract BlobReplication updateBlobReplication(String Key, int replicatio
 
 ## Appendix C
 
-``` thrift
+```
 service Nimbus {
 ...
 string beginCreateBlob(1: string key, 2: SettableBlobMeta meta) throws (1: AuthorizationException aze, 2: KeyAlreadyExistsException kae);
