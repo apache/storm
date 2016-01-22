@@ -1,4 +1,5 @@
 ## 1.0.0
+ * STORM-1450: Fix minor bugs and refactor code in ResourceAwareScheduler
  * STORM-1452: Fixes profiling/debugging out of the box
  * STORM-1406: Add MQTT Support
  * STORM-1473: enable log search for daemon logs
