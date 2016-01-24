@@ -1,4 +1,6 @@
 ## 1.0.0
+ * STORM-1484: ignore subproject .classpath & .project file
+ * STORM-1478: make bolts getComponentConfiguration method cleaner/simpler
  * STORM-1463: added file scehma to log4j config files for windows env
  * STORM-1485: DRPC Connectivity Issues
  * STORM-1486: Fix storm-kafa documentation
