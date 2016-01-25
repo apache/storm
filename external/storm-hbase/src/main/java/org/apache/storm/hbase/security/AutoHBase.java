@@ -166,18 +166,20 @@ public class AutoHBase implements IAutoCredentials, ICredentialsRenewer, INimbus
     protected byte[] getHadoopCredentials(Map conf) {
         try {
             final Configuration hbaseConf = HBaseConfiguration.create();
+            
+            hbaseConf.set(HBASE_KEYTAB_FILE_KEY, hbaseKeytab);
+            hbaseConf.set(HBASE_PRINCIPAL_KEY, hbasePrincipal);
+            
+            UserGroupInformation.setConfiguration(hbaseConf);
+
             if(UserGroupInformation.isSecurityEnabled()) {
                 final String topologySubmitterUser = (String) conf.get(Config.TOPOLOGY_SUBMITTER_PRINCIPAL);
 
                 UserProvider provider = UserProvider.instantiate(hbaseConf);
-
-                hbaseConf.set(HBASE_KEYTAB_FILE_KEY, hbaseKeytab);
-                hbaseConf.set(HBASE_PRINCIPAL_KEY, hbasePrincipal);
                 provider.login(HBASE_KEYTAB_FILE_KEY, HBASE_PRINCIPAL_KEY, InetAddress.getLocalHost().getCanonicalHostName());
 
                 LOG.info("Logged into Hbase as principal = " + conf.get(HBASE_PRINCIPAL_KEY));
-                UserGroupInformation.setConfiguration(hbaseConf);
-
+            
                 UserGroupInformation ugi = UserGroupInformation.getCurrentUser();
 
                 final UserGroupInformation proxyUser = UserGroupInformation.createProxyUser(topologySubmitterUser, ugi);
