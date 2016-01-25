@@ -1609,54 +1609,54 @@ public class Utils {
          style in the caller functions to a more Java style for loop. This is mentioned in TODOs across the clojure
          files.
     */
-    public static Map filterVal(IPredicate aFn, Map amap) {
-        Map newMap = new HashMap();
-        if (amap == null) {
-            return newMap;
-        }
-        for (Object key: amap.keySet()) {
-            Object value = amap.get(key);
-            if(aFn.test(value)) {
-                newMap.put(key, value);
-            }
-        }
-        return newMap;
-    }
+//    public static Map filterVal(IPredicate aFn, Map amap) {
+//        Map newMap = new HashMap();
+//        if (amap == null) {
+//            return newMap;
+//        }
+//        for (Object key: amap.keySet()) {
+//            Object value = amap.get(key);
+//            if(aFn.test(value)) {
+//                newMap.put(key, value);
+//            }
+//        }
+//        return newMap;
+//    }
 
     /* TODO: This function was originally written to replace filter-key in util.clj. But we decided to change the coding
          style in the caller functions to a more Java style for loop + if conditionals. This is mentioned in TODOs
          across the clojure files.
     */
-    public static Map filterKey(IPredicate aFn, Map amap) {
-        Map newMap = new HashMap();
-        if (amap == null) {
-            return newMap;
-        }
-        for (Object key: amap.keySet()) {
-            Object value = amap.get(key);
-            if(aFn.test(key)) {
-                newMap.put(key, value);
-            }
-        }
-        return newMap;
-    }
+//    public static Map filterKey(IPredicate aFn, Map amap) {
+//        Map newMap = new HashMap();
+//        if (amap == null) {
+//            return newMap;
+//        }
+//        for (Object key: amap.keySet()) {
+//            Object value = amap.get(key);
+//            if(aFn.test(key)) {
+//                newMap.put(key, value);
+//            }
+//        }
+//        return newMap;
+//    }
 
     /* TODO: This function was originally written to replace map-key in util.clj. But we decided to change the coding
          style in the caller functions to a more Java style for loop. This is mentioned in TODOs across the clojure
          files.
     */
-    public static Map mapKey (IFn aFn, Map amap) {
-        Map newMap = new HashMap();
-        if (amap == null) {
-            return newMap;
-        }
-        for (Object key: amap.keySet()) {
-            Object value = amap.get(key);
-            Object newKey = aFn.eval(key);
-            newMap.put(newKey, value);
-        }
-        return newMap;
-    }
+//    public static Map mapKey (IFn aFn, Map amap) {
+//        Map newMap = new HashMap();
+//        if (amap == null) {
+//            return newMap;
+//        }
+//        for (Object key: amap.keySet()) {
+//            Object value = amap.get(key);
+//            Object newKey = aFn.eval(key);
+//            newMap.put(newKey, value);
+//        }
+//        return newMap;
+//    }
 
     /* TODO: This function was originally written to replace separate in util.clj. But since it was only used in
     transactional_test.clj, the separate function was moved there for now.
@@ -1677,15 +1677,37 @@ public class Utils {
         return outputVector;
     }
 
-//    (defn full-path
-//    [parent name]
-//            (let [toks (Utils/tokenizePath parent)]
-//            (toks->path (conj toks name))))
+    public static void exitProcess (int val, Object... msg) {
+        String combinedErrorMessage = "";
+        for (Object oneMessage: msg) {
+            combinedErrorMessage = combinedErrorMessage + oneMessage.toString();
+        }
+        LOG.error("halting process: " + combinedErrorMessage, new RuntimeException(combinedErrorMessage));
+        Runtime.getRuntime().exit(val);
+    }
 
-//    public static String fullPath (String parent, String name) {
-//        Vector<String> toks = tokenizePath(parent);
-//
-//    }
+    public static Double sum(Collection<Number> vals) {
+        double sum = 0.0;
+        double dVal;
+        if (vals == null) {
+            return 0.0;
+        }
+        for (Number val: vals) {
+            dVal = val.doubleValue();
+            sum = sum + dVal;
+        }
+        return new Double(sum);
+    }
+
+
+    public static Object defaulted(Object val, Object defaultObj) {
+        if (val != null) {
+            return val;
+        } else {
+            return defaultObj;
+        }
+    }
+
     /**
      * Deletes a file or directory and its contents if it exists. Does not
      * complain if the input is null or does not exist.

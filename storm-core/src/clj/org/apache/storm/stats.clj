@@ -54,6 +54,11 @@
 
 (def NUM-STAT-BUCKETS 20)
 
+(defn- div
+  "Perform floating point division on the arguments."
+  [f & rest]
+  (apply / (double f) rest))
+
 (defn- mk-common-stats
   [rate]
   (CommonStats.
@@ -325,17 +330,17 @@
   (letfn [(weight-avg [[id avg]]
             (let [num-e (get idk->num-executed id)]
               (product-or-0 avg num-e)))]
-    {:executeLatencyTotal (sum (map weight-avg idk->exec-avg))
-     :processLatencyTotal (sum (map weight-avg idk->proc-avg))
-     :executed (sum (vals idk->num-executed))}))
+    {:executeLatencyTotal (Utils/sum (map weight-avg idk->exec-avg))
+     :processLatencyTotal (Utils/sum (map weight-avg idk->proc-avg))
+     :executed (Utils/sum (vals idk->num-executed))}))
 
 (defn- agg-spout-lat-and-count
   "Aggregates number acked and complete latencies across all streams."
   [sid->comp-avg sid->num-acked]
   (letfn [(weight-avg [[id avg]]
             (product-or-0 avg (get sid->num-acked id)))]
-    {:completeLatencyTotal (sum (map weight-avg sid->comp-avg))
-     :acked (sum (vals sid->num-acked))}))
+    {:completeLatencyTotal (Utils/sum (map weight-avg sid->comp-avg))
+     :acked (Utils/sum (vals sid->num-acked))}))
 
 (defn add-pairs
   ([] [0 0])
@@ -552,27 +557,27 @@
                      (get window)
                      handle-sys-components-fn
                      vals
-                     sum)
+                     Utils/sum)
         :transferred (-> statk->w->sid->num
                          :transferred
                          str-key
                          (get window)
                          handle-sys-components-fn
                          vals
-                         sum)
+                         Utils/sum)
         :capacity (compute-agg-capacity statk->w->sid->num uptime)
         :acked (-> statk->w->sid->num
                    :acked
                    str-key
                    (get window)
                    vals
-                   sum)
+                   Utils/sum)
         :failed (-> statk->w->sid->num
                     :failed
                     str-key
                     (get window)
                     vals
-                    sum)})}))
+                    Utils/sum)})}))
 
 (defn agg-pre-merge-topo-page-spout
   [{comp-id :comp-id
@@ -601,20 +606,20 @@
                      (get window)
                      handle-sys-components-fn
                      vals
-                     sum)
+                     Utils/sum)
         :transferred (-> statk->w->sid->num
                          :transferred
                          str-key
                          (get window)
                          handle-sys-components-fn
                          vals
-                         sum)
+                         Utils/sum)
         :failed (-> statk->w->sid->num
                     :failed
                     str-key
                     (get window)
                     vals
-                    sum)})}))
+                    Utils/sum)})}))
 
 (defn merge-agg-comp-stats-comp-page-bolt
   [{acc-in :cid+sid->input-stats

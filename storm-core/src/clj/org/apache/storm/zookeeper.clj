@@ -118,6 +118,10 @@
                   )
                   (catch Exception e (throw (Utils/wrapInRuntime e)))))))
 
+(defn barr
+  [& vals]
+  (byte-array (map byte vals)))
+
 (defn mkdirs
   [^CuratorFramework zk ^String path acls]
   (let [path (Utils/normalizePath path)]

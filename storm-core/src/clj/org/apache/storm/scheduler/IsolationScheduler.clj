@@ -35,6 +35,12 @@
 (defn -prepare [this conf]
   (container-set! (.state this) conf))
 
+(defn- repeat-seq
+  ([aseq]
+    (apply concat (repeat aseq)))
+  ([amt aseq]
+    (apply concat (repeat amt aseq))))
+
 ;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn- compute-worker-specs "Returns mutable set of sets of executors"
   [^TopologyDetails details]

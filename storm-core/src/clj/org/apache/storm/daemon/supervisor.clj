@@ -331,16 +331,16 @@
    :curr-assignment (atom nil) ;; used for reporting used ports when heartbeating
    :heartbeat-timer (mk-timer :kill-fn (fn [t]
                                (log-error t "Error when processing event")
-                               (exit-process! 20 "Error when processing an event")
+                               (Utils/exitProcess 20 "Error when processing an event")
                                ))
    :event-timer (mk-timer :kill-fn (fn [t]
                                          (log-error t "Error when processing event")
-                                         (exit-process! 20 "Error when processing an event")
+                                         (Utils/exitProcess 20 "Error when processing an event")
                                          ))
    :blob-update-timer (mk-timer :kill-fn (defn blob-update-timer
                                            [t]
                                            (log-error t "Error when processing event")
-                                           (exit-process! 20 "Error when processing a event"))
+                                           (Utils/exitProcess 20 "Error when processing a event"))
                                 :timer-name "blob-update-timer")
    :localizer (Utils/createLocalizer conf (supervisor-local-dir conf))
    :assignment-versions (atom {})
@@ -399,7 +399,7 @@
   (let [conf (:conf supervisor)
         ^LocalState local-state (:local-state supervisor)
         storm-cluster-state (:storm-cluster-state supervisor)
-        assigned-executors (defaulted (ls-local-assignments local-state) {})
+        assigned-executors (Utils/defaulted (ls-local-assignments local-state) {})
         now (Utils/currentTimeSecs)
         allocated (read-allocated-workers supervisor assigned-executors now)
         keepers (filter-val
@@ -450,7 +450,7 @@
 (defn shutdown-disallowed-workers [supervisor]
   (let [conf (:conf supervisor)
         ^LocalState local-state (:local-state supervisor)
-        assigned-executors (defaulted (ls-local-assignments local-state) {})
+        assigned-executors (Utils/defaulted (ls-local-assignments local-state) {})
         now (Utils/currentTimeSecs)
         allocated (read-allocated-workers supervisor assigned-executors now)
         disallowed (keys (filter-val

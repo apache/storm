@@ -237,7 +237,7 @@
 (defn mk-halting-timer [timer-name]
   (mk-timer :kill-fn (fn [t]
                        (log-error t "Error when processing event")
-                       (exit-process! 20 "Error when processing an event")
+                       (Utils/exitProcess 20 "Error when processing an event")
                        )
             :timer-name timer-name))
 
@@ -773,11 +773,11 @@
 
 (defmethod mk-suicide-fn
   :local [conf]
-  (fn [] (exit-process! 1 "Worker died")))
+  (fn [] (Utils/exitProcess 1 "Worker died")))
 
 (defmethod mk-suicide-fn
   :distributed [conf]
-  (fn [] (exit-process! 1 "Worker died")))
+  (fn [] (Utils/exitProcess 1 "Worker died")))
 
 (defn -main [storm-id assignment-id port-str worker-id]
   (let [conf (read-storm-config)]

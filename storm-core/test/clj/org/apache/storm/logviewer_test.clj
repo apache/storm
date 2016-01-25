@@ -187,7 +187,7 @@
                                     (mk-DirectoryStream
                                       (ArrayList.
                                         (map #(mk-mock-Path %) (.listFiles dir)))))))
-                      now-millis (Utils/currentTimeMillis))
+                      now-millis (Utils/currentTimeMillis)
                       files1 (into-array File (map #(mk-mock-File {:name (str "A" % ".log")
                                                                    :type :file
                                                                    :mtime (+ now-millis (* 100 %))

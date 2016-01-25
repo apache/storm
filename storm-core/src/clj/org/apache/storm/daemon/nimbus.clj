@@ -192,7 +192,7 @@
      :validator (new-instance (conf NIMBUS-TOPOLOGY-VALIDATOR))
      :timer (mk-timer :kill-fn (fn [t]
                                  (log-error t "Error when processing event")
-                                 (exit-process! 20 "Error when processing an event")
+                                 (Utils/exitProcess 20 "Error when processing an event")
                                  ))
      :scheduler (mk-scheduler conf inimbus)
      :leader-elector (zk-leader-elector conf)
@@ -411,7 +411,7 @@
   [storm-cluster-state]
 
   (let [assignments (.assignments storm-cluster-state nil)]
-    (defaulted
+    (Utils/defaulted
       (apply merge-with set/union
              (for [a assignments
                    [_ [node port]] (-> (.assignment-info storm-cluster-state a nil) :executor->node+port)]

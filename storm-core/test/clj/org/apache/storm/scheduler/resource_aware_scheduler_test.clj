@@ -16,12 +16,13 @@
 (ns org.apache.storm.scheduler.resource-aware-scheduler-test
   (:use [clojure test])
   (:use [org.apache.storm config testing thrift])
-  (:require [org.apache.storm.util :refer [map-val reverse-map sum]])
+  (:require [org.apache.storm.util :refer [map-val reverse-map]])
   (:require [org.apache.storm.daemon [nimbus :as nimbus]])
   (:import [org.apache.storm.generated StormTopology]
            [org.apache.storm Config]
            [org.apache.storm.testing TestWordSpout TestWordCounter]
-           [org.apache.storm.topology TopologyBuilder])
+           [org.apache.storm.topology TopologyBuilder]
+           [org.apache.storm.utils Utils])
   (:import [org.apache.storm.scheduler Cluster SupervisorDetails WorkerSlot ExecutorDetails
             SchedulerAssignmentImpl Topologies TopologyDetails])
   (:import [org.apache.storm.scheduler.resource RAS_Node RAS_Nodes ResourceAwareScheduler])
@@ -339,10 +340,10 @@
           super->eds (reverse-map ed->super)
           mem-avail->used (into []
                                  (for [[super eds] super->eds]
-                                   [(.getTotalMemory super) (sum (map #(.getTotalMemReqTask topology1 %) eds))]))
+                                   [(.getTotalMemory super) (Utils/sum (map #(.getTotalMemReqTask topology1 %) eds))]))
           cpu-avail->used (into []
                                  (for [[super eds] super->eds]
-                                   [(.getTotalCPU super) (sum (map #(.getTotalCpuReqTask topology1 %) eds))]))]
+                                   [(.getTotalCPU super) (Utils/sum (map #(.getTotalCpuReqTask topology1 %) eds))]))]
     ;; 4 slots on 1 machine, all executors assigned
     (is (= 2 (.size assigned-slots)))  ;; executor0 resides one one worker (on one), executor1 and executor2 on another worker (on the other node)
     (is (= 2 (.size (into #{} (for [slot assigned-slots] (.getNodeId slot))))))

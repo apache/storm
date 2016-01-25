@@ -329,40 +329,37 @@
   [afn amap]
   (into {} (for [[k v] amap] [(afn k) v])))
 
-(defn full-path
-  [parent name]
-  (let [toks (Utils/tokenizePath parent)]
-    (Utils/toksToPath (conj toks name))))
+;(defn full-path
+;  [parent name]
+;  (let [toks (Utils/tokenizePath parent)]
+;    (Utils/toksToPath (conj toks name))))
 
+;TODO: Once all the other clojure functions (100+ locations) are translated to java, this function becomes moot.
 (def not-nil? (complement nil?))
 
-(defn barr
-  [& vals]
-  (byte-array (map byte vals)))
+;(defn exit-process!
+;  [val & msg]
+;  (log-error (RuntimeException. (str msg)) "Halting process: " msg)
+;  (.exit (Runtime/getRuntime) val))
 
-(defn exit-process!
-  [val & msg]
-  (log-error (RuntimeException. (str msg)) "Halting process: " msg)
-  (.exit (Runtime/getRuntime) val))
+;(defn sum
+;  [vals]
+;  (reduce + vals))
 
-(defn sum
-  [vals]
-  (reduce + vals))
+;(defn repeat-seq
+;  ([aseq]
+;   (apply concat (repeat aseq)))
+;  ([amt aseq]
+;   (apply concat (repeat amt aseq))))
 
-(defn repeat-seq
-  ([aseq]
-   (apply concat (repeat aseq)))
-  ([amt aseq]
-   (apply concat (repeat amt aseq))))
+;(defn div
+;  "Perform floating point division on the arguments."
+;  [f & rest]
+;  (apply / (double f) rest))
 
-(defn div
-  "Perform floating point division on the arguments."
-  [f & rest]
-  (apply / (double f) rest))
-
-(defn defaulted
-  [val default]
-  (if val val default))
+;(defn defaulted
+;  [val default]
+;  (if val val default))
 
 (defn mk-counter
   ([] (mk-counter 1))
@@ -475,7 +472,7 @@
 ;; afn returns amount of time to sleep
 (defnk async-loop [afn
                    :daemon false
-                   :kill-fn (fn [error] (exit-process! 1 "Async loop died!"))
+                   :kill-fn (fn [error] (Utils/exitProcess 1 "Async loop died!"))
                    :priority Thread/NORM_PRIORITY
                    :factory? false
                    :start true

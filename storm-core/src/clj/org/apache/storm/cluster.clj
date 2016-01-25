@@ -274,7 +274,9 @@
                          LOGCONFIG-ROOT (issue-map-callback! log-config-callback (first args))
                          BACKPRESSURE-ROOT (issue-map-callback! backpressure-callback (first args))
                          ;; this should never happen
-                         (exit-process! 30 "Unknown callback for subtree " subtree args)))))]
+                         ;(exit-process! 30 "Unknown callback for subtree " subtree args)
+                         (Utils/exitProcess 30 ["Unknown callback for subtree " subtree args])
+                          ))))]
     (doseq [p [ASSIGNMENTS-SUBTREE STORMS-SUBTREE SUPERVISORS-SUBTREE WORKERBEATS-SUBTREE ERRORS-SUBTREE BLOBSTORE-SUBTREE NIMBUSES-SUBTREE
                LOGCONFIG-SUBTREE]]
       (.mkdirs cluster-state p acls))

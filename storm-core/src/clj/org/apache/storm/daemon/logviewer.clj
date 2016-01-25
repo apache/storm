@@ -264,7 +264,7 @@
       (schedule-recurring (mk-timer :thread-name "logviewer-cleanup"
                                     :kill-fn (fn [t]
                                                (log-error t "Error when doing logs cleanup")
-                                               (exit-process! 20 "Error when doing log cleanup")))
+                                               (Utils/exitProcess 20 "Error when doing log cleanup")))
                           0 ;; Start immediately.
                           interval-secs
                           (fn [] (cleanup-fn! log-root-dir))))))

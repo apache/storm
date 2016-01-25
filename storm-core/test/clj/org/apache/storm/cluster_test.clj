@@ -45,6 +45,10 @@
 
 (defn mk-storm-state [zk-port] (mk-storm-cluster-state (mk-config zk-port)))
 
+(defn barr
+  [& vals]
+  (byte-array (map byte vals)))
+
 (deftest test-basics
   (with-inprocess-zookeeper zk-port
     (let [state (mk-state zk-port)]

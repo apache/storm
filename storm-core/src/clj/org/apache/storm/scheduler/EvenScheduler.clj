@@ -38,6 +38,12 @@
         alive-assigned (reverse-map executor->node+port)]
     alive-assigned))
 
+(defn- repeat-seq
+  ([aseq]
+    (apply concat (repeat aseq)))
+  ([amt aseq]
+    (apply concat (repeat amt aseq))))
+
 (defn- schedule-topology [^TopologyDetails topology ^Cluster cluster]
   (let [topology-id (.getId topology)
         available-slots (->> (.getAvailableSlots cluster)
