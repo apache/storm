@@ -46,6 +46,10 @@ public class Zookeeper {
         return mkClient(conf, servers, port, root, new DefaultWatcherCallBack());
     }
 
+    public static CuratorFramework mkClient(Map conf, List<String> servers, Object port, Map authConf) {
+        return mkClient(conf, servers, port, "", new DefaultWatcherCallBack(), authConf);
+    }
+
     public static CuratorFramework mkClient(Map conf, List<String> servers, Object port, String root, Map authConf) {
         return mkClient(conf, servers, port, root, new DefaultWatcherCallBack(), authConf);
     }
@@ -83,7 +87,8 @@ public class Zookeeper {
         return mkClient(conf, servers, port, root, watcher, null);
     }
 
-    public static String createNode(CuratorFramework zk, String path, byte[] data, org.apache.zookeeper.CreateMode mode, List<ACL> acls) throws RuntimeException {
+    public static String createNode(CuratorFramework zk, String path, byte[] data, org.apache.zookeeper.CreateMode mode, List<ACL> acls)
+            throws RuntimeException {
 
         String ret = null;
         try {
@@ -156,8 +161,9 @@ public class Zookeeper {
     }
 
     public static byte[] getData(CuratorFramework zk, String path, boolean watch) throws RuntimeException {
-        String npath = Utils.normalizePath(path);
+
         try {
+            String npath = Utils.normalizePath(path);
             if (existsNode(zk, npath, watch)) {
                 if (watch) {
                     return zk.getData().watched().forPath(npath);
@@ -191,8 +197,8 @@ public class Zookeeper {
 
     public static List<String> getChildren(CuratorFramework zk, String path, boolean watch) throws RuntimeException {
 
-        String npath = Utils.normalizePath(path);
         try {
+            String npath = Utils.normalizePath(path);
             if (watch) {
                 return zk.getChildren().watched().forPath(npath);
             } else {
@@ -213,15 +219,16 @@ public class Zookeeper {
         }
         for (String child : childPathList) {
             if (child.startsWith(hostPortInfo)) {
-                LOG.debug("delete-node child " + child);
+                LOG.debug("deleteNode child " + child);
                 deleteNode(zk, parentnPath + "/" + child);
             }
         }
     }
 
     public static Stat setData(CuratorFramework zk, String path, byte[] data) throws RuntimeException {
-        String npath = Utils.normalizePath(path);
+
         try {
+            String npath = Utils.normalizePath(path);
             return zk.setData().forPath(npath, data);
         } catch (Exception e) {
             throw Utils.wrapInRuntime(e);

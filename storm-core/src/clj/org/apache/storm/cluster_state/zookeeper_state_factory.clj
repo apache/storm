@@ -17,7 +17,7 @@
 (ns org.apache.storm.cluster-state.zookeeper-state-factory
   (:import [org.apache.curator.framework.state ConnectionStateListener]
            [org.apache.storm.zookeeper Zookeeper])
-  (:import [org.apache.zookeeper KeeperException$NoNodeException]
+  (:import [org.apache.zookeeper KeeperException$NoNodeException CreateMode]
            [org.apache.storm.cluster ClusterState DaemonType])
   (:use [org.apache.storm cluster config log util])
   (:require [org.apache.storm [zookeeper :as zk]])
@@ -78,12 +78,12 @@
            (Zookeeper/setData zk-writer path data) ; should verify that it's ephemeral
            (catch KeeperException$NoNodeException e
              (log-warn-error e "Ephemeral node disappeared between checking for existing and setting data")
-             (zk/create-node zk-writer path data :ephemeral acls)))
-         (zk/create-node zk-writer path data :ephemeral acls)))
+             (Zookeeper/createNode zk-writer path data CreateMode/EPHEMERAL acls)))
+         (Zookeeper/createNode zk-writer path data CreateMode/EPHEMERAL acls)))
 
      (create-sequential
        [this path data acls]
-       (zk/create-node zk-writer path data :sequential acls))
+       (Zookeeper/createNode zk-writer path data CreateMode/PERSISTENT_SEQUENTIAL acls))
 
      (set-data
        [this path data acls]
@@ -92,7 +92,7 @@
          (Zookeeper/setData zk-writer path data)
          (do
            (Zookeeper/mkdirs zk-writer (parent-path path) acls)
-           (zk/create-node zk-writer path data :persistent acls))))
+           (Zookeeper/createNode zk-writer path data CreateMode/PERSISTENT acls))))
 
      (set-worker-hb
        [this path data acls]
@@ -136,7 +136,7 @@
 
      (node-exists
        [this path watch?]
-       (Zookeeper/existsNode? zk-reader path watch?))
+       (Zookeeper/existsNode zk-reader path watch?))
 
      (add-listener
        [this listener]
@@ -152,7 +152,7 @@
 
       (delete-node-blobstore
         [this path nimbus-host-port-info]
-        (Zookeeper/deleteNodeBlobstore zk-writer path nimbus-host-port-info))
+        (Zookeeper/deleteDodeBlobstore zk-writer path nimbus-host-port-info))
 
      (close
        [this]
