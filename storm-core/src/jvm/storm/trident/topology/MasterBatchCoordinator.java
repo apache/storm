@@ -199,8 +199,8 @@ public class MasterBatchCoordinator extends BaseRichSpout {
                         _activeTx.put(curr, new TransactionStatus(attempt));
                         _collector.emit(BATCH_STREAM_ID, new Values(attempt), attempt);
                         _throttler.markEvent();
+                        curr = nextTransactionId(curr);
                     }
-                    curr = nextTransactionId(curr);
                 }
             }
         }
