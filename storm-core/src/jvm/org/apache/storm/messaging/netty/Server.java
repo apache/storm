@@ -61,6 +61,7 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
     private final AtomicInteger messagesDequeued = new AtomicInteger(0);
     
     volatile ChannelGroup allChannels = new DefaultChannelGroup("storm-server", GlobalEventExecutor.INSTANCE);
+    final EventLoopGroup bossEventLoopGroup;
     final EventLoopGroup workerEventLoopGroup;
     final ServerBootstrap bootstrap;
  
@@ -82,12 +83,14 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
         int backlog = Utils.getInt(storm_conf.get(Config.STORM_MESSAGING_NETTY_SOCKET_BACKLOG), 500);
         int maxWorkers = Utils.getInt(storm_conf.get(Config.STORM_MESSAGING_NETTY_SERVER_WORKER_THREADS));
 
+        ThreadFactory bossFactory = new NettyRenameThreadFactory(name() + "-boss");
         ThreadFactory workerFactory = new NettyRenameThreadFactory(name() + "-worker");
 
+        bossEventLoopGroup = new NioEventLoopGroup(1, bossFactory);
         // 0 means DEFAULT_EVENT_LOOP_THREADS
         if (maxWorkers > 0) {
             // add extra one for boss
-            workerEventLoopGroup = new NioEventLoopGroup(maxWorkers + 1, workerFactory);
+            workerEventLoopGroup = new NioEventLoopGroup(maxWorkers, workerFactory);
         } else {
             workerEventLoopGroup = new NioEventLoopGroup(0, workerFactory);
         }
@@ -95,7 +98,7 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
         LOG.info("Create Netty Server " + name() + ", buffer_size: " + buffer_size + ", maxWorkers: " + maxWorkers);
         
         bootstrap = new ServerBootstrap()
-                .group(workerEventLoopGroup)
+                .group(bossEventLoopGroup, workerEventLoopGroup)
                 .channel(NioServerSocketChannel.class)
                 .option(ChannelOption.SO_BACKLOG, backlog)
                 .childOption(ChannelOption.TCP_NODELAY, true)
