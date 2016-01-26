@@ -21,4 +21,3 @@ package org.apache.storm.callback;
 public interface Callback {
     public <T> Object execute(T... args);
 }
-
