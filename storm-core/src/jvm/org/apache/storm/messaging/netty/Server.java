@@ -107,7 +107,7 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
                 .childOption(ChannelOption.WRITE_BUFFER_HIGH_WATER_MARK, write_buffer_high_water_mark)
                 .childOption(ChannelOption.WRITE_BUFFER_LOW_WATER_MARK, write_buffer_low_water_mark)
                 .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
-                .childHandler(new StormServerPipelineFactory(this));
+                .childHandler(new StormServerPipelineFactory(this, storm_conf));
 
         // Bind and start to accept incoming connections.
         try {

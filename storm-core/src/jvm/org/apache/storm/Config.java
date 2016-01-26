@@ -135,6 +135,12 @@ public class Config extends HashMap<String, Object> {
     public static final String STORM_NETTY_MESSAGE_BATCH_SIZE = "storm.messaging.netty.transfer.batch.size";
 
     /**
+     * The Netty message decoder will try to batch message as more as possible up to the size of STORM_NETTY_MESSAGE_DECODE_BATCH_SIZE
+     */
+    @isInteger
+    public static final String STORM_NETTY_MESSAGE_DECODE_BATCH_SIZE = "storm.messaging.netty.decode.batch.size";
+
+    /**
      * We check with this interval that whether the Netty channel is writable and try to write pending messages
      */
     @isInteger

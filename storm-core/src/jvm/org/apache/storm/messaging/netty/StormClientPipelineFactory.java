@@ -39,7 +39,7 @@ class StormClientPipelineFactory extends ChannelInitializer {
         ChannelPipeline pipeline = ch.pipeline();
 
         // Decoder
-        pipeline.addLast("decoder", new MessageDecoder());
+        pipeline.addLast("decoder", new MessageDecoder(conf));
         // Encoder
         pipeline.addLast("encoder", new MessageEncoder());
 

@@ -23,11 +23,15 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import org.apache.storm.Config;
 
+import java.util.Map;
+
 class StormServerPipelineFactory extends ChannelInitializer {
     private Server server;
+    private Map conf;
 
-    StormServerPipelineFactory(Server server) {
+    StormServerPipelineFactory(Server server, Map conf) {
         this.server = server;
+        this.conf = conf;
     }
 
     @Override
@@ -36,7 +40,7 @@ class StormServerPipelineFactory extends ChannelInitializer {
         ChannelPipeline pipeline = ch.pipeline();
 
         // Decoder
-        pipeline.addLast("decoder", new MessageDecoder());
+        pipeline.addLast("decoder", new MessageDecoder(conf));
         // Encoder
         pipeline.addLast("encoder", new MessageEncoder());
 

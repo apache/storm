@@ -20,16 +20,25 @@ package org.apache.storm.messaging.netty;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
+import org.apache.storm.Config;
 import org.apache.storm.messaging.TaskMessage;
+import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class MessageDecoder extends ByteToMessageDecoder {
 
     private static final Logger LOG = LoggerFactory.getLogger(MessageDecoder.class);
+
+    private final int maxBatchSize;
+
+    public MessageDecoder(Map storm_conf) {
+        maxBatchSize = Utils.getInt(storm_conf.get(Config.STORM_NETTY_MESSAGE_DECODE_BATCH_SIZE), -1);
+    }
 
     /*
      * Each ControlMessage is encoded as:
@@ -139,6 +148,10 @@ public class MessageDecoder extends ByteToMessageDecoder {
             // Successfully decoded a frame.
             // Return a TaskMessage object
             ret.add(new TaskMessage(code, payload.array()));
+
+            if (maxBatchSize > 0 && ret.size() >= maxBatchSize) {
+                break;
+            }
         }
 
         LOG.debug("Decoded {} messages", ret.size());
