@@ -15,12 +15,14 @@
 ;; limitations under the License.
 (ns org.apache.storm.command.dev-zookeeper
   (:use [org.apache.storm zookeeper util config])
+  (:import [org.apache.storm.utils ConfigUtils]
+           [org.apache.storm.zookeeper Zookeeper])
   (:gen-class))
 
 (defn -main [& args]
-  (let [conf (read-storm-config)
+  (let [conf (clojurify-structure (ConfigUtils/readStormConfig))
         port (conf STORM-ZOOKEEPER-PORT)
         localpath (conf DEV-ZOOKEEPER-PATH)]
     (rmr localpath)
-    (mk-inprocess-zookeeper localpath :port port)
+    (Zookeeper/mkInprocessZookeeper localpath port)
     ))

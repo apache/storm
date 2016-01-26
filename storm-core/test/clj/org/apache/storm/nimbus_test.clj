@@ -29,7 +29,7 @@
             LogConfig LogLevel LogLevelAction])
   (:import [java.util HashMap])
   (:import [java.io File])
-  (:import [org.apache.storm.utils Time Utils])
+  (:import [org.apache.storm.utils Time Utils ConfigUtils])
   (:import [org.apache.commons.io FileUtils])
   (:use [org.apache.storm testing MockAutoCred util config log timer zookeeper])
   (:use [org.apache.storm.daemon common])
@@ -1020,7 +1020,7 @@
     (with-local-tmp [nimbus-dir]
       (stubbing [zk-leader-elector (mock-leader-elector)]
         (letlocals
-         (bind conf (merge (read-storm-config)
+         (bind conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
                            {STORM-ZOOKEEPER-SERVERS ["localhost"]
                             STORM-CLUSTER-MODE "local"
                             STORM-ZOOKEEPER-PORT zk-port
@@ -1091,7 +1091,7 @@
     (with-local-tmp [nimbus-dir]
       (stubbing [zk-leader-elector (mock-leader-elector)]
         (letlocals
-          (bind conf (merge (read-storm-config)
+          (bind conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
                        {STORM-ZOOKEEPER-SERVERS ["localhost"]
                         STORM-CLUSTER-MODE "local"
                         STORM-ZOOKEEPER-PORT zk-port
@@ -1334,15 +1334,15 @@
   (testing "nimbus-data uses correct ACLs"
     (let [scheme "digest"
           digest "storm:thisisapoorpassword"
-          auth-conf (merge (read-storm-config)
+          auth-conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
                     {STORM-ZOOKEEPER-AUTH-SCHEME scheme
                      STORM-ZOOKEEPER-AUTH-PAYLOAD digest
                      STORM-PRINCIPAL-TO-LOCAL-PLUGIN "org.apache.storm.security.auth.DefaultPrincipalToLocal"
                      NIMBUS-THRIFT-PORT 6666})
           expected-acls nimbus/NIMBUS-ZK-ACLS
           fake-inimbus (reify INimbus (getForcedScheduler [this] nil))]
-      (stubbing [nimbus-topo-history-state nil
-                 mk-authorization-handler nil
+      (with-open [mock (org.apache.storm.utils.ConfigUtils$SetMockedNimbusTopoHistoryState. {})]
+        (stubbing [mk-authorization-handler nil
                  cluster/mk-storm-cluster-state nil
                  nimbus/file-cache-map nil
                  nimbus/mk-blob-cache-map nil
@@ -1352,10 +1352,10 @@
                  mk-timer nil
                  zk-leader-elector nil
                  nimbus/mk-scheduler nil]
-        (nimbus/nimbus-data auth-conf fake-inimbus)
-        (verify-call-times-for cluster/mk-storm-cluster-state 1)
-        (verify-first-call-args-for-indices cluster/mk-storm-cluster-state [2]
-                                            expected-acls)))))
+          (nimbus/nimbus-data auth-conf fake-inimbus)
+          (verify-call-times-for cluster/mk-storm-cluster-state 1)
+          (verify-first-call-args-for-indices cluster/mk-storm-cluster-state [2]
+                                              expected-acls))))))
 
 (deftest test-file-bogus-download
   (with-local-cluster [cluster :daemon-conf {SUPERVISOR-ENABLE false TOPOLOGY-ACKER-EXECUTORS 0 TOPOLOGY-EVENTLOGGER-EXECUTORS 0}]
@@ -1381,7 +1381,7 @@
   (with-inprocess-zookeeper zk-port
     (with-local-tmp [nimbus-dir]
       (letlocals
-        (bind conf (merge (read-storm-config)
+        (bind conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
                      {STORM-ZOOKEEPER-SERVERS ["localhost"]
                       STORM-CLUSTER-MODE "local"
                       STORM-ZOOKEEPER-PORT zk-port
@@ -1411,7 +1411,7 @@
     (with-local-tmp [nimbus-dir]
       (stubbing [zk-leader-elector (mock-leader-elector)]
         (letlocals
-          (bind conf (merge (read-storm-config)
+          (bind conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
                        {STORM-ZOOKEEPER-SERVERS ["localhost"]
                         STORM-CLUSTER-MODE "local"
                         STORM-ZOOKEEPER-PORT zk-port

@@ -22,16 +22,16 @@
   (:import [org.mockito Mockito])
   (:import [org.mockito.exceptions.base MockitoAssertionError])
   (:import [org.apache.curator.framework CuratorFramework CuratorFrameworkFactory CuratorFrameworkFactory$Builder])
-  (:import [org.apache.storm.utils Utils TestUtils ZookeeperAuthInfo])
+  (:import [org.apache.storm.utils Utils TestUtils ZookeeperAuthInfo ConfigUtils])
   (:import [org.apache.storm.cluster ClusterState])
-  (:require [org.apache.storm [zookeeper :as zk]])
+  (:import [org.apache.storm.zookeeper Zookeeper])
   (:require [conjure.core])
   (:use [conjure core])
   (:use [clojure test])
   (:use [org.apache.storm cluster config util testing thrift log]))
 
 (defn mk-config [zk-port]
-  (merge (read-storm-config)
+  (merge (clojurify-structure (ConfigUtils/readStormConfig))
          {STORM-ZOOKEEPER-PORT zk-port
           STORM-ZOOKEEPER-SERVERS ["localhost"]}))
 
@@ -308,11 +308,11 @@
 
 (deftest test-cluster-state-default-acls
   (testing "The default ACLs are empty."
-    (stubbing [zk/mkdirs nil
+    (stubbing [Zookeeper/mkdirs nil
                zk/mk-client (reify CuratorFramework (^void close [this] nil))]
       (mk-distributed-cluster-state {})
-      (verify-call-times-for zk/mkdirs 1)
-      (verify-first-call-args-for-indices zk/mkdirs [2] nil))
+      (verify-call-times-for Zookeeper/mkdirs 1)
+      (verify-first-call-args-for-indices Zookeeper/mkdirs [2] nil))
     (stubbing [mk-distributed-cluster-state (reify ClusterState
                                               (register [this callback] nil)
                                               (mkdirs [this path acls] nil))]

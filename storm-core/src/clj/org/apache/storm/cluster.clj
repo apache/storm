@@ -26,8 +26,9 @@
   (:import [java.security MessageDigest])
   (:import [org.apache.zookeeper.server.auth DigestAuthenticationProvider])
   (:import [org.apache.storm.nimbus NimbusInfo])
+  (:import [org.apache.commons.io FileUtils]
+           [org.apache.storm.zookeeper Zookeeper])
   (:use [org.apache.storm util log config converter])
-  (:require [org.apache.storm [zookeeper :as zk]])
   (:require [org.apache.storm.daemon [common :as common]]))
 
 (defn mk-topo-only-acls
