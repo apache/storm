@@ -73,19 +73,3 @@
     (.start fk)
     fk))
 
-(defn get-data-with-version 
-  [^CuratorFramework zk ^String path watch?]
-  (let [stats (org.apache.zookeeper.data.Stat. )
-        path (normalize-path path)]
-    (try-cause
-     (if-let [data
-              (if (Zookeeper/existsNode zk path watch?)
-                (if watch?
-                  (.. zk (getData) (watched) (storingStatIn stats) (forPath path))
-                  (.. zk (getData) (storingStatIn stats) (forPath path))))]
-       {:data data
-        :version (.getVersion stats)})
-     (catch KeeperException$NoNodeException e
-       ;; this is fine b/c we still have a watch from the successful exists call
-       nil ))))
-

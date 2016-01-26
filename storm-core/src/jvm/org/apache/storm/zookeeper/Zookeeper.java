@@ -17,6 +17,8 @@
  */
 package org.apache.storm.zookeeper;
 
+import clojure.lang.PersistentArrayMap;
+import clojure.lang.RT;
 import org.apache.commons.lang.StringUtils;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.api.CuratorEvent;
@@ -321,6 +323,33 @@ public class Zookeeper {
         AtomicReference<LeaderLatchListener> leaderLatchListenerAtomicReference =
                 new AtomicReference<>(leaderLatchListenerImpl(conf, zk, leaderLatchAtomicReference.get()));
         return new LeaderElectorImp(conf, servers, zk, leaderLockPath, id, leaderLatchAtomicReference, leaderLatchListenerAtomicReference);
+    }
+
+    //To do modify @return once don't need persistentArrayMap
+    public static PersistentArrayMap getDataWithVersion(CuratorFramework zk, String path, boolean watch) {
+        PersistentArrayMap map = null;
+        try {
+            byte[] bytes = null;
+            Stat stats = new Stat();
+            String npath = Utils.normalizePath(path);
+            if (existsNode(zk, npath, watch)) {
+                if (watch) {
+                    bytes = zk.getData().storingStatIn(stats).watched().forPath(npath);
+                } else {
+                    bytes = zk.getData().storingStatIn(stats).forPath(npath);
+
+                }
+                if (bytes != null) {
+                    int version = stats.getVersion();
+                    map = new PersistentArrayMap(new Object[] { RT.keyword(null, "data"), bytes, RT.keyword(null, "version"), version });
+                }
+            }
+        } catch (KeeperException.NoNodeException e) {
+            // this is fine b/c we still have a watch from the successful exists call
+        } catch (Exception e){
+            Utils.wrapInRuntime(e);
+        }
+        return map;
     }
 
 }

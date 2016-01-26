@@ -112,7 +112,7 @@
 
      (get-data-with-version
        [this path watch?]
-       (zk/get-data-with-version zk-reader path watch?))
+       (Zookeeper/getDataWithVersion zk-reader path watch?))
 
      (get-version
        [this path watch?]
