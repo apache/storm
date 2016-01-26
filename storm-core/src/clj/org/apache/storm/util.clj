@@ -554,7 +554,7 @@
                  (log-message log-prefix " interrupted.")))
              (exit-code-callback (.exitValue process)))
            nil)
-          :kill-fn (fn [error] (log-error (RuntimeException. ("launch process failed...")))))
+          :kill-fn (fn [error] (log-error (RuntimeException. ("launch process failed..."))))))
       process)))
    
 (defn exists-file?
