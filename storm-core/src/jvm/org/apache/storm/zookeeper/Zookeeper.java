@@ -299,7 +299,7 @@ public class Zookeeper {
 
     public static ILeaderElector zkLeaderElector(Map conf) throws Exception {
         List<String> servers = (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS);
-        String port = (String) conf.get(Config.STORM_ZOOKEEPER_PORT);
+        Object port = conf.get(Config.STORM_ZOOKEEPER_PORT);
         CuratorFramework zk = mkClient(conf, servers, port, "", conf);
         String leaderLockPath = conf.get(Config.STORM_ZOOKEEPER_ROOT) + "/leader-lock";
         String id = NimbusInfo.fromConf(conf).toHostPortString();
