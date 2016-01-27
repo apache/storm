@@ -997,11 +997,11 @@ public class Utils {
         return false;
     }
 
-    public static CuratorFramework newCurator(Map conf, List<String> servers, Object port, String root) {
+    public static CuratorFramework newCurator(Map conf, List<String> servers, Integer port, String root) {
         return newCurator(conf, servers, port, root, null);
     }
 
-    public static CuratorFramework newCurator(Map conf, List<String> servers, Object port, String root, ZookeeperAuthInfo auth) {
+    public static CuratorFramework newCurator(Map conf, List<String> servers, Integer port, String root, ZookeeperAuthInfo auth) {
         List<String> serverPorts = new ArrayList<String>();
         for (String zkServer : servers) {
             serverPorts.add(zkServer + ":" + Utils.getInt(port));
@@ -1050,17 +1050,17 @@ public class Utils {
         }
     }
 
-    public static CuratorFramework newCurator(Map conf, List<String> servers, Object port, ZookeeperAuthInfo auth) {
+    public static CuratorFramework newCurator(Map conf, List<String> servers, Integer port, ZookeeperAuthInfo auth) {
         return newCurator(conf, servers, port, "", auth);
     }
 
-    public static CuratorFramework newCuratorStarted(Map conf, List<String> servers, Object port, String root, ZookeeperAuthInfo auth) {
+    public static CuratorFramework newCuratorStarted(Map conf, List<String> servers, Integer port, String root, ZookeeperAuthInfo auth) {
         CuratorFramework ret = newCurator(conf, servers, port, root, auth);
         ret.start();
         return ret;
     }
 
-    public static CuratorFramework newCuratorStarted(Map conf, List<String> servers, Object port, ZookeeperAuthInfo auth) {
+    public static CuratorFramework newCuratorStarted(Map conf, List<String> servers, Integer port, ZookeeperAuthInfo auth) {
         CuratorFramework ret = newCurator(conf, servers, port, auth);
         ret.start();
         return ret;
