@@ -16,10 +16,11 @@
 (ns org.apache.storm.command.dev-zookeeper
   (:import [org.apache.storm.utils Utils])
   (:use [org.apache.storm zookeeper util config])
+  (:import [org.apache.storm.utils ConfigUtils])
   (:gen-class))
 
 (defn -main [& args]
-  (let [conf (read-storm-config)
+  (let [conf (clojurify-structure (ConfigUtils/readStormConfig))
         port (conf STORM-ZOOKEEPER-PORT)
         localpath (conf DEV-ZOOKEEPER-PATH)]
     (Utils/forceDelete localpath)

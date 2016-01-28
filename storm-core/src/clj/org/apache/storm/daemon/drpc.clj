@@ -27,7 +27,7 @@
            [org.apache.storm.utils Time])
   (:import [java.net InetAddress])
   (:import [org.apache.storm.generated AuthorizationException]
-           [org.apache.storm.utils VersionInfo])
+           [org.apache.storm.utils VersionInfo ConfigUtils])
   (:use [org.apache.storm config log util])
   (:use [org.apache.storm.daemon common])
   (:use [org.apache.storm.ui helpers])
@@ -211,7 +211,7 @@
 (defn launch-server!
   ([]
     (log-message "Starting drpc server for storm version '" STORM-VERSION "'")
-    (let [conf (read-storm-config)
+    (let [conf (clojurify-structure (ConfigUtils/readStormConfig))
           worker-threads (int (conf DRPC-WORKER-THREADS))
           queue-size (int (conf DRPC-QUEUE-SIZE))
           drpc-http-port (int (conf DRPC-HTTP-PORT))

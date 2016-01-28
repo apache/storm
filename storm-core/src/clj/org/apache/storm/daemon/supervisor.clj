@@ -16,7 +16,7 @@
 (ns org.apache.storm.daemon.supervisor
   (:import [java.io File IOException FileOutputStream])
   (:import [org.apache.storm.scheduler ISupervisor]
-           [org.apache.storm.utils LocalState Time Utils]
+           [org.apache.storm.utils LocalState Time Utils ConfigUtils]
            [org.apache.storm.daemon Shutdownable]
            [org.apache.storm Constants]
            [org.apache.storm.cluster ClusterStateContext DaemonType]
@@ -120,11 +120,11 @@
   (map-val :master-code-dir assignments-snapshot))
 
 (defn- read-downloaded-storm-ids [conf]
-  (map #(url-decode %) (Utils/readDirContents (supervisor-stormdist-root conf)))
+  (map #(url-decode %) (Utils/readDirContents (ConfigUtils/supervisorStormDistRoot conf)))
   )
 
 (defn read-worker-heartbeat [conf id]
-  (let [local-state (worker-state conf id)]
+  (let [local-state (ConfigUtils/workerState conf id)]
     (try
       (ls-worker-heartbeat local-state)
       (catch Exception e
@@ -133,7 +133,7 @@
 
 
 (defn my-worker-ids [conf]
-  (Utils/readDirContents (worker-root conf)))
+  (Utils/readDirContents (ConfigUtils/workerRoot conf)))
 
 (defn read-worker-heartbeats
   "Returns map from worker id to heartbeat"
@@ -194,7 +194,7 @@
      )))
 
 (defn- wait-for-worker-launch [conf id start-time]
-  (let [state (worker-state conf id)]
+  (let [state (ConfigUtils/workerState conf id)]
     (loop []
       (let [hb (ls-worker-heartbeat state)]
         (when (and
@@ -256,16 +256,16 @@
 
 (defn try-cleanup-worker [conf id]
   (try
-    (if (.exists (File. (worker-root conf id)))
+    (if (.exists (File. (ConfigUtils/workerRoot conf id)))
       (do
         (if (conf SUPERVISOR-RUN-WORKER-AS-USER)
-          (rmr-as-user conf id (worker-root conf id))
+          (rmr-as-user conf id (ConfigUtils/workerRoot conf id))
           (do
-            (Utils/forceDelete (worker-heartbeats-root conf id))
+            (Utils/forceDelete (ConfigUtils/workerHeartbeatsRoot conf id))
             ;; this avoids a race condition with worker or subprocess writing pid around same time
-            (Utils/forceDelete (worker-pids-root conf id))
-            (Utils/forceDelete (worker-root conf id))))
-        (remove-worker-user! conf id)
+            (Utils/forceDelete (ConfigUtils/workerPidsRoot conf id))
+            (Utils/forceDelete (ConfigUtils/workerRoot conf id))))
+        (ConfigUtils/removeWorkerUserWSE conf id)
         (remove-dead-worker id)
       ))
   (catch IOException e
@@ -279,11 +279,11 @@
 (defn shutdown-worker [supervisor id]
   (log-message "Shutting down " (:supervisor-id supervisor) ":" id)
   (let [conf (:conf supervisor)
-        pids (Utils/readDirContents (worker-pids-root conf id))
+        pids (Utils/readDirContents (ConfigUtils/workerPidsRoot conf id))
         thread-pid (@(:worker-thread-pids-atom supervisor) id)
         shutdown-sleep-secs (conf SUPERVISOR-WORKER-SHUTDOWN-SLEEP-SECS)
         as-user (conf SUPERVISOR-RUN-WORKER-AS-USER)
-        user (get-worker-user conf id)]
+        user (ConfigUtils/getWorkerUser conf id)]
     (when thread-pid
       (psim/kill-process thread-pid))
     (doseq [pid pids]
@@ -297,7 +297,7 @@
       (if as-user
         (worker-launcher-and-wait conf user ["signal" pid "9"] :log-prefix (str "kill -9 " pid))
         (Utils/forceKillProcess pid))
-      (let [path (worker-pid-path conf id pid)]
+      (let [path (ConfigUtils/workerPidPath conf id pid)]
         (if as-user
           (rmr-as-user conf id path)
           (try
@@ -324,7 +324,7 @@
                                                                        conf)
                                                                      SUPERVISOR-ZK-ACLS)
                                                         :context (ClusterStateContext. DaemonType/SUPERVISOR))
-   :local-state (supervisor-state conf)
+   :local-state (ConfigUtils/supervisorState conf)
    :supervisor-id (.getSupervisorId isupervisor)
    :assignment-id (.getAssignmentId isupervisor)
    :my-hostname (Utils/hostname conf)
@@ -342,7 +342,7 @@
                                            (log-error t "Error when processing event")
                                            (Utils/exitProcess 20 "Error when processing a event"))
                                 :timer-name "blob-update-timer")
-   :localizer (Utils/createLocalizer conf (supervisor-local-dir conf))
+   :localizer (Utils/createLocalizer conf (ConfigUtils/supervisorLocalDir conf))
    :assignment-versions (atom {})
    :sync-retry (atom 0)
    :download-lock (Object.)
@@ -351,12 +351,12 @@
 
 (defn required-topo-files-exist?
   [conf storm-id]
-  (let [stormroot (supervisor-stormdist-root conf storm-id)
-        stormjarpath (supervisor-stormjar-path stormroot)
-        stormcodepath (supervisor-stormcode-path stormroot)
-        stormconfpath (supervisor-stormconf-path stormroot)]
+  (let [stormroot (ConfigUtils/supervisorStormDistRoot conf storm-id)
+        stormjarpath (ConfigUtils/supervisorStormJarPath stormroot)
+        stormcodepath (ConfigUtils/supervisorStormCodePath stormroot)
+        stormconfpath (ConfigUtils/supervisorStormConfPath stormroot)]
     (and (every? #(Utils/checkFileExists %) [stormroot stormconfpath stormcodepath])
-         (or (local-mode? conf)
+         (or (ConfigUtils/isLocalMode conf)
              (Utils/checkFileExists stormjarpath)))))
 
 (defn get-worker-assignment-helper-msg
@@ -375,8 +375,8 @@
               mem-onheap (.get_mem_on_heap resources)]
           ;; This condition checks for required files exist before launching the worker
           (if (required-topo-files-exist? conf storm-id)
-            (let [pids-path (worker-pids-root conf id)
-                  hb-path (worker-heartbeats-root conf id)]
+            (let [pids-path (ConfigUtils/workerPidsRoot conf id)
+                  hb-path (ConfigUtils/workerHeartbeatsRoot conf id)]
               (log-message "Launching worker with assignment "
                 (get-worker-assignment-helper-msg assignment supervisor port id))
               (log-debug "Making dirs at " pids-path)
@@ -477,7 +477,7 @@
 (defn remove-blob-references
   "Remove a reference to a blob when its no longer needed."
   [localizer storm-id conf]
-  (let [storm-conf (read-supervisor-storm-conf conf storm-id)
+  (let [storm-conf (clojurify-structure (ConfigUtils/readSupervisorStormConf conf storm-id))
         blobstore-map (storm-conf TOPOLOGY-BLOBSTORE-MAP)
         user (storm-conf TOPOLOGY-SUBMITTER-USER)
         topo-name (storm-conf TOPOLOGY-NAME)]
@@ -500,7 +500,7 @@
   "For each of the downloaded topologies, adds references to the blobs that the topologies are
   using. This is used to reconstruct the cache on restart."
   [localizer storm-id conf]
-  (let [storm-conf (read-supervisor-storm-conf conf storm-id)
+  (let [storm-conf (clojurify-structure (ConfigUtils/readSupervisorStormConf conf storm-id))
         blobstore-map (storm-conf TOPOLOGY-BLOBSTORE-MAP)
         user (storm-conf TOPOLOGY-SUBMITTER-USER)
         topo-name (storm-conf TOPOLOGY-NAME)
@@ -510,13 +510,13 @@
 
 (defn rm-topo-files
   [conf storm-id localizer rm-blob-refs?]
-  (let [path (supervisor-stormdist-root conf storm-id)]
+  (let [path (ConfigUtils/supervisorStormDistRoot conf storm-id)]
     (try
       (if rm-blob-refs?
         (remove-blob-references localizer storm-id conf))
       (if (conf SUPERVISOR-RUN-WORKER-AS-USER)
         (rmr-as-user conf storm-id path)
-        (Utils/forceDelete (supervisor-stormdist-root conf storm-id)))
+        (Utils/forceDelete (ConfigUtils/supervisorStormDistRoot conf storm-id)))
       (catch Exception e
         (log-message e (str "Exception removing: " storm-id))))))
 
@@ -619,7 +619,7 @@
   "Update each blob listed in the topology configuration if the latest version of the blob
    has not been downloaded."
   [conf storm-id localizer]
-  (let [storm-conf (read-supervisor-storm-conf conf storm-id)
+  (let [storm-conf (clojurify-structure (ConfigUtils/readSupervisorStormConf conf storm-id))
         blobstore-map (storm-conf TOPOLOGY-BLOBSTORE-MAP)
         user (storm-conf TOPOLOGY-SUBMITTER-USER)
         localresources (blobstore-map-to-localresources blobstore-map)]
@@ -642,7 +642,7 @@
             new-assignment @(:curr-assignment supervisor)
             assigned-storm-ids (assigned-storm-ids-from-port-assignments new-assignment)]
         (doseq [topology-id downloaded-storm-ids]
-          (let [storm-root (supervisor-stormdist-root conf topology-id)]
+          (let [storm-root (ConfigUtils/supervisorStormDistRoot conf topology-id)]
             (when (assigned-storm-ids topology-id)
               (log-debug "Checking Blob updates for storm topology id " topology-id " With target_dir: " storm-root)
               (update-blobs-for-topology! conf topology-id (:localizer supervisor))))))
@@ -732,11 +732,11 @@
                 (let [port (:port pro-action)
                       action ^ProfileAction (:action pro-action)
                       stop? (> (System/currentTimeMillis) (:timestamp pro-action))
-                      target-dir (worker-artifacts-root conf storm-id port)
-                      storm-conf (read-supervisor-storm-conf conf storm-id)
+                      target-dir (ConfigUtils/workerArtifactsRoot conf storm-id port)
+                      storm-conf (clojurify-structure (ConfigUtils/readSupervisorStormConf conf storm-id))
                       user (storm-conf TOPOLOGY-SUBMITTER-USER)
                       environment (if-let [env (storm-conf TOPOLOGY-ENVIRONMENT)] env {})
-                      worker-pid (slurp (worker-artifacts-pid-path conf storm-id port))
+                      worker-pid (slurp (ConfigUtils/workerArtifactsPidPath conf storm-id port))
                       log-prefix (str "ProfilerAction process " storm-id ":" port " PROFILER_ACTION: " action " ")
                       ;; Until PROFILER_STOP action is invalid, keep launching profiler start in case worker restarted
                       ;; The profiler plugin script validates if JVM is recording before starting another recording.
@@ -776,8 +776,8 @@
 ;; another thread launches events to restart any dead processes if necessary
 (defserverfn mk-supervisor [conf shared-context ^ISupervisor isupervisor]
   (log-message "Starting Supervisor with conf " conf)
-  (.prepare isupervisor conf (supervisor-isupervisor-dir conf))
-  (FileUtils/cleanDirectory (File. (supervisor-tmp-dir conf)))
+  (.prepare isupervisor conf (ConfigUtils/supervisorIsupervisorDir conf))
+  (FileUtils/cleanDirectory (File. (ConfigUtils/supervisorTmpDir conf)))
   (let [supervisor (supervisor-data conf shared-context isupervisor)
         [event-manager processes-event-manager :as managers] [(event/event-manager false) (event/event-manager false)]
         sync-processes (partial sync-processes supervisor)
@@ -891,7 +891,7 @@
 (defn download-blobs-for-topology!
   "Download all blobs listed in the topology configuration for a given topology."
   [conf stormconf-path localizer tmproot]
-  (let [storm-conf (read-supervisor-storm-conf-given-path conf stormconf-path)
+  (let [storm-conf (clojurify-structure (ConfigUtils/readSupervisorStormConfGivenPath conf stormconf-path))
         blobstore-map (storm-conf TOPOLOGY-BLOBSTORE-MAP)
         user (storm-conf TOPOLOGY-SUBMITTER-USER)
         topo-name (storm-conf TOPOLOGY-NAME)
@@ -935,43 +935,47 @@
 (defmethod download-storm-code
   :distributed [conf storm-id master-code-dir localizer]
   ;; Downloading to permanent location is atomic
-  (let [tmproot (str (supervisor-tmp-dir conf) Utils/filePathSeparator (Utils/uuid))
-        stormroot (supervisor-stormdist-root conf storm-id)
+
+  (let [tmproot (str (ConfigUtils/supervisorTmpDir conf) Utils/filePathSeparator (Utils/uuid))
+        stormroot (ConfigUtils/supervisorStormDistRoot conf storm-id)
         blobstore (Utils/getClientBlobStoreForSupervisor conf)]
     (FileUtils/forceMkdir (File. tmproot))
     (if-not on-windows?
       (Utils/restrictPermissions tmproot)
       (if (conf SUPERVISOR-RUN-WORKER-AS-USER)
         (throw-runtime (str "ERROR: Windows doesn't implement setting the correct permissions"))))
-    (Utils/downloadResourcesAsSupervisor (master-stormjar-key storm-id)
-      (supervisor-stormjar-path tmproot) blobstore)
-    (Utils/downloadResourcesAsSupervisor (master-stormcode-key storm-id)
-      (supervisor-stormcode-path tmproot) blobstore)
-    (Utils/downloadResourcesAsSupervisor (master-stormconf-key storm-id)
-      (supervisor-stormconf-path tmproot) blobstore)
+    (Utils/downloadResourcesAsSupervisor (ConfigUtils/masterStormJarKey storm-id)
+      (ConfigUtils/supervisorStormJarPath tmproot) blobstore)
+    (Utils/downloadResourcesAsSupervisor (ConfigUtils/masterStormCodeKey storm-id)
+      (ConfigUtils/supervisorStormCodePath tmproot) blobstore)
+    (Utils/downloadResourcesAsSupervisor (ConfigUtils/masterStormConfKey storm-id)
+      (ConfigUtils/supervisorStormConfPath tmproot) blobstore)
     (.shutdown blobstore)
-    (Utils/extractDirFromJar (supervisor-stormjar-path tmproot) RESOURCES-SUBDIR tmproot)
-    (download-blobs-for-topology! conf (supervisor-stormconf-path tmproot) localizer
+    (Utils/extractDirFromJar (ConfigUtils/supervisorStormJarPath tmproot) ConfigUtils/RESOURCES_SUBDIR tmproot)
+    (download-blobs-for-topology! conf (ConfigUtils/supervisorStormConfPath tmproot) localizer
       tmproot)
-    (if (download-blobs-for-topology-succeed? (supervisor-stormconf-path tmproot) tmproot)
+    (if (download-blobs-for-topology-succeed? (ConfigUtils/supervisorStormConfPath tmproot) tmproot)
       (do
         (log-message "Successfully downloaded blob resources for storm-id " storm-id)
         (FileUtils/forceMkdir (File. stormroot))
         (Files/move (.toPath (File. tmproot)) (.toPath (File. stormroot))
           (doto (make-array StandardCopyOption 1) (aset 0 StandardCopyOption/ATOMIC_MOVE)))
-        (setup-storm-code-dir conf (read-supervisor-storm-conf conf storm-id) stormroot))
+        (setup-storm-code-dir conf (clojurify-structure (ConfigUtils/readSupervisorStormConf conf storm-id)) stormroot))
       (do
         (log-message "Failed to download blob resources for storm-id " storm-id)
         (Utils/forceDelete tmproot)))))
 
 (defn write-log-metadata-to-yaml-file! [storm-id port data conf]
-  (let [file (get-log-metadata-file conf storm-id port)]
+  (let [file (ConfigUtils/getLogMetaDataFile conf storm-id port)]
     ;;run worker as user needs the directory to have special permissions
     ;; or it is insecure
     (when (not (.exists (.getParentFile file)))
       (if (conf SUPERVISOR-RUN-WORKER-AS-USER)
         (do (FileUtils/forceMkdir (.getParentFile file))
-            (setup-storm-code-dir conf (read-supervisor-storm-conf conf storm-id) (.getCanonicalPath (.getParentFile file))))
+            (setup-storm-code-dir
+              conf
+              (clojurify-structure (ConfigUtils/readSupervisorStormConf conf storm-id))
+              (.getCanonicalPath (.getParentFile file))))
         (.mkdirs (.getParentFile file))))
     (let [writer (java.io.FileWriter. file)
           yaml (Yaml.)]
@@ -994,7 +998,7 @@
     (write-log-metadata-to-yaml-file! storm-id port data conf)))
 
 (defn jlp [stormroot conf]
-  (let [resource-root (str stormroot File/separator RESOURCES-SUBDIR)
+  (let [resource-root (str stormroot File/separator ConfigUtils/RESOURCES_SUBDIR)
         os (clojure.string/replace (System/getProperty "os.name") #"\s+" "_")
         arch (System/getProperty "os.arch")
         arch-resource-root (str resource-root File/separator os "-" arch)]
@@ -1021,23 +1025,23 @@
 (defn create-blobstore-links
   "Create symlinks in worker launch directory for all blobs"
   [conf storm-id worker-id]
-  (let [stormroot (supervisor-stormdist-root conf storm-id)
-        storm-conf (read-supervisor-storm-conf conf storm-id)
-        workerroot (worker-root conf worker-id)
+  (let [stormroot (ConfigUtils/supervisorStormDistRoot conf storm-id)
+        storm-conf (clojurify-structure (ConfigUtils/readSupervisorStormConf conf storm-id))
+        workerroot (ConfigUtils/workerRoot conf worker-id)
         blobstore-map (storm-conf TOPOLOGY-BLOBSTORE-MAP)
         blob-file-names (get-blob-file-names blobstore-map)
-        resource-file-names (cons RESOURCES-SUBDIR blob-file-names)]
+        resource-file-names (cons ConfigUtils/RESOURCES_SUBDIR blob-file-names)]
     (log-message "Creating symlinks for worker-id: " worker-id " storm-id: "
       storm-id " for files(" (count resource-file-names) "): " (pr-str resource-file-names))
-    (Utils/createSymlink workerroot stormroot RESOURCES-SUBDIR)
+    (Utils/createSymlink workerroot stormroot ConfigUtils/RESOURCES_SUBDIR)
     (doseq [file-name blob-file-names]
       (Utils/createSymlink workerroot stormroot file-name file-name))))
 
 (defn create-artifacts-link
   "Create a symlink from workder directory to its port artifacts directory"
   [conf storm-id port worker-id]
-  (let [worker-dir (worker-root conf worker-id)
-        topo-dir (worker-artifacts-root conf storm-id)]
+  (let [worker-dir (ConfigUtils/workerRoot conf worker-id)
+        topo-dir (ConfigUtils/workerArtifactsRoot conf storm-id)]
     (log-message "Creating symlinks for worker-id: " worker-id " storm-id: "
                  storm-id " to its port artifacts directory")
     (if (.exists (File. worker-dir))
@@ -1050,17 +1054,17 @@
           storm-home (System/getProperty "storm.home")
           storm-options (System/getProperty "storm.options")
           storm-conf-file (System/getProperty "storm.conf.file")
-          storm-log-dir LOG-DIR
+          storm-log-dir (ConfigUtils/getLogDir)
           storm-log-conf-dir (conf STORM-LOG4J2-CONF-DIR)
           storm-log4j2-conf-dir (if storm-log-conf-dir
                                   (if (.isAbsolute (File. storm-log-conf-dir)) ;(is-absolute-path? storm-log-conf-dir)
                                     storm-log-conf-dir
                                     (str storm-home Utils/filePathSeparator storm-log-conf-dir))
                                   (str storm-home Utils/filePathSeparator "log4j2"))
-          stormroot (supervisor-stormdist-root conf storm-id)
+          stormroot (ConfigUtils/supervisorStormDistRoot conf storm-id)
           jlp (jlp stormroot conf)
-          stormjar (supervisor-stormjar-path stormroot)
-          storm-conf (read-supervisor-storm-conf conf storm-id)
+          stormjar (ConfigUtils/supervisorStormJarPath stormroot)
+          storm-conf (clojurify-structure (ConfigUtils/readSupervisorStormConf conf storm-id))
           topo-classpath (if-let [cp (storm-conf TOPOLOGY-CLASSPATH)]
                            [cp]
                            [])
@@ -1075,7 +1079,7 @@
           topo-worker-logwriter-childopts (storm-conf TOPOLOGY-WORKER-LOGWRITER-CHILDOPTS)
           user (storm-conf TOPOLOGY-SUBMITTER-USER)
           logfilename "worker.log"
-          workers-artifacts (worker-artifacts-root conf)
+          workers-artifacts (ConfigUtils/workerArtifactsRoot conf)
           logging-sensitivity (storm-conf TOPOLOGY-LOGGING-SENSITIVITY "S3")
           worker-childopts (when-let [s (conf WORKER-CHILDOPTS)]
                              (substitute-childopts s worker-id storm-id port mem-onheap))
@@ -1134,13 +1138,13 @@
           command (->> command (map str) (filter (complement empty?)))]
       (log-message "Launching worker with command: " (Utils/shellCmd command))
       (write-log-metadata! storm-conf user worker-id storm-id port conf)
-      (set-worker-user! conf worker-id user)
+      (ConfigUtils/setWorkerUserWSE conf worker-id user)
       (create-artifacts-link conf storm-id port worker-id)
       (let [log-prefix (str "Worker Process " worker-id)
             callback (fn [exit-code]
                        (log-message log-prefix " exited with code: " exit-code)
                        (add-dead-worker worker-id))
-            worker-dir (worker-root conf worker-id)]
+            worker-dir (ConfigUtils/workerRoot conf worker-id)]
         (remove-dead-worker worker-id)
         (create-blobstore-links conf storm-id worker-id)
         (if run-worker-as-user
@@ -1153,31 +1157,31 @@
 (defn resources-jar []
   (->> (.split (Utils/currentClasspath) File/pathSeparator)
        (filter #(.endsWith  % ".jar"))
-       (filter #(zip-contains-dir? % RESOURCES-SUBDIR))
+       (filter #(zip-contains-dir? % ConfigUtils/RESOURCES_SUBDIR))
        first ))
 
 (defmethod download-storm-code
   :local [conf storm-id master-code-dir localizer]
-  (let [tmproot (str (supervisor-tmp-dir conf) Utils/filePathSeparator (Utils/uuid))
-        stormroot (supervisor-stormdist-root conf storm-id)
+  (let [tmproot (str (ConfigUtils/supervisorTmpDir conf) Utils/filePathSeparator (Utils/uuid))
+        stormroot (ConfigUtils/supervisorStormDistRoot conf storm-id)
         blob-store (Utils/getNimbusBlobStore conf master-code-dir nil)]
     (try
       (FileUtils/forceMkdir (File. tmproot))
-      (.readBlobTo blob-store (master-stormcode-key storm-id) (FileOutputStream. (supervisor-stormcode-path tmproot)) nil)
-      (.readBlobTo blob-store (master-stormconf-key storm-id) (FileOutputStream. (supervisor-stormconf-path tmproot)) nil)
+      (.readBlobTo blob-store (ConfigUtils/masterStormCodeKey storm-id) (FileOutputStream. (ConfigUtils/supervisorStormCodePath tmproot)) nil)
+      (.readBlobTo blob-store (ConfigUtils/masterStormConfKey storm-id) (FileOutputStream. (ConfigUtils/supervisorStormConfPath tmproot)) nil)
       (finally
         (.shutdown blob-store)))
     (FileUtils/moveDirectory (File. tmproot) (File. stormroot))
-    (setup-storm-code-dir conf (read-supervisor-storm-conf conf storm-id) stormroot)
+    (setup-storm-code-dir conf (clojurify-structure (ConfigUtils/readSupervisorStormConf conf storm-id)) stormroot)
     (let [classloader (.getContextClassLoader (Thread/currentThread))
           resources-jar (resources-jar)
-          url (.getResource classloader RESOURCES-SUBDIR)
-          target-dir (str stormroot Utils/filePathSeparator RESOURCES-SUBDIR)]
+          url (.getResource classloader ConfigUtils/RESOURCES_SUBDIR)
+          target-dir (str stormroot Utils/filePathSeparator ConfigUtils/RESOURCES_SUBDIR)]
       (cond
         resources-jar
         (do
           (log-message "Extracting resources from jar at " resources-jar " to " target-dir)
-          (Utils/extractDirFromJar resources-jar RESOURCES-SUBDIR stormroot))
+          (Utils/extractDirFromJar resources-jar ConfigUtils/RESOURCES_SUBDIR stormroot))
         url
         (do
           (log-message "Copying resources at " (str url) " to " target-dir)
@@ -1193,7 +1197,7 @@
                                    (:assignment-id supervisor)
                                    port
                                    worker-id)]
-      (set-worker-user! conf worker-id "")
+      (ConfigUtils/setWorkerUserWSE conf worker-id "")
       (psim/register-process pid worker)
       (swap! (:worker-thread-pids-atom supervisor) assoc worker-id pid)
       ))
@@ -1201,7 +1205,7 @@
 (defn -launch
   [supervisor]
   (log-message "Starting supervisor for storm version '" STORM-VERSION "'")
-  (let [conf (read-storm-config)]
+  (let [conf (clojurify-structure (ConfigUtils/readStormConfig))]
     (validate-distributed-mode! conf)
     (let [supervisor (mk-supervisor conf nil supervisor)]
       (Utils/addShutdownHookWithForceKillIn1Sec #(.shutdown supervisor)))
