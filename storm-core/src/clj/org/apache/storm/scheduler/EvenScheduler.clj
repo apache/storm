@@ -17,7 +17,8 @@
   (:use [org.apache.storm util log config])
   (:require [clojure.set :as set])
   (:import [org.apache.storm.scheduler IScheduler Topologies
-            Cluster TopologyDetails WorkerSlot ExecutorDetails])
+            Cluster TopologyDetails WorkerSlot ExecutorDetails]
+           [org.apache.storm.utils Utils])
   (:gen-class
     :implements [org.apache.storm.scheduler.IScheduler]))
 
@@ -35,7 +36,7 @@
                                            :let [executor [(.getStartTask executor) (.getEndTask executor)]
                                                  node+port [(.getNodeId slot) (.getPort slot)]]]
                                        {executor node+port}))
-        alive-assigned (reverse-map executor->node+port)]
+        alive-assigned (clojurify-structure (Utils/reverseMap executor->node+port))]
     alive-assigned))
 
 (defn- repeat-seq
@@ -73,7 +74,7 @@
     (doseq [^TopologyDetails topology needs-scheduling-topologies
             :let [topology-id (.getId topology)
                   new-assignment (schedule-topology topology cluster)
-                  node+port->executors (reverse-map new-assignment)]]
+                  node+port->executors (clojurify-structure (Utils/reverseMap new-assignment))]]
       (doseq [[node+port executors] node+port->executors
               :let [^WorkerSlot slot (WorkerSlot. (first node+port) (last node+port))
                     executors (for [[start-task end-task] executors]

@@ -15,8 +15,8 @@
 ;; limitations under the License.
 (ns org.apache.storm.scheduler.resource-aware-scheduler-test
   (:use [clojure test])
-  (:use [org.apache.storm config testing thrift])
-  (:require [org.apache.storm.util :refer [map-val reverse-map]])
+  (:use [org.apache.storm util config testing thrift])
+  (:require [org.apache.storm.util :refer [map-val]])
   (:require [org.apache.storm.daemon [nimbus :as nimbus]])
   (:import [org.apache.storm.generated StormTopology]
            [org.apache.storm Config]
@@ -66,7 +66,7 @@
       (let [ed->super (into {}
                             (for [[ed slot] (.getExecutorToSlot assignment)]
                               {ed (.getSupervisorById cluster (.getNodeId slot))}))
-            super->eds (reverse-map ed->super)
+            super->eds (clojurify-structure (Utils/reverseMap ed->super))
             topology (.getById topologies (.getTopologyId assignment))
             super->mem-pertopo (map-val (fn [eds] 
                                           (reduce + (map #(.getTotalMemReqTask topology %) eds))) 
@@ -88,7 +88,7 @@
       (let [ed->super (into {}
                             (for [[ed slot] (.getExecutorToSlot assignment)]
                               {ed (.getSupervisorById cluster (.getNodeId slot))}))
-            super->eds (reverse-map ed->super)
+            super->eds (clojurify-structure (Utils/reverseMap ed->super))
             topology (.getById topologies (.getTopologyId assignment))
             super->cpu-pertopo (map-val (fn [eds] 
                                           (reduce + (map #(.getTotalCpuReqTask topology %) eds))) 
@@ -337,7 +337,7 @@
           ed->super (into {}
                             (for [[ed slot] (.getExecutorToSlot assignment)]
                               {ed (.getSupervisorById cluster (.getNodeId slot))}))
-          super->eds (reverse-map ed->super)
+          super->eds (clojurify-structure (Utils/reverseMap ed->super))
           mem-avail->used (into []
                                  (for [[super eds] super->eds]
                                    [(.getTotalMemory super) (Utils/sum (map #(.getTotalMemReqTask topology1 %) eds))]))
@@ -406,7 +406,7 @@
             assignment (.getAssignmentById cluster "topology2")
             failed-worker (first (vec (.getSlots assignment)))  ;; choose a worker to mock as failed
             ed->slot (.getExecutorToSlot assignment)
-            failed-eds (.get (reverse-map ed->slot) failed-worker)
+            failed-eds (.get (clojurify-structure (Utils/reverseMap ed->slot)) failed-worker)
             _ (doseq [ed failed-eds] (.remove ed->slot ed))  ;; remove executor details assigned to the worker
             copy-old-mapping (HashMap. ed->slot)
             healthy-eds (.keySet copy-old-mapping)

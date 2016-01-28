@@ -42,7 +42,8 @@
         slot-assigns (for [storm-id (.assignments state nil)]
                         (let [executors (-> (.assignment-info state storm-id nil)
                                         :executor->node+port
-                                        reverse-map
+                                        (Utils/reverseMap)
+                                        clojurify-structure
                                         (get [supervisor-id port] ))]
                           (when executors [storm-id executors])
                           ))
@@ -454,8 +455,8 @@
                                " '-DLog4jContextSelector=org.apache.logging.log4j.core.selector.BasicContextSelector'"
                                " 'org.apache.storm.LogWriter'"
                                " 'java' '-server'"
-                               " " (shell-cmd opts)
-                               " " (shell-cmd topo-opts)
+                               " " (Utils/shellCmd opts)
+                               " " (Utils/shellCmd topo-opts)
                                " '-Djava.library.path='"
                                " '-Dlogfile.name=" "worker.log'"
                                " '-Dstorm.home='"

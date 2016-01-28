@@ -17,7 +17,11 @@
  */
 package org.apache.storm.utils;
 
+import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecutor;
+import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.storm.Config;
 import org.apache.storm.blobstore.BlobStore;
 import org.apache.storm.blobstore.BlobStoreAclHandler;
@@ -75,6 +79,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.RandomAccessFile;
 import java.io.Serializable;
+import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -88,6 +93,7 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -95,6 +101,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
@@ -642,7 +649,10 @@ public class Utils {
         return id.startsWith("__");
     }
 
-    public static <K, V> Map<V, K> reverseMap(Map<K, V> map) {
+    /*
+        TODO: Can this be replaced with reverseMap in this file?
+     */
+    public static <K, V> Map<V, K> simpleReverseMap(Map<K, V> map) {
         Map<V, K> ret = new HashMap<V, K>();
         for (Map.Entry<K, V> entry : map.entrySet()) {
             ret.put(entry.getValue(), entry.getKey());
@@ -1131,7 +1141,7 @@ public class Utils {
                 LOG.info("{}:{}", prefix, line);
             }
         } catch (IOException e) {
-            LOG.warn("Error whiel trying to log stream", e);
+            LOG.warn("Error while trying to log stream", e);
         }
     }
 
@@ -1442,6 +1452,10 @@ public class Utils {
 
     public static final String classPathSeparator = System.getProperty("path.separator");
 
+    public static final int sigKill = 9;
+    public static final int sigTerm = 15;
+
+
 
     /*
         Returns the first item of coll for which (pred item) returns logical true.
@@ -1721,6 +1735,233 @@ public class Utils {
         } else {
             return defaultObj;
         }
+    }
+
+    /**
+     * "{:a 1 :b 1 :c 2} -> {1 [:a :b] 2 :c}"
+     *
+     * Example usage in java:
+     *  Map<Integer, String> tasks;
+     *  Map<String, List<Integer>> componentTasks = Utils.reverse_map(tasks);
+     *
+     * @param map
+     * @return
+     */
+    public static <K, V> HashMap<V, List<K>> reverseMap(Map<K, V> map) {
+        HashMap<V, List<K>> rtn = new HashMap<V, List<K>>();
+        if (map == null) {
+            return rtn;
+        }
+        for (Entry<K, V> entry : map.entrySet()) {
+            K key = entry.getKey();
+            V val = entry.getValue();
+            List<K> list = rtn.get(val);
+            if (list == null) {
+                list = new ArrayList<K>();
+                rtn.put(entry.getValue(), list);
+            }
+            list.add(key);
+        }
+        return rtn;
+    }
+
+    /**
+     * "{:a 1 :b 1 :c 2} -> {1 [:a :b] 2 :c}"
+     *
+     */
+    public static HashMap reverseMap(List listSeq) {
+        HashMap<Object, List<Object>> rtn = new HashMap();
+        if (listSeq == null) {
+            return rtn;
+        }
+        for (Object entry : listSeq) {
+            List listEntry = (List) entry;
+            Object key = listEntry.get(0);
+            Object val = listEntry.get(1);
+            List list = rtn.get(val);
+            if (list == null) {
+                list = new ArrayList<Object>();
+                rtn.put(val, list);
+            }
+            list.add(key);
+        }
+        return rtn;
+    }
+
+
+    /**
+     * Gets the pid of this JVM, because Java doesn't provide a real way to do this.
+     *
+     * @return
+     */
+    public static String processPid() throws RuntimeException {
+        String name = ManagementFactory.getRuntimeMXBean().getName();
+        String[] split = name.split("@");
+        if (split.length != 2) {
+            throw new RuntimeException("Got unexpected process name: " + name);
+        }
+        return split[0];
+    }
+
+    public static int execCommand(String command) throws ExecuteException, IOException {
+        String[] cmdlist = command.split(" ");
+        CommandLine cmd = new CommandLine(cmdlist[0]);
+        for (int i = 1; i < cmdlist.length; i++) {
+            cmd.addArgument(cmdlist[i]);
+        }
+
+        DefaultExecutor exec = new DefaultExecutor();
+        return exec.execute(cmd);
+    }
+
+    /**
+     * Extra dir from the jar to destdir
+     *
+     * @param jarpath
+     * @param dir
+     * @param destdir
+     *
+    (with-open [jarpath (ZipFile. jarpath)]
+    (let [entries (enumeration-seq (.entries jarpath))]
+    (doseq [file (filter (fn [entry](and (not (.isDirectory entry)) (.startsWith (.getName entry) dir))) entries)]
+    (.mkdirs (.getParentFile (File. destdir (.getName file))))
+    (with-open [out (FileOutputStream. (File. destdir (.getName file)))]
+    (io/copy (.getInputStream jarpath file) out)))))
+
+     */
+    public static void extractDirFromJar(String jarpath, String dir, String destdir) {
+        JarFile jarFile = null;
+        FileOutputStream out = null;
+        InputStream in = null;
+        try {
+            jarFile = new JarFile(jarpath);
+            Enumeration<JarEntry> jarEnums = jarFile.entries();
+            while (jarEnums.hasMoreElements()) {
+                JarEntry entry = jarEnums.nextElement();
+                if (!entry.isDirectory() && entry.getName().startsWith(dir)) {
+                    File aFile = new File(destdir, entry.getName());
+                    aFile.getParentFile().mkdirs();
+                    out = new FileOutputStream(aFile);
+                    in = jarFile.getInputStream(entry);
+                    IOUtils.copy(in, out);
+                    out.close();
+                    in.close();
+                }
+            }
+        } catch (IOException e) {
+            LOG.info("Could not extract {} from {}", dir, jarpath);
+        } finally {
+            if (jarFile != null) {
+                try {
+                    jarFile.close();
+                } catch (IOException e) {
+                    throw new RuntimeException(
+                            "Something really strange happened when trying to close the jar file" + jarpath);
+                }
+            }
+            if (out != null) {
+                try {
+                    out.close();
+                } catch (IOException e) {
+                    throw new RuntimeException(
+                            "Something really strange happened when trying to close the output for jar file" + jarpath);
+                }
+            }
+            if (in != null) {
+                try {
+                    in.close();
+                } catch (IOException e) {
+                    throw new RuntimeException(
+                            "Something really strange happened when trying to close the input for jar file" + jarpath);
+                }
+            }
+        }
+
+    }
+
+    public static int sendSignalToProcess(long pid, int signum) {
+        int retval = 0;
+        try {
+            String killString = null;
+            if (onWindows()) {
+                if (signum == sigKill) {
+                    killString = "taskkill /f /pid ";
+                } else {
+                    killString = "taskkill /pid ";
+                }
+            } else {
+                killString = "kill -" + signum + " ";
+            }
+            killString = killString + pid;
+            retval = execCommand(killString);
+        } catch (ExecuteException e) {
+            LOG.info("Error when trying to kill " + pid + ". Process is probably already dead.");
+        } catch (IOException e) {
+            LOG.info("IOException Error when trying to kill " + pid + ".");
+        } finally {
+            return retval;
+        }
+    }
+
+    public static int forceKillProcess (long pid) {
+        return sendSignalToProcess(pid, sigKill);
+    }
+
+    public static int forceKillProcess (String pid) {
+        return sendSignalToProcess(Long.parseLong(pid), sigKill);
+    }
+
+    public static int killProcessWithSigTerm (long pid) {
+        return sendSignalToProcess(pid, sigTerm);
+    }
+    public static int killProcessWithSigTerm (String pid) {
+        return sendSignalToProcess(Long.parseLong(pid), sigTerm);
+    }
+
+    /*
+        Adds the user supplied function as a shutdown hook for cleanup.
+        Also adds a function that sleeps for a second and then sends kill -9
+        to process to avoid any zombie process in case cleanup function hangs.
+     */
+    public static void addShutdownHookWithForceKillIn1Sec (Runnable func) {
+        Runnable sleepKill = new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Time.sleepSecs(1);
+                    Runtime.getRuntime().halt(20);
+                } catch (Exception e) {
+                    LOG.warn("Exception in the ShutDownHook: " + e);
+                }
+            }
+        };
+        Runtime.getRuntime().addShutdownHook(new Thread(func));
+        Runtime.getRuntime().addShutdownHook(new Thread(sleepKill));
+    }
+
+
+    /*
+        This function checks the command line argument that will be issued by the supervisor to launch a worker,
+        and makes sure it is safe to execute. This is done by replacing any single quote charachter with a
+        safe combination of single and double quotes. For example:
+        if a file is named:    foo'bar"
+        the shell cannot parse it, as soon as it reaches the first single quote, it tries to find the closing quote
+        Instead, we change it to:  'foo'"'"'bar"' which is now perfectly readable by the shell.
+     */
+    public static String shellCmd (Collection<String> command) {
+        Vector<String> changedCommands = new Vector<>();
+        for (String str: command) {
+            changedCommands.add("'" + str.replaceAll("'", "'\"'\"'") + "'");
+        }
+        return StringUtils.join(changedCommands, " ");
+    }
+
+    public static String scriptFilePath (String dir) {
+        return dir + filePathSeparator + "storm-worker-script.sh";
+    }
+
+    public static String containerFilePath (String dir) {
+        return dir + filePathSeparator + "launch_container.sh";
     }
 
     /**

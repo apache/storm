@@ -52,7 +52,8 @@
         nimbus (:nimbus cluster)]
     (-> (.getUserTopology nimbus storm-id)
         (storm-task-info (from-json (.getTopologyConf nimbus storm-id)))
-        reverse-map)))
+        (Utils/reverseMap)
+        clojurify-structure)))
 
 (defn getCredentials [cluster storm-name]
   (let [storm-id (get-storm-id (:storm-cluster-state cluster) storm-name)]
@@ -71,12 +72,13 @@
          keys
          (map (fn [e] {e (get-component e)}))
          (apply merge)
-         reverse-map)))
+         (Utils/reverseMap)
+         clojurify-structure)))
 
 (defn storm-num-workers [state storm-name]
   (let [storm-id (get-storm-id state storm-name)
         assignment (.assignment-info state storm-id nil)]
-    (count (reverse-map (:executor->node+port assignment)))
+    (count (clojurify-structure (Utils/reverseMap (:executor->node+port assignment))))
     ))
 
 (defn topology-nodes [state storm-name]
@@ -139,8 +141,7 @@
 (defn slot-assignments [cluster storm-id]
   (let [state (:storm-cluster-state cluster)
         assignment (.assignment-info state storm-id nil)]
-    (reverse-map (:executor->node+port assignment))
-    ))
+        (clojurify-structure (Utils/reverseMap (:executor->node+port assignment)))))
 
 (defn task-ids [cluster storm-id]
   (let [nimbus (:nimbus cluster)]
@@ -150,8 +151,10 @@
 
 (defn topology-executors [cluster storm-id]
   (let [state (:storm-cluster-state cluster)
-        assignment (.assignment-info state storm-id nil)]
-    (keys (:executor->node+port assignment))
+        assignment (.assignment-info state storm-id nil)
+        ret-keys (keys (:executor->node+port assignment))
+        _ (log-message "ret-keys: " (pr-str ret-keys)) ]
+    ret-keys
     ))
 
 (defn check-distribution [items distribution]
@@ -631,32 +634,54 @@
       (bind [executor-id1 executor-id2]  (topology-executors cluster storm-id))
       (bind ass1 (executor-assignment cluster storm-id executor-id1))
       (bind ass2 (executor-assignment cluster storm-id executor-id2))
+      (bind _ (log-message "ass1, t0: " (pr-str ass1)))
+      (bind _ (log-message "ass2, t0: " (pr-str ass2)))
 
       (advance-cluster-time cluster 30)
+      (bind _ (log-message "ass1, t30, pre beat: " (pr-str ass1)))
+      (bind _ (log-message "ass2, t30, pre beat: " (pr-str ass2)))
       (do-executor-heartbeat cluster storm-id executor-id1)
       (do-executor-heartbeat cluster storm-id executor-id2)
+      (bind _ (log-message "ass1, t30, post beat: " (pr-str ass1)))
+      (bind _ (log-message "ass2, t30, post beat: " (pr-str ass2)))
 
       (advance-cluster-time cluster 13)
+      (bind _ (log-message "ass1, t43, pre beat: " (pr-str ass1)))
+      (bind _ (log-message "ass2, t43, pre beat: " (pr-str ass2)))
       (is (= ass1 (executor-assignment cluster storm-id executor-id1)))
       (is (= ass2 (executor-assignment cluster storm-id executor-id2)))
       (do-executor-heartbeat cluster storm-id executor-id1)
+      (bind _ (log-message "ass1, t43, post beat: " (pr-str ass1)))
+      (bind _ (log-message "ass2, t43, post beat: " (pr-str ass2)))
 
       (advance-cluster-time cluster 11)
+      (bind _ (log-message "ass1, t54, pre beat: " (pr-str ass1)))
+      (bind _ (log-message "ass2, t54, pre beat: " (pr-str ass2)))
       (do-executor-heartbeat cluster storm-id executor-id1)
+      (bind _ (log-message "ass1, t54, post beat: " (pr-str ass1)))
+      (bind _ (log-message "ass2, t54, post beat: " (pr-str ass2)))
       (is (= ass1 (executor-assignment cluster storm-id executor-id1)))
       (check-consistency cluster "test")
 
       ; have to wait an extra 10 seconds because nimbus may not
       ; resynchronize its heartbeat time till monitor-time secs after
       (advance-cluster-time cluster 11)
+      (bind _ (log-message "ass1, t65, pre beat: " (pr-str ass1)))
+      (bind _ (log-message "ass2, t65, pre beat: " (pr-str ass2)))
       (do-executor-heartbeat cluster storm-id executor-id1)
+      (bind _ (log-message "ass1, t65, post beat: " (pr-str ass1)))
+      (bind _ (log-message "ass2, t65, post beat: " (pr-str ass2)))
       (is (= ass1 (executor-assignment cluster storm-id executor-id1)))
       (check-consistency cluster "test")
 
       (advance-cluster-time cluster 11)
+      (bind _ (log-message "ass1, t76, pre beat: " (pr-str ass1)))
+      (bind _ (log-message "ass2, t76, pre beat: " (pr-str ass2)))
       (is (= ass1 (executor-assignment cluster storm-id executor-id1)))
       (is (not= ass2 (executor-assignment cluster storm-id executor-id2)))
       (bind ass2 (executor-assignment cluster storm-id executor-id2))
+      (bind _ (log-message "ass1, t76, post beat: " (pr-str ass1)))
+      (bind _ (log-message "ass2, t76, post beat: " (pr-str ass2)))
       (check-consistency cluster "test")
 
       (advance-cluster-time cluster 31)
@@ -1412,7 +1437,7 @@
                       STORM-LOCAL-DIR nimbus-dir}))
         (bind cluster-state (cluster/mk-storm-cluster-state conf))
         (bind nimbus (nimbus/service-handler conf (nimbus/standalone-nimbus)))
-        (sleep-secs 1)
+        (Time/sleepSecs 1)
         (bind topology (thrift/mk-topology
                          {"1" (thrift/mk-spout-spec (TestPlannerSpout. true) :parallelism-hint 3)}
                          {}))
@@ -1444,7 +1469,7 @@
           (bind cluster-state (cluster/mk-storm-cluster-state conf))
           (bind nimbus (nimbus/service-handler conf (nimbus/standalone-nimbus)))
           (bind notifier (InMemoryTopologyActionNotifier.))
-          (sleep-secs 1)
+          (Time/sleepSecs 1)
           (bind topology (thrift/mk-topology
                            {"1" (thrift/mk-spout-spec (TestPlannerSpout. true) :parallelism-hint 3)}
                            {}))

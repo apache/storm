@@ -383,7 +383,7 @@
         ;; long dead worker with a skewed clock overrides all the timestamps. By only checking heartbeats
         ;; with an assigned node+port, and only reading executors from that heartbeat that are actually assigned,
         ;; we avoid situations like that
-        (let [node+port->executors (reverse-map executor->node+port)
+        (let [node+port->executors (clojurify-structure (Utils/reverseMap executor->node+port))
               all-heartbeats (for [[[node port] executors] node+port->executors]
                                (->> (get-worker-heartbeat this storm-id node port)
                                     (convert-executor-beats executors)

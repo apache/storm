@@ -361,107 +361,107 @@
 ;  [val default]
 ;  (if val val default))
 
-(defn mk-counter
-  ([] (mk-counter 1))
-  ([start-val]
-   (let [val (atom (dec start-val))]
-     (fn [] (swap! val inc)))))
+;(defn mk-counter
+;  ([] (mk-counter 1))
+;  ([start-val]
+;   (let [val (atom (dec start-val))]
+;     (fn [] (swap! val inc)))))
 
-(defmacro for-times [times & body]
-  `(for [i# (range ~times)]
-     ~@body))
+;(defmacro for-times [times & body]
+;  `(for [i# (range ~times)]
+;     ~@body))
 
 (defmacro dofor [& body]
   `(doall (for ~@body)))
 
-(defn reverse-map
-  "{:a 1 :b 1 :c 2} -> {1 [:a :b] 2 :c}"
-  [amap]
-  (reduce (fn [m [k v]]
-            (let [existing (get m v [])]
-              (assoc m v (conj existing k))))
-          {} amap))
+;(defn reverse-map
+;  "{:a 1 :b 1 :c 2} -> {1 [:a :b] 2 :c}"
+;  [amap]
+;  (reduce (fn [m [k v]]
+;            (let [existing (get m v [])]
+;              (assoc m v (conj existing k))))
+;          {} amap))
 
 (defmacro print-vars [& vars]
   (let [prints (for [v vars] `(println ~(str v) ~v))]
     `(do ~@prints)))
 
-(defn process-pid
-  "Gets the pid of this JVM. Hacky because Java doesn't provide a real way to do this."
-  []
-  (let [name (.getName (ManagementFactory/getRuntimeMXBean))
-        split (.split name "@")]
-    (when-not (= 2 (count split))
-      (throw (RuntimeException. (str "Got unexpected process name: " name))))
-    (first split)))
+;(defn process-pid
+;  "Gets the pid of this JVM. Hacky because Java doesn't provide a real way to do this."
+;  []
+;  (let [name (.getName (ManagementFactory/getRuntimeMXBean))
+;        split (.split name "@")]
+;    (when-not (= 2 (count split))
+;      (throw (RuntimeException. (str "Got unexpected process name: " name))))
+;    (first split)))
 
-(defn exec-command! [command]
-  (let [[comm-str & args] (seq (.split command " "))
-        command (CommandLine. comm-str)]
-    (doseq [a args]
-      (.addArgument command a))
-    (.execute (DefaultExecutor.) command)))
+;(defn exec-command! [command]
+;  (let [[comm-str & args] (seq (.split command " "))
+;        command (CommandLine. comm-str)]
+;    (doseq [a args]
+;      (.addArgument command a))
+;    (.execute (DefaultExecutor.) command)))
 
-(defn extract-dir-from-jar [jarpath dir destdir]
-  (try-cause
-    (with-open [jarpath (ZipFile. jarpath)]
-      (let [entries (enumeration-seq (.entries jarpath))]
-        (doseq [file (filter (fn [entry](and (not (.isDirectory entry)) (.startsWith (.getName entry) dir))) entries)]
-          (.mkdirs (.getParentFile (File. destdir (.getName file))))
-          (with-open [out (FileOutputStream. (File. destdir (.getName file)))]
-            (io/copy (.getInputStream jarpath file) out)))))
-    (catch IOException e
-      (log-message "Could not extract " dir " from " jarpath))))
+;(defn extract-dir-from-jar [jarpath dir destdir]
+;  (try-cause
+;    (with-open [jarpath (ZipFile. jarpath)]
+;      (let [entries (enumeration-seq (.entries jarpath))]
+;        (doseq [file (filter (fn [entry](and (not (.isDirectory entry)) (.startsWith (.getName entry) dir))) entries)]
+;          (.mkdirs (.getParentFile (File. destdir (.getName file))))
+;          (with-open [out (FileOutputStream. (File. destdir (.getName file)))]
+;            (io/copy (.getInputStream jarpath file) out)))))
+;    (catch IOException e
+;      (log-message "Could not extract " dir " from " jarpath))))
 
-(defn sleep-secs [secs]
-  (when (pos? secs)
-    (Time/sleep (* (long secs) 1000))))
+;(defn sleep-secs [secs]
+;  (when (pos? secs)
+;    (Time/sleep (* (long secs) 1000))))
 
-(defn sleep-until-secs [target-secs]
-  (Time/sleepUntil (* (long target-secs) 1000)))
+;(defn sleep-until-secs [target-secs]
+;  (Time/sleepUntil (* (long target-secs) 1000)))
 
-(def ^:const sig-kill 9)
+;(def ^:const sig-kill 9)
+;
+;(def ^:const sig-term 15)
 
-(def ^:const sig-term 15)
+;(defn send-signal-to-process
+;  [pid signum]
+;  (try-cause
+;    (Utils/execCommand (str (if on-windows?
+;                          (if (== signum sig-kill) "taskkill /f /pid " "taskkill /pid ")
+;                          (str "kill -" signum " "))
+;                     pid))
+;    (catch ExecuteException e
+;      (log-message "Error when trying to kill " pid ". Process is probably already dead."))))
 
-(defn send-signal-to-process
-  [pid signum]
-  (try-cause
-    (exec-command! (str (if on-windows?
-                          (if (== signum sig-kill) "taskkill /f /pid " "taskkill /pid ")
-                          (str "kill -" signum " "))
-                     pid))
-    (catch ExecuteException e
-      (log-message "Error when trying to kill " pid ". Process is probably already dead."))))
+;(defn read-and-log-stream
+;  [prefix stream]
+;  (try
+;    (let [reader (BufferedReader. (InputStreamReader. stream))]
+;      (loop []
+;        (if-let [line (.readLine reader)]
+;                (do
+;                  (log-warn (str prefix ":" line))
+;                  (recur)))))
+;    (catch IOException e
+;      (log-warn "Error while trying to log stream" e))))
 
-(defn read-and-log-stream
-  [prefix stream]
-  (try
-    (let [reader (BufferedReader. (InputStreamReader. stream))]
-      (loop []
-        (if-let [line (.readLine reader)]
-                (do
-                  (log-warn (str prefix ":" line))
-                  (recur)))))
-    (catch IOException e
-      (log-warn "Error while trying to log stream" e))))
+;(defn force-kill-process
+;  [pid]
+;  (send-signal-to-process pid sig-kill))
 
-(defn force-kill-process
-  [pid]
-  (send-signal-to-process pid sig-kill))
+;(defn kill-process-with-sig-term
+;  [pid]
+;  (send-signal-to-process pid sig-term))
 
-(defn kill-process-with-sig-term
-  [pid]
-  (send-signal-to-process pid sig-term))
-
-(defn add-shutdown-hook-with-force-kill-in-1-sec
-  "adds the user supplied function as a shutdown hook for cleanup.
-   Also adds a function that sleeps for a second and then sends kill -9 to process to avoid any zombie process in case
-   cleanup function hangs."
-  [func]
-  (.addShutdownHook (Runtime/getRuntime) (Thread. #(func)))
-  (.addShutdownHook (Runtime/getRuntime) (Thread. #((sleep-secs 1)
-                                                    (.halt (Runtime/getRuntime) 20)))))
+;(defn add-shutdown-hook-with-force-kill-in-1-sec
+;  "adds the user supplied function as a shutdown hook for cleanup.
+;   Also adds a function that sleeps for a second and then sends kill -9 to process to avoid any zombie process in case
+;   cleanup function hangs."
+;  [func]
+;  (.addShutdownHook (Runtime/getRuntime) (Thread. #(func)))
+;  (.addShutdownHook (Runtime/getRuntime) (Thread. #((Time/sleepSecs 1)
+;                                                    (.halt (Runtime/getRuntime) 20)))))
 
 (defprotocol SmartThread
   (start [this])
@@ -484,7 +484,7 @@
                        (loop []
                          (let [sleep-time (afn)]
                            (when-not (nil? sleep-time)
-                             (sleep-secs sleep-time)
+                             (Time/sleepSecs sleep-time)
                              (recur))
                            )))
                      (catch InterruptedException e
@@ -514,22 +514,22 @@
         [this]
         (Time/isThreadWaiting thread)))))
 
-(defn shell-cmd
-  [command]
-  (->> command
-    (map #(str \' (clojure.string/escape % {\' "'\"'\"'"}) \'))
-      (clojure.string/join " ")))
+;(defn shell-cmd
+;  [command]
+;  (->> command
+;    (map #(str \' (clojure.string/escape % {\' "'\"'\"'"}) \'))
+;      (clojure.string/join " ")))
 
-(defn script-file-path [dir]
-  (str dir Utils/filePathSeparator "storm-worker-script.sh"))
+;(defn script-file-path [dir]
+;  (str dir Utils/filePathSeparator "storm-worker-script.sh"))
 
-(defn container-file-path [dir]
-  (str dir Utils/filePathSeparator "launch_container.sh"))
+;(defn container-file-path [dir]
+;  (str dir Utils/filePathSeparator "launch_container.sh"))
 
 (defnk write-script
   [dir command :environment {}]
-  (let [script-src (str "#!/bin/bash\n" (clojure.string/join "" (map (fn [[k v]] (str (shell-cmd ["export" (str k "=" v)]) ";\n")) environment)) "\nexec " (shell-cmd command) ";")
-        script-path (script-file-path dir)
+  (let [script-src (str "#!/bin/bash\n" (clojure.string/join "" (map (fn [[k v]] (str (Utils/shellCmd ["export" (str k "=" v)]) ";\n")) environment)) "\nexec " (Utils/shellCmd command) ";")
+        script-path (Utils/scriptFilePath dir)
         _ (spit script-path script-src)]
     script-path
   ))
@@ -547,7 +547,7 @@
         (async-loop
          (fn []
            (if log-prefix
-             (read-and-log-stream log-prefix (.getInputStream process)))
+             (Utils/readAndLogStream log-prefix (.getInputStream process)))
            (when exit-code-callback
              (try
                (.waitFor process)

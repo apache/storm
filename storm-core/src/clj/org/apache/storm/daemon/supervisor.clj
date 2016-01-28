@@ -235,7 +235,7 @@
 (defnk worker-launcher-and-wait [conf user args :environment {} :log-prefix nil]
   (let [process (worker-launcher conf user args :environment environment)]
     (if log-prefix
-      (read-and-log-stream log-prefix (.getInputStream process)))
+      (Utils/readAndLogStream log-prefix (.getInputStream process)))
       (try
         (.waitFor process)
       (catch InterruptedException e
@@ -289,14 +289,14 @@
     (doseq [pid pids]
       (if as-user
         (worker-launcher-and-wait conf user ["signal" pid "15"] :log-prefix (str "kill -15 " pid))
-        (kill-process-with-sig-term pid)))
+        (Utils/killProcessWithSigTerm pid)))
     (when-not (empty? pids)  
       (log-message "Sleep " shutdown-sleep-secs " seconds for execution of cleanup threads on worker.")
-      (sleep-secs shutdown-sleep-secs))
+      (Time/sleepSecs shutdown-sleep-secs))
     (doseq [pid pids]
       (if as-user
         (worker-launcher-and-wait conf user ["signal" pid "9"] :log-prefix (str "kill -9 " pid))
-        (force-kill-process pid))
+        (Utils/forceKillProcess pid))
       (let [path (worker-pid-path conf id pid)]
         (if as-user
           (rmr-as-user conf id path)
@@ -690,9 +690,9 @@
   "Launch profiler action for a worker"
   [conf user target-dir command :environment {} :exit-code-on-profile-action nil :log-prefix nil]
   (if-let [run-worker-as-user (conf SUPERVISOR-RUN-WORKER-AS-USER)]
-    (let [container-file (container-file-path target-dir)
-          script-file (script-file-path target-dir)]
-      (log-message "Running as user:" user " command:" (shell-cmd command))
+    (let [container-file (Utils/containerFilePath target-dir)
+          script-file (Utils/scriptFilePath target-dir)]
+      (log-message "Running as user:" user " command:" (Utils/shellCmd command))
       (if (Utils/checkFileExists container-file) (rmr-as-user conf container-file container-file))
       (if (Utils/checkFileExists script-file) (rmr-as-user conf script-file script-file))
       (worker-launcher
@@ -950,7 +950,7 @@
     (Utils/downloadResourcesAsSupervisor (master-stormconf-key storm-id)
       (supervisor-stormconf-path tmproot) blobstore)
     (.shutdown blobstore)
-    (extract-dir-from-jar (supervisor-stormjar-path tmproot) RESOURCES-SUBDIR tmproot)
+    (Utils/extractDirFromJar (supervisor-stormjar-path tmproot) RESOURCES-SUBDIR tmproot)
     (download-blobs-for-topology! conf (supervisor-stormconf-path tmproot) localizer
       tmproot)
     (if (download-blobs-for-topology-succeed? (supervisor-stormconf-path tmproot) tmproot)
@@ -1132,7 +1132,7 @@
                      port
                      worker-id])
           command (->> command (map str) (filter (complement empty?)))]
-      (log-message "Launching worker with command: " (shell-cmd command))
+      (log-message "Launching worker with command: " (Utils/shellCmd command))
       (write-log-metadata! storm-conf user worker-id storm-id port conf)
       (set-worker-user! conf worker-id user)
       (create-artifacts-link conf storm-id port worker-id)
@@ -1177,7 +1177,7 @@
         resources-jar
         (do
           (log-message "Extracting resources from jar at " resources-jar " to " target-dir)
-          (extract-dir-from-jar resources-jar RESOURCES-SUBDIR stormroot))
+          (Utils/extractDirFromJar resources-jar RESOURCES-SUBDIR stormroot))
         url
         (do
           (log-message "Copying resources at " (str url) " to " target-dir)
@@ -1204,7 +1204,7 @@
   (let [conf (read-storm-config)]
     (validate-distributed-mode! conf)
     (let [supervisor (mk-supervisor conf nil supervisor)]
-      (add-shutdown-hook-with-force-kill-in-1-sec #(.shutdown supervisor)))
+      (Utils/addShutdownHookWithForceKillIn1Sec #(.shutdown supervisor)))
     (defgauge supervisor:num-slots-used-gauge #(count (my-worker-ids conf)))
     (start-metrics-reporters)))
 

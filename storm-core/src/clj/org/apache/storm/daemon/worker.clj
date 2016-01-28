@@ -94,18 +94,19 @@
         components (mapcat
                      (fn [task-id]
                        (->> (.getComponentId context (int task-id))
-                            (.getTargets context)
-                            vals
-                            (map keys)
-                            (apply concat)))
+                         (.getTargets context)
+                         vals
+                         (map keys)
+                         (apply concat)))
                      (:task-ids worker))]
     (-> worker
-        :task->component
-        reverse-map
-        (select-keys components)
-        vals
-        flatten
-        set )))
+      :task->component
+      (Utils/reverseMap)
+      clojurify-structure
+      (select-keys components)
+      vals
+      flatten
+      set )))
 
 (defn get-dest
   [^AddressedTuple addressed-tuple]
@@ -291,7 +292,7 @@
       :task->component (HashMap. (storm-task-info topology storm-conf)) ; for optimized access when used in tasks later on
       :component->stream->fields (component->stream->fields (:system-topology <>))
       ;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
-      :component->sorted-tasks (->> (:task->component <>) reverse-map (map-val sort))
+      :component->sorted-tasks (->> (:task->component <>) (Utils/reverseMap) (clojurify-structure) (map-val sort))
       :endpoint-socket-lock (ReentrantReadWriteLock.)
       :cached-node+port->socket (atom {})
       :cached-task->node+port (atom {})
@@ -604,7 +605,7 @@
   ;; because in local mode, its not a separate
   ;; process. supervisor will register it in this case
   (when (= :distributed (cluster-mode conf))
-    (let [pid (process-pid)]
+    (let [pid (Utils/processPid)]
       (FileUtils/touch (worker-pid-path conf worker-id pid))
       (spit (worker-artifacts-pid-path conf storm-id port) pid)))
 
@@ -784,4 +785,4 @@
     (setup-default-uncaught-exception-handler)
     (validate-distributed-mode! conf)
     (let [worker (mk-worker conf nil storm-id assignment-id (Integer/parseInt port-str) worker-id)]
-      (add-shutdown-hook-with-force-kill-in-1-sec #(.shutdown worker)))))
+      (Utils/addShutdownHookWithForceKillIn1Sec #(.shutdown worker)))))

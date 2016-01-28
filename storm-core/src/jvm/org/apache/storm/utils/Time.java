@@ -86,9 +86,15 @@ public class Time {
                 Thread.sleep(sleepTime);
         }
     }
-    
+
     public static void sleep(long ms) throws InterruptedException {
         sleepUntil(currentTimeMillis()+ms);
+    }
+
+    public static void sleepSecs (long secs) throws InterruptedException {
+        if (secs > 0) {
+            sleep(secs * 1000);
+        }
     }
     
     public static long currentTimeMillis() {

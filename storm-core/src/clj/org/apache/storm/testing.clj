@@ -152,6 +152,12 @@
     server))
 
 
+(defn- mk-counter
+  ([] (mk-counter 1))
+  ([start-val]
+    (let [val (atom (dec start-val))]
+      (fn [] (swap! val inc)))))
+
 ;; returns map containing cluster info
 ;; local dir is always overridden in maps
 ;; can customize the supervisors (except for ports) by passing in map for :supervisors parameter
@@ -385,7 +391,7 @@
   [supervisor-conf port]
   (let [supervisor-state (supervisor-state supervisor-conf)
         worker->port (ls-approved-workers supervisor-state)]
-    (first ((reverse-map worker->port) port))))
+    (first ((clojurify-structure (Utils/reverseMap worker->port)) port))))
 
 (defn find-worker-port
   [supervisor-conf worker-id]
@@ -427,13 +433,13 @@
   (let [state (:storm-cluster-state cluster-map)
         nimbus (:nimbus cluster-map)
         storm-id (common/get-storm-id state storm-name)
-        component->tasks (reverse-map
+        component->tasks (clojurify-structure (Utils/reverseMap
                            (common/storm-task-info
                              (.getUserTopology nimbus storm-id)
                              (->>
                                (.getTopologyConf nimbus storm-id)
                                (#(if % (JSONValue/parse %)))
-                               clojurify-structure)))
+                               clojurify-structure))))
         component->tasks (if component-ids
                            (select-keys component->tasks component-ids)
                            component->tasks)

@@ -45,7 +45,8 @@
 (defn- compute-worker-specs "Returns mutable set of sets of executors"
   [^TopologyDetails details]
   (->> (.getExecutorToComponent details)
-       reverse-map
+       (Utils/reverseMap)
+       clojurify-structure
        (map second)
        (apply concat)
        (map vector (repeat-seq (range (.getNumWorkers details))))
@@ -87,7 +88,8 @@
   (letfn [(to-slot-specs [^SchedulerAssignment ass]
             (->> ass
                  .getExecutorToSlot
-                 reverse-map
+                 (Utils/reverseMap)
+                 clojurify-structure
                  (map (fn [[slot executors]]
                         [slot (.getTopologyId ass) (set executors)]))))]
   (->> cluster

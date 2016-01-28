@@ -506,7 +506,7 @@
                    (> min-replication-count @current-replication-count-conf))
                (or (neg? max-replication-wait-time)
                    (< @total-wait-time max-replication-wait-time)))
-        (sleep-secs 1)
+        (Time/sleepSecs 1)
         (log-debug "waiting for desired replication to be achieved.
           min-replication-count = " min-replication-count  " max-replication-wait-time = " max-replication-wait-time
           (if (not (local-mode? conf))"current-replication-count for jar key = " @current-replication-count-jar)
@@ -648,7 +648,8 @@
         topology (read-storm-topology-as-nimbus storm-id blob-store)
         task->component (storm-task-info topology storm-conf)]
     (->> (storm-task-info topology storm-conf)
-         reverse-map
+         (Utils/reverseMap)
+         clojurify-structure
          (map-val sort)
          (join-maps component->executors)
          (map-val (partial apply partition-fixed))
@@ -867,8 +868,9 @@
 (defn changed-executors [executor->node+port new-executor->node+port]
   (let [executor->node+port (if executor->node+port (sort executor->node+port) nil)
         new-executor->node+port (if new-executor->node+port (sort new-executor->node+port) nil)
-        slot-assigned (reverse-map executor->node+port)
-        new-slot-assigned (reverse-map new-executor->node+port)
+        _ (log-message "executor->node+port: " executor->node+port)
+        slot-assigned (clojurify-structure (Utils/reverseMap executor->node+port))
+        new-slot-assigned (clojurify-structure (Utils/reverseMap new-executor->node+port))
         brand-new-slots (map-diff slot-assigned new-slot-assigned)]
     (apply concat (vals brand-new-slots))
     ))
@@ -2157,7 +2159,7 @@
               comp-page-info
               (converter/thriftify-debugoptions debug-options)))
           ;; Add the event logger details.
-          (let [component->tasks (reverse-map (:task->component info))
+          (let [component->tasks (clojurify-structure (Utils/reverseMap (:task->component info)))
                 eventlogger-tasks (sort (get component->tasks
                                              EVENTLOGGER-COMPONENT-ID))
                 ;; Find the task the events from this component route to.
@@ -2219,7 +2221,7 @@
   (let [service-handler (service-handler conf nimbus)
         server (ThriftServer. conf (Nimbus$Processor. service-handler)
                               ThriftConnectionType/NIMBUS)]
-    (add-shutdown-hook-with-force-kill-in-1-sec (fn []
+    (Utils/addShutdownHookWithForceKillIn1Sec (fn []
                                                   (.shutdown service-handler)
                                                   (.stop server)))
     (log-message "Starting nimbus server for storm version '"
