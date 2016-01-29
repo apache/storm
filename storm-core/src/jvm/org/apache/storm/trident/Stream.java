@@ -19,10 +19,8 @@ package org.apache.storm.trident;
 
 import org.apache.storm.generated.Grouping;
 import org.apache.storm.generated.NullStruct;
-import org.apache.storm.trident.fluent.ChainedAggregatorDeclarer;
 import org.apache.storm.grouping.CustomStreamGrouping;
-import org.apache.storm.tuple.Fields;
-import org.apache.storm.utils.Utils;
+import org.apache.storm.trident.fluent.ChainedAggregatorDeclarer;
 import org.apache.storm.trident.fluent.GlobalAggregationScheme;
 import org.apache.storm.trident.fluent.GroupedStream;
 import org.apache.storm.trident.fluent.IAggregatableStream;
@@ -32,11 +30,13 @@ import org.apache.storm.trident.operation.CombinerAggregator;
 import org.apache.storm.trident.operation.Filter;
 import org.apache.storm.trident.operation.Function;
 import org.apache.storm.trident.operation.ReducerAggregator;
+import org.apache.storm.trident.operation.builtin.Max;
+import org.apache.storm.trident.operation.builtin.Min;
 import org.apache.storm.trident.operation.impl.CombinerAggStateUpdater;
 import org.apache.storm.trident.operation.impl.FilterExecutor;
 import org.apache.storm.trident.operation.impl.GlobalBatchToPartition;
-import org.apache.storm.trident.operation.impl.ReducerAggStateUpdater;
 import org.apache.storm.trident.operation.impl.IndexHashBatchToPartition;
+import org.apache.storm.trident.operation.impl.ReducerAggStateUpdater;
 import org.apache.storm.trident.operation.impl.SingleEmitAggregator.BatchToPartition;
 import org.apache.storm.trident.operation.impl.TrueFilter;
 import org.apache.storm.trident.partition.GlobalGrouping;
@@ -56,6 +56,10 @@ import org.apache.storm.trident.state.StateFactory;
 import org.apache.storm.trident.state.StateSpec;
 import org.apache.storm.trident.state.StateUpdater;
 import org.apache.storm.trident.util.TridentUtils;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.utils.Utils;
+
+import java.util.Comparator;
 
 /**
  * A Stream represents the core data model in Trident, and can be thought of as a "stream" of tuples that are processed
@@ -353,8 +357,81 @@ public class Stream implements IAggregatableStream {
         return chainedAgg()
                .partitionAggregate(inputFields, agg, functionFields)
                .chainEnd();
-    }  
-    
+    }
+
+    /**
+     * This aggregator operation computes the minimum of tuples in a stream with the given input field and it is
+     * assumed that its value is an instance of {@code Comparable}.
+     *
+     * @param inputFieldName input field name
+     * @param outputFieldName output field name to be emitted with the result
+     * @return
+     */
+    public Stream min(String inputFieldName, String outputFieldName) {
+        CombinerAggregator<Comparable<Object>> min = Min.withComparables();
+        return comparableAggregateStream(inputFieldName, outputFieldName, min);
+    }
+
+    /**
+     * This aggregator operation computes the minimum of tuples in a stream by using the given {@code comparator}.
+     *
+     * @param inputFieldName input field name
+     * @param outputFieldName output field name to be emitted with the result
+     * @param comparator comparator used in for finding minimum of two tuple values.
+     * @param <T> type of input tuple value
+     * @return
+     */
+    public <T> Stream min(String inputFieldName, String outputFieldName, Comparator<T> comparator) {
+        CombinerAggregator<T> min = Min.withComparator(comparator);
+        return comparableAggregateStream(inputFieldName, outputFieldName, min);
+    }
+
+    /**
+     * This aggregator operation computes the maximum of tuples in a stream with the given input field and it is
+     * assumed that its value is an instance of {@code Comparable}.
+     *
+     * @param inputFieldName input field name
+     * @param outputFieldName output field name to be emitted with the result
+     * @return
+     */
+    public Stream max(String inputFieldName, String outputFieldName) {
+        CombinerAggregator<Comparable<Object>> max = Max.withComparables();
+        return comparableAggregateStream(inputFieldName, outputFieldName, max);
+    }
+
+    /**
+     * This aggregator operation computes the maximum of tuples in a stream by using the given {@code comparator}.
+     *
+     * @param inputFieldName input field name
+     * @param outputFieldName output field name to be emitted with the result
+     * @param comparator comparator used in for finding maximum of two tuple values.
+     * @param <T> type of input tuple value
+     * @return
+     */
+    public <T> Stream max(String inputFieldName, String outputFieldName, Comparator<T> comparator) {
+        CombinerAggregator<T> max = Max.withComparator(comparator);
+        return comparableAggregateStream(inputFieldName, outputFieldName, max);
+    }
+
+    private <T> Stream comparableAggregateStream(String inputFieldName, String outputFieldName, CombinerAggregator<T> min) {
+        Fields inputFields = new Fields(inputFieldName);
+        Fields outputFields = new Fields(outputFieldName);
+        return comparableStream(inputFields, outputFields)
+                .aggregate(inputFields, min, outputFields);
+    }
+
+    private Stream comparableStream(Fields inputFields, Fields outputFields) {
+        if(inputFields.size() > 1) {
+            throw new IllegalArgumentException("Only one field is allowed as input");
+        }
+        if(outputFields.size() > 1) {
+            throw new IllegalArgumentException("Only one field is allowed as output");
+        }
+
+        projectionValidation(inputFields);
+        return project(inputFields);
+    }
+
     public Stream aggregate(Aggregator agg, Fields functionFields) {
         return aggregate(null, agg, functionFields);
     }
