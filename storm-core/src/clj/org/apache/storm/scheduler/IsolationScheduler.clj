@@ -15,7 +15,7 @@
 ;; limitations under the License.
 (ns org.apache.storm.scheduler.IsolationScheduler
   (:use [org.apache.storm util config log])
-  (:require [org.apache.storm.scheduler.DefaultScheduler :as DefaultScheduler])
+  (:import [org.apache.storm.scheduler.DefaultScheduler])
   (:import [java.util HashSet Set List LinkedList ArrayList Map HashMap])
   (:import [org.apache.storm.scheduler IScheduler Topologies
             Cluster TopologyDetails WorkerSlot SchedulerAssignment
@@ -206,7 +206,7 @@
         (-<> topology-worker-specs
              allocated-topologies
              (leftover-topologies topologies <>)
-             (DefaultScheduler/default-schedule <> cluster))
+             (DefaultScheduler/defaultSchedule <> cluster))
         (do
           (log-warn "Unable to isolate topologies " (pr-str failed-iso-topologies) ". No machine had enough worker slots to run the remaining workers for these topologies. Clearing all other resources and will wait for enough resources for isolated topologies before allocating any other resources.")
           ;; clear workers off all hosts that are not blacklisted

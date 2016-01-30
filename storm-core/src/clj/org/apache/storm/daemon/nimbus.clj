@@ -34,9 +34,9 @@
   (:import [java.net InetAddress ServerSocket BindException])
   (:import [java.nio.channels Channels WritableByteChannel])
   (:import [org.apache.storm.security.auth ThriftServer ThriftConnectionType ReqContext AuthUtils])
-  (:use [org.apache.storm.scheduler.DefaultScheduler])
+  (:import [org.apache.storm.scheduler.DefaultScheduler])
   (:import [org.apache.storm.scheduler INimbus SupervisorDetails WorkerSlot TopologyDetails
-            Cluster Topologies SchedulerAssignment SchedulerAssignmentImpl DefaultScheduler ExecutorDetails])
+            Cluster Topologies SchedulerAssignment SchedulerAssignmentImpl ExecutorDetails])
   (:import [org.apache.storm.nimbus NimbusInfo])
   (:import [org.apache.storm.utils TimeCacheMap TimeCacheMap$ExpiredCallback Utils ConfigUtils TupleUtils ThriftTopologyUtils
             BufferFileInputStream BufferInputStream])
