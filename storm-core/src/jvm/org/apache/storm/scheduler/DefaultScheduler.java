@@ -23,31 +23,26 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.TreeMap;
+
+import org.apache.storm.utils.Utils;
 
 public class DefaultScheduler implements IScheduler {
 
     private Set<WorkerSlot> badSlots(Map<WorkerSlot, List<ExecutorDetails>> existingSlots, int numExecutors, int numWorkers) {
         if (numWorkers != 0) {
-            Map<Integer, Integer> distribution = new TreeMap<Integer, Integer>();
-            int quotient = numExecutors / numWorkers;
-            int remainder = numExecutors % numWorkers;
-            distribution.put(quotient, numWorkers - remainder);
-            if(remainder != 0) {
-                distribution.put(quotient + 1, remainder);
-            }
+            Map<Integer, Integer> distribution = Utils.integerDivided(numExecutors, numWorkers);
+            Set<WorkerSlot> _slots = new HashSet<WorkerSlot>();
 
-            Map<WorkerSlot, List<ExecutorDetails>> _slots = new HashMap<WorkerSlot, List<ExecutorDetails>>();
             for (Entry<WorkerSlot, List<ExecutorDetails>> entry : existingSlots.entrySet()) {
                 Integer executorCount = distribution.get(entry.getValue().size());
                 if (executorCount != null && executorCount > 0) {
-                    _slots.put(entry.getKey(), entry.getValue());
+                    _slots.add(entry.getKey());
                     executorCount--;
                     distribution.put(entry.getValue().size(), executorCount);
                 }
             }
 
-            for (WorkerSlot slot : _slots.keySet()) {
+            for (WorkerSlot slot : _slots) {
                 existingSlots.remove(slot);                
             }
 
