@@ -17,7 +17,6 @@
  */
 package org.apache.storm.hbase.security;
 
-import backtype.storm.Config;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.security.UserProvider;
 import org.apache.hadoop.security.UserGroupInformation;
