@@ -22,6 +22,16 @@
   (:gen-class
     :implements [org.apache.storm.scheduler.IScheduler]))
 
+; this can be rewritten to be tail recursive
+(defn- interleave-all
+  [& colls]
+  (if (empty? colls)
+    []
+    (let [colls (filter (complement empty?) colls)
+          my-elems (map first colls)
+          rest-elems (apply interleave-all (map rest colls))]
+      (concat my-elems rest-elems))))
+
 (defn sort-slots [all-slots]
   (let [split-up (sort-by count > (vals (group-by first all-slots)))]
     (apply interleave-all split-up)

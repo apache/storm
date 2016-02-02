@@ -14,7 +14,8 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns org.apache.storm.daemon.supervisor
-  (:import [java.io File IOException FileOutputStream])
+  (:import [java.io File IOException FileOutputStream]
+           [org.apache.storm.utils UptimeComputer])
   (:import [org.apache.storm.scheduler ISupervisor]
            [org.apache.storm.utils LocalState Time Utils ConfigUtils]
            [org.apache.storm.daemon Shutdownable]
@@ -104,7 +105,7 @@
   "Returns map from port to struct containing :storm-id, :executors and :resources"
   ([assignments-snapshot assignment-id]
      (->> (dofor [sid (keys assignments-snapshot)] (read-my-executors assignments-snapshot sid assignment-id))
-          (apply merge-with (fn [& ignored] (throw-runtime "Should not have multiple topologies assigned to one port")))))
+          (apply merge-with (fn [& ignored] (Utils/throwRuntime ["Should not have multiple topologies assigned to one port"])))))
   ([assignments-snapshot assignment-id existing-assignment retries]
      (try (let [assignments (read-assignments assignments-snapshot assignment-id)]
             (reset! retries 0)
@@ -316,6 +317,7 @@
    :shared-context shared-context
    :isupervisor isupervisor
    :active (atom true)
+   ;:uptime (UptimeComputer.)
    :uptime (uptime-computer)
    :version STORM-VERSION
    :worker-thread-pids-atom (atom {})
@@ -393,6 +395,11 @@
               (log-message "Missing topology storm code, so can't launch worker with assignment "
                 (get-worker-assignment-helper-msg assignment supervisor port id))
               nil)))))))
+
+
+(defn- select-keys-pred
+  [pred amap]
+  (into {} (filter (fn [[k v]] (pred k)) amap)))
 
 ;TODO: when translating this function, you should replace the filter-val with a proper for loop + if condition HERE
 (defn sync-processes [supervisor]
@@ -795,6 +802,7 @@
                                                   ;; used ports
                                                  (.getMetadata isupervisor)
                                                  (conf SUPERVISOR-SCHEDULER-META)
+                                                 ;(. (:uptime supervisor) upTime)
                                                  ((:uptime supervisor))
                                                  (:version supervisor)
                                                  (mk-supervisor-capacities conf))))]
@@ -943,7 +951,7 @@
     (if-not on-windows?
       (Utils/restrictPermissions tmproot)
       (if (conf SUPERVISOR-RUN-WORKER-AS-USER)
-        (throw-runtime (str "ERROR: Windows doesn't implement setting the correct permissions"))))
+        (Utils/throwRuntime (str "ERROR: Windows doesn't implement setting the correct permissions"))))
     (Utils/downloadResourcesAsSupervisor (ConfigUtils/masterStormJarKey storm-id)
       (ConfigUtils/supervisorStormJarPath tmproot) blobstore)
     (Utils/downloadResourcesAsSupervisor (ConfigUtils/masterStormCodeKey storm-id)

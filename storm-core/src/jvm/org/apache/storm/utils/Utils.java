@@ -1964,6 +1964,29 @@ public class Utils {
         return dir + filePathSeparator + "launch_container.sh";
     }
 
+    public static void throwRuntime (Object... strings) {
+        String combinedErrorMessage = "";
+        for (Object oneMessage: strings) {
+            combinedErrorMessage = combinedErrorMessage + oneMessage.toString();
+        }
+        throw new RuntimeException(combinedErrorMessage);
+    }
+
+    public static Object nullToZero (Object v) {
+        return (v!=null? v : 0);
+    }
+
+    public static Object containerGet (Container container) {
+        return container.object;
+    }
+
+    public static Container containerSet (Container container, Object obj) {
+        container.object = obj;
+        return container;
+    }
+
+
+
     /**
      * Deletes a file or directory and its contents if it exists. Does not
      * complain if the input is null or does not exist.

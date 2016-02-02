@@ -104,7 +104,14 @@ public class Time {
             return System.currentTimeMillis();
         }
     }
-    
+
+    public static long toMillis (int secs) {
+        return 1000*(long) secs;
+    }
+    public static long toMillis (String secs) {
+        return 1000*Long.parseLong(secs);
+    }
+
     public static int currentTimeSecs() {
         return (int) (currentTimeMillis() / 1000);
     }

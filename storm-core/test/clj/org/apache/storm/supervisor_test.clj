@@ -52,7 +52,7 @@
         pred (reify IPredicate (test [this x] (not-nil? x)))
         ret (Utils/findFirst pred slot-assigns)]
     (when-not ret
-      (throw-runtime "Could not find assignment for worker"))
+      (Utils/throwRuntime "Could not find assignment for worker"))
     ret
     ))
 
@@ -592,9 +592,7 @@
                       (supervisorLocalDirImpl [conf] nil))]
         (stubbing [uptime-computer nil
                    cluster/mk-storm-cluster-state nil
-;                   supervisor-state nil
                    mk-timer nil
-;                   supervisor-local-dir nil
                    ]
           (with-open [- (proxy [MockedUtils] [] (localHostnameImpl [] nil))]
             (supervisor/supervisor-data auth-conf nil fake-isupervisor)

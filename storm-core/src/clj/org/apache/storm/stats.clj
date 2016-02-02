@@ -206,6 +206,10 @@
          (value-stats stats SPOUT-FIELDS)
          {:type :spout}))
 
+(defn- class-selector
+  [obj & args]
+  (class obj))
+
 (defmulti render-stats! class-selector)
 
 (defmethod render-stats! SpoutExecutorStats
@@ -1504,10 +1508,10 @@
                     (aggregate-bolt-streams)
                     swap-map-order
                     (get (str TEN-MIN-IN-SECONDS))))
-        uptime (nil-to-zero (.get_uptime_secs e))
+        uptime (Utils/nullToZero (.get_uptime_secs e))
         window (if (< uptime TEN-MIN-IN-SECONDS) uptime TEN-MIN-IN-SECONDS)
-        executed (-> stats :executed nil-to-zero)
-        latency (-> stats :execute-latencies nil-to-zero)]
+        executed (-> stats :executed Utils/nullToZero)
+        latency (-> stats :execute-latencies Utils/nullToZero)]
     (if (> window 0)
       (div (* executed latency) (* 1000 window)))))
 
@@ -1562,5 +1566,5 @@
   [executors]
   (->> executors
        (map compute-executor-capacity)
-       (map nil-to-zero)
+       (map #(Utils/nullToZero %))
        (apply max)))

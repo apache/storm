@@ -21,7 +21,7 @@
   (:import [java.nio.file Paths])
   (:import [org.apache.storm Config])
   (:import [org.apache.storm.utils Time Container ClojureTimerTask Utils
-            MutableObject MutableInt])
+            MutableObject])
   (:import [org.apache.storm.security.auth NimbusPrincipal])
   (:import [javax.security.auth Subject])
   (:import [java.util UUID Random ArrayList List Collections])
@@ -750,120 +750,66 @@
 ;;          (finally
 ;;            ~@restorers)))))
 
-(defn map-diff
-  "Returns mappings in m2 that aren't in m1"
-  [m1 m2]
-  (into {} (filter (fn [[k v]] (not= v (m1 k))) m2)))
 
-(defn select-keys-pred
-  [pred amap]
-  (into {} (filter (fn [[k v]] (pred k)) amap)))
+;(defn rotating-random-range
+;  [choices]
+;  (let [rand (Random.)
+;        choices (ArrayList. choices)]
+;    (Collections/shuffle choices rand)
+;    [(MutableInt. -1) choices rand]))
 
-(defn rotating-random-range
-  [choices]
-  (let [rand (Random.)
-        choices (ArrayList. choices)]
-    (Collections/shuffle choices rand)
-    [(MutableInt. -1) choices rand]))
+;(defn acquire-random-range-id
+;  [[^MutableInt curr ^List state ^Random rand]]
+;  (when (>= (.increment curr) (.size state))
+;    (.set curr 0)
+;    (Collections/shuffle state rand))
+;  (.get state (.get curr)))
 
-(defn acquire-random-range-id
-  [[^MutableInt curr ^List state ^Random rand]]
-  (when (>= (.increment curr) (.size state))
-    (.set curr 0)
-    (Collections/shuffle state rand))
-  (.get state (.get curr)))
+;(defmacro benchmark
+;  [& body]
+;  `(let [l# (doall (range 1000000))]
+;     (time
+;       (doseq [i# l#]
+;         ~@body))))
 
-; this can be rewritten to be tail recursive
-(defn interleave-all
-  [& colls]
-  (if (empty? colls)
-    []
-    (let [colls (filter (complement empty?) colls)
-          my-elems (map first colls)
-          rest-elems (apply interleave-all (map rest colls))]
-      (concat my-elems rest-elems))))
+;(defn rand-sampler
+;  [freq]
+;  (let [r (java.util.Random.)]
+;    (fn [] (= 0 (.nextInt r freq)))))
 
-(defn between?
-  "val >= lower and val <= upper"
-  [val lower upper]
-  (and (>= val lower)
-       (<= val upper)))
 
-(defmacro benchmark
-  [& body]
-  `(let [l# (doall (range 1000000))]
-     (time
-       (doseq [i# l#]
-         ~@body))))
-
-(defn rand-sampler
-  [freq]
-  (let [r (java.util.Random.)]
-    (fn [] (= 0 (.nextInt r freq)))))
-
-(defn even-sampler
-  [freq]
-  (let [freq (int freq)
-        start (int 0)
-        r (java.util.Random.)
-        curr (MutableInt. -1)
-        target (MutableInt. (.nextInt r freq))]
-    (with-meta
-      (fn []
-        (let [i (.increment curr)]
-          (when (>= i freq)
-            (.set curr start)
-            (.set target (.nextInt r freq))))
-        (= (.get curr) (.get target)))
-      {:rate freq})))
-
-(defn sampler-rate
-  [sampler]
-  (:rate (meta sampler)))
-
-(defn class-selector
-  [obj & args]
-  (class obj))
-
-(defn uptime-computer []
-  (let [start-time (Utils/currentTimeSecs)]
-    (fn [] (Time/delta start-time))))
-
-(defn stringify-error [error]
-  (let [result (StringWriter.)
-        printer (PrintWriter. result)]
-    (.printStackTrace error printer)
-    (.toString result)))
-
-(defn nil-to-zero
-  [v]
-  (or v 0))
-
-(defn bit-xor-vals
-  [vals]
-  (reduce bit-xor 0 vals))
+;(defn sampler-rate
+;  [sampler]
+;  (:rate (meta sampler)))
 
 (defmacro with-error-reaction
   [afn & body]
   `(try ~@body
      (catch Throwable t# (~afn t#))))
 
-(defn container
-  []
-  (Container.))
 
-(defn container-set! [^Container container obj]
-  (set! (. container object) obj)
-  container)
+(defn uptime-computer []
+  (let [start-time (Utils/currentTimeSecs)]
+    (fn [] (Time/delta start-time))))
 
-(defn container-get [^Container container]
-  (. container object))
+;(defn nil-to-zero
+;  [v]
+;  (or v 0))
 
-(defn to-millis [secs]
-  (* 1000 (long secs)))
 
-(defn throw-runtime [& strs]
-  (throw (RuntimeException. (apply str strs))))
+;(defn container
+;  []
+;  (Container.))
+
+;(defn container-set! [^Container container obj]
+;  (set! (. container object) obj)
+;  container)
+
+;(defn container-get [^Container container]
+;  (. container object))
+
+;(defn throw-runtime [& strs]
+;  (throw (RuntimeException. (apply str strs))))
 
 (defn redirect-stdio-to-slf4j!
   []
@@ -880,10 +826,12 @@
   ;;         true))
   (log-capture! "STDIO"))
 
-(defn spy
-  [prefix val]
-  (log-message prefix ": " val)
-  val)
+;(defn spy
+;  [prefix val]
+;  (log-message prefix ": " val)
+;  val)
+
+;; end of batch 4
 
 (defn zip-contains-dir?
   [zipfile target]

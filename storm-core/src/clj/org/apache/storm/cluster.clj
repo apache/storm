@@ -18,7 +18,7 @@
   (:import [org.apache.zookeeper.data Stat ACL Id]
            [org.apache.storm.generated SupervisorInfo Assignment StormBase ClusterWorkerHeartbeat ErrorInfo Credentials NimbusSummary
             LogConfig ProfileAction ProfileRequest NodeInfo]
-           [java.io Serializable])
+           [java.io Serializable StringWriter PrintWriter])
   (:import [org.apache.zookeeper KeeperException KeeperException$NoNodeException ZooDefs ZooDefs$Ids ZooDefs$Perms])
   (:import [org.apache.curator.framework CuratorFramework])
   (:import [org.apache.storm.utils Utils])
@@ -239,6 +239,12 @@
                       :uptime (:uptime worker-hb)
                       :stats (get executor-stats t)}})))
          (into {}))))
+
+(defn- stringify-error [error]
+  (let [result (StringWriter.)
+        printer (PrintWriter. result)]
+    (.printStackTrace error printer)
+    (.toString result)))
 
 ;; Watches should be used for optimization. When ZK is reconnecting, they're not guaranteed to be called.
 (defnk mk-storm-cluster-state

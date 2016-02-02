@@ -704,9 +704,9 @@
      "stream" (.get_streamId s)
      "executeLatency" (float-str (.get_execute_latency_ms bas))
      "processLatency" (float-str (.get_process_latency_ms bas))
-     "executed" (nil-to-zero (.get_executed bas))
-     "acked" (nil-to-zero (.get_acked cas))
-     "failed" (nil-to-zero (.get_failed cas))}))
+     "executed" (Utils/nullToZero (.get_executed bas))
+     "acked" (Utils/nullToZero (.get_acked cas))
+     "failed" (Utils/nullToZero (.get_failed cas))}))
 
 (defmulti unpack-comp-output-stat
   (fn [[_ ^ComponentAggregateStats s]] (.get_type s)))
@@ -715,8 +715,8 @@
   [[stream-id ^ComponentAggregateStats stats]]
   (let [^CommonAggregateStats cas (.get_common_stats stats)]
     {"stream" stream-id
-     "emitted" (nil-to-zero (.get_emitted cas))
-     "transferred" (nil-to-zero (.get_transferred cas))}))
+     "emitted" (Utils/nullToZero (.get_emitted cas))
+     "transferred" (Utils/nullToZero (.get_transferred cas))}))
 
 (defmethod unpack-comp-output-stat ComponentType/SPOUT
   [[stream-id ^ComponentAggregateStats stats]]
@@ -724,11 +724,11 @@
         ^SpecificAggregateStats spec-s (.get_specific_stats stats)
         ^SpoutAggregateStats spout-s (.get_spout spec-s)]
     {"stream" stream-id
-     "emitted" (nil-to-zero (.get_emitted cas))
-     "transferred" (nil-to-zero (.get_transferred cas))
+     "emitted" (Utils/nullToZero (.get_emitted cas))
+     "transferred" (Utils/nullToZero (.get_transferred cas))
      "completeLatency" (float-str (.get_complete_latency_ms spout-s))
-     "acked" (nil-to-zero (.get_acked cas))
-     "failed" (nil-to-zero (.get_failed cas))}))
+     "acked" (Utils/nullToZero (.get_acked cas))
+     "failed" (Utils/nullToZero (.get_failed cas))}))
 
 (defmulti unpack-comp-exec-stat
   (fn [_ _ ^ComponentAggregateStats cas] (.get_type (.get_stats ^ExecutorAggregateStats cas))))
@@ -751,14 +751,14 @@
      "uptimeSeconds" uptime
      "host" host
      "port" port
-     "emitted" (nil-to-zero (.get_emitted cas))
-     "transferred" (nil-to-zero (.get_transferred cas))
-     "capacity" (float-str (nil-to-zero (.get_capacity bas)))
+     "emitted" (Utils/nullToZero (.get_emitted cas))
+     "transferred" (Utils/nullToZero (.get_transferred cas))
+     "capacity" (float-str (Utils/nullToZero (.get_capacity bas)))
      "executeLatency" (float-str (.get_execute_latency_ms bas))
-     "executed" (nil-to-zero (.get_executed bas))
+     "executed" (Utils/nullToZero (.get_executed bas))
      "processLatency" (float-str (.get_process_latency_ms bas))
-     "acked" (nil-to-zero (.get_acked cas))
-     "failed" (nil-to-zero (.get_failed cas))
+     "acked" (Utils/nullToZero (.get_acked cas))
+     "failed" (Utils/nullToZero (.get_failed cas))
      "workerLogLink" (worker-log-link host port topology-id secure?)}))
 
 (defmethod unpack-comp-exec-stat ComponentType/SPOUT
@@ -779,11 +779,11 @@
      "uptimeSeconds" uptime
      "host" host
      "port" port
-     "emitted" (nil-to-zero (.get_emitted cas))
-     "transferred" (nil-to-zero (.get_transferred cas))
+     "emitted" (Utils/nullToZero (.get_emitted cas))
+     "transferred" (Utils/nullToZero (.get_transferred cas))
      "completeLatency" (float-str (.get_complete_latency_ms sas))
-     "acked" (nil-to-zero (.get_acked cas))
-     "failed" (nil-to-zero (.get_failed cas))
+     "acked" (Utils/nullToZero (.get_acked cas))
+     "failed" (Utils/nullToZero (.get_failed cas))
      "workerLogLink" (worker-log-link host port topology-id secure?)}))
 
 (defmulti unpack-component-page-info

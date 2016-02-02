@@ -18,7 +18,7 @@
   (:require [org.apache.storm.scheduler.DefaultScheduler :as DefaultScheduler])
   (:import [java.util HashSet Set List LinkedList ArrayList Map HashMap]
            [org.apache.storm.utils IFn])
-  (:import [org.apache.storm.utils Utils])
+  (:import [org.apache.storm.utils Utils Container])
   (:import [org.apache.storm.scheduler IScheduler Topologies
             Cluster TopologyDetails WorkerSlot SchedulerAssignment
             EvenScheduler ExecutorDetails]
@@ -30,10 +30,10 @@
     :implements [org.apache.storm.scheduler.IScheduler]))
 
 (defn -init []
-  [[] (container)])
+  [[] (Container.)])
 
 (defn -prepare [this conf]
-  (container-set! (.state this) conf))
+  (Utils/containerSet (.state this) conf))
 
 (defn- repeat-seq
   ([aseq]
@@ -169,7 +169,7 @@
 ;; run default scheduler on isolated topologies that didn't have enough slots + non-isolated topologies on remaining machines
 ;; set blacklist to what it was initially
 (defn -schedule [this ^Topologies topologies ^Cluster cluster]
-  (let [conf (container-get (.state this))        
+  (let [conf (Utils/containerGet (.state this))
         orig-blacklist (HashSet. (.getBlacklistedHosts cluster))
         iso-topologies (isolated-topologies conf (.getTopologies topologies))
         iso-ids-set (->> iso-topologies (map #(.getId ^TopologyDetails %)) set)

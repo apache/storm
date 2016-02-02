@@ -14,7 +14,8 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns org.apache.storm.daemon.nimbus
-  (:import [org.apache.thrift.server THsHaServer THsHaServer$Args])
+  (:import [org.apache.thrift.server THsHaServer THsHaServer$Args]
+           [org.apache.storm.utils UptimeComputer])
   (:import [org.apache.storm.generated KeyNotFoundException])
   (:import [org.apache.storm.blobstore LocalFsBlobStore])
   (:import [org.apache.thrift.protocol TBinaryProtocol TBinaryProtocol$Factory])
@@ -189,6 +190,7 @@
      :blob-downloaders (mk-blob-cache-map conf)
      :blob-uploaders (mk-blob-cache-map conf)
      :blob-listers (mk-bloblist-cache-map conf)
+     ;:uptime (UptimeComputer.)
      :uptime (uptime-computer)
      :validator (new-instance (conf NIMBUS-TOPOLOGY-VALIDATOR))
      :timer (mk-timer :kill-fn (fn [t]
@@ -348,7 +350,7 @@
                                               ", status: " status,
                                               " storm-id: " storm-id)]
                                  (if error-on-no-transition?
-                                   (throw-runtime msg)
+                                   (Utils/throwRuntime msg)
                                    (do (when-not (contains? system-events event)
                                          (log-message msg))
                                        nil))
@@ -866,6 +868,11 @@
         _ (reset! (:id->resources nimbus) (.getTopologyResourcesMap cluster))]
     (.getAssignments cluster)))
 
+(defn- map-diff
+  "Returns mappings in m2 that aren't in m1"
+  [m1 m2]
+  (into {} (filter (fn [[k v]] (not= v (m1 k))) m2)))
+
 (defn changed-executors [executor->node+port new-executor->node+port]
   (let [executor->node+port (if executor->node+port (sort executor->node+port) nil)
         new-executor->node+port (if new-executor->node+port (sort new-executor->node+port) nil)
@@ -1153,7 +1160,7 @@
     (log-message "not a leader, skipping cleanup")))
 
 (defn- file-older-than? [now seconds file]
-  (<= (+ (.lastModified file) (to-millis seconds)) (to-millis now)))
+  (<= (+ (.lastModified file) (Time/toMillis seconds)) (Time/toMillis now)))
 
 (defn clean-inbox [dir-location seconds]
   "Deletes jar files in dir older than seconds."
@@ -1364,6 +1371,12 @@
 
 (defmethod blob-sync :local [conf nimbus]
   nil)
+
+(defn- between?
+  "val >= lower and val <= upper"
+  [val lower upper]
+  (and (>= val lower)
+    (<= val upper)))
 
 ;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defserverfn service-handler [conf inimbus]
@@ -1817,6 +1830,7 @@
                                          (.set_used_cpu sup-sum used-cpu))
                                        (when-let [version (:version info)] (.set_version sup-sum version))
                                        sup-sum))
+              ;nimbus-uptime (. (:uptime nimbus) upTime)
               nimbus-uptime ((:uptime nimbus))
               bases (topology-bases storm-cluster-state)
               nimbuses (.nimbuses storm-cluster-state)
@@ -1901,7 +1915,7 @@
                                                                 (-> executor first task->component)
                                                                 host
                                                                 port
-                                                                (nil-to-zero (:uptime heartbeat)))
+                                                                (Utils/nullToZero (:uptime heartbeat)))
                                             (.set_stats stats))
                                           ))
               topo-info  (TopologyInfo. storm-id
@@ -1970,9 +1984,9 @@
                   position (.position blob-chunk)]
               (.write os chunk-array (+ array-offset position) remaining)
               (.put uploaders session os))
-            (throw-runtime "Blob for session "
+            (Utils/throwRuntime ["Blob for session "
               session
-              " does not exist (or timed out)"))))
+              " does not exist (or timed out)"]))))
 
       (^void finishBlobUpload [this ^String session]
         (if-let [^AtomicOutputStream os (.get (:blob-uploaders nimbus) session)]
@@ -1982,9 +1996,9 @@
               session
               ". Closing session.")
             (.remove (:blob-uploaders nimbus) session))
-          (throw-runtime "Blob for session "
+          (Utils/throwRuntime ["Blob for session "
             session
-            " does not exist (or timed out)")))
+            " does not exist (or timed out)"])))
 
       (^void cancelBlobUpload [this ^String session]
         (if-let [^AtomicOutputStream os (.get (:blob-uploaders nimbus) session)]
@@ -1994,9 +2008,9 @@
               session
               ". Closing session.")
             (.remove (:blob-uploaders nimbus) session))
-          (throw-runtime "Blob for session "
+          (Utils/throwRuntime ["Blob for session "
             session
-            " does not exist (or timed out)")))
+            " does not exist (or timed out)"])))
 
       (^ReadableBlobMeta getBlobMeta [this ^String blob-key]
         (let [^ReadableBlobMeta ret (.getBlobMeta (:blob-store nimbus)
@@ -2047,9 +2061,9 @@
               ^Iterator keys-it (if (clojure.string/blank? session)
                                   (.listKeys (:blob-store nimbus))
                                   (.get listers session))
-              _ (or keys-it (throw-runtime "Blob list for session "
+              _ (or keys-it (Utils/throwRuntime ["Blob list for session "
                               session
-                              " does not exist (or timed out)"))
+                              " does not exist (or timed out)"]))
 
               ;; Create a new session id if the user gave an empty session string.
               ;; This is the use case when the user wishes to list blobs

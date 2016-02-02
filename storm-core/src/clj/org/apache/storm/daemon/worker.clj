@@ -23,7 +23,8 @@
   (:require [clojure.set :as set])
   (:require [org.apache.storm.messaging.loader :as msg-loader])
   (:import [java.util.concurrent Executors]
-           [org.apache.storm.hooks IWorkerHook BaseWorkerHook])
+           [org.apache.storm.hooks IWorkerHook BaseWorkerHook]
+           [org.apache.storm.utils UptimeComputer])
   (:import [java.util ArrayList HashMap]
            [java.util.concurrent.locks ReentrantReadWriteLock])
   (:import [org.apache.commons.io FileUtils])
@@ -70,6 +71,7 @@
                     (apply merge)))
         zk-hb {:storm-id (:storm-id worker)
                :executor-stats stats
+               ;:uptime (. (:uptime worker) upTime)
                :uptime ((:uptime worker))
                :time-secs (Utils/currentTimeSecs)
                }]
@@ -307,6 +309,7 @@
                                  (into {})
                                  (HashMap.))
       :suicide-fn (mk-suicide-fn conf)
+      ;:uptime (UptimeComputer.)
       :uptime (uptime-computer)
       :default-shared-resources (mk-default-resources <>)
       :user-shared-resources (mk-user-resources <>)
