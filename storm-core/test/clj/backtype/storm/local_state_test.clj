@@ -53,3 +53,13 @@
       (.put ls "a" 1)
       (is (= 1 (.get ls "a")))
   )))
+
+(deftest all-nul-state
+  (with-local-tmp [dir]
+    (let [ls (LocalState. dir)
+          data (FileUtils/openOutputStream (File. dir "12345"))
+          version (FileUtils/openOutputStream (File. dir "12345.version"))]
+      (.write data (byte-array (repeat 100 (byte 0))))
+      (is (= nil (.get ls "c")))
+      (.put ls "a" 1)
+      (is (= 1 (.get ls "a"))))))
