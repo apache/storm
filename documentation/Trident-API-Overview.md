@@ -77,13 +77,67 @@ Now suppose you had these tuples with fields ["a", "b", "c"]:
 If you ran this code:
 
 ```java
-mystream.each(new Fields("b", "a"), new MyFilter())
+mystream.filter(new MyFilter())
 ```
 
 The resulting tuples would be:
 
 ```
-[2, 1, 1]
+[1, 2, 3]
+```
+
+### map and flatMap
+
+`map` returns a stream consisting of the result of applying the given mapping function to the tuples of the stream. This
+can be used to apply a one-one transformation to the tuples.
+
+For example, if there is a stream of words and you wanted to convert it to a stream of upper case words,
+you could define a mapping function as follows,
+
+```java
+public class UpperCase extends MapFunction {
+ @Override
+ public Values execute(TridentTuple input) {
+   return new Values(input.getString(0).toUpperCase());
+ }
+}
+```
+
+The mapping function can then be applied on the stream to produce a stream of uppercase words.
+
+```java
+mystream.map(new UpperCase())
+```
+
+`flatMap` is similar to `map` but has the effect of applying a one-to-many transformation to the values of the stream,
+and then flattening the resulting elements into a new stream.
+
+For example, if there is a stream of sentences and you wanted to convert it to a stream of words,
+you could define a flatMap function as follows,
+
+```java
+public class Split extends FlatMapFunction {
+  @Override
+  public Iterable<Values> execute(TridentTuple input) {
+    List<Values> valuesList = new ArrayList<>();
+    for (String word : input.getString(0).split(" ")) {
+      valuesList.add(new Values(word));
+    }
+    return valuesList;
+  }
+}
+```
+
+The flatMap function can then be applied on the stream of sentences to produce a stream of words,
+
+```java
+mystream.flatMap(new Split())
+```
+
+Of course these operations can be chained, so a stream of uppercase words can be obtained from a stream of sentences as follows,
+
+```java
+mystream.flatMap(new Split()).map(new UpperCase())
 ```
 
 ### partitionAggregate
