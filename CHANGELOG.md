@@ -1,4 +1,5 @@
 ## 1.0.0
+ * STORM-1518: Backport of STORM-1504
  * STORM-1505: Add map, flatMap and filter functions in trident stream
  * STORM-1510: Fix broken nimbus log link
  * STORM-1503: Worker should not crash on failure to send heartbeats to Pacemaker/ZK
