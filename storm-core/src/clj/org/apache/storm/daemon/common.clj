@@ -40,7 +40,7 @@
   (log-message "Started statistics report plugin..."))
 
 (defn start-metrics-reporters [conf]
-  (doseq [reporter (StatisticsUtils/getPreparableReporters conf)]
+  (doseq [reporter (MetricsUtils/getPreparableReporters conf)]
     (start-metrics-reporter reporter conf)))
 
 
