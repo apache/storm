@@ -19,9 +19,9 @@
             InvalidTopologyException GlobalStreamId]
            [org.apache.storm.utils ThriftTopologyUtils])
   (:import [org.apache.storm.utils Utils])
-  (:import [org.apache.storm.statistics.reporters PreparableReporter]
+  (:import [org.apache.storm.daemon.metrics.reporters PreparableReporter]
            [com.codahale.metrics MetricRegistry]
-           [org.apache.storm.statistics StatisticsUtils])
+           [org.apache.storm.daemon.metrics MetricsUtils])
   (:import [org.apache.storm.task WorkerTopologyContext])
   (:import [org.apache.storm Constants])
   (:import [org.apache.storm.metric SystemBolt])
