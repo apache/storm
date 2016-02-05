@@ -29,13 +29,5 @@ Installing a Storm release locally is only for interacting with remote clusters.
 The previous step installed the `storm` client on your machine which is used to communicate with remote Storm clusters. Now all you have to do is tell the client which Storm cluster to talk to. To do this, all you have to do is put the host address of the master in the `~/.storm/storm.yaml` file. It should look something like this:
 
 ```
-nimbus.host: "123.45.678.890"
+nimbus.seeds: ["123.45.678.890"]
 ```
-
-Alternatively, if you use the [storm-deploy](https://github.com/nathanmarz/storm-deploy) project to provision Storm clusters on AWS, it will automatically set up your ~/.storm/storm.yaml file. You can manually attach to a Storm cluster (or switch between multiple clusters) using the "attach" command, like so:
-
-```
-lein run :deploy --attach --name mystormcluster
-```
-
-More information is on the storm-deploy [wiki](https://github.com/nathanmarz/storm-deploy/wiki)

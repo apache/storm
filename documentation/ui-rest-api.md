@@ -488,7 +488,9 @@ Sample response:
         "nimbus.inbox.jar.expiration.secs": 3600,
         "drpc.worker.threads": 64,
         "topology.worker.shared.thread.pool.size": 4,
-        "nimbus.host": "hw10843.local",
+        "nimbus.seeds": [
+            "hw10843.local"
+        ],
         "storm.messaging.netty.min_wait_ms": 100,
         "storm.zookeeper.port": 2181,
         "transactional.zookeeper.port": null,
