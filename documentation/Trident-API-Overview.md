@@ -139,6 +139,22 @@ Of course these operations can be chained, so a stream of uppercase words can be
 ```java
 mystream.flatMap(new Split()).map(new UpperCase())
 ```
+### peek
+`peek` can be used to perform an additional action on each trident tuple as they flow through the stream.
+ This could be useful for debugging to see the tuples as they flow past a certain point in a pipeline.
+
+For example, the below code would print the result of converting the words to uppercase before they are passed to `groupBy`
+```java
+ mystream.flatMap(new Split()).map(new UpperCase())
+         .peek(new Consumer() {
+                @Override
+                public void accept(TridentTuple input) {
+                  System.out.println(input.getString(0));
+                }
+         })
+         .groupBy(new Fields("word"))
+         .persistentAggregate(new MemoryMapState.Factory(), new Count(), new Fields("count"))
+ ```
 
 ### partitionAggregate
 
