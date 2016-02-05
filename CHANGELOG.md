@@ -1,4 +1,5 @@
 ## 1.0.0
+ * STORM-1455: kafka spout should not reset to the beginning of partition when offsetoutofrange exception occurs
  * STORM-1518: Backport of STORM-1504
  * STORM-1505: Add map, flatMap and filter functions in trident stream
  * STORM-1510: Fix broken nimbus log link
