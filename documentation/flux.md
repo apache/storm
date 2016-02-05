@@ -216,7 +216,7 @@ usage: storm jar <my_topology_uber_jar.jar> org.apache.storm.flux.Flux
 switches to pass through to the `storm` command.
 
 For example, you can use the `storm` command switch `-c` to override a topology configuration property. The following
-example command will run Flux and override the `nimus.seeds` configuration:
+example command will run Flux and override the `nimbus.seeds` configuration:
 
 ```bash
 storm jar myTopology-0.1.0-SNAPSHOT.jar org.apache.storm.flux.Flux --remote my_config.yaml -c 'nimbus.seeds=["localhost"]'
