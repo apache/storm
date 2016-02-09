@@ -25,7 +25,7 @@ import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
-import org.apache.storm.utils.TimeCacheMap;
+import org.apache.storm.utils.RotatingMap;
 
 import java.util.*;
 
@@ -34,7 +34,7 @@ public class SingleJoinBolt extends BaseRichBolt {
   Fields _idFields;
   Fields _outFields;
   int _numSources;
-  TimeCacheMap<List<Object>, Map<GlobalStreamId, Tuple>> _pending;
+  RotatingMap<List<Object>, Map<GlobalStreamId, Tuple>> _pending;
   Map<String, GlobalStreamId> _fieldLocations;
 
   public SingleJoinBolt(Fields outFields) {
@@ -43,10 +43,10 @@ public class SingleJoinBolt extends BaseRichBolt {
 
   @Override
   public void prepare(Map conf, TopologyContext context, OutputCollector collector) {
-    _fieldLocations = new HashMap<String, GlobalStreamId>();
+    _fieldLocations = new HashMap<>();
     _collector = collector;
     int timeout = ((Number) conf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS)).intValue();
-    _pending = new TimeCacheMap<List<Object>, Map<GlobalStreamId, Tuple>>(timeout, new ExpireCallback());
+    _pending = new RotatingMap<>(timeout, new ExpireCallback());
     _numSources = context.getThisSources().size();
     Set<String> idFields = null;
     for (GlobalStreamId source : context.getThisSources().keySet()) {
@@ -90,7 +90,7 @@ public class SingleJoinBolt extends BaseRichBolt {
         GlobalStreamId loc = _fieldLocations.get(outField);
         joinResult.add(parts.get(loc).getValueByField(outField));
       }
-      _collector.emit(new ArrayList<Tuple>(parts.values()), joinResult);
+      _collector.emit(new ArrayList<>(parts.values()), joinResult);
 
       for (Tuple part : parts.values()) {
         _collector.ack(part);
@@ -103,7 +103,7 @@ public class SingleJoinBolt extends BaseRichBolt {
     declarer.declare(_outFields);
   }
 
-  private class ExpireCallback implements TimeCacheMap.ExpiredCallback<List<Object>, Map<GlobalStreamId, Tuple>> {
+  private class ExpireCallback implements RotatingMap.ExpiredCallback<List<Object>, Map<GlobalStreamId, Tuple>> {
     @Override
     public void expire(List<Object> id, Map<GlobalStreamId, Tuple> tuples) {
       for (Tuple tuple : tuples.values()) {
