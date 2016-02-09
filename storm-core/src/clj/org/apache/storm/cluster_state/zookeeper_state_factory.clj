@@ -18,6 +18,7 @@
   (:import [org.apache.curator.framework.state ConnectionStateListener])
   (:import [org.apache.zookeeper KeeperException$NoNodeException]
            [org.apache.storm.cluster ClusterState DaemonType])
+  (:import [org.apache.storm.utils StormConnectionStateConverter])
   (:use [org.apache.storm cluster config log util])
   (:require [org.apache.storm [zookeeper :as zk]])
   (:gen-class
@@ -142,7 +143,7 @@
        (let [curator-listener (reify ConnectionStateListener
                                 (stateChanged
                                   [this client newState]
-                                  (.stateChanged listener client newState)))]
+                                  (.stateChanged listener (StormConnectionStateConverter/convert newState))))]
          (zk/add-listener zk-reader curator-listener)))
 
      (sync-path
