@@ -1,4 +1,5 @@
 ## 1.0.0
+ * STORM-1476: Filter -c options from args and add them as part of storm.options
  * STORM-1520: Nimbus Clojure/Zookeeper issue ("stateChanged" method not found)
  * STORM-1531: Junit and mockito dependencies need to have correct scope defined in storm-elasticsearch pom.xml
  * STORM-1526: Improve Storm core performance
