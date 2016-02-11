@@ -97,28 +97,22 @@ public class ShellSpout implements ISpout {
     }
 
     public void nextTuple() {
-        if (_spoutMsg == null) {
-            _spoutMsg = new SpoutMsg();
-        }
-        _spoutMsg.setCommand("next");
-        _spoutMsg.setId("");
-        querySubprocess();
+        this.sendSyncCommand("next", "");
     }
 
     public void ack(Object msgId) {
-        if (_spoutMsg == null) {
-            _spoutMsg = new SpoutMsg();
-        }
-        _spoutMsg.setCommand("ack");
-        _spoutMsg.setId(msgId);
-        querySubprocess();
+        this.sendSyncCommand("ack", msgId);
     }
 
     public void fail(Object msgId) {
+        this.sendSyncCommand("fail", msgId);
+    }
+
+    private void sendSyncCommand(String command, Object msgId) {
         if (_spoutMsg == null) {
             _spoutMsg = new SpoutMsg();
         }
-        _spoutMsg.setCommand("fail");
+        _spoutMsg.setCommand(command);
         _spoutMsg.setId(msgId);
         querySubprocess();
     }
@@ -232,10 +226,12 @@ public class ShellSpout implements ISpout {
         // prevent timer to check heartbeat based on last thing before activate
         setHeartbeat();
         heartBeatExecutorService.scheduleAtFixedRate(new SpoutHeartbeatTimerTask(this), 1, 1, TimeUnit.SECONDS);
+        this.sendSyncCommand("activate", "");
     }
 
     @Override
     public void deactivate() {
+        this.sendSyncCommand("deactivate", "");
         heartBeatExecutorService.shutdownNow();
     }
 
