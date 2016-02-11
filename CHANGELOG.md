@@ -1,4 +1,5 @@
 ## 1.0.0
+ * STORM-1519: Storm syslog logging not confirming to RFC5426 3.1
  * STORM-1533: IntegerValidator for metric consumer parallelism hint
  * STORM-1534: Pick correct version of jackson-annotations jar
  * STORM-1476: Filter -c options from args and add them as part of storm.options
