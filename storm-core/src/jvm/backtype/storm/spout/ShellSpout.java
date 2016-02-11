@@ -97,15 +97,15 @@ public class ShellSpout implements ISpout {
     }
 
     public void nextTuple() {
-        this.sendSimpleSyncCommand("next", "");
+        this.sendSyncCommand("next", "");
     }
 
     public void ack(Object msgId) {
-        this.sendSimpleSyncCommand("ack", msgId);
+        this.sendSyncCommand("ack", msgId);
     }
 
     public void fail(Object msgId) {
-        this.sendSimpleSyncCommand("fail", msgId);
+        this.sendSyncCommand("fail", msgId);
     }
     
     private void handleMetrics(ShellMsg shellMsg) {
@@ -217,10 +217,10 @@ public class ShellSpout implements ISpout {
         // prevent timer to check heartbeat based on last thing before activate
         setHeartbeat();
         heartBeatExecutorService.scheduleAtFixedRate(new SpoutHeartbeatTimerTask(this), 1, 1, TimeUnit.SECONDS);
-        this.sendSimpleSyncCommand("activate", "");
+        this.sendSyncCommand("activate", "");
     }
 
-    private void sendSimpleSyncCommand(String command, Object msgId) {
+    private void sendSyncCommand(String command, Object msgId) {
         if (_spoutMsg == null) {
             _spoutMsg = new SpoutMsg();
         }
@@ -231,7 +231,7 @@ public class ShellSpout implements ISpout {
 
     @Override
     public void deactivate() {
-        this.sendSimpleSyncCommand("deactivate", "");
+        this.sendSyncCommand("deactivate", "");
         heartBeatExecutorService.shutdownNow();
     }
 
