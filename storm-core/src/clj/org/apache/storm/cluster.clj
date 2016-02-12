@@ -494,7 +494,7 @@
     
       (topology-backpressure
         [this storm-id callback]
-        "if the backpresure/storm-id dir is empty, this topology has throttle-on, otherwise not."
+        "if the backpresure/storm-id dir is not empty, this topology has throttle-on, otherwise throttle-off."
         (when callback
           (swap! backpressure-callback assoc storm-id callback))
         (let [path (backpressure-storm-root storm-id)
