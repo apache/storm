@@ -192,8 +192,8 @@
                    (HBMessage. HBServerMessageType/SEND_PULSE
                                (HBMessageData/pulse
                                  (doto (HBPulse.)
-                                 (.set_id path)
-                                 (.set_details data)))))]
+                                       (.set_id path)
+                                       (.set_details data)))))]
              (if (= (.get_type response) HBServerMessageType/SEND_PULSE_RESPONSE)
                :ok
                (throw (HBExecutionException. "Invalid Response Type"))))))
