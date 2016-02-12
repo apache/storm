@@ -35,8 +35,6 @@
   (:gen-class
     :implements [org.apache.storm.cluster.ClusterStateFactory]))
 
-
-
 (defn- maybe-deserialize
   [ser clazz]
   (when ser
