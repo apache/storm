@@ -231,7 +231,7 @@ public class Config extends HashMap<String, Object> {
 
     /**
      * Whether we want to display all the resource capacity and scheduled usage on the UI page.
-     * You msut have this variable set if you are using any kind of resource-related scheduler.
+     * You must have this variable set if you are using any kind of resource-related scheduler.
      *
      * If this is not set, we will not display resource capacity and usage on the UI.
      */
