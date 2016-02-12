@@ -60,9 +60,8 @@ public class PacemakerClient implements ISaslClient {
     private StormBoundedExponentialBackoffRetry backoff = new StormBoundedExponentialBackoffRetry(100, 5000, 20);
     private int retryTimes = 0;
 
-    public PacemakerClient(Map config) {
+    public PacemakerClient(Map config, String host) {
 
-        String host = (String)config.get(Config.PACEMAKER_HOST);
         int port = (int)config.get(Config.PACEMAKER_PORT);
         topo_name = (String)config.get(Config.TOPOLOGY_NAME);
         if(topo_name == null) {
@@ -72,9 +71,8 @@ public class PacemakerClient implements ISaslClient {
         String auth = (String)config.get(Config.PACEMAKER_AUTH_METHOD);
         ThriftNettyClientCodec.AuthMethod authMethod;
 
-        switch(auth) {
+        if(auth.equals("DIGEST")) {
 
-        case "DIGEST":
             Configuration login_conf = AuthUtils.GetConfiguration(config);
             authMethod = ThriftNettyClientCodec.AuthMethod.DIGEST;
             secret = AuthUtils.makeDigestPayload(login_conf, AuthUtils.LOGIN_CONTEXT_PACEMAKER_DIGEST);
@@ -82,20 +80,17 @@ public class PacemakerClient implements ISaslClient {
                 LOG.error("Can't start pacemaker server without digest secret.");
                 throw new RuntimeException("Can't start pacemaker server without digest secret.");
             }
-            break;
 
-        case "KERBEROS":
+        }
+        else if(auth.equals("KERBEROS")) {
             authMethod = ThriftNettyClientCodec.AuthMethod.KERBEROS;
-            break;
+        }
+        else {
+            if(!auth.equals("NONE")) {
+                LOG.warn("Invalid auth scheme: '{}'. Falling back to 'NONE'", auth);
+            }
 
-        case "NONE":
             authMethod = ThriftNettyClientCodec.AuthMethod.NONE;
-            break;
-
-        default:
-            authMethod = ThriftNettyClientCodec.AuthMethod.NONE;
-            LOG.warn("Invalid auth scheme: '{}'. Falling back to 'NONE'", auth);
-            break;
         }
 
         closing = new AtomicBoolean(false);
@@ -105,8 +100,8 @@ public class PacemakerClient implements ISaslClient {
         ThreadFactory bossFactory = new NettyRenameThreadFactory("client-boss");
         ThreadFactory workerFactory = new NettyRenameThreadFactory("client-worker");
         NioClientSocketChannelFactory factory =
-            new NioClientSocketChannelFactory(Executors.newCachedThreadPool(bossFactory),
-                                              Executors.newCachedThreadPool(workerFactory));
+                new NioClientSocketChannelFactory(Executors.newCachedThreadPool(bossFactory),
+                        Executors.newCachedThreadPool(workerFactory));
         bootstrap = new ClientBootstrap(factory);
         bootstrap.setOption("tcpNoDelay", true);
         bootstrap.setOption("sendBufferSize", 5242880);
@@ -218,7 +213,7 @@ public class PacemakerClient implements ISaslClient {
         int message_id = m.get_message_id();
         if(message_id >=0 && message_id < maxPending) {
 
-            LOG.debug("Pacemaker client got message: {}", m.toString());
+            LOG.debug("Pacemaker Client got message: {}", m.toString());
             HBMessage request = messages[message_id];
 
             if(request == null) {
@@ -241,11 +236,11 @@ public class PacemakerClient implements ISaslClient {
         final PacemakerClient client = this;
         Timer t = new Timer(true);
         t.schedule(new TimerTask() {
-                public void run() {
-                    client.doReconnect();
-                }
-            },
-            backoff.getSleepTimeMs(retryTimes++, 0));
+                       public void run() {
+                           client.doReconnect();
+                       }
+                   },
+                backoff.getSleepTimeMs(retryTimes++, 0));
         ready = false;
         setupMessaging();
     }
