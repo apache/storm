@@ -1,4 +1,9 @@
-# Pacemaker
+---
+title: Pacemaker
+layout: documentation
+documentation: true
+---
+
 
 ### Introduction
 Pacemaker is a storm daemon designed to process heartbeats from workers. As Storm is scaled up, ZooKeeper begins to become a bottleneck due to high volumes of writes from workers doing heartbeats. Lots of writes to disk and too much traffic across the network is generated as ZooKeeper tries to maintain consistency.

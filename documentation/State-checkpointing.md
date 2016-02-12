@@ -1,3 +1,8 @@
+---
+title: Storm State Management
+layout: documentation
+documentation: true
+---
 # State support in core storm
 Storm core has abstractions for bolts to save and retrieve the state of its operations. There is a default in-memory
 based state implementation and also a Redis backed implementation that provides state persistence.

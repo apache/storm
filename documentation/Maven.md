@@ -1,6 +1,7 @@
 ---
 title: Maven
 layout: documentation
+documentation: true
 ---
 To develop topologies, you'll need the Storm jars on your classpath. You should either include the unpacked jars in the classpath for your project or use Maven to include Storm as a development dependency. Storm is hosted on Maven Central. To include Storm in your project as a development dependency, add the following to your pom.xml:
 

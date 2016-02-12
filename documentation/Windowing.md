@@ -1,4 +1,8 @@
-# Windowing support in core storm
+---
+title: Windowing Support in Core Storm
+layout: documentation
+documentation: true
+---
 
 Storm core has support for processing a group of tuples that falls within a window. Windows are specified with the 
 following two parameters,

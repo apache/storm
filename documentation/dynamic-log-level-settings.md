@@ -1,5 +1,9 @@
-Dynamic Log Level Settings
-==========================
+---
+title: Dynamic Log Level Settings
+layout: documentation
+documentation: true
+---
+
 
 We have added the ability to set log level settings for a running topology using the Storm UI and the Storm CLI. 
 

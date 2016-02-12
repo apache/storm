@@ -1,4 +1,9 @@
-#Highly Available Nimbus design proposal
+---
+title: Highly Available Nimbus Design
+layout: documentation
+documentation: true
+---
+
 ##Problem Statement:
 Currently the storm master aka nimbus, is a process that runs on a single machine under supervision. In most cases the 
 nimbus failure is transient and it is restarted by the supervisor. However sometimes when disks fail and networks 

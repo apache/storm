@@ -1,5 +1,9 @@
-Dynamic Worker Profiling
-==========================
+---
+title: Dynamic Worker Profiling
+layout: documentation
+documentation: true
+---
+
 
 In multi-tenant mode, storm launches long-running JVMs across cluster without sudo access to user. Self-serving of Java heap-dumps, jstacks and java profiling of these JVMs would improve users' ability to analyze and debug issues when monitoring it actively.
 

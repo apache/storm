@@ -1,3 +1,8 @@
+---
+title: Resource Aware Scheduler
+layout: documentation
+documentation: true
+---
 # Introduction
 
 The purpose of this document is to provide a description of the Resource Aware Scheduler for the Storm distributed real-time computation system.  This document will provide you with both a high level description of the resource aware scheduler in Storm
