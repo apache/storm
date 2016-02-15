@@ -15,20 +15,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.storm.callback;
 
-package org.apache.storm.utils;
+import org.apache.storm.zookeeper.ZkEventTypes;
+import org.apache.storm.zookeeper.ZkKeeperStates;
+import org.apache.zookeeper.Watcher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.CuratorFrameworkFactory;
-import org.apache.curator.retry.ExponentialBackoffRetry;
-import java.util.Map;
+public class DefaultWatcherCallBack implements WatcherCallBack {
 
-public class TestUtils extends Utils {
+    private static Logger LOG = LoggerFactory.getLogger(DefaultWatcherCallBack.class);
 
-    public static void testSetupBuilder(CuratorFrameworkFactory.Builder
-            builder, String zkStr, Map conf, ZookeeperAuthInfo auth)
-    {
-        setupBuilder(builder, zkStr, conf, auth);
+    @Override
+    public void execute(Watcher.Event.KeeperState state, Watcher.Event.EventType type, String path) {
+        LOG.debug("Zookeeper state update:  {}, {}, {}", ZkKeeperStates.getStateName(state), ZkEventTypes.getTypeName(type), path);
     }
 
 }

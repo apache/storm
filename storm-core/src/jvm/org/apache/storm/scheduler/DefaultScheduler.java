@@ -28,7 +28,7 @@ import org.apache.storm.utils.Utils;
 
 public class DefaultScheduler implements IScheduler {
 
-    private Set<WorkerSlot> badSlots(Map<WorkerSlot, List<ExecutorDetails>> existingSlots, int numExecutors, int numWorkers) {
+    private static Set<WorkerSlot> badSlots(Map<WorkerSlot, List<ExecutorDetails>> existingSlots, int numExecutors, int numWorkers) {
         if (numWorkers != 0) {
             Map<Integer, Integer> distribution = Utils.integerDivided(numExecutors, numWorkers);
             Set<WorkerSlot> _slots = new HashSet<WorkerSlot>();
@@ -52,7 +52,7 @@ public class DefaultScheduler implements IScheduler {
         return null;
     }
 
-    public Set<WorkerSlot> slotsCanReassign(Cluster cluster, Set<WorkerSlot> slots) {
+    public static Set<WorkerSlot> slotsCanReassign(Cluster cluster, Set<WorkerSlot> slots) {
         Set<WorkerSlot> result = new HashSet<WorkerSlot>();
         for (WorkerSlot slot : slots) {
             if (!cluster.isBlackListed(slot.getNodeId())) {
@@ -68,7 +68,7 @@ public class DefaultScheduler implements IScheduler {
         return result;
     }
 
-    public void defaultSchedule(Topologies topologies, Cluster cluster) {
+    public static void defaultSchedule(Topologies topologies, Cluster cluster) {
         List<TopologyDetails> needsSchedulingTopologies = cluster.needsSchedulingTopologies(topologies);
         for (TopologyDetails topology : needsSchedulingTopologies) {
             List<WorkerSlot> availableSlots = cluster.getAvailableSlots();
@@ -99,7 +99,7 @@ public class DefaultScheduler implements IScheduler {
 
     @Override
     public void prepare(Map conf) {
-
+        //noop
     }
 
     @Override
