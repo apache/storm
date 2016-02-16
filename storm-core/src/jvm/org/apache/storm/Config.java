@@ -921,6 +921,12 @@ public class Config extends HashMap<String, Object> {
     public static final String PACEMAKER_HOST = "pacemaker.host";
 
     /**
+     * The list of hosts that the HB server is running on.
+     */
+    @isStringList
+    public static final String PACEMAKER_SERVERS = "pacemaker.servers";
+
+    /**
      * The port Pacemaker should run on. Clients should
      * connect to this port to submit or read heartbeats.
      */
