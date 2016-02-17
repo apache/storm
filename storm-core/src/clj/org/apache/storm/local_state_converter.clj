@@ -23,8 +23,3 @@
 (defn ->ExecutorInfo-list
   [executors]
   (map ->ExecutorInfo executors))
-
-
-
-
-
