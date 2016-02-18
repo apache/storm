@@ -14,7 +14,6 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns org.apache.storm.local-state-converter
-  (:use [org.apache.storm log util])
   (:import [org.apache.storm.generated ExecutorInfo]))
 
 (defn ->ExecutorInfo
