@@ -30,3 +30,5 @@ cache:
     - "$HOME/.m2/repository"
     - "$HOME/.rvm"
     - "$NVM_DIR"
+after_failure:
+  - cat ./storm-core/target/surefire-reports/*.txt
