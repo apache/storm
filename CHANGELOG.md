@@ -1,4 +1,5 @@
 ## 1.0.0
+ * STORM-1532: Fix readCommandLineOpts to parse JSON correctly
  * STORM-1541: Change scope of 'hadoop-minicluster' to test
  * STORM-1539: Improve Storm ACK-ing performance
  * STORM-1519: Storm syslog logging not confirming to RFC5426 3.1
