@@ -17,6 +17,7 @@
  */
 package org.apache.storm.metric;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.storm.Config;
 import org.apache.storm.task.TopologyContext;
 import org.slf4j.Logger;
@@ -77,11 +78,24 @@ public class FileBasedEventLogger implements IEventLogger {
         scheduler.scheduleAtFixedRate(task, FLUSH_INTERVAL_MILLIS, FLUSH_INTERVAL_MILLIS, TimeUnit.MILLISECONDS);
     }
 
+    private String getFirstNonNull(String... strings) {
+        for (String str : strings) {
+            if (str != null) {
+                return str;
+            }
+        }
+        return null;
+    }
+
     private String getLogDir(Map stormConf) {
-        String logDir;
-        if ((logDir = System.getProperty("storm.log.dir")) == null
-                && (logDir = (String) stormConf.get("storm.log.dir")) == null) {
-            logDir = Paths.get(System.getProperty("storm.home"), "logs").toString();
+        String logDir = getFirstNonNull(System.getProperty("storm.log.dir"),
+                                        (String) stormConf.get("storm.log.dir"));
+        if (logDir == null) {
+            logDir = Paths.get(getFirstNonNull(System.getProperty("storm.home"),
+                                               System.getProperty("storm.local.dir"),
+                                               (String) stormConf.get("storm.local.dir"),
+                                               StringUtils.EMPTY),
+                               "logs").toString();
         }
         return logDir;
     }
