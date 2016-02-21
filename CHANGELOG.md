@@ -1,4 +1,5 @@
 ## 1.0.0
+ * STORM-1511: min/max operations support on a trident stream
  * STORM-1522: REST API throws invalid worker log links
  * STORM-1532: Fix readCommandLineOpts to parse JSON correctly
  * STORM-1541: Change scope of 'hadoop-minicluster' to test
