@@ -85,7 +85,7 @@ public class DynamicBrokersReader {
               String brokerInfoPath = brokerPath();
               for (int partition = 0; partition < numPartitionsForTopic; partition++) {
                   int leader = getLeaderFor(topic,partition);
-                  if(leader == -1){
+                  if(leader == -1) {
                 	      LOG.warn("No leader found for partition " + topic + " : " + partition);
                 	      continue;
                   }
