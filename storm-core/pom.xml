@@ -231,6 +231,11 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
+            <groupId>org.msgpack</groupId>
+            <artifactId>msgpack</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
             <groupId>com.twitter</groupId>
             <artifactId>carbonite</artifactId>
             <scope>compile</scope>
@@ -510,6 +515,7 @@
                             <include>commons-fileupload:commons-fileupload</include>
                             <include>commons-lang:commons-lang</include>
                             <include>com.googlecode.json-simple:json-simple</include>
+                            <include>org.msgpack:msgpack</include>
                             <include>org.clojure:math.numeric-tower</include>
                             <include>org.clojure:tools.cli</include>
                             <include>org.clojure:tools.logging</include>
