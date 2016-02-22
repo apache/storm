@@ -226,7 +226,7 @@ topology.eventlogger.executors: null
 topology.tasks: null
 # maximum amount of time a message has to complete before it's considered failed
 topology.message.timeout.secs: 30
-topology.multilang.serializer: "org.apache.storm.multilang.JsonSerializer"
+topology.multilang.serializer: "org.apache.storm.multilang.MessagePackSerializer"
 topology.shellbolt.max.pending: 100
 topology.skip.missing.kryo.registrations: false
 topology.max.task.parallelism: null
