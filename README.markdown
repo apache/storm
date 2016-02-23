@@ -13,7 +13,7 @@ Documentation and tutorials can be found on the [Storm website](http://storm.apa
 Developers and contributors should also take a look at our [Developer documentation](DEVELOPER.md).
 
 
-## Getting helptest
+## Getting help
 
 __NOTE:__ The google groups account storm-user@googlegroups.com is now officially deprecated in favor of the Apache-hosted user/dev mailing lists.
 
