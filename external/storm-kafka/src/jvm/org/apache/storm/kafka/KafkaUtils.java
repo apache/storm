@@ -19,13 +19,20 @@ package org.apache.storm.kafka;
 
 import com.google.common.base.Preconditions;
 
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.retry.RetryNTimes;
+import org.apache.storm.Config;
 import org.apache.storm.kafka.trident.GlobalPartitionInformation;
 import org.apache.storm.kafka.trident.IBrokerReader;
 import org.apache.storm.kafka.trident.StaticBrokerReader;
 import org.apache.storm.kafka.trident.ZkBrokerReader;
 import org.apache.storm.metric.api.IMetric;
+import org.apache.storm.utils.Utils;
+import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -278,4 +285,45 @@ public class KafkaUtils {
     public static String taskId(int taskIndex, int totalTasks) {
         return "Task [" + (taskIndex + 1) + "/" + totalTasks + "] ";
     }
+    
+    
+	private static CuratorFramework _curator;
+
+	public static Boolean checkLeader(Map conf, SpoutConfig spoutConfig, Partition id) {
+
+		String topicBrokersPath = "";
+		String zkStr = "";
+
+		if (spoutConfig.hosts instanceof ZkHosts) {
+			ZkHosts hosts = (ZkHosts) spoutConfig.hosts;
+			topicBrokersPath = hosts.brokerZkPath + "/topics/" + id.topic + "/partitions";
+			zkStr = hosts.brokerZkStr;
+		}
+		try {
+			_curator = CuratorFrameworkFactory.newClient(zkStr,
+					Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_SESSION_TIMEOUT)),
+					Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_CONNECTION_TIMEOUT)),
+					new RetryNTimes(Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_RETRY_TIMES)),
+							Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_RETRY_INTERVAL))));
+			_curator.start();
+		} catch (Exception ex) {
+			LOG.error("Couldn't connect to zookeeper", ex);
+			throw new RuntimeException(ex);
+		}
+
+		try {
+			byte[] hostPortData = _curator.getData().forPath(topicBrokersPath + "/" + id.partition + "/state");
+			Map<Object, Object> value = (Map<Object, Object>) JSONValue.parse(new String(hostPortData, "UTF-8"));
+			Integer leader = ((Number) value.get("leader")).intValue();
+			if (leader == -1) {
+				return false;
+			} else {
+				return true;
+			}
+		} catch (RuntimeException e) {
+			throw e;
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
 }
