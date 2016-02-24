@@ -97,6 +97,11 @@ public class ZkCoordinator implements PartitionCoordinator {
             for (Partition id : newPartitions) {
                 PartitionManager man = new PartitionManager(_connections, _topologyInstanceId, _state, _stormConf, _spoutConfig, id);
                 _managers.put(id, man);
+               if (man._isActive) {
+                    _managers.put(id, man);
+                }else {
+                    LOG.warn("No leader found for partition " + id.topic + " : " + id.partition);
+                }
             }
 
         } catch (Exception e) {
