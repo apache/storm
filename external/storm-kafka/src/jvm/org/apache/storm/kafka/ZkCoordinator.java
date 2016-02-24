@@ -99,7 +99,7 @@ public class ZkCoordinator implements PartitionCoordinator {
                if (man._isActive) {
                     _managers.put(id, man);
                 }else {
-                	LOG.warn("No leader found for partition " + id.topic + " : " + id.partition);
+                    LOG.warn("No leader found for partition " + id.topic + " : " + id.partition);
                 }
             }
 
