@@ -28,7 +28,11 @@ import org.apache.storm.topology.base.BaseRichSpout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 // TODO: need to add blacklisting
 // TODO: need to make a best effort to not re-emit messages if don't have to
@@ -95,7 +99,7 @@ public class KafkaSpout extends BaseRichSpout {
                 }
                 _kafkaOffsetMetric.refreshPartitions(latestPartitions);
                 for (PartitionManager pm : pms) {
-                    _kafkaOffsetMetric.setLatestEmittedOffset(pm.getPartition(), pm.lastCompletedOffset());
+                    _kafkaOffsetMetric.setOffsetData(pm.getPartition(), pm.getOffsetData());
                 }
                 return _kafkaOffsetMetric.getValueAndReset();
             }

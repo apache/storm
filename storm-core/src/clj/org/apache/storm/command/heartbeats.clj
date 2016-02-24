@@ -17,20 +17,21 @@
   (:require [org.apache.storm
              [config :refer :all]
              [log :refer :all]
-             [cluster :refer :all]
+             [util :refer :all]
              [converter :refer :all]]
-        [clojure.string :refer :all])
+            [clojure.string :as string])
   (:import [org.apache.storm.generated ClusterWorkerHeartbeat]
-           [org.apache.storm.utils Utils])
+           [org.apache.storm.utils Utils ConfigUtils]
+           [org.apache.storm.cluster ZKStateStorage ClusterStateContext ClusterUtils])
   (:gen-class))
 
 (defn -main [command path & args]
-  (let [conf (read-storm-config)
-        cluster (mk-distributed-cluster-state conf :auth-conf conf)]
+  (let [conf (clojurify-structure (ConfigUtils/readStormConfig))
+        cluster (ClusterUtils/mkStateStorage conf conf nil (ClusterStateContext.))]
     (println "Command: [" command "]")
     (condp = command
       "list"
-      (let [message (join " \n" (.get_worker_hb_children cluster path false))]
+      (let [message (clojure.string/join " \n" (.get_worker_hb_children cluster path false))]
         (log-message "list " path ":\n"
                      message "\n"))
       "get"

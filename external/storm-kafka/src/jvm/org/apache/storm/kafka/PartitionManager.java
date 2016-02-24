@@ -33,7 +33,13 @@ import org.apache.storm.spout.SpoutOutputCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 public class PartitionManager {
     private static final Logger LOG = LoggerFactory.getLogger(PartitionManager.class);
@@ -183,8 +189,7 @@ public class PartitionManager {
         try {
             msgs = KafkaUtils.fetchMessages(_spoutConfig, _consumer, _partition, offset);
         } catch (TopicOffsetOutOfRangeException e) {
-            _emittedToOffset = KafkaUtils.getOffset(_consumer, _partition.topic, _partition.partition, kafka.api.OffsetRequest.EarliestTime());
-            LOG.warn("{} Using new offset: {}", _partition.partition, _emittedToOffset);
+            offset = KafkaUtils.getOffset(_consumer, _partition.topic, _partition.partition, kafka.api.OffsetRequest.EarliestTime());
             // fetch failed, so don't update the metrics
             
             //fix bug [STORM-643] : remove outdated failed offsets
@@ -193,9 +198,14 @@ public class PartitionManager {
                 // all the failed offsets, that are earlier than actual EarliestTime
                 // offset, since they are anyway not there.
                 // These calls to broker API will be then saved.
-                Set<Long> omitted = this._failedMsgRetryManager.clearInvalidMessages(_emittedToOffset);
+                Set<Long> omitted = this._failedMsgRetryManager.clearInvalidMessages(offset);
                 
                 LOG.warn("Removing the failed offsets that are out of range: {}", omitted);
+            }
+
+            if (offset > _emittedToOffset) {
+                _emittedToOffset = offset;
+                LOG.warn("{} Using new offset: {}", _partition.partition, _emittedToOffset);
             }
             
             return;
@@ -289,6 +299,10 @@ public class PartitionManager {
         }
     }
 
+    public OffsetData getOffsetData() {
+        return new OffsetData(_emittedToOffset, lastCompletedOffset());
+    }
+
     public Partition getPartition() {
         return _partition;
     }
@@ -309,4 +323,13 @@ public class PartitionManager {
         }
     }
 
+    public static class OffsetData {
+        public long latestEmittedOffset;
+        public long latestCompletedOffset;
+
+        public OffsetData(long latestEmittedOffset, long latestCompletedOffset) {
+            this.latestEmittedOffset = latestEmittedOffset;
+            this.latestCompletedOffset = latestCompletedOffset;
+        }
+    }
 }

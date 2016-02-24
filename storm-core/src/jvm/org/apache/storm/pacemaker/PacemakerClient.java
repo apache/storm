@@ -60,6 +60,10 @@ public class PacemakerClient implements ISaslClient {
     private StormBoundedExponentialBackoffRetry backoff = new StormBoundedExponentialBackoffRetry(100, 5000, 20);
     private int retryTimes = 0;
 
+    //the constructor is invoked by pacemaker-state-factory-test
+    public PacemakerClient() {
+        bootstrap = new ClientBootstrap();
+    }
     public PacemakerClient(Map config) {
 
         String host = (String)config.get(Config.PACEMAKER_HOST);
@@ -127,6 +131,12 @@ public class PacemakerClient implements ISaslClient {
     }
 
     public synchronized void channelConnected(Channel channel) {
+        Channel oldChannel = channelRef.get();
+        if (oldChannel != null) {
+            LOG.debug("Closing oldChannel is connected: {}", oldChannel.toString());
+            close_channel();
+        }
+
         LOG.debug("Channel is connected: {}", channel.toString());
         channelRef.set(channel);
 
@@ -151,25 +161,9 @@ public class PacemakerClient implements ISaslClient {
     public String secretKey() {
         return secret;
     }
-
+    public HBMessage  checkCaptured() {return null;}
     public HBMessage send(HBMessage m) {
-        // Wait for 'ready' (channel connected and maybe authentication)
-        if(!ready) {
-            synchronized(this) {
-                if(!ready) {
-                    LOG.debug("Waiting for netty channel to be ready.");
-                    try {
-                        this.wait(1000);
-                        if(!ready) {
-                            throw new RuntimeException("Timed out waiting for channel ready.");
-                        }
-                    } catch (java.lang.InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            }
-        }
-
+        waitUntilReady();
         LOG.debug("Sending message: {}", m.toString());
         try {
 
@@ -179,6 +173,12 @@ public class PacemakerClient implements ISaslClient {
                 messages[next] = m;
                 LOG.debug("Put message in slot: {}", Integer.toString(next));
                 do {
+                    Channel channel = channelRef.get();
+                    if(channel == null )
+                    {
+                        reconnect();
+                        waitUntilReady();
+                    }
                     channelRef.get().write(m);
                     m.wait(1000);
                 } while (messages[next] == m);
@@ -196,6 +196,25 @@ public class PacemakerClient implements ISaslClient {
         catch (InterruptedException e) {
             LOG.error("PacemakerClient send interrupted: ", e);
             throw new RuntimeException(e);
+        }
+    }
+
+    private void waitUntilReady() {
+        // Wait for 'ready' (channel connected and maybe authentication)
+        if(!ready || channelRef.get() == null) {
+            synchronized(this) {
+                if(!ready) {
+                    LOG.debug("Waiting for netty channel to be ready.");
+                    try {
+                        this.wait(1000);
+                        if(!ready || channelRef.get() == null) {
+                            throw new RuntimeException("Timed out waiting for channel ready.");
+                        }
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
         }
     }
 
