@@ -16,14 +16,19 @@
 (ns org.apache.storm.drpc-test
   (:use [clojure test])
   (:import [org.apache.storm.drpc ReturnResults DRPCSpout
-            LinearDRPCTopologyBuilder])
+            LinearDRPCTopologyBuilder]
+           [org.apache.storm.utils ConfigUtils Utils])
   (:import [org.apache.storm.topology FailedException])
   (:import [org.apache.storm.coordination CoordinatedBolt$FinishedCallback])
   (:import [org.apache.storm LocalDRPC LocalCluster])
   (:import [org.apache.storm.tuple Fields])
+  (:import [org.apache.storm.utils ConfigUtils]
+           [org.apache.storm.utils.staticmocking ConfigUtilsInstaller])
   (:import [org.apache.storm.generated DRPCExecutionException])
   (:import [java.util.concurrent ConcurrentLinkedQueue])
-  (:use [org.apache.storm config testing clojure])
+  (:import [org.apache.storm Thrift])
+  (:use [org.apache.storm config testing])
+  (:use [org.apache.storm.internal clojure])
   (:use [org.apache.storm.daemon common drpc])
   (:use [conjure core]))
 
@@ -38,12 +43,16 @@
   (let [drpc (LocalDRPC.)
         spout (DRPCSpout. "test" drpc)
         cluster (LocalCluster.)
-        topology (topology
-                  {"1" (spout-spec spout)}
-                  {"2" (bolt-spec {"1" :shuffle}
-                                exclamation-bolt)
-                   "3" (bolt-spec {"2" :shuffle}
-                                (ReturnResults.))})]
+        topology (Thrift/buildTopology
+                  {"1" (Thrift/prepareSpoutDetails spout)}
+                  {"2" (Thrift/prepareBoltDetails
+                         {(Utils/getGlobalStreamId "1" nil)
+                          (Thrift/prepareShuffleGrouping)}
+                         exclamation-bolt)
+                   "3" (Thrift/prepareBoltDetails
+                         {(Utils/getGlobalStreamId "2" nil)
+                          (Thrift/prepareGlobalGrouping)}
+                         (ReturnResults.))})]
     (.submitTopology cluster "test" {} topology)
 
     (is (= "aaa!!!" (.execute drpc "test" "aaa")))
@@ -220,22 +229,26 @@
 (deftest test-dequeue-req-after-timeout
   (let [queue (ConcurrentLinkedQueue.)
         delay-seconds 2
-        conf {DRPC-REQUEST-TIMEOUT-SECS delay-seconds}]
-    (stubbing [acquire-queue queue
-               read-storm-config conf]
-      (let [drpc-handler (service-handler conf)]
-        (is (thrown? DRPCExecutionException
-          (.execute drpc-handler "ArbitraryDRPCFunctionName" "")))
-        (is (= 0 (.size queue)))))))
+        conf {DRPC-REQUEST-TIMEOUT-SECS delay-seconds}
+        mock-cu (proxy [ConfigUtils] []
+                  (readStormConfigImpl [] conf))]
+    (with-open [_ (ConfigUtilsInstaller. mock-cu)]
+      (stubbing [acquire-queue queue]
+        (let [drpc-handler (service-handler conf)]
+          (is (thrown? DRPCExecutionException
+            (.execute drpc-handler "ArbitraryDRPCFunctionName" "")))
+          (is (= 0 (.size queue))))))))
 
 (deftest test-drpc-timeout-cleanup 
   (let [queue (ConcurrentLinkedQueue.)
         delay-seconds 1
-        conf {DRPC-REQUEST-TIMEOUT-SECS delay-seconds}]
-    (stubbing [acquire-queue queue
-               read-storm-config conf
-               timeout-check-secs delay-seconds]
+        conf {DRPC-REQUEST-TIMEOUT-SECS delay-seconds}
+        mock-cu (proxy [ConfigUtils] []
+                  (readStormConfigImpl [] conf))]
+    (with-open [_ (ConfigUtilsInstaller. mock-cu)]
+          (stubbing [acquire-queue queue
+                     timeout-check-secs delay-seconds]
               (let [drpc-handler (service-handler conf)]
                 (is (thrown? DRPCExecutionException 
-                             (.execute drpc-handler "ArbitraryDRPCFunctionName" "no-args")))))))
+                             (.execute drpc-handler "ArbitraryDRPCFunctionName" "no-args"))))))))
 

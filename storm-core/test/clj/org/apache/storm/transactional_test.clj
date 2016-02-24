@@ -29,14 +29,15 @@
   (:import [org.apache.storm.testing CountingBatchBolt MemoryTransactionalSpout
             KeyedCountingBatchBolt KeyedCountingCommitterBolt KeyedSummingBatchBolt
             IdentityBolt CountingCommitBolt OpaqueMemoryTransactionalSpout])
-  (:import [org.apache.storm.utils ZookeeperAuthInfo])
+  (:import [org.apache.storm.utils ZookeeperAuthInfo Utils])
   (:import [org.apache.curator.framework CuratorFramework])
   (:import [org.apache.curator.framework.api CreateBuilder ProtectACLCreateModePathAndBytesable])
   (:import [org.apache.zookeeper CreateMode ZooDefs ZooDefs$Ids])
   (:import [org.mockito Matchers Mockito])
   (:import [org.mockito.exceptions.base MockitoAssertionError])
   (:import [java.util HashMap Collections ArrayList])
-  (:use [org.apache.storm testing util config clojure])
+  (:use [org.apache.storm testing util config])
+  (:use [org.apache.storm.internal clojure])
   (:use [org.apache.storm.daemon common]))
 
 ;; Testing TODO:
@@ -72,6 +73,7 @@
 (defn normalize-tx-tuple [values]
   (-> values vec (update 0 #(-> % .getTransactionId .intValue))))
 
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn verify-and-reset! [expected-map emitted-map-atom]
   (let [results @emitted-map-atom]
     (dorun
@@ -99,6 +101,18 @@
 (defn get-commit [capture-atom]
   (-> @capture-atom (get COMMIT-STREAM) first :id))
 
+(defmacro letlocals
+  [& body]
+  (let [[tobind lexpr] (split-at (dec (count body)) body)
+        binded (vec (mapcat (fn [e]
+                              (if (and (list? e) (= 'bind (first e)))
+                                [(second e) (last e)]
+                                ['_ e]
+                                ))
+                            tobind))]
+    `(let ~binded
+       ~(first lexpr))))
+
 (deftest test-coordinator
   (let [coordinator-state (atom nil)
         emit-capture (atom nil)]
@@ -107,7 +121,7 @@
         (bind coordinator
               (mk-coordinator-state-changer coordinator-state))
         (.open coordinator
-               (merge (read-default-config)
+               (merge (clojurify-structure (Utils/readDefaultConfig))
                        {TOPOLOGY-MAX-SPOUT-PENDING 4
                        TOPOLOGY-TRANSACTIONAL-ID "abc"
                        STORM-ZOOKEEPER-PORT zk-port
@@ -270,7 +284,7 @@
 (deftest test-rotating-transactional-state
   ;; test strict ordered vs not strict ordered
   (with-inprocess-zookeeper zk-port
-    (let [conf (merge (read-default-config)
+    (let [conf (merge (clojurify-structure (Utils/readDefaultConfig))
                       {STORM-ZOOKEEPER-PORT zk-port
                        STORM-ZOOKEEPER-SERVERS ["localhost"]
                        })
@@ -344,6 +358,11 @@
      ~@body
      (RegisteredGlobalState/clearState id#)
     ))
+
+(defn separate
+  [pred aseq]
+  [(filter pred aseq) (filter (complement pred) aseq)])
+
 
 (deftest test-transactional-topology
   (with-tracked-cluster [cluster]

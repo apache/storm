@@ -23,12 +23,12 @@
   (:import [org.apache.storm.hooks.info SpoutAckInfo SpoutFailInfo
             EmitInfo BoltFailInfo BoltAckInfo])
   (:import [org.apache.storm.task TopologyContext ShellBolt WorkerTopologyContext])
-  (:import [org.apache.storm.utils Utils])
+  (:import [org.apache.storm.utils Utils ConfigUtils])
   (:import [org.apache.storm.generated ShellComponent JavaObject])
   (:import [org.apache.storm.spout ShellSpout])
   (:import [java.util Collection List ArrayList])
+  (:import [org.apache.storm Thrift])
   (:require [org.apache.storm
-             [thrift :as thrift]
              [stats :as stats]])
   (:require [org.apache.storm.daemon.builtin-metrics :as builtin-metrics]))
 
@@ -41,9 +41,9 @@
       (:component->sorted-tasks worker)
       (:component->stream->fields worker)
       (:storm-id worker)
-      (supervisor-storm-resources-path
-        (supervisor-stormdist-root conf (:storm-id worker)))
-      (worker-pids-root conf (:worker-id worker))
+      (ConfigUtils/supervisorStormResourcesPath
+        (ConfigUtils/supervisorStormDistRoot conf (:storm-id worker)))
+      (ConfigUtils/workerPidsRoot conf (:worker-id worker))
       (int %)
       (:port worker)
       (:task-ids worker)
@@ -76,14 +76,14 @@
               (contains? spouts component-id) (.get_spout_object ^SpoutSpec (get spouts component-id))
               (contains? bolts component-id) (.get_bolt_object ^Bolt (get bolts component-id))
               (contains? state-spouts component-id) (.get_state_spout_object ^StateSpoutSpec (get state-spouts component-id))
-              true (throw-runtime "Could not find " component-id " in " topology)))
+              true (throw (RuntimeException. (str "Could not find " component-id " in " topology)))))
         obj (if (instance? ShellComponent obj)
               (if (contains? spouts component-id)
                 (ShellSpout. obj)
                 (ShellBolt. obj))
               obj )
         obj (if (instance? JavaObject obj)
-              (thrift/instantiate-java-object obj)
+              (Thrift/instantiateJavaObject obj)
               obj )]
     obj
     ))
@@ -150,6 +150,8 @@
            (when debug?
              (log-message "Emitting: " component-id " " stream " " values))
            (let [out-tasks (ArrayList.)]
+             (if (not (.containsKey stream->component->grouper stream))
+               (throw (IllegalArgumentException. (str "Unknown stream ID: " stream))))
              (fast-map-iter [[out-component grouper] (get stream->component->grouper stream)]
                (when (= :direct grouper)
                   ;;  TODO: this is wrong, need to check how the stream was declared

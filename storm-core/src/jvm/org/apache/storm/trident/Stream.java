@@ -19,24 +19,33 @@ package org.apache.storm.trident;
 
 import org.apache.storm.generated.Grouping;
 import org.apache.storm.generated.NullStruct;
-import org.apache.storm.trident.fluent.ChainedAggregatorDeclarer;
 import org.apache.storm.grouping.CustomStreamGrouping;
-import org.apache.storm.tuple.Fields;
-import org.apache.storm.utils.Utils;
+import org.apache.storm.trident.fluent.ChainedAggregatorDeclarer;
 import org.apache.storm.trident.fluent.GlobalAggregationScheme;
 import org.apache.storm.trident.fluent.GroupedStream;
 import org.apache.storm.trident.fluent.IAggregatableStream;
 import org.apache.storm.trident.operation.Aggregator;
 import org.apache.storm.trident.operation.Assembly;
 import org.apache.storm.trident.operation.CombinerAggregator;
+import org.apache.storm.trident.operation.Consumer;
 import org.apache.storm.trident.operation.Filter;
+import org.apache.storm.trident.operation.FlatMapFunction;
 import org.apache.storm.trident.operation.Function;
+import org.apache.storm.trident.operation.MapFunction;
 import org.apache.storm.trident.operation.ReducerAggregator;
+import org.apache.storm.trident.operation.builtin.ComparisonAggregator;
+import org.apache.storm.trident.operation.builtin.Max;
+import org.apache.storm.trident.operation.builtin.MaxWithComparator;
+import org.apache.storm.trident.operation.builtin.Min;
+import org.apache.storm.trident.operation.builtin.MinWithComparator;
 import org.apache.storm.trident.operation.impl.CombinerAggStateUpdater;
+import org.apache.storm.trident.operation.impl.ConsumerExecutor;
 import org.apache.storm.trident.operation.impl.FilterExecutor;
+import org.apache.storm.trident.operation.impl.FlatMapFunctionExecutor;
 import org.apache.storm.trident.operation.impl.GlobalBatchToPartition;
-import org.apache.storm.trident.operation.impl.ReducerAggStateUpdater;
 import org.apache.storm.trident.operation.impl.IndexHashBatchToPartition;
+import org.apache.storm.trident.operation.impl.MapFunctionExecutor;
+import org.apache.storm.trident.operation.impl.ReducerAggStateUpdater;
 import org.apache.storm.trident.operation.impl.SingleEmitAggregator.BatchToPartition;
 import org.apache.storm.trident.operation.impl.TrueFilter;
 import org.apache.storm.trident.partition.GlobalGrouping;
@@ -48,6 +57,7 @@ import org.apache.storm.trident.planner.PartitionNode;
 import org.apache.storm.trident.planner.ProcessorNode;
 import org.apache.storm.trident.planner.processor.AggregateProcessor;
 import org.apache.storm.trident.planner.processor.EachProcessor;
+import org.apache.storm.trident.planner.processor.MapProcessor;
 import org.apache.storm.trident.planner.processor.PartitionPersistProcessor;
 import org.apache.storm.trident.planner.processor.ProjectedProcessor;
 import org.apache.storm.trident.planner.processor.StateQueryProcessor;
@@ -55,7 +65,12 @@ import org.apache.storm.trident.state.QueryFunction;
 import org.apache.storm.trident.state.StateFactory;
 import org.apache.storm.trident.state.StateSpec;
 import org.apache.storm.trident.state.StateUpdater;
+import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.trident.util.TridentUtils;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.utils.Utils;
+
+import java.util.Comparator;
 
 /**
  * A Stream represents the core data model in Trident, and can be thought of as a "stream" of tuples that are processed
@@ -323,8 +338,84 @@ public class Stream implements IAggregatableStream {
     
     public Stream each(Fields inputFields, Filter filter) {
         return each(inputFields, new FilterExecutor(filter), new Fields());
-    }    
-    
+    }
+
+    /**
+     * Returns a stream consisting of the elements of this stream that match the given filter.
+     *
+     * @param filter the filter to apply to each trident tuple to determine if it should be included.
+     * @return the new stream
+     */
+    public Stream filter(Filter filter) {
+        return each(getOutputFields(), filter);
+    }
+
+    /**
+     * Returns a stream consisting of the elements of this stream that match the given filter.
+     *
+     * @param inputFields the fields of the input trident tuple to be selected.
+     * @param filter      the filter to apply to each trident tuple to determine if it should be included.
+     * @return the new stream
+     */
+    public Stream filter(Fields inputFields, Filter filter) {
+        return each(inputFields, filter);
+    }
+
+    /**
+     * Returns a stream consisting of the result of applying the given mapping function to the values of this stream.
+     *
+     * @param function a mapping function to be applied to each value in this stream.
+     * @return the new stream
+     */
+    public Stream map(MapFunction function) {
+        projectionValidation(getOutputFields());
+        return _topology.addSourcedNode(this,
+                                        new ProcessorNode(
+                                                _topology.getUniqueStreamId(),
+                                                _name,
+                                                getOutputFields(),
+                                                getOutputFields(),
+                                                new MapProcessor(getOutputFields(), new MapFunctionExecutor(function))));
+    }
+
+    /**
+     * Returns a stream consisting of the results of replacing each value of this stream with the contents
+     * produced by applying the provided mapping function to each value. This has the effect of applying
+     * a one-to-many transformation to the values of the stream, and then flattening the resulting elements into a new stream.
+     *
+     * @param function a mapping function to be applied to each value in this stream which produces new values.
+     * @return the new stream
+     */
+    public Stream flatMap(FlatMapFunction function) {
+        projectionValidation(getOutputFields());
+        return _topology.addSourcedNode(this,
+                                        new ProcessorNode(
+                                                _topology.getUniqueStreamId(),
+                                                _name,
+                                                getOutputFields(),
+                                                getOutputFields(),
+                                                new MapProcessor(getOutputFields(), new FlatMapFunctionExecutor(function))));
+    }
+
+    /**
+     * Returns a stream consisting of the trident tuples of this stream, additionally performing the provided action on
+     * each trident tuple as they are consumed from the resulting stream. This is mostly useful for debugging
+     * to see the tuples as they flow past a certain point in a pipeline.
+     *
+     * @param action the action to perform on the trident tuple as they are consumed from the stream
+     * @return the new stream
+     */
+    public Stream peek(Consumer action) {
+        projectionValidation(getOutputFields());
+        return _topology.addSourcedNode(this,
+                                        new ProcessorNode(
+                                                _topology.getUniqueStreamId(),
+                                                _name,
+                                                getOutputFields(),
+                                                getOutputFields(),
+                                                new MapProcessor(getOutputFields(), new ConsumerExecutor(action))));
+    }
+
     public ChainedAggregatorDeclarer chainedAgg() {
         return new ChainedAggregatorDeclarer(this, new BatchGlobalAggScheme());
     }
@@ -353,8 +444,95 @@ public class Stream implements IAggregatableStream {
         return chainedAgg()
                .partitionAggregate(inputFields, agg, functionFields)
                .chainEnd();
-    }  
-    
+    }
+
+    /**
+     * This aggregator operation computes the minimum of tuples by the given {@code inputFieldName} and it is
+     * assumed that its value is an instance of {@code Comparable}. If the value of tuple with field {@code inputFieldName} is not an
+     * instance of {@code Comparable} then it throws {@code ClassCastException}
+     *
+     * @param inputFieldName input field name
+     * @return the new stream with this operation.
+     */
+    public Stream minBy(String inputFieldName) {
+        Aggregator<ComparisonAggregator.State> min = new Min(inputFieldName);
+        return comparableAggregateStream(inputFieldName, min);
+    }
+
+    /**
+     * This aggregator operation computes the minimum of tuples by the given {@code inputFieldName} in a stream by
+     * using the given {@code comparator}. If the value of tuple with field {@code inputFieldName} is not an
+     * instance of {@code T} then it throws {@code ClassCastException}
+     *
+     * @param inputFieldName input field name
+     * @param comparator comparator used in for finding minimum of two tuple values of {@code inputFieldName}.
+     * @param <T> type of tuple's given input field value.
+     * @return the new stream with this operation.
+     */
+    public <T> Stream minBy(String inputFieldName, Comparator<T> comparator) {
+        Aggregator<ComparisonAggregator.State> min = new MinWithComparator<>(inputFieldName, comparator);
+        return comparableAggregateStream(inputFieldName, min);
+    }
+
+    /**
+     * This aggregator operation computes the minimum of tuples in a stream by using the given {@code comparator} with
+     * {@code TridentTuple}s.
+     *
+     * @param comparator comparator used in for finding minimum of two tuple values.
+     * @return the new stream with this operation.
+     */
+    public Stream min(Comparator<TridentTuple> comparator) {
+        Aggregator<ComparisonAggregator.State> min = new MinWithComparator<>(comparator);
+        return comparableAggregateStream(null, min);
+    }
+
+    /**
+     * This aggregator operation computes the maximum of tuples by the given {@code inputFieldName} and it is
+     * assumed that its value is an instance of {@code Comparable}. If the value of tuple with field {@code inputFieldName} is not an
+     * instance of {@code Comparable} then it throws {@code ClassCastException}
+     *
+     * @param inputFieldName input field name
+     * @return the new stream with this operation.
+     */
+    public Stream maxBy(String inputFieldName) {
+        Aggregator<ComparisonAggregator.State> max = new Max(inputFieldName);
+        return comparableAggregateStream(inputFieldName, max);
+    }
+
+    /**
+     * This aggregator operation computes the maximum of tuples by the given {@code inputFieldName} in a stream by
+     * using the given {@code comparator}. If the value of tuple with field {@code inputFieldName} is not an
+     * instance of {@code T} then it throws {@code ClassCastException}
+     *
+     * @param inputFieldName input field name
+     * @param comparator comparator used in for finding maximum of two tuple values of {@code inputFieldName}.
+     * @param <T> type of tuple's given input field value.
+     * @return the new stream with this operation.
+     */
+    public <T> Stream maxBy(String inputFieldName, Comparator<T> comparator) {
+        Aggregator<ComparisonAggregator.State> max = new MaxWithComparator<>(inputFieldName, comparator);
+        return comparableAggregateStream(inputFieldName, max);
+    }
+
+    /**
+     * This aggregator operation computes the maximum of tuples in a stream by using the given {@code comparator} with
+     * {@code TridentTuple}s.
+     *
+     * @param comparator comparator used in for finding maximum of two tuple values.
+     * @return the new stream with this operation.
+     */
+    public Stream max(Comparator<TridentTuple> comparator) {
+        Aggregator<ComparisonAggregator.State> max = new MaxWithComparator<>(comparator);
+        return comparableAggregateStream(null, max);
+    }
+
+    private <T> Stream comparableAggregateStream(String inputFieldName, Aggregator<T> aggregator) {
+        if(inputFieldName != null) {
+            projectionValidation(new Fields(inputFieldName));
+        }
+        return partitionAggregate(getOutputFields(), aggregator, getOutputFields());
+    }
+
     public Stream aggregate(Aggregator agg, Fields functionFields) {
         return aggregate(null, agg, functionFields);
     }

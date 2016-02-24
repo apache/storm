@@ -1,11 +1,56 @@
 ## 2.0.0
+ * STORM-1273: port backtype.storm.cluster to java
+ * STORM-1479: use a simple implemention for IntSerializer
+ * STORM-1255: port storm_utils.clj to java and split Time tests into its
+ * STORM-1566: Worker exits with error o.a.s.d.worker [ERROR] Error on initialization of server mk-worker
+ * STORM-1558: Utils in java breaks component page due to illegal type cast
+ * STORM-1553: port event.clj to java
+ * STORM-1262: port backtype.storm.command.dev-zookeeper to java.
+ * STORM-1243: port backtype.storm.command.healthcheck to java.
+ * STORM-1246: port backtype.storm.local-state to java.
+ * STORM-1516: Fixed issue in writing pids with distributed cluster mode.
+ * STORM-1253: port backtype.storm.timer to java
+ * STORM-1258: port thrift.clj to Thrift.java
+ * STORM-1336: Evalute/Port JStorm cgroup support and implement cgroup support for RAS
+ * STORM-1511: min/max operators implementation in Trident streams API.
+ * STROM-1263: port backtype.storm.command.kill-topology to java
+ * STORM-1260: port backtype.storm.command.activate to java
+ * STORM-1261: port backtype.storm.command.deactivate to java
+ * STORM-1264: port backtype.storm.command.list to java
+ * STORM-1272: port backtype.storm.disruptor to java
+ * STORM-1248: port backtype.storm.messaging.loader to java
+ * STORM-1538: Exception being thrown after Utils conversion to java
+ * STORM-1242: migrate backtype.storm.command.config-value to java
+ * STORM-1226: Port backtype.storm.util to java
+ * STORM-1436: Random test failure on BlobStoreTest / HdfsBlobStoreImplTest (occasionally killed)
+ * STORM-1476: Filter -c options from args and add them as part of storm.options
+ * STORM-1257: port backtype.storm.zookeeper to java
+ * STORM-1504: Add Serializer and instruction for AvroGenericRecordBolt
+ * STORM-1524: Add Pluggable daemon metrics Reporters
+ * STORM-1521: When using Kerberos login from keytab with multiple bolts/executors ticket is not renewed in hbase bolt.
 
 ## 1.0.0
+ * STORM-1522: REST API throws invalid worker log links
+ * STORM-1541: Change scope of 'hadoop-minicluster' to test
+ * STORM-1532: Fix readCommandLineOpts to parse JSON correctly in windows
+ * STORM-1539: Improve Storm ACK-ing performance
+ * STORM-1519: Storm syslog logging not confirming to RFC5426 3.1
+ * STORM-1520: Nimbus Clojure/Zookeeper issue ("stateChanged" method not found)
+ * STORM-1531: Junit and mockito dependencies need to have correct scope defined in storm-elasticsearch pom.xml
+ * STORM-1526: Improve Storm core performance
+ * STORM-1517: Add peek api in trident stream
+ * STORM-1455: kafka spout should not reset to the beginning of partition when offsetoutofrange exception occurs
+ * STORM-1505: Add map, flatMap and filter functions in trident stream
+ * STORM-1518: Backport of STORM-1504
+ * STORM-1510: Fix broken nimbus log link
+ * STORM-1503: Worker should not crash on failure to send heartbeats to Pacemaker/ZK
+ * STORM-1176: Checkpoint window evaluated/expired state
+ * STORM-1494: Add link to supervisor log in Storm UI
  * STORM-1496: Nimbus periodically throws blobstore-related exception
  * STORM-1484: ignore subproject .classpath & .project file
  * STORM-1478: make bolts getComponentConfiguration method cleaner/simpler
  * STORM-1499: fix wrong package name for storm trident
- * STORM-1463: added file scehma to log4j config files for windows env
+ * STORM-1463: added file schema to log4j config files for windows env
  * STORM-1485: DRPC Connectivity Issues
  * STORM-1486: Fix storm-kafa documentation
  * STORM-1214: add javadoc for Trident Streams and Operations
