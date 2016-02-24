@@ -178,8 +178,7 @@
 (defn get-error-time
   [error]
   (if error
-    (.get_error_time_secs ^ErrorInfo error)
-    0))
+    (.get_error_time_secs ^ErrorInfo error)))
 
 (defn worker-dump-link [host port topology-id]
   (url-format "http://%s:%s/dumps/%s/%s"
@@ -513,7 +512,7 @@
      "errorTime" (get-error-time error-info)
      "errorHost" host
      "errorPort" port
-     "errorLapsedSecs" (time-delta (get-error-time error-info))
+     "errorLapsedSecs" (if-let [t (get-error-time error-info)] (time-delta t))
      "errorWorkerLogLink" (worker-log-link host port topo-id secure?)}))
 
 (defn- common-agg-stats-json
@@ -646,7 +645,7 @@
                                                (.get_port e)
                                                topology-id
                                                secure?)
-        "errorLapsedSecs" (time-delta (get-error-time e))
+        "errorLapsedSecs" (if-let [t (get-error-time e)] (time-delta t))
         "error" (.get_error e)})}))
 
 (defmulti unpack-comp-agg-stat
