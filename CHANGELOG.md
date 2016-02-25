@@ -1,4 +1,5 @@
 ## 1.0.0
+ * STORM-1540: Fix Debug/Sampling for Trident
  * STORM-1569: Allowing users to specify the nimbus thrift server queue size.
  * STORM-1552: Fix topology event sampling log dir 
  * STORM-1511: min/max operations support on a trident stream
