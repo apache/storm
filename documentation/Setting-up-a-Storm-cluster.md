@@ -64,11 +64,13 @@ storm.local.dir: "C:\\storm-local"
 ```
 If you use a relative path,it will be relative to where you installed storm(STORM_HOME).
 You can leave it empty with default value `$STORM_HOME/storm-local`
-3) **nimbus.host**: The worker nodes need to know which machine is the master in order to download topology jars and confs. For example:
+
+3) **nimbus.seeds**: The worker nodes need to know which machines are the candidate of master in order to download topology jars and confs. For example:
 
 ```yaml
-nimbus.host: "111.222.333.44"
+nimbus.seeds: ["111.222.333.44"]
 ```
+You're encouraged to fill out the value to list of **machine's FQDN**. If you want to set up Nimbus H/A, you have to address all machines' FQDN which run nimbus. You may want to leave it to default value when you just want to set up 'pseudo-distributed' cluster, but you're still encouraged to fill out FQDN.
 
 4) **supervisor.slots.ports**: For each worker machine, you configure how many workers run on that machine with this config. Each worker uses a single port for receiving messages, and this setting defines which ports are open for use. If you define five ports here, then Storm will allocate up to five workers to run on this machine. If you define three ports, Storm will only run up to three. By default, this setting is configured to run 4 workers on the ports 6700, 6701, 6702, and 6703. For example:
 
@@ -110,6 +112,6 @@ The last step is to launch all the Storm daemons. It is critical that you run ea
 
 1. **Nimbus**: Run the command "bin/storm nimbus" under supervision on the master machine.
 2. **Supervisor**: Run the command "bin/storm supervisor" under supervision on each worker machine. The supervisor daemon is responsible for starting and stopping worker processes on that machine.
-3. **UI**: Run the Storm UI (a site you can access from the browser that gives diagnostics on the cluster and topologies) by running the command "bin/storm ui" under supervision. The UI can be accessed by navigating your web browser to http://{nimbus host}:8080. 
+3. **UI**: Run the Storm UI (a site you can access from the browser that gives diagnostics on the cluster and topologies) by running the command "bin/storm ui" under supervision. The UI can be accessed by navigating your web browser to http://{ui host}:8080. 
 
 As you can see, running the daemons is very straightforward. The daemons will log to the logs/ directory in wherever you extracted the Storm release.
