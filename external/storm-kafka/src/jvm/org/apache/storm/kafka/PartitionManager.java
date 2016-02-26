@@ -59,7 +59,6 @@ public class PartitionManager {
     DynamicPartitionConnections _connections;
     ZkState _state;
     Map _stormConf;
-    Boolean _isActive = true;
     long numberFailed, numberAcked;
     public PartitionManager(DynamicPartitionConnections connections, String topologyInstanceId, ZkState state, Map stormConf, SpoutConfig spoutConfig, Partition id) {
         _partition = id;
@@ -89,11 +88,6 @@ public class PartitionManager {
             LOG.warn("Error reading and/or parsing at ZkNode: " + path, e);
         }
         
-        
-        //if leader == -1, set the manager to inactive.
-        if (!KafkaUtils.checkLeader(stormConf, spoutConfig, id)) {
-    	        _isActive = false;
-        }
 
         String topic = _partition.topic;
         Long currentOffset = KafkaUtils.getOffset(_consumer, topic, id.partition, spoutConfig);

@@ -98,6 +98,7 @@ public class OpaquePartitionedTridentSpoutExecutor implements ICommitterTridentS
                 List<ISpoutPartition> partitions = _emitter.getOrderedPartitions(coordinatorMeta);
                 _partitionStates.clear();
                 List<ISpoutPartition> myPartitions = new ArrayList<>();
+                //计算自己这个task负责哪些分区
                 for(int i=_index; i < partitions.size(); i+=_numTasks) {
                     ISpoutPartition p = partitions.get(i);
                     String id = p.getId();
