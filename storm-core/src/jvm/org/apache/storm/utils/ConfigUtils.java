@@ -44,12 +44,13 @@ public class ConfigUtils {
 
     // A singleton instance allows us to mock delegated static methods in our
     // tests by subclassing.
-    private static ConfigUtils _instance = new ConfigUtils();;
+    private static ConfigUtils _instance = new ConfigUtils();
 
     /**
      * Provide an instance of this class for delegates to use.  To mock out
      * delegated methods, provide an instance of a subclass that overrides the
      * implementation of the delegated method.
+     *
      * @param u a Utils instance
      * @return the previously set instance
      */
@@ -66,7 +67,11 @@ public class ConfigUtils {
             dir = System.getProperty("storm.log.dir");
         } else if ((conf = readStormConfig()).get("storm.log.dir") != null) {
             dir = String.valueOf(conf.get("storm.log.dir"));
-        } else  {
+        } else if (System.getProperty("storm.local.dir") != null) {
+            dir = System.getProperty("storm.local.dir");
+        } else if (conf.get("storm.local.dir") != null) {
+            dir = (String) conf.get("storm.local.dir");
+        } else {
             dir = concatIfNotNull(System.getProperty("storm.home")) + FILE_SEPARATOR + "logs";
         }
         try {
@@ -405,7 +410,7 @@ public class ConfigUtils {
     }
 
     public String workerArtifactsRootImpl(Map conf) {
-        String artifactsDir = (String)conf.get(Config.STORM_WORKERS_ARTIFACTS_DIR);
+        String artifactsDir = (String) conf.get(Config.STORM_WORKERS_ARTIFACTS_DIR);
         if (artifactsDir == null) {
             return (getLogDir() + FILE_SEPARATOR + "workers-artifacts");
         } else {
@@ -426,7 +431,7 @@ public class ConfigUtils {
     }
 
     public static String workerArtifactsPidPath(Map conf, String id, Integer port) {
-        return (workerArtifactsRoot(conf, id, port) + FILE_SEPARATOR +  "worker.pid");
+        return (workerArtifactsRoot(conf, id, port) + FILE_SEPARATOR + "worker.pid");
     }
 
     public static File getLogMetaDataFile(String fname) {
@@ -472,15 +477,15 @@ public class ConfigUtils {
     public static Map overrideLoginConfigWithSystemProperty(Map conf) { // note that we delete the return value
         String loginConfFile = System.getProperty("java.security.auth.login.config");
         if (loginConfFile != null) {
-             conf.put("java.security.auth.login.config", loginConfFile);
+            conf.put("java.security.auth.login.config", loginConfFile);
         }
         return conf;
     }
 
     /* TODO: make sure test these two functions in manual tests */
     public static List<String> getTopoLogsUsers(Map topologyConf) {
-        List<String> logsUsers = (List<String>)topologyConf.get(Config.LOGS_USERS);
-        List<String> topologyUsers = (List<String>)topologyConf.get(Config.TOPOLOGY_USERS);
+        List<String> logsUsers = (List<String>) topologyConf.get(Config.LOGS_USERS);
+        List<String> topologyUsers = (List<String>) topologyConf.get(Config.TOPOLOGY_USERS);
         Set<String> mergedUsers = new HashSet<String>();
         if (logsUsers != null) {
             for (String user : logsUsers) {
@@ -502,8 +507,8 @@ public class ConfigUtils {
     }
 
     public static List<String> getTopoLogsGroups(Map topologyConf) {
-        List<String> logsGroups = (List<String>)topologyConf.get(Config.LOGS_GROUPS);
-        List<String> topologyGroups = (List<String>)topologyConf.get(Config.TOPOLOGY_GROUPS);
+        List<String> logsGroups = (List<String>) topologyConf.get(Config.LOGS_GROUPS);
+        List<String> topologyGroups = (List<String>) topologyConf.get(Config.TOPOLOGY_GROUPS);
         Set<String> mergedGroups = new HashSet<String>();
         if (logsGroups != null) {
             for (String group : logsGroups) {
