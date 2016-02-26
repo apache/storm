@@ -157,11 +157,6 @@
 (defn supervisor-log-link [host]
   (url-format "http://%s:%s/daemonlog?file=supervisor.log" host (*STORM-CONF* LOGVIEWER-PORT)))
 
-(defn get-error-time
-  [error]
-  (if error
-    (time-delta (.get_error_time_secs ^ErrorInfo error))))
-
 (defn get-error-data
   [error]
   (if error
@@ -183,8 +178,7 @@
 (defn get-error-time
   [error]
   (if error
-    (.get_error_time_secs ^ErrorInfo error)
-    ""))
+    (.get_error_time_secs ^ErrorInfo error)))
 
 (defn worker-dump-link [host port topology-id]
   (url-format "http://%s:%s/dumps/%s/%s"
@@ -518,7 +512,7 @@
      "errorTime" (get-error-time error-info)
      "errorHost" host
      "errorPort" port
-     "errorLapsedSecs" (get-error-time error-info)
+     "errorLapsedSecs" (if-let [t (get-error-time error-info)] (time-delta t))
      "errorWorkerLogLink" (worker-log-link host port topo-id secure?)}))
 
 (defn- common-agg-stats-json
@@ -644,14 +638,14 @@
                     reverse)]
     {"componentErrors"
      (for [^ErrorInfo e errors]
-       {"errorTime" (* 1000 (long (.get_error_time_secs e)))
+       {"errorTime" (get-error-time e)
         "errorHost" (.get_host e)
         "errorPort"  (.get_port e)
         "errorWorkerLogLink"  (worker-log-link (.get_host e)
                                                (.get_port e)
                                                topology-id
                                                secure?)
-        "errorLapsedSecs" (get-error-time e)
+        "errorLapsedSecs" (if-let [t (get-error-time e)] (time-delta t))
         "error" (.get_error e)})}))
 
 (defmulti unpack-comp-agg-stat
