@@ -1,4 +1,5 @@
 ## 1.0.0
+ * STORM-1488: UI Topology Page component last error timestamp is from 1970
  * STORM-1542: Remove profile action retry in case of non-zero exit code
  * STORM-1540: Fix Debug/Sampling for Trident
  * STORM-1569: Allowing users to specify the nimbus thrift server queue size.
