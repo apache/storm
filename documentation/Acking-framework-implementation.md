@@ -28,7 +28,7 @@ Finally, pass on an ack of our own.
 
 ### Pending tuples and the `RotatingMap`
 
-The acker stores pending tuples in a [`RotatingMap`](https://github.com/apache/storm/blob/master/storm-core/src/jvm/backtype/storm/utils/RotatingMap.java#L19), a simple device used in several places within Storm to efficiently time-expire a process.
+The acker stores pending tuples in a [`RotatingMap`](https://github.com/apache/storm/blob/master/storm-core/src/jvm/org/apache/storm/utils/RotatingMap.java#L19), a simple device used in several places within Storm to efficiently time-expire a process.
 
 The RotatingMap behaves as a HashMap, and offers the same O(1) access guarantees.
 

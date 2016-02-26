@@ -68,7 +68,7 @@ In addition to these parameters, SpoutConfig contains the following fields that 
 
     // Exponential back-off retry settings.  These are used when retrying messages after a bolt
     // calls OutputCollector.fail().
-    // Note: be sure to set backtype.storm.Config.MESSAGE_TIMEOUT_SECS appropriately to prevent
+    // Note: be sure to set org.apache.storm.Config.MESSAGE_TIMEOUT_SECS appropriately to prevent
     // resubmitting the message while still retrying.
     public long retryInitialDelayMs = 0;
     public double retryDelayMultiplier = 1.0;

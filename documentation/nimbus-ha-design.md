@@ -204,7 +204,7 @@ be rare in general case.
 You can use nimbus ha with default configuration , however the default configuration assumes a single nimbus host so it
 trades off replication for lower topology submission latency. Depending on your use case you can adjust following configurations:
 * storm.codedistributor.class : This is a string representing fully qualified class name of a class that implements
-backtype.storm.codedistributor.ICodeDistributor. The default is set to "backtype.storm.codedistributor.LocalFileSystemCodeDistributor".
+org.apache.storm.codedistributor.ICodeDistributor. The default is set to "org.apache.storm.codedistributor.LocalFileSystemCodeDistributor".
 This class leverages local file system to store both meta files and code/configs. This class adds extra load on zookeeper as even after
 downloading the code-distrbutor meta file it contacts zookeeper in order to figure out hosts from where it can download
 actual code/config and to get the current replication count. An alternative is to use 

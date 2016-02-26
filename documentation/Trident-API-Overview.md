@@ -324,7 +324,7 @@ Repartitioning operations run a function to change how the tuples are partitione
 3. partitionBy: partitionBy takes in a set of fields and does semantic partitioning based on that set of fields. The fields are hashed and modded by the number of target partitions to select the target partition. partitionBy guarantees that the same set of fields always goes to the same target partition.
 4. global: All tuples are sent to the same partition. The same partition is chosen for all batches in the stream.
 5. batchGlobal: All tuples in the batch are sent to the same partition. Different batches in the stream may go to different partitions. 
-6. partition: This method takes in a custom partitioning function that implements backtype.storm.grouping.CustomStreamGrouping
+6. partition: This method takes in a custom partitioning function that implements org.apache.storm.grouping.CustomStreamGrouping
 
 ## Aggregation operations
 

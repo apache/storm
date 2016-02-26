@@ -241,7 +241,7 @@ sentence-spout[1](org.apache.storm.flux.spouts.GenericShellSpout)
 ---------------- BOLTS ---------------
 splitsentence[1](org.apache.storm.flux.bolts.GenericShellBolt)
 log[1](org.apache.storm.flux.wrappers.bolts.LogInfoBolt)
-count[1](backtype.storm.testing.TestWordCounter)
+count[1](org.apache.storm.testing.TestWordCounter)
 --------------- STREAMS ---------------
 sentence-spout --SHUFFLE--> splitsentence
 splitsentence --FIELDS--> count
@@ -260,7 +260,7 @@ definition consists of the following:
       * A list of spouts, each identified by a unique ID
       * A list of bolts, each identified by a unique ID
       * A list of "stream" objects representing a flow of tuples between spouts and bolts
-  4. **OR** (A JVM class that can produce a `backtype.storm.generated.StormTopology` instance:
+  4. **OR** (A JVM class that can produce a `org.apache.storm.generated.StormTopology` instance:
       * A `topologySource` definition.
 
 
@@ -275,13 +275,13 @@ config:
 # spout definitions
 spouts:
   - id: "spout-1"
-    className: "backtype.storm.testing.TestWordSpout"
+    className: "org.apache.storm.testing.TestWordSpout"
     parallelism: 1
 
 # bolt definitions
 bolts:
   - id: "bolt-1"
-    className: "backtype.storm.testing.TestWordCounter"
+    className: "org.apache.storm.testing.TestWordCounter"
     parallelism: 1
   - id: "bolt-2"
     className: "org.apache.storm.flux.wrappers.bolts.LogInfoBolt"
@@ -385,7 +385,7 @@ components:
     className: "storm.kafka.StringScheme"
 
   - id: "stringMultiScheme"
-    className: "backtype.storm.spout.SchemeAsMultiScheme"
+    className: "org.apache.storm.spout.SchemeAsMultiScheme"
     constructorArgs:
       - ref: "stringScheme" # component with id "stringScheme" must be declared above.
 ```
@@ -493,7 +493,7 @@ FileRotationPolicy rotationPolicy = new FileSizeRotationPolicy(5.0f, Units.MB);
 
 ## Topology Config
 The `config` section is simply a map of Storm topology configuration parameters that will be passed to the
-`backtype.storm.StormSubmitter` as an instance of the `backtype.storm.Config` class:
+`org.apache.storm.StormSubmitter` as an instance of the `org.apache.storm.Config` class:
 
 ```yaml
 config:
@@ -538,7 +538,7 @@ topologySource:
 ```
 
 __N.B.:__ The specified method must accept a single argument of type `java.util.Map<String, Object>` or
-`backtype.storm.Config`, and return a `backtype.storm.generated.StormTopology` object.
+`org.apache.storm.Config`, and return a `org.apache.storm.generated.StormTopology` object.
 
 # YAML DSL
 ## Spouts and Bolts
@@ -572,7 +572,7 @@ components:
     className: "storm.kafka.StringScheme"
 
   - id: "stringMultiScheme"
-    className: "backtype.storm.spout.SchemeAsMultiScheme"
+    className: "org.apache.storm.spout.SchemeAsMultiScheme"
     constructorArgs:
       - ref: "stringScheme"
 
@@ -642,7 +642,7 @@ bolts:
     # ...
 
   - id: "count"
-    className: "backtype.storm.testing.TestWordCounter"
+    className: "org.apache.storm.testing.TestWordCounter"
     parallelism: 1
     # ...
 ```
@@ -709,7 +709,7 @@ Custom stream groupings are defined by setting the grouping type to `CUSTOM` and
 that tells Flux how to instantiate the custom class. The `customClass` definition extends `component`, so it supports
 constructor arguments, references, and properties as well.
 
-The example below creates a Stream with an instance of the `backtype.storm.testing.NGrouping` custom stream grouping
+The example below creates a Stream with an instance of the `org.apache.storm.testing.NGrouping` custom stream grouping
 class.
 
 ```yaml
@@ -719,7 +719,7 @@ class.
     grouping:
       type: CUSTOM
       customClass:
-        className: "backtype.storm.testing.NGrouping"
+        className: "org.apache.storm.testing.NGrouping"
         constructorArgs:
           - 1
 ```
@@ -787,7 +787,7 @@ bolts:
     parallelism: 1
 
   - id: "count"
-    className: "backtype.storm.testing.TestWordCounter"
+    className: "org.apache.storm.testing.TestWordCounter"
     parallelism: 1
 
 #stream definitions

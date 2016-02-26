@@ -113,9 +113,9 @@
 <p>To do realtime computation on Storm, you create what are called &quot;topologies&quot;. A topology is a graph of computation. Each node in a topology contains processing logic, and links between nodes indicate how data should be passed around between nodes.</p>
 
 <p>Running a topology is straightforward. First, you package all your code and dependencies into a single jar. Then, you run a command like the following:</p>
-<div class="highlight"><pre><code class="language-" data-lang="">storm jar all-my-code.jar backtype.storm.MyTopology arg1 arg2
+<div class="highlight"><pre><code class="language-" data-lang="">storm jar all-my-code.jar org.apache.storm.MyTopology arg1 arg2
 </code></pre></div>
-<p>This runs the class <code>backtype.storm.MyTopology</code> with the arguments <code>arg1</code> and <code>arg2</code>. The main function of the class defines the topology and submits it to Nimbus. The <code>storm jar</code> part takes care of connecting to Nimbus and uploading the jar.</p>
+<p>This runs the class <code>org.apache.storm.MyTopology</code> with the arguments <code>arg1</code> and <code>arg2</code>. The main function of the class defines the topology and submits it to Nimbus. The <code>storm jar</code> part takes care of connecting to Nimbus and uploading the jar.</p>
 
 <p>Since topology definitions are just Thrift structs, and Nimbus is a Thrift service, you can create and submit topologies using any programming language. The above example is the easiest way to do it from a JVM-based language. See <a href="/documentation/Running-topologies-on-a-production-cluster.html">Running topologies on a production cluster</a> for more information on starting and stopping topologies.</p>
 
@@ -181,11 +181,11 @@
 
 <p>This code defines the nodes using the <code>setSpout</code> and <code>setBolt</code> methods. These methods take as input a user-specified id, an object containing the processing logic, and the amount of parallelism you want for the node. In this example, the spout is given id &quot;words&quot; and the bolts are given ids &quot;exclaim1&quot; and &quot;exclaim2&quot;. </p>
 
-<p>The object containing the processing logic implements the <a href="/javadoc/apidocs/backtype/storm/topology/IRichSpout.html">IRichSpout</a> interface for spouts and the <a href="/javadoc/apidocs/backtype/storm/topology/IRichBolt.html">IRichBolt</a> interface for bolts.</p>
+<p>The object containing the processing logic implements the <a href="/javadoc/apidocs/org/apache/storm/topology/IRichSpout.html">IRichSpout</a> interface for spouts and the <a href="/javadoc/apidocs/org/apache/storm/topology/IRichBolt.html">IRichBolt</a> interface for bolts.</p>
 
 <p>The last parameter, how much parallelism you want for the node, is optional. It indicates how many threads should execute that component across the cluster. If you omit it, Storm will only allocate one thread for that node.</p>
 
-<p><code>setBolt</code> returns an <a href="/javadoc/apidocs/backtype/storm/topology/InputDeclarer.html">InputDeclarer</a> object that is used to define the inputs to the Bolt. Here, component &quot;exclaim1&quot; declares that it wants to read all the tuples emitted by component &quot;words&quot; using a shuffle grouping, and component &quot;exclaim2&quot; declares that it wants to read all the tuples emitted by component &quot;exclaim1&quot; using a shuffle grouping. &quot;shuffle grouping&quot; means that tuples should be randomly distributed from the input tasks to the bolt&#39;s tasks. There are many ways to group data between components. These will be explained in a few sections.</p>
+<p><code>setBolt</code> returns an <a href="/javadoc/apidocs/org/apache/storm/topology/InputDeclarer.html">InputDeclarer</a> object that is used to define the inputs to the Bolt. Here, component &quot;exclaim1&quot; declares that it wants to read all the tuples emitted by component &quot;words&quot; using a shuffle grouping, and component &quot;exclaim2&quot; declares that it wants to read all the tuples emitted by component &quot;exclaim1&quot; using a shuffle grouping. &quot;shuffle grouping&quot; means that tuples should be randomly distributed from the input tasks to the bolt&#39;s tasks. There are many ways to group data between components. These will be explained in a few sections.</p>
 
 <p>If you wanted component &quot;exclaim2&quot; to read all the tuples emitted by both component &quot;words&quot; and component &quot;exclaim1&quot;, you would write component &quot;exclaim2&quot;&#39;s definition like this:</p>
 <div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">builder</span><span class="o">.</span><span class="na">setBolt</span><span class="o">(</span><span class="s">"exclaim2"</span><span class="o">,</span> <span class="k">new</span> <span class="n">ExclamationBolt</span><span class="o">(),</span> <span class="mi">5</span><span class="o">)</span>
@@ -237,7 +237,7 @@
 </code></pre></div>
 <p>The <code>prepare</code> method provides the bolt with an <code>OutputCollector</code> that is used for emitting tuples from this bolt. Tuples can be emitted at anytime from the bolt -- in the <code>prepare</code>, <code>execute</code>, or <code>cleanup</code> methods, or even asynchronously in another thread. This <code>prepare</code> implementation simply saves the <code>OutputCollector</code> as an instance variable to be used later on in the <code>execute</code> method.</p>
 
-<p>The <code>execute</code> method receives a tuple from one of the bolt&#39;s inputs. The <code>ExclamationBolt</code> grabs the first field from the tuple and emits a new tuple with the string &quot;!!!&quot; appended to it. If you implement a bolt that subscribes to multiple input sources, you can find out which component the <a href="/javadoc/apidocs/backtype/storm/tuple/Tuple.html">Tuple</a> came from by using the <code>Tuple#getSourceComponent</code> method.</p>
+<p>The <code>execute</code> method receives a tuple from one of the bolt&#39;s inputs. The <code>ExclamationBolt</code> grabs the first field from the tuple and emits a new tuple with the string &quot;!!!&quot; appended to it. If you implement a bolt that subscribes to multiple input sources, you can find out which component the <a href="/javadoc/apidocs/org/apache/storm/tuple/Tuple.html">Tuple</a> came from by using the <code>Tuple#getSourceComponent</code> method.</p>
 
 <p>There&#39;s a few other things going on in the <code>execute</code> method, namely that the input tuple is passed as the first argument to <code>emit</code> and the input tuple is acked on the final line. These are part of Storm&#39;s reliability API for guaranteeing no data loss and will be explained later in this tutorial. </p>
 
@@ -298,7 +298,7 @@
 <li><strong>TOPOLOGY_DEBUG</strong> (set with <code>setDebug</code>), when set to true, tells Storm to log every message every emitted by a component. This is useful in local mode when testing topologies, but you probably want to keep this turned off when running topologies on the cluster.</li>
 </ol>
 
-<p>There&#39;s many other configurations you can set for the topology. The various configurations are detailed on <a href="/javadoc/apidocs/backtype/storm/Config.html">the Javadoc for Config</a>.</p>
+<p>There&#39;s many other configurations you can set for the topology. The various configurations are detailed on <a href="/javadoc/apidocs/org/apache/storm/Config.html">the Javadoc for Config</a>.</p>
 
 <p>To learn about how to set up your development environment so that you can run topologies in local mode (such as in Eclipse), see <a href="/documentation/Creating-a-new-Storm-project.html">Creating a new Storm project</a>.</p>
 
@@ -310,7 +310,7 @@
 
 <p>When a task for Bolt A emits a tuple to Bolt B, which task should it send the tuple to?</p>
 
-<p>A &quot;stream grouping&quot; answers this question by telling Storm how to send tuples between sets of tasks. Before we dig into the different kinds of stream groupings, let&#39;s take a look at another topology from <a href="http://github.com/apache/storm/blob/master/examples/storm-starter">storm-starter</a>. This <a href="https://github.com/apache/storm/blob/master/examples/storm-starter/src/jvm/storm/starter/WordCountTopology.java">WordCountTopology</a> reads sentences off of a spout and streams out of <code>WordCountBolt</code> the total number of times it has seen that word before:</p>
+<p>A &quot;stream grouping&quot; answers this question by telling Storm how to send tuples between sets of tasks. Before we dig into the different kinds of stream groupings, let&#39;s take a look at another topology from <a href="http://github.com/apache/storm/blob/master/examples/storm-starter">storm-starter</a>. This <a href="https://github.com/apache/storm/blob/master/examples/storm-starter/src/jvm/org/apache/storm/starter/WordCountTopology.java">WordCountTopology</a> reads sentences off of a spout and streams out of <code>WordCountBolt</code> the total number of times it has seen that word before:</p>
 <div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">TopologyBuilder</span> <span class="n">builder</span> <span class="o">=</span> <span class="k">new</span> <span class="n">TopologyBuilder</span><span class="o">();</span>
 
 <span class="n">builder</span><span class="o">.</span><span class="na">setSpout</span><span class="o">(</span><span class="s">"sentences"</span><span class="o">,</span> <span class="k">new</span> <span class="n">RandomSentenceSpout</span><span class="o">(),</span> <span class="mi">5</span><span class="o">);</span>        
