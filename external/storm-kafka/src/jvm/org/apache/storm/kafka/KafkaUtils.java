@@ -24,12 +24,6 @@ import org.apache.storm.kafka.trident.IBrokerReader;
 import org.apache.storm.kafka.trident.StaticBrokerReader;
 import org.apache.storm.kafka.trident.ZkBrokerReader;
 import org.apache.storm.metric.api.IMetric;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.CuratorFrameworkFactory;
-import org.apache.curator.retry.RetryNTimes;
-import org.apache.storm.Config;
-import org.apache.storm.utils.Utils;
-import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -284,6 +278,4 @@ public class KafkaUtils {
     public static String taskId(int taskIndex, int totalTasks) {
         return "Task [" + (taskIndex + 1) + "/" + totalTasks + "] ";
     }
-    
- 
 }

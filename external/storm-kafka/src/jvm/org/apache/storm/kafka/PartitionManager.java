@@ -87,7 +87,6 @@ public class PartitionManager {
         } catch (Throwable e) {
             LOG.warn("Error reading and/or parsing at ZkNode: " + path, e);
         }
-        
 
         String topic = _partition.topic;
         Long currentOffset = KafkaUtils.getOffset(_consumer, topic, id.partition, spoutConfig);
