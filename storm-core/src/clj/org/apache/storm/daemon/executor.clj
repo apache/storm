@@ -16,9 +16,8 @@
 (ns org.apache.storm.daemon.executor
   (:use [org.apache.storm.daemon common])
   (:import [org.apache.storm.generated Grouping Grouping$_Fields]
-           [java.io Serializable]
-           [org.apache.storm.stats BoltExecutorStats SpoutExecutorStats])
-  (:use [org.apache.storm util config log])
+           [java.io Serializable])
+  (:use [org.apache.storm util config log stats])
   (:import [java.util List Random HashMap ArrayList LinkedList Map])
   (:import [org.apache.storm ICredentialsListener Thrift])
   (:import [org.apache.storm.hooks ITaskHook])
@@ -42,6 +41,7 @@
            [org.json.simple JSONValue]
            [com.lmax.disruptor.dsl ProducerType]
            [org.apache.storm StormTimer])
+  (:require [org.apache.storm [stats :as stats]])
   (:require [org.apache.storm.daemon [task :as task]])
   (:require [org.apache.storm.daemon.builtin-metrics :as builtin-metrics])
   (:require [clojure.set :as set]))
@@ -257,8 +257,8 @@
      :batch-transfer-queue batch-transfer->worker
      :transfer-fn (mk-executor-transfer-fn batch-transfer->worker storm-conf)
      :suicide-fn (:suicide-fn worker)
-      :storm-cluster-state (ClusterUtils/mkStormClusterState (:state-store worker) (Utils/getWorkerACL storm-conf)
-                             (ClusterStateContext. DaemonType/WORKER))
+     :storm-cluster-state (ClusterUtils/mkStormClusterState (:state-store worker) (Utils/getWorkerACL storm-conf)
+                            (ClusterStateContext. DaemonType/WORKER))
      :type executor-type
      ;; TODO: should refactor this to be part of the executor specific map (spout or bolt with :common field)
      :stats (mk-executor-stats <> (ConfigUtils/samplingRate storm-conf))
@@ -406,7 +406,7 @@
     (reify
       RunningExecutor
       (render-stats [this]
-        (clojurify-structure (.renderStats (:stats executor-data))))
+        (stats/render-stats! (:stats executor-data)))
       (get-executor-id [this]
         executor-id)
       (credentials-changed [this creds]
@@ -446,7 +446,7 @@
     (.fail spout msg-id)
     (task/apply-hooks (:user-context task-data) .spoutFail (SpoutFailInfo. msg-id task-id time-delta))
     (when time-delta
-      (.spoutFailedTuple (:stats executor-data) (:stream tuple-info) time-delta))))
+      (stats/spout-failed-tuple! (:stats executor-data) (:stream tuple-info) time-delta))))
 
 (defn- ack-spout-msg [executor-data task-data msg-id tuple-info time-delta id]
   (let [storm-conf (:storm-conf executor-data)
@@ -457,7 +457,7 @@
     (.ack spout msg-id)
     (task/apply-hooks (:user-context task-data) .spoutAck (SpoutAckInfo. msg-id task-id time-delta))
     (when time-delta
-      (.spoutAckedTuple (:stats executor-data) (:stream tuple-info) time-delta))))
+      (stats/spout-acked-tuple! (:stats executor-data) (:stream tuple-info) time-delta))))
 
 (defn mk-task-receiver [executor-data tuple-action-fn]
   (let [task-ids (:task-ids executor-data)
@@ -738,7 +738,7 @@
 
                                   (task/apply-hooks user-context .boltExecute (BoltExecuteInfo. tuple task-id delta))
                                   (when delta
-                                    (.boltExecuteTuple executor-stats
+                                    (stats/bolt-execute-tuple! executor-stats
                                                                (.getSourceComponent tuple)
                                                                (.getSourceStreamId tuple)
                                                                delta)))))))
@@ -811,7 +811,7 @@
                                                 (log-message "BOLT ack TASK: " task-id " TIME: " delta " TUPLE: " tuple))
                                               (task/apply-hooks user-context .boltAck (BoltAckInfo. tuple task-id delta))
                                               (when delta
-                                                (.boltAckedTuple executor-stats
+                                                (stats/bolt-acked-tuple! executor-stats
                                                                          (.getSourceComponent tuple)
                                                                          (.getSourceStreamId tuple)
                                                                          delta))))
@@ -826,7 +826,7 @@
                                                 (log-message "BOLT fail TASK: " task-id " TIME: " delta " TUPLE: " tuple))
                                               (task/apply-hooks user-context .boltFail (BoltFailInfo. tuple task-id delta))
                                               (when delta
-                                                (.boltFailedTuple executor-stats
+                                                (stats/bolt-failed-tuple! executor-stats
                                                                           (.getSourceComponent tuple)
                                                                           (.getSourceStreamId tuple)
                                                                           delta))))
@@ -861,7 +861,7 @@
 
 ;; TODO: refactor this to be part of an executor-specific map
 (defmethod mk-executor-stats :spout [_ rate]
-  (SpoutExecutorStats/mkSpoutStats rate))
+  (stats/mk-spout-stats rate))
 
 (defmethod mk-executor-stats :bolt [_ rate]
-  (BoltExecutorStats/mkBoltStats rate))
+  (stats/mk-bolt-stats rate))

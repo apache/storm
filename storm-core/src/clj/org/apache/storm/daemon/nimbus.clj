@@ -14,8 +14,7 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns org.apache.storm.daemon.nimbus
-  (:import [org.apache.thrift.server THsHaServer THsHaServer$Args]
-           [org.apache.storm.stats StatsUtil])
+  (:import [org.apache.thrift.server THsHaServer THsHaServer$Args])
   (:import [org.apache.storm.generated KeyNotFoundException])
   (:import [org.apache.storm.blobstore LocalFsBlobStore])
   (:import [org.apache.thrift.protocol TBinaryProtocol TBinaryProtocol$Factory])
@@ -42,7 +41,7 @@
   (:import [org.apache.storm.nimbus NimbusInfo])
   (:import [org.apache.storm.utils TimeCacheMap Time TimeCacheMap$ExpiredCallback Utils ConfigUtils TupleUtils ThriftTopologyUtils
             BufferFileInputStream BufferInputStream])
-  (:import [org.apache.storm.generated NotAliveException AlreadyAliveException StormTopology ErrorInfo
+  (:import [org.apache.storm.generated NotAliveException AlreadyAliveException StormTopology ErrorInfo ClusterWorkerHeartbeat
             ExecutorInfo InvalidTopologyException Nimbus$Iface Nimbus$Processor SubmitOptions TopologyInitialStatus
             KillOptions RebalanceOptions ClusterSummary SupervisorSummary TopologySummary TopologyInfo TopologyHistoryInfo
             ExecutorSummary AuthorizationException GetInfoOptions NumErrorsChoice SettableBlobMeta ReadableBlobMeta
@@ -52,7 +51,8 @@
   (:import [org.apache.storm.validation ConfigValidation])
   (:import [org.apache.storm.cluster ClusterStateContext DaemonType StormClusterStateImpl ClusterUtils])
   (:use [org.apache.storm util config log converter])
-  (:require [org.apache.storm [converter :as converter]])
+  (:require [org.apache.storm [converter :as converter]
+                              [stats :as stats]])
   (:require [clojure.set :as set])
   (:import [org.apache.storm.daemon.common StormBase Assignment])
   (:import [org.apache.storm.zookeeper Zookeeper])
@@ -916,7 +916,7 @@
         storm-cluster-state (:storm-cluster-state nimbus)
         ^INimbus inimbus (:inimbus nimbus)
         ;; read all the topologies
-          topology-ids (.activeStorms storm-cluster-state)
+        topology-ids (.activeStorms storm-cluster-state)
         topologies (into {} (for [tid topology-ids]
                               {tid (read-topology-details nimbus tid)}))
         topologies (Topologies. topologies)
@@ -1679,7 +1679,7 @@
               executor->host+port (map-val (fn [[node port]]
                                              [(node->host node) port])
                                     executor->node+port)
-              nodeinfos (clojurify-structure (StatsUtil/extractNodeInfosFromHbForComp executor->host+port task->component false component_id))
+              nodeinfos (stats/extract-nodeinfos-from-hb-for-comp executor->host+port task->component false component_id)
               all-pending-actions-for-topology (clojurify-profile-request (.getTopologyProfileRequests storm-cluster-state id))
               latest-profile-actions (remove nil? (map (fn [nodeInfo]
                                                          (->> all-pending-actions-for-topology
@@ -1716,7 +1716,7 @@
                                (.containsKey named-loggers logger-name))
                         (.remove named-loggers logger-name))))))
             (log-message "Setting log config for " storm-name ":" merged-log-config)
-          (.setTopologyLogConfig storm-cluster-state id merged-log-config)))
+            (.setTopologyLogConfig storm-cluster-state id merged-log-config)))
 
       (uploadNewCredentials [this storm-name credentials]
         (mark! nimbus:num-uploadNewCredentials-calls)
@@ -1800,7 +1800,7 @@
               storm-name (topology-conf TOPOLOGY-NAME)
               _ (check-authorization! nimbus storm-name topology-conf "getLogConfig")
              storm-cluster-state (:storm-cluster-state nimbus)
-              log-config (.topologyLogConfig storm-cluster-state id nil)]
+             log-config (.topologyLogConfig storm-cluster-state id nil)]
            (if log-config log-config (LogConfig.))))
 
       (^String getTopologyConf [this ^String id]
@@ -1923,8 +1923,7 @@
                                               heartbeat (get beats executor)
                                               excutorstats (:stats heartbeat)
                                               excutorstats (if excutorstats
-                                                      (StatsUtil/thriftifyExecutorStats excutorstats))]
-                                              
+                                                      (stats/thriftify-executor-stats excutorstats))]
                                           (doto
                                               (ExecutorSummary. (thriftify-executor-id executor)
                                                                 (-> executor first task->component)
@@ -1987,7 +1986,7 @@
               nimbus-host-port-info (:nimbus-host-port-info nimbus)
               conf (:conf nimbus)]
           (if (instance? LocalFsBlobStore blob-store)
-            (.setupBlobstore storm-cluster-state blob-key nimbus-host-port-info (get-version-for-key blob-key nimbus-host-port-info conf)))
+              (.setupBlobstore storm-cluster-state blob-key nimbus-host-port-info (get-version-for-key blob-key nimbus-host-port-info conf)))
           (log-debug "Created state in zookeeper" storm-cluster-state blob-store nimbus-host-port-info)))
 
       (^void uploadBlobChunk [this ^String session ^ByteBuffer blob-chunk]
@@ -2113,15 +2112,19 @@
         [this ^String topo-id ^String window ^boolean include-sys?]
         (mark! nimbus:num-getTopologyPageInfo-calls)
         (let [info (get-common-topo-info topo-id "getTopologyPageInfo")
+
               exec->node+port (:executor->node+port (:assignment info))
-              topo-page-info (StatsUtil/aggTopoExecsStats topo-id
+              last-err-fn (partial get-last-error
+                                   (:storm-cluster-state info)
+                                   topo-id)
+              topo-page-info (stats/agg-topo-execs-stats topo-id
                                                          exec->node+port
                                                          (:task->component info)
                                                          (:beats info)
                                                          (:topology info)
                                                          window
                                                          include-sys?
-                                                         (:storm-cluster-state info))]
+                                                         last-err-fn)]
           (when-let [owner (:owner (:base info))]
             (.set_owner topo-page-info owner))
           (when-let [sched-status (.get @(:id->sched-status nimbus) topo-id)]
@@ -2162,7 +2165,7 @@
               executor->host+port (map-val (fn [[node port]]
                                              [(node->host node) port])
                                            executor->node+port)
-              comp-page-info (StatsUtil/aggCompExecsStats executor->host+port
+              comp-page-info (stats/agg-comp-execs-stats executor->host+port
                                                          (:task->component info)
                                                          (:beats info)
                                                          window

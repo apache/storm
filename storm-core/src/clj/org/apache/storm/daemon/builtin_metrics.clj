@@ -16,7 +16,8 @@
 (ns org.apache.storm.daemon.builtin-metrics
   (:import [org.apache.storm.metric.api CountMetric StateMetric IMetric IStatefulObject])
   (:import [org.apache.storm.metric.internal MultiCountStatAndMetric MultiLatencyStatAndMetric])
-  (:import [org.apache.storm Config]))
+  (:import [org.apache.storm Config])
+  (:use [org.apache.storm.stats]))
 
 (defrecord BuiltinSpoutMetrics [^MultiCountStatAndMetric ack-count
                                 ^MultiLatencyStatAndMetric complete-latency
@@ -37,18 +38,18 @@
 
 (defn make-data [executor-type stats]
   (condp = executor-type
-    :spout (BuiltinSpoutMetrics. (.getAcked stats)
-                                 (.getCompleteLatencies stats)
-                                 (.getFailed stats)
-                                 (.getEmitted stats)
-                                 (.getTransferred stats))
-    :bolt (BuiltinBoltMetrics. (.getAcked stats)
-                               (.getProcessLatencies stats)
-                               (.getFailed stats)
-                               (.getExecuted stats)
-                               (.getExecuteLatencies stats)
-                               (.getEmitted stats)
-                               (.getTransferred stats))))
+    :spout (BuiltinSpoutMetrics. (stats-acked stats)
+                                 (stats-complete-latencies stats)
+                                 (stats-failed stats)
+                                 (stats-emitted stats)
+                                 (stats-transferred stats))
+    :bolt (BuiltinBoltMetrics. (stats-acked stats)
+                               (stats-process-latencies stats)
+                               (stats-failed stats)
+                               (stats-executed stats)
+                               (stats-execute-latencies stats)
+                               (stats-emitted stats)
+                               (stats-transferred stats))))
 
 (defn make-spout-throttling-data []
   (SpoutThrottlingMetrics. (CountMetric.)
@@ -88,10 +89,10 @@
                      (int (get storm-conf Config/TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS)))))
 
 (defn skipped-max-spout! [^SpoutThrottlingMetrics m stats]
-  (-> m .skipped-max-spout (.incrBy (.getRate stats))))
+  (-> m .skipped-max-spout (.incrBy (stats-rate stats))))
 
 (defn skipped-throttle! [^SpoutThrottlingMetrics m stats]
-  (-> m .skipped-throttle (.incrBy (.getRate stats))))
+  (-> m .skipped-throttle (.incrBy (stats-rate stats))))
 
 (defn skipped-inactive! [^SpoutThrottlingMetrics m stats]
-  (-> m .skipped-inactive (.incrBy (.getRate stats))))
+  (-> m .skipped-inactive (.incrBy (stats-rate stats))))

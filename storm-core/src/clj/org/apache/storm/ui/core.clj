@@ -21,14 +21,13 @@
         ring.middleware.multipart-params)
   (:use [ring.middleware.json :only [wrap-json-params]])
   (:use [hiccup core page-helpers])
-  (:use [org.apache.storm config util log converter])
+  (:use [org.apache.storm config util log stats converter])
   (:use [org.apache.storm.ui helpers])
   (:use [org.apache.storm.daemon [common :only [ACKER-COMPONENT-ID ACKER-INIT-STREAM-ID ACKER-ACK-STREAM-ID
                                               ACKER-FAIL-STREAM-ID mk-authorization-handler
                                               start-metrics-reporters]]])
   (:import [org.apache.storm.utils Time]
            [org.apache.storm.generated NimbusSummary]
-           [org.apache.storm.stats StatsUtil]
            [org.apache.storm.ui UIHelpers IConfigurator FilterConfiguration])
   (:use [clojure.string :only [blank? lower-case trim split]])
   (:import [org.apache.storm.generated ExecutorSpecificStats
@@ -112,7 +111,7 @@
 
 (defn executor-summary-type
   [topology ^ExecutorSummary s]
-  (StatsUtil/componentType topology (.get_component_id s)))
+  (component-type topology (.get_component_id s)))
 
 (defn is-ack-stream
   [stream]
@@ -164,15 +163,10 @@
 (defn supervisor-log-link [host]
   (UIHelpers/urlFormat "http://%s:%s/daemonlog?file=supervisor.log" (to-array [host (*STORM-CONF* LOGVIEWER-PORT)])))
 
-(defn get-error-time
-  [error]
-  (if error
-    (Time/deltaSecs (.get_error_time_secs ^ErrorInfo error))))
-
 (defn get-error-data
   [error]
   (if error
-    (StatsUtil/errorSubset (.get_error ^ErrorInfo error))
+    (error-subset (.get_error ^ErrorInfo error))
     ""))
 
 (defn get-error-port
@@ -190,8 +184,7 @@
 (defn get-error-time
   [error]
   (if error
-    (.get_error_time_secs ^ErrorInfo error)
-    ""))
+    (.get_error_time_secs ^ErrorInfo error)))
 
 (defn worker-dump-link [host port topology-id]
   (UIHelpers/urlFormat "http://%s:%s/dumps/%s/%s"
@@ -239,23 +232,23 @@
                    bolt-summs (get bolt-comp-summs id)
                    spout-summs (get spout-comp-summs id)
                    bolt-cap (if bolt-summs
-                              (StatsUtil/computeBoltCapacity bolt-summs)
+                              (compute-bolt-capacity bolt-summs)
                               0)]
                {:type (if bolt-summs "bolt" "spout")
                 :capacity bolt-cap
                 :latency (if bolt-summs
                            (get-in
-                             (clojurify-structure (StatsUtil/boltStreamsStats bolt-summs true))
+                             (bolt-streams-stats bolt-summs true)
                              [:process-latencies window])
                            (get-in
-                             (clojurify-structure (StatsUtil/spoutStreamsStats spout-summs true))
+                             (spout-streams-stats spout-summs true)
                              [:complete-latencies window]))
                 :transferred (or
                                (get-in
-                                 (clojurify-structure (StatsUtil/spoutStreamsStats spout-summs true))
+                                 (spout-streams-stats spout-summs true)
                                  [:transferred window])
                                (get-in
-                                 (clojurify-structure (StatsUtil/boltStreamsStats bolt-summs true))
+                                 (bolt-streams-stats bolt-summs true)
                                  [:transferred window]))
                 :stats (let [mapfn (fn [dat]
                                      (map (fn [^ExecutorSummary summ]
@@ -275,12 +268,6 @@
                            :sani-stream (sanitize-stream-name (.get_streamId global-stream-id))
                            :grouping (clojure.core/name (thrift/grouping-type group))})})])]
     (into {} (doall components))))
-
-(defn mk-include-sys-fn
-  [include-sys?]
-  (if include-sys?
-    (fn [_] true)
-    (fn [stream] (and (string? stream) (not (Utils/isSystemId stream))))))
 
 (defn stream-boxes [datmap]
   (let [filter-fn (mk-include-sys-fn true)
@@ -503,7 +490,7 @@
        "window" w
        "emitted" (get-in stats [:emitted w])
        "transferred" (get-in stats [:transferred w])
-       "completeLatency" (StatsUtil/floatStr (get-in stats [:complete-latencies w]))
+       "completeLatency" (float-str (get-in stats [:complete-latencies w]))
        "acked" (get-in stats [:acked w])
        "failed" (get-in stats [:failed w])})))
 
@@ -540,7 +527,7 @@
      "errorTime" (get-error-time error-info)
      "errorHost" host
      "errorPort" port
-     "errorLapsedSecs" (get-error-time error-info)
+     "errorLapsedSecs" (if-let [t (get-error-time error-info)] (Time/deltaSecs t))
      "errorWorkerLogLink" (worker-log-link host port topo-id secure?)}))
 
 (defn- common-agg-stats-json
@@ -566,7 +553,7 @@
       (get-error-json topo-id (.get_last_error s) secure?)
       {"spoutId" id
        "encodedSpoutId" (URLEncoder/encode id)
-       "completeLatency" (StatsUtil/floatStr (.get_complete_latency_ms ss))})))
+       "completeLatency" (float-str (.get_complete_latency_ms ss))})))
 
 (defmethod comp-agg-stats-json ComponentType/BOLT
   [topo-id secure? [id ^ComponentAggregateStats s]]
@@ -577,10 +564,10 @@
       (get-error-json topo-id (.get_last_error s) secure?)
       {"boltId" id
        "encodedBoltId" (URLEncoder/encode id)
-       "capacity" (StatsUtil/floatStr (.get_capacity ss))
-       "executeLatency" (StatsUtil/floatStr (.get_execute_latency_ms ss))
+       "capacity" (float-str (.get_capacity ss))
+       "executeLatency" (float-str (.get_execute_latency_ms ss))
        "executed" (.get_executed ss)
-       "processLatency" (StatsUtil/floatStr (.get_process_latency_ms ss))})))
+       "processLatency" (float-str (.get_process_latency_ms ss))})))
 
 (defn- unpack-topology-page-info
   "Unpacks the serialized object to data structures"
@@ -666,14 +653,14 @@
                     reverse)]
     {"componentErrors"
      (for [^ErrorInfo e errors]
-       {"errorTime" (* 1000 (long (.get_error_time_secs e)))
+       {"errorTime" (get-error-time e)
         "errorHost" (.get_host e)
         "errorPort"  (.get_port e)
         "errorWorkerLogLink"  (worker-log-link (.get_host e)
                                                (.get_port e)
                                                topology-id
                                                secure?)
-        "errorLapsedSecs" (get-error-time e)
+        "errorLapsedSecs" (if-let [t (get-error-time e)] (Time/deltaSecs t))
         "error" (.get_error e)})}))
 
 (defmulti unpack-comp-agg-stat
@@ -690,10 +677,10 @@
      "transferred" (.get_transferred comm-s)
      "acked" (.get_acked comm-s)
      "failed" (.get_failed comm-s)
-     "executeLatency" (StatsUtil/floatStr (.get_execute_latency_ms bolt-s))
-     "processLatency"  (StatsUtil/floatStr (.get_process_latency_ms bolt-s))
+     "executeLatency" (float-str (.get_execute_latency_ms bolt-s))
+     "processLatency"  (float-str (.get_process_latency_ms bolt-s))
      "executed" (.get_executed bolt-s)
-     "capacity" (StatsUtil/floatStr (.get_capacity bolt-s))}))
+     "capacity" (float-str (.get_capacity bolt-s))}))
 
 (defmethod unpack-comp-agg-stat ComponentType/SPOUT
   [[window ^ComponentAggregateStats s]]
@@ -706,7 +693,7 @@
      "transferred" (.get_transferred comm-s)
      "acked" (.get_acked comm-s)
      "failed" (.get_failed comm-s)
-     "completeLatency" (StatsUtil/floatStr (.get_complete_latency_ms spout-s))}))
+     "completeLatency" (float-str (.get_complete_latency_ms spout-s))}))
 
 (defn- unpack-bolt-input-stat
   [[^GlobalStreamId s ^ComponentAggregateStats stats]]
@@ -717,8 +704,8 @@
     {"component" comp-id
      "encodedComponentId" (URLEncoder/encode comp-id)
      "stream" (.get_streamId s)
-     "executeLatency" (StatsUtil/floatStr (.get_execute_latency_ms bas))
-     "processLatency" (StatsUtil/floatStr (.get_process_latency_ms bas))
+     "executeLatency" (float-str (.get_execute_latency_ms bas))
+     "processLatency" (float-str (.get_process_latency_ms bas))
      "executed" (Utils/nullToZero (.get_executed bas))
      "acked" (Utils/nullToZero (.get_acked cas))
      "failed" (Utils/nullToZero (.get_failed cas))}))
@@ -741,7 +728,7 @@
     {"stream" stream-id
      "emitted" (Utils/nullToZero (.get_emitted cas))
      "transferred" (Utils/nullToZero (.get_transferred cas))
-     "completeLatency" (StatsUtil/floatStr (.get_complete_latency_ms spout-s))
+     "completeLatency" (float-str (.get_complete_latency_ms spout-s))
      "acked" (Utils/nullToZero (.get_acked cas))
      "failed" (Utils/nullToZero (.get_failed cas))}))
 
@@ -768,10 +755,10 @@
      "port" port
      "emitted" (Utils/nullToZero (.get_emitted cas))
      "transferred" (Utils/nullToZero (.get_transferred cas))
-     "capacity" (StatsUtil/floatStr (Utils/nullToZero (.get_capacity bas)))
-     "executeLatency" (StatsUtil/floatStr (.get_execute_latency_ms bas))
+     "capacity" (float-str (Utils/nullToZero (.get_capacity bas)))
+     "executeLatency" (float-str (.get_execute_latency_ms bas))
      "executed" (Utils/nullToZero (.get_executed bas))
-     "processLatency" (StatsUtil/floatStr (.get_process_latency_ms bas))
+     "processLatency" (float-str (.get_process_latency_ms bas))
      "acked" (Utils/nullToZero (.get_acked cas))
      "failed" (Utils/nullToZero (.get_failed cas))
      "workerLogLink" (worker-log-link host port topology-id secure?)}))
@@ -796,7 +783,7 @@
      "port" port
      "emitted" (Utils/nullToZero (.get_emitted cas))
      "transferred" (Utils/nullToZero (.get_transferred cas))
-     "completeLatency" (StatsUtil/floatStr (.get_complete_latency_ms sas))
+     "completeLatency" (float-str (.get_complete_latency_ms sas))
      "acked" (Utils/nullToZero (.get_acked cas))
      "failed" (Utils/nullToZero (.get_failed cas))
      "workerLogLink" (worker-log-link host port topology-id secure?)}))
@@ -1228,7 +1215,7 @@
            (json-response {"status" "ok"
                            "id" host-port}
                           (m "callback")))))
-       
+
   (GET "/api/v1/topology/:id/profiling/dumpheap/:host-port"
        [:as {:keys [servlet-request]} id host-port & m]
        (populate-context! servlet-request)
@@ -1244,7 +1231,7 @@
            (json-response {"status" "ok"
                            "id" host-port}
                           (m "callback")))))
-  
+
   (GET "/" [:as {cookies :cookies}]
     (mark! ui:num-main-page-http-requests)
     (resp/redirect "/index.html"))
