@@ -166,8 +166,9 @@ public class DynamicBrokersReader {
                 throw new RuntimeException("No leader found for partition " + partition);
             }
             return leader;
-        } catch (RuntimeException e) {
-            throw e;
+        } catch (UnsupportedEncodingException e) {
+            LOG.error("Error parsing JSON in the zookeeper because of the Character Encoding is not supported.");
+            throw new RuntimeException(e);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
