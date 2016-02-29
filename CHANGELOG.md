@@ -1,4 +1,5 @@
 ## 1.0.0
+ * STORM-1576: fix ConcurrentModificationException in addCheckpointInputs
  * STORM-1521: When using Kerberos login from keytab with multiple bolts/executors ticket is not renewed
  * STORM-1488: UI Topology Page component last error timestamp is from 1970
  * STORM-1542: Remove profile action retry in case of non-zero exit code
