@@ -2,6 +2,7 @@
 title: Trident API Overview
 layout: documentation
 documentation: true
+
 ---
 
 The core data model in Trident is the "Stream", processed as a series of batches. A stream is partitioned among the nodes in the cluster, and operations applied to a stream are applied in parallel across each partition.
@@ -154,7 +155,150 @@ For example, the below code would print the result of converting the words to up
          })
          .groupBy(new Fields("word"))
          .persistentAggregate(new MemoryMapState.Factory(), new Count(), new Fields("count"))
- ```
+```
+
+### min and minBy
+`min` and `minBy` operations return minimum value on each partition of a batch of tuples in a trident stream.
+
+Suppose, a trident stream contains fields ["device-id", "count"] and the following partitions of tuples
+
+```
+Partition 0:
+[123, 2]
+[113, 54]
+[23,  28]
+[237, 37]
+[12,  23]
+[62,  17]
+[98,  42]
+
+Partition 1:
+[64,  18]
+[72,  54]
+[2,   28]
+[742, 71]
+[98,  45]
+[62,  12]
+[19,  174]
+
+
+Partition 2:
+[27,  94]
+[82,  23]
+[9,   86]
+[53,  71]
+[74,  37]
+[51,  49]
+[37,  98]
+
+```
+
+`minBy` operation can be applied on the above stream of tuples like below which results in emitting tuples with minimum values of `count` field in each partition.
+
+``` java
+  mystream.minBy(new Fields("count"))
+```
+Result of the above code on mentioned partitions is:
+ 
+```
+Partition 0:
+[123, 2]
+
+
+Partition 1:
+[62,  12]
+
+
+Partition 2:
+[82,  23]
+
+```
+
+You can look at other `min` and `minBy` operations on Stream
+``` java
+      public <T> Stream minBy(String inputFieldName, Comparator<T> comparator) 
+      public Stream min(Comparator<TridentTuple> comparator) 
+```
+Below example shows how these APIs can be used to find minimum using respective Comparators on a tuple. 
+
+``` java
+
+        FixedBatchSpout spout = new FixedBatchSpout(allFields, 10, Vehicle.generateVehicles(20));
+
+        TridentTopology topology = new TridentTopology();
+        Stream vehiclesStream = topology.newStream("spout1", spout).
+                each(allFields, new Debug("##### vehicles"));
+                
+        Stream slowVehiclesStream =
+                vehiclesStream
+                        .min(new SpeedComparator()) // Comparator w.r.t speed on received tuple.
+                        .each(vehicleField, new Debug("#### slowest vehicle"));
+
+        vehiclesStream
+                .minBy(Vehicle.FIELD_NAME, new EfficiencyComparator()) // Comparator w.r.t efficiency on received tuple.
+                .each(vehicleField, new Debug("#### least efficient vehicle"));
+
+```
+Example applications of these APIs can be located at [TridentMinMaxOfDevicesTopology](https://github.com/apache/storm/blob/master/examples/storm-starter/src/jvm/org/apache/storm/starter/trident/TridentMinMaxOfDevicesTopology.java) and [TridentMinMaxOfVehiclesTopology](https://github.com/apache/storm/blob/master/examples/storm-starter/src/jvm/org/apache/storm/starter/trident/TridentMinMaxOfVehiclesTopology.java) 
+
+### max and maxBy
+`max` and `maxBy` operations return maximum value on each partition of a batch of tuples in a trident stream.
+
+Suppose, a trident stream contains fields ["device-id", "count"] as mentioned in the above section.
+
+`max` and `maxBy` operations can be applied on the above stream of tuples like below which results in emitting tuples with maximum values of `count` field for each partition.
+
+``` java
+  mystream.maxBy(new Fields("count"))
+```
+Result of the above code on mentioned partitions is:
+ 
+```
+Partition 0:
+[113, 54]
+
+
+Partition 1:
+[19,  174]
+
+
+Partition 2:
+[37,  98]
+
+```
+
+You can look at other `max` and `maxBy` functions on Stream
+
+``` java
+
+      public <T> Stream maxBy(String inputFieldName, Comparator<T> comparator) 
+      public Stream max(Comparator<TridentTuple> comparator) 
+      
+```
+
+Below example shows how these APIs can be used to find maximum using respective Comparators on a tuple.
+
+``` java
+
+        FixedBatchSpout spout = new FixedBatchSpout(allFields, 10, Vehicle.generateVehicles(20));
+
+        TridentTopology topology = new TridentTopology();
+        Stream vehiclesStream = topology.newStream("spout1", spout).
+                each(allFields, new Debug("##### vehicles"));
+
+        vehiclesStream
+                .max(new SpeedComparator()) // Comparator w.r.t speed on received tuple.
+                .each(vehicleField, new Debug("#### fastest vehicle"))
+                .project(driverField)
+                .each(driverField, new Debug("##### fastest driver"));
+        
+        vehiclesStream
+                .maxBy(Vehicle.FIELD_NAME, new EfficiencyComparator()) // Comparator w.r.t efficiency on received tuple.
+                .each(vehicleField, new Debug("#### most efficient vehicle"));
+
+```
+
+Example applications of these APIs can be located at [TridentMinMaxOfDevicesTopology](https://github.com/apache/storm/blob/master/examples/storm-starter/src/jvm/org/apache/storm/starter/trident/TridentMinMaxOfDevicesTopology.java) and [TridentMinMaxOfVehiclesTopology](https://github.com/apache/storm/blob/master/examples/storm-starter/src/jvm/org/apache/storm/starter/trident/TridentMinMaxOfVehiclesTopology.java) 
 
 ### partitionAggregate
 
