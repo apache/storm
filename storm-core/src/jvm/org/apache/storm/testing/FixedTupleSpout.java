@@ -34,15 +34,15 @@ public class FixedTupleSpout implements IRichSpout {
     private static final Map<String, Integer> acked = new HashMap<String, Integer>();
     private static final Map<String, Integer> failed = new HashMap<String, Integer>();
 
-    public static int getNumAcked(String stormId) {
+    public int getNumAcked() {
         synchronized(acked) {
-            return get(acked, stormId, 0);
+            return acked.get(_id);
         }
     }
 
-    public static int getNumFailed(String stormId) {
+    public int getNumFailed() {
         synchronized(failed) {
-            return get(failed, stormId, 0);
+            return failed.get(_id);
         }
     }
     
