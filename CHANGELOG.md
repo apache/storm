@@ -1,4 +1,5 @@
 ## 1.0.0
+ * STORM-1587: Avoid NPE while prining Metrics
  * STORM-1570: Storm SQL support for nested fields and array
  * STORM-1576: fix ConcurrentModificationException in addCheckpointInputs
  * STORM-1521: When using Kerberos login from keytab with multiple bolts/executors ticket is not renewed
