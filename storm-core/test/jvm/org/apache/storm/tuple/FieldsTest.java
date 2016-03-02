@@ -43,26 +43,22 @@ public class FieldsTest {
         new Fields(new String[] {"foo", "bar", "foo"});
     }
 
-    private Fields getFields() {
-        return new Fields("foo", "bar");
-    }
-
     @Test
     public void getDoesNotThrowWithValidIndexTest() {
-        Fields fields = getFields();
+        Fields fields = new Fields("foo", "bar");
         Assert.assertEquals(fields.get(0), "foo");
         Assert.assertEquals(fields.get(1), "bar");
     }
 
     @Test(expected = IndexOutOfBoundsException.class)
     public void getThrowsWhenOutOfBoundsTest() {
-        Fields fields = getFields(); // only has two items
+        Fields fields = new Fields("foo", "bar");
         fields.get(2);
     }
 
     @Test
     public void fieldIndexTest() {
-        Fields fields = getFields();
+        Fields fields = new Fields("foo", "bar");
         Assert.assertEquals(fields.fieldIndex("foo"), 0);
         Assert.assertEquals(fields.fieldIndex("bar"), 1);
     }
@@ -74,7 +70,7 @@ public class FieldsTest {
 
     @Test
     public void containsTest() {
-        Fields fields = getFields();
+        Fields fields = new Fields("foo", "bar");
         Assert.assertTrue(fields.contains("foo"));
         Assert.assertTrue(fields.contains("bar"));
         Assert.assertFalse(fields.contains("baz"));
@@ -82,7 +78,7 @@ public class FieldsTest {
 
     @Test
     public void toListTest() {
-        Fields fields = getFields();
+        Fields fields = new Fields("foo", "bar");
         List<String> fieldList = fields.toList();
         Assert.assertEquals(fieldList.size(), 2);
         Assert.assertEquals(fieldList.get(0), "foo");
@@ -91,7 +87,7 @@ public class FieldsTest {
 
     @Test
     public void toIteratorTest() {
-        Fields fields = getFields();
+        Fields fields = new Fields("foo", "bar");
         Iterator<String> fieldIter = fields.iterator();
 
         Assert.assertTrue(
@@ -111,7 +107,7 @@ public class FieldsTest {
 
     @Test
     public void selectTest() {
-        Fields fields = getFields(); 
+        Fields fields = new Fields("foo", "bar"); 
         List<Object> second = Arrays.asList(new Object[]{"b"});
         List<Object> tuple = Arrays.asList(new Object[]{"a", "b", "c"});
         List<Object> pickSecond = fields.select(new Fields("bar"), tuple);
@@ -124,7 +120,7 @@ public class FieldsTest {
 
     @Test(expected = NullPointerException.class)
     public void selectingUnknownFieldThrowsTest() {
-        Fields fields = getFields();
+        Fields fields = new Fields("foo", "bar");
         fields.select(new Fields("bar", "baz"), Arrays.asList(new Object[]{"a", "b", "c"}));
     }
 }
