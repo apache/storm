@@ -71,6 +71,12 @@ public enum ThriftConnectionType {
         return Utils.getInt(conf.get(_threadsConf));
     }
 
+    /**
+     * @deprecated  As SimpleTrasportPlugin is deprecated, no other thrift transport plugin uses this method.
+     * @param conf
+     * @return
+     */
+    @Deprecated
     public int getMaxBufferSize(Map conf) {
         return Utils.getInt(conf.get(_buffConf));
     }
