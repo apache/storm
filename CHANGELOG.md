@@ -1,4 +1,6 @@
 ## 0.10.1
+
+ * STORM-1596: Do not use single Kerberos TGT instance between multiple threads
  * STORM-1482: add missing 'break' for RedisStoreBolt
  * STORM-1481: avoid Math.abs(Integer) get a negative value
  * STORM-1121: Deprecate test only configuraton nimbus.reassign
