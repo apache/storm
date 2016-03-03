@@ -550,13 +550,6 @@ public class Config extends HashMap<String, Object> {
     public static final String NIMBUS_DAEMON_USER = "nimbus.daemon.user";
 
     /**
-     * The maximum buffer size thrift should use when reading messages.
-     */
-    @isInteger
-    @isPositiveNumber
-    public static final String NIMBUS_THRIFT_MAX_BUFFER_SIZE = "nimbus.thrift.max_buffer_size";
-
-    /**
      * This parameter is used by the storm-deploy project to configure the
      * jvm options for the nimbus daemon.
      */
@@ -1087,13 +1080,6 @@ public class Config extends HashMap<String, Object> {
     @isInteger
     @isPositiveNumber
     public static final String DRPC_WORKER_THREADS = "drpc.worker.threads";
-
-    /**
-     * The maximum buffer size thrift should use when reading messages for DRPC.
-     */
-    @isNumber
-    @isPositiveNumber
-    public static final String DRPC_MAX_BUFFER_SIZE = "drpc.max_buffer_size";
 
     /**
      * DRPC thrift server queue size

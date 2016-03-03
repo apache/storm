@@ -56,9 +56,9 @@
 
 (deftest Simple-authentication-test
   (let [port (available-port)]
-    (with-test-cluster [port nil nil "org.apache.storm.security.auth.SimpleTransportPlugin"]
+    (with-test-cluster [port nil nil "org.apache.storm.security.auth.plain.PlainSaslTransportPlugin"]
       (let [storm-conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
-                              {STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.SimpleTransportPlugin"
+                              {STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.plain.PlainSaslTransportPlugin"
                                STORM-NIMBUS-RETRY-TIMES 0})
             client (NimbusClient. storm-conf "localhost" port nimbus-timeout)
             nimbus_client (.getClient client)]
@@ -71,9 +71,9 @@
   (let [port (available-port)]
     (with-test-cluster [port nil
                   "org.apache.storm.security.auth.authorizer.NoopAuthorizer"
-                  "org.apache.storm.security.auth.SimpleTransportPlugin"]
+                  "org.apache.storm.security.auth.plain.PlainSaslTransportPlugin"]
       (let [storm-conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
-                               {STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.SimpleTransportPlugin"
+                               {STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.plain.PlainSaslTransportPlugin"
                                 STORM-NIMBUS-RETRY-TIMES 0})
             client (NimbusClient. storm-conf "localhost" port nimbus-timeout)
             nimbus_client (.getClient client)]
@@ -86,9 +86,9 @@
   (let [port (available-port)]
     (with-test-cluster [port nil
                   "org.apache.storm.security.auth.authorizer.DenyAuthorizer"
-                  "org.apache.storm.security.auth.SimpleTransportPlugin"]
+                  "org.apache.storm.security.auth.plain.PlainSaslTransportPlugin"]
       (let [storm-conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
-                               {STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.SimpleTransportPlugin"
+                               {STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.plain.PlainSaslTransportPlugin"
                                Config/NIMBUS_THRIFT_PORT port
                                STORM-NIMBUS-RETRY-TIMES 0})
             client (NimbusClient. storm-conf "localhost" port nimbus-timeout)

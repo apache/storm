@@ -31,7 +31,8 @@
   (:import [org.apache.storm.utils NimbusClient ConfigUtils])
   (:import [org.apache.storm.security.auth.authorizer SimpleWhitelistAuthorizer SimpleACLAuthorizer])
   (:import [org.apache.storm.security.auth AuthUtils ThriftServer ThriftClient ShellBasedGroupsMapping
-            ReqContext SimpleTransportPlugin KerberosPrincipalToLocal ThriftConnectionType])
+            ReqContext KerberosPrincipalToLocal ThriftConnectionType])
+  (:import [org.apache.storm.security.auth.plain PlainSaslTransportPlugin])
   (:use [org.apache.storm util config])
   (:use [org.apache.storm.daemon common])
   (:use [org.apache.storm testing])
@@ -159,9 +160,9 @@
 
 (deftest Simple-authentication-test
   (let [a-port (available-port)]
-    (with-server [a-port nil nil "org.apache.storm.security.auth.SimpleTransportPlugin" nil]
+    (with-server [a-port nil nil "org.apache.storm.security.auth.plain.PlainSaslTransportPlugin" nil]
       (let [storm-conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
-                              {STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.SimpleTransportPlugin"})
+                              {STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.plain.PlainSaslTransportPlugin"})
             client (NimbusClient. storm-conf "localhost" a-port nimbus-timeout)
             nimbus_client (.getClient client)]
         (.activate nimbus_client "security_auth_test_topology")
@@ -179,9 +180,9 @@
   (let [a-port (available-port)]
     (with-server [a-port nil
                   "org.apache.storm.security.auth.authorizer.SimpleWhitelistAuthorizer"
-                  "org.apache.storm.testing.SingleUserSimpleTransport" nil]
+                  "org.apache.storm.security.auth.plain.PlainSaslTransportPlugin" nil]
       (let [storm-conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
-                              {STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.testing.SingleUserSimpleTransport"})
+                              {STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.plain.PlainSaslTransportPlugin"})
             client (NimbusClient. storm-conf "localhost" a-port nimbus-timeout)
             nimbus_client (.getClient client)]
         (testing "(Negative authorization) Authorization plugin should reject client request"
@@ -193,9 +194,9 @@
     (let [a-port (available-port)]
       (with-server [a-port nil
                     "org.apache.storm.security.auth.authorizer.SimpleWhitelistAuthorizer"
-                    "org.apache.storm.testing.SingleUserSimpleTransport" {SimpleWhitelistAuthorizer/WHITELIST_USERS_CONF ["user"]}]
+                    "org.apache.storm.security.auth.plain.PlainSaslTransportPlugin" {SimpleWhitelistAuthorizer/WHITELIST_USERS_CONF ["user"]}]
         (let [storm-conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
-                                {STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.testing.SingleUserSimpleTransport"})
+                                {STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.plain.PlainSaslTransportPlugin"})
               client (NimbusClient. storm-conf "localhost" a-port nimbus-timeout)
               nimbus_client (.getClient client)]
           (testing "(Positive authorization) Authorization plugin should accept client request"
@@ -336,9 +337,9 @@
   (let [a-port (available-port)]
     (with-server [a-port nil
                   "org.apache.storm.security.auth.authorizer.NoopAuthorizer"
-                  "org.apache.storm.security.auth.SimpleTransportPlugin" nil]
+                  "org.apache.storm.security.auth.plain.PlainSaslTransportPlugin" nil]
       (let [storm-conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
-                              {STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.SimpleTransportPlugin"})
+                              {STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.plain.PlainSaslTransportPlugin"})
             client (NimbusClient. storm-conf "localhost" a-port nimbus-timeout)
             nimbus_client (.getClient client)]
         (testing "(Positive authorization) Authorization plugin should accept client request"
@@ -349,9 +350,9 @@
   (let [a-port (available-port)]
     (with-server [a-port nil
                   "org.apache.storm.security.auth.authorizer.DenyAuthorizer"
-                  "org.apache.storm.security.auth.SimpleTransportPlugin" nil]
+                  "org.apache.storm.security.auth.plain.PlainSaslTransportPlugin" nil]
       (let [storm-conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
-                              {STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.SimpleTransportPlugin"
+                              {STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.plain.PlainSaslTransportPlugin"
                                Config/NIMBUS_THRIFT_PORT a-port
                                Config/NIMBUS_TASK_TIMEOUT_SECS nimbus-timeout})
             client (NimbusClient. storm-conf "localhost" a-port nimbus-timeout)
@@ -378,7 +379,7 @@
         (.close client))
 
       (let [storm-conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
-                              {STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.SimpleTransportPlugin"
+                              {STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.plain.PlainSaslTransportPlugin"
                                STORM-NIMBUS-RETRY-TIMES 0})
             client (NimbusClient. storm-conf "localhost" a-port nimbus-timeout)
             nimbus_client (.getClient client)]
