@@ -1,4 +1,5 @@
 ## 1.0.0
+ * STORM-1436: Set Travis Heap size to fit in memory limits in travis builds.
  * STORM-1529: Change default worker temp directory location for workers
  * STORM-1543: DRPCSpout should always try to reconnect disconnected DRPCInvocationsClient
  * STORM-1561: Supervisor should relaunch worker if assignments have changed
