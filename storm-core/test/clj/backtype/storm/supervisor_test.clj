@@ -253,7 +253,6 @@
           mock-worker-id "fake-worker-id"
           mock-cp (str file-path-separator "base" class-path-separator file-path-separator "stormjar.jar")
           mock-sensitivity "S3"
-          mock-cp "/base:/stormjar.jar"
           exp-args-fn (fn [opts topo-opts classpath]
                        (concat [(supervisor/java-cmd) "-cp" classpath 
                                (str "-Dlogfile.name=" mock-storm-id "-worker-" mock-port ".log")
@@ -261,8 +260,8 @@
                                 (str "-Dstorm.id=" mock-storm-id)
                                 (str "-Dworker.id=" mock-worker-id)
                                 (str "-Dworker.port=" mock-port)
-                               "-Dstorm.log.dir=/logs"
-                               "-Dlog4j.configurationFile=/log4j2/worker.xml"
+                                (str "-Dstorm.log.dir=" file-path-separator "logs")
+                                (str "-Dlog4j.configurationFile=" file-path-separator "log4j2" file-path-separator "worker.xml")
                                "backtype.storm.LogWriter"]
                                [(supervisor/java-cmd) "-server"]
                                opts
@@ -378,12 +377,15 @@
           mock-worker-id "fake-worker-id"
           mock-sensitivity "S3"
           mock-cp "mock-classpath'quote-on-purpose"
-          storm-local (str "/tmp/" (UUID/randomUUID))
-          worker-script (str storm-local "/workers/" mock-worker-id "/storm-worker-script.sh")
+          storm-local (if on-windows?
+              (str (System/getProperty "java.io.tmpdir") file-path-separator (UUID/randomUUID))
+              (str file-path-separator "tmp" file-path-separator (UUID/randomUUID)))
+          ; worker-script itself relies on bash, so adding storm-worker-script.sh with / (not using file-path-separator) would not make an issue in production
+          worker-script (str storm-local file-path-separator "workers" file-path-separator mock-worker-id "/storm-worker-script.sh")
           exp-launch ["/bin/worker-launcher"
                       "me"
                       "worker"
-                      (str storm-local "/workers/" mock-worker-id)
+                      (str storm-local file-path-separator "workers" file-path-separator mock-worker-id)
                       worker-script]
           exp-script-fn (fn [opts topo-opts]
                        (str "#!/bin/bash\n'export' 'LD_LIBRARY_PATH=';\n\nexec 'java'"
@@ -393,8 +395,8 @@
                                 " '-Dstorm.id=" mock-storm-id "'"
                                 " '-Dworker.id=" mock-worker-id "'"
                                 " '-Dworker.port=" mock-port "'"
-                                " '-Dstorm.log.dir=/logs'"
-                                " '-Dlog4j.configurationFile=/log4j2/worker.xml'"
+                                " '-Dstorm.log.dir=" file-path-separator "logs'"
+                                " '-Dlog4j.configurationFile=" file-path-separator "log4j2" file-path-separator "worker.xml'"
                                 " 'backtype.storm.LogWriter'"
                                 " 'java' '-server'"
                                 " " (shell-cmd opts)
@@ -404,9 +406,9 @@
                                 " '-Dstorm.home='"
                                 " '-Dstorm.conf.file='"
                                 " '-Dstorm.options='"
-                                " '-Dstorm.log.dir=/logs'"
+                                " '-Dstorm.log.dir=" file-path-separator "logs'"
                                 " '-Dlogging.sensitivity=" mock-sensitivity "'"
-                                " '-Dlog4j.configurationFile=/log4j2/worker.xml'"
+                                " '-Dlog4j.configurationFile=" file-path-separator "log4j2" file-path-separator "worker.xml'"
                                 " '-Dstorm.id=" mock-storm-id "'"
                                 " '-Dworker.id=" mock-worker-id "'"
                                 " '-Dworker.port=" mock-port "'"
