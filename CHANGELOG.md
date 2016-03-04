@@ -1,4 +1,5 @@
 ## 1.0.0
+ * STORM-1601: Check if /backpressure/storm-id node exists before requesting children
  * STORM-1574: Better handle backpressure exception etc.
  * STORM-1587: Avoid NPE while prining Metrics
  * STORM-1570: Storm SQL support for nested fields and array
