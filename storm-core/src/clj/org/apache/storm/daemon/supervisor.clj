@@ -299,6 +299,7 @@
         (rmr-as-user conf id (worker-pid-path conf id pid))
         (try
           (rmpath (worker-pid-path conf id pid))
+          (rmpath (worker-tmp-root conf id pid))
           (catch Exception e)))) ;; on windows, the supervisor may still holds the lock on the worker directory
     (try-cleanup-worker conf id))
   (log-message "Shut down " (:supervisor-id supervisor) ":" id))
@@ -375,6 +376,7 @@
               (log-message "Launching worker with assignment "
                 (get-worker-assignment-helper-msg assignment supervisor port id))
               (local-mkdirs (worker-pids-root conf id))
+              (local-mkdirs (worker-tmp-root conf id))
               (local-mkdirs (worker-heartbeats-root conf id))
               (launch-worker supervisor
                 (:storm-id assignment)
@@ -1051,6 +1053,7 @@
           storm-home (System/getProperty "storm.home")
           storm-options (System/getProperty "storm.options")
           storm-conf-file (System/getProperty "storm.conf.file")
+          worker-tmp-dir (worker-tmp-root conf worker-id)
           storm-log-dir LOG-DIR
           storm-log-conf-dir (conf STORM-LOG4J2-CONF-DIR)
           storm-log4j2-conf-dir (if storm-log-conf-dir
@@ -1120,6 +1123,7 @@
                      (str "-Dstorm.conf.file=" storm-conf-file)
                      (str "-Dstorm.options=" storm-options)
                      (str "-Dstorm.log.dir=" storm-log-dir)
+                     (str "-Djava.io.tmpdir=" worker-tmp-dir)
                      (str "-Dlogging.sensitivity=" logging-sensitivity)
                      (str "-Dlog4j.configurationFile=" log4j-configuration-file)
                      (str "-DLog4jContextSelector=org.apache.logging.log4j.core.selector.BasicContextSelector")
