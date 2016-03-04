@@ -1,4 +1,5 @@
 ## 1.0.0
+ * STORM-1543: DRPCSpout should always try to reconnect disconnected DRPCInvocationsClient
  * STORM-1561: Supervisor should relaunch worker if assignments have changed
  * STORM-1601: Check if /backpressure/storm-id node exists before requesting children
  * STORM-1574: Better handle backpressure exception etc.
