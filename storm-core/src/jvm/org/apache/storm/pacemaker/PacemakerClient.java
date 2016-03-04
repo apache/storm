@@ -47,22 +47,26 @@ public class PacemakerClient implements ISaslClient {
 
     private String topo_name;
     private String secret;
-    private boolean ready = false;
+    private AtomicBoolean ready;
     private final ClientBootstrap bootstrap;
     private AtomicReference<Channel> channelRef;
-    private AtomicBoolean closing;
     private InetSocketAddress remote_addr;
     private int maxPending = 100;
     private HBMessage messages[];
     private LinkedBlockingQueue<Integer> availableMessageSlots;
     private ThriftNettyClientCodec.AuthMethod authMethod;
+    private static Timer timer;
+    private String host;
+
+    static {
+        timer = new Timer(true);
+    }
 
     private StormBoundedExponentialBackoffRetry backoff = new StormBoundedExponentialBackoffRetry(100, 5000, 20);
     private int retryTimes = 0;
 
-    public PacemakerClient(Map config) {
-
-        String host = (String)config.get(Config.PACEMAKER_HOST);
+    public PacemakerClient(Map config, String host) {
+        this.host = host;
         int port = (int)config.get(Config.PACEMAKER_PORT);
         topo_name = (String)config.get(Config.TOPOLOGY_NAME);
         if(topo_name == null) {
@@ -98,7 +102,7 @@ public class PacemakerClient implements ISaslClient {
             break;
         }
 
-        closing = new AtomicBoolean(false);
+        ready = new AtomicBoolean(false);
         channelRef = new AtomicReference<Channel>(null);
         setupMessaging();
 
@@ -113,9 +117,13 @@ public class PacemakerClient implements ISaslClient {
         bootstrap.setOption("keepAlive", true);
 
         remote_addr = new InetSocketAddress(host, port);
-        ChannelPipelineFactory pipelineFactory = new ThriftNettyClientCodec(this, config, authMethod).pipelineFactory();
+        ChannelPipelineFactory pipelineFactory = new ThriftNettyClientCodec(this, config, authMethod, host).pipelineFactory();
         bootstrap.setPipelineFactory(pipelineFactory);
         bootstrap.connect(remote_addr);
+    }
+
+    public String toString() {
+        return host;
     }
 
     private void setupMessaging() {
@@ -138,15 +146,19 @@ public class PacemakerClient implements ISaslClient {
 
         //If we're not going to authenticate, we can begin sending.
         if(authMethod == ThriftNettyClientCodec.AuthMethod.NONE) {
-            ready = true;
+            ready.set(true);
             this.notifyAll();
         }
         retryTimes = 0;
     }
 
+    public boolean isReady() {
+        return ready.get();
+    }
+
     public synchronized void channelReady() {
         LOG.debug("Channel is ready.");
-        ready = true;
+        ready.set(true);
         this.notifyAll();
     }
 
@@ -162,21 +174,21 @@ public class PacemakerClient implements ISaslClient {
         waitUntilReady();
         LOG.debug("Sending message: {}", m.toString());
         try {
-
             int next = availableMessageSlots.take();
             synchronized (m) {
                 m.set_message_id(next);
                 messages[next] = m;
                 LOG.debug("Put message in slot: {}", Integer.toString(next));
                 do {
-                    Channel channel = channelRef.get();
-                    if(channel == null )
-                    {
-                        reconnect();
+                    try {
+                        if (channelRef.get() != null) {
+                            channelRef.get().write(m);
+                            m.wait(1000);
+                        }
+                    } catch (Exception exp) {
+                        LOG.error("error attempting to write to a channel {}", exp);
                         waitUntilReady();
                     }
-                    channelRef.get().write(m);
-                    m.wait(1000);
                 } while (messages[next] == m);
             }
 
@@ -195,15 +207,15 @@ public class PacemakerClient implements ISaslClient {
         }
     }
 
-    private void waitUntilReady() {
+    public PacemakerClient waitUntilReady() {
         // Wait for 'ready' (channel connected and maybe authentication)
-        if(!ready || channelRef.get() == null) {
+        if(!isReady() || channelRef.get() == null) {
             synchronized(this) {
-                if(!ready) {
+                if(!isReady()) {
                     LOG.debug("Waiting for netty channel to be ready.");
                     try {
                         this.wait(1000);
-                        if(!ready || channelRef.get() == null) {
+                        if(!isReady() || channelRef.get() == null) {
                             throw new RuntimeException("Timed out waiting for channel ready.");
                         }
                     } catch (InterruptedException e) {
@@ -212,13 +224,14 @@ public class PacemakerClient implements ISaslClient {
                 }
             }
         }
+        return this;
     }
 
     public void gotMessage(HBMessage m) {
         int message_id = m.get_message_id();
-        if(message_id >=0 && message_id < maxPending) {
-
-            LOG.debug("Pacemaker client got message: {}", m.toString());
+        if(message_id >= 0 && message_id < maxPending) {
+            
+            LOG.debug("Pacemaker Client got message: {}", m.toString());
             HBMessage request = messages[message_id];
 
             if(request == null) {
@@ -239,24 +252,25 @@ public class PacemakerClient implements ISaslClient {
 
     public void reconnect() {
         final PacemakerClient client = this;
-        Timer t = new Timer(true);
-        t.schedule(new TimerTask() {
-                public void run() {
-                    client.doReconnect();
-                }
-            },
-            backoff.getSleepTimeMs(retryTimes++, 0));
-        ready = false;
+        timer.schedule(new TimerTask() {
+                              public void run() {
+                                 client.doReconnect();
+                              }
+                           }, backoff.getSleepTimeMs(retryTimes++, 0));
+        ready.set(false);
         setupMessaging();
     }
 
     public synchronized void doReconnect() {
         close_channel();
-        if(closing.get()) return;
         bootstrap.connect(remote_addr);
     }
 
-    synchronized void close_channel() {
+    public void shutdown() {
+        bootstrap.shutdown();
+    }
+
+    private synchronized void close_channel() {
         if (channelRef.get() != null) {
             channelRef.get().close();
             LOG.debug("channel {} closed", remote_addr);
