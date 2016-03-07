@@ -1,4 +1,5 @@
 ## 1.0.0
+ * STORM-1469: Adding Plain Sasl Transport Plugin
  * STORM-1588: Do not add event logger details if number of event loggers is zero
  * STORM-1606: print the information of testcase which is on failure
  * STORM-1436: Set Travis Heap size to fit in memory limits in travis builds.
