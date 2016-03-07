@@ -1,4 +1,5 @@
 ## 1.0.0
+ * STORM-1606: print the information of testcase which is on failure
  * STORM-1436: Set Travis Heap size to fit in memory limits in travis builds.
  * STORM-1529: Change default worker temp directory location for workers
  * STORM-1543: DRPCSpout should always try to reconnect disconnected DRPCInvocationsClient
