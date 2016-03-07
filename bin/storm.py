@@ -207,7 +207,10 @@ def exec_storm_class(klass, jvmtype="-server", jvmopts=[], extrajars=[], args=[]
         "-Dstorm.conf.file=" + CONFFILE,
         "-cp", get_classpath(extrajars, daemon),
     ] + jvmopts + [klass] + list(args)
-    print("Running: " + " ".join(all_args))
+    
+    if (V_FLAG):
+        print("Running: " + " ".join(all_args))
+        
     if fork:
         os.spawnvp(os.P_WAIT, JAVA_CMD, all_args)
     elif is_windows():
@@ -752,6 +755,13 @@ def main():
         print_usage()
         sys.exit(-1)
     global CONFIG_OPTS
+    
+    global V_FLAG 
+    V_FLAG=False
+    if('-v' in sys.argv):        
+        V_FLAG=True
+        sys.argv.remove('-v')
+    
     config_list, args = parse_config_opts(sys.argv[1:])
     parse_config(config_list)
     COMMAND = args[0]
