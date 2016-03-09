@@ -550,7 +550,9 @@ public class Config extends HashMap<String, Object> {
 
     /**
      * The maximum buffer size thrift should use when reading messages.
+     * @deprecated  As SimpleTrasportPlugin is deprecated, no other thrift transport plugin uses this configuration.
      */
+    @Deprecated
     @isInteger
     @isPositiveNumber
     public static final String NIMBUS_THRIFT_MAX_BUFFER_SIZE = "nimbus.thrift.max_buffer_size";
@@ -1089,7 +1091,9 @@ public class Config extends HashMap<String, Object> {
 
     /**
      * The maximum buffer size thrift should use when reading messages for DRPC.
+     * @deprecated  As SimpleTrasportPlugin is deprecated, no other thrift transport plugin uses this configuration.
      */
+    @Deprecated
     @isNumber
     @isPositiveNumber
     public static final String DRPC_MAX_BUFFER_SIZE = "drpc.max_buffer_size";
