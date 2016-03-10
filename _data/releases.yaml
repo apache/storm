@@ -1,7 +1,9 @@
-0.10.0:
+-
+    name: 0.10.0
     git-tag: v0.10.0
     base-name: apache-storm-0.10.0
     stable: true
-0.9.6:
+-
+    name: 0.9.6
     git-tag: v0.9.6
     base-name: apache-storm-0.9.6
