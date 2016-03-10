@@ -1,0 +1,38 @@
+---
+layout: default
+title: Storm Releases
+---
+<div class="content">
+	<div class="container-fluid">
+    	<div class="row">
+        	<div class="col-md-12">
+				  {% for r in site.data.releases %}
+                                  <a href="http://github.com/apache/storm/tree/{{r.git-tag}}">Apache Storm {{r.name}} on Github</a>
+                                  <br/><a href="releases/{{r.name}}/javadocs/index.html">Javadocs</a>
+				  <ul>
+					  <li><a href="http://www.apache.org/dyn/closer.lua/storm/{{r.base-name}}/{{r.base-name}}.tar.gz">{{r.base-name}}.tar.gz</a>
+					     [<a href="http://www.us.apache.org/dist/storm/{{r.base-name}}/{{r.base-name}}.tar.gz.asc">PGP</a>]
+					     [<a href="http://www.us.apache.org/dist/storm/{{r.base-name}}/{{r.base-name}}.tar.gz.sha">SHA512</a>] 
+					     [<a href="http://www.us.apache.org/dist/storm/{{r.base-name}}/{{r.base-name}}.tar.gz.md5">MD5</a>]
+					  </li>
+					  <li><a href="http://www.apache.org/dyn/closer.lua/storm/{{r.base-name}}/{{r.base-name}}.zip">{{r.base-name}}.zip</a>
+					     [<a href="http://www.us.apache.org/dist/storm/{{r.base-name}}/{{r.base-name}}.zip.asc">PGP</a>]
+					     [<a href="http://www.us.apache.org/dist/storm/{{r.base-name}}/{{r.base-name}}.zip.sha">SHA512</a>] 
+					     [<a href="http://www.us.apache.org/dist/storm/{{r.base-name}}/{{r.base-name}}.zip.md5">MD5</a>]
+					  </li>
+					  <li><a href="http://www.apache.org/dyn/closer.lua/storm/{{r.base-name}}/{{r.base-name}}-src.tar.gz">{{r.base-name}}-src.tar.gz</a>
+					     [<a href="http://www.us.apache.org/dist/storm/{{r.base-name}}/{{r.base-name}}-src.tar.gz.asc">PGP</a>]
+					     [<a href="http://www.us.apache.org/dist/storm/{{r.base-name}}/{{r.base-name}}-src.tar.gz.sha">SHA512</a>] 
+					     [<a href="http://www.us.apache.org/dist/storm/{{r.base-name}}/{{r.base-name}}-src.tar.gz.md5">MD5</a>]
+					  </li>
+					  <li><a href="http://www.apache.org/dyn/closer.lua/storm/{{r.base-name}}/{{r.base-name}}-src.zip">{{r.base-name}}-src.zip</a>
+					     [<a href="http://www.us.apache.org/dist/storm/{{r.base-name}}/{{r.base-name}}-src.zip.asc">PGP</a>]
+					     [<a href="http://www.us.apache.org/dist/storm/{{r.base-name}}/{{r.base-name}}-src.zip.sha">SHA512</a>] 
+					     [<a href="http://www.us.apache.org/dist/storm/{{r.base-name}}/{{r.base-name}}-src.zip.md5">MD5</a>]
+					  </li>
+				  </ul>
+                                  {% endfor %}
+		    </div>
+		</div>
+	</div>
+</div>

@@ -3,3 +3,5 @@
 **/*.iml
 **/*.ipr
 **/*.iws
+_site/
+.jekyll-metadata
