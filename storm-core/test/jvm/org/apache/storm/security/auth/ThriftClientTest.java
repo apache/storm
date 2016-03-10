@@ -62,7 +62,7 @@ public class ThriftClientTest {
 
     @Test
     public void testConstructorThrowsIfHostEmpty() {
-        expectedException.expectCause(ThrowableNestedCauseMatcher.isCausedBy(TTransportException.class));
+        expectedException.expect(ThrowableNestedCauseMatcher.isCausedBy(TTransportException.class));
         new ThriftClient(conf, ThriftConnectionType.DRPC, "", 4242, NIMBUS_TIMEOUT);
     }
 }
