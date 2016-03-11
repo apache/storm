@@ -1043,12 +1043,13 @@
                 (filter [this key] (get-id-from-blob-key key)))]
     (set (.filterAndListKeys blob-store to-id))))
 
-(defn cleanup-storm-ids [conf storm-cluster-state blob-store]
+(defn cleanup-storm-ids [storm-cluster-state blob-store]
   (let [heartbeat-ids (set (.heartbeat-storms storm-cluster-state))
         error-ids (set (.error-topologies storm-cluster-state))
         code-ids (code-ids blob-store)
+        backpressure-ids (set (.backpressure-topologies storm-cluster-state))
         assigned-ids (set (.active-storms storm-cluster-state))]
-    (set/difference (set/union heartbeat-ids error-ids code-ids) assigned-ids)
+    (set/difference (set/union heartbeat-ids error-ids backpressure-ids code-ids) assigned-ids)
     ))
 
 (defn extract-status-str [base]
@@ -1120,6 +1121,9 @@
   (blob-rm-key blob-store (master-stormconf-key id) storm-cluster-state)
   (blob-rm-key blob-store (master-stormcode-key id) storm-cluster-state))
 
+(defn force-delete-dir [conf id]
+  (rmr (master-stormdist-root conf id)))
+
 (defn do-cleanup [nimbus]
   (if (is-leader nimbus :throw-exception false)
     (let [storm-cluster-state (:storm-cluster-state nimbus)
@@ -1127,13 +1131,14 @@
           submit-lock (:submit-lock nimbus)
           blob-store (:blob-store nimbus)]
       (let [to-cleanup-ids (locking submit-lock
-                             (cleanup-storm-ids conf storm-cluster-state blob-store))]
+                             (cleanup-storm-ids storm-cluster-state blob-store))]
         (when-not (empty? to-cleanup-ids)
           (doseq [id to-cleanup-ids]
             (log-message "Cleaning up " id)
             (.teardown-heartbeats! storm-cluster-state id)
             (.teardown-topology-errors! storm-cluster-state id)
-            (rmr (master-stormdist-root conf id))
+            (.remove-backpressure! storm-cluster-state id)
+            (force-delete-dir conf id)
             (blob-rm-topology-keys id blob-store storm-cluster-state)
             (swap! (:heartbeats-cache nimbus) dissoc id)))))
     (log-message "not a leader, skipping cleanup")))
@@ -1555,8 +1560,6 @@
                            )]
             (transition-name! nimbus storm-name [:kill wait-amt] true)
             (notify-topology-action-listener nimbus storm-name operation))
-          (if (topology-conf TOPOLOGY-BACKPRESSURE-ENABLE)
-            (.remove-backpressure! (:storm-cluster-state nimbus) storm-id))
           (add-topology-to-history-log (get-storm-id (:storm-cluster-state nimbus) storm-name)
             nimbus topology-conf)))
 
