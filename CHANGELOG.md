@@ -1,4 +1,5 @@
 ## 1.0.0
+ * STORM-1620: Update curator to fix CURATOR-209
  * STORM-1469: Decommission SimpleTransportPlugin and configuration
  * STORM-1469: Adding Plain Sasl Transport Plugin
  * STORM-1588: Do not add event logger details if number of event loggers is zero
