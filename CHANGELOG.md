@@ -1,4 +1,5 @@
 ## 1.0.0
+ * STORM-1609: Netty Client is not best effort delivery on failed Connection
  * STORM-1620: Update curator to fix CURATOR-209
  * STORM-1469: Decommission SimpleTransportPlugin and configuration
  * STORM-1469: Adding Plain Sasl Transport Plugin
