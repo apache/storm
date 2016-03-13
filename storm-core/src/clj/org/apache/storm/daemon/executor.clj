@@ -170,6 +170,8 @@
                         TOPOLOGY-MAX-TASK-PARALLELISM
                         TOPOLOGY-TRANSACTIONAL-ID
                         TOPOLOGY-TICK-TUPLE-FREQ-SECS
+                        TOPOLOGY-EXECUTOR-HANG-TIME-LIMIT-SECS
+                        TOPOLOGY-CHECK-HANG-TICK-TUPLE-FREQ-SECS
                         TOPOLOGY-SLEEP-SPOUT-WAIT-STRATEGY-TIME-MS
                         TOPOLOGY-SPOUT-WAIT-STRATEGY
                         TOPOLOGY-BOLTS-WINDOW-LENGTH-COUNT
@@ -193,7 +195,7 @@
 (defprotocol RunningExecutor
   (render-stats [this])
   (get-executor-id [this])
-  (last-active-time [this])
+  (is-hanging? [this])
   (credentials-changed [this creds])
   (get-backpressure-flag [this]))
 
@@ -281,7 +283,7 @@
      :spout-throttling-metrics (if (= executor-type :spout) 
                                 (builtin-metrics/make-spout-throttling-data)
                                 nil)
-     :last-active-time (System/currentTimeMillis)
+     :last-hang-check-time-secs (atom (Time/currentTimeSecs))
      ;; TODO: add in the executor-specific stuff in a :specific... or make a spout-data, bolt-data function?
      )))
 
@@ -335,14 +337,14 @@
 
 (defn setup-check-tick! [executor-data]
   (let [{:keys [storm-conf receive-queue worker-context worker]} executor-data
-        tick-interval-secs (storm-conf TOPOLOGY-CHECK-TICK-FREQ-SECS)]
+        tick-interval-secs (storm-conf TOPOLOGY-CHECK-HANG-TICK-TUPLE-FREQ-SECS)]
     (when tick-interval-secs
       (.scheduleRecurring
         (:user-timer worker)
         tick-interval-secs
         tick-interval-secs
         (fn []
-          (let [val [(AddressedTuple. AddressedTuple/BROADCAST_DEST (TupleImpl. worker-context [tick-interval-secs] Constants/SYSTEM_TASK_ID Constants/CHECK_TICK_STREAM_ID))]]
+          (let [val [(AddressedTuple. AddressedTuple/BROADCAST_DEST (TupleImpl. worker-context [tick-interval-secs] Constants/SYSTEM_TASK_ID Constants/HANG_CHECK_TICK_STREAM_ID))]]
             (.publish ^DisruptorQueue receive-queue val)))))))
 
 (defn metrics-tick
@@ -423,8 +425,13 @@
         (stats/render-stats! (:stats executor-data)))
       (get-executor-id [this]
         executor-id)
-      (last-active-time [this]
-        @(:last-active-time executor-data))
+      (is-hanging? [this]
+        (let [storm-conf (:storm-conf executor-data)]
+          (if-not (storm-conf TOPOLOGY-CHECK-HANG-TICK-TUPLE-FREQ-SECS)
+            false
+            (if (= executor-id Constants/SYSTEM_EXECUTOR_ID)
+              false
+              (< (- (Time/currentTimeSecs) @(:last-hang-check-time-secs executor-data)) (storm-conf TOPOLOGY-EXECUTOR-HANG-TIME-LIMIT-SECS))))))
       (credentials-changed [this creds]
         (let [receive-queue (:receive-queue executor-data)
               context (:worker-context executor-data)
@@ -517,6 +524,9 @@
           StormCommon/EVENTLOGGER_STREAM_ID
           [component-id message-id (System/currentTimeMillis) values]))))
 
+(defn- update-last-hang-check-time! [executor-data]
+  (reset! (:last-hang-check-time-secs executor-data) (Time/currentTimeSecs)))
+
 (defmethod mk-threads :spout [executor-data task-datas initial-credentials]
   (let [{:keys [storm-conf component-id worker-context transfer-fn report-error sampler open-or-prepare-was-called?]} executor-data
         ^ISpoutWaitStrategy spout-wait-strategy (init-spout-wait-strategy storm-conf)
@@ -540,7 +550,7 @@
                             (condp = stream-id
                               Constants/SYSTEM_TICK_STREAM_ID (.rotate pending)
                               Constants/METRICS_TICK_STREAM_ID (metrics-tick executor-data (get task-datas task-id) tuple)
-                              Constants/CHECK_TICK_STREAM_ID (reset! (:last-active-time executor-data) (System/currentTimeMillis))
+                              Constants/HANG_CHECK_TICK_STREAM_ID (update-last-hang-check-time! executor-data)
                               Constants/CREDENTIALS_CHANGED_STREAM_ID 
                                 (let [task-data (get task-datas task-id)
                                       spout-obj (:object task-data)]
@@ -737,7 +747,7 @@
                                   (when (instance? ICredentialsListener bolt-obj)
                                     (.setCredentials bolt-obj (.getValue tuple 0))))
                               Constants/METRICS_TICK_STREAM_ID (metrics-tick executor-data (get task-datas task-id) tuple)
-                              Constants/CHECK_TICK_STREAM_ID (reset! (:last-active-time executor-data) (System/currentTimeMillis))
+                              Constants/HANG_CHECK_TICK_STREAM_ID (update-last-hang-check-time! executor-data)
                               (let [task-data (get task-datas task-id)
                                     ^IBolt bolt-obj (:object task-data)
                                     user-context (:user-context task-data)

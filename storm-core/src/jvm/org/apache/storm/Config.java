@@ -1455,12 +1455,6 @@ public class Config extends HashMap<String, Object> {
     public static final String WORKER_HEARTBEAT_FREQUENCY_SECS = "worker.heartbeat.frequency.secs";
 
     /**
-     * The limit the worker can bear the threads hang on.
-     */
-    @isInteger
-    public static final String WORKER_HANGTIME_LIMIT_SECS = "worker.hangon.limit.secs";
-
-    /**
      * How often a task should heartbeat its status to the master.
      */
     @isInteger
@@ -1938,12 +1932,28 @@ public class Config extends HashMap<String, Object> {
     @isInteger
     public static final String TOPOLOGY_TICK_TUPLE_FREQ_SECS="topology.tick.tuple.freq.secs";
 
-   /**
-    * How often a chek tick tuple from the "__system" component and "__check_tick" stream should
-    * be sent to task. Meant to be used as component-specific configuration.
+    /**
+    * True if the worker should reboot executors that have hung in nextTuple/execute for longer
+    * than TOPOLOGY_HANGTIME_LIMIT_SECS.
+    */
+    @isBoolean
+    public static final String TOPOLOGY_EXECUTOR_REBOOT_ON_HANG="topology.reboot.executor.on.hang";
+    
+    /**
+    * The amount of time an executor is allowed to hang in nextTuple/execute. If this limit is
+    * exceeded, the worker will log an error for the executor. If TOPOLOGY_REBOOT_EXECUTOR_ON_HANG
+    * is true, the worker will additionally reboot the executor.
     */
     @isInteger
-    public static final String TOPOLOGY_CHECK_TICK_FREQ_SECS="toplogy.check.tick.freq.secs";
+    public static final String TOPOLOGY_EXECUTOR_HANG_TIME_LIMIT_SECS="topology.executor.hang.time.limit.secs";
+    
+   /**
+    * How often the worker will send liveness check tuples to executors. A failure to process
+    * at least one check tuple every TOPOLOGY_EXECUTOR_HANG_TIME_LIMIT_SECS is interpreted as
+    * a hang by the worker.
+    */
+    @isInteger
+    public static final String TOPOLOGY_CHECK_HANG_TICK_TUPLE_FREQ_SECS="topology.check.hang.tick.tuple.freq.secs";
 
    /**
     * @deprecated this is no longer supported

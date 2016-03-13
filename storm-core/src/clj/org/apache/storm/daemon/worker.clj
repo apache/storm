@@ -51,6 +51,8 @@
 
 (defmulti mk-suicide-fn cluster-mode)
 
+(declare executor->tasks)
+
 (defn read-worker-executors [storm-conf storm-cluster-state storm-id assignment-id port assignment-versions]
   (log-message "Reading Assignments.")
   (let [assignment (:executor->node+port (clojurify-assignment (.assignmentInfo storm-cluster-state storm-id nil)))]
@@ -74,27 +76,38 @@
                :executor-stats stats
                :uptime (. (:uptime worker) upTime)
                :time-secs (Time/currentTimeSecs)
-               }]
+               }
+        hanging-executor-ids (if-not executors
+                                nil
+                                (->> executors
+                                  (filter (fn [executor] (executor/is-hanging? executor)))
+                                  (map (fn [executor] (executor/get-executor-id executor)))))]
+    (when (seq hanging-executor-ids)
+      (let [hanging-executor-components (->> hanging-executor-ids
+                                          (map (fn [executor-id] (executor->tasks executor-id)))
+                                          (map (fn [task] (.get (:task->component worker) (first task))))
+                                          (distinct))]
+        (log-warn "Detected hanging executors: " (pr-str hanging-executor-ids) " for components " (pr-str hanging-executor-components)))
+        ;;TODO: Log to zookeeper, metrics
+      (when (and (:worker-active-flag worker) ((:conf worker) TOPOLOGY-EXECUTOR-REBOOT-ON-HANG))
+        ;;TODO: Shutdown worker/executors(?)
+        nil
+        ))
     ;; do the zookeeper heartbeat
     (try
       (.workerHeartbeat (:storm-cluster-state worker) (:storm-id worker) (:assignment-id worker) (long (:port worker)) (thriftify-zk-worker-hb zk-hb))
       (catch Exception exc
         (log-error exc "Worker failed to write heatbeats to ZK or Pacemaker...will retry")))))
 
-(defnk do-heartbeat [worker]
+(defn do-heartbeat [worker]
   (let [conf (:conf worker)
-        state (ConfigUtils/workerState conf (:worker-id worker))
-        hang-time-limit (:worker-hangtime-limit-secs conf)
-        last-active-time (->> (:executors worker)
-                              (map executor/last-active-time)
-                              min)]
-    (when (< (- (System/currentTimeMillis) last-active-time) (* hang-time-limit 1000))
-      ;; do the local-file-system heartbeat.
-      (.setWorkerHeartBeat state (LSWorkerHeartbeat.
-                                   (Time/currentTimeSecs)
-                                   (:storm-id worker)
-                                   (->ExecutorInfo-list (:executors worker))
-                                   (:port worker))))
+        state (ConfigUtils/workerState conf (:worker-id worker))]
+    ;; do the local-file-system heartbeat.
+    (.setWorkerHeartBeat state (LSWorkerHeartbeat.
+                                 (Time/currentTimeSecs)
+                                 (:storm-id worker)
+                                 (->ExecutorInfo-list (:executors worker))
+                                 (:port worker)))
     (.cleanup state 60) ; this is just in case supervisor is down so that disk doesn't fill up.
                          ; it shouldn't take supervisor 120 seconds between listing dir and reading it
 
