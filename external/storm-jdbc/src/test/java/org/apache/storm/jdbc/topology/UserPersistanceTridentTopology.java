@@ -17,8 +17,8 @@
  */
 package org.apache.storm.jdbc.topology;
 
-import backtype.storm.generated.StormTopology;
-import backtype.storm.tuple.Fields;
+import org.apache.storm.generated.StormTopology;
+import org.apache.storm.tuple.Fields;
 import com.google.common.collect.Lists;
 import org.apache.storm.jdbc.common.Column;
 import org.apache.storm.jdbc.mapper.SimpleJdbcLookupMapper;
@@ -27,9 +27,9 @@ import org.apache.storm.jdbc.trident.state.JdbcQuery;
 import org.apache.storm.jdbc.trident.state.JdbcState;
 import org.apache.storm.jdbc.trident.state.JdbcStateFactory;
 import org.apache.storm.jdbc.trident.state.JdbcUpdater;
-import storm.trident.Stream;
-import storm.trident.TridentState;
-import storm.trident.TridentTopology;
+import org.apache.storm.trident.Stream;
+import org.apache.storm.trident.TridentState;
+import org.apache.storm.trident.TridentTopology;
 
 import java.sql.Types;
 
@@ -44,7 +44,7 @@ public class UserPersistanceTridentTopology extends AbstractUserTopology {
         TridentTopology topology = new TridentTopology();
 
         JdbcState.Options options = new JdbcState.Options()
-                .withConnectionPrvoider(connectionProvider)
+                .withConnectionProvider(connectionProvider)
                 .withMapper(this.jdbcMapper)
                 .withJdbcLookupMapper(new SimpleJdbcLookupMapper(new Fields("dept_name"), Lists.newArrayList(new Column("user_id", Types.INTEGER))))
                 .withTableName(TABLE_NAME)

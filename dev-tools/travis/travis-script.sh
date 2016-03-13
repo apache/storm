@@ -11,15 +11,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-PYTHON_VERSION_TO_FILE=`python -V > /tmp/python_version 2>&1`
-PYTHON_VERSION=`cat /tmp/python_version`
-RUBY_VERSION=`ruby -v`
-NODEJS_VERSION=`node -v`
-
-echo "Python version : $PYTHON_VERSION"
-echo "Ruby version : $RUBY_VERSION"
-echo "NodeJs version : $NODEJS_VERSION"
-
+echo "Python version :  " `python -V 2>&1`
+echo "Ruby version   :  " `ruby -v`
+echo "NodeJs version :  " `node -v`
+echo "Maven version  :  " `mvn -v`
 
 STORM_SRC_ROOT_DIR=$1
 
@@ -27,11 +22,12 @@ TRAVIS_SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
 cd ${STORM_SRC_ROOT_DIR}
 
-# We should concern that Travis CI could be very slow cause it uses VM
-export STORM_TEST_TIMEOUT_MS=100000
+# We should be concerned that Travis CI could be very slow because it uses VM
+export STORM_TEST_TIMEOUT_MS=150000
+# Travis only has 3GB of memory, lets use 1GB for build, and 1.5GB for forked JVMs
+export MAVEN_OPTS="-Xmx1024m"
 
-# We now lean on Travis CI's implicit behavior, ```mvn clean install -DskipTests``` before running script
-mvn test -fae -Pnative -pl '!external/storm-kafka'
+mvn --batch-mode test -fae -Pnative,all-tests -Prat -pl "$2"
 BUILD_RET_VAL=$?
 
 for dir in `find . -type d -and -wholename \*/target/\*-reports`;

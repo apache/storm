@@ -17,10 +17,10 @@
  */
 package org.apache.storm.hbase.bolt;
 
-import backtype.storm.Config;
-import backtype.storm.task.OutputCollector;
-import backtype.storm.task.TopologyContext;
-import backtype.storm.topology.base.BaseRichBolt;
+import org.apache.storm.Config;
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.commons.lang.Validate;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
@@ -42,6 +42,8 @@ public abstract class AbstractHBaseBolt extends BaseRichBolt {
     protected String tableName;
     protected HBaseMapper mapper;
     protected String configKey;
+    protected int batchSize = 15000;
+    protected int flushIntervalSecs = 0;
 
     public AbstractHBaseBolt(String tableName, HBaseMapper mapper) {
         Validate.notEmpty(tableName, "Table name can not be blank or null");
