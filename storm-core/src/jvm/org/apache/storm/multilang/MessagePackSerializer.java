@@ -184,7 +184,7 @@ public class MessagePackSerializer implements ISerializer {
         //Object metricParams
         Value paramsValue = msg.get("params");
         if(paramsValue != null) {
-            shellMsg.setMetricParams(paramsValue.asRawValue().getString());
+            shellMsg.setMetricParams(toJavaType(paramsValue));
         }
 
         //ShellLogLevel logLevel
