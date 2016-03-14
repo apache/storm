@@ -25,18 +25,24 @@ last committed by the framework during the previous run.
  ```java
  public class WordCountBolt extends BaseStatefulBolt<KeyValueState<String, Long>> {
  private KeyValueState<String, Long> wordCounts;
+ private OutputCollector collector;
  ...
+     @Override
+     public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+       this.collector = collector;
+     }
      @Override
      public void initState(KeyValueState<String, Long> state) {
        wordCounts = state;
      }
      @Override
-     public void execute(Tuple tuple, BasicOutputCollector collector) {
+     public void execute(Tuple tuple) {
        String word = tuple.getString(0);
        Integer count = wordCounts.get(word, 0);
        count++;
        wordCounts.put(word, count);
-       collector.emit(new Values(word, count));
+       collector.emit(tuple, new Values(word, count));
+       collector.ack(tuple);
      }
  ...
  }
@@ -109,6 +115,8 @@ tuple on one stream while waiting for checkpoint to arrive on other input stream
 duplicate state updates during recovery.
 
 The state abstraction does not eliminate duplicate evaluations and currently provides only at-least once guarantee.
+
+In order to provide the at-least once guarantee, all bolts in a stateful topology are expected to anchor the tuples while emitting and ack the input tuples once its processed. For non-stateful bolts, the anchoring/acking can be automatically managed by extending the `BaseBasicBolt`. Stateful bolts are expected to anchor tuples while emitting and ack the tuple after processing like in the `WordCountBolt` example in the State management section above.
 
 ### IStateful bolt hooks
 IStateful bolt interface provides hook methods where in the stateful bolts could implement some custom actions.
