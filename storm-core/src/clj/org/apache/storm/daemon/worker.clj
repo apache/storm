@@ -76,28 +76,28 @@
                :executor-stats stats
                :uptime (. (:uptime worker) upTime)
                :time-secs (Time/currentTimeSecs)
-               }
-        hanging-executor-ids (if-not executors
+               }]
+    ;; do the zookeeper heartbeat
+    (try
+      (.workerHeartbeat (:storm-cluster-state worker) (:storm-id worker) (:assignment-id worker) (long (:port worker)) (thriftify-zk-worker-hb zk-hb))
+      (catch Exception exc
+        (log-error exc "Worker failed to write heatbeats to ZK or Pacemaker...will retry")))))
+
+(defn do-executor-hang-check [worker executors]
+  (let [hanging-executor-ids (if-not executors
                                 nil
                                 (->> executors
                                   (filter (fn [executor] (executor/is-hanging? executor)))
                                   (map (fn [executor] (executor/get-executor-id executor)))))]
-    (when (seq hanging-executor-ids)
+    (when (and (:worker-active-flag worker) (seq hanging-executor-ids))
       (let [hanging-executor-components (->> hanging-executor-ids
                                           (map (fn [executor-id] (executor->tasks executor-id)))
                                           (map (fn [task] (.get (:task->component worker) (first task))))
                                           (distinct))]
         (log-warn "Detected hanging executors: " (pr-str hanging-executor-ids) " for components " (pr-str hanging-executor-components)))
         ;;TODO: Log to zookeeper, metrics
-      (when (and (:worker-active-flag worker) ((:conf worker) TOPOLOGY-EXECUTOR-REBOOT-ON-HANG))
-        ;;TODO: Shutdown worker/executors(?)
-        nil
-        ))
-    ;; do the zookeeper heartbeat
-    (try
-      (.workerHeartbeat (:storm-cluster-state worker) (:storm-id worker) (:assignment-id worker) (long (:port worker)) (thriftify-zk-worker-hb zk-hb))
-      (catch Exception exc
-        (log-error exc "Worker failed to write heatbeats to ZK or Pacemaker...will retry")))))
+      (when ((:conf worker) TOPOLOGY-EXECUTOR-REBOOT-ON-HANG)
+        ((:suicide-fn worker))))))
 
 (defn do-heartbeat [worker]
   (let [conf (:conf worker)
@@ -322,6 +322,7 @@
       :reset-log-levels-timer (mk-halting-timer "reset-log-levels-timer")
       :refresh-active-timer (mk-halting-timer "refresh-active-timer")
       :executor-heartbeat-timer (mk-halting-timer "executor-heartbeat-timer")
+      :executor-hang-check-timer (mk-halting-timer "executor-hang-check-timer")
       :user-timer (mk-halting-timer "user-timer")
       :task->component (StormCommon/stormTaskInfo topology storm-conf) ; for optimized access when used in tasks later on
       :component->stream->fields (component->stream->fields (:system-topology <>))
@@ -820,6 +821,13 @@
         (fn [] (reset-log-levels latest-log-config)))
     (.scheduleRecurring
       (:refresh-active-timer worker) 0 (conf TASK-REFRESH-POLL-SECS) (partial refresh-storm-active worker))
+    (let [min-executor-timeout (->> @executors
+                                 (map (fn [executor] (executor/get-hang-timeout executor)))
+                                 (reduce min))]
+      (log-message (pr-str min-executor-timeout))
+      (when (pos? min-executor-timeout)
+        (.scheduleRecurring (:executor-hang-check-timer worker) min-executor-timeout min-executor-timeout
+                (fn [] (do-executor-hang-check worker @executors)))))
     (log-message "Worker has topology config " (Utils/redactValue (:storm-conf worker) STORM-ZOOKEEPER-TOPOLOGY-AUTH-PAYLOAD))
     (log-message "Worker " worker-id " for storm " storm-id " on " assignment-id ":" port " has finished loading")
     ret

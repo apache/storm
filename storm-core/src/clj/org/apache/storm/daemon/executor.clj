@@ -195,6 +195,7 @@
 (defprotocol RunningExecutor
   (render-stats [this])
   (get-executor-id [this])
+  (get-hang-timeout [this])
   (is-hanging? [this])
   (credentials-changed [this creds])
   (get-backpressure-flag [this]))
@@ -276,7 +277,7 @@
                                (if (or
                                     (Utils/exceptionCauseIsInstanceOf InterruptedException error)
                                     (Utils/exceptionCauseIsInstanceOf java.io.InterruptedIOException error))
-                                 (log-message "Got interrupted excpetion shutting thread down...")
+                                 (log-message "Got interruptedException while shutting thread down...")
                                  ((:suicide-fn <>)))))
      :sampler (mk-stats-sampler storm-conf)
      :backpressure (atom false)
@@ -425,6 +426,8 @@
         (stats/render-stats! (:stats executor-data)))
       (get-executor-id [this]
         executor-id)
+      (get-hang-timeout [this]
+        ((:storm-conf executor-data) TOPOLOGY-EXECUTOR-HANG-TIME-LIMIT-SECS))
       (is-hanging? [this]
         (let [storm-conf (:storm-conf executor-data)]
           (if-not (storm-conf TOPOLOGY-CHECK-HANG-TICK-TUPLE-FREQ-SECS)
