@@ -84,18 +84,21 @@
         (log-error exc "Worker failed to write heatbeats to ZK or Pacemaker...will retry")))))
 
 (defn do-executor-hang-check [worker executors]
-  (let [hanging-executor-ids (if-not executors
+  (let [hanging-executors (if-not executors
                                 nil
                                 (->> executors
-                                  (filter (fn [executor] (executor/is-hanging? executor)))
-                                  (map (fn [executor] (executor/get-executor-id executor)))))]
-    (when (and (:worker-active-flag worker) (seq hanging-executor-ids))
-      (let [hanging-executor-components (->> hanging-executor-ids
+                                  (filter (fn [executor] (executor/is-hanging? executor)))))]
+    (when (and (:worker-active-flag worker) (seq hanging-executors))
+      (doseq [executor hanging-executors]
+        (executor/report-hang executor))
+      (let [hanging-executor-ids (->> hanging-executors
+                                   (map (fn [executor] (executor/get-executor-id executor))))
+            hanging-executor-components (->> hanging-executor-ids
                                           (map (fn [executor-id] (executor->tasks executor-id)))
                                           (map (fn [task] (.get (:task->component worker) (first task))))
                                           (distinct))]
         (log-warn "Detected hanging executors: " (pr-str hanging-executor-ids) " for components " (pr-str hanging-executor-components)))
-        ;;TODO: Log to zookeeper, metrics
+        ;;TODO: Log to metrics
       (when ((:conf worker) TOPOLOGY-EXECUTOR-REBOOT-ON-HANG)
         ((:suicide-fn worker))))))
 

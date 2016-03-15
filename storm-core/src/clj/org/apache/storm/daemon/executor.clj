@@ -197,6 +197,7 @@
   (get-executor-id [this])
   (get-hang-timeout [this])
   (is-hanging? [this])
+  (report-hang [this])
   (credentials-changed [this creds])
   (get-backpressure-flag [this]))
 
@@ -435,6 +436,8 @@
             (if (= executor-id Constants/SYSTEM_EXECUTOR_ID)
               false
               (< (- (Time/currentTimeSecs) @(:last-hang-check-time-secs executor-data)) (storm-conf TOPOLOGY-EXECUTOR-HANG-TIME-LIMIT-SECS))))))
+      (report-hang [this]
+        (:report-error (RuntimeException. "Executor exceeded hang check timeout, and may be hanging")))
       (credentials-changed [this creds]
         (let [receive-queue (:receive-queue executor-data)
               context (:worker-context executor-data)
