@@ -1523,7 +1523,8 @@
               (setup-storm-code nimbus conf storm-id uploadedJarLocation total-storm-conf topology)
               (wait-for-desired-code-replication nimbus total-storm-conf storm-id)
               (.setup-heartbeats! storm-cluster-state storm-id)
-              (.setup-backpressure! storm-cluster-state storm-id)
+              (if (total-storm-conf TOPOLOGY-BACKPRESSURE-ENABLE)
+                (.setup-backpressure! storm-cluster-state storm-id))
               (notify-topology-action-listener nimbus storm-name "submitTopology")
               (let [thrift-status->kw-status {TopologyInitialStatus/INACTIVE :inactive
                                               TopologyInitialStatus/ACTIVE :active}]
@@ -1546,6 +1547,7 @@
         (mark! nimbus:num-killTopologyWithOpts-calls)
         (check-storm-active! nimbus storm-name true)
         (let [topology-conf (try-read-storm-conf-from-name conf storm-name nimbus)
+              storm-id (topology-conf STORM-ID)
               operation "killTopology"]
           (check-authorization! nimbus storm-name topology-conf operation)
           (let [wait-amt (if (.is_set_wait_secs options)
@@ -1553,6 +1555,8 @@
                            )]
             (transition-name! nimbus storm-name [:kill wait-amt] true)
             (notify-topology-action-listener nimbus storm-name operation))
+          (if (topology-conf TOPOLOGY-BACKPRESSURE-ENABLE)
+            (.remove-backpressure! (:storm-cluster-state nimbus) storm-id))
           (add-topology-to-history-log (get-storm-id (:storm-cluster-state nimbus) storm-name)
             nimbus topology-conf)))
 
@@ -2135,22 +2139,23 @@
             (.set_debug_options
               comp-page-info
               (converter/thriftify-debugoptions debug-options)))
-          ;; Add the event logger details.
-          (let [component->tasks (reverse-map (:task->component info))
-                eventlogger-tasks (sort (get component->tasks
-                                             EVENTLOGGER-COMPONENT-ID))
-                ;; Find the task the events from this component route to.
-                task-index (mod (TupleUtils/listHashCode [component-id])
-                                (count eventlogger-tasks))
-                task-id (nth eventlogger-tasks task-index)
-                eventlogger-exec (first (filter (fn [[start stop]]
-                                                  (between? task-id start stop))
-                                                (keys executor->host+port)))
-                [host port] (get executor->host+port eventlogger-exec)]
-            (if (and host port)
-              (doto comp-page-info
-                (.set_eventlog_host host)
-                (.set_eventlog_port port))))
+          ;; Add the event logger details
+          (let [component->tasks (reverse-map (:task->component info))]
+            (if (contains? component->tasks EVENTLOGGER-COMPONENT-ID)
+              (let [eventlogger-tasks (sort (get component->tasks
+                                                 EVENTLOGGER-COMPONENT-ID))
+                    ;; Find the task the events from this component route to.
+                    task-index (mod (TupleUtils/listHashCode [component-id])
+                                    (count eventlogger-tasks))
+                    task-id (nth eventlogger-tasks task-index)
+                    eventlogger-exec (first (filter (fn [[start stop]]
+                                                      (between? task-id start stop))
+                                                    (keys executor->host+port)))
+                    [host port] (get executor->host+port eventlogger-exec)]
+                (if (and host port)
+                  (doto comp-page-info
+                    (.set_eventlog_host host)
+                    (.set_eventlog_port port))))))
           comp-page-info))
 
       (^TopologyHistoryInfo getTopologyHistory [this ^String user]

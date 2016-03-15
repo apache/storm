@@ -295,6 +295,10 @@
   [conf id]
   (str (worker-root conf id) file-path-separator "pids"))
 
+(defn worker-tmp-root
+  [conf id]
+  (str (worker-root conf id) file-path-separator "tmp"))
+
 (defn worker-pid-path
   [conf id pid]
   (str (worker-pids-root conf id) file-path-separator pid))

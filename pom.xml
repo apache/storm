@@ -165,6 +165,15 @@
             </roles>
             <timezone>-6</timezone>
         </developer>
+        <developer>
+            <id>longda</id>
+            <name>Longda Feng</name>
+            <email>longda@apache.org</email>
+            <roles>
+                <role>Committer</role>
+            </roles>
+            <timezone>+8</timezone>
+        </developer>
     </developers>
 
 
@@ -200,7 +209,7 @@
         <commons-fileupload.version>1.2.1</commons-fileupload.version>
         <commons-codec.version>1.6</commons-codec.version>
         <clj-time.version>0.8.0</clj-time.version>
-        <curator.version>2.9.0</curator.version>
+        <curator.version>2.10.0</curator.version>
         <json-simple.version>1.1</json-simple.version>
         <ring.version>1.3.0</ring.version>
         <ring-json.version>0.3.1</ring-json.version>
@@ -867,6 +876,7 @@
                         <includes>
                             <include>${java.unit.test.include}</include>
                         </includes>
+                        <argLine>-Xmx1536m</argLine>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -878,6 +888,7 @@
                             <include>${java.integration.test.include}</include>
                         </includes>
                         <groups>${java.integration.test.group}</groups>  <!--set in integration-test the profile-->
+                        <argLine>-Xmx1536m</argLine>
                     </configuration>
                     <executions>
                         <execution>

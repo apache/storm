@@ -49,7 +49,9 @@ import org.slf4j.LoggerFactory;
  * Simple transport for Thrift plugin.
  * 
  * This plugin is designed to be backward compatible with existing Storm code.
+ * @deprecated Use PlainSaslTransportPlugin instead as default insecure transport plugin
  */
+@Deprecated
 public class SimpleTransportPlugin implements ITransportPlugin {
     protected ThriftConnectionType type;
     protected Map storm_conf;

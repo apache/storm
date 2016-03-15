@@ -23,7 +23,10 @@ import javax.security.auth.Subject;
 import java.security.Principal;
 import java.util.HashSet;
 
-
+/**
+  * @deprecated This is no longer available for testing purpose.
+  */
+@Deprecated
 public class SingleUserSimpleTransport extends SimpleTransportPlugin {
    @Override
    protected Subject getDefaultSubject() {

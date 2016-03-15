@@ -1,4 +1,32 @@
 ## 1.0.0
+ * STORM-971: Metric for messages lost due to kafka retention
+ * STORM-1608: Fix stateful topology acking behavior
+ * STORM-1609: Netty Client is not best effort delivery on failed Connection
+ * STORM-1620: Update curator to fix CURATOR-209
+ * STORM-1469: Decommission SimpleTransportPlugin and configuration
+ * STORM-1469: Adding Plain Sasl Transport Plugin
+ * STORM-1588: Do not add event logger details if number of event loggers is zero
+ * STORM-1606: print the information of testcase which is on failure
+ * STORM-1436: Set Travis Heap size to fit in memory limits in travis builds.
+ * STORM-1529: Change default worker temp directory location for workers
+ * STORM-1543: DRPCSpout should always try to reconnect disconnected DRPCInvocationsClient
+ * STORM-1561: Supervisor should relaunch worker if assignments have changed
+ * STORM-1601: Check if /backpressure/storm-id node exists before requesting children
+ * STORM-1574: Better handle backpressure exception etc.
+ * STORM-1587: Avoid NPE while prining Metrics
+ * STORM-1570: Storm SQL support for nested fields and array
+ * STORM-1576: fix ConcurrentModificationException in addCheckpointInputs
+ * STORM-1521: When using Kerberos login from keytab with multiple bolts/executors ticket is not renewed
+ * STORM-1488: UI Topology Page component last error timestamp is from 1970
+ * STORM-1542: Remove profile action retry in case of non-zero exit code
+ * STORM-1540: Fix Debug/Sampling for Trident
+ * STORM-1569: Allowing users to specify the nimbus thrift server queue size.
+ * STORM-1552: Fix topology event sampling log dir 
+ * STORM-1511: min/max operations support on a trident stream
+ * STORM-1522: REST API throws invalid worker log links
+ * STORM-1532: Fix readCommandLineOpts to parse JSON correctly
+ * STORM-1541: Change scope of 'hadoop-minicluster' to test
+ * STORM-1539: Improve Storm ACK-ing performance
  * STORM-1519: Storm syslog logging not confirming to RFC5426 3.1
  * STORM-1533: IntegerValidator for metric consumer parallelism hint
  * STORM-1534: Pick correct version of jackson-annotations jar
@@ -265,6 +293,7 @@
 
 ## 0.10.1
 
+ * STORM-1596: Do not use single Kerberos TGT instance between multiple threads
  * STORM-1481: avoid Math.abs(Integer) get a negative value
  * STORM-1121: Deprecate test only configuraton nimbus.reassign
  * STORM-1180: FLUX logo wasn't appearing quite right

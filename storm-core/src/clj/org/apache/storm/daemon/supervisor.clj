@@ -299,6 +299,7 @@
         (rmr-as-user conf id (worker-pid-path conf id pid))
         (try
           (rmpath (worker-pid-path conf id pid))
+          (rmpath (worker-tmp-root conf id pid))
           (catch Exception e)))) ;; on windows, the supervisor may still holds the lock on the worker directory
     (try-cleanup-worker conf id))
   (log-message "Shut down " (:supervisor-id supervisor) ":" id))
@@ -375,6 +376,7 @@
               (log-message "Launching worker with assignment "
                 (get-worker-assignment-helper-msg assignment supervisor port id))
               (local-mkdirs (worker-pids-root conf id))
+              (local-mkdirs (worker-tmp-root conf id))
               (local-mkdirs (worker-heartbeats-root conf id))
               (launch-worker supervisor
                 (:storm-id assignment)
@@ -524,6 +526,16 @@
           (rm-topo-files conf storm-id localizer false)
           storm-id)))))
 
+(defn kill-existing-workers-with-change-in-components [supervisor existing-assignment new-assignment]
+  (let [assigned-executors (or (ls-local-assignments (:local-state supervisor)) {})
+        allocated (read-allocated-workers supervisor assigned-executors (Time/currentTimeSecs))
+        valid-allocated (filter-val (fn [[state _]] (= state :valid)) allocated)
+        port->worker-id (clojure.set/map-invert (map-val #((nth % 1) :port) valid-allocated))]
+    (doseq [p (set/intersection (set (keys existing-assignment))
+                                (set (keys new-assignment)))]
+      (if (not= (:executors (existing-assignment p)) (:executors (new-assignment p)))
+        (shutdown-worker supervisor (port->worker-id p))))))
+
 (defn mk-synchronize-supervisor [supervisor sync-processes event-manager processes-event-manager]
   (fn this []
     (let [conf (:conf supervisor)
@@ -581,6 +593,7 @@
       (doseq [p (set/difference (set (keys existing-assignment))
                                 (set (keys new-assignment)))]
         (.killedWorker isupervisor (int p)))
+      (kill-existing-workers-with-change-in-components supervisor existing-assignment new-assignment)
       (.assigned isupervisor (keys new-assignment))
       (ls-local-assignments! local-state
             new-assignment)
@@ -741,7 +754,7 @@
                                 (and stop? (= action ProfileAction/JPROFILE_STOP)) (jprofile-stop profile-cmd worker-pid target-dir))
                       action-on-exit (fn [exit-code]
                                        (log-message log-prefix " profile-action exited for code: " exit-code)
-                                       (if (and (= exit-code 0) stop?)
+                                       (if stop?
                                          (delete-topology-profiler-action storm-cluster-state storm-id pro-action)))
                       command (->> command (map str) (filter (complement empty?)))]
 
@@ -1040,6 +1053,7 @@
           storm-home (System/getProperty "storm.home")
           storm-options (System/getProperty "storm.options")
           storm-conf-file (System/getProperty "storm.conf.file")
+          worker-tmp-dir (worker-tmp-root conf worker-id)
           storm-log-dir LOG-DIR
           storm-log-conf-dir (conf STORM-LOG4J2-CONF-DIR)
           storm-log4j2-conf-dir (if storm-log-conf-dir
@@ -1109,6 +1123,7 @@
                      (str "-Dstorm.conf.file=" storm-conf-file)
                      (str "-Dstorm.options=" storm-options)
                      (str "-Dstorm.log.dir=" storm-log-dir)
+                     (str "-Djava.io.tmpdir=" worker-tmp-dir)
                      (str "-Dlogging.sensitivity=" logging-sensitivity)
                      (str "-Dlog4j.configurationFile=" log4j-configuration-file)
                      (str "-DLog4jContextSelector=org.apache.logging.log4j.core.selector.BasicContextSelector")

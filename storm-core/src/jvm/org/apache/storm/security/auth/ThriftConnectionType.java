@@ -26,7 +26,7 @@ import java.util.Map;
  * The purpose for which the Thrift server is created.
  */
 public enum ThriftConnectionType {
-    NIMBUS(Config.NIMBUS_THRIFT_TRANSPORT_PLUGIN, Config.NIMBUS_THRIFT_PORT, null,
+    NIMBUS(Config.NIMBUS_THRIFT_TRANSPORT_PLUGIN, Config.NIMBUS_THRIFT_PORT, Config.NIMBUS_QUEUE_SIZE,
          Config.NIMBUS_THRIFT_THREADS, Config.NIMBUS_THRIFT_MAX_BUFFER_SIZE),
     DRPC(Config.DRPC_THRIFT_TRANSPORT_PLUGIN, Config.DRPC_PORT, Config.DRPC_QUEUE_SIZE,
          Config.DRPC_WORKER_THREADS, Config.DRPC_MAX_BUFFER_SIZE),
@@ -71,6 +71,12 @@ public enum ThriftConnectionType {
         return Utils.getInt(conf.get(_threadsConf));
     }
 
+    /**
+     * @deprecated  As SimpleTrasportPlugin is deprecated, no other thrift transport plugin uses this method.
+     * @param conf
+     * @return
+     */
+    @Deprecated
     public int getMaxBufferSize(Map conf) {
         return Utils.getInt(conf.get(_buffConf));
     }

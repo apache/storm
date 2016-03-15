@@ -550,7 +550,9 @@ public class Config extends HashMap<String, Object> {
 
     /**
      * The maximum buffer size thrift should use when reading messages.
+     * @deprecated  As SimpleTrasportPlugin is deprecated, no other thrift transport plugin uses this configuration.
      */
+    @Deprecated
     @isInteger
     @isPositiveNumber
     public static final String NIMBUS_THRIFT_MAX_BUFFER_SIZE = "nimbus.thrift.max_buffer_size";
@@ -673,6 +675,15 @@ public class Config extends HashMap<String, Object> {
      */
     @isStringList
     public static final String NIMBUS_AUTO_CRED_PLUGINS = "nimbus.autocredential.plugins.classes";
+
+    /**
+     * Nimbus thrift server queue size, default is 100000. This is the request queue size , when there are more requests
+     * than number of threads to serve the requests, those requests will be queued to this queue. If the request queue
+     * size > this config, then the incoming requests will be rejected.
+     */
+    @isInteger
+    @isPositiveNumber
+    public static final String NIMBUS_QUEUE_SIZE = "nimbus.queue.size";
 
     /**
      * FQCN of a class that implements {@code ISubmitterHook} @see ISubmitterHook for details.
@@ -1080,7 +1091,9 @@ public class Config extends HashMap<String, Object> {
 
     /**
      * The maximum buffer size thrift should use when reading messages for DRPC.
+     * @deprecated  As SimpleTrasportPlugin is deprecated, no other thrift transport plugin uses this configuration.
      */
+    @Deprecated
     @isNumber
     @isPositiveNumber
     public static final String DRPC_MAX_BUFFER_SIZE = "drpc.max_buffer_size";

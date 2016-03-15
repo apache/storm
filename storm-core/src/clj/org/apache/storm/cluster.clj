@@ -81,6 +81,7 @@
   (worker-backpressure! [this storm-id node port info])
   (topology-backpressure [this storm-id callback])
   (setup-backpressure! [this storm-id])
+  (remove-backpressure! [this storm-id])
   (remove-worker-backpressure! [this storm-id node port])
   (activate-storm! [this storm-id storm-base])
   (update-storm! [this storm-id new-elems])
@@ -485,16 +486,22 @@
     
       (topology-backpressure
         [this storm-id callback]
-        "if the backpresure/storm-id dir is empty, this topology has throttle-on, otherwise not."
+        "if the backpresure/storm-id dir is not empty, this topology has throttle-on, otherwise throttle-off.
+         The backpressure/storm-id dir may not exist if nimbus has shutdown the topology"
         (when callback
           (swap! backpressure-callback assoc storm-id callback))
         (let [path (backpressure-storm-root storm-id)
-              children (.get_children cluster-state path (not-nil? callback))]
+              children (if (.node_exists cluster-state path false)
+                         (.get_children cluster-state path (not-nil? callback))) ]
               (> (count children) 0)))
       
       (setup-backpressure!
         [this storm-id]
         (.mkdirs cluster-state (backpressure-storm-root storm-id) acls))
+
+      (remove-backpressure!
+        [this storm-id]
+        (.delete_node cluster-state (backpressure-storm-root storm-id)))
 
       (remove-worker-backpressure!
         [this storm-id node port]

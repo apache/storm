@@ -21,6 +21,5 @@ package org.apache.storm.utils;
 
 public interface WorkerBackpressureCallback {
 
-    void onEvent(Object obj) throws Exception;
-
+    void onEvent(Object obj);
 }
