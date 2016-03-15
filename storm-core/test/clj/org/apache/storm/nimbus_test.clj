@@ -1581,7 +1581,7 @@
         [teardown-heartbeats 
          teardown-topo-errors 
          teardown-backpressure-dirs
-         nimbus/force-delete-dir
+         nimbus/force-delete-topo-dist-dir
          nimbus/blob-rm-topology-keys] 
 
         (nimbus/do-cleanup nimbus)
@@ -1599,8 +1599,8 @@
         (verify-nth-call-args-for 2 teardown-backpressure-dirs "topo3")
 
         ;; removed topo directories
-        (verify-nth-call-args-for 1 nimbus/force-delete-dir conf "topo2")
-        (verify-nth-call-args-for 2 nimbus/force-delete-dir conf "topo3")
+        (verify-nth-call-args-for 1 nimbus/force-delete-topo-dist-dir conf "topo2")
+        (verify-nth-call-args-for 2 nimbus/force-delete-topo-dist-dir conf "topo3")
 
         ;; removed blob store topo keys
         (verify-nth-call-args-for 1 nimbus/blob-rm-topology-keys "topo2" mock-blob-store mock-state)
@@ -1628,7 +1628,7 @@
         [teardown-heartbeats 
          teardown-topo-errors 
          teardown-backpressure-dirs
-         nimbus/force-delete-dir
+         nimbus/force-delete-topo-dist-dir
          nimbus/blob-rm-topology-keys] 
 
         (nimbus/do-cleanup nimbus)
@@ -1636,7 +1636,7 @@
         (verify-call-times-for teardown-heartbeats 0)
         (verify-call-times-for teardown-topo-errors 0)
         (verify-call-times-for teardown-backpressure-dirs 0)
-        (verify-call-times-for nimbus/force-delete-dir 0)
+        (verify-call-times-for nimbus/force-delete-topo-dist-dir 0)
         (verify-call-times-for nimbus/blob-rm-topology-keys 0)
 
         ;; hb-cache goes down to 1 because only one topo was inactive
