@@ -1,4 +1,5 @@
 ## 1.0.0
+ * STORM-1614: backpressure init and cleanup changes
  * STORM-971: Metric for messages lost due to kafka retention
  * STORM-1608: Fix stateful topology acking behavior
  * STORM-1609: Netty Client is not best effort delivery on failed Connection
