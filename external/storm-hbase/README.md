@@ -46,6 +46,44 @@ config.put("storm.kerberos.principal", "$principle");
 StormSubmitter.submitTopology("$topologyName", config, builder.createTopology());
 ```
 
+##HBaseMapState
+
+HBaseMapState allows you to persistent your state with a simple way.
+
+Before coding with HBaseMapState，you should create a hbase table to store your state, for exmaple:
+```
+create 'hbasemapstate_test','f1'
+```
+
+First, you should specify some option:
+
+```    
+private final static String TABLE_NAME = "hbasemapstate_test";
+private final static String FAMILY = "f1";
+private final static String QUALIFIER = "q1";
+
+HBaseMapState.Options option = new HBaseMapState.Options();
+option.tableName = TABLE_NAME;
+option.columnFamily = FAMILY;
+option.mapMapper = new SimpleTridentHBaseMapMapper(QUALIFIER);
+```
+
+And the hbase-site.xml should in your classpath or specify by:
+```
+public String configKey = "hbase.config";
+```
+Second, use the HBaseMapState. transactional() as a parameter of the methond persistentAggregate().
+
+```
+topology.newStream("wordsplit", spout).shuffle().
+         each(new Fields("sentence"), new WordSplit(), new Fields("word")).
+         groupBy(new Fields("word")).
+         persistentAggregate(HBaseMapState.transactional(option), new Count(), new Fields("aggregates_words")).parallelismHint(1);
+```
+
+Of cource, HBaseMapState.NonTransactional(option) and HBaseMapState.opaque(option) is supported.
+
+
 ##Working with Secure HBASE using delegation tokens.
 If your topology is going to interact with secure HBase, your bolts/states needs to be authenticated by HBase. 
 The approach described above requires that all potential worker hosts have "storm.keytab.file" on them. If you have 
