@@ -1,4 +1,5 @@
 ## 1.0.0
+ * STORM-1616: Add RAS API for Trident
  * STORM-1483: add storm-mongodb connector
  * STORM-1614: backpressure init and cleanup changes
  * STORM-1549: Add support for resetting tuple timeout from bolts via the OutputCollector
