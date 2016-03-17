@@ -30,6 +30,7 @@
 (def ACKER-INIT-STREAM-ID "__ack_init")
 (def ACKER-ACK-STREAM-ID "__ack_ack")
 (def ACKER-FAIL-STREAM-ID "__ack_fail")
+(def ACKER-RESET-TIMEOUT-STREAM-ID "__ack_reset_timeout")
 
 (defn- update-ack [curr-entry val]
   (let [old (get curr-entry :val 0)]
@@ -61,7 +62,8 @@
                                                          (update-ack (.getValue tuple 1))
                                                          (assoc :spout-task (.getValue tuple 2)))
                                 ACKER-ACK-STREAM-ID (update-ack curr (.getValue tuple 1))
-                                ACKER-FAIL-STREAM-ID (assoc curr :failed true))]
+                                ACKER-FAIL-STREAM-ID (assoc curr :failed true)
+                                ACKER-RESET-TIMEOUT-STREAM-ID curr)]
                    (.put pending id curr)
                    (when (and curr (:spout-task curr))
                      (cond (= 0 (:val curr))
@@ -80,6 +82,12 @@
                                                 ACKER-FAIL-STREAM-ID
                                                 [id]
                                                 ))
+                           (= stream-id ACKER-RESET-TIMEOUT-STREAM-ID)
+                           (acker-emit-direct output-collector
+                                              (:spout-task curr)
+                                              ACKER-RESET-TIMEOUT-STREAM-ID
+                                              [id]
+                                              )
                            ))
                    (.ack output-collector tuple)
                    ))))

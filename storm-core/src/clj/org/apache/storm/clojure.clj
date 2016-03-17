@@ -173,6 +173,9 @@
 (defn fail! [collector ^Tuple tuple]
   (.fail ^OutputCollector (:output-collector collector) tuple))
 
+(defn reset-timeout! [collector ^Tuple tuple]
+  (.resetTimeout ^OutputCollector (:output-collector collector) tuple))
+
 (defn report-error! [collector ^Tuple tuple]
   (.reportError ^OutputCollector (:output-collector collector) tuple))
 
