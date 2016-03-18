@@ -104,14 +104,10 @@ public final class SlotBasedCounter<T> implements Serializable {
    * Remove any object from the counter whose total count is zero (to free up memory).
    */
   public void wipeZeros() {
-    Set<T> objToBeRemoved = new HashSet<T>();
     for (T obj : objToCounts.keySet()) {
       if (shouldBeRemovedFromCounter(obj)) {
-        objToBeRemoved.add(obj);
+        objToCounts.remove(obj);
       }
-    }
-    for (T obj : objToBeRemoved) {
-      objToCounts.remove(obj);
     }
   }
 
