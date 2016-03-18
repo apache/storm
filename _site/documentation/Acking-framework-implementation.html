@@ -119,7 +119,7 @@
 
 <h3 id="pending-tuples-and-the-rotatingmap">Pending tuples and the <code>RotatingMap</code></h3>
 
-<p>The acker stores pending tuples in a <a href="https://github.com/apache/storm/blob/master/storm-core/src/jvm/backtype/storm/utils/RotatingMap.java#L19"><code>RotatingMap</code></a>, a simple device used in several places within Storm to efficiently time-expire a process.</p>
+<p>The acker stores pending tuples in a <a href="https://github.com/apache/storm/blob/master/storm-core/src/jvm/org/apache/storm/utils/RotatingMap.java#L19"><code>RotatingMap</code></a>, a simple device used in several places within Storm to efficiently time-expire a process.</p>
 
 <p>The RotatingMap behaves as a HashMap, and offers the same O(1) access guarantees.</p>
 

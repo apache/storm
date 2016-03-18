@@ -11,7 +11,7 @@ The purpose of this document is to provide a description of the Resource Aware S
 
 The user can switch to using the Resource Aware Scheduler by setting the following in *conf/storm.yaml*
 
-    storm.scheduler: “backtype.storm.scheduler.resource.ResourceAwareScheduler”
+    storm.scheduler: “org.apache.storm.scheduler.resource.ResourceAwareScheduler”
 
 
 ## API Overview
@@ -178,7 +178,7 @@ Parameters:
 
 Example Usage:
 
-    conf.setTopologyStrategy(backtype.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy.class);
+    conf.setTopologyStrategy(org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy.class);
 
 A default scheduling is provided.  The DefaultResourceAwareStrategy is implemented based off the scheduling algorithm in the original paper describing resource aware scheduling in Storm:
 
@@ -188,7 +188,7 @@ http://web.engr.illinois.edu/~bpeng/files/r-storm.pdf
 
 The order of scheduling is a pluggable interface in which a user could define a strategy that prioritizes topologies.  For a user to define his or her own prioritization strategy, he or she needs to implement the ISchedulingPriorityStrategy interface.  A user can set the scheduling priority strategy by setting the *Config.RESOURCE_AWARE_SCHEDULER_PRIORITY_STRATEGY* to point to the class that implements the strategy. For instance:
 
-    resource.aware.scheduler.priority.strategy: "backtype.storm.scheduler.resource.strategies.priority.DefaultSchedulingPriorityStrategy"
+    resource.aware.scheduler.priority.strategy: "org.apache.storm.scheduler.resource.strategies.priority.DefaultSchedulingPriorityStrategy"
     
 A default strategy will be provided.  The following explains how the default scheduling priority strategy works.
 
@@ -218,7 +218,7 @@ When scheduling, RAS sorts users by the average percentage satisfied of resource
 ### Specifying Eviction Strategy
 The eviction strategy is used when there are not enough free resources in the cluster to schedule new topologies. If the cluster is full, we need a mechanism to evict topologies so that user resource guarantees can be met and additional resource can be shared fairly among users. The strategy for evicting topologies is also a pluggable interface in which the user can implement his or her own topology eviction strategy.  For a user to implement his or her own eviction strategy, he or she needs to implement the IEvictionStrategy Interface and set *Config.RESOURCE_AWARE_SCHEDULER_EVICTION_STRATEGY* to point to the implemented strategy class. For instance:
 
-    resource.aware.scheduler.eviction.strategy: "backtype.storm.scheduler.resource.strategies.eviction.DefaultEvictionStrategy"
+    resource.aware.scheduler.eviction.strategy: "org.apache.storm.scheduler.resource.strategies.eviction.DefaultEvictionStrategy"
 
 A default eviction strategy is provided.  The following explains how the default topology eviction strategy works
 

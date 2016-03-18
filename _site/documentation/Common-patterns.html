@@ -124,7 +124,7 @@
 
 <h3 id="basicbolt">BasicBolt</h3>
 
-<p>Many bolts follow a similar pattern of reading an input tuple, emitting zero or more tuples based on that input tuple, and then acking that input tuple immediately at the end of the execute method. Bolts that match this pattern are things like functions and filters. This is such a common pattern that Storm exposes an interface called <a href="/javadoc/apidocs/backtype/storm/topology/IBasicBolt.html">IBasicBolt</a> that automates this pattern for you. See <a href="Guaranteeing-message-processing.html">Guaranteeing message processing</a> for more information.</p>
+<p>Many bolts follow a similar pattern of reading an input tuple, emitting zero or more tuples based on that input tuple, and then acking that input tuple immediately at the end of the execute method. Bolts that match this pattern are things like functions and filters. This is such a common pattern that Storm exposes an interface called <a href="/javadoc/apidocs/org/apache/storm/topology/IBasicBolt.html">IBasicBolt</a> that automates this pattern for you. See <a href="Guaranteeing-message-processing.html">Guaranteeing message processing</a> for more information.</p>
 
 <h3 id="in-memory-caching-fields-grouping-combo">In-memory caching + fields grouping combo</h3>
 
@@ -146,7 +146,7 @@
 <span class="n">builder</span><span class="o">.</span><span class="na">setBolt</span><span class="o">(</span><span class="s">"merge"</span><span class="o">,</span> <span class="k">new</span> <span class="n">MergeObjects</span><span class="o">())</span>
   <span class="o">.</span><span class="na">globalGrouping</span><span class="o">(</span><span class="s">"rank"</span><span class="o">);</span>
 </code></pre></div>
-<p>This pattern works because of the fields grouping done by the first bolt which gives the partitioning you need for this to be semantically correct. You can see an example of this pattern in storm-starter <a href="https://github.com/apache/storm/blob/master/examples/storm-starter/src/jvm/storm/starter/RollingTopWords.java">here</a>.</p>
+<p>This pattern works because of the fields grouping done by the first bolt which gives the partitioning you need for this to be semantically correct. You can see an example of this pattern in storm-starter <a href="https://github.com/apache/storm/blob/master/examples/storm-starter/src/jvm/org/apache/storm/starter/RollingTopWords.java">here</a>.</p>
 
 <p>If however you have a known skew in the data being processed it can be advantageous to use partialKeyGrouping instead of fieldsGrouping.  This will distribute the load for each key between two downstream bolts instead of a single one.</p>
 <div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">builder</span><span class="o">.</span><span class="na">setBolt</span><span class="o">(</span><span class="s">"count"</span><span class="o">,</span> <span class="k">new</span> <span class="n">CountObjects</span><span class="o">(),</span> <span class="n">parallelism</span><span class="o">)</span>
@@ -156,15 +156,15 @@
 <span class="n">builder</span><span class="o">.</span><span class="na">setBolt</span><span class="o">(</span><span class="s">"merge"</span><span class="o">,</span> <span class="k">new</span> <span class="n">MergeRanksObjects</span><span class="o">())</span>
   <span class="o">.</span><span class="na">globalGrouping</span><span class="o">(</span><span class="s">"rank"</span><span class="o">);</span>
 </code></pre></div>
-<p>The topology needs an extra layer of processing to aggregate the partial counts from the upstream bolts but this only processes aggregated values now so the bolt it is not subject to the load caused by the skewed data. You can see an example of this pattern in storm-starter <a href="https://github.com/apache/storm/blob/master/examples/storm-starter/src/jvm/storm/starter/SkewedRollingTopWords.java">here</a>.</p>
+<p>The topology needs an extra layer of processing to aggregate the partial counts from the upstream bolts but this only processes aggregated values now so the bolt it is not subject to the load caused by the skewed data. You can see an example of this pattern in storm-starter <a href="https://github.com/apache/storm/blob/master/examples/storm-starter/src/jvm/org/apache/storm/starter/SkewedRollingTopWords.java">here</a>.</p>
 
 <h3 id="timecachemap-for-efficiently-keeping-a-cache-of-things-that-have-been-recently-updated">TimeCacheMap for efficiently keeping a cache of things that have been recently updated</h3>
 
-<p>You sometimes want to keep a cache in memory of items that have been recently &quot;active&quot; and have items that have been inactive for some time be automatically expires. <a href="/javadoc/apidocs/backtype/storm/utils/TimeCacheMap.html">TimeCacheMap</a> is an efficient data structure for doing this and provides hooks so you can insert callbacks whenever an item is expired.</p>
+<p>You sometimes want to keep a cache in memory of items that have been recently &quot;active&quot; and have items that have been inactive for some time be automatically expires. <a href="/javadoc/apidocs/org/apache/storm/utils/TimeCacheMap.html">TimeCacheMap</a> is an efficient data structure for doing this and provides hooks so you can insert callbacks whenever an item is expired.</p>
 
 <h3 id="coordinatedbolt-and-keyedfairbolt-for-distributed-rpc">CoordinatedBolt and KeyedFairBolt for Distributed RPC</h3>
 
-<p>When building distributed RPC applications on top of Storm, there are two common patterns that are usually needed. These are encapsulated by <a href="/javadoc/apidocs/backtype/storm/task/CoordinatedBolt.html">CoordinatedBolt</a> and <a href="/javadoc/apidocs/backtype/storm/task/KeyedFairBolt.html">KeyedFairBolt</a> which are part of the &quot;standard library&quot; that ships with the Storm codebase.</p>
+<p>When building distributed RPC applications on top of Storm, there are two common patterns that are usually needed. These are encapsulated by <a href="/javadoc/apidocs/org/apache/storm/task/CoordinatedBolt.html">CoordinatedBolt</a> and <a href="/javadoc/apidocs/org/apache/storm/task/KeyedFairBolt.html">KeyedFairBolt</a> which are part of the &quot;standard library&quot; that ships with the Storm codebase.</p>
 
 <p><code>CoordinatedBolt</code> wraps the bolt containing your logic and figures out when your bolt has received all the tuples for any given request. It makes heavy use of direct streams to do this.</p>
 

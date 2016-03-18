@@ -309,7 +309,7 @@ sentence-spout[1](org.apache.storm.flux.spouts.GenericShellSpout)
 ---------------- BOLTS ---------------
 splitsentence[1](org.apache.storm.flux.bolts.GenericShellBolt)
 log[1](org.apache.storm.flux.wrappers.bolts.LogInfoBolt)
-count[1](backtype.storm.testing.TestWordCounter)
+count[1](org.apache.storm.testing.TestWordCounter)
 --------------- STREAMS ---------------
 sentence-spout --SHUFFLE--&gt; splitsentence
 splitsentence --FIELDS--&gt; count
@@ -332,7 +332,7 @@ definition consists of the following:</p>
 <li>A list of bolts, each identified by a unique ID</li>
 <li>A list of &quot;stream&quot; objects representing a flow of tuples between spouts and bolts</li>
 </ul></li>
-<li><strong>OR</strong> (A JVM class that can produce a <code>backtype.storm.generated.StormTopology</code> instance:
+<li><strong>OR</strong> (A JVM class that can produce a <code>org.apache.storm.generated.StormTopology</code> instance:
 
 <ul>
 <li>A <code>topologySource</code> definition.</li>
@@ -347,13 +347,13 @@ definition consists of the following:</p>
 <span class="c1"># spout definitions</span>
 <span class="s">spouts</span><span class="pi">:</span>
   <span class="pi">-</span> <span class="s">id</span><span class="pi">:</span> <span class="s2">"</span><span class="s">spout-1"</span>
-    <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">backtype.storm.testing.TestWordSpout"</span>
+    <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">org.apache.storm.testing.TestWordSpout"</span>
     <span class="s">parallelism</span><span class="pi">:</span> <span class="s">1</span>
 
 <span class="c1"># bolt definitions</span>
 <span class="s">bolts</span><span class="pi">:</span>
   <span class="pi">-</span> <span class="s">id</span><span class="pi">:</span> <span class="s2">"</span><span class="s">bolt-1"</span>
-    <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">backtype.storm.testing.TestWordCounter"</span>
+    <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">org.apache.storm.testing.TestWordCounter"</span>
     <span class="s">parallelism</span><span class="pi">:</span> <span class="s">1</span>
   <span class="pi">-</span> <span class="s">id</span><span class="pi">:</span> <span class="s2">"</span><span class="s">bolt-2"</span>
     <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">org.apache.storm.flux.wrappers.bolts.LogInfoBolt"</span>
@@ -443,7 +443,7 @@ to another component&#39;s constructor:</p>
     <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">storm.kafka.StringScheme"</span>
 
   <span class="pi">-</span> <span class="s">id</span><span class="pi">:</span> <span class="s2">"</span><span class="s">stringMultiScheme"</span>
-    <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">backtype.storm.spout.SchemeAsMultiScheme"</span>
+    <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">org.apache.storm.spout.SchemeAsMultiScheme"</span>
     <span class="s">constructorArgs</span><span class="pi">:</span>
       <span class="pi">-</span> <span class="s">ref</span><span class="pi">:</span> <span class="s2">"</span><span class="s">stringScheme"</span> <span class="c1"># component with id "stringScheme" must be declared above.</span>
 </code></pre></div>
@@ -535,7 +535,7 @@ well.</p>
 <h2 id="topology-config">Topology Config</h2>
 
 <p>The <code>config</code> section is simply a map of Storm topology configuration parameters that will be passed to the
-<code>backtype.storm.StormSubmitter</code> as an instance of the <code>backtype.storm.Config</code> class:</p>
+<code>org.apache.storm.StormSubmitter</code> as an instance of the <code>org.apache.storm.Config</code> class:</p>
 <div class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="s">config</span><span class="pi">:</span>
   <span class="s">topology.workers</span><span class="pi">:</span> <span class="s">4</span>
   <span class="s">topology.max.spout.pending</span><span class="pi">:</span> <span class="s">1000</span>
@@ -567,7 +567,7 @@ override it:</p>
   <span class="s">methodName</span><span class="pi">:</span> <span class="s2">"</span><span class="s">getTopologyWithDifferentMethodName"</span>
 </code></pre></div>
 <p><strong>N.B.:</strong> The specified method must accept a single argument of type <code>java.util.Map&lt;String, Object&gt;</code> or
-<code>backtype.storm.Config</code>, and return a <code>backtype.storm.generated.StormTopology</code> object.</p>
+<code>org.apache.storm.Config</code>, and return a <code>org.apache.storm.generated.StormTopology</code> object.</p>
 
 <h1 id="yaml-dsl">YAML DSL</h1>
 
@@ -598,7 +598,7 @@ well.</p>
     <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">storm.kafka.StringScheme"</span>
 
   <span class="pi">-</span> <span class="s">id</span><span class="pi">:</span> <span class="s2">"</span><span class="s">stringMultiScheme"</span>
-    <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">backtype.storm.spout.SchemeAsMultiScheme"</span>
+    <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">org.apache.storm.spout.SchemeAsMultiScheme"</span>
     <span class="s">constructorArgs</span><span class="pi">:</span>
       <span class="pi">-</span> <span class="s">ref</span><span class="pi">:</span> <span class="s2">"</span><span class="s">stringScheme"</span>
 
@@ -665,7 +665,7 @@ well.</p>
     <span class="c1"># ...</span>
 
   <span class="pi">-</span> <span class="s">id</span><span class="pi">:</span> <span class="s2">"</span><span class="s">count"</span>
-    <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">backtype.storm.testing.TestWordCounter"</span>
+    <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">org.apache.storm.testing.TestWordCounter"</span>
     <span class="s">parallelism</span><span class="pi">:</span> <span class="s">1</span>
     <span class="c1"># ...</span>
 </code></pre></div>
@@ -727,7 +727,7 @@ a topology, with an associated Grouping definition.</p>
 that tells Flux how to instantiate the custom class. The <code>customClass</code> definition extends <code>component</code>, so it supports
 constructor arguments, references, and properties as well.</p>
 
-<p>The example below creates a Stream with an instance of the <code>backtype.storm.testing.NGrouping</code> custom stream grouping
+<p>The example below creates a Stream with an instance of the <code>org.apache.storm.testing.NGrouping</code> custom stream grouping
 class.</p>
 <div class="highlight"><pre><code class="language-yaml" data-lang="yaml">  <span class="pi">-</span> <span class="s">name</span><span class="pi">:</span> <span class="s2">"</span><span class="s">bolt-1</span><span class="nv"> </span><span class="s">--&gt;</span><span class="nv"> </span><span class="s">bolt2"</span>
     <span class="s">from</span><span class="pi">:</span> <span class="s2">"</span><span class="s">bolt-1"</span>
@@ -735,7 +735,7 @@ class.</p>
     <span class="s">grouping</span><span class="pi">:</span>
       <span class="s">type</span><span class="pi">:</span> <span class="s">CUSTOM</span>
       <span class="s">customClass</span><span class="pi">:</span>
-        <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">backtype.storm.testing.NGrouping"</span>
+        <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">org.apache.storm.testing.NGrouping"</span>
         <span class="s">constructorArgs</span><span class="pi">:</span>
           <span class="pi">-</span> <span class="s">1</span>
 </code></pre></div>
@@ -797,7 +797,7 @@ same file. Includes may be either files, or classpath resources.</p>
     <span class="s">parallelism</span><span class="pi">:</span> <span class="s">1</span>
 
   <span class="pi">-</span> <span class="s">id</span><span class="pi">:</span> <span class="s2">"</span><span class="s">count"</span>
-    <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">backtype.storm.testing.TestWordCounter"</span>
+    <span class="s">className</span><span class="pi">:</span> <span class="s2">"</span><span class="s">org.apache.storm.testing.TestWordCounter"</span>
     <span class="s">parallelism</span><span class="pi">:</span> <span class="s">1</span>
 
 <span class="c1">#stream definitions</span>

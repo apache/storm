@@ -176,7 +176,7 @@
 
 <h2 id="the-basics-through-example">The basics through example</h2>
 
-<p>You build transactional topologies by using <a href="/javadoc/apidocs/backtype/storm/transactional/TransactionalTopologyBuilder.html">TransactionalTopologyBuilder</a>. Here&#39;s the transactional topology definition for a topology that computes the global count of tuples from the input stream. This code comes from <a href="https://github.com/apache/storm/blob/master/examples/storm-starter/src/jvm/storm/starter/TransactionalGlobalCount.java">TransactionalGlobalCount</a> in storm-starter.</p>
+<p>You build transactional topologies by using <a href="/javadoc/apidocs/org/apache/storm/transactional/TransactionalTopologyBuilder.html">TransactionalTopologyBuilder</a>. Here&#39;s the transactional topology definition for a topology that computes the global count of tuples from the input stream. This code comes from <a href="https://github.com/apache/storm/blob/master/examples/storm-starter/src/jvm/org/apache/storm/starter/TransactionalGlobalCount.java">TransactionalGlobalCount</a> in storm-starter.</p>
 <div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">MemoryTransactionalSpout</span> <span class="n">spout</span> <span class="o">=</span> <span class="k">new</span> <span class="n">MemoryTransactionalSpout</span><span class="o">(</span><span class="n">DATA</span><span class="o">,</span> <span class="k">new</span> <span class="n">Fields</span><span class="o">(</span><span class="s">"word"</span><span class="o">),</span> <span class="n">PARTITION_TAKE_PER_BATCH</span><span class="o">);</span>
 <span class="n">TransactionalTopologyBuilder</span> <span class="n">builder</span> <span class="o">=</span> <span class="k">new</span> <span class="n">TransactionalTopologyBuilder</span><span class="o">(</span><span class="s">"global-count"</span><span class="o">,</span> <span class="s">"spout"</span><span class="o">,</span> <span class="n">spout</span><span class="o">,</span> <span class="mi">3</span><span class="o">);</span>
 <span class="n">builder</span><span class="o">.</span><span class="na">setBolt</span><span class="o">(</span><span class="s">"partial-count"</span><span class="o">,</span> <span class="k">new</span> <span class="n">BatchCount</span><span class="o">(),</span> <span class="mi">5</span><span class="o">)</span>
@@ -221,7 +221,7 @@
 </code></pre></div>
 <p>A new instance of this object is created for every batch that&#39;s being processed. The actual bolt this runs within is called <a href="https://github.com/apache/storm/blob/0.7.0/src/jvm/backtype/storm/coordination/BatchBoltExecutor.java">BatchBoltExecutor</a> and manages the creation and cleanup for these objects.</p>
 
-<p>The <code>prepare</code> method parameterizes this batch bolt with the Storm config, the topology context, an output collector, and the id for this batch of tuples. In the case of transactional topologies, the id will be a <a href="/javadoc/apidocs/backtype/storm/transactional/TransactionAttempt.html">TransactionAttempt</a> object. The batch bolt abstraction can be used in Distributed RPC as well which uses a different type of id for the batches. <code>BatchBolt</code> can actually be parameterized with the type of the id, so if you only intend to use the batch bolt for transactional topologies, you can extend <code>BaseTransactionalBolt</code> which has this definition:</p>
+<p>The <code>prepare</code> method parameterizes this batch bolt with the Storm config, the topology context, an output collector, and the id for this batch of tuples. In the case of transactional topologies, the id will be a <a href="/javadoc/apidocs/org/apache/storm/transactional/TransactionAttempt.html">TransactionAttempt</a> object. The batch bolt abstraction can be used in Distributed RPC as well which uses a different type of id for the batches. <code>BatchBolt</code> can actually be parameterized with the type of the id, so if you only intend to use the batch bolt for transactional topologies, you can extend <code>BaseTransactionalBolt</code> which has this definition:</p>
 <div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">abstract</span> <span class="kd">class</span> <span class="nc">BaseTransactionalBolt</span> <span class="kd">extends</span> <span class="n">BaseBatchBolt</span><span class="o">&lt;</span><span class="n">TransactionAttempt</span><span class="o">&gt;</span> <span class="o">{</span>
 <span class="o">}</span>
 </code></pre></div>
@@ -284,7 +284,7 @@
 
 <p>The code for <code>finishBatch</code> in <code>UpdateGlobalCount</code> gets the current value from the database and compares its transaction id to the transaction id for this batch. If they are the same, it does nothing. Otherwise, it increments the value in the database by the partial count for this batch.</p>
 
-<p>A more involved transactional topology example that updates multiple databases idempotently can be found in storm-starter in the <a href="https://github.com/apache/storm/blob/master/examples/storm-starter/src/jvm/storm/starter/TransactionalWords.java">TransactionalWords</a> class.</p>
+<p>A more involved transactional topology example that updates multiple databases idempotently can be found in storm-starter in the <a href="https://github.com/apache/storm/blob/master/examples/storm-starter/src/jvm/org/apache/storm/starter/TransactionalWords.java">TransactionalWords</a> class.</p>
 
 <h2 id="transactional-topology-api">Transactional Topology API</h2>
 
@@ -295,9 +295,9 @@
 <p>There are three kinds of bolts possible in a transactional topology:</p>
 
 <ol>
-<li><a href="/javadoc/apidocs/backtype/storm/topology/base/BaseBasicBolt.html">BasicBolt</a>: This bolt doesn&#39;t deal with batches of tuples and just emits tuples based on a single tuple of input.</li>
-<li><a href="/javadoc/apidocs/backtype/storm/topology/base/BaseBatchBolt.html">BatchBolt</a>: This bolt processes batches of tuples. <code>execute</code> is called for each tuple, and <code>finishBatch</code> is called when the batch is complete.</li>
-<li>BatchBolt&#39;s that are marked as committers: The only difference between this bolt and a regular batch bolt is when <code>finishBatch</code> is called. A committer bolt has <code>finishedBatch</code> called during the commit phase. The commit phase is guaranteed to occur only after all prior batches have successfully committed, and it will be retried until all bolts in the topology succeed the commit for the batch. There are two ways to make a <code>BatchBolt</code> a committer, by having the <code>BatchBolt</code> implement the <a href="/javadoc/apidocs/backtype/storm/transactional/ICommitter.html">ICommitter</a> marker interface, or by using the <code>setCommiterBolt</code> method in <code>TransactionalTopologyBuilder</code>.</li>
+<li><a href="/javadoc/apidocs/org/apache/storm/topology/base/BaseBasicBolt.html">BasicBolt</a>: This bolt doesn&#39;t deal with batches of tuples and just emits tuples based on a single tuple of input.</li>
+<li><a href="/javadoc/apidocs/org/apache/storm/topology/base/BaseBatchBolt.html">BatchBolt</a>: This bolt processes batches of tuples. <code>execute</code> is called for each tuple, and <code>finishBatch</code> is called when the batch is complete.</li>
+<li>BatchBolt&#39;s that are marked as committers: The only difference between this bolt and a regular batch bolt is when <code>finishBatch</code> is called. A committer bolt has <code>finishedBatch</code> called during the commit phase. The commit phase is guaranteed to occur only after all prior batches have successfully committed, and it will be retried until all bolts in the topology succeed the commit for the batch. There are two ways to make a <code>BatchBolt</code> a committer, by having the <code>BatchBolt</code> implement the <a href="/javadoc/apidocs/org/apache/storm/transactional/ICommitter.html">ICommitter</a> marker interface, or by using the <code>setCommiterBolt</code> method in <code>TransactionalTopologyBuilder</code>.</li>
 </ol>
 
 <h4 id="processing-phase-vs-commit-phase-in-bolts">Processing phase vs. commit phase in bolts</h4>
@@ -322,7 +322,7 @@
 
 <h4 id="failing-a-transaction">Failing a transaction</h4>
 
-<p>When using regular bolts, you can call the <code>fail</code> method on <code>OutputCollector</code> to fail the tuple trees of which that tuple is a member. Since transactional topologies hide the acking framework from you, they provide a different mechanism to fail a batch (and cause the batch to be replayed). Just throw a <a href="/javadoc/apidocs/backtype/storm/topology/FailedException.html">FailedException</a>. Unlike regular exceptions, this will only cause that particular batch to replay and will not crash the process.</p>
+<p>When using regular bolts, you can call the <code>fail</code> method on <code>OutputCollector</code> to fail the tuple trees of which that tuple is a member. Since transactional topologies hide the acking framework from you, they provide a different mechanism to fail a batch (and cause the batch to be replayed). Just throw a <a href="/javadoc/apidocs/org/apache/storm/topology/FailedException.html">FailedException</a>. Unlike regular exceptions, this will only cause that particular batch to replay and will not crash the process.</p>
 
 <h3 id="transactional-spout">Transactional spout</h3>
 
@@ -336,11 +336,11 @@
 
 <p>The need to be idempotent with respect to the tuples it emits requires a <code>TransactionalSpout</code> to store a small amount of state. The state is stored in Zookeeper.</p>
 
-<p>The details of implementing a <code>TransactionalSpout</code> are in <a href="/javadoc/apidocs/backtype/storm/transactional/ITransactionalSpout.html">the Javadoc</a>.</p>
+<p>The details of implementing a <code>TransactionalSpout</code> are in <a href="/javadoc/apidocs/org/apache/storm/transactional/ITransactionalSpout.html">the Javadoc</a>.</p>
 
 <h4 id="partitioned-transactional-spout">Partitioned Transactional Spout</h4>
 
-<p>A common kind of transactional spout is one that reads the batches from a set of partitions across many queue brokers. For example, this is how <a href="https://github.com/apache/storm/tree/master/external/storm-kafka/src/jvm/storm/kafka/TransactionalKafkaSpout.java">TransactionalKafkaSpout</a> works. An <code>IPartitionedTransactionalSpout</code> automates the bookkeeping work of managing the state for each partition to ensure idempotent replayability. See <a href="/javadoc/apidocs/backtype/storm/transactional/partitioned/IPartitionedTransactionalSpout.html">the Javadoc</a> for more details.</p>
+<p>A common kind of transactional spout is one that reads the batches from a set of partitions across many queue brokers. For example, this is how <a href="https://github.com/apache/storm/tree/master/external/storm-kafka/src/jvm/storm/kafka/TransactionalKafkaSpout.java">TransactionalKafkaSpout</a> works. An <code>IPartitionedTransactionalSpout</code> automates the bookkeeping work of managing the state for each partition to ensure idempotent replayability. See <a href="/javadoc/apidocs/org/apache/storm/transactional/partitioned/IPartitionedTransactionalSpout.html">the Javadoc</a> for more details.</p>
 
 <h3 id="configuration">Configuration</h3>
 
@@ -412,7 +412,7 @@
 
 <p>By failing all subsequent transactions on failure, no tuples are skipped. This also shows that a requirement of transactional spouts is that they always emit where the last transaction left off.</p>
 
-<p>A non-idempotent transactional spout is more concisely referred to as an &quot;OpaqueTransactionalSpout&quot; (opaque is the opposite of idempotent). <a href="/javadoc/apidocs/backtype/storm/transactional/partitioned/IOpaquePartitionedTransactionalSpout.html">IOpaquePartitionedTransactionalSpout</a> is an interface for implementing opaque partitioned transactional spouts, of which <a href="https://github.com/apache/storm/tree/master/external/storm-kafka/src/jvm/storm/kafka/OpaqueTransactionalKafkaSpout.java">OpaqueTransactionalKafkaSpout</a> is an example. <code>OpaqueTransactionalKafkaSpout</code> can withstand losing individual Kafka nodes without sacrificing accuracy as long as you use the update strategy as explained in this section.</p>
+<p>A non-idempotent transactional spout is more concisely referred to as an &quot;OpaqueTransactionalSpout&quot; (opaque is the opposite of idempotent). <a href="/javadoc/apidocs/org/apache/storm/transactional/partitioned/IOpaquePartitionedTransactionalSpout.html">IOpaquePartitionedTransactionalSpout</a> is an interface for implementing opaque partitioned transactional spouts, of which <a href="https://github.com/apache/storm/tree/master/external/storm-kafka/src/jvm/storm/kafka/OpaqueTransactionalKafkaSpout.java">OpaqueTransactionalKafkaSpout</a> is an example. <code>OpaqueTransactionalKafkaSpout</code> can withstand losing individual Kafka nodes without sacrificing accuracy as long as you use the update strategy as explained in this section.</p>
 
 <h2 id="implementation">Implementation</h2>
 

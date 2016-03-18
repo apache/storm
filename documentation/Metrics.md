@@ -12,13 +12,13 @@ Metrics have to implement just one method, `getValueAndReset` -- do any remainin
 
 Storm gives you these metric types:
 
-* [AssignableMetric](https://github.com/apache/storm/blob/master/storm-core/src/jvm/backtype/storm/metric/api/AssignableMetric.java) -- set the metric to the explicit value you supply. Useful if it's an external value or in the case that you are already calculating the summary statistic yourself.
-* [CombinedMetric](https://github.com/apache/storm/blob/master/storm-core/src/jvm/backtype/storm/metric/api/CombinedMetric.java) -- generic interface for metrics that can be updated associatively. 
-* [CountMetric](https://github.com/apache/storm/blob/master/storm-core/src/jvm/backtype/storm/metric/api/CountMetric.java) -- a running total of the supplied values. Call `incr()` to increment by one, `incrBy(n)` to add/subtract the given number.
-  - [MultiCountMetric](https://github.com/apache/storm/blob/master/storm-core/src/jvm/backtype/storm/metric/api/MultiCountMetric.java) -- a hashmap of count metrics.
-* [ReducedMetric](https://github.com/apache/storm/blob/master/storm-core/src/jvm/backtype/storm/metric/api/ReducedMetric.java)
-  - [MeanReducer](https://github.com/apache/storm/blob/master/storm-core/src/jvm/backtype/storm/metric/api/MeanReducer.java) -- track a running average of values given to its `reduce()` method. (It accepts `Double`, `Integer` or `Long` values, and maintains the internal average as a `Double`.) Despite his reputation, the MeanReducer is actually a pretty nice guy in person.
-  - [MultiReducedMetric](https://github.com/apache/storm/blob/master/storm-core/src/jvm/backtype/storm/metric/api/MultiReducedMetric.java) -- a hashmap of reduced metrics.
+* [AssignableMetric](https://github.com/apache/storm/blob/master/storm-core/src/jvm/org/apache/storm/metric/api/AssignableMetric.java) -- set the metric to the explicit value you supply. Useful if it's an external value or in the case that you are already calculating the summary statistic yourself.
+* [CombinedMetric](https://github.com/apache/storm/blob/master/storm-core/src/jvm/org/apache/storm/metric/api/CombinedMetric.java) -- generic interface for metrics that can be updated associatively. 
+* [CountMetric](https://github.com/apache/storm/blob/master/storm-core/src/jvm/org/apache/storm/metric/api/CountMetric.java) -- a running total of the supplied values. Call `incr()` to increment by one, `incrBy(n)` to add/subtract the given number.
+  - [MultiCountMetric](https://github.com/apache/storm/blob/master/storm-core/src/jvm/org/apache/storm/metric/api/MultiCountMetric.java) -- a hashmap of count metrics.
+* [ReducedMetric](https://github.com/apache/storm/blob/master/storm-core/src/jvm/org/apache/storm/metric/api/ReducedMetric.java)
+  - [MeanReducer](https://github.com/apache/storm/blob/master/storm-core/src/jvm/org/apache/storm/metric/api/MeanReducer.java) -- track a running average of values given to its `reduce()` method. (It accepts `Double`, `Integer` or `Long` values, and maintains the internal average as a `Double`.) Despite his reputation, the MeanReducer is actually a pretty nice guy in person.
+  - [MultiReducedMetric](https://github.com/apache/storm/blob/master/storm-core/src/jvm/org/apache/storm/metric/api/MultiReducedMetric.java) -- a hashmap of reduced metrics.
 
 
 ### Metric Consumer

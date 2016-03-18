@@ -100,18 +100,18 @@ It&#39;s used internally to track the numbers you see in the Nimbus UI console: 
 <p>Storm gives you these metric types:</p>
 
 <ul>
-<li><a href="https://github.com/apache/storm/blob/master/storm-core/src/jvm/backtype/storm/metric/api/AssignableMetric.java">AssignableMetric</a> -- set the metric to the explicit value you supply. Useful if it&#39;s an external value or in the case that you are already calculating the summary statistic yourself.</li>
-<li><a href="https://github.com/apache/storm/blob/master/storm-core/src/jvm/backtype/storm/metric/api/CombinedMetric.java">CombinedMetric</a> -- generic interface for metrics that can be updated associatively. </li>
-<li><a href="https://github.com/apache/storm/blob/master/storm-core/src/jvm/backtype/storm/metric/api/CountMetric.java">CountMetric</a> -- a running total of the supplied values. Call <code>incr()</code> to increment by one, <code>incrBy(n)</code> to add/subtract the given number.
+<li><a href="https://github.com/apache/storm/blob/master/storm-core/src/jvm/org/apache/storm/metric/api/AssignableMetric.java">AssignableMetric</a> -- set the metric to the explicit value you supply. Useful if it&#39;s an external value or in the case that you are already calculating the summary statistic yourself.</li>
+<li><a href="https://github.com/apache/storm/blob/master/storm-core/src/jvm/org/apache/storm/metric/api/CombinedMetric.java">CombinedMetric</a> -- generic interface for metrics that can be updated associatively. </li>
+<li><a href="https://github.com/apache/storm/blob/master/storm-core/src/jvm/org/apache/storm/metric/api/CountMetric.java">CountMetric</a> -- a running total of the supplied values. Call <code>incr()</code> to increment by one, <code>incrBy(n)</code> to add/subtract the given number.
 
 <ul>
-<li><a href="https://github.com/apache/storm/blob/master/storm-core/src/jvm/backtype/storm/metric/api/MultiCountMetric.java">MultiCountMetric</a> -- a hashmap of count metrics.</li>
+<li><a href="https://github.com/apache/storm/blob/master/storm-core/src/jvm/org/apache/storm/metric/api/MultiCountMetric.java">MultiCountMetric</a> -- a hashmap of count metrics.</li>
 </ul></li>
-<li><a href="https://github.com/apache/storm/blob/master/storm-core/src/jvm/backtype/storm/metric/api/ReducedMetric.java">ReducedMetric</a>
+<li><a href="https://github.com/apache/storm/blob/master/storm-core/src/jvm/org/apache/storm/metric/api/ReducedMetric.java">ReducedMetric</a>
 
 <ul>
-<li><a href="https://github.com/apache/storm/blob/master/storm-core/src/jvm/backtype/storm/metric/api/MeanReducer.java">MeanReducer</a> -- track a running average of values given to its <code>reduce()</code> method. (It accepts <code>Double</code>, <code>Integer</code> or <code>Long</code> values, and maintains the internal average as a <code>Double</code>.) Despite his reputation, the MeanReducer is actually a pretty nice guy in person.</li>
-<li><a href="https://github.com/apache/storm/blob/master/storm-core/src/jvm/backtype/storm/metric/api/MultiReducedMetric.java">MultiReducedMetric</a> -- a hashmap of reduced metrics.</li>
+<li><a href="https://github.com/apache/storm/blob/master/storm-core/src/jvm/org/apache/storm/metric/api/MeanReducer.java">MeanReducer</a> -- track a running average of values given to its <code>reduce()</code> method. (It accepts <code>Double</code>, <code>Integer</code> or <code>Long</code> values, and maintains the internal average as a <code>Double</code>.) Despite his reputation, the MeanReducer is actually a pretty nice guy in person.</li>
+<li><a href="https://github.com/apache/storm/blob/master/storm-core/src/jvm/org/apache/storm/metric/api/MultiReducedMetric.java">MultiReducedMetric</a> -- a hashmap of reduced metrics.</li>
 </ul></li>
 </ul>
 

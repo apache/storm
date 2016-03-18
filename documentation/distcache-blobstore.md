@@ -68,7 +68,7 @@ key “key1” having a local file name mapping named “blob_file” and it is 
 
 ```
 storm jar /home/y/lib/storm-starter/current/storm-starter-jar-with-dependencies.jar 
-storm.starter.clj.word_count test_topo -c topology.blobstore.map='{"key1":{"localname":"blob_file", "uncompress":"false"},"key2":{}}'
+org.apache.storm.starter.clj.word_count test_topo -c topology.blobstore.map='{"key1":{"localname":"blob_file", "uncompress":"false"},"key2":{}}'
 ```
 
 ### Blob Creation Process
@@ -98,7 +98,7 @@ end, the supervisor and localizer talks to HdfsBlobStore through “HdfsClientBl
 
 ## Additional Features and Documentation
 ```
-storm jar /home/y/lib/storm-starter/current/storm-starter-jar-with-dependencies.jar storm.starter.clj.word_count test_topo 
+storm jar /home/y/lib/storm-starter/current/storm-starter-jar-with-dependencies.jar org.apache.storm.starter.clj.word_count test_topo 
 -c topology.blobstore.map='{"key1":{"localname":"blob_file", "uncompress":"false"},"key2":{}}'
 ```
  
@@ -275,8 +275,8 @@ blobstore.dir: The directory where all blobs are stored. For local file system i
 node and for HDFS file system it represents the hdfs file system path.
 
 supervisor.blobstore.class: This configuration is meant to set the client for  the supervisor  in order to talk to the blobstore. 
-For a local file system blobstore it is set to “backtype.storm.blobstore.NimbusBlobStore” and for the HDFS blobstore it is set 
-to “backtype.storm.blobstore.HdfsClientBlobStore”.
+For a local file system blobstore it is set to “org.apache.storm.blobstore.NimbusBlobStore” and for the HDFS blobstore it is set 
+to “org.apache.storm.blobstore.HdfsClientBlobStore”.
 
 supervisor.blobstore.download.thread.count: This configuration spawns multiple threads for from the supervisor in order download 
 blobs concurrently. The default is set to 5
@@ -292,7 +292,7 @@ of the distributed cache contents. It is set to 10240 MB.
 supervisor.localizer.cleanup.interval.ms: The distributed cache cleanup interval. Controls how often it scans to attempt to 
 cleanup anything over the cache target size. By default it is set to 600000 milliseconds.
 
-nimbus.blobstore.class:  Sets the blobstore implementation nimbus uses. It is set to "backtype.storm.blobstore.LocalFsBlobStore"
+nimbus.blobstore.class:  Sets the blobstore implementation nimbus uses. It is set to "org.apache.storm.blobstore.LocalFsBlobStore"
 
 nimbus.blobstore.expiration.secs: During operations with the blobstore, via master, how long a connection is idle before nimbus 
 considers it dead and drops the session and any associated connections. The default is set to 600.
@@ -300,7 +300,7 @@ considers it dead and drops the session and any associated connections. The defa
 storm.blobstore.inputstream.buffer.size.bytes: The buffer size it uses for blobstore upload. It is set to 65536 bytes.
 
 client.blobstore.class: The blobstore implementation the storm client uses. The current implementation uses the default 
-config "backtype.storm.blobstore.NimbusBlobStore".
+config "org.apache.storm.blobstore.NimbusBlobStore".
 
 blobstore.replication.factor: It sets the replication for each blob within the blobstore. The “topology.min.replication.count” 
 ensures the minimum replication the topology specific blobs are set before launching the topology. You might want to set the 
@@ -397,7 +397,7 @@ file-name-like format and extension, so it can be uncompressed correctly.
 ###### Example:  
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-storm jar /home/y/lib/storm-starter/current/storm-starter-jar-with-dependencies.jar storm.starter.clj.word_count test_topo -c topology.blobstore.map='{"key1":{"localname":"blob_file", "uncompress":"false"},"key2":{}}'
+storm jar /home/y/lib/storm-starter/current/storm-starter-jar-with-dependencies.jar org.apache.storm.starter.clj.word_count test_topo -c topology.blobstore.map='{"key1":{"localname":"blob_file", "uncompress":"false"},"key2":{}}'
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Note: Please take care of the quotes.
@@ -503,17 +503,17 @@ ClientBlobStore clientBlobStore = Utils.getClientBlobStore(theconf);
 The required Utils package can by imported by:
 
 ```java
-import backtype.storm.utils.Utils;
+import org.apache.storm.utils.Utils;
 ```
 
 ClientBlobStore and other blob-related classes can be imported by:
 
 ```java
-import backtype.storm.blobstore.ClientBlobStore;
-import backtype.storm.blobstore.AtomicOutputStream;
-import backtype.storm.blobstore.InputStreamWithMeta;
-import backtype.storm.blobstore.BlobStoreAclHandler;
-import backtype.storm.generated.*;
+import org.apache.storm.blobstore.ClientBlobStore;
+import org.apache.storm.blobstore.AtomicOutputStream;
+import org.apache.storm.blobstore.InputStreamWithMeta;
+import org.apache.storm.blobstore.BlobStoreAclHandler;
+import org.apache.storm.generated.*;
 ```
 
 ### Creating ACLs to be used for blobs

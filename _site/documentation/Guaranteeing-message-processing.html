@@ -109,11 +109,11 @@
 
 <p><img src="images/tuple_tree.png" alt="Tuple tree"></p>
 
-<p>Storm considers a tuple coming off a spout &quot;fully processed&quot; when the tuple tree has been exhausted and every message in the tree has been processed. A tuple is considered failed when its tree of messages fails to be fully processed within a specified timeout. This timeout can be configured on a topology-specific basis using the <a href="/javadoc/apidocs/backtype/storm/Config.html#TOPOLOGY_MESSAGE_TIMEOUT_SECS">Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS</a> configuration and defaults to 30 seconds.</p>
+<p>Storm considers a tuple coming off a spout &quot;fully processed&quot; when the tuple tree has been exhausted and every message in the tree has been processed. A tuple is considered failed when its tree of messages fails to be fully processed within a specified timeout. This timeout can be configured on a topology-specific basis using the <a href="/javadoc/apidocs/org/apache/storm/Config.html#TOPOLOGY_MESSAGE_TIMEOUT_SECS">Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS</a> configuration and defaults to 30 seconds.</p>
 
 <h3 id="what-happens-if-a-message-is-fully-processed-or-fails-to-be-fully-processed">What happens if a message is fully processed or fails to be fully processed?</h3>
 
-<p>To understand this question, let&#39;s take a look at the lifecycle of a tuple coming off of a spout. For reference, here is the interface that spouts implement (see the <a href="/javadoc/apidocs/backtype/storm/spout/ISpout.html">Javadoc</a> for more information):</p>
+<p>To understand this question, let&#39;s take a look at the lifecycle of a tuple coming off of a spout. For reference, here is the interface that spouts implement (see the <a href="/javadoc/apidocs/org/apache/storm/spout/ISpout.html">Javadoc</a> for more information):</p>
 <div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">ISpout</span> <span class="kd">extends</span> <span class="n">Serializable</span> <span class="o">{</span>
     <span class="kt">void</span> <span class="n">open</span><span class="o">(</span><span class="n">Map</span> <span class="n">conf</span><span class="o">,</span> <span class="n">TopologyContext</span> <span class="n">context</span><span class="o">,</span> <span class="n">SpoutOutputCollector</span> <span class="n">collector</span><span class="o">);</span>
     <span class="kt">void</span> <span class="n">close</span><span class="o">();</span>
@@ -201,7 +201,7 @@
 
 <h3 id="how-does-storm-implement-reliability-in-an-efficient-way">How does Storm implement reliability in an efficient way?</h3>
 
-<p>A Storm topology has a set of special &quot;acker&quot; tasks that track the DAG of tuples for every spout tuple. When an acker sees that a DAG is complete, it sends a message to the spout task that created the spout tuple to ack the message. You can set the number of acker executors for a topology in the topology configuration using <a href="/javadoc/apidocs/backtype/storm/Config.html#TOPOLOGY_ACKER_EXECUTORS">Config.TOPOLOGY_ACKER_EXECUTORS</a>. Storm defaults TOPOLOGY_ACKER_EXECUTORS to be equal to the number of workers configured in the topology -- you will need to increase this number for topologies processing large amounts of messages.</p>
+<p>A Storm topology has a set of special &quot;acker&quot; tasks that track the DAG of tuples for every spout tuple. When an acker sees that a DAG is complete, it sends a message to the spout task that created the spout tuple to ack the message. You can set the number of acker executors for a topology in the topology configuration using <a href="/javadoc/apidocs/org/apache/storm/Config.html#TOPOLOGY_ACKER_EXECUTORS">Config.TOPOLOGY_ACKER_EXECUTORS</a>. Storm defaults TOPOLOGY_ACKER_EXECUTORS to be equal to the number of workers configured in the topology -- you will need to increase this number for topologies processing large amounts of messages.</p>
 
 <p>The best way to understand Storm&#39;s reliability implementation is to look at the lifecycle of tuples and tuple DAGs. When a tuple is created in a topology, whether in a spout or a bolt, it is given a random 64 bit id. These ids are used by ackers to track the tuple DAG for every spout tuple.</p>
 

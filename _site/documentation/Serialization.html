@@ -127,7 +127,7 @@
 </code></pre></div>
 <p><code>com.mycompany.CustomType1</code> and <code>com.mycompany.CustomType3</code> will use the <code>FieldsSerializer</code>, whereas <code>com.mycompany.CustomType2</code> will use <code>com.mycompany.serializer.CustomType2Serializer</code> for serialization.</p>
 
-<p>Storm provides helpers for registering serializers in a topology config. The <a href="/javadoc/apidocs/backtype/storm/Config.html">Config</a> class has a method called <code>registerSerialization</code> that takes in a registration to add to the config.</p>
+<p>Storm provides helpers for registering serializers in a topology config. The <a href="/javadoc/apidocs/org/apache/storm/Config.html">Config</a> class has a method called <code>registerSerialization</code> that takes in a registration to add to the config.</p>
 
 <p>There&#39;s an advanced config called <code>Config.TOPOLOGY_SKIP_MISSING_KRYO_REGISTRATIONS</code>. If you set this to true, Storm will ignore any serializations that are registered but do not have their code available on the classpath. Otherwise, Storm will throw errors when it can&#39;t find a serialization. This is useful if you run many topologies on a cluster that each have different serializations, but you want to declare all the serializations across all topologies in the <code>storm.yaml</code> files.</p>
 
