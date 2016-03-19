@@ -28,9 +28,10 @@
   (:use [org.apache.storm testing config])
   (:use [org.apache.storm.internal clojure])
   (:use [org.apache.storm.daemon common])
-  (:use [org.apache.storm.metric testing])
+  (:use [org.apache.storm.util])
   (:import [org.apache.storm Thrift])
-  (:import [org.apache.storm.utils Utils]))
+  (:import [org.apache.storm.utils Utils]
+           (org.apache.storm.metric FakeMetricConsumer)))
 
 (defbolt acking-bolt {} {:prepare true}
   [conf context collector]  
@@ -68,24 +69,21 @@
               (.incr mycustommetric)
               (ack! collector tuple)))))
 
-(def metrics-data org.apache.storm.metric.testing/buffer)
-
 (defn wait-for-atleast-N-buckets! [N comp-id metric-name cluster]
   (while-timeout TEST-TIMEOUT-MS
-      (let [taskid->buckets (-> @metrics-data (get comp-id) (get metric-name))]
+      (let [taskid->buckets (clojurify-structure (FakeMetricConsumer/getTaskIdToBuckets comp-id metric-name))]
         (or
          (and (not= N 0) (nil? taskid->buckets))
          (not-every? #(<= N %) (map (comp count second) taskid->buckets))))
-      ;;(log-message "Waiting for at least " N " timebuckets to appear in FakeMetricsConsumer for component id " comp-id " and metric name " metric-name " metrics " (-> @metrics-data (get comp-id) (get metric-name)))
+      ;;(log-message "Waiting for at least " N " timebuckets to appear in FakeMetricsConsumer for component id " comp-id " and metric name " metric-name " metrics " FakeMetricConsumer/getTaskIdToBuckets)
     (if cluster
       (advance-cluster-time cluster 1)
       (Thread/sleep 10))))
     
 
 (defn lookup-bucket-by-comp-id-&-metric-name! [comp-id metric-name]
-  (-> @metrics-data
-      (get comp-id)
-      (get metric-name)
+  (-> (FakeMetricConsumer/getTaskIdToBuckets comp-id metric-name)
+      (clojurify-structure)
       (first) ;; pick first task in the list, ignore other tasks' metric data.
       (second)
       (or [])))
@@ -102,7 +100,7 @@
 (deftest test-custom-metric
   (with-simulated-time-local-cluster
     [cluster :daemon-conf {TOPOLOGY-METRICS-CONSUMER-REGISTER
-                           [{"class" "clojure.storm.metric.testing.FakeMetricConsumer"}]
+                           [{"class" "org.apache.storm.metric.FakeMetricConsumer"}]
                            "storm.zookeeper.connection.timeout" 30000
                            "storm.zookeeper.session.timeout" 60000
                            }]
@@ -133,7 +131,7 @@
 (deftest test-custom-metric-with-multi-tasks
   (with-simulated-time-local-cluster
     [cluster :daemon-conf {TOPOLOGY-METRICS-CONSUMER-REGISTER
-                           [{"class" "clojure.storm.metric.testing.FakeMetricConsumer"}]
+                           [{"class" "org.apache.storm.metric.FakeMetricConsumer"}]
                            "storm.zookeeper.connection.timeout" 30000
                            "storm.zookeeper.session.timeout" 60000
                            }]
@@ -169,7 +167,7 @@
 (deftest test-custom-metric-with-multilang-py
   (with-simulated-time-local-cluster 
     [cluster :daemon-conf {TOPOLOGY-METRICS-CONSUMER-REGISTER
-                       [{"class" "clojure.storm.metric.testing.FakeMetricConsumer"}]
+                       [{"class" "org.apache.storm.metric.FakeMetricConsumer"}]
                        "storm.zookeeper.connection.timeout" 30000
                        "storm.zookeeper.session.timeout" 60000
                        }]
@@ -205,7 +203,7 @@
 (deftest test-custom-metric-with-spout-multilang-py
   (with-simulated-time-local-cluster 
     [cluster :daemon-conf {TOPOLOGY-METRICS-CONSUMER-REGISTER
-                       [{"class" "clojure.storm.metric.testing.FakeMetricConsumer"}]
+                       [{"class" "org.apache.storm.metric.FakeMetricConsumer"}]
                        "storm.zookeeper.connection.timeout" 30000
                        "storm.zookeeper.session.timeout" 60000}]
     (let [topology (Thrift/buildTopology
@@ -224,7 +222,7 @@
 (deftest test-builtin-metrics-1
   (with-simulated-time-local-cluster
     [cluster :daemon-conf {TOPOLOGY-METRICS-CONSUMER-REGISTER                    
-                           [{"class" "clojure.storm.metric.testing.FakeMetricConsumer"}]
+                           [{"class" "org.apache.storm.metric.FakeMetricConsumer"}]
                            TOPOLOGY-STATS-SAMPLE-RATE 1.0
                            TOPOLOGY-BUILTIN-METRICS-BUCKET-SIZE-SECS 60}]
     (let [feeder (feeder-spout ["field1"])
@@ -264,7 +262,7 @@
 (deftest test-builtin-metrics-2
   (with-simulated-time-local-cluster
     [cluster :daemon-conf {TOPOLOGY-METRICS-CONSUMER-REGISTER
-                           [{"class" "clojure.storm.metric.testing.FakeMetricConsumer"}]
+                           [{"class" "org.apache.storm.metric.FakeMetricConsumer"}]
                            TOPOLOGY-STATS-SAMPLE-RATE 1.0
                            TOPOLOGY-BUILTIN-METRICS-BUCKET-SIZE-SECS 5}]
     (let [feeder (feeder-spout ["field1"])
@@ -318,7 +316,7 @@
 (deftest test-builtin-metrics-3
   (with-simulated-time-local-cluster
     [cluster :daemon-conf {TOPOLOGY-METRICS-CONSUMER-REGISTER
-                           [{"class" "clojure.storm.metric.testing.FakeMetricConsumer"}]
+                           [{"class" "org.apache.storm.metric.FakeMetricConsumer"}]
                            TOPOLOGY-STATS-SAMPLE-RATE 1.0
                            TOPOLOGY-BUILTIN-METRICS-BUCKET-SIZE-SECS 5
                            TOPOLOGY-ENABLE-MESSAGE-TIMEOUTS true}]
@@ -359,7 +357,7 @@
 (deftest test-system-bolt
   (with-simulated-time-local-cluster
     [cluster :daemon-conf {TOPOLOGY-METRICS-CONSUMER-REGISTER
-                           [{"class" "clojure.storm.metric.testing.FakeMetricConsumer"}]
+                           [{"class" "org.apache.storm.metric.FakeMetricConsumer"}]
                            TOPOLOGY-BUILTIN-METRICS-BUCKET-SIZE-SECS 60}]
     (let [feeder (feeder-spout ["field1"])
           topology (Thrift/buildTopology
