@@ -30,3 +30,5 @@ target
 .idea
 .*
 !/.gitignore
+/docs/_site
+/docs/javadocs
