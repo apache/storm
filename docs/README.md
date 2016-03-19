@@ -1,12 +1,13 @@
 # Apache Storm Website and Documentation
-This is the source for the Storm website and documentation. It is statically generated using [jekyll](http://jekyllrb.com).
+This is the source for the Release specific part of the Apache Storm website and documentation. It is statically generated using [jekyll](http://jekyllrb.com).
 
 ## Generate Javadoc
 
 You have to generate javadoc on project root before generating document site.
 
 ```
-mvn clean install -Pdist # you may skip tests with `-DskipTests=true` to save time
+mvn javadoc:javadoc
+mvn javadoc:aggregate -DreportOutputDirectory=./docs/ -DdestDir=javadocs
 ```
 
 You need to create distribution package with gpg certificate. Please refer [here](https://github.com/apache/storm/blob/master/DEVELOPER.md#packaging).
@@ -30,18 +31,31 @@ Point your browser to http://localhost:4000
 
 By default, jekyll will generate the site in a `_site` directory.
 
+This will only show the portion of the documentation that is specific to this release.
 
-## Publishing the Website
-In order to publish the website, you must have committer access to Storm's subversion repository.
+## Adding a new release to the website
+In order to add a new relase, you must have committer access to Storm's subversion repository at https://svn.apache.org/repos/asf/storm/site.
 
-The Storm website is published using Apache svnpubsub. Any changes committed to subversion will be automatically published to storm.apache.org.
+Release documentation is placed under the releases directory named after the release version.  Most metadata about the release will be generated automatically from the name using a jekyll plugin.  Or by plaing them in the _data/releases.yml file.
 
-To publish changes, tell jekyll to generate the site in the `publish` directory of subversion, then commit the changes:
-
+To create a new release run the following from the main git directory
 
 ```
+mvn javadoc:javadoc
+mvn javadoc:aggregate -DreportOutputDirectory=./docs/ -DdestDir=javadocs
 cd docs
-jekyll build -d /path/to/svn/repo/publish
-cd /path/to/svn/repo/publish
+mkdir ${path_to_svn}/releases/${release_name}
+cp -r *.md images/ javadocs/ ${path_to_svn}/releases/${release_name}
+cd ${path_to_svn}
+svn add releases/${release_name}
+svn commit
+```
+
+to publish a new release run
+
+```
+cd ${path_to_svn}
+jekyll build -d publish/
+svn add publish/ #Add any new files
 svn commit
 ```
