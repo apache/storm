@@ -43,4 +43,12 @@ public abstract class BatchOutputCollector {
     public abstract void emitDirect(int taskId, String streamId, List<Object> tuple); 
     
     public abstract void reportError(Throwable error);
+    
+    /**
+    * Resets the hang check timeout for the executor running the component this is called from.
+    * It is only necessary to call this if the calling code needs to hang in nextTuple
+    * for longer than Config.TOPOLOGY_EXECUTOR_HANG_TIME_LIMIT_SECS. Note that any interaction with
+    * the BatchOutputCollector will also call this function.
+    */
+    public abstract void notifyNotHanging();
 }

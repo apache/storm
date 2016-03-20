@@ -171,7 +171,7 @@
                         TOPOLOGY-TRANSACTIONAL-ID
                         TOPOLOGY-TICK-TUPLE-FREQ-SECS
                         TOPOLOGY-EXECUTOR-HANG-TIME-LIMIT-SECS
-                        TOPOLOGY-CHECK-HANG-TICK-TUPLE-FREQ-SECS
+                        TOPOLOGY-EXECUTOR-CHECK-HANG-TUPLE-FREQ-SECS
                         TOPOLOGY-SLEEP-SPOUT-WAIT-STRATEGY-TIME-MS
                         TOPOLOGY-SPOUT-WAIT-STRATEGY
                         TOPOLOGY-BOLTS-WINDOW-LENGTH-COUNT
@@ -196,8 +196,9 @@
   (render-stats [this])
   (get-executor-id [this])
   (get-hang-timeout [this])
+  (reset-hang-timeout! [this])
   (is-hanging? [this])
-  (report-hang [this])
+  (report-hang! [this])
   (credentials-changed [this creds])
   (get-backpressure-flag [this]))
 
@@ -337,16 +338,16 @@
           (let [val [(AddressedTuple. AddressedTuple/BROADCAST_DEST (TupleImpl. worker-context [interval] Constants/SYSTEM_TASK_ID Constants/METRICS_TICK_STREAM_ID))]]
             (.publish ^DisruptorQueue receive-queue val)))))))
 
-(defn setup-check-tick! [executor-data]
+(defn setup-hang-checks! [executor-data]
   (let [{:keys [storm-conf receive-queue worker-context worker]} executor-data
-        tick-interval-secs (storm-conf TOPOLOGY-CHECK-HANG-TICK-TUPLE-FREQ-SECS)]
+        tick-interval-secs (storm-conf TOPOLOGY-EXECUTOR-CHECK-HANG-TUPLE-FREQ-SECS)]
     (when tick-interval-secs
       (.scheduleRecurring
         (:user-timer worker)
         tick-interval-secs
         tick-interval-secs
         (fn []
-          (let [val [(AddressedTuple. AddressedTuple/BROADCAST_DEST (TupleImpl. worker-context [tick-interval-secs] Constants/SYSTEM_TASK_ID Constants/HANG_CHECK_TICK_STREAM_ID))]]
+          (let [val [(AddressedTuple. AddressedTuple/BROADCAST_DEST (TupleImpl. worker-context [] Constants/SYSTEM_TASK_ID Constants/HANG_CHECK_STREAM_ID))]]
             (.publish ^DisruptorQueue receive-queue val)))))))
 
 (defn metrics-tick
@@ -390,6 +391,9 @@
             (let [val [(AddressedTuple. AddressedTuple/BROADCAST_DEST (TupleImpl. context [tick-time-secs] Constants/SYSTEM_TASK_ID Constants/SYSTEM_TICK_STREAM_ID))]]
               (.publish ^DisruptorQueue receive-queue val))))))))
 
+(defn- update-last-hang-check-time! [executor-data]
+  (reset! (:last-hang-check-time-secs executor-data) (Time/currentTimeSecs)))
+
 (defn mk-executor [worker executor-id initial-credentials]
   (let [executor-data (mk-executor-data worker executor-id)
         _ (log-message "Loading executor " (:component-id executor-data) ":" (pr-str executor-id))
@@ -418,6 +422,7 @@
                    (catch Throwable t (.uncaughtException report-error-and-die nil t)))
         threads (concat handlers system-threads)]    
     (setup-ticks! worker executor-data)
+    (setup-hang-checks! executor-data)
 
     (log-message "Finished loading executor " component-id ":" (pr-str executor-id))
     ;; TODO: add method here to get rendered stats... have worker call that when heartbeating
@@ -429,15 +434,17 @@
         executor-id)
       (get-hang-timeout [this]
         ((:storm-conf executor-data) TOPOLOGY-EXECUTOR-HANG-TIME-LIMIT-SECS))
+      (reset-hang-timeout! [this]
+        (update-last-hang-check-time! executor-data))
       (is-hanging? [this]
         (let [storm-conf (:storm-conf executor-data)]
-          (if-not (storm-conf TOPOLOGY-CHECK-HANG-TICK-TUPLE-FREQ-SECS)
+          (if-not (and (storm-conf TOPOLOGY-EXECUTOR-CHECK-HANG-TUPLE-FREQ-SECS) (storm-conf TOPOLOGY-EXECUTOR-HANG-TIME-LIMIT-SECS))
             false
             (if (= executor-id Constants/SYSTEM_EXECUTOR_ID)
               false
-              (< (- (Time/currentTimeSecs) @(:last-hang-check-time-secs executor-data)) (storm-conf TOPOLOGY-EXECUTOR-HANG-TIME-LIMIT-SECS))))))
-      (report-hang [this]
-        (:report-error (RuntimeException. "Executor exceeded hang check timeout, and may be hanging")))
+              (> (- (Time/currentTimeSecs) @(:last-hang-check-time-secs executor-data)) (storm-conf TOPOLOGY-EXECUTOR-HANG-TIME-LIMIT-SECS))))))
+      (report-hang! [this]
+        ((:report-error executor-data) (RuntimeException. (str "Executor " executor-id " for component " (:component-id executor-data) " exceeded hang check timeout, and may be hanging"))))
       (credentials-changed [this creds]
         (let [receive-queue (:receive-queue executor-data)
               context (:worker-context executor-data)
@@ -530,9 +537,6 @@
           StormCommon/EVENTLOGGER_STREAM_ID
           [component-id message-id (System/currentTimeMillis) values]))))
 
-(defn- update-last-hang-check-time! [executor-data]
-  (reset! (:last-hang-check-time-secs executor-data) (Time/currentTimeSecs)))
-
 (defmethod mk-threads :spout [executor-data task-datas initial-credentials]
   (let [{:keys [storm-conf component-id worker-context transfer-fn report-error sampler open-or-prepare-was-called?]} executor-data
         ^ISpoutWaitStrategy spout-wait-strategy (init-spout-wait-strategy storm-conf)
@@ -556,7 +560,7 @@
                             (condp = stream-id
                               Constants/SYSTEM_TICK_STREAM_ID (.rotate pending)
                               Constants/METRICS_TICK_STREAM_ID (metrics-tick executor-data (get task-datas task-id) tuple)
-                              Constants/HANG_CHECK_TICK_STREAM_ID (update-last-hang-check-time! executor-data)
+                              Constants/HANG_CHECK_STREAM_ID (update-last-hang-check-time! executor-data)
                               Constants/CREDENTIALS_CHANGED_STREAM_ID 
                                 (let [task-data (get task-datas task-id)
                                       spout-obj (:object task-data)]
@@ -644,15 +648,25 @@
                                      (:user-context task-data)
                                      (SpoutOutputCollector.
                                       (reify ISpoutOutputCollector
+                                        (^void notifyNotHanging [this]
+                                          (update-last-hang-check-time! executor-data))
                                         (^long getPendingCount[this]
-                                          (.size pending))
+                                          (do
+                                            (.notifyNotHanging this)
+                                            (.size pending)))
                                         (^List emit [this ^String stream-id ^List tuple ^Object message-id]
-                                          (send-spout-msg stream-id tuple message-id nil))
+                                          (do
+                                            (.notifyNotHanging this)
+                                            (send-spout-msg stream-id tuple message-id nil)))
                                         (^void emitDirect [this ^int out-task-id ^String stream-id
                                                            ^List tuple ^Object message-id]
-                                          (send-spout-msg stream-id tuple message-id out-task-id))
+                                          (do
+                                            (.notifyNotHanging this)
+                                            (send-spout-msg stream-id tuple message-id out-task-id)))
                                         (reportError [this error]
-                                          (report-error error))))))
+                                          (do
+                                            (.notifyNotHanging this)
+                                            (report-error error)))))))
 
                             (reset! open-or-prepare-was-called? true) 
                             (log-message "Opened spout " component-id ":" (keys task-datas))
@@ -758,7 +772,7 @@
                                   (when (instance? ICredentialsListener bolt-obj)
                                     (.setCredentials bolt-obj (.getValue tuple 0))))
                               Constants/METRICS_TICK_STREAM_ID (metrics-tick executor-data (get task-datas task-id) tuple)
-                              Constants/HANG_CHECK_TICK_STREAM_ID (update-last-hang-check-time! executor-data)
+                              Constants/HANG_CHECK_STREAM_ID (update-last-hang-check-time! executor-data)
                               (let [task-data (get task-datas task-id)
                                     ^IBolt bolt-obj (:object task-data)
                                     user-context (:user-context task-data)
@@ -833,13 +847,20 @@
                                        user-context
                                        (OutputCollector.
                                         (reify IOutputCollector
+                                          (^void notifyNotHanging [this]
+                                            (update-last-hang-check-time! executor-data))
                                           (emit [this stream anchors values]
-                                            (bolt-emit stream anchors values nil))
+                                            (do
+                                              (.notifyNotHanging this)
+                                              (bolt-emit stream anchors values nil)))
                                           (emitDirect [this task stream anchors values]
-                                            (bolt-emit stream anchors values task))
+                                            (do
+                                              (.notifyNotHanging this)
+                                              (bolt-emit stream anchors values task)))
                                           (^void ack [this ^Tuple tuple]
                                             (let [^TupleImpl tuple tuple
                                                   ack-val (.getAckVal tuple)]
+                                              (.notifyNotHanging this)
                                               (fast-map-iter [[root id] (.. tuple getMessageId getAnchorsToIds)]
                                                              (task/send-unanchored task-data
                                                                                    Acker/ACKER_ACK_STREAM_ID
@@ -855,6 +876,7 @@
                                                                          (.getSourceStreamId tuple)
                                                                          delta))))
                                           (^void fail [this ^Tuple tuple]
+                                            (.notifyNotHanging this)
                                             (fast-list-iter [root (.. tuple getMessageId getAnchors)]
                                                             (task/send-unanchored task-data
                                                                                   Acker/ACKER_FAIL_STREAM_ID
@@ -870,12 +892,16 @@
                                                                           (.getSourceStreamId tuple)
                                                                           delta))))
                                           (^void resetTimeout [this ^Tuple tuple]
-                                            (fast-list-iter [root (.. tuple getMessageId getAnchors)]
-                                                            (task/send-unanchored task-data
-                                                                                  Acker/ACKER_RESET_TIMEOUT_STREAM_ID
-                                                                                  [root])))
+                                            (do
+                                              (.notifyNotHanging this)
+                                              (fast-list-iter [root (.. tuple getMessageId getAnchors)]
+                                                              (task/send-unanchored task-data
+                                                                                    Acker/ACKER_RESET_TIMEOUT_STREAM_ID
+                                                                                    [root]))))
                                           (reportError [this error]
-                                            (report-error error))))))
+                                            (do
+                                              (.notifyNotHanging this)
+                                              (report-error error)))))))
                            (reset! open-or-prepare-was-called? true)
                            (log-message "Prepared bolt " component-id ":" (keys task-datas))
                            (setup-metrics! executor-data)

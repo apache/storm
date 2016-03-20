@@ -228,6 +228,17 @@ public class OutputCollector implements IOutputCollector {
     public void resetTimeout(Tuple input) {
         _delegate.resetTimeout(input);
     }
+    
+    /**
+    * Resets the hang check timeout for the executor running the component this is called from.
+    * It is only necessary to call this if the calling code needs to hang in execute
+    * for longer than Config.TOPOLOGY_EXECUTOR_HANG_TIME_LIMIT_SECS. Note that any interaction with
+    * the OutputCollector will also call this function.
+    */
+    @Override
+    public void notifyNotHanging() {
+        _delegate.notifyNotHanging();
+    }
 
     @Override
     public void reportError(Throwable error) {

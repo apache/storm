@@ -129,6 +129,10 @@ public class CoordinatedBolt implements IRichBolt {
             _delegate.resetTimeout(tuple);
         }
         
+        public void notifyNotHanging() {
+            _delegate.notifyNotHanging();
+        }
+        
         public void reportError(Throwable error) {
             _delegate.reportError(error);
         }

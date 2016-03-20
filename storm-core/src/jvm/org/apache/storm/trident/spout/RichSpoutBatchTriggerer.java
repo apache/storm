@@ -178,5 +178,11 @@ public class RichSpoutBatchTriggerer implements IRichSpout {
         public long getPendingCount() {
             return _collector.getPendingCount();
         }
+        
+        
+        @Override
+        public void notifyNotHanging() {
+            _collector.notifyNotHanging();
+        }
     }
 }

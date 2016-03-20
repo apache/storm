@@ -86,18 +86,12 @@
                                 nil
                                 (->> executors
                                   (filter (fn [executor] (executor/is-hanging? executor)))))]
-    (when (and (:worker-active-flag worker) (seq hanging-executors))
+    (when (and @(:storm-active-atom worker) (seq hanging-executors))
       (doseq [executor hanging-executors]
-        (executor/report-hang executor))
-      (let [hanging-executor-ids (->> hanging-executors
-                                   (map (fn [executor] (executor/get-executor-id executor))))
-            hanging-executor-components (->> hanging-executor-ids
-                                          (map (fn [executor-id] (executor->tasks executor-id)))
-                                          (map (fn [task] (.get (:task->component worker) (first task))))
-                                          (distinct))]
-        (log-warn "Detected hanging executors: " (pr-str hanging-executor-ids) " for components " (pr-str hanging-executor-components)))
-        ;;TODO: Log to metrics
-      (when ((:conf worker) TOPOLOGY-EXECUTOR-REBOOT-ON-HANG)
+        (executor/report-hang! executor))
+      (when ((:storm-conf worker) TOPOLOGY-WORKER-REBOOT-ON-HANG)
+        (log-warn "Killing worker due to hanging executors")
+        ;; Suicide may be safer than shutdown in case hanging threads don't respond to interrupts
         ((:suicide-fn worker))))))
 
 (defn do-heartbeat [worker]
@@ -467,16 +461,21 @@
            )))))
 
 (defn refresh-storm-active
-  ([worker]
+  ([worker executors]
     (refresh-storm-active
-      worker (fn []
+      worker executors (fn []
                (.schedule
-                 (:refresh-active-timer worker) 0 (partial refresh-storm-active worker)))))
-  ([worker callback]
-    (let [base (clojurify-storm-base (.stormBase (:storm-cluster-state worker) (:storm-id worker) callback))]
+                 (:refresh-active-timer worker) 0 (partial refresh-storm-active worker executors)))))
+  ([worker executors callback]
+    (let [base (clojurify-storm-base (.stormBase (:storm-cluster-state worker) (:storm-id worker) callback))
+          was-active @(:storm-active-atom worker)
+          is-active (and (= :active (-> base :status :type)) @(:worker-active-flag worker))]
+      (when (and is-active (not was-active) executors)
+        (doseq [executor executors]
+          (executor/reset-hang-timeout! executor)))
       (reset!
         (:storm-active-atom worker)
-        (and (= :active (-> base :status :type)) @(:worker-active-flag worker)))
+        is-active)
       (reset! (:storm-component->debug-atom worker) (-> base :component->debug))
       (log-debug "Event debug options " @(:storm-component->debug-atom worker)))))
 
@@ -695,7 +694,7 @@
 
         _ (activate-worker-when-all-connections-ready worker)
 
-        _ (refresh-storm-active worker nil)
+        _ (refresh-storm-active worker nil nil)
 
         _ (run-worker-start-hooks worker)
 
@@ -750,6 +749,7 @@
                     (.close (:refresh-active-timer worker))
                     (.close (:executor-heartbeat-timer worker))
                     (.close (:user-timer worker))
+                    (.close (:executor-hang-check-timer worker))
                     (.close (:refresh-load-timer worker))
                     (.close (:reset-log-levels-timer worker))
                     (close-resources worker)
@@ -777,6 +777,8 @@
                  (.isTimerWaiting (:refresh-active-timer worker))
                  (.isTimerWaiting (:executor-heartbeat-timer worker))
                  (.isTimerWaiting (:user-timer worker))
+                 (.isTimerWaiting (:reset-log-levels-timer worker))
+                 (.isTimerWaiting (:executor-hang-check-timer worker))
                  ))
              )
         credentials (atom initial-credentials)
@@ -821,14 +823,15 @@
       (:reset-log-levels-timer worker) 0 (conf WORKER-LOG-LEVEL-RESET-POLL-SECS)
         (fn [] (reset-log-levels latest-log-config)))
     (.scheduleRecurring
-      (:refresh-active-timer worker) 0 (conf TASK-REFRESH-POLL-SECS) (partial refresh-storm-active worker))
-    (let [min-executor-timeout (->> @executors
+      (:refresh-active-timer worker) 0 (conf TASK-REFRESH-POLL-SECS) (partial refresh-storm-active worker @executors))
+    (let [executor-timeouts (->> @executors
                                  (map (fn [executor] (executor/get-hang-timeout executor)))
-                                 (reduce min))]
-      (log-message (pr-str min-executor-timeout))
-      (when (pos? min-executor-timeout)
-        (.scheduleRecurring (:executor-hang-check-timer worker) min-executor-timeout min-executor-timeout
-                (fn [] (do-executor-hang-check worker @executors)))))
+                                 (filter (fn [executor-timeout] executor-timeout)))]
+      (when (seq executor-timeouts)
+        (let [min-executor-timeout (reduce min executor-timeouts)]
+          (when (pos? min-executor-timeout)
+            (.scheduleRecurring (:executor-hang-check-timer worker) min-executor-timeout min-executor-timeout
+                    (fn [] (do-executor-hang-check worker @executors)))))))
     (log-message "Worker has topology config " (Utils/redactValue (:storm-conf worker) STORM-ZOOKEEPER-TOPOLOGY-AUTH-PAYLOAD))
     (log-message "Worker " worker-id " for storm " storm-id " on " assignment-id ":" port " has finished loading")
     ret

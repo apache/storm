@@ -133,6 +133,11 @@ public class TridentSpoutExecutor implements ITridentBatchBolt {
         @Override
         public void reportError(Throwable t) {
             _delegate.reportError(t);
+        }
+
+        @Override
+        public void notifyNotHanging() {
+            _delegate.notifyNotHanging();
         }        
     }
 }

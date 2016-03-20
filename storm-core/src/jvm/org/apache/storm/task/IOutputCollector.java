@@ -30,4 +30,5 @@ public interface IOutputCollector extends IErrorReporter {
     void ack(Tuple input);
     void fail(Tuple input);
     void resetTimeout(Tuple input);
+    void notifyNotHanging();
 }

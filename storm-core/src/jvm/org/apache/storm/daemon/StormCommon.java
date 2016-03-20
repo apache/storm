@@ -414,6 +414,7 @@ public class StormCommon {
     public static void addSystemComponents(Map conf, StormTopology topology) {
         Map<String, StreamInfo> outputStreams = new HashMap<String, StreamInfo>();
         outputStreams.put(Constants.SYSTEM_TICK_STREAM_ID, Thrift.outputFields(Arrays.asList("rate_secs")));
+        outputStreams.put(Constants.HANG_CHECK_STREAM_ID, Thrift.outputFields(new ArrayList<String>()));
         outputStreams.put(Constants.METRICS_TICK_STREAM_ID, Thrift.outputFields(Arrays.asList("interval")));
         outputStreams.put(Constants.CREDENTIALS_CHANGED_STREAM_ID, Thrift.outputFields(Arrays.asList("creds")));
 

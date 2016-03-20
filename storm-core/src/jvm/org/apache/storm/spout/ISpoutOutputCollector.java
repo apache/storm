@@ -28,5 +28,6 @@ public interface ISpoutOutputCollector extends IErrorReporter{
     List<Integer> emit(String streamId, List<Object> tuple, Object messageId);
     void emitDirect(int taskId, String streamId, List<Object> tuple, Object messageId);
     long getPendingCount();
+    void notifyNotHanging();
 }
 

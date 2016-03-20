@@ -1933,16 +1933,17 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_TICK_TUPLE_FREQ_SECS="topology.tick.tuple.freq.secs";
 
     /**
-    * True if the worker should reboot executors that have hung in nextTuple/execute for longer
-    * than TOPOLOGY_HANGTIME_LIMIT_SECS.
+    * True if the worker should restart if it has executors that have not processed liveness check
+    * tuples for longer than TOPOLOGY_HANGTIME_LIMIT_SECS.
     */
     @isBoolean
-    public static final String TOPOLOGY_EXECUTOR_REBOOT_ON_HANG="topology.reboot.executor.on.hang";
+    public static final String TOPOLOGY_WORKER_REBOOT_ON_HANG="topology.worker.reboot.on.hang";
     
     /**
-    * The amount of time an executor is allowed to hang in nextTuple/execute. If this limit is
+    * The amount of time an executor is allowed to not process liveness check tuples. If this limit is
     * exceeded, the worker will log an error for the executor. If TOPOLOGY_REBOOT_EXECUTOR_ON_HANG
-    * is true, the worker will additionally reboot the executor.
+    * is true, the worker will additionally restart. If this parameter is set on individual components,
+    * it may take up to two times the smallest limit for the worker to detect hanging executors.
     */
     @isInteger
     public static final String TOPOLOGY_EXECUTOR_HANG_TIME_LIMIT_SECS="topology.executor.hang.time.limit.secs";
@@ -1950,10 +1951,11 @@ public class Config extends HashMap<String, Object> {
    /**
     * How often the worker will send liveness check tuples to executors. A failure to process
     * at least one check tuple every TOPOLOGY_EXECUTOR_HANG_TIME_LIMIT_SECS is interpreted as
-    * a hang by the worker.
+    * a hang by the worker. Note that this requires the check tuple to make it through the receive queue,
+    * so you should set the hang time limit conservatively.
     */
     @isInteger
-    public static final String TOPOLOGY_CHECK_HANG_TICK_TUPLE_FREQ_SECS="topology.check.hang.tick.tuple.freq.secs";
+    public static final String TOPOLOGY_EXECUTOR_CHECK_HANG_TUPLE_FREQ_SECS="topology.executor.check.hang.tuple.freq.secs";
 
    /**
     * @deprecated this is no longer supported

@@ -31,7 +31,7 @@ public class Constants {
     public static final String METRICS_COMPONENT_ID_PREFIX = "__metrics";
     public static final String METRICS_STREAM_ID = "__metrics";
     public static final String METRICS_TICK_STREAM_ID = "__metrics_tick";
-    public static final String HANG_CHECK_TICK_STREAM_ID = "__hang_check_tick";
+    public static final String HANG_CHECK_STREAM_ID = "__hang_check";
     public static final String CREDENTIALS_CHANGED_STREAM_ID = "__credentials";
 }
     

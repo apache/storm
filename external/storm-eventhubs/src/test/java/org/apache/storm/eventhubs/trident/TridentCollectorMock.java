@@ -41,6 +41,10 @@ public class TridentCollectorMock implements TridentCollector {
   @Override
   public void reportError(Throwable arg0) {
   }
+  
+  @Override
+  public void notifyNotHanging() {
+  }
 
   public void clear() {
     buffer.setLength(0);
