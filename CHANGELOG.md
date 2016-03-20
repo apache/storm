@@ -1,4 +1,5 @@
 ## 1.0.0
+ * STORM-1602: Blobstore UTs are failed on Windows
  * STORM-1629: Files/move doesn't work properly with non-empty directory in Windows
  * STORM-1616: Add RAS API for Trident
  * STORM-1483: add storm-mongodb connector
