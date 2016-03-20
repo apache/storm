@@ -376,7 +376,7 @@ public class DefaultShader {
                 {
                     value = prefix + r.relocatePath( name ) + suffix;
                     if (!warned.contains(orig)) {
-                        LOG.warn("Relocating {} to {} in {} please modify your code to use the new namespace", orig, value, className);
+                        LOG.warn("Relocating {} to {} in {}. {}", orig, value, className, r.getWarnMessage());
                         warned.add(orig);
                     }
                     break;
