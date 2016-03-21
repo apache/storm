@@ -278,7 +278,7 @@
                          ;; this should never happen
                          (exit-process! 30 "Unknown callback for subtree " subtree args)))))]
     (doseq [p [ASSIGNMENTS-SUBTREE STORMS-SUBTREE SUPERVISORS-SUBTREE WORKERBEATS-SUBTREE ERRORS-SUBTREE BLOBSTORE-SUBTREE NIMBUSES-SUBTREE
-               LOGCONFIG-SUBTREE BACKPRESSURE-ROOT]]
+               LOGCONFIG-SUBTREE BACKPRESSURE-SUBTREE]]
       (.mkdirs cluster-state p acls))
     (reify
       StormClusterState
