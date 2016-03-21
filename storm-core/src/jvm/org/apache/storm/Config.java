@@ -1943,7 +1943,8 @@ public class Config extends HashMap<String, Object> {
     * The amount of time an executor is allowed to not process liveness check tuples. If this limit is
     * exceeded, the worker will log an error for the executor. If TOPOLOGY_REBOOT_EXECUTOR_ON_HANG
     * is true, the worker will additionally restart. If this parameter is set on individual components,
-    * it may take up to two times the smallest limit for the worker to detect hanging executors.
+    * it may take up to two times the smallest limit for the worker to detect hanging executors. Setting
+    * this or TOPOLOGY_EXECUTOR_CHECK_HANG_TUPLE_FREQ_SECS to null will disable hang checking.
     */
     @isInteger
     public static final String TOPOLOGY_EXECUTOR_HANG_TIME_LIMIT_SECS="topology.executor.hang.time.limit.secs";
@@ -1952,7 +1953,8 @@ public class Config extends HashMap<String, Object> {
     * How often the worker will send liveness check tuples to executors. A failure to process
     * at least one check tuple every TOPOLOGY_EXECUTOR_HANG_TIME_LIMIT_SECS is interpreted as
     * a hang by the worker. Note that this requires the check tuple to make it through the receive queue,
-    * so you should set the hang time limit conservatively.
+    * so you should set the hang time limit conservatively. Setting this or TOPOLOGY_EXECUTOR_HANG_TIME_LIMIT_SECS to null
+    * will disable hang checking.
     */
     @isInteger
     public static final String TOPOLOGY_EXECUTOR_CHECK_HANG_TUPLE_FREQ_SECS="topology.executor.check.hang.tuple.freq.secs";
