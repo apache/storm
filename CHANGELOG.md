@@ -1,4 +1,5 @@
 ## 1.0.0
+ * STORM-1641: make subtree node creation consistent
  * STORM-1604: Delayed transition should handle NotALeaderException
  * STORM-1602: Blobstore UTs are failed on Windows
  * STORM-1629: Files/move doesn't work properly with non-empty directory in Windows
