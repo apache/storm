@@ -238,13 +238,13 @@ public class KafkaUtilsTest {
         p.put("bootstrap.servers", broker.getBrokerConnectionString());
         p.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         p.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-        p.put("metadata.fetch.timeout.ms", 1000);
+        p.put("max.block.ms", 5000);
         KafkaProducer<String, String> producer = new KafkaProducer<String, String>(p);
         try {
             producer.send(new ProducerRecord<String, String>(config.topic, key, value)).get();
         } catch (Exception e) {
-            Assert.fail(e.getMessage());
             LOG.error("Failed to do synchronous sending due to " + e, e);
+            Assert.fail(e.getMessage());
         } finally {
             producer.close();
         }
