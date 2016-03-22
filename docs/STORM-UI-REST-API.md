@@ -1,3 +1,9 @@
+---
+title: Storm UI REST API
+layout: documentation
+documentation: true
+---
+
 # Storm UI REST API
 Storm UI server provides a REST Api to access cluster, topology, component overview and metrics. 
 This api returns json response.  
