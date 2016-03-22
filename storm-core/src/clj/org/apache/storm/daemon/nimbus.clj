@@ -510,9 +510,9 @@
           " total-wait-time " @total-wait-time)
         (swap! total-wait-time inc)
         (if (not (local-mode? conf))
-          (reset! current-replication-count-conf  (get-blob-replication-count (master-stormconf-key storm-id) nimbus)))
+          (reset! current-replication-count-jar  (get-blob-replication-count (master-stormjar-key storm-id) nimbus)))
         (reset! current-replication-count-code  (get-blob-replication-count (master-stormcode-key storm-id) nimbus))
-        (reset! current-replication-count-jar  (get-blob-replication-count (master-stormjar-key storm-id) nimbus))))
+        (reset! current-replication-count-conf  (get-blob-replication-count (master-stormconf-key storm-id) nimbus))))
     (if (and (< min-replication-count @current-replication-count-conf)
              (< min-replication-count @current-replication-count-code)
              (< min-replication-count @current-replication-count-jar))
@@ -1727,8 +1727,8 @@
         [this ^String file]
         (mark! nimbus:num-beginFileDownload-calls)
         (check-authorization! nimbus nil nil "fileDownload")
-        (let [is (BufferInputStream. (.getBlob (:blob-store nimbus) file nil) 
-              ^Integer (Utils/getInt (conf STORM-BLOBSTORE-INPUTSTREAM-BUFFER-SIZE-BYTES) 
+        (let [is (BufferInputStream. (.getBlob (:blob-store nimbus) file nil)
+              ^Integer (Utils/getInt (conf STORM-BLOBSTORE-INPUTSTREAM-BUFFER-SIZE-BYTES)
               (int 65536)))
               id (uuid)]
           (.put (:downloaders nimbus) id is)
