@@ -373,8 +373,8 @@
   (log-message "Delaying event " event " for " delay-secs " secs for " storm-id)
   (schedule (:timer nimbus)
             delay-secs
-            #(transition! nimbus storm-id event false)
-            ))
+            #(try (transition! nimbus storm-id event false)
+               (catch Exception e (log-error e "Exception while trying transition for " storm-id " and event " event)))))
 
 ;; active -> reassign in X secs
 
