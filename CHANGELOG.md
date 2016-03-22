@@ -1,5 +1,5 @@
 ## 0.10.1
-
+ * STORM-584: Fix logging for LoggingMetricsConsumer metrics.log file
  * STORM-1603: Storm UT fails on supervisor test in Windows (0.10.x)
  * STORM-1596: Do not use single Kerberos TGT instance between multiple threads
  * STORM-1482: add missing 'break' for RedisStoreBolt
