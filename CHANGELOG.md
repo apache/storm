@@ -1,4 +1,5 @@
 ## 1.0.0
+ * STORM-1537: Upgrade to kryo 3
  * STORM-1556: nimbus.clj/wait-for-desired-code-replication wrong reset for current-replication-count-jar in local mode
  * STORM-1636: Supervisor shutdown with worker id pass in being nil
  * STORM-1641: make subtree node creation consistent
