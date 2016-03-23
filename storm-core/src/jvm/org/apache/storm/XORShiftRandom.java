@@ -17,10 +17,6 @@
  */
 package org.apache.storm;
 
-/**
- * @author JohnFang (xiaojian.fxj@alibaba-inc.com).
- */
-
 import com.google.common.hash.Hashing;
 import java.util.Random;
 
