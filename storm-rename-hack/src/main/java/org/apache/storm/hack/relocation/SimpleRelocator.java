@@ -38,7 +38,9 @@ public class SimpleRelocator
 
     private final String shadedPathPattern;
 
-    public SimpleRelocator( String patt, String shadedPattern)
+    private final String warnMessage;
+
+    public SimpleRelocator( String patt, String shadedPattern, String warnMessage)
     {
         if ( patt == null )
         {
@@ -61,6 +63,8 @@ public class SimpleRelocator
             this.shadedPattern = "hidden." + this.pattern;
             this.shadedPathPattern = "hidden/" + this.pathPattern;
         }
+
+        this.warnMessage = warnMessage;
     }
 
     public boolean canRelocatePath( String path )
@@ -93,5 +97,9 @@ public class SimpleRelocator
     public String applyToSourceContent( String sourceContent )
     {
         return sourceContent.replaceAll( "\\b" + pattern, shadedPattern );
+    }
+
+    public String getWarnMessage() {
+        return warnMessage;
     }
 }
