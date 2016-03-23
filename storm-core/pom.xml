@@ -48,7 +48,7 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.esotericsoftware.kryo</groupId>
+            <groupId>com.esotericsoftware</groupId>
             <artifactId>kryo</artifactId>
             <exclusions>
                 <exclusion>
