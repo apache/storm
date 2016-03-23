@@ -18,6 +18,7 @@
 package org.apache.storm.transactional;
 
 import org.apache.storm.Config;
+import org.apache.storm.XORShiftRandom;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.FailedException;
@@ -71,7 +72,7 @@ public class TransactionalSpoutCoordinator extends BaseRichSpout {
     
     @Override
     public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
-        _rand = new Random(Utils.secureRandomLong());
+        _rand = new XORShiftRandom(Utils.secureRandomLong());
         _state = TransactionalState.newCoordinatorState(conf, (String) conf.get(Config.TOPOLOGY_TRANSACTIONAL_ID), _spout.getComponentConfiguration());
         _coordinatorState = new RotatingTransactionalState(_state, META_DIR, true);
         _collector = collector;

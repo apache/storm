@@ -16,7 +16,8 @@
 
 (ns org.apache.storm.config
   (:import [java.io FileReader File IOException]
-           [org.apache.storm.generated StormTopology])
+           [org.apache.storm.generated StormTopology]
+           [org.apache.storm XORShiftRandom])
   (:import [org.apache.storm Config])
   (:import [org.apache.storm.utils Utils LocalState ConfigUtils MutableInt])
   (:import [org.apache.storm.validation ConfigValidation])
@@ -53,7 +54,7 @@
   [freq]
   (let [freq (int freq)
         start (int 0)
-        r (java.util.Random.)
+        r (XORShiftRandom.)
         curr (MutableInt. -1)
         target (MutableInt. (.nextInt r freq))]
     (with-meta

@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
+import org.apache.storm.XORShiftRandom;
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.task.WorkerTopologyContext;
 
@@ -36,7 +37,7 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
 
     @Override
     public void prepare(WorkerTopologyContext context, GlobalStreamId stream, List<Integer> targetTasks) {
-        random = new Random();
+        random = new XORShiftRandom();
         rets = (List<Integer>[])new List<?>[targetTasks.size()];
         targets = new int[targetTasks.size()];
         for (int i = 0; i < targets.length; i++) {

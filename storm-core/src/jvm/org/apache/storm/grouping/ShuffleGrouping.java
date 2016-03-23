@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.storm.XORShiftRandom;
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.task.WorkerTopologyContext;
 
@@ -35,7 +36,7 @@ public class ShuffleGrouping implements CustomStreamGrouping, Serializable {
 
     @Override
     public void prepare(WorkerTopologyContext context, GlobalStreamId stream, List<Integer> targetTasks) {
-        random = new Random();
+        random = new XORShiftRandom();
         choices = new ArrayList<List<Integer>>(targetTasks.size());
         for (Integer i: targetTasks) {
             choices.add(Arrays.asList(i));
