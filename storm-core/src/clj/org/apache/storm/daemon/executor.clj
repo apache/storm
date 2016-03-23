@@ -17,7 +17,8 @@
   (:use [org.apache.storm.daemon common])
   (:import [org.apache.storm.generated Grouping Grouping$_Fields]
            [java.io Serializable]
-           [org.apache.storm.stats BoltExecutorStats SpoutExecutorStats])
+           [org.apache.storm.stats BoltExecutorStats SpoutExecutorStats]
+           [org.apache.storm XORShiftRandom])
   (:use [org.apache.storm util config log])
   (:import [java.util List Random HashMap ArrayList LinkedList Map])
   (:import [org.apache.storm ICredentialsListener Thrift])
@@ -75,7 +76,7 @@
   "Returns a function that returns a vector of which task indices to send tuple to, or just a single task index."
   [^WorkerTopologyContext context component-id stream-id ^Fields out-fields thrift-grouping ^List target-tasks topo-conf]
   (let [num-tasks (count target-tasks)
-        random (Random.)
+        random (XORShiftRandom.)
         target-tasks (vec (sort target-tasks))]
     (condp = (Thrift/groupingType thrift-grouping)
       Grouping$_Fields/FIELDS
@@ -508,7 +509,7 @@
         ^Integer max-spout-pending (if max-spout-pending (int max-spout-pending))        
         last-active (atom false)        
         spouts (ArrayList. (map :object (vals task-datas)))
-        rand (Random. (Utils/secureRandomLong))
+        rand (XORShiftRandom. (Utils/secureRandomLong))
         ^DisruptorQueue transfer-queue (executor-data :batch-transfer-queue)
         debug? (= true (storm-conf TOPOLOGY-DEBUG))
 
@@ -698,7 +699,7 @@
         executor-stats (:stats executor-data)
         {:keys [storm-conf component-id worker-context transfer-fn report-error sampler
                 open-or-prepare-was-called?]} executor-data
-        rand (Random. (Utils/secureRandomLong))
+        rand (XORShiftRandom. (Utils/secureRandomLong))
 
         tuple-action-fn (fn [task-id ^TupleImpl tuple]
                           ;; synchronization needs to be done with a key provided by this bolt, otherwise:
