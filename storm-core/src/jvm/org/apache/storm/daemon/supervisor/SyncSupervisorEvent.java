@@ -206,7 +206,7 @@ public class SyncSupervisorEvent implements Runnable {
             List<ExecutorInfo> newExecutors = newAssignment.get(port).get_executors();
             Set<ExecutorInfo> setExitExecutors = new HashSet<>(existExecutors);
             Set<ExecutorInfo>  setNewExecutors = new HashSet<>(newExecutors);
-            if (setExitExecutors.equals(setNewExecutors)){
+            if (!setExitExecutors.equals(setNewExecutors)){
                 syncProcesses.killWorker(supervisorData, supervisorData.getWorkerManager(), vaildPortToWorkerIds.get(port));
             }
         }
