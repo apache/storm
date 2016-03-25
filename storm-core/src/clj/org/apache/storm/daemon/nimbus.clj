@@ -490,10 +490,10 @@
         (-> (:blob-store nimbus)
           (.getBlobReplication  blob-key nimbus-subject))))
 
-(defn- wait-for-desired-code-replication [nimbus conf storm-id]
+(defn- wait-for-desired-code-replication [nimbus conf storm-id is-local-mode]
   (let [min-replication-count (conf TOPOLOGY-MIN-REPLICATION-COUNT)
         max-replication-wait-time (conf TOPOLOGY-MAX-REPLICATION-WAIT-TIME-SEC)
-        current-replication-count-jar (if (not (ConfigUtils/isLocalMode conf))
+        current-replication-count-jar (if (not is-local-mode)
                                         (atom (get-blob-replication-count (ConfigUtils/masterStormJarKey storm-id) nimbus))
                                         (atom min-replication-count))
         current-replication-count-code (atom (get-blob-replication-count (ConfigUtils/masterStormCodeKey storm-id) nimbus))
@@ -509,12 +509,12 @@
         (Time/sleepSecs 1)
         (log-debug "waiting for desired replication to be achieved.
           min-replication-count = " min-replication-count  " max-replication-wait-time = " max-replication-wait-time
-          (if (not (ConfigUtils/isLocalMode conf))"current-replication-count for jar key = " @current-replication-count-jar)
+          (if (not is-local-mode)"current-replication-count for jar key = " @current-replication-count-jar)
           "current-replication-count for code key = " @current-replication-count-code
           "current-replication-count for conf key = " @current-replication-count-conf
           " total-wait-time " @total-wait-time)
         (swap! total-wait-time inc)
-        (if (not (ConfigUtils/isLocalMode conf))
+        (if (not is-local-mode)
           (reset! current-replication-count-jar  (get-blob-replication-count (ConfigUtils/masterStormJarKey storm-id) nimbus)))
         (reset! current-replication-count-code  (get-blob-replication-count (ConfigUtils/masterStormCodeKey storm-id) nimbus))
         (reset! current-replication-count-conf  (get-blob-replication-count (ConfigUtils/masterStormConfKey storm-id) nimbus))))
@@ -1529,7 +1529,7 @@
               (.setCredentials storm-cluster-state storm-id (thriftify-credentials credentials) storm-conf)
               (log-message "uploadedJar " uploadedJarLocation)
               (setup-storm-code nimbus conf storm-id uploadedJarLocation total-storm-conf topology)
-              (wait-for-desired-code-replication nimbus total-storm-conf storm-id)
+              (wait-for-desired-code-replication nimbus total-storm-conf storm-id (ConfigUtils/isLocalMode conf))
               (.setupHeatbeats storm-cluster-state storm-id)
               (if (total-storm-conf TOPOLOGY-BACKPRESSURE-ENABLE)
                 (.setupBackpressure storm-cluster-state storm-id))
