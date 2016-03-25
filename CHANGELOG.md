@@ -1,4 +1,5 @@
 ## 1.0.0
+ * STORM-1654: HBaseBolt creates tick tuples with no interval when we don't set flushIntervalSecs 
  * STORM-1625: Move storm-sql dependencies out of lib folder
  * STORM-1622: Rename classes with older third party shaded packages
  * STORM-1537: Upgrade to kryo 3
