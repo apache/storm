@@ -82,8 +82,7 @@ public class SyncProcessEvent implements Runnable {
     public SyncProcessEvent(SupervisorData supervisorData) {
         init(supervisorData);
     }
-
-    //TODO: initData is intended to local supervisor, so we will remove them after porting worker.clj to java
+    
     public void init(SupervisorData supervisorData){
         this.supervisorData = supervisorData;
         this.localState = supervisorData.getLocalState();
