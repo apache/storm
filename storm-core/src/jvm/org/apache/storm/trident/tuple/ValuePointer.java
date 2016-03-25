@@ -43,7 +43,7 @@ public class ValuePointer {
         return ret;
     }    
     
-    public int delegateIndex;
+    protected int delegateIndex;
     protected int index;
     protected String field;
     
