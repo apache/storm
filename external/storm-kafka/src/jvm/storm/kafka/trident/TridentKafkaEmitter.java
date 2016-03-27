@@ -23,6 +23,7 @@ import backtype.storm.metric.api.MeanReducer;
 import backtype.storm.metric.api.ReducedMetric;
 import backtype.storm.task.TopologyContext;
 import com.google.common.collect.ImmutableMap;
+import kafka.api.OffsetRequest;
 import kafka.javaapi.consumer.SimpleConsumer;
 import kafka.javaapi.message.ByteBufferMessageSet;
 import kafka.message.Message;
@@ -104,6 +105,12 @@ public class TridentKafkaEmitter {
             }
             if (_config.forceFromStart && !_topologyInstanceId.equals(lastInstanceId)) {
                 offset = KafkaUtils.getOffset(consumer, _config.topic, partition.partition, _config.startOffsetTime);
+                if(_config.useStartOffsetTimeIfOffsetOutOfRange){
+                    long earliestAvailableOffset = KafkaUtils.getOffset(consumer, _config.topic, partition.partition, OffsetRequest.EarliestTime());
+                    if(offset < earliestAvailableOffset) {
+                        offset = earliestAvailableOffset;
+                    }
+                }
             } else {
                 offset = (Long) lastMeta.get("nextOffset");
             }
