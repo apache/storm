@@ -106,9 +106,11 @@ public class TridentKafkaEmitter {
             if (_config.forceFromStart && !_topologyInstanceId.equals(lastInstanceId)) {
                 offset = KafkaUtils.getOffset(consumer, _config.topic, partition.partition, _config.startOffsetTime);
                 if(_config.useStartOffsetTimeIfOffsetOutOfRange){
+                    long nextOffset = (Long) lastMeta.get("nextOffset");
                     long earliestAvailableOffset = KafkaUtils.getOffset(consumer, _config.topic, partition.partition, OffsetRequest.EarliestTime());
-                    if(offset < earliestAvailableOffset) {
-                        offset = earliestAvailableOffset;
+                    long latestAvailableOffset = KafkaUtils.getOffset(consumer, _config.topic, partition.partition, OffsetRequest.LatestTime());
+                    if(earliestAvailableOffset <= nextOffset && nextOffset <= latestAvailableOffset) { // in the offset range.
+                        offset = nextOffset;
                     }
                 }
             } else {
