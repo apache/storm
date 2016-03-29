@@ -1,4 +1,5 @@
 ## 1.0.0
+ * STORM-1030: Hive Connector Fixes
  * STORM-676: Storm Trident support for sliding/tumbling windows
  * STORM-1630: Add guide page for Windows users
  * STORM-1655: Flux doesn't set return code to non-zero when there's any exception while deploying topology to remote cluster
