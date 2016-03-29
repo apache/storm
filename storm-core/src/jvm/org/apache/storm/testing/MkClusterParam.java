@@ -20,7 +20,7 @@ package org.apache.storm.testing;
 import java.util.Map;
 
 /**
- * The param arg for `Testing.withSimulatedTimeCluster` and `Testing.withTrackedCluster`
+ * The param arg for `Testing.withSimulatedTimeCluster`, `Testing.withTrackedCluster` and `Testing.withLocalCluster` 
  */
 public class MkClusterParam {
 	/**
@@ -35,6 +35,8 @@ public class MkClusterParam {
 	 * cluster config
 	 */
 	private Map daemonConf;
+
+	private Boolean nimbusDaemon;
 	
 	public Integer getSupervisors() {
 		return supervisors;
@@ -45,6 +47,9 @@ public class MkClusterParam {
 	public Integer getPortsPerSupervisor() {
 		return portsPerSupervisor;
 	}
+	public Boolean isNimbusDaemon() {
+	  return nimbusDaemon;
+	}
 	public void setPortsPerSupervisor(Integer portsPerSupervisor) {
 		this.portsPerSupervisor = portsPerSupervisor;
 	}
@@ -53,5 +58,12 @@ public class MkClusterParam {
 	}
 	public void setDaemonConf(Map daemonConf) {
 		this.daemonConf = daemonConf;
+	}
+	/**
+	* When nimbusDaemon is true, the local cluster will be started with a Nimbus
+	* Thrift server, allowing communication through for example org.apache.storm.utils.NimbusClient
+	*/
+	public void setNimbusDaemon(Boolean nimbusDaemon) {
+	  this.nimbusDaemon = nimbusDaemon;
 	}
 }
