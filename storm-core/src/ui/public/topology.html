@@ -107,7 +107,7 @@ function clearLoggerLevel(id){
 }
 
 function sendLoggerLevel(id){
-    var topologyId = $.url("?id");
+    var topologyName = $.url("?name");
     var shouldRemove = $("#loggerRemove-" + id).val() === "true";
     var level = $("#loggerLevel-" + id).val();
     var timeout = parseInt($("#loggerTimeout-" + id).val());
@@ -143,11 +143,11 @@ function sendLoggerLevel(id){
     loggerSetting.reset_level  = "INFO";
     loggerSetting.timeout = timeout;
 
-    sendRequest (topologyId, "logconfig", null, data, toggleChangeLogLevel);
+    sendRequest (topologyName, "logconfig", null, data, toggleChangeLogLevel);
 };
 
 function renderLogLevelForm (template, responseData){
-    var topologyId = $.url("?id");
+    var topologyName = $.url("?name");
     var container = $("#change-log-level");
 
     var levels = [
@@ -226,8 +226,8 @@ function renderLogLevelForm (template, responseData){
         container.show('fast');
     };
     if (!responseData) {
-        var topologyId = $.url("?id");
-        $.get ('/api/v1/topology/' + topologyId + '/logconfig', renderImpl);
+        var topologyName = $.url("?name");
+        $.get ('/api/v1/topology/' + topologyName + '/logconfig', renderImpl);
     } else {
         renderImpl (responseData);
     }
@@ -239,11 +239,11 @@ $(document).ajaxStart(function(){
     }
 });
 $(document).ready(function() {
-    var topologyId = $.url("?id");
-    var tableStateKey = ":".concat(topologyId);
+    var topologyName = $.url("?name");
+    var tableStateKey = ":".concat(topologyName);
     var window = $.url("?window");
     var sys = $.cookies.get("sys") || "false";
-    var url = "/api/v1/topology/"+topologyId+"?sys="+sys;
+    var url = "/api/v1/topology/"+topologyName+"?sys="+sys;
     if(window) url += "&window="+window;
     $.extend( $.fn.dataTable.defaults, {
       stateSave: true,
@@ -290,7 +290,7 @@ $(document).ready(function() {
             toggleChangeLogLevel = function (data) {
               renderLogLevelForm (template, data);
             }
-            searchForm.append(Mustache.render($(template).filter("#search-form-template").html(),{id: topologyId}));
+            searchForm.append(Mustache.render($(template).filter("#search-form-template").html(),{id: response["encodedId"]}));
             topologySummary.append(Mustache.render($(template).filter("#topology-summary-template").html(),response));
             topologyResources.append(Mustache.render($(template).filter("#topology-resources-template").html(),response));
             var displayResource = response["schedulerDisplayResource"];

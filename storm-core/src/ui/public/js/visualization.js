@@ -387,7 +387,7 @@ function jsError(other) {
 
 var should_update;
 function show_visualization(sys) {
-    $.getJSON("/api/v1/topology/"+$.url("?id")+"/visualization-init",function(response,status,jqXHR) {
+    $.getJSON("/api/v1/topology/"+$.url("?name")+"/visualization-init",function(response,status,jqXHR) {
         $.get("/templates/topology-page-template.html", function(template) {
             jsError(function() {
                 var topologyVisualization = $("#visualization-container");
@@ -412,7 +412,7 @@ function show_visualization(sys) {
             var update = function(should_rechoose){
               if(should_update) {
                 $.ajax({
-                    url: "/api/v1/topology/"+$.url("?id")+"/visualization",
+                    url: "/api/v1/topology/"+$.url("?name")+"/visualization",
                     success: function(data, status, jqXHR) {
                         topology_data = data;
                         update_data(topology_data, sys);

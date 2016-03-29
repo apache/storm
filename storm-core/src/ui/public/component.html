@@ -132,12 +132,13 @@ function workerActionSelectedClicked() {
 workerActionSelected = {};
 
 $(document).ready(function() {
+    var topologyId;
     var componentId = $.url("?id");
-    var topologyId = $.url("?topology_id");
-    var tableStateKey = ":".concat(topologyId, ":", componentId);
+    var topologyName = $.url("?topology_name");
+    var tableStateKey = ":".concat(topologyName, ":", componentId);
     var window = $.url("?window");
     var sys = $.cookies.get("sys") || "false";
-    var url = "/api/v1/topology/"+topologyId+"/component/"+componentId+"?sys="+sys;
+    var url = "/api/v1/topology/"+topologyName+"/component/"+componentId+"?sys="+sys;
     if(window) url += "&window="+window;
 
     $.extend( $.fn.dataTable.defaults, {
@@ -186,6 +187,7 @@ $(document).ready(function() {
     }
 
     $.getJSON(url,function(response,status,jqXHR) {
+        topologyId = response["topologyId"];
         var uiUser = $("#ui-user");
         $.get("/templates/user-template.html", function(template) {
             uiUser.append(Mustache.render($(template).filter("#user-template").html(),response));
@@ -194,7 +196,7 @@ $(document).ready(function() {
 
         var componentSummary = $("#component-summary");
         var componentActions = $("#component-actions");
-        var buttonJsonData = componentActionJson(response["encodedTopologyId"], response["encodedId"], response["id"],
+        var buttonJsonData = componentActionJson(response["name"], response["encodedId"], response["id"],
                                                  response["topologyStatus"], response["debug"], response["samplingPct"]);
         var componentStatsDetail = $("#component-stats-detail")
         var inputStats = $("#component-input-stats");
@@ -328,7 +330,7 @@ $(document).ready(function() {
 });
 
 function start_profiling() {
-    var topologyId = $.url("?topology_id");
+    var topologyName = $.url("?topology_name");
     var timeout = $("#timeout").val();
 
     if(timeout == "") { timeout = 10; }
@@ -340,7 +342,7 @@ function start_profiling() {
     var failed = {}
     var passed = {}
     Object.keys(workerActionSelected).forEach(function (id) {
-        var url = "/api/v1/topology/"+topologyId+"/profiling/start/" + id + "/" + timeout;
+        var url = "/api/v1/topology/"+topologyName+"/profiling/start/" + id + "/" + timeout;
         $.get(url, function(response,status,jqXHR) {
             jsError(function() {
                 $.get("/templates/component-page-template.html", function(template) {
@@ -376,8 +378,8 @@ function start_profiling() {
 }
 
 function stop_profiling(id) {
-    var topologyId = $.url("?topology_id");
-    var url = "/api/v1/topology/"+topologyId+"/profiling/stop/" + id;
+    var topologyName = $.url("?topology_name");
+    var url = "/api/v1/topology/"+topologyName+"/profiling/stop/" + id;
 
     $("#stop_" + id).prop('disabled', true);
     setTimeout(function(){ $("#stop_" + id).prop('disabled', false); }, 5000);
@@ -392,8 +394,8 @@ function stop_profiling(id) {
 }
 
 function dump_profile(id) {
-    var topologyId = $.url("?topology_id");
-    var url = "/api/v1/topology/"+topologyId+"/profiling/dumpprofile/" + id;
+    var topologyName = $.url("?topology_name");
+    var url = "/api/v1/topology/"+topologyName+"/profiling/dumpprofile/" + id;
 
     $("#dump_profile_" + id).prop('disabled', true);
     setTimeout(function(){ $("#dump_profile_" + id).prop('disabled', false); }, 5000);
@@ -408,12 +410,12 @@ function dump_profile(id) {
 
 // Create jstack output for all selected workers.
 function dump_jstacks() {
-    var topologyId = $.url("?topology_id");
+    var topologyName = $.url("?topology_name");
 
     var failed = {}
     var passed = {}
     Object.keys(workerActionSelected).forEach(function (id) {
-        var url = "/api/v1/topology/"+topologyId+"/profiling/dumpjstack/" + id;
+        var url = "/api/v1/topology/"+topologyName+"/profiling/dumpjstack/" + id;
 
         $("#dump_jstack_" + id).prop('disabled', true);
         setTimeout(function(){ $("#dump_jstack_" + id).prop('disabled', false); }, 5000);
@@ -437,8 +439,8 @@ function dump_jstacks() {
 
 // Create jstack output for the worker with the given id.
 function dump_jstack(id) {
-    var topologyId = $.url("?topology_id");
-    var url = "/api/v1/topology/"+topologyId+"/profiling/dumpjstack/" + id;
+    var topologyName = $.url("?topology_name");
+    var url = "/api/v1/topology/"+topologyName+"/profiling/dumpjstack/" + id;
 
     $("#dump_jstack_" + id).prop('disabled', true);
     setTimeout(function(){ $("#dump_jstack_" + id).prop('disabled', false); }, 5000);
@@ -452,11 +454,11 @@ function dump_jstack(id) {
 }
 
 function restart_worker_jvms() {
-    var topologyId = $.url("?topology_id");
+    var topologyName = $.url("?topology_name");
     var failed = {}
     var passed = {}
     Object.keys(workerActionSelected).forEach(function (id) {
-        var url = "/api/v1/topology/"+topologyId+"/profiling/restartworker/" + id;
+        var url = "/api/v1/topology/"+topologyName+"/profiling/restartworker/" + id;
 
         $("#restart_worker_jvm_" + id).prop('disabled', true);
         setTimeout(function(){ $("#restart_worker_jvm_" + id).prop('disabled', false); }, 5000);
@@ -480,11 +482,11 @@ function restart_worker_jvms() {
 
 // Create java heap output for all selected workers.
 function dump_heaps() {
-    var topologyId = $.url("?topology_id");
+    var topologyName = $.url("?topology_name");
     var failed = {}
     var passed = {}
     Object.keys(workerActionSelected).forEach(function (id) {
-        var url = "/api/v1/topology/"+topologyId+"/profiling/dumpheap/" + id;
+        var url = "/api/v1/topology/"+topologyName+"/profiling/dumpheap/" + id;
         var heap = $("#dump_heap_" + id);
         $("#dump_heap_" + id).prop('disabled', true);
         setTimeout(function(){ $("#dump_heap_" + id).prop('disabled', false); }, 5000);
@@ -508,8 +510,8 @@ function dump_heaps() {
 
 // Create java heap output for the worker with the given id.
 function dump_heap(id) {
-    var topologyId = $.url("?topology_id");
-    var url = "/api/v1/topology/"+topologyId+"/profiling/dumpheap/" + id;
+    var topologyName = $.url("?topology_name");
+    var url = "/api/v1/topology/"+topologyName+"/profiling/dumpheap/" + id;
     var heap = $("#dump_heap_" + id);
     $("#dump_heap_" + id).prop('disabled', true);
     setTimeout(function(){ $("#dump_heap_" + id).prop('disabled', false); }, 5000);

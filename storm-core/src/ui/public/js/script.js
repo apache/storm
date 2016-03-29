@@ -81,10 +81,10 @@ function ensureInt(n) {
     return isInt;
 }
 
-function sendRequest(id, action, extra, body, cb){
+function sendRequest(name, action, extra, body, cb){
    var opts = {
         type:'POST',
-        url:'/api/v1/topology/' + id + '/' + action
+        url:'/api/v1/topology/' + name + '/' + action
     };
 
     if (body) {
@@ -101,10 +101,10 @@ function sendRequest(id, action, extra, body, cb){
     });
 }
 
-function confirmComponentAction(topologyId, componentId, componentName, action, param, defaultParamValue, paramText, actionText) {
+function confirmComponentAction(name, componentId, componentName, action, param, defaultParamValue, paramText, actionText) {
     var opts = {
         type:'POST',
-        url:'/api/v1/topology/' + topologyId + '/component/' + componentId + '/' + action
+        url:'/api/v1/topology/' + name + '/component/' + componentId + '/' + action
     };
     if (actionText === undefined) {
         actionText = action;
@@ -140,7 +140,7 @@ function confirmComponentAction(topologyId, componentId, componentName, action, 
 function confirmAction(id, name, action, param, defaultParamValue, paramText, actionText) {
     var opts = {
         type:'POST',
-        url:'/api/v1/topology/' + id + '/' + action
+        url:'/api/v1/topology/' + name + '/' + action
     };
     if (actionText === undefined) {
         actionText = action;
@@ -226,9 +226,9 @@ function topologyActionJson(id, encodedId, name, status, msgTimeout, debug, samp
     return jsonData;
 }
 
-function componentActionJson(encodedTopologyId, encodedId, componentName, status, debug, samplingPct) {
+function componentActionJson(topologyName, encodedId, componentName, status, debug, samplingPct) {
     var jsonData = {};
-    jsonData["encodedTopologyId"] = encodedTopologyId;
+    jsonData["topologyName"] = topologyName;
     jsonData["encodedId"] = encodedId;
     jsonData["componentName"] = componentName;
     jsonData["startDebugStatus"] = (status === "ACTIVE" && !debug) ? "enabled" : "disabled";
