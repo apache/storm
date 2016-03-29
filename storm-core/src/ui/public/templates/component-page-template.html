@@ -49,7 +49,7 @@
     <tbody>
       <tr>
         <td>{{id}}</td>
-        <td><a href="/topology.html?id={{encodedTopologyId}}">{{name}}</a></td>
+        <td><a href="/topology.html?name={{name}}">{{name}}</a></td>
         <td>{{executors}}</td>
         <td>{{tasks}}</td>
         <td><a href="{{eventLogLink}}">events</a></td>
@@ -96,7 +96,7 @@
     <tbody>
       {{#spoutSummary}}
       <tr>
-        <td><a href="/component.html?id={{encodedId}}&topology_id={{encodedTopologyId}}&window={{window}}">{{windowPretty}}</a></td>
+        <td><a href="/component.html?id={{encodedId}}&topology_name={{name}}&window={{window}}">{{windowPretty}}</a></td>
         <td>{{emitted}}</td>
         <td>{{transferred}}</td>
         <td>{{completeLatency}}</td>
@@ -331,7 +331,7 @@
     <tbody>
       {{#boltStats}}
       <tr>
-        <td><a href="/component.html?id={{encodedId}}&topology_id={{encodedTopologyId}}&window={{window}}">{{windowPretty}}</a></td>
+        <td><a href="/component.html?id={{encodedId}}&topology_name={{name}}&window={{window}}">{{windowPretty}}</a></td>
         <td>{{emitted}}</td>
         <td>{{transferred}}</td>
         <td>{{executeLatency}}</td>
@@ -557,7 +557,9 @@
 <script id="component-actions-template" type="text/html">
   <h2>Component actions</h2>
   <p id="component-actions">
-    <input {{startDebugStatus}} onclick="confirmComponentAction('{{encodedTopologyId}}', '{{encodedId}}', '{{componentName}}', 'debug/enable', true, {{currentSamplingPct}}, 'sampling percentage', 'debug')" type="button" value="Debug" class="btn btn-default">
-    <input {{stopDebugStatus}} onclick="confirmComponentAction('{{encodedTopologyId}}', '{{encodedId}}', '{{componentName}}', 'debug/disable', false, 0, 'sampling percentage', 'stop debugging')" type="button" value="Stop Debug" class="btn btn-default">
+    <input {{startDebugStatus}}
+           onclick="confirmComponentAction('{{topologyName}}', '{{encodedId}}', '{{componentName}}', 'debug/enable', true, {{currentSamplingPct}}, 'sampling percentage', 'debug')" type="button" value="Debug" class="btn btn-default">
+    <input {{stopDebugStatus}}
+           onclick="confirmComponentAction('{{topologyName}}', '{{encodedId}}', '{{componentName}}', 'debug/disable', false, 0, 'sampling percentage', 'stop debugging')" type="button" value="Stop Debug" class="btn btn-default">
   </p>
 </script>
