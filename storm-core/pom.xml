@@ -503,6 +503,7 @@
                             <include>org.apache.curator:*</include>
                             <include>com.twitter:carbonite</include>
                             <include>com.twitter:chill-java</include>
+                            <include>org.objenesis:objenesis</include>
                             <include>org.tukaani:xz</include>
                             <include>org.yaml:snakeyaml</include>
                             <include>org.jgrapht:jgrapht-core</include>
@@ -626,6 +627,10 @@
                         <relocation>
                           <pattern>com.twitter.chill</pattern>
                           <shadedPattern>org.apache.storm.shade.com.twitter.chill</shadedPattern>
+                        </relocation>
+                        <relocation>
+                          <pattern>org.objenesis</pattern>
+                          <shadedPattern>org.apache.storm.shade.org.objenesis</shadedPattern>
                         </relocation>
                         <relocation>
                           <pattern>org.tukaani.xz</pattern>
@@ -825,6 +830,13 @@
                         </filter>
                         <filter>
                             <artifact>joda-time:joda-time</artifact>
+                            <excludes>
+                                <exclude>META-INF/LICENSE.txt</exclude>
+                                <exclude>META-INF/NOTICE.txt</exclude>
+                            </excludes>
+                        </filter>
+                        <filter>
+                            <artifact>org.objenesis:objenesis</artifact>
                             <excludes>
                                 <exclude>META-INF/LICENSE.txt</exclude>
                                 <exclude>META-INF/NOTICE.txt</exclude>
