@@ -219,7 +219,6 @@ public class MasterBatchCoordinator extends BaseRichSpout {
     public Map<String, Object> getComponentConfiguration() {
         Config ret = new Config();
         ret.setMaxTaskParallelism(1);
-        ret.registerSerialization(TransactionAttempt.class);
         return ret;
     }
     
