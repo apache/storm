@@ -1,11 +1,5 @@
 ## 1.0.0
- * STORM-1634: Refactoring of Resource Aware Scheduler
- * STORM-1030: Hive Connector Fixes
- * STORM-676: Storm Trident support for sliding/tumbling windows
- * STORM-1630: Add guide page for Windows users
- * STORM-1655: Flux doesn't set return code to non-zero when there's any exception while deploying topology to remote cluster
- * STORM-1654: HBaseBolt creates tick tuples with no interval when we don't set flushIntervalSecs 
- * STORM-1625: Move storm-sql dependencies out of lib folder
+ * STORM-1660: remove flux gitignore file and move rules to top level gitignore
  * STORM-1622: Rename classes with older third party shaded packages
  * STORM-1537: Upgrade to kryo 3
  * STORM-1556: nimbus.clj/wait-for-desired-code-replication wrong reset for current-replication-count-jar in local mode
