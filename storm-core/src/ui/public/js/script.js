@@ -210,7 +210,7 @@ function renderToggleSys(div) {
     }
 }
 
-function topologyActionJson(id, encodedId, name, status, msgTimeout, debug, samplingPct) {
+function topologyActionJson(id, encodedId, name, status, msgTimeout, loggersTotal, debug, samplingPct) {
     var jsonData = {};
     jsonData["id"] = id;
     jsonData["encodedId"] = encodedId;
@@ -220,7 +220,7 @@ function topologyActionJson(id, encodedId, name, status, msgTimeout, debug, samp
     jsonData["deactivateStatus"] = (status === "ACTIVE") ? "enabled" : "disabled";
     jsonData["rebalanceStatus"] = (status === "ACTIVE" || status === "INACTIVE" ) ? "enabled" : "disabled";
     jsonData["killStatus"] = (status !== "KILLED") ? "enabled" : "disabled";
-    jsonData["startDebugStatus"] = (status === "ACTIVE" && !debug) ? "enabled" : "disabled";
+    jsonData["startDebugStatus"] = (status === "ACTIVE" && loggersTotal!=null && loggersTotal!=0 && !debug) ? "enabled" : "disabled";
     jsonData["stopDebugStatus"] = (status === "ACTIVE" && debug) ? "enabled" : "disabled";
     jsonData["currentSamplingPct"] = samplingPct;
     return jsonData;
