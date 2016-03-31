@@ -254,10 +254,10 @@
             </includes>
         </fileSet>
         <fileSet>
-            <directory>${project.basedir}/../../external/sql/storm-sql-core/target</directory>
+            <directory>${project.basedir}/../../external/sql/storm-sql-core/target/appassembler/repo</directory>
             <outputDirectory>external/sql/storm-sql-core</outputDirectory>
             <includes>
-                <include>storm*jar</include>
+                <include>*jar</include>
             </includes>
         </fileSet>
         <fileSet>
@@ -301,6 +301,20 @@
             <outputDirectory>external/storm-mqtt</outputDirectory>
             <includes>
                 <include>storm*jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-mongodb/target</directory>
+            <outputDirectory>external/storm-mongodb</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-mongodb</directory>
+            <outputDirectory>external/storm-mongodb</outputDirectory>
+            <includes>
+                <include>README.*</include>
             </includes>
         </fileSet>
 

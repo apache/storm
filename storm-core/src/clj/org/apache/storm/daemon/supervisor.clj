@@ -14,11 +14,12 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns org.apache.storm.daemon.supervisor
-  (:import [java.io File IOException FileOutputStream])
+  (:import [java.io File IOException FileOutputStream]
+           [org.apache.storm.metric StormMetricsRegistry])
   (:import [org.apache.storm.scheduler ISupervisor]
            [org.apache.storm.utils LocalState Time Utils Utils$ExitCodeCallable
                                    ConfigUtils]
-           [org.apache.storm.daemon Shutdownable]
+           [org.apache.storm.daemon Shutdownable StormCommon DaemonCommon]
            [org.apache.storm Constants]
            [org.apache.storm.cluster ClusterStateContext DaemonType StormClusterStateImpl ClusterUtils IStateStorage]
            [java.net JarURLConnection]
@@ -35,20 +36,17 @@
   (:use [org.apache.storm.daemon common])
   (:import [org.apache.storm.command HealthCheck])
   (:require [org.apache.storm.daemon [worker :as worker]]
-
             [clojure.set :as set])
   (:import [org.apache.thrift.transport TTransportException])
   (:import [org.apache.zookeeper data.ACL ZooDefs$Ids ZooDefs$Perms])
   (:import [org.yaml.snakeyaml Yaml]
            [org.yaml.snakeyaml.constructor SafeConstructor])
-  (:require [metrics.gauges :refer [defgauge]])
-  (:require [metrics.meters :refer [defmeter mark!]])
   (:import [org.apache.storm StormTimer])
   (:gen-class
     :methods [^{:static true} [launch [org.apache.storm.scheduler.ISupervisor] void]])
   (:require [clojure.string :as str]))
 
-(defmeter supervisor:num-workers-launched)
+(def supervisor:num-workers-launched (StormMetricsRegistry/registerMeter "supervisor:num-workers-launched"))
 
 (defmulti download-storm-code cluster-mode)
 (defmulti launch-worker (fn [supervisor & _] (cluster-mode (:conf supervisor))))
@@ -243,14 +241,16 @@
 (defn generate-supervisor-id []
   (Utils/uuid))
 
-(defnk worker-launcher [conf user args :environment {} :log-prefix nil :exit-code-callback nil :directory nil]
+(defnk worker-launcher [conf user args :environment {} :log-prefix nil :exit-code-callback nil :directory nil :launch-in-container? false :supervisor nil :worker-id nil]
   (let [_ (when (clojure.string/blank? user)
             (throw (java.lang.IllegalArgumentException.
                      "User cannot be blank when calling worker-launcher.")))
         wl-initial (conf SUPERVISOR-WORKER-LAUNCHER)
         storm-home (System/getProperty "storm.home")
         wl (if wl-initial wl-initial (str storm-home "/bin/worker-launcher"))
-        command (concat [wl user] args)]
+        command (if launch-in-container?
+                  (concat (.getLaunchCommandPrefix (:resource-isolation-manager supervisor) worker-id) [wl user] args)
+                  (concat [wl user] args))]
     (log-message "Running as user:" user " command:" (pr-str command))
     (Utils/launchProcess command
                          environment
@@ -282,6 +282,11 @@
 
 (defn try-cleanup-worker [conf supervisor id]
   (try
+    ;; clean up for resource isolation if enabled
+    (if (conf STORM-RESOURCE-ISOLATION-PLUGIN-ENABLE)
+      (.releaseResourcesForWorker (:resource-isolation-manager supervisor) id))
+    ;; Always make sure to clean up everything else before worker directory
+    ;; is removed since that is what is going to trigger the retry for cleanup
     (if (.exists (File. (ConfigUtils/workerRoot conf id)))
       (do
         (if (conf SUPERVISOR-RUN-WORKER-AS-USER)
@@ -290,12 +295,11 @@
             (Utils/forceDelete (ConfigUtils/workerHeartbeatsRoot conf id))
             ;; this avoids a race condition with worker or subprocess writing pid around same time
             (Utils/forceDelete (ConfigUtils/workerPidsRoot conf id))
+            (Utils/forceDelete (ConfigUtils/workerTmpRoot conf id))
             (Utils/forceDelete (ConfigUtils/workerRoot conf id))))
         (ConfigUtils/removeWorkerUserWSE conf id)
         (remove-dead-worker id)
       ))
-    (if (conf STORM-RESOURCE-ISOLATION-PLUGIN-ENABLE)
-      (.releaseResourcesForWorker (:resource-isolation-manager supervisor) id))
   (catch IOException e
     (log-warn-error e "Failed to cleanup worker " id ". Will retry later"))
   (catch RuntimeException e
@@ -416,6 +420,7 @@
               (log-message "Launching worker with assignment "
                 (get-worker-assignment-helper-msg assignment supervisor port id))
               (FileUtils/forceMkdir (File. pids-path))
+              (FileUtils/forceMkdir (File. (ConfigUtils/workerTmpRoot conf id)))
               (FileUtils/forceMkdir (File. hb-path))
               (launch-worker supervisor
                 (:storm-id assignment)
@@ -585,6 +590,16 @@
           (rm-topo-files conf storm-id localizer false)
           storm-id)))))
 
+(defn kill-existing-workers-with-change-in-components [supervisor existing-assignment new-assignment]
+  (let [assigned-executors (or (ls-local-assignments (:local-state supervisor)) {})
+        allocated (read-allocated-workers supervisor assigned-executors (Time/currentTimeSecs))
+        valid-allocated (filter-val (fn [[state _]] (= state :valid)) allocated)
+        port->worker-id (clojure.set/map-invert (map-val #((nth % 1) :port) valid-allocated))]
+    (doseq [p (set/intersection (set (keys existing-assignment))
+                                (set (keys new-assignment)))]
+      (if (not= (set (:executors (existing-assignment p))) (set (:executors (new-assignment p))))
+        (shutdown-worker supervisor (port->worker-id p))))))
+
 (defn ->LocalAssignment
   [{storm-id :storm-id executors :executors resources :resources}]
   (let [assignment (LocalAssignment. storm-id (->ExecutorInfo-list executors))]
@@ -662,6 +677,7 @@
       (doseq [p (set/difference (set (keys existing-assignment))
                                 (set (keys new-assignment)))]
         (.killedWorker isupervisor (int p)))
+      (kill-existing-workers-with-change-in-components supervisor existing-assignment new-assignment)
       (.assigned isupervisor (keys new-assignment))
       (ls-local-assignments! local-state
             new-assignment)
@@ -956,7 +972,7 @@
            (shutdown-worker supervisor id)
            )))
      DaemonCommon
-     (waiting? [this]
+     (isWaiting [this]
        (or (not @(:active supervisor))
            (and
             (.isTimerWaiting (:heartbeat-timer supervisor))
@@ -1049,9 +1065,13 @@
     (if (download-blobs-for-topology-succeed? (ConfigUtils/supervisorStormConfPath tmproot) tmproot)
       (do
         (log-message "Successfully downloaded blob resources for storm-id " storm-id)
-        (FileUtils/forceMkdir (File. stormroot))
-        (Files/move (.toPath (File. tmproot)) (.toPath (File. stormroot))
-          (doto (make-array StandardCopyOption 1) (aset 0 StandardCopyOption/ATOMIC_MOVE)))
+        (if (Utils/isOnWindows)
+          ; Files/move with non-empty directory doesn't work well on Windows
+          (FileUtils/moveDirectory (File. tmproot) (File. stormroot))
+          (do
+            (FileUtils/forceMkdir (File. stormroot))
+            (Files/move (.toPath (File. tmproot)) (.toPath (File. stormroot))
+                        (doto (make-array StandardCopyOption 1) (aset 0 StandardCopyOption/ATOMIC_MOVE)))))
         (setup-storm-code-dir conf (clojurify-structure (ConfigUtils/readSupervisorStormConf conf storm-id)) stormroot))
       (do
         (log-message "Failed to download blob resources for storm-id " storm-id)
@@ -1146,6 +1166,7 @@
           storm-home (System/getProperty "storm.home")
           storm-options (System/getProperty "storm.options")
           storm-conf-file (System/getProperty "storm.conf.file")
+          worker-tmp-dir (ConfigUtils/workerTmpRoot conf worker-id)
           storm-log-dir (ConfigUtils/getLogDir)
           storm-log-conf-dir (conf STORM-LOG4J2-CONF-DIR)
           storm-log4j2-conf-dir (if storm-log-conf-dir
@@ -1222,6 +1243,7 @@
                      (str "-Dstorm.conf.file=" storm-conf-file)
                      (str "-Dstorm.options=" storm-options)
                      (str "-Dstorm.log.dir=" storm-log-dir)
+                     (str "-Djava.io.tmpdir=" worker-tmp-dir)
                      (str "-Dlogging.sensitivity=" logging-sensitivity)
                      (str "-Dlog4j.configurationFile=" log4j-configuration-file)
                      (str "-DLog4jContextSelector=org.apache.logging.log4j.core.selector.BasicContextSelector")
@@ -1237,14 +1259,14 @@
           command (->> command
                        (map str)
                        (filter (complement empty?)))
-          command (if (conf STORM-RESOURCE-ISOLATION-PLUGIN-ENABLE)
+          command_final (if (conf STORM-RESOURCE-ISOLATION-PLUGIN-ENABLE)
                     (do
                       (.reserveResourcesForWorker (:resource-isolation-manager supervisor) worker-id
                         {"cpu" cpu "memory" (+ mem-onheap mem-offheap  (int (Math/ceil (conf STORM-CGROUP-MEMORY-LIMIT-TOLERANCE-MARGIN-MB))))})
                       (.getLaunchCommand (:resource-isolation-manager supervisor) worker-id
                         (java.util.ArrayList. (java.util.Arrays/asList (to-array command)))))
                     command)]
-      (log-message "Launching worker with command: " (Utils/shellCmd command))
+      (log-message "Launching worker with command: " (Utils/shellCmd command_final))
       (write-log-metadata! storm-conf user worker-id storm-id port conf)
       (ConfigUtils/setWorkerUserWSE conf worker-id user)
       (create-artifacts-link conf storm-id port worker-id)
@@ -1257,8 +1279,18 @@
         (remove-dead-worker worker-id)
         (create-blobstore-links conf storm-id worker-id)
         (if run-worker-as-user
-          (worker-launcher conf user ["worker" worker-dir (Utils/writeScript worker-dir command topology-worker-environment)] :log-prefix log-prefix :exit-code-callback callback :directory (File. worker-dir))
-          (Utils/launchProcess command
+          (worker-launcher conf
+            user
+            ["worker"
+             worker-dir
+             (Utils/writeScript worker-dir command topology-worker-environment)]
+            :log-prefix log-prefix
+            :exit-code-callback callback
+            :directory (File. worker-dir)
+            :launch-in-container? (if (conf STORM-RESOURCE-ISOLATION-PLUGIN-ENABLE) true false)
+            :supervisor supervisor
+            :worker-id worker-id)
+          (Utils/launchProcess command_final
                                topology-worker-environment
                                log-prefix
                                callback
@@ -1279,8 +1311,10 @@
         blob-store (Utils/getNimbusBlobStore conf master-code-dir nil)]
     (try
       (FileUtils/forceMkdir (File. tmproot))
-      (.readBlobTo blob-store (ConfigUtils/masterStormCodeKey storm-id) (FileOutputStream. (ConfigUtils/supervisorStormCodePath tmproot)) nil)
-      (.readBlobTo blob-store (ConfigUtils/masterStormConfKey storm-id) (FileOutputStream. (ConfigUtils/supervisorStormConfPath tmproot)) nil)
+      (with-open [fos-storm-code (FileOutputStream. (ConfigUtils/supervisorStormCodePath tmproot))
+                  fos-storm-conf (FileOutputStream. (ConfigUtils/supervisorStormConfPath tmproot))]
+        (.readBlobTo blob-store (ConfigUtils/masterStormCodeKey storm-id) fos-storm-code nil)
+        (.readBlobTo blob-store (ConfigUtils/masterStormConfKey storm-id) fos-storm-conf nil))
       (finally
         (.shutdown blob-store)))
     (FileUtils/moveDirectory (File. tmproot) (File. stormroot))
@@ -1319,11 +1353,12 @@
   [supervisor]
   (log-message "Starting supervisor for storm version '" STORM-VERSION "'")
   (let [conf (clojurify-structure (ConfigUtils/readStormConfig))]
-    (validate-distributed-mode! conf)
+    (StormCommon/validateDistributedMode conf)
     (let [supervisor (mk-supervisor conf nil supervisor)]
       (Utils/addShutdownHookWithForceKillIn1Sec #(.shutdown supervisor)))
-    (defgauge supervisor:num-slots-used-gauge #(count (my-worker-ids conf)))
-    (start-metrics-reporters conf)))
+    (def supervisor:num-slots-used-gauge (StormMetricsRegistry/registerGauge "supervisor:num-slots-used-gauge"
+                                           #(count (my-worker-ids conf))))
+    (StormMetricsRegistry/startMetricsReporters conf)))
 
 (defn standalone-supervisor []
   (let [conf-atom (atom nil)

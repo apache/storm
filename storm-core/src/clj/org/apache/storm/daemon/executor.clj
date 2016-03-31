@@ -16,8 +16,10 @@
 (ns org.apache.storm.daemon.executor
   (:use [org.apache.storm.daemon common])
   (:import [org.apache.storm.generated Grouping Grouping$_Fields]
-           [java.io Serializable])
-  (:use [org.apache.storm util config log stats])
+           [java.io Serializable]
+           [org.apache.storm.stats BoltExecutorStats SpoutExecutorStats]
+           [org.apache.storm.daemon.metrics BuiltinMetricsUtil SpoutThrottlingMetrics])
+  (:use [org.apache.storm util config log])
   (:import [java.util List Random HashMap ArrayList LinkedList Map])
   (:import [org.apache.storm ICredentialsListener Thrift])
   (:import [org.apache.storm.hooks ITaskHook])
@@ -31,7 +33,7 @@
   (:import [org.apache.storm.utils Utils ConfigUtils TupleUtils MutableObject RotatingMap RotatingMap$ExpiredCallback MutableLong Time DisruptorQueue WorkerBackpressureThread DisruptorBackpressureCallback])
   (:import [com.lmax.disruptor InsufficientCapacityException])
   (:import [org.apache.storm.serialization KryoTupleSerializer])
-  (:import [org.apache.storm.daemon Shutdownable])
+  (:import [org.apache.storm.daemon Shutdownable StormCommon Acker])
   (:import [org.apache.storm.metric.api IMetric IMetricsConsumer$TaskInfo IMetricsConsumer$DataPoint StateMetric])
   (:import [org.apache.storm Config Constants])
   (:import [org.apache.storm.cluster ClusterStateContext DaemonType StormClusterStateImpl ClusterUtils])
@@ -41,9 +43,7 @@
            [org.json.simple JSONValue]
            [com.lmax.disruptor.dsl ProducerType]
            [org.apache.storm StormTimer])
-  (:require [org.apache.storm [stats :as stats]])
   (:require [org.apache.storm.daemon [task :as task]])
-  (:require [org.apache.storm.daemon.builtin-metrics :as builtin-metrics])
   (:require [clojure.set :as set]))
 
 (defn- mk-fields-grouper
@@ -228,7 +228,7 @@
 
 (defn mk-executor-data [worker executor-id]
   (let [worker-context (worker-context worker)
-        task-ids (executor-id->tasks executor-id)
+        task-ids (clojurify-structure (StormCommon/executorIdToTasks executor-id))
         component-id (.getComponentId worker-context (first task-ids))
         storm-conf (normalized-component-conf (:storm-conf worker) worker-context component-id)
         executor-type (executor-type worker-context component-id)
@@ -278,7 +278,7 @@
      :sampler (mk-stats-sampler storm-conf)
      :backpressure (atom false)
      :spout-throttling-metrics (if (= executor-type :spout) 
-                                (builtin-metrics/make-spout-throttling-data)
+                                 (SpoutThrottlingMetrics.)
                                 nil)
      ;; TODO: add in the executor-specific stuff in a :specific... or make a spout-data, bolt-data function?
      )))
@@ -406,7 +406,7 @@
     (reify
       RunningExecutor
       (render-stats [this]
-        (stats/render-stats! (:stats executor-data)))
+        (.renderStats (:stats executor-data)))
       (get-executor-id [this]
         executor-id)
       (credentials-changed [this creds]
@@ -446,7 +446,7 @@
     (.fail spout msg-id)
     (task/apply-hooks (:user-context task-data) .spoutFail (SpoutFailInfo. msg-id task-id time-delta))
     (when time-delta
-      (stats/spout-failed-tuple! (:stats executor-data) (:stream tuple-info) time-delta))))
+      (.spoutFailedTuple (:stats executor-data) (:stream tuple-info) time-delta))))
 
 (defn- ack-spout-msg [executor-data task-data msg-id tuple-info time-delta id]
   (let [storm-conf (:storm-conf executor-data)
@@ -457,7 +457,7 @@
     (.ack spout msg-id)
     (task/apply-hooks (:user-context task-data) .spoutAck (SpoutAckInfo. msg-id task-id time-delta))
     (when time-delta
-      (stats/spout-acked-tuple! (:stats executor-data) (:stream tuple-info) time-delta))))
+      (.spoutAckedTuple (:stats executor-data) (:stream tuple-info) time-delta))))
 
 (defn mk-task-receiver [executor-data tuple-action-fn]
   (let [task-ids (:task-ids executor-data)
@@ -498,7 +498,7 @@
       (when (and (> spct 0) (< (* 100 (.nextDouble random)) spct))
         (task/send-unanchored
           task-data
-          EVENTLOGGER-STREAM-ID
+          StormCommon/EVENTLOGGER_STREAM_ID
           [component-id message-id (System/currentTimeMillis) values]))))
 
 (defmethod mk-threads :spout [executor-data task-datas initial-credentials]
@@ -529,6 +529,11 @@
                                       spout-obj (:object task-data)]
                                   (when (instance? ICredentialsListener spout-obj)
                                     (.setCredentials spout-obj (.getValue tuple 0))))
+                              Acker/ACKER_RESET_TIMEOUT_STREAM_ID 
+                                (let [id (.getValue tuple 0)
+                                      pending-for-id (.get pending id)]
+                                   (when pending-for-id
+                                     (.put pending id pending-for-id))) 
                               (let [id (.getValue tuple 0)
                                     [stored-task-id spout-id tuple-finished-info start-time-ms] (.remove pending id)]
                                 (when spout-id
@@ -536,17 +541,17 @@
                                     (throw (RuntimeException. (str "Fatal error, mismatched task ids: " task-id " " stored-task-id))))
                                   (let [time-delta (if start-time-ms (Time/deltaMs start-time-ms))]
                                     (condp = stream-id
-                                      ACKER-ACK-STREAM-ID (ack-spout-msg executor-data (get task-datas task-id)
-                                                                         spout-id tuple-finished-info time-delta id)
-                                      ACKER-FAIL-STREAM-ID (fail-spout-msg executor-data (get task-datas task-id)
+                                      Acker/ACKER_ACK_STREAM_ID (ack-spout-msg executor-data (get task-datas task-id)
+                                                                               spout-id tuple-finished-info time-delta id)
+                                      Acker/ACKER_FAIL_STREAM_ID (fail-spout-msg executor-data (get task-datas task-id)
                                                                            spout-id tuple-finished-info time-delta "FAIL-STREAM" id)
                                       )))
                                 ;; TODO: on failure, emit tuple to failure stream
                                 ))))
         receive-queue (:receive-queue executor-data)
         event-handler (mk-task-receiver executor-data tuple-action-fn)
-        has-ackers? (has-ackers? storm-conf)
-        has-eventloggers? (has-eventloggers? storm-conf)
+        has-ackers? (StormCommon/hasAckers storm-conf)
+        has-eventloggers? (StormCommon/hasEventLoggers storm-conf)
         emitted-count (MutableLong. 0)
         empty-emit-streak (MutableLong. 0)
         spout-transfer-fn (fn []
@@ -554,7 +559,7 @@
                             (while (not @(:storm-active-atom executor-data))
                               (Thread/sleep 100))
                             (log-message "Opening spout " component-id ":" (keys task-datas))
-                            (builtin-metrics/register-spout-throttling-metrics (:spout-throttling-metrics executor-data) storm-conf (:user-context (first (vals task-datas))))
+                            (.registerAll (:spout-throttling-metrics executor-data) storm-conf (:user-context (first (vals task-datas))))
                             (doseq [[task-id task-data] task-datas
                                     :let [^ISpout spout-obj (:object task-data)
                                           tasks-fn (:tasks-fn task-data)
@@ -587,7 +592,7 @@
                                                                                          :values (if debug? values nil)}
                                                                                         (if (sampler) (System/currentTimeMillis))])
                                                                  (task/send-unanchored task-data
-                                                                                       ACKER-INIT-STREAM-ID
+                                                                                       Acker/ACKER_INIT_STREAM_ID
                                                                                        [root-id (Utils/bitXorVals out-ids) task-id]))
                                                                (when message-id
                                                                  (ack-spout-msg executor-data task-data message-id
@@ -595,9 +600,9 @@
                                                                                 (if (sampler) 0) "0:")))
                                                              (or out-tasks [])))]]
 
-                              (builtin-metrics/register-all (:builtin-metrics task-data) storm-conf (:user-context task-data))
-                              (builtin-metrics/register-queue-metrics {:sendqueue (:batch-transfer-queue executor-data)
-                                                                       :receive receive-queue}
+                              (.registerAll (:builtin-metrics task-data) storm-conf (:user-context task-data))
+                              (BuiltinMetricsUtil/registerQueueMetrics {"sendqueue" (:batch-transfer-queue executor-data)
+                                                                       "receive" receive-queue}
                                                                       storm-conf (:user-context task-data))
                               (when (instance? ICredentialsListener spout-obj) (.setCredentials spout-obj initial-credentials))
 
@@ -651,16 +656,16 @@
                                       (fast-list-iter [^ISpout spout spouts] (.deactivate spout)))
                                     ;; TODO: log that it's getting throttled
                                     (Time/sleep 100)
-                                    (builtin-metrics/skipped-inactive! (:spout-throttling-metrics executor-data) (:stats executor-data))))
+                                    (.skippedInactive (:spout-throttling-metrics executor-data) (:stats executor-data))))
 
                                 (if (and (= curr-count (.get emitted-count)) active?)
                                   (do (.increment empty-emit-streak)
                                       (.emptyEmit spout-wait-strategy (.get empty-emit-streak))
                                       ;; update the spout throttling metrics
                                       (if throttle-on
-                                        (builtin-metrics/skipped-throttle! (:spout-throttling-metrics executor-data) (:stats executor-data))
+                                        (.skippedThrottle (:spout-throttling-metrics executor-data) (:stats executor-data))
                                         (if reached-max-spout-pending
-                                          (builtin-metrics/skipped-max-spout! (:spout-throttling-metrics executor-data) (:stats executor-data)))))
+                                          (.skippedMaxSpout (:spout-throttling-metrics executor-data) (:stats executor-data)))))
                                   (.set empty-emit-streak 0)))
                               0))]
 
@@ -738,11 +743,11 @@
 
                                   (task/apply-hooks user-context .boltExecute (BoltExecuteInfo. tuple task-id delta))
                                   (when delta
-                                    (stats/bolt-execute-tuple! executor-stats
+                                    (.boltExecuteTuple executor-stats
                                                                (.getSourceComponent tuple)
                                                                (.getSourceStreamId tuple)
                                                                delta)))))))
-        has-eventloggers? (has-eventloggers? storm-conf)
+        has-eventloggers? (StormCommon/hasEventLoggers storm-conf)
         bolt-transfer-fn (fn []
                            ;; If topology was started in inactive state, don't call prepare bolt until it's activated first.
                            (while (not @(:storm-active-atom executor-data))
@@ -775,18 +780,19 @@
                                                        (if has-eventloggers?
                                                          (send-to-eventlogger executor-data task-data values component-id nil rand))
                                                        (or out-tasks [])))]]
-                             (builtin-metrics/register-all (:builtin-metrics task-data) storm-conf user-context)
+                             (.registerAll (:builtin-metrics task-data) storm-conf user-context)
                              (when (instance? ICredentialsListener bolt-obj) (.setCredentials bolt-obj initial-credentials)) 
                              (if (= component-id Constants/SYSTEM_COMPONENT_ID)
                                (do
-                                 (builtin-metrics/register-queue-metrics {:sendqueue (:batch-transfer-queue executor-data)
-                                                                          :receive (:receive-queue executor-data)
-                                                                          :transfer (:transfer-queue (:worker executor-data))}
+                                 (BuiltinMetricsUtil/registerQueueMetrics {"sendqueue" (:batch-transfer-queue executor-data)
+                                                                          "receive" (:receive-queue executor-data)
+                                                                          "transfer" (:transfer-queue (:worker executor-data))}
                                                                          storm-conf user-context)
-                                 (builtin-metrics/register-iconnection-client-metrics (:cached-node+port->socket (:worker executor-data)) storm-conf user-context)
-                                 (builtin-metrics/register-iconnection-server-metric (:receiver (:worker executor-data)) storm-conf user-context))
-                               (builtin-metrics/register-queue-metrics {:sendqueue (:batch-transfer-queue executor-data)
-                                                                        :receive (:receive-queue executor-data)}
+                                 (BuiltinMetricsUtil/registerIconnectionClientMetrics
+                                   (.deref (:cached-node+port->socket (:worker executor-data))) storm-conf user-context)
+                                 (BuiltinMetricsUtil/registerIconnectionServerMetric (:receiver (:worker executor-data)) storm-conf user-context))
+                               (BuiltinMetricsUtil/registerQueueMetrics {"sendqueue" (:batch-transfer-queue executor-data)
+                                                                        "receive" (:receive-queue executor-data)}
                                                                        storm-conf user-context))
 
                              (.prepare bolt-obj
@@ -803,7 +809,7 @@
                                                   ack-val (.getAckVal tuple)]
                                               (fast-map-iter [[root id] (.. tuple getMessageId getAnchorsToIds)]
                                                              (task/send-unanchored task-data
-                                                                                   ACKER-ACK-STREAM-ID
+                                                                                   Acker/ACKER_ACK_STREAM_ID
                                                                                    [root (bit-xor id ack-val)])))
                                             (let [delta (tuple-time-delta! tuple)
                                                   debug? (= true (storm-conf TOPOLOGY-DEBUG))]
@@ -811,14 +817,14 @@
                                                 (log-message "BOLT ack TASK: " task-id " TIME: " delta " TUPLE: " tuple))
                                               (task/apply-hooks user-context .boltAck (BoltAckInfo. tuple task-id delta))
                                               (when delta
-                                                (stats/bolt-acked-tuple! executor-stats
+                                                (.boltAckedTuple executor-stats
                                                                          (.getSourceComponent tuple)
                                                                          (.getSourceStreamId tuple)
                                                                          delta))))
                                           (^void fail [this ^Tuple tuple]
                                             (fast-list-iter [root (.. tuple getMessageId getAnchors)]
                                                             (task/send-unanchored task-data
-                                                                                  ACKER-FAIL-STREAM-ID
+                                                                                  Acker/ACKER_FAIL_STREAM_ID
                                                                                   [root]))
                                             (let [delta (tuple-time-delta! tuple)
                                                   debug? (= true (storm-conf TOPOLOGY-DEBUG))]
@@ -826,13 +832,17 @@
                                                 (log-message "BOLT fail TASK: " task-id " TIME: " delta " TUPLE: " tuple))
                                               (task/apply-hooks user-context .boltFail (BoltFailInfo. tuple task-id delta))
                                               (when delta
-                                                (stats/bolt-failed-tuple! executor-stats
+                                                (.boltFailedTuple executor-stats
                                                                           (.getSourceComponent tuple)
                                                                           (.getSourceStreamId tuple)
                                                                           delta))))
+                                          (^void resetTimeout [this ^Tuple tuple]
+                                            (fast-list-iter [root (.. tuple getMessageId getAnchors)]
+                                                            (task/send-unanchored task-data
+                                                                                  Acker/ACKER_RESET_TIMEOUT_STREAM_ID
+                                                                                  [root])))
                                           (reportError [this error]
                                             (report-error error))))))
-
                            (reset! open-or-prepare-was-called? true)
                            (log-message "Prepared bolt " component-id ":" (keys task-datas))
                            (setup-metrics! executor-data)
@@ -861,7 +871,7 @@
 
 ;; TODO: refactor this to be part of an executor-specific map
 (defmethod mk-executor-stats :spout [_ rate]
-  (stats/mk-spout-stats rate))
+  (SpoutExecutorStats. rate))
 
 (defmethod mk-executor-stats :bolt [_ rate]
-  (stats/mk-bolt-stats rate))
+  (BoltExecutorStats. rate))

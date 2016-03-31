@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -257,10 +257,13 @@ def sql(sql_file, topology_name):
 
     Compiles the SQL statements into a Trident topology and submits it to Storm.
     """
+    extrajars=[USER_CONF_DIR, STORM_BIN_DIR]
+    extrajars.extend(get_jars_full(STORM_DIR + "/external/sql/storm-sql-core"))
+    extrajars.extend(get_jars_full(STORM_DIR + "/external/sql/storm-sql-runtime"))
     exec_storm_class(
         "org.apache.storm.sql.StormSqlRunner",
         jvmtype="-client",
-        extrajars=[USER_CONF_DIR, STORM_BIN_DIR],
+        extrajars=extrajars,
         args=[sql_file, topology_name],
         daemon=False)
 
@@ -293,7 +296,7 @@ def upload_credentials(*args):
         print_usage(command="upload_credentials")
         sys.exit(2)
     exec_storm_class(
-        "org.apache.storm.command.upload_credentials",
+        "org.apache.storm.command.UploadCredentials",
         args=args,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
@@ -389,7 +392,7 @@ def listtopos(*args):
     List the running topologies and their statuses.
     """
     exec_storm_class(
-        "org.apache.storm.command.List",
+        "org.apache.storm.command.ListTopologies",
         args=args,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
@@ -531,7 +534,7 @@ def nimbus(klass="org.apache.storm.daemon.nimbus"):
         extrajars=cppaths,
         jvmopts=jvmopts)
 
-def pacemaker(klass="org.apache.storm.pacemaker.pacemaker"):
+def pacemaker(klass="org.apache.storm.pacemaker.Pacemaker"):
     """Syntax: [storm pacemaker]
 
     Launches the Pacemaker daemon. This command should be run under

@@ -16,7 +16,8 @@
 (ns org.apache.storm.daemon.task
   (:use [org.apache.storm.daemon common])
   (:use [org.apache.storm config util log])
-  (:import [org.apache.storm.hooks ITaskHook])
+  (:import [org.apache.storm.hooks ITaskHook]
+           [org.apache.storm.daemon.metrics BuiltinMetrics BuiltinMetricsUtil])
   (:import [org.apache.storm.tuple Tuple TupleImpl])
   (:import [org.apache.storm.grouping LoadMapping])
   (:import [org.apache.storm.generated SpoutSpec Bolt StateSpoutSpec StormTopology])
@@ -27,10 +28,8 @@
   (:import [org.apache.storm.generated ShellComponent JavaObject])
   (:import [org.apache.storm.spout ShellSpout])
   (:import [java.util Collection List ArrayList])
-  (:import [org.apache.storm Thrift])
-  (:require [org.apache.storm
-             [stats :as stats]])
-  (:require [org.apache.storm.daemon.builtin-metrics :as builtin-metrics]))
+  (:import [org.apache.storm Thrift]
+           (org.apache.storm.daemon StormCommon)))
 
 (defn mk-topology-context-builder [worker executor-data topology]
   (let [conf (:conf worker)]
@@ -141,9 +140,9 @@
               (throw (IllegalArgumentException. "Cannot emitDirect to a task expecting a regular grouping")))                          
             (apply-hooks user-context .emit (EmitInfo. values stream task-id [out-task-id]))
             (when (emit-sampler)
-              (stats/emitted-tuple! executor-stats stream)
+              (.emittedTuple executor-stats stream)
               (if out-task-id
-                (stats/transferred-tuples! executor-stats stream 1)))
+                (.transferredTuples executor-stats stream, 1)))
             (if out-task-id [out-task-id])
             ))
         ([^String stream ^List values]
@@ -163,8 +162,8 @@
                    )))
              (apply-hooks user-context .emit (EmitInfo. values stream task-id out-tasks))
              (when (emit-sampler)
-               (stats/emitted-tuple! executor-stats stream)
-               (stats/transferred-tuples! executor-stats stream (count out-tasks)))
+               (.emittedTuple executor-stats stream)
+               (.transferredTuples executor-stats stream (count out-tasks)))
              out-tasks)))
     ))
 
@@ -174,7 +173,7 @@
     :task-id task-id
     :system-context (system-topology-context (:worker executor-data) executor-data task-id)
     :user-context (user-topology-context (:worker executor-data) executor-data task-id)
-    :builtin-metrics (builtin-metrics/make-data (:type executor-data) (:stats executor-data))
+    :builtin-metrics (BuiltinMetricsUtil/mkData (.getName (:type executor-data)) (:stats executor-data))
     :tasks-fn (mk-tasks-fn <>)
     :object (get-task-object (.getRawTopology ^TopologyContext (:system-context <>)) (:component-id executor-data))))
 
@@ -186,6 +185,6 @@
       (.addTaskHook ^TopologyContext (:user-context task-data) (-> klass Class/forName .newInstance)))
     ;; when this is called, the threads for the executor haven't been started yet,
     ;; so we won't be risking trampling on the single-threaded claim strategy disruptor queue
-    (send-unanchored task-data SYSTEM-STREAM-ID ["startup"])
+    (send-unanchored task-data StormCommon/SYSTEM_STREAM_ID ["startup"])
     task-data
     ))
