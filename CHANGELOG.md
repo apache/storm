@@ -1,4 +1,5 @@
 ## 1.0.0
+ * STORM-1573: Add batch support for MongoInsertBolt
  * STORM-1660: remove flux gitignore file and move rules to top level gitignore
  * STORM-1622: Rename classes with older third party shaded packages
  * STORM-1537: Upgrade to kryo 3
