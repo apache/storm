@@ -55,7 +55,7 @@ import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("unchecked")
 public class StatsUtil {
-    private static final Logger logger = LoggerFactory.getLogger(StatsUtil.class);
+    private static final Logger LOG = LoggerFactory.getLogger(StatsUtil.class);
 
     public static final String TYPE = "type";
     public static final String SPOUT = "spout";
@@ -237,12 +237,12 @@ public class StatsUtil {
         Map sid2emitted = (Map) windowSetConverter(getMapByKey(stat2win2sid2num, EMITTED), TO_STRING).get(window);
         Map sid2transferred = (Map) windowSetConverter(getMapByKey(stat2win2sid2num, TRANSFERRED), TO_STRING).get(window);
         if (sid2emitted != null) {
-            putKV(outputStats, EMITTED, filterSysStreams(sid2emitted, includeSys));
+            putKV(outputStats, EMITTED, filterSysStreams2Stat(sid2emitted, includeSys));
         } else {
             putKV(outputStats, EMITTED, new HashMap());
         }
         if (sid2transferred != null) {
-            putKV(outputStats, TRANSFERRED, filterSysStreams(sid2transferred, includeSys));
+            putKV(outputStats, TRANSFERRED, filterSysStreams2Stat(sid2transferred, includeSys));
         } else {
             putKV(outputStats, TRANSFERRED, new HashMap());
         }
@@ -284,8 +284,17 @@ public class StatsUtil {
 
         putKV(outputStats, ACKED, win2sid2acked.get(window));
         putKV(outputStats, FAILED, win2sid2failed.get(window));
-        putKV(outputStats, EMITTED, filterSysStreams((Map) win2sid2emitted.get(window), includeSys));
-        putKV(outputStats, TRANSFERRED, filterSysStreams((Map) win2sid2transferred.get(window), includeSys));
+        Map<String, Long> sid2emitted = (Map) win2sid2emitted.get(window);
+        if (sid2emitted == null) {
+            sid2emitted = new HashMap<>();
+        }
+        putKV(outputStats, EMITTED, filterSysStreams2Stat(sid2emitted, includeSys));
+
+        Map<String, Long> sid2transferred = (Map) win2sid2transferred.get(window);
+        if (sid2transferred == null) {
+            sid2transferred = new HashMap<>();
+        }
+        putKV(outputStats, TRANSFERRED, filterSysStreams2Stat(sid2transferred, includeSys));
         outputStats = swapMapOrder(outputStats);
 
         Map sid2compLat = (Map) win2sid2compLat.get(window);
@@ -1682,6 +1691,27 @@ public class StatsUtil {
         return m1;
     }
 
+
+    /**
+     * filter system streams from stats
+     *
+     * @param stats      { stream id -> value }
+     * @param includeSys whether to filter system streams
+     * @return filtered stats
+     */
+    private static <K, V> Map<K, V> filterSysStreams2Stat(Map<K, V> stream2stat, boolean includeSys) {
+        LOG.trace("Filter Sys Streams2Stat {}", stream2stat);
+        if (!includeSys) {
+            for (Iterator itr = stream2stat.keySet().iterator(); itr.hasNext(); ) {
+                Object key = itr.next();
+                if (key instanceof String && Utils.isSystemId((String) key)) {
+                    itr.remove();
+                }
+            }
+        }
+        return stream2stat;
+    }
+
     /**
      * filter system streams from stats
      *
@@ -1690,6 +1720,7 @@ public class StatsUtil {
      * @return filtered stats
      */
     private static <K, V> Map<String, Map<K, V>> filterSysStreams(Map<String, Map<K, V>> stats, boolean includeSys) {
+        LOG.trace("Filter Sys Streams {}", stats);
         if (!includeSys) {
             for (Iterator<String> itr = stats.keySet().iterator(); itr.hasNext(); ) {
                 String winOrStream = itr.next();
