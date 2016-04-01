@@ -238,18 +238,20 @@
         (is (= expected (logviewer/identify-worker-log-dirs [port1-dir])))))))
 
 (deftest test-get-dead-worker-dirs
-  (testing "removes any files of workers that are still alive"
-    (let [conf {SUPERVISOR-WORKER-TIMEOUT-SECS 5}
-          id->hb {"42" {:time-secs 1}}
-          now-secs 2
-          unexpected-dir (mk-mock-File {:name "dir1" :type :directory})
-          expected-dir (mk-mock-File {:name "dir2" :type :directory})
-          log-dirs #{unexpected-dir expected-dir}]
-      (stubbing [logviewer/identify-worker-log-dirs {"42" unexpected-dir,
-                                                     "007" expected-dir}
-                 supervisor/read-worker-heartbeats id->hb]
-        (is (= #{expected-dir}
-              (logviewer/get-dead-worker-dirs conf now-secs log-dirs)))))))
+         (testing "return directories for workers that are not alive"
+                  (let [conf {SUPERVISOR-WORKER-TIMEOUT-SECS 5}
+                        id->hb {"42" {:time-secs 1}} ;; map for alive ids
+                        now-secs 2
+                        unexpected-dir1 (mk-mock-File {:name "dir1" :type :directory})
+                        expected-dir2 (mk-mock-File {:name "dir2" :type :directory})
+                        expected-dir3 (mk-mock-File {:name "dir3" :type :directory})
+                        log-dirs #{unexpected-dir1 expected-dir2 expected-dir3}]
+                       (stubbing [logviewer/identify-worker-log-dirs {"42" unexpected-dir1,
+                                                                      "007" expected-dir2,
+                                                                      "" expected-dir3} ;; this tests a directory with no yaml file thus no worker id
+                                  supervisor/read-worker-heartbeats id->hb]
+                                 (is (= #{expected-dir2 expected-dir3}
+                                        (logviewer/get-dead-worker-dirs conf now-secs log-dirs)))))))
 
 (deftest test-cleanup-fn
   (testing "cleanup function rmr's files of dead workers"
