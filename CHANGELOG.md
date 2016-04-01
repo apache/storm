@@ -1,4 +1,5 @@
 ## 1.0.0
+ * STORM-1673: log4j2/worker.xml refers old package of LoggerMetricsConsumer
  * STORM-1632 Disable event logging by default
  * STORM-1667: Log the IO exception when deleting worker pid dir
  * STORM-1669: Fix SolrUpdateBolt flush bug
