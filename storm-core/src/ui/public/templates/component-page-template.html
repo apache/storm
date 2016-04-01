@@ -579,7 +579,13 @@
 <script id="component-actions-template" type="text/html">
   <h2>Component actions</h2>
   <p id="component-actions">
-    <input {{startDebugStatus}} onclick="confirmComponentAction('{{encodedTopologyId}}', '{{encodedId}}', '{{componentName}}', 'debug/enable', true, {{currentSamplingPct}}, 'sampling percentage', 'debug')" type="button" value="Debug" class="btn btn-default">
+    {{#loggersDisabled}}
+    <span style="display:inline-block;" data-toggle="tooltip" title="" data-original-title="To debug, set topology.eventlogger.executors to a value > 0">
+    {{/loggersDisabled}}
+      <input {{startDebugStatus}} onclick="confirmComponentAction('{{encodedTopologyId}}', '{{encodedId}}', '{{componentName}}', 'debug/enable', true, {{currentSamplingPct}}, 'sampling percentage', 'debug')" type="button" value="Debug" class="btn btn-default">
+    {{#loggersDisabled}}
+    </span>
+    {{/loggersDisabled}}
     <input {{stopDebugStatus}} onclick="confirmComponentAction('{{encodedTopologyId}}', '{{encodedId}}', '{{componentName}}', 'debug/disable', false, 0, 'sampling percentage', 'stop debugging')" type="button" value="Stop Debug" class="btn btn-default">
   </p>
 </script>
