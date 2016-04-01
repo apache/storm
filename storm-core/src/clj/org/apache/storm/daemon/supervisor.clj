@@ -27,7 +27,7 @@
            [org.apache.commons.io FileUtils])
   (:use [org.apache.storm config util log converter local-state-converter])
   (:import [org.apache.storm.generated AuthorizationException KeyNotFoundException WorkerResources])
-  (:import [org.apache.storm.utils NimbusLeaderNotFoundException VersionInfo])
+  (:import [org.apache.storm.utils NimbusLeaderNotFoundException VersionInfo Zipper])
   (:import [java.nio.file Files StandardCopyOption])
   (:import [org.apache.storm.generated WorkerResources ProfileAction LocalAssignment])
   (:import [org.apache.storm Config ProcessSimulator])
@@ -393,12 +393,12 @@
 (defn required-topo-files-exist?
   [conf storm-id]
   (let [stormroot (ConfigUtils/supervisorStormDistRoot conf storm-id)
-        stormjarpath (ConfigUtils/supervisorStormJarPath stormroot)
+        storm-jar-zip-path (ConfigUtils/supervisorStormJarZipPath stormroot)
         stormcodepath (ConfigUtils/supervisorStormCodePath stormroot)
         stormconfpath (ConfigUtils/supervisorStormConfPath stormroot)]
     (and (every? #(Utils/checkFileExists %) [stormroot stormconfpath stormcodepath])
          (or (ConfigUtils/isLocalMode conf)
-             (Utils/checkFileExists stormjarpath)))))
+             (Utils/checkFileExists storm-jar-zip-path)))))
 
 (defn get-worker-assignment-helper-msg
   [assignment supervisor port id]
@@ -1053,13 +1053,14 @@
       (if (conf SUPERVISOR-RUN-WORKER-AS-USER)
         (throw (RuntimeException. (str "ERROR: Windows doesn't implement setting the correct permissions")))))
     (Utils/downloadResourcesAsSupervisor (ConfigUtils/masterStormJarKey storm-id)
-      (ConfigUtils/supervisorStormJarPath tmproot) blobstore)
+      (ConfigUtils/supervisorStormJarZipPath tmproot) blobstore)
     (Utils/downloadResourcesAsSupervisor (ConfigUtils/masterStormCodeKey storm-id)
       (ConfigUtils/supervisorStormCodePath tmproot) blobstore)
     (Utils/downloadResourcesAsSupervisor (ConfigUtils/masterStormConfKey storm-id)
       (ConfigUtils/supervisorStormConfPath tmproot) blobstore)
     (.shutdown blobstore)
-    (Utils/extractDirFromJar (ConfigUtils/supervisorStormJarPath tmproot) ConfigUtils/RESOURCES_SUBDIR tmproot)
+    (Zipper/unzip (ConfigUtils/supervisorStormJarZipPath tmproot) tmproot)
+    ; (Utils/extractDirFromJar (ConfigUtils/supervisorStormJarPath tmproot) ConfigUtils/RESOURCES_SUBDIR tmproot)
     (download-blobs-for-topology! conf (ConfigUtils/supervisorStormConfPath tmproot) localizer
       tmproot)
     (if (download-blobs-for-topology-succeed? (ConfigUtils/supervisorStormConfPath tmproot) tmproot)
@@ -1176,13 +1177,13 @@
                                   (str storm-home Utils/FILE_PATH_SEPARATOR "log4j2"))
           stormroot (ConfigUtils/supervisorStormDistRoot conf storm-id)
           jlp (jlp stormroot conf)
-          stormjar (ConfigUtils/supervisorStormJarPath stormroot)
+          stormjarlist (Utils/getFullJars (ConfigUtils/concatIfNotNull stormroot))
           storm-conf (clojurify-structure (ConfigUtils/readSupervisorStormConf conf storm-id))
           topo-classpath (if-let [cp (storm-conf TOPOLOGY-CLASSPATH)]
                            [cp]
                            [])
           classpath (-> (Utils/workerClasspath)
-                        (Utils/addToClasspath [stormjar])
+                        (Utils/addToClasspath stormjarlist)
                         (Utils/addToClasspath topo-classpath))
           top-gc-opts (storm-conf TOPOLOGY-WORKER-GC-CHILDOPTS)
 

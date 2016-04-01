@@ -216,7 +216,7 @@ public class ConfigUtils {
     }
 
     public static String masterStormJarKey(String topologyId) {
-        return (topologyId + "-stormjar.jar");
+        return (topologyId + "-stormjar.zip");
     }
 
     public static String masterStormCodeKey(String topologyId) {
@@ -253,7 +253,7 @@ public class ConfigUtils {
     }
 
     public static String masterStormJarPath(String stormRoot) {
-        return (stormRoot + FILE_SEPARATOR + "stormjar.jar");
+        return (stormRoot + FILE_SEPARATOR + "stormjar.zip");
     }
 
     public static String masterInbox(Map conf) throws IOException {
@@ -308,8 +308,8 @@ public class ConfigUtils {
         return ret;
     }
 
-    public static String supervisorStormJarPath(String stormRoot) {
-        return (concatIfNotNull(stormRoot) + FILE_SEPARATOR + "stormjar.jar");
+    public static String supervisorStormJarZipPath(String stormRoot) {
+        return (concatIfNotNull(stormRoot) + FILE_SEPARATOR + "stormjar.zip");
     }
 
     public static String supervisorStormCodePath(String stormRoot) {
@@ -396,7 +396,7 @@ public class ConfigUtils {
 
     public static String getIdFromBlobKey(String key) {
         if (key == null) return null;
-        final String STORM_JAR_SUFFIX = "-stormjar.jar";
+        final String STORM_JAR_SUFFIX = "-stormjar.zip";
         final String STORM_CODE_SUFFIX = "-stormcode.ser";
         final String STORM_CONF_SUFFIX = "-stormconf.ser";
 

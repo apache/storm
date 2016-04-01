@@ -2032,7 +2032,7 @@ public class Utils {
      * @param dir the directory to search
      * @return the jar file names
      */
-    private static List<String> getFullJars(String dir) {
+    public static List<String> getFullJars(String dir) {
         File[] files = new File(dir).listFiles(jarFilter);
 
         if(files == null) {

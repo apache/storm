@@ -17,27 +17,40 @@
  */
 package org.apache.storm;
 
-import java.io.File;
-import java.nio.ByteBuffer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.HashMap;
-import java.util.Map;
-
-import org.apache.storm.scheduler.resource.ResourceUtils;
-import org.apache.storm.validation.ConfigValidation;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.storm.generated.AlreadyAliveException;
+import org.apache.storm.generated.AuthorizationException;
+import org.apache.storm.generated.ClusterSummary;
+import org.apache.storm.generated.Credentials;
+import org.apache.storm.generated.InvalidTopologyException;
+import org.apache.storm.generated.NotAliveException;
+import org.apache.storm.generated.StormTopology;
+import org.apache.storm.generated.SubmitOptions;
+import org.apache.storm.generated.TopologyInfo;
+import org.apache.storm.generated.TopologyInitialStatus;
+import org.apache.storm.generated.TopologySummary;
+import org.apache.storm.scheduler.resource.ResourceUtils;
+import org.apache.storm.security.auth.AuthUtils;
+import org.apache.storm.security.auth.IAutoCredentials;
+import org.apache.storm.utils.BufferFileInputStream;
+import org.apache.storm.utils.NimbusClient;
+import org.apache.storm.utils.Utils;
+import org.apache.storm.utils.Zipper;
+import org.apache.storm.validation.ConfigValidation;
 import org.apache.thrift.TException;
 import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.storm.security.auth.IAutoCredentials;
-import org.apache.storm.security.auth.AuthUtils;
-import org.apache.storm.generated.*;
-import org.apache.storm.utils.BufferFileInputStream;
-import org.apache.storm.utils.NimbusClient;
-import org.apache.storm.utils.Utils;
+import java.io.File;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Use this class to submit topologies to run on the Storm cluster. You should run your program
@@ -382,15 +395,33 @@ public class StormSubmitter {
             throw new RuntimeException("Must submit topologies using the 'storm' client script so that StormSubmitter knows which jar to upload.");
         }
 
+        String[] jars = localJar.split(":");
+        File tmpDir = FileUtils.getTempDirectory();
+        String zipFilePath = new File(tmpDir, "stormjars.zip").getAbsolutePath();
+        LOG.info("Zipping " + localJar + " to " + zipFilePath);
+        try {
+            Zipper.zip(Arrays.asList(jars), zipFilePath);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to zip jars " + localJar + " into zip " + zipFilePath, e);
+        }
+
+        return submitFileAs(conf, zipFilePath, listener, asUser);
+    }
+
+    private static String submitFileAs(Map conf, String localFile, ProgressListener listener, String asUser) {
+        if (localFile == null) {
+            throw new RuntimeException("Must submit topologies using the 'storm' client script so that StormSubmitter knows which jar to upload.");
+        }
+
         NimbusClient client = NimbusClient.getConfiguredClientAs(conf, asUser);
         try {
             String uploadLocation = client.getClient().beginFileUpload();
-            LOG.info("Uploading topology jar " + localJar + " to assigned location: " + uploadLocation);
-            BufferFileInputStream is = new BufferFileInputStream(localJar, THRIFT_CHUNK_SIZE_BYTES);
+            LOG.info("Uploading local file " + localFile + " to assigned location: " + uploadLocation);
+            BufferFileInputStream is = new BufferFileInputStream(localFile, THRIFT_CHUNK_SIZE_BYTES);
 
-            long totalSize = new File(localJar).length();
+            long totalSize = new File(localFile).length();
             if (listener != null) {
-                listener.onStart(localJar, uploadLocation, totalSize);
+                listener.onStart(localFile, uploadLocation, totalSize);
             }
 
             long bytesUploaded = 0;
@@ -398,7 +429,7 @@ public class StormSubmitter {
                 byte[] toSubmit = is.read();
                 bytesUploaded += toSubmit.length;
                 if (listener != null) {
-                    listener.onProgress(localJar, uploadLocation, bytesUploaded, totalSize);
+                    listener.onProgress(localFile, uploadLocation, bytesUploaded, totalSize);
                 }
 
                 if(toSubmit.length==0) break;
@@ -407,10 +438,10 @@ public class StormSubmitter {
             client.getClient().finishFileUpload(uploadLocation);
 
             if (listener != null) {
-                listener.onCompleted(localJar, uploadLocation, totalSize);
+                listener.onCompleted(localFile, uploadLocation, totalSize);
             }
 
-            LOG.info("Successfully uploaded topology jar to assigned location: " + uploadLocation);
+            LOG.info("Successfully uploaded " + localFile + " to assigned location: " + uploadLocation);
             return uploadLocation;
         } catch(Exception e) {
             throw new RuntimeException(e);
