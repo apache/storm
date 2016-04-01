@@ -1,4 +1,5 @@
 ## 1.0.0
+ * STORM-1671: Enable logviewer to delete a dir without yaml
  * STORM-822: Kafka Spout New Consumer API
  * STORM-1673: log4j2/worker.xml refers old package of LoggerMetricsConsumer
  * STORM-1632 Disable event logging by default
