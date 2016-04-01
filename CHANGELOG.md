@@ -1,4 +1,5 @@
 ## 1.0.0
+ * STORM-1667: Log the IO exception when deleting worker pid dir
  * STORM-1669: Fix SolrUpdateBolt flush bug
  * STORM-1668: Flux silently fails while setting a non-existent property.
  * STORM-1573: Add batch support for MongoInsertBolt
