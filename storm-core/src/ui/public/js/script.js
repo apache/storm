@@ -222,17 +222,19 @@ function topologyActionJson(id, encodedId, name, status, msgTimeout, loggersTota
     jsonData["killStatus"] = (status !== "KILLED") ? "enabled" : "disabled";
     jsonData["startDebugStatus"] = (status === "ACTIVE" && loggersTotal!=null && loggersTotal!=0 && !debug) ? "enabled" : "disabled";
     jsonData["stopDebugStatus"] = (status === "ACTIVE" && debug) ? "enabled" : "disabled";
+    jsonData["loggersDisabled"] = loggersTotal==null || loggersTotal==0;
     jsonData["currentSamplingPct"] = samplingPct;
     return jsonData;
 }
 
-function componentActionJson(encodedTopologyId, encodedId, componentName, status, debug, samplingPct) {
+function componentActionJson(encodedTopologyId, encodedId, componentName, status, loggersTotal, debug, samplingPct) {
     var jsonData = {};
     jsonData["encodedTopologyId"] = encodedTopologyId;
     jsonData["encodedId"] = encodedId;
     jsonData["componentName"] = componentName;
-    jsonData["startDebugStatus"] = (status === "ACTIVE" && !debug) ? "enabled" : "disabled";
+    jsonData["startDebugStatus"] = (status === "ACTIVE" && loggersTotal!=null && loggersTotal!=0 && !debug) ? "enabled" : "disabled";
     jsonData["stopDebugStatus"] = (status === "ACTIVE" && debug) ? "enabled" : "disabled";
+    jsonData["loggersDisabled"] = loggersTotal==null || loggersTotal==0;
     jsonData["currentSamplingPct"] = samplingPct;
     return jsonData;
 }
