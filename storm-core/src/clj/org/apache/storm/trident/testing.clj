@@ -14,9 +14,7 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns org.apache.storm.trident.testing
-  (:require [org.apache.storm.LocalDRPC :as LocalDRPC])
   (:import [org.apache.storm.trident.testing FeederBatchSpout FeederCommitterBatchSpout MemoryMapState MemoryMapState$Factory TuplifyArgs])
-  (:require [org.apache.storm [LocalDRPC]])
   (:import [org.apache.storm LocalDRPC])
   (:import [org.apache.storm.tuple Fields])
   (:import [org.apache.storm.generated KillOptions]
@@ -56,14 +54,14 @@
      (.shutdown ~drpc)
      ))
 
-(defn with-topology* [cluster topo body-fn]
-  (t/submit-local-topology (:nimbus cluster) "tester" {} (.build topo))
+(defn with-topology* [cluster storm-topo body-fn]
+  (t/submit-local-topology (:nimbus cluster) "tester" {} storm-topo)
   (body-fn)
-  (.killTopologyWithOpts (:nimbus cluster) "tester" (doto (KillOptions.) (.set_wait_secs 0)))
-  )
+  (.killTopologyWithOpts (:nimbus cluster) "tester" (doto (KillOptions.) (.set_wait_secs 0))))
 
-(defmacro with-topology [[cluster topo] & body]
-  `(with-topology* ~cluster ~topo (fn [] ~@body)))
+(defmacro with-topology [[cluster topo storm-topo] & body]
+  `(let [~storm-topo (.build ~topo)]
+     (with-topology* ~cluster ~storm-topo (fn [] ~@body))))
 
 (defn bootstrap-imports []
   (import 'org.apache.storm.LocalDRPC)

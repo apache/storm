@@ -1,4 +1,50 @@
 ## 2.0.0
+ * STORM-1668: Flux silently fails while setting a non-existent property.
+ * STORM-1271: Port backtype.storm.daemon.task to java
+ * STORM-822: Kafka Spout New Consumer API
+ * STORM-1663: Stats couldn't handle null worker HB.
+ * STORM-1665: Worker cannot instantiate kryo
+ * STORM-1666: Kill from the UI fails silently
+ * STORM-1610: port pacemaker_state_factory_test.clj to java
+ * STORM-1611: port org.apache.storm.pacemaker.pacemaker to java
+ * STORM-1268: port builtin-metrics to java
+ * STORM-1648: drpc spout reconnect on failure
+ * STORM-1631: Storm CGroup bugs
+ * STORM-1616: Add RAS API for Trident
+ * STORM-1623: nimbus.clj's minor bug
+ * STORM-1624: Add maven central status in README
+ * STORM-1232: port backtype.storm.scheduler.DefaultScheduler to java
+ * STORM-1231: port backtype.storm.scheduler.EvenScheduler to java
+ * STORM-1523: util.clj available-port conversion to java
+ * STORM-1252: port backtype.storm.stats to java
+ * STORM-1250: port backtype.storm.serialization-test to java
+ * STORM-1605: use '/usr/bin/env python' to check python version
+ * STORM-1618: Add the option of passing config directory
+ * STORM-1269: port backtype.storm.daemon.common to java
+ * STORM-1270: port drpc to java
+ * STORM-1274: port LocalDRPC to java
+ * STORM-1590: port defmeters/defgauge/defhistogram... to java for all of our code to use
+ * STORM-1529: Change default worker temp directory location for workers
+ * STORM-1543: DRPCSpout should always try to reconnect disconnected DRPCInvocationsClient
+ * STORM-1528: Fix CsvPreparableReporter log directory
+ * STORM-1561: Supervisor should relaunch worker if assignments have changed
+ * STORM-1283: port backtype.storm.MockAutoCred to java
+ * STORM-1592: clojure code calling into Utils.exitProcess throws ClassCastException
+ * STORM-1579: Fix NoSuchFileException when running tests in storm-core
+ * STORM-1244: port backtype.storm.command.upload-credentials to java
+ * STORM-1245: port backtype.storm.daemon.acker to java
+ * STORM-1545: Topology Debug Event Log in Wrong Location
+ * STORM-1254: port ui.helper to java
+ * STORM-1571: Improvment Kafka Spout Time Metric
+ * STORM-1569: Allowing users to specify the nimbus thrift server queue size.
+ * STORM-1564: fix wrong package-info in org.apache.storm.utils.staticmocking
+ * STORM-1267: Port set_log_level
+ * STORM-1266: Port rebalance
+ * STORM-1265: Port monitor
+ * STORM-1572: throw NPE when parsing the command line arguments by CLI
+ * STORM-1273: port backtype.storm.cluster to java
+ * STORM-1479: use a simple implemention for IntSerializer
+ * STORM-1255: port storm_utils.clj to java and split Time tests into its
  * STORM-1566: Worker exits with error o.a.s.d.worker [ERROR] Error on initialization of server mk-worker
  * STORM-1558: Utils in java breaks component page due to illegal type cast
  * STORM-1553: port event.clj to java
@@ -27,6 +73,38 @@
  * STORM-1521: When using Kerberos login from keytab with multiple bolts/executors ticket is not renewed in hbase bolt.
 
 ## 1.0.0
+ * STORM-1573: Add batch support for MongoInsertBolt
+ * STORM-1660: remove flux gitignore file and move rules to top level gitignore
+ * STORM-1634: Refactoring of Resource Aware Scheduler
+ * STORM-1030: Hive Connector Fixes
+ * STORM-676: Storm Trident support for sliding/tumbling windows
+ * STORM-1630: Add guide page for Windows users
+ * STORM-1655: Flux doesn't set return code to non-zero when there's any exception while deploying topology to remote cluster
+ * STORM-1537: Upgrade to kryo3 in master
+ * STORM-1654: HBaseBolt creates tick tuples with no interval when we don't set flushIntervalSecs
+ * STORM-1625: Move storm-sql dependencies out of lib folder
+ * STORM-1556: nimbus.clj/wait-for-desired-code-replication wrong reset for current-replication-count-jar in local mode
+ * STORM-1636: Supervisor shutdown with worker id pass in being nil
+ * STORM-1602: Blobstore UTs are failed on Windows
+ * STORM-1629: Files/move doesn't work properly with non-empty directory in Windows
+ * STORM-1549: Add support for resetting tuple timeout from bolts via the OutputCollector
+ * STORM-971: Metric for messages lost due to kafka retention
+ * STORM-1483: add storm-mongodb connector
+ * STORM-1608: Fix stateful topology acking behavior
+ * STORM-1609: Netty Client is not best effort delivery on failed Connection
+ * STORM-1620: Update curator to fix CURATOR-209
+ * STORM-1469: Adding Plain Sasl Transport Plugin
+ * STORM-1588: Do not add event logger details if number of event loggers is zero
+ * STORM-1606: print the information of testcase which is on failure
+ * STORM-1601: Check if /backpressure/storm-id node exists before requesting children
+ * STORM-1574: Better handle backpressure exception etc.
+ * STORM-1587: Avoid NPE while prining Metrics
+ * STORM-1570: Storm SQL support for nested fields and array
+ * STORM-1576: fix ConcurrentModificationException in addCheckpointInputs
+ * STORM-1488: UI Topology Page component last error timestamp is from 1970
+ * STORM-1552: Fix topology event sampling log dir
+ * STORM-1542: Remove profile action retry in case of non-zero exit code
+ * STORM-1540: Fix Debug/Sampling for Trident
  * STORM-1522: REST API throws invalid worker log links
  * STORM-1541: Change scope of 'hadoop-minicluster' to test
  * STORM-1532: Fix readCommandLineOpts to parse JSON correctly in windows
@@ -47,7 +125,7 @@
  * STORM-1484: ignore subproject .classpath & .project file
  * STORM-1478: make bolts getComponentConfiguration method cleaner/simpler
  * STORM-1499: fix wrong package name for storm trident
- * STORM-1463: added file scehma to log4j config files for windows env
+ * STORM-1463: added file schema to log4j config files for windows env
  * STORM-1485: DRPC Connectivity Issues
  * STORM-1486: Fix storm-kafa documentation
  * STORM-1214: add javadoc for Trident Streams and Operations
@@ -292,7 +370,8 @@
  * STORM-1217: making small fixes in RAS
 
 ## 0.10.1
-
+ * STORM-584: Fix logging for LoggingMetricsConsumer metrics.log file
+ * STORM-1596: Do not use single Kerberos TGT instance between multiple threads
  * STORM-1481: avoid Math.abs(Integer) get a negative value
  * STORM-1121: Deprecate test only configuraton nimbus.reassign
  * STORM-1180: FLUX logo wasn't appearing quite right

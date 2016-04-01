@@ -18,23 +18,33 @@
 
 package org.apache.storm.utils;
 
-import org.apache.storm.Config;
-import org.apache.storm.validation.ConfigValidation;
-import org.apache.storm.generated.StormTopology;
 import org.apache.commons.io.FileUtils;
+import org.apache.storm.Config;
+import org.apache.storm.generated.StormTopology;
+import org.apache.storm.validation.ConfigValidation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.lang.reflect.Field;
+import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
-import java.util.HashSet;
-import java.util.Collections;
-import java.net.URLEncoder;
+import java.util.concurrent.Callable;
 
 public class ConfigUtils {
     private final static Logger LOG = LoggerFactory.getLogger(ConfigUtils.class);
@@ -44,7 +54,7 @@ public class ConfigUtils {
 
     // A singleton instance allows us to mock delegated static methods in our
     // tests by subclassing.
-    private static ConfigUtils _instance = new ConfigUtils();;
+    private static ConfigUtils _instance = new ConfigUtils();
 
     /**
      * Provide an instance of this class for delegates to use.  To mock out
@@ -66,8 +76,10 @@ public class ConfigUtils {
             dir = System.getProperty("storm.log.dir");
         } else if ((conf = readStormConfig()).get("storm.log.dir") != null) {
             dir = String.valueOf(conf.get("storm.log.dir"));
-        } else  {
-            dir = concatIfNotNull(System.getProperty("storm.home")) + FILE_SEPARATOR + "logs";
+        } else if (System.getProperty("storm.home") != null) {
+            dir = System.getProperty("storm.home") + FILE_SEPARATOR + "logs";
+        } else {
+            dir = "logs";
         }
         try {
             return new File(dir).getCanonicalPath();
@@ -125,9 +137,30 @@ public class ConfigUtils {
         throw new IllegalArgumentException("Illegal topology.stats.sample.rate in conf: " + rate);
     }
 
-    // public static mkStatsSampler // depends on Utils.evenSampler() TODO, this is sth we need to do after util
+    public static Callable<Boolean> evenSampler(final int samplingFreq) {
+        final Random random = new Random();
 
-    // we use this "wired" wrapper pattern temporarily for mocking in clojure test
+        return new Callable<Boolean>() {
+            private int curr = -1;
+            private int target = random.nextInt(samplingFreq);
+
+            @Override
+            public Boolean call() throws Exception {
+                curr++;
+                if (curr >= samplingFreq) {
+                    curr = 0;
+                    target = random.nextInt(samplingFreq);
+                }
+                return (curr == target);
+            }
+        };
+    }
+
+    public static Callable<Boolean> mkStatsSampler(Map conf) {
+        return evenSampler(samplingRate(conf));
+    }
+
+    // we use this "weird" wrapper pattern temporarily for mocking in clojure test
     public static Map readStormConfig() {
         return _instance.readStormConfigImpl();
     }
@@ -233,7 +266,7 @@ public class ConfigUtils {
         return (masterLocalDir(conf) + FILE_SEPARATOR + "inimbus");
     }
 
-    // we use this "wired" wrapper pattern temporarily for mocking in clojure test
+    // we use this "weird" wrapper pattern temporarily for mocking in clojure test
     public static String supervisorLocalDir(Map conf) throws IOException {
         return _instance.supervisorLocalDirImpl(conf);
     }
@@ -248,7 +281,7 @@ public class ConfigUtils {
         return (supervisorLocalDir(conf) + FILE_SEPARATOR + "isupervisor");
     }
 
-    // we use this "wired" wrapper pattern temporarily for mocking in clojure test
+    // we use this "weird" wrapper pattern temporarily for mocking in clojure test
     public static String supervisorStormDistRoot(Map conf) throws IOException {
         return _instance.supervisorStormDistRootImpl(conf);
     }
@@ -257,7 +290,7 @@ public class ConfigUtils {
         return stormDistPath(supervisorLocalDir(conf));
     }
 
-    // we use this "wired" wrapper pattern temporarily for mocking in clojure test
+    // we use this "weird" wrapper pattern temporarily for mocking in clojure test
     public static String supervisorStormDistRoot(Map conf, String stormId) throws IOException {
         return _instance.supervisorStormDistRootImpl(conf, stormId);
     }
@@ -297,7 +330,7 @@ public class ConfigUtils {
         return (concatIfNotNull(stormRoot) + FILE_SEPARATOR + RESOURCES_SUBDIR);
     }
 
-    // we use this "wired" wrapper pattern temporarily for mocking in clojure test
+    // we use this "weird" wrapper pattern temporarily for mocking in clojure test
     public static LocalState supervisorState(Map conf) throws IOException {
         return _instance.supervisorStateImpl(conf);
     }
@@ -306,7 +339,7 @@ public class ConfigUtils {
         return new LocalState((supervisorLocalDir(conf) + FILE_SEPARATOR + "localstate"));
     }
 
-    // we use this "wired" wrapper pattern temporarily for mocking in clojure test
+    // we use this "weird" wrapper pattern temporarily for mocking in clojure test
     public static LocalState nimbusTopoHistoryState(Map conf) throws IOException {
         return _instance.nimbusTopoHistoryStateImpl(conf);
     }
@@ -315,7 +348,7 @@ public class ConfigUtils {
         return new LocalState((masterLocalDir(conf) + FILE_SEPARATOR + "history"));
     }
 
-    // we use this "wired" wrapper pattern temporarily for mocking in clojure test
+    // we use this "weird" wrapper pattern temporarily for mocking in clojure test
     public static Map readSupervisorStormConf(Map conf, String stormId) throws IOException {
         return _instance.readSupervisorStormConfImpl(conf, stormId);
     }
@@ -378,7 +411,7 @@ public class ConfigUtils {
         return ret;
     }
 
-    // we use this "wired" wrapper pattern temporarily for mocking in clojure test
+    // we use this "weird" wrapper pattern temporarily for mocking in clojure test
     public static void setWorkerUserWSE(Map conf, String workerId, String user) throws IOException {
         _instance.setWorkerUserWSEImpl(conf, workerId, user);
     }
@@ -399,7 +432,7 @@ public class ConfigUtils {
         new File(workerUserFile(conf, workerId)).delete();
     }
 
-    // we use this "wired" wrapper pattern temporarily for mocking in clojure test
+    // we use this "weird" wrapper pattern temporarily for mocking in clojure test
     public static String workerArtifactsRoot(Map conf) {
         return _instance.workerArtifactsRootImpl(conf);
     }
@@ -445,7 +478,12 @@ public class ConfigUtils {
         return new File((logRoot + FILE_SEPARATOR + id + FILE_SEPARATOR + port));
     }
 
+    // we use this "weird" wrapper pattern temporarily for mocking in clojure test
     public static String workerRoot(Map conf) {
+        return _instance.workerRootImpl(conf);
+    }
+
+    public String workerRootImpl(Map conf) {
         return (absoluteStormLocalDir(conf) + FILE_SEPARATOR + "workers");
     }
 
@@ -456,6 +494,11 @@ public class ConfigUtils {
     public static String workerPidsRoot(Map conf, String id) {
         return (workerRoot(conf, id) + FILE_SEPARATOR + "pids");
     }
+
+    public static String workerTmpRoot(Map conf, String id) {
+        return (workerRoot(conf, id) + FILE_SEPARATOR + "tmp");
+    }
+
 
     public static String workerPidPath(Map conf, String id, String pid) {
         return (workerPidsRoot(conf, id) + FILE_SEPARATOR + pid);

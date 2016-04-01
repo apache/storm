@@ -31,10 +31,10 @@
 
     <developers>
         <developer>
-            <id>Hugo-Louro</id>
-            <name>Hugo Louro</name>
-            <email>hmclouro@gmail.com</email>
-        </developer>
+        <id>hmcl</id>
+        <name>Hugo Louro</name>
+        <email>hmclouro@gmail.com</email>
+    </developer>
     </developers>
 
     <dependencies>

@@ -82,7 +82,7 @@
             <roles>
                 <role>Committer</role>
             </roles>
-            <timezone />
+            <timezone/>
         </developer>
         <developer>
             <id>afeng</id>
@@ -109,7 +109,7 @@
             <roles>
                 <role>Committer</role>
             </roles>
-            <timezone />
+            <timezone/>
         </developer>
         <developer>
             <id>jjackson</id>
@@ -210,14 +210,14 @@
         <commons-codec.version>1.6</commons-codec.version>
         <commons-cli.version>1.3.1</commons-cli.version>
         <clj-time.version>0.8.0</clj-time.version>
-        <curator.version>2.9.0</curator.version>
+        <curator.version>2.10.0</curator.version>
         <json-simple.version>1.1</json-simple.version>
         <ring.version>1.3.0</ring.version>
         <ring-json.version>0.3.1</ring-json.version>
         <jetty.version>7.6.13.v20130916</jetty.version>
         <clojure.tools.logging.version>0.2.3</clojure.tools.logging.version>
         <clojure.math.numeric-tower.version>0.0.1</clojure.math.numeric-tower.version>
-        <carbonite.version>1.4.0</carbonite.version>
+        <carbonite.version>1.5.0</carbonite.version>
         <snakeyaml.version>1.11</snakeyaml.version>
         <httpclient.version>4.3.3</httpclient.version>
         <clojure.tools.cli.version>0.2.4</clojure.tools.cli.version>
@@ -239,7 +239,7 @@
         <clojure-contrib.version>1.2.0</clojure-contrib.version>
         <hive.version>0.14.0</hive.version>
         <hadoop.version>2.6.1</hadoop.version>
-        <kryo.version>2.21</kryo.version>
+        <kryo.version>3.0.3</kryo.version>
         <servlet.version>2.5</servlet.version>
         <joda-time.version>2.3</joda-time.version>
         <thrift.version>0.9.3</thrift.version>
@@ -249,6 +249,8 @@
         <calcite.version>1.4.0-incubating</calcite.version>
         <jackson.version>2.6.3</jackson.version>
         <maven-surefire.version>2.18.1</maven-surefire.version>
+        <kafka.version>0.9.0.1</kafka.version>
+        <kafka.artifact.id>kafka_2.11</kafka.artifact.id>
 
         <!-- Java and clojure build lifecycle test properties are defined here to avoid having to create a default profile -->
         <java.unit.test.exclude>org.apache.storm.testing.IntegrationTest</java.unit.test.exclude>
@@ -279,8 +281,10 @@
         <module>external/storm-metrics</module>
         <module>external/storm-cassandra</module>
         <module>external/storm-mqtt</module>
+        <module>external/storm-mongodb</module>
         <module>examples/storm-starter</module>
         <module>storm-clojure</module>
+        <module>external/storm-kafka-client</module>
     </modules>
 
     <dependencies>
@@ -322,6 +326,8 @@
                                 <exclude>**/metastore_db/**</exclude>
                                 <!-- anything written into build should be ignored -->
                                 <exclude>**/build/**</exclude>
+                                <!-- logs generated during test -->
+                                <exclude>**/logs/**</exclude>
 
                                 <!-- exclude CHANGELOG, VERSION, AND TODO files -->
                                 <exclude>**/CHANGELOG.md</exclude>
@@ -498,7 +504,7 @@
                 <version>${clojure.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.esotericsoftware.kryo</groupId>
+                <groupId>com.esotericsoftware</groupId>
                 <artifactId>kryo</artifactId>
                 <version>${kryo.version}</version>
             </dependency>
@@ -670,14 +676,14 @@
                 <version>${ring-json.version}</version>
             </dependency>
             <dependency>
-	      <groupId>org.eclipse.jetty</groupId>
-	      <artifactId>jetty-servlet</artifactId>
-	      <version>${jetty.version}</version>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-servlet</artifactId>
+                <version>${jetty.version}</version>
             </dependency>
             <dependency>
-	      <groupId>org.eclipse.jetty</groupId>
-	      <artifactId>jetty-servlets</artifactId>
-	      <version>${jetty.version}</version>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-servlets</artifactId>
+                <version>${jetty.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
@@ -828,7 +834,7 @@
                 <version>${thrift.version}</version>
                 <scope>compile</scope>
             </dependency>
-			<!-- used by examples/storm-starter -->
+            <!-- used by examples/storm-starter -->
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
@@ -836,14 +842,38 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-              <groupId>org.apache.calcite</groupId>
-              <artifactId>calcite-core</artifactId>
-              <version>${calcite.version}</version>
+                <groupId>org.apache.calcite</groupId>
+                <artifactId>calcite-core</artifactId>
+                <version>${calcite.version}</version>
             </dependency>
             <dependency>
-              <groupId>com.fasterxml.jackson.core</groupId>
-              <artifactId>jackson-databind</artifactId>
-              <version>${jackson.version}</version>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.kafka</groupId>
+                <artifactId>${kafka.artifact.id}</artifactId>
+                <version>${kafka.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.zookeeper</groupId>
+                        <artifactId>zookeeper</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.kafka</groupId>
+                <artifactId>kafka-clients</artifactId>
+                <version>${kafka.version}</version>
             </dependency>
             <dependency>
                 <groupId>uk.org.lidalia</groupId>
@@ -909,6 +939,27 @@
                                 <goal>integration-test</goal>
                                 <goal>verify</goal>
                             </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-clean-plugin</artifactId>
+                    <version>2.5</version>
+                    <executions>
+                        <execution>
+                            <id>cleanup</id>
+                            <phase>clean</phase>
+                            <goals>
+                                <goal>clean</goal>
+                            </goals>
+                            <configuration>
+                                <excludeDefaultDirectories>true</excludeDefaultDirectories>
+                                <filesets>
+                                    <fileset>
+                                        <directory>./logs/</directory>
+                                    </fileset>
+                                </filesets>
+                            </configuration>
                         </execution>
                     </executions>
                 </plugin>
