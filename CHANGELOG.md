@@ -1,4 +1,13 @@
 ## 2.0.0
+ * STORM-1279: port backtype.storm.daemon.supervisor to java
+ * STORM-1668: Flux silently fails while setting a non-existent property.
+ * STORM-1271: Port backtype.storm.daemon.task to java
+ * STORM-822: Kafka Spout New Consumer API
+ * STORM-1663: Stats couldn't handle null worker HB.
+ * STORM-1665: Worker cannot instantiate kryo
+ * STORM-1666: Kill from the UI fails silently
+ * STORM-1610: port pacemaker_state_factory_test.clj to java
+ * STORM-1611: port org.apache.storm.pacemaker.pacemaker to java
  * STORM-1268: port builtin-metrics to java
  * STORM-1648: drpc spout reconnect on failure
  * STORM-1631: Storm CGroup bugs
@@ -65,6 +74,18 @@
  * STORM-1521: When using Kerberos login from keytab with multiple bolts/executors ticket is not renewed in hbase bolt.
 
 ## 1.0.0
+ * STORM-1671: Enable logviewer to delete a dir without yaml
+ * STORM-1673: log4j2/worker.xml refers old package of LoggerMetricsConsumer
+ * STORM-1669: Fix SolrUpdateBolt flush bug
+ * STORM-1573: Add batch support for MongoInsertBolt
+ * STORM-1660: remove flux gitignore file and move rules to top level gitignore
+ * STORM-1634: Refactoring of Resource Aware Scheduler
+ * STORM-1030: Hive Connector Fixes
+ * STORM-676: Storm Trident support for sliding/tumbling windows
+ * STORM-1630: Add guide page for Windows users
+ * STORM-1655: Flux doesn't set return code to non-zero when there's any exception while deploying topology to remote cluster
+ * STORM-1537: Upgrade to kryo3 in master
+ * STORM-1654: HBaseBolt creates tick tuples with no interval when we don't set flushIntervalSecs
  * STORM-1625: Move storm-sql dependencies out of lib folder
  * STORM-1556: nimbus.clj/wait-for-desired-code-replication wrong reset for current-replication-count-jar in local mode
  * STORM-1636: Supervisor shutdown with worker id pass in being nil
