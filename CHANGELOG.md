@@ -1,4 +1,5 @@
 ## 1.0.1
+ * STORM-1670: LocalState#get(String) can throw FileNotFoundException which may result supervisor.clj#sync-processes stop assigning new workers/assignments
  * STORM-1677: Test resource files are excluded from source distribution, which makes logviewer-test failing
 
 ## 1.0.0
