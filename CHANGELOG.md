@@ -3,6 +3,7 @@
  * STORM-1677: Test resource files are excluded from source distribution, which makes logviewer-test failing
 
 ## 1.0.0
+ * STORM-676: Storm Trident support for sliding/tumbling windows
  * STORM-1671: Enable logviewer to delete a dir without yaml
  * STORM-822: Kafka Spout New Consumer API
  * STORM-1673: log4j2/worker.xml refers old package of LoggerMetricsConsumer
