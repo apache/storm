@@ -1,3 +1,6 @@
+## 1.0.1
+ * STORM-1677: Test resource files are excluded from source distribution, which makes logviewer-test failing
+
 ## 1.0.0
  * STORM-1671: Enable logviewer to delete a dir without yaml
  * STORM-822: Kafka Spout New Consumer API
