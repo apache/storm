@@ -411,7 +411,7 @@
       ((fn [[weighted-avg cnt]]
          (if (> uptime 0)
            (div weighted-avg (* 1000 (min uptime 600)))
-           0))))))
+           0.))))))
 
 (defn agg-pre-merge-comp-page-bolt
   [{exec-id :exec-id
