@@ -21,10 +21,13 @@ import backtype.storm.messaging.TaskMessage;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBufferOutputStream;
 import org.jboss.netty.buffer.ChannelBuffers;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 
 class MessageBatch {
+    private static final Logger LOG = LoggerFactory.getLogger(MessageDecoder.class);
     private int buffer_size;
     private ArrayList<TaskMessage> msgs;
     private int encoded_length;
@@ -112,6 +115,9 @@ class MessageBatch {
             throw new RuntimeException("Task ID should not exceed "+Short.MAX_VALUE);
         
         bout.writeShort((short)task_id);
+        if (payload_len == 0) {
+            LOG.warn("Zero length payload to task {}.", (short)task_id);
+        }
         bout.writeInt(payload_len);
         if (payload_len >0)
             bout.write(message.message());

@@ -25,8 +25,11 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.handler.codec.frame.FrameDecoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class MessageDecoder extends FrameDecoder {    
+public class MessageDecoder extends FrameDecoder {
+    private static final Logger LOG = LoggerFactory.getLogger(MessageDecoder.class);
     /*
      * Each ControlMessage is encoded as:
      *  code (<0) ... short(2)
@@ -115,6 +118,8 @@ public class MessageDecoder extends FrameDecoder {
             available -= 4;
 
             if (length <= 0) {
+                LOG.error("Received zero length message for task: {}, remote address: {}", task,
+                        channel.getRemoteAddress());
                 ret.add(new TaskMessage(task, null));
                 break;
             }
