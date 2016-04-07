@@ -24,7 +24,7 @@ Trident is an alternative interface to Storm. It provides exactly-once processin
 * [Trident State](Trident-state.html)        -- exactly-once processing and fast, persistent aggregation
 * [Trident spouts](Trident-spouts.html)       -- transactional and non-transactional data intake
 
-### Setup and deploying
+### Setup and Deploying
 
 * [Setting up a Storm cluster](Setting-up-a-Storm-cluster.html)
 * [Local mode](Local-mode.html)
@@ -41,21 +41,19 @@ Trident is an alternative interface to Storm. It provides exactly-once processin
 * [Using non-JVM languages with Storm](Using-non-JVM-languages-with-Storm.html)
 * [Distributed RPC](Distributed-RPC.html)
 * [Transactional topologies](Transactional-topologies.html)
-* [Direct groupings](Direct-groupings.html)
 * [Hooks](Hooks.html)
 * [Metrics](Metrics.html)
-* [Lifecycle of a trident tuple]()
 
 ### Integration With External Systems, and Other Libraries
 * [Flux Data Driven Topology Builder](flux.html)
-* [Event Hubs Intergration](storm-eventhubs.html)
+* [Apache Kafka Integration](storm-kafka.html)
 * [Apache HBase Integration](storm-hbase.html)
 * [Apache HDFS Integration](storm-hdfs.html)
 * [Apache Hive Integration](storm-hive.html)
 * [JDBC Integration](storm-jdbc.html)
-* [Apache Kafka Integration](storm-kafka.html)
-* [REDIS Integration](storm-redis.html) 
-* [Kestrel and Storm](Kestrel-and-Storm.html)
+* [Redis Integration](storm-redis.html) 
+* [Event Hubs Intergration](storm-eventhubs.html)
+* [Kestrel Intergration](Kestrel-and-Storm.html)
 
 ### Advanced
 
