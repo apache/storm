@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-515: Clojure documentation and examples
  * STORM-1279: port backtype.storm.daemon.supervisor to java
  * STORM-1668: Flux silently fails while setting a non-existent property.
  * STORM-1271: Port backtype.storm.daemon.task to java
@@ -72,6 +73,10 @@
  * STORM-1504: Add Serializer and instruction for AvroGenericRecordBolt
  * STORM-1524: Add Pluggable daemon metrics Reporters
  * STORM-1521: When using Kerberos login from keytab with multiple bolts/executors ticket is not renewed in hbase bolt.
+
+## 1.0.1
+ * STORM-1670: LocalState#get(String) can throw FileNotFoundException which results in not removing worker heartbeats and supervisor is kind of stuck and goes down after some time.
+ * STORM-1677: Test resource files are excluded from source distribution, which makes logviewer-test failing
 
 ## 1.0.0
  * STORM-1671: Enable logviewer to delete a dir without yaml
