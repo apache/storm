@@ -23,14 +23,27 @@ import org.apache.storm.task.IBolt;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.Tuple;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingDeque;
 
 public class MetricsConsumerBolt implements IBolt {
+    public static final Logger LOG = LoggerFactory.getLogger(MetricsConsumerBolt.class);
+
     IMetricsConsumer _metricsConsumer;
     String _consumerClassName;
     OutputCollector _collector;
     Object _registrationArgument;
+
+    private final BlockingQueue<MetricsTask> _taskQueue = new LinkedBlockingDeque<>();
+    private Thread _taskExecuteThread;
+    private volatile boolean _running = true;
 
     public MetricsConsumerBolt(String consumerClassName, Object registrationArgument) {
         _consumerClassName = consumerClassName;
@@ -47,17 +60,56 @@ public class MetricsConsumerBolt implements IBolt {
         }
         _metricsConsumer.prepare(stormConf, _registrationArgument, context, collector);
         _collector = collector;
+        _taskExecuteThread = new Thread(new MetricsHandlerRunnable());
+        _taskExecuteThread.setDaemon(true);
+        _taskExecuteThread.start();
     }
     
     @Override
     public void execute(Tuple input) {
-        _metricsConsumer.handleDataPoints((IMetricsConsumer.TaskInfo)input.getValue(0), (Collection)input.getValue(1));
+        _taskQueue.add(new MetricsTask((IMetricsConsumer.TaskInfo)input.getValue(0), (Collection)input.getValue(1)));
         _collector.ack(input);
     }
 
     @Override
     public void cleanup() {
+        _running = false;
         _metricsConsumer.cleanup();
+        _taskExecuteThread.interrupt();
     }
-    
+
+    class MetricsTask {
+        private IMetricsConsumer.TaskInfo taskInfo;
+        private Collection<IMetricsConsumer.DataPoint> dataPoints;
+
+        public MetricsTask(IMetricsConsumer.TaskInfo taskInfo, Collection<IMetricsConsumer.DataPoint> dataPoints) {
+            this.taskInfo = taskInfo;
+            this.dataPoints = dataPoints;
+        }
+
+        public IMetricsConsumer.TaskInfo getTaskInfo() {
+            return taskInfo;
+        }
+
+        public Collection<IMetricsConsumer.DataPoint> getDataPoints() {
+            return dataPoints;
+        }
+    }
+
+    class MetricsHandlerRunnable implements Runnable {
+
+        @Override
+        public void run() {
+            while (_running) {
+                try {
+                    MetricsTask task = _taskQueue.take();
+                    _metricsConsumer.handleDataPoints(task.getTaskInfo(), task.getDataPoints());
+                } catch (InterruptedException e) {
+                    break;
+                } catch (Throwable t) {
+                    LOG.error("Exception occurred during handle metrics", t);
+                }
+            }
+        }
+    }
 }
