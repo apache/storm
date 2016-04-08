@@ -432,12 +432,12 @@
         (fast-list-iter [[task-id msg] tuple-batch]
           (let [^TupleImpl tuple (if (instance? Tuple msg) msg (.deserialize deserializer msg))]
             (if tuple
-              (when debug? (log-message "Processing received message FOR " task-id " TUPLE: " tuple))
-              (if task-id
-                (tuple-action-fn task-id tuple)
-                ;; null task ids are broadcast tuples
-                (fast-list-iter [task-id task-ids]
-                  (tuple-action-fn task-id tuple))))))))))
+              ((when debug? (log-message "Processing received message FOR " task-id " TUPLE: " tuple))
+                (if task-id
+                  (tuple-action-fn task-id tuple)
+                  ;; null task ids are broadcast tuples
+                  (fast-list-iter [task-id task-ids]
+                    (tuple-action-fn task-id tuple))))))))))
 
 (defn executor-max-spout-pending [storm-conf num-tasks]
   (let [p (storm-conf TOPOLOGY-MAX-SPOUT-PENDING)]
