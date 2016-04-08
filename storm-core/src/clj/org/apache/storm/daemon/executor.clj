@@ -604,22 +604,14 @@
                                         (^void notifyNotHanging [this]
                                           (update-last-hang-check-time! executor-data))
                                         (^long getPendingCount[this]
-                                          (do
-                                            (.notifyNotHanging this)
-                                            (.size pending)))
+                                            (.size pending))
                                         (^List emit [this ^String stream-id ^List tuple ^Object message-id]
-                                          (do
-                                            (.notifyNotHanging this)
-                                            (send-spout-msg stream-id tuple message-id nil)))
+                                            (send-spout-msg stream-id tuple message-id nil))
                                         (^void emitDirect [this ^int out-task-id ^String stream-id
                                                            ^List tuple ^Object message-id]
-                                          (do
-                                            (.notifyNotHanging this)
-                                            (send-spout-msg stream-id tuple message-id out-task-id)))
+                                            (send-spout-msg stream-id tuple message-id out-task-id))
                                         (reportError [this error]
-                                          (do
-                                            (.notifyNotHanging this)
-                                            (report-error error)))))))
+                                            (report-error error))))))
 
                             (reset! open-or-prepare-was-called? true) 
                             (log-message "Opened spout " component-id ":" (keys task-datas))
@@ -804,17 +796,12 @@
                                           (^void notifyNotHanging [this]
                                             (update-last-hang-check-time! executor-data))
                                           (emit [this stream anchors values]
-                                            (do
-                                              (.notifyNotHanging this)
-                                              (bolt-emit stream anchors values nil)))
+                                              (bolt-emit stream anchors values nil))
                                           (emitDirect [this task stream anchors values]
-                                            (do
-                                              (.notifyNotHanging this)
-                                              (bolt-emit stream anchors values task)))
+                                              (bolt-emit stream anchors values task))
                                           (^void ack [this ^Tuple tuple]
                                             (let [^TupleImpl tuple tuple
                                                   ack-val (.getAckVal tuple)]
-                                              (.notifyNotHanging this)
                                               (fast-map-iter [[root id] (.. tuple getMessageId getAnchorsToIds)]
                                                              (send-unanchored task-data
                                                                               Acker/ACKER_ACK_STREAM_ID
@@ -831,7 +818,6 @@
                                                                          (.getSourceStreamId tuple)
                                                                          delta))))
                                           (^void fail [this ^Tuple tuple]
-                                            (.notifyNotHanging this)
                                             (fast-list-iter [root (.. tuple getMessageId getAnchors)]
                                                             (send-unanchored task-data
                                                                                   Acker/ACKER_FAIL_STREAM_ID
@@ -849,15 +835,13 @@
                                                                           delta))))
                                           (^void resetTimeout [this ^Tuple tuple]
                                             (do
-                                              (.notifyNotHanging this)
                                               (fast-list-iter [root (.. tuple getMessageId getAnchors)]
                                                               (send-unanchored task-data
                                                                                     Acker/ACKER_RESET_TIMEOUT_STREAM_ID
-                                                                                    [root]))))
+                                                                                    [root]
+                                                                                    transfer-fn))))
                                           (reportError [this error]
-                                            (do
-                                              (.notifyNotHanging this)
-                                              (report-error error)))))))
+                                              (report-error error))))))
                            (reset! open-or-prepare-was-called? true)
                            (log-message "Prepared bolt " component-id ":" (keys task-datas))
                            (setup-metrics! executor-data)

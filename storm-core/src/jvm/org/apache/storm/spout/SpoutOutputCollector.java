@@ -140,8 +140,7 @@ public class SpoutOutputCollector implements ISpoutOutputCollector {
     /**
     * Resets the hang check timeout for the executor running the component this is called from.
     * It is only necessary to call this if the calling code needs to hang in nextTuple
-    * for longer than Config.TOPOLOGY_EXECUTOR_HANG_TIME_LIMIT_SECS. Note that any interaction with
-    * the SpoutOutputCollector will also call this function.
+    * for longer than Config.TOPOLOGY_EXECUTOR_HANG_TIME_LIMIT_SECS.
     */
     @Override
     public void notifyNotHanging(){
