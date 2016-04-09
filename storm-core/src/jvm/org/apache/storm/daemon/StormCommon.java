@@ -38,6 +38,7 @@ import org.apache.storm.generated.StreamInfo;
 import org.apache.storm.metric.EventLoggerBolt;
 import org.apache.storm.metric.MetricsConsumerBolt;
 import org.apache.storm.metric.SystemBolt;
+import org.apache.storm.metric.filter.FilterByMetricName;
 import org.apache.storm.security.auth.IAuthorizer;
 import org.apache.storm.task.IBolt;
 import org.apache.storm.testing.NonRichBoltTracker;
@@ -387,8 +388,12 @@ public class StormCommon {
                 Integer phintNum = Utils.getInt(info.get("parallelism.hint"), 1);
                 Map<String, Object> metricsConsumerConf = new HashMap<String, Object>();
                 metricsConsumerConf.put(Config.TOPOLOGY_TASKS, phintNum);
+                List<String> whitelist = (List<String>) info.get("whitelist");
+                List<String> blacklist = (List<String>) info.get("blacklist");
+                FilterByMetricName filterPredicate = new FilterByMetricName(whitelist, blacklist);
                 Bolt metricsConsumerBolt = Thrift.prepareSerializedBoltDetails(inputs,
-                        new MetricsConsumerBolt(className, argument, maxRetainMetricTuples), null, phintNum, metricsConsumerConf);
+                        new MetricsConsumerBolt(className, argument, maxRetainMetricTuples, filterPredicate),
+                        null, phintNum, metricsConsumerConf);
 
                 String id = className;
                 if (classOccurrencesMap.containsKey(className)) {

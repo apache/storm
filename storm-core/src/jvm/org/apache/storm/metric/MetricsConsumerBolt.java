@@ -17,6 +17,9 @@
  */
 package org.apache.storm.metric;
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import org.apache.storm.Config;
 import org.apache.storm.metric.api.IMetricsConsumer;
 import org.apache.storm.task.IBolt;
@@ -27,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -39,15 +43,25 @@ public class MetricsConsumerBolt implements IBolt {
     OutputCollector _collector;
     Object _registrationArgument;
     private final int _maxRetainMetricTuples;
+    private Predicate<IMetricsConsumer.DataPoint> _filterPredicate;
 
-    private final BlockingQueue<MetricsTask> _taskQueue = new LinkedBlockingDeque<>();
+    private final BlockingQueue<MetricsTask> _taskQueue;
     private Thread _taskExecuteThread;
     private volatile boolean _running = true;
 
-    public MetricsConsumerBolt(String consumerClassName, Object registrationArgument, int maxRetainMetricTuples) {
+    public MetricsConsumerBolt(String consumerClassName, Object registrationArgument, int maxRetainMetricTuples,
+                               Predicate<IMetricsConsumer.DataPoint> filterPredicate) {
+
         _consumerClassName = consumerClassName;
         _registrationArgument = registrationArgument;
         _maxRetainMetricTuples = maxRetainMetricTuples;
+        _filterPredicate = filterPredicate;
+
+        if (_maxRetainMetricTuples > 0) {
+            _taskQueue = new LinkedBlockingDeque<>(_maxRetainMetricTuples);
+        } else {
+            _taskQueue = new LinkedBlockingDeque<>();
+        }
     }
 
     @Override
@@ -67,15 +81,20 @@ public class MetricsConsumerBolt implements IBolt {
     
     @Override
     public void execute(Tuple input) {
-        // remove older tasks if task queue exceeds the max size
-        if (_taskQueue.size() > _maxRetainMetricTuples) {
-            while (_taskQueue.size() - 1 > _maxRetainMetricTuples) {
-                _taskQueue.poll();
-            }
+        IMetricsConsumer.TaskInfo taskInfo = (IMetricsConsumer.TaskInfo) input.getValue(0);
+        Collection<IMetricsConsumer.DataPoint> dataPoints = (Collection) input.getValue(1);
+        List<IMetricsConsumer.DataPoint> filteredDataPoints = getFilteredDataPoints(dataPoints);
+        MetricsTask metricsTask = new MetricsTask(taskInfo, filteredDataPoints);
+
+        while (! _taskQueue.offer(metricsTask)) {
+            _taskQueue.poll();
         }
 
-        _taskQueue.add(new MetricsTask((IMetricsConsumer.TaskInfo)input.getValue(0), (Collection)input.getValue(1)));
         _collector.ack(input);
+    }
+
+    private List<IMetricsConsumer.DataPoint> getFilteredDataPoints(Collection<IMetricsConsumer.DataPoint> dataPoints) {
+        return Lists.newArrayList(Iterables.filter(dataPoints, _filterPredicate));
     }
 
     @Override
@@ -85,7 +104,7 @@ public class MetricsConsumerBolt implements IBolt {
         _taskExecuteThread.interrupt();
     }
 
-    class MetricsTask {
+    static class MetricsTask {
         private IMetricsConsumer.TaskInfo taskInfo;
         private Collection<IMetricsConsumer.DataPoint> dataPoints;
 
@@ -119,4 +138,5 @@ public class MetricsConsumerBolt implements IBolt {
             }
         }
     }
+
 }
