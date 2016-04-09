@@ -120,7 +120,6 @@ public class MessageDecoder extends FrameDecoder {
             if (length <= 0) {
                 LOG.error("Received zero length message for task: {}, remote address: {}", task,
                         channel.getRemoteAddress());
-                ret.add(new TaskMessage(task, null));
                 break;
             }
 
