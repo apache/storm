@@ -30,6 +30,7 @@ import org.apache.hadoop.hbase.client.Result;
 import org.apache.storm.hbase.bolt.mapper.HBaseMapper;
 import org.apache.storm.hbase.bolt.mapper.HBaseProjectionCriteria;
 import org.apache.storm.hbase.bolt.mapper.HBaseValueMapper;
+import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,7 +69,13 @@ public class HBaseLookupBolt extends AbstractHBaseBolt {
             collector.ack(tuple);
             return;
         }
-        byte[] rowKey = this.mapper.rowKey(tuple);
+        byte[] rowKey = new byte[0];
+        try {
+            rowKey = this.mapper.rowKey(tuple);
+        } catch (ParseException e) {
+            this.collector.reportError(e);
+            this.collector.fail(tuple);
+        }
         Get get = hBaseClient.constructGetRequests(rowKey, projectionCriteria);
 
         try {
