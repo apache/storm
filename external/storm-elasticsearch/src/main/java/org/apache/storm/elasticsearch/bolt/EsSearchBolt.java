@@ -32,7 +32,6 @@ import static org.elasticsearch.common.base.Preconditions.checkNotNull;
 
 public class EsSearchBolt extends AbstractEsBolt{
 
-
     private final ElasticsearchSearchRequest searchRequest;
     private final EsSearchResultOutput output;
 
