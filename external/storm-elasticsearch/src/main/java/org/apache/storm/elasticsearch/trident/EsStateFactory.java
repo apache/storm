@@ -17,6 +17,8 @@
  */
 package org.apache.storm.elasticsearch.trident;
 
+import org.apache.storm.elasticsearch.ElasticsearchSearchRequest;
+import org.apache.storm.elasticsearch.EsSearchResultOutput;
 import org.apache.storm.task.IMetricsContext;
 import org.apache.storm.elasticsearch.common.EsConfig;
 import org.apache.storm.elasticsearch.common.EsTupleMapper;
@@ -34,7 +36,9 @@ import static org.elasticsearch.common.base.Preconditions.checkNotNull;
  */
 public class EsStateFactory implements StateFactory {
     private final EsConfig esConfig;
-    private final EsTupleMapper tupleMapper;
+    private EsTupleMapper tupleMapper;
+    private ElasticsearchSearchRequest searchRequest;
+    private EsSearchResultOutput output;
 
     /**
      * EsStateFactory constructor
@@ -46,10 +50,29 @@ public class EsStateFactory implements StateFactory {
         this.tupleMapper = checkNotNull(tupleMapper);
     }
 
+    /**
+     *
+     * @param esConfig
+     * @param searchRequest
+     * @param output
+     */
+    public EsStateFactory(EsConfig esConfig, ElasticsearchSearchRequest searchRequest,
+                          EsSearchResultOutput output) {
+        this.esConfig = checkNotNull(esConfig);
+        this.searchRequest = checkNotNull(searchRequest);
+        this.output = checkNotNull(output);
+    }
+
     @Override
     public State makeState(Map conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
-        EsState esState = new EsState(esConfig, tupleMapper);
-        esState.prepare();
-        return esState;
+        if (tupleMapper != null) {
+            EsState esState = new EsState(esConfig, tupleMapper);
+            esState.prepare();
+            return esState;
+        } else {
+            EsState esState = new EsState(esConfig, searchRequest, output);
+            esState.prepare();
+            return esState;
+        }
     }
 }

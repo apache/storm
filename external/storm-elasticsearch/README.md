@@ -62,6 +62,24 @@ EsLookupResultOutput output = createOutput();
 EsLookupBolt lookupBolt = new EsLookupBolt(esConfig, getRequestAdapter, output);
 ```
 
+## EsSearchBolt (org.apache.storm.elasticsearch.bolt.EsSearchBolt)
+
+EsSearchBolt performs a search request to Elasticsearch.
+In order to do that, three dependencies need to be satisfied. Apart from usual EsConfig, two other dependencies must be provided:
+    ElasticsearchSearchRequest is used to convert the incoming Tuple to the SearchRequest that will be executed against Elasticsearch.
+    EsSearchResultOutput is used to declare the output fields and convert the SearchResponse to values that are emited by the bolt.
+
+Incoming tuple is passed to provided SearchRequest creator and the result of that execution is passed to Elasticsearch client.
+The bolt then uses the provider output adapter (EsSearchResultOutput) to convert the SearchResponse to Values to emit.
+The output fields are also specified by the user of the bolt via the output adapter (EsSearchResultOutput).
+
+```java
+EsConfig esConfig = createEsConfig();
+ElasticsearchSearchRequest searchRequestAdapter = createElasticsearchSearchRequest();
+EsSearchResultOutput output = createOutput();
+EsLookupBolt lookupBolt = new EsLookupBolt(esConfig, getRequestAdapter, output);
+```
+
 ## EsConfig (org.apache.storm.elasticsearch.common.EsConfig)
   
 Provided components (Bolt, State) takes in EsConfig as a constructor arg.
