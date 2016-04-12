@@ -59,7 +59,7 @@ public class KafkaUtils {
         if (conf.hosts instanceof StaticHosts) {
             return new StaticBrokerReader(conf.topic, ((StaticHosts) conf.hosts).getPartitionInformation());
         } else {
-            return new ZkBrokerReader(stormConf, conf.topic, (ZkHosts) conf.hosts);
+            return new ZkBrokerReader(stormConf, conf);
         }
     }
 

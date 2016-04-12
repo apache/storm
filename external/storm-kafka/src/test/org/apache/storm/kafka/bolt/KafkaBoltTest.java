@@ -55,6 +55,7 @@ import java.util.List;
 import java.util.HashMap;
 import java.util.Properties;
 import java.util.concurrent.Future;
+import org.apache.curator.test.TestingServer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -64,6 +65,7 @@ public class KafkaBoltTest {
 
     private static final String TEST_TOPIC = "test-topic";
     private KafkaTestBroker broker;
+    private TestingServer kafkaZookeeper;
     private KafkaBolt bolt;
     private Config config = new Config();
     private KafkaConfig kafkaConfig;
@@ -73,19 +75,21 @@ public class KafkaBoltTest {
     private IOutputCollector collector;
 
     @Before
-    public void initMocks() {
+    public void initMocks() throws Exception {
         MockitoAnnotations.initMocks(this);
-        broker = new KafkaTestBroker();
+        kafkaZookeeper = new TestingServer();
+        broker = new KafkaTestBroker(kafkaZookeeper.getConnectString());
         setupKafkaConsumer();
         config.put(KafkaBolt.TOPIC, TEST_TOPIC);
         bolt = generateStringSerializerBolt();
     }
 
     @After
-    public void shutdown() {
+    public void shutdown() throws Exception {
         simpleConsumer.close();
         broker.shutdown();
         bolt.cleanup();
+        kafkaZookeeper.close();
     }
 
     private void setupKafkaConsumer() {

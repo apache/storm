@@ -32,15 +32,18 @@ import org.apache.storm.trident.tuple.TridentTupleView;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.curator.test.TestingServer;
 
 public class TridentKafkaTest {
     private KafkaTestBroker broker;
+    private TestingServer kafkaZookeeper;
     private TridentKafkaState state;
     private SimpleConsumer simpleConsumer;
 
     @Before
-    public void setup() {
-        broker = new KafkaTestBroker();
+    public void setup() throws Exception {
+        kafkaZookeeper = new TestingServer();
+        broker = new KafkaTestBroker(kafkaZookeeper.getConnectString());
         simpleConsumer = TestUtils.getKafkaConsumer(broker);
         TridentTupleToKafkaMapper mapper = new FieldNameBasedTupleToKafkaMapper("key", "message");
         KafkaTopicSelector topicSelector = new DefaultTopicSelector(TestUtils.TOPIC);
@@ -74,8 +77,9 @@ public class TridentKafkaTest {
     }
 
     @After
-    public void shutdown() {
+    public void shutdown() throws Exception {
         simpleConsumer.close();
         broker.shutdown();
+        kafkaZookeeper.close();
     }
 }

@@ -46,17 +46,20 @@ import org.apache.storm.spout.SchemeAsMultiScheme;
 import org.apache.storm.utils.Utils;
 
 import com.google.common.collect.ImmutableMap;
+import org.apache.curator.test.TestingServer;
 public class KafkaUtilsTest {
     private String TEST_TOPIC = "testTopic";
     private static final Logger LOG = LoggerFactory.getLogger(KafkaUtilsTest.class);
     private KafkaTestBroker broker;
+    private TestingServer kafkaZookeeper;
     private SimpleConsumer simpleConsumer;
     private KafkaConfig config;
     private BrokerHosts brokerHosts;
 
     @Before
-    public void setup() {
-        broker = new KafkaTestBroker();
+    public void setup() throws Exception {
+        kafkaZookeeper = new TestingServer();
+        broker = new KafkaTestBroker(kafkaZookeeper.getConnectString());
         GlobalPartitionInformation globalPartitionInformation = new GlobalPartitionInformation(TEST_TOPIC);
         globalPartitionInformation.addPartition(0, Broker.fromString(broker.getBrokerConnectionString()));
         brokerHosts = new StaticHosts(globalPartitionInformation);
@@ -65,9 +68,10 @@ public class KafkaUtilsTest {
     }
 
     @After
-    public void shutdown() {
+    public void shutdown() throws Exception {
         simpleConsumer.close();
         broker.shutdown();
+        kafkaZookeeper.close();
     }
 
 

@@ -28,11 +28,11 @@ import org.mockito.MockitoAnnotations;
 
 import java.util.*;
 
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Mockito.when;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Mockito.when;
 
 public class ZkCoordinatorTest {
 
@@ -43,8 +43,9 @@ public class ZkCoordinatorTest {
     @Mock
     private DynamicPartitionConnections dynamicPartitionConnections;
 
-    private KafkaTestBroker broker = new KafkaTestBroker();
-    private TestingServer server;
+    private KafkaTestBroker broker;
+    private TestingServer kafkaZookeeper;
+    private TestingServer stormZookeeper;
     private Map stormConf = new HashMap();
     private SpoutConfig spoutConfig;
     private ZkState state;
@@ -53,12 +54,14 @@ public class ZkCoordinatorTest {
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
-        server = new TestingServer();
-        String connectionString = server.getConnectString();
+        stormZookeeper = new TestingServer();
+        kafkaZookeeper = new TestingServer();
+        broker = new KafkaTestBroker(kafkaZookeeper.getConnectString());
+        String connectionString = stormZookeeper.getConnectString();
         ZkHosts hosts = new ZkHosts(connectionString);
         hosts.refreshFreqSecs = 1;
         spoutConfig = new SpoutConfig(hosts, "topic", "/test", "id");
-        Map conf = buildZookeeperConfig(server);
+        Map conf = buildZookeeperConfig(stormZookeeper);
         state = new ZkState(conf);
         simpleConsumer = new SimpleConsumer("localhost", broker.getPort(), 60000, 1024, "testClient");
         when(dynamicPartitionConnections.register(any(Broker.class), any(String.class) ,anyInt())).thenReturn(simpleConsumer);
@@ -79,7 +82,8 @@ public class ZkCoordinatorTest {
     public void shutdown() throws Exception {
         simpleConsumer.close();
         broker.shutdown();
-        server.close();
+        kafkaZookeeper.close();
+        stormZookeeper.close();
     }
 
     @Test

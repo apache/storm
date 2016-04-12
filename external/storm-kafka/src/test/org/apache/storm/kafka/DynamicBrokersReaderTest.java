@@ -17,236 +17,362 @@
  */
 package org.apache.storm.kafka;
 
-import org.apache.storm.Config;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.CuratorFrameworkFactory;
-import org.apache.curator.retry.ExponentialBackoffRetry;
-import org.apache.curator.test.TestingServer;
-import org.apache.curator.utils.ZKPaths;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.apache.storm.kafka.trident.GlobalPartitionInformation;
-
+import java.net.SocketTimeoutException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import java.util.Set;
+import kafka.admin.TopicCommand;
+import kafka.admin.TopicCommand.TopicCommandOptions;
+import kafka.common.ErrorMapping;
+import kafka.javaapi.PartitionMetadata;
+import kafka.javaapi.TopicMetadata;
+import kafka.javaapi.TopicMetadataRequest;
+import kafka.javaapi.TopicMetadataResponse;
+import kafka.javaapi.consumer.SimpleConsumer;
+import kafka.utils.ZkUtils;
+import org.apache.curator.test.TestingServer;
+import org.apache.storm.kafka.trident.GlobalPartitionInformation;
+import static org.hamcrest.Matchers.empty;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.mockito.Mock;
+import static org.mockito.Mockito.when;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
+import static org.hamcrest.CoreMatchers.anyOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.junit.Assert.assertThat;
+import org.junit.rules.ExpectedException;
 
 /**
- * Date: 16/05/2013
- * Time: 20:35
+ * Date: 16/05/2013 Time: 20:35
  */
 public class DynamicBrokersReaderTest {
-    private DynamicBrokersReader dynamicBrokersReader, wildCardBrokerReader;
-    private String masterPath = "/brokers";
-    private String topic = "testing1";
-    private String secondTopic = "testing2";
-    private String thirdTopic = "testing3";
 
-    private CuratorFramework zookeeper;
-    private TestingServer server;
+    private DynamicBrokersReader dynamicBrokersReader;
+
+    private TestingServer kafkaZookeeper;
+    private KafkaTestBroker broker;
+
+    private final int maxWaitTimeMs = 30_000;
+
+    @Rule
+    public MockitoRule mockitoRule = MockitoJUnit.rule();
+    
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
+
+    @Mock
+    private ZkMetadataReader zkMetadataReader;
+
+    @Mock
+    private ZkMetadataReaderFactory mockZkReaderFactory;
 
     @Before
     public void setUp() throws Exception {
-        server = new TestingServer();
-        String connectionString = server.getConnectString();
+        kafkaZookeeper = new TestingServer();
+        broker = new KafkaTestBroker(kafkaZookeeper.getConnectString(), "0");
         Map conf = new HashMap();
-        conf.put(Config.STORM_ZOOKEEPER_SESSION_TIMEOUT, 1000);
-        conf.put(Config.STORM_ZOOKEEPER_CONNECTION_TIMEOUT, 1000);
-        conf.put(Config.STORM_ZOOKEEPER_RETRY_TIMES, 4);
-        conf.put(Config.STORM_ZOOKEEPER_RETRY_INTERVAL, 5);
-
-        ExponentialBackoffRetry retryPolicy = new ExponentialBackoffRetry(1000, 3);
-        zookeeper = CuratorFrameworkFactory.newClient(connectionString, retryPolicy);
-        dynamicBrokersReader = new DynamicBrokersReader(conf, connectionString, masterPath, topic);
-
-        Map conf2 = new HashMap();
-        conf2.putAll(conf);
-        conf2.put("kafka.topic.wildcard.match",true);
-
-        wildCardBrokerReader = new DynamicBrokersReader(conf2, connectionString, masterPath, "^test.*$");
-        zookeeper.start();
+        KafkaConfig kafkaConfig = TestUtils.getKafkaConfig(broker);
+        when(mockZkReaderFactory.createZkMetadataReader(conf, kafkaConfig)).thenReturn(zkMetadataReader);
+        dynamicBrokersReader = new DynamicBrokersReader(conf, kafkaConfig, mockZkReaderFactory);
     }
 
     @After
     public void tearDown() throws Exception {
         dynamicBrokersReader.close();
-        zookeeper.close();
-        server.close();
+        broker.shutdown();
+        kafkaZookeeper.close();
     }
 
-    private void addPartition(int id, String host, int port, String topic) throws Exception {
-        writePartitionId(id, topic);
-        writeLeader(id, 0, topic);
-        writeLeaderDetails(0, host, port);
+    private void createTopic(String topic, int numPartitions, int numReplicas) {
+        String[] createCommands = new String[]{
+            "--create",
+            "--topic", topic,
+            "--partitions", numPartitions + "",
+            "--replication-factor", numReplicas + "",
+            "--zookeeper", kafkaZookeeper.getConnectString()
+        };
+        TopicCommandOptions createOptions = new TopicCommandOptions(createCommands);
+        ZkUtils zkUtils = ZkUtils.apply(createOptions.options().valueOf(createOptions.zkConnectOpt()), 30_000, 30_000, false);
+        TopicCommand.createTopic(zkUtils, createOptions);
     }
 
-    private void addPartition(int id, int leader, String host, int port, String topic) throws Exception {
-        writePartitionId(id, topic);
-        writeLeader(id, leader, topic);
-        writeLeaderDetails(leader, host, port);
-    }
-
-    private void writePartitionId(int id, String topic) throws Exception {
-        String path = dynamicBrokersReader.partitionPath(topic);
-        writeDataToPath(path, ("" + id));
-    }
-
-    private void writeDataToPath(String path, String data) throws Exception {
-        ZKPaths.mkdirs(zookeeper.getZookeeperClient().getZooKeeper(), path);
-        zookeeper.setData().forPath(path, data.getBytes());
-    }
-
-    private void writeLeader(int id, int leaderId, String topic) throws Exception {
-        String path = dynamicBrokersReader.partitionPath(topic) + "/" + id + "/state";
-        String value = " { \"controller_epoch\":4, \"isr\":[ 1, 0 ], \"leader\":" + leaderId + ", \"leader_epoch\":1, \"version\":1 }";
-        writeDataToPath(path, value);
-    }
-
-    private void writeLeaderDetails(int leaderId, String host, int port) throws Exception {
-        String path = dynamicBrokersReader.brokerPath() + "/" + leaderId;
-        String value = "{ \"host\":\"" + host + "\", \"jmx_port\":9999, \"port\":" + port + ", \"version\":1 }";
-        writeDataToPath(path, value);
-    }
-
-
-    private GlobalPartitionInformation getByTopic(List<GlobalPartitionInformation> partitions, String topic){
-        for(GlobalPartitionInformation partitionInformation : partitions) {
-            if (partitionInformation.topic.equals(topic)) return partitionInformation;
+    private GlobalPartitionInformation getByTopic(List<GlobalPartitionInformation> partitions, String topic) {
+        for (GlobalPartitionInformation partitionInformation : partitions) {
+            if (partitionInformation.topic.equals(topic)) {
+                return partitionInformation;
+            }
         }
         return null;
+    }
+
+    private void waitUntilTopicsCreatedAndFullyReplicated(int numReplicas, String... topics) throws InterruptedException, SocketTimeoutException {
+        SimpleConsumer consumer = null;
+        try {
+            consumer = TestUtils.getKafkaConsumer(broker);
+            long currentTime = System.currentTimeMillis();
+            while (System.currentTimeMillis() < currentTime + maxWaitTimeMs) {
+                TopicMetadataResponse metadataResponse = consumer.send(new TopicMetadataRequest(Arrays.asList(topics)));
+                Set<String> remainingTopics = new HashSet<>(Arrays.asList(topics));
+                List<TopicMetadata> topicsMetadata = metadataResponse.topicsMetadata();
+                for (TopicMetadata topicMetadata : topicsMetadata) {
+                    if (topicMetadata.errorCode() == ErrorMapping.NoError()) {
+                        List<PartitionMetadata> partitionsMetadata = topicMetadata.partitionsMetadata();
+                        boolean fullyReplicated = true;
+                        for (PartitionMetadata partitionMetadata : partitionsMetadata) {
+                            fullyReplicated = fullyReplicated && (partitionMetadata.replicas().size() == numReplicas);
+                        }
+                        if (fullyReplicated) {
+                            remainingTopics.remove(topicMetadata.topic());
+                        }
+                    }
+                }
+                if (remainingTopics.isEmpty()) {
+                    break;
+                } else {
+                    //Topics still not available, retry later
+                    Thread.sleep(10);
+                }
+            }
+        } finally {
+            if (consumer != null) {
+                consumer.close();
+            }
+        }
+
     }
 
     @Test
     public void testGetBrokerInfo() throws Exception {
         String host = "localhost";
-        int port = 9092;
         int partition = 0;
-        addPartition(partition, host, port, topic);
-        List<GlobalPartitionInformation> partitions = dynamicBrokersReader.getBrokerInfo();
+        createTopic(TestUtils.TOPIC, 1, 1);
+        waitUntilTopicsCreatedAndFullyReplicated(1, TestUtils.TOPIC);
+        List<Broker> seedBrokers = Collections.singletonList(new Broker(host, broker.getPort()));
+        when(zkMetadataReader.getBrokers()).thenReturn(seedBrokers);
 
-        GlobalPartitionInformation brokerInfo = getByTopic(partitions, topic);
-        assertNotNull(brokerInfo);
-        assertEquals(1, brokerInfo.getOrderedPartitions().size());
-        assertEquals(port, brokerInfo.getBrokerFor(partition).port);
-        assertEquals(host, brokerInfo.getBrokerFor(partition).host);
+        List<GlobalPartitionInformation> partitions = dynamicBrokersReader.getBrokerInfo();
+        GlobalPartitionInformation brokerInfo = getByTopic(partitions, TestUtils.TOPIC);
+        assertThat(brokerInfo, not(nullValue()));
+        assertThat(brokerInfo.getOrderedPartitions().size(), is(1));
+        assertThat(brokerInfo.getBrokerFor(partition).port, is(broker.getPort()));
+        assertThat(brokerInfo.getBrokerFor(partition).host, is(host));
     }
 
     @Test
     public void testGetBrokerInfoWildcardMatch() throws Exception {
         String host = "localhost";
-        int port = 9092;
         int partition = 0;
-        addPartition(partition, host, port, topic);
-        addPartition(partition, host, port, secondTopic);
+        String firstTopic = "testTopic1";
+        String secondTopic = "testTopic2";
+        List<String> matchingTopics = new ArrayList<>();
+        matchingTopics.add(firstTopic);
+        matchingTopics.add(secondTopic);
+        String thirdTopic = "Topic3";
+        createTopic(firstTopic, 1, 1);
+        createTopic(secondTopic, 1, 1);
+        createTopic(thirdTopic, 1, 1);
+        waitUntilTopicsCreatedAndFullyReplicated(1, firstTopic, secondTopic, thirdTopic);
+        
+        Map conf = new HashMap();
+        conf.putAll(conf);
+        conf.put("kafka.topic.wildcard.match", true);
+        DynamicBrokersReader wildcardBrokerReader = null;
+        try {
+            ZkHosts zkHosts = new ZkHosts(kafkaZookeeper.getConnectString());
+            String topicPattern = "^test.*$";
+            KafkaConfig kafkaConfig = new KafkaConfig(zkHosts, topicPattern);
+            when(zkMetadataReader.getWildcardTopics(topicPattern)).thenReturn(matchingTopics);
+            when(mockZkReaderFactory.createZkMetadataReader(conf, kafkaConfig)).thenReturn(zkMetadataReader);
+            wildcardBrokerReader = new DynamicBrokersReader(conf, kafkaConfig, mockZkReaderFactory);
+            List<Broker> seedBrokers = Collections.singletonList(new Broker(host, broker.getPort()));
+            when(zkMetadataReader.getBrokers()).thenReturn(seedBrokers);
 
-        List<GlobalPartitionInformation> partitions = wildCardBrokerReader.getBrokerInfo();
+            List<GlobalPartitionInformation> partitions = wildcardBrokerReader.getBrokerInfo();
 
-        GlobalPartitionInformation brokerInfo = getByTopic(partitions, topic);
-        assertNotNull(brokerInfo);
-        assertEquals(1, brokerInfo.getOrderedPartitions().size());
-        assertEquals(port, brokerInfo.getBrokerFor(partition).port);
-        assertEquals(host, brokerInfo.getBrokerFor(partition).host);
+            for (String topic : matchingTopics) {
+                GlobalPartitionInformation brokerInfo = getByTopic(partitions, topic);
+                assertThat(brokerInfo, not(nullValue()));
+                assertThat(brokerInfo.getOrderedPartitions().size(), is(1));
+                assertThat(brokerInfo.getBrokerFor(partition).port, is(broker.getPort()));
+                assertThat(brokerInfo.getBrokerFor(partition).host, is(host));
+            }
 
-        brokerInfo = getByTopic(partitions, secondTopic);
-        assertNotNull(brokerInfo);
-        assertEquals(1, brokerInfo.getOrderedPartitions().size());
-        assertEquals(port, brokerInfo.getBrokerFor(partition).port);
-        assertEquals(host, brokerInfo.getBrokerFor(partition).host);
-
-        addPartition(partition, host, port, thirdTopic);
-        //Discover newly added topic
-        partitions = wildCardBrokerReader.getBrokerInfo();
-        assertNotNull(getByTopic(partitions, topic));
-        assertNotNull(getByTopic(partitions, secondTopic));
-        assertNotNull(getByTopic(partitions, secondTopic));
+            GlobalPartitionInformation brokerInfo = getByTopic(partitions, thirdTopic);
+            assertThat("Did not expect third topic to match wildcard pattern", brokerInfo, is(nullValue()));
+        } finally {
+            if (wildcardBrokerReader != null) {
+                wildcardBrokerReader.close();
+            }
+        }
     }
-
 
     @Test
     public void testMultiplePartitionsOnDifferentHosts() throws Exception {
-        String host = "localhost";
-        int port = 9092;
-        int secondPort = 9093;
-        int partition = 0;
-        int secondPartition = partition + 1;
-        addPartition(partition, 0, host, port, topic);
-        addPartition(secondPartition, 1, host, secondPort, topic);
+        KafkaTestBroker broker2 = null;
+        try {
+            broker2 = new KafkaTestBroker(kafkaZookeeper.getConnectString(), "1");
+            String host = "localhost";
+            int partitionCount = 2;
+            createTopic(TestUtils.TOPIC, 2, 1);
+            waitUntilTopicsCreatedAndFullyReplicated(1, TestUtils.TOPIC);
+            List<Broker> seedBrokers = Collections.singletonList(new Broker(host, broker.getPort()));
+            when(zkMetadataReader.getBrokers()).thenReturn(seedBrokers);
 
-        List<GlobalPartitionInformation> partitions = dynamicBrokersReader.getBrokerInfo();
-
-        GlobalPartitionInformation brokerInfo = getByTopic(partitions, topic);
-        assertNotNull(brokerInfo);
-        assertEquals(2, brokerInfo.getOrderedPartitions().size());
-
-        assertEquals(port, brokerInfo.getBrokerFor(partition).port);
-        assertEquals(host, brokerInfo.getBrokerFor(partition).host);
-
-        assertEquals(secondPort, brokerInfo.getBrokerFor(secondPartition).port);
-        assertEquals(host, brokerInfo.getBrokerFor(secondPartition).host);
+            List<GlobalPartitionInformation> partitions = dynamicBrokersReader.getBrokerInfo();
+            GlobalPartitionInformation brokerInfo = getByTopic(partitions, TestUtils.TOPIC);
+            assertThat(brokerInfo, not(nullValue()));
+            assertThat(brokerInfo.getOrderedPartitions().size(), is(partitionCount));
+            Set<Integer> unmatchedBrokerPorts = new HashSet<>();
+            unmatchedBrokerPorts.add(broker.getPort());
+            unmatchedBrokerPorts.add(broker2.getPort());
+            for (int i = 0; i < partitionCount; i++) {
+                int brokerPort = brokerInfo.getBrokerFor(i).port;
+                unmatchedBrokerPorts.remove(brokerPort);
+                assertThat(brokerPort, anyOf(is(broker.getPort()), is(broker2.getPort())));
+                assertThat(brokerInfo.getBrokerFor(i).host, is(host));
+            }
+            assertThat("Expected all brokers to have at least 1 partition", unmatchedBrokerPorts, is(empty()));
+        } finally {
+            if (broker2 != null) {
+                broker2.shutdown();
+            }
+        }
     }
-
 
     @Test
     public void testMultiplePartitionsOnSameHost() throws Exception {
         String host = "localhost";
-        int port = 9092;
         int partition = 0;
         int secondPartition = partition + 1;
-        addPartition(partition, 0, host, port, topic);
-        addPartition(secondPartition, 0, host, port, topic);
+        createTopic(TestUtils.TOPIC, 2, 1);
+        waitUntilTopicsCreatedAndFullyReplicated(1, TestUtils.TOPIC);
+        List<Broker> seedBrokers = Collections.singletonList(new Broker(host, broker.getPort()));
+        when(zkMetadataReader.getBrokers()).thenReturn(seedBrokers);
 
         List<GlobalPartitionInformation> partitions = dynamicBrokersReader.getBrokerInfo();
-
-        GlobalPartitionInformation brokerInfo = getByTopic(partitions, topic);
-        assertNotNull(brokerInfo);
-        assertEquals(2, brokerInfo.getOrderedPartitions().size());
-
-        assertEquals(port, brokerInfo.getBrokerFor(partition).port);
-        assertEquals(host, brokerInfo.getBrokerFor(partition).host);
-
-        assertEquals(port, brokerInfo.getBrokerFor(secondPartition).port);
-        assertEquals(host, brokerInfo.getBrokerFor(secondPartition).host);
+        GlobalPartitionInformation brokerInfo = getByTopic(partitions, TestUtils.TOPIC);
+        assertThat(brokerInfo, not(nullValue()));
+        assertThat(brokerInfo.getOrderedPartitions().size(), is(2));
+        assertThat(brokerInfo.getBrokerFor(partition).port, is(broker.getPort()));
+        assertThat(brokerInfo.getBrokerFor(partition).host, is(host));
+        assertThat(brokerInfo.getBrokerFor(secondPartition).port, is(broker.getPort()));
+        assertThat(brokerInfo.getBrokerFor(secondPartition).host, is(host));
     }
 
     @Test
     public void testSwitchHostForPartition() throws Exception {
-        String host = "localhost";
-        int port = 9092;
-        int partition = 0;
-        addPartition(partition, host, port, topic);
-        List<GlobalPartitionInformation> partitions = dynamicBrokersReader.getBrokerInfo();
+        boolean shutdownBroker2 = false;
+        int partitionCount = 32;
+        KafkaTestBroker broker2 = null;
+        try {
+            broker2 = new KafkaTestBroker(kafkaZookeeper.getConnectString(), "1");
+            createTopic(TestUtils.TOPIC, partitionCount, 2);
+            waitUntilTopicsCreatedAndFullyReplicated(2, TestUtils.TOPIC);
+            List<Broker> seedBrokers = Collections.singletonList(new Broker("localhost", broker.getPort()));
+            when(zkMetadataReader.getBrokers()).thenReturn(seedBrokers);
 
-        GlobalPartitionInformation brokerInfo = getByTopic(partitions, topic);
-        assertNotNull(brokerInfo);
-        assertEquals(port, brokerInfo.getBrokerFor(partition).port);
-        assertEquals(host, brokerInfo.getBrokerFor(partition).host);
+            {
+                List<GlobalPartitionInformation> partitions = dynamicBrokersReader.getBrokerInfo();
+                assertThat(partitions.size(), is(1));
+                boolean atLeastOneAssignedToBroker2 = false;
+                GlobalPartitionInformation brokerInfo = partitions.get(0);
+                for (int i = 0; i < partitionCount; i++) {
+                    atLeastOneAssignedToBroker2 = atLeastOneAssignedToBroker2 || (brokerInfo.getBrokerFor(i).port == broker2.getPort());
+                }
+                assertThat("Expected at least one partition assigned to broker 2 pre-shutdown", atLeastOneAssignedToBroker2, is(true));
+            }
 
-        String newHost = host + "switch";
-        int newPort = port + 1;
-        addPartition(partition, newHost, newPort, topic);
-        partitions = dynamicBrokersReader.getBrokerInfo();
-
-        brokerInfo = getByTopic(partitions, topic);
-        assertNotNull(brokerInfo);
-        assertEquals(newPort, brokerInfo.getBrokerFor(partition).port);
-        assertEquals(newHost, brokerInfo.getBrokerFor(partition).host);
+            broker2.shutdown();
+            shutdownBroker2 = true;
+            waitUntilTopicsCreatedAndFullyReplicated(1, TestUtils.TOPIC);
+            List<GlobalPartitionInformation> partitions = dynamicBrokersReader.getBrokerInfo();
+            assertThat(partitions.size(), is(1));
+            GlobalPartitionInformation brokerInfo = partitions.get(0);
+            for (int i = 0; i < partitionCount; i++) {
+                assertThat("Expected all partitions assigned to surviving broker", brokerInfo.getBrokerFor(i).port, is(broker.getPort()));
+            }
+        } finally {
+            if (broker2 != null && !shutdownBroker2) {
+                broker2.shutdown();
+            }
+        }
     }
 
     @Test(expected = NullPointerException.class)
     public void testErrorLogsWhenConfigIsMissing() throws Exception {
-        String connectionString = server.getConnectString();
         Map conf = new HashMap();
-        conf.put(Config.STORM_ZOOKEEPER_SESSION_TIMEOUT, 1000);
-//        conf.put(Config.STORM_ZOOKEEPER_CONNECTION_TIMEOUT, 1000);
-        conf.put(Config.STORM_ZOOKEEPER_RETRY_TIMES, 4);
-        conf.put(Config.STORM_ZOOKEEPER_RETRY_INTERVAL, 5);
+        ZkHosts zkHosts = new ZkHosts(kafkaZookeeper.getConnectString());
+        KafkaConfig kafkaConfig = new KafkaConfig(zkHosts, null);
 
-        DynamicBrokersReader dynamicBrokersReader1 = new DynamicBrokersReader(conf, connectionString, masterPath, topic);
+        DynamicBrokersReader misconfiguredBrokersReader = new DynamicBrokersReader(conf, kafkaConfig, mockZkReaderFactory);
+    }
+    
+    @Test
+    public void testErrorIfTopicIsMissing() throws Exception {
+        expectedException.expect(RuntimeException.class);
+        expectedException.expectMessage("Failed to retrieve partition information from brokers");
+        String host = "localhost";
+        List<Broker> seedBrokers = Collections.singletonList(new Broker(host, broker.getPort()));
+        when(zkMetadataReader.getBrokers()).thenReturn(seedBrokers);
 
+        dynamicBrokersReader.getBrokerInfo();
+    }
+    
+    @Test
+    public void testErrorIfBrokersAreMissing() throws Exception {
+        expectedException.expect(RuntimeException.class);
+        expectedException.expectMessage("Failed to retrieve partition information from brokers");
+        createTopic(TestUtils.TOPIC, 1, 1);
+        waitUntilTopicsCreatedAndFullyReplicated(1, TestUtils.TOPIC);
+        List<Broker> seedBrokers = Collections.singletonList(new Broker("FakeHost", broker.getPort()));
+        when(zkMetadataReader.getBrokers()).thenReturn(seedBrokers);
+
+        dynamicBrokersReader.getBrokerInfo();
+    }
+    
+    @Test
+    public void testErrorIfBrokerIsMissingWildcardTopics() throws Exception {
+        expectedException.expect(RuntimeException.class);
+        expectedException.expectMessage("Failed to retrieve partition information from brokers");
+        String host = "localhost";
+        String firstTopic = "testTopic1";
+        String secondTopic = "testTopic2";
+        List<String> matchingTopics = new ArrayList<>();
+        matchingTopics.add(firstTopic);
+        matchingTopics.add(secondTopic);
+        createTopic(firstTopic, 1, 1);
+        waitUntilTopicsCreatedAndFullyReplicated(1, firstTopic);
+
+        Map conf = new HashMap();
+        conf.putAll(conf);
+        conf.put("kafka.topic.wildcard.match", true);
+        DynamicBrokersReader wildcardBrokerReader = null;
+        try {
+            ZkHosts zkHosts = new ZkHosts(kafkaZookeeper.getConnectString());
+            String topicPattern = "^test.*$";
+            KafkaConfig kafkaConfig = new KafkaConfig(zkHosts, topicPattern);
+            when(zkMetadataReader.getWildcardTopics(topicPattern)).thenReturn(matchingTopics);
+            when(mockZkReaderFactory.createZkMetadataReader(conf, kafkaConfig)).thenReturn(zkMetadataReader);
+            wildcardBrokerReader = new DynamicBrokersReader(conf, kafkaConfig, mockZkReaderFactory);
+            List<Broker> seedBrokers = Collections.singletonList(new Broker(host, broker.getPort()));
+            when(zkMetadataReader.getBrokers()).thenReturn(seedBrokers);
+
+            wildcardBrokerReader.getBrokerInfo();
+        } finally {
+            if (wildcardBrokerReader != null) {
+                wildcardBrokerReader.close();
+            }
+        }
     }
 }

@@ -40,20 +40,17 @@ public class KafkaTestBroker {
 
     private int port;
     private KafkaServerStartable kafka;
-    private TestingServer server;
-    private CuratorFramework zookeeper;
     private File logDir;
 
-    public KafkaTestBroker() {
+    public KafkaTestBroker(String zookeeperConnectionString){
+        this(zookeeperConnectionString, "0");
+    }
+    
+    public KafkaTestBroker(String zookeeperConnectionString, String brokerId) {
         try {
-            server = new TestingServer();
-            String zookeeperConnectionString = server.getConnectString();
-            ExponentialBackoffRetry retryPolicy = new ExponentialBackoffRetry(1000, 3);
-            zookeeper = CuratorFrameworkFactory.newClient(zookeeperConnectionString, retryPolicy);
-            zookeeper.start();
             port = InstanceSpec.getRandomPort();
             logDir = new File(System.getProperty("java.io.tmpdir"), "kafka/logs/kafka-test-" + port);
-            KafkaConfig config = buildKafkaConfig(zookeeperConnectionString);
+            KafkaConfig config = buildKafkaConfig(zookeeperConnectionString, brokerId);
             kafka = new KafkaServerStartable(config);
             kafka.startup();
         } catch (Exception ex) {
@@ -61,10 +58,11 @@ public class KafkaTestBroker {
         }
     }
 
-    private kafka.server.KafkaConfig buildKafkaConfig(String zookeeperConnectionString) {
+    private kafka.server.KafkaConfig buildKafkaConfig(String zookeeperConnectionString, String brokerId) {
         Properties p = new Properties();
         p.setProperty("zookeeper.connect", zookeeperConnectionString);
-        p.setProperty("broker.id", "0");
+        p.setProperty("broker.id", brokerId);
+        p.setProperty("advertised.host.name", "localhost");
         p.setProperty("port", "" + port);
         p.setProperty("log.dirs", logDir.getAbsolutePath());
         return new KafkaConfig(p);
@@ -79,14 +77,7 @@ public class KafkaTestBroker {
     }
     public void shutdown() {
         kafka.shutdown();
-        if (zookeeper.getState().equals(CuratorFrameworkState.STARTED)) {
-            zookeeper.close();
-        }
-        try {
-            server.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        kafka.awaitShutdown();
         FileUtils.deleteQuietly(logDir);
     }
 }

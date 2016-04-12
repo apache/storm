@@ -17,102 +17,100 @@
  */
 package org.apache.storm.kafka;
 
-import org.apache.storm.Config;
 import org.apache.storm.utils.Utils;
 import com.google.common.base.Preconditions;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.CuratorFrameworkFactory;
-import org.apache.curator.retry.RetryNTimes;
-import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.storm.kafka.trident.GlobalPartitionInformation;
 
-import java.io.UnsupportedEncodingException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-
+import java.util.Set;
+import kafka.cluster.BrokerEndPoint;
+import kafka.javaapi.PartitionMetadata;
+import kafka.javaapi.TopicMetadata;
+import kafka.javaapi.TopicMetadataRequest;
+import kafka.javaapi.TopicMetadataResponse;
+import kafka.javaapi.consumer.SimpleConsumer;
 
 public class DynamicBrokersReader {
 
     public static final Logger LOG = LoggerFactory.getLogger(DynamicBrokersReader.class);
 
-    private CuratorFramework _curator;
-    private String _zkPath;
-    private String _topic;
-    private Boolean _isWildcardTopic;
+    private final String _topic;
+    private final Boolean _isWildcardTopic;
+    private final String _clientId;
+    private final int _socketTimeoutMs;
+    private final int _bufferSizeBytes;
+    private final ZkMetadataReader _zkMetadataReader;
 
-    public DynamicBrokersReader(Map conf, String zkStr, String zkPath, String topic) {
+    public DynamicBrokersReader(Map conf, KafkaConfig kafkaConfig, ZkMetadataReaderFactory zkMetadataReaderFactory) {
         // Check required parameters
         Preconditions.checkNotNull(conf, "conf cannot be null");
+        Preconditions.checkNotNull(kafkaConfig, "kafkaConfig cannot be null");
+        Preconditions.checkNotNull(kafkaConfig.topic, "topic cannot be null");
+        Preconditions.checkNotNull(kafkaConfig.clientId, "clientId cannot be null");
+        _topic = kafkaConfig.topic;
+        _clientId = kafkaConfig.clientId;
+        _socketTimeoutMs = kafkaConfig.socketTimeoutMs;
+        _bufferSizeBytes = kafkaConfig.bufferSizeBytes;
+        _zkMetadataReader = zkMetadataReaderFactory.createZkMetadataReader(conf, kafkaConfig);
 
-        validateConfig(conf);
-
-        Preconditions.checkNotNull(zkStr,"zkString cannot be null");
-        Preconditions.checkNotNull(zkPath, "zkPath cannot be null");
-        Preconditions.checkNotNull(topic, "topic cannot be null");
-
-        _zkPath = zkPath;
-        _topic = topic;
         _isWildcardTopic = Utils.getBoolean(conf.get("kafka.topic.wildcard.match"), false);
-        try {
-            _curator = CuratorFrameworkFactory.newClient(
-                    zkStr,
-                    Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_SESSION_TIMEOUT)),
-                    Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_CONNECTION_TIMEOUT)),
-                    new RetryNTimes(Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_RETRY_TIMES)),
-                            Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_RETRY_INTERVAL))));
-            _curator.start();
-        } catch (Exception ex) {
-            LOG.error("Couldn't connect to zookeeper", ex);
-            throw new RuntimeException(ex);
-        }
     }
 
     /**
-     * Get all partitions with their current leaders
+     * Get all partitions with their current leaders from Kafka.
      */
     public List<GlobalPartitionInformation> getBrokerInfo() throws SocketTimeoutException {
-      List<String> topics =  getTopics();
-      List<GlobalPartitionInformation> partitions =  new ArrayList<GlobalPartitionInformation>();
+        List<Broker> seedBrokers = _zkMetadataReader.getBrokers();
+        List<String> topics = getTopics();
+        Set<String> missingTopics = new HashSet<>();
+        List<GlobalPartitionInformation> partitions = new ArrayList<GlobalPartitionInformation>();
 
-      for (String topic : topics) {
-          GlobalPartitionInformation globalPartitionInformation = new GlobalPartitionInformation(topic, this._isWildcardTopic);
-          try {
-              int numPartitionsForTopic = getNumPartitions(topic);
-              String brokerInfoPath = brokerPath();
-              for (int partition = 0; partition < numPartitionsForTopic; partition++) {
-                  int leader = getLeaderFor(topic,partition);
-                  String path = brokerInfoPath + "/" + leader;
-                  try {
-                      byte[] brokerData = _curator.getData().forPath(path);
-                      Broker hp = getBrokerHost(brokerData);
-                      globalPartitionInformation.addPartition(partition, hp);
-                  } catch (org.apache.zookeeper.KeeperException.NoNodeException e) {
-                      LOG.error("Node {} does not exist ", path);
-                  }
-              }
-          } catch (SocketTimeoutException e) {
-              throw e;
-          } catch (Exception e) {
-              throw new RuntimeException(e);
-          }
-          LOG.info("Read partition info from zookeeper: " + globalPartitionInformation);
-          partitions.add(globalPartitionInformation);
-      }
-        return partitions;
-    }
-
-    private int getNumPartitions(String topic) {
-        try {
-            String topicBrokersPath = partitionPath(topic);
-            List<String> children = _curator.getChildren().forPath(topicBrokersPath);
-            return children.size();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        brokerLoop:
+        for (Broker broker : seedBrokers) {
+            missingTopics.clear();
+            missingTopics.addAll(topics);
+            SimpleConsumer consumer = null;
+            try {
+                consumer = new SimpleConsumer(broker.host, broker.port, _socketTimeoutMs, _bufferSizeBytes, _clientId);
+                TopicMetadataResponse metadataResponse = consumer.send(new TopicMetadataRequest(topics));
+                List<TopicMetadata> topicsMetadata = metadataResponse.topicsMetadata();
+                for (TopicMetadata topicMetadata : topicsMetadata) {
+                    GlobalPartitionInformation globalPartitionInformation = new GlobalPartitionInformation(topicMetadata.topic(), this._isWildcardTopic);
+                    List<PartitionMetadata> partitionsMetadata = topicMetadata.partitionsMetadata();
+                    for (PartitionMetadata partitionMetadata : partitionsMetadata) {
+                        BrokerEndPoint leaderBroker = partitionMetadata.leader();
+                        globalPartitionInformation.addPartition(partitionMetadata.partitionId(), new Broker(leaderBroker.host(), leaderBroker.port()));
+                    }
+                    if (globalPartitionInformation.getOrderedPartitions().isEmpty()) {
+                        //0 partition topic doesn't make sense, don't know if this can actually happen
+                        LOG.info("Failed to retrieve partition information from broker {} for topic {}, trying next broker", broker, topicMetadata.topic());
+                        continue brokerLoop;
+                    }
+                    LOG.info("Read partition info from Kafka: " + globalPartitionInformation);
+                    partitions.add(globalPartitionInformation);
+                    missingTopics.remove(topicMetadata.topic());
+                }
+                if(missingTopics.isEmpty()){
+                    break;
+                }
+            } catch (Exception e) {
+                LOG.warn("Failed to communicate with broker {}:{}", broker.host, broker.port, e);
+            } finally {
+                if (consumer != null) {
+                    consumer.close();
+                }
+            }
         }
+        if (!missingTopics.isEmpty()) {
+            throw new RuntimeException("Failed to retrieve partition information from brokers " + seedBrokers + " for topics " + missingTopics);
+        }
+        return partitions;
     }
 
     private List<String> getTopics() {
@@ -121,93 +119,12 @@ public class DynamicBrokersReader {
             topics.add(_topic);
             return topics;
         } else {
-            try {
-                List<String> children = _curator.getChildren().forPath(topicsPath());
-                for (String t : children) {
-                    if (t.matches(_topic)) {
-                        LOG.info(String.format("Found matching topic %s", t));
-                        topics.add(t);
-                    }
-                }
-                return topics;
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
-    public String topicsPath () {
-        return _zkPath + "/topics";
-    }
-    public String partitionPath(String topic) {
-        return topicsPath() + "/" + topic + "/partitions";
-    }
-
-    public String brokerPath() {
-        return _zkPath + "/ids";
-    }
-
-
-
-    /**
-     * get /brokers/topics/distributedTopic/partitions/1/state
-     * { "controller_epoch":4, "isr":[ 1, 0 ], "leader":1, "leader_epoch":1, "version":1 }
-     * @param topic
-     * @param partition
-     * @return
-     */
-    private int getLeaderFor(String topic, long partition) {
-        try {
-            String topicBrokersPath = partitionPath(topic);
-            byte[] hostPortData = _curator.getData().forPath(topicBrokersPath + "/" + partition + "/state");
-            Map<Object, Object> value = (Map<Object, Object>) JSONValue.parse(new String(hostPortData, "UTF-8"));
-            Integer leader = ((Number) value.get("leader")).intValue();
-            if (leader == -1) {
-                throw new RuntimeException("No leader found for partition " + partition);
-            }
-            return leader;
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            return _zkMetadataReader.getWildcardTopics(_topic);
         }
     }
 
     public void close() {
-        _curator.close();
-    }
-
-    /**
-     * [zk: localhost:2181(CONNECTED) 56] get /brokers/ids/0
-     * { "host":"localhost", "jmx_port":9999, "port":9092, "version":1 }
-     *
-     * @param contents
-     * @return
-     */
-    private Broker getBrokerHost(byte[] contents) {
-        try {
-            Map<Object, Object> value = (Map<Object, Object>) JSONValue.parse(new String(contents, "UTF-8"));
-            String host = (String) value.get("host");
-            Integer port = ((Long) value.get("port")).intValue();
-            return new Broker(host, port);
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * Validate required parameters in the input configuration Map
-     * @param conf
-     */
-    private void validateConfig(final Map conf) {
-        Preconditions.checkNotNull(conf.get(Config.STORM_ZOOKEEPER_SESSION_TIMEOUT),
-                "%s cannot be null", Config.STORM_ZOOKEEPER_SESSION_TIMEOUT);
-        Preconditions.checkNotNull(conf.get(Config.STORM_ZOOKEEPER_CONNECTION_TIMEOUT),
-                "%s cannot be null", Config.STORM_ZOOKEEPER_CONNECTION_TIMEOUT);
-        Preconditions.checkNotNull(conf.get(Config.STORM_ZOOKEEPER_RETRY_TIMES),
-                "%s cannot be null", Config.STORM_ZOOKEEPER_RETRY_TIMES);
-        Preconditions.checkNotNull(conf.get(Config.STORM_ZOOKEEPER_RETRY_INTERVAL),
-                "%s cannot be null", Config.STORM_ZOOKEEPER_RETRY_INTERVAL);
+        _zkMetadataReader.close();
     }
 
 }
