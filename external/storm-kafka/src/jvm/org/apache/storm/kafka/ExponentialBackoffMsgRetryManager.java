@@ -27,17 +27,25 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class ExponentialBackoffMsgRetryManager implements FailedMsgRetryManager {
 
-    private final long retryInitialDelayMs;
-    private final double retryDelayMultiplier;
-    private final long retryDelayMaxMs;
+    private long retryInitialDelayMs;
+    private double retryDelayMultiplier;
+    private long retryDelayMaxMs;
+    private int retryLimit;
 
-    private Queue<MessageRetryRecord> waiting = new PriorityQueue<MessageRetryRecord>(11, new RetryTimeComparator());
-    private Map<Long,MessageRetryRecord> records = new ConcurrentHashMap<Long,MessageRetryRecord>();
+    private Queue<MessageRetryRecord> waiting;
+    private Map<Long,MessageRetryRecord> records;
 
-    public ExponentialBackoffMsgRetryManager(long retryInitialDelayMs, double retryDelayMultiplier, long retryDelayMaxMs) {
-        this.retryInitialDelayMs = retryInitialDelayMs;
-        this.retryDelayMultiplier = retryDelayMultiplier;
-        this.retryDelayMaxMs = retryDelayMaxMs;
+    public ExponentialBackoffMsgRetryManager() {
+
+    }
+
+    public void prepare(SpoutConfig spoutConfig) {
+        this.retryInitialDelayMs = spoutConfig.retryInitialDelayMs;
+        this.retryDelayMultiplier = spoutConfig.retryDelayMultiplier;
+        this.retryDelayMaxMs = spoutConfig.retryDelayMaxMs;
+        this.retryLimit = spoutConfig.retryLimit;
+        this.waiting = new PriorityQueue<MessageRetryRecord>(11, new RetryTimeComparator());
+        this.records = new ConcurrentHashMap<Long,MessageRetryRecord>();
     }
 
     @Override
@@ -86,7 +94,7 @@ public class ExponentialBackoffMsgRetryManager implements FailedMsgRetryManager 
     }
 
     @Override
-    public boolean shouldRetryMsg(Long offset) {
+    public boolean shouldReEmitMsg(Long offset) {
         MessageRetryRecord record = this.records.get(offset);
         return record != null &&
                 this.waiting.contains(record) &&
@@ -94,7 +102,15 @@ public class ExponentialBackoffMsgRetryManager implements FailedMsgRetryManager 
     }
 
     @Override
-    public Set<Long> clearInvalidMessages(Long kafkaOffset) {
+    public boolean retryFurther(Long offset) {
+        MessageRetryRecord record = this.records.get(offset);
+        return ! (record != null &&
+               this.waiting.contains(record) &&
+               this.retryLimit <= record.retryNum);
+    }
+
+    @Override
+    public Set<Long> clearOffsetsBefore(Long kafkaOffset) {
         Set<Long> invalidOffsets = new HashSet<Long>(); 
         for(Long offset : records.keySet()){
             if(offset < kafkaOffset){
