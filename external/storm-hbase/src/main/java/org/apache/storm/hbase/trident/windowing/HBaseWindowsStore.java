@@ -205,10 +205,10 @@ public class HBaseWindowsStore implements WindowsStore {
         Kryo kryo = new Kryo();
         Output output = new Output(new ByteArrayOutputStream());
         kryo.writeClassAndObject(output, value);
-        put.add(family, ByteBuffer.wrap(qualifier), System.currentTimeMillis(), ByteBuffer.wrap(output.getBuffer(), 0, output.position()));
+        put.addColumn(family, ByteBuffer.wrap(qualifier), System.currentTimeMillis(), ByteBuffer.wrap(output.getBuffer(), 0, output.position()));
         try {
             htable().put(put);
-        } catch (InterruptedIOException | RetriesExhaustedWithDetailsException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
@@ -221,13 +221,13 @@ public class HBaseWindowsStore implements WindowsStore {
             Output output = new Output(new ByteArrayOutputStream());
             Kryo kryo = new Kryo();
             kryo.writeClassAndObject(output, entry.value);
-            put.add(family, ByteBuffer.wrap(qualifier), System.currentTimeMillis(), ByteBuffer.wrap(output.getBuffer(), 0, output.position()));
+            put.addColumn(family, ByteBuffer.wrap(qualifier), System.currentTimeMillis(), ByteBuffer.wrap(output.getBuffer(), 0, output.position()));
             list.add(put);
         }
 
         try {
             htable().put(list);
-        } catch (InterruptedIOException | RetriesExhaustedWithDetailsException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
