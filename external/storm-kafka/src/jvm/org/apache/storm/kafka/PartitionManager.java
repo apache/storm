@@ -47,6 +47,9 @@ public class PartitionManager {
     private final CountMetric _fetchAPIMessageCount;
     // Count of messages which could not be emitted or retried because they were deleted from kafka
     private final CountMetric _lostMessageCount;
+    // Count of messages which were not retried because failedMsgRetryManager didn't consider offset eligible for
+    // retry
+    private final CountMetric _messageIneligibleForRetryCount;
     Long _emittedToOffset;
     // _pending key = Kafka offset, value = time at which the message was first submitted to the topology
     private SortedMap<Long,Long> _pending = new TreeMap<Long,Long>();
@@ -73,9 +76,14 @@ public class PartitionManager {
         _stormConf = stormConf;
         numberAcked = numberFailed = 0;
 
-        _failedMsgRetryManager = new ExponentialBackoffMsgRetryManager(_spoutConfig.retryInitialDelayMs,
-                                                                           _spoutConfig.retryDelayMultiplier,
-                                                                           _spoutConfig.retryDelayMaxMs);
+        try {
+            _failedMsgRetryManager = (FailedMsgRetryManager) Class.forName(spoutConfig.failedMsgRetryManagerClass).newInstance();
+            _failedMsgRetryManager.prepare(spoutConfig);
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+            throw new IllegalArgumentException(String.format("Failed to create an instance of <%s> from: <%s>",
+                                                             FailedMsgRetryManager.class,
+                                                             spoutConfig.failedMsgRetryManagerClass), e);
+        }
 
         String jsonTopologyId = null;
         Long jsonOffset = null;
@@ -121,6 +129,7 @@ public class PartitionManager {
         _fetchAPICallCount = new CountMetric();
         _fetchAPIMessageCount = new CountMetric();
         _lostMessageCount = new CountMetric();
+        _messageIneligibleForRetryCount = new CountMetric();
     }
 
     public Map getMetricsDataMap() {
@@ -130,6 +139,7 @@ public class PartitionManager {
         ret.put(_partition + "/fetchAPICallCount", _fetchAPICallCount.getValueAndReset());
         ret.put(_partition + "/fetchAPIMessageCount", _fetchAPIMessageCount.getValueAndReset());
         ret.put(_partition + "/lostMessageCount", _lostMessageCount.getValueAndReset());
+        ret.put(_partition + "/messageIneligibleForRetryCount", _messageIneligibleForRetryCount.getValueAndReset());
         return ret;
     }
 
@@ -198,7 +208,7 @@ public class PartitionManager {
                 // all the failed offsets, that are earlier than actual EarliestTime
                 // offset, since they are anyway not there.
                 // These calls to broker API will be then saved.
-                Set<Long> omitted = this._failedMsgRetryManager.clearInvalidMessages(offset);
+                Set<Long> omitted = this._failedMsgRetryManager.clearOffsetsBefore(offset);
 
                 // Omitted messages have not been acked and may be lost
                 if (null != omitted) {
@@ -229,14 +239,14 @@ public class PartitionManager {
                     // Skip any old offsets.
                     continue;
                 }
-                if (processingNewTuples || this._failedMsgRetryManager.shouldRetryMsg(cur_offset)) {
+                if (processingNewTuples || this._failedMsgRetryManager.shouldReEmitMsg(cur_offset)) {
                     numMessages += 1;
                     if (!_pending.containsKey(cur_offset)) {
                         _pending.put(cur_offset, System.currentTimeMillis());
                     }
                     _waitingToEmit.add(msg);
                     _emittedToOffset = Math.max(msg.nextOffset(), _emittedToOffset);
-                    if (_failedMsgRetryManager.shouldRetryMsg(cur_offset)) {
+                    if (_failedMsgRetryManager.shouldReEmitMsg(cur_offset)) {
                         this._failedMsgRetryManager.retryStarted(cur_offset);
                     }
                 }
@@ -273,7 +283,15 @@ public class PartitionManager {
                 throw new RuntimeException("Too many tuple failures");
             }
 
-            this._failedMsgRetryManager.failed(offset);
+            // Offset may not be considered for retry by failedMsgRetryManager
+            if (this._failedMsgRetryManager.retryFurther(offset)) {
+                this._failedMsgRetryManager.failed(offset);
+            } else {
+                // state for the offset should be cleaned up
+                _messageIneligibleForRetryCount.incr();
+                _pending.remove(offset);
+                this._failedMsgRetryManager.acked(offset);
+            }
         }
     }
 
