@@ -223,7 +223,7 @@
         <clojure.tools.cli.version>0.2.4</clojure.tools.cli.version>
         <disruptor.version>3.3.2</disruptor.version>
         <jgrapht.version>0.9.0</jgrapht.version>
-        <guava.version>16.0.1</guava.version>
+        <guava.version>18.0</guava.version>
         <netty.version>3.9.0.Final</netty.version>
         <sysout-over-slf4j.version>1.0.2</sysout-over-slf4j.version>
         <log4j-over-slf4j.version>1.6.6</log4j-over-slf4j.version>
