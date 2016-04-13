@@ -1,4 +1,5 @@
 ## 1.0.0
+ * STORM-1706: Add RELEASE and storm-env.sh to storm-diet assembly
  * STORM-1613: Upgraded HBase version to 1.1.0
  * STORM-1687: divide by zero in stats
  * STORM-1670: LocalState#get(String) can throw FileNotFoundException which may result supervisor.clj#sync-processes stop assigning new workers/assignments
