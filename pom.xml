@@ -277,6 +277,7 @@
         <module>external/flux</module>
         <module>external/sql</module>
         <module>external/storm-elasticsearch</module>
+        <module>external/storm-elasticsearch2</module>
         <module>external/storm-solr</module>
         <module>external/storm-metrics</module>
         <module>external/storm-cassandra</module>
