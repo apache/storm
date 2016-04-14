@@ -25,7 +25,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
+import kafka.admin.AdminUtils;
 import kafka.admin.TopicCommand;
 import kafka.admin.TopicCommand.TopicCommandOptions;
 import kafka.common.ErrorMapping;
@@ -95,16 +97,8 @@ public class DynamicBrokersReaderTest {
     }
 
     private void createTopic(String topic, int numPartitions, int numReplicas) {
-        String[] createCommands = new String[]{
-            "--create",
-            "--topic", topic,
-            "--partitions", numPartitions + "",
-            "--replication-factor", numReplicas + "",
-            "--zookeeper", kafkaZookeeper.getConnectString()
-        };
-        TopicCommandOptions createOptions = new TopicCommandOptions(createCommands);
-        ZkUtils zkUtils = ZkUtils.apply(createOptions.options().valueOf(createOptions.zkConnectOpt()), 30_000, 30_000, false);
-        TopicCommand.createTopic(zkUtils, createOptions);
+        ZkUtils zkUtils = ZkUtils.apply(kafkaZookeeper.getConnectString(), 30_000, 30_000, false);
+        AdminUtils.createTopic(zkUtils, topic, numPartitions, numReplicas, new Properties());
     }
 
     private GlobalPartitionInformation getByTopic(List<GlobalPartitionInformation> partitions, String topic) {

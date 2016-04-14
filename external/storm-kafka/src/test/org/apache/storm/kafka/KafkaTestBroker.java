@@ -17,41 +17,37 @@
  */
 package org.apache.storm.kafka;
 
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.CuratorFrameworkFactory;
-import org.apache.curator.framework.imps.CuratorFrameworkState;
-import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.curator.test.InstanceSpec;
-import org.apache.curator.test.TestingServer;
 
 import kafka.server.KafkaConfig;
-import kafka.server.KafkaServerStartable;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Properties;
+import kafka.server.KafkaServer;
+import kafka.utils.Time;
 
 /**
- * Date: 11/01/2014
- * Time: 13:15
+ * Date: 11/01/2014 Time: 13:15
  */
 public class KafkaTestBroker {
 
     private int port;
-    private KafkaServerStartable kafka;
+    private KafkaServer kafka;
     private File logDir;
 
-    public KafkaTestBroker(String zookeeperConnectionString){
+    public KafkaTestBroker(String zookeeperConnectionString) {
         this(zookeeperConnectionString, "0");
     }
-    
+
     public KafkaTestBroker(String zookeeperConnectionString, String brokerId) {
         try {
             port = InstanceSpec.getRandomPort();
             logDir = new File(System.getProperty("java.io.tmpdir"), "kafka/logs/kafka-test-" + port);
             KafkaConfig config = buildKafkaConfig(zookeeperConnectionString, brokerId);
-            kafka = new KafkaServerStartable(config);
+            //Java doesn't know how to call scala functions with default types, hence this hack.
+            scala.Option<String> scalaNoneHack = scala.Option$.MODULE$.apply(null);
+            kafka = new KafkaServer(config, new SystemTime(), scalaNoneHack);
             kafka.startup();
         } catch (Exception ex) {
             throw new RuntimeException("Could not start test broker", ex);
@@ -75,9 +71,29 @@ public class KafkaTestBroker {
     public int getPort() {
         return port;
     }
+
     public void shutdown() {
         kafka.shutdown();
         kafka.awaitShutdown();
         FileUtils.deleteQuietly(logDir);
+    }
+
+    private static class SystemTime implements Time {
+
+        public long milliseconds() {
+            return System.currentTimeMillis();
+        }
+
+        public long nanoseconds() {
+            return System.nanoTime();
+        }
+
+        public void sleep(long ms) {
+            try {
+                Thread.sleep(ms);
+            } catch (InterruptedException e) {
+                // Ignore
+            }
+        }
     }
 }
