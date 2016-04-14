@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import kafka.cluster.BrokerEndPoint;
+import kafka.common.ErrorMapping;
 import kafka.javaapi.PartitionMetadata;
 import kafka.javaapi.TopicMetadata;
 import kafka.javaapi.TopicMetadataRequest;
@@ -81,6 +82,10 @@ public class DynamicBrokersReader {
                 TopicMetadataResponse metadataResponse = consumer.send(new TopicMetadataRequest(topics));
                 List<TopicMetadata> topicsMetadata = metadataResponse.topicsMetadata();
                 for (TopicMetadata topicMetadata : topicsMetadata) {
+                    if(topicMetadata.errorCode() != ErrorMapping.NoError()){
+                        LOG.warn("Got error code {} against broker {}", ErrorMapping.exceptionNameFor(topicMetadata.errorCode()), broker);
+                        continue brokerLoop;
+                    }
                     GlobalPartitionInformation globalPartitionInformation = new GlobalPartitionInformation(topicMetadata.topic(), this._isWildcardTopic);
                     List<PartitionMetadata> partitionsMetadata = topicMetadata.partitionsMetadata();
                     for (PartitionMetadata partitionMetadata : partitionsMetadata) {
