@@ -1,4 +1,5 @@
 ## 1.0.0
+ * STORM-1585: Add DDL support for UDFs in storm-sql
  * STORM-1681: Bug in scheduling cyclic topologies when scheduling with RAS
  * STORM-1706: Add RELEASE and storm-env.sh to storm-diet assembly
  * STORM-1613: Upgraded HBase version to 1.1.0
