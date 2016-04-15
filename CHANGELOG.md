@@ -1,9 +1,12 @@
-## 1.0.0
+## 1.0.1
+ * STORM-1693: Move stats cleanup to executor shutdown
  * STORM-1585: Add DDL support for UDFs in storm-sql
  * STORM-1681: Bug in scheduling cyclic topologies when scheduling with RAS
  * STORM-1706: Add RELEASE and storm-env.sh to storm-diet assembly
  * STORM-1613: Upgraded HBase version to 1.1.0
  * STORM-1687: divide by zero in stats
+
+## 1.0.0
  * STORM-1670: LocalState#get(String) can throw FileNotFoundException which may result supervisor.clj#sync-processes stop assigning new workers/assignments
  * STORM-1677: Test resource files are excluded from source distribution, which makes logviewer-test failing
  * STORM-676: Storm Trident support for sliding/tumbling windows
