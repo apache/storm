@@ -24,6 +24,7 @@ import org.apache.storm.scheduler.resource.strategies.priority.ISchedulingPriori
 import org.apache.storm.scheduler.resource.strategies.scheduling.IStrategy;
 import org.apache.storm.serialization.IKryoDecorator;
 import org.apache.storm.serialization.IKryoFactory;
+import org.apache.storm.trident.topology.state.ITransactionalStateStorageFactory;
 import org.apache.storm.validation.ConfigValidationAnnotations.*;
 import org.apache.storm.validation.ConfigValidation.*;
 import com.esotericsoftware.kryo.Serializer;
@@ -2280,9 +2281,13 @@ public class Config extends HashMap<String, Object> {
     @isString
     public static String STORM_CGROUP_CGEXEC_CMD = "storm.cgroup.cgexec.cmd";
 
+    @isImplementationOfClass(implementsClass = ITransactionalStateStorageFactory.class)
+    public static final String STORM_TRANSATION_STATE_STORE_FACTORY = "storm.transaction.state.store.factory";
+
     /**
      * The amount of memory a worker can exceed its allocation before cgroup will kill it
      */
+
     @isPositiveNumber
     public static String STORM_CGROUP_MEMORY_LIMIT_TOLERANCE_MARGIN_MB = "storm.cgroup.memory.limit.tolerance.margin.mb";
 

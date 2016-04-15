@@ -39,133 +39,56 @@ import org.apache.zookeeper.data.Id;
 import org.json.simple.JSONValue;
 
 public class TransactionalState {
-    CuratorFramework _curator;
-    List<ACL> _zkAcls = null;
-    
+
+    public static final String USER = "user";
+    public static final String COORDINATOR = "coordinator";
+    private ITransactionalStateStorage transactionalStateStorage;
+
     public static TransactionalState newUserState(Map conf, String id) {
-        return new TransactionalState(conf, id, "user");
+        return new TransactionalState(conf, id, USER);
     }
-    
+
     public static TransactionalState newCoordinatorState(Map conf, String id) {
-        return new TransactionalState(conf, id, "coordinator");        
+        return new TransactionalState(conf, id, COORDINATOR);
     }
-    
+
     protected TransactionalState(Map conf, String id, String subroot) {
         try {
-            conf = new HashMap(conf);
-            String transactionalRoot = (String)conf.get(Config.TRANSACTIONAL_ZOOKEEPER_ROOT);
-            String rootDir = transactionalRoot + "/" + id + "/" + subroot;
-            List<String> servers = (List<String>) getWithBackup(conf, Config.TRANSACTIONAL_ZOOKEEPER_SERVERS, Config.STORM_ZOOKEEPER_SERVERS);
-            Object port = getWithBackup(conf, Config.TRANSACTIONAL_ZOOKEEPER_PORT, Config.STORM_ZOOKEEPER_PORT);
-            ZookeeperAuthInfo auth = new ZookeeperAuthInfo(conf);
-            CuratorFramework initter = Utils.newCuratorStarted(conf, servers, port, auth);
-            _zkAcls = Utils.getWorkerACL(conf);
-            try {
-                TransactionalState.createNode(initter, transactionalRoot, null, null, null);
-            } catch (KeeperException.NodeExistsException e) {
-            }
-            try {
-                TransactionalState.createNode(initter, rootDir, null, _zkAcls, null);
-            } catch (KeeperException.NodeExistsException e) {
-            }
-            initter.close();
-                                    
-            _curator = Utils.newCuratorStarted(conf, servers, port, rootDir, auth);
-        } catch (Exception e) {
-           throw new RuntimeException(e);
-        }
-    }
-
-    protected static String forPath(PathAndBytesable<String> builder, 
-            String path, byte[] data) throws Exception {
-        return (data == null) 
-            ? builder.forPath(path) 
-            : builder.forPath(path, data);
-    }
-
-    protected static void createNode(CuratorFramework curator, String path,
-            byte[] data, List<ACL> acls, CreateMode mode) throws Exception {
-        ProtectACLCreateModePathAndBytesable<String> builder =
-            curator.create().creatingParentsIfNeeded();
-    
-        if (acls == null) {
-            if (mode == null ) {
-                TransactionalState.forPath(builder, path, data);
+            String className = null;
+            if (conf.get(Config.STORM_TRANSATION_STATE_STORE_FACTORY) != null) {
+                className = (String) conf.get(Config.STORM_TRANSATION_STATE_STORE_FACTORY);
             } else {
-                TransactionalState.forPath(builder.withMode(mode), path, data);
+                className = "org.apache.storm.trident.topology.state.TransactionalStateStorageZkFactory";
             }
-            return;
+            Class clazz = Class.forName(className);
+            ITransactionalStateStorageFactory storageFactory = (ITransactionalStateStorageFactory) clazz.newInstance();
+            transactionalStateStorage = storageFactory.mkTransactionalState(conf, id, subroot);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-
-        TransactionalState.forPath(builder.withACL(acls), path, data);
     }
 
     public void setData(String path, Object obj) {
-        path = "/" + path;
-        byte[] ser;
-        try {
-            ser = JSONValue.toJSONString(obj).getBytes("UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
-        try {
-            if(_curator.checkExists().forPath(path)!=null) {
-                _curator.setData().forPath(path, ser);
-            } else {
-                TransactionalState.createNode(_curator, path, ser, _zkAcls,
-                        CreateMode.PERSISTENT);
-            }
-        } catch(Exception e) {
-            throw new RuntimeException(e);
-        }        
+        transactionalStateStorage.setData(path, obj);
     }
-    
+
     public void delete(String path) {
-        path = "/" + path;
-        try {
-            _curator.delete().forPath(path);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        transactionalStateStorage.delete(path);
     }
-    
+
     public List<String> list(String path) {
-        path = "/" + path;
-        try {
-            if(_curator.checkExists().forPath(path)==null) {
-                return new ArrayList<String>();
-            } else {
-                return _curator.getChildren().forPath(path);
-            }
-        } catch(Exception e) {
-            throw new RuntimeException(e);
-        }   
+        return transactionalStateStorage.list(path);
     }
-    
+
     public void mkdir(String path) {
-        setData(path, 7);
+        transactionalStateStorage.mkdir(path);
     }
-    
+
     public Object getData(String path) {
-        path = "/" + path;
-        try {
-            if(_curator.checkExists().forPath(path)!=null) {
-                return JSONValue.parse(new String(_curator.getData().forPath(path), "UTF-8"));
-            } else {
-                return null;
-            }
-        } catch(Exception e) {
-            throw new RuntimeException(e);
-        }
+        return transactionalStateStorage.getData(path);
     }
-    
+
     public void close() {
-        _curator.close();
-    }
-    
-    private Object getWithBackup(Map amap, Object primary, Object backup) {
-        Object ret = amap.get(primary);
-        if(ret==null) return amap.get(backup);
-        return ret;
+        transactionalStateStorage.close();
     }
 }
