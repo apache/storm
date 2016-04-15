@@ -145,8 +145,8 @@ public class DisruptorQueue implements IStatefulObject {
             if (_enableBackpressure && _cb != null && (_metrics.population() + _overflowCount.get()) >= _highWaterMark) {
                 try {
                     if (!_throttleOn) {
-                        _cb.highWaterMark();
                         _throttleOn = true;
+                        _cb.highWaterMark();
                     }
                 } catch (Exception e) {
                     throw new RuntimeException("Exception during calling highWaterMark callback!", e);
@@ -199,8 +199,8 @@ public class DisruptorQueue implements IStatefulObject {
             if (_enableBackpressure && _cb != null && (_metrics.population() + _overflowCount.get()) >= _highWaterMark) {
                 try {
                     if (!_throttleOn) {
-                        _cb.highWaterMark();
                         _throttleOn = true;
+                        _cb.highWaterMark();
                     }
                 } catch (Exception e) {
                     throw new RuntimeException("Exception during calling highWaterMark callback!", e);
@@ -539,6 +539,10 @@ public class DisruptorQueue implements IStatefulObject {
     public DisruptorQueue setEnableBackpressure(boolean enableBackpressure) {
         this._enableBackpressure = enableBackpressure;
         return this;
+    }
+
+    public boolean getThrottleOn() {
+        return _throttleOn;
     }
 
     //This method enables the metrics to be accessed from outside of the DisruptorQueue class
