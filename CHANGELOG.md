@@ -1,4 +1,5 @@
 ## 1.0.1
+ * STORM-1696: status not sync if zk fails in backpressure
  * STORM-1693: Move stats cleanup to executor shutdown
  * STORM-1585: Add DDL support for UDFs in storm-sql
  * STORM-1681: Bug in scheduling cyclic topologies when scheduling with RAS
