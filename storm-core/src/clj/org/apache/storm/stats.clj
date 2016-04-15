@@ -153,25 +153,25 @@
   [^SpoutExecutorStats stats stream latency-ms]
   (.incBy ^MultiCountStatAndMetric (stats-failed stats) stream (stats-rate stats)))
 
-(defn- cleanup-stat! [stat]
+(defn- close-stat! [stat]
   (.close stat))
 
 (defn- cleanup-common-stats!
   [^CommonStats stats]
   (doseq [f COMMON-FIELDS]
-    (cleanup-stat! (f stats))))
+    (close-stat! (f stats))))
 
 (defn cleanup-bolt-stats!
   [^BoltExecutorStats stats]
   (cleanup-common-stats! (:common stats))
   (doseq [f BOLT-FIELDS]
-    (cleanup-stat! (f stats))))
+    (close-stat! (f stats))))
 
 (defn cleanup-spout-stats!
   [^SpoutExecutorStats stats]
   (cleanup-common-stats! (:common stats))
   (doseq [f SPOUT-FIELDS]
-    (cleanup-stat! (f stats))))
+    (close-stat! (f stats))))
 
 (defn- value-stats
   [stats fields]
@@ -188,14 +188,12 @@
 
 (defn value-bolt-stats!
   [^BoltExecutorStats stats]
-  (cleanup-bolt-stats! stats)
   (merge (value-common-stats (:common stats))
          (value-stats stats BOLT-FIELDS)
          {:type :bolt}))
 
 (defn value-spout-stats!
   [^SpoutExecutorStats stats]
-  (cleanup-spout-stats! stats)
   (merge (value-common-stats (:common stats))
          (value-stats stats SPOUT-FIELDS)
          {:type :spout}))
@@ -209,6 +207,16 @@
 (defmethod render-stats! BoltExecutorStats
   [stats]
   (value-bolt-stats! stats))
+
+(defmulti cleanup-stats! class-selector)
+
+(defmethod cleanup-stats! SpoutExecutorStats
+  [stats]
+  (cleanup-spout-stats! stats))
+
+(defmethod cleanup-stats! BoltExecutorStats
+  [stats]
+  (cleanup-bolt-stats! stats))
 
 (defmulti thriftify-specific-stats :type)
 (defmulti clojurify-specific-stats class-selector)
