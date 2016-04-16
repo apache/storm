@@ -15,8 +15,7 @@
 ;; limitations under the License.
 (ns org.apache.storm.logviewer-test
   (:use [org.apache.storm config util])
-  (:require [org.apache.storm.daemon [logviewer :as logviewer]
-                                   [supervisor :as supervisor]])
+  (:require [org.apache.storm.daemon [logviewer :as logviewer]])
   (:require [conjure.core])
   (:use [clojure test])
   (:use [conjure core])
@@ -24,7 +23,10 @@
         [org.apache.storm.ui helpers])
   (:import [org.apache.storm.daemon DirectoryCleaner]
            [org.apache.storm.utils Utils Time]
-           [org.apache.storm.utils.staticmocking UtilsInstaller])
+           [org.apache.storm.utils.staticmocking UtilsInstaller]
+           [org.apache.storm.daemon.supervisor SupervisorUtils]
+           [org.apache.storm.testing.staticmocking MockedSupervisorUtils]
+           [org.apache.storm.generated LSWorkerHeartbeat])
   (:import [java.nio.file Files Path DirectoryStream])
   (:import [java.nio.file Files])
   (:import [java.nio.file.attribute FileAttribute])
@@ -236,25 +238,33 @@
           mock-metaFile (mk-mock-File {:name "worker.yaml"
                                        :type :file})
           exp-id "id12345"
-          expected {exp-id port1-dir}]
-      (stubbing [supervisor/read-worker-heartbeats nil
-                 logviewer/get-metadata-file-for-wroker-logdir mock-metaFile
-                 logviewer/get-worker-id-from-metadata-file exp-id]
-        (is (= expected (logviewer/identify-worker-log-dirs [port1-dir])))))))
+          expected {exp-id port1-dir}
+          supervisor-util (Mockito/mock SupervisorUtils)]
+      (with-open [_ (MockedSupervisorUtils. supervisor-util)]
+        (stubbing [logviewer/get-metadata-file-for-wroker-logdir mock-metaFile
+                   logviewer/get-worker-id-from-metadata-file exp-id]
+          (. (Mockito/when (.readWorkerHeartbeatsImpl supervisor-util (Mockito/any))) (thenReturn nil))
+          (is (= expected (logviewer/identify-worker-log-dirs [port1-dir]))))))))
 
 (deftest test-get-dead-worker-dirs
-  (testing "removes any files of workers that are still alive"
+  (testing "return directories for workers that are not alive"
     (let [conf {SUPERVISOR-WORKER-TIMEOUT-SECS 5}
-          id->hb {"42" {:time-secs 1}}
+          hb (let [lwb (LSWorkerHeartbeat.)]
+                   (.set_time_secs lwb (int 1)) lwb)
+          id->hb {"42" hb}
           now-secs 2
-          unexpected-dir (mk-mock-File {:name "dir1" :type :directory})
-          expected-dir (mk-mock-File {:name "dir2" :type :directory})
-          log-dirs #{unexpected-dir expected-dir}]
-      (stubbing [logviewer/identify-worker-log-dirs {"42" unexpected-dir,
-                                                     "007" expected-dir}
-                 supervisor/read-worker-heartbeats id->hb]
-        (is (= #{expected-dir}
-              (logviewer/get-dead-worker-dirs conf now-secs log-dirs)))))))
+          unexpected-dir1 (mk-mock-File {:name "dir1" :type :directory})
+          expected-dir2 (mk-mock-File {:name "dir2" :type :directory})
+          expected-dir3 (mk-mock-File {:name "dir3" :type :directory})
+          log-dirs #{unexpected-dir1 expected-dir2 expected-dir3}
+          supervisor-util (Mockito/mock SupervisorUtils)]
+      (with-open [_ (MockedSupervisorUtils. supervisor-util)]
+      (stubbing [logviewer/identify-worker-log-dirs {"42" unexpected-dir1,
+                                                     "007" expected-dir2,
+                                                     "" expected-dir3}] ;; this tests a directory with no yaml file thus no worker id
+        (. (Mockito/when (.readWorkerHeartbeatsImpl supervisor-util (Mockito/any))) (thenReturn id->hb))
+        (is (= #{expected-dir2 expected-dir3}
+              (logviewer/get-dead-worker-dirs conf now-secs log-dirs))))))))
 
 (deftest test-cleanup-fn
   (testing "cleanup function forceDeletes files of dead workers"
@@ -387,7 +397,7 @@
                     27526
                     8888)))))
 
-      (let [file (->> "logviewer-search-context-tests.log"
+      (let [file (->> "logviewer-search-context-tests.log.test"
                    (clojure.java.io/file "src" "dev"))]
         (testing "returns correct before/after context"
           (is (= {"searchString" pattern
@@ -439,7 +449,7 @@
                              ]}
                 (logviewer/substring-search file pattern)))))
 
-      (let [file (clojure.java.io/file "src" "dev" "small-worker.log")]
+      (let [file (clojure.java.io/file "src" "dev" "small-worker.log.test")]
         (testing "a really small log file"
           (is (= {"searchString" pattern
                   "startByteOffset" 0
@@ -456,7 +466,7 @@
                                                "&start=0&length=51200")}]}
                 (logviewer/substring-search file pattern)))))
 
-      (let [file (clojure.java.io/file "src" "dev" "test-3072.log")]
+      (let [file (clojure.java.io/file "src" "dev" "test-3072.log.test")]
         (testing "no offset returned when file ends on buffer offset"
           (let [expected
                 {"searchString" pattern
@@ -479,7 +489,7 @@
             (is (= expected
                   (logviewer/substring-search file pattern :num-matches 1))))))
 
-      (let [file (clojure.java.io/file "src" "dev" "test-worker.log")]
+      (let [file (clojure.java.io/file "src" "dev" "test-worker.log.test")]
 
         (testing "next byte offsets are correct for each match"
           (doseq [[num-matches-sought
@@ -674,7 +684,7 @@
 
 (deftest test-find-n-matches
   (testing "find-n-matches looks through logs properly"
-    (let [files [(clojure.java.io/file "src" "dev" "logviewer-search-context-tests.log")
+    (let [files [(clojure.java.io/file "src" "dev" "logviewer-search-context-tests.log.test")
                  (clojure.java.io/file "src" "dev" "logviewer-search-context-tests.log.gz")]
           matches1 ((logviewer/find-n-matches files 20 0 0 "needle") "matches")
           matches2 ((logviewer/find-n-matches files 20 0 126 "needle") "matches")
@@ -683,7 +693,7 @@
       (is (= 2 (count matches1)))
       (is (= 4 (count ((first matches1) "matches"))))
       (is (= 4 (count ((second matches1) "matches"))))
-      (is (= ((first matches1) "fileName") "src/dev/logviewer-search-context-tests.log"))
+      (is (= ((first matches1) "fileName") "src/dev/logviewer-search-context-tests.log.test"))
       (is (= ((second matches1) "fileName") "src/dev/logviewer-search-context-tests.log.gz"))
 
       (is (= 2 (count ((first matches2) "matches"))))
@@ -693,7 +703,7 @@
       (is (= 4 (count ((first matches3) "matches")))))))
 
 (deftest test-deep-search-logs-for-topology
-  (let [files [(clojure.java.io/file "src" "dev" "logviewer-search-context-tests.log")
+  (let [files [(clojure.java.io/file "src" "dev" "logviewer-search-context-tests.log.test")
                (clojure.java.io/file "src" "dev" "logviewer-search-context-tests.log.gz")]
         attrs (make-array FileAttribute 0)
         topo-path (.getCanonicalPath (.toFile (Files/createTempDirectory "topoA" attrs)))
