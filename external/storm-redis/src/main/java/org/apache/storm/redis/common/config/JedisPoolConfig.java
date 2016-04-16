@@ -25,7 +25,6 @@ import java.io.Serializable;
  * Configuration for JedisPool.
  */
 public class JedisPoolConfig implements Serializable {
-    public static final String DEFAULT_HOST = "127.0.0.1";
 
     private String host;
     private int port;
@@ -99,7 +98,7 @@ public class JedisPoolConfig implements Serializable {
      * Builder for initializing JedisPoolConfig.
      */
     public static class Builder {
-        private String host = DEFAULT_HOST;
+        private String host = Protocol.DEFAULT_HOST;
         private int port = Protocol.DEFAULT_PORT;
         private int timeout = Protocol.DEFAULT_TIMEOUT;
         private int database = Protocol.DEFAULT_DATABASE;
