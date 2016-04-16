@@ -25,6 +25,7 @@ import org.apache.hive.hcatalog.streaming.HiveEndPoint;
 import org.apache.hive.hcatalog.streaming.RecordWriter;
 import org.apache.hive.hcatalog.streaming.TransactionBatch;
 import org.apache.hive.hcatalog.streaming.StreamingException;
+import org.apache.hadoop.security.UserGroupInformation;
 import java.io.Serializable;
 
 import java.io.IOException;
@@ -42,8 +43,8 @@ public interface HiveMapper extends Serializable {
      * @return
      */
 
-    RecordWriter createRecordWriter(HiveEndPoint endPoint)
-        throws StreamingException, IOException, ClassNotFoundException;
+    RecordWriter createRecordWriter(final HiveEndPoint endPoint, final UserGroupInformation ugi)
+        throws StreamingException, IOException, ClassNotFoundException, InterruptedException;
 
     void write(TransactionBatch txnBatch, Tuple tuple)
         throws StreamingException, IOException, InterruptedException;
