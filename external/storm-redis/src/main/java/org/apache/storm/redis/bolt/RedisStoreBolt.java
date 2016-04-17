@@ -100,6 +100,18 @@ public class RedisStoreBolt extends AbstractRedisBolt {
                     jedisCommand.pfadd(key, value);
                     break;
 
+                case INCR:
+                    jedisCommand.incr(key);
+                    break;
+
+                case INCR_BY:
+                    jedisCommand.incrBy(key, Long.valueOf(value));
+                    break;
+
+                case INCR_BY_FLOAT:
+                    jedisCommand.incrByFloat(key, Double.valueOf(value));
+                    break;
+
                 default:
                     throw new IllegalArgumentException("Cannot process such data type: " + dataType);
             }
