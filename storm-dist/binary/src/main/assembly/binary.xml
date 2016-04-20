@@ -529,6 +529,13 @@
             <fileMode>0755</fileMode>
         </file>
         <file>
+            <source>${project.basedir}/../../conf/storm-env.sh</source>
+            <outputDirectory>/conf</outputDirectory>
+            <destName>storm-slider-env.sh</destName>
+            <fileMode>0755</fileMode>
+        </file>
+
+        <file>
             <source>${project.basedir}/../../VERSION</source>
             <outputDirectory>/</outputDirectory>
             <destName>RELEASE</destName>
