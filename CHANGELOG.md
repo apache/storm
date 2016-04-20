@@ -1,4 +1,5 @@
 ## 1.0.1
+ * STORM-1683: only check non-system streams by default
  * STORM-1680: Provide configuration to set min fetch size in KafkaSpout
  * STORM-1649: Optimize Kryo instaces creation in HBaseWindowsStore
  * STORM-1696: status not sync if zk fails in backpressure
