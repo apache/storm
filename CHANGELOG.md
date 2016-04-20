@@ -1,4 +1,5 @@
 ## 1.0.1
+ * STORM-1714: StatefulBolts ends up as normal bolts while using TopologyBuilder.setBolt without parallelism
  * STORM-1683: only check non-system streams by default
  * STORM-1680: Provide configuration to set min fetch size in KafkaSpout
  * STORM-1649: Optimize Kryo instaces creation in HBaseWindowsStore
