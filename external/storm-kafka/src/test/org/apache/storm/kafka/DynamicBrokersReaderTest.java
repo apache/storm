@@ -28,8 +28,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import kafka.admin.AdminUtils;
-import kafka.admin.TopicCommand;
-import kafka.admin.TopicCommand.TopicCommandOptions;
 import kafka.common.ErrorMapping;
 import kafka.javaapi.PartitionMetadata;
 import kafka.javaapi.TopicMetadata;
@@ -124,6 +122,11 @@ public class DynamicBrokersReaderTest {
                         List<PartitionMetadata> partitionsMetadata = topicMetadata.partitionsMetadata();
                         boolean fullyReplicated = true;
                         for (PartitionMetadata partitionMetadata : partitionsMetadata) {
+                            short partitionErrorCode = partitionMetadata.errorCode();
+                            if(partitionErrorCode != ErrorMapping.NoError() && partitionErrorCode != ErrorMapping.ReplicaNotAvailableCode()){
+                                fullyReplicated = false;
+                                break;
+                            }
                             fullyReplicated = fullyReplicated && (partitionMetadata.replicas().size() == numReplicas);
                         }
                         if (fullyReplicated) {

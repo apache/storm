@@ -83,12 +83,17 @@ public class DynamicBrokersReader {
                 List<TopicMetadata> topicsMetadata = metadataResponse.topicsMetadata();
                 for (TopicMetadata topicMetadata : topicsMetadata) {
                     if(topicMetadata.errorCode() != ErrorMapping.NoError()){
-                        LOG.warn("Got error code {} against broker {}", ErrorMapping.exceptionNameFor(topicMetadata.errorCode()), broker);
+                        LOG.warn("Got error {} against broker {} for topic {}", ErrorMapping.exceptionNameFor(topicMetadata.errorCode()), broker, topicMetadata.topic());
                         continue brokerLoop;
                     }
                     GlobalPartitionInformation globalPartitionInformation = new GlobalPartitionInformation(topicMetadata.topic(), this._isWildcardTopic);
                     List<PartitionMetadata> partitionsMetadata = topicMetadata.partitionsMetadata();
                     for (PartitionMetadata partitionMetadata : partitionsMetadata) {
+                        short partitionErrorCode = partitionMetadata.errorCode();
+                        if(partitionErrorCode != ErrorMapping.NoError() && partitionErrorCode != ErrorMapping.ReplicaNotAvailableCode()){
+                            LOG.warn("Got error {} against broker {} for topic {} partition {}", ErrorMapping.exceptionNameFor(partitionErrorCode), broker, topicMetadata.topic(), partitionMetadata.partitionId());
+                            continue brokerLoop;
+                        }
                         BrokerEndPoint leaderBroker = partitionMetadata.leader();
                         globalPartitionInformation.addPartition(partitionMetadata.partitionId(), new Broker(leaderBroker.host(), leaderBroker.port()));
                     }
