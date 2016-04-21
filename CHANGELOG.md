@@ -1,4 +1,5 @@
 ## 1.0.1
+ * STORM-1679: add storm Scheduler documents
  * STORM-1704: When logviewer_search.html opens daemon file, next search always show no result
  * STORM-1714: StatefulBolts ends up as normal bolts while using TopologyBuilder.setBolt without parallelism
  * STORM-1683: only check non-system streams by default
