@@ -46,3 +46,12 @@
 #     parallelism.hint: 1
 #     argument:
 #       - endpoint: "metrics-collector.mycompany.org"
+
+## Cluster Metrics Consumers
+# storm.cluster.metrics.consumer.register:
+#   - class: "org.apache.storm.metric.LoggingClusterMetricsConsumer"
+#   - class: "org.mycompany.MyMetricsConsumer"
+#     argument:
+#       - endpoint: "metrics-collector.mycompany.org"
+#
+# storm.cluster.metrics.consumer.publish.interval.secs: 60
