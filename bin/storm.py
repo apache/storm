@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -257,10 +257,13 @@ def sql(sql_file, topology_name):
 
     Compiles the SQL statements into a Trident topology and submits it to Storm.
     """
+    extrajars=[USER_CONF_DIR, STORM_BIN_DIR]
+    extrajars.extend(get_jars_full(STORM_DIR + "/external/sql/storm-sql-core"))
+    extrajars.extend(get_jars_full(STORM_DIR + "/external/sql/storm-sql-runtime"))
     exec_storm_class(
         "org.apache.storm.sql.StormSqlRunner",
         jvmtype="-client",
-        extrajars=[USER_CONF_DIR, STORM_BIN_DIR],
+        extrajars=extrajars,
         args=[sql_file, topology_name],
         daemon=False)
 
@@ -473,7 +476,7 @@ def kill_workers(*args):
     to have admin rights on the node to be able to successfully kill all workers.
     """
     exec_storm_class(
-        "org.apache.storm.command.kill_workers",
+        "org.apache.storm.command.KillWorkers",
         args=args,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, os.path.join(STORM_DIR, "bin")])
@@ -531,7 +534,7 @@ def nimbus(klass="org.apache.storm.daemon.nimbus"):
         extrajars=cppaths,
         jvmopts=jvmopts)
 
-def pacemaker(klass="org.apache.storm.pacemaker.pacemaker"):
+def pacemaker(klass="org.apache.storm.pacemaker.Pacemaker"):
     """Syntax: [storm pacemaker]
 
     Launches the Pacemaker daemon. This command should be run under
@@ -552,7 +555,7 @@ def pacemaker(klass="org.apache.storm.pacemaker.pacemaker"):
         extrajars=cppaths,
         jvmopts=jvmopts)
 
-def supervisor(klass="org.apache.storm.daemon.supervisor"):
+def supervisor(klass="org.apache.storm.daemon.supervisor.Supervisor"):
     """Syntax: [storm supervisor]
 
     Launches the supervisor daemon. This command should be run

@@ -31,10 +31,12 @@
   <name>storm-starter</name>
 
   <properties>
-     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-     <!-- see comment below... This fixes an annoyance with intellij -->
-     <provided.scope>provided</provided.scope>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <!-- see comment below... This fixes an annoyance with intellij -->
+    <provided.scope>provided</provided.scope>
+    <hbase.version>0.98.4-hadoop2</hbase.version>
   </properties>
+
   <profiles>
     <profile>
         <id>intellij</id>
@@ -149,28 +151,19 @@
       <artifactId>storm-hdfs</artifactId>
       <version>${project.version}</version>
     </dependency>
+      <dependency>
+          <groupId>org.apache.storm</groupId>
+          <artifactId>storm-hbase</artifactId>
+          <version>${project.version}</version>
+      </dependency>
     <dependency>
       <groupId>org.apache.kafka</groupId>
-      <artifactId>kafka_2.10</artifactId>
-      <version>0.8.2.1</version>
-      <!-- use provided scope, so users can pull in whichever scala version they choose -->
+      <artifactId>${kafka.artifact.id}</artifactId>
       <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>org.apache.zookeeper</groupId>
-          <artifactId>zookeeper</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>log4j</groupId>
-          <artifactId>log4j</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.kafka</groupId>
       <artifactId>kafka-clients</artifactId>
-      <version>0.8.2.1</version>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.storm</groupId>
@@ -222,6 +215,9 @@
           <sourceDirectories>
             <sourceDirectory>src/clj</sourceDirectory>
           </sourceDirectories>
+          <testSourceDirectories>
+            <testSourceDirectory>test/clj</testSourceDirectory>
+          </testSourceDirectories>
         </configuration>
         <executions>
           <execution>
@@ -229,6 +225,13 @@
             <phase>compile</phase>
             <goals>
               <goal>compile</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>test-clojure</id>
+            <phase>test</phase>
+            <goals>
+              <goal>test</goal>
             </goals>
           </execution>
         </executions>

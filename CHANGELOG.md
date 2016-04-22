@@ -1,4 +1,31 @@
 ## 2.0.0
+ * STORM-1464: storm-hdfs support for multiple file outputs
+ * STORM-515: Clojure documentation and examples
+ * STORM-1279: port backtype.storm.daemon.supervisor to java
+ * STORM-1668: Flux silently fails while setting a non-existent property.
+ * STORM-1271: Port backtype.storm.daemon.task to java
+ * STORM-822: Kafka Spout New Consumer API
+ * STORM-1663: Stats couldn't handle null worker HB.
+ * STORM-1665: Worker cannot instantiate kryo
+ * STORM-1666: Kill from the UI fails silently
+ * STORM-1610: port pacemaker_state_factory_test.clj to java
+ * STORM-1611: port org.apache.storm.pacemaker.pacemaker to java
+ * STORM-1268: port builtin-metrics to java
+ * STORM-1648: drpc spout reconnect on failure
+ * STORM-1631: Storm CGroup bugs
+ * STORM-1616: Add RAS API for Trident
+ * STORM-1623: nimbus.clj's minor bug
+ * STORM-1624: Add maven central status in README
+ * STORM-1232: port backtype.storm.scheduler.DefaultScheduler to java
+ * STORM-1231: port backtype.storm.scheduler.EvenScheduler to java
+ * STORM-1523: util.clj available-port conversion to java
+ * STORM-1252: port backtype.storm.stats to java
+ * STORM-1250: port backtype.storm.serialization-test to java
+ * STORM-1605: use '/usr/bin/env python' to check python version
+ * STORM-1618: Add the option of passing config directory
+ * STORM-1269: port backtype.storm.daemon.common to java
+ * STORM-1270: port drpc to java
+ * STORM-1274: port LocalDRPC to java
  * STORM-1590: port defmeters/defgauge/defhistogram... to java for all of our code to use
  * STORM-1529: Change default worker temp directory location for workers
  * STORM-1543: DRPCSpout should always try to reconnect disconnected DRPCInvocationsClient
@@ -48,7 +75,34 @@
  * STORM-1524: Add Pluggable daemon metrics Reporters
  * STORM-1521: When using Kerberos login from keytab with multiple bolts/executors ticket is not renewed in hbase bolt.
 
+## 1.0.1
+ * STORM-1670: LocalState#get(String) can throw FileNotFoundException which results in not removing worker heartbeats and supervisor is kind of stuck and goes down after some time.
+ * STORM-1677: Test resource files are excluded from source distribution, which makes logviewer-test failing
+
 ## 1.0.0
+ * STORM-1671: Enable logviewer to delete a dir without yaml
+ * STORM-1673: log4j2/worker.xml refers old package of LoggerMetricsConsumer
+ * STORM-1669: Fix SolrUpdateBolt flush bug
+ * STORM-1573: Add batch support for MongoInsertBolt
+ * STORM-1660: remove flux gitignore file and move rules to top level gitignore
+ * STORM-1634: Refactoring of Resource Aware Scheduler
+ * STORM-1030: Hive Connector Fixes
+ * STORM-676: Storm Trident support for sliding/tumbling windows
+ * STORM-1630: Add guide page for Windows users
+ * STORM-1655: Flux doesn't set return code to non-zero when there's any exception while deploying topology to remote cluster
+ * STORM-1537: Upgrade to kryo3 in master
+ * STORM-1654: HBaseBolt creates tick tuples with no interval when we don't set flushIntervalSecs
+ * STORM-1625: Move storm-sql dependencies out of lib folder
+ * STORM-1556: nimbus.clj/wait-for-desired-code-replication wrong reset for current-replication-count-jar in local mode
+ * STORM-1636: Supervisor shutdown with worker id pass in being nil
+ * STORM-1602: Blobstore UTs are failed on Windows
+ * STORM-1629: Files/move doesn't work properly with non-empty directory in Windows
+ * STORM-1549: Add support for resetting tuple timeout from bolts via the OutputCollector
+ * STORM-971: Metric for messages lost due to kafka retention
+ * STORM-1483: add storm-mongodb connector
+ * STORM-1608: Fix stateful topology acking behavior
+ * STORM-1609: Netty Client is not best effort delivery on failed Connection
+ * STORM-1620: Update curator to fix CURATOR-209
  * STORM-1469: Adding Plain Sasl Transport Plugin
  * STORM-1588: Do not add event logger details if number of event loggers is zero
  * STORM-1606: print the information of testcase which is on failure
@@ -326,7 +380,7 @@
  * STORM-1217: making small fixes in RAS
 
 ## 0.10.1
-
+ * STORM-584: Fix logging for LoggingMetricsConsumer metrics.log file
  * STORM-1596: Do not use single Kerberos TGT instance between multiple threads
  * STORM-1481: avoid Math.abs(Integer) get a negative value
  * STORM-1121: Deprecate test only configuraton nimbus.reassign

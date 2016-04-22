@@ -21,6 +21,7 @@
   (:use [org.apache.storm config util log])
   (:use [org.apache.storm.ui helpers])
   (:import [org.apache.storm StormTimer]
+           [org.apache.storm.daemon.supervisor SupervisorUtils]
            [org.apache.storm.metric StormMetricsRegistry])
   (:import [org.apache.storm.utils Utils Time VersionInfo ConfigUtils])
   (:import [org.slf4j LoggerFactory])
@@ -34,12 +35,11 @@
            [java.net URLDecoder])
   (:import [java.nio.file Files Path Paths DirectoryStream])
   (:import [java.nio ByteBuffer])
-  (:import [org.apache.storm.daemon DirectoryCleaner])
+  (:import [org.apache.storm.daemon DirectoryCleaner StormCommon])
   (:import [org.yaml.snakeyaml Yaml]
            [org.yaml.snakeyaml.constructor SafeConstructor])
   (:import [org.apache.storm.ui InvalidRequestException UIHelpers IConfigurator FilterConfiguration]
            [org.apache.storm.security.auth AuthUtils])
-  (:require [org.apache.storm.daemon common [supervisor :as supervisor]])
   (:require [compojure.route :as route]
             [compojure.handler :as handler]
             [ring.middleware.keyword-params]
@@ -151,17 +151,18 @@
 (defn identify-worker-log-dirs [log-dirs]
   "return the workerid to worker-log-dir map"
   (into {} (for [logdir log-dirs
-                 :let [metaFile (get-metadata-file-for-wroker-logdir logdir)]
-                 :when metaFile]
-             {(get-worker-id-from-metadata-file metaFile) logdir})))
+                 :let [metaFile (get-metadata-file-for-wroker-logdir logdir)]]
+             (if metaFile
+               {(get-worker-id-from-metadata-file metaFile) logdir}
+               {"" logdir})))) ;; an old directory that has no yaml file will be treated as a dead dir for deleting
 
 (defn get-alive-ids
   [conf now-secs]
   (->>
-    (supervisor/read-worker-heartbeats conf)
+    (clojurify-structure (SupervisorUtils/readWorkerHeartbeats conf))
     (remove
       #(or (not (val %))
-           (supervisor/is-worker-hb-timed-out? now-secs
+           (SupervisorUtils/isWorkerHbTimedOut now-secs
                                                (val %)
                                                conf)))
     keys
