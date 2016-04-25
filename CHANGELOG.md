@@ -1,4 +1,5 @@
 ## 0.10.1
+ * STORM-1535: Make sure hdfs key tab login happens only once for multiple bolts/executors
  * STORM-584: Fix logging for LoggingMetricsConsumer metrics.log file
  * STORM-1603: Storm UT fails on supervisor test in Windows (0.10.x)
  * STORM-1596: Do not use single Kerberos TGT instance between multiple threads
