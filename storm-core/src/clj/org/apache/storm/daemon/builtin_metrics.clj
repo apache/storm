@@ -83,10 +83,11 @@
               @node+port->socket-ref)))))
     (int (get storm-conf Config/TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS))))
  
-(defn register-queue-metrics [queues storm-conf topology-context]
+(defn register-queue-metrics [queues storm-conf topology-context stats]
   (doseq [[qname q] queues]
     (.registerMetric topology-context (str "__" (name qname)) (StateMetric. q)
-                     (int (get storm-conf Config/TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS)))))
+                     (int (get storm-conf Config/TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS)))
+    ()))
 
 (defn skipped-max-spout! [^SpoutThrottlingMetrics m stats]
   (-> m .skipped-max-spout (.incrBy (stats-rate stats))))

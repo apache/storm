@@ -234,6 +234,7 @@
                                   :producer-type :single-threaded
                                   :batch-size (storm-conf TOPOLOGY-DISRUPTOR-BATCH-SIZE)
                                   :batch-timeout (storm-conf TOPOLOGY-DISRUPTOR-BATCH-TIMEOUT-MILLIS))
+        receive-queue ((:executor-receive-queue-map worker) executor-id)
         ]
     (recursive-map
      :worker worker
@@ -243,7 +244,7 @@
      :component-id component-id
      :open-or-prepare-was-called? (atom false)
      :storm-conf storm-conf
-     :receive-queue ((:executor-receive-queue-map worker) executor-id)
+     :receive-queue receive-queue
      :storm-id (:storm-id worker)
      :conf (:conf worker)
      :shared-executor-data (HashMap.)
@@ -257,7 +258,7 @@
                                                           :context (ClusterStateContext. DaemonType/WORKER))
      :type executor-type
      ;; TODO: should refactor this to be part of the executor specific map (spout or bolt with :common field)
-     :stats (mk-executor-stats <> (sampling-rate storm-conf))
+     :stats (mk-executor-stats <> (sampling-rate storm-conf) (.getMetrics receive-queue) (.getMetrics batch-transfer->worker))
      :interval->task->metric-registry (HashMap.)
      :task->component (:task->component worker)
      :stream->component->grouper (outbound-components worker-context component-id storm-conf)
@@ -492,7 +493,7 @@
           [component-id message-id (System/currentTimeMillis) values]))))
 
 (defmethod mk-threads :spout [executor-data task-datas initial-credentials]
-  (let [{:keys [storm-conf component-id worker-context transfer-fn report-error sampler open-or-prepare-was-called?]} executor-data
+  (let [{:keys [storm-conf component-id worker-context transfer-fn report-error sampler open-or-prepare-was-called? stats]} executor-data
         ^ISpoutWaitStrategy spout-wait-strategy (init-spout-wait-strategy storm-conf)
         max-spout-pending (executor-max-spout-pending storm-conf (count task-datas))
         ^Integer max-spout-pending (if max-spout-pending (int max-spout-pending))        
@@ -596,7 +597,7 @@
           (builtin-metrics/register-all (:builtin-metrics task-data) storm-conf (:user-context task-data))
           (builtin-metrics/register-queue-metrics {:sendqueue (:batch-transfer-queue executor-data)
                                                    :receive receive-queue}
-                                                  storm-conf (:user-context task-data))
+                                                  storm-conf (:user-context task-data) stats)
           (when (instance? ICredentialsListener spout-obj) (.setCredentials spout-obj initial-credentials))
 
           (.open spout-obj
@@ -784,12 +785,12 @@
               (builtin-metrics/register-queue-metrics {:sendqueue (:batch-transfer-queue executor-data)
                                                        :receive (:receive-queue executor-data)
                                                        :transfer (:transfer-queue (:worker executor-data))}
-                                                      storm-conf user-context)
+                                                      storm-conf user-context executor-stats)
               (builtin-metrics/register-iconnection-client-metrics (:cached-node+port->socket (:worker executor-data)) storm-conf user-context)
               (builtin-metrics/register-iconnection-server-metric (:receiver (:worker executor-data)) storm-conf user-context))
             (builtin-metrics/register-queue-metrics {:sendqueue (:batch-transfer-queue executor-data)
                                                      :receive (:receive-queue executor-data)}
-                                                    storm-conf user-context)
+                                                    storm-conf user-context executor-stats)
             )
 
           (.prepare bolt-obj
@@ -861,8 +862,8 @@
   (.cleanup bolt))
 
 ;; TODO: refactor this to be part of an executor-specific map
-(defmethod mk-executor-stats :spout [_ rate]
-  (stats/mk-spout-stats rate))
+(defmethod mk-executor-stats :spout [_ rate receive-queue-metrics send-queue-metrics]
+  (stats/mk-spout-stats rate receive-queue-metrics send-queue-metrics))
 
-(defmethod mk-executor-stats :bolt [_ rate]
-  (stats/mk-bolt-stats rate))
+(defmethod mk-executor-stats :bolt [_ rate receive-queue-metrics send-queue-metrics]
+  (stats/mk-bolt-stats rate receive-queue-metrics send-queue-metrics))

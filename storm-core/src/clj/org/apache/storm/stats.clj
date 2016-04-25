@@ -23,7 +23,7 @@
             ComponentPageInfo ComponentType BoltAggregateStats
             ExecutorAggregateStats SpecificAggregateStats
             SpoutAggregateStats TopologyPageInfo TopologyStats])
-  (:import [org.apache.storm.utils Utils])
+  (:import [org.apache.storm.utils Utils DisruptorQueue$QueueMetrics])
   (:import [org.apache.storm.metric.internal MultiCountStatAndMetric MultiLatencyStatAndMetric])
   (:use [org.apache.storm log util])
   (:use [clojure.math.numeric-tower :only [ceil]]))
@@ -33,6 +33,7 @@
 (def COMMON-FIELDS [:emitted :transferred])
 (defrecord CommonStats [^MultiCountStatAndMetric emitted
                         ^MultiCountStatAndMetric transferred
+                        ^MultiCountStatAndMetric population
                         rate])
 
 (def BOLT-FIELDS [:acked :failed :process-latencies :executed :execute-latencies])
@@ -53,17 +54,25 @@
 
 (def NUM-STAT-BUCKETS 20)
 
+(defn- mk-queue-stats
+  [^DisruptorQueue$QueueMetrics receive-queue-metrics ^DisruptorQueue$QueueMetrics send-queue-metrics]
+  (let [population (MultiLatencyStatAndMetric. DisruptorQueue$QueueMetrics/NUM_BUCKETS)]
+    (.add population "receive" (.avgQueuePopulationMetric receive-queue-metrics))
+    (.add population "send" (.avgQueuePopulationMetric send-queue-metrics))
+    population))
+
 (defn- mk-common-stats
-  [rate]
+  [rate receive-queue-metrics send-queue-metrics]
   (CommonStats.
     (MultiCountStatAndMetric. NUM-STAT-BUCKETS)
     (MultiCountStatAndMetric. NUM-STAT-BUCKETS)
+    (mk-queue-stats receive-queue-metrics send-queue-metrics)
     rate))
 
 (defn mk-bolt-stats
-  [rate]
+  [rate receive-queue-metrics send-queue-metrics]
   (BoltExecutorStats.
-    (mk-common-stats rate)
+    (mk-common-stats rate receive-queue-metrics send-queue-metrics)
     (MultiCountStatAndMetric. NUM-STAT-BUCKETS)
     (MultiCountStatAndMetric. NUM-STAT-BUCKETS)
     (MultiLatencyStatAndMetric. NUM-STAT-BUCKETS)
@@ -71,9 +80,9 @@
     (MultiLatencyStatAndMetric. NUM-STAT-BUCKETS)))
 
 (defn mk-spout-stats
-  [rate]
+  [rate receive-queue-metrics send-queue-metrics]
   (SpoutExecutorStats.
-    (mk-common-stats rate)
+    (mk-common-stats rate receive-queue-metrics send-queue-metrics)
     (MultiCountStatAndMetric. NUM-STAT-BUCKETS)
     (MultiCountStatAndMetric. NUM-STAT-BUCKETS)
     (MultiLatencyStatAndMetric. NUM-STAT-BUCKETS)))
@@ -184,6 +193,7 @@
   [^CommonStats stats]
   (merge
     (value-stats stats COMMON-FIELDS)
+    {:population (.getTimeLatAvg (:population stats))}
     {:rate (:rate stats)}))
 
 (defn value-bolt-stats!
@@ -260,6 +270,7 @@
          specific-stats (clojurify-specific-stats specific-stats)
          common-stats (CommonStats. (.get_emitted stats)
                                     (.get_transferred stats)
+                                    (.get_population stats)
                                     (.get_rate stats))]
     (if is_bolt?
       ; worker heart beat does not store the BoltExecutorStats or SpoutExecutorStats , instead it stores the result returned by render-stats!
@@ -290,10 +301,11 @@
   [stats]
   (let [specific-stats (thriftify-specific-stats stats)
         rate (:rate stats)]
-    (ExecutorStats. (window-set-converter (:emitted stats) str)
-      (window-set-converter (:transferred stats) str)
-      specific-stats
-      rate)))
+    (doto (ExecutorStats. (window-set-converter (:emitted stats) str)
+                          (window-set-converter (:transferred stats) str)
+                          specific-stats
+                          rate)
+      (.set_population (window-set-converter (:population stats) str)))))
 
 (defn valid-number?
   "Returns true if x is a number that is not NaN or Infinity, false otherwise"
@@ -438,6 +450,16 @@
      :num-executors 1,
      :num-tasks num-tasks,
      :capacity (compute-agg-capacity statk->w->sid->num uptime)
+     :in-backlog (-> statk->w->sid->num
+                     :population
+                     str-key
+                     (get window)
+                     (get "receive")),
+     :out-backlog (-> statk->w->sid->num
+                      :population
+                      str-key
+                      (get window)
+                      (get "send")),
      :cid+sid->input-stats
      (merge-with
        merge
@@ -493,6 +515,16 @@
      :uptime uptime,
      :num-executors 1,
      :num-tasks num-tasks,
+     :in-backlog (-> statk->w->sid->num
+                     :population
+                     str-key
+                     (get window)
+                     (get "receive")),
+     :out-backlog (-> statk->w->sid->num
+                      :population
+                      str-key
+                      (get window)
+                      (get "send")),
      :sid->output-stats
      (merge-with
        merge
@@ -639,7 +671,7 @@
      (conj (:executor-stats acc-bolt-stats)
            (merge
              (select-keys bolt-stats
-                          [:executor-id :uptime :host :port :capacity])
+                          [:executor-id :uptime :host :port :capacity :in-backlog :out-backlog])
              {:emitted (sum-streams bolt-out :emitted)
               :transferred (sum-streams bolt-out :transferred)
               :acked (sum-streams bolt-in :acked)
@@ -668,7 +700,7 @@
          acked (sum-streams spout-out :acked)]
      (conj (:executor-stats acc-spout-stats)
            (merge
-             (select-keys spout-stats [:executor-id :uptime :host :port])
+             (select-keys spout-stats [:executor-id :uptime :host :port :in-backlog :out-backlog])
              {:emitted (sum-streams spout-out :emitted)
               :transferred (sum-streams spout-out :transferred)
               :acked acked
@@ -920,6 +952,8 @@
            transferred
            acked
            failed
+           in-backlog
+           out-backlog
            num-executors] :as statk->num}]
   (let [cas (CommonAggregateStats.)]
     (and num-executors (.set_num_executors cas num-executors))
@@ -928,6 +962,8 @@
     (and transferred (.set_transferred cas transferred))
     (and acked (.set_acked cas acked))
     (and failed (.set_failed cas failed))
+    (and in-backlog (.set_in_backlog cas in-backlog))
+    (and out-backlog (.set_out_backlog cas out-backlog))
     (.set_common_stats s cas)))
 
 (defn thriftify-bolt-agg-stats
@@ -1132,7 +1168,9 @@
                   :window->executed {}
                   :window->proc-lat-wgt-avg {}
                   :window->acked {}
-                  :window->failed {}}]
+                  :window->failed {}
+                  :window->in-backlog {}
+                  :window->out-backlog {}}]
     (apply aggregate-comp-stats* (concat args (list init-val)))))
 
 (defmethod aggregate-comp-stats :spout
@@ -1144,7 +1182,9 @@
                   :window->transferred {}
                   :window->comp-lat-wgt-avg {}
                   :window->acked {}
-                  :window->failed {}}]
+                  :window->failed {}
+                  :window->in-backlog {}
+                  :window->out-backlog {}}]
     (apply aggregate-comp-stats* (concat args (list init-val)))))
 
 (defmethod aggregate-comp-stats :default [& _] {})
@@ -1192,7 +1232,9 @@
                                            :window->proc-lat-wgt-avg
                                            :window->executed)
    :window->acked (map-key str (:window->acked acc-data))
-   :window->failed (map-key str (:window->failed acc-data))})
+   :window->failed (map-key str (:window->failed acc-data))
+   :window->in-backlog (map-key str (:window->in-backlog acc-data))
+   :window->out-backlog (map-key str (:window->out-backlog acc-data))})
 
 (defmethod post-aggregate-comp-stats :spout
   [task->component
@@ -1259,7 +1301,9 @@
                      {:emitted (:window->emitted data)
                       :transferred (:window->transferred data)
                       :acked (:window->acked data)
-                      :failed (:window->failed data)}
+                      :failed (:window->failed data)
+                      :in-backlog (:window->in-backlog data)
+                      :out-backlog (:window->out-backlog data)}
                      (condp = (:type data)
                        :bolt {:execute-latency (:window->execute-latency data)
                               :process-latency (:window->process-latency data)

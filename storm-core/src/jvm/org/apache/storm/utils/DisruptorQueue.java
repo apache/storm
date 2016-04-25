@@ -31,6 +31,7 @@ import com.lmax.disruptor.WaitStrategy;
 import com.lmax.disruptor.dsl.ProducerType;
 
 import org.apache.storm.metric.api.IStatefulObject;
+import org.apache.storm.metric.internal.LatencyStatAndMetric;
 import org.apache.storm.metric.internal.RateTracker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -286,7 +287,11 @@ public class DisruptorQueue implements IStatefulObject {
      * This inner class provides methods to access the metrics of the disruptor queue.
      */
     public class QueueMetrics {
+        public final static int NUM_BUCKETS = 20;
+
         private final RateTracker _rateTracker = new RateTracker(10000, 10);
+
+        private final LatencyStatAndMetric _avgQueuePopulationMetric = new LatencyStatAndMetric(NUM_BUCKETS);
 
         public long writePos() {
             return _buffer.getCursor();
@@ -310,6 +315,10 @@ public class DisruptorQueue implements IStatefulObject {
 
         public float pctFull() {
             return (1.0F * population() / capacity());
+        }
+
+        public LatencyStatAndMetric avgQueuePopulationMetric() {
+            return _avgQueuePopulationMetric;
         }
 
         public Object getState() {
@@ -341,8 +350,14 @@ public class DisruptorQueue implements IStatefulObject {
             _rateTracker.notify(counts);
         }
 
+        public void recordPopulation() {
+            //TODO: has extra lock
+            _avgQueuePopulationMetric.record(_metrics.population() + _overflowCount.get());
+        }
+
         public void close() {
             _rateTracker.close();
+            _avgQueuePopulationMetric.close();
         }
     }
 
@@ -474,6 +489,7 @@ public class DisruptorQueue implements IStatefulObject {
         m.set(obj);
         _buffer.publish(at);
         _metrics.notifyArrivals(1);
+        _metrics.recordPopulation();
     }
 
     private void publishDirect(ArrayList<Object> objs, boolean block) throws InsufficientCapacityException {
@@ -494,6 +510,7 @@ public class DisruptorQueue implements IStatefulObject {
             }
             _buffer.publish(begin, end);
             _metrics.notifyArrivals(size);
+            _metrics.recordPopulation();
         }
     }
 

@@ -740,6 +740,8 @@
      "port" port
      "emitted" (nil-to-zero (.get_emitted cas))
      "transferred" (nil-to-zero (.get_transferred cas))
+     "inBacklog" (nil-to-zero (.get_in_backlog cas))
+     "outBacklog" (nil-to-zero (.get_out_backlog cas))
      "capacity" (float-str (nil-to-zero (.get_capacity bas)))
      "executeLatency" (float-str (.get_execute_latency_ms bas))
      "executed" (nil-to-zero (.get_executed bas))

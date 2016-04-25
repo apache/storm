@@ -17,12 +17,12 @@
  */
 package org.apache.storm.metric.internal;
 
-import java.util.Map;
-import java.util.List;
-import java.util.HashMap;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.apache.storm.metric.api.IMetric;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Acts as a Latnecy Metric for multiple keys, but keeps track of approximate counts
@@ -37,6 +37,14 @@ public class MultiLatencyStatAndMetric<T> implements IMetric {
      */
     public MultiLatencyStatAndMetric(int numBuckets) {
         _numBuckets = numBuckets;
+    }
+
+    public synchronized void add(T key, LatencyStatAndMetric latencyStatAndMetric) {
+        LatencyStatAndMetric c = _lat.get(key);
+        if (c != null) {
+            throw new IllegalArgumentException(key + " is already registered as latencyStatAndMetric");
+        }
+        _lat.put(key, latencyStatAndMetric);
     }
 
     LatencyStatAndMetric get(T key) {
