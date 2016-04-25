@@ -83,9 +83,9 @@ public class TestUtils {
 
     public MockGroupDataSource() {
       for (int i = 0; i < 10; ++i) {
-        RECORDS.add(new Values(i/3, i, (i+1)* 0.5, "x"));
+        RECORDS.add(new Values(i/3, i, (i+1)* 0.5, "x", i/2));
       }
-      // force evaluation of the aggregate function by emitting null row
+      // force evaluation of the aggregate function on the last group by emitting null row
       RECORDS.add(null);
     }
 

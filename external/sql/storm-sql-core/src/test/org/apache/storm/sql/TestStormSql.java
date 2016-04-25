@@ -326,4 +326,19 @@ public class TestStormSql {
     Assert.assertEquals(3, values.get(0).get(0));
     Assert.assertEquals(9, values.get(0).get(1));
   }
+
+  @Test
+  public void testGroupByMultipleFields() throws Exception {
+    List<String> stmt = new ArrayList<>();
+    stmt.add("CREATE EXTERNAL TABLE FOO (DEPTID INT PRIMARY KEY, SALARY INT, PCT DOUBLE, NAME VARCHAR, EMPID INT) LOCATION 'mockgroup:///foo'");
+    stmt.add("SELECT STREAM DEPTID, EMPID, COUNT(*), MIN(SALARY), MAX(PCT) FROM FOO GROUP BY DEPTID, EMPID");
+    StormSql sql = StormSql.construct();
+    List<Values> values = new ArrayList<>();
+    ChannelHandler h = new TestUtils.CollectDataChannelHandler(values);
+    sql.execute(stmt, h);
+    Assert.assertEquals(7, values.size());
+    Assert.assertEquals(0, values.get(0).get(0));
+    Assert.assertEquals(0, values.get(0).get(1));
+    Assert.assertEquals(2L, values.get(0).get(2));
+  }
 }

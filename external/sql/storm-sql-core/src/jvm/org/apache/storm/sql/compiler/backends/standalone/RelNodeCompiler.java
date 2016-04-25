@@ -62,8 +62,17 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
           "  private static final ChannelHandler %1$s = ",
           "    new AbstractChannelHandler() {",
           "    private final Values EMPTY_VALUES = new Values();",
-          "    private Object prevGroupValue = null;",
+          "    private List<Object> prevGroupValues = null;",
           "    private final Map<String, Object> accumulators = new HashMap<>();",
+          "    private final int[] groupIndices = new int[] {%2$s};",
+          "    private List<Object> getGroupValues(Values _data) {",
+          "      List<Object> res = new ArrayList<>();",
+          "      for (int i: groupIndices) {",
+          "        res.add(_data.get(i));",
+          "      }",
+          "      return res;",
+          "    }",
+          "",
           "    @Override",
           "    public void dataReceived(ChannelContext ctx, Values _data) {",
           ""
@@ -130,25 +139,39 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
   @Override
   public Void visitAggregate(Aggregate aggregate) throws Exception {
     beginAggregateStage(aggregate);
-    pw.println("        Object curGroupValue = _data == null ? null : _data.get(" + aggregate.getGroupSet().asList().get(0) + ");");
-    pw.println("        if (curGroupValue == null || (prevGroupValue != null && ! prevGroupValue.equals(curGroupValue))) {");
+    pw.println("        List<Object> curGroupValues = _data == null ? null : getGroupValues(_data);");
+    pw.println("        if (curGroupValues == null || (prevGroupValues != null && ! prevGroupValues.equals(curGroupValues))) {");
     List<String> res = new ArrayList<>();
     for (AggregateCall call : aggregate.getAggCallList()) {
       res.add(aggregateResult(call));
     }
-    pw.print(String.format("          ctx.emit(new Values(%s, %s));\n", "prevGroupValue", Joiner.on(", ").join(res)));
+    pw.print(String.format("          ctx.emit(new Values(%s, %s));\n",
+                           groupValueEmitStr("prevGroupValues", aggregate.getGroupSet().cardinality()),
+                           Joiner.on(", ").join(res)));
     pw.println("          accumulators.clear();");
     pw.println("        }");
-    pw.println("        if (curGroupValue != null) {");
+    pw.println("        if (curGroupValues != null) {");
     for (AggregateCall call : aggregate.getAggCallList()) {
       aggregate(call);
     }
     pw.println("        }");
-    pw.println("        if (prevGroupValue != curGroupValue) {");
-    pw.println("          prevGroupValue = curGroupValue;");
+    pw.println("        if (prevGroupValues != curGroupValues) {");
+    pw.println("          prevGroupValues = curGroupValues;");
     pw.println("        }");
     endAggregateStage();
     return null;
+  }
+
+  private String groupValueEmitStr(String var, int n) {
+    int count = 0;
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0; i < n; i++) {
+      if (++count > 1) {
+        sb.append(", ");
+      }
+      sb.append(var).append(".").append("get(").append(i).append(")");
+    }
+    return sb.toString();
   }
 
   private String aggregateResult(AggregateCall call) {
@@ -273,8 +296,8 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
     pw.print(String.format(STAGE_PROLOGUE, getStageName(n)));
   }
 
-  private void beginAggregateStage(RelNode n) {
-    pw.print(String.format(AGGREGATE_STAGE_PROLOGUE, getStageName(n)));
+  private void beginAggregateStage(Aggregate n) {
+    pw.print(String.format(AGGREGATE_STAGE_PROLOGUE, getStageName(n), getGroupByIndices(n)));
   }
 
   private void endStage() {
@@ -290,5 +313,17 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
 
   static String getStageName(RelNode n) {
     return n.getClass().getSimpleName().toUpperCase() + "_" + n.getId();
+  }
+
+  private String getGroupByIndices(Aggregate n) {
+    StringBuilder res = new StringBuilder();
+    int count = 0;
+    for (int i : n.getGroupSet()) {
+      if (++count > 1) {
+        res.append(", ");
+      }
+      res.append(i);
+    }
+    return res.toString();
   }
 }
