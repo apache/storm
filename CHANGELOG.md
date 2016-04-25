@@ -1,4 +1,5 @@
 ## 1.0.1
+ * STORM-1535: Make sure hdfs key tab login happens only once for multiple bolts/executors.
  * STORM-1725: Kafka Spout New Consumer API - KafkaSpoutRetryExponential Backoff method should use HashMap instead of TreeMap not to throw Exception
  * STORM-1544: Document Debug/Sampling of Topologies
  * STORM-1679: add storm Scheduler documents
