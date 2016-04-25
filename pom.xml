@@ -486,11 +486,6 @@
             <name>Storm Website</name>
             <url>file:///tmp/site</url>
         </site>
-        <repository>
-          <id>${repoid}</id>
-          <name>${reponame}</name>
-          <url>${repourl}</url>
-        </repository>
     </distributionManagement>
 
     <dependencyManagement>
