@@ -73,7 +73,7 @@
   ([host port as-user]
   (log-message "Connecting to Nimbus at " host ":" port " as user: " as-user)
   (let [conf (read-storm-config)
-        nimbusClient (NimbusClient. conf host port nil as-user)
+        nimbusClient (NimbusClient. conf host (int port) nil as-user)
         client (.getClient nimbusClient)
         transport (.transport nimbusClient)]
         [client transport] )))
