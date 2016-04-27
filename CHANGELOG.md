@@ -1,4 +1,5 @@
 ## 0.10.1
+ * STORM-1731: Avoid looking up debug enable flags within critical path
  * STORM-1645: convert nimbus.thrift.port to int to avoid ClassCastException
  * STORM-1535: Make sure hdfs key tab login happens only once for multiple bolts/executors
  * STORM-584: Fix logging for LoggingMetricsConsumer metrics.log file
