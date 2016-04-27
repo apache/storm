@@ -116,11 +116,13 @@
 
 (defn emitted-tuple!
   [stats stream]
-  (.incBy ^MultiCountStatAndMetric (stats-emitted stats) ^Object stream ^long (stats-rate stats)))
+  (let [^MultiCountStatAndMetric emitted (stats-emitted stats)]
+    (.incBy emitted ^Object stream ^long (stats-rate stats))))
 
 (defn transferred-tuples!
   [stats stream amt]
-  (.incBy ^MultiCountStatAndMetric (stats-transferred stats) ^Object stream ^long (* (stats-rate stats) amt)))
+  (let [^MultiCountStatAndMetric transferred (stats-transferred stats)]
+    (.incBy transferred ^Object stream ^long (* (stats-rate stats) amt))))
 
 (defn bolt-execute-tuple!
   [^BoltExecutorStats stats component stream latency-ms]
@@ -146,12 +148,15 @@
 
 (defn spout-acked-tuple!
   [^SpoutExecutorStats stats stream latency-ms]
-  (.incBy ^MultiCountStatAndMetric (stats-acked stats) stream (stats-rate stats))
-  (.record ^MultiLatencyStatAndMetric (stats-complete-latencies stats) stream latency-ms))
+  (let [^MultiCountStatAndMetric acked (stats-acked stats)
+        ^MultiLatencyStatAndMetric complete-latencies (stats-complete-latencies stats)]
+    (.incBy acked stream (stats-rate stats))
+    (.record complete-latencies stream latency-ms)))
 
 (defn spout-failed-tuple!
   [^SpoutExecutorStats stats stream latency-ms]
-  (.incBy ^MultiCountStatAndMetric (stats-failed stats) stream (stats-rate stats)))
+  (let [^MultiCountStatAndMetric failed (stats-failed stats)]
+    (.incBy failed stream (stats-rate stats))))
 
 (defn- close-stat! [stat]
   (.close stat))
