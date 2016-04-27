@@ -1,4 +1,6 @@
 ## 1.0.1
+ * STORM-1729: Get rid of reflections while recording stats
+ * STORM-1731: Avoid looking up debug / backpressure enable flags within critical path
  * STORM-1535: Make sure hdfs key tab login happens only once for multiple bolts/executors.
  * STORM-1725: Kafka Spout New Consumer API - KafkaSpoutRetryExponential Backoff method should use HashMap instead of TreeMap not to throw Exception
  * STORM-1544: Document Debug/Sampling of Topologies
