@@ -34,7 +34,7 @@ import org.apache.storm.utils.Utils;
 import java.io.Serializable;
 import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.Random;
 
 /**
  * This class demonstrates different usages of
@@ -130,7 +130,7 @@ public class TridentMinMaxOfDevicesTopology {
         public int compare(TridentTuple tuple1, TridentTuple tuple2) {
             Vehicle vehicle1 = (Vehicle) tuple1.getValueByField(Vehicle.FIELD_NAME);
             Vehicle vehicle2 = (Vehicle) tuple2.getValueByField(Vehicle.FIELD_NAME);
-            return Integer.compare(vehicle1.maxSpeed, vehicle2.maxSpeed);
+            return Integer.valueOf(vehicle1.maxSpeed).compareTo(Integer.valueOf(vehicle2.maxSpeed));
         }
     }
 
@@ -187,11 +187,12 @@ public class TridentMinMaxOfDevicesTopology {
 
         public static List<Object>[] generateVehicles(int count) {
             List<Object>[] vehicles = new List[count];
+            Random random = new Random();
             for (int i = 0; i < count; i++) {
                 int id = i - 1;
                 vehicles[i] =
                         (new Values(
-                                new Vehicle("Vehicle-" + id, ThreadLocalRandom.current().nextInt(0, 100), ThreadLocalRandom.current().nextDouble(1, 5)),
+                                new Vehicle("Vehicle-" + id, random.nextInt(100), random.nextDouble() * 4 + 1),
                                 new Driver("Driver-" + id, id)
                         ));
             }
