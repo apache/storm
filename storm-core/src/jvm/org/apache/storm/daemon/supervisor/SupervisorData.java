@@ -58,6 +58,8 @@ public class SupervisorData {
     private final Utils.UptimeComputer upTime;
     private final String stormVersion;
     private final ConcurrentHashMap<String, String> workerThreadPids; // for local mode
+    private final ConcurrentHashMap<String, Long> workerIdsToLaunchTimes;
+    private final ConcurrentHashMap<String, Integer> workerIdsToPorts;
     private final IStormClusterState stormClusterState;
     private final LocalState localState;
     private final String supervisorId;
@@ -84,6 +86,8 @@ public class SupervisorData {
         this.upTime = Utils.makeUptimeComputer();
         this.stormVersion = VersionInfo.getVersion();
         this.workerThreadPids = new ConcurrentHashMap<String, String>();
+        this.workerIdsToLaunchTimes = new ConcurrentHashMap<String, Long>();
+        this.workerIdsToPorts = new ConcurrentHashMap<String, Integer>();
         this.deadWorkers = new ConcurrentHashSet();
 
         List<ACL> acls = null;
@@ -166,6 +170,14 @@ public class SupervisorData {
 
     public ConcurrentHashMap<String, String> getWorkerThreadPids() {
         return workerThreadPids;
+    }
+
+    public ConcurrentHashMap<String, Long> getWorkerIdsToLaunchTimes() {
+        return workerIdsToLaunchTimes;
+    }
+
+    public ConcurrentHashMap<String, Integer> getWorkerIdsToPorts() {
+        return workerIdsToPorts;
     }
 
     public IStormClusterState getStormClusterState() {

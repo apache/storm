@@ -15,7 +15,7 @@
 ;; limitations under the License.
 (ns org.apache.storm.daemon.local-supervisor
   (:import [org.apache.storm.daemon.supervisor SyncProcessEvent SupervisorData Supervisor SupervisorUtils]
-           [org.apache.storm.utils Utils ConfigUtils]
+           [org.apache.storm.utils Time Utils ConfigUtils]
            [org.apache.storm ProcessSimulator])
   (:use [org.apache.storm.daemon common]
         [org.apache.storm log])
@@ -34,7 +34,9 @@
                  workerId)]
     (ConfigUtils/setWorkerUserWSE conf workerId "")
     (ProcessSimulator/registerProcess pid worker)
-    (.put (.getWorkerThreadPids supervisorData) workerId pid)))
+    (.put (.getWorkerThreadPids supervisorData) workerId pid)
+    (.put (.getWorkerIdsToLaunchTimes supervisorData) workerId (Time/currentTimeSecs))
+    (.put (.getWorkerIdsToPorts supervisorData) workerId port)))
 
 (defn shutdown-local-worker [supervisorData worker-manager workerId]
   (log-message "shutdown-local-worker")

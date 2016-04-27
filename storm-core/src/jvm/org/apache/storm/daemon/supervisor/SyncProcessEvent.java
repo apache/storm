@@ -88,6 +88,13 @@ public class SyncProcessEvent implements Runnable {
         this.localState = supervisorData.getLocalState();
     }
 
+    private Boolean isWorkerStartTimeoutExpired(String workerId) {
+        Long launchTime = supervisorData.getWorkerIdsToLaunchTimes().get(workerId);
+        Integer timeOut = Utils.getInt(supervisorData.getConf().get(Config.SUPERVISOR_WORKER_START_TIMEOUT_SECS));
+
+        return (launchTime == null || ((Time.currentTimeSecs() - launchTime) > timeOut));
+    }
+
     @Override
     public void run() {
         LOG.debug("Syncing processes");
@@ -110,58 +117,53 @@ public class SyncProcessEvent implements Runnable {
                     keeperWorkerIds.add(entry.getKey());
                     keepPorts.add(stateHeartbeat.getHeartbeat().get_port());
                 }
+                if (stateHeartbeat.getState() == State.NOT_STARTED) {
+                    keeperWorkerIds.add(entry.getKey());
+                    keepPorts.add(supervisorData.getWorkerIdsToPorts().get(entry.getKey()));
+                }
             }
             Map<Integer, LocalAssignment> reassignExecutors = getReassignExecutors(assignedExecutors, keepPorts);
             Map<Integer, String> newWorkerIds = new HashMap<>();
             for (Integer port : reassignExecutors.keySet()) {
                 newWorkerIds.put(port, Utils.uuid());
             }
+
             LOG.debug("Assigned executors: {}", assignedExecutors);
             LOG.debug("Allocated: {}", localWorkerStats);
+            LOG.debug("Keeper worker ids: {}", keeperWorkerIds);
+            LOG.debug("Keep ports: {}", keepPorts);
+            LOG.debug("LaunchTimes: {}", supervisorData.getWorkerIdsToLaunchTimes());
+            LOG.debug("Ids Ports: {}", supervisorData.getWorkerIdsToPorts());
 
             for (Map.Entry<String, StateHeartbeat> entry : localWorkerStats.entrySet()) {
                 StateHeartbeat stateHeartbeat = entry.getValue();
-                if (stateHeartbeat.getState() != State.VALID) {
+                if ((stateHeartbeat.getState() != State.VALID && stateHeartbeat.getState() != State.NOT_STARTED) ||
+                    (stateHeartbeat.getState() == State.NOT_STARTED && isWorkerStartTimeoutExpired(entry.getKey()))) { 
                     LOG.info("Shutting down and clearing state for id {}, Current supervisor time: {}, State: {}, Heartbeat: {}", entry.getKey(), now,
                             stateHeartbeat.getState(), stateHeartbeat.getHeartbeat());
                     killWorker(supervisorData, supervisorData.getWorkerManager(), entry.getKey());
                 }
             }
             // start new workers
-            Map<String, Integer> newWorkerPortToIds = startNewWorkers(newWorkerIds, reassignExecutors);
+            Map<String, Integer> newWorkerIdsToPorts = startNewWorkers(newWorkerIds, reassignExecutors);
 
-            Map<String, Integer> allWorkerPortToIds = new HashMap<>();
+            Map<String, Integer> allWorkerIdsToPorts = new HashMap<>();
             Map<String, Integer> approvedWorkers = localState.getApprovedWorkers();
             for (String keeper : keeperWorkerIds) {
-                allWorkerPortToIds.put(keeper, approvedWorkers.get(keeper));
+                allWorkerIdsToPorts.put(keeper, approvedWorkers.get(keeper));
             }
-            allWorkerPortToIds.putAll(newWorkerPortToIds);
-            localState.setApprovedWorkers(allWorkerPortToIds);
-            waitForWorkersLaunch(conf, newWorkerPortToIds.keySet());
+            allWorkerIdsToPorts.putAll(newWorkerIdsToPorts);
+            localState.setApprovedWorkers(allWorkerIdsToPorts);
+            supervisorData.getWorkerIdsToPorts().putAll(newWorkerIdsToPorts);
+            for (String workerId : newWorkerIdsToPorts.keySet()) {
+                supervisorData.getWorkerIdsToLaunchTimes().put(workerId, new Long(Time.currentTimeSecs()));
+            }
 
         } catch (Exception e) {
             LOG.error("Failed Sync Process", e);
             throw Utils.wrapInRuntime(e);
         }
 
-    }
-
-    protected void waitForWorkersLaunch(Map conf, Set<String> workerIds) throws Exception {
-        int startTime = Time.currentTimeSecs();
-        int timeOut = (int) conf.get(Config.NIMBUS_SUPERVISOR_TIMEOUT_SECS);
-        for (String workerId : workerIds) {
-            LocalState localState = ConfigUtils.workerState(conf, workerId);
-            while (true) {
-                LSWorkerHeartbeat hb = localState.getWorkerHeartBeat();
-                if (hb != null || (Time.currentTimeSecs() - startTime) > timeOut)
-                    break;
-                LOG.info("{} still hasn't started", workerId);
-                Time.sleep(500);
-            }
-            if (localState.getWorkerHeartBeat() == null) {
-                LOG.info("Worker {} failed to start", workerId);
-            }
-        }
     }
 
     protected Map<Integer, LocalAssignment> getReassignExecutors(Map<Integer, LocalAssignment> assignExecutors, Set<Integer> keepPorts) {
@@ -422,6 +424,8 @@ public class SyncProcessEvent implements Runnable {
         boolean success = workerManager.cleanupWorker(workerId);
         if (success){
             supervisorData.getDeadWorkers().remove(workerId);
+            supervisorData.getWorkerIdsToLaunchTimes().remove(workerId);
+            supervisorData.getWorkerIdsToPorts().remove(workerId);
         }
     }
 }
