@@ -221,9 +221,9 @@
   (let [num-executors (if (nil? (storm-conf TOPOLOGY-ACKER-EXECUTORS)) (storm-conf TOPOLOGY-WORKERS) (storm-conf TOPOLOGY-ACKER-EXECUTORS))
         acker-bolt (thrift/mk-bolt-spec* (acker-inputs ret)
                                          (new org.apache.storm.daemon.acker)
-                                         {ACKER-ACK-STREAM-ID (thrift/direct-output-fields ["id"])
-                                          ACKER-FAIL-STREAM-ID (thrift/direct-output-fields ["id"])
-                                          ACKER-RESET-TIMEOUT-STREAM-ID (thrift/direct-output-fields ["id"])
+                                         {ACKER-ACK-STREAM-ID (thrift/direct-output-fields ["id" "time-delta-ms"])
+                                          ACKER-FAIL-STREAM-ID (thrift/direct-output-fields ["id" "time-delta-ms"])
+                                          ACKER-RESET-TIMEOUT-STREAM-ID (thrift/direct-output-fields ["id" "time-delta-ms"])
                                           }
                                          :p num-executors
                                          :conf {TOPOLOGY-TASKS num-executors
