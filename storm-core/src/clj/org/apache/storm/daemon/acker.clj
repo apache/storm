@@ -15,7 +15,7 @@
 ;; limitations under the License.
 (ns org.apache.storm.daemon.acker
   (:import [org.apache.storm.task OutputCollector TopologyContext IBolt])
-  (:import [org.apache.storm.tuple Tuple Fields])
+  (:import [org.apache.storm.tuple Tuple])
   (:import [org.apache.storm.utils RotatingMap MutableObject])
   (:import [java.util List Map])
   (:import [org.apache.storm Constants])
@@ -60,7 +60,8 @@
                        curr (condp = stream-id
                                 ACKER-INIT-STREAM-ID (-> curr
                                                          (update-ack (.getValue tuple 1))
-                                                         (assoc :spout-task (.getValue tuple 2)))
+                                                         (assoc :spout-task (.getValue tuple 2))
+                                                         (assoc :start-time (System/currentTimeMillis)))
                                 ACKER-ACK-STREAM-ID (update-ack curr (.getValue tuple 1))
                                 ACKER-FAIL-STREAM-ID (assoc curr :failed true)
                                 ACKER-RESET-TIMEOUT-STREAM-ID curr)]
@@ -72,7 +73,7 @@
                              (acker-emit-direct output-collector
                                                 (:spout-task curr)
                                                 ACKER-ACK-STREAM-ID
-                                                [id]
+                                                [id (time-delta-ms (:start-time curr))]
                                                 ))
                            (:failed curr)
                            (do
@@ -80,13 +81,13 @@
                              (acker-emit-direct output-collector
                                                 (:spout-task curr)
                                                 ACKER-FAIL-STREAM-ID
-                                                [id]
+                                                [id (time-delta-ms (:start-time curr))]
                                                 ))
                            (= stream-id ACKER-RESET-TIMEOUT-STREAM-ID)
                            (acker-emit-direct output-collector
                                               (:spout-task curr)
                                               ACKER-RESET-TIMEOUT-STREAM-ID
-                                              [id]
+                                              [id (time-delta-ms (:start-time curr))]
                                               )
                            ))
                    (.ack output-collector tuple)
