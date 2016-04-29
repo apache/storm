@@ -1,4 +1,5 @@
 ## 0.10.2
+ * STORM-1739: update the minor JAVA version dependency in 0.10.0 and above
  * STORM-1733: Flush stdout and stderr before calling "os.execvp" to prevent log loss
 
 ## 0.10.1
