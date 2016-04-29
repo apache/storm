@@ -1,4 +1,5 @@
 ## 1.0.1
+ * STORM-1727: document 1.0 package renaming and how to use the migration tool
  * STORM-1733: Flush stdout and stderr before calling "os.execvp" to prevent log loss.
  * STORM-1729: Get rid of reflections while recording stats
  * STORM-1731: Avoid looking up debug / backpressure enable flags within critical path
