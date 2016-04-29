@@ -1,4 +1,5 @@
 ## 1.0.1
+ * STORM-1739: update the minor JAVA version dependency in 0.10.0 and above
  * STORM-1727: document 1.0 package renaming and how to use the migration tool
  * STORM-1733: Flush stdout and stderr before calling "os.execvp" to prevent log loss.
  * STORM-1729: Get rid of reflections while recording stats
