@@ -1,3 +1,6 @@
+## 0.10.2
+ * STORM-1733: Flush stdout and stderr before calling "os.execvp" to prevent log loss
+
 ## 0.10.1
  * STORM-1731: Avoid looking up debug enable flags within critical path
  * STORM-1645: convert nimbus.thrift.port to int to avoid ClassCastException
