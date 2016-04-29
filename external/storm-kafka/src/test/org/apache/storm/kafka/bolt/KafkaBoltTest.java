@@ -208,7 +208,7 @@ public class KafkaBoltTest {
         props.put("bootstrap.servers", broker.getBrokerConnectionString());
         props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-        props.put("metadata.fetch.timeout.ms", 1000);
+        props.put("max.block.ms", 5000);
         KafkaBolt bolt = new KafkaBolt().withProducerProperties(props);
         bolt.prepare(config, null, new OutputCollector(collector));
         bolt.setAsync(false);
@@ -222,7 +222,7 @@ public class KafkaBoltTest {
         props.put("bootstrap.servers", broker.getBrokerConnectionString());
         props.put("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
         props.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
-        props.put("metadata.fetch.timeout.ms", 1000);
+        props.put("max.block.ms", 5000);
         props.put("linger.ms", 0);
         KafkaBolt bolt = new KafkaBolt().withProducerProperties(props);
         bolt.prepare(config, null, new OutputCollector(collector));
@@ -240,7 +240,7 @@ public class KafkaBoltTest {
         props.put("bootstrap.servers", broker.getBrokerConnectionString());
         props.put("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
         props.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
-        props.put("metadata.fetch.timeout.ms", 1000);
+        props.put("max.block.ms", 5000);
         props.put("linger.ms", 0);
         KafkaBolt bolt = new KafkaBolt().withProducerProperties(props);
         bolt.prepare(config, null, new OutputCollector(collector));
