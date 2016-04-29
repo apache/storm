@@ -33,6 +33,8 @@ import java.util.Map;
 import java.util.Set;
 import org.json.simple.JSONValue;
 import org.json.simple.JSONAware;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class GeneralTopologyContext implements JSONAware {
     private StormTopology _topology;
@@ -131,6 +133,8 @@ public class GeneralTopologyContext implements JSONAware {
         return getComponentCommon(componentId).get_inputs();
     }
 
+
+    private final Logger logger = LoggerFactory.getLogger(getClass());
     /**
      * Gets information about who is consuming the outputs of the specified component,
      * and how.
@@ -195,5 +199,10 @@ public class GeneralTopologyContext implements JSONAware {
             }
         }
         return max;
+    }
+
+    //todo:debug logs
+    public Map<String, Map<String, Fields>> getComponentToStreamToFields(){
+        return this._componentToStreamToFields;
     }
 }

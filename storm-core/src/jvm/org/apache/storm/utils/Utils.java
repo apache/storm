@@ -17,6 +17,7 @@
  */
 package org.apache.storm.utils;
 
+import clojure.lang.Keyword;
 import com.google.common.annotations.VisibleForTesting;
 
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
@@ -1765,6 +1766,15 @@ public class Utils {
         Runtime.getRuntime().exit(val);
     }
 
+    public static Runnable mkSuicideFn() {
+        return new Runnable() {
+            @Override
+            public void run() {
+                Utils.exitProcess(1, "Worker died");
+            }
+        };
+    }
+
     /**
      * "{:a 1 :b 1 :c 2} -> {1 [:a :b] 2 :c}"
      *
@@ -2352,6 +2362,25 @@ public class Utils {
         }
 
         return rtn;
+    }
+
+    /**
+     * converts a clojure PersistentMap to java HashMap
+     */
+    public static Map<String, Object> convertMap(Map map) {
+        Map<String, Object> ret = new HashMap<>(map.size());
+        for (Object obj : map.entrySet()) {
+            Map.Entry entry = (Map.Entry) obj;
+            Keyword keyword = (Keyword) entry.getKey();
+            String key = keyword.getName();
+            if (key.startsWith(":")) {
+                key = key.substring(1, key.length());
+            }
+            Object value = entry.getValue();
+            ret.put(key, value);
+        }
+
+        return ret;
     }
 
 }

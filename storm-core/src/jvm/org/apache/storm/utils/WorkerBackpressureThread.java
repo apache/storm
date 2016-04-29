@@ -24,9 +24,9 @@ import org.slf4j.LoggerFactory;
 public class WorkerBackpressureThread extends Thread {
 
     private static final Logger LOG = LoggerFactory.getLogger(WorkerBackpressureThread.class);
-    private Object trigger;
-    private Object workerData;
-    private WorkerBackpressureCallback callback;
+    private final Object trigger;
+    private final Object workerData;
+    private final WorkerBackpressureCallback callback;
     private volatile boolean running = true;
 
     public WorkerBackpressureThread(Object trigger, Object workerData, WorkerBackpressureCallback callback) {
@@ -38,7 +38,7 @@ public class WorkerBackpressureThread extends Thread {
         this.setUncaughtExceptionHandler(new BackpressureUncaughtExceptionHandler());
     }
 
-    static public void notifyBackpressureChecker(Object trigger) {
+    static public void notifyBackpressureChecker(final Object trigger) {
         try {
             synchronized (trigger) {
                 trigger.notifyAll();
@@ -57,7 +57,7 @@ public class WorkerBackpressureThread extends Thread {
     public void run() {
         while (running) {
             try {
-                synchronized(trigger) {
+                synchronized (trigger) {
                     trigger.wait(100);
                 }
                 callback.onEvent(workerData); // check all executors and update zk backpressure throttle for the worker if needed
@@ -70,6 +70,7 @@ public class WorkerBackpressureThread extends Thread {
 
 class BackpressureUncaughtExceptionHandler implements Thread.UncaughtExceptionHandler {
     private static final Logger LOG = LoggerFactory.getLogger(BackpressureUncaughtExceptionHandler.class);
+
     @Override
     public void uncaughtException(Thread t, Throwable e) {
         // note that exception that happens during connecting to ZK has been ignored in the callback implementation
