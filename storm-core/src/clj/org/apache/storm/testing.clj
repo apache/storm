@@ -17,15 +17,16 @@
 (ns org.apache.storm.testing
   (:require [org.apache.storm.daemon
              [nimbus :as nimbus]
+             [local-executor :as local-executor]
              [local-supervisor :as local-supervisor]
              [common :as common]
-             [worker :as worker]
-             [executor :as executor]])
+             [worker :as worker]])
   (:import [org.apache.commons.io FileUtils]
            [org.apache.storm.utils]
            [org.apache.storm.zookeeper Zookeeper]
            [org.apache.storm ProcessSimulator]
-           [org.apache.storm.daemon.supervisor StandaloneSupervisor SupervisorData SupervisorManager SupervisorUtils SupervisorManager])
+           [org.apache.storm.daemon.supervisor StandaloneSupervisor SupervisorData SupervisorManager SupervisorUtils SupervisorManager]
+           [org.apache.storm.executor ExecutorCommon])
   (:import [java.io File])
   (:import [java.util HashMap ArrayList])
   (:import [java.util.concurrent.atomic AtomicInteger])
@@ -697,8 +698,8 @@
          ;; of tuple emission (and not on a separate thread later) for
          ;; topologies to be tracked correctly. This is because "transferred" *must*
          ;; be incremented before "processing".
-         executor/mk-executor-transfer-fn
-         (let [old# executor/mk-executor-transfer-fn]
+         local-executor/mk-executor-transfer-fn
+         (let [old# local-executor/mk-executor-transfer-fn]
            (fn [& args#]
              (let [transferrer# (apply old# args#)]
                (fn [& args2#]

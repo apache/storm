@@ -18,11 +18,11 @@
   (:use [org.apache.storm config log util converter local-state-converter])
   (:require [clj-time.core :as time])
   (:require [clj-time.coerce :as coerce])
-  (:require [org.apache.storm.daemon [executor :as executor]])
 
   (:require [clojure.set :as set])
   (:import [java.io File]
-           [org.apache.storm.stats StatsUtil])
+           [org.apache.storm.stats StatsUtil]
+           [java.util.concurrent.atomic AtomicBoolean AtomicReference])
   (:import [java.util.concurrent Executors]
            [org.apache.storm.hooks IWorkerHook BaseWorkerHook]
            [uk.org.lidalia.sysoutslf4j.context SysOutOverSLF4J])
@@ -48,6 +48,7 @@
   (:import [org.apache.logging.log4j.core.config LoggerConfig])
   (:import [org.apache.storm.generated LogConfig LogLevelAction])
   (:import [org.apache.storm StormTimer])
+  (:import [org.apache.storm.executor Executor])
   (:gen-class))
 
 (defmulti mk-suicide-fn cluster-mode)
@@ -67,10 +68,13 @@
 (defnk do-executor-heartbeats [worker :executors nil]
   ;; stats is how we know what executors are assigned to this worker 
   (let [stats (if-not executors
-                  (StatsUtil/mkEmptyExecutorZkHbs (:executors worker))
+                ((log-message "**** mk empty executor hbs")
+                  (StatsUtil/mkEmptyExecutorZkHbs (:executors worker)))
+
+                ( (log-message "**** executors:" (prn-str executors))
                   (StatsUtil/convertExecutorZkHbs (->> executors
-                    (map (fn [e] {(executor/get-executor-id e) (executor/render-stats e)}))
-                    (apply merge))))
+                    (map (fn [e] {(.getExecutorId e) (.renderStats e)}))
+                    (apply merge)))))
         zk-hb (StatsUtil/mkZkWorkerHb (:storm-id worker) stats (. (:uptime worker) upTime))]
     ;; do the zookeeper heartbeat
     (try
@@ -96,7 +100,7 @@
 (defn worker-outbound-tasks
   "Returns seq of task-ids that receive messages from this worker"
   [worker]
-  (let [context (worker-context worker)
+  (let [context (StormCommon/makeWorkerContext (Utils/convertMap worker))
         components (mapcat
                      (fn [task-id]
                        (->> (.getComponentId context (int task-id))
@@ -276,7 +280,6 @@
         mq-context  (if mq-context
                       mq-context
                       (TransportFactory/makeContext storm-conf))]
-
     (recursive-map
       :conf conf
       :mq-context mq-context
@@ -291,8 +294,8 @@
       ;; other workers. When all connection is ready, we will enable this flag
       ;; and spout and bolt will be activated.
       :worker-active-flag (atom false)
-      :storm-active-atom (atom false)
-      :storm-component->debug-atom (atom {})
+      :storm-active-atom (AtomicBoolean. false)
+      :storm-component->debug-atom (AtomicReference.)
       :executors executors
       :task-ids (->> receive-queue-map keys (map int) sort)
       :storm-conf storm-conf
@@ -332,7 +335,7 @@
       :backpressure (atom false) ;; whether this worker is going slow
       :transfer-backpressure (atom false) ;; if the transfer queue is backed-up
       :backpressure-trigger (atom false) ;; a trigger for synchronization with executors
-      :throttle-on (atom false) ;; whether throttle is activated for spouts
+      :throttle-on (AtomicBoolean. false) ;; whether throttle is activated for spouts
       )))
 
 (defn- endpoint->string [[node port]]
@@ -422,6 +425,7 @@
               current-connections (set (keys @(:cached-node+port->socket worker)))
               new-connections (set/difference needed-connections current-connections)
               remove-connections (set/difference current-connections needed-connections)]
+
               (swap! (:cached-node+port->socket worker)
                      #(HashMap. (merge (into {} %1) %2))
                      (into {}
@@ -455,11 +459,9 @@
                  (:refresh-active-timer worker) 0 (partial refresh-storm-active worker)))))
   ([worker callback]
     (let [base (clojurify-storm-base (.stormBase (:storm-cluster-state worker) (:storm-id worker) callback))]
-      (reset!
-        (:storm-active-atom worker)
-        (and (= :active (-> base :status :type)) @(:worker-active-flag worker)))
-      (reset! (:storm-component->debug-atom worker) (-> base :component->debug))
-      (log-debug "Event debug options " @(:storm-component->debug-atom worker)))))
+      (.set (:storm-active-atom worker) (and (= :active (-> base :status :type)) @(:worker-active-flag worker)))
+      (.set (:storm-component->debug-atom worker) (map-val thriftify-debugoptions (-> base :component->debug)))
+      (log-debug "Event debug options " (.get (:storm-component->debug-atom worker))))))
 
 ;; TODO: consider having a max batch size besides what disruptor does automagically to prevent latency issues
 (defn mk-transfer-tuples-handler [worker]
@@ -514,7 +516,7 @@
         ^IConnection socket (:receiver worker)]
     (log-message "Registering IConnectionCallbacks for " (:assignment-id worker) ":" (:port worker))
     (.registerRecv socket (DeserializingConnectionCallback. (:storm-conf worker)
-                                                            (worker-context worker)
+                                                            (StormCommon/makeWorkerContext (Utils/convertMap worker))
                                                             transfer-local-fn))))
 
 (defn- close-resources [worker]
@@ -605,7 +607,7 @@
 (defn run-worker-start-hooks [worker]
   (let [topology (:topology worker)
         topo-conf (:storm-conf worker)
-        worker-topology-context (worker-context worker)
+        worker-topology-context (StormCommon/makeWorkerContext (Utils/convertMap worker))
         hooks (.get_worker_hooks topology)]
     (dofor [hook hooks]
       (let [hook-bytes (Utils/toByteArray hook)
@@ -680,7 +682,7 @@
 
         _ (run-worker-start-hooks worker)
 
-        _ (reset! executors (dofor [e (:executors worker)] (executor/mk-executor worker e initial-credentials)))
+        _ (reset! executors (dofor [e (:executors worker)] (Executor/mkExecutor worker e initial-credentials)))
 
         transfer-tuples (mk-transfer-tuples-handler worker)
         
@@ -699,7 +701,7 @@
             (.start backpressure-thread))
         callback (fn cb []
                    (let [throttle-on (.topologyBackpressure storm-cluster-state storm-id cb)]
-                     (reset! (:throttle-on worker) throttle-on)))
+                     (.set (:throttle-on worker) throttle-on)))
         _ (if ((:storm-conf worker) TOPOLOGY-BACKPRESSURE-ENABLE)
             (.topologyBackpressure storm-cluster-state storm-id callback))
 
@@ -771,9 +773,9 @@
        check-throttle-changed (fn []
                                 (let [callback (fn cb []
                                                  (let [throttle-on (.topologyBackpressure (:storm-cluster-state worker) storm-id cb)]
-                                                   (reset! (:throttle-on worker) throttle-on)))
+                                                   (.set (:throttle-on worker) throttle-on)))
                                       new-throttle-on (.topologyBackpressure (:storm-cluster-state worker) storm-id callback)]
-                                    (reset! (:throttle-on worker) new-throttle-on)))
+                                    (.set (:throttle-on worker) new-throttle-on)))
         check-log-config-changed (fn []
                                   (let [log-config (.topologyLogConfig (:storm-cluster-state worker) storm-id nil)]
                                     (process-log-config-change latest-log-config original-log-levels log-config)
