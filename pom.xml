@@ -250,7 +250,7 @@
         <calcite.version>1.4.0-incubating</calcite.version>
         <jackson.version>2.6.3</jackson.version>
         <maven-surefire.version>2.18.1</maven-surefire.version>
-        <kafka.version>0.9.0.1</kafka.version>
+        <kafka.version>0.10.0.0</kafka.version>
         <kafka.artifact.id>kafka_2.11</kafka.artifact.id>
 
         <!-- Java and clojure build lifecycle test properties are defined here to avoid having to create a default profile -->
