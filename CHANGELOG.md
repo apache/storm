@@ -1,4 +1,5 @@
 ## 1.0.1
+ * STORM-1733: Flush stdout and stderr before calling "os.execvp" to prevent log loss.
  * STORM-1729: Get rid of reflections while recording stats
  * STORM-1731: Avoid looking up debug / backpressure enable flags within critical path
  * STORM-1535: Make sure hdfs key tab login happens only once for multiple bolts/executors.
