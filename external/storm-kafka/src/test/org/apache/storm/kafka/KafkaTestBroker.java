@@ -78,7 +78,12 @@ public class KafkaTestBroker {
         return port;
     }
     public void shutdown() {
-        kafka.shutdown();
+        if (kafka != null) {
+            kafka.shutdown();
+            kafka.awaitShutdown();
+        }
+        //Ensure kafka server is eligible for garbage collection immediately
+        kafka = null;
         if (zookeeper.getState().equals(CuratorFrameworkState.STARTED)) {
             zookeeper.close();
         }
