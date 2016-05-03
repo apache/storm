@@ -18,7 +18,7 @@
   (:import [org.apache.zookeeper.data Stat ACL Id]
            [backtype.storm.generated SupervisorInfo Assignment StormBase ClusterWorkerHeartbeat ErrorInfo Credentials]
            [java.io Serializable])
-  (:import [org.apache.zookeeper KeeperException KeeperException$NoNodeException ZooDefs ZooDefs$Ids ZooDefs$Perms])
+  (:import [org.apache.zookeeper KeeperException KeeperException$NoNodeException KeeperException$NodeExistsException ZooDefs ZooDefs$Ids ZooDefs$Perms])
   (:import [backtype.storm.utils Utils])
   (:import [java.security MessageDigest])
   (:import [org.apache.zookeeper.server.auth DigestAuthenticationProvider])
@@ -103,7 +103,12 @@
          (zk/set-data zk path data)
          (do
            (zk/mkdirs zk (parent-path path) acls)
-           (zk/create-node zk path data :persistent acls))))
+           (try
+             (zk/create-node zk path data :persistent acls)
+             (catch RuntimeException e
+               (if (instance? KeeperException$NodeExistsException (.getCause e))
+                 (zk/set-data zk path data)
+                 (throw e)))))))
 
      (delete-node
        [this path]
