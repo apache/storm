@@ -298,17 +298,18 @@
                       {[comp-id METRICS-STREAM-ID] :shuffle})
                     (into {}))
         
-        mk-bolt-spec (fn [class arg p]
+        mk-bolt-spec (fn [class arg p max-retain-metric-tuples]
                        (thrift/mk-bolt-spec*
                         inputs
-                        (org.apache.storm.metric.MetricsConsumerBolt. class arg)
+                        (org.apache.storm.metric.MetricsConsumerBolt. class arg max-retain-metric-tuples)
                         {} :p p :conf {TOPOLOGY-TASKS p}))]
     
     (map
      (fn [component-id register]           
        [component-id (mk-bolt-spec (get register "class")
                                    (get register "argument")
-                                   (or (get register "parallelism.hint") 1))])
+                                   (or (get register "parallelism.hint") 1)
+                                   (or (get register "max.retain.metric.tuples") 100))])
      
      (metrics-consumer-register-ids storm-conf)
      (get storm-conf TOPOLOGY-METRICS-CONSUMER-REGISTER))))

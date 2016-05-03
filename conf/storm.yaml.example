@@ -41,8 +41,10 @@
 ## Metrics Consumers
 # topology.metrics.consumer.register:
 #   - class: "org.apache.storm.metric.LoggingMetricsConsumer"
+#     max.retain.metric.tuples: 100
 #     parallelism.hint: 1
 #   - class: "org.mycompany.MyMetricsConsumer"
+#     max.retain.metric.tuples: 100
 #     parallelism.hint: 1
 #     argument:
 #       - endpoint: "metrics-collector.mycompany.org"
