@@ -116,11 +116,13 @@
 
 (defn emitted-tuple!
   [stats stream]
-  (.incBy ^MultiCountStatAndMetric (stats-emitted stats) ^Object stream ^long (stats-rate stats)))
+  (let [^MultiCountStatAndMetric emitted (stats-emitted stats)]
+    (.incBy emitted ^Object stream ^long (stats-rate stats))))
 
 (defn transferred-tuples!
   [stats stream amt]
-  (.incBy ^MultiCountStatAndMetric (stats-transferred stats) ^Object stream ^long (* (stats-rate stats) amt)))
+  (let [^MultiCountStatAndMetric transferred (stats-transferred stats)]
+    (.incBy transferred ^Object stream ^long (* (stats-rate stats) amt))))
 
 (defn bolt-execute-tuple!
   [^BoltExecutorStats stats component stream latency-ms]
@@ -146,32 +148,35 @@
 
 (defn spout-acked-tuple!
   [^SpoutExecutorStats stats stream latency-ms]
-  (.incBy ^MultiCountStatAndMetric (stats-acked stats) stream (stats-rate stats))
-  (.record ^MultiLatencyStatAndMetric (stats-complete-latencies stats) stream latency-ms))
+  (let [^MultiCountStatAndMetric acked (stats-acked stats)
+        ^MultiLatencyStatAndMetric complete-latencies (stats-complete-latencies stats)]
+    (.incBy acked stream (stats-rate stats))
+    (.record complete-latencies stream latency-ms)))
 
 (defn spout-failed-tuple!
   [^SpoutExecutorStats stats stream latency-ms]
-  (.incBy ^MultiCountStatAndMetric (stats-failed stats) stream (stats-rate stats)))
+  (let [^MultiCountStatAndMetric failed (stats-failed stats)]
+    (.incBy failed stream (stats-rate stats))))
 
-(defn- cleanup-stat! [stat]
+(defn- close-stat! [stat]
   (.close stat))
 
 (defn- cleanup-common-stats!
   [^CommonStats stats]
   (doseq [f COMMON-FIELDS]
-    (cleanup-stat! (f stats))))
+    (close-stat! (f stats))))
 
 (defn cleanup-bolt-stats!
   [^BoltExecutorStats stats]
   (cleanup-common-stats! (:common stats))
   (doseq [f BOLT-FIELDS]
-    (cleanup-stat! (f stats))))
+    (close-stat! (f stats))))
 
 (defn cleanup-spout-stats!
   [^SpoutExecutorStats stats]
   (cleanup-common-stats! (:common stats))
   (doseq [f SPOUT-FIELDS]
-    (cleanup-stat! (f stats))))
+    (close-stat! (f stats))))
 
 (defn- value-stats
   [stats fields]
@@ -188,14 +193,12 @@
 
 (defn value-bolt-stats!
   [^BoltExecutorStats stats]
-  (cleanup-bolt-stats! stats)
   (merge (value-common-stats (:common stats))
          (value-stats stats BOLT-FIELDS)
          {:type :bolt}))
 
 (defn value-spout-stats!
   [^SpoutExecutorStats stats]
-  (cleanup-spout-stats! stats)
   (merge (value-common-stats (:common stats))
          (value-stats stats SPOUT-FIELDS)
          {:type :spout}))
@@ -209,6 +212,16 @@
 (defmethod render-stats! BoltExecutorStats
   [stats]
   (value-bolt-stats! stats))
+
+(defmulti cleanup-stats! class-selector)
+
+(defmethod cleanup-stats! SpoutExecutorStats
+  [stats]
+  (cleanup-spout-stats! stats))
+
+(defmethod cleanup-stats! BoltExecutorStats
+  [stats]
+  (cleanup-bolt-stats! stats))
 
 (defmulti thriftify-specific-stats :type)
 (defmulti clojurify-specific-stats class-selector)
@@ -409,7 +422,9 @@
       (reduce add-pairs
               [0. 0]) ;; Combine weighted averages and counts.
       ((fn [[weighted-avg cnt]]
-        (div weighted-avg (* 1000 (min uptime TEN-MIN-IN-SECONDS))))))))
+         (if (> uptime 0)
+           (div weighted-avg (* 1000 (min uptime TEN-MIN-IN-SECONDS)))
+           0.))))))
 
 (defn agg-pre-merge-comp-page-bolt
   [{exec-id :exec-id

@@ -21,7 +21,7 @@
     <parent>
         <artifactId>storm</artifactId>
         <groupId>org.apache.storm</groupId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>1.0.2-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -115,7 +115,7 @@
                             <driver>org.hsqldb.jdbcDriver</driver>
                             <url>jdbc:hsqldb:mem:test;shutdown=false</url>
                             <username>SA</username>
-                            <password></password>
+                            <password />
                             <autocommit>true</autocommit>
                             <srcFiles>
                                 <srcFile>src/test/sql/test.sql</srcFile>

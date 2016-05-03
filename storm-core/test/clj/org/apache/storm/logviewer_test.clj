@@ -238,18 +238,20 @@
         (is (= expected (logviewer/identify-worker-log-dirs [port1-dir])))))))
 
 (deftest test-get-dead-worker-dirs
-  (testing "removes any files of workers that are still alive"
-    (let [conf {SUPERVISOR-WORKER-TIMEOUT-SECS 5}
-          id->hb {"42" {:time-secs 1}}
-          now-secs 2
-          unexpected-dir (mk-mock-File {:name "dir1" :type :directory})
-          expected-dir (mk-mock-File {:name "dir2" :type :directory})
-          log-dirs #{unexpected-dir expected-dir}]
-      (stubbing [logviewer/identify-worker-log-dirs {"42" unexpected-dir,
-                                                     "007" expected-dir}
-                 supervisor/read-worker-heartbeats id->hb]
-        (is (= #{expected-dir}
-              (logviewer/get-dead-worker-dirs conf now-secs log-dirs)))))))
+         (testing "return directories for workers that are not alive"
+                  (let [conf {SUPERVISOR-WORKER-TIMEOUT-SECS 5}
+                        id->hb {"42" {:time-secs 1}} ;; map for alive ids
+                        now-secs 2
+                        unexpected-dir1 (mk-mock-File {:name "dir1" :type :directory})
+                        expected-dir2 (mk-mock-File {:name "dir2" :type :directory})
+                        expected-dir3 (mk-mock-File {:name "dir3" :type :directory})
+                        log-dirs #{unexpected-dir1 expected-dir2 expected-dir3}]
+                       (stubbing [logviewer/identify-worker-log-dirs {"42" unexpected-dir1,
+                                                                      "007" expected-dir2,
+                                                                      "" expected-dir3} ;; this tests a directory with no yaml file thus no worker id
+                                  supervisor/read-worker-heartbeats id->hb]
+                                 (is (= #{expected-dir2 expected-dir3}
+                                        (logviewer/get-dead-worker-dirs conf now-secs log-dirs)))))))
 
 (deftest test-cleanup-fn
   (testing "cleanup function rmr's files of dead workers"
@@ -378,10 +380,26 @@
                   27526
                   8888)))))
 
-      (let [file (->> "logviewer-search-context-tests.log"
+      (testing "Logviewer link centers the match in the page (daemon)"
+        (let [expected-fname "foobar.log"]
+          (is (= (str "http://"
+                   expected-host
+                   ":"
+                   expected-port
+                   "/daemonlog?file="
+                   expected-fname
+                   "&start=1947&length="
+                   logviewer/default-bytes-per-page)
+                (logviewer/url-to-match-centered-in-log-page-daemon-file (byte-array 42)
+                  expected-fname
+                  27526
+                  8888)))))
+
+      (let [file (->> "logviewer-search-context-tests.log.test"
                    (clojure.java.io/file "src" "dev"))]
         (testing "returns correct before/after context"
-          (is (= {"searchString" pattern
+          (is (= {"isDaemon" "no"
+                  "searchString" pattern
                   "startByteOffset" 0
                   "matches" [{"byteOffset" 0
                               "beforeString" ""
@@ -430,9 +448,10 @@
                              ]}
                 (logviewer/substring-search file pattern)))))
 
-      (let [file (clojure.java.io/file "src" "dev" "small-worker.log")]
+      (let [file (clojure.java.io/file "src" "dev" "small-worker.log.test")]
         (testing "a really small log file"
-          (is (= {"searchString" pattern
+          (is (= {"isDaemon" "no"
+                  "searchString" pattern
                   "startByteOffset" 0
                   "matches" [{"byteOffset" 7
                               "beforeString" "000000 "
@@ -447,10 +466,29 @@
                                                "&start=0&length=51200")}]}
                 (logviewer/substring-search file pattern)))))
 
-      (let [file (clojure.java.io/file "src" "dev" "test-3072.log")]
+      (let [file (clojure.java.io/file "src" "dev" "small-worker.log.test")]
+        (testing "a really small log file (daemon)"
+          (is (= {"isDaemon" "yes"
+                  "searchString" pattern
+                  "startByteOffset" 0
+                  "matches" [{"byteOffset" 7
+                              "beforeString" "000000 "
+                              "afterString" " 000000\n"
+                              "matchString" pattern
+                              "logviewerURL" (str "http://"
+                                               expected-host
+                                               ":"
+                                               expected-port
+                                               "/daemonlog?file="
+                                               (.getName file)
+                                               "&start=0&length=51200")}]}
+                (logviewer/substring-search file pattern :is-daemon true)))))
+
+      (let [file (clojure.java.io/file "src" "dev" "test-3072.log.test")]
         (testing "no offset returned when file ends on buffer offset"
           (let [expected
-                {"searchString" pattern
+                {"isDaemon" "no"
+                 "searchString" pattern
                  "startByteOffset" 0
                  "matches" [{"byteOffset" 3066
                              "beforeString" (->>
@@ -470,7 +508,7 @@
             (is (= expected
                   (logviewer/substring-search file pattern :num-matches 1))))))
 
-      (let [file (clojure.java.io/file "src" "dev" "test-worker.log")]
+      (let [file (clojure.java.io/file "src" "dev" "test-worker.log.test")]
 
         (testing "next byte offsets are correct for each match"
           (doseq [[num-matches-sought
@@ -497,7 +535,8 @@
               (is (= num-matches-found (count (get result "matches")))))))
 
         (is
-          (= {"nextByteOffset" 6252
+          (= {"isDaemon" "no"
+              "nextByteOffset" 6252
               "searchString" pattern
               "startByteOffset" 0
               "matches" [
@@ -583,7 +622,8 @@
 
         (testing "Correct match offset is returned when skipping bytes"
           (let [start-byte-offset 3197]
-            (is (= {"nextByteOffset" 6252
+            (is (= {"isDaemon" "no"
+                    "nextByteOffset" 6252
                     "searchString" pattern
                     "startByteOffset" start-byte-offset
                     "matches" [{"byteOffset" 6246
@@ -604,7 +644,8 @@
 
         (let [pattern (clojure.string/join (repeat 1024 'X))]
           (is
-            (= {"nextByteOffset" 6183
+            (= {"isDaemon" "no"
+                "nextByteOffset" 6183
                 "searchString" pattern
                 "startByteOffset" 0
                 "matches" [
@@ -635,7 +676,8 @@
 
         (let [pattern "𐄀𐄁𐄂"]
           (is
-            (= {"nextByteOffset" 7176
+            (= {"isDaemon" "no"
+                "nextByteOffset" 7176
                 "searchString" pattern
                 "startByteOffset" 0
                 "matches" [
@@ -655,7 +697,8 @@
 
         (testing "Returns 0 matches for unseen pattern"
           (let [pattern "Not There"]
-            (is (= {"searchString" pattern
+            (is (= {"isDaemon" "no"
+                    "searchString" pattern
                     "startByteOffset" 0
                     "matches" []}
                   (logviewer/substring-search file
@@ -665,7 +708,7 @@
 
 (deftest test-find-n-matches
   (testing "find-n-matches looks through logs properly"
-    (let [files [(clojure.java.io/file "src" "dev" "logviewer-search-context-tests.log")
+    (let [files [(clojure.java.io/file "src" "dev" "logviewer-search-context-tests.log.test")
                  (clojure.java.io/file "src" "dev" "logviewer-search-context-tests.log.gz")]
           matches1 ((logviewer/find-n-matches files 20 0 0 "needle") "matches")
           matches2 ((logviewer/find-n-matches files 20 0 126 "needle") "matches")
@@ -674,7 +717,7 @@
       (is (= 2 (count matches1)))
       (is (= 4 (count ((first matches1) "matches"))))
       (is (= 4 (count ((second matches1) "matches"))))
-      (is (= ((first matches1) "fileName") "src/dev/logviewer-search-context-tests.log"))
+      (is (= ((first matches1) "fileName") "src/dev/logviewer-search-context-tests.log.test"))
       (is (= ((second matches1) "fileName") "src/dev/logviewer-search-context-tests.log.gz"))
 
       (is (= 2 (count ((first matches2) "matches"))))
@@ -684,7 +727,7 @@
       (is (= 4 (count ((first matches3) "matches")))))))
 
 (deftest test-deep-search-logs-for-topology
-  (let [files [(clojure.java.io/file "src" "dev" "logviewer-search-context-tests.log")
+  (let [files [(clojure.java.io/file "src" "dev" "logviewer-search-context-tests.log.test")
                (clojure.java.io/file "src" "dev" "logviewer-search-context-tests.log.gz")]
         attrs (make-array FileAttribute 0)
         topo-path (.getCanonicalPath (.toFile (Files/createTempDirectory "topoA" attrs)))

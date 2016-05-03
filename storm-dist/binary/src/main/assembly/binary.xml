@@ -317,6 +317,20 @@
                 <include>README.*</include>
             </includes>
         </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-kafka-client/target</directory>
+            <outputDirectory>external/storm-kafka-client</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-kafka-client</directory>
+            <outputDirectory>external/storm-kafka-client</outputDirectory>
+            <includes>
+                <include>README.*</include>
+            </includes>
+        </fileSet>
 
         <!-- $STORM_HOME/extlib -->
         <fileSet>
@@ -360,6 +374,18 @@
             <outputDirectory>/conf</outputDirectory>
             <destName>storm_env.ini</destName>
             <fileMode>0644</fileMode>
+        </file>
+        <file>
+            <source>${project.basedir}/../../conf/storm-env.sh</source>
+            <outputDirectory>/conf</outputDirectory>
+            <destName>storm-env.sh</destName>
+            <fileMode>0755</fileMode>
+        </file>
+        <file>
+            <source>${project.basedir}/../../VERSION</source>
+            <outputDirectory>/</outputDirectory>
+            <destName>RELEASE</destName>
+            <filtered>true</filtered>
         </file>
         <!-- TODO this should be a generated file from "target" -->
         <file>

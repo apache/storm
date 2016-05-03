@@ -269,10 +269,7 @@
   (catch IOException e
     (log-warn-error e "Failed to cleanup worker " id ". Will retry later"))
   (catch RuntimeException e
-    (log-warn-error e "Failed to cleanup worker " id ". Will retry later")
-    )
-  (catch java.io.FileNotFoundException e (log-message (.getMessage e)))
-    ))
+    (log-warn-error e "Failed to cleanup worker " id ". Will retry later"))))
 
 (defn shutdown-worker [supervisor id]
   (log-message "Shutting down " (:supervisor-id supervisor) ":" id)
@@ -296,11 +293,13 @@
         (worker-launcher-and-wait conf user ["signal" pid "9"] :log-prefix (str "kill -9 " pid))
         (force-kill-process pid))
       (if as-user
-        (rmr-as-user conf id (worker-pid-path conf id pid))
         (try
+          (rmr-as-user conf id (worker-pid-path conf id pid))
           (rmpath (worker-pid-path conf id pid))
           (rmpath (worker-tmp-root conf id pid))
-          (catch Exception e)))) ;; on windows, the supervisor may still holds the lock on the worker directory
+          (catch Exception e
+            (log-warn-error e "Failed to cleanup pid dir: " pid " for worker " id". Will retry later")))))
+          ;; on windows, the supervisor may still holds the lock on the worker directory
     (try-cleanup-worker conf id))
   (log-message "Shut down " (:supervisor-id supervisor) ":" id))
 
