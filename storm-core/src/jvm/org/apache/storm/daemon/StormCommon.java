@@ -383,10 +383,12 @@ public class StormCommon {
             for (Map<String, Object> info : registerInfo) {
                 String className = (String) info.get("class");
                 Object argument = info.get("argument");
+                Integer maxRetainMetricTuples = Utils.getInt(info.get("max.retain.metric.tuples"), 100);
                 Integer phintNum = Utils.getInt(info.get("parallelism.hint"), 1);
                 Map<String, Object> metricsConsumerConf = new HashMap<String, Object>();
                 metricsConsumerConf.put(Config.TOPOLOGY_TASKS, phintNum);
-                Bolt metricsConsumerBolt = Thrift.prepareSerializedBoltDetails(inputs, new MetricsConsumerBolt(className, argument), null, phintNum, metricsConsumerConf);
+                Bolt metricsConsumerBolt = Thrift.prepareSerializedBoltDetails(inputs,
+                        new MetricsConsumerBolt(className, argument, maxRetainMetricTuples), null, phintNum, metricsConsumerConf);
 
                 String id = className;
                 if (classOccurrencesMap.containsKey(className)) {

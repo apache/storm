@@ -26,11 +26,9 @@ import org.apache.storm.tuple.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 
 public class MetricsConsumerBolt implements IBolt {
@@ -40,14 +38,16 @@ public class MetricsConsumerBolt implements IBolt {
     String _consumerClassName;
     OutputCollector _collector;
     Object _registrationArgument;
+    private final int _maxRetainMetricTuples;
 
     private final BlockingQueue<MetricsTask> _taskQueue = new LinkedBlockingDeque<>();
     private Thread _taskExecuteThread;
     private volatile boolean _running = true;
 
-    public MetricsConsumerBolt(String consumerClassName, Object registrationArgument) {
+    public MetricsConsumerBolt(String consumerClassName, Object registrationArgument, int maxRetainMetricTuples) {
         _consumerClassName = consumerClassName;
         _registrationArgument = registrationArgument;
+        _maxRetainMetricTuples = maxRetainMetricTuples;
     }
 
     @Override
@@ -67,6 +67,13 @@ public class MetricsConsumerBolt implements IBolt {
     
     @Override
     public void execute(Tuple input) {
+        // remove older tasks if task queue exceeds the max size
+        if (_taskQueue.size() > _maxRetainMetricTuples) {
+            while (_taskQueue.size() - 1 > _maxRetainMetricTuples) {
+                _taskQueue.poll();
+            }
+        }
+
         _taskQueue.add(new MetricsTask((IMetricsConsumer.TaskInfo)input.getValue(0), (Collection)input.getValue(1)));
         _collector.ack(input);
     }
