@@ -41,7 +41,6 @@ import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
-import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -94,33 +93,44 @@ public class TestUtilsForResourceAwareScheduler {
     }
 
     public static Map<String, SupervisorDetails> genSupervisors(int numSup, int numPorts, Map resourceMap) {
+        return genSupervisors(numSup, numPorts, 0, resourceMap);
+    }
+
+    public static Map<String, SupervisorDetails> genSupervisors(int numSup, int numPorts, int start, Map resourceMap) {
         Map<String, SupervisorDetails> retList = new HashMap<String, SupervisorDetails>();
-        for (int i = 0; i < numSup; i++) {
+        for (int i = start; i < numSup + start; i++) {
             List<Number> ports = new LinkedList<Number>();
             for (int j = 0; j < numPorts; j++) {
                 ports.add(j);
             }
-            SupervisorDetails sup = new SupervisorDetails("sup-" + i, "host-" + i, null, ports, resourceMap);
+            SupervisorDetails sup = new SupervisorDetails("sup-" + i, "host-" + i, null, ports, new HashMap<String, Double>(resourceMap));
             retList.put(sup.getId(), sup);
         }
         return retList;
     }
 
-    public static Map<ExecutorDetails, String> genExecsAndComps(StormTopology topology, int spoutParallelism, int boltParallelism) {
+    public static Map<ExecutorDetails, String> genExecsAndComps(StormTopology topology) {
         Map<ExecutorDetails, String> retMap = new HashMap<ExecutorDetails, String>();
         int startTask = 0;
         int endTask = 1;
         for (Map.Entry<String, SpoutSpec> entry : topology.get_spouts().entrySet()) {
+            SpoutSpec spout = entry.getValue();
+            String spoutId = entry.getKey();
+            int spoutParallelism = spout.get_common().get_parallelism_hint();
+
             for (int i = 0; i < spoutParallelism; i++) {
-                retMap.put(new ExecutorDetails(startTask, endTask), entry.getKey());
+                retMap.put(new ExecutorDetails(startTask, endTask), spoutId);
                 startTask++;
                 endTask++;
             }
         }
 
         for (Map.Entry<String, Bolt> entry : topology.get_bolts().entrySet()) {
+            String boltId = entry.getKey();
+            Bolt bolt = entry.getValue();
+            int boltParallelism = bolt.get_common().get_parallelism_hint();
             for (int i = 0; i < boltParallelism; i++) {
-                retMap.put(new ExecutorDetails(startTask, endTask), entry.getKey());
+                retMap.put(new ExecutorDetails(startTask, endTask), boltId);
                 startTask++;
                 endTask++;
             }
@@ -139,7 +149,7 @@ public class TestUtilsForResourceAwareScheduler {
         StormTopology topology = buildTopology(numSpout, numBolt, spoutParallelism, boltParallelism);
         TopologyDetails topo = new TopologyDetails(name + "-" + launchTime, conf, topology,
                 0,
-                genExecsAndComps(topology, spoutParallelism, boltParallelism), launchTime);
+                genExecsAndComps(topology), launchTime);
         return topo;
     }
 
@@ -161,6 +171,7 @@ public class TestUtilsForResourceAwareScheduler {
             }
             BoltDeclarer b1 = builder.setBolt("bolt-" + i, new TestBolt(),
                     boltParallelism).shuffleGrouping("spout-" + j);
+            j++;
         }
 
         return builder.createTopology();
