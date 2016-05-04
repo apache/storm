@@ -17,22 +17,21 @@
  */
 package org.apache.storm.elasticsearch.bolt;
 
-import java.util.Map;
-
 import org.apache.storm.elasticsearch.common.EsConfig;
 import org.apache.storm.elasticsearch.common.StormElasticSearchClient;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.common.annotations.VisibleForTesting;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import org.apache.storm.shade.com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Tuple;
+import org.elasticsearch.client.Client;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static org.elasticsearch.common.base.Preconditions.checkNotNull;
+import java.util.Map;
+
+import static org.apache.storm.shade.com.google.common.base.Preconditions.checkNotNull;
 
 public abstract class AbstractEsBolt extends BaseRichBolt {
 

@@ -34,7 +34,7 @@ public final class StormElasticSearchClient implements Serializable {
 
     public Client construct() {
         Settings settings = esConfig.toBasicSettings();
-        TransportClient transportClient = new TransportClient(settings);
+        TransportClient transportClient = TransportClient.builder().settings(settings).build();
         addTransportAddresses(transportClient);
         return transportClient;
     }
