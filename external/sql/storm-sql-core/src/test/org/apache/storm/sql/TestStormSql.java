@@ -100,12 +100,54 @@ public class TestStormSql {
     }
   }
 
+  private static class MockEmpDataSourceProvider implements DataSourcesProvider {
+    @Override
+    public String scheme() {
+      return "mockemp";
+    }
+
+    @Override
+    public DataSource construct(
+            URI uri, String inputFormatClass, String outputFormatClass,
+            List<FieldInfo> fields) {
+      return new TestUtils.MockEmpDataSource();
+    }
+
+    @Override
+    public ISqlTridentDataSource constructTrident(URI uri, String inputFormatClass, String outputFormatClass,
+                                                  String properties, List<FieldInfo> fields) {
+      throw new UnsupportedOperationException("Not supported");
+    }
+  }
+
+  private static class MockDeptDataSourceProvider implements DataSourcesProvider {
+    @Override
+    public String scheme() {
+      return "mockdept";
+    }
+
+    @Override
+    public DataSource construct(
+            URI uri, String inputFormatClass, String outputFormatClass,
+            List<FieldInfo> fields) {
+      return new TestUtils.MockDeptDataSource();
+    }
+
+    @Override
+    public ISqlTridentDataSource constructTrident(URI uri, String inputFormatClass, String outputFormatClass,
+                                                  String properties, List<FieldInfo> fields) {
+      throw new UnsupportedOperationException("Not supported");
+    }
+  }
+
 
   @BeforeClass
   public static void setUp() {
     DataSourcesRegistry.providerMap().put("mock", new MockDataSourceProvider());
     DataSourcesRegistry.providerMap().put("mocknested", new MockNestedDataSourceProvider());
     DataSourcesRegistry.providerMap().put("mockgroup", new MockGroupDataSourceProvider());
+    DataSourcesRegistry.providerMap().put("mockemp", new MockEmpDataSourceProvider());
+    DataSourcesRegistry.providerMap().put("mockdept", new MockDeptDataSourceProvider());
   }
 
   @AfterClass
@@ -340,5 +382,43 @@ public class TestStormSql {
     Assert.assertEquals(0, values.get(0).get(0));
     Assert.assertEquals(0, values.get(0).get(1));
     Assert.assertEquals(2L, values.get(0).get(2));
+  }
+
+  @Test
+  public void testjoin() throws Exception {
+    List<String> stmt = new ArrayList<>();
+    stmt.add("CREATE EXTERNAL TABLE EMP (EMPID INT PRIMARY KEY, EMPNAME VARCHAR, DEPTID INT) LOCATION 'mockemp:///foo'");
+    stmt.add("CREATE EXTERNAL TABLE DEPT (DEPTID INT PRIMARY KEY, DEPTNAME VARCHAR) LOCATION 'mockdept:///foo'");
+    stmt.add("SELECT STREAM EMPID, EMPNAME, DEPTNAME FROM EMP AS e JOIN DEPT AS d ON e.DEPTID = d.DEPTID WHERE e.empid > 0");
+    StormSql sql = StormSql.construct();
+    List<Values> values = new ArrayList<>();
+    ChannelHandler h = new TestUtils.CollectDataChannelHandler(values);
+    sql.execute(stmt, h);
+    System.out.println(values);
+    Assert.assertEquals(3, values.size());
+    Assert.assertEquals("emp1", values.get(0).get(1));
+    Assert.assertEquals("dept1", values.get(0).get(2));
+    Assert.assertEquals("emp2", values.get(1).get(1));
+    Assert.assertEquals("dept1", values.get(1).get(2));
+    Assert.assertEquals("emp3", values.get(2).get(1));
+    Assert.assertEquals("dept2", values.get(2).get(2));
+  }
+
+  @Test
+  public void testjoinAndGroupby() throws Exception {
+    List<String> stmt = new ArrayList<>();
+    stmt.add("CREATE EXTERNAL TABLE EMP (EMPID INT PRIMARY KEY, EMPNAME VARCHAR, DEPTID INT) LOCATION 'mockemp:///foo'");
+    stmt.add("CREATE EXTERNAL TABLE DEPT (DEPTID INT PRIMARY KEY, DEPTNAME VARCHAR) LOCATION 'mockdept:///foo'");
+    stmt.add("SELECT STREAM d.DEPTID, count(EMPID) FROM EMP AS e JOIN DEPT AS d ON e.DEPTID = d.DEPTID WHERE e.empid > 0" +
+                     "GROUP BY d.DEPTID");
+    StormSql sql = StormSql.construct();
+    List<Values> values = new ArrayList<>();
+    ChannelHandler h = new TestUtils.CollectDataChannelHandler(values);
+    sql.execute(stmt, h);
+    Assert.assertEquals(2, values.size());
+    Assert.assertEquals(1, values.get(0).get(0));
+    Assert.assertEquals(2L, values.get(0).get(1));
+    Assert.assertEquals(2, values.get(1).get(0));
+    Assert.assertEquals(1L, values.get(1).get(1));
   }
 }

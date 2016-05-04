@@ -55,6 +55,8 @@ public abstract class PostOrderRelNodeVisitor<T> {
       return visitUncollect((Uncollect) n);
     } else if (n instanceof Window) {
       return visitWindow((Window) n);
+    } else if (n instanceof Join) {
+      return visitJoin((Join) n);
     } else {
       return defaultValue(n);
     }
@@ -114,6 +116,10 @@ public abstract class PostOrderRelNodeVisitor<T> {
 
   public T visitWindow(Window window) throws Exception {
     return defaultValue(window);
+  }
+
+  public T visitJoin(Join join) throws Exception {
+    return defaultValue(join);
   }
 
   public T defaultValue(RelNode n) {

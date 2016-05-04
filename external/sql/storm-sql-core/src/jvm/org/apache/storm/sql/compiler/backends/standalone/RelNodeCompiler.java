@@ -20,12 +20,15 @@ package org.apache.storm.sql.compiler.backends.standalone;
 import com.google.common.base.Joiner;
 import com.google.common.primitives.Primitives;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
+import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Aggregate;
 import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.rel.core.Filter;
+import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.core.TableScan;
+import org.apache.calcite.rel.logical.LogicalJoin;
 import org.apache.calcite.rel.stream.Delta;
 import org.apache.calcite.schema.AggregateFunction;
 import org.apache.calcite.schema.impl.AggregateFunctionImpl;
@@ -38,6 +41,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -88,9 +92,100 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
           "    public void dataReceived(ChannelContext ctx, Values _data) {",
           ""
   );
+
+  private static final String JOIN_STAGE_PROLOGUE = NEW_LINE_JOINER.join(
+          "  private static final ChannelHandler %1$s = ",
+          "    new AbstractChannelHandler() {",
+          "      Object left = %2$s;",
+          "      Object right = %3$s;",
+          "      Object source = null;",
+          "      List<Values> leftRows = new ArrayList<>();",
+          "      List<Values> rightRows = new ArrayList<>();",
+          "      boolean leftDone = false;",
+          "      boolean rightDone = false;",
+          "      int[] ordinals = new int[] {%4$s, %5$s};",
+          "",
+          "      Multimap<Object, Values> getJoinTable(List<Values> rows, int joinIndex) {",
+          "         Multimap<Object, Values> m = ArrayListMultimap.create();",
+          "         for(Values v: rows) {",
+          "           m.put(v.get(joinIndex), v);",
+          "         }",
+          "         return m;",
+          "      }",
+          "",
+          "      List<Values> join(Multimap<Object, Values> tab, List<Values> rows, int rowIdx, boolean rev) {",
+          "         List<Values> res = new ArrayList<>();",
+          "         for (Values row: rows) {",
+          "           for (Values mapValue: tab.get(row.get(rowIdx))) {",
+          "             if (mapValue != null) {",
+          "               Values joinedRow = new Values();",
+          "               if(rev) {",
+          "                 joinedRow.addAll(row);",
+          "                 joinedRow.addAll(mapValue);",
+          "               } else {",
+          "                 joinedRow.addAll(mapValue);",
+          "                 joinedRow.addAll(row);",
+          "               }",
+          "               res.add(joinedRow);",
+          "             }",
+          "           }",
+          "         }",
+          "         return res;",
+          "      }",
+          "",
+          "    @Override",
+          "    public void setSource(ChannelContext ctx, Object source) {",
+          "      this.source = source;",
+          "    }",
+          "",
+          "    @Override",
+          "    public void flush(ChannelContext ctx) {",
+          "        if (source == left) {",
+          "            leftDone = true;",
+          "        } else if (source == right) {",
+          "            rightDone = true;",
+          "        }",
+          "        if (leftDone && rightDone) {",
+          "          if (leftRows.size() <= rightRows.size()) {",
+          "            for(Values res: join(getJoinTable(leftRows, ordinals[0]), rightRows, ordinals[1], false)) {",
+          "              ctx.emit(res);",
+          "            }",
+          "          } else {",
+          "            for(Values res: join(getJoinTable(rightRows, ordinals[1]), leftRows, ordinals[0], true)) {",
+          "              ctx.emit(res);",
+          "            }",
+          "          }",
+          "          leftDone = rightDone = false;",
+          "          leftRows.clear();",
+          "          rightRows.clear();",
+          "          super.flush(ctx);",
+          "        }",
+          "    }",
+          "",
+          "    @Override",
+          "    public void dataReceived(ChannelContext ctx, Values _data) {",
+          ""
+  );
+
   private static final String STAGE_PASSTHROUGH = NEW_LINE_JOINER.join(
       "  private static final ChannelHandler %1$s = AbstractChannelHandler.PASS_THROUGH;",
       "");
+
+  private static final String STAGE_ENUMERABLE_TABLE_SCAN = NEW_LINE_JOINER.join(
+          "  private static final ChannelHandler %1$s = new AbstractChannelHandler() {",
+          "    @Override",
+          "    public void flush(ChannelContext ctx) {",
+          "      ctx.setSource(this);",
+          "      super.flush(ctx);",
+          "    }",
+          "",
+          "    @Override",
+          "    public void dataReceived(ChannelContext ctx, Values _data) {",
+          "      ctx.setSource(this);",
+          "      ctx.emit(_data);",
+          "    }",
+          "  };",
+          "");
 
   private int nameCount;
   private Map<AggregateCall, String> aggregateCallVarNames = new HashMap<>();
@@ -143,7 +238,7 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
 
   @Override
   public Void visitTableScan(TableScan scan) throws Exception {
-    pw.print(String.format(STAGE_PASSTHROUGH, getStageName(scan)));
+    pw.print(String.format(STAGE_ENUMERABLE_TABLE_SCAN, getStageName(scan)));
     return null;
   }
 
@@ -161,6 +256,18 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
     pw.println("        }");
     pw.println("        if (prevGroupValues != curGroupValues) {");
     pw.println("          prevGroupValues = curGroupValues;");
+    pw.println("        }");
+    endStage();
+    return null;
+  }
+
+  @Override
+  public Void visitJoin(Join join) {
+    beginJoinStage(join);
+    pw.println("        if (source == left) {");
+    pw.println("            leftRows.add(_data);");
+    pw.println("        } else if (source == right) {");
+    pw.println("            rightRows.add(_data);");
     pw.println("        }");
     endStage();
     return null;
@@ -316,6 +423,19 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
 
   private void beginAggregateStage(Aggregate n) {
     pw.print(String.format(AGGREGATE_STAGE_PROLOGUE, getStageName(n), getGroupByIndices(n), emitAggregateStmts(n)));
+  }
+
+  private void beginJoinStage(Join join) {
+    int[] ordinals = new int[2];
+    if (!RelOptUtil.analyzeSimpleEquiJoin((LogicalJoin) join, ordinals)) {
+      throw new UnsupportedOperationException("Only simple equi joins are supported");
+    }
+
+    pw.print(String.format(JOIN_STAGE_PROLOGUE, getStageName(join),
+                           getStageName(join.getLeft()),
+                           getStageName(join.getRight()),
+                           ordinals[0],
+                           ordinals[1]));
   }
 
   private void endStage() {

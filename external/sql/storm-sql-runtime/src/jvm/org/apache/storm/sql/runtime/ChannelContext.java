@@ -28,4 +28,5 @@ public interface ChannelContext {
   void emit(Values data);
   void fireChannelInactive();
   void flush();
+  void setSource(Object source);
 }

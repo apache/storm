@@ -38,4 +38,6 @@ public interface ChannelHandler {
   void exceptionCaught(Throwable cause);
 
   void flush(ChannelContext ctx);
+
+  void setSource(ChannelContext ctx, Object source);
 }
