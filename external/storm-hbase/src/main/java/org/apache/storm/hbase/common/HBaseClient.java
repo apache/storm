@@ -58,14 +58,14 @@ public class HBaseClient {
             put.setDurability(durability);
             for (ColumnList.Column col : cols.getColumns()) {
                 if (col.getTs() > 0) {
-                    put.add(
+                    put.addColumn(
                             col.getFamily(),
                             col.getQualifier(),
                             col.getTs(),
                             col.getValue()
                     );
                 } else {
-                    put.add(
+                    put.addColumn(
                             col.getFamily(),
                             col.getQualifier(),
                             col.getValue()

@@ -230,7 +230,7 @@ public class HBaseMapState<T> implements IBackingMap<T> {
             LOG.info("Partiton: {}, Key: {}, Value: {}", new Object[]{this.partitionNum, new String(hbaseKey), new String(this.serializer.serialize(values.get(i)))});
             Put put = new Put(hbaseKey);
             T val = values.get(i);
-            put.add(this.options.columnFamily.getBytes(),
+            put.addColumn(this.options.columnFamily.getBytes(),
                     qualifier.getBytes(),
                     this.serializer.serialize(val));
 
