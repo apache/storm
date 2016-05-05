@@ -206,9 +206,8 @@
                              (uncaughtException [this _ error]
                                (try
                                  ((:report-error <>) error)
-                               (catch Exception e
-                                 (log-error e "Error while reporting error to cluster, proceeding with shutdown")
-                               ))
+                                 (catch Exception e
+                                   (log-error e "Error while reporting error to cluster, proceeding with shutdown")))
                                (if (or
                                     (Utils/exceptionCauseIsInstanceOf InterruptedException error)
                                     (Utils/exceptionCauseIsInstanceOf java.io.InterruptedIOException error))
