@@ -28,7 +28,6 @@ import org.apache.storm.utils.Utils;
 import org.apache.storm.zookeeper.Zookeeper;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.KeeperException.NodeExistsException;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
@@ -193,7 +192,7 @@ public class ZKStateStorage implements IStateStorage {
             try {
                 Zookeeper.createNode(zkWriter, path, data, CreateMode.PERSISTENT, acls);
             } catch (RuntimeException e) {
-                if (e.getCause() instanceof NodeExistsException) {
+                if (Utils.exceptionCauseIsInstanceOf(KeeperException.NodeExistsException.class, e)) {
                     Zookeeper.setData(zkWriter, path, data);
                 } else {
                     throw e;
