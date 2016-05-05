@@ -80,7 +80,7 @@ $ cp storm-kafka-*.jar storm-sql-kafka-*.jar storm-sql-runtime-*.jar extlib/
 The next step is to submit the SQL statements to StormSQL:
 
 ```
-$ bin/storm sql order_filtering order_filtering.sql
+$ bin/storm sql order_filtering.sql order_filtering 
 ```
 
 By now you should be able to see the `order_filtering` topology in the Storm UI.
