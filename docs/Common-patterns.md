@@ -70,7 +70,7 @@ builder.setBolt("merge", new MergeObjects())
   .globalGrouping("rank");
 ```
 
-This pattern works because of the fields grouping done by the first bolt which gives the partitioning you need for this to be semantically correct. You can see an example of this pattern in storm-starter [here]({{page.git-blob-base}}/examples/storm-starter/src/jvm/storm/starter/RollingTopWords.java).
+This pattern works because of the fields grouping done by the first bolt which gives the partitioning you need for this to be semantically correct. You can see an example of this pattern in storm-starter [here]({{page.git-blob-base}}/examples/storm-starter/src/jvm/org/apache/storm/starter/RollingTopWords.java).
 
 If however you have a known skew in the data being processed it can be advantageous to use partialKeyGrouping instead of fieldsGrouping.  This will distribute the load for each key between two downstream bolts instead of a single one.
 
@@ -83,7 +83,7 @@ builder.setBolt("merge", new MergeRanksObjects())
   .globalGrouping("rank");
 ``` 
 
-The topology needs an extra layer of processing to aggregate the partial counts from the upstream bolts but this only processes aggregated values now so the bolt it is not subject to the load caused by the skewed data. You can see an example of this pattern in storm-starter [here]({{page.git-blob-base}}/examples/storm-starter/src/jvm/storm/starter/SkewedRollingTopWords.java).
+The topology needs an extra layer of processing to aggregate the partial counts from the upstream bolts but this only processes aggregated values now so the bolt it is not subject to the load caused by the skewed data. You can see an example of this pattern in storm-starter [here]({{page.git-blob-base}}/examples/storm-starter/src/jvm/org/apache/storm/starter/SkewedRollingTopWords.java).
 
 ### TimeCacheMap for efficiently keeping a cache of things that have been recently updated
 
