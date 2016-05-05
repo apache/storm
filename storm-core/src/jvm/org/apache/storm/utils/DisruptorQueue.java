@@ -17,6 +17,7 @@
  */
 package org.apache.storm.utils;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.lmax.disruptor.AlertException;
 import com.lmax.disruptor.EventFactory;
 import com.lmax.disruptor.EventHandler;
@@ -44,6 +45,7 @@ import java.util.TimerTask;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -62,10 +64,20 @@ public class DisruptorQueue implements IStatefulObject {
     private static final FlusherPool FLUSHER = new FlusherPool();
 
     private static class FlusherPool { 
-        private Timer _timer = new Timer("disruptor-flush-trigger", true);
-        private ThreadPoolExecutor _exec = new ThreadPoolExecutor(1, 100, 10, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(1024), new ThreadPoolExecutor.DiscardPolicy());
+    	private static final String THREAD_PREFIX = "disruptor-flush";
+        private Timer _timer = new Timer(THREAD_PREFIX + "-trigger", true);
+        private ThreadPoolExecutor _exec;
         private HashMap<Long, ArrayList<Flusher>> _pendingFlush = new HashMap<>();
         private HashMap<Long, TimerTask> _tt = new HashMap<>();
+        
+        public FlusherPool() {
+        	_exec = new ThreadPoolExecutor(1, 100, 10, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(1024), new ThreadPoolExecutor.DiscardPolicy());
+			ThreadFactory threadFactory = new ThreadFactoryBuilder()
+					.setDaemon(true)
+					.setNameFormat(THREAD_PREFIX + "-task-pool")
+					.build();
+			_exec.setThreadFactory(threadFactory);
+		}
 
         public synchronized void start(Flusher flusher, final long flushInterval) {
             ArrayList<Flusher> pending = _pendingFlush.get(flushInterval);
