@@ -103,12 +103,10 @@
          (zk/set-data zk path data)
          (do
            (zk/mkdirs zk (parent-path path) acls)
-           (try
+           (try-cause
              (zk/create-node zk path data :persistent acls)
-             (catch RuntimeException e
-               (if (instance? KeeperException$NodeExistsException (.getCause e))
-                 (zk/set-data zk path data)
-                 (throw e)))))))
+             (catch KeeperException$NodeExistsException e
+               (zk/set-data zk path data))))))
 
      (delete-node
        [this path]
