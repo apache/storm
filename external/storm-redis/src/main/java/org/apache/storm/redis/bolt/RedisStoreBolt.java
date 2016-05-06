@@ -17,12 +17,12 @@
  */
 package org.apache.storm.redis.bolt;
 
-import org.apache.storm.topology.OutputFieldsDeclarer;
-import org.apache.storm.tuple.Tuple;
 import org.apache.storm.redis.common.config.JedisClusterConfig;
 import org.apache.storm.redis.common.config.JedisPoolConfig;
 import org.apache.storm.redis.common.mapper.RedisDataTypeDescription;
 import org.apache.storm.redis.common.mapper.RedisStoreMapper;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.tuple.Tuple;
 import redis.clients.jedis.JedisCommands;
 
 /**
@@ -98,6 +98,17 @@ public class RedisStoreBolt extends AbstractRedisBolt {
 
                 case HYPER_LOG_LOG:
                     jedisCommand.pfadd(key, value);
+                    break;
+
+                case GEO:
+                    String[] array = value.split(":");
+                    if (array.length != 2) {
+                        throw new IllegalArgumentException("value structure should be longitude:latitude");
+                    }
+
+                    double longitude = Double.valueOf(array[0]);
+                    double latitude = Double.valueOf(array[1]);
+                    jedisCommand.geoadd(additionalKey, longitude, latitude, key);
                     break;
 
                 default:
