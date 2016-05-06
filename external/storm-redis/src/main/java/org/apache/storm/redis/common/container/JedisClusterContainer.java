@@ -21,6 +21,7 @@ import redis.clients.jedis.JedisCluster;
 import redis.clients.jedis.JedisCommands;
 
 import java.io.Closeable;
+import java.io.IOException;
 
 /**
  * Container for managing JedisCluster.
@@ -60,6 +61,10 @@ public class JedisClusterContainer implements JedisCommandsInstanceContainer, Cl
      */
     @Override
     public void close() {
-        this.jedisCluster.close();
+        try {
+            this.jedisCluster.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
