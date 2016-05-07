@@ -19,6 +19,6 @@
 # Set Storm specific environment variables here.
 
 # The java implementation to use.
-export JAVA_HOME=${JAVA_HOME}
+#export JAVA_HOME=/path/to/jdk/home
 
 # export STORM_CONF_DIR=""
