@@ -182,7 +182,7 @@ public class KafkaDataSourcesProvider implements DataSourcesProvider {
         String scheme = (String)map.get("scheme");
         if(scheme.toUpperCase().equals("JSON")){
           conf.scheme = new SchemeAsMultiScheme(new JsonScheme(fieldNames));
-        }else if(scheme.toUpperCase().equals("csv")){
+        }else if(scheme.toUpperCase().equals("CSV")){
           conf.scheme = new SchemeAsMultiScheme(new CsvScheme(fields));
         }else{
           throw new UnsupportedOperationException(String.format("%s: Unsupport scheme",scheme));
