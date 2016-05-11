@@ -134,7 +134,7 @@ public class GeneralTopologyContext implements JSONAware {
     }
 
 
-    private final Logger logger = LoggerFactory.getLogger(getClass());;
+    private final Logger logger = LoggerFactory.getLogger(getClass());
     /**
      * Gets information about who is consuming the outputs of the specified component,
      * and how.

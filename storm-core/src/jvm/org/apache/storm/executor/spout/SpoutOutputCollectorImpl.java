@@ -40,12 +40,12 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
     private final ExecutorData executorData;
     private final Task taskData;
     private final int taskId;
-    private final MutableLong emittedCount; // 共用
-    private final boolean isAcker; // 共用
-    private final Random random; // 共用
-    private final Boolean isEventLoggers; // 共用
-    private final Boolean isDebug; // 共用
-    private final RotatingMap<Long, TupleInfo> pending; // 共用
+    private final MutableLong emittedCount;
+    private final boolean isAcker;
+    private final Random random;
+    private final Boolean isEventLoggers;
+    private final Boolean isDebug;
+    private final RotatingMap<Long, TupleInfo> pending;
 
     public SpoutOutputCollectorImpl(ISpout spout, ExecutorData executorData, Task taskData, int taskId, MutableLong emittedCount, boolean isAcker,
             Random random, Boolean isEventLoggers, Boolean isDebug, RotatingMap<Long, TupleInfo> pending) {
@@ -81,7 +81,6 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
     }
 
     private List<Integer> sendSpoutMsg(String stream, List<Object> values, Object messageId, Integer outTaskId) {
-
         emittedCount.increment();
 
         java.util.List<Integer> outTasks;
@@ -95,31 +94,21 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
             return outTasks;
         }
         List<Long> ackSeq = new ArrayList<Long>();
-        Boolean needAck = (messageId != null) && isAcker;
+        boolean needAck = (messageId != null) && isAcker;
 
-        // This change storm logic
-        // Storm can't make sure rootId is unique
-        // storm's logic is rootId = MessageId.generateId(random);
-        // when duplicate rootId, it will miss call ack/fail
-        Long rootId = MessageId.generateId(random);
-        if (needAck) {
-            while (pending.containsKey(rootId) == true) {
-                rootId = MessageId.generateId(random);
-            }
-        }
+        long rootId = MessageId.generateId(random);
         for (Integer t : outTasks) {
-            MessageId msgid;
+            MessageId msgId;
             if (needAck) {
-                // Long as = MessageId.generateId();
-                Long as = MessageId.generateId(random);
-                msgid = MessageId.makeRootId(rootId, as);
+                long as = MessageId.generateId(random);
+                msgId = MessageId.makeRootId(rootId, as);
                 ackSeq.add(as);
             } else {
-                msgid = MessageId.makeUnanchored();
+                msgId = MessageId.makeUnanchored();
             }
 
-            TupleImpl tp = new TupleImpl(executorData.getWorkerTopologyContext(), values, t, stream, msgid);
-            executorData.getExecutorTransfer().transfer(t, tp);
+            TupleImpl tuple = new TupleImpl(executorData.getWorkerTopologyContext(), values, t, stream, msgId);
+            executorData.getExecutorTransfer().transfer(t, tuple);
         }
         if (isEventLoggers) {
             ExecutorCommon.sendToEventLogger(executorData, taskData, values, executorData.getComponentId(), messageId, random);
@@ -143,7 +132,6 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
             pending.put(rootId, info);
             List<Object> ackerTuple = new Values(rootId, Utils.bitXorVals(ackSeq), taskId);
             ExecutorCommon.sendUnanchored(taskData, Acker.ACKER_INIT_STREAM_ID, ackerTuple, executorData.getExecutorTransfer());
-
         } else if (messageId != null) {
             TupleInfo info = new TupleInfo();
             info.setStream(stream);

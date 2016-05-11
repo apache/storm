@@ -59,24 +59,31 @@ public class Executor {
         LOG.info("Loading executor " + componentId + ":" + executorId);
     }
 
+    public static ExecutorShutdown mkExecutor(Map workerData, List<Long> executorId, Map<String, String> credentials) throws Exception {
+        Map<String, Object> convertedWorkerData = Utils.convertMap(workerData);
+        Executor executor = new Executor(convertedWorkerData, executorId, credentials);
+        return executor.execute();
+    }
+
     private ExecutorShutdown execute() throws Exception {
-        Map<Integer, Task> taskDatas = new HashMap<>();
+        Map<Integer, Task> idToTask = new HashMap<>();
         for (Integer taskId : executorData.getTaskIds()) {
             Task task = new Task(executorData, taskId);
             ExecutorCommon.sendUnanchored(task, StormCommon.SYSTEM_STREAM_ID, new Values("startup"), executorData.getExecutorTransfer());
-            taskDatas.put(taskId, task);
+            idToTask.put(taskId, task);
         }
         LOG.info("Loading executor tasks " + componentId + ":" + executorId);
+
         registerBackpressure();
         Utils.SmartThread systemThreads =
                 Utils.asyncLoop(executorData.getExecutorTransfer(), executorData.getExecutorTransfer().getName(), executorData.getReportErrorDie());
-        BaseExecutor baseExecutor = null;
 
+        BaseExecutor baseExecutor;
         String type = executorData.getType();
         if (StatsUtil.SPOUT.equals(type)) {
-            baseExecutor = new SpoutExecutor(executorData, taskDatas, credentials);
+            baseExecutor = new SpoutExecutor(executorData, idToTask, credentials);
         } else if (StatsUtil.BOLT.equals(type)) {
-            baseExecutor = new BoltExecutor(executorData, taskDatas, credentials);
+            baseExecutor = new BoltExecutor(executorData, idToTask, credentials);
         } else {
             throw new RuntimeException("Could not find  " + componentId + " in topology");
         }
@@ -85,7 +92,7 @@ public class Executor {
         Utils.SmartThread handlers = Utils.asyncLoop(baseExecutor, false, executorData.getReportErrorDie(), Thread.NORM_PRIORITY, true, true, handlerName);
         setupTicks(StatsUtil.SPOUT.equals(type));
         LOG.info("Finished loading executor " + componentId + ":" + executorId);
-        return new ExecutorShutdown(executorData, Lists.newArrayList(systemThreads, handlers), taskDatas);
+        return new ExecutorShutdown(executorData, Lists.newArrayList(systemThreads, handlers), idToTask);
     }
 
     private void registerBackpressure() {
@@ -120,7 +127,7 @@ public class Executor {
         final Integer tickTimeSecs = Utils.getInt(stormConf.get(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS), null);
         boolean enableMessageTimeout = (Boolean) stormConf.get(Config.TOPOLOGY_ENABLE_MESSAGE_TIMEOUTS);
         if (tickTimeSecs != null) {
-            if (Utils.isSystemId(componentId) || ( !enableMessageTimeout && isSpout)) {
+            if (Utils.isSystemId(componentId) || (!enableMessageTimeout && isSpout)) {
                 LOG.info("Timeouts disabled for executor " + componentId + ":" + executorId);
                 StormTimer timerTask = (StormTimer) workerData.get("user-timer");
                 timerTask.scheduleRecurring(tickTimeSecs, tickTimeSecs, new Runnable() {
@@ -134,12 +141,6 @@ public class Executor {
                 });
             }
         }
-    }
-
-    public static ExecutorShutdown mkExecutor(Map workerData, List<Long> executorId, Map<String, String> credentials) throws Exception {
-        Map<String, Object> convertedWorkerData = Utils.convertMap(workerData);
-        Executor executor = new Executor(convertedWorkerData, executorId, credentials);
-        return executor.execute();
     }
 
 }

@@ -17,7 +17,6 @@
  */
 package org.apache.storm.executor.bolt;
 
-import org.apache.storm.Config;
 import org.apache.storm.daemon.Acker;
 import org.apache.storm.daemon.Task;
 import org.apache.storm.executor.ExecutorCommon;
@@ -44,15 +43,17 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
     private final ExecutorData executorData;
     private final Task taskData;
     private final int taskId;
-    private final Random random; // 共用
-    private final Boolean isEventLoggers; // 共用
+    private final Random random;
+    private final boolean isEventLoggers;
+    private final boolean isDebug;
 
-    public BoltOutputCollectorImpl(ExecutorData executorData, Task taskData, int taskId, Random random, Boolean isEventLoggers) {
+    public BoltOutputCollectorImpl(ExecutorData executorData, Task taskData, int taskId, Random random, boolean isEventLoggers, boolean isDebug) {
         this.executorData = executorData;
         this.taskData = taskData;
         this.taskId = taskId;
         this.random = random;
         this.isEventLoggers = isEventLoggers;
+        this.isDebug = isDebug;
     }
 
     public List<Integer> emit(String streamId, Collection<Tuple> anchors, List<Object> tuple) {
@@ -65,8 +66,7 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
     }
 
     private List<Integer> boltEmit(String streamId, Collection<Tuple> anchors, List<Object> values, Integer targetTaskId) {
-
-        List<Integer> outTasks = null;
+        List<Integer> outTasks;
         if (targetTaskId != null) {
             outTasks = taskData.getOutgoingTasks(targetTaskId, streamId, values);
         } else {
@@ -74,38 +74,36 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
         }
 
         for (Integer t : outTasks) {
-            Map<Long, Long> anchorsToids = new HashMap<Long, Long>();
+            Map<Long, Long> anchorsToIds = new HashMap<Long, Long>();
             if (anchors != null) {
                 for (Tuple a : anchors) {
-                    // Long edge_id = MessageId.generateId();
-                    Long edgeId = MessageId.generateId(random);
+                    long edgeId = MessageId.generateId(random);
                     ((TupleImpl) a).updateAckVal(edgeId);
                     for (Long root_id : a.getMessageId().getAnchorsToIds().keySet()) {
-                        putXor(anchorsToids, root_id, edgeId);
+                        putXor(anchorsToIds, root_id, edgeId);
                     }
                 }
             }
-            MessageId msgid = MessageId.makeId(anchorsToids);
-            TupleImpl tupleExt = new TupleImpl(executorData.getWorkerTopologyContext(), values, taskId, streamId, msgid);
+            MessageId msgId = MessageId.makeId(anchorsToIds);
+            TupleImpl tupleExt = new TupleImpl(executorData.getWorkerTopologyContext(), values, taskId, streamId, msgId);
             executorData.getExecutorTransfer().transfer(t, tupleExt);
         }
-        if (isEventLoggers)
+        if (isEventLoggers) {
             ExecutorCommon.sendToEventLogger(executorData, taskData, values, executorData.getComponentId(), null, random);
-        if (outTasks == null)
-            outTasks = new ArrayList<>();
+        }
         return outTasks;
     }
 
     @Override
     public void ack(Tuple input) {
-        long ackvalue = ((TupleImpl) input).getAckVal();
+        long ackValue = ((TupleImpl) input).getAckVal();
         Map<Long, Long> anchorsToIds = input.getMessageId().getAnchorsToIds();
         for (Map.Entry<Long, Long> entry : anchorsToIds.entrySet()) {
-            ExecutorCommon.sendUnanchored(taskData, Acker.ACKER_ACK_STREAM_ID, new Values(entry.getKey(), Utils.bitXor(entry.getValue(), ackvalue)),
+            ExecutorCommon.sendUnanchored(taskData, Acker.ACKER_ACK_STREAM_ID,
+                    new Values(entry.getKey(), Utils.bitXor(entry.getValue(), ackValue)),
                     executorData.getExecutorTransfer());
         }
         long delta = tupleTimeDelta((TupleImpl) input);
-        boolean isDebug = Utils.getBoolean(executorData.getStormConf().get(Config.TOPOLOGY_DEBUG), false);
         if (isDebug) {
             LOG.info("BOLT ack TASK: {} TIME: {} TUPLE: {}", taskId, delta, input);
         }
@@ -123,7 +121,6 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
             ExecutorCommon.sendUnanchored(taskData, Acker.ACKER_FAIL_STREAM_ID, new Values(root), executorData.getExecutorTransfer());
         }
         long delta = tupleTimeDelta((TupleImpl) input);
-        boolean isDebug = Utils.getBoolean(executorData.getStormConf().get(Config.TOPOLOGY_DEBUG), false);
         if (isDebug) {
             LOG.info("BOLT fail TASK: {} TIME: {} TUPLE: {}", taskId, delta, input);
         }
@@ -157,7 +154,7 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
     private void putXor(Map<Long, Long> pending, Long key, Long id) {
         Long curr = pending.get(key);
         if (curr == null) {
-            curr = Long.valueOf(0);
+            curr = 0l;
         }
         pending.put(key, Utils.bitXor(curr, id));
     }

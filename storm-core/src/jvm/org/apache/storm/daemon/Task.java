@@ -195,7 +195,7 @@ public class Task {
                 (Map<String, Object>) workerData.get("user-shared-resources"),
                 executorData.getSharedExecutorData(),
                 executorData.getIntervalToTaskToMetricToRegistry(),
-                executorData.getOpenOrprepareWasCalled());
+                executorData.getOpenOrPrepareWasCalled());
     }
 
     private Object mkTaskObject() {

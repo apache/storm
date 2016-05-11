@@ -90,7 +90,7 @@ public class ExecutorShutdown implements Shutdownable, IRunningExecutor {
                 }
             }
             executorData.getStormClusterState().disconnect();
-            if (executorData.getOpenOrprepareWasCalled().get()) {
+            if (executorData.getOpenOrPrepareWasCalled().get()) {
                 for (Task task : taskDatas.values()) {
                     Object object = task.getTaskObject();
                     if (object instanceof ISpout) {

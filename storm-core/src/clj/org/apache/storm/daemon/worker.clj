@@ -51,8 +51,6 @@
   (:import [org.apache.storm.executor Executor])
   (:gen-class))
 
-(defmulti mk-suicide-fn cluster-mode)
-
 (defn read-worker-executors [storm-conf storm-cluster-state storm-id assignment-id port assignment-versions]
   (log-message "Reading Assignments.")
   (let [assignment (:executor->node+port (clojurify-assignment (.assignmentInfo storm-cluster-state storm-id nil)))]
@@ -293,7 +291,7 @@
       ;; when worker bootup, worker will start to setup initial connections to
       ;; other workers. When all connection is ready, we will enable this flag
       ;; and spout and bolt will be activated.
-      :worker-active-flag (atom false)
+      :worker-active-flag (AtomicBoolean. false)
       :storm-active-atom (AtomicBoolean. false)
       :storm-component->debug-atom (AtomicReference.)
       :executors executors
@@ -324,7 +322,7 @@
                                  (mapcat (fn [e] (for [t (executor->tasks e)] [t (first e)])))
                                  (into {})
                                  (HashMap.))
-      :suicide-fn (mk-suicide-fn conf)
+      :suicide-fn (Utils/mkSuicideFn)
       :uptime (Utils/makeUptimeComputer)
       :default-shared-resources (mk-default-resources <>)
       :user-shared-resources (mk-user-resources <>)
@@ -332,9 +330,9 @@
       :transfer-fn (mk-transfer-fn <>)
       :load-mapping (LoadMapping.)
       :assignment-versions assignment-versions
-      :backpressure (atom false) ;; whether this worker is going slow
-      :transfer-backpressure (atom false) ;; if the transfer queue is backed-up
-      :backpressure-trigger (atom false) ;; a trigger for synchronization with executors
+      :backpressure (AtomicBoolean. false) ;; whether this worker is going slow
+      :transfer-backpressure (AtomicBoolean. false) ;; if the transfer queue is backed-up
+      :backpressure-trigger (AtomicBoolean. false) ;; a trigger for synchronization with executors
       :throttle-on (AtomicBoolean. false) ;; whether throttle is activated for spouts
       )))
 
@@ -810,14 +808,6 @@
     (log-message "Worker " worker-id " for storm " storm-id " on " assignment-id ":" port " has finished loading")
     ret
     ))))))
-
-(defmethod mk-suicide-fn
-  :local [conf]
-  (fn [] (Utils/exitProcess 1 "Worker died")))
-
-(defmethod mk-suicide-fn
-  :distributed [conf]
-  (fn [] (Utils/exitProcess 1 "Worker died")))
 
 (defn -main [storm-id assignment-id port-str worker-id]
   (let [conf (clojurify-structure (ConfigUtils/readStormConfig))]

@@ -1766,6 +1766,15 @@ public class Utils {
         Runtime.getRuntime().exit(val);
     }
 
+    public static Runnable mkSuicideFn() {
+        return new Runnable() {
+            @Override
+            public void run() {
+                Utils.exitProcess(1, "Worker died");
+            }
+        };
+    }
+
     /**
      * "{:a 1 :b 1 :c 2} -> {1 [:a :b] 2 :c}"
      *

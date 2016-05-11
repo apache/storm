@@ -49,19 +49,19 @@ public class BoltExecutor extends BaseExecutor {
 
     private final Callable<Boolean> executeSampler;
 
-    public BoltExecutor(ExecutorData executorData, Map<Integer, Task> taskDatas, Map<String, String> credentials) {
-        super(executorData, taskDatas, credentials);
+    public BoltExecutor(ExecutorData executorData, Map<Integer, Task> idToTask, Map<String, String> credentials) {
+        super(executorData, idToTask, credentials);
         this.executeSampler = ConfigUtils.mkStatsSampler(stormConf);
         init();
     }
 
     @Override
     protected void init() {
-        while (!executorData.getStormActiveAtom().get()) {
+        while (!executorData.getStormActive().get()) {
             Utils.sleep(100);
         }
-        LOG.info("Preparing bolt {}:{}", componentId, taskDatas.keySet());
-        for (Map.Entry<Integer, Task> entry : taskDatas.entrySet()) {
+        LOG.info("Preparing bolt {}:{}", componentId, idToTask.keySet());
+        for (Map.Entry<Integer, Task> entry : idToTask.entrySet()) {
             Task taskData = entry.getValue();
             IBolt boltObject = (IBolt) taskData.getTaskObject();
             TopologyContext userContext = taskData.getUserContext();
@@ -69,24 +69,25 @@ public class BoltExecutor extends BaseExecutor {
             if (boltObject instanceof ICredentialsListener) {
                 ((ICredentialsListener) boltObject).setCredentials(credentials);
             }
-            if (componentId == Constants.SYSTEM_COMPONENT_ID) {
-                Map<String, DisruptorQueue> map = ImmutableMap.of("sendqueue", transferQueue, "receive", receiveQueue, "transfer",
-                        (DisruptorQueue) executorData.getWorkerData().get("transfer"));
+            if (Constants.SYSTEM_COMPONENT_ID.equals(componentId)) {
+                Map<String, DisruptorQueue> map = ImmutableMap.of("sendqueue", transferQueue, "receive", receiveQueue,
+                        "transfer", (DisruptorQueue) executorData.getWorkerData().get("transfer"));
                 BuiltinMetricsUtil.registerQueueMetrics(map, stormConf, userContext);
+
                 Map cachedNodePortToSocket = (Map) ((AtomicReference) executorData.getWorkerData().get("cached-node+port->socket")).get();
                 BuiltinMetricsUtil.registerIconnectionClientMetrics(cachedNodePortToSocket, stormConf, userContext);
-                BuiltinMetricsUtil.registerQueueMetrics((Map) executorData.getWorkerData().get("receiver"), stormConf, userContext);
+                BuiltinMetricsUtil.registerIconnectionServerMetric(executorData.getWorkerData().get("receiver"), stormConf, userContext);
             } else {
                 Map<String, DisruptorQueue> map = ImmutableMap.of("sendqueue", transferQueue, "receive", receiveQueue);
                 BuiltinMetricsUtil.registerQueueMetrics(map, stormConf, userContext);
             }
 
-            IOutputCollector outputCollector = new BoltOutputCollectorImpl(executorData, taskData, entry.getKey(), rand, isEventLoggers);
+            IOutputCollector outputCollector = new BoltOutputCollectorImpl(executorData, taskData, entry.getKey(), rand, isEventLoggers, isDebug);
 
             boltObject.prepare(stormConf, userContext, new OutputCollector(outputCollector));
         }
-        executorData.setOpenOrprepareWasCalled(true);
-        LOG.info("Opened bolt {}:{}", componentId, taskDatas.keySet());
+        executorData.setOpenOrPrepareWasCalled(true);
+        LOG.info("Prepared bolt {}:{}", componentId, idToTask.keySet());
         setupMetrics();
     }
 
@@ -97,32 +98,34 @@ public class BoltExecutor extends BaseExecutor {
     }
 
     @Override
-    public void tupleActionFn(int taskId, TupleImpl tuple) throws Exception{
+    public void tupleActionFn(int taskId, TupleImpl tuple) throws Exception {
         String streamId = tuple.getSourceStreamId();
-        if (streamId == Constants.CREDENTIALS_CHANGED_STREAM_ID) {
-            Object taskObject = taskDatas.get(taskId).getTaskObject();
+        if (Constants.CREDENTIALS_CHANGED_STREAM_ID.equals(streamId)) {
+            Object taskObject = idToTask.get(taskId).getTaskObject();
             if (taskObject instanceof ICredentialsListener) {
                 ((ICredentialsListener) taskObject).setCredentials((Map<String, String>) tuple.getValue(0));
             }
-        } else if (streamId == Constants.METRICS_TICK_STREAM_ID) {
-            metricsTick(taskDatas.get(taskId), tuple);
+        } else if (Constants.METRICS_TICK_STREAM_ID.equals(streamId)) {
+            metricsTick(idToTask.get(taskId), tuple);
         } else {
-            IBolt boltObject = (IBolt) taskDatas.get(taskId).getTaskObject();
-            boolean isSampler = sampler.call();
+            IBolt boltObject = (IBolt) idToTask.get(taskId).getTaskObject();
+            boolean isSampled = sampler.call();
             boolean isExecuteSampler = executeSampler.call();
-            long now = (isSampler || isExecuteSampler) ? System.currentTimeMillis() : 0;
-            if (isSampler)
+            long now = (isSampled || isExecuteSampler) ? System.currentTimeMillis() : 0;
+            if (isSampled) {
                 tuple.setProcessSampleStartTime(now);
-            if (isExecuteSampler)
-                tuple.setProcessSampleStartTime(now);
+            }
+            if (isExecuteSampler) {
+                tuple.setExecuteSampleStartTime(now);
+            }
             boltObject.execute(tuple);
 
             Long ms = tuple.getExecuteSampleStartTime();
             long delta = (ms != null) ? Time.deltaMs(ms) : 0;
-            if (Utils.getBoolean(stormConf.get(Config.TOPOLOGY_DEBUG), false)) {
+            if (isDebug) {
                 LOG.info("Execute done TUPLE {} TASK: {} DELTA: {}", tuple, taskId, delta);
             }
-            new BoltExecuteInfo(tuple, taskId, delta).applyOn(taskDatas.get(taskId).getUserContext());
+            new BoltExecuteInfo(tuple, taskId, delta).applyOn(idToTask.get(taskId).getUserContext());
             if (delta != 0) {
                 ((BoltExecutorStats) executorData.getStats()).boltExecuteTuple(tuple.getSourceComponent(), tuple.getSourceStreamId(), delta);
             }

@@ -18,7 +18,6 @@
 package org.apache.storm.executor;
 
 import clojure.lang.IFn;
-import com.google.common.base.Joiner;
 import com.lmax.disruptor.dsl.ProducerType;
 import org.apache.storm.Config;
 import org.apache.storm.cluster.*;
@@ -45,8 +44,6 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ExecutorData {
 
@@ -55,16 +52,18 @@ public class ExecutorData {
     private final List<Long> executorId;
     private final List<Integer> taskIds;
     private final String componentId;
-    private final AtomicBoolean openOrprepareWasCalled;
+    private final AtomicBoolean openOrPrepareWasCalled;
     private final Map stormConf;
+    private final Map conf;
     private final DisruptorQueue receiveQueue;
     private final String stormId;
     private final HashMap sharedExecutorData;
-    private final AtomicBoolean stormActiveAtom;
+    private final AtomicBoolean stormActive;
     private final AtomicReference<Map<String, DebugOptions>> stormComponentDebug;
     private final DisruptorQueue batchTransferWorkerQueue;
     private final Runnable suicideFn;
     private final IStormClusterState stormClusterState;
+    private final Map<Integer, String> taskToComponent;
     private CommonStats stats;
     private final Map<Integer, Map<Integer, Map<String, IMetric>>> intervalToTaskToMetricToRegistry;
     private final Map<String, Map<String, LoadAwareCustomStreamGrouping>> streamToComponentToGrouper;
@@ -74,31 +73,33 @@ public class ExecutorData {
     private final AtomicBoolean backpressure;
     private final ExecutorTransfer executorTransfer;
     private final String type;
-
-    private final Logger logger = LoggerFactory.getLogger(getClass());
+    private final AtomicBoolean throttleOn;
+    private final boolean isDebug;
 
     public ExecutorData(Map<String, Object> workerData, List<Long> executorId) {
         this.workerData = workerData;
-        this.executorId = executorId;
         this.workerTopologyContext = StormCommon.makeWorkerContext(workerData);
+        this.executorId = executorId;
         this.taskIds = StormCommon.executorIdToTasks(executorId);
         this.componentId = workerTopologyContext.getComponentId(taskIds.get(0));
+        this.openOrPrepareWasCalled = new AtomicBoolean(false);
         this.stormConf = normalizedComponentConf((Map) workerData.get("storm-conf"), workerTopologyContext, componentId);
+        this.receiveQueue = (DisruptorQueue) (((Map) workerData.get("executor-receive-queue-map")).get(executorId));
+        this.stormId = (String) workerData.get("storm-id");
+        this.conf = (Map) workerData.get("conf");
+        this.sharedExecutorData = new HashMap();
+        this.stormActive = (AtomicBoolean) workerData.get("storm-active-atom");
+        this.stormComponentDebug = (AtomicReference<Map<String, DebugOptions>>) workerData.get("storm-component->debug-atom");
+
         int sendSize = Utils.getInt(stormConf.get(Config.TOPOLOGY_EXECUTOR_SEND_BUFFER_SIZE));
         int waitTimeOutMs = Utils.getInt(stormConf.get(Config.TOPOLOGY_DISRUPTOR_WAIT_TIMEOUT_MILLIS));
         int batchSize = Utils.getInt(stormConf.get(Config.TOPOLOGY_DISRUPTOR_BATCH_SIZE));
         int batchTimeOutMs = Utils.getInt(stormConf.get(Config.TOPOLOGY_DISRUPTOR_BATCH_TIMEOUT_MILLIS));
-        this.batchTransferWorkerQueue =
-                new DisruptorQueue("executor" + executorId + "-send-queue", ProducerType.SINGLE, sendSize, waitTimeOutMs, batchSize, batchTimeOutMs);
-        this.openOrprepareWasCalled = new AtomicBoolean(false);
-        // maybe question?
-        this.receiveQueue = (DisruptorQueue) (((Map) workerData.get("executor-receive-queue-map")).get(executorId));
-        this.stormId = (String) workerData.get("storm-id");
-        this.sharedExecutorData = new HashMap();
-        // 我现在不太确定workerData 的 storm-active-atom 从 atom 改成AtomicBoolean是否合理
-        this.stormActiveAtom = (AtomicBoolean) workerData.get("storm-active-atom");
-        // 注意这里有可能是null值
-        this.stormComponentDebug = (AtomicReference<Map<String, DebugOptions>>) workerData.get("storm-component->debug-atom");
+        this.batchTransferWorkerQueue = new DisruptorQueue(
+                "executor" + executorId + "-send-queue", ProducerType.SINGLE, sendSize, waitTimeOutMs, batchSize, batchTimeOutMs);
+        this.executorTransfer = new ExecutorTransfer(workerTopologyContext, batchTransferWorkerQueue, stormConf,
+                (IFn) workerData.get("transfer-fn"));
+
         this.suicideFn = (Runnable) workerData.get("suicide-fn");
         try {
             this.stormClusterState = ClusterUtils.mkStormClusterState(workerData.get("state-store"), Utils.getWorkerACL(stormConf),
@@ -106,18 +107,6 @@ public class ExecutorData {
         } catch (Exception e) {
             throw Utils.wrapInRuntime(e);
         }
-        this.intervalToTaskToMetricToRegistry = new HashMap<>();
-        this.streamToComponentToGrouper = outboundComponents(workerTopologyContext, componentId, stormConf);
-        //todo:debug
-        logger.info("outboundComponents for component:{}, tasks:{}, executors:{}",
-                componentId, Joiner.on(",").join(taskIds), Joiner.on(",").join(executorId));
-
-        this.reportError = new ReportError(stormConf, stormClusterState, stormId, componentId, workerTopologyContext);
-        this.reportErrorDie = new ReportErrorAndDie(reportError, suicideFn);
-        this.sampler = ConfigUtils.mkStatsSampler(stormConf);
-        this.backpressure = new AtomicBoolean(false);
-        this.executorTransfer = new ExecutorTransfer(workerTopologyContext, batchTransferWorkerQueue, stormConf, (IFn) workerData.get("executorTransfer-fn"),
-                componentId + "-executorTransfer");
 
         StormTopology topology = workerTopologyContext.getRawTopology();
         Map<String, SpoutSpec> spouts = topology.get_spouts();
@@ -132,6 +121,16 @@ public class ExecutorData {
             throw new RuntimeException("Could not find " + componentId + " in " + topology);
         }
 
+        this.intervalToTaskToMetricToRegistry = new HashMap<>();
+        this.taskToComponent = (Map<Integer, String>) workerData.get("task->component");
+        this.streamToComponentToGrouper = outboundComponents(workerTopologyContext, componentId, stormConf);
+
+        this.reportError = new ReportError(stormConf, stormClusterState, stormId, componentId, workerTopologyContext);
+        this.reportErrorDie = new ReportErrorAndDie(reportError, suicideFn);
+        this.sampler = ConfigUtils.mkStatsSampler(stormConf);
+        this.backpressure = new AtomicBoolean(false);
+        this.throttleOn = (AtomicBoolean) workerData.get("throttle-on");
+        this.isDebug = Utils.getBoolean(stormConf.get(Config.TOPOLOGY_DEBUG), false);
     }
 
     /**
@@ -170,36 +169,39 @@ public class ExecutorData {
     }
 
     private Map normalizedComponentConf(Map stormConf, WorkerTopologyContext topologyContext, String componentId) {
-        List<Object> to_remove = ConfigUtils.All_CONFIGS();
-        to_remove.remove(Config.TOPOLOGY_DEBUG);
-        to_remove.remove(Config.TOPOLOGY_MAX_SPOUT_PENDING);
-        to_remove.remove(Config.TOPOLOGY_MAX_TASK_PARALLELISM);
-        to_remove.remove(Config.TOPOLOGY_TRANSACTIONAL_ID);
-        to_remove.remove(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS);
-        to_remove.remove(Config.TOPOLOGY_SLEEP_SPOUT_WAIT_STRATEGY_TIME_MS);
-        to_remove.remove(Config.TOPOLOGY_SPOUT_WAIT_STRATEGY);
-        to_remove.remove(Config.TOPOLOGY_BOLTS_WINDOW_LENGTH_COUNT);
-        to_remove.remove(Config.TOPOLOGY_BOLTS_WINDOW_LENGTH_DURATION_MS);
-        to_remove.remove(Config.TOPOLOGY_BOLTS_SLIDING_INTERVAL_COUNT);
-        to_remove.remove(Config.TOPOLOGY_BOLTS_SLIDING_INTERVAL_DURATION_MS);
-        to_remove.remove(Config.TOPOLOGY_BOLTS_TUPLE_TIMESTAMP_FIELD_NAME);
-        to_remove.remove(Config.TOPOLOGY_BOLTS_TUPLE_TIMESTAMP_MAX_LAG_MS);
-        to_remove.remove(Config.TOPOLOGY_BOLTS_MESSAGE_ID_FIELD_NAME);
-        to_remove.remove(Config.TOPOLOGY_STATE_PROVIDER);
-        to_remove.remove(Config.TOPOLOGY_STATE_PROVIDER_CONFIG);
+        List<Object> keysToRemove = ConfigUtils.All_CONFIGS();
+        keysToRemove.remove(Config.TOPOLOGY_DEBUG);
+        keysToRemove.remove(Config.TOPOLOGY_MAX_SPOUT_PENDING);
+        keysToRemove.remove(Config.TOPOLOGY_MAX_TASK_PARALLELISM);
+        keysToRemove.remove(Config.TOPOLOGY_TRANSACTIONAL_ID);
+        keysToRemove.remove(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS);
+        keysToRemove.remove(Config.TOPOLOGY_SLEEP_SPOUT_WAIT_STRATEGY_TIME_MS);
+        keysToRemove.remove(Config.TOPOLOGY_SPOUT_WAIT_STRATEGY);
+        keysToRemove.remove(Config.TOPOLOGY_BOLTS_WINDOW_LENGTH_COUNT);
+        keysToRemove.remove(Config.TOPOLOGY_BOLTS_WINDOW_LENGTH_DURATION_MS);
+        keysToRemove.remove(Config.TOPOLOGY_BOLTS_SLIDING_INTERVAL_COUNT);
+        keysToRemove.remove(Config.TOPOLOGY_BOLTS_SLIDING_INTERVAL_DURATION_MS);
+        keysToRemove.remove(Config.TOPOLOGY_BOLTS_TUPLE_TIMESTAMP_FIELD_NAME);
+        keysToRemove.remove(Config.TOPOLOGY_BOLTS_TUPLE_TIMESTAMP_MAX_LAG_MS);
+        keysToRemove.remove(Config.TOPOLOGY_BOLTS_MESSAGE_ID_FIELD_NAME);
+        keysToRemove.remove(Config.TOPOLOGY_STATE_PROVIDER);
+        keysToRemove.remove(Config.TOPOLOGY_STATE_PROVIDER_CONFIG);
 
-        Map<Object, Object> componentConf = new HashMap<Object, Object>();
+        Map<Object, Object> componentConf;
+        String specJsonConf = topologyContext.getComponentCommon(componentId).get_json_conf();
+        if (specJsonConf != null) {
+            componentConf = (Map<Object, Object>) JSONValue.parse(specJsonConf);
+            for (Object p : keysToRemove) {
+                componentConf.remove(p);
+            }
+        } else {
+            componentConf = new HashMap<>();
+        }
 
-        String jconf = topologyContext.getComponentCommon(componentId).get_json_conf();
-        if (jconf != null) {
-            componentConf = (Map<Object, Object>) JSONValue.parse(jconf);
-        }
-        for (Object p : to_remove) {
-            componentConf.remove(p);
-        }
-        Map<Object, Object> ret = new HashMap<Object, Object>();
+        Map<Object, Object> ret = new HashMap<>();
         ret.putAll(stormConf);
         ret.putAll(componentConf);
+
         return ret;
     }
 
@@ -255,20 +257,20 @@ public class ExecutorData {
         return intervalToTaskToMetricToRegistry;
     }
 
-    public AtomicBoolean getStormActiveAtom() {
-        return stormActiveAtom;
+    public AtomicBoolean getStormActive() {
+        return stormActive;
     }
 
     public Map getWorkerData() {
         return workerData;
     }
 
-    public void setOpenOrprepareWasCalled(Boolean openOrprepareWasCalled) {
-        this.openOrprepareWasCalled.set(openOrprepareWasCalled);
+    public void setOpenOrPrepareWasCalled(Boolean openOrPrepareWasCalled) {
+        this.openOrPrepareWasCalled.set(openOrPrepareWasCalled);
     }
 
-    public AtomicBoolean getOpenOrprepareWasCalled() {
-        return openOrprepareWasCalled;
+    public AtomicBoolean getOpenOrPrepareWasCalled() {
+        return openOrPrepareWasCalled;
     }
 
     public AtomicBoolean getBackpressure() {
@@ -297,5 +299,21 @@ public class ExecutorData {
 
     public HashMap getSharedExecutorData() {
         return sharedExecutorData;
+    }
+
+    public Map getConf() {
+        return conf;
+    }
+
+    public Map<Integer, String> getTaskToComponent() {
+        return taskToComponent;
+    }
+
+    public AtomicBoolean getThrottleOn() {
+        return throttleOn;
+    }
+
+    public boolean isDebug() {
+        return isDebug;
     }
 }

@@ -18,6 +18,8 @@
 package org.apache.storm.executor;
 
 import com.lmax.disruptor.EventHandler;
+import java.net.UnknownHostException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.StormTimer;
@@ -51,12 +53,13 @@ public abstract class BaseExecutor implements Callable, EventHandler {
     protected final Random rand;
     protected final DisruptorQueue transferQueue;
     protected final DisruptorQueue receiveQueue;
-    protected final Map<Integer, Task> taskDatas;
+    protected final Map<Integer, Task> idToTask;
     protected final Map<String, String> credentials;
     protected final Boolean isDebug;
     protected final Boolean isEventLoggers;
+    protected String hostname;
 
-    public BaseExecutor(ExecutorData executorData, Map<Integer, Task> taskDatas, Map<String, String> credentials) {
+    public BaseExecutor(ExecutorData executorData, Map<Integer, Task> idToTask, Map<String, String> credentials) {
         this.executorData = executorData;
         this.stormConf = executorData.getStormConf();
         this.componentId = executorData.getComponentId();
@@ -66,18 +69,24 @@ public abstract class BaseExecutor implements Callable, EventHandler {
         this.rand = new Random(Utils.secureRandomLong());
         this.transferQueue = executorData.getBatchTransferWorkerQueue();
         this.receiveQueue = executorData.getReceiveQueue();
-        this.taskDatas = taskDatas;
+        this.idToTask = idToTask;
         this.credentials = credentials;
         this.isDebug = Utils.getBoolean(stormConf.get(Config.TOPOLOGY_DEBUG), false);
         this.isEventLoggers = StormCommon.hasEventLoggers(stormConf);
+
+        try {
+            this.hostname = Utils.hostname(stormConf);
+        }catch (UnknownHostException ignored){
+            this.hostname = "";
+        }
     }
 
     @Override
-    public void onEvent(Object o, long l, boolean b) throws Exception {
-        AddressedTuple addressedTuple = (AddressedTuple) o;
+    public void onEvent(Object event, long seq, boolean endOfBatch) throws Exception {
+        AddressedTuple addressedTuple = (AddressedTuple) event;
         TupleImpl tuple = (TupleImpl) addressedTuple.getTuple();
         int taskId = addressedTuple.getDest();
-        if (Utils.getBoolean(stormConf.get(Config.TOPOLOGY_DEBUG), false)) {
+        if (isDebug) {
             LOG.info("Processing received message FOR {} TUPLE: {}", taskId, tuple);
         }
         if (taskId != AddressedTuple.BROADCAST_DEST) {
@@ -94,7 +103,7 @@ public abstract class BaseExecutor implements Callable, EventHandler {
             Integer interval = tuple.getInteger(0);
             int taskId = taskData.getTaskId();
             Map<String, IMetric> nameToRegistry = executorData.getIntervalToTaskToMetricToRegistry().get(interval).get(taskId);
-            IMetricsConsumer.TaskInfo taskInfo = new IMetricsConsumer.TaskInfo(Utils.hostname(stormConf), workerTopologyContext.getThisWorkerPort(),
+            IMetricsConsumer.TaskInfo taskInfo = new IMetricsConsumer.TaskInfo(hostname, workerTopologyContext.getThisWorkerPort(),
                     componentId, taskId, (System.currentTimeMillis() / 1000), interval);
             List<IMetricsConsumer.DataPoint> dataPoints = new ArrayList<>();
             for (Map.Entry<String, IMetric> entry : nameToRegistry.entrySet()) {

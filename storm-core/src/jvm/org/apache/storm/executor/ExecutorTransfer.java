@@ -35,29 +35,27 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 
 public class ExecutorTransfer implements EventHandler, Callable {
-
     private static final Logger LOG = LoggerFactory.getLogger(ExecutorTransfer.class);
 
     private final DisruptorQueue batchTransferQueue;
     private final KryoTupleSerializer serializer;
-    private final String taskName;
     private final MutableObject cachedEmit;
     private final IFn transferFn;
-    private final Map stormConf;
+    private final boolean isDebug;
 
-    public ExecutorTransfer(WorkerTopologyContext workerTopologyContext, DisruptorQueue batchTransferQueue, Map stormConf, IFn transferFn, String taskName) {
+    public ExecutorTransfer(WorkerTopologyContext workerTopologyContext, DisruptorQueue batchTransferQueue, Map stormConf, IFn transferFn) {
         this.batchTransferQueue = batchTransferQueue;
         this.serializer = new KryoTupleSerializer(stormConf, workerTopologyContext);
-        this.taskName = taskName;
         this.cachedEmit = new MutableObject(new ArrayList<>());
         this.transferFn = transferFn;
-        this.stormConf = stormConf;
+        this.isDebug = Utils.getBoolean(stormConf.get(Config.TOPOLOGY_DEBUG), false);
     }
 
-    public void transfer(int t, Tuple tuple) {
-        AddressedTuple val = new AddressedTuple(t, tuple);
-        if (Utils.getBoolean(stormConf.get(Config.TOPOLOGY_DEBUG), false))
-            LOG.info("TRANSFERING tuple {}", val);
+    public void transfer(int task, Tuple tuple) {
+        AddressedTuple val = new AddressedTuple(task, tuple);
+        if (isDebug) {
+            LOG.info("TRANSFERRING tuple {}", val);
+        }
         batchTransferQueue.publish(val);
     }
 
@@ -72,11 +70,11 @@ public class ExecutorTransfer implements EventHandler, Callable {
     }
 
     @Override
-    public void onEvent(Object o, long l, boolean b) throws Exception {
-        ArrayList alist = (ArrayList) cachedEmit.getObject();
-        alist.add(o);
-        if (b) {
-            transferFn.invoke(serializer, alist);
+    public void onEvent(Object event, long sequence, boolean endOfBatch) throws Exception {
+        ArrayList cachedEvents = (ArrayList) cachedEmit.getObject();
+        cachedEvents.add(event);
+        if (endOfBatch) {
+            transferFn.invoke(serializer, cachedEvents);
             cachedEmit.setObject(new ArrayList<>());
         }
     }

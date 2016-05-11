@@ -17,7 +17,6 @@
  */
 package org.apache.storm.executor;
 
-import org.apache.storm.Config;
 import org.apache.storm.daemon.StormCommon;
 import org.apache.storm.daemon.Task;
 import org.apache.storm.generated.DebugOptions;
@@ -67,10 +66,9 @@ public class ExecutorCommon {
 
     public static void ackSpoutMsg(ExecutorData executorData, Task taskData, TupleInfo tupleInfo) {
         try {
-            Map stormConf = executorData.getStormConf();
             ISpout spout = (ISpout) taskData.getTaskObject();
             int taskId = taskData.getTaskId();
-            if (Utils.getBoolean(stormConf.get(Config.TOPOLOGY_DEBUG), false)) {
+            if (executorData.isDebug()) {
                 LOG.info("SPOUT Acking message {} {}", tupleInfo.getId(), tupleInfo.getMessageId());
             }
             spout.ack(tupleInfo.getMessageId());
@@ -85,10 +83,9 @@ public class ExecutorCommon {
 
     public static void failSpoutMsg(ExecutorData executorData, Task taskData, TupleInfo tupleInfo, String reason) {
         try {
-            Map stormConf = executorData.getStormConf();
             ISpout spout = (ISpout) taskData.getTaskObject();
             int taskId = taskData.getTaskId();
-            if (Utils.getBoolean(stormConf.get(Config.TOPOLOGY_DEBUG), false)) {
+            if (executorData.isDebug()) {
                 LOG.info("SPOUT Failing {} : {} REASON: {}", tupleInfo.getId(), tupleInfo, reason);
             }
             spout.fail(tupleInfo.getMessageId());
