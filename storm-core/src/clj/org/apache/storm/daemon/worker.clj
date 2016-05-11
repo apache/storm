@@ -66,13 +66,10 @@
 (defnk do-executor-heartbeats [worker :executors nil]
   ;; stats is how we know what executors are assigned to this worker 
   (let [stats (if-not executors
-                ((log-message "**** mk empty executor hbs")
-                  (StatsUtil/mkEmptyExecutorZkHbs (:executors worker)))
-
-                ( (log-message "**** executors:" (prn-str executors))
+                  (StatsUtil/mkEmptyExecutorZkHbs (:executors worker))
                   (StatsUtil/convertExecutorZkHbs (->> executors
                     (map (fn [e] {(.getExecutorId e) (.renderStats e)}))
-                    (apply merge)))))
+                    (apply merge))))
         zk-hb (StatsUtil/mkZkWorkerHb (:storm-id worker) stats (. (:uptime worker) upTime))]
     ;; do the zookeeper heartbeat
     (try
@@ -147,11 +144,11 @@
             assignment-id (:assignment-id worker)
             port (:port worker)
             storm-cluster-state (:storm-cluster-state worker)
-            prev-backpressure-flag @(:backpressure worker)
+            prev-backpressure-flag (.get (:backpressure worker))
             ;; the backpressure flag is true if at least one of the disruptor queues has throttle-on
             curr-backpressure-flag (if executors
                                      (or (.getThrottleOn (:transfer-queue worker))
-                                       (reduce #(or %1 %2) (map #(.get-backpressure-flag %1) executors)))
+                                       (reduce #(or %1 %2) (map #(.getBackPressureFlag %1) executors)))
                                      prev-backpressure-flag)]
         ;; update the worker's backpressure flag to zookeeper only when it has changed
         (when (not= prev-backpressure-flag curr-backpressure-flag)
@@ -159,7 +156,7 @@
             (log-debug "worker backpressure flag changing from " prev-backpressure-flag " to " curr-backpressure-flag)
             (.workerBackpressure storm-cluster-state storm-id assignment-id (long port) curr-backpressure-flag)
             ;; doing the local reset after the zk update succeeds is very important to avoid a bad state upon zk exception
-            (reset! (:backpressure worker) curr-backpressure-flag)
+            (.set (:backpressure worker) curr-backpressure-flag)
             (catch Exception exc
               (log-error exc "workerBackpressure update failed when connecting to ZK ... will retry"))))
         ))))
@@ -291,7 +288,7 @@
       ;; when worker bootup, worker will start to setup initial connections to
       ;; other workers. When all connection is ready, we will enable this flag
       ;; and spout and bolt will be activated.
-      :worker-active-flag (AtomicBoolean. false)
+      :worker-active-flag (atom false) ;; used in worker only, keep it as atom
       :storm-active-atom (AtomicBoolean. false)
       :storm-component->debug-atom (AtomicReference.)
       :executors executors

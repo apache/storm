@@ -17,7 +17,6 @@
  */
 package org.apache.storm.executor.spout;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
@@ -66,7 +65,7 @@ public class SpoutExecutor extends BaseExecutor {
         this.spoutWaitStrategy = Utils.newInstance((String) stormConf.get(Config.TOPOLOGY_SPOUT_WAIT_STRATEGY));
         this.spoutWaitStrategy.prepare(stormConf);
 
-        this.maxSpoutPending = Utils.getInt(stormConf.get(Config.TOPOLOGY_MAX_SPOUT_PENDING)) * idToTask.size();
+        this.maxSpoutPending = Utils.getInt(stormConf.get(Config.TOPOLOGY_MAX_SPOUT_PENDING), 0) * idToTask.size();
         this.backPressureEnabled = Utils.getBoolean(stormConf.get(Config.TOPOLOGY_BACKPRESSURE_ENABLE), false);
         this.throttleOn = executorData.getThrottleOn();
 
@@ -92,9 +91,6 @@ public class SpoutExecutor extends BaseExecutor {
 
     @Override
     protected void init() {
-        while (!executorData.getStormActive().get()) {
-            Utils.sleep(100);
-        }
         LOG.info("Opening spout {}:{}", componentId, idToTask.keySet());
         this.spoutThrottlingMetrics.registerAll(stormConf, idToTask.values().iterator().next().getUserContext());
         for (Map.Entry<Integer, Task> entry : idToTask.entrySet()) {
@@ -121,6 +117,9 @@ public class SpoutExecutor extends BaseExecutor {
 
     @Override
     public Object call() throws Exception {
+        while (!executorData.getStormActive().get()) {
+            Utils.sleep(100);
+        }
         receiveQueue.consumeBatch(this);
 
         long currCount = emittedCount.get();

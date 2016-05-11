@@ -17,6 +17,7 @@
  */
 package org.apache.storm.executor.bolt;
 
+import clojure.lang.Atom;
 import com.google.common.collect.ImmutableMap;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
@@ -57,9 +58,6 @@ public class BoltExecutor extends BaseExecutor {
 
     @Override
     protected void init() {
-        while (!executorData.getStormActive().get()) {
-            Utils.sleep(100);
-        }
         LOG.info("Preparing bolt {}:{}", componentId, idToTask.keySet());
         for (Map.Entry<Integer, Task> entry : idToTask.entrySet()) {
             Task taskData = entry.getValue();
@@ -71,10 +69,10 @@ public class BoltExecutor extends BaseExecutor {
             }
             if (Constants.SYSTEM_COMPONENT_ID.equals(componentId)) {
                 Map<String, DisruptorQueue> map = ImmutableMap.of("sendqueue", transferQueue, "receive", receiveQueue,
-                        "transfer", (DisruptorQueue) executorData.getWorkerData().get("transfer"));
+                        "transfer", (DisruptorQueue) executorData.getWorkerData().get("transfer-queue"));
                 BuiltinMetricsUtil.registerQueueMetrics(map, stormConf, userContext);
 
-                Map cachedNodePortToSocket = (Map) ((AtomicReference) executorData.getWorkerData().get("cached-node+port->socket")).get();
+                Map cachedNodePortToSocket = (Map) ((Atom) executorData.getWorkerData().get("cached-node+port->socket")).deref();
                 BuiltinMetricsUtil.registerIconnectionClientMetrics(cachedNodePortToSocket, stormConf, userContext);
                 BuiltinMetricsUtil.registerIconnectionServerMetric(executorData.getWorkerData().get("receiver"), stormConf, userContext);
             } else {
@@ -93,6 +91,9 @@ public class BoltExecutor extends BaseExecutor {
 
     @Override
     public Object call() throws Exception {
+        while (!executorData.getStormActive().get()) {
+            Utils.sleep(100);
+        }
         receiveQueue.consumeBatchWhenAvailable(this);
         return (long) 0;
     }

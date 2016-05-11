@@ -18,7 +18,6 @@
 package org.apache.storm.executor;
 
 import com.google.common.collect.Lists;
-import org.apache.log4j.Logger;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.StormTimer;
@@ -39,9 +38,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Executor {
-    private static Logger LOG = Logger.getLogger(Executor.class);
+    private final Logger LOG = LoggerFactory.getLogger(Executor.class);
+
     private final Map workerData;
     private final List<Long> executorId;
     private final Map<String, String> credentials;
@@ -89,7 +91,7 @@ public class Executor {
         }
 
         String handlerName = componentId + "-executor" + executorId;
-        Utils.SmartThread handlers = Utils.asyncLoop(baseExecutor, false, executorData.getReportErrorDie(), Thread.NORM_PRIORITY, true, true, handlerName);
+        Utils.SmartThread handlers = Utils.asyncLoop(baseExecutor, false, executorData.getReportErrorDie(), Thread.NORM_PRIORITY, false, true, handlerName);
         setupTicks(StatsUtil.SPOUT.equals(type));
         LOG.info("Finished loading executor " + componentId + ":" + executorId);
         return new ExecutorShutdown(executorData, Lists.newArrayList(systemThreads, handlers), idToTask);
