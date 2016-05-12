@@ -1,3 +1,5 @@
+## 1.0.2
+ * STORM-1773: Utils.javaDeserialize() doesn't work with primitive types
 ## 1.0.1
  * STORM-1741: remove unconditional setting of JAVA_HOME from storm-env.sh
  * STORM-1739: update the minor JAVA version dependency in 0.10.0 and above
