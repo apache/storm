@@ -35,6 +35,7 @@ import org.apache.storm.sql.compiler.ExprCompiler;
 import org.apache.storm.sql.compiler.PostOrderRelNodeVisitor;
 
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -54,7 +55,6 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
     "    new AbstractChannelHandler() {",
     "    @Override",
     "    public void dataReceived(ChannelContext ctx, Values _data) {",
-    "      if (_data != null) {",
     ""
   );
 
@@ -71,6 +71,17 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
           "        res.add(_data.get(i));",
           "      }",
           "      return res;",
+          "    }",
+          "",
+          "    @Override",
+          "    public void flush(ChannelContext ctx) {",
+          "      emitAggregateResults(ctx);",
+          "      super.flush(ctx);",
+          "      prevGroupValues = null;",
+          "    }",
+          "",
+          "    private void emitAggregateResults(ChannelContext ctx) {",
+          "    %3$s",
           "    }",
           "",
           "    @Override",
@@ -140,15 +151,8 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
   public Void visitAggregate(Aggregate aggregate) throws Exception {
     beginAggregateStage(aggregate);
     pw.println("        List<Object> curGroupValues = _data == null ? null : getGroupValues(_data);");
-    pw.println("        if (curGroupValues == null || (prevGroupValues != null && ! prevGroupValues.equals(curGroupValues))) {");
-    List<String> res = new ArrayList<>();
-    for (AggregateCall call : aggregate.getAggCallList()) {
-      res.add(aggregateResult(call));
-    }
-    pw.print(String.format("          ctx.emit(new Values(%s, %s));\n",
-                           groupValueEmitStr("prevGroupValues", aggregate.getGroupSet().cardinality()),
-                           Joiner.on(", ").join(res)));
-    pw.println("          accumulators.clear();");
+    pw.println("        if (prevGroupValues != null && !prevGroupValues.equals(curGroupValues)) {");
+    pw.println("          emitAggregateResults(ctx);");
     pw.println("        }");
     pw.println("        if (curGroupValues != null) {");
     for (AggregateCall call : aggregate.getAggCallList()) {
@@ -158,7 +162,7 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
     pw.println("        if (prevGroupValues != curGroupValues) {");
     pw.println("          prevGroupValues = curGroupValues;");
     pw.println("        }");
-    endAggregateStage();
+    endStage();
     return null;
   }
 
@@ -174,26 +178,40 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
     return sb.toString();
   }
 
-  private String aggregateResult(AggregateCall call) {
+  private String emitAggregateStmts(Aggregate aggregate) {
+    List<String> res = new ArrayList<>();
+    StringWriter sw = new StringWriter();
+    for (AggregateCall call : aggregate.getAggCallList()) {
+      res.add(aggregateResult(call, new PrintWriter(sw)));
+    }
+    return NEW_LINE_JOINER.join(sw.toString(),
+                                String.format("          ctx.emit(new Values(%s, %s));",
+                                              groupValueEmitStr("prevGroupValues", aggregate.getGroupSet().cardinality()),
+                                              Joiner.on(", ").join(res)),
+                                "          accumulators.clear();"
+    );
+  }
+
+  private String aggregateResult(AggregateCall call, PrintWriter pw) {
     SqlAggFunction aggFunction = call.getAggregation();
     String aggregationName = call.getAggregation().getName();
     Type ty = typeFactory.getJavaClass(call.getType());
     String result;
     if (aggFunction instanceof SqlUserDefinedAggFunction) {
       AggregateFunction aggregateFunction = ((SqlUserDefinedAggFunction) aggFunction).function;
-      result = doAggregateResult((AggregateFunctionImpl) aggregateFunction, reserveAggVarName(call), ty);
+      result = doAggregateResult((AggregateFunctionImpl) aggregateFunction, reserveAggVarName(call), ty, pw);
     } else {
       List<BuiltinAggregateFunctions.TypeClass> typeClasses = BuiltinAggregateFunctions.TABLE.get(aggregationName);
       if (typeClasses == null) {
         throw new UnsupportedOperationException(aggregationName + " Not implemented");
       }
       result = doAggregateResult(AggregateFunctionImpl.create(findMatchingClass(aggregationName, typeClasses, ty)),
-                                 reserveAggVarName(call), ty);
+                                 reserveAggVarName(call), ty, pw);
     }
     return result;
   }
 
-  private String doAggregateResult(AggregateFunctionImpl aggFn, String varName, Type ty) {
+  private String doAggregateResult(AggregateFunctionImpl aggFn, String varName, Type ty, PrintWriter pw) {
     String resultName = varName + "_result";
     List<String> args = new ArrayList<>();
     if (!aggFn.isStatic) {
@@ -202,15 +220,15 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
       boolean genericType = aggFn.initMethod.getDeclaringClass().getTypeParameters().length > 0;
       if (genericType) {
         pw.println("          @SuppressWarnings(\"unchecked\")");
-        pw.println(String.format("          final %1$s<%3$s> %2$s = (%1$s<%3$s>) accumulators.get(\"%2$s\");", aggObjClassName,
+        pw.print(String.format("          final %1$s<%3$s> %2$s = (%1$s<%3$s>) accumulators.get(\"%2$s\");", aggObjClassName,
                                  aggObjName, Primitives.wrap((Class<?>) ty).getCanonicalName()));
       } else {
-        pw.println(String.format("          final %1$s %2$s = (%1$s) accumulators.get(\"%2$s\");", aggObjClassName, aggObjName));
+        pw.print(String.format("          final %1$s %2$s = (%1$s) accumulators.get(\"%2$s\");", aggObjClassName, aggObjName));
       }
       args.add(aggObjName);
     }
     args.add(String.format("(%s)accumulators.get(\"%s\")", ((Class<?>) ty).getCanonicalName(), varName));
-    pw.println(String.format("          final %s %s = %s;", ((Class<?>) ty).getCanonicalName(),
+    pw.print(String.format("          final %s %s = %s;", ((Class<?>) ty).getCanonicalName(),
                              resultName, ExprCompiler.printMethodCall(aggFn.resultMethod, args)));
 
     return resultName;
@@ -297,17 +315,10 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
   }
 
   private void beginAggregateStage(Aggregate n) {
-    pw.print(String.format(AGGREGATE_STAGE_PROLOGUE, getStageName(n), getGroupByIndices(n)));
+    pw.print(String.format(AGGREGATE_STAGE_PROLOGUE, getStageName(n), getGroupByIndices(n), emitAggregateStmts(n)));
   }
 
   private void endStage() {
-    pw.println("      } else {");
-    pw.println("        ctx.emit(_data);");
-    pw.println("      }");
-    pw.print("  }\n  };\n");
-  }
-
-  private void endAggregateStage() {
     pw.print("  }\n  };\n");
   }
 
