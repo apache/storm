@@ -82,6 +82,9 @@
  * STORM-1524: Add Pluggable daemon metrics Reporters
  * STORM-1521: When using Kerberos login from keytab with multiple bolts/executors ticket is not renewed in hbase bolt.
 
+## 1.0.2
+ * STORM-1773: Utils.javaDeserialize() doesn't work with primitive types
+ 
 ## 1.0.1
  * STORM-1704: When logviewer_search.html opens daemon file, next search always show no result
  * STORM-1714: StatefulBolts ends up as normal bolts while using TopologyBuilder.setBolt without parallelism
