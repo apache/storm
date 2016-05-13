@@ -81,6 +81,7 @@
  * STORM-1504: Add Serializer and instruction for AvroGenericRecordBolt
  * STORM-1524: Add Pluggable daemon metrics Reporters
  * STORM-1521: When using Kerberos login from keytab with multiple bolts/executors ticket is not renewed in hbase bolt.
+ * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.0.2
  * STORM-1773: Utils.javaDeserialize() doesn't work with primitive types
