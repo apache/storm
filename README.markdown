@@ -95,6 +95,7 @@ under the License.
 * Haohui Mai ([@haohui](https://github.com/haohui))
 * Sanket Chintapalli ([@redsanket](https://github.com/redsanket))
 * Longda Feng ([@longda](https://github.com/longdafeng))
+* John Fang ([@hustfxj](https://github.com/hustfxj))
 
 ## Contributors
 
@@ -254,7 +255,6 @@ under the License.
 * Seth Ammons ([@sethgrid](https://github.com/sethgrid))
 * Aaron Dixon ([@atdixon](https://github.com/atdixon))
 * Roshan Naik ([@roshannaik](https://github.com/roshannaik))
-* John Fang ([@hustfxj](https://github.com/hustfxj))
 * Dan Bahir ([#dbahir](https://github.com/dbahir))
 * Alessandro Bellina ([#abellina](https://github.com/abellina))
 * Basti Liu ([@basti](https://github.com/bastiliu))
