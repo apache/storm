@@ -17,15 +17,16 @@ Tuples are grouped in windows and window slides every sliding interval. A tuple 
 For example a time duration based sliding window with length 10 secs and sliding interval of 5 seconds.
 
 ```
-| e1 e2 | e3 e4 e5 e6 | e7 e8 e9 |...
-0       5             10         15    -> time
-
-|<------- w1 -------->|
-        |------------ w2 ------->|
+........| e1 e2 | e3 e4 e5 e6 | e7 e8 e9 |...
+-5      0       5            10          15   -> time
+|<------- w1 -->|
+        |<---------- w2 ----->|
+                |<-------------- w3 ---->|
 ```
 
 The window is evaluated every 5 seconds and some of the tuples in the first window overlaps with the second one.
-		
+
+Note: The window first slides at t = 5 secs and would contain events received up to the first five secs.
 
 ## Tumbling Window
 
