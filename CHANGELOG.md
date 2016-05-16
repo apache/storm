@@ -89,6 +89,7 @@
  * STORM-1720: Support GEO in storm-redis
 
 ## 1.0.2
+ * STORM-1750: Ensure worker dies when report-error-and-die is called.
  * STORM-1715: using Jedis Protocol.DEFAULT_HOST to replace DEFAULT_HOST
  * STORM-1713: Replace NotImplementedException with UnsupportedOperationException
  * STORM-1661: Introduce a config to turn off blobstore acl validation in insecure mode
