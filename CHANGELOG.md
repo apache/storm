@@ -1,4 +1,5 @@
 ## 1.0.2
+ * STORM-1764: Pacemaker is throwing some stack traces
  * STORM-1761: Storm-Solr Example Throws ArrayIndexOutOfBoundsException in Remote Cluster Mode
  * STORM-1756: Explicitly null KafkaServer reference in KafkaTestBroker to prevent out of memory on large test classes.
  * STORM-1750: Ensure worker dies when report-error-and-die is called.
