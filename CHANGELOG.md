@@ -2,6 +2,7 @@
  * STORM-1720: Support GEO in storm-redis
 
 ## 1.0.2
+ * STORM-1835: add lock info in thread dump
  * STORM-1749: Fix storm-starter github links
  * STORM-1764: Pacemaker is throwing some stack traces
  * STORM-1761: Storm-Solr Example Throws ArrayIndexOutOfBoundsException in Remote Cluster Mode
