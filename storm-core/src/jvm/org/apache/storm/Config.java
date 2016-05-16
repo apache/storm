@@ -941,7 +941,7 @@ public class Config extends HashMap<String, Object> {
 
     /**
      * The maximum number of threads that should be used by the Pacemaker.
-     * When Pacemaker gets loaded it will spawn new threads, up to 
+     * When Pacemaker gets loaded it will spawn new threads, up to
      * this many total, to handle the load.
      */
     @isNumber
@@ -965,7 +965,7 @@ public class Config extends HashMap<String, Object> {
      */
     @CustomValidator(validatorClass=PacemakerAuthTypeValidator.class)
     public static final String PACEMAKER_AUTH_METHOD = "pacemaker.auth.method";
-    
+
     /**
      * List of DRPC servers so that the DRPCSpout knows who to talk to.
      */
@@ -1257,6 +1257,13 @@ public class Config extends HashMap<String, Object> {
     @isPositiveNumber
     @isInteger
     public static final String STORM_BLOBSTORE_REPLICATION_FACTOR = "storm.blobstore.replication.factor";
+
+    /**
+     *  For secure mode we would want to turn on this config
+     *  By default this is turned off assuming the default is insecure
+     */
+    @isBoolean
+    public static final String STORM_BLOBSTORE_ACL_VALIDATION_ENABLED = "storm.blobstore.acl.validation.enabled";
 
     /**
      * What blobstore implementation nimbus should use.
