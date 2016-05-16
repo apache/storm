@@ -1283,6 +1283,10 @@ public class Utils {
             dump.append('"');
             dump.append(threadInfo.getThreadName());
             dump.append("\" ");
+            dump.append("\n   lock: ");
+            dump.append(threadInfo.getLockName());
+            dump.append(" owner: ");
+            dump.append(threadInfo.getLockOwnerName());
             final Thread.State state = threadInfo.getThreadState();
             dump.append("\n   java.lang.Thread.State: ");
             dump.append(state);
