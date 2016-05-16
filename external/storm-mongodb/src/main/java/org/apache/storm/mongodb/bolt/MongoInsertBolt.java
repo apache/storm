@@ -23,12 +23,13 @@ import java.util.Map;
 
 import org.apache.commons.lang.Validate;
 import org.apache.storm.mongodb.common.mapper.MongoMapper;
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Tuple;
+import org.apache.storm.utils.BatchHelper;
 import org.apache.storm.utils.TupleUtils;
 import org.bson.Document;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Basic bolt for writing to MongoDB.
@@ -37,7 +38,6 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class MongoInsertBolt extends AbstractMongoBolt {
-    private static final Logger LOG = LoggerFactory.getLogger(MongoInsertBolt.class);
 
     private static final int DEFAULT_FLUSH_INTERVAL_SECS = 1;
 
@@ -45,9 +45,9 @@ public class MongoInsertBolt extends AbstractMongoBolt {
 
     private boolean ordered = true;  //default is ordered.
 
-    private int batchSize = 15000;
+    private int batchSize;
 
-    private List<Tuple> tupleBatch;
+    private BatchHelper batchHelper;
 
     private int flushIntervalSecs = DEFAULT_FLUSH_INTERVAL_SECS;
 
@@ -57,45 +57,31 @@ public class MongoInsertBolt extends AbstractMongoBolt {
         Validate.notNull(mapper, "MongoMapper can not be null");
 
         this.mapper = mapper;
-
-        this.tupleBatch = new LinkedList<>();
     }
 
     @Override
     public void execute(Tuple tuple) {
-        boolean forceFlush = false;
         try{
-            if (TupleUtils.isTick(tuple)) {
-                LOG.debug("TICK received! current batch status [{}/{}]", tupleBatch.size(), batchSize);
-                collector.ack(tuple);
-                forceFlush = true;
-            } else {
-                tupleBatch.add(tuple);
-                if (tupleBatch.size() >= batchSize) {
-                    forceFlush = true;
-                }
+            if(batchHelper.shouldHandle(tuple)){
+                batchHelper.addBatch(tuple);
             }
 
-            if(forceFlush && !tupleBatch.isEmpty()) {
-                List<Document> docs = new LinkedList<>();
-                for (Tuple t : tupleBatch) {
-                    Document doc = mapper.toDocument(t);
-                    docs.add(doc);
-                }
-                mongoClient.insert(docs, ordered);
-
-                for(Tuple t : tupleBatch) {
-                    collector.ack(t);
-                }
-                tupleBatch.clear();
+            if(batchHelper.shouldFlush()) {
+                flushTuples();
+                batchHelper.ack();
             }
         } catch (Exception e) {
-            this.collector.reportError(e);
-            for (Tuple t : tupleBatch) {
-                collector.fail(t);
-            }
-            tupleBatch.clear();
+           batchHelper.fail(e);
         }
+    }
+
+    private void flushTuples(){
+        List<Document> docs = new LinkedList<>();
+        for (Tuple t : batchHelper.getBatchTuples()) {
+            Document doc = mapper.toDocument(t);
+            docs.add(doc);
+        }
+        mongoClient.insert(docs, ordered);
     }
 
     public MongoInsertBolt withBatchSize(int batchSize) {
@@ -116,6 +102,13 @@ public class MongoInsertBolt extends AbstractMongoBolt {
     @Override
     public Map<String, Object> getComponentConfiguration() {
         return TupleUtils.putTickFrequencyIntoComponentConfig(super.getComponentConfiguration(), flushIntervalSecs);
+    }
+
+    @Override
+    public void prepare(Map stormConf, TopologyContext context,
+            OutputCollector collector) {
+        super.prepare(stormConf, context, collector);
+        this.batchHelper = new BatchHelper(batchSize, collector);
     }
 
     @Override
