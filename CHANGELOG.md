@@ -1,3 +1,6 @@
+## 1.1.0
+ * STORM-1720: Support GEO in storm-redis
+
 ## 1.0.2
  * STORM-1773: Utils.javaDeserialize() doesn't work with primitive types
  * STORM-1661: Introduce a config to turn off blobstore acl validation in insecure mode
