@@ -18,6 +18,7 @@
 package org.apache.storm.kafka;
 
 import java.net.SocketTimeoutException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -35,6 +36,10 @@ import kafka.javaapi.TopicMetadataRequest;
 import kafka.javaapi.TopicMetadataResponse;
 import kafka.javaapi.consumer.SimpleConsumer;
 import kafka.utils.ZkUtils;
+import org.I0Itec.zkclient.ZkClient;
+import org.I0Itec.zkclient.ZkConnection;
+import org.I0Itec.zkclient.exception.ZkMarshallingError;
+import org.I0Itec.zkclient.serialize.ZkSerializer;
 import org.apache.curator.test.TestingServer;
 import org.apache.storm.kafka.trident.GlobalPartitionInformation;
 import static org.hamcrest.Matchers.empty;
@@ -67,7 +72,7 @@ public class DynamicBrokersReaderTest {
 
     @Rule
     public MockitoRule mockitoRule = MockitoJUnit.rule();
-    
+
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
@@ -94,9 +99,30 @@ public class DynamicBrokersReaderTest {
         kafkaZookeeper.close();
     }
 
-    private void createTopic(String topic, int numPartitions, int numReplicas) {
-        ZkUtils zkUtils = ZkUtils.apply(kafkaZookeeper.getConnectString(), 30_000, 30_000, false);
-        AdminUtils.createTopic(zkUtils, topic, numPartitions, numReplicas, new Properties());
+    //Copied from https://github.com/apache/kafka/blob/0.8.1/core/src/main/scala/kafka/utils/ZkUtils.scala#L760
+    private static class ZkStringSerializer implements ZkSerializer {
+
+        @Override
+        public byte[] serialize(Object data) throws ZkMarshallingError {
+            return ((String) data).getBytes(StandardCharsets.UTF_8);
+        }
+
+        @Override
+        public Object deserialize(byte[] bytes) throws ZkMarshallingError {
+            if (bytes == null) {
+                return null;
+            }
+            return new String(bytes, StandardCharsets.UTF_8);
+        }
+
+    }
+
+    private void createTopic(String topic, int numPartitions, int numReplicas) throws InterruptedException {
+        ZkConnection connection = new ZkConnection(kafkaZookeeper.getConnectString(), 30_000);
+        ZkClient client = new ZkClient(connection, 30_000, new ZkStringSerializer());
+        AdminUtils.createTopic(client, topic, numPartitions, numReplicas, new Properties());
+        client.close();
+        connection.close();
     }
 
     private GlobalPartitionInformation getByTopic(List<GlobalPartitionInformation> partitions, String topic) {
@@ -108,7 +134,16 @@ public class DynamicBrokersReaderTest {
         return null;
     }
 
-    private void waitUntilTopicsCreatedAndFullyReplicated(int numReplicas, String... topics) throws InterruptedException, SocketTimeoutException {
+    /**
+     * Repeatedly requests metadata until the response has exactly numReplicas
+     * in the ISR, or the timeout expires.
+     *
+     * @param numReplicas The number of replicas needed in the ISR
+     * @param topics The topics to request metadata for
+     * @throws InterruptedException
+     * @throws SocketTimeoutException
+     */
+    private void waitUntilTopicsCreatedAndSynced(int numReplicas, String... topics) throws InterruptedException, SocketTimeoutException {
         SimpleConsumer consumer = null;
         try {
             consumer = TestUtils.getKafkaConsumer(broker);
@@ -123,11 +158,11 @@ public class DynamicBrokersReaderTest {
                         boolean fullyReplicated = true;
                         for (PartitionMetadata partitionMetadata : partitionsMetadata) {
                             short partitionErrorCode = partitionMetadata.errorCode();
-                            if(partitionErrorCode != ErrorMapping.NoError() && partitionErrorCode != ErrorMapping.ReplicaNotAvailableCode()){
+                            if (partitionErrorCode != ErrorMapping.NoError() && partitionErrorCode != ErrorMapping.ReplicaNotAvailableCode()) {
                                 fullyReplicated = false;
                                 break;
                             }
-                            fullyReplicated = fullyReplicated && (partitionMetadata.replicas().size() == numReplicas);
+                            fullyReplicated = fullyReplicated && (partitionMetadata.isr().size() == numReplicas);
                         }
                         if (fullyReplicated) {
                             remainingTopics.remove(topicMetadata.topic());
@@ -154,7 +189,7 @@ public class DynamicBrokersReaderTest {
         String host = "localhost";
         int partition = 0;
         createTopic(TestUtils.TOPIC, 1, 1);
-        waitUntilTopicsCreatedAndFullyReplicated(1, TestUtils.TOPIC);
+        waitUntilTopicsCreatedAndSynced(1, TestUtils.TOPIC);
         List<Broker> seedBrokers = Collections.singletonList(new Broker(host, broker.getPort()));
         when(zkMetadataReader.getBrokers()).thenReturn(seedBrokers);
 
@@ -179,8 +214,8 @@ public class DynamicBrokersReaderTest {
         createTopic(firstTopic, 1, 1);
         createTopic(secondTopic, 1, 1);
         createTopic(thirdTopic, 1, 1);
-        waitUntilTopicsCreatedAndFullyReplicated(1, firstTopic, secondTopic, thirdTopic);
-        
+        waitUntilTopicsCreatedAndSynced(1, firstTopic, secondTopic, thirdTopic);
+
         Map conf = new HashMap();
         conf.putAll(conf);
         conf.put("kafka.topic.wildcard.match", true);
@@ -222,7 +257,7 @@ public class DynamicBrokersReaderTest {
             String host = "localhost";
             int partitionCount = 2;
             createTopic(TestUtils.TOPIC, 2, 1);
-            waitUntilTopicsCreatedAndFullyReplicated(1, TestUtils.TOPIC);
+            waitUntilTopicsCreatedAndSynced(1, TestUtils.TOPIC);
             List<Broker> seedBrokers = Collections.singletonList(new Broker(host, broker.getPort()));
             when(zkMetadataReader.getBrokers()).thenReturn(seedBrokers);
 
@@ -253,7 +288,7 @@ public class DynamicBrokersReaderTest {
         int partition = 0;
         int secondPartition = partition + 1;
         createTopic(TestUtils.TOPIC, 2, 1);
-        waitUntilTopicsCreatedAndFullyReplicated(1, TestUtils.TOPIC);
+        waitUntilTopicsCreatedAndSynced(1, TestUtils.TOPIC);
         List<Broker> seedBrokers = Collections.singletonList(new Broker(host, broker.getPort()));
         when(zkMetadataReader.getBrokers()).thenReturn(seedBrokers);
 
@@ -275,7 +310,7 @@ public class DynamicBrokersReaderTest {
         try {
             broker2 = new KafkaTestBroker(kafkaZookeeper.getConnectString(), "1");
             createTopic(TestUtils.TOPIC, partitionCount, 2);
-            waitUntilTopicsCreatedAndFullyReplicated(2, TestUtils.TOPIC);
+            waitUntilTopicsCreatedAndSynced(2, TestUtils.TOPIC);
             List<Broker> seedBrokers = Collections.singletonList(new Broker("localhost", broker.getPort()));
             when(zkMetadataReader.getBrokers()).thenReturn(seedBrokers);
 
@@ -292,7 +327,7 @@ public class DynamicBrokersReaderTest {
 
             broker2.shutdown();
             shutdownBroker2 = true;
-            waitUntilTopicsCreatedAndFullyReplicated(1, TestUtils.TOPIC);
+            waitUntilTopicsCreatedAndSynced(1, TestUtils.TOPIC);
             List<GlobalPartitionInformation> partitions = dynamicBrokersReader.getBrokerInfo();
             assertThat(partitions.size(), is(1));
             GlobalPartitionInformation brokerInfo = partitions.get(0);
@@ -314,7 +349,7 @@ public class DynamicBrokersReaderTest {
 
         DynamicBrokersReader misconfiguredBrokersReader = new DynamicBrokersReader(conf, kafkaConfig, mockZkReaderFactory);
     }
-    
+
     @Test
     public void testErrorIfTopicIsMissing() throws Exception {
         expectedException.expect(RuntimeException.class);
@@ -325,19 +360,19 @@ public class DynamicBrokersReaderTest {
 
         dynamicBrokersReader.getBrokerInfo();
     }
-    
+
     @Test
     public void testErrorIfBrokersAreMissing() throws Exception {
         expectedException.expect(RuntimeException.class);
         expectedException.expectMessage("Failed to retrieve partition information from brokers");
         createTopic(TestUtils.TOPIC, 1, 1);
-        waitUntilTopicsCreatedAndFullyReplicated(1, TestUtils.TOPIC);
+        waitUntilTopicsCreatedAndSynced(1, TestUtils.TOPIC);
         List<Broker> seedBrokers = Collections.singletonList(new Broker("FakeHost", broker.getPort()));
         when(zkMetadataReader.getBrokers()).thenReturn(seedBrokers);
 
         dynamicBrokersReader.getBrokerInfo();
     }
-    
+
     @Test
     public void testErrorIfBrokerIsMissingWildcardTopics() throws Exception {
         expectedException.expect(RuntimeException.class);
@@ -349,7 +384,7 @@ public class DynamicBrokersReaderTest {
         matchingTopics.add(firstTopic);
         matchingTopics.add(secondTopic);
         createTopic(firstTopic, 1, 1);
-        waitUntilTopicsCreatedAndFullyReplicated(1, firstTopic);
+        waitUntilTopicsCreatedAndSynced(1, firstTopic);
 
         Map conf = new HashMap();
         conf.putAll(conf);

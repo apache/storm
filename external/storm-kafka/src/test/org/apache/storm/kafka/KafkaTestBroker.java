@@ -45,9 +45,7 @@ public class KafkaTestBroker {
             port = InstanceSpec.getRandomPort();
             logDir = new File(System.getProperty("java.io.tmpdir"), "kafka/logs/kafka-test-" + port);
             KafkaConfig config = buildKafkaConfig(zookeeperConnectionString, brokerId);
-            //Java doesn't know how to call scala functions with default types, hence this hack.
-            scala.Option<String> scalaNoneHack = scala.Option$.MODULE$.apply(null);
-            kafka = new KafkaServer(config, new SystemTime(), scalaNoneHack);
+            kafka = new KafkaServer(config, new SystemTime());
             kafka.startup();
         } catch (Exception ex) {
             throw new RuntimeException("Could not start test broker", ex);

@@ -29,7 +29,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import kafka.cluster.BrokerEndPoint;
 import kafka.common.ErrorMapping;
 import kafka.javaapi.PartitionMetadata;
 import kafka.javaapi.TopicMetadata;
@@ -83,7 +82,7 @@ public class DynamicBrokersReader {
                 List<TopicMetadata> topicsMetadata = metadataResponse.topicsMetadata();
                 for (TopicMetadata topicMetadata : topicsMetadata) {
                     if(topicMetadata.errorCode() != ErrorMapping.NoError()){
-                        LOG.warn("Got error {} against broker {} for topic {}", ErrorMapping.exceptionNameFor(topicMetadata.errorCode()), broker, topicMetadata.topic());
+                        LOG.warn("Got error against broker {} for topic {}", broker, topicMetadata.topic(), ErrorMapping.exceptionFor(topicMetadata.errorCode()));
                         continue brokerLoop;
                     }
                     GlobalPartitionInformation globalPartitionInformation = new GlobalPartitionInformation(topicMetadata.topic(), this._isWildcardTopic);
@@ -91,10 +90,10 @@ public class DynamicBrokersReader {
                     for (PartitionMetadata partitionMetadata : partitionsMetadata) {
                         short partitionErrorCode = partitionMetadata.errorCode();
                         if(partitionErrorCode != ErrorMapping.NoError() && partitionErrorCode != ErrorMapping.ReplicaNotAvailableCode()){
-                            LOG.warn("Got error {} against broker {} for topic {} partition {}", ErrorMapping.exceptionNameFor(partitionErrorCode), broker, topicMetadata.topic(), partitionMetadata.partitionId());
+                            LOG.warn("Got error against broker {} for topic {} partition {}", broker, topicMetadata.topic(), partitionMetadata.partitionId(), ErrorMapping.exceptionFor(partitionErrorCode));
                             continue brokerLoop;
                         }
-                        BrokerEndPoint leaderBroker = partitionMetadata.leader();
+                        kafka.cluster.Broker leaderBroker = partitionMetadata.leader();
                         globalPartitionInformation.addPartition(partitionMetadata.partitionId(), new Broker(leaderBroker.host(), leaderBroker.port()));
                     }
                     if (globalPartitionInformation.getOrderedPartitions().isEmpty()) {
