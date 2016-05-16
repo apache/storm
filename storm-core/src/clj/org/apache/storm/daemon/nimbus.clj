@@ -518,9 +518,9 @@
           (reset! current-replication-count-jar  (get-blob-replication-count (ConfigUtils/masterStormJarKey storm-id) nimbus)))
         (reset! current-replication-count-code  (get-blob-replication-count (ConfigUtils/masterStormCodeKey storm-id) nimbus))
         (reset! current-replication-count-conf  (get-blob-replication-count (ConfigUtils/masterStormConfKey storm-id) nimbus))))
-    (if (and (< min-replication-count @current-replication-count-conf)
-             (< min-replication-count @current-replication-count-code)
-             (< min-replication-count @current-replication-count-jar))
+    (if (and (<= min-replication-count @current-replication-count-conf)
+             (<= min-replication-count @current-replication-count-code)
+             (<= min-replication-count @current-replication-count-jar))
       (log-message "desired replication count "  min-replication-count " achieved, "
         "current-replication-count for conf key = " @current-replication-count-conf ", "
         "current-replication-count for code key = " @current-replication-count-code ", "
