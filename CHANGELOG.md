@@ -83,6 +83,9 @@
  * STORM-1521: When using Kerberos login from keytab with multiple bolts/executors ticket is not renewed in hbase bolt.
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
+## 1.1.0
+ * STORM-1720: Support GEO in storm-redis
+
 ## 1.0.2
  * STORM-1661: Introduce a config to turn off blobstore acl validation in insecure mode
  * STORM-1773: Utils.javaDeserialize() doesn't work with primitive types
