@@ -147,7 +147,9 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
             for (TopicPartition tp : partitions) {
                 final OffsetAndMetadata committedOffset = kafkaConsumer.committed(tp);
                 final long fetchOffset = doSeek(tp, committedOffset);
-                setAcked(tp, fetchOffset);
+                if (!consumerAutoCommitMode) {
+                  acked.put(tp, new OffsetEntry(tp, fetchOffset));
+                }
             }
             initialized = true;
             LOG.debug("Initialization complete");
@@ -179,13 +181,6 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                 fetchOffset = kafkaConsumer.position(tp);
             }
             return fetchOffset;
-        }
-    }
-
-    private void setAcked(TopicPartition tp, long fetchOffset) {
-        // If this partition was previously assigned to this spout, leave the acked offsets as they were to resume where it left off
-        if (!consumerAutoCommitMode && !acked.containsKey(tp)) {
-            acked.put(tp, new OffsetEntry(tp, fetchOffset));
         }
     }
 
