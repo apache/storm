@@ -93,6 +93,7 @@
  * STORM-1773: Utils.javaDeserialize() doesn't work with primitive types
  
 ## 1.0.1
+ * STORM-1678: abstract batch processing to common api `BatchHelper`
  * STORM-1704: When logviewer_search.html opens daemon file, next search always show no result
  * STORM-1714: StatefulBolts ends up as normal bolts while using TopologyBuilder.setBolt without parallelism
  * STORM-1683: only check non-system streams by default
