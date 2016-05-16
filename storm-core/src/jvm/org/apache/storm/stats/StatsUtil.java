@@ -18,13 +18,7 @@
 package org.apache.storm.stats;
 
 import com.google.common.collect.Lists;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+
 import org.apache.storm.cluster.ExecutorBeat;
 import org.apache.storm.cluster.IStormClusterState;
 import org.apache.storm.generated.Bolt;
@@ -52,6 +46,14 @@ import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @SuppressWarnings("unchecked")
 public class StatsUtil {
@@ -1881,7 +1883,6 @@ public class StatsUtil {
         ret.set_storm_id((String) getByKey(heartbeat, "storm-id"));
         ret.set_time_secs(getByKeyOr0(heartbeat, TIME_SECS).intValue());
 
-        // Map<List<Integer, Integer>, ExecutorStat>
         Map<ExecutorInfo, ExecutorStats> convertedStats = new HashMap<>();
 
         Map<List<Integer>, ExecutorStats> executorStats = getMapByKey(heartbeat, EXECUTOR_STATS);
@@ -1889,7 +1890,9 @@ public class StatsUtil {
             for (Map.Entry<List<Integer>, ExecutorStats> entry : executorStats.entrySet()) {
                 List<Integer> executor = entry.getKey();
                 ExecutorStats stats = entry.getValue();
-                convertedStats.put(new ExecutorInfo(executor.get(0), executor.get(1)), stats);
+                if (null != stats) {
+                    convertedStats.put(new ExecutorInfo(executor.get(0), executor.get(1)), stats);
+                }
             }
         }
         ret.set_executor_stats(convertedStats);
