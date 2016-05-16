@@ -1,4 +1,5 @@
 ## 1.0.2
+ * STORM-1735: Nimbus should log that replication succeeded when min replicas was reached exactly
  * STORM-1835: add lock info in thread dump
  * STORM-1749: Fix storm-starter github links
  * STORM-1764: Pacemaker is throwing some stack traces
