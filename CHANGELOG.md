@@ -1,4 +1,5 @@
 ## 1.0.2
+ * STORM-1678: abstract batch processing to common api `BatchHelper`
  * STORM-1773: Utils.javaDeserialize() doesn't work with primitive types
  * STORM-1661: Introduce a config to turn off blobstore acl validation in insecure mode
 
