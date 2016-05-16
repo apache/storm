@@ -101,6 +101,7 @@
  * STORM-1773: Utils.javaDeserialize() doesn't work with primitive types
  
 ## 1.0.1
+ * STORM-1725: Kafka Spout New Consumer API - KafkaSpoutRetryExponentialBackoff method should use HashMap instead of TreeMap not to throw Exception 
  * STORM-1749: Fix storm-starter github links
  * STORM-1678: abstract batch processing to common api `BatchHelper`
  * STORM-1704: When logviewer_search.html opens daemon file, next search always show no result
