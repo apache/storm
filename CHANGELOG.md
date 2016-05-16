@@ -1,4 +1,5 @@
 ## 1.0.2
+ * STORM-1749: Fix storm-starter github links
  * STORM-1764: Pacemaker is throwing some stack traces
  * STORM-1761: Storm-Solr Example Throws ArrayIndexOutOfBoundsException in Remote Cluster Mode
  * STORM-1756: Explicitly null KafkaServer reference in KafkaTestBroker to prevent out of memory on large test classes.
