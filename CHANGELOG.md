@@ -1,5 +1,6 @@
 ## 1.0.2
  * STORM-1773: Utils.javaDeserialize() doesn't work with primitive types
+ * STORM-1661: Introduce a config to turn off blobstore acl validation in insecure mode
 
 ## 1.0.1
  * STORM-1741: remove unconditional setting of JAVA_HOME from storm-env.sh
