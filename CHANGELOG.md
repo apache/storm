@@ -1,5 +1,12 @@
 ## 2.0.0
+ * STORM-1676: Filter null executor stats from worker heartbeat map
+ * STORM-1672: Stats not get class cast exception
+ * STORM-1739: update the minor JAVA version dependency in 0.10.0 and above
+ * STORM-1733: Flush stdout before calling "os.execvp" to prevent log loss
+ * STORM-1535: Make sure hdfs key tab login happens only once for multiple components
+ * STORM-1544: Document Debug/Sampling of Topologies
  * STORM-1681: Bug in scheduling cyclic topologies when scheduling with RAS
+ * STORM-1679: add storm Scheduler documents
  * STORM-1687: divide by zero in StatsUtil
  * STORM-1464: storm-hdfs support for multiple file outputs
  * STORM-515: Clojure documentation and examples
@@ -76,8 +83,29 @@
  * STORM-1504: Add Serializer and instruction for AvroGenericRecordBolt
  * STORM-1524: Add Pluggable daemon metrics Reporters
  * STORM-1521: When using Kerberos login from keytab with multiple bolts/executors ticket is not renewed in hbase bolt.
+ * STORM-1769: Added a test to check local nimbus with notifier plugin
 
+## 1.1.0
+ * STORM-1709: Added group by support in storm sql standalone mode
+ * STORM-1720: Support GEO in storm-redis
+
+## 1.0.2
+ * STORM-1745: Add partition to log output in PartitionManager
+ * STORM-1735: Nimbus should log that replication succeeded when min replicas was reached exactly
+ * STORM-1835: add lock info in thread dump
+ * STORM-1764: Pacemaker is throwing some stack traces
+ * STORM-1761: Storm-Solr Example Throws ArrayIndexOutOfBoundsException in Remote Cluster Mode
+ * STORM-1756: Explicitly null KafkaServer reference in KafkaTestBroker to prevent out of memory on large test classes.
+ * STORM-1750: Ensure worker dies when report-error-and-die is called.
+ * STORM-1715: using Jedis Protocol.DEFAULT_HOST to replace DEFAULT_HOST
+ * STORM-1713: Replace NotImplementedException with UnsupportedOperationException
+ * STORM-1661: Introduce a config to turn off blobstore acl validation in insecure mode
+ * STORM-1773: Utils.javaDeserialize() doesn't work with primitive types
+ 
 ## 1.0.1
+ * STORM-1725: Kafka Spout New Consumer API - KafkaSpoutRetryExponentialBackoff method should use HashMap instead of TreeMap not to throw Exception 
+ * STORM-1749: Fix storm-starter github links
+ * STORM-1678: abstract batch processing to common api `BatchHelper`
  * STORM-1704: When logviewer_search.html opens daemon file, next search always show no result
  * STORM-1714: StatefulBolts ends up as normal bolts while using TopologyBuilder.setBolt without parallelism
  * STORM-1683: only check non-system streams by default

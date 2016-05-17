@@ -494,7 +494,7 @@ public class ExprCompiler implements RexVisitor<String> {
     }
   }
 
-  private static String printMethodCall(Method method, List<String> args) {
+  public static String printMethodCall(Method method, List<String> args) {
     return printMethodCall(method.getDeclaringClass(), method.getName(),
         Modifier.isStatic(method.getModifiers()), args);
   }

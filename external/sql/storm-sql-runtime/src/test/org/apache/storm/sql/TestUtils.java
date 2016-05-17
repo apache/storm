@@ -47,6 +47,19 @@ public class TestUtils {
     }
   }
 
+  public static class MyConcat {
+    public static String init() {
+      return "";
+    }
+    public static String add(String accumulator, String val) {
+      return accumulator + val;
+    }
+    public static String result(String accumulator) {
+      return accumulator;
+    }
+  }
+
+
   public static class MockDataSource implements DataSource {
     private final ArrayList<Values> RECORDS = new ArrayList<>();
 
@@ -61,6 +74,26 @@ public class TestUtils {
       for (Values v : RECORDS) {
         ctx.emit(v);
       }
+      ctx.fireChannelInactive();
+    }
+  }
+
+  public static class MockGroupDataSource implements DataSource {
+    private final ArrayList<Values> RECORDS = new ArrayList<>();
+
+    public MockGroupDataSource() {
+      for (int i = 0; i < 10; ++i) {
+        RECORDS.add(new Values(i/3, i, (i+1)* 0.5, "x", i/2));
+      }
+    }
+
+    @Override
+    public void open(ChannelContext ctx) {
+      for (Values v : RECORDS) {
+        ctx.emit(v);
+      }
+      // force evaluation of the aggregate function on the last group
+      ctx.flush();
       ctx.fireChannelInactive();
     }
   }
@@ -182,6 +215,9 @@ public class TestUtils {
     public void exceptionCaught(Throwable cause) {
       throw new RuntimeException(cause);
     }
+
+    @Override
+    public void flush(ChannelContext ctx) {}
   }
 
   public static long monotonicNow() {
