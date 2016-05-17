@@ -112,7 +112,7 @@ public class PartitionManager {
                     spoutConfig.maxOffsetBehind + " behind latest offset " + currentOffset + ", resetting to startOffsetTime=" + spoutConfig.startOffsetTime);
         }
 
-        LOG.info("Starting Kafka " + _consumer.host() + ":" + id.partition + " from offset " + _committedTo);
+        LOG.info("Starting Kafka " + _consumer.host() + " " + id + " from offset " + _committedTo);
         _emittedToOffset = _committedTo;
 
         _fetchAPILatencyMax = new CombinedMetric(new MaxMetric());
@@ -204,13 +204,13 @@ public class PartitionManager {
                     _lostMessageCount.incrBy(omitted.size());
                 }
                 
-                LOG.warn("Removing the failed offsets that are out of range: {}", omitted);
+                LOG.warn("Removing the failed offsets for {} that are out of range: {}", _partition, omitted);
             }
 
             if (offset > _emittedToOffset) {
                 _lostMessageCount.incrBy(offset - _emittedToOffset);
                 _emittedToOffset = offset;
-                LOG.warn("{} Using new offset: {}", _partition.partition, _emittedToOffset);
+                LOG.warn("{} Using new offset: {}", _partition, _emittedToOffset);
             }
             
             return;
@@ -257,12 +257,16 @@ public class PartitionManager {
     public void fail(Long offset) {
         if (offset < _emittedToOffset - _spoutConfig.maxOffsetBehind) {
             LOG.info(
-                    "Skipping failed tuple at offset=" + offset +
-                            " because it's more than maxOffsetBehind=" + _spoutConfig.maxOffsetBehind +
-                            " behind _emittedToOffset=" + _emittedToOffset
+                    "Skipping failed tuple at offset={}" +
+                        " because it's more than maxOffsetBehind={}" +
+                        " behind _emittedToOffset={} for {}",
+                offset,
+                _spoutConfig.maxOffsetBehind,
+                _emittedToOffset,
+                _partition
             );
         } else {
-            LOG.debug("failing at offset={} with _pending.size()={} pending and _emittedToOffset={}", offset, _pending.size(), _emittedToOffset);
+            LOG.debug("Failing at offset={} with _pending.size()={} pending and _emittedToOffset={} for {}", offset, _pending.size(), _emittedToOffset, _partition);
             numberFailed++;
             if (numberAcked == 0 && numberFailed > _spoutConfig.maxOffsetBehind) {
                 throw new RuntimeException("Too many tuple failures");
