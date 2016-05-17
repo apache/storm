@@ -19,6 +19,8 @@ package org.apache.storm.sql;
 
 import org.apache.calcite.jdbc.CalciteSchema;
 import org.apache.calcite.prepare.CalciteCatalogReader;
+import org.apache.calcite.schema.Function;
+import org.apache.calcite.schema.impl.AggregateFunctionImpl;
 import org.apache.calcite.schema.impl.ScalarFunctionImpl;
 import org.apache.calcite.sql.SqlOperatorTable;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
@@ -51,6 +53,7 @@ import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -168,9 +171,27 @@ class StormSqlImpl extends StormSql {
     if(sqlCreateFunction.jarName() != null) {
       throw new UnsupportedOperationException("UDF 'USING JAR' not implemented");
     }
-    schema.add(sqlCreateFunction.functionName().toUpperCase(),
-               ScalarFunctionImpl.create(Class.forName(sqlCreateFunction.className()), "evaluate"));
+    Method method;
+    Function function;
+    if ((method=findMethod(sqlCreateFunction.className(), "evaluate")) != null) {
+      function = ScalarFunctionImpl.create(method);
+    } else if (findMethod(sqlCreateFunction.className(), "add") != null) {
+      function = AggregateFunctionImpl.create(Class.forName(sqlCreateFunction.className()));
+    } else {
+      throw new RuntimeException("Invalid scalar or aggregate function");
+    }
+    schema.add(sqlCreateFunction.functionName().toUpperCase(), function);
     hasUdf = true;
+  }
+
+  private Method findMethod(String clazzName, String methodName) throws ClassNotFoundException {
+    Class<?> clazz = Class.forName(clazzName);
+    for (Method method : clazz.getMethods()) {
+      if (method.getName().equals(methodName)) {
+        return method;
+      }
+    }
+    return null;
   }
 
   private void handleCreateTableForTrident(
