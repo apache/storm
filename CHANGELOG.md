@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-1709: Added group by support in storm sql standalone mode
  * STORM-1720: Support GEO in storm-redis
 
 ## 1.0.2
