@@ -72,10 +72,7 @@ public class DisruptorQueue implements IStatefulObject {
         
         public FlusherPool() {
         	_exec = new ThreadPoolExecutor(1, 100, 10, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(1024), new ThreadPoolExecutor.DiscardPolicy());
-			ThreadFactory threadFactory = new ThreadFactoryBuilder()
-					.setDaemon(true)
-					.setNameFormat(THREAD_PREFIX + "-task-pool")
-					.build();
+			ThreadFactory threadFactory = new ThreadFactoryBuilder().setDaemon(true).setNameFormat(THREAD_PREFIX + "-task-pool").build();
 			_exec.setThreadFactory(threadFactory);
 		}
 
