@@ -23,6 +23,8 @@ import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;
 
 import java.util.Map;
+import java.util.HashMap;
+import java.util.Iterator;
 
 /**
  * A generic `ShellBolt` implementation that allows you specify output fields
