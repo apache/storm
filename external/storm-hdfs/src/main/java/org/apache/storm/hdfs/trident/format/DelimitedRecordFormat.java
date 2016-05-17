@@ -20,6 +20,8 @@ package org.apache.storm.hdfs.trident.format;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.trident.tuple.TridentTuple;
 
+import java.nio.charset.StandardCharsets;
+
 /**
  * RecordFormat implementation that uses field and record delimiters.
  * By default uses a comma (",") as the field delimiter and a
@@ -78,6 +80,6 @@ public class DelimitedRecordFormat implements RecordFormat {
             }
         }
         sb.append(this.recordDelimiter);
-        return sb.toString().getBytes();
+        return sb.toString().getBytes(StandardCharsets.UTF_8);
     }
 }

@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 
 public class Utils {
     private static final Logger LOG = LoggerFactory.getLogger(Utils.class);
@@ -44,7 +45,7 @@ public class Utils {
         if(obj == null) {
           return null;
         } else if(obj instanceof String){
-            return ((String)obj).getBytes();
+            return ((String)obj).getBytes(StandardCharsets.UTF_8);
         } else if (obj instanceof Integer){
             return Bytes.toBytes((Integer) obj);
         } else if (obj instanceof Long){

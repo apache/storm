@@ -27,6 +27,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.nio.charset.StandardCharsets;
 
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hive.hcatalog.streaming.*;
@@ -403,7 +404,7 @@ public class HiveWriter {
             buf.append(o);
             buf.append(",");
         }
-        return buf.toString().getBytes();
+        return buf.toString().getBytes(StandardCharsets.UTF_8);
     }
 
     /**

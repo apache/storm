@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.text.SimpleDateFormat;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 public class JsonRecordHiveMapper implements HiveMapper {
     private static final Logger LOG = LoggerFactory.getLogger(DelimitedRecordHiveMapper.class);
@@ -122,7 +123,7 @@ public class JsonRecordHiveMapper implements HiveMapper {
                 obj.put(field,tuple.getValueByField(field));
             }
         }
-        return obj.toJSONString().getBytes();
+        return obj.toJSONString().getBytes(StandardCharsets.UTF_8);
     }
 
     private String getPartitionsByTimeFormat() {

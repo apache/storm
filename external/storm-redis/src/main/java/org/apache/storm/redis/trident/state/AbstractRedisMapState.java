@@ -32,6 +32,7 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.nio.charset.StandardCharsets;
 
 /**
  * AbstractRedisMapState is base class of any RedisMapState, which implements IBackingMap.
@@ -99,7 +100,7 @@ public abstract class AbstractRedisMapState<T> implements IBackingMap<T> {
 		List<T> result = new ArrayList<T>(keys.size());
 		for (String value : values) {
 			if (value != null) {
-				result.add((T) getSerializer().deserialize(value.getBytes()));
+				result.add((T) getSerializer().deserialize(value.getBytes(StandardCharsets.UTF_8)));
 			} else {
 				result.add(null);
 			}

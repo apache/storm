@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.text.SimpleDateFormat;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 public class DelimitedRecordHiveMapper implements HiveMapper {
     private static final Logger LOG = LoggerFactory.getLogger(DelimitedRecordHiveMapper.class);
@@ -133,7 +134,7 @@ public class DelimitedRecordHiveMapper implements HiveMapper {
                 builder.append(fieldDelimiter);
             }
         }
-        return builder.toString().getBytes();
+        return builder.toString().getBytes(StandardCharsets.UTF_8);
     }
 
     private String getPartitionsByTimeFormat() {
