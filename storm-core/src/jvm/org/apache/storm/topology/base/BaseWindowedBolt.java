@@ -43,6 +43,23 @@ public abstract class BaseWindowedBolt implements IWindowedBolt {
         public Count(int value) {
             this.value = value;
         }
+
+        /**
+         * Returns a {@link Count} of given value.
+         *
+         * @param value the count value
+         * @return the Count
+         */
+        public static Count of(int value) {
+            return new Count(value);
+        }
+
+        @Override
+        public String toString() {
+            return "Count{" +
+                    "value=" + value +
+                    '}';
+        }
     }
 
     /**
@@ -54,6 +71,63 @@ public abstract class BaseWindowedBolt implements IWindowedBolt {
         public Duration(int value, TimeUnit timeUnit) {
             this.value = (int) timeUnit.toMillis(value);
         }
+
+        /**
+         * Returns a {@link Duration} corresponding to the the given value in milli seconds.
+         *
+         * @param milliseconds the duration in milliseconds
+         * @return the Duration
+         */
+        public static Duration of(int milliseconds) {
+            return new Duration(milliseconds, TimeUnit.MILLISECONDS);
+        }
+
+        /**
+         * Returns a {@link Duration} corresponding to the the given value in days.
+         *
+         * @param days the number of days
+         * @return the Duration
+         */
+        public static Duration days(int days) {
+            return new Duration(days, TimeUnit.DAYS);
+        }
+
+        /**
+         * Returns a {@link Duration} corresponding to the the given value in hours.
+         *
+         * @param hours the number of hours
+         * @return the Duration
+         */
+        public static Duration hours(int hours) {
+            return new Duration(hours, TimeUnit.HOURS);
+        }
+
+        /**
+         * Returns a {@link Duration} corresponding to the the given value in minutes.
+         *
+         * @param minutes the number of minutes
+         * @return the Duration
+         */
+        public static Duration minutes(int minutes) {
+            return new Duration(minutes, TimeUnit.MINUTES);
+        }
+
+        /**
+         * Returns a {@link Duration} corresponding to the the given value in seconds.
+         *
+         * @param seconds the number of seconds
+         * @return the Duration
+         */
+        public static Duration seconds(int seconds) {
+            return new Duration(seconds, TimeUnit.SECONDS);
+        }
+
+        @Override
+        public String toString() {
+            return "Duration{" +
+                    "value=" + value +
+                    '}';
+        }
     }
 
     protected BaseWindowedBolt() {
@@ -61,21 +135,34 @@ public abstract class BaseWindowedBolt implements IWindowedBolt {
     }
 
     private BaseWindowedBolt withWindowLength(Count count) {
+        if (count.value < 0) {
+            throw new IllegalArgumentException("Negative window length [" + count + "]");
+        }
         windowConfiguration.put(Config.TOPOLOGY_BOLTS_WINDOW_LENGTH_COUNT, count.value);
         return this;
     }
 
     private BaseWindowedBolt withWindowLength(Duration duration) {
+        if (duration.value < 0) {
+            throw new IllegalArgumentException("Negative window length [" + duration + "]");
+        }
+
         windowConfiguration.put(Config.TOPOLOGY_BOLTS_WINDOW_LENGTH_DURATION_MS, duration.value);
         return this;
     }
 
     private BaseWindowedBolt withSlidingInterval(Count count) {
+        if (count.value < 0) {
+            throw new IllegalArgumentException("Negative sliding interval [" + count + "]");
+        }
         windowConfiguration.put(Config.TOPOLOGY_BOLTS_SLIDING_INTERVAL_COUNT, count.value);
         return this;
     }
 
     private BaseWindowedBolt withSlidingInterval(Duration duration) {
+        if (duration.value < 0) {
+            throw new IllegalArgumentException("Negative sliding interval [" + duration + "]");
+        }
         windowConfiguration.put(Config.TOPOLOGY_BOLTS_SLIDING_INTERVAL_DURATION_MS, duration.value);
         return this;
     }
