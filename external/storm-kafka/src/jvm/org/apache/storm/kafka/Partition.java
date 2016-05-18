@@ -18,10 +18,11 @@
 package org.apache.storm.kafka;
 
 import com.google.common.base.Objects;
+import java.io.Serializable;
 import org.apache.storm.trident.spout.ISpoutPartition;
 
 
-public class Partition implements ISpoutPartition {
+public class Partition implements ISpoutPartition, Serializable {
 
     public Broker host;
     public int partition;
