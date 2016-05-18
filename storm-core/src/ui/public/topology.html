@@ -70,6 +70,10 @@
     <div id="topology-stats" class="col-md-12"></div>
   </div>
   <div class="row">
+    <div id="topology-spouts-lag" class="col-md-12"></div>
+  </div>
+  </div>
+  <div class="row">
     <div id="spout-stats" class="col-md-12"></div>
   </div>
   <div class="row">
@@ -277,6 +281,7 @@ $(document).ready(function() {
         var topologySummary = $("#topology-summary");
         var topologyResources = $("#topology-resources");
         var topologyStats = $("#topology-stats");
+        var topologySpoutsLag = $("#topology-spouts-lag");
         var spoutStats = $("#spout-stats");
         var boltStats = $("#bolt-stats");
         var config = $("#topology-configuration");
@@ -384,8 +389,51 @@ $(document).ready(function() {
             $('#topology-configuration [data-toggle="tooltip"]').tooltip();
             $('#topology-actions [data-toggle="tooltip"]').tooltip();
             $('#topology-visualization [data-toggle="tooltip"]').tooltip();
+
+            var lagUrl = "/api/v1/topology/"+topologyId+"/lag";
+            $.getJSON(lagUrl,function(lagResponse,status,jqXHR) {
+              if (lagResponse !== null && lagResponse !== undefined && lagResponse instanceof Array && lagResponse.length > 0) {
+                var kafkaSpoutsLagTemplate = $(template).filter("#topology-kafka-spouts-lag-template").html();
+                var spoutsErrorTemplate = $(template).filter("#topology-spouts-lag-error-template").html();
+
+                var kafkaSpoutLags = lagResponse.filter(function(ele) {return ele.spoutType === "KAFKA";});
+                var isJson = function (input) {
+                  try {
+                    JSON.parse(input);
+                  } catch (e) {
+                    return false;
+                  }
+                  return true;
+                };
+                var kafkaSpoutsValidResults = kafkaSpoutLags.filter(function (ele) {return isJson(ele.spoutLagResult);});
+                var kafkaSpoutsErrorResults = kafkaSpoutLags.filter(function (ele) {return !isJson(ele.spoutLagResult);});
+                var data = {};
+                if (kafkaSpoutsValidResults.length > 0) {
+                  data.kafkaSpoutsLagResults = [];
+                  kafkaSpoutsValidResults.forEach(function(ele) {
+                    var spoutLagResult = JSON.parse(ele.spoutLagResult);
+                    spoutLagResult.forEach(function(ele2) {
+                      data.kafkaSpoutsLagResults.push({
+                        id: ele.spoutId,
+                        topic: ele2.topic,
+                        partition: ele2.partition,
+                        logHeadOffset: ele2.logHeadOffset,
+                        consumerCommittedOffset: ele2.consumerCommittedOffset,
+                        lag: ele2.lag
+                      });
+                    });
+                  });
+                  topologySpoutsLag.append(Mustache.render(kafkaSpoutsLagTemplate,data));
+                }
+                if (kafkaSpoutsErrorResults.length > 0) {
+                  data.spoutsLagErrorResults = kafkaSpoutsErrorResults;
+                  topologySpoutsLag.append(Mustache.render(spoutsErrorTemplate,data));
+                }
+              }
+            });
       }});
     });
+
  });
 </script>
 </html>

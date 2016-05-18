@@ -204,6 +204,92 @@
   </table>
 </script>
 
+<script id="topology-kafka-spouts-lag-template" type="text/html">
+  <h2>Kafka Spouts Lag</h2>
+  <table class="table table-striped compact" id="topology-kafka-spouts-lag-table">
+    <thead>
+      <tr>
+        <th>
+          <span data-toggle="tooltip" data-placement="right" title="Kafka spout id">
+            Id
+          </span>
+        </th>
+        <th>
+          <span data-toggle="tooltip" data-placement="above" title="Topic">
+            Topic
+          </span>
+        </th>
+        <th>
+          <span data-toggle="tooltip" data-placement="above" title="Partition">
+            Partition
+          </span>
+        </th>
+        <th>
+          <span data-toggle="tooltip" data-placement="above" title="Latest Offset">
+            Latest Offset
+          </span>
+        </th>
+        <th>
+          <span data-toggle="tooltip" data-placement="above" title="Offset of last spout message successfully acked">
+            Spout Committed Offset
+          </span>
+        </th>
+        <th>
+          <span data-toggle="tooltip" data-placement="left" title="Lag">
+            Lag
+          </span>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#kafkaSpoutsLagResults}}
+      <tr>
+        <td>{{id}}</td>
+        <td>{{topic}}</td>
+        <td>{{partition}}</td>
+        <td>{{logHeadOffset}}</td>
+        <td>{{consumerCommittedOffset}}</td>
+        <td>{{lag}}</td>
+      </tr>
+      {{/kafkaSpoutsLagResults}}
+    </tbody>
+  </table>
+</script>
+
+<script id="topology-spouts-lag-error-template" type="text/html">
+  <h2>Topology spouts lag error</h2>
+  <table class="table table-striped compact" id="topology-spouts-lag-error-table">
+    <thead>
+      <tr>
+        <th>
+          <span data-toggle="tooltip" data-placement="right" title="Spout id">
+            Id
+          </span>
+        </th>
+        <th>
+          <span data-toggle="tooltip" data-placement="above" title="Type of spout">
+            Type
+          </span>
+        </th>
+        <th>
+          <span data-toggle="tooltip" data-placement="left" title="Message to denote the reason for failure to get the lag">
+            Message
+          </span>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#spoutsLagErrorResults}}
+      <tr>
+        <td>{{spoutId}}</td>
+        <td>{{spoutType}}</td>
+        <td>{{spoutLagResult}}</td>
+      </tr>
+      {{/spoutsLagErrorResults}}
+    </tbody>
+  </table>
+</script>
+
 <script id="topology-visualization-container-template" type="text/html">
   <p>
     <table class="table table-striped compact">

@@ -26,7 +26,7 @@
   (:use [org.apache.storm.daemon [common :only [ACKER-COMPONENT-ID ACKER-INIT-STREAM-ID ACKER-ACK-STREAM-ID
                                               ACKER-FAIL-STREAM-ID mk-authorization-handler
                                               start-metrics-reporters]]])
-  (:import [org.apache.storm.utils Utils]
+  (:import [org.apache.storm.utils Utils TopologySpoutLag]
            [org.apache.storm.generated NimbusSummary])
   (:use [clojure.string :only [blank? lower-case trim split]])
   (:import [org.apache.storm.generated ExecutorSpecificStats
@@ -66,6 +66,7 @@
 (defmeter ui:num-all-topologies-summary-http-requests)
 (defmeter ui:num-topology-page-http-requests)
 (defmeter ui:num-topology-metric-http-requests)
+(defmeter ui:num-topology-lag-http-requests)
 (defmeter ui:num-build-visualization-http-requests)
 (defmeter ui:num-mk-visualization-data-http-requests)
 (defmeter ui:num-component-page-http-requests)
@@ -718,6 +719,12 @@
           merged-bolt-stats (map (fn [[k v]] (merge-executor-stats window k v)) bolt-comp-summs)]
       (merge {"window" window "window-hint" window-hint "spouts" merged-spout-stats "bolts" merged-bolt-stats}))))
 
+(defn topology-lag [id topology-conf]
+  (thrift/with-configured-nimbus-connection nimbus
+    (let [topology (.getUserTopology ^Nimbus$Client nimbus
+                                               id)]
+      (TopologySpoutLag/lag topology topology-conf))))
+
 (defn component-errors
   [errors-list topology-id secure?]
   (let [errors (->> errors-list
@@ -1057,6 +1064,12 @@
     (populate-context! servlet-request)
     (assert-authorized-user "getTopology" (topology-config id))
     (json-response (topology-metrics-page id (:window m) (check-include-sys? (:sys m))) (:callback m)))
+  (GET "/api/v1/topology/:id/lag" [:as {:keys [cookies servlet-request scheme]} id & m]
+    (mark! ui:num-topology-lag-http-requests)
+    (populate-context! servlet-request)
+    (let [topology-conf (topology-config id)]
+      (assert-authorized-user "getUserTopology" topology-conf)
+      (json-response (topology-lag id topology-conf) nil)))
   (GET "/api/v1/topology/:id/visualization-init" [:as {:keys [cookies servlet-request]} id & m]
     (mark! ui:num-build-visualization-http-requests)
     (populate-context! servlet-request)

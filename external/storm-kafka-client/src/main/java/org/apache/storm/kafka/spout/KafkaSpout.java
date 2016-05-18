@@ -381,6 +381,23 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         return "{acked=" + acked + "} ";
     }
 
+    @Override
+    public Map<String, Object> getComponentConfiguration () {
+        Map<String, Object> configuration = super.getComponentConfiguration();
+        if (configuration == null) {
+            configuration = new HashMap<>();
+        }
+        String configKeyPrefix = "config.";
+        StringBuilder topics = new StringBuilder();
+        for (String topic: this.kafkaSpoutConfig.getSubscribedTopics()) {
+            topics.append(topic).append(",");
+        }
+        configuration.put(configKeyPrefix + "topics", topics.toString());
+        configuration.put(configKeyPrefix + "groupid", this.kafkaSpoutConfig.getConsumerGroupId());
+        configuration.put(configKeyPrefix + "bootstrap.servers", this.kafkaSpoutConfig.getKafkaProps().get("bootstrap.servers"));
+        return configuration;
+    }
+
     // ======= Offsets Commit Management ==========
 
     private static class OffsetComparator implements Comparator<KafkaSpoutMessageId> {
