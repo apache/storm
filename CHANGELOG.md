@@ -91,6 +91,7 @@
  * STORM-1720: Support GEO in storm-redis
 
 ## 1.0.2
+ * STORM-1730: LocalCluster#shutdown() does not terminate all storm threads/thread pools.
  * STORM-1745: Add partition to log output in PartitionManager
  * STORM-1735: Nimbus should log that replication succeeded when min replicas was reached exactly
  * STORM-1835: add lock info in thread dump
