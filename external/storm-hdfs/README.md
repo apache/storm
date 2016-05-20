@@ -109,6 +109,17 @@ By default, storm-hdfs uses the following Hadoop dependencies:
         </exclusion>
     </exclusions>
 </dependency>
+<dependency>
+    <groupId>org.apache.hadoop</groupId>
+    <artifactId>hadoop-common</artifactId>
+    <version>2.6.1</version>
+    <exclusions>
+        <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+        </exclusion>
+    </exclusions>
+</dependency>
 ```
 
 If you are using a different version of Hadoop, you should exclude the Hadoop libraries from the storm-hdfs dependency
