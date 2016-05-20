@@ -33,7 +33,8 @@ public class KafkaConfig implements Serializable {
 
     public int fetchSizeBytes = 1024 * 1024;
     public int socketTimeoutMs = 10000;
-    public int fetchMaxWait = 10000;
+    public int fetchMaxWait = FetchRequest.DefaultMaxWait();
+    public int fetchMinBytes = FetchRequest.DefaultMinBytes();
     public int bufferSizeBytes = 1024 * 1024;
     public MultiScheme scheme = new RawMultiScheme();
     public boolean ignoreZkOffsets = false;
@@ -41,7 +42,6 @@ public class KafkaConfig implements Serializable {
     public long maxOffsetBehind = Long.MAX_VALUE;
     public boolean useStartOffsetTimeIfOffsetOutOfRange = true;
     public int metricsTimeBucketSizeInSecs = 60;
-    public int minFetchByte = FetchRequest.DefaultMinBytes();
 
     public KafkaConfig(BrokerHosts hosts, String topic) {
         this(hosts, topic, kafka.api.OffsetRequest.DefaultClientId());
