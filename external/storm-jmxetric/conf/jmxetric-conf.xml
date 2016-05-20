@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+    <!DOCTYPE jmxetric-config [
+       <!ELEMENT jmxetric-config (sample|ganglia|jvm)*>
+       <!ELEMENT sample (mbean)*>
+          <!ATTLIST sample delay CDATA #REQUIRED>
+          <!ATTLIST sample initialdelay CDATA "0">
+       <!ELEMENT mbean (attribute)*>
+          <!ATTLIST mbean name CDATA #REQUIRED>
+          <!ATTLIST mbean pname CDATA #REQUIRED>
+       <!ELEMENT attribute (composite*)>
+          <!ATTLIST attribute name CDATA #REQUIRED>
+          <!ATTLIST attribute type CDATA "" >
+          <!ATTLIST attribute units CDATA "" >
+          <!ATTLIST attribute pname CDATA "" >
+          <!ATTLIST attribute slope CDATA "both" >
+       <!ELEMENT composite EMPTY>
+          <!ATTLIST composite name CDATA #REQUIRED>
+          <!ATTLIST composite type CDATA "" >
+          <!ATTLIST composite units CDATA "" >
+          <!ATTLIST composite pname CDATA "" >
+          <!ATTLIST composite slope CDATA "both" >
+       <!ELEMENT ganglia EMPTY>
+          <!ATTLIST ganglia hostname CDATA #REQUIRED>
+          <!ATTLIST ganglia port CDATA #REQUIRED>
+          <!ATTLIST ganglia mode CDATA #REQUIRED>
+          <!ATTLIST ganglia wireformat31x CDATA #REQUIRED>
+          <!ATTLIST ganglia spoof CDATA #IMPLIED>
+       <!ELEMENT jvm EMPTY>
+          <!ATTLIST jvm process CDATA "">
+    ]>
+    <jmxetric-config>
+        <jvm process="ProcessName"/>
+        <sample delay="20">
+            <mbean name="java.lang:type=Memory" pname="Memory">
+                <attribute name="HeapMemoryUsage">
+                    <composite name="init" pname="Heap_init" type="int32" units="bytes"/>
+                    <composite name="committed" pname="Heap_committed" type="int32" units="bytes"/>
+                    <composite name="used" pname="Heap_used" type="int32" units="bytes" />
+                    <composite name="max" pname="Heap_max" type="int32" units="bytes" />
+                </attribute>
+                <attribute name="NonHeapMemoryUsage" >
+                    <composite name="init" pname="NonHeap_init" type="int32"  units="bytes" />
+                    <composite name="committed" pname="NonHeap_committed" type="int32" units="bytes" />
+                    <composite name="used" pname="NonHeap_used" type="int32" units="bytes" />
+                    <composite name="max" pname="NonHeap_max" type="int32" units="bytes" />
+                </attribute>
+            </mbean>
+            <mbean name="java.lang:type=Threading" pname="Threading" >
+                <attribute name="ThreadCount" type="int16" />
+                <attribute name="DaemonThreadCount" type="int16" />
+            </mbean>
+            <mbean name="java.lang:type=OperatingSystem" pname="OS" >
+                <attribute name="ProcessCpuTime" type="int32" slope="positive"/>
+            </mbean>
+        </sample>
+    </jmxetric-config>
