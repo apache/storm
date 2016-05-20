@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-1842: Forward references in storm.thrift cause tooling issues
  * STORM-1676: Filter null executor stats from worker heartbeat map
  * STORM-1672: Stats not get class cast exception
  * STORM-1739: update the minor JAVA version dependency in 0.10.0 and above
