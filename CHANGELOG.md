@@ -1,4 +1,5 @@
 ## 1.0.2
+ * STORM-1674: Idle KafkaSpout consumes more bandwidth than needed
  * STORM-1842: Forward references in storm.thrift cause tooling issues
  * STORM-1745: Add partition to log output in PartitionManager
  * STORM-1735: Nimbus should log that replication succeeded when min replicas was reached exactly
