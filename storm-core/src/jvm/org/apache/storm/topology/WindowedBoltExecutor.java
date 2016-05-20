@@ -268,6 +268,7 @@ public class WindowedBoltExecutor implements IRichBolt {
             if (waterMarkEventGenerator.track(input.getSourceGlobalStreamId(), ts)) {
                 windowManager.add(input, ts);
             } else {
+                windowedOutputCollector.ack(input);
                 LOG.info("Received a late tuple {} with ts {}. This will not processed.", input, ts);
             }
         } else {
