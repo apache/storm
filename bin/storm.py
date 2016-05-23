@@ -220,7 +220,6 @@ def exec_storm_class(klass, jvmtype="-server", jvmopts=[], extrajars=[], args=[]
             sys.exit(e.returncode)
     else:
         os.execvp(JAVA_CMD, all_args)
-        os._exit()
 
 def jar(jarfile, klass, *args):
     """Syntax: [storm jar topology-jar-path class ...]
@@ -241,7 +240,6 @@ def jar(jarfile, klass, *args):
             extrajars=[tmpjar, USER_CONF_DIR, STORM_BIN_DIR],
             args=args,
             daemon=False,
-            fork=True,
             jvmopts=JAR_JVM_OPTS + ["-Dstorm.jar=" + tmpjar])
         os.remove(tmpjar)
     else:
