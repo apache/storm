@@ -261,6 +261,7 @@ under the License.
 * Jark Wu ([@jark](https://github.com/wuchong))
 * Cody Wang ([@unsleepy22](https://github.com/unsleepy22))
 * Karthick Duraisamy Soundararaj ([@dsKarthick](https://github.com/dsKarthick))
+* Olivier Mallassi ([@omallassi](https://github.com/omallassi))
 
 
 ## Acknowledgements
