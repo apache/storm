@@ -200,4 +200,9 @@ public class GeneralTopologyContext implements JSONAware {
         }
         return max;
     }
+
+    //todo:debug logs
+    public Map<String, Map<String, Fields>> getComponentToStreamToFields(){
+        return this._componentToStreamToFields;
+    }
 }

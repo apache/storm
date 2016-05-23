@@ -124,7 +124,7 @@ public class SpoutExecutor extends BaseExecutor {
 
         long currCount = emittedCount.get();
         boolean throttleOn = backPressureEnabled && this.throttleOn.get();
-        boolean reachedMaxSpoutPending = ((maxSpoutPending != null) && (pending.size() >= maxSpoutPending));
+        boolean reachedMaxSpoutPending = (maxSpoutPending != 0) && (pending.size() >= maxSpoutPending);
         boolean isActive = executorData.getStormActive().get();
         if (isActive) {
             if (!lastActive.get()) {
@@ -149,7 +149,6 @@ public class SpoutExecutor extends BaseExecutor {
             }
             Time.sleep(100);
             spoutThrottlingMetrics.skippedInactive(executorData.getStats());
-
         }
         if (currCount == emittedCount.get() && isActive) {
             emptyEmitStreak.increment();
@@ -199,7 +198,6 @@ public class SpoutExecutor extends BaseExecutor {
                 } else if (tupleInfo.getStream().equals(Acker.ACKER_FAIL_STREAM_ID)) {
                     ExecutorCommon.failSpoutMsg(executorData, idToTask.get(taskId), tupleInfo, "FAIL-STREAM");
                 }
-
             }
         }
     }

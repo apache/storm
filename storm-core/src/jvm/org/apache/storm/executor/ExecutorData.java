@@ -44,6 +44,8 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ExecutorData {
 
@@ -75,6 +77,8 @@ public class ExecutorData {
     private final String type;
     private final AtomicBoolean throttleOn;
     private final boolean isDebug;
+
+    private static final Logger LOG = LoggerFactory.getLogger(ExecutorData.class);
 
     public ExecutorData(Map<String, Object> workerData, List<Long> executorId) {
         this.workerData = workerData;
@@ -124,6 +128,20 @@ public class ExecutorData {
         this.intervalToTaskToMetricToRegistry = new HashMap<>();
         this.taskToComponent = (Map<Integer, String>) workerData.get("task->component");
         this.streamToComponentToGrouper = outboundComponents(workerTopologyContext, componentId, stormConf);
+        // todo: debug logs
+        LOG.info("\n{}\n======================================", componentId);
+        for (Map.Entry<String, Map<String, LoadAwareCustomStreamGrouping>> entry : streamToComponentToGrouper.entrySet()) {
+            String stream = entry.getKey();
+            Map<String, LoadAwareCustomStreamGrouping> comp2grouper = entry.getValue();
+            if(comp2grouper!=null) {
+                for (Map.Entry<String, LoadAwareCustomStreamGrouping> groupingEntry : comp2grouper.entrySet()) {
+                    String comp = groupingEntry.getKey();
+                    LOG.info("stream:{}, comp:{}, grouping:{}", stream, comp, groupingEntry.getValue());
+                }
+            } else {
+                LOG.info("stream:{}, comp2grouper:null", stream);
+            }
+        }
 
         this.reportError = new ReportError(stormConf, stormClusterState, stormId, componentId, workerTopologyContext);
         this.reportErrorDie = new ReportErrorAndDie(reportError, suicideFn);

@@ -17,6 +17,7 @@
  */
 package org.apache.storm.executor.spout;
 
+import com.google.common.base.Joiner;
 import org.apache.storm.daemon.Acker;
 import org.apache.storm.daemon.Task;
 import org.apache.storm.executor.ExecutorCommon;
@@ -24,6 +25,7 @@ import org.apache.storm.executor.ExecutorData;
 import org.apache.storm.executor.TupleInfo;
 import org.apache.storm.spout.ISpout;
 import org.apache.storm.spout.ISpoutOutputCollector;
+import org.apache.storm.task.GeneralTopologyContext;
 import org.apache.storm.tuple.MessageId;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.tuple.Values;
@@ -34,8 +36,11 @@ import org.apache.storm.utils.Utils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
+    private final Logger LOG = LoggerFactory.getLogger(getClass());
 
     private final ExecutorData executorData;
     private final Task taskData;
@@ -81,6 +86,7 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
     }
 
     private List<Integer> sendSpoutMsg(String stream, List<Object> values, Object messageId, Integer outTaskId) {
+        LOG.info("@@@@ emit tuple, stream:{}, tuple:{}, msgId:{}, out task:{}", stream, values, messageId, outTaskId);
         emittedCount.increment();
 
         java.util.List<Integer> outTasks;
@@ -89,6 +95,14 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
         } else {
             outTasks = taskData.getOutgoingTasks(stream, values);
         }
+        //todo: debug
+        GeneralTopologyContext context = executorData.getWorkerTopologyContext();
+        List<String> outComps = new ArrayList<>();
+        for(int outTask: outTasks){
+            outComps.add(context.getComponentId(outTask));
+        }
+        LOG.info("out tasks:{}, out comps:{}", Joiner.on(",").join(outTasks), Joiner.on(",").join(outComps));
+
         if (outTasks.size() == 0) {
             // don't need send tuple to other task
             return outTasks;

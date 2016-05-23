@@ -76,24 +76,27 @@ public abstract class BaseExecutor implements Callable, EventHandler {
 
         try {
             this.hostname = Utils.hostname(stormConf);
-        }catch (UnknownHostException ignored){
+        } catch (UnknownHostException ignored) {
             this.hostname = "";
         }
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void onEvent(Object event, long seq, boolean endOfBatch) throws Exception {
-        AddressedTuple addressedTuple = (AddressedTuple) event;
-        TupleImpl tuple = (TupleImpl) addressedTuple.getTuple();
-        int taskId = addressedTuple.getDest();
-        if (isDebug) {
-            LOG.info("Processing received message FOR {} TUPLE: {}", taskId, tuple);
-        }
-        if (taskId != AddressedTuple.BROADCAST_DEST) {
-            tupleActionFn(taskId, tuple);
-        } else {
-            for (Integer t : executorData.getTaskIds()) {
-                tupleActionFn(t, tuple);
+        ArrayList<AddressedTuple> addressedTuples = (ArrayList<AddressedTuple>) event;
+        for (AddressedTuple addressedTuple : addressedTuples) {
+            TupleImpl tuple = (TupleImpl) addressedTuple.getTuple();
+            int taskId = addressedTuple.getDest();
+            if (isDebug) {
+                LOG.info("Processing received message FOR {} TUPLE: {}", taskId, tuple);
+            }
+            if (taskId != AddressedTuple.BROADCAST_DEST) {
+                tupleActionFn(taskId, tuple);
+            } else {
+                for (Integer t : executorData.getTaskIds()) {
+                    tupleActionFn(t, tuple);
+                }
             }
         }
     }
@@ -102,20 +105,26 @@ public abstract class BaseExecutor implements Callable, EventHandler {
         try {
             Integer interval = tuple.getInteger(0);
             int taskId = taskData.getTaskId();
-            Map<String, IMetric> nameToRegistry = executorData.getIntervalToTaskToMetricToRegistry().get(interval).get(taskId);
-            IMetricsConsumer.TaskInfo taskInfo = new IMetricsConsumer.TaskInfo(hostname, workerTopologyContext.getThisWorkerPort(),
-                    componentId, taskId, (System.currentTimeMillis() / 1000), interval);
-            List<IMetricsConsumer.DataPoint> dataPoints = new ArrayList<>();
-            for (Map.Entry<String, IMetric> entry : nameToRegistry.entrySet()) {
-                IMetric metric = entry.getValue();
-                Object value = metric.getValueAndReset();
-                if (value != null) {
-                    IMetricsConsumer.DataPoint dataPoint = new IMetricsConsumer.DataPoint(entry.getKey(), value);
-                    dataPoints.add(dataPoint);
-                }
+            Map<Integer, Map<String, IMetric>> taskToMetricToRegistry = executorData.getIntervalToTaskToMetricToRegistry().get(interval);
+            Map<String, IMetric> nameToRegistry = null;
+            if (taskToMetricToRegistry != null) {
+                nameToRegistry = taskToMetricToRegistry.get(taskId);
             }
-            if (!dataPoints.isEmpty()) {
-                ExecutorCommon.sendUnanchored(taskData, Constants.METRICS_STREAM_ID, new Values(taskInfo, dataPoints), executorData.getExecutorTransfer());
+            if (nameToRegistry != null) {
+                IMetricsConsumer.TaskInfo taskInfo = new IMetricsConsumer.TaskInfo(hostname, workerTopologyContext.getThisWorkerPort(),
+                        componentId, taskId, (System.currentTimeMillis() / 1000), interval);
+                List<IMetricsConsumer.DataPoint> dataPoints = new ArrayList<>();
+                for (Map.Entry<String, IMetric> entry : nameToRegistry.entrySet()) {
+                    IMetric metric = entry.getValue();
+                    Object value = metric.getValueAndReset();
+                    if (value != null) {
+                        IMetricsConsumer.DataPoint dataPoint = new IMetricsConsumer.DataPoint(entry.getKey(), value);
+                        dataPoints.add(dataPoint);
+                    }
+                }
+                if (!dataPoints.isEmpty()) {
+                    ExecutorCommon.sendUnanchored(taskData, Constants.METRICS_STREAM_ID, new Values(taskInfo, dataPoints), executorData.getExecutorTransfer());
+                }
             }
         } catch (Exception e) {
             throw Utils.wrapInRuntime(e);
@@ -127,8 +136,8 @@ public abstract class BaseExecutor implements Callable, EventHandler {
     protected abstract void init();
 
     protected void setupMetrics() {
-        Map<Integer, Map<Integer, Map<String, IMetric>>> integerMapMap = executorData.getIntervalToTaskToMetricToRegistry();
-        for (final Integer interval : integerMapMap.keySet()) {
+        Map<Integer, Map<Integer, Map<String, IMetric>>> intervalToTaskToMetricToRegistry = executorData.getIntervalToTaskToMetricToRegistry();
+        for (final Integer interval : intervalToTaskToMetricToRegistry.keySet()) {
             StormTimer timerTask = (StormTimer) executorData.getWorkerData().get("user-timer");
             timerTask.scheduleRecurring(interval, interval, new Runnable() {
                 @Override

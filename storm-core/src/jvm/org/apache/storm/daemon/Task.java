@@ -86,6 +86,16 @@ public class Task {
         this.emitSampler = ConfigUtils.mkStatsSampler(stormConf);
         this.loadMapping = (LoadMapping) workerData.get("load-mapping");
         this.systemTopologyContext = mkTopologyContext((StormTopology) workerData.get("system-topology"));
+        //todo:debug
+        Map<String, Map<String, Fields>> comp2stream2fields = this.systemTopologyContext.getComponentToStreamToFields();
+        for (Map.Entry<String, Map<String, Fields>> entry : comp2stream2fields.entrySet()) {
+            String comp = entry.getKey();
+            Map<String, Fields> stream2field = entry.getValue();
+            for (Map.Entry<String, Fields> fieldsEntry : stream2field.entrySet()) {
+                LOG.info("@@@@ comp:{}, stream:{}, out fields:{}", comp, fieldsEntry.getKey(), fieldsEntry.getValue());
+            }
+        }
+
         this.userTopologyContext = mkTopologyContext((StormTopology) workerData.get("topology"));
         this.taskObject = mkTaskObject();
         this.debug = stormConf.containsKey(Config.TOPOLOGY_DEBUG) && (Boolean) stormConf.get(Config.TOPOLOGY_DEBUG);
