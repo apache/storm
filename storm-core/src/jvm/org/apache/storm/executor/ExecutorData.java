@@ -128,21 +128,6 @@ public class ExecutorData {
         this.intervalToTaskToMetricToRegistry = new HashMap<>();
         this.taskToComponent = (Map<Integer, String>) workerData.get("task->component");
         this.streamToComponentToGrouper = outboundComponents(workerTopologyContext, componentId, stormConf);
-        // todo: debug logs
-        LOG.info("\n{}\n======================================", componentId);
-        for (Map.Entry<String, Map<String, LoadAwareCustomStreamGrouping>> entry : streamToComponentToGrouper.entrySet()) {
-            String stream = entry.getKey();
-            Map<String, LoadAwareCustomStreamGrouping> comp2grouper = entry.getValue();
-            if(comp2grouper!=null) {
-                for (Map.Entry<String, LoadAwareCustomStreamGrouping> groupingEntry : comp2grouper.entrySet()) {
-                    String comp = groupingEntry.getKey();
-                    LOG.info("stream:{}, comp:{}, grouping:{}", stream, comp, groupingEntry.getValue());
-                }
-            } else {
-                LOG.info("stream:{}, comp2grouper:null", stream);
-            }
-        }
-
         this.reportError = new ReportError(stormConf, stormClusterState, stormId, componentId, workerTopologyContext);
         this.reportErrorDie = new ReportErrorAndDie(reportError, suicideFn);
         this.sampler = ConfigUtils.mkStatsSampler(stormConf);

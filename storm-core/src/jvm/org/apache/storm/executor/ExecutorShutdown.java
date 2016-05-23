@@ -17,6 +17,7 @@
  */
 package org.apache.storm.executor;
 
+import com.google.common.collect.Lists;
 import org.apache.storm.Constants;
 import org.apache.storm.daemon.Shutdownable;
 import org.apache.storm.daemon.Task;
@@ -63,7 +64,7 @@ public class ExecutorShutdown implements Shutdownable, IRunningExecutor {
     public void credenetialsChanged(Credentials credentials) {
         TupleImpl tuple = new TupleImpl(executorData.getWorkerTopologyContext(), new Values(credentials), (int) Constants.SYSTEM_TASK_ID,
                 Constants.CREDENTIALS_CHANGED_STREAM_ID);
-        AddressedTuple addressedTuple = new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple);
+        List<AddressedTuple> addressedTuple = Lists.newArrayList(new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple));
         executorData.getReceiveQueue().publish(addressedTuple);
     }
 

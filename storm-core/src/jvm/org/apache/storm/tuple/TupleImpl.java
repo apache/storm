@@ -33,11 +33,8 @@ import clojure.lang.PersistentArrayMap;
 import clojure.lang.Seqable;
 import clojure.lang.Symbol;
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class TupleImpl extends IndifferentAccessMap implements Seqable, Indexed, IMeta, Tuple {
-    private final Logger LOG = LoggerFactory.getLogger(TupleImpl.class);
     private List<Object> values;
     private int taskId;
     private String streamId;
@@ -53,9 +50,6 @@ public class TupleImpl extends IndifferentAccessMap implements Seqable, Indexed,
         this.context = context;
         
         String componentId = context.getComponentId(taskId);
-        // todo: debug logs
-        LOG.info("@@@@ target comp:{}, stream:{}, out task:{}", componentId, streamId, taskId);
-
         Fields schema = context.getComponentOutputFields(componentId, streamId);
         if(values.size()!=schema.size()) {
             throw new IllegalArgumentException(

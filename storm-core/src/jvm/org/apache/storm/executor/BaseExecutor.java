@@ -17,9 +17,9 @@
  */
 package org.apache.storm.executor;
 
+import com.google.common.collect.Lists;
 import com.lmax.disruptor.EventHandler;
 import java.net.UnknownHostException;
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.StormTimer;
@@ -144,8 +144,8 @@ public abstract class BaseExecutor implements Callable, EventHandler {
                 public void run() {
                     TupleImpl tuple =
                             new TupleImpl(workerTopologyContext, new Values(interval), (int) Constants.SYSTEM_TASK_ID, Constants.METRICS_TICK_STREAM_ID);
-                    AddressedTuple addressedTuple = new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple);
-                    receiveQueue.publish(addressedTuple);
+                    List<AddressedTuple> metricsTickTuple = Lists.newArrayList(new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple));
+                    receiveQueue.publish(metricsTickTuple);
                 }
             });
         }

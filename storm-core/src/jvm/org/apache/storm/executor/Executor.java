@@ -137,8 +137,8 @@ public class Executor {
                     public void run() {
                         TupleImpl tuple = new TupleImpl(executorData.getWorkerTopologyContext(), new Values(tickTimeSecs), (int) Constants.SYSTEM_TASK_ID,
                                 Constants.METRICS_TICK_STREAM_ID);
-                        AddressedTuple addressedTuple = new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple);
-                        executorData.getReceiveQueue().publish(addressedTuple);
+                        List<AddressedTuple> metricTickTuple = Lists.newArrayList(new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple));
+                        executorData.getReceiveQueue().publish(metricTickTuple);
                     }
                 });
             }
