@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-1850: State Checkpointing Documentation update
  * STORM-1674: Idle KafkaSpout consumes more bandwidth than needed
  * STORM-1842: Forward references in storm.thrift cause tooling issues
  * STORM-1730: LocalCluster#shutdown() does not terminate all storm threads/thread pools.
