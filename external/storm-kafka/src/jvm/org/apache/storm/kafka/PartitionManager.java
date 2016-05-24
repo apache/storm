@@ -19,6 +19,7 @@ package org.apache.storm.kafka;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
+import java.io.Serializable;
 
 import org.apache.storm.Config;
 import org.apache.storm.kafka.KafkaSpout.EmitState;
@@ -322,10 +323,9 @@ public class PartitionManager {
         _connections.unregister(_partition.host, _partition.topic , _partition.partition);
     }
 
-    static class KafkaMessageId {
+    static class KafkaMessageId implements Serializable {
         public Partition partition;
         public long offset;
-
 
         public KafkaMessageId(Partition partition, long offset) {
             this.partition = partition;
