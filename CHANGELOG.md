@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-1851: Fix default nimbus impersonation authorizer config
  * STORM-1848: Make KafkaMessageId and Partition serializable to support event logging
  * STORM-1862: Flux ShellSpout and ShellBolt can't emit to named streams
  * Storm-1728: TransactionalTridentKafkaSpout error
