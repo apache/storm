@@ -62,7 +62,7 @@ public class ExecutorTransfer implements EventHandler, Callable {
     @Override
     public Object call() throws Exception {
         batchTransferQueue.consumeBatchWhenAvailable(this);
-        return 0;
+        return 0L;
     }
 
     public String getName() {

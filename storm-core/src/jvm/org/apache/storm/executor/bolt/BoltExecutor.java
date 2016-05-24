@@ -81,7 +81,6 @@ public class BoltExecutor extends BaseExecutor {
             }
 
             IOutputCollector outputCollector = new BoltOutputCollectorImpl(executorData, taskData, entry.getKey(), rand, isEventLoggers, isDebug);
-
             boltObject.prepare(stormConf, userContext, new OutputCollector(outputCollector));
         }
         executorData.setOpenOrPrepareWasCalled(true);
@@ -95,7 +94,7 @@ public class BoltExecutor extends BaseExecutor {
             Utils.sleep(100);
         }
         receiveQueue.consumeBatchWhenAvailable(this);
-        return (long) 0;
+        return 0L;
     }
 
     @Override

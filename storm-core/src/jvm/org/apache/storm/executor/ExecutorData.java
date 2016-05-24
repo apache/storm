@@ -78,8 +78,6 @@ public class ExecutorData {
     private final AtomicBoolean throttleOn;
     private final boolean isDebug;
 
-    private static final Logger LOG = LoggerFactory.getLogger(ExecutorData.class);
-
     public ExecutorData(Map<String, Object> workerData, List<Long> executorId) {
         this.workerData = workerData;
         this.workerTopologyContext = StormCommon.makeWorkerContext(workerData);

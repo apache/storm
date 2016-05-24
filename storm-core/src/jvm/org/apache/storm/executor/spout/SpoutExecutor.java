@@ -55,7 +55,7 @@ public class SpoutExecutor extends BaseExecutor {
     private final MutableLong emittedCount;
     private final MutableLong emptyEmitStreak;
     private final SpoutThrottlingMetrics spoutThrottlingMetrics;
-    private final boolean isAcker;
+    private final boolean hasAckers;
     private final RotatingMap<Long, TupleInfo> pending;
     private final boolean backPressureEnabled;
     private final AtomicBoolean throttleOn;
@@ -74,7 +74,7 @@ public class SpoutExecutor extends BaseExecutor {
         for (Task task : idToTask.values()) {
             this.spouts.add((ISpout) task.getTaskObject());
         }
-        this.isAcker = StormCommon.hasAckers(stormConf);
+        this.hasAckers = StormCommon.hasAckers(stormConf);
         this.emittedCount = new MutableLong(0);
         this.emptyEmitStreak = new MutableLong(0);
         this.spoutThrottlingMetrics = new SpoutThrottlingMetrics();
@@ -97,7 +97,7 @@ public class SpoutExecutor extends BaseExecutor {
             Task taskData = entry.getValue();
             ISpout spoutObject = (ISpout) taskData.getTaskObject();
             SpoutOutputCollectorImpl spoutOutputCollector = new SpoutOutputCollectorImpl(spoutObject, executorData, taskData, entry.getKey(), emittedCount,
-                    isAcker, rand, isEventLoggers, isDebug, pending);
+                    hasAckers, rand, isEventLoggers, isDebug, pending);
             SpoutOutputCollector outputCollector = new SpoutOutputCollector(spoutOutputCollector);
             this.outputCollectors.add(outputCollector);
 
@@ -161,7 +161,7 @@ public class SpoutExecutor extends BaseExecutor {
         } else {
             emptyEmitStreak.set(0);
         }
-        return (long) 0;
+        return 0L;
     }
 
     @Override
@@ -193,9 +193,9 @@ public class SpoutExecutor extends BaseExecutor {
                 if (startTimeMs != 0)
                     timeDelta = Time.deltaMs(tupleInfo.getTimestamp());
                 tupleInfo.setTimestamp(timeDelta);
-                if (tupleInfo.getStream().equals(Acker.ACKER_ACK_STREAM_ID)) {
+                if (streamId.equals(Acker.ACKER_ACK_STREAM_ID)) {
                     ExecutorCommon.ackSpoutMsg(executorData, idToTask.get(taskId), tupleInfo);
-                } else if (tupleInfo.getStream().equals(Acker.ACKER_FAIL_STREAM_ID)) {
+                } else if (streamId.equals(Acker.ACKER_FAIL_STREAM_ID)) {
                     ExecutorCommon.failSpoutMsg(executorData, idToTask.get(taskId), tupleInfo, "FAIL-STREAM");
                 }
             }

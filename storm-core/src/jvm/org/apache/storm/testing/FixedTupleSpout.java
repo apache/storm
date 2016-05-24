@@ -17,7 +17,6 @@
  */
 package org.apache.storm.testing;
 
-import com.google.common.base.Joiner;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.IRichSpout;
@@ -29,14 +28,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static org.apache.storm.utils.Utils.get;
 
 public class FixedTupleSpout implements IRichSpout {
-    private final Logger LOG = LoggerFactory.getLogger(getClass());
-
     private static final Map<String, Integer> acked = new HashMap<String, Integer>();
     private static final Map<String, Integer> failed = new HashMap<String, Integer>();
 
@@ -143,8 +138,6 @@ public class FixedTupleSpout implements IRichSpout {
             FixedTuple ft = _serveTuples.remove(0);
             String id = UUID.randomUUID().toString();
             _pending.put(id, ft);
-            // todo: debug logs
-            LOG.info("@@@@ nextTuple, stream:{}, values:{}", ft.stream, ft.values);
             _collector.emit(ft.stream, ft.values, id);
         } else {
             Utils.sleep(100);

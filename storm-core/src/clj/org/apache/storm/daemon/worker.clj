@@ -274,9 +274,7 @@
         topology (ConfigUtils/readSupervisorTopology conf storm-id)
         mq-context  (if mq-context
                       mq-context
-                      (TransportFactory/makeContext storm-conf))
-        ;; todo: debug logs
-        _ (log-message "@@@comp2stream2fields:" (component->stream->fields (StormCommon/systemTopology storm-conf topology)))]
+                      (TransportFactory/makeContext storm-conf))]
     (recursive-map
       :conf conf
       :mq-context mq-context
