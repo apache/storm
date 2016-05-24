@@ -26,7 +26,8 @@
            [org.apache.storm.zookeeper Zookeeper]
            [org.apache.storm ProcessSimulator]
            [org.apache.storm.daemon.supervisor StandaloneSupervisor SupervisorData SupervisorManager SupervisorUtils SupervisorManager]
-           [org.apache.storm.executor ExecutorCommon])
+           [org.apache.storm.executor ExecutorCommon]
+           [java.util.concurrent.atomic AtomicBoolean])
   (:import [java.io File])
   (:import [java.util HashMap ArrayList])
   (:import [java.util.concurrent.atomic AtomicInteger])
@@ -725,9 +726,9 @@
                          (not= (global-amt track-id "transferred")
                                (global-amt track-id "processed"))))]
       (while-timeout timeout-ms (waiting?)
-                     ;; (println "Spout emitted: " (global-amt track-id "spout-emitted"))
-                     ;; (println "Processed: " (global-amt track-id "processed"))
-                     ;; (println "Transferred: " (global-amt track-id "transferred"))
+                      (println "Spout emitted: " (global-amt track-id "spout-emitted") " ,target: " target)
+                      (println "Processed: " (global-amt track-id "processed"))
+                      (println "Transferred: " (global-amt track-id "transferred"))
                     (Thread/sleep (rand-int 200)))
       (reset! (:last-spout-emit tracked-topology) target))))
 
@@ -760,7 +761,7 @@
                   {}
                   (HashMap.)
                   (HashMap.)
-                  (atom false))]
+                  (AtomicBoolean. false))]
     (TupleImpl. context values 1 stream)))
 
 (defmacro with-timeout
