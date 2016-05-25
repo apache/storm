@@ -18,6 +18,7 @@
 package org.apache.storm.executor;
 
 import clojure.lang.IFn;
+import com.google.common.annotations.VisibleForTesting;
 import com.lmax.disruptor.dsl.ProducerType;
 import org.apache.storm.Config;
 import org.apache.storm.cluster.*;
@@ -73,10 +74,11 @@ public class ExecutorData {
     private final ReportErrorAndDie reportErrorDie;
     private final Callable<Boolean> sampler;
     private final AtomicBoolean backpressure;
-    private final ExecutorTransfer executorTransfer;
+    private ExecutorTransfer executorTransfer;
     private final String type;
     private final AtomicBoolean throttleOn;
     private final boolean isDebug;
+    private IFn transferFn;
 
     public ExecutorData(Map<String, Object> workerData, List<Long> executorId) {
         this.workerData = workerData;
@@ -93,14 +95,9 @@ public class ExecutorData {
         this.stormActive = (AtomicBoolean) workerData.get("storm-active-atom");
         this.stormComponentDebug = (AtomicReference<Map<String, DebugOptions>>) workerData.get("storm-component->debug-atom");
 
-        int sendSize = Utils.getInt(stormConf.get(Config.TOPOLOGY_EXECUTOR_SEND_BUFFER_SIZE));
-        int waitTimeOutMs = Utils.getInt(stormConf.get(Config.TOPOLOGY_DISRUPTOR_WAIT_TIMEOUT_MILLIS));
-        int batchSize = Utils.getInt(stormConf.get(Config.TOPOLOGY_DISRUPTOR_BATCH_SIZE));
-        int batchTimeOutMs = Utils.getInt(stormConf.get(Config.TOPOLOGY_DISRUPTOR_BATCH_TIMEOUT_MILLIS));
-        this.batchTransferWorkerQueue = new DisruptorQueue(
-                "executor" + executorId + "-send-queue", ProducerType.SINGLE, sendSize, waitTimeOutMs, batchSize, batchTimeOutMs);
-        this.executorTransfer = new ExecutorTransfer(workerTopologyContext, batchTransferWorkerQueue, stormConf,
-                (IFn) workerData.get("transfer-fn"));
+        this.batchTransferWorkerQueue = mkExecutorBatchQueue(stormConf, executorId);
+        this.transferFn = (IFn) workerData.get("transfer-fn");
+        this.executorTransfer = new ExecutorTransfer(workerTopologyContext, batchTransferWorkerQueue, stormConf, transferFn);
 
         this.suicideFn = (Runnable) workerData.get("suicide-fn");
         try {
@@ -132,6 +129,20 @@ public class ExecutorData {
         this.backpressure = new AtomicBoolean(false);
         this.throttleOn = (AtomicBoolean) workerData.get("throttle-on");
         this.isDebug = Utils.getBoolean(stormConf.get(Config.TOPOLOGY_DEBUG), false);
+    }
+
+    @VisibleForTesting
+    public void setLocalExecutorTransfer(ExecutorTransfer executorTransfer) {
+        this.executorTransfer = executorTransfer;
+    }
+
+    private DisruptorQueue mkExecutorBatchQueue(Map stormConf, List<Long> executorId) {
+        int sendSize = Utils.getInt(stormConf.get(Config.TOPOLOGY_EXECUTOR_SEND_BUFFER_SIZE));
+        int waitTimeOutMs = Utils.getInt(stormConf.get(Config.TOPOLOGY_DISRUPTOR_WAIT_TIMEOUT_MILLIS));
+        int batchSize = Utils.getInt(stormConf.get(Config.TOPOLOGY_DISRUPTOR_BATCH_SIZE));
+        int batchTimeOutMs = Utils.getInt(stormConf.get(Config.TOPOLOGY_DISRUPTOR_BATCH_TIMEOUT_MILLIS));
+        return new DisruptorQueue(
+                "executor" + executorId + "-send-queue", ProducerType.SINGLE, sendSize, waitTimeOutMs, batchSize, batchTimeOutMs);
     }
 
     /**
@@ -316,5 +327,9 @@ public class ExecutorData {
 
     public boolean isDebug() {
         return isDebug;
+    }
+
+    public IFn getTransferFn() {
+        return transferFn;
     }
 }

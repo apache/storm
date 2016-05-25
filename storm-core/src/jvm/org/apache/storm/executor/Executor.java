@@ -17,6 +17,7 @@
  */
 package org.apache.storm.executor;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
@@ -47,7 +48,7 @@ public class Executor {
     private final Map workerData;
     private final List<Long> executorId;
     private final Map<String, String> credentials;
-    private final ExecutorData executorData;
+    private ExecutorData executorData;
     private final String componentId;
     private final Map stormConf;
 
@@ -61,13 +62,20 @@ public class Executor {
         LOG.info("Loading executor " + componentId + ":" + executorId);
     }
 
-    public static ExecutorShutdown mkExecutor(Map workerData, List<Long> executorId, Map<String, String> credentials) throws Exception {
+    public static Executor mkExecutor(Map workerData, List<Long> executorId, Map<String, String> credentials) {
         Map<String, Object> convertedWorkerData = Utils.convertMap(workerData);
-        Executor executor = new Executor(convertedWorkerData, executorId, credentials);
-        return executor.execute();
+        return new Executor(convertedWorkerData, executorId, credentials);
     }
 
-    private ExecutorShutdown execute() throws Exception {
+    @VisibleForTesting
+    public ExecutorData getExecutorData() {
+        return this.executorData;
+    }
+
+    /**
+     * separated from mkExecutor in order to replace executor transfer in executor data for testing
+     */
+    public ExecutorShutdown execute() throws Exception {
         Map<Integer, Task> idToTask = new HashMap<>();
         for (Integer taskId : executorData.getTaskIds()) {
             Task task = new Task(executorData, taskId);

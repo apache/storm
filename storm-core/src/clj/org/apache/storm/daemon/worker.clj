@@ -20,6 +20,8 @@
   (:require [clj-time.coerce :as coerce])
 
   (:require [clojure.set :as set])
+  (:require [org.apache.storm.daemon
+               [local-executor :as local-executor]])
   (:import [java.io File]
            [org.apache.storm.stats StatsUtil]
            [java.util.concurrent.atomic AtomicBoolean AtomicReference])
@@ -677,7 +679,9 @@
 
         _ (run-worker-start-hooks worker)
 
-        _ (reset! executors (dofor [e (:executors worker)] (Executor/mkExecutor worker e initial-credentials)))
+        _ (if (ConfigUtils/isLocalMode storm-conf)
+            (reset! executors (dofor [e (:executors worker)] (local-executor/mk-local-executor worker e initial-credentials)))
+            (reset! executors (dofor [e (:executors worker)] (.execute (Executor/mkExecutor worker e initial-credentials)))))
 
         transfer-tuples (mk-transfer-tuples-handler worker)
         

@@ -18,6 +18,7 @@
 package org.apache.storm.executor;
 
 import clojure.lang.IFn;
+import com.google.common.annotations.VisibleForTesting;
 import com.lmax.disruptor.EventHandler;
 import org.apache.storm.Config;
 import org.apache.storm.serialization.KryoTupleSerializer;
@@ -57,6 +58,11 @@ public class ExecutorTransfer implements EventHandler, Callable {
             LOG.info("TRANSFERRING tuple {}", val);
         }
         batchTransferQueue.publish(val);
+    }
+
+    @VisibleForTesting
+    public DisruptorQueue getBatchTransferQueue() {
+        return this.batchTransferQueue;
     }
 
     @Override

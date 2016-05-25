@@ -699,11 +699,12 @@
          ;; of tuple emission (and not on a separate thread later) for
          ;; topologies to be tracked correctly. This is because "transferred" *must*
          ;; be incremented before "processing".
-         local-executor/mk-executor-transfer-fn
-         (let [old# local-executor/mk-executor-transfer-fn]
+         local-executor/local-transfer-executor-tuple
+         (let [old# local-executor/local-transfer-executor-tuple]
            (fn [& args#]
              (let [transferrer# (apply old# args#)]
                (fn [& args2#]
+                 (log-message "old-fn:" (prn-str old#) ",args:" (prn-str args#))
                   (log-message "Transferring: " args2#)
                  (increment-global! id# "transferred" 1)
                  (apply transferrer# args2#)))))]
