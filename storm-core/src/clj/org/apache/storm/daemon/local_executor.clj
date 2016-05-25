@@ -5,15 +5,16 @@
   (:import [org.apache.storm.utils DisruptorQueue])
   (:import [org.apache.storm Config Constants]))
 
-(defn local-transfer-executor-tuple [task tuple batch-transfer->worker]
+(defn local-transfer-executor-tuple []
+  (fn [task tuple batch-transfer->worker]
     (let [val (AddressedTuple. task tuple)]
-      (.publish ^DisruptorQueue batch-transfer->worker val)))
+      (.publish ^DisruptorQueue batch-transfer->worker val))))
 
 (defn mk-local-executor-transfer [worker-topology-context batch-queue storm-conf transfer-fn]
   (proxy [ExecutorTransfer] [worker-topology-context batch-queue storm-conf transfer-fn]
     (transfer [task tuple]
       (let [batch-transfer->worker (.getBatchTransferQueue this)]
-        (local-transfer-executor-tuple task tuple batch-transfer->worker)))))
+        ((local-transfer-executor-tuple) task tuple batch-transfer->worker)))))
 
 (defn mk-local-executor [workerData executorId credentials]
   (let [executor (Executor/mkExecutor workerData executorId credentials)

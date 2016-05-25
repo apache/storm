@@ -767,7 +767,7 @@
                                     (let [new-creds (clojurify-crdentials (.credentials (:storm-cluster-state worker) storm-id nil))]
                                       (when-not (= new-creds @credentials) ;;This does not have to be atomic, worst case we update when one is not needed
                                         (AuthUtils/updateSubject subject auto-creds new-creds)
-                                        (dofor [e @executors] (.credentials-changed e new-creds))
+                                        (dofor [e @executors] (.credenetialsChanged e new-creds))
                                         (reset! credentials new-creds))))
        check-throttle-changed (fn []
                                 (let [callback (fn cb []
