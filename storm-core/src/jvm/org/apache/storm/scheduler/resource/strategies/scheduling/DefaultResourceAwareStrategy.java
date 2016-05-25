@@ -20,6 +20,7 @@ package org.apache.storm.scheduler.resource.strategies.scheduling;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -29,6 +30,7 @@ import java.util.Queue;
 import java.util.TreeMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.TreeSet;
 
 import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.Topologies;
@@ -103,16 +105,16 @@ public class DefaultResourceAwareStrategy implements IStrategy {
         Map<Integer, List<ExecutorDetails>> priorityToExecutorMap = getPriorityToExecutorDetailsListMap(ordered__Component_list, unassignedExecutors);
         Collection<ExecutorDetails> executorsNotScheduled = new HashSet<>(unassignedExecutors);
         Integer longestPriorityListSize = this.getLongestPriorityListSize(priorityToExecutorMap);
-        //Pick the first executor with priority one, then the 1st exec with priority 2, so on an so forth. 
+        //Pick the first executor with priority one, then the 1st exec with priority 2, so on an so forth.
         //Once we reach the last priority, we go back to priority 1 and schedule the second task with priority 1.
         for (int i = 0; i < longestPriorityListSize; i++) {
             for (Entry<Integer, List<ExecutorDetails>> entry : priorityToExecutorMap.entrySet()) {
                 Iterator<ExecutorDetails> it = entry.getValue().iterator();
                 if (it.hasNext()) {
                     ExecutorDetails exec = it.next();
-                    LOG.debug("\n\nAttempting to schedule: {} of component {}[avail {}] with rank {}",
+                    LOG.debug("\n\nAttempting to schedule: {} of component {}[ REQ {} ] with rank {}",
                             new Object[] { exec, td.getExecutorToComponent().get(exec),
-                    td.getTaskResourceReqList(exec), entry.getKey() });
+                                    td.getTaskResourceReqList(exec), entry.getKey() });
                     scheduleExecutor(exec, td, schedulerAssignmentMap, scheduledTasks);
                     it.remove();
                 }
@@ -156,42 +158,49 @@ public class DefaultResourceAwareStrategy implements IStrategy {
             schedulerAssignmentMap.get(targetSlot).add(exec);
             targetNode.consumeResourcesforTask(exec, td);
             scheduledTasks.add(exec);
-            LOG.debug("TASK {} assigned to Node: {} avail [mem: {} cpu: {}] total [mem: {} cpu: {}] on slot: {}", exec,
-                    targetNode, targetNode.getAvailableMemoryResources(),
+            LOG.debug("TASK {} assigned to Node: {} avail [ mem: {} cpu: {} ] total [ mem: {} cpu: {} ] on slot: {} on Rack: {}", exec,
+                    targetNode.getHostname(), targetNode.getAvailableMemoryResources(),
                     targetNode.getAvailableCpuResources(), targetNode.getTotalMemoryResources(),
-                    targetNode.getTotalCpuResources(), targetSlot);
+                    targetNode.getTotalCpuResources(), targetSlot, nodeToRack(targetNode));
         } else {
             LOG.error("Not Enough Resources to schedule Task {}", exec);
         }
     }
 
     private WorkerSlot findWorkerForExec(ExecutorDetails exec, TopologyDetails td, Map<WorkerSlot, Collection<ExecutorDetails>> scheduleAssignmentMap) {
-      WorkerSlot ws;
-      // first scheduling
-      if (this.refNode == null) {
-          String clus = this.getBestClustering();
-          ws = this.getBestWorker(exec, td, clus, scheduleAssignmentMap);
-      } else {
-          ws = this.getBestWorker(exec, td, scheduleAssignmentMap);
-      }
-      if(ws != null) {
-          this.refNode = this.idToNode(ws.getNodeId());
-      }
-      LOG.debug("reference node for the resource aware scheduler is: {}", this.refNode);
-      return ws;
+        WorkerSlot ws = null;
+        // first scheduling
+        if (this.refNode == null) {
+            // iterate through an ordered list of all racks available to make sure we cannot schedule the first executor in any rack before we "give up"
+            // the list is ordered in decreasing order of effective resources. With the rack in the front of the list having the most effective resources.
+            for (RackResources rack : sortRacks(td.getId())) {
+                ws = this.getBestWorker(exec, td, rack.id, scheduleAssignmentMap);
+                if (ws != null) {
+                    LOG.debug("best rack: {}", rack.id);
+                    break;
+                }
+            }
+        } else {
+            ws = this.getBestWorker(exec, td, scheduleAssignmentMap);
+        }
+        if (ws != null) {
+            this.refNode = this.idToNode(ws.getNodeId());
+        }
+        LOG.debug("reference node for the resource aware scheduler is: {}", this.refNode);
+        return ws;
     }
 
     private WorkerSlot getBestWorker(ExecutorDetails exec, TopologyDetails td, Map<WorkerSlot, Collection<ExecutorDetails>> scheduleAssignmentMap) {
         return this.getBestWorker(exec, td, null, scheduleAssignmentMap);
     }
 
-    private WorkerSlot getBestWorker(ExecutorDetails exec, TopologyDetails td, String clusterId, Map<WorkerSlot, Collection<ExecutorDetails>> scheduleAssignmentMap) {
+    private WorkerSlot getBestWorker(ExecutorDetails exec, TopologyDetails td, String rackId, Map<WorkerSlot, Collection<ExecutorDetails>> scheduleAssignmentMap) {
         double taskMem = td.getTotalMemReqTask(exec);
         double taskCPU = td.getTotalCpuReqTask(exec);
         List<RAS_Node> nodes;
-        if(clusterId != null) {
-            nodes = this.getAvailableNodesFromCluster(clusterId);
-            
+        if(rackId != null) {
+            nodes = this.getAvailableNodesFromRack(rackId);
+
         } else {
             nodes = this.getAvailableNodes();
         }
@@ -227,71 +236,178 @@ public class DefaultResourceAwareStrategy implements IStrategy {
         return null;
     }
 
-    private String getBestClustering() {
-        String bestCluster = null;
-        Double mostRes = 0.0;
-        for (Entry<String, List<String>> cluster : _clusterInfo
-                .entrySet()) {
-            Double clusterTotalRes = this.getTotalClusterRes(cluster.getValue());
-            if (clusterTotalRes > mostRes) {
-                mostRes = clusterTotalRes;
-                bestCluster = cluster.getKey();
-            }
+    /**
+     * class to keep track of resources on a rack
+     */
+    class RackResources {
+        String id;
+        double availMem = 0.0;
+        double totalMem = 0.0;
+        double availCpu = 0.0;
+        double totalCpu = 0.0;
+        int freeSlots = 0;
+        int totalSlots = 0;
+        double effectiveResources = 0.0;
+        public RackResources(String id) {
+            this.id = id;
         }
-        return bestCluster;
+
+        @Override
+        public String toString() {
+            return this.id;
+        }
     }
 
-    private Double getTotalClusterRes(List<String> cluster) {
-        Double res = 0.0;
-        for (String node : cluster) {
-            res += _nodes.getNodeById(this.NodeHostnameToId(node))
-                    .getAvailableMemoryResources()
-                    + _nodes.getNodeById(this.NodeHostnameToId(node))
-                    .getAvailableCpuResources();
+    /**
+     *
+     * @param topoId
+     * @return a sorted list of racks
+     * Racks are sorted by two criteria. 1) the number executors of the topology that needs to be scheduled is already on the rack in descending order.
+     * The reasoning to sort based on  criterion 1 is so we schedule the rest of a topology on the same rack as the existing executors of the topology.
+     * 2) the subordinate/subservient resource availability percentage of a rack in descending order
+     * We calculate the resource availability percentage by dividing the resource availability on the rack by the resource availability of the entire cluster
+     * By doing this calculation, racks that have exhausted or little of one of the resources mentioned above will be ranked after racks that have more balanced resource availability.
+     * So we will be less likely to pick a rack that have a lot of one resource but a low amount of another.
+     */
+    TreeSet<RackResources> sortRacks(final String topoId) {
+        List<RackResources> racks = new LinkedList<RackResources>();
+        final Map<String, String> nodeIdToRackId = new HashMap<String, String>();
+        double availMemResourcesOverall = 0.0;
+        double totalMemResourcesOverall = 0.0;
+
+        double availCpuResourcesOverall = 0.0;
+        double totalCpuResourcesOverall = 0.0;
+
+        int freeSlotsOverall = 0;
+        int totalSlotsOverall = 0;
+
+        for (Entry<String, List<String>> entry : _clusterInfo.entrySet()) {
+            String rackId = entry.getKey();
+            List<String> nodeIds = entry.getValue();
+            RackResources rack = new RackResources(rackId);
+            racks.add(rack);
+            for (String nodeId : nodeIds) {
+                RAS_Node node = _nodes.getNodeById(this.NodeHostnameToId(nodeId));
+                double availMem = node.getAvailableMemoryResources();
+                double availCpu = node.getAvailableCpuResources();
+                double freeSlots = node.totalSlotsFree();
+                double totalMem = node.getTotalMemoryResources();
+                double totalCpu = node.getTotalCpuResources();
+                double totalSlots = node.totalSlots();
+
+                rack.availMem += availMem;
+                rack.totalMem += totalMem;
+                rack.availCpu += availCpu;
+                rack.totalCpu += totalCpu;
+                rack.freeSlots += freeSlots;
+                rack.totalSlots += totalSlots;
+                nodeIdToRackId.put(nodeId, rack.id);
+
+                availMemResourcesOverall += availMem;
+                availCpuResourcesOverall += availCpu;
+                freeSlotsOverall += freeSlots;
+
+                totalMemResourcesOverall += totalMem;
+                totalCpuResourcesOverall += totalCpu;
+                totalSlotsOverall += totalSlots;
+            }
         }
-        return res;
+
+        LOG.debug("Cluster Overall Avail [ CPU {} MEM {} Slots {} ] Total [ CPU {} MEM {} Slots {} ]",
+                availCpuResourcesOverall, availMemResourcesOverall, freeSlotsOverall, totalCpuResourcesOverall, totalMemResourcesOverall, totalSlotsOverall);
+        for (RackResources rack : racks) {
+            if (availCpuResourcesOverall <= 0.0 || availMemResourcesOverall <= 0.0 || freeSlotsOverall <= 0.0) {
+                rack.effectiveResources = 0.0;
+            } else {
+                rack.effectiveResources = Math.min(Math.min((rack.availCpu / availCpuResourcesOverall), (rack.availMem / availMemResourcesOverall)), ((double) rack.freeSlots / (double) freeSlotsOverall));
+            }
+            LOG.debug("rack: {} Avail [ CPU {}({}%) MEM {}({}%) Slots {}({}%) ] Total [ CPU {} MEM {} Slots {} ] effective resources: {}",
+                    rack.id, rack.availCpu, rack.availCpu/availCpuResourcesOverall * 100.0, rack.availMem, rack.availMem/availMemResourcesOverall * 100.0,
+                    rack.freeSlots, ((double) rack.freeSlots / (double) freeSlotsOverall) * 100.0, rack.totalCpu, rack.totalMem, rack.totalSlots, rack.effectiveResources);
+        }
+
+        TreeSet<RackResources> sortedRacks = new TreeSet<RackResources>(new Comparator<RackResources>() {
+            @Override
+            public int compare(RackResources o1, RackResources o2) {
+
+                int execsScheduledInRack1 = getExecutorsScheduledinRack(topoId, o1.id, nodeIdToRackId).size();
+                int execsScheduledInRack2 = getExecutorsScheduledinRack(topoId, o2.id, nodeIdToRackId).size();
+                if (execsScheduledInRack1 > execsScheduledInRack2) {
+                    return -1;
+                } else if (execsScheduledInRack1 < execsScheduledInRack2) {
+                    return 1;
+                } else {
+                    if (o1.effectiveResources > o2.effectiveResources) {
+                        return -1;
+                    } else if (o1.effectiveResources < o2.effectiveResources) {
+                        return 1;
+                    }
+                    else {
+                        return o1.id.compareTo(o2.id);
+                    }
+                }
+            }
+        });
+        sortedRacks.addAll(racks);
+        LOG.debug("Sorted rack: {}", sortedRacks);
+        return sortedRacks;
+    }
+
+    private Collection<ExecutorDetails> getExecutorsScheduledinRack(String topoId, String rackId, Map<String, String> nodeToRack) {
+        Collection<ExecutorDetails> execs = new LinkedList<ExecutorDetails>();
+        if (_cluster.getAssignmentById(topoId) != null) {
+            for (Entry<ExecutorDetails, WorkerSlot> entry : _cluster.getAssignmentById(topoId).getExecutorToSlot().entrySet()) {
+                String nodeId = entry.getValue().getNodeId();
+                String hostname = idToNode(nodeId).getHostname();
+                ExecutorDetails exec = entry.getKey();
+                if (nodeToRack.get(hostname) != null && nodeToRack.get(hostname).equals(rackId)) {
+                    execs.add(exec);
+                }
+            }
+        }
+        return execs;
     }
 
     private Double distToNode(RAS_Node src, RAS_Node dest) {
         if (src.getId().equals(dest.getId())) {
             return 0.0;
-        } else if (this.NodeToCluster(src).equals(this.NodeToCluster(dest))) {
+        } else if (this.nodeToRack(src).equals(this.nodeToRack(dest))) {
             return 0.5;
         } else {
             return 1.0;
         }
     }
 
-    private String NodeToCluster(RAS_Node node) {
+    private String nodeToRack(RAS_Node node) {
         for (Entry<String, List<String>> entry : _clusterInfo
                 .entrySet()) {
             if (entry.getValue().contains(node.getHostname())) {
                 return entry.getKey();
             }
         }
-        LOG.error("Node: {} not found in any clusters", node.getHostname());
+        LOG.error("Node: {} not found in any racks", node.getHostname());
         return null;
     }
-    
+
     private List<RAS_Node> getAvailableNodes() {
         LinkedList<RAS_Node> nodes = new LinkedList<>();
-        for (String clusterId : _clusterInfo.keySet()) {
-            nodes.addAll(this.getAvailableNodesFromCluster(clusterId));
+        for (String rackId : _clusterInfo.keySet()) {
+            nodes.addAll(this.getAvailableNodesFromRack(rackId));
         }
         return nodes;
     }
 
-    private List<RAS_Node> getAvailableNodesFromCluster(String clus) {
+    private List<RAS_Node> getAvailableNodesFromRack(String rackId) {
         List<RAS_Node> retList = new ArrayList<>();
-        for (String node_id : _clusterInfo.get(clus)) {
+        for (String node_id : _clusterInfo.get(rackId)) {
             retList.add(_nodes.getNodeById(this
                     .NodeHostnameToId(node_id)));
         }
         return retList;
     }
 
-    private List<WorkerSlot> getAvailableWorkersFromCluster(String clusterId) {
-        List<RAS_Node> nodes = this.getAvailableNodesFromCluster(clusterId);
+    private List<WorkerSlot> getAvailableWorkersFromRack(String rackId) {
+        List<RAS_Node> nodes = this.getAvailableNodesFromRack(rackId);
         List<WorkerSlot> workers = new LinkedList<>();
         for(RAS_Node node : nodes) {
             workers.addAll(node.getFreeSlots());
@@ -301,8 +417,8 @@ public class DefaultResourceAwareStrategy implements IStrategy {
 
     private List<WorkerSlot> getAvailableWorker() {
         List<WorkerSlot> workers = new LinkedList<>();
-        for (String clusterId : _clusterInfo.keySet()) {
-            workers.addAll(this.getAvailableWorkersFromCluster(clusterId));
+        for (String rackId : _clusterInfo.keySet()) {
+            workers.addAll(this.getAvailableWorkersFromRack(rackId));
         }
         return workers;
     }
@@ -391,7 +507,7 @@ public class DefaultResourceAwareStrategy implements IStrategy {
             for(ExecutorDetails exec : execs) {
                 totalMem += td.getTotalMemReqTask(exec);
             }
-        } 
+        }
         return totalMem;
     }
 
@@ -424,8 +540,8 @@ public class DefaultResourceAwareStrategy implements IStrategy {
             for(String nodeHostname : clusterEntry.getValue()) {
                 RAS_Node node = this.idToNode(this.NodeHostnameToId(nodeHostname));
                 retVal += "-> Node: " + node.getHostname() + " " + node.getId() + "\n";
-                retVal += "--> Avail Resources: {Mem " + node.getAvailableMemoryResources() + ", CPU " + node.getAvailableCpuResources() + "}\n";
-                retVal += "--> Total Resources: {Mem " + node.getTotalMemoryResources() + ", CPU " + node.getTotalCpuResources() + "}\n";
+                retVal += "--> Avail Resources: {Mem " + node.getAvailableMemoryResources() + ", CPU " + node.getAvailableCpuResources() + " Slots: " + node.totalSlotsFree() + "}\n";
+                retVal += "--> Total Resources: {Mem " + node.getTotalMemoryResources() + ", CPU " + node.getTotalCpuResources() + " Slots: " + node.totalSlots() + "}\n";
             }
         }
         return retVal;
