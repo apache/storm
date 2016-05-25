@@ -273,13 +273,18 @@ public class StormSubmitter {
             if (stormConf.containsKey(Config.STORM_TOPOLOGY_SUBMISSION_NOTIFIER_PLUGIN)) {
                 submissionNotifierClassName = stormConf.get(Config.STORM_TOPOLOGY_SUBMISSION_NOTIFIER_PLUGIN).toString();
                 LOG.info("Initializing the registered ISubmitterHook [{}]", submissionNotifierClassName);
+
+                if(submissionNotifierClassName == null || submissionNotifierClassName.isEmpty()) {
+                    throw new IllegalArgumentException(Config.STORM_TOPOLOGY_SUBMISSION_NOTIFIER_PLUGIN + " property must be a non empty string.");
+                }
+
                 ISubmitterHook submitterHook = (ISubmitterHook) Class.forName(submissionNotifierClassName).newInstance();
                 TopologyInfo topologyInfo = Utils.getTopologyInfo(name, asUser, stormConf);
                 LOG.info("Invoking the registered ISubmitterHook [{}]", submissionNotifierClassName);
                 submitterHook.notify(topologyInfo, stormConf, topology);
             }
         } catch (Exception e) {
-            LOG.warn("Error occurred in invoking submitter hook: "+submissionNotifierClassName, e);
+            LOG.warn("Error occurred in invoking submitter hook:[{}] ",submissionNotifierClassName, e);
             throw new SubmitterHookException(e);
         }
     }
