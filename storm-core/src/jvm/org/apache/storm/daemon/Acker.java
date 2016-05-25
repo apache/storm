@@ -101,7 +101,7 @@ public class Acker implements IBolt {
             }
             curr.failed = true;
             pending.put(id, curr);
-        } else if (ACKER_RESET_TIMEOUT_STREAM_ID.equals(streamId)) {
+        } else if(ACKER_RESET_TIMEOUT_STREAM_ID.equals(streamId)) {
             if (curr == null) {
                 curr = new AckObject();
             }

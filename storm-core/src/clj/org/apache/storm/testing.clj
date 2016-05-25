@@ -727,9 +727,9 @@
                          (not= (global-amt track-id "transferred")
                                (global-amt track-id "processed"))))]
       (while-timeout timeout-ms (waiting?)
-                      (println "Spout emitted: " (global-amt track-id "spout-emitted") " ,target: " target)
-                      (println "Processed: " (global-amt track-id "processed"))
-                      (println "Transferred: " (global-amt track-id "transferred"))
+                     ;; (println "Spout emitted: " (global-amt track-id "spout-emitted"))
+                     ;; (println "Processed: " (global-amt track-id "processed"))
+                     ;; (println "Transferred: " (global-amt track-id "transferred"))
                     (Thread/sleep (rand-int 200)))
       (reset! (:last-spout-emit tracked-topology) target))))
 
