@@ -1,4 +1,5 @@
 ## 1.0.2
+ * STORM-1859: Ack late tuples in windowed mode
  * STORM-1851: Fix default nimbus impersonation authorizer config
  * STORM-1848: Make KafkaMessageId and Partition serializable to support event logging
  * STORM-1862: Flux ShellSpout and ShellBolt can't emit to named streams
