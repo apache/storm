@@ -262,6 +262,7 @@ under the License.
 * Cody Wang ([@unsleepy22](https://github.com/unsleepy22))
 * Karthick Duraisamy Soundararaj ([@dsKarthick](https://github.com/dsKarthick))
 * Olivier Mallassi ([@omallassi](https://github.com/omallassi))
+* Balázs Kossovics ([@kosii](https://github.com/kosii))
 
 
 ## Acknowledgements
