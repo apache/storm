@@ -704,8 +704,7 @@
            (fn [& args#]
              (let [transferrer# (apply old# args#)]
                (fn [& args2#]
-                 (log-message "old-fn:" (prn-str old#) ",args:" (prn-str args#))
-                  (log-message "Transferring: " args2#)
+                 ;; (log-message "Transferring: " args2#)
                  (increment-global! id# "transferred" 1)
                  (apply transferrer# args2#)))))]
           (with-simulated-time-local-cluster [~cluster-sym ~@cluster-args]
