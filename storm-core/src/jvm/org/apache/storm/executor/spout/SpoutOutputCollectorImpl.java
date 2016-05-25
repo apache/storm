@@ -53,7 +53,7 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
     private final ExecutorTransfer executorTransfer;
 
     public SpoutOutputCollectorImpl(ISpout spout, ExecutorData executorData, Task taskData, int taskId, MutableLong emittedCount, boolean hasAckers,
-            Random random, Boolean isEventLoggers, Boolean isDebug, RotatingMap<Long, TupleInfo> pending) {
+                                    Random random, Boolean isEventLoggers, Boolean isDebug, RotatingMap<Long, TupleInfo> pending) {
         this.executorData = executorData;
         this.taskData = taskData;
         this.taskId = taskId;
@@ -121,6 +121,11 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
             ExecutorCommon.sendToEventLogger(executorData, taskData, values, executorData.getComponentId(), messageId, random);
         }
 
+        boolean sample = false;
+        try {
+            sample = executorData.getSampler().call();
+        } catch (Exception ignored) {
+        }
         if (needAck) {
             TupleInfo info = new TupleInfo();
             info.setTaskId(this.taskId);
@@ -129,12 +134,8 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
             if (isDebug) {
                 info.setValues(values);
             }
-            try {
-                if (executorData.getSampler().call()) {
-                    info.setTimestamp(System.currentTimeMillis());
-                }
-            } catch (Exception e) {
-                throw Utils.wrapInRuntime(e);
+            if (sample) {
+                info.setTimestamp(System.currentTimeMillis());
             }
 
             pending.put(rootId, info);
@@ -146,8 +147,9 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
             info.setValues(values);
             info.setMessageId(messageId);
             info.setTimestamp(0);
+            Long timeDelta = sample ? 0L : null;
             info.setId("0:");
-            ExecutorCommon.ackSpoutMsg(executorData, taskData, info);
+            ExecutorCommon.ackSpoutMsg(executorData, taskData, timeDelta, info);
         }
 
         return outTasks;

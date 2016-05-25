@@ -81,7 +81,11 @@ public class SpoutExecutor extends BaseExecutor {
         this.pending = new RotatingMap<>(new RotatingMap.ExpiredCallback<Long, TupleInfo>() {
             @Override
             public void expire(Long key, TupleInfo tupleInfo) {
-                ExecutorCommon.failSpoutMsg(executorData, idToTask.get(tupleInfo.getTaskId()), tupleInfo, "TIMEOUT");
+                Long timeDelta = null;
+                if (tupleInfo.getTimestamp() != 0) {
+                    timeDelta = Time.deltaMs(tupleInfo.getTimestamp());
+                }
+                ExecutorCommon.failSpoutMsg(executorData, idToTask.get(tupleInfo.getTaskId()), timeDelta, tupleInfo, "TIMEOUT");
             }
         });
         this.outputCollectors = new ArrayList<>();
@@ -167,9 +171,9 @@ public class SpoutExecutor extends BaseExecutor {
     @Override
     public void tupleActionFn(int taskId, TupleImpl tuple) throws Exception {
         String streamId = tuple.getSourceStreamId();
-        if (streamId.equals(Constants.SYSTEM_TICK_STREAM_ID))
+        if (streamId.equals(Constants.SYSTEM_TICK_STREAM_ID)) {
             pending.rotate();
-        else if (streamId.equals(Constants.METRICS_TICK_STREAM_ID)) {
+        } else if (streamId.equals(Constants.METRICS_TICK_STREAM_ID)) {
             metricsTick(idToTask.get(taskId), tuple);
         } else if (streamId.equals(Constants.CREDENTIALS_CHANGED_STREAM_ID)) {
             Object spoutObj = idToTask.get(taskId).getTaskObject();
@@ -179,8 +183,9 @@ public class SpoutExecutor extends BaseExecutor {
         } else if (streamId.equals(Acker.ACKER_RESET_TIMEOUT_STREAM_ID)) {
             Long id = (Long) tuple.getValue(0);
             TupleInfo pendingForId = pending.get(id);
-            if (pendingForId != null)
+            if (pendingForId != null) {
                 pending.put(id, pendingForId);
+            }
         } else {
             Long id = (Long) tuple.getValue(0);
             TupleInfo tupleInfo = (TupleInfo) pending.remove(id);
@@ -189,14 +194,14 @@ public class SpoutExecutor extends BaseExecutor {
                     throw new RuntimeException("Fatal error, mismatched task ids: " + taskId + " " + tupleInfo.getTaskId());
                 }
                 long startTimeMs = tupleInfo.getTimestamp();
-                long timeDelta = 0;
-                if (startTimeMs != 0)
-                    timeDelta = Time.deltaMs(tupleInfo.getTimestamp());
-                tupleInfo.setTimestamp(timeDelta);
+                Long timeDelta = null;
+                if (startTimeMs != 0) {
+                    timeDelta = Time.deltaMs(startTimeMs);
+                }
                 if (streamId.equals(Acker.ACKER_ACK_STREAM_ID)) {
-                    ExecutorCommon.ackSpoutMsg(executorData, idToTask.get(taskId), tupleInfo);
+                    ExecutorCommon.ackSpoutMsg(executorData, idToTask.get(taskId), timeDelta, tupleInfo);
                 } else if (streamId.equals(Acker.ACKER_FAIL_STREAM_ID)) {
-                    ExecutorCommon.failSpoutMsg(executorData, idToTask.get(taskId), tupleInfo, "FAIL-STREAM");
+                    ExecutorCommon.failSpoutMsg(executorData, idToTask.get(taskId), timeDelta, tupleInfo, "FAIL-STREAM");
                 }
             }
         }

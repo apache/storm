@@ -139,12 +139,13 @@ public class Executor {
         if (tickTimeSecs != null) {
             if (Utils.isSystemId(componentId) || (!enableMessageTimeout && isSpout)) {
                 LOG.info("Timeouts disabled for executor " + componentId + ":" + executorId);
+            } else {
                 StormTimer timerTask = (StormTimer) workerData.get("user-timer");
                 timerTask.scheduleRecurring(tickTimeSecs, tickTimeSecs, new Runnable() {
                     @Override
                     public void run() {
                         TupleImpl tuple = new TupleImpl(executorData.getWorkerTopologyContext(), new Values(tickTimeSecs), (int) Constants.SYSTEM_TASK_ID,
-                                Constants.METRICS_TICK_STREAM_ID);
+                                Constants.SYSTEM_TICK_STREAM_ID);
                         List<AddressedTuple> metricTickTuple = Lists.newArrayList(new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple));
                         executorData.getReceiveQueue().publish(metricTickTuple);
                     }

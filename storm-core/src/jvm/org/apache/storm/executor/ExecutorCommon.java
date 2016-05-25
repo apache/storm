@@ -64,7 +64,7 @@ public class ExecutorCommon {
         }
     }
 
-    public static void ackSpoutMsg(ExecutorData executorData, Task taskData, TupleInfo tupleInfo) {
+    public static void ackSpoutMsg(ExecutorData executorData, Task taskData, Long timeDelta, TupleInfo tupleInfo) {
         try {
             ISpout spout = (ISpout) taskData.getTaskObject();
             int taskId = taskData.getTaskId();
@@ -72,27 +72,28 @@ public class ExecutorCommon {
                 LOG.info("SPOUT Acking message {} {}", tupleInfo.getId(), tupleInfo.getMessageId());
             }
             spout.ack(tupleInfo.getMessageId());
-            new SpoutAckInfo(tupleInfo.getMessageId(), taskId, tupleInfo.getTimestamp()).applyOn(taskData.getUserContext());
-            if (tupleInfo.getTimestamp() != 0)
-                ((SpoutExecutorStats) executorData.getStats()).spoutAckedTuple(tupleInfo.getStream(), tupleInfo.getTimestamp());
-
+            new SpoutAckInfo(tupleInfo.getMessageId(), taskId, timeDelta).applyOn(taskData.getUserContext());
+            if (timeDelta != null) {
+                ((SpoutExecutorStats) executorData.getStats()).spoutAckedTuple(tupleInfo.getStream(), timeDelta);
+            }
         } catch (Exception e) {
             throw Utils.wrapInRuntime(e);
         }
     }
 
-    public static void failSpoutMsg(ExecutorData executorData, Task taskData, TupleInfo tupleInfo, String reason) {
+    public static void failSpoutMsg(ExecutorData executorData, Task taskData, Long timeDelta, TupleInfo tupleInfo, String reason) {
         try {
+            LOG.info("SPOUT Failing {} : {} REASON: {}", tupleInfo.getId(), tupleInfo, reason);
             ISpout spout = (ISpout) taskData.getTaskObject();
             int taskId = taskData.getTaskId();
             if (executorData.isDebug()) {
                 LOG.info("SPOUT Failing {} : {} REASON: {}", tupleInfo.getId(), tupleInfo, reason);
             }
             spout.fail(tupleInfo.getMessageId());
-            new SpoutFailInfo(tupleInfo.getMessageId(), taskId, tupleInfo.getTimestamp()).applyOn(taskData.getUserContext());
-            if (tupleInfo.getTimestamp() != 0)
-                ((SpoutExecutorStats) executorData.getStats()).spoutFailedTuple(tupleInfo.getStream(), tupleInfo.getTimestamp());
-
+            new SpoutFailInfo(tupleInfo.getMessageId(), taskId, timeDelta).applyOn(taskData.getUserContext());
+            if (timeDelta != null) {
+                ((SpoutExecutorStats) executorData.getStats()).spoutFailedTuple(tupleInfo.getStream(), timeDelta);
+            }
         } catch (Exception e) {
             throw Utils.wrapInRuntime(e);
         }
