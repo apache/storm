@@ -219,10 +219,10 @@ public class KafkaUtils {
             }
         } else {
             msgs = fetchResponse.messageSet(topic, partitionId);
-            if (msgs.validBytes() == 0) {
-                throw new MessageSizeTooLargeException("Found a message larger than the maximum fetch size of this consumer on topic " +
-                        "%s partition %d at fetch offset %d. Increase the fetch size, or decrease the maximum message size the broker will allow."
-                                .format(partition.topic, partition.partition, offset));
+            if (msgs.sizeInBytes() > 0 && msgs.validBytes() == 0) {
+                throw new MessageSizeTooLargeException(String.format("Found a message larger than the maximum fetch size of this consumer on topic " +
+                                "%s partition %d at fetch offset %d. Increase the fetch size, or decrease the maximum message size the broker will allow."
+                        , partition.topic, partition.partition, offset));
             }
         }
         return msgs;
