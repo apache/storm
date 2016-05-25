@@ -94,6 +94,9 @@ is saved and then the checkpoint tuple is forwarded to the next component. Each 
 streams before it saves its state so that the state represents a consistent state across the topology. Once the checkpoint spout receives
 ACK from all the bolts, the state commit is complete and the transaction is recorded as committed by the checkpoint spout.
 
+The state checkpointing does not currently checkpoint the state of the spout. Yet, once the state of all bolts are checkpointed, and once the checkpoint tuples are acked, the tuples emitted by the spout are also acked. 
+It also implies that `topology.state.checkpoint.interval.ms` is lower than `topology.message.timeout.secs`. 
+
 The state commit works like a three phase commit protocol with a prepare and commit phase so that the state across the topology is saved
 in a consistent and atomic manner.
 

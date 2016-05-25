@@ -208,6 +208,7 @@ def exec_storm_class(klass, jvmtype="-server", jvmopts=[], extrajars=[], args=[]
         "-cp", get_classpath(extrajars, daemon),
     ] + jvmopts + [klass] + list(args)
     print("Running: " + " ".join(all_args))
+    sys.stdout.flush()
     if fork:
         os.spawnvp(os.P_WAIT, JAVA_CMD, all_args)
     elif is_windows():
@@ -227,7 +228,7 @@ def jar(jarfile, klass, *args):
     Runs the main method of class with the specified arguments.
     The storm jars and configs in ~/.storm are put on the classpath.
     The process is configured so that StormSubmitter
-    (http://storm.apache.org/apidocs/org/apache/storm/StormSubmitter.html)
+    (http://storm.apache.org/releases/current/javadocs/org/apache/storm/StormSubmitter.html)
     will upload the jar at topology-jar-path when the topology is submitted.
     """
     transform_class = confvalue("client.jartransformer.class", [CLUSTER_CONF_DIR])

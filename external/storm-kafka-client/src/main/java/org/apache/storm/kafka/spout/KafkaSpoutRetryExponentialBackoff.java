@@ -162,7 +162,7 @@ public class KafkaSpoutRetryExponentialBackoff implements KafkaSpoutRetryService
 
     @Override
     public Set<TopicPartition> retriableTopicPartitions() {
-        final Set<TopicPartition> tps = new TreeSet<>();
+        final Set<TopicPartition> tps = new HashSet<>();
         final long currentTimeNanos = System.nanoTime();
         for (RetrySchedule retrySchedule : retrySchedules) {
             if (retrySchedule.retry(currentTimeNanos)) {
