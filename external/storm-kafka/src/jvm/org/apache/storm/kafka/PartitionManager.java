@@ -20,6 +20,7 @@ package org.apache.storm.kafka;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 
+import kafka.common.MessageSizeTooLargeException;
 import org.apache.storm.Config;
 import org.apache.storm.kafka.KafkaSpout.EmitState;
 import org.apache.storm.kafka.trident.MaxMetric;
@@ -44,7 +45,7 @@ public class PartitionManager {
     private final ReducedMetric _fetchAPILatencyMean;
     private final CountMetric _fetchAPICallCount;
     private final CountMetric _fetchAPIMessageCount;
-    // Count of messages which could not be emitted or retried because they were deleted from kafka
+    // Count of messages which could not be emitted or retried because they were deleted from kafka or over maximum fetch size.
     private final CountMetric _lostMessageCount;
     Long _emittedToOffset;
     // _pending key = Kafka offset, value = time at which the message was first submitted to the topology
@@ -219,7 +220,19 @@ public class PartitionManager {
         _fetchAPILatencyMax.update(millis);
         _fetchAPILatencyMean.update(millis);
         _fetchAPICallCount.incr();
-        if (msgs != null) {
+        if (msgs != null && msgs.sizeInBytes() > 0 && msgs.validBytes() == 0) {
+            String errMsg = String.format("Found a message larger than the maximum fetch size " +
+                            "(%d bytes) of this consumer on topic %s partition %d at fetch offset %d. Increase the fetch size, " +
+                            "or decrease the maximum message size the broker will allow and start after this offset."
+                    , _spoutConfig.fetchSizeBytes, _partition.topic, _partition.partition, offset);
+            if (_spoutConfig.skipMsgOverFetchSize) {
+                _lostMessageCount.incr();
+                _emittedToOffset = offset + 1;
+                LOG.warn(errMsg);
+            } else {
+                throw new MessageSizeTooLargeException(errMsg);
+            }
+        } else if (msgs != null) {
             int numMessages = 0;
 
             for (MessageAndOffset msg : msgs) {

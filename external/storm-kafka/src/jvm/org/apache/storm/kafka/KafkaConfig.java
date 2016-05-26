@@ -32,6 +32,7 @@ public class KafkaConfig implements Serializable {
     public final String clientId;
 
     public int fetchSizeBytes = 1024 * 1024;
+    public boolean skipMsgOverFetchSize = true;
     public int socketTimeoutMs = 10000;
     public int fetchMaxWait = 100;
     public int bufferSizeBytes = 1024 * 1024;
