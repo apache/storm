@@ -78,7 +78,7 @@ public class SpoutExecutor extends BaseExecutor {
         this.emittedCount = new MutableLong(0);
         this.emptyEmitStreak = new MutableLong(0);
         this.spoutThrottlingMetrics = new SpoutThrottlingMetrics();
-        this.pending = new RotatingMap<>(new RotatingMap.ExpiredCallback<Long, TupleInfo>() {
+        this.pending = new RotatingMap<>(2, new RotatingMap.ExpiredCallback<Long, TupleInfo>() {
             @Override
             public void expire(Long key, TupleInfo tupleInfo) {
                 Long timeDelta = null;

@@ -59,7 +59,8 @@ public class ExecutorCommon {
         }
         double spct = ((debugOptions != null) && (debugOptions.is_enable())) ? debugOptions.get_samplingpct() : 0;
         if (spct > 0 && (random.nextDouble() * 100) < spct) {
-            sendUnanchored(taskData, StormCommon.EVENTLOGGER_STREAM_ID, new Values(componentId, messageId, System.currentTimeMillis(), values),
+            sendUnanchored(taskData, StormCommon.EVENTLOGGER_STREAM_ID,
+                    new Values(componentId, messageId, System.currentTimeMillis(), values),
                     executorData.getExecutorTransfer());
         }
     }
@@ -83,7 +84,6 @@ public class ExecutorCommon {
 
     public static void failSpoutMsg(ExecutorData executorData, Task taskData, Long timeDelta, TupleInfo tupleInfo, String reason) {
         try {
-            LOG.info("SPOUT Failing {} : {} REASON: {}", tupleInfo.getId(), tupleInfo, reason);
             ISpout spout = (ISpout) taskData.getTaskObject();
             int taskId = taskData.getTaskId();
             if (executorData.isDebug()) {

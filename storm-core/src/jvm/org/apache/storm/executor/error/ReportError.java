@@ -58,15 +58,15 @@ public class ReportError implements IReportError {
 
     @Override
     public void report(Throwable error) {
-        LOG.error("{}", error);
+        LOG.error("Error", error);
         if (Time.deltaSecs(intervalStartTime.get()) > errorIntervalSecs) {
             intervalErrors.set(0);
             intervalStartTime.set(Time.currentTimeSecs());
         }
-        intervalErrors.incrementAndGet();
         if (intervalErrors.incrementAndGet() <= maxPerInterval) {
             try {
-                stormClusterState.reportError(stormId, componentId, Utils.hostname(stormConf), workerTopologyContext.getThisWorkerPort().longValue(), error);
+                stormClusterState.reportError(stormId, componentId, Utils.hostname(stormConf),
+                        workerTopologyContext.getThisWorkerPort().longValue(), error);
             } catch (UnknownHostException e) {
                 throw Utils.wrapInRuntime(e);
             }

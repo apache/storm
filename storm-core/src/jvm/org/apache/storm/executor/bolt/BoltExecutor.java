@@ -111,7 +111,7 @@ public class BoltExecutor extends BaseExecutor {
             IBolt boltObject = (IBolt) idToTask.get(taskId).getTaskObject();
             boolean isSampled = sampler.call();
             boolean isExecuteSampler = executeSampler.call();
-            long now = (isSampled || isExecuteSampler) ? System.currentTimeMillis() : 0;
+            Long now = (isSampled || isExecuteSampler) ? System.currentTimeMillis() : null;
             if (isSampled) {
                 tuple.setProcessSampleStartTime(now);
             }
