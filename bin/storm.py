@@ -209,8 +209,9 @@ def exec_storm_class(klass, jvmtype="-server", jvmopts=[], extrajars=[], args=[]
     ] + jvmopts + [klass] + list(args)
     print("Running: " + " ".join(all_args))
     sys.stdout.flush()
+    exit_code = 0
     if fork:
-        os.spawnvp(os.P_WAIT, JAVA_CMD, all_args)
+        exit_code = os.spawnvp(os.P_WAIT, JAVA_CMD, all_args)
     elif is_windows():
         # handling whitespaces in JAVA_CMD
         try:
@@ -220,6 +221,7 @@ def exec_storm_class(klass, jvmtype="-server", jvmopts=[], extrajars=[], args=[]
             sys.exit(e.returncode)
     else:
         os.execvp(JAVA_CMD, all_args)
+    return exit_code
 
 def jar(jarfile, klass, *args):
     """Syntax: [storm jar topology-jar-path class ...]
@@ -234,14 +236,16 @@ def jar(jarfile, klass, *args):
     if (transform_class != None and transform_class != "nil"):
         tmpjar = os.path.join(tempfile.gettempdir(), uuid.uuid1().hex+".jar")
         exec_storm_class("org.apache.storm.daemon.ClientJarTransformerRunner", args=[transform_class, jarfile, tmpjar], fork=True, daemon=False)
-        exec_storm_class(
-            klass,
-            jvmtype="-client",
-            extrajars=[tmpjar, USER_CONF_DIR, STORM_BIN_DIR],
-            args=args,
-            daemon=False,
-            jvmopts=JAR_JVM_OPTS + ["-Dstorm.jar=" + tmpjar])
+        topology_runner_exit_code = exec_storm_class(
+                klass,
+                jvmtype="-client",
+                extrajars=[tmpjar, USER_CONF_DIR, STORM_BIN_DIR],
+                args=args,
+                daemon=False,
+                fork=True,
+                jvmopts=JAR_JVM_OPTS + ["-Dstorm.jar=" + tmpjar])
         os.remove(tmpjar)
+        sys.exit(topology_runner_exit_code)
     else:
         exec_storm_class(
             klass,
