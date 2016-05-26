@@ -725,7 +725,6 @@ struct HBMessage {
   3: optional i32 message_id = -1,
 }
 
-
 exception HBAuthorizationException {
   1: required string msg;
 }

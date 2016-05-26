@@ -1,3 +1,17 @@
+## 1.1.0
+ * STORM-1859: Ack late tuples in windowed mode
+ * STORM-1851: Fix default nimbus impersonation authorizer config
+ * STORM-1848: Make KafkaMessageId and Partition serializable to support
+ * STORM-1862: Flux ShellSpout and ShellBolt can't emit to named streams
+ * Storm-1728: TransactionalTridentKafkaSpout error
+ * STORM-1850: State Checkpointing Documentation update
+ * STORM-1674: Idle KafkaSpout consumes more bandwidth than needed
+ * STORM-1842: Forward references in storm.thrift cause tooling issues
+ * STORM-1730: LocalCluster#shutdown() does not terminate all storm threads/thread pools.
+ * STORM-1841: Address a few minor issues in windowing and doc
+ * STORM-1709: Added group by support in storm sql standalone mode
+ * STORM-1720: Support GEO in storm-redis
+
 ## 1.0.2
  * STORM-1859: Ack late tuples in windowed mode
  * STORM-1851: Fix default nimbus impersonation authorizer config

@@ -43,6 +43,7 @@ public class KafkaConfig implements Serializable {
     public int metricsTimeBucketSizeInSecs = 60;
     public int minFetchByte = FetchRequest.DefaultMinBytes();
 
+
     public KafkaConfig(BrokerHosts hosts, String topic) {
         this(hosts, topic, kafka.api.OffsetRequest.DefaultClientId());
     }
