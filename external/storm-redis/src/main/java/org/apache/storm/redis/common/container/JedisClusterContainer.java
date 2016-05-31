@@ -20,14 +20,12 @@ package org.apache.storm.redis.common.container;
 import redis.clients.jedis.JedisCluster;
 import redis.clients.jedis.JedisCommands;
 
-import java.io.Closeable;
-
 /**
  * Container for managing JedisCluster.
  * <p/>
  * Note that JedisCluster doesn't need to be pooled since it's thread-safe and it stores pools internally.
  */
-public class JedisClusterContainer implements JedisCommandsInstanceContainer, Closeable {
+public class JedisClusterContainer implements JedisCommandsInstanceContainer {
 
     private JedisCluster jedisCluster;
 
