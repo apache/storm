@@ -1,4 +1,5 @@
 ## 1.0.2
+ * STORM-1755: Revert the kafka client version upgrade in storm-kafka module
  * STORM-1853: Replace ClassLoaderObjectInputStream with ObjectInputStream
  * STORM-1868: Modify TridentKafkaWordCount to run in distributed mode
  * STORM-1859: Ack late tuples in windowed mode
