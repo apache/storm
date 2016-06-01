@@ -15,6 +15,7 @@
  * STORM-1720: Support GEO in storm-redis
 
 ## 1.0.2
+ * STORM-1755: Revert the kafka client version to 0.8.x in storm-kafka
  * STORM-1745: Add partition to log output in PartitionManager
  * STORM-1735: Nimbus should log that replication succeeded when min replicas was reached exactly
  * STORM-1835: add lock info in thread dump
