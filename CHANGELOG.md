@@ -30,6 +30,7 @@
  * STORM-1661: Introduce a config to turn off blobstore acl validation in insecure mode
 
 ## 1.0.1
+ * STORM-1853: Replace ClassLoaderObjectInputStream with ObjectInputStream
  * STORM-1741: remove unconditional setting of JAVA_HOME from storm-env.sh
  * STORM-1739: update the minor JAVA version dependency in 0.10.0 and above
  * STORM-1727: document 1.0 package renaming and how to use the migration tool
