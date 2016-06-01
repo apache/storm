@@ -1,6 +1,5 @@
 ## 1.1.0
  * STORM-1868: Modify TridentKafkaWordCount to run in distributed mode
- * STORM-1861: Storm submit command returns exit code of 0 even when it fails.
  * STORM-1859: Ack late tuples in windowed mode
  * STORM-1851: Fix default nimbus impersonation authorizer config
  * STORM-1848: Make KafkaMessageId and Partition serializable to support
@@ -15,6 +14,7 @@
  * STORM-1720: Support GEO in storm-redis
 
 ## 1.0.2
+ * STORM-1861: Storm submit command returns exit code of 0 even when it fails.
  * STORM-1755: Revert the kafka client version to 0.8.x in storm-kafka
  * STORM-1745: Add partition to log output in PartitionManager
  * STORM-1735: Nimbus should log that replication succeeded when min replicas was reached exactly
