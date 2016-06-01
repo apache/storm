@@ -113,7 +113,7 @@ public class Utils {
     private static ThreadLocal<TDeserializer> threadDes = new ThreadLocal<TDeserializer>();
 
     private static SerializationDelegate serializationDelegate;
-    private static ClassLoader cl = ClassLoader.getSystemClassLoader();
+    private static ClassLoader cl = null;
 
     static {
         Map conf = readStormConfig();
@@ -171,7 +171,13 @@ public class Utils {
     public static <T> T javaDeserialize(byte[] serialized, Class<T> clazz) {
         try {
             ByteArrayInputStream bis = new ByteArrayInputStream(serialized);
-            ObjectInputStream ois = new ClassLoaderObjectInputStream(cl, bis);
+            ObjectInputStream ois = null;
+            if (null == cl) {
+                ois = new ObjectInputStream(bis);
+            } else {
+                // Use custom class loader set in testing environment
+                ois = new ClassLoaderObjectInputStream(cl, bis);
+            }
             Object ret = ois.readObject();
             ois.close();
             return (T)ret;
