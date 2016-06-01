@@ -26,7 +26,7 @@ import java.util.*;
 import static org.apache.storm.kafka.KafkaUtils.taskId;
 
 public class ZkCoordinator implements PartitionCoordinator {
-    public static final Logger LOG = LoggerFactory.getLogger(ZkCoordinator.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ZkCoordinator.class);
 
     SpoutConfig _spoutConfig;
     int _taskIndex;
