@@ -29,6 +29,11 @@
     <artifactId>storm-kafka</artifactId>
     <name>storm-kafka</name>
     <description>Storm Spouts for Apache Kafka</description>
+
+    <properties>
+        <kafka.version>0.8.2.1</kafka.version>
+        <kafka.artifact.id>kafka_2.10</kafka.artifact.id>
+    </properties>
     <build>
         <plugins>
             <plugin>
