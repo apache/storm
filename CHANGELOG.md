@@ -1,4 +1,5 @@
 ## 1.0.2
+ * STORM-1853: Replace ClassLoaderObjectInputStream with ObjectInputStream
  * STORM-1868: Modify TridentKafkaWordCount to run in distributed mode
  * STORM-1859: Ack late tuples in windowed mode
  * STORM-1851: Fix default nimbus impersonation authorizer config
