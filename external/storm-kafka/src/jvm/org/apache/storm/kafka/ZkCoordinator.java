@@ -59,8 +59,7 @@ public class ZkCoordinator implements PartitionCoordinator {
     }
 
     private static DynamicBrokersReader buildReader(Map stormConf, SpoutConfig spoutConfig) {
-        ZkHosts hosts = (ZkHosts) spoutConfig.hosts;
-        return new DynamicBrokersReader(stormConf, hosts.brokerZkStr, hosts.brokerZkPath, spoutConfig.topic);
+        return new DynamicBrokersReader(stormConf, spoutConfig, new ZkMetadataReaderFactory());
     }
 
     @Override

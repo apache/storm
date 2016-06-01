@@ -17,54 +17,46 @@
  */
 package org.apache.storm.kafka;
 
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.CuratorFrameworkFactory;
-import org.apache.curator.framework.imps.CuratorFrameworkState;
-import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.curator.test.InstanceSpec;
-import org.apache.curator.test.TestingServer;
 
 import kafka.server.KafkaConfig;
-import kafka.server.KafkaServerStartable;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Properties;
+import kafka.server.KafkaServer;
+import kafka.utils.Time;
 
 /**
- * Date: 11/01/2014
- * Time: 13:15
+ * Date: 11/01/2014 Time: 13:15
  */
 public class KafkaTestBroker {
 
     private int port;
-    private KafkaServerStartable kafka;
-    private TestingServer server;
-    private CuratorFramework zookeeper;
+    private KafkaServer kafka;
     private File logDir;
 
-    public KafkaTestBroker() {
+    public KafkaTestBroker(String zookeeperConnectionString) {
+        this(zookeeperConnectionString, "0");
+    }
+
+    public KafkaTestBroker(String zookeeperConnectionString, String brokerId) {
         try {
-            server = new TestingServer();
-            String zookeeperConnectionString = server.getConnectString();
-            ExponentialBackoffRetry retryPolicy = new ExponentialBackoffRetry(1000, 3);
-            zookeeper = CuratorFrameworkFactory.newClient(zookeeperConnectionString, retryPolicy);
-            zookeeper.start();
             port = InstanceSpec.getRandomPort();
             logDir = new File(System.getProperty("java.io.tmpdir"), "kafka/logs/kafka-test-" + port);
-            KafkaConfig config = buildKafkaConfig(zookeeperConnectionString);
-            kafka = new KafkaServerStartable(config);
+            KafkaConfig config = buildKafkaConfig(zookeeperConnectionString, brokerId);
+            kafka = new KafkaServer(config, new SystemTime());
             kafka.startup();
         } catch (Exception ex) {
             throw new RuntimeException("Could not start test broker", ex);
         }
     }
 
-    private kafka.server.KafkaConfig buildKafkaConfig(String zookeeperConnectionString) {
+    private kafka.server.KafkaConfig buildKafkaConfig(String zookeeperConnectionString, String brokerId) {
         Properties p = new Properties();
         p.setProperty("zookeeper.connect", zookeeperConnectionString);
-        p.setProperty("broker.id", "0");
+        p.setProperty("broker.id", brokerId);
+        p.setProperty("advertised.host.name", "localhost");
         p.setProperty("port", "" + port);
         p.setProperty("log.dirs", logDir.getAbsolutePath());
         return new KafkaConfig(p);
@@ -77,6 +69,7 @@ public class KafkaTestBroker {
     public int getPort() {
         return port;
     }
+
     public void shutdown() {
         if (kafka != null) {
             kafka.shutdown();
@@ -84,14 +77,25 @@ public class KafkaTestBroker {
         }
         //Ensure kafka server is eligible for garbage collection immediately
         kafka = null;
-        if (zookeeper.getState().equals(CuratorFrameworkState.STARTED)) {
-            zookeeper.close();
-        }
-        try {
-            server.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
         FileUtils.deleteQuietly(logDir);
+    }
+
+    private static class SystemTime implements Time {
+
+        public long milliseconds() {
+            return System.currentTimeMillis();
+        }
+
+        public long nanoseconds() {
+            return System.nanoTime();
+        }
+
+        public void sleep(long ms) {
+            try {
+                Thread.sleep(ms);
+            } catch (InterruptedException e) {
+                // Ignore
+            }
+        }
     }
 }

@@ -25,60 +25,59 @@ import org.apache.storm.kafka.ZkHosts;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
+import org.apache.storm.kafka.KafkaConfig;
+import org.apache.storm.kafka.ZkMetadataReaderFactory;
 
 public class ZkBrokerReader implements IBrokerReader {
 
-	public static final Logger LOG = LoggerFactory.getLogger(ZkBrokerReader.class);
+    public static final Logger LOG = LoggerFactory.getLogger(ZkBrokerReader.class);
 
-	List<GlobalPartitionInformation> cachedBrokers = new ArrayList<GlobalPartitionInformation>();
-	DynamicBrokersReader reader;
-	long lastRefreshTimeMs;
+    List<GlobalPartitionInformation> cachedBrokers = new ArrayList<GlobalPartitionInformation>();
+    DynamicBrokersReader reader;
+    long lastRefreshTimeMs;
 
+    long refreshMillis;
 
-	long refreshMillis;
+    public ZkBrokerReader(Map conf, KafkaConfig kafkaConfig) {
+        reader = new DynamicBrokersReader(conf, kafkaConfig, new ZkMetadataReaderFactory());
+        refresh();
+        lastRefreshTimeMs = System.currentTimeMillis();
+        ZkHosts zkHosts = (ZkHosts) kafkaConfig.hosts;
+        refreshMillis = zkHosts.refreshFreqSecs * 1000L;
+    }
 
-	public ZkBrokerReader(Map conf, String topic, ZkHosts hosts) {
-		try {
-			reader = new DynamicBrokersReader(conf, hosts.brokerZkStr, hosts.brokerZkPath, topic);
-			cachedBrokers = reader.getBrokerInfo();
-			lastRefreshTimeMs = System.currentTimeMillis();
-			refreshMillis = hosts.refreshFreqSecs * 1000L;
-		} catch (java.net.SocketTimeoutException e) {
-			LOG.warn("Failed to update brokers", e);
-		}
-
-	}
-
-	private void refresh() {
-		long currTime = System.currentTimeMillis();
-		if (currTime > lastRefreshTimeMs + refreshMillis) {
-			try {
-				LOG.info("brokers need refreshing because " + refreshMillis + "ms have expired");
-				cachedBrokers = reader.getBrokerInfo();
-				lastRefreshTimeMs = currTime;
-			} catch (java.net.SocketTimeoutException e) {
-				LOG.warn("Failed to update brokers", e);
-			}
-		}
-	}
-	@Override
-	public GlobalPartitionInformation getBrokerForTopic(String topic) {
-		refresh();
-        for(GlobalPartitionInformation partitionInformation : cachedBrokers) {
-            if (partitionInformation.topic.equals(topic)) return partitionInformation;
+    private void refresh() {
+        long currTime = System.currentTimeMillis();
+        if (currTime > lastRefreshTimeMs + refreshMillis) {
+            try {
+                LOG.info("brokers need refreshing because " + refreshMillis + "ms have expired");
+                cachedBrokers = reader.getBrokerInfo();
+                lastRefreshTimeMs = currTime;
+            } catch (java.net.SocketTimeoutException e) {
+                LOG.warn("Failed to update brokers", e);
+            }
         }
-		return null;
-	}
+    }
 
-	@Override
-	public List<GlobalPartitionInformation> getAllBrokers() {
-		refresh();
-		return cachedBrokers;
-	}
+    @Override
+    public GlobalPartitionInformation getBrokerForTopic(String topic) {
+        refresh();
+        for (GlobalPartitionInformation partitionInformation : cachedBrokers) {
+            if (partitionInformation.topic.equals(topic)) {
+                return partitionInformation;
+            }
+        }
+        return null;
+    }
 
-	@Override
-	public void close() {
-		reader.close();
-	}
+    @Override
+    public List<GlobalPartitionInformation> getAllBrokers() {
+        refresh();
+        return cachedBrokers;
+    }
+
+    @Override
+    public void close() {
+        reader.close();
+    }
 }
