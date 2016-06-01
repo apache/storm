@@ -101,6 +101,7 @@
  * STORM-1868: Modify TridentKafkaWordCount to run in distributed mode
 
 ## 1.0.2
+ * STORM-1861: Storm submit command returns exit code of 0 even when it fails.
  * STORM-1755: Revert the kafka client version upgrade in storm-kafka module
  * STORM-1853: Replace ClassLoaderObjectInputStream with ObjectInputStream
  * STORM-1730: LocalCluster#shutdown() does not terminate all storm threads/thread pools.
