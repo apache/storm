@@ -32,10 +32,9 @@ import redis.clients.jedis.SortingParams;
 import redis.clients.jedis.Tuple;
 
 import java.util.HashMap;
-import java.util.List;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
-
 import static org.junit.Assert.*;
 
 /**
@@ -93,6 +92,17 @@ public class RedisKeyValueStateTest {
                     }
                 });
 
+        Mockito.when(mockCommands.hdel(Mockito.anyString(), Mockito.<String>anyVararg()))
+                .thenAnswer(new Answer<Long>() {
+                    @Override
+                    public Long answer(InvocationOnMock invocation) throws Throwable {
+                        Object[] args = invocation.getArguments();
+                        int argsSize = args.length;
+                        String[] fields = Arrays.asList(args).subList(1, argsSize).toArray(new String[argsSize - 1]);
+                        return hdel(mockMap, (String) args[0], fields);
+                    }
+                });
+
         keyValueState = new RedisKeyValueState<String, String>("test", mockContainer, new DefaultStateSerializer<String>(),
                                                                new DefaultStateSerializer<String>());
     }
@@ -103,6 +113,19 @@ public class RedisKeyValueStateTest {
         keyValueState.put("a", "1");
         keyValueState.put("b", "2");
         assertEquals("1", keyValueState.get("a"));
+        assertEquals("2", keyValueState.get("b"));
+        assertEquals(null, keyValueState.get("c"));
+    }
+
+    @Test
+    public void testPutAndDelete() throws Exception {
+        keyValueState.put("a", "1");
+        keyValueState.put("b", "2");
+        assertEquals("1", keyValueState.get("a"));
+        assertEquals("2", keyValueState.get("b"));
+        assertEquals(null, keyValueState.get("c"));
+        keyValueState.delete("a");
+        assertEquals(null, keyValueState.get("a"));
         assertEquals("2", keyValueState.get("b"));
         assertEquals(null, keyValueState.get("c"));
     }
@@ -124,6 +147,20 @@ public class RedisKeyValueStateTest {
         assertArrayEquals(new String[]{"1", "2", "3"}, getValues());
         keyValueState.rollback();
         assertArrayEquals(new String[]{"1", "2", null}, getValues());
+        keyValueState.put("c", "3");
+        keyValueState.delete("b");
+        keyValueState.delete("c");
+        assertArrayEquals(new String[]{"1", null, null}, getValues());
+        keyValueState.prepareCommit(2);
+        assertArrayEquals(new String[]{"1", null, null}, getValues());
+        keyValueState.commit(2);
+        assertArrayEquals(new String[]{"1", null, null}, getValues());
+        keyValueState.put("b", "2");
+        keyValueState.prepareCommit(3);
+        keyValueState.put("c", "3");
+        assertArrayEquals(new String[]{"1", "2", "3"}, getValues());
+        keyValueState.rollback();
+        assertArrayEquals(new String[]{"1", null, null}, getValues());
     }
 
     private String[] getValues() {
@@ -135,13 +172,20 @@ public class RedisKeyValueStateTest {
     }
 
     private String hmset(Map<String, Map<String, String>> mockMap, String key, Map value) {
-        mockMap.put(key, value);
+        Map<String, String> currentValue = mockMap.get(key);
+        if (currentValue == null) {
+            currentValue = new HashMap<>();
+        }
+        currentValue.putAll(value);
+        mockMap.put(key, currentValue);
         return "";
     }
 
     private Long del(Map<String, Map<String, String>> mockMap, String key) {
-        mockMap.remove(key);
-        return 0L;
+        if (mockMap.remove(key) == null)
+            return 0L;
+        else
+            return 1L;
     }
 
     private String hget(Map<String, Map<String, String>> mockMap, String namespace, String key) {
@@ -149,6 +193,14 @@ public class RedisKeyValueStateTest {
             return mockMap.get(namespace).get(key);
         }
         return null;
+    }
+
+    private Long hdel(Map<String, Map<String, String>> mockMap, String namespace, String ... keys) {
+        Long count = 0L;
+        for (String key: keys) {
+            if (mockMap.get(namespace).remove(key) != null) count++;
+        }
+        return count;
     }
 
 }
