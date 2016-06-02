@@ -17,13 +17,12 @@
  */
 package org.apache.storm.redis.bolt;
 
+import org.apache.storm.redis.common.config.JedisConfig;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.redis.common.mapper.RedisDataTypeDescription;
 import org.apache.storm.redis.common.mapper.RedisLookupMapper;
-import org.apache.storm.redis.common.config.JedisClusterConfig;
-import org.apache.storm.redis.common.config.JedisPoolConfig;
 import redis.clients.jedis.JedisCommands;
 
 import java.util.List;
@@ -39,11 +38,11 @@ public class RedisLookupBolt extends AbstractRedisBolt {
     private final String additionalKey;
 
     /**
-     * Constructor for single Redis environment (JedisPool)
-     * @param config configuration for initializing JedisPool
+     * Constructor for single Redis or Redis cluster environment
+     * @param config configuration for initializing JedisPool or JedisCluster
      * @param lookupMapper mapper containing which datatype, query key, output key that Bolt uses
      */
-    public RedisLookupBolt(JedisPoolConfig config, RedisLookupMapper lookupMapper) {
+    public RedisLookupBolt(JedisConfig config, RedisLookupMapper lookupMapper) {
         super(config);
 
         this.lookupMapper = lookupMapper;
@@ -53,20 +52,6 @@ public class RedisLookupBolt extends AbstractRedisBolt {
         this.additionalKey = dataTypeDescription.getAdditionalKey();
     }
 
-    /**
-     * Constructor for Redis Cluster environment (JedisCluster)
-     * @param config configuration for initializing JedisCluster
-     * @param lookupMapper mapper containing which datatype, query key, output key that Bolt uses
-     */
-    public RedisLookupBolt(JedisClusterConfig config, RedisLookupMapper lookupMapper) {
-        super(config);
-
-        this.lookupMapper = lookupMapper;
-
-        RedisDataTypeDescription dataTypeDescription = lookupMapper.getDataTypeDescription();
-        this.dataType = dataTypeDescription.getDataType();
-        this.additionalKey = dataTypeDescription.getAdditionalKey();
-    }
 
     /**
      * {@inheritDoc}
