@@ -23,7 +23,9 @@ import org.apache.storm.spout.CheckpointSpout;
 import org.apache.storm.task.IOutputCollector;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
+import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
+import org.apache.storm.tuple.Values;
 import org.apache.storm.windowing.CountEvictionPolicy;
 import org.apache.storm.windowing.CountTriggerPolicy;
 import org.apache.storm.windowing.EvictionPolicy;
@@ -57,12 +59,14 @@ public class WindowedBoltExecutor implements IRichBolt {
     private static final Logger LOG = LoggerFactory.getLogger(WindowedBoltExecutor.class);
     private static final int DEFAULT_WATERMARK_EVENT_INTERVAL_MS = 1000; // 1s
     private static final int DEFAULT_MAX_LAG_MS = 0; // no lag
+    public static final String LATE_TUPLE_FIELD = "late_tuple";
     private final IWindowedBolt bolt;
     private transient WindowedOutputCollector windowedOutputCollector;
     private transient WindowLifecycleListener<Tuple> listener;
     private transient WindowManager<Tuple> windowManager;
     private transient int maxLagMs;
     private transient String tupleTsFieldName;
+    private transient String lateTupleStream;
     private transient TriggerPolicy<Tuple> triggerPolicy;
     private transient EvictionPolicy<Tuple> evictionPolicy;
     // package level for unit tests
@@ -163,6 +167,13 @@ public class WindowedBoltExecutor implements IRichBolt {
         // tuple ts
         if (stormConf.containsKey(Config.TOPOLOGY_BOLTS_TUPLE_TIMESTAMP_FIELD_NAME)) {
             tupleTsFieldName = (String) stormConf.get(Config.TOPOLOGY_BOLTS_TUPLE_TIMESTAMP_FIELD_NAME);
+            // late tuple stream
+            lateTupleStream = (String) stormConf.get(Config.TOPOLOGY_BOLTS_LATE_TUPLE_STREAM);
+            if (lateTupleStream != null) {
+                if (!context.getThisStreams().contains(lateTupleStream)) {
+                    throw new IllegalArgumentException("Stream for late tuples must be defined with the builder method withLateTupleStream");
+                }
+            }
             // max lag
             if (stormConf.containsKey(Config.TOPOLOGY_BOLTS_TUPLE_TIMESTAMP_MAX_LAG_MS)) {
                 maxLagMs = ((Number) stormConf.get(Config.TOPOLOGY_BOLTS_TUPLE_TIMESTAMP_MAX_LAG_MS)).intValue();
@@ -178,6 +189,10 @@ public class WindowedBoltExecutor implements IRichBolt {
             }
             waterMarkEventGenerator = new WaterMarkEventGenerator<>(manager, watermarkInterval,
                                                                     maxLagMs, getComponentStreams(context));
+        } else {
+            if (stormConf.containsKey(Config.TOPOLOGY_BOLTS_LATE_TUPLE_STREAM)) {
+                throw new IllegalArgumentException("Late tuple stream can be defined only when specifying a timestamp field");
+            }
         }
         // validate
         validate(stormConf, windowLengthCount, windowLengthDuration,
@@ -268,8 +283,12 @@ public class WindowedBoltExecutor implements IRichBolt {
             if (waterMarkEventGenerator.track(input.getSourceGlobalStreamId(), ts)) {
                 windowManager.add(input, ts);
             } else {
+                if (lateTupleStream != null) {
+                    windowedOutputCollector.emit(lateTupleStream, input, new Values(input));
+                } else {
+                    LOG.info("Received a late tuple {} with ts {}. This will not be processed.", input, ts);
+                }
                 windowedOutputCollector.ack(input);
-                LOG.info("Received a late tuple {} with ts {}. This will not processed.", input, ts);
             }
         } else {
             windowManager.add(input);
@@ -284,6 +303,10 @@ public class WindowedBoltExecutor implements IRichBolt {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
+        String lateTupleStream = (String) getComponentConfiguration().get(Config.TOPOLOGY_BOLTS_LATE_TUPLE_STREAM);
+        if (lateTupleStream != null) {
+            declarer.declareStream(lateTupleStream, new Fields(LATE_TUPLE_FIELD));
+        }
         bolt.declareOutputFields(declarer);
     }
 
