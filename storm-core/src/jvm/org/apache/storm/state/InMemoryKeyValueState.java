@@ -68,6 +68,11 @@ public class InMemoryKeyValueState<K, V> implements KeyValueState<K, V> {
     }
 
     @Override
+    public void delete(K key) {
+        state.remove(key);
+    }
+
+    @Override
     public void commit() {
         commitedState = new TxIdState<>(DEFAULT_TXID, new ConcurrentHashMap<>(state));
     }
