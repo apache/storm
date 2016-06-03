@@ -287,6 +287,9 @@ pacemaker.kerberos.users: []
 storm.daemon.metrics.reporter.plugins:
      - "org.apache.storm.daemon.metrics.reporters.JmxPreparableReporter"
 
+# configuration of cluster metrics consumer
+storm.cluster.metrics.consumer.publish.interval.secs: 60
+
 storm.resource.isolation.plugin: "org.apache.storm.container.cgroup.CgroupManager"
 # Also determines whether the unit tests for cgroup runs.  
 # If storm.resource.isolation.plugin.enable is set to false the unit tests for cgroups will not run
