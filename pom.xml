@@ -237,7 +237,7 @@
         <zookeeper.version>3.4.6</zookeeper.version>
         <clojure-data-codec.version>0.1.0</clojure-data-codec.version>
         <clojure-contrib.version>1.2.0</clojure-contrib.version>
-        <hive.version>0.14.0</hive.version>
+        <hive.version>2.1.0.2.5.0.0-652</hive.version>
         <hadoop.version>2.6.1</hadoop.version>
         <hbase.version>1.1.0</hbase.version>
         <kryo.version>3.0.3</kryo.version>
@@ -950,6 +950,17 @@
             </snapshots>
             <id>clojars</id>
             <url>https://clojars.org/repo/</url>
+        </repository>
+        <repository>
+          <id>hortonworks.repo</id>
+          <url>http://nexus-private.hortonworks.com/nexus/content/groups/public/</url>
+          <name>Hortonworks Repo</name>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+          <snapshots>
+            <enabled>false</enabled>
+          </snapshots>
         </repository>
     </repositories>
 
