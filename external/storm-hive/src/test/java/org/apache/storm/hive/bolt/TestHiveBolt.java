@@ -39,6 +39,7 @@ import org.apache.hadoop.hive.ql.Driver;
 import org.apache.hadoop.hive.ql.session.SessionState;
 import org.apache.hadoop.hive.serde.serdeConstants;
 import org.apache.hadoop.hive.metastore.txn.TxnDbUtil;
+import org.apache.hadoop.security.UserGroupInformation;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -129,14 +130,15 @@ public class TestHiveBolt {
 
     @Test
     public void testEndpointConnection() throws Exception {
+        UserGroupInformation ugi = null;
         // 1) Basic
         HiveEndPoint endPt = new HiveEndPoint(metaStoreURI, dbName, tblName
                                               , Arrays.asList(partitionVals.split(",")));
-        StreamingConnection connection = endPt.newConnection(false, null); //shouldn't throw
+        StreamingConnection connection = endPt.newConnection(false, null, ugi); //shouldn't throw
         connection.close();
         // 2) Leave partition unspecified
         endPt = new HiveEndPoint(metaStoreURI, dbName, tblName, null);
-        endPt.newConnection(false, null).close(); // should not throw
+        endPt.newConnection(false, null, ugi).close(); // should not throw
     }
 
     @Test
