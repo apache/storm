@@ -98,8 +98,12 @@
  * STORM-1841: Address a few minor issues in windowing and doc
  * STORM-1709: Added group by support in storm sql standalone mode
  * STORM-1720: Support GEO in storm-redis
+ * STORM-1868: Modify TridentKafkaWordCount to run in distributed mode
 
 ## 1.0.2
+ * STORM-1861: Storm submit command returns exit code of 0 even when it fails.
+ * STORM-1755: Revert the kafka client version upgrade in storm-kafka module
+ * STORM-1853: Replace ClassLoaderObjectInputStream with ObjectInputStream
  * STORM-1730: LocalCluster#shutdown() does not terminate all storm threads/thread pools.
  * STORM-1745: Add partition to log output in PartitionManager
  * STORM-1735: Nimbus should log that replication succeeded when min replicas was reached exactly

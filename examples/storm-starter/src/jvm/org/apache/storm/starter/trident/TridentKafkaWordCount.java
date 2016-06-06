@@ -26,6 +26,7 @@ package org.apache.storm.starter.trident;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.LocalDRPC;
+import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.spout.SchemeAsMultiScheme;
 import org.apache.storm.topology.TopologyBuilder;
@@ -182,17 +183,33 @@ public class TridentKafkaWordCount {
      * <p>
      * To run this topology ensure you have a kafka broker running.
      * </p>
-     * Create a topic test with command line,
+     * Create a topic 'test' with command line,
+     * <pre>
      * kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partition 1 --topic test
+     * </pre>
+     * To run in local mode,
+     * <pre>
+     * storm jar storm-starter-topologies-{version}.jar org.apache.storm.starter.trident.TridentKafkaWordCount
+     * </pre>
+     * This will also run a local DRPC query and print the word counts.
+     * <p>
+     * To run in distributed mode, run it with a topology name. You will also need to start a drpc server and
+     * specify the drpc server details storm.yaml before submitting the topology.
+     * </p>
+     * <pre>
+     * storm jar storm-starter-topologies-{version}.jar org.apache.storm.starter.trident.TridentKafkaWordCount zkhost:port broker:port wordcount
+     * </pre>
+     * This will submit two topologies, one for the producer and another for the consumer. You can query the results
+     * (word counts) by running an external drpc query against the drpc server.
      */
     public static void main(String[] args) throws Exception {
 
         String zkUrl = "localhost:2181";        // the defaults.
         String brokerUrl = "localhost:9092";
 
-        if (args.length > 2 || (args.length == 1 && args[0].matches("^-h|--help$"))) {
-            System.out.println("Usage: TridentKafkaWordCount [kafka zookeeper url] [kafka broker url]");
-            System.out.println("   E.g TridentKafkaWordCount [" + zkUrl + "]" + " [" + brokerUrl + "]");
+        if (args.length > 3 || (args.length == 1 && args[0].matches("^-h|--help$"))) {
+            System.out.println("Usage: TridentKafkaWordCount [kafka zookeeper url] [kafka broker url] [topology name]");
+            System.out.println("   E.g TridentKafkaWordCount [" + zkUrl + "]" + " [" + brokerUrl + "] [wordcount]");
             System.exit(1);
         } else if (args.length == 1) {
             zkUrl = args[0];
@@ -205,25 +222,35 @@ public class TridentKafkaWordCount {
 
         TridentKafkaWordCount wordCount = new TridentKafkaWordCount(zkUrl, brokerUrl);
 
-        LocalDRPC drpc = new LocalDRPC();
-        LocalCluster cluster = new LocalCluster();
+        if (args.length == 3)  {
+            Config conf = new Config();
+            conf.setMaxSpoutPending(20);
+            conf.setNumWorkers(1);
+            // submit the consumer topology.
+            StormSubmitter.submitTopology(args[2] + "-consumer", conf, wordCount.buildConsumerTopology(null));
+            // submit the producer topology.
+            StormSubmitter.submitTopology(args[2] + "-producer", conf, wordCount.buildProducerTopology(wordCount.getProducerConfig()));
+        } else {
+            LocalDRPC drpc = new LocalDRPC();
+            LocalCluster cluster = new LocalCluster();
 
-        // submit the consumer topology.
-        cluster.submitTopology("wordCounter", wordCount.getConsumerConfig(), wordCount.buildConsumerTopology(drpc));
+            // submit the consumer topology.
+            cluster.submitTopology("wordCounter", wordCount.getConsumerConfig(), wordCount.buildConsumerTopology(drpc));
 
-        Config conf = new Config();
-        conf.setMaxSpoutPending(20);
-        // submit the producer topology.
-        cluster.submitTopology("kafkaBolt", conf, wordCount.buildProducerTopology(wordCount.getProducerConfig()));
+            Config conf = new Config();
+            conf.setMaxSpoutPending(20);
+            // submit the producer topology.
+            cluster.submitTopology("kafkaBolt", conf, wordCount.buildProducerTopology(wordCount.getProducerConfig()));
 
-        // keep querying the word counts for a minute.
-        for (int i = 0; i < 60; i++) {
-            System.out.println("DRPC RESULT: " + drpc.execute("words", "the and apple snow jumped"));
-            Thread.sleep(1000);
+            // keep querying the word counts for a minute.
+            for (int i = 0; i < 60; i++) {
+                System.out.println("DRPC RESULT: " + drpc.execute("words", "the and apple snow jumped"));
+                Thread.sleep(1000);
+            }
+
+            cluster.killTopology("kafkaBolt");
+            cluster.killTopology("wordCounter");
+            cluster.shutdown();
         }
-
-        cluster.killTopology("kafkaBolt");
-        cluster.killTopology("wordCounter");
-        cluster.shutdown();
     }
 }

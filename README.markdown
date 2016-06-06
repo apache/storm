@@ -263,6 +263,7 @@ under the License.
 * Karthick Duraisamy Soundararaj ([@dsKarthick](https://github.com/dsKarthick))
 * Olivier Mallassi ([@omallassi](https://github.com/omallassi))
 * Balázs Kossovics ([@kosii](https://github.com/kosii))
+* csivaguru ([@csivaguru](https://github.com/csivaguru))
 
 
 ## Acknowledgements
