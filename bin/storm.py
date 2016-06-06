@@ -256,7 +256,7 @@ def jar(jarfile, klass, *args):
             jvmopts=JAR_JVM_OPTS + ["-Dstorm.jar=" + jarfile])
 
 def sql(sql_file, topology_name):
-    """Syntax: [storm sql sql-file topology]
+    """Syntax: [storm sql sql-file topology-name]
 
     Compiles the SQL statements into a Trident topology and submits it to Storm.
     """
@@ -360,26 +360,26 @@ def set_log_level(*args):
     """
     Dynamically change topology log levels
 
-    Syntax: [storm set_log_level -l [logger name]=[log level][:optional timeout] -r [logger name]
+    Syntax: [storm set_log_level -l [logger name]=[log level][:optional timeout] -r [logger name] topology-name]
     where log level is one of:
         ALL, TRACE, DEBUG, INFO, WARN, ERROR, FATAL, OFF
     and timeout is integer seconds.
 
     e.g.
-        ./bin/storm set_log_level -l ROOT=DEBUG:30
+        ./bin/storm set_log_level -l ROOT=DEBUG:30 topology-name
 
         Set the root logger's level to DEBUG for 30 seconds
 
-        ./bin/storm set_log_level -l com.myapp=WARN
+        ./bin/storm set_log_level -l com.myapp=WARN topology-name
 
         Set the com.myapp logger's level to WARN for 30 seconds
 
-        ./bin/storm set_log_level -l com.myapp=WARN -l com.myOtherLogger=ERROR:123
+        ./bin/storm set_log_level -l com.myapp=WARN -l com.myOtherLogger=ERROR:123 topology-name
 
         Set the com.myapp logger's level to WARN indifinitely, and com.myOtherLogger
         to ERROR for 123 seconds
 
-        ./bin/storm set_log_level -r com.myOtherLogger
+        ./bin/storm set_log_level -r com.myOtherLogger topology-name
 
         Clears settings, resetting back to the original level
     """
