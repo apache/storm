@@ -194,49 +194,35 @@ _This section applies to committers only._
 Committers that are integrating patches or pull requests should use the official Apache repository at
 [https://git-wip-us.apache.org/repos/asf/storm.git](https://git-wip-us.apache.org/repos/asf/storm.git).
 
-To pull in a merge request you should generally follow the command line instructions sent out by GitHub.
+To pull in a merge request you should use storm-merge-pr.py
 
-1. Go to your local copy of the [Apache git repo](https://git-wip-us.apache.org/repos/asf/storm.git), switch
-   to the `master` branch, and make sure it is up to date.
+storm-merge-pr.py is a script that automates the process of accepting a code change into the project. It creates a temporary branch from apache/trunk, 
+squashes the commits in the pull request, rewrites the commit message in the squashed commit to follow a standard format including information about each original commit, 
+merges the squashed commit into the temporary branch, pushes the code to apache/trunk and closes the JIRA ticket. The push will then be mirrored to apache-github/trunk, 
+which will cause the PR to be closed due to the pattern in the commit message. Note that the script will ask the user before executing remote updates (ie git push and closing JIRA ticket), 
+so it can still be used even if the user wants to skip those steps.
 
-        $ git checkout master
-        $ git fetch origin
-        $ git merge origin/master
+#### Setup
 
-2. Create a local branch for integrating and testing the pull request.  You may want to name the branch according to the
-   Storm JIRA ticket associated with the pull request (example: `STORM-1234`).
+1. Add aliases for the remotes expected by the merge script (if you haven't already)
 
-        $ git checkout -b <local_test_branch>  # e.g. git checkout -b STORM-1234
+        $ git remote add apache https://git-wip-us.apache.org/repos/asf/storm.git
+        $ git remote add apache-github https://github.com/apache/storm.git
 
-3. Merge the pull request into your local test branch.
+2. Install jira-python
 
-        $ git pull <remote_repo_url> <remote_branch>
-    You can use `./dev-tools/storm-merge.py <pull-number>` to produce the above command most of the time.
+        $ sudo easy_install jira
 
-4.  Assuming that the pull request merges without any conflicts:
-    Update the top-level `CHANGELOG.md`, and add in the JIRA ticket number (example: `STORM-1234`) and ticket
-    description to the change log.  Make sure that you place the JIRA ticket number in the commit comments where
-    applicable.
+#### Merging
 
-5. Run any sanity tests that you think are needed.
+Once the pull request is ready to be merged (it has been reviewed, feedback has been addressed, CI build has been successful and the branch merges cleanly into trunk):
 
-6. Once you are confident that everything is ok, you can merge your local test branch into your local `master` branch,
-   and push the changes back to the official Apache repo.
+1. Set the JIRA_USERNAME and JIRA_PASSWORD environment variables with the appropriate credentials if you intend to ask the script to close the issue associated with the pull request.
 
-        # Pull request looks ok, change log was updated, etc.  We are ready for pushing.
-        $ git checkout master
-        $ git merge <local_test_branch>  # e.g. git merge STORM-1234
+2. Run the merge script:
+python storm-merge-pr.py
 
-        # At this point our local master branch is ready, so now we will push the changes
-        # to the official Apache repo.  Note: The read-only mirror on GitHub will be updated
-        # automatically a short while after you have pushed to the Apache repo.
-        $ git push origin master
-
-7. The last step is updating the corresponding JIRA ticket.  [Go to JIRA](https://issues.apache.org/jira/browse/STORM)
-   and resolve the ticket.  Be sure to set the `Fix Version/s` field to the version you pushed your changes to.
-   It is usually good practice to thank the author of the pull request for their contribution if you have not done
-   so already.
-
+3. Answer the questions prompted by the script.
 
 <a name="building"></a>
 
