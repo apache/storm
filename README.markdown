@@ -264,6 +264,7 @@ under the License.
 * Olivier Mallassi ([@omallassi](https://github.com/omallassi))
 * Balázs Kossovics ([@kosii](https://github.com/kosii))
 * csivaguru ([@csivaguru](https://github.com/csivaguru))
+* sakanaou ([@sakanaou](https://github.com/sakanaou))
 
 
 ## Acknowledgements
