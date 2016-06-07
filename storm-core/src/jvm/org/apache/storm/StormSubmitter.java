@@ -234,8 +234,9 @@ public class StormSubmitter {
                     throw new RuntimeException("Topology with name `" + name + "` already exists on cluster");
                 }
                 String jar = submitJarAs(conf, System.getProperty("storm.jar"), progressListener, asUser);
-                try (NimbusClient client = NimbusClient.getConfiguredClientAs(conf, asUser)) {
+                try {
                     LOG.info("Submitting topology " + name + " in distributed mode with conf " + serConf);
+                    NimbusClient client = NimbusClient.getConfiguredClientAs(conf, asUser);
                     if (opts != null) {
                         client.getClient().submitTopologyWithOpts(name, jar, serConf, topology, opts);
                     } else {
