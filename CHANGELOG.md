@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-1864: StormSubmitter should throw respective exceptions and log respective errors forregistered submitter hook invocation
  * STORM-1766: A better algorithm server rack selection for RAS
  * STORM-1859: Ack late tuples in windowed mode
  * STORM-1851: Fix default nimbus impersonation authorizer config
