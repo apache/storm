@@ -485,6 +485,11 @@ def kill_workers(*args):
         extrajars=[USER_CONF_DIR, os.path.join(STORM_DIR, "bin")])
 
 def shell(resourcesdir, command, *args):
+    """Syntax: [storm shell resourcesdir command args]
+
+    Archives resources to jar and uploads jar to Nimbus, and executes following arguments on "local". Useful for non JVM languages.
+    eg: `storm shell resources/ python topology.py arg1 arg2`
+    """
     tmpjarpath = "stormshell" + str(random.randint(0, 10000000)) + ".jar"
     os.system("jar cf %s %s" % (tmpjarpath, resourcesdir))
     runnerargs = [tmpjarpath, command]
