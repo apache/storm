@@ -1,4 +1,5 @@
 ## 1.0.2
+ * STORM-1887: Fixed help message for set_log_level command
  * STORM-1878: Flux can now handle IStatefulBolts
  * STORM-1861: Storm submit command returns exit code of 0 even when it fails.
  * STORM-1755: Revert the kafka client version upgrade in storm-kafka module
