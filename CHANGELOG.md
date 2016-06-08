@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-1887: Fixed help message for set_log_level command
  * STORM-1878: Flux can now handle IStatefulBolts
  * STORM-1864: StormSubmitter should throw respective exceptions and log respective errors forregistered submitter hook invocation
  * STORM-1868: Modify TridentKafkaWordCount to run in distributed mode
