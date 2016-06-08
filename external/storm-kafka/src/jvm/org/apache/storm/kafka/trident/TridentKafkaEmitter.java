@@ -19,7 +19,6 @@ package org.apache.storm.kafka.trident;
 
 import com.google.common.collect.ImmutableMap;
 
-import kafka.common.MessageSizeTooLargeException;
 import org.apache.storm.Config;
 import org.apache.storm.kafka.*;
 import org.apache.storm.metric.api.CombinedMetric;
@@ -121,22 +120,9 @@ public class TridentKafkaEmitter {
         }
 
         long endoffset = offset;
-        if (msgs != null && msgs.sizeInBytes() > 0 && msgs.validBytes() == 0) {
-            String errMsg = String.format("Found a message larger than the maximum fetch size " +
-                            "(%d bytes) on topic %s partition %d at fetch offset %d. Increase the fetch size, " +
-                            "or decrease the maximum message size the broker will allow."
-                    , _config.fetchSizeBytes, partition.topic, partition.partition, offset);
-            if (_config.skipMsgOverFetchSize) {
-                endoffset = offset + 1;
-                LOG.warn(errMsg);
-            } else {
-                throw new MessageSizeTooLargeException(errMsg);
-            }
-        } else if (msgs != null) {
-            for (MessageAndOffset msg : msgs) {
-                emit(collector, msg.message(), partition, msg.offset());
-                endoffset = msg.nextOffset();
-            }
+        for (MessageAndOffset msg : msgs) {
+            emit(collector, msg.message(), partition, msg.offset());
+            endoffset = msg.nextOffset();
         }
         Map newMeta = new HashMap();
         newMeta.put("offset", offset);
