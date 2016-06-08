@@ -77,7 +77,9 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
     private final int maxUncommittedOffsets;
     private final FirstPollOffsetStrategy firstPollOffsetStrategy;
     private final KafkaSpoutStreams kafkaSpoutStreams;
+    private final KafkaSpoutStream kafkaSpoutStream;
     private final KafkaSpoutTuplesBuilder<K, V> tuplesBuilder;
+    private final KafkaSpoutTupleBuilder<K, V> tupleBuilder;
     private final KafkaSpoutRetryService retryService;
 
     private KafkaSpoutConfig(Builder<K,V> builder) {
@@ -89,8 +91,10 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         this.maxRetries = builder.maxRetries;
         this.firstPollOffsetStrategy = builder.firstPollOffsetStrategy;
         this.kafkaSpoutStreams = builder.kafkaSpoutStreams;
+        this.kafkaSpoutStream  = builder.kafkaSpoutStream;
         this.maxUncommittedOffsets = builder.maxUncommittedOffsets;
         this.tuplesBuilder = builder.tuplesBuilder;
+        this.tupleBuilder = builder.tupleBuilder;
         this.retryService = builder.retryService;
     }
 
@@ -111,8 +115,10 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         private int maxRetries = DEFAULT_MAX_RETRIES;
         private FirstPollOffsetStrategy firstPollOffsetStrategy = FirstPollOffsetStrategy.UNCOMMITTED_EARLIEST;
         private final KafkaSpoutStreams kafkaSpoutStreams;
+        private final KafkaSpoutStream kafkaSpoutStream;
         private int maxUncommittedOffsets = DEFAULT_MAX_UNCOMMITTED_OFFSETS;
         private final KafkaSpoutTuplesBuilder<K, V> tuplesBuilder;
+        private final KafkaSpoutTupleBuilder<K, V> tupleBuilder;
         private final KafkaSpoutRetryService retryService;
 
         /**
@@ -156,7 +162,43 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
 
             this.kafkaProps = kafkaProps;
             this.kafkaSpoutStreams = kafkaSpoutStreams;
+            this.kafkaSpoutStream = null;
             this.tuplesBuilder = tuplesBuilder;
+            this.tupleBuilder = null;
+            this.retryService = retryService;
+        }
+        
+        /***
+         * KafkaSpoutConfig defines the required configuration to connect a consumer to a consumer group, as well as the subscribing topics
+         * The optional configuration can be specified using the set methods of this builder
+         * @param kafkaProps    properties defining consumer connection to Kafka broker as specified in @see <a href="http://kafka.apache.org/090/javadoc/index.html?org/apache/kafka/clients/consumer/KafkaConsumer.html">KafkaConsumer</a>
+         * @param kafkaSpoutStreams    streams to where the tuples are emitted for each tuple. Multiple topics can emit in the same stream.
+         * @param tuplesBuilder logic to build tuples from {@link ConsumerRecord}s.
+         * @param retryService  logic that manages the retrial of failed tuples
+         */
+        public Builder(Map<String, Object> kafkaProps, KafkaSpoutStream kafkaSpoutStream,
+                       KafkaSpoutTupleBuilder<K,V> tupleBuilder, KafkaSpoutRetryService retryService) {
+            if (kafkaProps == null || kafkaProps.isEmpty()) {
+                throw new IllegalArgumentException("Properties defining consumer connection to Kafka broker are required: " + kafkaProps);
+            }
+
+            if (kafkaSpoutStream == null)  {
+                throw new IllegalArgumentException("Must specify stream associated with a topic wildcard. ");
+            }
+
+            if (tupleBuilder == null) {
+                throw new IllegalArgumentException("Must specify a tuple builder");
+            }
+
+            if (retryService == null) {
+                throw new IllegalArgumentException("Must specify at implementation of retry service");
+            }
+
+            this.kafkaProps = kafkaProps;
+            this.kafkaSpoutStreams = null;
+            this.kafkaSpoutStream = kafkaSpoutStream;
+            this.tuplesBuilder = null;
+            this.tupleBuilder = tupleBuilder;
             this.retryService = retryService;
         }
 
@@ -280,8 +322,12 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
     public KafkaSpoutStreams getKafkaSpoutStreams() {
         return kafkaSpoutStreams;
     }
+    
+		public KafkaSpoutStream getKafkaSpoutStream() {
+			return kafkaSpoutStream;
+		}
 
-    public int getMaxUncommittedOffsets() {
+		public int getMaxUncommittedOffsets() {
         return maxUncommittedOffsets;
     }
 
@@ -289,7 +335,11 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         return tuplesBuilder;
     }
 
-    public KafkaSpoutRetryService getRetryService() {
+    public KafkaSpoutTupleBuilder<K, V> getTupleBuilder() {
+			return tupleBuilder;
+		}
+
+		public KafkaSpoutRetryService getRetryService() {
         return retryService;
     }
 
