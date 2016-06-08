@@ -284,6 +284,7 @@
         <module>external/storm-mongodb</module>
         <module>examples/storm-starter</module>
         <module>external/storm-kafka-client</module>
+        <module>external/storm-opentsdb</module>
     </modules>
 
     <dependencies>
