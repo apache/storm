@@ -1,4 +1,5 @@
 ## 1.0.2
+ * STORM-1864 : StormSubmitter should throw respective exceptions and log respective errors for registered submitter hook invocation
  * STORM-1887: Fixed help message for set_log_level command
  * STORM-1878: Flux can now handle IStatefulBolts
  * STORM-1861: Storm submit command returns exit code of 0 even when it fails.
