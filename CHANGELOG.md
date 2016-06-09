@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-1882: Expose TextFileReader public
  * STORM-1873: Implement alternative behaviour for late tuples
  * STORM-1719: Introduce REST API: Topology metric stats for stream
  * STORM-1887: Fixed help message for set_log_level command
