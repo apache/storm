@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-1874: Update logger private permissions
  * STORM-1865: update command line client document
  * STORM-1771. HiveState should flushAndClose before closing old or idle Hive connections
  * STORM-1882: Expose TextFileReader public
