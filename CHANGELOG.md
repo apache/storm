@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-1873: Implement alternative behaviour for late tuples
  * STORM-1878: Flux can now handle IStatefulBolts
  * STORM-1864: StormSubmitter should throw respective exceptions and log respective errors forregistered submitter hook invocation
  * STORM-1766: A better algorithm server rack selection for RAS
