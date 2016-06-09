@@ -1,4 +1,5 @@
 ## 1.0.2
+ * STORM-1771: HiveState should flushAndClose before closing old or idle Hive connections
  * STORM-1882: Expose TextFileReader public
  * STORM-1864 : StormSubmitter should throw respective exceptions and log respective errors for registered submitter hook invocation
  * STORM-1887: Fixed help message for set_log_level command
