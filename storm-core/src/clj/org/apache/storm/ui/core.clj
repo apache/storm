@@ -65,6 +65,7 @@
 (defmeter ui:num-supervisor-summary-http-requests)
 (defmeter ui:num-all-topologies-summary-http-requests)
 (defmeter ui:num-topology-page-http-requests)
+(defmeter ui:num-topology-metric-http-requests)
 (defmeter ui:num-build-visualization-http-requests)
 (defmeter ui:num-mk-visualization-data-http-requests)
 (defmeter ui:num-component-page-http-requests)
@@ -625,6 +626,98 @@
         "visualizationTable" []
         "schedulerDisplayResource" (*STORM-CONF* Config/SCHEDULER_DISPLAY_RESOURCE)}))))
 
+(defn- average
+  [vals]
+  (/ (reduce + vals) (count vals)))
+
+(defn- merge-with-conj [& mlist]
+  (let [flatten-keys (set (filter identity (flatten (map keys mlist))))
+        dict-keys-with-empty-list (zipmap flatten-keys (repeat '()))]
+    (apply merge-with conj dict-keys-with-empty-list mlist)))
+
+(defn- conj-specific-stats-by-field [window field-fn stats]
+  (apply merge-with-conj (map #(into {} (.get (field-fn %) window)) stats)))
+
+(defn- reduce-conj-specific-stats-by-field [agg-val-fn stats-map]
+  (let [fn-key-to-str (fn [key]
+                        (condp instance? key
+                              String {"stream_id" key}
+                              GlobalStreamId {"component_id" (.get_componentId key) "stream_id" (.get_streamId key)}
+                              {"stream_id" (str key)}))]
+    (reduce-kv #(conj %1 (merge (fn-key-to-str %2) {"value" (agg-val-fn %3)})) '() stats-map)))
+
+(defn- merge-stats-specific-field-by-stream
+  [window field-fn agg-val-fn stats]
+  (reduce-conj-specific-stats-by-field agg-val-fn
+    (conj-specific-stats-by-field window field-fn stats)))
+
+(defn- merge-executor-common-stats
+  [window executor-stats]
+  {"emitted"
+   (merge-stats-specific-field-by-stream window #(.get_emitted %) sum executor-stats)
+   "transferred"
+   (merge-stats-specific-field-by-stream window #(.get_transferred %) sum executor-stats)
+   })
+
+(defmulti merge-executor-specific-stats
+  (fn [_ specific-stats]
+    (if (.is_set_spout (first specific-stats)) :spout :bolt)))
+
+(defmethod merge-executor-specific-stats :spout
+  [window specific-stats]
+  (let [stats (map #(.get_spout %) specific-stats)]
+    {"acked"
+     (merge-stats-specific-field-by-stream window #(.get_acked %) sum stats)
+     "failed"
+     (merge-stats-specific-field-by-stream window #(.get_failed %) sum stats)
+     "complete_ms_avg"
+     (merge-stats-specific-field-by-stream window #(.get_complete_ms_avg %) #(float-str (average %)) stats)
+     }
+    ))
+
+(defmethod merge-executor-specific-stats :bolt
+  [window specific-stats]
+  (let [stats (map #(.get_bolt %) specific-stats)]
+    {"acked"
+     (merge-stats-specific-field-by-stream window #(.get_acked %) sum stats)
+     "failed"
+     (merge-stats-specific-field-by-stream window #(.get_failed %) sum stats)
+     "process_ms_avg"
+     (merge-stats-specific-field-by-stream window #(.get_process_ms_avg %) #(float-str (average %)) stats)
+     "executed"
+     (merge-stats-specific-field-by-stream window #(.get_executed %) sum stats)
+     "executed_ms_avg"
+     (merge-stats-specific-field-by-stream window #(.get_execute_ms_avg %) #(float-str (average %)) stats)
+     }
+    ))
+
+(defn merge-executor-stats [window component-id eslist]
+  (let [stats (map #(.get_stats %) eslist)
+        specific-stats (map #(.get_specific %) stats)]
+    (merge {"id" component-id}
+           (merge-executor-common-stats window stats)
+           (merge-executor-specific-stats window specific-stats))))
+
+(defn topology-metrics-page [id window include-sys?]
+  (thrift/with-configured-nimbus-connection nimbus
+    (let [window (if window window ":all-time")
+          window-hint (window-hint window)
+          topology (.getTopology ^Nimbus$Client nimbus id)
+          summ (->> (doto
+                      (GetInfoOptions.)
+                      (.set_num_err_choice NumErrorsChoice/NONE))
+                    (.getTopologyInfoWithOpts ^Nimbus$Client nimbus id))
+          execs (.get_executors summ)
+          spout-summs (filter (partial spout-summary? topology) execs)
+          bolt-summs (filter (partial bolt-summary? topology) execs)
+          spout-comp-summs (group-by-comp spout-summs)
+          bolt-comp-summs (group-by-comp bolt-summs)
+          bolt-comp-summs (filter-key (mk-include-sys-fn include-sys?)
+                                      bolt-comp-summs)
+          merged-spout-stats (map (fn [[k v]] (merge-executor-stats window k v)) spout-comp-summs)
+          merged-bolt-stats (map (fn [[k v]] (merge-executor-stats window k v)) bolt-comp-summs)]
+      (merge {"window" window "window-hint" window-hint "spouts" merged-spout-stats "bolts" merged-bolt-stats}))))
+
 (defn component-errors
   [errors-list topology-id secure?]
   (let [errors (->> errors-list
@@ -959,6 +1052,11 @@
     (assert-authorized-user "getTopology" (topology-config id))
     (let [user (get-user-name servlet-request)]
       (json-response (topology-page id (:window m) (check-include-sys? (:sys m)) user (= scheme :https)) (:callback m))))
+  (GET "/api/v1/topology/:id/metrics" [:as {:keys [cookies servlet-request]} id & m]
+    (mark! ui:num-topology-metric-http-requests)
+    (populate-context! servlet-request)
+    (assert-authorized-user "getTopology" (topology-config id))
+    (json-response (topology-metrics-page id (:window m) (check-include-sys? (:sys m))) (:callback m)))
   (GET "/api/v1/topology/:id/visualization-init" [:as {:keys [cookies servlet-request]} id & m]
     (mark! ui:num-build-visualization-http-requests)
     (populate-context! servlet-request)
