@@ -39,7 +39,7 @@ import kafka.javaapi.message.ByteBufferMessageSet;
 import kafka.message.MessageAndOffset;
 
 public class PartitionManager {
-    public static final Logger LOG = LoggerFactory.getLogger(PartitionManager.class);
+    private static final Logger LOG = LoggerFactory.getLogger(PartitionManager.class);
 
     private final CombinedMetric _fetchAPILatencyMax;
     private final ReducedMetric _fetchAPILatencyMean;
