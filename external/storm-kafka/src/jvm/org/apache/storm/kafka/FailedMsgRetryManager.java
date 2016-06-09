@@ -18,6 +18,7 @@
 package org.apache.storm.kafka;
 
 import java.io.Serializable;
+import java.util.Map;
 import java.util.Set;
 
 public interface FailedMsgRetryManager extends Serializable {
@@ -25,7 +26,7 @@ public interface FailedMsgRetryManager extends Serializable {
     /**
      * Initialization
      */
-    void prepare(SpoutConfig spoutConfig);
+    void prepare(SpoutConfig spoutConfig, Map stormConf);
 
     /**
      * Message corresponding to the offset failed in kafka spout.
