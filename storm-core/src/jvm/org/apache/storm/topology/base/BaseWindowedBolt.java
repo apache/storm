@@ -255,6 +255,20 @@ public abstract class BaseWindowedBolt implements IWindowedBolt {
     }
 
     /**
+     * Specify a stream id on which late tuples are going to be emitted. They are going to be accessible via the
+     * {@link org.apache.storm.topology.WindowedBoltExecutor#LATE_TUPLE_FIELD} field.
+     * It must be defined on a per-component basis, and in conjunction with the
+     * {@link BaseWindowedBolt#withTimestampField}, otherwise {@link IllegalArgumentException} will be thrown.
+     *
+     * @param streamId the name of the stream used to emit late tuples on
+     */
+    public BaseWindowedBolt withLateTupleStream(String streamId) {
+        windowConfiguration.put(Config.TOPOLOGY_BOLTS_LATE_TUPLE_STREAM, streamId);
+        return this;
+    }
+
+
+    /**
      * Specify the maximum time lag of the tuple timestamp in milliseconds. It means that the tuple timestamps
      * cannot be out of order by more than this amount.
      *
