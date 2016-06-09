@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-1882: Expose TextFileReader public
  * STORM-1873: Implement alternative behaviour for late tuples
  * STORM-1878: Flux can now handle IStatefulBolts
  * STORM-1864: StormSubmitter should throw respective exceptions and log respective errors forregistered submitter hook invocation
