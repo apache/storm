@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-1575: fix TwitterSampleSpout NPE on close
  * STORM-1874: Update logger private permissions
  * STORM-1865: update command line client document
  * STORM-1771: HiveState should flushAndClose before closing old or idle Hive connections
