@@ -55,7 +55,7 @@ The main stages can be depicted as follows
 Blobs in the blobstore can be created through command line using the following command.
 
 ```
-storm blobstore create --file README.txt --acl o::rwa --repl-fctr 4 key1
+storm blobstore create --file README.txt --acl o::rwa --replication-factor 4 key1
 ```
 
 The above command creates a blob with a key name “key1” corresponding to the file README.txt. 
@@ -324,7 +324,7 @@ that need to be cached and bind them to key strings. To achieve this, the user
 uses the "blobstore create" command of the storm executable, as follows:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-storm blobstore create [-f|--file FILE] [-a|--acl ACL1,ACL2,...] [--repl-fctr NUMBER] [keyname]
+storm blobstore create [-f|--file FILE] [-a|--acl ACL1,ACL2,...] [--replication-factor NUMBER] [keyname]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The contents come from a FILE, if provided by -f or --file option, otherwise
@@ -346,7 +346,7 @@ where:
 * a = admin access  
 * _ = ignored  
 
-The replication factor can be set to a value greater than 1 using --repl-fctr.
+The replication factor can be set to a value greater than 1 using --replication-factor.
 
 Note: The replication right now is configurable for a hdfs blobstore but for a
 local blobstore the replication always stays at 1. For a hdfs blobstore
@@ -355,7 +355,7 @@ the default replication is set to 3.
 ###### Example:  
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-storm blobstore create --file README.txt --acl o::rwa --repl-fctr 4 key1
+storm blobstore create --file README.txt --acl o::rwa --replication-factor 4 key1
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In the above example, the *README.txt* file is added to the distributed cache.
@@ -475,7 +475,7 @@ ACL is in the form [uo]:[username]:[r-][w-][a-] can be comma  separated list
 ### Update the replication factor for a blob
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-storm blobstore replication --update --repl-fctr 5 key1
+storm blobstore replication --update --replication-factor 5 key1
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ### Read the replication factor of a blob
