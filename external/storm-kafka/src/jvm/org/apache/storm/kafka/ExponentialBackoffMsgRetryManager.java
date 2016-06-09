@@ -39,7 +39,7 @@ public class ExponentialBackoffMsgRetryManager implements FailedMsgRetryManager 
 
     }
 
-    public void prepare(SpoutConfig spoutConfig) {
+    public void prepare(SpoutConfig spoutConfig, Map stormConf) {
         this.retryInitialDelayMs = spoutConfig.retryInitialDelayMs;
         this.retryDelayMultiplier = spoutConfig.retryDelayMultiplier;
         this.retryDelayMaxMs = spoutConfig.retryDelayMaxMs;
@@ -105,6 +105,7 @@ public class ExponentialBackoffMsgRetryManager implements FailedMsgRetryManager 
     public boolean retryFurther(Long offset) {
         MessageRetryRecord record = this.records.get(offset);
         return ! (record != null &&
+               this.retryLimit > 0 &&
                this.waiting.contains(record) &&
                this.retryLimit <= record.retryNum);
     }

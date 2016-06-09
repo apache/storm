@@ -62,13 +62,19 @@ In addition to these parameters, SpoutConfig contains the following fields that 
     // setting for how often to save the current Kafka offset to ZooKeeper
     public long stateUpdateIntervalMs = 2000;
 
-    // Exponential back-off retry settings.  These are used when retrying messages after a bolt
-    // calls OutputCollector.fail().
-    // Note: be sure to set org.apache.storm.Config.MESSAGE_TIMEOUT_SECS appropriately to prevent
-    // resubmitting the message while still retrying.
+    // Retry strategy for failed messages
+    public String failedMsgRetryManagerClass = ExponentialBackoffMsgRetryManager.class.getName();
+
+    // Exponential back-off retry settings.  These are used by ExponentialBackoffMsgRetryManager for retrying messages after a bolt
+    // calls OutputCollector.fail(). These come into effect only if ExponentialBackoffMsgRetryManager is being used.
+    // Initial delay between successive retries
     public long retryInitialDelayMs = 0;
     public double retryDelayMultiplier = 1.0;
+    
+    // Maximum delay between successive retries    
     public long retryDelayMaxMs = 60 * 1000;
+    // Failed message will be retried infinitely if retryLimit is less than zero. 
+    public int retryLimit = -1;     
 
 ```
 Core KafkaSpout only accepts an instance of SpoutConfig.
@@ -111,6 +117,47 @@ public Iterable<List<Object>> deserializeMessageWithMetadata(ByteBuffer message,
 ```
 
 This is useful for auditing/replaying messages from arbitrary points on a Kafka topic, saving the partition and offset of each message of a discrete stream instead of persisting the entire message.
+
+###Failed message retry
+FailedMsgRetryManager is an interface which defines the retry strategy for a failed message. Default implementation is ExponentialBackoffMsgRetryManager which retries with exponential delays
+between consecutive retries. To use a custom implementation, set SpoutConfig.failedMsgRetryManagerClass to the full classname
+of implementation. Here is the interface 
+
+```java
+    // Spout initialization can go here. This can be called multiple times during lifecycle of a worker. 
+    void prepare(SpoutConfig spoutConfig, Map stormConf);
+
+    // Message corresponding to offset has failed. This method is called only if retryFurther returns true for offset.
+    void failed(Long offset);
+
+    // Message corresponding to offset has been acked.  
+    void acked(Long offset);
+
+    // Message corresponding to the offset, has been re-emitted and under transit.
+    void retryStarted(Long offset);
+
+    /**
+     * The offset of message, which is to be re-emitted. Spout will fetch messages starting from this offset
+     * and resend them, except completed messages.
+     */
+    Long nextFailedMessageToRetry();
+
+    /**
+     * @return True if the message corresponding to the offset should be emitted NOW. False otherwise.
+     */
+    boolean shouldReEmitMsg(Long offset);
+
+    /**
+     * Spout will clean up the state for this offset if false is returned. If retryFurther is set to true,
+     * spout will called failed(offset) in next call and acked(offset) otherwise 
+     */
+    boolean retryFurther(Long offset);
+
+    /**
+     * Clear any offsets before kafkaOffset. These offsets are no longer available in kafka.
+     */
+    Set<Long> clearOffsetsBefore(Long kafkaOffset);
+``` 
 
 #### Version incompatibility
 In Storm versions prior to 1.0, the MultiScheme methods accepted a `byte[]` instead of `ByteBuffer`. The `MultScheme` and the related

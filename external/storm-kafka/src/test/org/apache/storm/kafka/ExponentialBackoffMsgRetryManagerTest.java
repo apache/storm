@@ -260,7 +260,7 @@ public class ExponentialBackoffMsgRetryManagerTest {
         spoutConfig.retryDelayMaxMs = retryDelayMaxMs;
         spoutConfig.retryLimit = retryLimit; 
         ExponentialBackoffMsgRetryManager exponentialBackoffMsgRetryManager = new ExponentialBackoffMsgRetryManager();
-        exponentialBackoffMsgRetryManager.prepare(spoutConfig);
+        exponentialBackoffMsgRetryManager.prepare(spoutConfig, null);
         return exponentialBackoffMsgRetryManager;
     }
 }

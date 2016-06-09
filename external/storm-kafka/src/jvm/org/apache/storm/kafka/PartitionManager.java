@@ -78,7 +78,7 @@ public class PartitionManager {
 
         try {
             _failedMsgRetryManager = (FailedMsgRetryManager) Class.forName(spoutConfig.failedMsgRetryManagerClass).newInstance();
-            _failedMsgRetryManager.prepare(spoutConfig);
+            _failedMsgRetryManager.prepare(spoutConfig, _stormConf);
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
             throw new IllegalArgumentException(String.format("Failed to create an instance of <%s> from: <%s>",
                                                              FailedMsgRetryManager.class,
@@ -288,6 +288,7 @@ public class PartitionManager {
                 this._failedMsgRetryManager.failed(offset);
             } else {
                 // state for the offset should be cleaned up
+                LOG.warn("Will not retry failed kafka offset {} further", offset);
                 _messageIneligibleForRetryCount.incr();
                 _pending.remove(offset);
                 this._failedMsgRetryManager.acked(offset);
