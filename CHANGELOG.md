@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-1771. HiveState should flushAndClose before closing old or idle Hive connections
  * STORM-1882: Expose TextFileReader public
  * STORM-1873: Implement alternative behaviour for late tuples
  * STORM-1878: Flux can now handle IStatefulBolts
