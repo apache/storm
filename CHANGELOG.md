@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-1705: Cap number of retries for a failed message
  * STORM-1884: Prioritize pendingPrepare over pendingCommit
  * STORM-1575: fix TwitterSampleSpout NPE on close
  * STORM-1874: Update logger private permissions
