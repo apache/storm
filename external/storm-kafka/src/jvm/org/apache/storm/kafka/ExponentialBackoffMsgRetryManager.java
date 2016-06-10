@@ -106,7 +106,6 @@ public class ExponentialBackoffMsgRetryManager implements FailedMsgRetryManager 
         MessageRetryRecord record = this.records.get(offset);
         return ! (record != null &&
                this.retryLimit > 0 &&
-               this.waiting.contains(record) &&
                this.retryLimit <= record.retryNum);
     }
 
