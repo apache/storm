@@ -30,10 +30,6 @@
     <name>storm-kafka</name>
     <description>Storm Spouts for Apache Kafka</description>
 
-    <properties>
-        <kafka.version>0.8.2.1</kafka.version>
-        <kafka.artifact.id>kafka_2.10</kafka.artifact.id>
-    </properties>
     <build>
         <plugins>
             <plugin>
@@ -123,12 +119,14 @@
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>
-            <artifactId>${kafka.artifact.id}</artifactId>
+            <artifactId>${storm.kafka.artifact.id}</artifactId>
+            <version>${storm.kafka.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
+            <version>${storm.kafka.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.storm</groupId>
