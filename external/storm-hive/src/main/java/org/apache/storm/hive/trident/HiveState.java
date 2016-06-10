@@ -243,7 +243,7 @@ public class HiveState implements State {
             LOG.warn("Interrupted when attempting to close writer for end point: " + eldest, e);
             Thread.currentThread().interrupt();
         } catch (Exception e) {
-            LOG.warn("Interrupted when attempting to close writer for end point: " + ep, e);
+            LOG.warn("Interrupted when attempting to close writer for end point: " + eldest, e);
         }
     }
 
