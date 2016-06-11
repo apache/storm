@@ -64,7 +64,7 @@ public class RedisKeyValueState<K, V> implements KeyValueState<K, V> {
     }
 
     public RedisKeyValueState(String namespace, JedisPoolConfig poolConfig, Serializer<K> keySerializer, Serializer<V> valueSerializer) {
-        this(namespace, JedisCommandsContainerBuilder.build(poolConfig), keySerializer, valueSerializer);
+        this(namespace, JedisCommandsContainerBuilder.buildContainer(poolConfig), keySerializer, valueSerializer);
     }
 
     public RedisKeyValueState(String namespace, JedisCommandsInstanceContainer jedisContainer,

@@ -36,7 +36,7 @@ public class JedisCommandsContainerBuilder {
      * @param config configuration for JedisPool
      * @return container for single Redis environment
      */
-    public static JedisCommandsInstanceContainer build(JedisPoolConfig config) {
+    public static JedisContainer buildContainer(JedisPoolConfig config) {
         JedisPool jedisPool = new JedisPool(DEFAULT_POOL_CONFIG, config.getHost(), config.getPort(), config.getTimeout(), config.getPassword(), config.getDatabase());
         return new JedisContainer(jedisPool);
     }
@@ -46,7 +46,7 @@ public class JedisCommandsContainerBuilder {
      * @param config configuration for JedisCluster
      * @return container for Redis Cluster environment
      */
-    public static JedisCommandsInstanceContainer build(JedisClusterConfig config) {
+    public static JedisClusterContainer buildClusterContainer(JedisClusterConfig config) {
         JedisCluster jedisCluster = new JedisCluster(config.getNodes(), config.getTimeout(), config.getMaxRedirections(), DEFAULT_POOL_CONFIG);
         return new JedisClusterContainer(jedisCluster);
     }

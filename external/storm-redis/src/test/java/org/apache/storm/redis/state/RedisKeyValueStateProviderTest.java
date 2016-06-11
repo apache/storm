@@ -18,11 +18,8 @@
 package org.apache.storm.redis.state;
 
 import org.apache.storm.Config;
-import org.apache.storm.state.State;
-import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 

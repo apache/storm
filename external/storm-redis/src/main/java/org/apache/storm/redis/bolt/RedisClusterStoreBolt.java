@@ -17,7 +17,7 @@
  */
 package org.apache.storm.redis.bolt;
 
-import org.apache.storm.redis.common.config.JedisPoolConfig;
+import org.apache.storm.redis.common.config.JedisClusterConfig;
 import org.apache.storm.redis.common.container.JedisCommandsContainerBuilder;
 import org.apache.storm.redis.common.mapper.RedisStoreMapper;
 import org.apache.storm.task.OutputCollector;
@@ -26,15 +26,10 @@ import org.apache.storm.topology.OutputFieldsDeclarer;
 
 import java.util.Map;
 
-/**
- * Basic bolt for writing to Redis
- * <p>
- * Various data types are supported: STRING, LIST, HASH, SET, SORTED_SET, HYPER_LOG_LOG
- */
-public class RedisStoreBolt extends BaseStoreBolt {
-    private final JedisPoolConfig config;
+public class RedisClusterStoreBolt extends BaseStoreBolt {
+    private final JedisClusterConfig config;
 
-    public RedisStoreBolt(JedisPoolConfig config, RedisStoreMapper mapper) {
+    public RedisClusterStoreBolt(JedisClusterConfig config, RedisStoreMapper mapper) {
         super(mapper);
         this.config = config;
     }
@@ -44,7 +39,7 @@ public class RedisStoreBolt extends BaseStoreBolt {
         this.collector = collector;
 
         if (this.config != null) {
-            this.container = JedisCommandsContainerBuilder.buildContainer(config);
+            this.container = JedisCommandsContainerBuilder.buildClusterContainer(config);
         } else {
             throw new IllegalArgumentException("Jedis configuration not found");
         }

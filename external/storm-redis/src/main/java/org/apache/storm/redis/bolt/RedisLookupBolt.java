@@ -17,121 +17,42 @@
  */
 package org.apache.storm.redis.bolt;
 
-import org.apache.storm.topology.OutputFieldsDeclarer;
-import org.apache.storm.tuple.Tuple;
-import org.apache.storm.tuple.Values;
-import org.apache.storm.redis.common.mapper.RedisDataTypeDescription;
-import org.apache.storm.redis.common.mapper.RedisLookupMapper;
-import org.apache.storm.redis.common.config.JedisClusterConfig;
 import org.apache.storm.redis.common.config.JedisPoolConfig;
-import redis.clients.jedis.JedisCommands;
+import org.apache.storm.redis.common.container.JedisCommandsContainerBuilder;
+import org.apache.storm.redis.common.mapper.RedisLookupMapper;
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.OutputFieldsDeclarer;
 
-import java.util.List;
+import java.util.Map;
 
 /**
  * Basic bolt for querying from Redis and emits response as tuple.
- * <p/>
+ * <p>
  * Various data types are supported: STRING, LIST, HASH, SET, SORTED_SET, HYPER_LOG_LOG
  */
-public class RedisLookupBolt extends AbstractRedisBolt {
-    private final RedisLookupMapper lookupMapper;
-    private final RedisDataTypeDescription.RedisDataType dataType;
-    private final String additionalKey;
+public class RedisLookupBolt extends BaseLookupBolt {
 
-    /**
-     * Constructor for single Redis environment (JedisPool)
-     * @param config configuration for initializing JedisPool
-     * @param lookupMapper mapper containing which datatype, query key, output key that Bolt uses
-     */
+    private final JedisPoolConfig config;
+
     public RedisLookupBolt(JedisPoolConfig config, RedisLookupMapper lookupMapper) {
-        super(config);
-
-        this.lookupMapper = lookupMapper;
-
-        RedisDataTypeDescription dataTypeDescription = lookupMapper.getDataTypeDescription();
-        this.dataType = dataTypeDescription.getDataType();
-        this.additionalKey = dataTypeDescription.getAdditionalKey();
+        super(lookupMapper);
+        this.config = config;
     }
 
-    /**
-     * Constructor for Redis Cluster environment (JedisCluster)
-     * @param config configuration for initializing JedisCluster
-     * @param lookupMapper mapper containing which datatype, query key, output key that Bolt uses
-     */
-    public RedisLookupBolt(JedisClusterConfig config, RedisLookupMapper lookupMapper) {
-        super(config);
-
-        this.lookupMapper = lookupMapper;
-
-        RedisDataTypeDescription dataTypeDescription = lookupMapper.getDataTypeDescription();
-        this.dataType = dataTypeDescription.getDataType();
-        this.additionalKey = dataTypeDescription.getAdditionalKey();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public void execute(Tuple input) {
-        String key = lookupMapper.getKeyFromTuple(input);
-        Object lookupValue;
+    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+        this.collector = collector;
 
-        JedisCommands jedisCommand = null;
-        try {
-            jedisCommand = getInstance();
-
-            switch (dataType) {
-                case STRING:
-                    lookupValue = jedisCommand.get(key);
-                    break;
-
-                case LIST:
-                    lookupValue = jedisCommand.lpop(key);
-                    break;
-
-                case HASH:
-                    lookupValue = jedisCommand.hget(additionalKey, key);
-                    break;
-
-                case SET:
-                    lookupValue = jedisCommand.scard(key);
-                    break;
-
-                case SORTED_SET:
-                    lookupValue = jedisCommand.zscore(additionalKey, key);
-                    break;
-
-                case HYPER_LOG_LOG:
-                    lookupValue = jedisCommand.pfcount(key);
-                    break;
-
-                case GEO:
-                    lookupValue = jedisCommand.geopos(additionalKey, key);
-                    break;
-
-                default:
-                    throw new IllegalArgumentException("Cannot process such data type: " + dataType);
-            }
-
-            List<Values> values = lookupMapper.toTuple(input, lookupValue);
-            for (Values value : values) {
-                collector.emit(input, value);
-            }
-
-            collector.ack(input);
-        } catch (Exception e) {
-            this.collector.reportError(e);
-            this.collector.fail(input);
-        } finally {
-            returnInstance(jedisCommand);
+        if (this.config != null) {
+            this.container = JedisCommandsContainerBuilder.buildContainer(config);
+        } else {
+            throw new IllegalArgumentException("Jedis configuration not found");
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        lookupMapper.declareOutputFields(declarer);
+        mapper.declareOutputFields(declarer);
     }
 }

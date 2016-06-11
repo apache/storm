@@ -19,12 +19,10 @@ package org.apache.storm.redis.common.config;
 
 import redis.clients.jedis.Protocol;
 
-import java.io.Serializable;
-
 /**
  * Configuration for JedisPool.
  */
-public class JedisPoolConfig implements Serializable {
+public class JedisPoolConfig implements JedisConfig {
 
     private String host;
     private int port;

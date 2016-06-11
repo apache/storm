@@ -21,7 +21,6 @@ import com.google.common.base.Preconditions;
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.Protocol;
 
-import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.util.HashSet;
 import java.util.Set;
@@ -29,7 +28,7 @@ import java.util.Set;
 /**
  * Configuration for JedisCluster.
  */
-public class JedisClusterConfig implements Serializable {
+public class JedisClusterConfig implements JedisConfig {
     private Set<InetSocketAddress> nodes;
     private int timeout;
     private int maxRedirections;
