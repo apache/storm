@@ -439,6 +439,7 @@ public abstract class Executor implements Callable, EventHandler {
         keysToRemove.remove(Config.TOPOLOGY_BOLTS_MESSAGE_ID_FIELD_NAME);
         keysToRemove.remove(Config.TOPOLOGY_STATE_PROVIDER);
         keysToRemove.remove(Config.TOPOLOGY_STATE_PROVIDER_CONFIG);
+        keysToRemove.remove(Config.TOPOLOGY_BOLTS_LATE_TUPLE_STREAM);
 
         Map<Object, Object> componentConf;
         String specJsonConf = topologyContext.getComponentCommon(componentId).get_json_conf();
