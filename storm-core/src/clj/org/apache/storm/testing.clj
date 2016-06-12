@@ -26,7 +26,7 @@
            [org.apache.storm.zookeeper Zookeeper]
            [org.apache.storm ProcessSimulator]
            [org.apache.storm.daemon.supervisor StandaloneSupervisor SupervisorData SupervisorManager SupervisorUtils SupervisorManager]
-           [org.apache.storm.executor ExecutorCommon]
+           [org.apache.storm.executor Executor]
            [java.util.concurrent.atomic AtomicBoolean])
   (:import [java.io File])
   (:import [java.util HashMap ArrayList])

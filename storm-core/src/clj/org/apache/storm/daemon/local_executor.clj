@@ -16,7 +16,7 @@
 (ns org.apache.storm.daemon.local-executor
   (:use [org.apache.storm util config log])
   (:import [org.apache.storm.tuple AddressedTuple]
-           [org.apache.storm.executor Executor ExecutorData ExecutorTransfer])
+           [org.apache.storm.executor Executor ExecutorTransfer])
   (:import [org.apache.storm.utils DisruptorQueue])
   (:import [org.apache.storm Config Constants]))
 
@@ -33,11 +33,10 @@
 
 (defn mk-local-executor [workerData executorId credentials]
   (let [executor (Executor/mkExecutor workerData executorId credentials)
-        executor-data (.getExecutorData executor)
-        worker-topology-context (.getWorkerTopologyContext executor-data)
-        batch-transfer-queue (.getBatchTransferWorkerQueue executor-data)
-        storm-conf (.getStormConf executor-data)
-        transfer-fn (.getTransferFn executor-data)
+        worker-topology-context (.getWorkerTopologyContext executor)
+        batch-transfer-queue (.getTransferWorkerQueue executor)
+        storm-conf (.getStormConf executor)
+        transfer-fn (.getTransferFn executor)
         local-executor-transfer (mk-local-executor-transfer worker-topology-context batch-transfer-queue storm-conf transfer-fn)]
-    (.setLocalExecutorTransfer executor-data local-executor-transfer)
+    (.setLocalExecutorTransfer executor local-executor-transfer)
     (.execute executor)))

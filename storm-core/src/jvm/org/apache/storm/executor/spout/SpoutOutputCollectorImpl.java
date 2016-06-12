@@ -19,8 +19,7 @@ package org.apache.storm.executor.spout;
 
 import org.apache.storm.daemon.Acker;
 import org.apache.storm.daemon.Task;
-import org.apache.storm.executor.ExecutorCommon;
-import org.apache.storm.executor.ExecutorData;
+import org.apache.storm.executor.Executor;
 import org.apache.storm.executor.ExecutorTransfer;
 import org.apache.storm.executor.TupleInfo;
 import org.apache.storm.spout.ISpout;
@@ -41,7 +40,7 @@ import org.slf4j.LoggerFactory;
 public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
     private final Logger LOG = LoggerFactory.getLogger(getClass());
 
-    private final ExecutorData executorData;
+    private final SpoutExecutor executor;
     private final Task taskData;
     private final int taskId;
     private final MutableLong emittedCount;
@@ -50,11 +49,11 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
     private final Boolean isEventLoggers;
     private final Boolean isDebug;
     private final RotatingMap<Long, TupleInfo> pending;
-    private final ExecutorTransfer executorTransfer;
 
-    public SpoutOutputCollectorImpl(ISpout spout, ExecutorData executorData, Task taskData, int taskId, MutableLong emittedCount, boolean hasAckers,
-                                    Random random, Boolean isEventLoggers, Boolean isDebug, RotatingMap<Long, TupleInfo> pending) {
-        this.executorData = executorData;
+    public SpoutOutputCollectorImpl(ISpout spout, SpoutExecutor executor, Task taskData, int taskId,
+                                    MutableLong emittedCount, boolean hasAckers, Random random,
+                                    Boolean isEventLoggers, Boolean isDebug, RotatingMap<Long, TupleInfo> pending) {
+        this.executor = executor;
         this.taskData = taskData;
         this.taskId = taskId;
         this.emittedCount = emittedCount;
@@ -63,7 +62,6 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
         this.isEventLoggers = isEventLoggers;
         this.isDebug = isDebug;
         this.pending = pending;
-        this.executorTransfer = executorData.getExecutorTransfer();
     }
 
     @Override
@@ -83,7 +81,7 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
 
     @Override
     public void reportError(Throwable error) {
-        executorData.getReportError().report(error);
+        executor.getReportError().report(error);
     }
 
     private List<Integer> sendSpoutMsg(String stream, List<Object> values, Object messageId, Integer outTaskId) {
@@ -114,16 +112,16 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
                 msgId = MessageId.makeUnanchored();
             }
 
-            TupleImpl tuple = new TupleImpl(executorData.getWorkerTopologyContext(), values, this.taskId, stream, msgId);
-            executorTransfer.transfer(t, tuple);
+            TupleImpl tuple = new TupleImpl(executor.getWorkerTopologyContext(), values, this.taskId, stream, msgId);
+            executor.getExecutorTransfer().transfer(t, tuple);
         }
         if (isEventLoggers) {
-            ExecutorCommon.sendToEventLogger(executorData, taskData, values, executorData.getComponentId(), messageId, random);
+            executor.sendToEventLogger(executor, taskData, values, executor.getComponentId(), messageId, random);
         }
 
         boolean sample = false;
         try {
-            sample = executorData.getSampler().call();
+            sample = executor.getSampler().call();
         } catch (Exception ignored) {
         }
         if (needAck) {
@@ -140,7 +138,7 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
 
             pending.put(rootId, info);
             List<Object> ackInitTuple = new Values(rootId, Utils.bitXorVals(ackSeq), this.taskId);
-            ExecutorCommon.sendUnanchored(taskData, Acker.ACKER_INIT_STREAM_ID, ackInitTuple, executorData.getExecutorTransfer());
+            executor.sendUnanchored(taskData, Acker.ACKER_INIT_STREAM_ID, ackInitTuple, executor.getExecutorTransfer());
         } else if (messageId != null) {
             TupleInfo info = new TupleInfo();
             info.setStream(stream);
@@ -149,7 +147,7 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
             info.setTimestamp(0);
             Long timeDelta = sample ? 0L : null;
             info.setId("0:");
-            ExecutorCommon.ackSpoutMsg(executorData, taskData, timeDelta, info);
+            executor.ackSpoutMsg(executor, taskData, timeDelta, info);
         }
 
         return outTasks;

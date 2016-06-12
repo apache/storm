@@ -21,7 +21,7 @@ import org.apache.storm.Config;
 import org.apache.storm.Thrift;
 import org.apache.storm.daemon.metrics.BuiltinMetrics;
 import org.apache.storm.daemon.metrics.BuiltinMetricsUtil;
-import org.apache.storm.executor.ExecutorData;
+import org.apache.storm.executor.Executor;
 import org.apache.storm.generated.Bolt;
 import org.apache.storm.generated.ComponentObject;
 import org.apache.storm.generated.JavaObject;
@@ -57,7 +57,7 @@ public class Task {
 
     private static final Logger LOG = LoggerFactory.getLogger(Task.class);
 
-    private ExecutorData executorData;
+    private Executor executor;
     private Map workerData;
     private TopologyContext systemTopologyContext;
     private TopologyContext userTopologyContext;
@@ -73,16 +73,16 @@ public class Task {
     private BuiltinMetrics builtInMetrics;
     private boolean debug;
 
-    public Task(ExecutorData executorData, Integer taskId) throws IOException {
+    public Task(Executor executor, Integer taskId) throws IOException {
         this.taskId = taskId;
-        this.executorData = executorData;
-        this.workerData = executorData.getWorkerData();
-        this.stormConf = executorData.getStormConf();
-        this.componentId = executorData.getComponentId();
-        this.streamComponentToGrouper = executorData.getStreamToComponentToGrouper();
-        this.executorStats = executorData.getStats();
-        this.builtInMetrics = BuiltinMetricsUtil.mkData(executorData.getType(), this.executorStats);
-        this.workerTopologyContext = executorData.getWorkerTopologyContext();
+        this.executor = executor;
+        this.workerData = executor.getWorkerData();
+        this.stormConf = executor.getStormConf();
+        this.componentId = executor.getComponentId();
+        this.streamComponentToGrouper = executor.getStreamToComponentToGrouper();
+        this.executorStats = executor.getStats();
+        this.builtInMetrics = BuiltinMetricsUtil.mkData(executor.getType(), this.executorStats);
+        this.workerTopologyContext = executor.getWorkerTopologyContext();
         this.emitSampler = ConfigUtils.mkStatsSampler(stormConf);
         this.loadMapping = (LoadMapping) workerData.get("load-mapping");
         this.systemTopologyContext = mkTopologyContext((StormTopology) workerData.get("system-topology"));
@@ -193,9 +193,9 @@ public class Task {
                 (List<Integer>) workerData.get("task-ids"),
                 (Map<String, Object>) workerData.get("default-shared-resources"),
                 (Map<String, Object>) workerData.get("user-shared-resources"),
-                executorData.getSharedExecutorData(),
-                executorData.getIntervalToTaskToMetricToRegistry(),
-                executorData.getOpenOrPrepareWasCalled());
+                executor.getSharedExecutorData(),
+                executor.getIntervalToTaskToMetricToRegistry(),
+                executor.getOpenOrPrepareWasCalled());
     }
 
     private Object mkTaskObject() {
