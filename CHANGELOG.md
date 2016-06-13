@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-1723: Introduce ClusterMetricsConsumer
  * STORM-1700: Introduce 'whitelist' / 'blacklist' option to MetricsConsumer
  * STORM-1698: Asynchronous MetricsConsumerBolt
  * STORM-1705: Cap number of retries for a failed message
