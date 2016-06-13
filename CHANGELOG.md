@@ -1,4 +1,6 @@
 ## 1.1.0
+ * STORM-1700: Introduce 'whitelist' / 'blacklist' option to MetricsConsumer
+ * STORM-1698: Asynchronous MetricsConsumerBolt
  * STORM-1705: Cap number of retries for a failed message
  * STORM-1884: Prioritize pendingPrepare over pendingCommit
  * STORM-1575: fix TwitterSampleSpout NPE on close
