@@ -105,6 +105,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0
+ * STORM-1723: Introduce ClusterMetricsConsumer
  * STORM-1700: Introduce 'whitelist' / 'blacklist' option to MetricsConsumer
  * STORM-1698: Asynchronous MetricsConsumerBolt
  * STORM-1887: Fixed help message for set_log_level command
