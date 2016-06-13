@@ -286,3 +286,6 @@ pacemaker.kerberos.users: []
 #default storm daemon metrics reporter plugins
 storm.daemon.metrics.reporter.plugins:
      - "org.apache.storm.daemon.metrics.reporters.JmxPreparableReporter"
+
+# configuration of cluster metrics consumer
+storm.cluster.metrics.consumer.publish.interval.secs: 60

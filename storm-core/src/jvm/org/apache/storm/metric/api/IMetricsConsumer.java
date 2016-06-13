@@ -40,6 +40,8 @@ public interface IMetricsConsumer {
         public long timestamp;
         public int updateIntervalSecs; 
     }
+
+    // We can't move this to outside without breaking backward compatibility.
     public static class DataPoint {
         public DataPoint() {}
         public DataPoint(String name, Object value) {
