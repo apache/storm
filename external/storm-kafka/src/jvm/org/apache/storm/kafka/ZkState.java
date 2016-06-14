@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.Map;
 
 public class ZkState {
-    public static final Logger LOG = LoggerFactory.getLogger(ZkState.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ZkState.class);
     CuratorFramework _curator;
 
     private CuratorFramework newCurator(Map stateConf) throws Exception {

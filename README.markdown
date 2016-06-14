@@ -96,6 +96,7 @@ under the License.
 * Sanket Chintapalli ([@redsanket](https://github.com/redsanket))
 * Longda Feng ([@longda](https://github.com/longdafeng))
 * John Fang ([@hustfxj](https://github.com/hustfxj))
+* Abhishek Agarwal ([@abhishekagarwal87](https://github.com/abhishekagarwal87))
 
 ## Contributors
 
@@ -233,7 +234,6 @@ under the License.
 * Renkai Ge ([@Renkai](https://github.com/Renkai))
 * Aaron Coburn ([@acoburn](https://github.com/acoburn))
 * Rick Kellogg ([@rmkellogg](https://github.com/rmkellogg))
-* Abhishek Agarwal ([@abhishekagarwal87](https://github.com/abhishekagarwal87))
 * chenyuzhao ([@danny0405](https://github.com/danny0405))
 * Michael Schonfeld ([@schonfeld](https://github.com/schonfeld))
 * Erik Weathers ([@erikdw](https://github.com/erikdw))
@@ -261,6 +261,10 @@ under the License.
 * Jark Wu ([@jark](https://github.com/wuchong))
 * Cody Wang ([@unsleepy22](https://github.com/unsleepy22))
 * Karthick Duraisamy Soundararaj ([@dsKarthick](https://github.com/dsKarthick))
+* Olivier Mallassi ([@omallassi](https://github.com/omallassi))
+* Balázs Kossovics ([@kosii](https://github.com/kosii))
+* csivaguru ([@csivaguru](https://github.com/csivaguru))
+* sakanaou ([@sakanaou](https://github.com/sakanaou))
 
 
 ## Acknowledgements

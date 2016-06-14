@@ -161,7 +161,11 @@ public class RedisKeyValueState<K, V> implements KeyValueState<K, V> {
             commands = jedisContainer.getInstance();
             if (commands.exists(prepareNamespace)) {
                 LOG.debug("Prepared txn already exists, will merge", txid);
-                pendingPrepare.putAll(pendingCommit);
+                for (Map.Entry<String, String> e: pendingCommit.entrySet()) {
+                    if (!pendingPrepare.containsKey(e.getKey())) {
+                        pendingPrepare.put(e.getKey(), e.getValue());
+                    }
+                }
             }
             if (!pendingPrepare.isEmpty()) {
                 commands.hmset(prepareNamespace, pendingPrepare);
