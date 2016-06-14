@@ -209,8 +209,9 @@ def exec_storm_class(klass, jvmtype="-server", jvmopts=[], extrajars=[], args=[]
     ] + jvmopts + [klass] + list(args)
     print("Running: " + " ".join(all_args))
     sys.stdout.flush()
+    exit_code = 0
     if fork:
-        os.spawnvp(os.P_WAIT, JAVA_CMD, all_args)
+        exit_code = os.spawnvp(os.P_WAIT, JAVA_CMD, all_args)
     elif is_windows():
         # handling whitespaces in JAVA_CMD
         try:
@@ -220,7 +221,7 @@ def exec_storm_class(klass, jvmtype="-server", jvmopts=[], extrajars=[], args=[]
             sys.exit(e.returncode)
     else:
         os.execvp(JAVA_CMD, all_args)
-        os._exit()
+    return exit_code
 
 def jar(jarfile, klass, *args):
     """Syntax: [storm jar topology-jar-path class ...]
@@ -228,22 +229,23 @@ def jar(jarfile, klass, *args):
     Runs the main method of class with the specified arguments.
     The storm jars and configs in ~/.storm are put on the classpath.
     The process is configured so that StormSubmitter
-    (http://storm.apache.org/apidocs/org/apache/storm/StormSubmitter.html)
+    (http://storm.apache.org/releases/current/javadocs/org/apache/storm/StormSubmitter.html)
     will upload the jar at topology-jar-path when the topology is submitted.
     """
     transform_class = confvalue("client.jartransformer.class", [CLUSTER_CONF_DIR])
     if (transform_class != None and transform_class != "null"):
         tmpjar = os.path.join(tempfile.gettempdir(), uuid.uuid1().hex+".jar")
         exec_storm_class("org.apache.storm.daemon.ClientJarTransformerRunner", args=[transform_class, jarfile, tmpjar], fork=True, daemon=False)
-        exec_storm_class(
-            klass,
-            jvmtype="-client",
-            extrajars=[tmpjar, USER_CONF_DIR, STORM_BIN_DIR],
-            args=args,
-            daemon=False,
-            fork=True,
-            jvmopts=JAR_JVM_OPTS + ["-Dstorm.jar=" + tmpjar])
+        topology_runner_exit_code = exec_storm_class(
+                klass,
+                jvmtype="-client",
+                extrajars=[tmpjar, USER_CONF_DIR, STORM_BIN_DIR],
+                args=args,
+                daemon=False,
+                fork=True,
+                jvmopts=JAR_JVM_OPTS + ["-Dstorm.jar=" + tmpjar])
         os.remove(tmpjar)
+        sys.exit(topology_runner_exit_code)
     else:
         exec_storm_class(
             klass,
@@ -254,7 +256,7 @@ def jar(jarfile, klass, *args):
             jvmopts=JAR_JVM_OPTS + ["-Dstorm.jar=" + jarfile])
 
 def sql(sql_file, topology_name):
-    """Syntax: [storm sql sql-file topology]
+    """Syntax: [storm sql sql-file topology-name]
 
     Compiles the SQL statements into a Trident topology and submits it to Storm.
     """
@@ -358,26 +360,26 @@ def set_log_level(*args):
     """
     Dynamically change topology log levels
 
-    Syntax: [storm set_log_level -l [logger name]=[log level][:optional timeout] -r [logger name]
+    Syntax: [storm set_log_level -l [logger name]=[log level][:optional timeout] -r [logger name] topology-name]
     where log level is one of:
         ALL, TRACE, DEBUG, INFO, WARN, ERROR, FATAL, OFF
     and timeout is integer seconds.
 
     e.g.
-        ./bin/storm set_log_level -l ROOT=DEBUG:30
+        ./bin/storm set_log_level -l ROOT=DEBUG:30 topology-name
 
         Set the root logger's level to DEBUG for 30 seconds
 
-        ./bin/storm set_log_level -l com.myapp=WARN
+        ./bin/storm set_log_level -l com.myapp=WARN topology-name
 
         Set the com.myapp logger's level to WARN for 30 seconds
 
-        ./bin/storm set_log_level -l com.myapp=WARN -l com.myOtherLogger=ERROR:123
+        ./bin/storm set_log_level -l com.myapp=WARN -l com.myOtherLogger=ERROR:123 topology-name
 
         Set the com.myapp logger's level to WARN indifinitely, and com.myOtherLogger
         to ERROR for 123 seconds
 
-        ./bin/storm set_log_level -r com.myOtherLogger
+        ./bin/storm set_log_level -r com.myOtherLogger topology-name
 
         Clears settings, resetting back to the original level
     """

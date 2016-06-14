@@ -89,10 +89,6 @@ public class RAS_Node {
             _sup = sup;
             _availMemory = getTotalMemoryResources();
             _availCPU = getTotalCpuResources();
-
-            LOG.debug("Found a {} Node {} {}",
-                    _isAlive ? "living" : "dead", _nodeId, sup.getAllPorts());
-            LOG.debug("resources_mem: {}, resources_CPU: {}", sup.getTotalMemory(), sup.getTotalCPU());
             //intialize resource usages on node
             intializeResources();
         }
@@ -363,8 +359,11 @@ public class RAS_Node {
     @Override
     public String toString() {
         return "{Node: " + ((_sup == null) ? "null (possibly down)" : _sup.getHost())
-                + ", AvailMem: " + ((_availMemory == null) ? "N/A" : _availMemory.toString())
-                + ", AvailCPU: " + ((_availCPU == null) ? "N/A" : _availCPU.toString()) + "}";
+                + ", Avail [ Mem: " + ((_availMemory == null) ? "N/A" : _availMemory.toString())
+                + ", CPU: " + ((_availCPU == null) ? "N/A" : _availCPU.toString()) + ", Slots: " + this.getFreeSlots()
+                + "] Total [ Mem: " + ((_sup == null) ? "N/A" : this.getTotalMemoryResources())
+                + ", CPU: " + ((_sup == null) ? "N/A" : this.getTotalCpuResources()) + ", Slots: "
+                + this._slots.values() + " ]}";
     }
 
     public static int countSlotsUsed(String topId, Collection<RAS_Node> nodes) {

@@ -24,6 +24,7 @@ import java.util.regex.Pattern;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.storm.hooks.SubmitterHookException;
 import org.apache.storm.scheduler.resource.ResourceUtils;
 import org.apache.storm.validation.ConfigValidation;
 import org.apache.commons.lang.StringUtils;
@@ -149,6 +150,7 @@ public class StormSubmitter {
      * @throws AlreadyAliveException if a topology with this name is already running
      * @throws InvalidTopologyException if an invalid topology was submitted
      * @throws AuthorizationException if authorization is failed
+     * @thorws SubmitterHookException if any Exception occurs during initialization or invocation of registered {@link ISubmitterHook}
      */
     public static void submitTopology(String name, Map stormConf, StormTopology topology)
             throws AlreadyAliveException, InvalidTopologyException, AuthorizationException {
@@ -166,6 +168,7 @@ public class StormSubmitter {
      * @throws AlreadyAliveException if a topology with this name is already running
      * @throws InvalidTopologyException if an invalid topology was submitted
      * @throws AuthorizationException if authorization is failed
+     * @thorws SubmitterHookException if any Exception occurs during initialization or invocation of registered {@link ISubmitterHook}
      */
     public static void submitTopology(String name, Map stormConf, StormTopology topology, SubmitOptions opts)
             throws AlreadyAliveException, InvalidTopologyException, AuthorizationException {
@@ -186,6 +189,7 @@ public class StormSubmitter {
      * @throws InvalidTopologyException
      * @throws AuthorizationException
      * @throws IllegalArgumentException thrown if configs will yield an unschedulable topology. validateConfs validates confs
+     * @thorws SubmitterHookException if any Exception occurs during initialization or invocation of registered {@link ISubmitterHook}
      */
     public static void submitTopologyAs(String name, Map stormConf, StormTopology topology, SubmitOptions opts, ProgressListener progressListener, String asUser)
             throws AlreadyAliveException, InvalidTopologyException, AuthorizationException, IllegalArgumentException {
@@ -223,32 +227,30 @@ public class StormSubmitter {
                     // this is for backwards compatibility
                     localNimbus.submitTopology(name, stormConf, topology);
                 }
+                LOG.info("Finished submitting topology: " +  name);
             } else {
                 String serConf = JSONValue.toJSONString(stormConf);
-                NimbusClient client = NimbusClient.getConfiguredClientAs(conf, asUser);
                 if(topologyNameExists(conf, name, asUser)) {
                     throw new RuntimeException("Topology with name `" + name + "` already exists on cluster");
                 }
                 String jar = submitJarAs(conf, System.getProperty("storm.jar"), progressListener, asUser);
-                try {
-                    LOG.info("Submitting topology " +  name + " in distributed mode with conf " + serConf);
-                    if(opts!=null) {
+                try (NimbusClient client = NimbusClient.getConfiguredClientAs(conf, asUser)) {
+                    LOG.info("Submitting topology " + name + " in distributed mode with conf " + serConf);
+                    if (opts != null) {
                         client.getClient().submitTopologyWithOpts(name, jar, serConf, topology, opts);
                     } else {
                         // this is for backwards compatibility
                         client.getClient().submitTopology(name, jar, serConf, topology);
                     }
-                } catch(InvalidTopologyException e) {
-                    LOG.warn("Topology submission exception: "+e.get_msg());
+                    LOG.info("Finished submitting topology: " + name);
+                } catch (InvalidTopologyException e) {
+                    LOG.warn("Topology submission exception: " + e.get_msg());
                     throw e;
-                } catch(AlreadyAliveException e) {
+                } catch (AlreadyAliveException e) {
                     LOG.warn("Topology already alive exception", e);
                     throw e;
-                } finally {
-                    client.close();
                 }
             }
-            LOG.info("Finished submitting topology: " +  name);
         } catch(TException e) {
             throw new RuntimeException(e);
         }
@@ -256,15 +258,34 @@ public class StormSubmitter {
 
     }
 
+    /**
+     *
+     * @param name
+     * @param asUser
+     * @param stormConf
+     * @param topology
+     *
+     * @thorws SubmitterHookException This is thrown when any Exception occurs during initialization or invocation of registered {@link ISubmitterHook}
+     */
     private static void invokeSubmitterHook(String name, String asUser, Map stormConf, StormTopology topology) {
+        String submissionNotifierClassName = null;
         try {
             if (stormConf.containsKey(Config.STORM_TOPOLOGY_SUBMISSION_NOTIFIER_PLUGIN)) {
-                ISubmitterHook submitterHook = (ISubmitterHook) Class.forName(stormConf.get(Config.STORM_TOPOLOGY_SUBMISSION_NOTIFIER_PLUGIN).toString()).newInstance();
+                submissionNotifierClassName = stormConf.get(Config.STORM_TOPOLOGY_SUBMISSION_NOTIFIER_PLUGIN).toString();
+                LOG.info("Initializing the registered ISubmitterHook [{}]", submissionNotifierClassName);
+
+                if(submissionNotifierClassName == null || submissionNotifierClassName.isEmpty()) {
+                    throw new IllegalArgumentException(Config.STORM_TOPOLOGY_SUBMISSION_NOTIFIER_PLUGIN + " property must be a non empty string.");
+                }
+
+                ISubmitterHook submitterHook = (ISubmitterHook) Class.forName(submissionNotifierClassName).newInstance();
                 TopologyInfo topologyInfo = Utils.getTopologyInfo(name, asUser, stormConf);
+                LOG.info("Invoking the registered ISubmitterHook [{}]", submissionNotifierClassName);
                 submitterHook.notify(topologyInfo, stormConf, topology);
             }
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            LOG.warn("Error occurred in invoking submitter hook:[{}] ",submissionNotifierClassName, e);
+            throw new SubmitterHookException(e);
         }
     }
 
@@ -281,6 +302,7 @@ public class StormSubmitter {
      * @throws AlreadyAliveException if a topology with this name is already running
      * @throws InvalidTopologyException if an invalid topology was submitted
      * @throws AuthorizationException if authorization is failed
+     * @thorws SubmitterHookException if any Exception occurs during initialization or invocation of registered {@link ISubmitterHook}
      */
     @SuppressWarnings("unchecked")
     public static void submitTopology(String name, Map stormConf, StormTopology topology, SubmitOptions opts,
@@ -317,8 +339,8 @@ public class StormSubmitter {
      * @throws AlreadyAliveException if a topology with this name is already running
      * @throws InvalidTopologyException if an invalid topology was submitted
      * @throws AuthorizationException if authorization is failed
+     * @thorws SubmitterHookException if any Exception occurs during initialization or invocation of registered {@link ISubmitterHook}
      */
-
     public static void submitTopologyWithProgressBar(String name, Map stormConf, StormTopology topology, SubmitOptions opts) throws AlreadyAliveException, InvalidTopologyException, AuthorizationException {
         // show a progress bar so we know we're not stuck (especially on slow connections)
         submitTopology(name, stormConf, topology, opts, new StormSubmitter.ProgressListener() {

@@ -175,6 +175,14 @@ public class FluxBuilder {
                             topologyDef.parallelismForBolt(stream.getTo()));
                     declarers.put(stream.getTo(), declarer);
                 }
+            } else if (boltObj instanceof IStatefulBolt) {
+                if(declarer == null) {
+                    declarer = builder.setBolt(
+                            stream.getTo(),
+                            (IStatefulBolt) boltObj,
+                            topologyDef.parallelismForBolt(stream.getTo()));
+                    declarers.put(stream.getTo(), declarer);
+                }
             } else {
                 throw new IllegalArgumentException("Class does not appear to be a bolt: " +
                         boltObj.getClass().getName());
