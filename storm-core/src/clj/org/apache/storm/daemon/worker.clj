@@ -79,7 +79,7 @@
       (.workerHeartbeat (:storm-cluster-state worker) (:storm-id worker) (:assignment-id worker) (long (:port worker))
         (StatsUtil/thriftifyZkWorkerHb zk-hb))
       (catch Exception exc
-        (log-error exc "Worker failed to write heatbeats to ZK or Pacemaker...will retry")))))
+        (log-error exc "Worker failed to write heartbeats to ZK or Pacemaker...will retry")))))
 
 (defn do-executor-hang-check [worker executors]
   (let [hanging-executors (if-not executors
@@ -160,16 +160,19 @@
             assignment-id (:assignment-id worker)
             port (:port worker)
             storm-cluster-state (:storm-cluster-state worker)
-            prev-backpressure-flag @(:backpressure worker)]
-        (when executors
-          (reset! (:backpressure worker)
-                  (or @(:transfer-backpressure worker)
-                      (reduce #(or %1 %2) (map #(.get-backpressure-flag %1) executors)))))
+            prev-backpressure-flag @(:backpressure worker)
+            ;; the backpressure flag is true if at least one of the disruptor queues has throttle-on
+            curr-backpressure-flag (if executors
+                                     (or (.getThrottleOn (:transfer-queue worker))
+                                       (reduce #(or %1 %2) (map #(.get-backpressure-flag %1) executors)))
+                                     prev-backpressure-flag)]
         ;; update the worker's backpressure flag to zookeeper only when it has changed
-        (log-debug "BP " @(:backpressure worker) " WAS " prev-backpressure-flag)
-        (when (not= prev-backpressure-flag @(:backpressure worker))
+        (when (not= prev-backpressure-flag curr-backpressure-flag)
           (try
-            (.workerBackpressure storm-cluster-state storm-id assignment-id (long port) @(:backpressure worker))
+            (log-debug "worker backpressure flag changing from " prev-backpressure-flag " to " curr-backpressure-flag)
+            (.workerBackpressure storm-cluster-state storm-id assignment-id (long port) curr-backpressure-flag)
+            ;; doing the local reset after the zk update succeeds is very important to avoid a bad state upon zk exception
+            (reset! (:backpressure worker) curr-backpressure-flag)
             (catch Exception exc
               (log-error exc "workerBackpressure update failed when connecting to ZK ... will retry"))))
         ))))

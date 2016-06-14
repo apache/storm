@@ -29,7 +29,7 @@ import org.apache.storm.trident.topology.state.RotatingTransactionalState;
 import org.apache.storm.trident.topology.state.TransactionalState;
 
 
-public class PartitionedTridentSpoutExecutor implements ITridentSpout<Integer> {
+public class PartitionedTridentSpoutExecutor implements ITridentSpout<Object> {
     IPartitionedTridentSpout<Integer, ISpoutPartition, Object> _spout;
     
     public PartitionedTridentSpoutExecutor(IPartitionedTridentSpout<Integer, ISpoutPartition, Object> spout) {
@@ -40,7 +40,7 @@ public class PartitionedTridentSpoutExecutor implements ITridentSpout<Integer> {
         return _spout;
     }
     
-    class Coordinator implements ITridentSpout.BatchCoordinator<Integer> {
+    class Coordinator implements ITridentSpout.BatchCoordinator<Object> {
         private IPartitionedTridentSpout.Coordinator<Integer> _coordinator;
         
         public Coordinator(Map conf, TopologyContext context) {
@@ -48,7 +48,7 @@ public class PartitionedTridentSpoutExecutor implements ITridentSpout<Integer> {
         }
         
         @Override
-        public Integer initializeTransaction(long txid, Integer prevMetadata, Integer currMetadata) {
+        public Object initializeTransaction(long txid, Object prevMetadata, Object currMetadata) {
             if(currMetadata!=null) {
                 return currMetadata;
             } else {
@@ -82,8 +82,8 @@ public class PartitionedTridentSpoutExecutor implements ITridentSpout<Integer> {
         }
     }
     
-    class Emitter implements ITridentSpout.Emitter<Integer> {
-        private IPartitionedTridentSpout.Emitter<Integer, ISpoutPartition, Object> _emitter;
+    class Emitter implements ITridentSpout.Emitter<Object> {
+        private IPartitionedTridentSpout.Emitter _emitter;
         private TransactionalState _state;
         private Map<String, EmitterPartitionState> _partitionStates = new HashMap<>();
         private int _index;
@@ -100,7 +100,7 @@ public class PartitionedTridentSpoutExecutor implements ITridentSpout<Integer> {
 
         
         @Override
-        public void emitBatch(final TransactionAttempt tx, final Integer coordinatorMeta,
+        public void emitBatch(final TransactionAttempt tx, final Object coordinatorMeta,
                 final TridentCollector collector) {
             if(_savedCoordinatorMeta == null || !_savedCoordinatorMeta.equals(coordinatorMeta)) {
                 List<ISpoutPartition> partitions = _emitter.getOrderedPartitions(coordinatorMeta);
@@ -150,12 +150,12 @@ public class PartitionedTridentSpoutExecutor implements ITridentSpout<Integer> {
     }    
 
     @Override
-    public ITridentSpout.BatchCoordinator<Integer> getCoordinator(String txStateId, Map conf, TopologyContext context) {
+    public ITridentSpout.BatchCoordinator getCoordinator(String txStateId, Map conf, TopologyContext context) {
         return new Coordinator(conf, context);
     }
 
     @Override
-    public ITridentSpout.Emitter<Integer> getEmitter(String txStateId, Map conf, TopologyContext context) {
+    public ITridentSpout.Emitter<Object> getEmitter(String txStateId, Map conf, TopologyContext context) {
         return new Emitter(txStateId, conf, context);
     }
 

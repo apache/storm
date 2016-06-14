@@ -47,7 +47,7 @@ import kafka.message.Message;
 
 public class KafkaUtils {
 
-    public static final Logger LOG = LoggerFactory.getLogger(KafkaUtils.class);
+    private static final Logger LOG = LoggerFactory.getLogger(KafkaUtils.class);
     private static final int NO_OFFSET = -5;
 
     //suppress default constructor for noninstantiablility
@@ -189,7 +189,7 @@ public class KafkaUtils {
         int partitionId = partition.partition;
         FetchRequestBuilder builder = new FetchRequestBuilder();
         FetchRequest fetchRequest = builder.addFetch(topic, partitionId, offset, config.fetchSizeBytes).
-                clientId(config.clientId).maxWait(config.fetchMaxWait).build();
+        		clientId(config.clientId).maxWait(config.fetchMaxWait).minBytes(config.minFetchByte).build();
         FetchResponse fetchResponse;
         try {
             fetchResponse = consumer.fetch(fetchRequest);

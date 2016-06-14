@@ -28,6 +28,11 @@ public class Channels {
 
     @Override
     public void fireChannelInactive() {}
+
+    @Override
+    public void flush() {
+
+    }
   };
 
   private static class ChannelContextAdapter implements ChannelContext {
@@ -49,6 +54,11 @@ public class Channels {
     public void fireChannelInactive() {
       handler.channelInactive(next);
     }
+
+    @Override
+    public void flush() {
+      handler.flush(next);
+    }
   }
 
   private static class ForwardingChannelContext implements ChannelContext {
@@ -66,6 +76,11 @@ public class Channels {
     @Override
     public void fireChannelInactive() {
       next.fireChannelInactive();
+    }
+
+    @Override
+    public void flush() {
+      next.flush();
     }
   }
 

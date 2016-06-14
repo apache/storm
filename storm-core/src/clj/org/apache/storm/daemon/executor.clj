@@ -114,6 +114,7 @@
                         TOPOLOGY-BOLTS-SLIDING-INTERVAL-COUNT
                         TOPOLOGY-BOLTS-SLIDING-INTERVAL-DURATION-MS
                         TOPOLOGY-BOLTS-TUPLE-TIMESTAMP-FIELD-NAME
+                        TOPOLOGY-BOLTS-LATE-TUPLE-STREAM
                         TOPOLOGY-BOLTS-TUPLE-TIMESTAMP-MAX-LAG-MS
                         TOPOLOGY-BOLTS-MESSAGE-ID-FIELD-NAME
                         TOPOLOGY-STATE-PROVIDER
@@ -210,7 +211,10 @@
      :report-error-and-die (reify
                              Thread$UncaughtExceptionHandler
                              (uncaughtException [this _ error]
-                               ((:report-error <>) error)
+                               (try
+                                 ((:report-error <>) error)
+                                 (catch Exception e
+                                   (log-error e "Error while reporting error to cluster, proceeding with shutdown")))
                                (if (or
                                     (Utils/exceptionCauseIsInstanceOf InterruptedException error)
                                     (Utils/exceptionCauseIsInstanceOf java.io.InterruptedIOException error))
@@ -412,7 +416,8 @@
         (doseq [t threads]
           (.interrupt t)
           (.join t))
-        
+
+        (.cleanupStats (:stats executor-data))
         (doseq [user-context (map #(.getUserContext %) (vals task-datas))]
           (doseq [hook (.getHooks user-context)]
             (.cleanup hook)))

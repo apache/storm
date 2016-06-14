@@ -236,12 +236,14 @@ public class HiveState implements State {
         }
         try {
             LOG.info("Closing least used Writer to Hive end point : " + eldest);
-            allWriters.remove(eldest).close();
+            allWriters.remove(eldest).flushAndClose();
         } catch (IOException e) {
             LOG.warn("Failed to close writer for end point: " + eldest, e);
         } catch (InterruptedException e) {
             LOG.warn("Interrupted when attempting to close writer for end point: " + eldest, e);
             Thread.currentThread().interrupt();
+        } catch (Exception e) {
+            LOG.warn("Interrupted when attempting to close writer for end point: " + eldest, e);
         }
     }
 
@@ -265,12 +267,14 @@ public class HiveState implements State {
         for(HiveEndPoint ep : retirees) {
             try {
                 LOG.info("Closing idle Writer to Hive end point : {}", ep);
-                allWriters.remove(ep).close();
+                allWriters.remove(ep).flushAndClose();
             } catch (IOException e) {
                 LOG.warn("Failed to close writer for end point: {}. Error: "+ ep, e);
             } catch (InterruptedException e) {
                 LOG.warn("Interrupted when attempting to close writer for end point: " + ep, e);
                 Thread.currentThread().interrupt();
+            } catch (Exception e) {
+                LOG.warn("Interrupted when attempting to close writer for end point: " + ep, e);
             }
         }
         return count;

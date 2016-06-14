@@ -17,6 +17,14 @@
  */
 package org.apache.storm.sql;
 
+import org.apache.calcite.jdbc.CalciteSchema;
+import org.apache.calcite.prepare.CalciteCatalogReader;
+import org.apache.calcite.schema.Function;
+import org.apache.calcite.schema.impl.AggregateFunctionImpl;
+import org.apache.calcite.schema.impl.ScalarFunctionImpl;
+import org.apache.calcite.sql.SqlOperatorTable;
+import org.apache.calcite.sql.fun.SqlStdOperatorTable;
+import org.apache.calcite.sql.util.ChainedSqlOperatorTable;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.SubmitOptions;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
@@ -34,6 +42,7 @@ import org.apache.storm.sql.compiler.backends.standalone.PlanCompiler;
 import org.apache.storm.sql.javac.CompilingClassLoader;
 import org.apache.storm.sql.parser.ColumnConstraint;
 import org.apache.storm.sql.parser.ColumnDefinition;
+import org.apache.storm.sql.parser.SqlCreateFunction;
 import org.apache.storm.sql.parser.SqlCreateTable;
 import org.apache.storm.sql.parser.StormParser;
 import org.apache.storm.sql.runtime.*;
@@ -44,9 +53,11 @@ import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,6 +72,7 @@ class StormSqlImpl extends StormSql {
   private final JavaTypeFactory typeFactory = new JavaTypeFactoryImpl(
       RelDataTypeSystem.DEFAULT);
   private final SchemaPlus schema = Frameworks.createRootSchema(true);
+  private boolean hasUdf = false;
 
   @Override
   public void execute(
@@ -72,9 +84,10 @@ class StormSqlImpl extends StormSql {
       SqlNode node = parser.impl().parseSqlStmtEof();
       if (node instanceof SqlCreateTable) {
         handleCreateTable((SqlCreateTable) node, dataSources);
+      } else if (node instanceof SqlCreateFunction) {
+        handleCreateFunction((SqlCreateFunction) node);
       } else {
-        FrameworkConfig config = Frameworks.newConfigBuilder().defaultSchema(
-            schema).build();
+        FrameworkConfig config = buildFrameWorkConfig();
         Planner planner = Frameworks.getPlanner(config);
         SqlNode parse = planner.parse(sql);
         SqlNode validate = planner.validate(parse);
@@ -97,9 +110,10 @@ class StormSqlImpl extends StormSql {
       SqlNode node = parser.impl().parseSqlStmtEof();
       if (node instanceof SqlCreateTable) {
         handleCreateTableForTrident((SqlCreateTable) node, dataSources);
-      } else {
-        FrameworkConfig config = Frameworks.newConfigBuilder().defaultSchema(
-            schema).build();
+      } else if (node instanceof SqlCreateFunction) {
+        handleCreateFunction((SqlCreateFunction) node);
+      }  else {
+        FrameworkConfig config = buildFrameWorkConfig();
         Planner planner = Frameworks.getPlanner(config);
         SqlNode parse = planner.parse(sql);
         SqlNode validate = planner.validate(parse);
@@ -153,6 +167,33 @@ class StormSqlImpl extends StormSql {
     dataSources.put(n.tableName(), ds);
   }
 
+  private void handleCreateFunction(SqlCreateFunction sqlCreateFunction) throws ClassNotFoundException {
+    if(sqlCreateFunction.jarName() != null) {
+      throw new UnsupportedOperationException("UDF 'USING JAR' not implemented");
+    }
+    Method method;
+    Function function;
+    if ((method=findMethod(sqlCreateFunction.className(), "evaluate")) != null) {
+      function = ScalarFunctionImpl.create(method);
+    } else if (findMethod(sqlCreateFunction.className(), "add") != null) {
+      function = AggregateFunctionImpl.create(Class.forName(sqlCreateFunction.className()));
+    } else {
+      throw new RuntimeException("Invalid scalar or aggregate function");
+    }
+    schema.add(sqlCreateFunction.functionName().toUpperCase(), function);
+    hasUdf = true;
+  }
+
+  private Method findMethod(String clazzName, String methodName) throws ClassNotFoundException {
+    Class<?> clazz = Class.forName(clazzName);
+    for (Method method : clazz.getMethods()) {
+      if (method.getName().equals(methodName)) {
+        return method;
+      }
+    }
+    return null;
+  }
+
   private void handleCreateTableForTrident(
       SqlCreateTable n, Map<String, ISqlTridentDataSource> dataSources) {
     List<FieldInfo> fields = updateSchema(n);
@@ -183,5 +224,19 @@ class StormSqlImpl extends StormSql {
     Table table = builder.build();
     schema.add(n.tableName(), table);
     return fields;
+  }
+
+  private FrameworkConfig buildFrameWorkConfig() {
+    if (hasUdf) {
+      List<SqlOperatorTable> sqlOperatorTables = new ArrayList<>();
+      sqlOperatorTables.add(SqlStdOperatorTable.instance());
+      sqlOperatorTables.add(new CalciteCatalogReader(CalciteSchema.from(schema),
+                                                     false,
+                                                     Collections.<String>emptyList(), typeFactory));
+      return Frameworks.newConfigBuilder().defaultSchema(schema)
+              .operatorTable(new ChainedSqlOperatorTable(sqlOperatorTables)).build();
+    } else {
+      return Frameworks.newConfigBuilder().defaultSchema(schema).build();
+    }
   }
 }

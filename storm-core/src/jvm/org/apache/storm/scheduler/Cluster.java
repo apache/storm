@@ -103,6 +103,9 @@ public class Cluster {
         this.status.putAll(src.status);
         this.topologyResources.putAll(src.topologyResources);
         this.blackListedHosts.addAll(src.blackListedHosts);
+        if (src.networkTopography != null) {
+            this.networkTopography = new HashMap<String, List<String>>(src.networkTopography);
+        }
     }
     
     public void setBlacklistedHosts(Set<String> hosts) {
@@ -520,6 +523,10 @@ public class Cluster {
             }
         }
         return networkTopography;
+    }
+
+    public void setNetworkTopography(Map<String, List<String>> networkTopography) {
+        this.networkTopography = networkTopography;
     }
 
     private String getStringFromStringList(Object o) {

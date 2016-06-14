@@ -93,6 +93,16 @@ Spotify serves streaming music to over 10 million subscribers and 40 million act
 </td>
 </tr>
 
+<tr>
+<td>
+<a href="http://www.paypal.com">PayPal</a>
+</td>
+<td>
+<p>
+PayPal is using Storm along with Esper and Kafka to monitor 100K+ merchants, their activities and any anomalies in real time. We employ machine learning to detect any issues as they occur on our 25-node storm cluster running along with other components on a lambda architecture.
+</p>
+</td>
+</tr>
 
 <tr>
 <td>

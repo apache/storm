@@ -40,7 +40,7 @@ public class KafkaSpout extends BaseRichSpout {
         NO_EMITTED
     }
 
-    public static final Logger LOG = LoggerFactory.getLogger(KafkaSpout.class);
+    private static final Logger LOG = LoggerFactory.getLogger(KafkaSpout.class);
 
     SpoutConfig _spoutConfig;
     SpoutOutputCollector _collector;

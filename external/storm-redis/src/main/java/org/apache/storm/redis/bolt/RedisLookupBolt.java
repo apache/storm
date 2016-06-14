@@ -105,6 +105,10 @@ public class RedisLookupBolt extends AbstractRedisBolt {
                     lookupValue = jedisCommand.pfcount(key);
                     break;
 
+                case GEO:
+                    lookupValue = jedisCommand.geopos(additionalKey, key);
+                    break;
+
                 default:
                     throw new IllegalArgumentException("Cannot process such data type: " + dataType);
             }
