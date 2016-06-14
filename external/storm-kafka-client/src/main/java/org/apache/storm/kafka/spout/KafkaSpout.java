@@ -167,7 +167,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                     fetchOffset = kafkaConsumer.position(tp);
                 } else {
                     // By default polling starts at the last committed offset. +1 to point fetch to the first uncommitted offset.
-                    fetchOffset = committedOffset.offset() + 1;
+                    fetchOffset = committedOffset.offset();
                     kafkaConsumer.seek(tp, fetchOffset);
                 }
             } else {    // no commits have ever been done, so start at the beginning or end depending on the strategy
