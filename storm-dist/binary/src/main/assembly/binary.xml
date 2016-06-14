@@ -46,13 +46,36 @@
             </includes>
             <fileMode>0755</fileMode>
         </fileSet>
+        <!--
+            Allow for variable substitution for cache busting in HTML files and script.js
+            See storm-dist/binary/pom.xml for custom variables that will be substituted in.
+
+            The source files should have a ${variable to be replaced} wherever
+            maven assembly plugin should inject a value.
+        -->
+        <fileSet>
+            <directory>${project.basedir}/../../storm-core/src/ui/public</directory>
+            <outputDirectory>public</outputDirectory>
+            <includes>
+                <include>*.html</include>
+                <include>js/script.js</include>
+            </includes>
+            <excludes/>
+            <filtered>true</filtered>
+        </fileSet>
+        <!--
+            Include rest of public/ directory, without any filtering
+        -->
         <fileSet>
             <directory>${project.basedir}/../../storm-core/src/ui/public</directory>
             <outputDirectory>public</outputDirectory>
             <includes>
                 <include>*/**</include>
             </includes>
-            <excludes/>
+            <excludes>
+                <exclude>*.html</exclude>
+                <exclude>js/script.js</exclude>
+            </excludes>
         </fileSet>
         <fileSet>
             <directory>${project.basedir}/../../examples</directory>

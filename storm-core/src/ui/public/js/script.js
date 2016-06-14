@@ -257,3 +257,15 @@ $.blockUI.defaults.css = {
     opacity: .5,
     color: '#fff',margin:0,width:"30%",top:"40%",left:"35%",textAlign:"center"
 };
+
+// add a url query param to static (templates normally) ajax requests
+// for cache busting
+function getStatic(url, cb) {
+    return $.ajax({
+        url: url,
+        data: {
+            '_ts': '${packageTimestamp}'
+        },
+        success: cb
+    });
+};

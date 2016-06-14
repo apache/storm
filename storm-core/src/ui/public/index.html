@@ -23,7 +23,7 @@
 <link href="/css/jquery.dataTables.1.10.4.min.css" rel="stylesheet" type="text/css">
 <link href="/css/dataTables.bootstrap.css" rel="stylesheet" type="text/css">
 <link href="/css/jsonFormatter.min.css" rel="stylesheet" type="text/css">
-<link href="/css/style.css" rel="stylesheet" type="text/css">
+<link href="/css/style.css?_ts=${packageTimestamp}" rel="stylesheet" type="text/css">
 <script src="/js/jquery-1.11.1.min.js" type="text/javascript"></script>
 <script src="/js/jquery.dataTables.1.10.4.min.js" type="text/javascript"></script>
 <script src="/js/jquery.cookies.2.2.0.min.js" type="text/javascript"></script>
@@ -32,7 +32,7 @@
 <script src="/js/jquery.blockUI.min.js" type="text/javascript"></script>
 <script src="/js/dataTables.bootstrap.min.js" type="text/javascript"></script>
 <script src="/js/jsonFormatter.min.js" type="text/javascript"></script>
-<script src="/js/script.js" type="text/javascript"></script>
+<script src="/js/script.js?_ts=${packageTimestamp}" type="text/javascript"></script>
 </head>
 <body>
 <div class="container-fluid">
@@ -96,7 +96,7 @@ $(document).ready(function() {
     $.ajaxSetup({
         "error":function(jqXHR,textStatus,response) {
             var errorJson = jQuery.parseJSON(jqXHR.responseText);
-            $.get("/templates/json-error-template.html", function(template) {
+            getStatic("/templates/json-error-template.html", function(template) {
                 $("#json-response-error").append(Mustache.render($(template).filter("#json-error-template").html(),errorJson));
             });
         }
@@ -109,18 +109,18 @@ $(document).ready(function() {
     var config = $("#nimbus-configuration");
 
     $.getJSON("/api/v1/cluster/summary",function(response,status,jqXHR) {
-        $.get("/templates/user-template.html", function(template) {
+        getStatic("/templates/user-template.html", function(template) {
             uiUser.append(Mustache.render($(template).filter("#user-template").html(),response));
             $('#ui-user [data-toggle="tooltip"]').tooltip()
         });
 
-        $.get("/templates/index-page-template.html", function(template) {
+        getStatic("/templates/index-page-template.html", function(template) {
             clusterSummary.append(Mustache.render($(template).filter("#cluster-summary-template").html(),response));
             $('#cluster-summary [data-toggle="tooltip"]').tooltip();
         });
     });
     $.getJSON("/api/v1/nimbus/summary",function(response,status,jqXHR) {
-      $.get("/templates/index-page-template.html", function(template) {
+      getStatic("/templates/index-page-template.html", function(template) {
           nimbusSummary.append(Mustache.render($(template).filter("#nimbus-summary-template").html(),response));
           //host, port, isLeader, version, uptime
           dtAutoPage("#nimbus-summary-table", {
@@ -133,7 +133,7 @@ $(document).ready(function() {
       });
     });
     $.getJSON("/api/v1/topology/summary",function(response,status,jqXHR) {
-      $.get("/templates/index-page-template.html", function(template) {
+      getStatic("/templates/index-page-template.html", function(template) {
           topologySummary.append(Mustache.render($(template).filter("#topology-summary-template").html(),response));
           //name, owner, status, uptime, num workers, num executors, num tasks, replication count, assigned total mem, assigned total cpu, scheduler info
           dtAutoPage("#topology-summary-table", {
@@ -146,7 +146,7 @@ $(document).ready(function() {
       });
     });
     $.getJSON("/api/v1/supervisor/summary",function(response,status,jqXHR) {
-      $.get("/templates/index-page-template.html", function(template) {
+      getStatic("/templates/index-page-template.html", function(template) {
           supervisorSummary.append(Mustache.render($(template).filter("#supervisor-summary-template").html(),response));
           //id, host, uptime, slots, used slots
           dtAutoPage("#supervisor-summary-table", {
@@ -160,7 +160,7 @@ $(document).ready(function() {
     });
     $.getJSON("/api/v1/cluster/configuration",function(response,status,jqXHR) {
       var formattedResponse = formatConfigData(response);
-      $.get("/templates/index-page-template.html", function(template) {
+      getStatic("/templates/index-page-template.html", function(template) {
         config.append(Mustache.render($(template).filter("#configuration-template").html(),formattedResponse));
         $('#nimbus-configuration-table td').jsonFormatter()
         //key, value
