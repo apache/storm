@@ -135,16 +135,16 @@ public abstract class BaseWindowedBolt implements IWindowedBolt {
     }
 
     private BaseWindowedBolt withWindowLength(Count count) {
-        if (count.value < 0) {
-            throw new IllegalArgumentException("Negative window length [" + count + "]");
+        if (count.value <= 0) {
+            throw new IllegalArgumentException("Window length must be positive [" + count + "]");
         }
         windowConfiguration.put(Config.TOPOLOGY_BOLTS_WINDOW_LENGTH_COUNT, count.value);
         return this;
     }
 
     private BaseWindowedBolt withWindowLength(Duration duration) {
-        if (duration.value < 0) {
-            throw new IllegalArgumentException("Negative window length [" + duration + "]");
+        if (duration.value <= 0) {
+            throw new IllegalArgumentException("Window length must be positive [" + duration + "]");
         }
 
         windowConfiguration.put(Config.TOPOLOGY_BOLTS_WINDOW_LENGTH_DURATION_MS, duration.value);
@@ -152,16 +152,16 @@ public abstract class BaseWindowedBolt implements IWindowedBolt {
     }
 
     private BaseWindowedBolt withSlidingInterval(Count count) {
-        if (count.value < 0) {
-            throw new IllegalArgumentException("Negative sliding interval [" + count + "]");
+        if (count.value <= 0) {
+            throw new IllegalArgumentException("Sliding interval must be positive [" + count + "]");
         }
         windowConfiguration.put(Config.TOPOLOGY_BOLTS_SLIDING_INTERVAL_COUNT, count.value);
         return this;
     }
 
     private BaseWindowedBolt withSlidingInterval(Duration duration) {
-        if (duration.value < 0) {
-            throw new IllegalArgumentException("Negative sliding interval [" + duration + "]");
+        if (duration.value <= 0) {
+            throw new IllegalArgumentException("Sliding interval must be positive [" + duration + "]");
         }
         windowConfiguration.put(Config.TOPOLOGY_BOLTS_SLIDING_INTERVAL_DURATION_MS, duration.value);
         return this;
