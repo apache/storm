@@ -41,7 +41,7 @@ import kafka.message.MessageAndOffset;
 
 public class TridentKafkaEmitter {
 
-    public static final Logger LOG = LoggerFactory.getLogger(TridentKafkaEmitter.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TridentKafkaEmitter.class);
 
     private DynamicPartitionConnections _connections;
     private String _topologyName;
