@@ -167,6 +167,7 @@ public class HiveBolt extends BaseRichBolt {
         }
 
         callTimeoutPool = null;
+        HiveUtils.killReLoginThread(ugi);
         super.cleanup();
         LOG.info("Hive Bolt stopped");
     }

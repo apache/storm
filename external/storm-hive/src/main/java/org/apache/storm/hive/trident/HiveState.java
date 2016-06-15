@@ -313,6 +313,7 @@ public class HiveState implements State {
             }
         }
         callTimeoutPool = null;
+        HiveUtils.killReLoginThread(ugi);
     }
 
 }
