@@ -74,7 +74,9 @@ public class HiveUtils {
         }
         try {
             UserGroupInformation.loginUserFromKeytab(principal, keytab);
-            return UserGroupInformation.getLoginUser();
+            UserGroupInformation ugi = UserGroupInformation.getLoginUser();
+            spawnReLoginThread(ugi);
+            return ugi;
         } catch (IOException e) {
             throw new AuthenticationFailed("Login failed for principal " + principal, e);
         }
