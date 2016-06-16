@@ -29,9 +29,12 @@ import org.apache.storm.localizer.Localizer;
 import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.storm.serialization.DefaultSerializationDelegate;
 import org.apache.storm.serialization.SerializationDelegate;
+
 import clojure.lang.IFn;
 import clojure.lang.RT;
+
 import com.google.common.annotations.VisibleForTesting;
+
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.io.input.ClassLoaderObjectInputStream;
@@ -74,8 +77,10 @@ import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.RandomAccessFile;
 import java.io.Serializable;
+import java.net.InetAddress;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -1410,6 +1415,10 @@ public class Utils {
      */
     public static int toPositive(int number) {
         return number & Integer.MAX_VALUE;
+    }
+
+    public static String localHostname() throws UnknownHostException {
+        return InetAddress.getLocalHost().getCanonicalHostName();
     }
 }
 
