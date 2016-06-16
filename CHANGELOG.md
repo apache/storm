@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-1906: Window count/length of zero should be disallowed
  * STORM-1893: Support OpenTSDB for storing timeseries data.
  * STORM-1723: Introduce ClusterMetricsConsumer
  * STORM-1700: Introduce 'whitelist' / 'blacklist' option to MetricsConsumer
