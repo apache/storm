@@ -44,24 +44,18 @@
 
 ;; TODO this function and its callings will be replace when ui.core and logviewer and drpc move to Java
 (def num-web-requests (StormMetricsRegistry/registerMeter "num-web-requests"))
-;; (defn requests-middleware
-;;   "Coda Hale metric for counting the number of web requests."
-;;   [handler]
-;;   (fn [req]
-;;     (.mark num-web-requests)
-;;     (handler req)))
 
 (defn requests-middleware
   "Wrap request with Coda Hale metric for counting the number of web requests, 
-  and add Cache-Control: no-cache for /*.html files (html files in root directory)"
+  and add Cache-Control: no-cache for html files in root directory (index.html, topology.html, etc)"
   [handler]
   (fn [req]
     (.mark num-web-requests)
     (let [uri (:uri req)
           res (handler req) 
           content-type (response/get-header res "Content-Type")]
-      ;; check that the response is html and that uri is for a root page: a single / in the url
-      ;; then we know we don't want it cached (e.g. index.html)
+      ;; check that the response is html and that the path is for a root page: a single / in the path 
+      ;; then we know we don't want it cached (e.g. /index.html)
       (if (and (= content-type "text/html") 
                (= 1 (StringUtils/countMatches uri "/")))
         ;; response for html page in root directory, no-cache 

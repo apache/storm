@@ -74,6 +74,10 @@
         </dependency>
         <dependency>
             <groupId>ring</groupId>
+            <artifactId>ring-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>ring</groupId>
             <artifactId>ring-devel</artifactId>
         </dependency>
         <dependency>
