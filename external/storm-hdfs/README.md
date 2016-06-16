@@ -334,7 +334,7 @@ file open/close/create operations.
 To use this bolt you **must** register the appropriate Kryo serializers with your topology configuration.  A convenience
 method is provided for this:
 
-`AvroGenericRecordBolt.addAvroKryoSerializations(conf);`
+`AvroUtils.addAvroKryoSerializations(conf);`
 
 By default Storm will use the ```GenericAvroSerializer``` to handle serialization.  This will work, but there are much 
 faster options available if you can pre-define the schemas you will be using or utilize an external schema registry. An
