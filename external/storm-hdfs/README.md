@@ -159,6 +159,8 @@ For example:
 By default, prefix is empty and extenstion is ".txt".
 
 
+The provided `org.apache.storm.hdfs.format.SimpleFileNameFormat` is flexible, supports parameters such as `$TIME` `$NUM` `$HOST` etc.
+
 
 ### Sync Policies
 Sync policies allow you to control when buffered data is flushed to the underlying filesystem (thus making it available
