@@ -69,9 +69,6 @@ public class HBaseSecurityUtil {
                         }
                         legacyProvider.login(STORM_KEYTAB_FILE_KEY, STORM_USER_NAME_KEY,
                                 InetAddress.getLocalHost().getCanonicalHostName());
-                        // spawn a thread to periodically re-login in secure mode
-                        UserGroupInformation ugi = legacyProvider.getCurrent().getUGI();
-                        spawnReLoginThread(ugi);
                     }
                 }
             }
@@ -82,7 +79,7 @@ public class HBaseSecurityUtil {
     }
 
 
-    private synchronized static void spawnReLoginThread(final UserGroupInformation ugi) {
+    public synchronized static void spawnReLoginThread(final UserGroupInformation ugi) {
         if (!renewThreads.containsKey(ugi)) {
             Runnable task = new Runnable() {
                 @Override
