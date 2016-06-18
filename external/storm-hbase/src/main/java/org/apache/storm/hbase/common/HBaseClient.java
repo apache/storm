@@ -40,6 +40,7 @@ public class HBaseClient implements Closeable{
     public HBaseClient(Map<String, Object> map , final Configuration configuration, final String tableName) {
         try {
             UserProvider provider = HBaseSecurityUtil.login(map, configuration);
+            HBaseSecurityUtil.spawnReLoginThread(provider.getCurrent().getUGI());
             this.table = provider.getCurrent().getUGI().doAs(new PrivilegedExceptionAction<HTable>() {
                 @Override
                 public HTable run() throws IOException {
