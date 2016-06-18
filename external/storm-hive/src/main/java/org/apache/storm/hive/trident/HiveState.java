@@ -91,6 +91,7 @@ public class HiveState implements State {
             if (kerberosEnabled) {
                 try {
                     ugi = HiveUtils.authenticate(options.getKerberosKeytab(), options.getKerberosPrincipal());
+                    HiveUtils.spawnReLoginThread(ugi);
                 } catch(HiveUtils.AuthenticationFailed ex) {
                     LOG.error("Hive kerberos authentication failed " + ex.getMessage(), ex);
                     throw new IllegalArgumentException(ex);
