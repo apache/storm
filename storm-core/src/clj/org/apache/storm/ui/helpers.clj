@@ -32,18 +32,32 @@
 	   [org.eclipse.jetty.util.ssl SslContextFactory]
            [org.eclipse.jetty.server DispatcherType]
            [org.eclipse.jetty.servlets CrossOriginFilter])
-  (:require [ring.util servlet])
+  (:require [ring.util servlet]
+            [ring.util.response :as response])
   (:require [compojure.route :as route]
             [compojure.handler :as handler])
   (:require [metrics.meters :refer [defmeter mark!]]))
 
 (defmeter num-web-requests)
+
 (defn requests-middleware
-  "Coda Hale metric for counting the number of web requests."
+  "Wrap request with Coda Hale metric for counting the number of web requests,
+  and add Cache-Control: no-cache for html files in root directory (index.html, topology.html, etc)"
   [handler]
   (fn [req]
-    (mark! num-web-requests)
-    (handler req)))
+    (.mark num-web-requests)
+    (let [uri (:uri req)
+          res (handler req)
+          content-type (response/get-header res "Content-Type")]
+      ;; check that the response is html and that the path is for a root page: a single / in the path
+      ;; then we know we don't want it cached (e.g. /index.html)
+      (if (and (= content-type "text/html")
+               (= 1 (count (re-seq #"/" uri))))
+        ;; response for html page in root directory, no-cache
+        (response/header res "Cache-Control" "no-cache")
+        ;; else, carry on
+        res))))
+
 
 (defn split-divide [val divider]
   [(Integer. (int (/ val divider))) (mod val divider)]
