@@ -81,6 +81,7 @@ public class HBaseMapState<T> implements IBackingMap<T> {
 
         try{
             UserProvider provider = HBaseSecurityUtil.login(map, hbConfig);
+            HBaseSecurityUtil.spawnReLoginThread(provider.getCurrent().getUGI());
             this.table = provider.getCurrent().getUGI().doAs(new PrivilegedExceptionAction<HTable>() {
                 @Override
                 public HTable run() throws IOException {
