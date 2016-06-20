@@ -84,13 +84,6 @@
             </includes>
         </fileSet>
         <fileSet>
-            <directory>${project.basedir}/../../external/storm-kinesis/target</directory>
-            <outputDirectory>external/storm-kinesis</outputDirectory>
-            <includes>
-                <include>storm*jar</include>
-            </includes>
-        </fileSet>
-        <fileSet>
             <directory>${project.basedir}/../../external/storm-kinesis</directory>
             <outputDirectory>external/storm-kinesis</outputDirectory>
             <includes>
