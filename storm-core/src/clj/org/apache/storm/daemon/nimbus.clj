@@ -58,7 +58,7 @@
   (:use [org.apache.storm.daemon common])
   (:use [org.apache.storm config])
   (:import [org.apache.zookeeper data.ACL ZooDefs$Ids ZooDefs$Perms])
-  (:import [org.apache.storm.utils VersionInfo]
+  (:import [org.apache.storm.utils VersionInfo Time]
            (org.apache.storm.metric ClusterMetricsConsumerExecutor)
            (org.apache.storm.metric.api IClusterMetricsConsumer$ClusterInfo DataPoint IClusterMetricsConsumer$SupervisorInfo)
            (org.apache.storm Config))
@@ -1369,7 +1369,7 @@
 
 (defn extract-cluster-metrics [^ClusterSummary summ]
   (let [cluster-summ (ui/cluster-summary summ "nimbus")]
-    {:cluster-info (IClusterMetricsConsumer$ClusterInfo. (long (/ (System/currentTimeMillis) 1000)))
+    {:cluster-info (IClusterMetricsConsumer$ClusterInfo. (long (Time/currentTimeSecs)))
      :data-points  (map
                      (fn [[k v]] (DataPoint. k v))
                      (select-keys cluster-summ ["supervisors" "topologies" "slotsTotal" "slotsUsed" "slotsFree"
@@ -1382,7 +1382,7 @@
            {:supervisor-info (IClusterMetricsConsumer$SupervisorInfo.
                                (supervisor-summ "host")
                                (supervisor-summ "id")
-                               (long (/ (System/currentTimeMillis) 1000)))
+                               (long (Time/currentTimeSecs)))
             :data-points     (map
                                (fn [[k v]] (DataPoint. k v))
                                (select-keys supervisor-summ ["slotsTotal" "slotsUsed" "totalMem" "totalCpu"
