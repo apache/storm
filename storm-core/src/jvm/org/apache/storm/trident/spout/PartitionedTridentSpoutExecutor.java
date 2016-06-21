@@ -23,6 +23,8 @@ import org.apache.storm.trident.topology.TransactionAttempt;
 import org.apache.storm.trident.topology.state.RotatingTransactionalState;
 import org.apache.storm.trident.topology.state.TransactionalState;
 import org.apache.storm.tuple.Fields;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
