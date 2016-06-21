@@ -1372,7 +1372,7 @@
 
 (defn extract-cluster-metrics [^ClusterSummary summ]
   (let [cluster-summ (ui/cluster-summary summ "nimbus")]
-    {:cluster-info (IClusterMetricsConsumer$ClusterInfo. (System/currentTimeMillis))
+    {:cluster-info (IClusterMetricsConsumer$ClusterInfo. (long (Time/currentTimeSecs)))
      :data-points  (map
                      (fn [[k v]] (DataPoint. k v))
                      (select-keys cluster-summ ["supervisors" "topologies" "slotsTotal" "slotsUsed" "slotsFree"
@@ -1384,7 +1384,7 @@
            {:supervisor-info (IClusterMetricsConsumer$SupervisorInfo.
                                (supervisor-summ "host")
                                (supervisor-summ "id")
-                               (System/currentTimeMillis))
+                               (long (Time/currentTimeSecs)))
             :data-points     (map
                                (fn [[k v]] (DataPoint. k v))
                                (select-keys supervisor-summ ["slotsTotal" "slotsUsed" "totalMem" "totalCpu"
