@@ -25,7 +25,7 @@ import org.apache.storm.kafka.spout.KafkaSpoutRetryService;
 import org.apache.storm.kafka.spout.KafkaSpoutStreams;
 import org.apache.storm.kafka.spout.KafkaSpoutTupleBuilder;
 import org.apache.storm.kafka.spout.KafkaSpoutTuplesBuilder;
-import org.apache.storm.kafka.spout.trident.KafkaManager;
+import org.apache.storm.kafka.spout.trident.KafkaManagerTridentSpout;
 import org.apache.storm.kafka.spout.trident.KafkaOpaquePartitionedTridentSpout;
 import org.apache.storm.trident.Stream;
 import org.apache.storm.trident.TridentState;
@@ -65,8 +65,8 @@ public class TridentKafkaClientWordCount extends TridentKafkaWordCount {
         return new KafkaOpaquePartitionedTridentSpout<String, String>(getKafkaManager());
     }
 
-    private KafkaManager<String, String> getKafkaManager() {
-        return new KafkaManager<>(getKafkaSpoutConfig(getKafkaSpoutStreams()));
+    private KafkaManagerTridentSpout<String, String> getKafkaManager() {
+        return new KafkaManagerTridentSpout<>(getKafkaSpoutConfig(getKafkaSpoutStreams()));
     }
 
     private KafkaSpoutConfig<String,String> getKafkaSpoutConfig(KafkaSpoutStreams kafkaSpoutStreams) {
