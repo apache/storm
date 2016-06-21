@@ -222,6 +222,11 @@ public class TridentKafkaWordCount implements Serializable {
      * (word counts) by running an external drpc query against the drpc server.
      */
     public static void main(String[] args) throws Exception {
+        final String[] zkBrokerUrl = parseUrl(args);
+        runMain(args, new TridentKafkaWordCount(zkBrokerUrl[0], zkBrokerUrl[1]));
+    }
+
+    protected static String[] parseUrl(String[] args) {
         String zkUrl = "localhost:2181";        // the defaults.
         String brokerUrl = "localhost:9092";
 
@@ -237,8 +242,7 @@ public class TridentKafkaWordCount implements Serializable {
         }
 
         System.out.println("Using Kafka zookeeper url: " + zkUrl + " broker url: " + brokerUrl);
-
-        runMain(args, new TridentKafkaWordCount(zkUrl, brokerUrl));
+        return new String[]{zkUrl, brokerUrl};
     }
 
     protected static void runMain(String[] args, TridentKafkaWordCount wordCount) throws Exception {

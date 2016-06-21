@@ -16,23 +16,33 @@
  *   limitations under the License.
  */
 
-package org.apache.storm.kafka.spout;
+package org.apache.storm.kafka.spout.trident;
 
-import org.apache.storm.spout.SpoutOutputCollector;
-import org.apache.storm.topology.OutputFieldsDeclarer;
-import org.apache.storm.tuple.Fields;
+import org.apache.kafka.common.TopicPartition;
 
-import java.io.Serializable;
-import java.util.List;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
-/**
- * Represents the {@link KafkaSpoutStream} associated with each topic or topic pattern (wildcard), and provides
- * a public API to declare output streams and emmit tuples, on the appropriate stream, for all the topics specified.
- */
-public interface KafkaSpoutStreams extends Serializable {
-    void declareOutputFields(OutputFieldsDeclarer declarer);
+public enum KafkaTridentSpoutTopicPartitionRegistry {
+    INSTANCE;
 
-    void emit(SpoutOutputCollector collector, List<Object> tuple, KafkaSpoutMessageId messageId);
+    private Set<TopicPartition> topicPartitions;
 
-    Fields getOutputFields();
+    KafkaTridentSpoutTopicPartitionRegistry() {
+        this.topicPartitions = new HashSet<>();
+    }
+
+    public Set<TopicPartition> getTopicPartitions() {
+        return Collections.unmodifiableSet(topicPartitions);
+    }
+
+    public void addAll(Collection<? extends TopicPartition> topicPartitions) {
+        this.topicPartitions.addAll(topicPartitions);
+    }
+
+    public void removeAll(Collection<? extends TopicPartition> topicPartitions) {
+        this.topicPartitions.removeAll(topicPartitions);
+    }
 }
