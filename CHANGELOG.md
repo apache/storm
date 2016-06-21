@@ -107,6 +107,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0 
+ * STORM-1907: PartitionedTridentSpoutExecutor has incompatible types that cause ClassCastException
  * STORM-1136: Command line module to return kafka spout offsets lag and display in storm ui.
  * STORM-1911: IClusterMetricsConsumer should use seconds to timestamp unit
  * STORM-1849: HDFSFileTopology should use the 3rd argument as topologyName
