@@ -337,7 +337,7 @@
                      (.getThisWorkerPort worker-context)
                      (:component-id executor-data)
                      task-id
-                     (long (/ (System/currentTimeMillis) 1000))
+                     (long (Time/currentTimeSecs))
                      interval)
          data-points (->> name->imetric
                           (map (fn [[name imetric]]
