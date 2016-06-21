@@ -347,6 +347,16 @@ public class DefaultWorkerManager implements IWorkerManager {
         List<String> topoClasspath = new ArrayList<>();
         Object object = stormConf.get(Config.TOPOLOGY_CLASSPATH);
 
+        // Will be populated only if STORM_USER_CLASSPATH_FIRST_ENABLED is set on Nimbus.
+        // Allowed for extreme debugging.
+        Object topologyClasspathFirst = stormConf.get(Config.TOPOLOGY_CLASSPATH_FIRST);
+        List<String> firstClasspathList = new ArrayList<>();
+        if(topologyClasspathFirst instanceof List) {
+           firstClasspathList.addAll((List<String>)topologyClasspathFirst);
+        } else if (topologyClasspathFirst instanceof String) {
+            firstClasspathList.add((String) topologyClasspathFirst);
+        }
+
         if (object instanceof List) {
             topoClasspath.addAll((List<String>) object);
         } else if (object instanceof String) {
@@ -354,7 +364,7 @@ public class DefaultWorkerManager implements IWorkerManager {
         }
         LOG.debug("topology specific classpath is {}", object);
 
-        String classPath = Utils.workerClasspath();
+        String classPath = Utils.addToClasspath(firstClasspathList, Arrays.asList(Utils.workerClasspath()));
         String classAddPath = Utils.addToClasspath(classPath, Arrays.asList(stormJar));
         return Utils.addToClasspath(classAddPath, topoClasspath);
     }
