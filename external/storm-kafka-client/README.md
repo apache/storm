@@ -1,4 +1,4 @@
-#Storm Kafka Spout with New Kafaka Consumer API
+#Storm Kafka Spout with New Kafka Consumer API
 
 Apache Storm Spout implementation to consume data from Apache Kafka 0.9.x. It allows 
 clients to consume data from Kafka starting at offsets as defined by the offset strategy specified in `FirstPollOffsetStrategy`. 
