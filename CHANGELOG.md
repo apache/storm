@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-1909: Update HDFS spout documentation
  * STORM-1705: Cap number of retries for a failed message
  * STORM-1884: Prioritize pendingPrepare over pendingCommit
  * STORM-1575: fix TwitterSampleSpout NPE on close
