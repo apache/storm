@@ -36,4 +36,9 @@ public class WordCountStoreMapper implements RedisStoreMapper {
     public String getValueFromTuple(ITuple tuple) {
         return tuple.getInteger(1).toString();
     }
+
+    @Override
+    public long getTTLFromTuple(ITuple tuple) {
+        return -1;
+    }
 }

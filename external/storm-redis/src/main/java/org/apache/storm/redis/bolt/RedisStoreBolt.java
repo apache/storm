@@ -115,6 +115,12 @@ public class RedisStoreBolt extends AbstractRedisBolt {
                     throw new IllegalArgumentException("Cannot process such data type: " + dataType);
             }
 
+            long ttlMS = storeMapper.getTTLFromTuple(input);
+
+            if (ttlMS >= 0) {
+                jedisCommand.pexpire(key, ttlMS);
+            }
+
             collector.ack(input);
         } catch (Exception e) {
             this.collector.reportError(e);

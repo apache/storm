@@ -17,8 +17,17 @@
  */
 package org.apache.storm.redis.common.mapper;
 
+import org.apache.storm.tuple.ITuple;
+
 /**
  * RedisStoreMapper is for defining spec. which is used for storing value to Redis.
  */
 public interface RedisStoreMapper extends TupleMapper, RedisMapper {
+    /**
+     * Extracts time to live from tuple.
+     *
+     * @param tuple
+     * @return time to live MS
+     */
+    public long getTTLFromTuple(ITuple tuple);
 }

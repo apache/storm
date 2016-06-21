@@ -112,5 +112,10 @@ public class PersistentWordCount {
         public String getValueFromTuple(ITuple tuple) {
             return tuple.getStringByField("count");
         }
+
+        @Override
+        public long getTTLFromTuple(ITuple tuple) {
+            return -1;
+        }
     }
 }
