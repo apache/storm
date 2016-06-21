@@ -285,10 +285,7 @@ public class HdfsSpout extends BaseRichSpout {
     this.commitTimer = new Timer();
     this.tracker = new ProgressTracker();
     this.hdfsConfig = new Configuration();
-
     this.collector = collector;
-    this.hdfsConfig = new Configuration();
-    this.tupleCounter = 0;
 
     // Hdfs related settings
     if( conf.containsKey(Configs.HDFS_URI)) {
