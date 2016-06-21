@@ -35,6 +35,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
+import org.apache.storm.trident.operation.TridentCollector;
+import org.apache.storm.trident.topology.state.RotatingTransactionalState;
+import org.apache.storm.trident.topology.state.TransactionalState;
+import org.apache.storm.trident.topology.TransactionAttempt;
 
 
 public class OpaquePartitionedTridentSpoutExecutor implements ICommitterTridentSpout<Object> {

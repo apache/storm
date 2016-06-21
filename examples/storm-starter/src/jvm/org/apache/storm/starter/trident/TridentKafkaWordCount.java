@@ -29,6 +29,10 @@ import org.apache.storm.LocalCluster;
 import org.apache.storm.LocalDRPC;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
+import org.apache.storm.spout.SchemeAsMultiScheme;
+import org.apache.storm.topology.TopologyBuilder;
+import org.apache.storm.tuple.Fields;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.storm.kafka.StringScheme;
 import org.apache.storm.kafka.ZkHosts;
 import org.apache.storm.kafka.bolt.KafkaBolt;
@@ -77,8 +81,7 @@ import java.util.Properties;
  *     <a href="https://github.com/apache/storm/tree/master/external/storm-kafka"> Storm Kafka </a>.
  * </p>
  */
-public class TridentKafkaWordCount implements Serializable {
-    private static final Logger LOG = LoggerFactory.getLogger(TridentKafkaWordCount.class);
+public class TridentKafkaWordCount {
 
     private String zkUrl;
     private String brokerUrl;
@@ -222,6 +225,7 @@ public class TridentKafkaWordCount implements Serializable {
      * (word counts) by running an external drpc query against the drpc server.
      */
     public static void main(String[] args) throws Exception {
+
         String zkUrl = "localhost:2181";        // the defaults.
         String brokerUrl = "localhost:9092";
 
