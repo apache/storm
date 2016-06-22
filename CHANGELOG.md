@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-1920: version of parent pom for storm-kafka-monitor is set 1.0.2-SNAPSHOT in master branch
  * STORM-1896: Remove duplicate code from HDFS spout
  * STORM-1909: Update HDFS spout documentation
  * STORM-1705: Cap number of retries for a failed message
