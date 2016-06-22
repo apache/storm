@@ -15,14 +15,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.hdfs.avro;
+package org.apache.storm.avro;
 
 import org.apache.avro.Schema;
 
-import java.io.Serializable;
+/**
+ * A default implementation of the AvroSerializer that will just pass literal schemas back and forth.  This should
+ * only be used if no other serializer will fit a use case.
+ */
+public class GenericAvroSerializer extends AbstractAvroSerializer {
+    @Override
+    public String getFingerprint(Schema schema) {
+        return schema.toString();
+    }
 
-public interface AvroSchemaRegistry extends Serializable {
-    String getFingerprint(Schema schema);
-
-    Schema getSchema(String fingerPrint);
+    @Override
+    public Schema getSchema(String fingerPrint) {
+        return new Schema.Parser().parse(fingerPrint);
+    }
 }

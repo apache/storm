@@ -97,6 +97,7 @@ The KafkaConfig class also has bunch of public variables that controls your appl
 ```
 
 Most of them are self explanatory except MultiScheme.
+
 ###MultiScheme
 MultiScheme is an interface that dictates how the ByteBuffer consumed from Kafka gets transformed into a storm tuple. It
 also controls the naming of your output field.
@@ -355,6 +356,44 @@ For Trident:
         Config conf = new Config();
         StormSubmitter.submitTopology("kafkaTridentTest", conf, topology.build());
 ```
+
+## Avro Integration for Storm-Kafka
+
+To integrate with Avro you **must** register the appropriate Kryo serializers with your topology configuration.  A convenience method is provided for this:
+
+`AvroUtils.addAvroKryoSerializations(conf);`
+
+###AvroSchema
+
+`AvroSchema` is an implementation of `Schema`. You can use AvroSchema to read Avro GenericRecord from Kafka:
+
+```java
+BrokerHosts hosts = new ZkHosts(zkConnString);
+String schema = "your json format schema here";
+SpoutConfig spoutConfig = new SpoutConfig(hosts, topicName, "/" + topicName, UUID.randomUUID().toString());
+spoutConfig.scheme = new SchemeAsMultiScheme(new AvroScheme(schema));
+KafkaSpout kafkaSpout = new KafkaSpout(spoutConfig);
+```
+
+###DirectAvroTupleToKafkaMapper
+
+`DirectAvroTupleToKafkaMapper` is an implementation of `TupleToKafkaMapper`. You can use DirectAvroTupleToKafkaMapper to write Avro GenericRecord to Kafka:
+
+```java
+        //set producer properties.
+        Properties props = new Properties();
+        props.put("bootstrap.servers", "localhost:9092");
+        props.put("acks", "1");
+        props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+        props.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
+        KafkaBolt bolt = new KafkaBolt()
+                .withProducerProperties(props)
+                .withTopicSelector(new DefaultTopicSelector("test"))
+                .withTupleToKafkaMapper(new DirectAvroTupleToKafkaMapper());
+```
+
+ *NOTE*: To use this mapper you **must** use `ByteArraySerializer` for Kafka `value.serializer` property setting.
+
 
 ## Committer Sponsors
 

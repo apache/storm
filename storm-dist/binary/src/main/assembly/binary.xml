@@ -70,6 +70,20 @@
         </fileSet>
         <!-- EXTERNAL -->
         <fileSet>
+            <directory>${project.basedir}/../../external/storm-avro/target</directory>
+            <outputDirectory>external/storm-avro</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-avro</directory>
+            <outputDirectory>external/storm-avro</outputDirectory>
+            <includes>
+                <include>README.*</include>
+            </includes>
+        </fileSet>
+        <fileSet>
             <directory>${project.basedir}/../../external/storm-kafka/target</directory>
             <outputDirectory>external/storm-kafka</outputDirectory>
             <includes>

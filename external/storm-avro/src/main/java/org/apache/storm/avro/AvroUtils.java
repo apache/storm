@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.hdfs.avro;
+package org.apache.storm.avro;
 
 import org.apache.avro.generic.GenericData;
 import org.apache.storm.Config;
@@ -25,15 +25,15 @@ public class AvroUtils {
      * A helper method to extract avro serialization configurations from the topology configuration and register
      * specific kryo serializers as necessary.  A default serializer will be provided if none is specified in the
      * configuration.  "avro.serializer" should specify the complete class name of the serializer, e.g.
-     * "org.apache.stgorm.hdfs.avro.GenericAvroSerializer"
+     * "org.apache.stgorm.avro.GenericAvroSerializer"
      *
      * @param conf The topology configuration
      * @throws ClassNotFoundException If the specified serializer cannot be located.
      */
     public static void addAvroKryoSerializations(Config conf) throws ClassNotFoundException {
         final Class serializerClass;
-        if (conf.containsKey("avro.serializer")) {
-            serializerClass = Class.forName((String)conf.get("avro.serializer"));
+        if (conf.containsKey(Config.TOPOLOGY_AVRO_SERIALIZER)) {
+            serializerClass = Class.forName((String)conf.get(Config.TOPOLOGY_AVRO_SERIALIZER));
         }
         else {
             serializerClass = GenericAvroSerializer.class;

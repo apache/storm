@@ -15,13 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.hdfs.avro;
+package org.apache.storm.avro;
 
 import org.apache.avro.Schema;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class TestGenericAvroSerializer {
+public class TestFixedAvroSerializer {
+    //These should match FixedAvroSerializer.config in the test resources
     private static final String schemaString1 = "{\"type\":\"record\"," +
             "\"name\":\"stormtest1\"," +
             "\"fields\":[{\"name\":\"foo1\",\"type\":\"string\"}," +
@@ -33,7 +34,7 @@ public class TestGenericAvroSerializer {
     private static final Schema schema1;
     private static final Schema schema2;
 
-    AvroSchemaRegistry reg = new GenericAvroSerializer();
+    final AvroSchemaRegistry reg;
 
     static {
 
@@ -42,6 +43,10 @@ public class TestGenericAvroSerializer {
 
         parser = new Schema.Parser();
         schema2 = parser.parse(schemaString2);
+    }
+
+    public TestFixedAvroSerializer() throws Exception{
+        reg  = new FixedAvroSerializer();
     }
 
     @Test

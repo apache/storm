@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.hdfs.avro;
+package org.apache.storm.avro;
 
 import com.esotericsoftware.kryo.Kryo;
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient;
