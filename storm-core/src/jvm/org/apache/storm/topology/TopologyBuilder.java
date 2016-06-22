@@ -164,7 +164,7 @@ public class TopologyBuilder {
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
     public BoltDeclarer setBolt(String id, IRichBolt bolt) throws IllegalArgumentException {
-        return setBolt(id, bolt, null);
+        return setBolt(id, bolt, 1);
     }
 
     /**
@@ -176,7 +176,7 @@ public class TopologyBuilder {
      * @return use the returned object to declare the inputs to this component
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
-    public BoltDeclarer setBolt(String id, IRichBolt bolt, Number parallelism_hint) throws IllegalArgumentException {
+    public BoltDeclarer setBolt(String id, IRichBolt bolt, int parallelism_hint) throws IllegalArgumentException {
         validateUnusedId(id);
         initCommon(id, bolt, parallelism_hint);
         _bolts.put(id, bolt);
@@ -195,7 +195,7 @@ public class TopologyBuilder {
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
     public BoltDeclarer setBolt(String id, IBasicBolt bolt) throws IllegalArgumentException {
-        return setBolt(id, bolt, null);
+        return setBolt(id, bolt, 1);
     }
 
     /**
@@ -210,7 +210,7 @@ public class TopologyBuilder {
      * @return use the returned object to declare the inputs to this component
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
-    public BoltDeclarer setBolt(String id, IBasicBolt bolt, Number parallelism_hint) throws IllegalArgumentException {
+    public BoltDeclarer setBolt(String id, IBasicBolt bolt, int parallelism_hint) throws IllegalArgumentException {
         return setBolt(id, new BasicBoltExecutor(bolt), parallelism_hint);
     }
 
@@ -225,7 +225,7 @@ public class TopologyBuilder {
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
     public BoltDeclarer setBolt(String id, IWindowedBolt bolt) throws IllegalArgumentException {
-        return setBolt(id, bolt, null);
+        return setBolt(id, bolt, 1);
     }
 
     /**
@@ -239,7 +239,7 @@ public class TopologyBuilder {
      * @return use the returned object to declare the inputs to this component
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
-    public BoltDeclarer setBolt(String id, IWindowedBolt bolt, Number parallelism_hint) throws IllegalArgumentException {
+    public BoltDeclarer setBolt(String id, IWindowedBolt bolt, int parallelism_hint) throws IllegalArgumentException {
         return setBolt(id, new WindowedBoltExecutor(bolt), parallelism_hint);
     }
 
@@ -258,7 +258,7 @@ public class TopologyBuilder {
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
     public <T extends State> BoltDeclarer setBolt(String id, IStatefulBolt<T> bolt) throws IllegalArgumentException {
-        return setBolt(id, bolt, null);
+        return setBolt(id, bolt, 1);
     }
 
     /**
@@ -276,7 +276,7 @@ public class TopologyBuilder {
      * @return use the returned object to declare the inputs to this component
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
-    public <T extends State> BoltDeclarer setBolt(String id, IStatefulBolt<T> bolt, Number parallelism_hint) throws IllegalArgumentException {
+    public <T extends State> BoltDeclarer setBolt(String id, IStatefulBolt<T> bolt, int parallelism_hint) throws IllegalArgumentException {
         hasStatefulBolt = true;
         return setBolt(id, new StatefulBoltExecutor<T>(bolt), parallelism_hint);
     }
@@ -294,7 +294,7 @@ public class TopologyBuilder {
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
     public <T extends State> BoltDeclarer setBolt(String id, IStatefulWindowedBolt<T> bolt) throws IllegalArgumentException {
-        return setBolt(id, bolt, null);
+        return setBolt(id, bolt, 1);
     }
 
     /**
@@ -310,7 +310,7 @@ public class TopologyBuilder {
      * @return use the returned object to declare the inputs to this component
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
-    public <T extends State> BoltDeclarer setBolt(String id, IStatefulWindowedBolt<T> bolt, Number parallelism_hint) throws IllegalArgumentException {
+    public <T extends State> BoltDeclarer setBolt(String id, IStatefulWindowedBolt<T> bolt, int parallelism_hint) throws IllegalArgumentException {
         hasStatefulBolt = true;
         return setBolt(id, new StatefulBoltExecutor<T>(new StatefulWindowedBoltExecutor<T>(bolt)), parallelism_hint);
     }
@@ -323,7 +323,7 @@ public class TopologyBuilder {
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
     public SpoutDeclarer setSpout(String id, IRichSpout spout) throws IllegalArgumentException {
-        return setSpout(id, spout, null);
+        return setSpout(id, spout, 1);
     }
 
     /**
@@ -336,7 +336,7 @@ public class TopologyBuilder {
      * @param spout the spout
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
-    public SpoutDeclarer setSpout(String id, IRichSpout spout, Number parallelism_hint) throws IllegalArgumentException {
+    public SpoutDeclarer setSpout(String id, IRichSpout spout, int parallelism_hint) throws IllegalArgumentException {
         validateUnusedId(id);
         initCommon(id, spout, parallelism_hint);
         _spouts.put(id, spout);
@@ -344,10 +344,10 @@ public class TopologyBuilder {
     }
 
     public void setStateSpout(String id, IRichStateSpout stateSpout) throws IllegalArgumentException {
-        setStateSpout(id, stateSpout, null);
+        setStateSpout(id, stateSpout, 1);
     }
 
-    public void setStateSpout(String id, IRichStateSpout stateSpout, Number parallelism_hint) throws IllegalArgumentException {
+    public void setStateSpout(String id, IRichStateSpout stateSpout, int parallelism_hint) throws IllegalArgumentException {
         validateUnusedId(id);
         // TODO: finish
     }
@@ -433,16 +433,13 @@ public class TopologyBuilder {
         return ret;
     }
 
-    private void initCommon(String id, IComponent component, Number parallelism) throws IllegalArgumentException {
+    private void initCommon(String id, IComponent component, int parallelism) throws IllegalArgumentException {
         ComponentCommon common = new ComponentCommon();
         common.set_inputs(new HashMap<GlobalStreamId, Grouping>());
-        if(parallelism!=null) {
-            int dop = parallelism.intValue();
-            if(dop < 1) {
-                throw new IllegalArgumentException("Parallelism must be positive.");
-            }
-            common.set_parallelism_hint(dop);
+        if(parallelism < 1) {
+            throw new IllegalArgumentException("Parallelism must be positive.");
         }
+        common.set_parallelism_hint(parallelism);
         Map conf = component.getComponentConfiguration();
         if(conf!=null) common.set_json_conf(JSONValue.toJSONString(conf));
         _commons.put(id, common);
