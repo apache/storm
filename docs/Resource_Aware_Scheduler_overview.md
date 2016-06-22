@@ -186,6 +186,58 @@ A default scheduling is provided.  The DefaultResourceAwareStrategy is implement
 
 http://web.engr.illinois.edu/~bpeng/files/r-storm.pdf
 
+#### * Enhancements on original DefaultResourceAwareStrategy *
+
+Originally the getBestClustering algorithm for RAS finds the "Best" cluster/rack based on which rack has the "most available" resources by finding the rack with the biggest sum of available memory + available across all nodes in the rack. This method is not very accurate since memory and cpu usage aree values on a different scale and the values are not normailized. This method is also not effective since it does not consider the number of slots available and it fails to identifying racks that are not schedulable due to the exhaustion of one of the resources either memory, cpu, or slots. Also the current method does not consider failures of workers. When executors of a topology gets unassigned and needs to be scheduled again, the current logic in getBestClustering may be inadequate since it will likely return a cluster that is different from where the majority of executors from the topology is originally scheduling in.
+
+The new strategy/algorithm to find the "best" cluster, I dub subordinate resource availability ordering (inspired by Dominant Resource Fairness), sorts racks by the subordinate (not dominant) resource availability.
+
+For example given 4 racks with the following resource availabilities
+
+    //generate some that has alot of memory but little of cpu
+    rack-3 Avail [ CPU 100.0 MEM 200000.0 Slots 40 ] Total [ CPU 100.0 MEM 200000.0 Slots 40 ]
+    //generate some supervisors that are depleted of one resource
+    rack-2 Avail [ CPU 0.0 MEM 80000.0 Slots 40 ] Total [ CPU 0.0 MEM 80000.0 Slots 40 ]
+    //generate some that has a lot of cpu but little of memory
+    rack-4 Avail [ CPU 6100.0 MEM 10000.0 Slots 40 ] Total [ CPU 6100.0 MEM 10000.0 Slots 40 ]
+    //generate another rack of supervisors with less resources than rack-0
+    rack-1 Avail [ CPU 2000.0 MEM 40000.0 Slots 40 ] Total [ CPU 2000.0 MEM 40000.0 Slots 40 ]
+    //best rack to choose
+    rack-0 Avail [ CPU 4000.0 MEM 80000.0 Slots 40( ] Total [ CPU 4000.0 MEM 80000.0 Slots 40 ]
+    Cluster Overall Avail [ CPU 12200.0 MEM 410000.0 Slots 200 ] Total [ CPU 12200.0 MEM 410000.0 Slots 200 ]
+
+It is clear that rack-0 is the best cluster since its the most balanced and can potentially schedule the most executors, while rack-2 is the worst rack since rack-2 is depleted of cpu resource thus rendering it unschedulable even though there are other resources available.
+
+We first calculate the resource availability percentage of all the racks for each resource by computing:
+
+    (resource available on rack) / (resource available in cluster)
+
+We do this calculation to normalize the values otherwise the resource values would not be comparable.
+
+So for our example:
+
+    rack-3 Avail [ CPU 0.819672131147541% MEM 48.78048780487805% Slots 20.0% ] effective resources: 0.00819672131147541
+    rack-2 Avail [ 0.0% MEM 19.51219512195122% Slots 20.0% ] effective resources: 0.0
+    rack-4 Avail [ CPU 50.0% MEM 2.4390243902439024% Slots 20.0% ] effective resources: 0.024390243902439025
+    rack-1 Avail [ CPU 16.39344262295082% MEM 9.75609756097561% Slots 20.0% ] effective resources: 0.0975609756097561
+    rack-0 Avail [ CPU 32.78688524590164% MEM 19.51219512195122% Slots 20.0% ] effective resources: 0.1951219512195122
+
+The effective resource of a rack, which is also the subordinate resource, is computed by: 
+
+    MIN(resource availability percentage of {CPU, Memory, # of free Slots}).
+    
+Then we order the racks by the effective resource.
+
+Thus for our example:
+
+    Sorted rack: [rack-0, rack-1, rack-4, rack-3, rack-2]
+
+Also to deal with the presence of failures, if a topology is partially scheduled, we find the rack with the most scheduled executors for the topology and we try to schedule on that rack first.
+
+Thus we first sort by the number of executors already scheduled on the rack and then by the subordinate resource availability.
+
+Original Jira for this enhancement: [STORM-1766](https://issues.apache.org/jira/browse/STORM-1766)
+
 ### Specifying Topology Prioritization Strategy
 
 The order of scheduling is a pluggable interface in which a user could define a strategy that prioritizes topologies.  For a user to define his or her own prioritization strategy, he or she needs to implement the ISchedulingPriorityStrategy interface.  A user can set the scheduling priority strategy by setting the *Config.RESOURCE_AWARE_SCHEDULER_PRIORITY_STRATEGY* to point to the class that implements the strategy. For instance:
@@ -231,4 +283,4 @@ To determine if topology eviction should occur we should take into account the p
 
 We should never evict a topology from a user that does not have his or her resource guarantees satisfied.  The following flow chart should describe the logic for the eviction process.
 
-![Viewing metrics with VisualVM](images/resource_aware_scheduler_default_eviction_strategy.svg)
+![Viewing metrics with VisualVM](images/resource_aware_scheduler_default_eviction_strategy.png)
