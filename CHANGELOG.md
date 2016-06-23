@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-1925: Remove Nimbus thrift call from Nimbus itself
  * STORM-1909: Update HDFS spout documentation
  * STORM-1136: Command line module to return kafka spout offsets lag and display in storm ui
  * STORM-1911: IClusterMetricsConsumer should use seconds to timestamp unit
