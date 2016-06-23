@@ -113,6 +113,11 @@ public class TopologyBuilder {
         Map<String, Bolt> boltSpecs = new HashMap<>();
         Map<String, SpoutSpec> spoutSpecs = new HashMap<>();
         maybeAddCheckpointSpout();
+
+        if (_spouts.size() == 0) {
+            throw new IllegalArgumentException("Spouts is not set");
+        }
+
         for(String boltId: _bolts.keySet()) {
             IRichBolt bolt = _bolts.get(boltId);
             bolt = maybeAddCheckpointTupleForwarder(bolt);
@@ -179,8 +184,13 @@ public class TopologyBuilder {
     public BoltDeclarer setBolt(String id, IRichBolt bolt, Number parallelism_hint) throws IllegalArgumentException {
         validateUnusedId(id);
         initCommon(id, bolt, parallelism_hint);
-        _bolts.put(id, bolt);
-        return new BoltGetter(id);
+
+        if (_bolts.containsKey(id)) {
+            throw new IllegalArgumentException("Duplicate bolt id found " + id);
+        } else {
+            _bolts.put(id, bolt);
+            return new BoltGetter(id);
+        }
     }
 
     /**
@@ -339,8 +349,13 @@ public class TopologyBuilder {
     public SpoutDeclarer setSpout(String id, IRichSpout spout, Number parallelism_hint) throws IllegalArgumentException {
         validateUnusedId(id);
         initCommon(id, spout, parallelism_hint);
-        _spouts.put(id, spout);
-        return new SpoutGetter(id);
+
+        if (_spouts.containsKey(id)) {
+            throw new IllegalArgumentException("Duplicate spout id found " + id);
+        } else {
+            _spouts.put(id, spout);
+            return new SpoutGetter(id);
+        }
     }
 
     public void setStateSpout(String id, IRichStateSpout stateSpout) throws IllegalArgumentException {
