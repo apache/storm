@@ -158,6 +158,20 @@ For example:
 
 By default, prefix is empty and extenstion is ".txt".
 
+**New FileNameFormat:**
+
+The new provided `org.apache.storm.hdfs.format.SimpleFileNameFormat` and `org.apache.storm.hdfs.trident.format.SimpleFileNameFormat` are more flexible, and the `withName` method support parameters as following:
+
+* $TIME - current time. use `withTimeFormat` to format.
+* $NUM - rotation number
+* $HOST - local host name
+* $PARTITION - partition index (`org.apache.storm.hdfs.trident.format.SimpleFileNameFormat` only)
+* $COMPONENT - component id (`org.apache.storm.hdfs.format.SimpleFileNameFormat` only)
+* $TASK - task id (`org.apache.storm.hdfs.format.SimpleFileNameFormat` only)
+
+eg: `seq.$TIME.$HOST.$COMPONENT.$NUM.dat`
+
+The default file `name` is `$TIME.$NUM.txt`, and the default `timeFormat` is `yyyyMMddHHmmss`.
 
 
 ### Sync Policies
