@@ -62,6 +62,7 @@ import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.DisruptorBackpressureCallback;
 import org.apache.storm.utils.DisruptorQueue;
+import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.WorkerBackpressureThread;
 import org.json.simple.JSONValue;
@@ -268,7 +269,7 @@ public abstract class Executor implements Callable, EventHandler {
             }
             if (nameToRegistry != null) {
                 IMetricsConsumer.TaskInfo taskInfo = new IMetricsConsumer.TaskInfo(hostname, workerTopologyContext.getThisWorkerPort(),
-                        componentId, taskId, (System.currentTimeMillis() / 1000), interval);
+                        componentId, taskId, Time.currentTimeSecs(), interval);
                 List<IMetricsConsumer.DataPoint> dataPoints = new ArrayList<>();
                 for (Map.Entry<String, IMetric> entry : nameToRegistry.entrySet()) {
                     IMetric metric = entry.getValue();
