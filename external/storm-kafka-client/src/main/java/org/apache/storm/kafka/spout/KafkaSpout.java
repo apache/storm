@@ -72,8 +72,10 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     private transient boolean initialized;                              // Flag indicating that the spout is still undergoing initialization process.
     // Initialization is only complete after the first call to  KafkaSpoutConsumerRebalanceListener.onPartitionsAssigned()
 
+    private KafkaSpoutStream kafkaSpoutStream;
     private KafkaSpoutStreams kafkaSpoutStreams;                        // Object that wraps all the logic to declare output fields and emit tuples
     private transient KafkaSpoutTuplesBuilder<K, V> tuplesBuilder;      // Object that contains the logic to build tuples for each ConsumerRecord
+    private transient KafkaSpoutTupleBuilder<K, V> tupleBuilder; 
 
     private transient Map<TopicPartition, OffsetEntry> acked;           // Tuples that were successfully acked. These tuples will be committed periodically when the commit timer expires, after consumer rebalance, or on close/deactivate
     private transient Set<KafkaSpoutMessageId> emitted;                 // Tuples that have been emitted but that are "on the wire", i.e. pending being acked or failed
@@ -84,6 +86,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     public KafkaSpout(KafkaSpoutConfig<K, V> kafkaSpoutConfig) {
         this.kafkaSpoutConfig = kafkaSpoutConfig;                 // Pass in configuration
         this.kafkaSpoutStreams = kafkaSpoutConfig.getKafkaSpoutStreams();
+        this.kafkaSpoutStream = kafkaSpoutConfig.getKafkaSpoutStream();
     }
 
     @Override
@@ -104,6 +107,8 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
 
         // Tuples builder delegate
         tuplesBuilder = kafkaSpoutConfig.getTuplesBuilder();
+        
+        tupleBuilder = kafkaSpoutConfig.getTupleBuilder();
 
         if (!consumerAutoCommitMode) {     // If it is auto commit, no need to commit offsets manually
             commitTimer = new Timer(500, kafkaSpoutConfig.getOffsetsCommitPeriodMs(), TimeUnit.MILLISECONDS);
@@ -270,8 +275,26 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         } else if (emitted.contains(msgId)) {   // has been emitted and it's pending ack or fail
             LOG.trace("Tuple for record [{}] has already been emitted. Skipping", record);
         } else if (!retryService.isScheduled(msgId) || retryService.isReady(msgId)) {   // not scheduled <=> never failed (i.e. never emitted) or ready to be retried
-            final List<Object> tuple = tuplesBuilder.buildTuple(record);
-            kafkaSpoutStreams.emit(collector, tuple, msgId);
+            List<Object> tuple = null;
+            
+            if(tuplesBuilder != null)
+            {
+            	tuple = tuplesBuilder.buildTuple(record);
+            }
+            else if(tupleBuilder != null)
+            {
+            	tuple = tupleBuilder.buildTuple(record);
+            }
+            
+            if(kafkaSpoutStreams != null)
+            {
+            	kafkaSpoutStreams.emit(collector, tuple, msgId);
+            }
+            else if(kafkaSpoutStream != null)
+            {
+            	kafkaSpoutStream.emit(collector, tuple, msgId);
+            }
+            
             emitted.add(msgId);
             numUncommittedOffsets++;
             if (retryService.isReady(msgId)) { // has failed. Is it ready for retry ?
@@ -343,7 +366,14 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     private void subscribeKafkaConsumer() {
         kafkaConsumer = new KafkaConsumer<>(kafkaSpoutConfig.getKafkaProps(),
                 kafkaSpoutConfig.getKeyDeserializer(), kafkaSpoutConfig.getValueDeserializer());
-        kafkaConsumer.subscribe(kafkaSpoutConfig.getSubscribedTopics(), new KafkaSpoutConsumerRebalanceListener());
+        if(kafkaSpoutStreams != null)
+        {
+        	kafkaConsumer.subscribe(kafkaSpoutConfig.getSubscribedTopics(), new KafkaSpoutConsumerRebalanceListener());
+        }
+        else if(kafkaSpoutStream != null && kafkaSpoutStream.getTopicWildcard() != null)
+        {
+        	kafkaConsumer.subscribe(kafkaSpoutStream.getTopicWildcard(), new KafkaSpoutConsumerRebalanceListener());
+        }
         // Initial poll to get the consumer registration process going.
         // KafkaSpoutConsumerRebalanceListener will be called following this poll, upon partition registration
         kafkaConsumer.poll(0);
@@ -373,7 +403,15 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
+    	if(kafkaSpoutStreams != null)
+    	{
         kafkaSpoutStreams.declareOutputFields(declarer);
+    	}
+    	else if(kafkaSpoutStream != null)
+    	{
+    		kafkaSpoutStream.declareOutputFields(declarer);
+    	}
+    		
     }
 
     @Override
