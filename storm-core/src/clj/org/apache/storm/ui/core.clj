@@ -28,6 +28,7 @@
            [org.apache.storm.stats StatsUtil]
            [org.apache.storm.ui UIHelpers IConfigurator FilterConfiguration]
            [org.apache.storm.metric StormMetricsRegistry])
+  (:import [org.apache.storm.utils Utils TopologySpoutLag])
   (:use [clojure.string :only [blank? lower-case trim split]])
   (:import [org.apache.storm.generated ExecutorSpecificStats
             ExecutorStats ExecutorSummary ExecutorInfo TopologyInfo SpoutStats BoltStats
@@ -80,6 +81,7 @@
 (def ui:num-topology-op-response-http-requests (StormMetricsRegistry/registerMeter "ui:num-topology-op-response-http-requests")) 
 (def ui:num-topology-op-response-http-requests (StormMetricsRegistry/registerMeter "ui:num-topology-op-response-http-requests")) 
 (def ui:num-main-page-http-requests (StormMetricsRegistry/registerMeter "ui:num-main-page-http-requests")) 
+(def ui:num-topology-lag-http-requests (StormMetricsRegistry/registerMeter "ui:num-topology-lag-http-requests")) 
 
 (defn assert-authorized-user
   ([op]
@@ -645,6 +647,12 @@
         "visualizationTable" []
         "schedulerDisplayResource" (*STORM-CONF* Config/SCHEDULER_DISPLAY_RESOURCE)}))))
 
+(defn topology-lag [id topology-conf]
+  (thrift/with-configured-nimbus-connection nimbus
+    (let [topology (.getUserTopology ^Nimbus$Client nimbus
+                                               id)]
+      (TopologySpoutLag/lag topology topology-conf))))
+
 (defn component-errors
   [errors-list topology-id secure?]
   (let [errors (->> errors-list
@@ -979,6 +987,12 @@
     (assert-authorized-user "getTopology" (topology-config id))
     (let [user (get-user-name servlet-request)]
       (json-response (topology-page id (:window m) (check-include-sys? (:sys m)) user (= scheme :https)) (:callback m))))
+  (GET "/api/v1/topology/:id/lag" [:as {:keys [cookies servlet-request scheme]} id & m]
+    (.mark ui:num-topology-lag-http-requests)
+    (populate-context! servlet-request)
+    (let [topology-conf (topology-config id)]
+      (assert-authorized-user "getUserTopology" topology-conf)
+      (json-response (topology-lag id topology-conf) nil)))
   (GET "/api/v1/topology/:id/visualization-init" [:as {:keys [cookies servlet-request]} id & m]
     (.mark ui:num-build-visualization-http-requests)
     (populate-context! servlet-request)

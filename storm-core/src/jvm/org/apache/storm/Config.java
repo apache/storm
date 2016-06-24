@@ -1520,6 +1520,22 @@ public class Config extends HashMap<String, Object> {
     public static final String BACKPRESSURE_DISRUPTOR_LOW_WATERMARK="backpressure.disruptor.low.watermark";
 
     /**
+     * A list of classes implementing IClusterMetricsConsumer (See storm.yaml.example for exact config format).
+     * Each listed class will be routed cluster related metrics data.
+     * Each listed class maps 1:1 to a ClusterMetricsConsumerExecutor and they're executed in Nimbus.
+     * Only consumers which run in leader Nimbus receives metrics data.
+     */
+    @isListEntryCustom(entryValidatorClasses = {ClusterMetricRegistryValidator.class})
+    public static final String STORM_CLUSTER_METRICS_CONSUMER_REGISTER = "storm.cluster.metrics.consumer.register";
+
+    /**
+     * How often cluster metrics data is published to metrics consumer.
+     */
+    @NotNull
+    @isPositiveNumber
+    public static final String STORM_CLUSTER_METRICS_CONSUMER_PUBLISH_INTERVAL_SECS = "storm.cluster.metrics.consumer.publish.interval.secs";
+
+    /**
      * A list of users that are allowed to interact with the topology.  To use this set
      * nimbus.authorizer to org.apache.storm.security.auth.authorizer.SimpleACLAuthorizer
      */

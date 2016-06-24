@@ -158,6 +158,20 @@ For example:
 
 By default, prefix is empty and extenstion is ".txt".
 
+**New FileNameFormat:**
+
+The new provided `org.apache.storm.hdfs.format.SimpleFileNameFormat` and `org.apache.storm.hdfs.trident.format.SimpleFileNameFormat` are more flexible, and the `withName` method support parameters as following:
+
+* $TIME - current time. use `withTimeFormat` to format.
+* $NUM - rotation number
+* $HOST - local host name
+* $PARTITION - partition index (`org.apache.storm.hdfs.trident.format.SimpleFileNameFormat` only)
+* $COMPONENT - component id (`org.apache.storm.hdfs.format.SimpleFileNameFormat` only)
+* $TASK - task id (`org.apache.storm.hdfs.format.SimpleFileNameFormat` only)
+
+eg: `seq.$TIME.$HOST.$COMPONENT.$NUM.dat`
+
+The default file `name` is `$TIME.$NUM.txt`, and the default `timeFormat` is `yyyyMMddHHmmss`.
 
 
 ### Sync Policies
@@ -334,7 +348,7 @@ file open/close/create operations.
 To use this bolt you **must** register the appropriate Kryo serializers with your topology configuration.  A convenience
 method is provided for this:
 
-`AvroGenericRecordBolt.addAvroKryoSerializations(conf);`
+`AvroUtils.addAvroKryoSerializations(conf);`
 
 By default Storm will use the ```GenericAvroSerializer``` to handle serialization.  This will work, but there are much 
 faster options available if you can pre-define the schemas you will be using or utilize an external schema registry. An
@@ -497,9 +511,10 @@ HdfsSpout textReaderSpout = new HdfsSpout().withOutputFields(TextFileReader.defa
 
 // Configure it
 Config conf = new Config();
-conf.put(Configs.SOURCE_DIR, "hdfs://localhost:54310/source");
-conf.put(Configs.ARCHIVE_DIR, "hdfs://localhost:54310/done");
-conf.put(Configs.BAD_DIR, "hdfs://localhost:54310/badfiles");
+conf.put(Configs.HDFS_URI, "hdfs://localhost:54310");
+conf.put(Configs.SOURCE_DIR, "/data/in");
+conf.put(Configs.ARCHIVE_DIR, "/data/done");
+conf.put(Configs.BAD_DIR, "/data/badfiles");
 conf.put(Configs.READER_TYPE, "text"); // or 'seq' for sequence files
 
 // Create & configure topology
@@ -539,10 +554,10 @@ Only settings mentioned in **bold** are required.
 | Setting                      | Default     | Description |
 |------------------------------|-------------|-------------|
 |**hdfsspout.reader.type**     |             | Indicates the reader for the file format. Set to 'seq' for reading sequence files or 'text' for text files. Set to a fully qualified class name if using a custom type (that implements interface org.apache.storm.hdfs.spout.FileReader)|
-|**hdfsspout.hdfs**            |             | HDFS URI. Example:  hdfs://namenodehost:8020
-|**hdfsspout.source.dir**      |             | HDFS location from where to read.  E.g. /data/inputfiles  |
-|**hdfsspout.archive.dir**     |             | After a file is processed completely it will be moved to this directory. E.g. /data/done|
-|**hdfsspout.badfiles.dir**    |             | if there is an error parsing a file's contents, the file is moved to this location.  E.g. /data/badfiles  |
+|**hdfsspout.hdfs**            |             | HDFS URI for the hdfs Name node. Example:  hdfs://namenodehost:8020|
+|**hdfsspout.source.dir**      |             | HDFS directory from where to read files. E.g. /data/inputfiles|
+|**hdfsspout.archive.dir**     |             | After a file is processed completely it will be moved to this HDFS directory. If this directory does not exist it will be created. E.g. /data/done|
+|**hdfsspout.badfiles.dir**    |             | if there is an error parsing a file's contents, the file is moved to this location.  If this directory does not exist it will be created. E.g. /data/badfiles  |
 |hdfsspout.lock.dir            | '.lock' subdirectory under hdfsspout.source.dir | Dir in which lock files will be created. Concurrent HDFS spout instances synchronize using *lock* files. Before processing a file the spout instance creates a lock file in this directory with same name as input file and deletes this lock file after processing the file. Spouts also periodically makes a note of their progress (wrt reading the input file) in the lock file so that another spout instance can resume progress on the same file if the spout dies for any reason.|
 |hdfsspout.ignore.suffix       |   .ignore   | File names with this suffix in the in the hdfsspout.source.dir location will not be processed|
 |hdfsspout.commit.count        |    20000    | Record progress in the lock file after these many records are processed. If set to 0, this criterion will not be used. |

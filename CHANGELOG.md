@@ -1,4 +1,7 @@
 ## 2.0.0
+ * STORM-1920: version of parent pom for storm-kafka-monitor is set 1.0.2-SNAPSHOT in master branch
+ * STORM-1896: Remove duplicate code from HDFS spout
+ * STORM-1909: Update HDFS spout documentation
  * STORM-1705: Cap number of retries for a failed message
  * STORM-1884: Prioritize pendingPrepare over pendingCommit
  * STORM-1575: fix TwitterSampleSpout NPE on close
@@ -104,7 +107,20 @@
  * STORM-1521: When using Kerberos login from keytab with multiple bolts/executors ticket is not renewed in hbase bolt.
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
-## 1.1.0
+## 1.1.0 
+ * STORM-1888: add description for shell command
+ * STORM-1902: add a simple & flexible FileNameFormat for storm-hdfs
+ * STORM-1914: Storm Kafka Field Topic Selector
+ * STORM-1925: Remove Nimbus thrift call from Nimbus itself
+ * STORM-1907: PartitionedTridentSpoutExecutor has incompatible types that cause ClassCastException
+ * STORM-1136: Command line module to return kafka spout offsets lag and display in storm ui.
+ * STORM-1911: IClusterMetricsConsumer should use seconds to timestamp unit
+ * STORM-1849: HDFSFileTopology should use the 3rd argument as topologyName
+ * STORM-1906: Window count/length of zero should be disallowed
+ * STORM-1893: Support OpenTSDB for storing timeseries data.
+ * STORM-1723: Introduce ClusterMetricsConsumer
+ * STORM-1700: Introduce 'whitelist' / 'blacklist' option to MetricsConsumer
+ * STORM-1698: Asynchronous MetricsConsumerBolt
  * STORM-1887: Fixed help message for set_log_level command
  * STORM-1841: Address a few minor issues in windowing and doc
  * STORM-1709: Added group by support in storm sql standalone mode
