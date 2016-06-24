@@ -20,45 +20,65 @@ package org.apache.storm.redis.bolt;
 import org.apache.storm.redis.common.config.JedisClusterConfig;
 import org.apache.storm.redis.common.config.JedisPoolConfig;
 import org.apache.storm.redis.common.mapper.RedisDataTypeDescription;
-import org.apache.storm.redis.common.mapper.RedisStoreMapper;
+import org.apache.storm.redis.common.mapper.RedisFilterMapper;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Tuple;
+import redis.clients.jedis.GeoCoordinate;
 import redis.clients.jedis.JedisCommands;
 
+import java.util.List;
+
 /**
- * Basic bolt for writing to Redis
+ * Basic bolt for querying from Redis and filters out if key/field doesn't exist.
+ * If key/field exists on Redis, this bolt just forwards input tuple to default stream.
  * <p/>
- * Various data types are supported: STRING, LIST, HASH, SET, SORTED_SET, HYPER_LOG_LOG, GEO
+ * Supported data types: STRING, HASH, SET, SORTED_SET, HYPER_LOG_LOG, GEO.
+ * <p/>
+ * Note: For STRING it checks such key exists on the key space.
+ * For HASH and SORTED_SET and GEO, it checks such field exists on that data structure.
+ * For SET and HYPER_LOG_LOG, it check such value exists on that data structure.
+ * (Note that it still refers key from tuple via RedisFilterMapper#getKeyFromTuple())
+ * In order to apply checking this to SET, you need to input additional key this case.
+ * <p/>
+ * Note2: If you want to just query about existence of key regardless of actual data type,
+ * specify STRING to data type of RedisFilterMapper.
  */
-public class RedisStoreBolt extends AbstractRedisBolt {
-    private final RedisStoreMapper storeMapper;
+public class RedisFilterBolt extends AbstractRedisBolt {
+    private final RedisFilterMapper filterMapper;
     private final RedisDataTypeDescription.RedisDataType dataType;
     private final String additionalKey;
 
     /**
      * Constructor for single Redis environment (JedisPool)
      * @param config configuration for initializing JedisPool
-     * @param storeMapper mapper containing which datatype, storing value's key that Bolt uses
+     * @param filterMapper mapper containing which datatype, query key that Bolt uses
      */
-    public RedisStoreBolt(JedisPoolConfig config, RedisStoreMapper storeMapper) {
+    public RedisFilterBolt(JedisPoolConfig config, RedisFilterMapper filterMapper) {
         super(config);
-        this.storeMapper = storeMapper;
 
-        RedisDataTypeDescription dataTypeDescription = storeMapper.getDataTypeDescription();
+        this.filterMapper = filterMapper;
+
+        RedisDataTypeDescription dataTypeDescription = filterMapper.getDataTypeDescription();
         this.dataType = dataTypeDescription.getDataType();
         this.additionalKey = dataTypeDescription.getAdditionalKey();
+
+        if (dataType == RedisDataTypeDescription.RedisDataType.SET &&
+            additionalKey == null) {
+            throw new IllegalArgumentException("additionalKey should be defined");
+        }
     }
 
     /**
      * Constructor for Redis Cluster environment (JedisCluster)
      * @param config configuration for initializing JedisCluster
-     * @param storeMapper mapper containing which datatype, storing value's key that Bolt uses
+     * @param filterMapper mapper containing which datatype, query key that Bolt uses
      */
-    public RedisStoreBolt(JedisClusterConfig config, RedisStoreMapper storeMapper) {
+    public RedisFilterBolt(JedisClusterConfig config, RedisFilterMapper filterMapper) {
         super(config);
-        this.storeMapper = storeMapper;
 
-        RedisDataTypeDescription dataTypeDescription = storeMapper.getDataTypeDescription();
+        this.filterMapper = filterMapper;
+
+        RedisDataTypeDescription dataTypeDescription = filterMapper.getDataTypeDescription();
         this.dataType = dataTypeDescription.getDataType();
         this.additionalKey = dataTypeDescription.getAdditionalKey();
     }
@@ -68,51 +88,45 @@ public class RedisStoreBolt extends AbstractRedisBolt {
      */
     @Override
     public void execute(Tuple input) {
-        String key = storeMapper.getKeyFromTuple(input);
-        String value = storeMapper.getValueFromTuple(input);
+        String key = filterMapper.getKeyFromTuple(input);
 
+        boolean found;
         JedisCommands jedisCommand = null;
         try {
             jedisCommand = getInstance();
 
             switch (dataType) {
                 case STRING:
-                    jedisCommand.set(key, value);
-                    break;
-
-                case LIST:
-                    jedisCommand.rpush(key, value);
-                    break;
-
-                case HASH:
-                    jedisCommand.hset(additionalKey, key, value);
+                    found = jedisCommand.exists(key);
                     break;
 
                 case SET:
-                    jedisCommand.sadd(key, value);
+                    found = jedisCommand.sismember(additionalKey, key);
+                    break;
+
+                case HASH:
+                    found = jedisCommand.hexists(additionalKey, key);
                     break;
 
                 case SORTED_SET:
-                    jedisCommand.zadd(additionalKey, Double.valueOf(value), key);
+                    found = jedisCommand.zrank(additionalKey, key) != null;
                     break;
 
                 case HYPER_LOG_LOG:
-                    jedisCommand.pfadd(key, value);
+                    found = jedisCommand.pfcount(key) > 0;
                     break;
 
                 case GEO:
-                    String[] array = value.split(":");
-                    if (array.length != 2) {
-                        throw new IllegalArgumentException("value structure should be longitude:latitude");
-                    }
-
-                    double longitude = Double.valueOf(array[0]);
-                    double latitude = Double.valueOf(array[1]);
-                    jedisCommand.geoadd(additionalKey, longitude, latitude, key);
+                    List<GeoCoordinate> geopos = jedisCommand.geopos(additionalKey, key);
+                    found = (geopos != null && geopos.size() > 0);
                     break;
 
                 default:
                     throw new IllegalArgumentException("Cannot process such data type: " + dataType);
+            }
+
+            if (found) {
+                collector.emit(input, input.getValues());
             }
 
             collector.ack(input);
@@ -129,5 +143,6 @@ public class RedisStoreBolt extends AbstractRedisBolt {
      */
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
+        filterMapper.declareOutputFields(declarer);
     }
 }

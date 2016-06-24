@@ -18,22 +18,11 @@
 package org.apache.storm.redis.common.mapper;
 
 import org.apache.storm.topology.OutputFieldsDeclarer;
-import org.apache.storm.tuple.ITuple;
-import org.apache.storm.tuple.Values;
-
-import java.util.List;
 
 /**
- * RedisLookupMapper is for defining spec. which is used for querying value from Redis and converting response to tuple.
+ * RedisFilterMapper is for defining spec. which is used for querying value from Redis and filtering.
  */
-public interface RedisLookupMapper extends TupleMapper, RedisMapper {
-    /**
-     * Converts return value from Redis to a list of storm values that can be emitted.
-     * @param input the input tuple.
-     * @param value Redis query response value. Can be String, Boolean, Long regarding of data type.
-     * @return a List of storm values that can be emitted. Each item in list is emitted as an output tuple.
-     */
-    List<Values> toTuple(ITuple input, Object value);
+public interface RedisFilterMapper extends TupleMapper, RedisMapper {
 
     /**
      * declare what are the fields that this code will output.
