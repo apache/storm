@@ -51,5 +51,5 @@ public interface KeyValueState<K, V> extends State {
      *
      * @param key   the key
      */
-    void delete(K key);
+    V delete(K key);
 }
