@@ -17,6 +17,7 @@
  */
 package org.apache.storm.redis.state;
 
+import com.google.common.base.Optional;
 import org.apache.storm.state.DefaultStateSerializer;
 import org.apache.storm.state.KeyValueState;
 import org.apache.storm.state.Serializer;
@@ -31,8 +32,8 @@ import org.apache.commons.codec.binary.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
-import java.util.HashSet;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -46,13 +47,12 @@ public class RedisKeyValueState<K, V> implements KeyValueState<K, V> {
     private final String namespace;
     private final String prepareNamespace;
     private final String txidNamespace;
+    private final String tombstone;
     private final Serializer<K> keySerializer;
-    private final Serializer<V> valueSerializer;
+    private final Serializer<Optional<V>> valueSerializer;
     private final JedisCommandsInstanceContainer jedisContainer;
     private Map<String, String> pendingPrepare;
-    private Set<String> pendingDeletePrepare;
     private Map<String, String> pendingCommit;
-    private Set<String> pendingDeleteCommit;
     private Map<String, String> txIds;
 
     public RedisKeyValueState(String namespace) {
@@ -60,23 +60,23 @@ public class RedisKeyValueState<K, V> implements KeyValueState<K, V> {
     }
 
     public RedisKeyValueState(String namespace, JedisPoolConfig poolConfig) {
-        this(namespace, poolConfig, new DefaultStateSerializer<K>(), new DefaultStateSerializer<V>());
+        this(namespace, poolConfig, new DefaultStateSerializer<K>(), new DefaultStateSerializer<Optional<V>>());
     }
 
-    public RedisKeyValueState(String namespace, JedisPoolConfig poolConfig, Serializer<K> keySerializer, Serializer<V> valueSerializer) {
+    public RedisKeyValueState(String namespace, JedisPoolConfig poolConfig, Serializer<K> keySerializer, Serializer<Optional<V>> valueSerializer) {
         this(namespace, JedisCommandsContainerBuilder.build(poolConfig), keySerializer, valueSerializer);
     }
 
     public RedisKeyValueState(String namespace, JedisCommandsInstanceContainer jedisContainer,
-                              Serializer<K> keySerializer, Serializer<V> valueSerializer) {
+                              Serializer<K> keySerializer, Serializer<Optional<V>> valueSerializer) {
         this.namespace = namespace;
         this.prepareNamespace = namespace + "$prepare";
         this.txidNamespace = namespace + "$txid";
         this.keySerializer = keySerializer;
         this.valueSerializer = valueSerializer;
+        this.tombstone = encode(valueSerializer.serialize(Optional.<V>absent()));
         this.jedisContainer = jedisContainer;
-        this.pendingPrepare = new HashMap<>();
-        this.pendingDeletePrepare = new HashSet<>();
+        this.pendingPrepare = new ConcurrentHashMap<>();
         initTxids();
         initPendingCommit();
     }
@@ -103,11 +103,9 @@ public class RedisKeyValueState<K, V> implements KeyValueState<K, V> {
             if (commands.exists(prepareNamespace)) {
                 LOG.debug("Loading previously prepared commit from {}", prepareNamespace);
                 pendingCommit = Collections.unmodifiableMap(commands.hgetAll(prepareNamespace));
-                pendingDeleteCommit = Collections.emptySet();
             } else {
                 LOG.debug("No previously prepared commits.");
                 pendingCommit = Collections.emptyMap();
-                pendingDeleteCommit = Collections.emptySet();
             }
         } finally {
             jedisContainer.returnInstance(commands);
@@ -118,11 +116,8 @@ public class RedisKeyValueState<K, V> implements KeyValueState<K, V> {
     public void put(K key, V value) {
         LOG.debug("put key '{}', value '{}'", key, value);
         String redisKey = encode(keySerializer.serialize(key));
-        synchronized (this) {
-            pendingPrepare.put(redisKey,
-                    encode(valueSerializer.serialize(value)));
-            pendingDeletePrepare.remove(redisKey);
-        }
+        pendingPrepare.put(redisKey,
+                encode(valueSerializer.serialize(Optional.of(value))));
     }
 
     @Override
@@ -130,17 +125,11 @@ public class RedisKeyValueState<K, V> implements KeyValueState<K, V> {
         LOG.debug("get key '{}'", key);
         String redisKey = encode(keySerializer.serialize(key));
         String redisValue = null;
-        boolean found = false;
-        synchronized (this) {
-            if (pendingPrepare.containsKey(redisKey) || pendingDeletePrepare.contains(redisKey)) {
-                redisValue = pendingPrepare.get(redisKey);
-                found = true;
-            } else if (pendingCommit.containsKey(redisKey) || pendingDeleteCommit.contains(redisKey)) {
-                redisValue = pendingCommit.get(redisKey);
-                found = true;
-            }
-        }
-        if (!found) {
+        if (pendingPrepare.containsKey(redisKey)) {
+            redisValue = pendingPrepare.get(redisKey);
+        } else if (pendingCommit.containsKey(redisKey)) {
+            redisValue = pendingCommit.get(redisKey);
+        } else {
             JedisCommands commands = null;
             try {
                 commands = jedisContainer.getInstance();
@@ -151,7 +140,7 @@ public class RedisKeyValueState<K, V> implements KeyValueState<K, V> {
         }
         V value = null;
         if (redisValue != null) {
-            value = valueSerializer.deserialize(decode(redisValue));
+            value = valueSerializer.deserialize(decode(redisValue)).orNull();
         }
         LOG.debug("Value for key '{}' is '{}'", key, value);
         return value;
@@ -164,17 +153,16 @@ public class RedisKeyValueState<K, V> implements KeyValueState<K, V> {
     }
 
     @Override
-    public void delete(K key) {
+    public V delete(K key) {
         LOG.debug("delete key '{}'", key);
         String redisKey = encode(keySerializer.serialize(key));
-        synchronized (this) {
-            pendingDeletePrepare.add(redisKey);
-            pendingPrepare.remove(redisKey);
-        }
+        V curr = get(key);
+        pendingPrepare.put(redisKey, tombstone);
+        return curr;
     }
 
     @Override
-    public void prepareCommit(long txid){
+    public void prepareCommit(long txid) {
         LOG.debug("prepareCommit txid {}", txid);
         validatePrepareTxid(txid);
         JedisCommands commands = null;
@@ -188,20 +176,15 @@ public class RedisKeyValueState<K, V> implements KeyValueState<K, V> {
                     }
                 }
             }
-            if (!pendingPrepare.isEmpty() || !pendingDeletePrepare.isEmpty()) {
+            if (!pendingPrepare.isEmpty()) {
                 commands.hmset(prepareNamespace, pendingPrepare);
-                commands.hdel(prepareNamespace, pendingDeletePrepare.toArray(new String[pendingDeletePrepare.size()]));
             } else {
                 LOG.debug("Nothing to save for prepareCommit, txid {}.", txid);
             }
             txIds.put(PREPARE_TXID_KEY, String.valueOf(txid));
             commands.hmset(txidNamespace, txIds);
-            synchronized (this) {
-                pendingCommit = Collections.unmodifiableMap(pendingPrepare);
-                pendingDeleteCommit = Collections.unmodifiableSet(pendingDeletePrepare);
-            }
+            pendingCommit = Collections.unmodifiableMap(pendingPrepare);
             pendingPrepare = new ConcurrentHashMap<>();
-            pendingDeletePrepare = Collections.synchronizedSet(new HashSet<String>());
         } finally {
             jedisContainer.returnInstance(commands);
         }
@@ -214,9 +197,22 @@ public class RedisKeyValueState<K, V> implements KeyValueState<K, V> {
         JedisCommands commands = null;
         try {
             commands = jedisContainer.getInstance();
-            if (!pendingCommit.isEmpty() || !pendingDeleteCommit.isEmpty()) {
-                commands.hmset(namespace, pendingCommit);
-                commands.hdel(namespace, pendingDeleteCommit.toArray(new String[pendingDeleteCommit.size()]));
+            if (!pendingCommit.isEmpty()) {
+                List<String> keysToDelete = new ArrayList<>();
+                Map<String, String> keysToAdd = new HashMap<>();
+                for(Map.Entry<String, String> entry: pendingCommit.entrySet()) {
+                    if (tombstone.equals(entry.getValue())) {
+                        keysToDelete.add(entry.getKey());
+                    } else {
+                        keysToAdd.put(entry.getKey(), entry.getValue());
+                    }
+                }
+                if (!keysToAdd.isEmpty()) {
+                    commands.hmset(namespace, keysToAdd);
+                }
+                if (!keysToDelete.isEmpty()) {
+                    commands.hdel(namespace, keysToDelete.toArray(new String[0]));
+                }
             } else {
                 LOG.debug("Nothing to save for commit, txid {}.", txid);
             }
@@ -224,7 +220,6 @@ public class RedisKeyValueState<K, V> implements KeyValueState<K, V> {
             commands.hmset(txidNamespace, txIds);
             commands.del(prepareNamespace);
             pendingCommit = Collections.emptyMap();
-            pendingDeleteCommit = Collections.emptySet();
         } finally {
             jedisContainer.returnInstance(commands);
         }
@@ -235,14 +230,12 @@ public class RedisKeyValueState<K, V> implements KeyValueState<K, V> {
         JedisCommands commands = null;
         try {
             commands = jedisContainer.getInstance();
-            if (!pendingPrepare.isEmpty() || !pendingDeletePrepare.isEmpty()) {
+            if (!pendingPrepare.isEmpty()) {
                 commands.hmset(namespace, pendingPrepare);
-                commands.hdel(namespace, pendingDeletePrepare.toArray(new String[pendingDeletePrepare.size()]));
             } else {
                 LOG.debug("Nothing to save for commit");
             }
-            pendingPrepare = new HashMap<>();
-            pendingDeletePrepare = new HashSet<>();
+            pendingPrepare = new ConcurrentHashMap<>();
         } finally {
             jedisContainer.returnInstance(commands);
         }
@@ -270,9 +263,7 @@ public class RedisKeyValueState<K, V> implements KeyValueState<K, V> {
                 commands.hmset(txidNamespace, txIds);
             }
             pendingCommit = Collections.emptyMap();
-            pendingDeleteCommit = Collections.emptySet();
             pendingPrepare = new ConcurrentHashMap<>();
-            pendingDeletePrepare = Collections.synchronizedSet(new HashSet<String>());
         } finally {
             jedisContainer.returnInstance(commands);
         }

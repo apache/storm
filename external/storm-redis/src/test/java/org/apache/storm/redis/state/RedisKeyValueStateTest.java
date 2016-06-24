@@ -17,6 +17,7 @@
  */
 package org.apache.storm.redis.state;
 
+import com.google.common.base.Optional;
 import org.apache.storm.state.DefaultStateSerializer;
 import org.apache.storm.redis.common.container.JedisCommandsInstanceContainer;
 import org.junit.Before;
@@ -104,7 +105,7 @@ public class RedisKeyValueStateTest {
                 });
 
         keyValueState = new RedisKeyValueState<String, String>("test", mockContainer, new DefaultStateSerializer<String>(),
-                                                               new DefaultStateSerializer<String>());
+                                                               new DefaultStateSerializer<Optional<String>>());
     }
 
 
@@ -124,7 +125,7 @@ public class RedisKeyValueStateTest {
         assertEquals("1", keyValueState.get("a"));
         assertEquals("2", keyValueState.get("b"));
         assertEquals(null, keyValueState.get("c"));
-        keyValueState.delete("a");
+        assertEquals("1", keyValueState.delete("a"));
         assertEquals(null, keyValueState.get("a"));
         assertEquals("2", keyValueState.get("b"));
         assertEquals(null, keyValueState.get("c"));
@@ -148,8 +149,8 @@ public class RedisKeyValueStateTest {
         keyValueState.rollback();
         assertArrayEquals(new String[]{"1", "2", null}, getValues());
         keyValueState.put("c", "3");
-        keyValueState.delete("b");
-        keyValueState.delete("c");
+        assertEquals("2", keyValueState.delete("b"));
+        assertEquals("3", keyValueState.delete("c"));
         assertArrayEquals(new String[]{"1", null, null}, getValues());
         keyValueState.prepareCommit(2);
         assertArrayEquals(new String[]{"1", null, null}, getValues());

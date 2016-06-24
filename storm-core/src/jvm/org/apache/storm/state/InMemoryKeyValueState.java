@@ -68,8 +68,8 @@ public class InMemoryKeyValueState<K, V> implements KeyValueState<K, V> {
     }
 
     @Override
-    public void delete(K key) {
-        state.remove(key);
+    public V delete(K key) {
+        return state.remove(key);
     }
 
     @Override
