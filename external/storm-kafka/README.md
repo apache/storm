@@ -275,6 +275,10 @@ public interface KafkaTopicSelector {
 The implementation of this interface should return the topic to which the tuple's key/message mapping needs to be published
 You can return a null and the message will be ignored. If you have one static topic name then you can use
 DefaultTopicSelector.java and set the name of the topic in the constructor.
+`FieldNameTopicSelector` and `FieldIndexTopicSelector` use to support decided which topic should to push message from tuple.
+User could specify the field name or field index in tuple ,selector will use this value as topic name which to publish message.
+When the topic name not found , `KafkaBolt` will write messages into default topic .
+Please make sure the default topic have created .
 
 ### Specifying Kafka producer properties
 You can provide all the produce properties in your Storm topology by calling `KafkaBolt.withProducerProperties()` and `TridentKafkaStateFactory.withProducerProperties()`. Please see  http://kafka.apache.org/documentation.html#newproducerconfigs
