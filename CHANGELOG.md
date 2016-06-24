@@ -108,6 +108,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0 
+ * STORM-1914: Storm Kafka Field Topic Selector
  * STORM-1925: Remove Nimbus thrift call from Nimbus itself
  * STORM-1907: PartitionedTridentSpoutExecutor has incompatible types that cause ClassCastException
  * STORM-1136: Command line module to return kafka spout offsets lag and display in storm ui.
