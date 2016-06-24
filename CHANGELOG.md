@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-1902: add a simple & flexible FileNameFormat for storm-hdfs
  * STORM-1914: Storm Kafka Field Topic Selector
  * STORM-1907: PartitionedTridentSpoutExecutor has incompatible types that cause ClassCastException
  * STORM-1925: Remove Nimbus thrift call from Nimbus itself
