@@ -108,6 +108,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0 
+ * STORM-1888: add description for shell command
  * STORM-1902: add a simple & flexible FileNameFormat for storm-hdfs
  * STORM-1914: Storm Kafka Field Topic Selector
  * STORM-1925: Remove Nimbus thrift call from Nimbus itself
