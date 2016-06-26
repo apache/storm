@@ -21,6 +21,7 @@ import com.google.common.base.Strings;
 
 import org.apache.storm.Config;
 import org.apache.storm.kafka.PartitionManager.KafkaMessageId;
+import org.apache.storm.kafka.trident.GlobalPartitionInformation;
 import org.apache.storm.metric.api.IMetric;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -186,6 +187,47 @@ public class KafkaSpout extends BaseRichSpout {
         } else {
             declarer.declare(_spoutConfig.scheme.getOutputFields());
         }
+    }
+
+    @Override
+    public Map<String, Object> getComponentConfiguration () {
+        Map<String, Object> configuration = super.getComponentConfiguration();
+        if (configuration == null) {
+            configuration = new HashMap<>();
+        }
+        String configKeyPrefix = "config.";
+        configuration.put(configKeyPrefix + "topics", this._spoutConfig.topic);
+        StringBuilder zkServers = new StringBuilder();
+        if (_spoutConfig.zkServers != null && _spoutConfig.zkServers.size() > 0) {
+            for (String zkServer : this._spoutConfig.zkServers) {
+                zkServers.append(zkServer + ":" + this._spoutConfig.zkPort + ",");
+            }
+            configuration.put(configKeyPrefix + "zkServers", zkServers.toString());
+        }
+        BrokerHosts brokerHosts = this._spoutConfig.hosts;
+        String zkRoot = this._spoutConfig.zkRoot + "/" + this._spoutConfig.id;
+        if (brokerHosts instanceof ZkHosts) {
+            ZkHosts zkHosts = (ZkHosts) brokerHosts;
+            configuration.put(configKeyPrefix + "zkNodeBrokers", zkHosts.brokerZkPath);
+        } else if (brokerHosts instanceof StaticHosts) {
+            StaticHosts staticHosts = (StaticHosts) brokerHosts;
+            GlobalPartitionInformation globalPartitionInformation = staticHosts.getPartitionInformation();
+            boolean useTopicNameForPath = globalPartitionInformation.getbUseTopicNameForPartitionPathId();
+            if (useTopicNameForPath) {
+                zkRoot += ("/" + this._spoutConfig.topic);
+            }
+            List<Partition> partitions = globalPartitionInformation.getOrderedPartitions();
+            StringBuilder staticPartitions = new StringBuilder();
+            StringBuilder leaderHosts = new StringBuilder();
+            for (Partition partition: partitions) {
+                staticPartitions.append(partition.partition + ",");
+                leaderHosts.append(partition.host.host + ":" + partition.host.port).append(",");
+            }
+            configuration.put(configKeyPrefix + "partitions", staticPartitions.toString());
+            configuration.put(configKeyPrefix + "leaders", leaderHosts.toString());
+        }
+        configuration.put(configKeyPrefix + "zkRoot", zkRoot);
+        return configuration;
     }
 
     private void commit() {
