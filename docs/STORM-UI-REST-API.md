@@ -510,6 +510,282 @@ Sample response:
 }
 ```
 
+### /api/v1/topology/:id/metrics
+
+Returns detailed metrics for topology. It shows metrics per component, which are aggregated by stream.
+
+|Parameter |Value   |Description  |
+|----------|--------|-------------|
+|id   	   |String (required)| Topology Id  |
+|window    |String. Default value :all-time| window duration for metrics in seconds|
+|sys       |String. Values 1 or 0. Default value 0| Controls including sys stats part of the response|
+
+Response fields:
+
+|Field  |Value |Description| 
+|---	|---	|--- 
+|window    |String. Default value ":all-time" | window duration for metrics in seconds|
+ |windowHint| String | window param value in "hh mm ss" format. Default value is "All Time"| 
+|spouts| Array | Array of all the spout components in the topology|
+|spouts.id| String |Spout id|
+|spouts.emitted| Array | Array of all the output streams this spout emits messages |
+|spouts.emitted.stream_id| String | Stream id for this stream |
+|spouts.emitted.value| Long | Number of messages emitted in given window|
+|spouts.transferred | Array | Array of all the output streams this spout transfers messages |
+|spouts.transferred.stream_id| String | Stream id for this stream |
+|spouts.transferred.value| Long |Number messages transferred in given window|
+|spouts.acked| Array | Array of all the output streams this spout receives ack of messages |
+|spouts.acked.stream_id| String | Stream id for this stream |
+|spouts.acked.value| Long |Number of messages acked in given window|
+|spouts.failed| Array | Array of all the output streams this spout receives fail of messages |
+|spouts.failed.stream_id| String | Stream id for this stream |
+|spouts.failed.value| Long |Number of messages failed in given window|
+|spouts.complete_ms_avg| Array | Array of all the output streams this spout receives ack of messages |
+|spouts.complete_ms_avg.stream_id| String | Stream id for this stream |
+|spouts.complete_ms_avg.value| String (double value returned in String format) | Total latency for processing the message|
+|bolts| Array | Array of all the bolt components in the topology|
+|bolts.id| String |Bolt id|
+|bolts.emitted| Array | Array of all the output streams this bolt emits messages |
+|bolts.emitted.stream_id| String | Stream id for this stream |
+|bolts.emitted.value| Long | Number of messages emitted in given window|
+|bolts.transferred | Array | Array of all the output streams this bolt transfers messages |
+|bolts.transferred.stream_id| String | Stream id for this stream |
+|bolts.transferred.value| Long |Number messages transferred in given window|
+|bolts.acked| Array | Array of all the input streams this bolt acknowledges of messages |
+|bolts.acked.component_id| String | Component id for this stream |
+|bolts.acked.stream_id| String | Stream id for this stream |
+|bolts.acked.value| Long |Number of messages acked in given window|
+|bolts.failed| Array | Array of all the input streams this bolt receives fail of messages |
+|bolts.failed.component_id| String | Component id for this stream |
+|bolts.failed.stream_id| String | Stream id for this stream |
+|bolts.failed.value| Long |Number of messages failed in given window|
+|bolts.process_ms_avg| Array | Array of all the input streams this spout acks messages |
+|bolts.process_ms_avg.component_id| String | Component id for this stream |
+|bolts.process_ms_avg.stream_id| String | Stream id for this stream |
+|bolts.process_ms_avg.value| String (double value returned in String format) |Average time of the bolt to ack a message after it was received|
+|bolts.executed| Array | Array of all the input streams this bolt executes messages |
+|bolts.executed.component_id| String | Component id for this stream |
+|bolts.executed.stream_id| String | Stream id for this stream |
+|bolts.executed.value| Long |Number of messages executed in given window|
+|bolts.executed_ms_avg| Array | Array of all the output streams this spout receives ack of messages |
+|bolts.executed_ms_avg.component_id| String | Component id for this stream |
+|bolts.executed_ms_avg.stream_id| String | Stream id for this stream |
+|bolts.executed_ms_avg.value| String (double value returned in String format) | Average time to run the execute method of the bolt|
+
+Examples:
+
+```no-highlight
+1. http://ui-daemon-host-name:8080/api/v1/topology/WordCount3-1-1402960825/metrics
+1. http://ui-daemon-host-name:8080/api/v1/topology/WordCount3-1-1402960825/metrics?sys=1
+2. http://ui-daemon-host-name:8080/api/v1/topology/WordCount3-1-1402960825/metrics?window=600
+```
+
+Sample response:
+
+```json
+{
+    "window":":all-time",
+    "window-hint":"All time",
+    "spouts":[
+        {
+            "id":"spout",
+            "emitted":[
+                {
+                    "stream_id":"__metrics",
+                    "value":20
+                },
+                {
+                    "stream_id":"default",
+                    "value":17350280
+                },
+                {
+                    "stream_id":"__ack_init",
+                    "value":17328160
+                },
+                {
+                    "stream_id":"__system",
+                    "value":20
+                }
+            ],
+            "transferred":[
+                {
+                    "stream_id":"__metrics",
+                    "value":20
+                },
+                {
+                    "stream_id":"default",
+                    "value":17350280
+                },
+                {
+                    "stream_id":"__ack_init",
+                    "value":17328160
+                },
+                {
+                    "stream_id":"__system",
+                    "value":0
+                }
+            ],
+            "acked":[
+                {
+                    "stream_id":"default",
+                    "value":17339180
+                }
+            ],
+            "failed":[
+
+            ],
+            "complete_ms_avg":[
+                {
+                    "stream_id":"default",
+                    "value":"920.497"
+                }
+            ]
+        }
+    ],
+    "bolts":[
+        {
+            "id":"count",
+            "emitted":[
+                {
+                    "stream_id":"__metrics",
+                    "value":120
+                },
+                {
+                    "stream_id":"default",
+                    "value":190748180
+                },
+                {
+                    "stream_id":"__ack_ack",
+                    "value":190718100
+                },
+                {
+                    "stream_id":"__system",
+                    "value":20
+                }
+            ],
+            "transferred":[
+                {
+                    "stream_id":"__metrics",
+                    "value":120
+                },
+                {
+                    "stream_id":"default",
+                    "value":0
+                },
+                {
+                    "stream_id":"__ack_ack",
+                    "value":190718100
+                },
+                {
+                    "stream_id":"__system",
+                    "value":0
+                }
+            ],
+            "acked":[
+                {
+                    "component_id":"split",
+                    "stream_id":"default",
+                    "value":190733160
+                }
+            ],
+            "failed":[
+
+            ],
+            "process_ms_avg":[
+                {
+                    "component_id":"split",
+                    "stream_id":"default",
+                    "value":"0.004"
+                }
+            ],
+            "executed":[
+                {
+                    "component_id":"split",
+                    "stream_id":"default",
+                    "value":190733140
+                }
+            ],
+            "executed_ms_avg":[
+                {
+                    "component_id":"split",
+                    "stream_id":"default",
+                    "value":"0.005"
+                }
+            ]
+        },
+        {
+            "id":"split",
+            "emitted":[
+                {
+                    "stream_id":"__metrics",
+                    "value":60
+                },
+                {
+                    "stream_id":"default",
+                    "value":190754740
+                },
+                {
+                    "stream_id":"__ack_ack",
+                    "value":17317580
+                },
+                {
+                    "stream_id":"__system",
+                    "value":20
+                }
+            ],
+            "transferred":[
+                {
+                    "stream_id":"__metrics",
+                    "value":60
+                },
+                {
+                    "stream_id":"default",
+                    "value":190754740
+                },
+                {
+                    "stream_id":"__ack_ack",
+                    "value":17317580
+                },
+                {
+                    "stream_id":"__system",
+                    "value":0
+                }
+            ],
+            "acked":[
+                {
+                    "component_id":"spout",
+                    "stream_id":"default",
+                    "value":17339180
+                }
+            ],
+            "failed":[
+
+            ],
+            "process_ms_avg":[
+                {
+                    "component_id":"spout",
+                    "stream_id":"default",
+                    "value":"0.051"
+                }
+            ],
+            "executed":[
+                {
+                    "component_id":"spout",
+                    "stream_id":"default",
+                    "value":17339240
+                }
+            ],
+            "executed_ms_avg":[
+                {
+                    "component_id":"spout",
+                    "stream_id":"default",
+                    "value":"0.052"
+                }
+            ]
+        }
+    ]
+}
+```
 
 ### /api/v1/topology/:id/component/:component (GET)
 
