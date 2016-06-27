@@ -15,12 +15,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.kafka.trident.selector;
+package org.apache.storm.kafka.mapper;
 
-import org.apache.storm.trident.tuple.TridentTuple;
+import org.apache.storm.tuple.ITuple;
 
 import java.io.Serializable;
 
-public interface KafkaTopicSelector extends Serializable {
-    String getTopic(TridentTuple tuple);
+/**
+ * as the really verbose name suggests this interface mapps a storm tuple to kafka key and message.
+ * @param <K> type of key.
+ * @param <V> type of value.
+ */
+public interface TupleToKafkaMapper<K,V> extends Serializable {
+    K getKeyFromTuple(ITuple tuple);
+    V getMessageFromTuple(ITuple tuple);
 }

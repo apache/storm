@@ -17,6 +17,10 @@
  */
 package org.apache.storm.kafka.bolt;
 
+import org.apache.storm.kafka.mapper.FieldNameBasedTupleToKafkaMapper;
+import org.apache.storm.kafka.mapper.TupleToKafkaMapper;
+import org.apache.storm.kafka.selector.DefaultTopicSelector;
+import org.apache.storm.kafka.selector.KafkaTopicSelector;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -29,10 +33,6 @@ import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.clients.producer.Callback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.storm.kafka.bolt.mapper.FieldNameBasedTupleToKafkaMapper;
-import org.apache.storm.kafka.bolt.mapper.TupleToKafkaMapper;
-import org.apache.storm.kafka.bolt.selector.DefaultTopicSelector;
-import org.apache.storm.kafka.bolt.selector.KafkaTopicSelector;
 import java.util.concurrent.Future;
 import java.util.concurrent.ExecutionException;
 import java.util.Map;

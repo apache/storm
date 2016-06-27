@@ -15,9 +15,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.kafka.bolt.mapper;
+package org.apache.storm.kafka.mapper;
 
-import org.apache.storm.tuple.Tuple;
+import org.apache.storm.tuple.ITuple;
 
 public class FieldNameBasedTupleToKafkaMapper<K,V> implements TupleToKafkaMapper<K, V> {
 
@@ -36,13 +36,13 @@ public class FieldNameBasedTupleToKafkaMapper<K,V> implements TupleToKafkaMapper
     }
 
     @Override
-    public K getKeyFromTuple(Tuple tuple) {
+    public K getKeyFromTuple(ITuple tuple) {
         //for backward compatibility, we return null when key is not present.
         return tuple.contains(boltKeyField) ? (K) tuple.getValueByField(boltKeyField) : null;
     }
 
     @Override
-    public V getMessageFromTuple(Tuple tuple) {
+    public V getMessageFromTuple(ITuple tuple) {
         return (V) tuple.getValueByField(boltMessageField);
     }
 }

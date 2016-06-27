@@ -15,9 +15,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.kafka.bolt.selector;
+package org.apache.storm.kafka.selector;
 
-import org.apache.storm.tuple.Tuple;
+import org.apache.storm.tuple.ITuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +38,7 @@ public class FieldNameTopicSelector implements KafkaTopicSelector {
     }
 
     @Override
-    public String getTopic(Tuple tuple) {
+    public String getTopic(ITuple tuple) {
         if (tuple.contains(fieldName)) {
             return tuple.getStringByField(fieldName);
         } else {

@@ -17,16 +17,16 @@
  */
 package org.apache.storm.kafka;
 
+import org.apache.storm.kafka.mapper.FieldNameBasedTupleToKafkaMapper;
+import org.apache.storm.kafka.mapper.TupleToKafkaMapper;
+import org.apache.storm.kafka.selector.DefaultTopicSelector;
+import org.apache.storm.kafka.selector.KafkaTopicSelector;
 import org.apache.storm.tuple.Fields;
 import kafka.javaapi.consumer.SimpleConsumer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.apache.storm.kafka.trident.TridentKafkaState;
-import org.apache.storm.kafka.trident.mapper.FieldNameBasedTupleToKafkaMapper;
-import org.apache.storm.kafka.trident.mapper.TridentTupleToKafkaMapper;
-import org.apache.storm.kafka.trident.selector.DefaultTopicSelector;
-import org.apache.storm.kafka.trident.selector.KafkaTopicSelector;
 import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.trident.tuple.TridentTupleView;
 
@@ -42,7 +42,7 @@ public class TridentKafkaTest {
     public void setup() {
         broker = new KafkaTestBroker();
         simpleConsumer = TestUtils.getKafkaConsumer(broker);
-        TridentTupleToKafkaMapper mapper = new FieldNameBasedTupleToKafkaMapper("key", "message");
+        TupleToKafkaMapper mapper = new FieldNameBasedTupleToKafkaMapper("key", "message");
         KafkaTopicSelector topicSelector = new DefaultTopicSelector(TestUtils.TOPIC);
         state = new TridentKafkaState()
                 .withKafkaTopicSelector(topicSelector)

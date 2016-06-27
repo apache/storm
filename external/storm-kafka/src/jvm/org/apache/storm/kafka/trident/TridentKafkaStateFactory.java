@@ -17,11 +17,11 @@
  */
 package org.apache.storm.kafka.trident;
 
+import org.apache.storm.kafka.mapper.TupleToKafkaMapper;
+import org.apache.storm.kafka.selector.KafkaTopicSelector;
 import org.apache.storm.task.IMetricsContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.storm.kafka.trident.mapper.TridentTupleToKafkaMapper;
-import org.apache.storm.kafka.trident.selector.KafkaTopicSelector;
 import org.apache.storm.trident.state.State;
 import org.apache.storm.trident.state.StateFactory;
 
@@ -32,11 +32,11 @@ public class TridentKafkaStateFactory implements StateFactory {
 
     private static final Logger LOG = LoggerFactory.getLogger(TridentKafkaStateFactory.class);
 
-    private TridentTupleToKafkaMapper mapper;
+    private TupleToKafkaMapper mapper;
     private KafkaTopicSelector topicSelector;
     private Properties producerProperties = new Properties();
 
-    public TridentKafkaStateFactory withTridentTupleToKafkaMapper(TridentTupleToKafkaMapper mapper) {
+    public TridentKafkaStateFactory withTridentTupleToKafkaMapper(TupleToKafkaMapper mapper) {
         this.mapper = mapper;
         return this;
     }

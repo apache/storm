@@ -15,14 +15,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.kafka.trident.mapper;
+package org.apache.storm.kafka.selector;
 
-import org.apache.storm.tuple.Tuple;
-import org.apache.storm.trident.tuple.TridentTuple;
+import org.apache.storm.tuple.ITuple;
 
-import java.io.Serializable;
+public class DefaultTopicSelector implements KafkaTopicSelector {
 
-public interface TridentTupleToKafkaMapper<K,V>  extends Serializable {
-    K getKeyFromTuple(TridentTuple tuple);
-    V getMessageFromTuple(TridentTuple tuple);
+    private final String topicName;
+
+    public DefaultTopicSelector(final String topicName) {
+        this.topicName = topicName;
+    }
+
+    @Override
+    public String getTopic(ITuple tuple) {
+        return topicName;
+    }
 }

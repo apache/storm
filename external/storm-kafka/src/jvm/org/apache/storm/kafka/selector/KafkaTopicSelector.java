@@ -15,20 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.kafka.bolt.selector;
+package org.apache.storm.kafka.selector;
 
-import org.apache.storm.tuple.Tuple;
+import org.apache.storm.tuple.ITuple;
 
-public class DefaultTopicSelector implements KafkaTopicSelector {
+import java.io.Serializable;
 
-    private final String topicName;
-
-    public DefaultTopicSelector(final String topicName) {
-        this.topicName = topicName;
-    }
-
-    @Override
-    public String getTopic(Tuple tuple) {
-        return topicName;
-    }
+public interface KafkaTopicSelector extends Serializable {
+    String getTopic(ITuple tuple);
 }

@@ -17,6 +17,8 @@
  */
 package org.apache.storm.kafka.trident;
 
+import org.apache.storm.kafka.mapper.TupleToKafkaMapper;
+import org.apache.storm.kafka.selector.KafkaTopicSelector;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.topology.FailedException;
 import org.apache.commons.lang.Validate;
@@ -25,8 +27,6 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.storm.kafka.trident.mapper.TridentTupleToKafkaMapper;
-import org.apache.storm.kafka.trident.selector.KafkaTopicSelector;
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.state.State;
 import org.apache.storm.trident.tuple.TridentTuple;
@@ -42,10 +42,10 @@ public class TridentKafkaState implements State {
     private KafkaProducer producer;
     private OutputCollector collector;
 
-    private TridentTupleToKafkaMapper mapper;
+    private TupleToKafkaMapper mapper;
     private KafkaTopicSelector topicSelector;
 
-    public TridentKafkaState withTridentTupleToKafkaMapper(TridentTupleToKafkaMapper mapper) {
+    public TridentKafkaState withTridentTupleToKafkaMapper(TupleToKafkaMapper mapper) {
         this.mapper = mapper;
         return this;
     }
