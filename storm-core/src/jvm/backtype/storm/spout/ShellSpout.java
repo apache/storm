@@ -31,6 +31,7 @@ import java.util.TimerTask;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import clojure.lang.RT;
@@ -45,7 +46,9 @@ public class ShellSpout implements ISpout {
     private SpoutOutputCollector _collector;
     private String[] _command;
     private ShellProcess _process;
-    
+    private volatile boolean _running = true;
+    private volatile RuntimeException _exception;
+
     private TopologyContext _context;
     
     private SpoutMsg _spoutMsg;
@@ -53,6 +56,7 @@ public class ShellSpout implements ISpout {
     private int workerTimeoutMills;
     private ScheduledExecutorService heartBeatExecutorService;
     private AtomicLong lastHeartbeatTimestamp = new AtomicLong();
+    private AtomicBoolean waitingOnSubprocess = new AtomicBoolean(false);
 
     public ShellSpout(ShellComponent component) {
         this(component.get_execution_command(), component.get_script());
@@ -80,9 +84,14 @@ public class ShellSpout implements ISpout {
     public void close() {
         heartBeatExecutorService.shutdownNow();
         _process.destroy();
+        _running = false;
     }
 
     public void nextTuple() {
+        if (_exception != null) {
+            throw _exception;
+        }
+
         if (_spoutMsg == null) {
             _spoutMsg = new SpoutMsg();
         }
@@ -92,6 +101,10 @@ public class ShellSpout implements ISpout {
     }
 
     public void ack(Object msgId) {
+        if (_exception != null) {
+            throw _exception;
+        }
+
         if (_spoutMsg == null) {
             _spoutMsg = new SpoutMsg();
         }
@@ -101,6 +114,10 @@ public class ShellSpout implements ISpout {
     }
 
     public void fail(Object msgId) {
+        if (_exception != null) {
+            throw _exception;
+        }
+
         if (_spoutMsg == null) {
             _spoutMsg = new SpoutMsg();
         }
@@ -139,6 +156,7 @@ public class ShellSpout implements ISpout {
 
     private void querySubprocess() {
         try {
+            markWaitingSubprocess();
             _process.writeSpoutMsg(_spoutMsg);
 
             while (true) {
@@ -178,6 +196,8 @@ public class ShellSpout implements ISpout {
         } catch (Exception e) {
             String processInfo = _process.getProcessInfoString() + _process.getProcessTerminationInfoString();
             throw new RuntimeException(processInfo, e);
+        } finally {
+            completedWaitingSubprocess();
         }
     }
 
@@ -233,13 +253,25 @@ public class ShellSpout implements ISpout {
         return lastHeartbeatTimestamp.get();
     }
 
-    private void die(Throwable exception) {
-        heartBeatExecutorService.shutdownNow();
+    private void markWaitingSubprocess() {
+        waitingOnSubprocess.compareAndSet(false, true);
+    }
 
-        LOG.error("Halting process: ShellSpout died.", exception);
+    private void completedWaitingSubprocess() {
+        waitingOnSubprocess.compareAndSet(true, false);
+    }
+
+    private void die(Throwable exception) {
+        String processInfo = _process.getProcessInfoString() + _process.getProcessTerminationInfoString();
+        _exception = new RuntimeException(processInfo, exception);
+        String message = String.format("Halting process: ShellSpout died. Command: %s, ProcessInfo %s",
+            Arrays.toString(_command),
+            processInfo);
+        LOG.error(message, exception);
         _collector.reportError(exception);
-        _process.destroy();
-        System.exit(11);
+        if (_running || (exception instanceof Error)) { //don't exit if not running, unless it is an Error
+            System.exit(11);
+        }
     }
 
     private class SpoutHeartbeatTimerTask extends TimerTask {
@@ -251,13 +283,14 @@ public class ShellSpout implements ISpout {
 
         @Override
         public void run() {
-            long currentTimeMillis = System.currentTimeMillis();
             long lastHeartbeat = getLastHeartbeat();
+            long currentTimestamp = System.currentTimeMillis();
+            boolean isWaitingOnSubprocess = waitingOnSubprocess.get();
 
-            LOG.debug("current time : {}, last heartbeat : {}, worker timeout (ms) : {}",
-                    currentTimeMillis, lastHeartbeat, workerTimeoutMills);
+            LOG.debug("last heartbeat : {}, waiting subprocess now : {}, worker timeout (ms) : {}",
+                    lastHeartbeat, isWaitingOnSubprocess, workerTimeoutMills);
 
-            if (currentTimeMillis - lastHeartbeat > workerTimeoutMills) {
+            if (isWaitingOnSubprocess && currentTimestamp - lastHeartbeat > workerTimeoutMills) {
                 spout.die(new RuntimeException("subprocess heartbeat timeout"));
             }
         }
