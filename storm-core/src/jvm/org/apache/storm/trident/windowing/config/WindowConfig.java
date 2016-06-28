@@ -31,13 +31,13 @@ public interface WindowConfig extends Serializable {
      * Returns the length of the window.
      * @return
      */
-    public int getWindowLength();
+    public long getWindowLength();
 
     /**
      * Returns the sliding length of the moving window.
      * @return
      */
-    public int getSlidingLength();
+    public long getSlidingLength();
 
     /**
      * Gives the type of windowing. It can be any of {@code Type} values.

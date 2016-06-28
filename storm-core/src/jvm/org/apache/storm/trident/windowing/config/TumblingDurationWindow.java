@@ -27,7 +27,7 @@ import org.apache.storm.trident.windowing.strategy.WindowStrategy;
  */
 public final class TumblingDurationWindow extends BaseWindowConfig {
 
-    private TumblingDurationWindow(int windowLength) {
+    private TumblingDurationWindow(long windowLength) {
         super(windowLength, windowLength);
     }
 

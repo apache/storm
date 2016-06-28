@@ -66,10 +66,14 @@ public abstract class BaseWindowedBolt implements IWindowedBolt {
      * Holds a Time duration for time based windows and sliding intervals.
      */
     public static class Duration {
-        public final int value;
+        public final long value;
 
         public Duration(int value, TimeUnit timeUnit) {
-            this.value = (int) timeUnit.toMillis(value);
+            this.value = timeUnit.toMillis(value);
+        }
+
+        public Duration(long value) {
+            this.value = value;
         }
 
         /**

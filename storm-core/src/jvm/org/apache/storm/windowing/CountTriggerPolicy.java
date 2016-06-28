@@ -26,13 +26,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @param <T> the type of event tracked by this policy.
  */
 public class CountTriggerPolicy<T> implements TriggerPolicy<T> {
-    private final int count;
+    private final long count;
     private final AtomicInteger currentCount;
     private final TriggerHandler handler;
     private final EvictionPolicy<T> evictionPolicy;
     private boolean started;
 
-    public CountTriggerPolicy(int count, TriggerHandler handler, EvictionPolicy<T> evictionPolicy) {
+    public CountTriggerPolicy(long count, TriggerHandler handler, EvictionPolicy<T> evictionPolicy) {
         this.count = count;
         this.currentCount = new AtomicInteger();
         this.handler = handler;

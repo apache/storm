@@ -26,10 +26,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @param <T> the type of event tracked by this policy.
  */
 public class CountEvictionPolicy<T> implements EvictionPolicy<T> {
-    private final int threshold;
+    private final long threshold;
     protected final AtomicInteger currentCount;
 
-    public CountEvictionPolicy(int count) {
+    public CountEvictionPolicy(long count) {
         this.threshold = count;
         this.currentCount = new AtomicInteger();
     }

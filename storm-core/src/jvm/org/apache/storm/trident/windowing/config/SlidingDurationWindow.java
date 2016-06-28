@@ -29,7 +29,7 @@ import org.apache.storm.trident.windowing.strategy.WindowStrategy;
  */
 public final class SlidingDurationWindow extends BaseWindowConfig {
 
-    private SlidingDurationWindow(int windowLength, int slideLength) {
+    private SlidingDurationWindow(long windowLength, long slideLength) {
         super(windowLength, slideLength);
     }
 

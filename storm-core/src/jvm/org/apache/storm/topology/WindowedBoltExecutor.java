@@ -76,7 +76,7 @@ public class WindowedBoltExecutor implements IRichBolt {
         this.bolt = bolt;
     }
 
-    private int getTopologyTimeoutMillis(Map stormConf) {
+    private long getTopologyTimeoutMillis(Map stormConf) {
         if (stormConf.get(Config.TOPOLOGY_ENABLE_MESSAGE_TIMEOUTS) != null) {
             boolean timeOutsEnabled = (boolean) stormConf.get(Config.TOPOLOGY_ENABLE_MESSAGE_TIMEOUTS);
             if (!timeOutsEnabled) {
@@ -98,7 +98,7 @@ public class WindowedBoltExecutor implements IRichBolt {
         return maxPending;
     }
 
-    private void ensureDurationLessThanTimeout(int duration, int timeout) {
+    private void ensureDurationLessThanTimeout(long duration, long timeout) {
         if (duration > timeout) {
             throw new IllegalArgumentException("Window duration (length + sliding interval) value " + duration +
                                                        " is more than " + Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS +
@@ -117,7 +117,7 @@ public class WindowedBoltExecutor implements IRichBolt {
     private void validate(Map stormConf, Count windowLengthCount, Duration windowLengthDuration,
                           Count slidingIntervalCount, Duration slidingIntervalDuration) {
 
-        int topologyTimeout = getTopologyTimeoutMillis(stormConf);
+        long topologyTimeout = getTopologyTimeoutMillis(stormConf);
         int maxSpoutPending = getMaxSpoutPending(stormConf);
         if (windowLengthCount == null && windowLengthDuration == null) {
             throw new IllegalArgumentException("Window length is not specified");

@@ -21,7 +21,7 @@ package org.apache.storm.windowing;
  * Eviction policy that evicts events based on time duration.
  */
 public class TimeEvictionPolicy<T> implements EvictionPolicy<T> {
-    private final int windowLength;
+    private final long windowLength;
     /**
      * The reference time in millis for window calculations and
      * expiring events. If not set it will default to System.currentTimeMillis()
@@ -34,7 +34,7 @@ public class TimeEvictionPolicy<T> implements EvictionPolicy<T> {
      *
      * @param windowLength the duration in milliseconds
      */
-    public TimeEvictionPolicy(int windowLength) {
+    public TimeEvictionPolicy(long windowLength) {
         this.windowLength = windowLength;
     }
 
