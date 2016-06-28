@@ -18,10 +18,13 @@
 package org.apache.storm.avro;
 
 import com.esotericsoftware.kryo.Kryo;
+
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
+
 import org.apache.avro.Schema;
+import org.apache.storm.Config;
 
 import java.io.IOException;
 import java.util.Map;
@@ -50,11 +53,11 @@ public class ConfluentAvroSerializer extends AbstractAvroSerializer {
      * See Storm's SerializationFactory class for details
      *
      * @param k Unused but needs to be present for Serialization Factory to find this constructor
-     * @param stormConf The global storm configuration. Must define "avro.schemaregistry.confluent" to locate the
+     * @param stormConf The global storm configuration. Must define "topology.avro.confluent.schema.registry.url" to locate the
      *                  confluent schema registry. Should in the form of "http://HOST:PORT"
      */
     public ConfluentAvroSerializer(Kryo k, Map stormConf) {
-        url = (String) stormConf.get("avro.schemaregistry.confluent");
+        url = (String) stormConf.get(Config.TOPOLOGY_AVRO_CONFLUENT_SCHEMA_REGISTRY_URL);
         this.theClient = new CachedSchemaRegistryClient(this.url, 10000);
     }
 

@@ -367,9 +367,9 @@ To integrate with Avro you **must** register the appropriate Kryo serializers wi
 
 `AvroUtils.addAvroKryoSerializations(conf);`
 
-###AvroSchema
+###AvroScheme
 
-`AvroSchema` is an implementation of `Schema`. You can use AvroSchema to read Avro GenericRecord from Kafka:
+`AvroScheme` is an implementation of `Scheme`. You can use AvroScheme to read Avro GenericRecord from Kafka:
 
 ```java
 BrokerHosts hosts = new ZkHosts(zkConnString);

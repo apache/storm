@@ -17,12 +17,17 @@
  */
 package org.apache.storm.kafka;
 
+import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient;
+import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericContainer;
+import org.apache.storm.Config;
 import org.apache.storm.avro.DefaultDirectAvroSerializer;
 import org.apache.storm.avro.DirectAvroSerializer;
 import org.apache.storm.spout.Scheme;
@@ -35,10 +40,42 @@ public class AvroScheme implements Scheme {
     DirectAvroSerializer serializer = new DefaultDirectAvroSerializer();
     Schema schema;
 
+    /**
+     * @param schemaString json format schema string
+     */
     public AvroScheme(String schemaString) {
         schema = new Schema.Parser().parse(schemaString);
     }
 
+    /**
+     * for confluent avro schema registry
+     * 
+     * @param url schema registry server url
+     * @param id schema id
+     */
+    public AvroScheme(String url, int id) {
+        getRegistrySchema(url, id);
+    }
+
+    /**
+     * @param id schema id
+     * @param stormConf storm configuration
+     */
+    public AvroScheme(int id, Map stormConf) {
+        String url = (String) stormConf.get(Config.TOPOLOGY_AVRO_CONFLUENT_SCHEMA_REGISTRY_URL);
+        getRegistrySchema(url, id);
+    }
+
+    private void getRegistrySchema(String url, int id) {
+        CachedSchemaRegistryClient client = new CachedSchemaRegistryClient(url, 10000);
+        try {
+            schema = client.getByID(id);
+        } catch (IOException | RestClientException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
     public List<Object> deserialize(ByteBuffer byteBuffer) {
         try {
             GenericContainer record = null;
