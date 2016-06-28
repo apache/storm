@@ -30,10 +30,12 @@ import org.apache.storm.hdfs.trident.rotation.FileSizeRotationPolicy;
 import org.apache.storm.trident.Stream;
 import org.apache.storm.trident.TridentState;
 import org.apache.storm.trident.TridentTopology;
-import org.apache.storm.trident.operation.BaseFunction;
-import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.state.StateFactory;
-import org.apache.storm.trident.tuple.TridentTuple;
+import org.yaml.snakeyaml.Yaml;
+
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.util.Map;
 
 public class TridentSequenceTopology {
 
@@ -73,16 +75,22 @@ public class TridentSequenceTopology {
     public static void main(String[] args) throws Exception {
         Config conf = new Config();
         conf.setMaxSpoutPending(5);
-        if (args.length == 1) {
+
+        Yaml yaml = new Yaml();
+        InputStream in = new FileInputStream(args[1]);
+        Map<String, Object> yamlConf = (Map<String, Object>) yaml.load(in);
+        in.close();
+        conf.put("hdfs.config", yamlConf);
+
+        if (args.length == 2) {
             LocalCluster cluster = new LocalCluster();
             cluster.submitTopology("wordCounter", conf, buildTopology(args[0]));
             Thread.sleep(120 * 1000);
-        }
-        else if(args.length == 2) {
+        } else if(args.length == 3) {
             conf.setNumWorkers(3);
-            StormSubmitter.submitTopology(args[1], conf, buildTopology(args[0]));
+            StormSubmitter.submitTopology(args[2], conf, buildTopology(args[0]));
         } else{
-            System.out.println("Usage: TridentFileTopology <hdfs url> [topology name]");
+            System.out.println("Usage: TridentSequenceTopology [hdfs url] [hdfs yaml config file] <topology name>");
         }
     }
 }
