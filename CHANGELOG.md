@@ -1,3 +1,6 @@
+## 1.0.3
+ * STORM-1924: Add a config file parameter to HDFS test topologies
+
 ## 1.0.2
  * STORM-1705: Cap number of retries for a failed message
  * STORM-1884: Prioritize pendingPrepare over pendingCommit
