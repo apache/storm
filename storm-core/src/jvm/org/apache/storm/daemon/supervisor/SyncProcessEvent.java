@@ -41,10 +41,14 @@ import java.io.IOException;
 import java.util.*;
 
 /**
- * 1. to kill are those in allocated that are dead or disallowed 2. kill the ones that should be dead - read pids, kill -9 and individually remove file - rmr
- * heartbeat dir, rmdir pid dir, rmdir id dir (catch exception and log) 3. of the rest, figure out what assignments aren't yet satisfied 4. generate new worker
- * ids, write new "approved workers" to LS 5. create local dir for worker id 5. launch new workers (give worker-id, port, and supervisor-id) 6. wait for workers
- * launch
+ * 1. to kill are those in allocated that are dead or disallowed
+ * 2. kill the ones that should be dead - read pids, kill -9 and individually remove file - rmr heartbeat dir, rmdir pid dir, rmdir id dir (catch exception and log)
+ * 3. remove any downloaded code that's no longer assigned to this supervisor
+ * 4. of the rest, figure out what assignments aren't yet satisfied
+ * 5. generate new worker ids, write new "approved workers" to LS
+ * 6. create local dir for worker id
+ * 7. launch new workers (give worker-id, port, and supervisor-id)
+ * 8. wait for workers launch
  */
 public class SyncProcessEvent implements Runnable {
 
@@ -98,6 +102,12 @@ public class SyncProcessEvent implements Runnable {
             if (assignedExecutors == null) {
                 assignedExecutors = new HashMap<>();
             }
+
+            Set<String> assignedStormIds = new HashSet<>();
+            for (Map.Entry<Integer, LocalAssignment> entry : assignedExecutors.entrySet()) {
+                assignedStormIds.add(entry.getValue().get_topology_id());
+            }
+
             int now = Time.currentTimeSecs();
 
             Map<String, StateHeartbeat> localWorkerStats = getLocalWorkerStats(supervisorData, assignedExecutors, now);
@@ -116,6 +126,8 @@ public class SyncProcessEvent implements Runnable {
             for (Integer port : reassignExecutors.keySet()) {
                 newWorkerIds.put(port, Utils.uuid());
             }
+            Set<String> allDownloadedTopologyIds = SupervisorUtils.readDownLoadedStormIds(conf);
+
             LOG.debug("Assigned executors: {}", assignedExecutors);
             LOG.debug("Allocated: {}", localWorkerStats);
 
@@ -127,6 +139,15 @@ public class SyncProcessEvent implements Runnable {
                     killWorker(supervisorData, supervisorData.getWorkerManager(), entry.getKey());
                 }
             }
+
+            // remove any downloaded code that's no longer assigned or active
+            for (String downloadedTopologyId : allDownloadedTopologyIds) {
+                if (!assignedStormIds.contains(downloadedTopologyId)) {
+                    LOG.info("Removing code for storm id {}.", downloadedTopologyId);
+                    SupervisorUtils.rmTopoFiles(conf, downloadedTopologyId, supervisorData.getLocalizer(), true);
+                }
+            }
+
             // start new workers
             Map<String, Integer> newWorkerPortToIds = startNewWorkers(newWorkerIds, reassignExecutors);
 

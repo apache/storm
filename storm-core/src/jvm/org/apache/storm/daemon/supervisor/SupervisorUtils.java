@@ -283,4 +283,43 @@ public class SupervisorUtils {
             throw Utils.wrapInRuntime(e);
         }
     }
+
+
+    /**
+     * Remove a reference to a blob when its no longer needed.
+     *
+     * @param localizer
+     * @param stormId
+     * @param conf
+     */
+    public static void removeBlobReferences(Localizer localizer, String stormId, Map conf) throws Exception {
+        Map stormConf = ConfigUtils.readSupervisorStormConf(conf, stormId);
+        Map<String, Map<String, Object>> blobstoreMap = (Map<String, Map<String, Object>>) stormConf.get(Config.TOPOLOGY_BLOBSTORE_MAP);
+        String user = (String) stormConf.get(Config.TOPOLOGY_SUBMITTER_USER);
+        String topoName = (String) stormConf.get(Config.TOPOLOGY_NAME);
+        if (blobstoreMap != null) {
+            for (Map.Entry<String, Map<String, Object>> entry : blobstoreMap.entrySet()) {
+                String key = entry.getKey();
+                Map<String, Object> blobInfo = entry.getValue();
+                localizer.removeBlobReference(key, user, topoName, shouldUncompressBlob(blobInfo));
+            }
+        }
+    }
+
+    public static void rmTopoFiles(Map conf, String stormId, Localizer localizer, boolean isrmBlobRefs) throws IOException {
+        String path = ConfigUtils.supervisorStormDistRoot(conf, stormId);
+        try {
+            if (isrmBlobRefs) {
+                removeBlobReferences(localizer, stormId, conf);
+            }
+            if (Utils.getBoolean(conf.get(Config.SUPERVISOR_RUN_WORKER_AS_USER), false)) {
+                SupervisorUtils.rmrAsUser(conf, stormId, path);
+            } else {
+                Utils.forceDelete(ConfigUtils.supervisorStormDistRoot(conf, stormId));
+            }
+        } catch (Exception e) {
+            LOG.info("Exception removing: {} ", stormId, e);
+        }
+    }
+
 }
