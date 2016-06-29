@@ -388,71 +388,11 @@
                 (get-worker-assignment-helper-msg assignment supervisor port id))
               nil)))))))
 
-(defn sync-processes [supervisor]
-  (let [conf (:conf supervisor)
-        ^LocalState local-state (:local-state supervisor)
-        storm-cluster-state (:storm-cluster-state supervisor)
-        assigned-executors (defaulted (ls-local-assignments local-state) {})
-        now (current-time-secs)
-        allocated (read-allocated-workers supervisor assigned-executors now)
-        keepers (filter-val
-                 (fn [[state _]] (= state :valid))
-                 allocated)
-        keep-ports (set (for [[id [_ hb]] keepers] (:port hb)))
-        reassign-executors (select-keys-pred (complement keep-ports) assigned-executors)
-        new-worker-ids (into
-                        {}
-                        (for [port (keys reassign-executors)]
-                          [port (uuid)]))]
-    ;; 1. to kill are those in allocated that are dead or disallowed
-    ;; 2. kill the ones that should be dead
-    ;;     - read pids, kill -9 and individually remove file
-    ;;     - rmr heartbeat dir, rmdir pid dir, rmdir id dir (catch exception and log)
-    ;; 3. of the rest, figure out what assignments aren't yet satisfied
-    ;; 4. generate new worker ids, write new "approved workers" to LS
-    ;; 5. create local dir for worker id
-    ;; 5. launch new workers (give worker-id, port, and supervisor-id)
-    ;; 6. wait for workers launch
-
-    (log-debug "Syncing processes")
-    (log-debug "Assigned executors: " assigned-executors)
-    (log-debug "Allocated: " allocated)
-    (doseq [[id [state heartbeat]] allocated]
-      (when (not= :valid state)
-        (log-message
-         "Shutting down and clearing state for id " id
-         ". Current supervisor time: " now
-         ". State: " state
-         ", Heartbeat: " (pr-str heartbeat))
-        (shutdown-worker supervisor id)))
-    (let [valid-new-worker-ids (get-valid-new-worker-ids conf supervisor reassign-executors new-worker-ids)]
-      (ls-approved-workers! local-state
-                        (merge
-                          (select-keys (ls-approved-workers local-state)
-                            (keys keepers))
-                          valid-new-worker-ids))
-      (wait-for-workers-launch conf (keys valid-new-worker-ids)))))
-
 (defn assigned-storm-ids-from-port-assignments [assignment]
   (->> assignment
        vals
        (map :storm-id)
        set))
-
-(defn shutdown-disallowed-workers [supervisor]
-  (let [conf (:conf supervisor)
-        ^LocalState local-state (:local-state supervisor)
-        assigned-executors (defaulted (ls-local-assignments local-state) {})
-        now (current-time-secs)
-        allocated (read-allocated-workers supervisor assigned-executors now)
-        disallowed (keys (filter-val
-                                  (fn [[state _]] (= state :disallowed))
-                                  allocated))]
-    (log-debug "Allocated workers " allocated)
-    (log-debug "Disallowed workers " disallowed)
-    (doseq [id disallowed]
-      (shutdown-worker supervisor id))
-    ))
 
 (defn get-blob-localname
   "Given the blob information either gets the localname field if it exists,
@@ -525,15 +465,60 @@
           (rm-topo-files conf storm-id localizer false)
           storm-id)))))
 
-(defn kill-existing-workers-with-change-in-components [supervisor existing-assignment new-assignment]
-  (let [assigned-executors (or (ls-local-assignments (:local-state supervisor)) {})
-        allocated (read-allocated-workers supervisor assigned-executors (Time/currentTimeSecs))
-        valid-allocated (filter-val (fn [[state _]] (= state :valid)) allocated)
-        port->worker-id (clojure.set/map-invert (map-val #((nth % 1) :port) valid-allocated))]
-    (doseq [p (set/intersection (set (keys existing-assignment))
-                                (set (keys new-assignment)))]
-      (if (not= (set (:executors (existing-assignment p))) (set (:executors (new-assignment p))))
-        (shutdown-worker supervisor (port->worker-id p))))))
+(defn sync-processes [supervisor]
+  (let [conf (:conf supervisor)
+        ^LocalState local-state (:local-state supervisor)
+        assigned-executors (defaulted (ls-local-assignments local-state) {})
+        assigned-storm-ids (assigned-storm-ids-from-port-assignments assigned-executors)
+        localizer (:localizer supervisor)
+        now (current-time-secs)
+        allocated (read-allocated-workers supervisor assigned-executors now)
+        keepers (filter-val
+                  (fn [[state _]] (= state :valid))
+                  allocated)
+        keep-ports (set (for [[id [_ hb]] keepers] (:port hb)))
+        reassign-executors (select-keys-pred (complement keep-ports) assigned-executors)
+        new-worker-ids (into
+                         {}
+                         (for [port (keys reassign-executors)]
+                           [port (uuid)]))
+        all-downloaded-storm-ids (set (read-downloaded-storm-ids conf))]
+    ;; 1. to kill are those in allocated that are dead or disallowed
+    ;; 2. kill the ones that should be dead
+    ;;     - read pids, kill -9 and individually remove file
+    ;;     - rmr heartbeat dir, rmdir pid dir, rmdir id dir (catch exception and log)
+    ;; 3. remove any downloaded code that's no longer assigned to this supervisor
+    ;; 4. of the rest, figure out what assignments aren't yet satisfied
+    ;; 5. generate new worker ids, write new "approved workers" to LS
+    ;; 6. create local dir for worker id
+    ;; 7. launch new workers (give worker-id, port, and supervisor-id)
+    ;; 8. wait for workers launch
+
+    (log-debug "Syncing processes")
+    (log-debug "Assigned executors: " assigned-executors)
+    (log-debug "Allocated: " allocated)
+    (doseq [[id [state heartbeat]] allocated]
+      (when (not= :valid state)
+        (log-message
+          "Shutting down and clearing state for id " id
+          ". Current supervisor time: " now
+          ". State: " state
+          ", Heartbeat: " (pr-str heartbeat))
+        (shutdown-worker supervisor id)))
+
+    (doseq [storm-id all-downloaded-storm-ids]
+      (when-not (assigned-storm-ids storm-id)
+        (log-message "Removing code for storm id "
+                     storm-id)
+        (rm-topo-files conf storm-id localizer true)))
+
+    (let [valid-new-worker-ids (get-valid-new-worker-ids conf supervisor reassign-executors new-worker-ids)]
+      (ls-approved-workers! local-state
+                            (merge
+                              (select-keys (ls-approved-workers local-state)
+                                           (keys keepers))
+                              valid-new-worker-ids))
+      (wait-for-workers-launch conf (keys valid-new-worker-ids)))))
 
 (defn mk-synchronize-supervisor [supervisor sync-processes event-manager processes-event-manager]
   (fn this []
@@ -592,24 +577,13 @@
       (doseq [p (set/difference (set (keys existing-assignment))
                                 (set (keys new-assignment)))]
         (.killedWorker isupervisor (int p)))
-      (kill-existing-workers-with-change-in-components supervisor existing-assignment new-assignment)
       (.assigned isupervisor (keys new-assignment))
       (ls-local-assignments! local-state
             new-assignment)
       (reset! (:assignment-versions supervisor) versions)
       (reset! (:stormid->profiler-actions supervisor) storm-id->profiler-actions)
-
       (reset! (:curr-assignment supervisor) new-assignment)
-      ;; remove any downloaded code that's no longer assigned or active
-      ;; important that this happens after setting the local assignment so that
-      ;; synchronize-supervisor doesn't try to launch workers for which the
-      ;; resources don't exist
-      (if on-windows? (shutdown-disallowed-workers supervisor))
-      (doseq [storm-id all-downloaded-storm-ids]
-        (when-not (storm-code-map storm-id)
-          (log-message "Removing code for storm id "
-                       storm-id)
-          (rm-topo-files conf storm-id localizer true)))
+
       (.add processes-event-manager sync-processes))))
 
 (defn mk-supervisor-capacities
@@ -724,9 +698,7 @@
             storm-home (System/getProperty "storm.home")
             profile-cmd (str (clojure.java.io/file storm-home
                                                    "bin"
-                                                   (conf WORKER-PROFILER-COMMAND)))
-            new-assignment @(:curr-assignment supervisor)
-            assigned-storm-ids (assigned-storm-ids-from-port-assignments new-assignment)]
+                                                   (conf WORKER-PROFILER-COMMAND)))]
         (doseq [[storm-id profiler-actions] stormid->profiler-actions]
           (when (not (empty? profiler-actions))
             (doseq [pro-action profiler-actions]
