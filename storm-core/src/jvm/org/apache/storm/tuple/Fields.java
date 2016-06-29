@@ -51,11 +51,7 @@ public class Fields implements Iterable<String>, Serializable {
     public List<Object> select(Fields selector, List<Object> tuple) {
         List<Object> ret = new ArrayList<>(selector.size());
         for (String s : selector) {
-            Integer index = _index.get(s);
-            if (index == null) {
-                throw new IllegalArgumentException(s + " does not exist");
-        }
-            ret.add(tuple.get(index));
+       	 	ret.add(tuple.get(fieldIndex(s))); 
         }
         return ret;
     }
