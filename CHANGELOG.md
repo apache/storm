@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-1229: port backtype.storm.metric.testing to java
  * STORM-1228: port backtype.storm.fields-test to java
  * STORM-1233: Port AuthUtilsTest to java
  * STORM-1920: version of parent pom for storm-kafka-monitor is set 1.0.2-SNAPSHOT in master branch
