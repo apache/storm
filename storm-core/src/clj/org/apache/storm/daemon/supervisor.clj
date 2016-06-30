@@ -493,6 +493,8 @@
     ;; 6. create local dir for worker id
     ;; 7. launch new workers (give worker-id, port, and supervisor-id)
     ;; 8. wait for workers launch
+    ;; Note: sync-processes runs based on local assignment, and avoid reading zk assignment.
+    ;; It's due to race condition between sync-supervisor and sync-processes.
 
     (log-debug "Syncing processes")
     (log-debug "Assigned executors: " assigned-executors)
@@ -545,6 +547,13 @@
           localizer (:localizer supervisor)
           checked-downloaded-storm-ids (set (verify-downloaded-files conf localizer assigned-storm-ids all-downloaded-storm-ids))
           downloaded-storm-ids (set/difference all-downloaded-storm-ids checked-downloaded-storm-ids)]
+
+      ;; 1. download assigned topology code if it's not downloaded
+      ;; 2. write new assignment to local assignment, and atom variables
+      ;; 3. trigger sync-processes to take care of the rest
+      ;; Note: mk-synchronize-supervisor runs based on zk assignment, and avoids touching local state
+      ;; except updating new assignment which sync-processes will refer.
+      ;; It's due to race condition between sync-supervisor and sync-processes.
 
       (log-debug "Synchronizing supervisor")
       (log-debug "Storm code map: " storm-code-map)
