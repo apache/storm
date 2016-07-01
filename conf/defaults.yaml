@@ -61,7 +61,7 @@ storm.health.check.timeout.ms: 5000
 ### nimbus.* configs are for the master
 nimbus.seeds : ["localhost"]
 nimbus.thrift.port: 6627
-nimbus.thrift.threads: 64
+nimbus.thrift.threads: 196
 nimbus.thrift.max_buffer_size: 1048576
 nimbus.childopts: "-Xmx1024m"
 nimbus.task.timeout.secs: 30
