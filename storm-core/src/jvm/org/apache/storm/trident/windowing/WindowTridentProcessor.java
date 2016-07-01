@@ -163,9 +163,8 @@ public class WindowTridentProcessor implements TridentProcessor {
         Iterable<Object> triggerValues = null;
 
         if (retriedAttempt(batchId)) {
-            Object triggerIds = windowStore.get(inprocessTriggerKey(batchTxnId));
-            if (triggerIds != null) {
-                pendingTriggerIds = (List<Integer>) triggerIds;
+            pendingTriggerIds = (List<Integer>) windowStore.get(inprocessTriggerKey(batchTxnId));
+            if (pendingTriggerIds != null){
                 for (Integer pendingTriggerId : pendingTriggerIds) {
                     triggerKeys.add(triggerKey(pendingTriggerId));
                 }
