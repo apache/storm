@@ -85,10 +85,13 @@ public class TridentKafkaState implements State {
 		for (TridentTuple tuple : tuples) {
 			try {
 				topic = topicSelector.getTopic(tuple);
-				batchList
-						.add(new KeyedMessage(topic, mapper.getKeyFromTuple(tuple), 
-						mapper.getMessageFromTuple(tuple)));
-				LOG.debug("Updated Batch");
+				if (topic != null) {
+					batchList.add(
+							new KeyedMessage(topic, mapper.getKeyFromTuple(tuple), mapper.getMessageFromTuple(tuple)));
+					LOG.debug("Updated Batch");
+				} else {
+					LOG.warn("skipping key = " + mapper.getKeyFromTuple(tuple) + ", topic selector returned null.");
+				}
 			} catch (Exception ex) {
 				String errorMsg = "Error while filling up List for Batching";
 				LOG.warn(errorMsg, ex);
@@ -104,8 +107,7 @@ public class TridentKafkaState implements State {
 				LOG.warn("BatchList is null " + batchList);
 			}
 		} catch (Exception ex) {
-			String errorMsg = "Could not send messages = " + tuples + " to topic = "
-					+ topic;
+			String errorMsg = "Could not send messages = " + tuples + " to topic = " + topic;
 			LOG.warn(errorMsg, ex);
 			throw new FailedException(errorMsg, ex);
 		}
