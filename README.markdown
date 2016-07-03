@@ -265,6 +265,7 @@ under the License.
 * Balázs Kossovics ([@kosii](https://github.com/kosii))
 * csivaguru ([@csivaguru](https://github.com/csivaguru))
 * sakanaou ([@sakanaou](https://github.com/sakanaou))
+* wangperry ([@wangperry](https://github.com/wangperry))
 
 
 ## Acknowledgements
