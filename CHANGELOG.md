@@ -134,6 +134,7 @@
  * STORM-1924: Add a config file parameter to HDFS test topologies
 
 ## 1.0.2
+ * STORM-1937: Fix WindowTridentProcessor cause NullPointerException
  * STORM-1861: Storm submit command returns exit code of 0 even when it fails.
  * STORM-1755: Revert the kafka client version upgrade in storm-kafka module
  * STORM-1853: Replace ClassLoaderObjectInputStream with ObjectInputStream
