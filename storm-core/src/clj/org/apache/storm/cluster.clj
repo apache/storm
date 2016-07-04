@@ -334,6 +334,8 @@
                           (if (.equals newState ConnectionState/RECONNECTED)
                             (do
                               (log-message "Connection state has changed to reconnected so setting nimbuses entry one more time")
+                              ;explicit delete for ephmeral node to ensure this session creates the entry.
+                              (.delete_node cluster-state (nimbus-path nimbus-id))
                               (.set_ephemeral_node cluster-state (nimbus-path nimbus-id) (Utils/serialize nimbus-summary) acls))))))
         
         (.set_ephemeral_node cluster-state (nimbus-path nimbus-id) (Utils/serialize nimbus-summary) acls))
