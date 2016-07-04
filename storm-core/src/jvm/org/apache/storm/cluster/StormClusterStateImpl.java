@@ -219,6 +219,8 @@ public class StormClusterStateImpl implements IStormClusterState {
                 LOG.info("Connection state listener invoked, zookeeper connection state has changed to {}", connectionState);
                 if (connectionState.equals(ConnectionState.RECONNECTED)) {
                     LOG.info("Connection state has changed to reconnected so setting nimbuses entry one more time");
+                    // explicit delete for ephmeral node to ensure this session creates the entry.
+                    stateStorage.delete_node(ClusterUtils.nimbusPath(nimbusId));
                     stateStorage.set_ephemeral_node(ClusterUtils.nimbusPath(nimbusId), Utils.serialize(nimbusSummary), acls);
                 }
 
