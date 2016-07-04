@@ -77,41 +77,40 @@ public class TridentKafkaState implements State {
         producer = new Producer(config);
     }
 
-    @SuppressWarnings("rawtypes")
-	public void updateState(List<TridentTuple> tuples, TridentCollector collector) {
-		String topic = null;
-		List<KeyedMessage> batchList = new ArrayList<KeyedMessage>(tuples.size());
-		// Creating Batch
-		for (TridentTuple tuple : tuples) {
-			try {
-				topic = topicSelector.getTopic(tuple);
-				if (topic != null) {
-					batchList.add(
-							new KeyedMessage(topic, mapper.getKeyFromTuple(tuple), mapper.getMessageFromTuple(tuple)));
-					LOG.debug("Updated Batch");
-				} else {
-					LOG.warn("skipping key = " + mapper.getKeyFromTuple(tuple) + ", topic selector returned null.");
-				}
-			} catch (Exception ex) {
-				String errorMsg = "Error while filling up List for Batching";
-				LOG.warn(errorMsg, ex);
-				throw new FailedException(errorMsg, ex);
-			}
-		}
-		// Sending Batch
-		try {
-			if (batchList != null) {
-				producer.send(batchList);
-				LOG.debug("Sending the Batch " + batchList.hashCode());
-			} else {
-				LOG.warn("BatchList is null " + batchList);
-			}
-		} catch (Exception ex) {
-			String errorMsg = "Could not send messages = " + tuples + " to topic = " + topic;
-			LOG.warn(errorMsg, ex);
-			throw new FailedException(errorMsg, ex);
-		}
-
-	} 
-    
+    @SuppressWarnings({"rawtypes", "unchecked", "unused"})
+    public void updateState(List<TridentTuple> tuples, TridentCollector collector) {
+        String topic = null;
+        List<KeyedMessage> batchList = new ArrayList<KeyedMessage>(tuples.size());
+        // Creating Batch
+        for (TridentTuple tuple : tuples) {
+            try {
+                topic = topicSelector.getTopic(tuple);
+                if (topic != null) {
+                    batchList.add(new KeyedMessage(topic, mapper.getKeyFromTuple(tuple),
+                            mapper.getMessageFromTuple(tuple)));
+                    LOG.debug("Updated Batch");
+                } else {
+                    LOG.warn("skipping key = " + mapper.getKeyFromTuple(tuple)
+                            + ", topic selector returned null.");
+                }
+            } catch (Exception ex) {
+                String errorMsg = "Error while filling up List for Batching";
+                LOG.warn(errorMsg, ex);
+                throw new FailedException(errorMsg, ex);
+            }
+        }
+        // Sending Batch
+        try {
+            if (batchList != null) {
+                producer.send(batchList);
+                LOG.debug("Sending the Batch " + batchList.hashCode());
+            } else {
+                LOG.warn("BatchList is null " + batchList);
+            }
+        } catch (Exception ex) {
+            String errorMsg = "Could not send messages = " + tuples + " to topic = " + topic;
+            LOG.warn(errorMsg, ex);
+            throw new FailedException(errorMsg, ex);
+        }
+    }
 }
