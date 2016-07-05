@@ -111,6 +111,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0 
+ * STORM-1719: Introduce REST API: Topology metric stats for stream
  * STORM-1941: Nimbus discovery can fail when zookeeper reconnect happens
  * STORM-1888: add description for shell command
  * STORM-1902: add a simple & flexible FileNameFormat for storm-hdfs
