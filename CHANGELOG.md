@@ -1,5 +1,4 @@
 ## 1.1.0
- * STORM-1941 Nimbus discovery can fail when zookeeper reconnect happens
  * STORM-1888: add description for shell command
  * STORM-1902: add a simple & flexible FileNameFormat for storm-hdfs
  * STORM-1914: Storm Kafka Field Topic Selector
@@ -44,6 +43,7 @@
  * STORM-1924: Add a config file parameter to HDFS test topologies
 
 ## 1.0.2
+ * STORM-1941 Nimbus discovery can fail when zookeeper reconnect happens
  * STORM-1937: Fix WindowTridentProcessor cause NullPointerException
  * STORM-1861: Storm submit command returns exit code of 0 even when it fails.
  * STORM-1755: Revert the kafka client version to 0.8.x in storm-kafka
