@@ -77,7 +77,7 @@ public class TridentKafkaState implements State {
         producer = new Producer(config);
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked", "unused"})
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public void updateState(List<TridentTuple> tuples, TridentCollector collector) {
         String topic = null;
         List<KeyedMessage> batchList = new ArrayList<KeyedMessage>(tuples.size());
@@ -101,12 +101,8 @@ public class TridentKafkaState implements State {
         }
         // Sending Batch
         try {
-            if (batchList != null) {
-                producer.send(batchList);
-                LOG.debug("Sending the Batch " + batchList.hashCode());
-            } else {
-                LOG.warn("BatchList is null " + batchList);
-            }
+            producer.send(batchList);
+            LOG.debug("Sending the Batch " + batchList);
         } catch (Exception ex) {
             String errorMsg = "Could not send messages = " + tuples + " to topic = " + topic;
             LOG.warn(errorMsg, ex);
