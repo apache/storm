@@ -39,12 +39,10 @@
  * STORM-1709: Added group by support in storm sql standalone mode
  * STORM-1720: Support GEO in storm-redis
 
-## 1.0.3
- * STORM-1924: Add a config file parameter to HDFS test topologies
-
 ## 1.0.2
- * STORM-1941 Nimbus discovery can fail when zookeeper reconnect happens
+ * STORM-1941: Nimbus discovery can fail when zookeeper reconnect happens
  * STORM-1937: Fix WindowTridentProcessor cause NullPointerException
+ * STORM-1924: Add a config file parameter to HDFS test topologies
  * STORM-1861: Storm submit command returns exit code of 0 even when it fails.
  * STORM-1755: Revert the kafka client version to 0.8.x in storm-kafka
  * STORM-1745: Add partition to log output in PartitionManager
