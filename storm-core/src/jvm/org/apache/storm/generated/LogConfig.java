@@ -368,16 +368,16 @@ public class LogConfig implements org.apache.thrift.TBase<LogConfig, LogConfig._
           case 2: // NAMED_LOGGER_LEVEL
             if (schemeField.type == org.apache.thrift.protocol.TType.MAP) {
               {
-                org.apache.thrift.protocol.TMap _map704 = iprot.readMapBegin();
-                struct.named_logger_level = new HashMap<String,LogLevel>(2*_map704.size);
-                String _key705;
-                LogLevel _val706;
-                for (int _i707 = 0; _i707 < _map704.size; ++_i707)
+                org.apache.thrift.protocol.TMap _map738 = iprot.readMapBegin();
+                struct.named_logger_level = new HashMap<String,LogLevel>(2*_map738.size);
+                String _key739;
+                LogLevel _val740;
+                for (int _i741 = 0; _i741 < _map738.size; ++_i741)
                 {
-                  _key705 = iprot.readString();
-                  _val706 = new LogLevel();
-                  _val706.read(iprot);
-                  struct.named_logger_level.put(_key705, _val706);
+                  _key739 = iprot.readString();
+                  _val740 = new LogLevel();
+                  _val740.read(iprot);
+                  struct.named_logger_level.put(_key739, _val740);
                 }
                 iprot.readMapEnd();
               }
@@ -404,10 +404,10 @@ public class LogConfig implements org.apache.thrift.TBase<LogConfig, LogConfig._
           oprot.writeFieldBegin(NAMED_LOGGER_LEVEL_FIELD_DESC);
           {
             oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.STRUCT, struct.named_logger_level.size()));
-            for (Map.Entry<String, LogLevel> _iter708 : struct.named_logger_level.entrySet())
+            for (Map.Entry<String, LogLevel> _iter742 : struct.named_logger_level.entrySet())
             {
-              oprot.writeString(_iter708.getKey());
-              _iter708.getValue().write(oprot);
+              oprot.writeString(_iter742.getKey());
+              _iter742.getValue().write(oprot);
             }
             oprot.writeMapEnd();
           }
@@ -439,10 +439,10 @@ public class LogConfig implements org.apache.thrift.TBase<LogConfig, LogConfig._
       if (struct.is_set_named_logger_level()) {
         {
           oprot.writeI32(struct.named_logger_level.size());
-          for (Map.Entry<String, LogLevel> _iter709 : struct.named_logger_level.entrySet())
+          for (Map.Entry<String, LogLevel> _iter743 : struct.named_logger_level.entrySet())
           {
-            oprot.writeString(_iter709.getKey());
-            _iter709.getValue().write(oprot);
+            oprot.writeString(_iter743.getKey());
+            _iter743.getValue().write(oprot);
           }
         }
       }
@@ -454,16 +454,16 @@ public class LogConfig implements org.apache.thrift.TBase<LogConfig, LogConfig._
       BitSet incoming = iprot.readBitSet(1);
       if (incoming.get(0)) {
         {
-          org.apache.thrift.protocol.TMap _map710 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
-          struct.named_logger_level = new HashMap<String,LogLevel>(2*_map710.size);
-          String _key711;
-          LogLevel _val712;
-          for (int _i713 = 0; _i713 < _map710.size; ++_i713)
+          org.apache.thrift.protocol.TMap _map744 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
+          struct.named_logger_level = new HashMap<String,LogLevel>(2*_map744.size);
+          String _key745;
+          LogLevel _val746;
+          for (int _i747 = 0; _i747 < _map744.size; ++_i747)
           {
-            _key711 = iprot.readString();
-            _val712 = new LogLevel();
-            _val712.read(iprot);
-            struct.named_logger_level.put(_key711, _val712);
+            _key745 = iprot.readString();
+            _val746 = new LogLevel();
+            _val746.read(iprot);
+            struct.named_logger_level.put(_key745, _val746);
           }
         }
         struct.set_named_logger_level_isSet(true);

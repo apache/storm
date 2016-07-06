@@ -635,17 +635,17 @@ public class ClusterWorkerHeartbeat implements org.apache.thrift.TBase<ClusterWo
           case 2: // EXECUTOR_STATS
             if (schemeField.type == org.apache.thrift.protocol.TType.MAP) {
               {
-                org.apache.thrift.protocol.TMap _map624 = iprot.readMapBegin();
-                struct.executor_stats = new HashMap<ExecutorInfo,ExecutorStats>(2*_map624.size);
-                ExecutorInfo _key625;
-                ExecutorStats _val626;
-                for (int _i627 = 0; _i627 < _map624.size; ++_i627)
+                org.apache.thrift.protocol.TMap _map658 = iprot.readMapBegin();
+                struct.executor_stats = new HashMap<ExecutorInfo,ExecutorStats>(2*_map658.size);
+                ExecutorInfo _key659;
+                ExecutorStats _val660;
+                for (int _i661 = 0; _i661 < _map658.size; ++_i661)
                 {
-                  _key625 = new ExecutorInfo();
-                  _key625.read(iprot);
-                  _val626 = new ExecutorStats();
-                  _val626.read(iprot);
-                  struct.executor_stats.put(_key625, _val626);
+                  _key659 = new ExecutorInfo();
+                  _key659.read(iprot);
+                  _val660 = new ExecutorStats();
+                  _val660.read(iprot);
+                  struct.executor_stats.put(_key659, _val660);
                 }
                 iprot.readMapEnd();
               }
@@ -692,10 +692,10 @@ public class ClusterWorkerHeartbeat implements org.apache.thrift.TBase<ClusterWo
         oprot.writeFieldBegin(EXECUTOR_STATS_FIELD_DESC);
         {
           oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRUCT, org.apache.thrift.protocol.TType.STRUCT, struct.executor_stats.size()));
-          for (Map.Entry<ExecutorInfo, ExecutorStats> _iter628 : struct.executor_stats.entrySet())
+          for (Map.Entry<ExecutorInfo, ExecutorStats> _iter662 : struct.executor_stats.entrySet())
           {
-            _iter628.getKey().write(oprot);
-            _iter628.getValue().write(oprot);
+            _iter662.getKey().write(oprot);
+            _iter662.getValue().write(oprot);
           }
           oprot.writeMapEnd();
         }
@@ -727,10 +727,10 @@ public class ClusterWorkerHeartbeat implements org.apache.thrift.TBase<ClusterWo
       oprot.writeString(struct.storm_id);
       {
         oprot.writeI32(struct.executor_stats.size());
-        for (Map.Entry<ExecutorInfo, ExecutorStats> _iter629 : struct.executor_stats.entrySet())
+        for (Map.Entry<ExecutorInfo, ExecutorStats> _iter663 : struct.executor_stats.entrySet())
         {
-          _iter629.getKey().write(oprot);
-          _iter629.getValue().write(oprot);
+          _iter663.getKey().write(oprot);
+          _iter663.getValue().write(oprot);
         }
       }
       oprot.writeI32(struct.time_secs);
@@ -743,17 +743,17 @@ public class ClusterWorkerHeartbeat implements org.apache.thrift.TBase<ClusterWo
       struct.storm_id = iprot.readString();
       struct.set_storm_id_isSet(true);
       {
-        org.apache.thrift.protocol.TMap _map630 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRUCT, org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
-        struct.executor_stats = new HashMap<ExecutorInfo,ExecutorStats>(2*_map630.size);
-        ExecutorInfo _key631;
-        ExecutorStats _val632;
-        for (int _i633 = 0; _i633 < _map630.size; ++_i633)
+        org.apache.thrift.protocol.TMap _map664 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRUCT, org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
+        struct.executor_stats = new HashMap<ExecutorInfo,ExecutorStats>(2*_map664.size);
+        ExecutorInfo _key665;
+        ExecutorStats _val666;
+        for (int _i667 = 0; _i667 < _map664.size; ++_i667)
         {
-          _key631 = new ExecutorInfo();
-          _key631.read(iprot);
-          _val632 = new ExecutorStats();
-          _val632.read(iprot);
-          struct.executor_stats.put(_key631, _val632);
+          _key665 = new ExecutorInfo();
+          _key665.read(iprot);
+          _val666 = new ExecutorStats();
+          _val666.read(iprot);
+          struct.executor_stats.put(_key665, _val666);
         }
       }
       struct.set_executor_stats_isSet(true);
