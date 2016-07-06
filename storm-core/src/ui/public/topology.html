@@ -79,6 +79,9 @@
     <div id="bolt-stats" class="col-md-12"></div>
   </div>
   <div class="row">
+    <div id="worker-stats" class="col-md-12"></div>
+  </div>
+  <div class="row">
     <div id="topology-visualization" class="col-md-12"></div>
   </div>
   <div class="row">
@@ -283,6 +286,7 @@ $(document).ready(function() {
         var topologySpoutsLag = $("#topology-spouts-lag");
         var spoutStats = $("#spout-stats");
         var boltStats = $("#bolt-stats");
+        var workerStats = $("#worker-stats");
         var config = $("#topology-configuration");
         var topologyActions = $("#topology-actions");
         var topologyVisualization = $("#topology-visualization")
@@ -331,6 +335,12 @@ $(document).ready(function() {
               ]
             });
 
+          jsError(function() {
+            workerStats.append(Mustache.render($(template).filter("#worker-stats-template").html(),response));
+            makeTopologyWorkerStatsTable (response, '#worker-stats-table', '#worker-stats');
+          });
+
+          jsError(function() {
             topologyVisualization.append(Mustache.render($(template).filter("#topology-visualization-template").html(), response));
             $("#show-hide-visualization").click(function () { show_visualization(null) });
 
@@ -438,9 +448,9 @@ $(document).ready(function() {
                     }
                 }
             });
+          });
       }});
     });
-
  });
 </script>
 </html>

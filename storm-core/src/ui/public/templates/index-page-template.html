@@ -252,8 +252,8 @@
   <tbody>
     {{#supervisors}}
     <tr>
-      <td><a href="{{logLink}}">{{host}}</a></td>
-      <td>{{id}}</td>
+      <td><a href="/supervisor.html?host={{host}}">{{host}}</a> (<a href="{{logLink}}" title="View log">log</a>)</td>
+      <td><a href="/supervisor.html?id={{id}}">{{id}}</a></td>
       <td>{{uptime}}</td>
       <td>{{slotsTotal}}</td>
       <td>{{slotsUsed}}</td>
