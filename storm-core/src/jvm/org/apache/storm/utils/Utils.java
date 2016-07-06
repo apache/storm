@@ -2092,9 +2092,9 @@ public class Utils {
         return _instance.addToClasspathImpl(classpath, paths);
     }
 
-    public static String addToClasspath(Collection<String> classpath,
+    public static String addToClasspath(Collection<String> classpaths,
                 Collection<String> paths) {
-        return _instance.addToClasspathImpl(classpath, paths);
+        return _instance.addToClasspathImpl(classpaths, paths);
     }
 
     // Non-static impl methods exist for mocking purposes.
