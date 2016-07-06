@@ -2116,7 +2116,7 @@ public class Utils {
             allPaths.addAll(classpaths);
         }
         if(paths != null) {
-            allpaths.addAll(classpaths);
+            allPaths.addAll(paths);
         }
         return StringUtils.join(allPaths, CLASS_PATH_SEPARATOR);
     }
