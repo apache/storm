@@ -356,13 +356,14 @@ public class DefaultWorkerManager implements IWorkerManager {
         } else if (topologyClasspathFirst instanceof String) {
             firstClasspathList.add((String) topologyClasspathFirst);
         }
+        LOG.debug("Topology Classpath Prefix: {}", firstClasspathList);
 
         if (object instanceof List) {
             topoClasspath.addAll((List<String>) object);
         } else if (object instanceof String) {
             topoClasspath.add((String) object);
         }
-        LOG.debug("topology specific classpath is {}", object);
+        LOG.debug("Topology specific classpath is {}", object);
 
         String classPath = Utils.addToClasspath(firstClasspathList, Arrays.asList(Utils.workerClasspath()));
         String classAddPath = Utils.addToClasspath(classPath, Arrays.asList(stormJar));

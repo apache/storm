@@ -2109,15 +2109,16 @@ public class Utils {
         return StringUtils.join(l, CLASS_PATH_SEPARATOR);
     }
 
-    public String addToClasspathImpl(Collection<String> classpath,
+    public String addToClasspathImpl(Collection<String> classpaths,
                 Collection<String> paths) {
-        String basePath = StringUtils.join(classpath, CLASS_PATH_SEPARATOR);
-        if(!basePath.equals("")) {
-            return addToClasspath(basePath, paths);
+        List<String> allPaths = new ArrayList<>();
+        if(classpaths != null) {
+            allPaths.addAll(classpaths);
         }
-        else {
-            return StringUtils.join(paths, CLASS_PATH_SEPARATOR);
+        if(paths != null) {
+            allpaths.addAll(classpaths);
         }
+        return StringUtils.join(allPaths, CLASS_PATH_SEPARATOR);
     }
 
     public static class UptimeComputer {
