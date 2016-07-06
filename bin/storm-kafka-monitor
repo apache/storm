@@ -40,4 +40,4 @@ else
   JAVA="$JAVA_HOME/bin/java"
 fi
 
-exec "$JAVA" -cp "$STORM_BASE_DIR/extlib/*" org.apache.storm.kafka.monitor.KafkaOffsetLagUtil "$@"
+exec "$JAVA" -cp "$STORM_BASE_DIR/toollib/*" org.apache.storm.kafka.monitor.KafkaOffsetLagUtil "$@"

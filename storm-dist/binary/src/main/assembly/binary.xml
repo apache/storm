@@ -340,10 +340,10 @@
         </fileSet>
         <!-- $STORM_HOME/extlib -->
         <fileSet>
-            <directory>${project.basedir}/../../external/storm-kafka-monitor/target</directory>
+            <directory></directory>
             <outputDirectory>extlib</outputDirectory>
             <includes>
-                <include>storm*jar</include>
+                <include></include>
             </includes>
         </fileSet>
         <!-- $STORM_HOME/extlib-daemon, for daemons only -->
@@ -352,6 +352,14 @@
             <outputDirectory>extlib-daemon</outputDirectory>
             <includes>
                 <include></include>
+            </includes>
+        </fileSet>
+        <!-- $STORM_HOME/toollib -->
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-kafka-monitor/target</directory>
+            <outputDirectory>toollib</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
             </includes>
         </fileSet>
 
