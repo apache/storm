@@ -502,7 +502,26 @@
                                     (Matchers/eq full-env)
                                     (Matchers/any)
                                     (Matchers/any)
-                                    (Matchers/any)))))))))
+                                    (Matchers/any))))))
+
+      (testing "testing addToClasspath(Collection<String>, Collection<String>)"
+        (let [firstpart (java.util.ArrayList. ["a" "b" "c"])
+              secondpart (java.util.ArrayList. ["d" "e" "f"])
+              ^java.util.ArrayList nillist nil]
+          (is (= (Utils/addToClasspath firstpart secondpart)
+                 "a:b:c:d:e:f"))
+          (is (= (Utils/addToClasspath [] secondpart)
+                 "d:e:f"))
+          (is (= (Utils/addToClasspath nillist secondpart)
+                 "d:e:f"))
+          (is (= (Utils/addToClasspath firstpart [])
+                 "a:b:c"))
+          (is (= (Utils/addToClasspath firstpart nillist)
+                 "a:b:c"))
+          (is (= (Utils/addToClasspath [] [])
+                 ""))
+          (is (= (Utils/addToClasspath nillist nillist)
+                 "")))))))
 
 (deftest test-worker-launch-command-run-as-user
   (testing "*.worker.childopts configuration"
