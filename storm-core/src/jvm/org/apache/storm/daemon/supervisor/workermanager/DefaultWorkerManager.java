@@ -352,7 +352,7 @@ public class DefaultWorkerManager implements IWorkerManager {
         Object topologyClasspathFirst = stormConf.get(Config.TOPOLOGY_CLASSPATH_FIRST);
         List<String> firstClasspathList = new ArrayList<>();
         if(topologyClasspathFirst instanceof List) {
-           firstClasspathList.addAll((List<String>)topologyClasspathFirst);
+            firstClasspathList.addAll((List<String>)topologyClasspathFirst);
         } else if (topologyClasspathFirst instanceof String) {
             firstClasspathList.add((String) topologyClasspathFirst);
         }
