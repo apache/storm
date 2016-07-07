@@ -220,7 +220,6 @@ public class WindowedBoltExecutorTest {
             Time.sleep(10);
         }
 
-        System.out.println(testWindowedBolt.tupleWindows);
         Tuple tuple = tuples.get(tuples.size() - 1);
         Mockito.verify(outputCollector).emit("$late", Arrays.asList(tuple), new Values(tuple));
     }
