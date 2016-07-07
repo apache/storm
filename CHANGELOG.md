@@ -1,4 +1,9 @@
 ## 2.0.0
+ * STORM-1249: port backtype.storm.security.serialization.BlowfishTupleSerializer-test to java
+ * STORM-1238: port backtype.storm.security.auth.ThriftServer-test to java
+ * STORM-1237: port backtype.storm.security.auth.ThriftClient-test to java
+ * STORM-1236: port backtype.storm.security.auth.SaslTransportPlugin-test to java
+ * STORM-1235: port backtype.storm.security.auth.ReqContext-test to java
  * STORM-1229: port backtype.storm.metric.testing to java
  * STORM-1228: port backtype.storm.fields-test to java
  * STORM-1233: Port AuthUtilsTest to java
