@@ -18,6 +18,13 @@
 
 package org.apache.storm;
 
+import org.apache.storm.scheduler.blacklist.reporters.IReporter;
+import org.apache.storm.scheduler.blacklist.strategies.IBlacklistStrategy;
+import org.apache.storm.container.ResourceIsolationInterface;
+import org.apache.storm.nimbus.ITopologyActionNotifierPlugin;
+import org.apache.storm.scheduler.resource.strategies.eviction.IEvictionStrategy;
+import org.apache.storm.scheduler.resource.strategies.priority.ISchedulingPriorityStrategy;
+import org.apache.storm.scheduler.resource.strategies.scheduling.IStrategy;
 import org.apache.storm.container.ResourceIsolationInterface;
 import org.apache.storm.nimbus.ITopologyActionNotifierPlugin;
 import org.apache.storm.scheduler.resource.strategies.eviction.IEvictionStrategy;
@@ -101,6 +108,38 @@ public class DaemonConfig implements Validated {
      */
     @isString
     public static final String STORM_SCHEDULER = "storm.scheduler";
+
+    /**
+     * The number of seconds that the blacklist scheduler will concern of bad slots or supervisors
+     */
+    @isInteger
+    public static final String BLACKLIST_SCHEDULER_TOLERANCE_TIME = "blacklist.scheduler.tolerance.time.secs";
+
+    /**
+     * The number of hit count that will trigger blacklist in tolerance time
+     */
+    @isInteger
+    public static final String BLACKLIST_SCHEDULER_TOLERANCE_COUNT = "blacklist.scheduler.tolerance.count";
+
+    /**
+     * The number of seconds that the blacklisted slots or supervisor will be resumed
+     */
+    @isInteger
+    public static final String BLACKLIST_SCHEDULER_RESUME_TIME = "blacklist.scheduler.resume.time.secs";
+
+    /**
+     * The class that the blacklist scheduler will report the blacklist
+     */
+    @NotNull
+    @isImplementationOfClass(implementsClass = IReporter.class)
+    public static final String BLACKLIST_SCHEDULER_REPORTER = "blacklist.scheduler.reporter";
+
+    /**
+     * The class that specifies the eviction strategy to use in blacklist scheduler
+     */
+    @NotNull
+    @isImplementationOfClass(implementsClass = IBlacklistStrategy.class)
+    public static final String BLACKLIST_SCHEDULER_STRATEGY = "blacklist.scheduler.strategy";
 
     /**
      * Whether we want to display all the resource capacity and scheduled usage on the UI page.

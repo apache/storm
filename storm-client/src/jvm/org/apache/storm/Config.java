@@ -1515,8 +1515,8 @@ public class Config extends HashMap<String, Object> {
     public static final String STORM_EXHIBITOR_PORT = "storm.exhibitor.port";
 
     /*
- * How often to poll Exhibitor cluster in millis.
- */
+     * How often to poll Exhibitor cluster in millis.
+     */
     @isString
     public static final String STORM_EXHIBITOR_URIPATH="storm.exhibitor.poll.uripath";
 
@@ -1532,7 +1532,7 @@ public class Config extends HashMap<String, Object> {
     @isInteger
     public static final String STORM_EXHIBITOR_RETRY_TIMES="storm.exhibitor.retry.times";
 
-    /**
+    /*
      * The interval between retries of an Exhibitor operation.
      */
     @isInteger
