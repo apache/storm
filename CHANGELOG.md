@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-1742: More accurate 'complete latency'
  * STORM-1945: Fix NPE bugs on topology spout lag for storm-kafka-monitor
  * STORM-1888: add description for shell command
  * STORM-1902: add a simple & flexible FileNameFormat for storm-hdfs
