@@ -134,11 +134,32 @@ public class KafkaOffsetLagUtil {
                         commandLine.getOptionValue(OPTION_BOOTSTRAP_BROKERS_LONG), commandLine.getOptionValue(OPTION_GROUP_ID_LONG));
                 results = getOffsetLags(newKafkaSpoutOffsetQuery);
             }
-            System.out.print(JSONValue.toJSONString(results));
+
+            Map<String, Map<Integer, KafkaPartitionOffsetLag>> keyedResult = keyByTopicAndPartition(results);
+            System.out.print(JSONValue.toJSONString(keyedResult));
         } catch (Exception ex) {
             System.out.print("Unable to get offset lags for kafka. Reason: ");
             ex.printStackTrace(System.out);
         }
+    }
+
+    private static Map<String, Map<Integer, KafkaPartitionOffsetLag>> keyByTopicAndPartition(
+        List<KafkaOffsetLagResult> results) {
+        Map<String, Map<Integer, KafkaPartitionOffsetLag>> resultKeyedByTopic = new HashMap<>();
+
+        for (KafkaOffsetLagResult result : results) {
+            String topic = result.getTopic();
+            Map<Integer, KafkaPartitionOffsetLag> topicResultKeyedByPartition = resultKeyedByTopic.get(topic);
+            if (topicResultKeyedByPartition == null) {
+                topicResultKeyedByPartition = new HashMap<>();
+                resultKeyedByTopic.put(topic, topicResultKeyedByPartition);
+            }
+
+            topicResultKeyedByPartition.put(result.getPartition(),
+                new KafkaPartitionOffsetLag(result.getConsumerCommittedOffset(), result.getLogHeadOffset()));
+        }
+
+        return resultKeyedByTopic;
     }
 
     private static void printUsageAndExit (Options options, String message) {

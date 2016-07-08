@@ -24,6 +24,7 @@ import org.apache.storm.generated.ComponentObject;
 import org.apache.storm.generated.SpoutSpec;
 import org.apache.storm.generated.StormTopology;
 import org.json.simple.JSONValue;
+import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,10 +39,11 @@ public class TopologySpoutLag {
     private static final String SPOUT_ID = "spoutId";
     private static final String SPOUT_TYPE= "spoutType";
     private static final String SPOUT_LAG_RESULT = "spoutLagResult";
+    private static final String ERROR_INFO = "errorInfo";
     private final static Logger logger = LoggerFactory.getLogger(TopologySpoutLag.class);
 
-    public static List<Map<String, Object>> lag (StormTopology stormTopology, Map topologyConf) {
-        List<Map<String, Object>> result = new ArrayList<>();
+    public static Map<String, Map<String, Object>> lag (StormTopology stormTopology, Map topologyConf) {
+        Map<String, Map<String, Object>> result = new HashMap<>();
         Map<String, SpoutSpec> spouts = stormTopology.get_spouts();
         String className = null;
         for (Map.Entry<String, SpoutSpec> spout: spouts.entrySet()) {
@@ -52,9 +54,9 @@ public class TopologySpoutLag {
                 className = getClassNameFromComponentObject(componentObject);
                 logger.debug("spout classname: {}", className);
                 if (className.endsWith("storm.kafka.spout.KafkaSpout")) {
-                    result.add(getLagResultForNewKafkaSpout(spout.getKey(), spoutSpec, topologyConf));
+                    result.put(spout.getKey(), getLagResultForNewKafkaSpout(spout.getKey(), spoutSpec, topologyConf));
                 } else if (className.endsWith("storm.kafka.KafkaSpout")) {
-                    result.add(getLagResultForOldKafkaSpout(spout.getKey(), spoutSpec, topologyConf));
+                    result.put(spout.getKey(), getLagResultForOldKafkaSpout(spout.getKey(), spoutSpec, topologyConf));
                 }
             } catch (Exception e) {
                 logger.warn("Exception thrown while getting lag for spout id: " + spout.getKey() + " and spout class: " + className);
@@ -132,7 +134,8 @@ public class TopologySpoutLag {
     private static Map<String, Object> getLagResultForKafka (String spoutId, SpoutSpec spoutSpec, Map topologyConf, boolean old) throws IOException {
         ComponentCommon componentCommon = spoutSpec.get_common();
         String json = componentCommon.get_json_conf();
-        String result = "Offset lags for kafka not supported for older versions. Please update kafka spout to latest version.";
+        Map<String, Object> result = null;
+        String errorMsg = "Offset lags for kafka not supported for older versions. Please update kafka spout to latest version.";
         if (json != null && !json.isEmpty()) {
             List<String> commands = new ArrayList<>();
             String stormHomeDir = System.getenv("STORM_BASE_DIR");
@@ -147,13 +150,28 @@ public class TopologySpoutLag {
 
             // if commands contains one or more null value, spout is compiled with lower version of storm-kafka / storm-kafka-client
             if (!commands.contains(null)) {
-                result = ShellUtils.execCommand(commands.toArray(new String[0]));
+                String resultFromMonitor = ShellUtils.execCommand(commands.toArray(new String[0]));
+
+                try {
+                    result = (Map<String, Object>) JSONValue.parseWithException(resultFromMonitor);
+                } catch (ParseException e) {
+                    logger.debug("JSON parsing failed, assuming message as error message: {}", resultFromMonitor);
+                    // json parsing fail -> error received
+                    errorMsg = resultFromMonitor;
+                }
             }
         }
+
         Map<String, Object> kafkaSpoutLagInfo = new HashMap<>();
         kafkaSpoutLagInfo.put(SPOUT_ID, spoutId);
         kafkaSpoutLagInfo.put(SPOUT_TYPE, "KAFKA");
-        kafkaSpoutLagInfo.put(SPOUT_LAG_RESULT, result);
+
+        if (result != null) {
+            kafkaSpoutLagInfo.put(SPOUT_LAG_RESULT, result);
+        } else {
+            kafkaSpoutLagInfo.put(ERROR_INFO, errorMsg);
+        }
+
         return kafkaSpoutLagInfo;
     }
 
