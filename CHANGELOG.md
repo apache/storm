@@ -43,6 +43,7 @@
  * STORM-1720: Support GEO in storm-redis
 
 ## 1.0.2
+ * STORM-1895: blobstore replication-factor argument
  * STORM-118: Docs: typo in transactional-commit-flow.png
  * STORM-1633: Document blobstore to command-line-client.md
  * STORM-1899: Release HBase connection when topology shutdown
