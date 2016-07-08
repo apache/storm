@@ -133,7 +133,31 @@ To set up 2-way authentication:
 1. `drpc.https.want.client.auth` (If this set to true, server requests for client certificate authentication, but keeps the connection even if no authentication is provided)
 2. `drpc.https.need.client.auth` (If this set to true, server requires the client to provide authentication)
 
+#### GENERATE CERTIFICATES FOR LOCAL TESTING SSL SETUP
 
+Run the following script and fill in the values and passwords when prompted. The `keyalg` must be set to `RSA`
+
+```bash
+#!/bin/bash
+
+DIR=/Users/user/certs/dir/
+
+keytool -keystore $DIR/server.keystore.jks -alias localhost -validity 365 -keyalg RSA -genkey
+
+openssl req -new -x509 -keyout $DIR/ca-key -out $DIR/ca-cert -days 365
+
+keytool -keystore $DIR/server.truststore.jks -alias CARoot -import -file $DIR/ca-cert
+
+keytool -keystore $DIR/client.truststore.jks -alias CARoot -import -file $DIR/ca-cert
+
+keytool -keystore $DIR/server.keystore.jks -alias localhost -certreq -file $DIR/cert-file
+
+openssl x509 -req -CA $DIR/ca-cert -CAkey $DIR/ca-key -in $DIR/cert-file -out $DIR/cert-signed -days 365 -CAcreateserial -passin pass:test12
+
+keytool -keystore $DIR/server.keystore.jks -alias CARoot -import -file $DIR/ca-cert
+
+keytool -keystore $DIR/server.keystore.jks -alias localhost -import -file $DIR/cert-signed
+```
 
 ## Authentication (Kerberos)
 
@@ -468,7 +492,6 @@ or
 nimbus.groups:
    - "storm"
 ```
-
 
 ### DRPC
 Hopefully more on this soon
