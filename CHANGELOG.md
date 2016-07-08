@@ -1,4 +1,5 @@
 ## 1.0.2
+ * STORM-118: Docs: typo in transactional-commit-flow.png
  * STORM-1633: Document blobstore to command-line-client.md
  * STORM-1899: Release HBase connection when topology shutdown
  * STORM-1844: Some tests are flaky due to low timeout
