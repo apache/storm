@@ -30,7 +30,7 @@ import org.apache.storm.topology.ResourceDeclarer;
 public class DefaultResourceDeclarer<T extends DefaultResourceDeclarer> implements ResourceDeclarer<T>, ITridentResource {
 
     private Map<String, Number> resources = new HashMap<>();
-    private Map conf = Utils.readStormConfig();
+    private static Map conf = Utils.readStormConfig();
 
     @Override
     public T setMemoryLoad(Number onHeap) {
