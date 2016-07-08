@@ -477,6 +477,13 @@
  * STORM-1144: Display requested and assigned cpu/mem resources for schedulers in UI
  * STORM-1217: making small fixes in RAS
 
+## 0.10.2
+ * STORM-1834: Documentation How to Generate Certificates For Local Testing SSL Setup
+ * STORM-1754: Correct java version in 0.10.x storm-starter
+ * STORM-1750: Ensure worker dies when report-error-and-die is called.
+ * STORM-1739: update the minor JAVA version dependency in 0.10.0 and above
+ * STORM-1733: Flush stdout and stderr before calling "os.execvp" to prevent log loss
+
 ## 0.10.1
  * STORM-584: Fix logging for LoggingMetricsConsumer metrics.log file
  * STORM-1596: Do not use single Kerberos TGT instance between multiple threads
