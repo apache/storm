@@ -1,6 +1,5 @@
-## 1.0.3
-
 ## 1.0.2
+ * STORM-1946: initialize lastHeartbeatTimestamp before starting heartbeat task
  * STORM-1941 Nimbus discovery can fail when zookeeper reconnect happens
  * STORM-1937 Fix WindowTridentProcessor cause NullPointerException
  * STORM-1924: Add a config file parameter to HDFS test topologies
