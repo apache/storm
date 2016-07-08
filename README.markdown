@@ -266,6 +266,7 @@ under the License.
 * csivaguru ([@csivaguru](https://github.com/csivaguru))
 * sakanaou ([@sakanaou](https://github.com/sakanaou))
 * wangperry ([@wangperry](https://github.com/wangperry))
+* Slava Andreyev ([@slava92](https://github.com/slava92))
 
 
 ## Acknowledgements
