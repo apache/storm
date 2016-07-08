@@ -43,26 +43,44 @@ public class TopologySpoutLag {
     public static List<Map<String, Object>> lag (StormTopology stormTopology, Map topologyConf) {
         List<Map<String, Object>> result = new ArrayList<>();
         Map<String, SpoutSpec> spouts = stormTopology.get_spouts();
-        Object object = null;
+        String className = null;
         for (Map.Entry<String, SpoutSpec> spout: spouts.entrySet()) {
             try {
                 SpoutSpec spoutSpec = spout.getValue();
                 ComponentObject componentObject = spoutSpec.get_spout_object();
-                object = Utils.getSetComponentObject(componentObject);
-                if (object.getClass().getCanonicalName().endsWith("storm.kafka.spout.KafkaSpout")) {
+                // FIXME: yes it's a trick so we might be better to find alternative way...
+                className = getClassNameFromComponentObject(componentObject);
+                logger.debug("spout classname: {}", className);
+                if (className.endsWith("storm.kafka.spout.KafkaSpout")) {
                     result.add(getLagResultForNewKafkaSpout(spout.getKey(), spoutSpec, topologyConf));
-                } else if (object.getClass().getCanonicalName().endsWith("storm.kafka.KafkaSpout")) {
+                } else if (className.endsWith("storm.kafka.KafkaSpout")) {
                     result.add(getLagResultForOldKafkaSpout(spout.getKey(), spoutSpec, topologyConf));
                 }
             } catch (Exception e) {
-                logger.warn("Exception thrown while getting lag for spout id: " + spout.getKey() + " and spout class: " + object.getClass().getCanonicalName());
-                logger.warn("Exception message:" + e.getMessage());
+                logger.warn("Exception thrown while getting lag for spout id: " + spout.getKey() + " and spout class: " + className);
+                logger.warn("Exception message:" + e.getMessage(), e);
             }
         }
         return result;
     }
 
+    private static String getClassNameFromComponentObject(ComponentObject componentObject) {
+        try {
+            Object object = Utils.getSetComponentObject(componentObject);
+            return object.getClass().getCanonicalName();
+        } catch (RuntimeException e) {
+
+            if (e.getCause() instanceof ClassNotFoundException) {
+                return e.getCause().getMessage().trim();
+            }
+
+            throw e;
+        }
+    }
+
     private static List<String> getCommandLineOptionsForNewKafkaSpout (Map<String, Object> jsonConf) {
+        logger.debug("json configuration: {}", jsonConf);
+
         List<String> commands = new ArrayList<>();
         String configKeyPrefix = "config.";
         commands.add("-t");
@@ -75,6 +93,8 @@ public class TopologySpoutLag {
     }
 
     private static List<String> getCommandLineOptionsForOldKafkaSpout (Map<String, Object> jsonConf, Map topologyConf) {
+        logger.debug("json configuration: {}", jsonConf);
+
         List<String> commands = new ArrayList<>();
         String configKeyPrefix = "config.";
         commands.add("-o");
@@ -122,7 +142,13 @@ public class TopologySpoutLag {
             commands.add(stormHomeDir != null ? stormHomeDir + "bin" + File.separator + "storm-kafka-monitor" : "storm-kafka-monitor");
             Map<String, Object> jsonMap = (Map<String, Object>) JSONValue.parse(json);
             commands.addAll(old ? getCommandLineOptionsForOldKafkaSpout(jsonMap, topologyConf) : getCommandLineOptionsForNewKafkaSpout(jsonMap));
-            result = ShellUtils.execCommand(commands.toArray(new String[0]));
+
+            logger.debug("Command to run: {}", commands);
+
+            // if commands contains one or more null value, spout is compiled with lower version of storm-kafka / storm-kafka-client
+            if (!commands.contains(null)) {
+                result = ShellUtils.execCommand(commands.toArray(new String[0]));
+            }
         }
         Map<String, Object> kafkaSpoutLagInfo = new HashMap<>();
         kafkaSpoutLagInfo.put(SPOUT_ID, spoutId);
