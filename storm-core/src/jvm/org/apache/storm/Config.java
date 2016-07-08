@@ -1841,13 +1841,13 @@ public class Config extends HashMap<String, Object> {
      * classpaths, set the user.classpath.first.enabled config to true.
      */
     @isStringOrStringList
-    public static final String TOPOLOGY_CLASSPATH_FIRST="topology.classpath.first";
+    public static final String TOPOLOGY_CLASSPATH_BEGINNING="topology.classpath.beginning";
 
     /**
      * Enables user-first classpath. See topology.classpath.first
      */
     @isBoolean
-    public static final String STORM_USER_CLASSPATH_FIRST_ENABLED="storm.user.classpath.first.enabled";
+    public static final String STORM_TOPOLOGY_CLASSPATH_BEGINNING_ENABLED="storm.topology.classpath.beginning.enabled";
 
     /**
      * Topology-specific environment variables for the worker child process.

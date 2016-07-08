@@ -1488,9 +1488,9 @@
                 storm-conf (if (Utils/isZkAuthenticationConfiguredStormServer conf)
                                 storm-conf
                                 (dissoc storm-conf STORM-ZOOKEEPER-TOPOLOGY-AUTH-SCHEME STORM-ZOOKEEPER-TOPOLOGY-AUTH-PAYLOAD))
-                storm-conf (if (conf STORM-USER-CLASSPATH-FIRST-ENABLED)
+                storm-conf (if (conf STORM-TOPOLOGY-CLASSPATH-BEGINNING-ENABLED)
                              storm-conf
-                             (dissoc storm-conf TOPOLOGY-CLASSPATH-FIRST))
+                             (dissoc storm-conf TOPOLOGY-CLASSPATH-BEGINNING))
                 total-storm-conf (merge conf storm-conf)
                 topology (normalize-topology total-storm-conf topology)
                 storm-cluster-state (:storm-cluster-state nimbus)]
