@@ -116,6 +116,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0 
+ * STORM-1919: Introduce FilterBolt on storm-redis
  * STORM-1742: More accurate 'complete latency'
  * STORM-1945: Fix NPE bugs on topology spout lag for storm-kafka-monitor
  * STORM-1719: Introduce REST API: Topology metric stats for stream
