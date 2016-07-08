@@ -143,6 +143,8 @@ For example, the following would create a mytopo:data.tgz key using the data sto
 
 storm blobstore create mytopo:data.tgz -f data.tgz -a u:alice:rwa,u:bob:rw,o::r
 
+See [Blobstore(Distcahce)](distcache-blobstore.html) for more information.
+
 ### dev-zookeeper
 
 Syntax: `storm dev-zookeeper`
