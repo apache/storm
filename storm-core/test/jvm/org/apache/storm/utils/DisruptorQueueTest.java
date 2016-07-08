@@ -28,7 +28,7 @@ import junit.framework.TestCase;
 
 public class DisruptorQueueTest extends TestCase {
 
-    private final static int TIMEOUT = 1000; // MS
+    private final static int TIMEOUT = 5000; // MS
     private final static int PRODUCER_NUM = 4;
 
     @Test
