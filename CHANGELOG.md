@@ -141,6 +141,7 @@
  * STORM-1868: Modify TridentKafkaWordCount to run in distributed mode
 
 ## 1.0.2
+ * STORM-1844: Some tests are flaky due to low timeout
  * STORM-1946: initialize lastHeartbeatTimestamp before starting heartbeat task
  * STORM-1937: Fix WindowTridentProcessor cause NullPointerException
  * STORM-1924: Add a config file parameter to HDFS test topologies
