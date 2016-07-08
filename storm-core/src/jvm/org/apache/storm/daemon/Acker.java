@@ -51,6 +51,7 @@ public class Acker implements IBolt {
         public long val = 0L;
         public Integer spoutTask = null;
         public boolean failed = false;
+        public long startTime = System.currentTimeMillis();
 
         // val xor value
         public void updateAck(Long value) {
@@ -113,14 +114,15 @@ public class Acker implements IBolt {
 
         Integer task = curr.spoutTask;
         if (curr != null && task != null) {
+            Values tuple = new Values(id, getTimeDeltaMillis(curr.startTime));
             if (curr.val == 0) {
                 pending.remove(id);
-                collector.emitDirect(task, ACKER_ACK_STREAM_ID, new Values(id));
+                collector.emitDirect(task, ACKER_ACK_STREAM_ID, tuple);
             } else if (curr.failed) {
                 pending.remove(id);
-                collector.emitDirect(task, ACKER_FAIL_STREAM_ID, new Values(id));
+                collector.emitDirect(task, ACKER_FAIL_STREAM_ID, tuple);
             } else if(ACKER_RESET_TIMEOUT_STREAM_ID.equals(streamId)) {
-                collector.emitDirect(task, ACKER_RESET_TIMEOUT_STREAM_ID, new Values(id));
+                collector.emitDirect(task, ACKER_RESET_TIMEOUT_STREAM_ID, tuple);
             }
         }
 
@@ -130,5 +132,9 @@ public class Acker implements IBolt {
     @Override
     public void cleanup() {
         LOG.info("Acker: cleanup successfully");
+    }
+
+    private long getTimeDeltaMillis(long startTimeMillis) {
+        return System.currentTimeMillis() - startTimeMillis;
     }
 }

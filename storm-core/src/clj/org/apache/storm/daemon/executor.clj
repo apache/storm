@@ -492,11 +492,12 @@
                                    (when pending-for-id
                                      (.put pending id pending-for-id))) 
                               (let [id (.getValue tuple 0)
+                                    time-delta-ms (.getValue tuple 1)
                                     [stored-task-id spout-id tuple-finished-info start-time-ms] (.remove pending id)]
                                 (when spout-id
                                   (when-not (= stored-task-id task-id)
                                     (throw (RuntimeException. (str "Fatal error, mismatched task ids: " task-id " " stored-task-id))))
-                                  (let [time-delta (if start-time-ms (Time/deltaMs start-time-ms))]
+                                  (let [time-delta (if start-time-ms time-delta-ms)]
                                     (condp = stream-id
                                       Acker/ACKER_ACK_STREAM_ID (ack-spout-msg executor-data (get task-datas task-id)
                                                                                spout-id tuple-finished-info time-delta id)
