@@ -141,6 +141,7 @@
  * STORM-1868: Modify TridentKafkaWordCount to run in distributed mode
 
 ## 1.0.2
+ * STORM-1633: Document blobstore to command-line-client.md
  * STORM-1899: Release HBase connection when topology shutdown
  * STORM-1844: Some tests are flaky due to low timeout
  * STORM-1946: initialize lastHeartbeatTimestamp before starting heartbeat task
