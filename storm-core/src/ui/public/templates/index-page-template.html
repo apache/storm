@@ -194,13 +194,13 @@
   <thead>
     <tr>
       <th>
-        <span data-toggle="tooltip" data-placement="right" title="A unique identifier given to a Supervisor when it joins the cluster.">
-          Id
+        <span data-toggle="tooltip" data-placement="right" title="The hostname reported by the remote host. (Note that this hostname is not the result of a reverse lookup at the Nimbus node.)">
+          Host
         </span>
       </th>
       <th>
-        <span data-toggle="tooltip" data-placement="above" title="The hostname reported by the remote host. (Note that this hostname is not the result of a reverse lookup at the Nimbus node.)">
-          Host
+        <span data-toggle="tooltip" data-placement="above" title="A unique identifier given to a Supervisor when it joins the cluster.">
+          Id
         </span>
       </th>
       <th>
@@ -252,8 +252,8 @@
   <tbody>
     {{#supervisors}}
     <tr>
-      <td>{{id}}</td>
       <td><a href="{{logLink}}">{{host}}</a></td>
+      <td>{{id}}</td>
       <td>{{uptime}}</td>
       <td>{{slotsTotal}}</td>
       <td>{{slotsUsed}}</td>
