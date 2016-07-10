@@ -1,4 +1,5 @@
 ## 1.0.2
+ * STORM-1956: Disabling Backpressure by default
  * STORM-1934: Fix race condition between sync-supervisor and sync-processes
  * STORM-1895: blobstore replication-factor argument
  * STORM-118: Docs: typo in transactional-commit-flow.png
