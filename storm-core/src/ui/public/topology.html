@@ -392,44 +392,52 @@ $(document).ready(function() {
 
             var lagUrl = "/api/v1/topology/"+topologyId+"/lag";
             $.getJSON(lagUrl,function(lagResponse,status,jqXHR) {
-              if (lagResponse !== null && lagResponse !== undefined && lagResponse instanceof Array && lagResponse.length > 0) {
-                var kafkaSpoutsLagTemplate = $(template).filter("#topology-kafka-spouts-lag-template").html();
-                var spoutsErrorTemplate = $(template).filter("#topology-spouts-lag-error-template").html();
+                if (lagResponse !== null && lagResponse !== undefined) {
+                    var kafkaSpoutsLagTemplate = $(template).filter("#topology-kafka-spouts-lag-template").html();
+                    var spoutsErrorTemplate = $(template).filter("#topology-spouts-lag-error-template").html();
 
-                var kafkaSpoutLags = lagResponse.filter(function(ele) {return ele.spoutType === "KAFKA";});
-                var isJson = function (input) {
-                  try {
-                    JSON.parse(input);
-                  } catch (e) {
-                    return false;
-                  }
-                  return true;
-                };
-                var kafkaSpoutsValidResults = kafkaSpoutLags.filter(function (ele) {return isJson(ele.spoutLagResult);});
-                var kafkaSpoutsErrorResults = kafkaSpoutLags.filter(function (ele) {return !isJson(ele.spoutLagResult);});
-                var data = {};
-                if (kafkaSpoutsValidResults.length > 0) {
-                  data.kafkaSpoutsLagResults = [];
-                  kafkaSpoutsValidResults.forEach(function(ele) {
-                    var spoutLagResult = JSON.parse(ele.spoutLagResult);
-                    spoutLagResult.forEach(function(ele2) {
-                      data.kafkaSpoutsLagResults.push({
-                        id: ele.spoutId,
-                        topic: ele2.topic,
-                        partition: ele2.partition,
-                        logHeadOffset: ele2.logHeadOffset,
-                        consumerCommittedOffset: ele2.consumerCommittedOffset,
-                        lag: ele2.lag
-                      });
-                    });
-                  });
-                  topologySpoutsLag.append(Mustache.render(kafkaSpoutsLagTemplate,data));
+                    var data = {};
+                    data.kafkaSpoutsLagResults = [];
+                    data.spoutsLagErrorResults = [];
+                    for (var spoutId in lagResponse) {
+                        var spout = lagResponse[spoutId];
+                        var spoutType = spout.spoutType;
+                        if (spoutType !== "KAFKA") {
+                            continue;
+                        }
+                        var spoutLagResult = spout.spoutLagResult;
+                        var errorInfo = spout.errorInfo;
+                        if (spoutLagResult !== undefined) {
+                            for (var topicName in spoutLagResult) {
+                                var topicLagResult = spoutLagResult[topicName];
+                                for (var partitionId in topicLagResult) {
+                                    var partitionLagResult = topicLagResult[partitionId];
+                                    data.kafkaSpoutsLagResults.push({
+                                        id: spoutId,
+                                        topic: topicName,
+                                        partition: partitionId,
+                                        logHeadOffset: partitionLagResult.logHeadOffset,
+                                        consumerCommittedOffset: partitionLagResult.consumerCommittedOffset,
+                                        lag: partitionLagResult.lag
+                                    });
+                                }
+                            }
+                        } else if (errorInfo !== undefined) {
+                            data.spoutsLagErrorResults.push({
+                                spoutId: spoutId,
+                                spoutType: spout.spoutType,
+                                errorInfo: errorInfo
+                            });
+                        }
+                    }
+
+                    if (data.kafkaSpoutsLagResults.length > 0) {
+                        topologySpoutsLag.append(Mustache.render(kafkaSpoutsLagTemplate, data));
+                    }
+                    if (data.spoutsLagErrorResults.length > 0) {
+                        topologySpoutsLag.append(Mustache.render(spoutsErrorTemplate, data));
+                    }
                 }
-                if (kafkaSpoutsErrorResults.length > 0) {
-                  data.spoutsLagErrorResults = kafkaSpoutsErrorResults;
-                  topologySpoutsLag.append(Mustache.render(spoutsErrorTemplate,data));
-                }
-              }
             });
       }});
     });
@@ -437,3 +445,4 @@ $(document).ready(function() {
  });
 </script>
 </html>
+
