@@ -145,6 +145,7 @@
  * STORM-1868: Modify TridentKafkaWordCount to run in distributed mode
 
 ## 1.0.2
+ * STORM-1922: Supervisor summary default order by host
  * STORM-1895: blobstore replication-factor argument
  * STORM-118: Docs: typo in transactional-commit-flow.png
  * STORM-1633: Document blobstore to command-line-client.md
