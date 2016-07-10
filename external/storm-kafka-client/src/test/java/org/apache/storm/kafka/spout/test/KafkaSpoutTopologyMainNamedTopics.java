@@ -28,7 +28,9 @@ import org.apache.storm.kafka.spout.KafkaSpoutRetryExponentialBackoff;
 import org.apache.storm.kafka.spout.KafkaSpoutRetryExponentialBackoff.TimeInterval;
 import org.apache.storm.kafka.spout.KafkaSpoutRetryService;
 import org.apache.storm.kafka.spout.KafkaSpoutStreams;
+import org.apache.storm.kafka.spout.KafkaSpoutStreamsNamedTopics;
 import org.apache.storm.kafka.spout.KafkaSpoutTuplesBuilder;
+import org.apache.storm.kafka.spout.KafkaSpoutTuplesBuilderNamedTopics;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
 
@@ -41,30 +43,35 @@ import java.util.concurrent.TimeUnit;
 
 import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST;
 
-public class KafkaSpoutTopologyMain {
+public class KafkaSpoutTopologyMainNamedTopics {
     private static final String[] STREAMS = new String[]{"test_stream","test1_stream","test2_stream"};
     private static final String[] TOPICS = new String[]{"test","test1","test2"};
 
 
     public static void main(String[] args) throws Exception {
+        new KafkaSpoutTopologyMainNamedTopics().runMain(args);
+    }
+
+    protected void runMain(String[] args) throws Exception {
         if (args.length == 0) {
             submitTopologyLocalCluster(getTopolgyKafkaSpout(), getConfig());
         } else {
             submitTopologyRemoteCluster(args[0], getTopolgyKafkaSpout(), getConfig());
         }
+
     }
 
-    protected static void submitTopologyLocalCluster(StormTopology topology, Config config) throws InterruptedException {
+    protected void submitTopologyLocalCluster(StormTopology topology, Config config) throws InterruptedException {
         LocalCluster cluster = new LocalCluster();
         cluster.submitTopology("test", config, topology);
         stopWaitingForInput();
     }
 
-    protected static void submitTopologyRemoteCluster(String arg, StormTopology topology, Config config) throws Exception {
+    protected void submitTopologyRemoteCluster(String arg, StormTopology topology, Config config) throws Exception {
         StormSubmitter.submitTopology(arg, config, topology);
     }
 
-    private static void stopWaitingForInput() {
+    protected void stopWaitingForInput() {
         try {
             System.out.println("PRESS ENTER TO STOP");
             new BufferedReader(new InputStreamReader(System.in)).readLine();
@@ -74,13 +81,13 @@ public class KafkaSpoutTopologyMain {
         }
     }
 
-    protected static Config getConfig() {
+    protected Config getConfig() {
         Config config = new Config();
         config.setDebug(true);
         return config;
     }
 
-    public static StormTopology getTopolgyKafkaSpout() {
+    protected StormTopology getTopolgyKafkaSpout() {
         final TopologyBuilder tp = new TopologyBuilder();
         tp.setSpout("kafka_spout", new KafkaSpout<>(getKafkaSpoutConfig(getKafkaSpoutStreams())), 1);
         tp.setBolt("kafka_bolt", new KafkaSpoutTestBolt()).shuffleGrouping("kafka_spout", STREAMS[0]);
@@ -88,7 +95,7 @@ public class KafkaSpoutTopologyMain {
         return tp.createTopology();
     }
 
-    public static KafkaSpoutConfig<String,String> getKafkaSpoutConfig(KafkaSpoutStreams kafkaSpoutStreams) {
+    protected KafkaSpoutConfig<String,String> getKafkaSpoutConfig(KafkaSpoutStreams kafkaSpoutStreams) {
         return new KafkaSpoutConfig.Builder<String, String>(getKafkaConsumerProps(), kafkaSpoutStreams, getTuplesBuilder(), getRetryService())
                 .setOffsetCommitPeriodMs(10_000)
                 .setFirstPollOffsetStrategy(EARLIEST)
@@ -96,16 +103,16 @@ public class KafkaSpoutTopologyMain {
                 .build();
     }
 
-    private static KafkaSpoutRetryService getRetryService() {
+    protected KafkaSpoutRetryService getRetryService() {
             return new KafkaSpoutRetryExponentialBackoff(getTimeInterval(500, TimeUnit.MICROSECONDS),
                     TimeInterval.milliSeconds(2), Integer.MAX_VALUE, TimeInterval.seconds(10));
     }
 
-    private static TimeInterval getTimeInterval(long delay, TimeUnit timeUnit) {
+    protected TimeInterval getTimeInterval(long delay, TimeUnit timeUnit) {
         return new TimeInterval(delay, timeUnit);
     }
 
-    public static Map<String,Object> getKafkaConsumerProps() {
+    protected Map<String,Object> getKafkaConsumerProps() {
         Map<String, Object> props = new HashMap<>();
 //        props.put(KafkaSpoutConfig.Consumer.ENABLE_AUTO_COMMIT, "true");
         props.put(KafkaSpoutConfig.Consumer.BOOTSTRAP_SERVERS, "127.0.0.1:9092");
@@ -115,17 +122,17 @@ public class KafkaSpoutTopologyMain {
         return props;
     }
 
-    public static KafkaSpoutTuplesBuilder<String, String> getTuplesBuilder() {
-        return new KafkaSpoutTuplesBuilder.Builder<>(
+    protected KafkaSpoutTuplesBuilder<String, String> getTuplesBuilder() {
+        return new KafkaSpoutTuplesBuilderNamedTopics.Builder<>(
                 new TopicsTest0Test1TupleBuilder<String, String>(TOPICS[0], TOPICS[1]),
                 new TopicTest2TupleBuilder<String, String>(TOPICS[2]))
                 .build();
     }
 
-    public static KafkaSpoutStreams getKafkaSpoutStreams() {
+    protected KafkaSpoutStreams getKafkaSpoutStreams() {
         final Fields outputFields = new Fields("topic", "partition", "offset", "key", "value");
         final Fields outputFields1 = new Fields("topic", "partition", "offset");
-        return new KafkaSpoutStreams.Builder(outputFields, STREAMS[0], new String[]{TOPICS[0], TOPICS[1]})  // contents of topics test, test1, sent to test_stream
+        return new KafkaSpoutStreamsNamedTopics.Builder(outputFields, STREAMS[0], new String[]{TOPICS[0], TOPICS[1]})  // contents of topics test, test1, sent to test_stream
                 .addStream(outputFields, STREAMS[0], new String[]{TOPICS[2]})  // contents of topic test2 sent to test_stream
                 .addStream(outputFields1, STREAMS[2], new String[]{TOPICS[2]})  // contents of topic test2 sent to test2_stream
                 .build();

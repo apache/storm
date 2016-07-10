@@ -20,13 +20,17 @@ package org.apache.storm.kafka.spout;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 
-import java.io.Serializable;
 import java.util.List;
 
-/**
- * {@link KafkaSpoutTuplesBuilder} wraps all the logic that builds tuples from {@link ConsumerRecord}s.
- * The logic is provided by the user by implementing the appropriate number of {@link KafkaSpoutTupleBuilder} instances
- */
-public interface KafkaSpoutTuplesBuilder<K,V> extends Serializable {
-    List<Object> buildTuple(ConsumerRecord<K, V> consumerRecord);
+public class KafkaSpoutTuplesBuilderWildcardTopics<K,V> implements KafkaSpoutTuplesBuilder<K,V> {
+    private KafkaSpoutTupleBuilder<K, V> tupleBuilder;
+
+    public KafkaSpoutTuplesBuilderWildcardTopics(KafkaSpoutTupleBuilder<K, V> tupleBuilder) {
+        this.tupleBuilder = tupleBuilder;
+    }
+
+    @Override
+    public List<Object> buildTuple(ConsumerRecord<K, V> consumerRecord) {
+        return tupleBuilder.buildTuple(consumerRecord);
+    }
 }
