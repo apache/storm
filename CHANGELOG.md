@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-1833: Simple equi-join in storm-sql standalone mode
  * STORM-1866: Update Resource Aware Scheduler Documentation
  * STORM-1930: Kafka New Client API - Support for Topic Wildcards
  * STORM-1924: Adding conf options for Persistent Word Count Topology
