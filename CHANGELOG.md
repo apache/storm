@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-1924: Adding conf options for Persistent Word Count Topology
  * STORM-1956: Disabling Backpressure by default
  * STORM-1934: Fix race condition between sync-supervisor and sync-processes
  * STORM-1919: Introduce FilterBolt on storm-redis
