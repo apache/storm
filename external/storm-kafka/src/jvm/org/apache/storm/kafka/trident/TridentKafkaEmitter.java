@@ -25,6 +25,7 @@ import org.apache.storm.metric.api.CombinedMetric;
 import org.apache.storm.metric.api.MeanReducer;
 import org.apache.storm.metric.api.ReducedMetric;
 import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.FailedException;
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.spout.IOpaquePartitionedTridentSpout;
 import org.apache.storm.trident.spout.IPartitionedTridentSpout;
@@ -162,7 +163,13 @@ public class TridentKafkaEmitter {
             long offset = (Long) meta.get("offset");
             long nextOffset = (Long) meta.get("nextOffset");
             ByteBufferMessageSet msgs = null;
-            msgs = fetchMessages(consumer, partition, offset);
+            
+            try {
+                msgs = fetchMessages(consumer, partition, offset);
+            } catch(FailedException e) {
+                LOG.error(String.format("Could not fetch messages for offset: %d", offset), e);
+                return;
+            }
 
             if(msgs != null) {
                 for (MessageAndOffset msg : msgs) {
