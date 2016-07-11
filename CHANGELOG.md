@@ -1,5 +1,6 @@
 ## 2.0.0
- * STORM-1959 Add missing license header to KafkaPartitionOffsetLag
+ * STORM-1913: Additions and Improvements for Trident RAS API
+ * STORM-1959: Add missing license header to KafkaPartitionOffsetLag
  * STORM-1249: port backtype.storm.security.serialization.BlowfishTupleSerializer-test to java
  * STORM-1238: port backtype.storm.security.auth.ThriftServer-test to java
  * STORM-1237: port backtype.storm.security.auth.ThriftClient-test to java
