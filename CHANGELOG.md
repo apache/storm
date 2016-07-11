@@ -1,4 +1,12 @@
 ## 2.0.0
+ * STORM-1249: port backtype.storm.security.serialization.BlowfishTupleSerializer-test to java
+ * STORM-1238: port backtype.storm.security.auth.ThriftServer-test to java
+ * STORM-1237: port backtype.storm.security.auth.ThriftClient-test to java
+ * STORM-1236: port backtype.storm.security.auth.SaslTransportPlugin-test to java
+ * STORM-1235: port backtype.storm.security.auth.ReqContext-test to java
+ * STORM-1229: port backtype.storm.metric.testing to java
+ * STORM-1228: port backtype.storm.fields-test to java
+ * STORM-1233: Port AuthUtilsTest to java
  * STORM-1920: version of parent pom for storm-kafka-monitor is set 1.0.2-SNAPSHOT in master branch
  * STORM-1896: Remove duplicate code from HDFS spout
  * STORM-1909: Update HDFS spout documentation
@@ -108,6 +116,18 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0 
+ * STORM-1950: Change response json of "Topology Lag" REST API to keyed by spoutId, topic, partition.
+ * STORM-1833: Simple equi-join in storm-sql standalone mode
+ * STORM-1866: Update Resource Aware Scheduler Documentation
+ * STORM-1930: Kafka New Client API - Support for Topic Wildcards
+ * STORM-1924: Adding conf options for Persistent Word Count Topology
+ * STORM-1956: Disabling Backpressure by default 
+ * STORM-1934: Fix race condition between sync-supervisor and sync-processes
+ * STORM-1919: Introduce FilterBolt on storm-redis
+ * STORM-1742: More accurate 'complete latency'
+ * STORM-1945: Fix NPE bugs on topology spout lag for storm-kafka-monitor
+ * STORM-1719: Introduce REST API: Topology metric stats for stream
+ * STORM-1941: Nimbus discovery can fail when zookeeper reconnect happens
  * STORM-1888: add description for shell command
  * STORM-1902: add a simple & flexible FileNameFormat for storm-hdfs
  * STORM-1914: Storm Kafka Field Topic Selector
@@ -128,6 +148,15 @@
  * STORM-1868: Modify TridentKafkaWordCount to run in distributed mode
 
 ## 1.0.2
+ * STORM-1922: Supervisor summary default order by host
+ * STORM-1895: blobstore replication-factor argument
+ * STORM-118: Docs: typo in transactional-commit-flow.png
+ * STORM-1633: Document blobstore to command-line-client.md
+ * STORM-1899: Release HBase connection when topology shutdown
+ * STORM-1844: Some tests are flaky due to low timeout
+ * STORM-1946: initialize lastHeartbeatTimestamp before starting heartbeat task
+ * STORM-1937: Fix WindowTridentProcessor cause NullPointerException
+ * STORM-1924: Add a config file parameter to HDFS test topologies
  * STORM-1861: Storm submit command returns exit code of 0 even when it fails.
  * STORM-1755: Revert the kafka client version upgrade in storm-kafka module
  * STORM-1853: Replace ClassLoaderObjectInputStream with ObjectInputStream
@@ -458,6 +487,13 @@
  * STORM-901: Worker Artifacts Directory
  * STORM-1144: Display requested and assigned cpu/mem resources for schedulers in UI
  * STORM-1217: making small fixes in RAS
+
+## 0.10.2
+ * STORM-1834: Documentation How to Generate Certificates For Local Testing SSL Setup
+ * STORM-1754: Correct java version in 0.10.x storm-starter
+ * STORM-1750: Ensure worker dies when report-error-and-die is called.
+ * STORM-1739: update the minor JAVA version dependency in 0.10.0 and above
+ * STORM-1733: Flush stdout and stderr before calling "os.execvp" to prevent log loss
 
 ## 0.10.1
  * STORM-584: Fix logging for LoggingMetricsConsumer metrics.log file

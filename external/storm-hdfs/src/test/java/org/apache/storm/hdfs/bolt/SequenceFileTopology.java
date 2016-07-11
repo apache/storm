@@ -39,7 +39,10 @@ import org.apache.storm.hdfs.bolt.sync.SyncPolicy;
 import org.apache.storm.hdfs.common.rotation.MoveFileAction;
 
 import org.apache.hadoop.io.SequenceFile;
+import org.yaml.snakeyaml.Yaml;
 
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -69,8 +72,15 @@ public class SequenceFileTopology {
         // create sequence format instance.
         DefaultSequenceFormat format = new DefaultSequenceFormat("timestamp", "sentence");
 
+        Yaml yaml = new Yaml();
+        InputStream in = new FileInputStream(args[1]);
+        Map<String, Object> yamlConf = (Map<String, Object>) yaml.load(in);
+        in.close();
+        config.put("hdfs.config", yamlConf);
+
         SequenceFileBolt bolt = new SequenceFileBolt()
                 .withFsUrl(args[0])
+                .withConfigKey("hdfs.config")
                 .withFileNameFormat(fileNameFormat)
                 .withSequenceFormat(format)
                 .withRotationPolicy(rotationPolicy)
@@ -78,9 +88,6 @@ public class SequenceFileTopology {
                 .withCompressionType(SequenceFile.CompressionType.RECORD)
                 .withCompressionCodec("deflate")
                 .addRotationAction(new MoveFileAction().toDestination("/tmp/dest/"));
-
-
-
 
         TopologyBuilder builder = new TopologyBuilder();
 
@@ -90,7 +97,7 @@ public class SequenceFileTopology {
                 .shuffleGrouping(SENTENCE_SPOUT_ID);
 
 
-        if (args.length == 1) {
+        if (args.length == 2) {
             LocalCluster cluster = new LocalCluster();
 
             cluster.submitTopology(TOPOLOGY_NAME, config, builder.createTopology());
@@ -98,8 +105,10 @@ public class SequenceFileTopology {
             cluster.killTopology(TOPOLOGY_NAME);
             cluster.shutdown();
             System.exit(0);
-        } else if(args.length == 2) {
-            StormSubmitter.submitTopology(args[1], config, builder.createTopology());
+        } else if(args.length == 3) {
+            StormSubmitter.submitTopology(args[2], config, builder.createTopology());
+        } else{
+            System.out.println("Usage: SequenceFileTopology [hdfs url] [hdfs yaml config file] <topology name>");
         }
     }
 
