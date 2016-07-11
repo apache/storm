@@ -34,48 +34,54 @@ public class JdbcClient {
 
     private ConnectionProvider connectionProvider;
     private int queryTimeoutSecs;
+    private int counter;
 
     public JdbcClient(ConnectionProvider connectionProvider, int queryTimeoutSecs) {
         this.connectionProvider = connectionProvider;
         this.queryTimeoutSecs = queryTimeoutSecs;
+        this.counter = 0;
     }
 
-    public void insert(String tableName, List<List<Column>> columnLists) {
+    public void insert(String tableName, List<List<Column>> columnLists, final int batchSize) {
         String query = constructInsertQuery(tableName, columnLists);
-        executeInsertQuery(query, columnLists);
+        executeInsertQuery(query, columnLists, batchSize);
     }
 
-    public void executeInsertQuery(String query, List<List<Column>> columnLists) {
+    public void executeInsertQuery(String query, List<List<Column>> columnLists, final int batchSize) {
         Connection connection = null;
         try {
             connection = connectionProvider.getConnection();
             boolean autoCommit = connection.getAutoCommit();
-            if(autoCommit) {
+            if (autoCommit) {
                 connection.setAutoCommit(false);
             }
 
             LOG.debug("Executing query {}", query);
 
             PreparedStatement preparedStatement = connection.prepareStatement(query);
-            if(queryTimeoutSecs > 0) {
+            if (queryTimeoutSecs > 0) {
                 preparedStatement.setQueryTimeout(queryTimeoutSecs);
             }
 
-            for(List<Column> columnList : columnLists) {
+            for (List<Column> columnList : columnLists) {
                 setPreparedStatementParams(preparedStatement, columnList);
                 preparedStatement.addBatch();
             }
 
-            int[] results = preparedStatement.executeBatch();
-            if(Arrays.asList(results).contains(Statement.EXECUTE_FAILED)) {
-                connection.rollback();
-                throw new RuntimeException("failed at least one sql statement in the batch, operation rolled back.");
-            } else {
-                try {
-                    connection.commit();
-                } catch (SQLException e) {
-                    throw new RuntimeException("Failed to commit insert query " + query, e);
+            counter += columnLists.size();
+            if (counter > batchSize) {
+                int[] results = preparedStatement.executeBatch();
+                if (Arrays.asList(results).contains(Statement.EXECUTE_FAILED)) {
+                    connection.rollback();
+                    throw new RuntimeException("failed at least one sql statement in the batch, operation rolled back.");
+                } else {
+                    try {
+                        connection.commit();
+                    } catch (SQLException e) {
+                        throw new RuntimeException("Failed to commit insert query " + query, e);
+                    }
                 }
+                counter = 0;
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to execute insert query " + query, e);
@@ -107,17 +113,17 @@ public class JdbcClient {
         try {
             connection = connectionProvider.getConnection();
             PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery);
-            if(queryTimeoutSecs > 0) {
+            if (queryTimeoutSecs > 0) {
                 preparedStatement.setQueryTimeout(queryTimeoutSecs);
             }
             setPreparedStatementParams(preparedStatement, queryParams);
             ResultSet resultSet = preparedStatement.executeQuery();
             List<List<Column>> rows = Lists.newArrayList();
-            while(resultSet.next()){
+            while (resultSet.next()) {
                 ResultSetMetaData metaData = resultSet.getMetaData();
                 int columnCount = metaData.getColumnCount();
                 List<Column> row = Lists.newArrayList();
-                for(int i=1 ; i <= columnCount; i++) {
+                for (int i = 1; i <= columnCount; i++) {
                     String columnLabel = metaData.getColumnLabel(i);
                     int columnType = metaData.getColumnType(i);
                     Class columnJavaType = Util.getJavaType(columnType);

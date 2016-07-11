@@ -59,6 +59,7 @@ public class JdbcState implements State {
         private String insertQuery;
         private String selectQuery;
         private Integer queryTimeoutSecs;
+        private int batchSize;
 
         public Options withConnectionProvider(ConnectionProvider connectionProvider) {
             this.connectionProvider = connectionProvider;
@@ -72,6 +73,14 @@ public class JdbcState implements State {
 
         public Options withInsertQuery(String insertQuery) {
             this.insertQuery = insertQuery;
+            return this;
+        }
+
+        public Options withBatchSize(int batchSize) {
+            if (batchSize < 0) {
+                throw new IllegalArgumentException("Batch size should be a positive number. ");
+            }
+            this.batchSize = batchSize;
             return this;
         }
 
@@ -130,9 +139,9 @@ public class JdbcState implements State {
 
         try {
             if(!StringUtils.isBlank(options.tableName)) {
-                jdbcClient.insert(options.tableName, columnsLists);
+                jdbcClient.insert(options.tableName, columnsLists, options.batchSize);
             } else {
-                jdbcClient.executeInsertQuery(options.insertQuery, columnsLists);
+                jdbcClient.executeInsertQuery(options.insertQuery, columnsLists, options.batchSize);
             }
         } catch (Exception e) {
             LOG.warn("Batch write failed but some requests might have succeeded. Triggering replay.", e);

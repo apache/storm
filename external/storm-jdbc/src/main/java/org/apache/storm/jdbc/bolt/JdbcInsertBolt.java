@@ -43,12 +43,14 @@ public class JdbcInsertBolt extends AbstractJdbcBolt {
     private String tableName;
     private String insertQuery;
     private JdbcMapper jdbcMapper;
+    private int batchSize;
 
     public JdbcInsertBolt(ConnectionProvider connectionProvider,  JdbcMapper jdbcMapper) {
         super(connectionProvider);
 
         Validate.notNull(jdbcMapper);
         this.jdbcMapper = jdbcMapper;
+        this.batchSize = 0;
     }
 
     public JdbcInsertBolt withTableName(String tableName) {
@@ -64,6 +66,14 @@ public class JdbcInsertBolt extends AbstractJdbcBolt {
             throw new IllegalArgumentException("You can not specify both insertQuery and tableName.");
         }
         this.insertQuery = insertQuery;
+        return this;
+    }
+
+    public JdbcInsertBolt withBatchSize(int batchSize) {
+        if (batchSize < 0) {
+            throw new IllegalArgumentException("Batch size should be a positive number. ");
+        }
+        this.batchSize = batchSize;
         return this;
     }
 
@@ -87,9 +97,9 @@ public class JdbcInsertBolt extends AbstractJdbcBolt {
             List<List<Column>> columnLists = new ArrayList<List<Column>>();
             columnLists.add(columns);
             if(!StringUtils.isBlank(tableName)) {
-                this.jdbcClient.insert(this.tableName, columnLists);
+                this.jdbcClient.insert(this.tableName, columnLists, this.batchSize);
             } else {
-                this.jdbcClient.executeInsertQuery(this.insertQuery, columnLists);
+                this.jdbcClient.executeInsertQuery(this.insertQuery, columnLists, this.batchSize);
             }
             this.collector.ack(tuple);
         } catch (Exception e) {

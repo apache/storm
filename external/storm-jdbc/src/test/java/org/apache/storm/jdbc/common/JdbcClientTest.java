@@ -57,7 +57,7 @@ public class JdbcClientTest {
         List<Column> row2 = createRow(2, "alice");
 
         List<List<Column>> rows = Lists.newArrayList(row1, row2);
-        client.insert(tableName, rows);
+        client.insert(tableName, rows, 0);
 
         List<List<Column>> selectedRows = client.select("select * from user_details where id = ?", Lists.newArrayList(new Column("id", 1, Types.INTEGER)));
         List<List<Column>> expectedRows = Lists.newArrayList();
@@ -67,7 +67,7 @@ public class JdbcClientTest {
         List<Column> row3 = createRow(3, "frank");
         List<List<Column>> moreRows  = new ArrayList<List<Column>>();
         moreRows.add(row3);
-        client.executeInsertQuery("insert into user_details values(?,?,?)", moreRows);
+        client.executeInsertQuery("insert into user_details values(?,?,?)", moreRows, 0);
 
         selectedRows = client.select("select * from user_details where id = ?", Lists.newArrayList(new Column("id", 3, Types.INTEGER)));
         expectedRows = Lists.newArrayList();
