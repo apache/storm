@@ -49,7 +49,7 @@ if not defined JAVA_HOME (
   set JAVA_HOME=c:\apps\java\openjdk7
 )
 
-if not exist %JAVA_HOME%\bin\java.exe (
+if not exist "%JAVA_HOME%\bin\java.exe" (
   echo Error: JAVA_HOME is incorrectly set.
   goto :eof
 )
@@ -82,12 +82,44 @@ if not defined STORM_LOG_DIR (
   set STORM_LOG_DIR=%STORM_HOME%\logs
 )
 
-if not defined STORM_LOGBACK_CONFIGURATION_FILE (
-  set STORM_LOGBACK_CONFIGURATION_FILE=%STORM_HOME%\logback\cluster.xml
-)
-%JAVA% -client -Dstorm.options= -Dstorm.conf.file= -cp %CLASSPATH% backtype.storm.command.config_value java.library.path > temp.txt
+@rem
+@rem retrieve storm.log4j2.conf.dir from conf file
+@rem
 
-FOR /F "delims=" %%i in (temp.txt) do (
+if not defined CMD_TEMP_FILE (
+  set CMD_TEMP_FILE=tmpfile
+)
+
+"%JAVA%" -client -Dstorm.options= -Dstorm.conf.file= -cp "%CLASSPATH%" org.apache.storm.command.config_value storm.log4j2.conf.dir > %CMD_TEMP_FILE%
+
+FOR /F "delims=" %%i in (%CMD_TEMP_FILE%) do (
+	FOR /F "tokens=1,* delims= " %%a in ("%%i") do (
+		if %%a == VALUE: (
+			set STORM_LOG4J2_CONFIGURATION_DIR=%%b
+			del /F %CMD_TEMP_FILE%)
+		)
+	)
+)
+
+@rem
+@rem if STORM_LOG4J2_CONFIGURATION_DIR was defined, also set STORM_LOG4J2_CONFIGURATION_FILE
+@rem
+
+if not %STORM_LOG4J2_CONFIGURATION_DIR% == nil (
+	set STORM_LOG4J2_CONFIGURATION_FILE="file:///%STORM_LOG4J2_CONFIGURATION_DIR%\cluster.xml"
+)
+
+@rem
+@rem otherwise, fall back to default
+@rem
+
+if not defined STORM_LOG4J2_CONFIGURATION_FILE (
+  set STORM_LOG4J2_CONFIGURATION_FILE="file:///%STORM_HOME%\log4j2\cluster.xml"
+)
+
+"%JAVA%" -client -Dstorm.options= -Dstorm.conf.file= -cp "%CLASSPATH%" org.apache.storm.command.config_value java.library.path > %CMD_TEMP_FILE%
+
+FOR /F "delims=" %%i in (%CMD_TEMP_FILE%) do (
     FOR /F "tokens=1,* delims= " %%a in ("%%i") do (
 	 if %%a == VALUE: (
 	   set JAVA_LIBRARY_PATH=%%b
@@ -97,10 +129,14 @@ FOR /F "delims=" %%i in (temp.txt) do (
 
 
 :storm_opts
- set STORM_OPTS=-Dstorm.options= -Dstorm.home=%STORM_HOME% -Djava.library.path=%JAVA_LIBRARY_PATH%
- set STORM_OPTS=%STORM_OPTS% -Dlogback.configurationFile=%STORM_LOGBACK_CONFIGURATION_FILE%
+ if "%set_storm_options%"=="true" (
+  set STORM_OPTS=-Dstorm.options=
+ )
+
+ set STORM_OPTS=%STORM_OPTS% -Dstorm.home=%STORM_HOME% -Djava.library.path=%JAVA_LIBRARY_PATH%;%JAVA_HOME%\bin;%JAVA_HOME%\lib;%JAVA_HOME%\jre\bin;%JAVA_HOME%\jre\lib
+ set STORM_OPTS=%STORM_OPTS% -Dlog4j.configurationFile=%STORM_LOG4J2_CONFIGURATION_FILE%
  set STORM_OPTS=%STORM_OPTS% -Dstorm.log.dir=%STORM_LOG_DIR%
- del /F temp.txt
+ del /F %CMD_TEMP_FILE%
 
 
 if not defined STORM_SERVER_OPTS (

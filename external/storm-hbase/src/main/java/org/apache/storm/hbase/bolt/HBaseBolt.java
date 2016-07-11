@@ -17,8 +17,12 @@
  */
 package org.apache.storm.hbase.bolt;
 
-import backtype.storm.topology.OutputFieldsDeclarer;
-import backtype.storm.tuple.Tuple;
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.tuple.Tuple;
+import org.apache.storm.utils.BatchHelper;
+import org.apache.storm.utils.TupleUtils;
 import org.apache.hadoop.hbase.client.Durability;
 import org.apache.hadoop.hbase.client.Mutation;
 import org.apache.storm.hbase.bolt.mapper.HBaseMapper;
@@ -26,7 +30,9 @@ import org.apache.storm.hbase.common.ColumnList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
 import java.util.List;
+import java.util.LinkedList;
 
 /**
  * Basic bolt for writing to HBase.
@@ -36,11 +42,17 @@ import java.util.List;
  */
 public class HBaseBolt  extends AbstractHBaseBolt {
     private static final Logger LOG = LoggerFactory.getLogger(HBaseBolt.class);
+    private static final int DEFAULT_FLUSH_INTERVAL_SECS = 1;
 
     boolean writeToWAL = true;
+    List<Mutation> batchMutations;
+    int flushIntervalSecs = DEFAULT_FLUSH_INTERVAL_SECS;
+    int batchSize;
+    BatchHelper batchHelper;
 
     public HBaseBolt(String tableName, HBaseMapper mapper) {
         super(tableName, mapper);
+        this.batchMutations = new LinkedList<>();
     }
 
     public HBaseBolt writeToWAL(boolean writeToWAL) {
@@ -53,21 +65,49 @@ public class HBaseBolt  extends AbstractHBaseBolt {
         return this;
     }
 
+    public HBaseBolt withBatchSize(int batchSize) {
+        this.batchSize = batchSize;
+        return this;
+    }
+
+    public HBaseBolt withFlushIntervalSecs(int flushIntervalSecs) {
+        this.flushIntervalSecs = flushIntervalSecs;
+        return this;
+    }
+
+    @Override
+    public Map<String, Object> getComponentConfiguration() {
+        return TupleUtils.putTickFrequencyIntoComponentConfig(super.getComponentConfiguration(), flushIntervalSecs);
+    }
+
+
     @Override
     public void execute(Tuple tuple) {
-        byte[] rowKey = this.mapper.rowKey(tuple);
-        ColumnList cols = this.mapper.columns(tuple);
-        List<Mutation> mutations = hBaseClient.constructMutationReq(rowKey, cols, writeToWAL? Durability.SYNC_WAL : Durability.SKIP_WAL);
-
         try {
-            this.hBaseClient.batchMutate(mutations);
-        } catch(Exception e){
-            LOG.warn("Failing tuple. Error writing rowKey " + rowKey, e);
-            this.collector.fail(tuple);
-            return;
-        }
+            if (batchHelper.shouldHandle(tuple)) {
+                byte[] rowKey = this.mapper.rowKey(tuple);
+                ColumnList cols = this.mapper.columns(tuple);
+                List<Mutation> mutations = hBaseClient.constructMutationReq(rowKey, cols, writeToWAL? Durability.SYNC_WAL : Durability.SKIP_WAL);
+                batchMutations.addAll(mutations);
+                batchHelper.addBatch(tuple);
+            }
 
-        this.collector.ack(tuple);
+            if (batchHelper.shouldFlush()) {
+                this.hBaseClient.batchMutate(batchMutations);
+                LOG.debug("acknowledging tuples after batchMutate");
+                batchHelper.ack();
+                batchMutations.clear();
+            }
+        } catch(Exception e){
+            batchHelper.fail(e);
+            batchMutations.clear();
+        }
+    }
+
+    @Override
+    public void prepare(Map map, TopologyContext topologyContext, OutputCollector collector) {
+        super.prepare(map, topologyContext, collector);
+        this.batchHelper = new BatchHelper(batchSize, collector);
     }
 
     @Override

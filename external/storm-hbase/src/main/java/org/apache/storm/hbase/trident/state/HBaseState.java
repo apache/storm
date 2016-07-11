@@ -17,9 +17,9 @@
  */
 package org.apache.storm.hbase.trident.state;
 
-import backtype.storm.Config;
-import backtype.storm.topology.FailedException;
-import backtype.storm.tuple.Values;
+import org.apache.storm.Config;
+import org.apache.storm.topology.FailedException;
+import org.apache.storm.tuple.Values;
 import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
@@ -31,9 +31,9 @@ import org.apache.storm.hbase.common.HBaseClient;
 import org.apache.storm.hbase.trident.mapper.TridentHBaseMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import storm.trident.operation.TridentCollector;
-import storm.trident.state.State;
-import storm.trident.tuple.TridentTuple;
+import org.apache.storm.trident.operation.TridentCollector;
+import org.apache.storm.trident.state.State;
+import org.apache.storm.trident.tuple.TridentTuple;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -107,7 +107,7 @@ public class HBaseState implements State {
                 LOG.warn("No 'hbase.rootdir' value found in configuration! Using HBase defaults.");
             }
             for (String key : conf.keySet()) {
-                hbConfig.set(key, String.valueOf(map.get(key)));
+                hbConfig.set(key, String.valueOf(conf.get(key)));
             }
         }
 
@@ -141,7 +141,7 @@ public class HBaseState implements State {
         try {
             hBaseClient.batchMutate(mutations);
         } catch (Exception e) {
-            LOG.warn("Batch write failed but some requests might have succeeded. Triggering replay.", e);
+            collector.reportError(e);
             throw new FailedException(e);
         }
     }

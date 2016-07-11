@@ -17,11 +17,11 @@
  */
 package org.apache.storm.hdfs.trident;
 
-import backtype.storm.Config;
-import backtype.storm.task.TopologyContext;
-import backtype.storm.tuple.Fields;
-import storm.trident.operation.TridentCollector;
-import storm.trident.spout.IBatchSpout;
+import org.apache.storm.Config;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.trident.operation.TridentCollector;
+import org.apache.storm.trident.spout.IBatchSpout;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -84,7 +84,7 @@ public class FixedBatchSpout implements IBatchSpout {
     }
 
     @Override
-    public Map getComponentConfiguration() {
+    public Map<String, Object> getComponentConfiguration() {
         Config conf = new Config();
         conf.setMaxTaskParallelism(1);
         return conf;

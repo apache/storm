@@ -17,10 +17,13 @@
  */
 package org.apache.storm.hbase.bolt;
 
-import backtype.storm.topology.OutputFieldsDeclarer;
-import backtype.storm.tuple.Tuple;
-import backtype.storm.tuple.Values;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.tuple.Tuple;
+import org.apache.storm.tuple.Values;
+import org.apache.storm.utils.TupleUtils;
+
 import com.google.common.collect.Lists;
+
 import org.apache.commons.lang.Validate;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.Result;
@@ -61,17 +64,21 @@ public class HBaseLookupBolt extends AbstractHBaseBolt {
 
     @Override
     public void execute(Tuple tuple) {
+        if (TupleUtils.isTick(tuple)) {
+            collector.ack(tuple);
+            return;
+        }
         byte[] rowKey = this.mapper.rowKey(tuple);
         Get get = hBaseClient.constructGetRequests(rowKey, projectionCriteria);
 
         try {
             Result result = hBaseClient.batchGet(Lists.newArrayList(get))[0];
             for(Values values : rowToTupleMapper.toValues(tuple, result)) {
-                this.collector.emit(values);
+                this.collector.emit(tuple, values);
             }
             this.collector.ack(tuple);
         } catch (Exception e) {
-            LOG.warn("Could not perform Lookup for rowKey =" + rowKey + " from Hbase.", e);
+            this.collector.reportError(e);
             this.collector.fail(tuple);
         }
     }

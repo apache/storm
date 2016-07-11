@@ -1,5 +1,0 @@
-StormClient {
-       org.apache.zookeeper.server.auth.DigestLoginModule required
-       username="charlie"
-       password="poorpasswordforcharlie";
-};

@@ -20,7 +20,7 @@ package org.apache.storm.hdfs.trident.rotation;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import storm.trident.tuple.TridentTuple;
+import org.apache.storm.trident.tuple.TridentTuple;
 
 /**
  * File rotation policy that will rotate files when a certain
@@ -66,6 +66,11 @@ public class FileSizeRotationPolicy implements FileRotationPolicy {
 
     @Override
     public boolean mark(TridentTuple tuple, long offset) {
+        return mark(offset);
+    }
+
+    @Override
+    public boolean mark(long offset) {
         long diff = offset - this.lastOffset;
         this.currentBytesWritten += diff;
         this.lastOffset = offset;
@@ -78,4 +83,12 @@ public class FileSizeRotationPolicy implements FileRotationPolicy {
         this.lastOffset = 0;
     }
 
+    @Override
+    public void start() {
+
+    }
+
+    public long getMaxBytes() {
+        return maxBytes;
+    }
 }
