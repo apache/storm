@@ -80,6 +80,10 @@ public class RichSpoutBatchExecutor implements ITridentSpout {
             _collector = new CaptureCollector();
             idsMap = new RotatingMap<>(3);
             rotateTime = 1000L * ((Number)conf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS)).intValue();
+            if(!prepared) {
+                _spout.open(_conf, _context, new SpoutOutputCollector(_collector));
+                prepared = true;
+            }
         }
         
         @Override
