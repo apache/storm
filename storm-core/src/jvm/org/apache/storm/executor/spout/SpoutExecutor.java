@@ -192,6 +192,7 @@ public class SpoutExecutor extends Executor {
             }
         } else {
             Long id = (Long) tuple.getValue(0);
+            Long timeDeltaMs = (Long) tuple.getValue(1);
             TupleInfo tupleInfo = (TupleInfo) pending.remove(id);
             if (tupleInfo.getMessageId() != null) {
                 if (taskId != tupleInfo.getTaskId()) {
@@ -200,7 +201,7 @@ public class SpoutExecutor extends Executor {
                 long startTimeMs = tupleInfo.getTimestamp();
                 Long timeDelta = null;
                 if (startTimeMs != 0) {
-                    timeDelta = Time.deltaMs(startTimeMs);
+                    timeDelta = timeDeltaMs;
                 }
                 if (streamId.equals(Acker.ACKER_ACK_STREAM_ID)) {
                     ackSpoutMsg(this, idToTask.get(taskId), timeDelta, tupleInfo);
