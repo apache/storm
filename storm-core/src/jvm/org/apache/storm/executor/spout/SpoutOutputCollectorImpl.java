@@ -19,8 +19,6 @@ package org.apache.storm.executor.spout;
 
 import org.apache.storm.daemon.Acker;
 import org.apache.storm.daemon.Task;
-import org.apache.storm.executor.Executor;
-import org.apache.storm.executor.ExecutorTransfer;
 import org.apache.storm.executor.TupleInfo;
 import org.apache.storm.spout.ISpout;
 import org.apache.storm.spout.ISpoutOutputCollector;
@@ -34,11 +32,8 @@ import org.apache.storm.utils.Utils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
-    private final Logger LOG = LoggerFactory.getLogger(getClass());
 
     private final SpoutExecutor executor;
     private final Task taskData;
@@ -50,6 +45,7 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
     private final Boolean isDebug;
     private final RotatingMap<Long, TupleInfo> pending;
 
+    @SuppressWarnings("unused")
     public SpoutOutputCollectorImpl(ISpout spout, SpoutExecutor executor, Task taskData, int taskId,
                                     MutableLong emittedCount, boolean hasAckers, Random random,
                                     Boolean isEventLoggers, Boolean isDebug, RotatingMap<Long, TupleInfo> pending) {
@@ -87,18 +83,14 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
     private List<Integer> sendSpoutMsg(String stream, List<Object> values, Object messageId, Integer outTaskId) {
         emittedCount.increment();
 
-        java.util.List<Integer> outTasks;
+        List<Integer> outTasks;
         if (outTaskId != null) {
             outTasks = taskData.getOutgoingTasks(outTaskId, stream, values);
         } else {
             outTasks = taskData.getOutgoingTasks(stream, values);
         }
 
-        if (outTasks.size() == 0) {
-            // don't need send tuple to other task
-            return outTasks;
-        }
-        List<Long> ackSeq = new ArrayList<Long>();
+        List<Long> ackSeq = new ArrayList<>();
         boolean needAck = (messageId != null) && hasAckers;
 
         long rootId = MessageId.generateId(random);
