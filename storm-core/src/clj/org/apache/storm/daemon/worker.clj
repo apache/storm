@@ -277,6 +277,7 @@
         mq-context  (if mq-context
                       mq-context
                       (TransportFactory/makeContext storm-conf))]
+    ;; TODO: when translating this function, use constants defined in Constants.java
     (recursive-map
       :conf conf
       :mq-context mq-context

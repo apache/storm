@@ -22,7 +22,7 @@ import clojure.lang.RT;
 
 
 public class Constants {
-    public static final String COORDINATED_STREAM_ID = CoordinatedBolt.class.getName() + "/coord-stream"; 
+    public static final String COORDINATED_STREAM_ID = CoordinatedBolt.class.getName() + "/coord-stream";
 
     public static final long SYSTEM_TASK_ID = -1;
     public static final Object SYSTEM_EXECUTOR_ID = RT.readString("[-1 -1]");
@@ -32,5 +32,24 @@ public class Constants {
     public static final String METRICS_STREAM_ID = "__metrics";
     public static final String METRICS_TICK_STREAM_ID = "__metrics_tick";
     public static final String CREDENTIALS_CHANGED_STREAM_ID = "__credentials";
+
+    public static final String SYSTEM_TOPOLOGY = "system-topology";
+    public static final String STORM_CONF = "storm-conf";
+    public static final String STORM_ID = "storm-id";
+    public static final String CONF = "conf";
+    public static final String PORT = "port";
+    public static final String TASK_TO_COMPONENT = "task->component";
+    public static final String COMPONENT_TO_SOTRTED_TASKS = "component->sorted-tasks";
+    public static final String COMPONENT_TO_STREAM_TO_FIELDS = "component->stream->fields";
+    public static final String TASK_IDS = "task-ids";
+    public static final String DEFAULT_SHARED_RESOURCES = "default-shared-resources";
+    public static final String USER_SHARED_RESOURCES = "user-shared-resources";
+    public static final String USER_TIMER = "user-timer";
+    public static final String TRANSFER_FN = "transfer-fn";
+    public static final String SUICIDE_FN = "suicide-fn";
+    public static final String THROTTLE_ON = "throttle-on";
+    public static final String EXECUTOR_RECEIVE_QUEUE_MAP = "executor-receive-queue-map";
+    public static final String STORM_ACTIVE_ATOM = "storm-active-atom";
+    public static final String COMPONENT_TO_DEBUG_ATOM = "storm-component->debug-atom";
 }
     

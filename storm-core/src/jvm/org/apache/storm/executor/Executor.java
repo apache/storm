@@ -24,6 +24,11 @@ import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.dsl.ProducerType;
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.storm.Config;
@@ -69,7 +74,6 @@ import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
 import java.util.concurrent.Callable;
 
 public abstract class Executor implements Callable, EventHandler {
@@ -119,19 +123,19 @@ public abstract class Executor implements Callable, EventHandler {
         this.taskIds = StormCommon.executorIdToTasks(executorId);
         this.componentId = workerTopologyContext.getComponentId(taskIds.get(0));
         this.openOrPrepareWasCalled = new AtomicBoolean(false);
-        this.stormConf = normalizedComponentConf((Map) workerData.get("storm-conf"), workerTopologyContext, componentId);
-        this.receiveQueue = (DisruptorQueue) (((Map) workerData.get("executor-receive-queue-map")).get(executorId));
-        this.stormId = (String) workerData.get("storm-id");
-        this.conf = (Map) workerData.get("conf");
+        this.stormConf = normalizedComponentConf((Map) workerData.get(Constants.STORM_CONF), workerTopologyContext, componentId);
+        this.receiveQueue = (DisruptorQueue) (((Map) workerData.get(Constants.EXECUTOR_RECEIVE_QUEUE_MAP)).get(executorId));
+        this.stormId = (String) workerData.get(Constants.STORM_ID);
+        this.conf = (Map) workerData.get(Constants.CONF);
         this.sharedExecutorData = new HashMap();
-        this.stormActive = (AtomicBoolean) workerData.get("storm-active-atom");
-        this.stormComponentDebug = (AtomicReference<Map<String, DebugOptions>>) workerData.get("storm-component->debug-atom");
+        this.stormActive = (AtomicBoolean) workerData.get(Constants.STORM_ACTIVE_ATOM);
+        this.stormComponentDebug = (AtomicReference<Map<String, DebugOptions>>) workerData.get(Constants.COMPONENT_TO_DEBUG_ATOM);
 
         this.transferQueue = mkExecutorBatchQueue(stormConf, executorId);
-        this.transferFn = (IFn) workerData.get("transfer-fn");
+        this.transferFn = (IFn) workerData.get(Constants.TRANSFER_FN);
         this.executorTransfer = new ExecutorTransfer(workerTopologyContext, transferQueue, stormConf, transferFn);
 
-        this.suicideFn = (Runnable) workerData.get("suicide-fn");
+        this.suicideFn = (Runnable) workerData.get(Constants.SUICIDE_FN);
         try {
             this.stormClusterState = ClusterUtils.mkStormClusterState(workerData.get("state-store"), Utils.getWorkerACL(stormConf),
                     new ClusterStateContext(DaemonType.SUPERVISOR));
@@ -153,13 +157,13 @@ public abstract class Executor implements Callable, EventHandler {
         }
 
         this.intervalToTaskToMetricToRegistry = new HashMap<>();
-        this.taskToComponent = (Map<Integer, String>) workerData.get("task->component");
+        this.taskToComponent = (Map<Integer, String>) workerData.get(Constants.TASK_TO_COMPONENT);
         this.streamToComponentToGrouper = outboundComponents(workerTopologyContext, componentId, stormConf);
         this.reportError = new ReportError(stormConf, stormClusterState, stormId, componentId, workerTopologyContext);
         this.reportErrorDie = new ReportErrorAndDie(reportError, suicideFn);
         this.sampler = ConfigUtils.mkStatsSampler(stormConf);
         this.backpressure = new AtomicBoolean(false);
-        this.throttleOn = (AtomicBoolean) workerData.get("throttle-on");
+        this.throttleOn = (AtomicBoolean) workerData.get(Constants.THROTTLE_ON);
         this.isDebug = Utils.getBoolean(stormConf.get(Config.TOPOLOGY_DEBUG), false);
         this.rand = new Random(Utils.secureRandomLong());
         this.credentials = credentials;
@@ -193,7 +197,8 @@ public abstract class Executor implements Callable, EventHandler {
         for (Integer taskId : taskIds) {
             try {
                 Task task = new Task(executor, taskId);
-                executor.sendUnanchored(task, StormCommon.SYSTEM_STREAM_ID, new Values("startup"), executor.getExecutorTransfer());
+                executor.sendUnanchored(
+                        task, StormCommon.SYSTEM_STREAM_ID, new Values("startup"), executor.getExecutorTransfer());
                 idToTask.put(taskId, task);
             } catch (IOException ex) {
                 throw Utils.wrapInRuntime(ex);
@@ -228,7 +233,8 @@ public abstract class Executor implements Callable, EventHandler {
                 Utils.asyncLoop(executorTransfer, executorTransfer.getName(), reportErrorDie);
 
         String handlerName = componentId + "-executor" + executorId;
-        Utils.SmartThread handlers = Utils.asyncLoop(this, false, reportErrorDie, Thread.NORM_PRIORITY, false, true, handlerName);
+        Utils.SmartThread handlers =
+                Utils.asyncLoop(this, false, reportErrorDie, Thread.NORM_PRIORITY, false, true, handlerName);
         setupTicks(StatsUtil.SPOUT.equals(type));
         LOG.info("Finished loading executor " + componentId + ":" + executorId);
         return new ExecutorShutdown(this, Lists.newArrayList(systemThreads, handlers), idToTask);
@@ -268,7 +274,8 @@ public abstract class Executor implements Callable, EventHandler {
                 nameToRegistry = taskToMetricToRegistry.get(taskId);
             }
             if (nameToRegistry != null) {
-                IMetricsConsumer.TaskInfo taskInfo = new IMetricsConsumer.TaskInfo(hostname, workerTopologyContext.getThisWorkerPort(),
+                IMetricsConsumer.TaskInfo taskInfo = new IMetricsConsumer.TaskInfo(
+                        hostname, workerTopologyContext.getThisWorkerPort(),
                         componentId, taskId, Time.currentTimeSecs(), interval);
                 List<IMetricsConsumer.DataPoint> dataPoints = new ArrayList<>();
                 for (Map.Entry<String, IMetric> entry : nameToRegistry.entrySet()) {
@@ -280,7 +287,8 @@ public abstract class Executor implements Callable, EventHandler {
                     }
                 }
                 if (!dataPoints.isEmpty()) {
-                    sendUnanchored(taskData, Constants.METRICS_STREAM_ID, new Values(taskInfo, dataPoints), executorTransfer);
+                    sendUnanchored(taskData, Constants.METRICS_STREAM_ID,
+                            new Values(taskInfo, dataPoints), executorTransfer);
                 }
             }
         } catch (Exception e) {
@@ -290,13 +298,14 @@ public abstract class Executor implements Callable, EventHandler {
 
     protected void setupMetrics() {
         for (final Integer interval : intervalToTaskToMetricToRegistry.keySet()) {
-            StormTimer timerTask = (StormTimer) workerData.get("user-timer");
+            StormTimer timerTask = (StormTimer) workerData.get(Constants.USER_TIMER);
             timerTask.scheduleRecurring(interval, interval, new Runnable() {
                 @Override
                 public void run() {
-                    TupleImpl tuple =
-                            new TupleImpl(workerTopologyContext, new Values(interval), (int) Constants.SYSTEM_TASK_ID, Constants.METRICS_TICK_STREAM_ID);
-                    List<AddressedTuple> metricsTickTuple = Lists.newArrayList(new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple));
+                    TupleImpl tuple = new TupleImpl(workerTopologyContext, new Values(interval),
+                            (int) Constants.SYSTEM_TASK_ID, Constants.METRICS_TICK_STREAM_ID);
+                    List<AddressedTuple> metricsTickTuple =
+                            Lists.newArrayList(new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple));
                     receiveQueue.publish(metricsTickTuple);
                 }
             });
@@ -306,9 +315,6 @@ public abstract class Executor implements Callable, EventHandler {
     public void sendUnanchored(Task task, String stream, List<Object> values, ExecutorTransfer transfer) {
         Tuple tuple = task.getTuple(stream, values);
         List<Integer> tasks = task.getOutgoingTasks(stream, values);
-        if (tasks.size() == 0) {
-            return;
-        }
         for (Integer t : tasks) {
             transfer.transfer(t, tuple);
         }
@@ -317,7 +323,8 @@ public abstract class Executor implements Callable, EventHandler {
     /**
      * Send sampled data to the eventlogger if the global or component level debug flag is set (via nimbus api).
      */
-    public void sendToEventLogger(Executor executor, Task taskData, List values, String componentId, Object messageId, Random random) {
+    public void sendToEventLogger(Executor executor, Task taskData, List values,
+                                  String componentId, Object messageId, Random random) {
         Map<String, DebugOptions> componentDebug = executor.getStormComponentDebug().get();
         DebugOptions debugOptions = componentDebug.get(componentId);
         if (debugOptions == null) {
@@ -363,13 +370,14 @@ public abstract class Executor implements Callable, EventHandler {
             if (Utils.isSystemId(componentId) || (!enableMessageTimeout && isSpout)) {
                 LOG.info("Timeouts disabled for executor " + componentId + ":" + executorId);
             } else {
-                StormTimer timerTask = (StormTimer) workerData.get("user-timer");
+                StormTimer timerTask = (StormTimer) workerData.get(Constants.USER_TIMER);
                 timerTask.scheduleRecurring(tickTimeSecs, tickTimeSecs, new Runnable() {
                     @Override
                     public void run() {
-                        TupleImpl tuple = new TupleImpl(workerTopologyContext, new Values(tickTimeSecs), (int) Constants.SYSTEM_TASK_ID,
-                                Constants.SYSTEM_TICK_STREAM_ID);
-                        List<AddressedTuple> metricTickTuple = Lists.newArrayList(new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple));
+                        TupleImpl tuple = new TupleImpl(workerTopologyContext, new Values(tickTimeSecs),
+                                (int) Constants.SYSTEM_TASK_ID, Constants.SYSTEM_TICK_STREAM_ID);
+                        List<AddressedTuple> metricTickTuple =
+                                Lists.newArrayList(new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple));
                         receiveQueue.publish(metricTickTuple);
                     }
                 });
@@ -383,8 +391,8 @@ public abstract class Executor implements Callable, EventHandler {
         int waitTimeOutMs = Utils.getInt(stormConf.get(Config.TOPOLOGY_DISRUPTOR_WAIT_TIMEOUT_MILLIS));
         int batchSize = Utils.getInt(stormConf.get(Config.TOPOLOGY_DISRUPTOR_BATCH_SIZE));
         int batchTimeOutMs = Utils.getInt(stormConf.get(Config.TOPOLOGY_DISRUPTOR_BATCH_TIMEOUT_MILLIS));
-        return new DisruptorQueue(
-                "executor" + executorId + "-send-queue", ProducerType.SINGLE, sendSize, waitTimeOutMs, batchSize, batchTimeOutMs);
+        return new DisruptorQueue("executor" + executorId + "-send-queue", ProducerType.SINGLE,
+                sendSize, waitTimeOutMs, batchSize, batchTimeOutMs);
     }
 
     /**

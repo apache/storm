@@ -17,6 +17,12 @@
  */
 package org.apache.storm.executor.bolt;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 import org.apache.storm.daemon.Acker;
 import org.apache.storm.daemon.Task;
 import org.apache.storm.hooks.info.BoltAckInfo;
@@ -31,8 +37,6 @@ import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.*;
 
 public class BoltOutputCollectorImpl implements IOutputCollector {
 
@@ -73,7 +77,7 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
         }
 
         for (Integer t : outTasks) {
-            Map<Long, Long> anchorsToIds = new HashMap<Long, Long>();
+            Map<Long, Long> anchorsToIds = new HashMap<>();
             if (anchors != null) {
                 for (Tuple a : anchors) {
                     long edgeId = MessageId.generateId(random);
@@ -109,7 +113,8 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
         BoltAckInfo boltAckInfo = new BoltAckInfo(input, taskId, delta);
         boltAckInfo.applyOn(taskData.getUserContext());
         if (delta != 0) {
-            ((BoltExecutorStats) executor.getStats()).boltAckedTuple(input.getSourceComponent(), input.getSourceStreamId(), delta);
+            ((BoltExecutorStats) executor.getStats()).boltAckedTuple(
+                    input.getSourceComponent(), input.getSourceStreamId(), delta);
         }
     }
 
@@ -117,7 +122,8 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
     public void fail(Tuple input) {
         Set<Long> roots = input.getMessageId().getAnchors();
         for (Long root : roots) {
-            executor.sendUnanchored(taskData, Acker.ACKER_FAIL_STREAM_ID, new Values(root), executor.getExecutorTransfer());
+            executor.sendUnanchored(taskData, Acker.ACKER_FAIL_STREAM_ID,
+                    new Values(root), executor.getExecutorTransfer());
         }
         long delta = tupleTimeDelta((TupleImpl) input);
         if (isDebug) {
@@ -126,7 +132,8 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
         BoltFailInfo boltFailInfo = new BoltFailInfo(input, taskId, delta);
         boltFailInfo.applyOn(taskData.getUserContext());
         if (delta != 0) {
-            ((BoltExecutorStats) executor.getStats()).boltFailedTuple(input.getSourceComponent(), input.getSourceStreamId(), delta);
+            ((BoltExecutorStats) executor.getStats()).boltFailedTuple(
+                    input.getSourceComponent(), input.getSourceStreamId(), delta);
         }
     }
 
@@ -134,7 +141,8 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
     public void resetTimeout(Tuple input) {
         Set<Long> roots = input.getMessageId().getAnchors();
         for (Long root : roots) {
-            executor.sendUnanchored(taskData, Acker.ACKER_RESET_TIMEOUT_STREAM_ID, new Values(root), executor.getExecutorTransfer());
+            executor.sendUnanchored(taskData, Acker.ACKER_RESET_TIMEOUT_STREAM_ID,
+                    new Values(root), executor.getExecutorTransfer());
         }
     }
 
