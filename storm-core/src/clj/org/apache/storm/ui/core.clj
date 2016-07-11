@@ -51,6 +51,7 @@
             [compojure.handler :as handler]
             [ring.util.response :as resp]
             [org.apache.storm.internal [thrift :as thrift]])
+  (:require [ring.middleware.cors :refer [wrap-cors]])
   (:import [org.apache.commons.lang StringEscapeUtils])
   (:import [org.apache.logging.log4j Level]
            (org.apache.storm.daemon StormCommon Acker))
@@ -1363,6 +1364,9 @@
 
 (def app
   (handler/site (-> main-routes
+                    (wrap-cors :access-control-allow-origin [#".*"]
+                               :access-control-allow-headers :any
+                               :access-control-allow-methods [:get :put :post :delete])
                     (wrap-json-params)
                     (wrap-multipart-params)
                     (wrap-reload '[org.apache.storm.ui.core])
