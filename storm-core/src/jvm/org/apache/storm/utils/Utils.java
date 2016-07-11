@@ -2092,6 +2092,11 @@ public class Utils {
         return _instance.addToClasspathImpl(classpath, paths);
     }
 
+    public static String addToClasspath(Collection<String> classpaths,
+                Collection<String> paths) {
+        return _instance.addToClasspathImpl(classpaths, paths);
+    }
+
     // Non-static impl methods exist for mocking purposes.
     public String addToClasspathImpl(String classpath,
                 Collection<String> paths) {
@@ -2102,6 +2107,18 @@ public class Utils {
         l.add(classpath);
         l.addAll(paths);
         return StringUtils.join(l, CLASS_PATH_SEPARATOR);
+    }
+
+    public String addToClasspathImpl(Collection<String> classpaths,
+                Collection<String> paths) {
+        List<String> allPaths = new ArrayList<>();
+        if(classpaths != null) {
+            allPaths.addAll(classpaths);
+        }
+        if(paths != null) {
+            allPaths.addAll(paths);
+        }
+        return StringUtils.join(allPaths, CLASS_PATH_SEPARATOR);
     }
 
     public static class UptimeComputer {
