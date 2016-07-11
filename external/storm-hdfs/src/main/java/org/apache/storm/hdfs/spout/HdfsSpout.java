@@ -256,7 +256,11 @@ public class HdfsSpout extends BaseRichSpout {
     tracker.offsets.clear();
     retryList.clear();
 
-    reader.close();
+    try {
+      reader.close();
+    } catch (IOException e) {
+      LOG.error("File Closing Failed", e);
+    }
     reader = null;
     releaseLockAndLog(lock, spoutId);
     lock = null;

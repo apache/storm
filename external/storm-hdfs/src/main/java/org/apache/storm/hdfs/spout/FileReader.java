@@ -20,10 +20,11 @@ package org.apache.storm.hdfs.spout;
 
 import org.apache.hadoop.fs.Path;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.List;
 
-interface FileReader {
+interface FileReader extends Closeable {
   Path getFilePath();
 
   /**
@@ -40,5 +41,4 @@ interface FileReader {
    */
   List<Object> next() throws IOException, ParseException;
 
-  void close();
 }
