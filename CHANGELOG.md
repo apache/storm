@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-1954: Large Trident topologies can cause memory issues due to DefaultResourceDeclarer object reading config
  * STORM-1913: Additions and Improvements for Trident RAS API
  * STORM-1959: Add missing license header to KafkaPartitionOffsetLag
  * STORM-1249: port backtype.storm.security.serialization.BlowfishTupleSerializer-test to java
