@@ -13,7 +13,7 @@ metrics data and configuration information as well as management operations such
 
 The REST API returns JSON responses and supports JSONP.
 Clients can pass a callback query parameter to wrap JSON in the callback function.
-
+**REST API allows CORS by default.**
 
 # Using the UI REST API
 
