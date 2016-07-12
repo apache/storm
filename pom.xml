@@ -296,6 +296,7 @@
         <module>external/storm-kafka-client</module>
         <module>external/storm-opentsdb</module>
         <module>external/storm-kafka-monitor</module>
+        <module>external/storm-kinesis</module>
     </modules>
 
     <dependencies>
