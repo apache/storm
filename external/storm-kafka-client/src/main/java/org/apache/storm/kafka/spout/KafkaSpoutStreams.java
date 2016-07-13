@@ -32,6 +32,8 @@ import java.util.List;
 public interface KafkaSpoutStreams extends Serializable {
     void declareOutputFields(OutputFieldsDeclarer declarer);
 
+    Fields getOutputFields();
+
     void emit(SpoutOutputCollector collector, List<Object> tuple, KafkaSpoutMessageId messageId);
 
     Fields getOutputFields();

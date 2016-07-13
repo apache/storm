@@ -57,7 +57,7 @@ public class KafkaOpaquePartitionedTridentSpout<K,V> implements IOpaquePartition
     @Override
     public Fields getOutputFields() {
         final KafkaSpoutStreams kafkaSpoutStreams = kafkaManager.getKafkaSpoutStreams();
-        final Fields outputFields = kafkaSpoutStreams.getOutputFields(kafkaSpoutStreams.getTopics().get(0));
+        final Fields outputFields = kafkaSpoutStreams.getOutputFields();
         LOG.debug("OutputFields = {}", outputFields);
         return outputFields;
     }

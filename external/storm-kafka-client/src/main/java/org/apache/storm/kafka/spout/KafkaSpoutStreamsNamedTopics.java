@@ -95,6 +95,17 @@ public class KafkaSpoutStreamsNamedTopics implements KafkaSpoutStreams {
         }
     }
 
+    @Override
+    public Fields getOutputFields() {
+        final Set<String> uniqueFields = new HashSet<>();
+
+        for (KafkaSpoutStream kafkaSpoutStream : topicToStream.values()) {
+            uniqueFields.addAll(kafkaSpoutStream.getOutputFields().toList());
+        }
+
+        return new Fields(new ArrayList<>(uniqueFields));
+    }
+
     public void emit(SpoutOutputCollector collector, List<Object> tuple, KafkaSpoutMessageId messageId) {
         getStream(messageId.topic()).emit(collector, tuple, messageId);
     }
