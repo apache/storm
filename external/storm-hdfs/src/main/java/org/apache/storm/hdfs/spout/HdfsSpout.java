@@ -51,9 +51,17 @@ public class HdfsSpout extends BaseRichSpout {
   private String hdfsUri;            // required
   private String readerType;         // required
   private Fields outputFields;       // required
+
+  private String sourceDir;        // required
   private Path sourceDirPath;        // required
+
+  private String archiveDir;       // required
   private Path archiveDirPath;       // required
+
+  private String badFilesDir;      // required
   private Path badFilesDirPath;      // required
+
+  private String lockDir;
   private Path lockDirPath;
 
   private int commitFrequencyCount = Configs.DEFAULT_COMMIT_FREQ_COUNT;
@@ -62,7 +70,7 @@ public class HdfsSpout extends BaseRichSpout {
   private int lockTimeoutSec = Configs.DEFAULT_LOCK_TIMEOUT;
   private boolean clocksInSync = true;
 
-  private String inprogress_suffix = ".inprogress";
+  private String inprogress_suffix = ".inprogress"; // not configurable to prevent change between topology restarts
   private String ignoreSuffix = ".ignore";
 
   // other members
@@ -97,7 +105,69 @@ public class HdfsSpout extends BaseRichSpout {
 
   public HdfsSpout() {
   }
-  /** Name of the output field names. Number of fields depends upon the reader type */
+
+  public HdfsSpout setHdfsUri(String hdfsUri) {
+    this.hdfsUri = hdfsUri;
+    return this;
+  }
+
+  public HdfsSpout setReaderType(String readerType) {
+    this.readerType = readerType;
+    return this;
+  }
+
+  public HdfsSpout setSourceDir(String sourceDir) {
+    this.sourceDir = sourceDir;
+    return this;
+  }
+
+  public HdfsSpout setArchiveDir(String archiveDir) {
+    this.archiveDir = archiveDir;
+    return this;
+  }
+
+  public HdfsSpout setBadFilesDir(String badFilesDir) {
+    this.badFilesDir = badFilesDir;
+    return this;
+  }
+
+  public HdfsSpout setLockDir(String lockDir) {
+    this.lockDir = lockDir;
+    return this;
+  }
+
+  public HdfsSpout setCommitFrequencyCount(int commitFrequencyCount) {
+    this.commitFrequencyCount = commitFrequencyCount;
+    return this;
+  }
+
+  public HdfsSpout setCommitFrequencySec(int commitFrequencySec) {
+    this.commitFrequencySec = commitFrequencySec;
+    return this;
+  }
+
+  public HdfsSpout setMaxOutstanding(int maxOutstanding) {
+    this.maxOutstanding = maxOutstanding;
+    return this;
+  }
+
+  public HdfsSpout setLockTimeoutSec(int lockTimeoutSec) {
+    this.lockTimeoutSec = lockTimeoutSec;
+    return this;
+  }
+
+  public HdfsSpout setClocksInSync(boolean clocksInSync) {
+    this.clocksInSync = clocksInSync;
+    return this;
+  }
+
+
+  public HdfsSpout setIgnoreSuffix(String ignoreSuffix) {
+    this.ignoreSuffix = ignoreSuffix;
+    return this;
+  }
+
+  /** Output field names. Number of fields depends upon the reader type */
   public HdfsSpout withOutputFields(String... fields) {
     outputFields = new Fields(fields);
     return this;
@@ -288,10 +358,11 @@ public class HdfsSpout extends BaseRichSpout {
     this.collector = collector;
 
     // Hdfs related settings
-    if( conf.containsKey(Configs.HDFS_URI)) {
+    if(this.hdfsUri==null && conf.containsKey(Configs.HDFS_URI)) {
       this.hdfsUri = conf.get(Configs.HDFS_URI).toString();
-    } else {
-      throw new RuntimeException(Configs.HDFS_URI + " setting is required");
+    }
+    if(this.hdfsUri==null) {
+      throw new RuntimeException("HDFS Uri not set on spout");
     }
 
     try {
@@ -319,33 +390,41 @@ public class HdfsSpout extends BaseRichSpout {
       }
 
     // Reader type config
-    if( conf.containsKey(Configs.READER_TYPE) ) {
+    if( readerType==null && conf.containsKey(Configs.READER_TYPE) ) {
       readerType = conf.get(Configs.READER_TYPE).toString();
-      checkValidReader(readerType);
     }
+    checkValidReader(readerType);
 
     // -- source dir config
-    if ( !conf.containsKey(Configs.SOURCE_DIR) ) {
+    if ( sourceDir==null && conf.containsKey(Configs.SOURCE_DIR) ) {
+      sourceDir = conf.get(Configs.SOURCE_DIR).toString();
+    }
+    if( sourceDir==null ) {
       LOG.error(Configs.SOURCE_DIR + " setting is required");
       throw new RuntimeException(Configs.SOURCE_DIR + " setting is required");
     }
-    this.sourceDirPath = new Path( conf.get(Configs.SOURCE_DIR).toString() );
+    this.sourceDirPath = new Path( sourceDir );
 
     // -- archive dir config
-    if ( !conf.containsKey(Configs.ARCHIVE_DIR) ) {
+    if ( archiveDir==null && conf.containsKey(Configs.ARCHIVE_DIR) ) {
+      archiveDir = conf.get(Configs.ARCHIVE_DIR).toString();
+    }
+    if ( archiveDir==null ) {
       LOG.error(Configs.ARCHIVE_DIR + " setting is required");
       throw new RuntimeException(Configs.ARCHIVE_DIR + " setting is required");
     }
-    this.archiveDirPath = new Path( conf.get(Configs.ARCHIVE_DIR).toString() );
+    this.archiveDirPath = new Path( archiveDir );
     validateOrMakeDir(hdfs, archiveDirPath, "Archive");
 
     // -- bad files dir config
-    if ( !conf.containsKey(Configs.BAD_DIR) ) {
+    if ( badFilesDir==null && conf.containsKey(Configs.BAD_DIR) ) {
+      badFilesDir = conf.get(Configs.BAD_DIR).toString();
+    }
+    if(badFilesDir==null) {
       LOG.error(Configs.BAD_DIR + " setting is required");
       throw new RuntimeException(Configs.BAD_DIR + " setting is required");
     }
-
-    this.badFilesDirPath = new Path(conf.get(Configs.BAD_DIR).toString());
+    this.badFilesDirPath = new Path(badFilesDir);
     validateOrMakeDir(hdfs, badFilesDirPath, "bad files");
 
     // -- ignore file names config
@@ -354,9 +433,15 @@ public class HdfsSpout extends BaseRichSpout {
     }
 
     // -- lock dir config
-    String lockDir = !conf.containsKey(Configs.LOCK_DIR) ? getDefaultLockDir(sourceDirPath) : conf.get(Configs.LOCK_DIR).toString() ;
+    if( lockDir==null && conf.containsKey(Configs.LOCK_DIR) ) {
+      lockDir = conf.get(Configs.LOCK_DIR).toString();
+    }
+    if(lockDir==null) {
+      lockDir = getDefaultLockDir(sourceDirPath);
+    }
     this.lockDirPath = new Path(lockDir);
-    validateOrMakeDir(hdfs,lockDirPath,"locks");
+    validateOrMakeDir(hdfs,lockDirPath, "locks");
+
 
     // -- lock timeout
     if( conf.get(Configs.LOCK_TIMEOUT) !=null ) {
