@@ -45,6 +45,7 @@ import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.tuple.Values;
 import org.apache.hadoop.hive.metastore.txn.TxnDbUtil;
+import org.mockito.MockitoAnnotations;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -68,6 +69,7 @@ public class TestHiveWriter {
     private final HiveConf conf;
     private ExecutorService callTimeoutPool;
     private final Driver driver;
+    private String dbLocation;
     int timeout = 10000; // msec
     UserGroupInformation ugi = null;
 
@@ -85,24 +87,24 @@ public class TestHiveWriter {
         // 1) Start metastore
         conf = HiveSetupUtil.getHiveConf();
         TxnDbUtil.setConfValues(conf);
-        TxnDbUtil.cleanDb();
-        TxnDbUtil.prepDb();
-
         if(metaStoreURI!=null) {
             conf.setVar(HiveConf.ConfVars.METASTOREURIS, metaStoreURI);
         }
         SessionState.start(new CliSessionState(conf));
         driver = new Driver(conf);
-        driver.init();
     }
 
     @Before
     public void setUp() throws Exception {
-        // 1) Setup tables
+        TxnDbUtil.cleanDb();
+        TxnDbUtil.prepDb();
         HiveSetupUtil.dropDB(conf, dbName);
-        String dbLocation = dbFolder.newFolder(dbName).getCanonicalPath() + ".db";
-        HiveSetupUtil.createDbAndTable(conf, dbName, tblName, Arrays.asList(partitionVals),
-                                       colNames,colTypes, partNames, dbLocation);
+        dbLocation = dbFolder.newFolder(dbName + ".db").getCanonicalPath();
+        dbLocation = dbLocation.replaceAll("\\\\","/"); //windows
+
+        HiveSetupUtil.createDbAndTable(driver, conf, dbName, tblName, Arrays.asList(partitionVals),
+                colNames, colTypes, partNames, dbLocation);
+
     }
 
     @Test
@@ -112,7 +114,7 @@ public class TestHiveWriter {
             .withPartitionFields(new Fields(partNames));
         HiveEndPoint endPoint = new HiveEndPoint(metaStoreURI, dbName, tblName, Arrays.asList(partitionVals));
         HiveWriter writer = new HiveWriter(endPoint, 10, true, timeout
-                                           ,callTimeoutPool, mapper, ugi);
+                                           ,callTimeoutPool, mapper, ugi, "test-instantiate");
         writer.close();
     }
 
@@ -123,7 +125,7 @@ public class TestHiveWriter {
             .withPartitionFields(new Fields(partNames));
         HiveEndPoint endPoint = new HiveEndPoint(metaStoreURI, dbName, tblName, Arrays.asList(partitionVals));
         HiveWriter writer = new HiveWriter(endPoint, 10, true, timeout
-                                           , callTimeoutPool, mapper, ugi);
+                                           , callTimeoutPool, mapper, ugi, "test-write-basic");
         writeTuples(writer,mapper,3);
         writer.flush(false);
         writer.close();
@@ -138,7 +140,7 @@ public class TestHiveWriter {
 
         HiveEndPoint endPoint = new HiveEndPoint(metaStoreURI, dbName, tblName, Arrays.asList(partitionVals));
         HiveWriter writer = new HiveWriter(endPoint, 10, true, timeout
-                                           , callTimeoutPool, mapper, ugi);
+                                           , callTimeoutPool, mapper, ugi, "test-write-multi-flush");
         Tuple tuple = generateTestTuple("1","abc");
         writer.write(mapper.mapRecord(tuple));
         tuple = generateTestTuple("2","def");
@@ -189,7 +191,7 @@ public class TestHiveWriter {
 
     private  ArrayList<String> listRecordsInTable(String dbName,String tableName)
         throws CommandNeedRetryException, IOException {
-        driver.compile("select * from " + dbName + "." + tableName);
+        driver.run("select * from " + dbName + "." + tableName);
         ArrayList<String> res = new ArrayList<String>();
         driver.getResults(res);
         return res;
