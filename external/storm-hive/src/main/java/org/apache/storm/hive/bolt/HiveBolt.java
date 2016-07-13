@@ -62,6 +62,7 @@ public class HiveBolt extends BaseRichBolt {
     private UserGroupInformation ugi = null;
     private Map<HiveEndPoint, HiveWriter> allWriters;
     private BatchHelper batchHelper;
+    private String agentInfo;
 
     public HiveBolt(HiveOptions options) {
         this.options = options;
@@ -87,17 +88,17 @@ public class HiveBolt extends BaseRichBolt {
                     throw new IllegalArgumentException(ex);
                 }
             }
+
             this.collector = collector;
             this.batchHelper = new BatchHelper(options.getBatchSize(), collector);
             allWriters = new ConcurrentHashMap<HiveEndPoint,HiveWriter>();
             String timeoutName = "hive-bolt-%d";
             this.callTimeoutPool = Executors.newFixedThreadPool(1,
                                 new ThreadFactoryBuilder().setNameFormat(timeoutName).build());
-
+            this.agentInfo = "HiveBolt-"+ HiveUtils.getAgentInfo(topologyContext);
             sendHeartBeat.set(true);
             heartBeatTimer = new Timer();
             setupHeartBeatTimer();
-
         } catch(Exception e) {
             LOG.warn("unable to make connection to hive ", e);
         }
@@ -121,9 +122,11 @@ public class HiveBolt extends BaseRichBolt {
             }
         } catch(SerializationError se) {
             LOG.info("Serialization exception occurred, tuple is acknowledged but not written to Hive.", tuple);
+            LOG.error("Serialization error occurred", se);
             this.collector.reportError(se);
             collector.ack(tuple);
         } catch(Exception e) {
+            LOG.error("Exception occurred ", e);
             batchHelper.fail(e);
             abortAndCloseWriters();
         }
@@ -256,7 +259,7 @@ public class HiveBolt extends BaseRichBolt {
             HiveWriter writer = allWriters.get( endPoint );
             if (writer == null) {
                 LOG.debug("Creating Writer to Hive end point : " + endPoint);
-                writer = HiveUtils.makeHiveWriter(endPoint, callTimeoutPool, ugi, options);
+                writer = HiveUtils.makeHiveWriter(endPoint, callTimeoutPool, ugi, options, agentInfo);
                 if (allWriters.size() > (options.getMaxOpenConnections() - 1)) {
                     LOG.info("cached HiveEndPoint size {} exceeded maxOpenConnections {} ", allWriters.size(), options.getMaxOpenConnections());
                     int retired = retireIdleWriters();

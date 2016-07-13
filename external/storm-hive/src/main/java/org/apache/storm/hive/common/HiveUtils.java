@@ -18,6 +18,7 @@
 
 package org.apache.storm.hive.common;
 
+import org.apache.storm.task.TopologyContext;
 import org.apache.storm.hive.common.HiveWriter;
 import org.apache.storm.hive.bolt.mapper.HiveMapper;
 import org.apache.hive.hcatalog.streaming.*;
@@ -44,10 +45,11 @@ public class HiveUtils {
         return new HiveEndPoint(options.getMetaStoreURI(), options.getDatabaseName(), options.getTableName(), partitionVals);
     }
 
-    public static HiveWriter makeHiveWriter(HiveEndPoint endPoint, ExecutorService callTimeoutPool, UserGroupInformation ugi, HiveOptions options)
+    public static HiveWriter makeHiveWriter(HiveEndPoint endPoint, ExecutorService callTimeoutPool, UserGroupInformation ugi, HiveOptions options,
+                                            String agentInfo)
         throws HiveWriter.ConnectFailure, InterruptedException {
         return new HiveWriter(endPoint, options.getTxnsPerBatch(), options.getAutoCreatePartitions(),
-                              options.getCallTimeOut(), callTimeoutPool, options.getMapper(), ugi);
+                              options.getCallTimeOut(), callTimeoutPool, options.getMapper(), ugi, agentInfo);
     }
 
     public static synchronized UserGroupInformation authenticate(String keytab, String principal)
@@ -81,5 +83,9 @@ public class HiveUtils {
         for (Map.Entry<HiveEndPoint,HiveWriter> entry : allWriters.entrySet()) {
             LOG.info("cached writers {} ", entry.getValue());
         }
+    }
+
+    public static String getAgentInfo(TopologyContext topologyContext) {
+        return topologyContext.getThisComponentId()+"-"+topologyContext.getThisTaskId();
     }
 }
