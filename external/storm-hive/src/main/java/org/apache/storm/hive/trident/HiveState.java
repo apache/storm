@@ -61,7 +61,8 @@ public class HiveState implements State {
     private UserGroupInformation ugi = null;
     private Boolean kerberosEnabled = false;
     private Map<HiveEndPoint, HiveWriter> allWriters;
-
+    private String agentInfo;
+    
     public HiveState(HiveOptions options) {
         this.options = options;
         this.currentBatchSize = 0;
@@ -97,6 +98,7 @@ public class HiveState implements State {
             }
 
             allWriters = new ConcurrentHashMap<HiveEndPoint,HiveWriter>();
+            this.agentInfo = "HiveState-"+partitionIndex;
             String timeoutName = "hive-bolt-%d";
             this.callTimeoutPool = Executors.newFixedThreadPool(1,
                                                                 new ThreadFactoryBuilder().setNameFormat(timeoutName).build());
@@ -203,7 +205,7 @@ public class HiveState implements State {
             HiveWriter writer = allWriters.get( endPoint );
             if( writer == null ) {
                 LOG.info("Creating Writer to Hive end point : " + endPoint);
-                writer = HiveUtils.makeHiveWriter(endPoint, callTimeoutPool, ugi, options);
+                writer = HiveUtils.makeHiveWriter(endPoint, callTimeoutPool, ugi, options, agentInfo);
                 if(allWriters.size() > (options.getMaxOpenConnections() - 1)){
                     int retired = retireIdleWriters();
                     if(retired==0) {

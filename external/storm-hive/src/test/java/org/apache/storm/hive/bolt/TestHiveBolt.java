@@ -40,6 +40,7 @@ import org.apache.hadoop.hive.ql.session.SessionState;
 import org.apache.hadoop.hive.serde.serdeConstants;
 import org.apache.hadoop.hive.metastore.txn.TxnDbUtil;
 import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.hive.ql.processors.CommandProcessorResponse;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -89,7 +90,6 @@ public class TestHiveBolt {
     private String dbLocation;
     private Config config = new Config();
     private HiveBolt bolt;
-    private final static boolean WINDOWS = System.getProperty("os.name").startsWith("Windows");
 
     @Rule
     public TemporaryFolder dbFolder = new TemporaryFolder();
@@ -106,26 +106,24 @@ public class TestHiveBolt {
         metaStoreURI = null;
         conf = HiveSetupUtil.getHiveConf();
         TxnDbUtil.setConfValues(conf);
-        TxnDbUtil.cleanDb();
-        TxnDbUtil.prepDb();
+        if (metaStoreURI != null) {
+            conf.setVar(HiveConf.ConfVars.METASTOREURIS, metaStoreURI);
+        }
         SessionState.start(new CliSessionState(conf));
         driver = new Driver(conf);
-
-        // driver.init();
     }
 
     @Before
     public void setup() throws Exception {
+        TxnDbUtil.cleanDb();
+        TxnDbUtil.prepDb();
         MockitoAnnotations.initMocks(this);
         HiveSetupUtil.dropDB(conf, dbName);
-        if(WINDOWS) {
-            dbLocation = dbFolder.newFolder(dbName + ".db").getCanonicalPath();
-        } else {
-            dbLocation = "raw://" + dbFolder.newFolder(dbName + ".db").getCanonicalPath();
-        }
-        HiveSetupUtil.createDbAndTable(conf, dbName, tblName, Arrays.asList(partitionVals.split(",")),
+        dbLocation = dbFolder.newFolder(dbName + ".db").getCanonicalPath();
+        dbLocation = dbLocation.replaceAll("\\\\","/"); //windows
+
+        HiveSetupUtil.createDbAndTable(driver, conf, dbName, tblName, Arrays.asList(partitionVals.split(",")),
                 colNames, colTypes, partNames, dbLocation);
-        System.out.println("done");
     }
 
     @Test
@@ -134,11 +132,11 @@ public class TestHiveBolt {
         // 1) Basic
         HiveEndPoint endPt = new HiveEndPoint(metaStoreURI, dbName, tblName
                                               , Arrays.asList(partitionVals.split(",")));
-        StreamingConnection connection = endPt.newConnection(false, null, ugi); //shouldn't throw
+        StreamingConnection connection = endPt.newConnection(false, null, ugi, "test-endpoint-connection"); //shouldn't throw
         connection.close();
         // 2) Leave partition unspecified
-        endPt = new HiveEndPoint(metaStoreURI, dbName, tblName, null);
-        endPt.newConnection(false, null, ugi).close(); // should not throw
+        endPt = new HiveEndPoint(metaStoreURI, dbName, tblName, Arrays.asList(partitionVals.split(",")));
+        endPt.newConnection(false, null, ugi, "test-endpoint-connection").close(); // should not throw
     }
 
     @Test
@@ -175,7 +173,7 @@ public class TestHiveBolt {
     public void testWithoutPartitions()
         throws Exception {
         HiveSetupUtil.dropDB(conf,dbName1);
-        HiveSetupUtil.createDbAndTable(conf, dbName1, tblName1,null,
+        HiveSetupUtil.createDbAndTable(driver, conf, dbName1, tblName1,null,
                                        colNames,colTypes,null, dbLocation);
         DelimitedRecordHiveMapper mapper = new DelimitedRecordHiveMapper()
             .withColumnFields(new Fields(colNames));
@@ -209,7 +207,7 @@ public class TestHiveBolt {
         String[] partNames1 = {"dt"};
         String timeFormat = "yyyy/MM/dd";
         HiveSetupUtil.dropDB(conf,dbName1);
-        HiveSetupUtil.createDbAndTable(conf, dbName1, tblName1, null,
+        HiveSetupUtil.createDbAndTable(driver, conf, dbName1, tblName1, null,
                 colNames, colTypes, partNames1, dbLocation);
         DelimitedRecordHiveMapper mapper = new DelimitedRecordHiveMapper()
             .withColumnFields(new Fields(colNames))
@@ -428,7 +426,9 @@ public class TestHiveBolt {
 
     private  ArrayList<String> listRecordsInTable(String tableName,String dbName)
         throws CommandNeedRetryException, IOException {
-        driver.compile("select * from " + dbName + "." + tableName);
+        CommandProcessorResponse cpr = driver.run("select * from " + dbName + "." + tableName);
+        System.out.println("cpr.respCode=" + cpr.getResponseCode() + " cpr.errMsg=" + cpr.getErrorMessage() +
+                " for table " + tableName);
         ArrayList<String> res = new ArrayList<String>();
         driver.getResults(res);
         return res;
