@@ -20,6 +20,7 @@ package org.apache.storm.kafka.spout;
 
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.tuple.Fields;
 
 import java.io.Serializable;
 import java.util.List;
@@ -30,6 +31,8 @@ import java.util.List;
  */
 public interface KafkaSpoutStreams extends Serializable {
     void declareOutputFields(OutputFieldsDeclarer declarer);
+
+    Fields getOutputFields();
 
     void emit(SpoutOutputCollector collector, List<Object> tuple, KafkaSpoutMessageId messageId);
 }

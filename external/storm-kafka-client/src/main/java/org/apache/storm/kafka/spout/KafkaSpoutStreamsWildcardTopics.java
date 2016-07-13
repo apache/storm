@@ -20,6 +20,7 @@ package org.apache.storm.kafka.spout;
 
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.tuple.Fields;
 
 import java.util.List;
 import java.util.regex.Pattern;
@@ -37,6 +38,11 @@ public class KafkaSpoutStreamsWildcardTopics implements KafkaSpoutStreams {
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         kafkaSpoutStream.declareOutputFields(declarer);
+    }
+
+    @Override
+    public Fields getOutputFields() {
+        return kafkaSpoutStream.getOutputFields();
     }
 
     @Override

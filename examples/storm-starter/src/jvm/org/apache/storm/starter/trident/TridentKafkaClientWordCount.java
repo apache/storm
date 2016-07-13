@@ -23,8 +23,10 @@ import org.apache.storm.kafka.spout.KafkaSpoutConfig;
 import org.apache.storm.kafka.spout.KafkaSpoutRetryExponentialBackoff;
 import org.apache.storm.kafka.spout.KafkaSpoutRetryService;
 import org.apache.storm.kafka.spout.KafkaSpoutStreams;
+import org.apache.storm.kafka.spout.KafkaSpoutStreamsNamedTopics;
 import org.apache.storm.kafka.spout.KafkaSpoutTupleBuilder;
 import org.apache.storm.kafka.spout.KafkaSpoutTuplesBuilder;
+import org.apache.storm.kafka.spout.KafkaSpoutTuplesBuilderNamedTopics;
 import org.apache.storm.kafka.spout.trident.KafkaManagerTridentSpout;
 import org.apache.storm.kafka.spout.trident.KafkaOpaquePartitionedTridentSpout;
 import org.apache.storm.trident.Stream;
@@ -88,7 +90,7 @@ public class TridentKafkaClientWordCount extends TridentKafkaWordCount {
     }
 
     private KafkaSpoutTuplesBuilder<String, String> getTuplesBuilder() {
-        return new KafkaSpoutTuplesBuilder.Builder<>(
+        return new KafkaSpoutTuplesBuilderNamedTopics.Builder<>(
                 new TopicTestTupleBuilder<String, String>("test"))
                 .build();
     }
@@ -104,7 +106,7 @@ public class TridentKafkaClientWordCount extends TridentKafkaWordCount {
 
     private KafkaSpoutStreams getKafkaSpoutStreams() {
         final Fields outputFields = new Fields("str");
-        return new KafkaSpoutStreams.Builder(outputFields, new String[]{"test"}).build();
+        return new KafkaSpoutStreamsNamedTopics.Builder(outputFields, new String[]{"test"}).build();
     }
 
     private class TopicTestTupleBuilder<K, V> extends KafkaSpoutTupleBuilder<K,V> {
