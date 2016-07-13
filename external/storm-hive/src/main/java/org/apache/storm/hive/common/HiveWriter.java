@@ -55,10 +55,12 @@ public class HiveWriter {
     private boolean autoCreatePartitions;
     private UserGroupInformation ugi;
     private int totalRecords = 0;
+    private String agentInfo;
 
     public HiveWriter(HiveEndPoint endPoint, int txnsPerBatch,
                       boolean autoCreatePartitions, long callTimeout,
-                      ExecutorService callTimeoutPool, HiveMapper mapper, UserGroupInformation ugi)
+                      ExecutorService callTimeoutPool, HiveMapper mapper,
+                      UserGroupInformation ugi, String agentInfo)
         throws InterruptedException, ConnectFailure {
         try {
             this.autoCreatePartitions = autoCreatePartitions;
@@ -72,6 +74,7 @@ public class HiveWriter {
             this.txnBatch = nextTxnBatch(recordWriter);
             this.closed = false;
             this.lastUsed = System.currentTimeMillis();
+            this.agentInfo = agentInfo;
         } catch(InterruptedException e) {
             throw e;
         } catch(RuntimeException e) {
@@ -235,7 +238,7 @@ public class HiveWriter {
             return  callWithTimeout(new CallRunner<StreamingConnection>() {
                     @Override
                     public StreamingConnection call() throws Exception {
-                        return endPoint.newConnection(autoCreatePartitions, null, ugi); // could block
+                        return endPoint.newConnection(autoCreatePartitions, null, ugi, agentInfo); // could block
                     }
                 });
         } catch(StreamingException e) {
@@ -405,6 +408,7 @@ public class HiveWriter {
         }
         return buf.toString().getBytes();
     }
+    
 
     /**
      * Simple interface whose <tt>call</tt> method is called by
@@ -451,4 +455,5 @@ public class HiveWriter {
             super("Failed switching to next Txn in TxnBatch " + txnBatch, cause);
         }
     }
+
 }
