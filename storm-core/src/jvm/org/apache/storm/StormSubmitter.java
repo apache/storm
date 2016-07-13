@@ -24,6 +24,7 @@ import java.util.regex.Pattern;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.google.common.base.Joiner;
 import org.apache.storm.hooks.SubmitterHookException;
 import org.apache.storm.scheduler.resource.ResourceUtils;
 import org.apache.storm.validation.ConfigValidation;
@@ -51,6 +52,8 @@ public class StormSubmitter {
     private static final int THRIFT_CHUNK_SIZE_BYTES = 307200;
 
     private static ILocalCluster localNimbus = null;
+
+    private static final String[] WARN_STRINGS_FOR_TOPOLOGY_OR_COMPONENT_NAME = { "." };
 
     private static String generateZookeeperDigestSecretPayload() {
         return Utils.secureRandomLong() + ":" + Utils.secureRandomLong();
@@ -193,6 +196,8 @@ public class StormSubmitter {
      */
     public static void submitTopologyAs(String name, Map stormConf, StormTopology topology, SubmitOptions opts, ProgressListener progressListener, String asUser)
             throws AlreadyAliveException, InvalidTopologyException, AuthorizationException, IllegalArgumentException {
+        checkTopologyName(name);
+        checkComponentsName(topology);
         if(!Utils.isValidConf(stormConf)) {
             throw new IllegalArgumentException("Storm conf is not valid. Must be json-serializable");
         }
@@ -256,6 +261,29 @@ public class StormSubmitter {
         }
         invokeSubmitterHook(name, asUser, conf, topology);
 
+    }
+
+    private static void checkTopologyName(String name) {
+        warnIfHavingWarnStringInName("Topology", name);
+    }
+
+    private static void checkComponentsName(StormTopology topology) {
+        for (String spoutName : topology.get_spouts().keySet()) {
+            warnIfHavingWarnStringInName("Spout", spoutName);
+        }
+
+        for (String boltName : topology.get_bolts().keySet()) {
+            warnIfHavingWarnStringInName("Bolt", boltName);
+        }
+    }
+
+    private static void warnIfHavingWarnStringInName(String componentType, String name) {
+        for (String warn : WARN_STRINGS_FOR_TOPOLOGY_OR_COMPONENT_NAME) {
+            if (name.contains(warn)) {
+                LOG.warn("{} name {} contains \"{}\" which can be problematic for metrics consumers.", componentType, name, warn);
+                LOG.warn("Encouraged to not using any of these strings: {}", Joiner.on(",").join(WARN_STRINGS_FOR_TOPOLOGY_OR_COMPONENT_NAME));
+            }
+        }
     }
 
     /**
