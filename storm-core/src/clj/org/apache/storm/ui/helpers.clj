@@ -22,7 +22,6 @@
   (:use [org.apache.storm config log])
   (:use [org.apache.storm.util :only [clojurify-structure defnk not-nil?]])
   (:use [clj-time coerce format])
-  (:import [org.apache.commons.lang StringUtils])
   (:import [org.apache.storm.generated ExecutorInfo ExecutorSummary]
            [org.apache.storm.ui UIHelpers]
            [org.apache.storm.metric StormMetricsRegistry])
@@ -57,7 +56,7 @@
       ;; check that the response is html and that the path is for a root page: a single / in the path 
       ;; then we know we don't want it cached (e.g. /index.html)
       (if (and (= content-type "text/html") 
-               (= 1 (StringUtils/countMatches uri "/")))
+               (= 1 (count (re-seq #"/" uri))))
         ;; response for html page in root directory, no-cache 
         (response/header res "Cache-Control" "no-cache")
         ;; else, carry on
