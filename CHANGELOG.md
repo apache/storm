@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-1960: Add CORS support to STORM UI Rest api
  * STORM-1959: Add missing license header to KafkaPartitionOffsetLag
  * STORM-1950: Change response json of "Topology Lag" REST API to keyed by spoutId, topic, partition.
  * STORM-1833: Simple equi-join in storm-sql standalone mode
