@@ -15,32 +15,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.hdfs.trident.sync;
+package org.apache.storm.hdfs.bolt.sync;
 
-
-import org.apache.storm.trident.tuple.TridentTuple;
+import org.apache.storm.tuple.Tuple;
 
 /**
- * SyncPolicy implementation that will trigger a
- * file system sync after a certain number of tuples
- * have been processed.
+ * SyncPolicy implementation that flush to HDFS periodically.
  */
-public class CountSyncPolicy implements SyncPolicy {
-    private final int count;
-    private int executeCount = 0;
+public class TimedSyncPolicy implements SyncPolicy {
+    private final long interval;
+    private long lastPoint;
 
-    public CountSyncPolicy(int count){
-        this.count = count;
+    public TimedSyncPolicy(long interval) {
+        this.interval = interval;
+        this.lastPoint = System.currentTimeMillis();
     }
 
     @Override
-    public boolean mark(TridentTuple tuple, long offset) {
-        this.executeCount++;
-        return this.executeCount >= this.count;
+    public boolean mark(Tuple tuple, long offset) {
+        long currentPoint = System.currentTimeMillis();
+        if ((currentPoint - lastPoint) > interval) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
     public void reset() {
-        this.executeCount = 0;
+        this.lastPoint = System.currentTimeMillis();
     }
 }
