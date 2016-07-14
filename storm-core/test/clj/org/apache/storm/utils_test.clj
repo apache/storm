@@ -108,3 +108,8 @@
   (is (= 10100 (secs-to-millis-long 10.1)))
 )
 
+(deftest test-clojure-from-yaml-file
+  (is (= {} (clojure-from-yaml-file nil)))
+  (is (= {} (clojure-from-yaml-file "foo-bar-file")))
+  )
+
