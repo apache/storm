@@ -51,7 +51,6 @@ public class HiveTopology {
         config.setNumWorkers(1);
         UserDataSpout spout = new UserDataSpout();
         DelimitedRecordHiveMapper mapper = new DelimitedRecordHiveMapper()
-                .withTimeAsPartitionField("yyyy/MM/dd/hh")
                 .withColumnFields(new Fields(colNames));
         HiveOptions hiveOptions;
         if (args.length == 6) {
