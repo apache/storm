@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-1737: storm-kafka-client has compilation errors with Apache Kafka 0.10
  * STORM-1968: Storm logviewer does not work for nimbus.log in secure cluster
  * STORM-1910 One topology cannot use hdfs spout to read from two locations
  * STORM-1960: Add CORS support to STORM UI Rest api
