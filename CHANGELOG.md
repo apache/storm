@@ -1,4 +1,5 @@
 ## 1.0.2
+ * STORM-1968: Storm logviewer does not work for nimbus.log in secure cluster
  * STORM-1922: Supervisor summary default order by host
  * STORM-1956: Disabling Backpressure by default
  * STORM-1934: Fix race condition between sync-supervisor and sync-processes
