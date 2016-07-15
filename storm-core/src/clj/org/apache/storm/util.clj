@@ -1055,7 +1055,7 @@
     (with-open [reader (java.io.FileReader. yamlFile)]
       (clojurify-structure (.load (Yaml. (SafeConstructor.)) reader)))
     (catch Exception ex
-      (log-error ex))))
+      (log-error ex) {})))
 
 (defn hashmap-to-persistent [^HashMap m]
   (zipmap (.keySet m) (.values m)))
