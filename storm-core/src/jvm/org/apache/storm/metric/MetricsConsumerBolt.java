@@ -22,6 +22,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import org.apache.storm.Config;
 import org.apache.storm.metric.api.IMetricsConsumer;
+import org.apache.storm.metric.util.DataPointExpander;
 import org.apache.storm.task.IBolt;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -42,19 +43,21 @@ public class MetricsConsumerBolt implements IBolt {
     String _consumerClassName;
     OutputCollector _collector;
     Object _registrationArgument;
-    private Predicate<IMetricsConsumer.DataPoint> _filterPredicate;
     private final int _maxRetainMetricTuples;
+    private Predicate<IMetricsConsumer.DataPoint> _filterPredicate;
+    private final DataPointExpander _expander;
 
     private final BlockingQueue<MetricsTask> _taskQueue;
     private Thread _taskExecuteThread;
     private volatile boolean _running = true;
 
     public MetricsConsumerBolt(String consumerClassName, Object registrationArgument, int maxRetainMetricTuples,
-                               Predicate<IMetricsConsumer.DataPoint> filterPredicate) {
+                               Predicate<IMetricsConsumer.DataPoint> filterPredicate, DataPointExpander expander) {
         _consumerClassName = consumerClassName;
         _registrationArgument = registrationArgument;
         _maxRetainMetricTuples = maxRetainMetricTuples;
         _filterPredicate = filterPredicate;
+        _expander = expander;
 
         if (_maxRetainMetricTuples > 0) {
             _taskQueue = new LinkedBlockingDeque<>(_maxRetainMetricTuples);
@@ -82,7 +85,8 @@ public class MetricsConsumerBolt implements IBolt {
     public void execute(Tuple input) {
         IMetricsConsumer.TaskInfo taskInfo = (IMetricsConsumer.TaskInfo) input.getValue(0);
         Collection<IMetricsConsumer.DataPoint> dataPoints = (Collection) input.getValue(1);
-        List<IMetricsConsumer.DataPoint> filteredDataPoints = getFilteredDataPoints(dataPoints);
+        Collection<IMetricsConsumer.DataPoint> expandedDataPoints = _expander.expandDataPoints(dataPoints);
+        List<IMetricsConsumer.DataPoint> filteredDataPoints = getFilteredDataPoints(expandedDataPoints);
         MetricsTask metricsTask = new MetricsTask(taskInfo, filteredDataPoints);
 
         while (!_taskQueue.offer(metricsTask)) {

@@ -28,7 +28,8 @@
   (:import [org.apache.storm.metric EventLoggerBolt MetricsConsumerBolt])
   (:import [org.apache.storm.security.auth IAuthorizer])
   (:import [java.io InterruptedIOException]
-           (org.apache.storm.metric.filter FilterByMetricName))
+           (org.apache.storm.metric.filter FilterByMetricName)
+           (org.apache.storm.metric.util DataPointExpander))
   (:require [clojure.set :as set])  
   (:require [org.apache.storm.daemon.acker :as acker])
   (:require [org.apache.storm.thrift :as thrift])
@@ -299,10 +300,12 @@
                       {[comp-id METRICS-STREAM-ID] :shuffle})
                     (into {}))
         
-        mk-bolt-spec (fn [class arg p max-retain-metric-tuples whitelist blacklist]
+        mk-bolt-spec (fn [class arg p max-retain-metric-tuples whitelist blacklist expandMapType metricNameSeparator]
                        (thrift/mk-bolt-spec*
                         inputs
-                        (org.apache.storm.metric.MetricsConsumerBolt. class arg max-retain-metric-tuples (FilterByMetricName. whitelist blacklist))
+                        (org.apache.storm.metric.MetricsConsumerBolt. class arg max-retain-metric-tuples
+                                                                      (FilterByMetricName. whitelist blacklist)
+                                                                      (DataPointExpander. expandMapType metricNameSeparator))
                         {} :p p :conf {TOPOLOGY-TASKS p}))]
     
     (map
@@ -312,7 +315,9 @@
                                    (or (get register "parallelism.hint") 1)
                                    (or (get register "max.retain.metric.tuples") 100)
                                    (get register "whitelist")
-                                   (get register "blacklist"))])
+                                   (get register "blacklist")
+                                   (or (get register "expandMapType") false)
+                                   (or (get register "metricNameSeparator") "."))])
 
      (metrics-consumer-register-ids storm-conf)
      (get storm-conf TOPOLOGY-METRICS-CONSUMER-REGISTER))))
