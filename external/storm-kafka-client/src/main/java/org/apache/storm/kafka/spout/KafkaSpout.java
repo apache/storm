@@ -32,6 +32,7 @@ import org.apache.storm.topology.base.BaseRichSpout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -161,10 +162,10 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
             long fetchOffset;
             if (committedOffset != null) {             // offset was committed for this TopicPartition
                 if (firstPollOffsetStrategy.equals(EARLIEST)) {
-                    kafkaConsumer.seekToBeginning(tp);
+                    kafkaConsumer.seekToBeginning(toArrayList(tp));
                     fetchOffset = kafkaConsumer.position(tp);
                 } else if (firstPollOffsetStrategy.equals(LATEST)) {
-                    kafkaConsumer.seekToEnd(tp);
+                    kafkaConsumer.seekToEnd(toArrayList(tp));
                     fetchOffset = kafkaConsumer.position(tp);
                 } else {
                     // By default polling starts at the last committed offset. +1 to point fetch to the first uncommitted offset.
@@ -173,14 +174,18 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                 }
             } else {    // no commits have ever been done, so start at the beginning or end depending on the strategy
                 if (firstPollOffsetStrategy.equals(EARLIEST) || firstPollOffsetStrategy.equals(UNCOMMITTED_EARLIEST)) {
-                    kafkaConsumer.seekToBeginning(tp);
+                    kafkaConsumer.seekToBeginning(toArrayList(tp));
                 } else if (firstPollOffsetStrategy.equals(LATEST) || firstPollOffsetStrategy.equals(UNCOMMITTED_LATEST)) {
-                    kafkaConsumer.seekToEnd(tp);
+                    kafkaConsumer.seekToEnd(toArrayList(tp));
                 }
                 fetchOffset = kafkaConsumer.position(tp);
             }
             return fetchOffset;
         }
+    }
+
+    private Collection<TopicPartition> toArrayList(final TopicPartition tp) {
+        return new ArrayList<TopicPartition>(1){{add(tp);}};
     }
 
     private void setAcked(TopicPartition tp, long fetchOffset) {
@@ -250,7 +255,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
             if (offsetAndMeta != null) {
                 kafkaConsumer.seek(rtp, offsetAndMeta.offset() + 1);  // seek to the next offset that is ready to commit in next commit cycle
             } else {
-                kafkaConsumer.seekToEnd(rtp);    // Seek to last committed offset
+                kafkaConsumer.seekToEnd(toArrayList(rtp));    // Seek to last committed offset
             }
         }
     }
