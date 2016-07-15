@@ -1,5 +1,7 @@
 ## 1.0.2
+ * STORM-1939: Frequent InterruptedException raised by ShellBoltMessageQueue.poll
  * STORM-1968: Storm logviewer does not work for nimbus.log in secure cluster
+ * STORM-1928: ShellSpout should check heartbeat while ShellSpout is waiting for subprocess to sync
  * STORM-1922: Supervisor summary default order by host
  * STORM-1956: Disabling Backpressure by default
  * STORM-1934: Fix race condition between sync-supervisor and sync-processes
