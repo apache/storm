@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-1966 Expand metric having Map type as value into multiple metrics based on entries
  * STORM-1737: storm-kafka-client has compilation errors with Apache Kafka 0.10
  * STORM-1910 One topology cannot use hdfs spout to read from two locations
  * STORM-1916: Add ability for worker-first classpath
