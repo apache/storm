@@ -1835,6 +1835,21 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_CLASSPATH="topology.classpath";
 
     /**
+     * Topology-specific classpath for the worker child process. This will be *prepended* to
+     * the usual classpath, meaning it can override the Storm classpath. This is for debugging
+     * purposes, and is disabled by default. To allow topologies to be submitted with user-first
+     * classpaths, set the storm.topology.classpath.beginning.enabled config to true.
+     */
+    @isStringOrStringList
+    public static final String TOPOLOGY_CLASSPATH_BEGINNING="topology.classpath.beginning";
+
+    /**
+     * Enables user-first classpath. See topology.classpath.beginning
+     */
+    @isBoolean
+    public static final String STORM_TOPOLOGY_CLASSPATH_BEGINNING_ENABLED="storm.topology.classpath.beginning.enabled";
+
+    /**
      * Topology-specific environment variables for the worker child process.
      * This is added to the existing environment (that of the supervisor)
      */

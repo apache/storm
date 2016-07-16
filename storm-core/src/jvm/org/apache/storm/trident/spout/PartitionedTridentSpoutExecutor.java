@@ -18,30 +18,31 @@
 package org.apache.storm.trident.spout;
 
 import org.apache.storm.task.TopologyContext;
-import org.apache.storm.tuple.Fields;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.topology.TransactionAttempt;
 import org.apache.storm.trident.topology.state.RotatingTransactionalState;
 import org.apache.storm.trident.topology.state.TransactionalState;
+import org.apache.storm.tuple.Fields;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 
 public class PartitionedTridentSpoutExecutor implements ITridentSpout<Object> {
-    IPartitionedTridentSpout<Integer, ISpoutPartition, Object> _spout;
+    IPartitionedTridentSpout<Object, ISpoutPartition, Object> _spout;
     
-    public PartitionedTridentSpoutExecutor(IPartitionedTridentSpout<Integer, ISpoutPartition, Object> spout) {
+    public PartitionedTridentSpoutExecutor(IPartitionedTridentSpout<Object, ISpoutPartition, Object> spout) {
         _spout = spout;
     }
     
-    public IPartitionedTridentSpout<Integer, ISpoutPartition, Object> getPartitionedSpout() {
+    public IPartitionedTridentSpout<Object, ISpoutPartition, Object> getPartitionedSpout() {
         return _spout;
     }
     
     class Coordinator implements ITridentSpout.BatchCoordinator<Object> {
-        private IPartitionedTridentSpout.Coordinator<Integer> _coordinator;
+        private IPartitionedTridentSpout.Coordinator<Object> _coordinator;
         
         public Coordinator(Map conf, TopologyContext context) {
             _coordinator = _spout.getCoordinator(conf, context);
@@ -83,7 +84,7 @@ public class PartitionedTridentSpoutExecutor implements ITridentSpout<Object> {
     }
     
     class Emitter implements ITridentSpout.Emitter<Object> {
-        private IPartitionedTridentSpout.Emitter _emitter;
+        private IPartitionedTridentSpout.Emitter<Object, ISpoutPartition, Object> _emitter;
         private TransactionalState _state;
         private Map<String, EmitterPartitionState> _partitionStates = new HashMap<>();
         private int _index;
@@ -150,7 +151,7 @@ public class PartitionedTridentSpoutExecutor implements ITridentSpout<Object> {
     }    
 
     @Override
-    public ITridentSpout.BatchCoordinator getCoordinator(String txStateId, Map conf, TopologyContext context) {
+    public ITridentSpout.BatchCoordinator<Object> getCoordinator(String txStateId, Map conf, TopologyContext context) {
         return new Coordinator(conf, context);
     }
 

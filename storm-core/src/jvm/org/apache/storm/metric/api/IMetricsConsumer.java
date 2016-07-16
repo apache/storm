@@ -17,10 +17,12 @@
  */
 package org.apache.storm.metric.api;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.storm.task.IErrorReporter;
 import org.apache.storm.task.TopologyContext;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 
 public interface IMetricsConsumer {
     public static class TaskInfo {
@@ -54,6 +56,23 @@ public interface IMetricsConsumer {
         }
         public String name; 
         public Object value;
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof DataPoint)) return false;
+
+            DataPoint dataPoint = (DataPoint) o;
+
+            return Objects.equals(name, dataPoint.name) && Objects.deepEquals(value, dataPoint.value);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = name != null ? name.hashCode() : 0;
+            result = 31 * result + (value != null ? value.hashCode() : 0);
+            return result;
+        }
     }
 
     void prepare(Map stormConf, Object registrationArgument, TopologyContext context, IErrorReporter errorReporter);

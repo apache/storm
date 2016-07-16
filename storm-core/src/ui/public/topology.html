@@ -70,6 +70,9 @@
     <div id="topology-stats" class="col-md-12"></div>
   </div>
   <div class="row">
+    <div id="topology-spouts-lag" class="col-md-12"></div>
+  </div>
+  <div class="row">
     <div id="spout-stats" class="col-md-12"></div>
   </div>
   <div class="row">
@@ -277,6 +280,7 @@ $(document).ready(function() {
         var topologySummary = $("#topology-summary");
         var topologyResources = $("#topology-resources");
         var topologyStats = $("#topology-stats");
+        var topologySpoutsLag = $("#topology-spouts-lag");
         var spoutStats = $("#spout-stats");
         var boltStats = $("#bolt-stats");
         var config = $("#topology-configuration");
@@ -384,8 +388,60 @@ $(document).ready(function() {
             $('#topology-configuration [data-toggle="tooltip"]').tooltip();
             $('#topology-actions [data-toggle="tooltip"]').tooltip();
             $('#topology-visualization [data-toggle="tooltip"]').tooltip();
+
+            var lagUrl = "/api/v1/topology/"+topologyId+"/lag";
+            $.getJSON(lagUrl,function(lagResponse,status,jqXHR) {
+                if (lagResponse !== null && lagResponse !== undefined) {
+                    var kafkaSpoutsLagTemplate = $(template).filter("#topology-kafka-spouts-lag-template").html();
+                    var spoutsErrorTemplate = $(template).filter("#topology-spouts-lag-error-template").html();
+
+                    var data = {};
+                    data.kafkaSpoutsLagResults = [];
+                    data.spoutsLagErrorResults = [];
+                    for (var spoutId in lagResponse) {
+                        var spout = lagResponse[spoutId];
+                        var spoutType = spout.spoutType;
+                        if (spoutType !== "KAFKA") {
+                            continue;
+                        }
+                        var spoutLagResult = spout.spoutLagResult;
+                        var errorInfo = spout.errorInfo;
+                        if (spoutLagResult !== undefined) {
+                            for (var topicName in spoutLagResult) {
+                                var topicLagResult = spoutLagResult[topicName];
+                                for (var partitionId in topicLagResult) {
+                                    var partitionLagResult = topicLagResult[partitionId];
+                                    data.kafkaSpoutsLagResults.push({
+                                        id: spoutId,
+                                        topic: topicName,
+                                        partition: partitionId,
+                                        logHeadOffset: partitionLagResult.logHeadOffset,
+                                        consumerCommittedOffset: partitionLagResult.consumerCommittedOffset,
+                                        lag: partitionLagResult.lag
+                                    });
+                                }
+                            }
+                        } else if (errorInfo !== undefined) {
+                            data.spoutsLagErrorResults.push({
+                                spoutId: spoutId,
+                                spoutType: spout.spoutType,
+                                errorInfo: errorInfo
+                            });
+                        }
+                    }
+
+                    if (data.kafkaSpoutsLagResults.length > 0) {
+                        topologySpoutsLag.append(Mustache.render(kafkaSpoutsLagTemplate, data));
+                    }
+                    if (data.spoutsLagErrorResults.length > 0) {
+                        topologySpoutsLag.append(Mustache.render(spoutsErrorTemplate, data));
+                    }
+                }
+            });
       }});
     });
+
  });
 </script>
 </html>
+

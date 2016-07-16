@@ -187,7 +187,7 @@ task.refresh.poll.secs: 10
 task.credentials.poll.secs: 30
 
 # now should be null by default
-topology.backpressure.enable: true
+topology.backpressure.enable: false
 backpressure.disruptor.high.watermark: 0.9
 backpressure.disruptor.low.watermark: 0.4
 
@@ -308,3 +308,4 @@ storm.cgroup.hierarchy.name: "storm"
 storm.supervisor.cgroup.rootdir: "storm"
 storm.cgroup.cgexec.cmd: "/bin/cgexec"
 storm.cgroup.memory.limit.tolerance.margin.mb: 128.0
+storm.topology.classpath.beginning.enabled: false

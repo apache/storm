@@ -28,7 +28,7 @@ import redis.clients.jedis.JedisCommands;
 /**
  * Basic bolt for writing to Redis
  * <p/>
- * Various data types are supported: STRING, LIST, HASH, SET, SORTED_SET, HYPER_LOG_LOG
+ * Various data types are supported: STRING, LIST, HASH, SET, SORTED_SET, HYPER_LOG_LOG, GEO
  */
 public class RedisStoreBolt extends AbstractRedisBolt {
     private final RedisStoreMapper storeMapper;

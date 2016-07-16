@@ -331,7 +331,13 @@
                 <include>README.*</include>
             </includes>
         </fileSet>
-
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-opentsdb</directory>
+            <outputDirectory>external/storm-opentsdb</outputDirectory>
+            <includes>
+                <include>README.*</include>
+            </includes>
+        </fileSet>
         <!-- $STORM_HOME/extlib -->
         <fileSet>
             <directory></directory>
@@ -346,6 +352,14 @@
             <outputDirectory>extlib-daemon</outputDirectory>
             <includes>
                 <include></include>
+            </includes>
+        </fileSet>
+        <!-- $STORM_HOME/toollib -->
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-kafka-monitor/target</directory>
+            <outputDirectory>toollib</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
             </includes>
         </fileSet>
 

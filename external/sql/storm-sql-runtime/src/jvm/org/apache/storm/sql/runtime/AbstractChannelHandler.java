@@ -40,6 +40,11 @@ public abstract class AbstractChannelHandler implements ChannelHandler {
     ctx.flush();
   }
 
+  @Override
+  public void setSource(ChannelContext ctx, Object source) {
+
+  }
+
   public static final AbstractChannelHandler PASS_THROUGH = new AbstractChannelHandler() {
     @Override
     public void dataReceived(ChannelContext ctx, Values data) {
