@@ -18,11 +18,6 @@
 
 package org.apache.storm.kafka.monitor;
 
-import kafka.api.OffsetRequest;
-import kafka.api.PartitionOffsetRequestInfo;
-import kafka.common.TopicAndPartition;
-import kafka.javaapi.OffsetResponse;
-import kafka.javaapi.consumer.SimpleConsumer;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -38,10 +33,17 @@ import org.apache.kafka.common.TopicPartition;
 import org.json.simple.JSONValue;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+
+import kafka.api.OffsetRequest;
+import kafka.api.PartitionOffsetRequestInfo;
+import kafka.common.TopicAndPartition;
+import kafka.javaapi.OffsetResponse;
+import kafka.javaapi.consumer.SimpleConsumer;
 
 /**
  * Utility class for querying offset lag for kafka spout
@@ -222,7 +224,7 @@ public class KafkaOffsetLagUtil {
             for (TopicPartition topicPartition : topicPartitionList) {
                 OffsetAndMetadata offsetAndMetadata = consumer.committed(topicPartition);
                 long committedOffset = offsetAndMetadata != null ? offsetAndMetadata.offset() : -1;
-                consumer.seekToEnd(topicPartition);
+                consumer.seekToEnd(toArrayList(topicPartition));
                 result.add(new KafkaOffsetLagResult(topicPartition.topic(), topicPartition.partition(), committedOffset, consumer.position(topicPartition)));
             }
         } finally {
@@ -231,6 +233,10 @@ public class KafkaOffsetLagUtil {
             }
         }
         return result;
+    }
+
+    private static Collection<TopicPartition> toArrayList(final TopicPartition tp) {
+        return new ArrayList<TopicPartition>(1){{add(tp);}};
     }
 
     /**
