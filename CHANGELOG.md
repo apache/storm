@@ -1,8 +1,9 @@
 ## 1.1.0
- * STORM-1966 Expand metric having Map type as value into multiple metrics based on entries
+ * STORM-1969: Modify HiveTopology to show usage of non-partition table.
+ * STORM-1966: Expand metric having Map type as value into multiple metrics based on entries
  * STORM-1737: storm-kafka-client has compilation errors with Apache Kafka 0.10
  * STORM-1968: Storm logviewer does not work for nimbus.log in secure cluster
- * STORM-1910 One topology cannot use hdfs spout to read from two locations
+ * STORM-1910: One topology cannot use hdfs spout to read from two locations
  * STORM-1960: Add CORS support to STORM UI Rest api
  * STORM-1959: Add missing license header to KafkaPartitionOffsetLag
  * STORM-1950: Change response json of "Topology Lag" REST API to keyed by spoutId, topic, partition.
