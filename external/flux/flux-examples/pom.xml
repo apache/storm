@@ -96,6 +96,7 @@
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>${kafka.artifact.id}</artifactId>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 

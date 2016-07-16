@@ -260,12 +260,11 @@
         <maven-surefire.version>2.18.1</maven-surefire.version>
 
         <!-- Kafka version used by old kafka spout code -->
-        <storm.kafka.version>0.8.2.1</storm.kafka.version>
-        <storm.kafka.artifact.id>kafka_2.10</storm.kafka.artifact.id>
+        <kafka.version>0.8.2.1</kafka.version>
+        <kafka.artifact.id>kafka_2.10</kafka.artifact.id>
 
         <!-- kafka version used by new kafka spout code -->
-        <kafka.version>0.9.0.1</kafka.version>
-        <kafka.artifact.id>kafka_2.11</kafka.artifact.id>
+        <storm.kafka.client.version>0.9.0.1</storm.kafka.client.version>
 
         <!-- Java and clojure build lifecycle test properties are defined here to avoid having to create a default profile -->
         <java.unit.test.exclude>org.apache.storm.testing.IntegrationTest</java.unit.test.exclude>
@@ -868,10 +867,13 @@
                 <artifactId>jackson-databind</artifactId>
                 <version>${jackson.version}</version>
             </dependency>
+
+            <!-- kafka artifact dependency needed for storm-kafka -->
             <dependency>
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>${kafka.artifact.id}</artifactId>
                 <version>${kafka.version}</version>
+                <scope>provided</scope>
                 <exclusions>
                     <exclusion>
                         <groupId>org.apache.zookeeper</groupId>
@@ -890,7 +892,8 @@
             <dependency>
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka-clients</artifactId>
-                <version>${kafka.version}</version>
+                <version>${storm.kafka.client.version}</version>
+                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>uk.org.lidalia</groupId>

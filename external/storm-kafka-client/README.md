@@ -105,5 +105,42 @@ Execute the command `STORM_HOME/bin/storm jar REPO_HOME/storm/external/storm/tar
 With the debug level logs enabled it is possible to see the messages of each topic being redirected to the appropriate Bolt as defined 
 by the streams defined and choice of shuffle grouping.   
 
+## Using storm-kafka-client with different versions of kafka
+
+Storm-kafka-client's Kafka dependency is defined as `provided` scope in maven, meaning it will not be pulled in
+as a transitive dependency. This allows you to use a version of Kafka dependency compatible with your kafka cluster.
+
+When building a project with storm-kafka-client, you must explicitly add the Kafka clients dependency. For example, to
+use Kafka-clients 0.10.0.0, you would use the following dependency in your `pom.xml`:
+
+```xml
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+            <version>0.10.0.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.zookeeper</groupId>
+                    <artifactId>zookeeper</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+```
+
+Note that the ZooKeeper and log4j dependencies are excluded to prevent version conflicts with Storm's dependencies.
+
+You can also override the kafka clients version while building from maven, with parameter `storm.kafka.client.version`
+e.g. `mvn clean install -Dstorm.kafka.client.version=0.10.0.0`
+
+When selecting a kafka client version, you should ensure - 
+ 1. kafka api is compatible. storm-kafka-client module only supports 0.10.x kafka client API. For older versions,
+ you can use storm-kafka module.  
+ 2. The kafka client selected by you should be wire compatible with the broker. e.g. 0.9.x client will not work with 
+ 0.8.x broker. 
+
 #Future Work
 Trident spout implementation, support for topic patterns, and comprehensive metrics
