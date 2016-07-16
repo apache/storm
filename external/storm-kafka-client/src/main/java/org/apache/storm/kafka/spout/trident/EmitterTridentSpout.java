@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -66,11 +67,12 @@ public class EmitterTridentSpout<K,V> implements IOpaquePartitionedTridentSpout.
         LOG.debug("Currently assigned topic partitions [{}]", assignedTopicPartitions);
         assignedTopicPartitions.remove(partition.getTopicPartition());
 
-        final TopicPartition[] pausedTopicPartitions = new TopicPartition[assignedTopicPartitions.size()];
+        final Collection<TopicPartition> pausedTopicPartitions = new ArrayList<TopicPartition>();
 
         try {
-            kafkaConsumer.pause(assignedTopicPartitions.toArray(pausedTopicPartitions));
-            LOG.trace("Paused topic partitions [{}]", Arrays.toString(pausedTopicPartitions));
+            assignedTopicPartitions.addAll(pausedTopicPartitions);
+            kafkaConsumer.pause(pausedTopicPartitions);
+            LOG.trace("Paused topic partitions [{}]", Arrays.toString(pausedTopicPartitions.toArray()));
 
             final ConsumerRecords<K, V> records = kafkaConsumer.poll(kafkaSpoutConfig.getPollTimeoutMs());
             LOG.debug("Polled [{}] records from Kafka.", records.count());
@@ -84,7 +86,7 @@ public class EmitterTridentSpout<K,V> implements IOpaquePartitionedTridentSpout.
             }
         } finally {
             kafkaConsumer.resume(pausedTopicPartitions);
-            LOG.trace("Resumed topic partitions [{}]", Arrays.toString(pausedTopicPartitions));
+            LOG.trace("Resumed topic partitions [{}]", Arrays.toString(pausedTopicPartitions.toArray()));
         }
         LOG.debug("Current metadata {}", currentPartitionMeta);
         return currentPartitionMeta;
