@@ -123,6 +123,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0 
+ * STORM-1969: Modify HiveTopology to show usage of non-partition table.
  * STORM-1950: Change response json of "Topology Lag" REST API to keyed by spoutId, topic, partition.
  * STORM-1833: Simple equi-join in storm-sql standalone mode
  * STORM-1866: Update Resource Aware Scheduler Documentation
