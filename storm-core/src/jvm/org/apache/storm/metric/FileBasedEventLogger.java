@@ -102,8 +102,7 @@ public class FileBasedEventLogger implements IEventLogger {
     public void log(EventInfo event) {
         try {
             //TODO: file rotation
-            eventLogWriter.write(event.toString());
-            eventLogWriter.newLine();
+            eventLogWriter.write(event.toString()+System.lineSeparator());
             dirty = true;
         } catch (IOException ex) {
             LOG.error("Error logging event {}", event, ex);
