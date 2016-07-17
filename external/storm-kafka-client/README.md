@@ -1,52 +1,80 @@
 #Storm Kafka Spout with New Kafka Consumer API
 
-Apache Storm Spout implementation to consume data from Apache Kafka 0.9.x. It allows 
-clients to consume data from Kafka starting at offsets as defined by the offset strategy specified in `FirstPollOffsetStrategy`. 
+Apache Storm Spout implementation to consume data from Apache Kafka versions 0.10 onwards (please see [Apache Kafka Version Compatibility] (#compatibility)). 
+
+The Apache Storm Spout allows clients to consume data from Kafka starting at offsets as defined by the offset strategy specified in `FirstPollOffsetStrategy`. 
 In case of failure, the Kafka Spout will re-start consuming messages from the offset that matches the chosen `FirstPollOffsetStrategy`.
 
-The Kafka Spout implementation allows you to specify the stream (`KafkaSpoutStream`) associated with each topic. `KafkaSpoutStream` represents the stream and output fields used by a topic.
+The Kafka Spout implementation allows you to specify the stream (`KafkaSpoutStream`) associated with each topic or topic wildcard. `KafkaSpoutStream` represents the stream and output fields. For named topics use `KafkaSpoutStreamsNamedTopics`, and for topic wildcards use `KafkaSpoutStreamsWildcardTopics`. 
 
-The `KafkaSpoutTuplesBuilder` wraps all the logic that builds `Tuple`s from `ConsumerRecord`s. The logic is provided by the user by implementing the appropriate number of `KafkaSpoutTupleBuilder` instances.
+The `KafkaSpoutTuplesBuilder` wraps all the logic that builds `Tuple`s from `ConsumerRecord`s. The logic is provided by the user through implementing the appropriate number of `KafkaSpoutTupleBuilder` instances. For named topics use `KafkaSpoutTuplesBuilderNamedTopics`, and for topic wildcard use `KafkaSpoutTuplesBuilderWildcardTopics`.
 
-Multiple topics can use the same `KafkaSpoutTupleBuilder` implementation, as long as the logic to build `Tuple`s from `ConsumerRecord`s is identical.
+Multiple topics and topic wildcards can use the same `KafkaSpoutTupleBuilder` implementation, as long as the logic to build `Tuple`s from `ConsumerRecord`s is identical.
+
+### <a name="compatibility"></a>Apache Kafka Version Compatibility 
+This spout implementation only supports Apache Kafka version **0.10 or newer**. To use a version of Kafka prior to 0.10, e.g 0.9.x or 0.8.x, please refer to the [prior implementation of Kafka Spout] (https://github.com/apache/storm/tree/master/external/storm-kafka). Note that the prior implementation also works with 0.10, but the goal is to have this new Spout implementation to be the de-facto.
 
 # Usage Examples
 
-### Create a Kafka Spout:
+### Create a Kafka Spout
 
-The code snippet bellow is extracted from the example in the module [test] (https://github.com/apache/storm/tree/master/external/storm-kafka-client/src/test/java/org/apache/storm/kafka/spout/test). Please refer to this module for more detail
+The code snippet bellow is extracted from the example in the module [test] (https://github.com/apache/storm/tree/master/external/storm-kafka-client/src/test/java/org/apache/storm/kafka/spout/test). The code that is common for named topics and topic wildcards is in the first box. The specific implementations are in the appropriate section. 
+
+These snippets serve as a reference and do not compile. If you would like to reuse this code in your implementation, please obtain it from the test module, where it is complete.
 
 ```java
-KafkaSpout<String,String> kafkaSpout = new KafkaSpout<>(kafkaSpoutConfig);
+KafkaSpout<String, String> kafkaSpout = new KafkaSpout<>(kafkaSpoutConfig);
 
 KafkaSpoutConfig kafkaSpoutConfig = new KafkaSpoutConfig.Builder<String, String>(kafkaConsumerProps, kafkaSpoutStreams, tuplesBuilder, retryService)
-                                                    .setOffsetCommitPeriodMs(10_000)
-                                                    .setFirstPollOffsetStrategy(EARLIEST)
-                                                    .setMaxUncommittedOffsets(250)
-                                                    .build();
+        .setOffsetCommitPeriodMs(10_000)
+        .setFirstPollOffsetStrategy(EARLIEST)
+        .setMaxUncommittedOffsets(250)
+        .build();
 
+Map<String, Object> kafkaConsumerProps= new HashMap<>();
+kafkaConsumerProps.put(KafkaSpoutConfig.Consumer.BOOTSTRAP_SERVERS,"127.0.0.1:9092");
+kafkaConsumerProps.put(KafkaSpoutConfig.Consumer.GROUP_ID,"kafkaSpoutTestGroup");
+kafkaConsumerProps.put(KafkaSpoutConfig.Consumer.KEY_DESERIALIZER,"org.apache.kafka.common.serialization.StringDeserializer");
+kafkaConsumerProps.put(KafkaSpoutConfig.Consumer.VALUE_DESERIALIZER,"org.apache.kafka.common.serialization.StringDeserializer");
 
-KafkaSpoutStreams kafkaSpoutStreams = new KafkaSpoutStreams.Builder(outputFields, STREAMS[0], new String[]{TOPICS[0], TOPICS[1]})
-                .addStream(outputFields, STREAMS[0], new String[]{TOPICS[2]})  // contents of topic test2 sent to test_stream
-                .addStream(outputFields1, STREAMS[2], new String[]{TOPICS[2]})  // contents of topic test2 sent to test2_stream
-                .build();
-
-Map<String, Object> kafkaConsumerProps = new HashMap<>();
-        props.put(KafkaSpoutConfig.Consumer.BOOTSTRAP_SERVERS, "127.0.0.1:9092");
-        props.put(KafkaSpoutConfig.Consumer.GROUP_ID, "kafkaSpoutTestGroup");
-        props.put(KafkaSpoutConfig.Consumer.KEY_DESERIALIZER, "org.apache.kafka.common.serialization.StringDeserializer");
-        props.put(KafkaSpoutConfig.Consumer.VALUE_DESERIALIZER, "org.apache.kafka.common.serialization.StringDeserializer");
-
-KafkaSpoutTuplesBuilder<String, String> tuplesBuilder = new KafkaSpoutTuplesBuilder.Builder<>(
-                new TopicsTest0Test1TupleBuilder<String, String>(TOPICS[0], TOPICS[1]),
-                new TopicTest2TupleBuilder<String, String>(TOPICS[2]))
-                .build();
-
-KafkaSpoutRetryService retryService = new KafkaSpoutRetryExponentialBackoff(new TimeInterval(500, TimeUnit.MICROSECONDS),
-                    TimeInterval.milliSeconds(2), Integer.MAX_VALUE, TimeInterval.seconds(10));
+KafkaSpoutRetryService retryService = new KafkaSpoutRetryExponentialBackoff(new KafkaSpoutRetryExponentialBackoff.TimeInterval(500, TimeUnit.MICROSECONDS),
+        KafkaSpoutRetryExponentialBackoff.TimeInterval.milliSeconds(2), Integer.MAX_VALUE, KafkaSpoutRetryExponentialBackoff.TimeInterval.seconds(10));
 ```
- 
+
+### Named Topics
+```java
+KafkaSpoutStreams kafkaSpoutStreams = new KafkaSpoutStreamsNamedTopics.Builder(outputFields, STREAMS[0], new String[]{TOPICS[0], TOPICS[1]})
+            .addStream(outputFields, STREAMS[0], new String[]{TOPICS[2]})  // contents of topic test2 sent to test_stream
+            .addStream(outputFields1, STREAMS[2], new String[]{TOPICS[2]})  // contents of topic test2 sent to test2_stream
+            .build();
+            
+KafkaSpoutTuplesBuilder<String, String> tuplesBuilder = new KafkaSpoutTuplesBuilderNamedTopics.Builder<>(
+            new TopicsTest0Test1TupleBuilder<String, String>(TOPICS[0], TOPICS[1]),
+            new TopicTest2TupleBuilder<String, String>(TOPICS[2]))
+            .build();
+            
+String[] STREAMS = new String[]{"test_stream", "test1_stream", "test2_stream"};
+String[] TOPICS = new String[]{"test", "test1", "test2"};
+
+Fields outputFields = new Fields("topic", "partition", "offset", "key", "value");
+Fields outputFields1 = new Fields("topic", "partition", "offset");
+```
+
+### Topic Wildcards
+```java
+KafkaSpoutStreams kafkaSpoutStreams = new KafkaSpoutStreamsWildcardTopics(
+            new KafkaSpoutStream(outputFields, STREAM, Pattern.compile(TOPIC_WILDCARD_PATTERN)));
+
+KafkaSpoutTuplesBuilder<String, String> tuplesBuilder = new TopicsTest0Test1TupleBuilder<>(TOPIC_WILDCARD_PATTERN);
+
+String STREAM = "test_wildcard_stream";
+String TOPIC_WILDCARD_PATTERN = "test[1|2]";
+
+Fields outputFields = new Fields("topic", "partition", "offset", "key", "value");
+```
+
 ### Create a simple Toplogy using the Kafka Spout:
+
 
 ```java
 TopologyBuilder tp = new TopologyBuilder();
@@ -106,4 +134,7 @@ With the debug level logs enabled it is possible to see the messages of each top
 by the streams defined and choice of shuffle grouping.   
 
 #Future Work
-Trident spout implementation, support for topic patterns, and comprehensive metrics
+ Implement comprehensive metrics. Trident spout is coming soon.
+
+## Committer Sponsors
+ * Sriharsha Chintalapani ([sriharsha@apache.org](mailto:sriharsha@apache.org))

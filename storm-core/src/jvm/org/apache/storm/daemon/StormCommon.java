@@ -17,13 +17,10 @@
  */
 package org.apache.storm.daemon;
 
-import com.codahale.metrics.MetricRegistry;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.Thrift;
 import org.apache.storm.cluster.IStormClusterState;
-import org.apache.storm.daemon.metrics.MetricsUtils;
-import org.apache.storm.daemon.metrics.reporters.PreparableReporter;
 import org.apache.storm.generated.Bolt;
 import org.apache.storm.generated.ComponentCommon;
 import org.apache.storm.generated.GlobalStreamId;
@@ -39,9 +36,9 @@ import org.apache.storm.metric.EventLoggerBolt;
 import org.apache.storm.metric.MetricsConsumerBolt;
 import org.apache.storm.metric.SystemBolt;
 import org.apache.storm.metric.filter.FilterByMetricName;
+import org.apache.storm.metric.util.DataPointExpander;
 import org.apache.storm.security.auth.IAuthorizer;
 import org.apache.storm.task.IBolt;
-import org.apache.storm.testing.NonRichBoltTracker;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.IPredicate;
 import org.apache.storm.utils.ThriftTopologyUtils;
@@ -83,6 +80,15 @@ public class StormCommon {
 
     public static final String EVENTLOGGER_COMPONENT_ID = "__eventlogger";
     public static final String EVENTLOGGER_STREAM_ID = "__eventlog";
+
+    public static final String TOPOLOGY_METRICS_CONSUMER_CLASS = "class";
+    public static final String TOPOLOGY_METRICS_CONSUMER_ARGUMENT = "argument";
+    public static final String TOPOLOGY_METRICS_CONSUMER_MAX_RETAIN_METRIC_TUPLES = "max.retain.metric.tuples";
+    public static final String TOPOLOGY_METRICS_CONSUMER_PARALLELISM_HINT = "parallelism.hint";
+    public static final String TOPOLOGY_METRICS_CONSUMER_WHITELIST = "whitelist";
+    public static final String TOPOLOGY_METRICS_CONSUMER_BLACKLIST = "blacklist";
+    public static final String TOPOLOGY_METRICS_CONSUMER_EXPAND_MAP_TYPE = "expandMapType";
+    public static final String TOPOLOGY_METRICS_CONSUMER_METRIC_NAME_SEPARATOR = "metricNameSeparator";
 
     public static String getStormId(final IStormClusterState stormClusterState, final String topologyName) {
         List<String> activeTopologys = stormClusterState.activeStorms();
@@ -382,18 +388,27 @@ public class StormCommon {
         if (registerInfo != null) {
             Map<String, Integer> classOccurrencesMap = new HashMap<String, Integer>();
             for (Map<String, Object> info : registerInfo) {
-                String className = (String) info.get("class");
-                Object argument = info.get("argument");
-                Integer maxRetainMetricTuples = Utils.getInt(info.get("max.retain.metric.tuples"), 100);
-                Integer phintNum = Utils.getInt(info.get("parallelism.hint"), 1);
+                String className = (String) info.get(TOPOLOGY_METRICS_CONSUMER_CLASS);
+                Object argument = info.get(TOPOLOGY_METRICS_CONSUMER_ARGUMENT);
+                Integer maxRetainMetricTuples = Utils.getInt(info.get(
+                    TOPOLOGY_METRICS_CONSUMER_MAX_RETAIN_METRIC_TUPLES), 100);
+                Integer phintNum = Utils.getInt(info.get(TOPOLOGY_METRICS_CONSUMER_PARALLELISM_HINT), 1);
                 Map<String, Object> metricsConsumerConf = new HashMap<String, Object>();
                 metricsConsumerConf.put(Config.TOPOLOGY_TASKS, phintNum);
-                List<String> whitelist = (List<String>) info.get("whitelist");
-                List<String> blacklist = (List<String>) info.get("blacklist");
+                List<String> whitelist = (List<String>) info.get(
+                    TOPOLOGY_METRICS_CONSUMER_WHITELIST);
+                List<String> blacklist = (List<String>) info.get(
+                    TOPOLOGY_METRICS_CONSUMER_BLACKLIST);
                 FilterByMetricName filterPredicate = new FilterByMetricName(whitelist, blacklist);
+                Boolean expandMapType = Utils.getBoolean(info.get(
+                    TOPOLOGY_METRICS_CONSUMER_EXPAND_MAP_TYPE), false);
+                String metricNameSeparator = Utils.getString(info.get(
+                    TOPOLOGY_METRICS_CONSUMER_METRIC_NAME_SEPARATOR), ".");
+                DataPointExpander expander = new DataPointExpander(expandMapType, metricNameSeparator);
+                MetricsConsumerBolt boltInstance = new MetricsConsumerBolt(className, argument,
+                    maxRetainMetricTuples, filterPredicate, expander);
                 Bolt metricsConsumerBolt = Thrift.prepareSerializedBoltDetails(inputs,
-                        new MetricsConsumerBolt(className, argument, maxRetainMetricTuples, filterPredicate),
-                        null, phintNum, metricsConsumerConf);
+                    boltInstance, null, phintNum, metricsConsumerConf);
 
                 String id = className;
                 if (classOccurrencesMap.containsKey(className)) {

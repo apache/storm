@@ -51,9 +51,17 @@ public class HdfsSpout extends BaseRichSpout {
   private String hdfsUri;            // required
   private String readerType;         // required
   private Fields outputFields;       // required
+
+  private String sourceDir;        // required
   private Path sourceDirPath;        // required
+
+  private String archiveDir;       // required
   private Path archiveDirPath;       // required
+
+  private String badFilesDir;      // required
   private Path badFilesDirPath;      // required
+
+  private String lockDir;
   private Path lockDirPath;
 
   private int commitFrequencyCount = Configs.DEFAULT_COMMIT_FREQ_COUNT;
@@ -62,7 +70,7 @@ public class HdfsSpout extends BaseRichSpout {
   private int lockTimeoutSec = Configs.DEFAULT_LOCK_TIMEOUT;
   private boolean clocksInSync = true;
 
-  private String inprogress_suffix = ".inprogress";
+  private String inprogress_suffix = ".inprogress"; // not configurable to prevent change between topology restarts
   private String ignoreSuffix = ".ignore";
 
   // other members
@@ -97,7 +105,69 @@ public class HdfsSpout extends BaseRichSpout {
 
   public HdfsSpout() {
   }
-  /** Name of the output field names. Number of fields depends upon the reader type */
+
+  public HdfsSpout setHdfsUri(String hdfsUri) {
+    this.hdfsUri = hdfsUri;
+    return this;
+  }
+
+  public HdfsSpout setReaderType(String readerType) {
+    this.readerType = readerType;
+    return this;
+  }
+
+  public HdfsSpout setSourceDir(String sourceDir) {
+    this.sourceDir = sourceDir;
+    return this;
+  }
+
+  public HdfsSpout setArchiveDir(String archiveDir) {
+    this.archiveDir = archiveDir;
+    return this;
+  }
+
+  public HdfsSpout setBadFilesDir(String badFilesDir) {
+    this.badFilesDir = badFilesDir;
+    return this;
+  }
+
+  public HdfsSpout setLockDir(String lockDir) {
+    this.lockDir = lockDir;
+    return this;
+  }
+
+  public HdfsSpout setCommitFrequencyCount(int commitFrequencyCount) {
+    this.commitFrequencyCount = commitFrequencyCount;
+    return this;
+  }
+
+  public HdfsSpout setCommitFrequencySec(int commitFrequencySec) {
+    this.commitFrequencySec = commitFrequencySec;
+    return this;
+  }
+
+  public HdfsSpout setMaxOutstanding(int maxOutstanding) {
+    this.maxOutstanding = maxOutstanding;
+    return this;
+  }
+
+  public HdfsSpout setLockTimeoutSec(int lockTimeoutSec) {
+    this.lockTimeoutSec = lockTimeoutSec;
+    return this;
+  }
+
+  public HdfsSpout setClocksInSync(boolean clocksInSync) {
+    this.clocksInSync = clocksInSync;
+    return this;
+  }
+
+
+  public HdfsSpout setIgnoreSuffix(String ignoreSuffix) {
+    this.ignoreSuffix = ignoreSuffix;
+    return this;
+  }
+
+  /** Output field names. Number of fields depends upon the reader type */
   public HdfsSpout withOutputFields(String... fields) {
     outputFields = new Fields(fields);
     return this;
@@ -128,7 +198,7 @@ public class HdfsSpout extends BaseRichSpout {
       return;
     }
 
-    if( ackEnabled  &&  tracker.size()>= maxOutstanding) {
+    if ( ackEnabled  &&  tracker.size()>= maxOutstanding ) {
       LOG.warn("Waiting for more ACKs before generating new tuples. " +
               "Progress tracker size has reached limit {}, SpoutID {}"
               , maxOutstanding, spoutId);
@@ -149,7 +219,7 @@ public class HdfsSpout extends BaseRichSpout {
             fileReadCompletely=false;
           }
         }
-        if( fileReadCompletely ) { // wait for more ACKs before proceeding
+        if ( fileReadCompletely ) { // wait for more ACKs before proceeding
           return;
         }
         // 4) Read record from file, emit to collector and record progress
@@ -160,7 +230,7 @@ public class HdfsSpout extends BaseRichSpout {
           MessageId msgId = new MessageId(tupleCounter, reader.getFilePath(), reader.getFileOffset());
           emitData(tuple, msgId);
 
-          if(!ackEnabled) {
+          if ( !ackEnabled ) {
             ++acksSinceLastCommit; // assume message is immediately ACKed in non-ack mode
             commitProgress(reader.getFileOffset());
           } else {
@@ -169,7 +239,7 @@ public class HdfsSpout extends BaseRichSpout {
           return;
         } else {
           fileReadCompletely = true;
-          if(!ackEnabled) {
+          if ( !ackEnabled ) {
             markFileAsDone(reader.getFilePath());
           }
         }
@@ -190,7 +260,7 @@ public class HdfsSpout extends BaseRichSpout {
 
   // will commit progress into lock file if commit threshold is reached
   private void commitProgress(FileOffset position) {
-    if(position==null) {
+    if ( position==null ) {
       return;
     }
     if ( lock!=null && canCommitNow() ) {
@@ -208,7 +278,7 @@ public class HdfsSpout extends BaseRichSpout {
   }
 
   private void setupCommitElapseTimer() {
-    if(commitFrequencySec<=0) {
+    if ( commitFrequencySec<=0 ) {
       return;
     }
     TimerTask timerTask = new TimerTask() {
@@ -264,7 +334,7 @@ public class HdfsSpout extends BaseRichSpout {
 
   private static void releaseLockAndLog(FileLock fLock, String spoutId) {
     try {
-      if(fLock!=null) {
+      if ( fLock!=null ) {
         fLock.release();
         LOG.debug("Spout {} released FileLock. SpoutId = {}", fLock.getLockFile(), spoutId);
       }
@@ -288,10 +358,11 @@ public class HdfsSpout extends BaseRichSpout {
     this.collector = collector;
 
     // Hdfs related settings
-    if( conf.containsKey(Configs.HDFS_URI)) {
+    if ( this.hdfsUri==null && conf.containsKey(Configs.HDFS_URI) ) {
       this.hdfsUri = conf.get(Configs.HDFS_URI).toString();
-    } else {
-      throw new RuntimeException(Configs.HDFS_URI + " setting is required");
+    }
+    if ( this.hdfsUri==null ) {
+      throw new RuntimeException("HDFS Uri not set on spout");
     }
 
     try {
@@ -304,7 +375,7 @@ public class HdfsSpout extends BaseRichSpout {
 
     if ( conf.containsKey(configKey) ) {
       Map<String, Object> map = (Map<String, Object>)conf.get(configKey);
-        if(map != null) {
+        if ( map != null ) {
           for(String keyName : map.keySet()){
             LOG.info("HDFS Config override : {} = {} ", keyName, String.valueOf(map.get(keyName)));
             this.hdfsConfig.set(keyName, String.valueOf(map.get(keyName)));
@@ -315,37 +386,45 @@ public class HdfsSpout extends BaseRichSpout {
             LOG.error("HDFS Login failed ", e);
             throw new RuntimeException(e);
           }
-        } // if(map != null)
+        } // if (map != null)
       }
 
     // Reader type config
-    if( conf.containsKey(Configs.READER_TYPE) ) {
+    if ( readerType==null && conf.containsKey(Configs.READER_TYPE) ) {
       readerType = conf.get(Configs.READER_TYPE).toString();
-      checkValidReader(readerType);
     }
+    checkValidReader(readerType);
 
     // -- source dir config
-    if ( !conf.containsKey(Configs.SOURCE_DIR) ) {
+    if ( sourceDir==null && conf.containsKey(Configs.SOURCE_DIR) ) {
+      sourceDir = conf.get(Configs.SOURCE_DIR).toString();
+    }
+    if ( sourceDir==null ) {
       LOG.error(Configs.SOURCE_DIR + " setting is required");
       throw new RuntimeException(Configs.SOURCE_DIR + " setting is required");
     }
-    this.sourceDirPath = new Path( conf.get(Configs.SOURCE_DIR).toString() );
+    this.sourceDirPath = new Path( sourceDir );
 
     // -- archive dir config
-    if ( !conf.containsKey(Configs.ARCHIVE_DIR) ) {
+    if ( archiveDir==null && conf.containsKey(Configs.ARCHIVE_DIR) ) {
+      archiveDir = conf.get(Configs.ARCHIVE_DIR).toString();
+    }
+    if ( archiveDir==null ) {
       LOG.error(Configs.ARCHIVE_DIR + " setting is required");
       throw new RuntimeException(Configs.ARCHIVE_DIR + " setting is required");
     }
-    this.archiveDirPath = new Path( conf.get(Configs.ARCHIVE_DIR).toString() );
+    this.archiveDirPath = new Path( archiveDir );
     validateOrMakeDir(hdfs, archiveDirPath, "Archive");
 
     // -- bad files dir config
-    if ( !conf.containsKey(Configs.BAD_DIR) ) {
+    if ( badFilesDir==null && conf.containsKey(Configs.BAD_DIR) ) {
+      badFilesDir = conf.get(Configs.BAD_DIR).toString();
+    }
+    if ( badFilesDir==null ) {
       LOG.error(Configs.BAD_DIR + " setting is required");
       throw new RuntimeException(Configs.BAD_DIR + " setting is required");
     }
-
-    this.badFilesDirPath = new Path(conf.get(Configs.BAD_DIR).toString());
+    this.badFilesDirPath = new Path(badFilesDir);
     validateOrMakeDir(hdfs, badFilesDirPath, "bad files");
 
     // -- ignore file names config
@@ -354,18 +433,24 @@ public class HdfsSpout extends BaseRichSpout {
     }
 
     // -- lock dir config
-    String lockDir = !conf.containsKey(Configs.LOCK_DIR) ? getDefaultLockDir(sourceDirPath) : conf.get(Configs.LOCK_DIR).toString() ;
+    if ( lockDir==null && conf.containsKey(Configs.LOCK_DIR) ) {
+      lockDir = conf.get(Configs.LOCK_DIR).toString();
+    }
+    if ( lockDir==null ) {
+      lockDir = getDefaultLockDir(sourceDirPath);
+    }
     this.lockDirPath = new Path(lockDir);
-    validateOrMakeDir(hdfs,lockDirPath,"locks");
+    validateOrMakeDir(hdfs,lockDirPath, "locks");
+
 
     // -- lock timeout
-    if( conf.get(Configs.LOCK_TIMEOUT) !=null ) {
+    if ( conf.get(Configs.LOCK_TIMEOUT) !=null ) {
       this.lockTimeoutSec = Integer.parseInt(conf.get(Configs.LOCK_TIMEOUT).toString());
     }
 
     // -- enable/disable ACKing
     Object ackers = conf.get(Config.TOPOLOGY_ACKER_EXECUTORS);
-    if( ackers!=null ) {
+    if ( ackers!=null ) {
       int ackerCount = Integer.parseInt(ackers.toString());
       this.ackEnabled = (ackerCount>0);
       LOG.debug("ACKer count = {}", ackerCount);
@@ -378,25 +463,25 @@ public class HdfsSpout extends BaseRichSpout {
     LOG.info("ACK mode is {}", ackEnabled ? "enabled" : "disabled");
 
     // -- commit frequency - count
-    if( conf.get(Configs.COMMIT_FREQ_COUNT) != null ) {
+    if ( conf.get(Configs.COMMIT_FREQ_COUNT) != null ) {
       commitFrequencyCount = Integer.parseInt(conf.get(Configs.COMMIT_FREQ_COUNT).toString());
     }
 
     // -- commit frequency - seconds
-    if( conf.get(Configs.COMMIT_FREQ_SEC) != null ) {
+    if ( conf.get(Configs.COMMIT_FREQ_SEC) != null ) {
       commitFrequencySec = Integer.parseInt(conf.get(Configs.COMMIT_FREQ_SEC).toString());
-      if(commitFrequencySec<=0) {
+      if ( commitFrequencySec<=0 ) {
         throw new RuntimeException(Configs.COMMIT_FREQ_SEC + " setting must be greater than 0");
       }
     }
 
     // -- max outstanding tuples
-    if( conf.get(Configs.MAX_OUTSTANDING) !=null ) {
+    if ( conf.get(Configs.MAX_OUTSTANDING) !=null ) {
       maxOutstanding = Integer.parseInt(conf.get(Configs.MAX_OUTSTANDING).toString());
     }
 
     // -- clocks in sync
-    if( conf.get(Configs.CLOCKS_INSYNC) !=null ) {
+    if ( conf.get(Configs.CLOCKS_INSYNC) !=null ) {
       clocksInSync = Boolean.parseBoolean(conf.get(Configs.CLOCKS_INSYNC).toString());
     }
 
@@ -409,12 +494,12 @@ public class HdfsSpout extends BaseRichSpout {
 
   private static void validateOrMakeDir(FileSystem fs, Path dir, String dirDescription) {
     try {
-      if(fs.exists(dir)) {
-        if(! fs.isDirectory(dir) ) {
+      if ( fs.exists(dir) ) {
+        if ( !fs.isDirectory(dir) ) {
           LOG.error(dirDescription + " directory is a file, not a dir. " + dir);
           throw new RuntimeException(dirDescription + " directory is a file, not a dir. " + dir);
         }
-      } else if(! fs.mkdirs(dir) ) {
+      } else if ( ! fs.mkdirs(dir) ) {
         LOG.error("Unable to create " + dirDescription + " directory " + dir);
         throw new RuntimeException("Unable to create " + dirDescription + " directory " + dir);
       }
@@ -429,7 +514,7 @@ public class HdfsSpout extends BaseRichSpout {
   }
 
   private static void checkValidReader(String readerType) {
-    if(readerType.equalsIgnoreCase(Configs.TEXT)  || readerType.equalsIgnoreCase(Configs.SEQ) )
+    if ( readerType.equalsIgnoreCase(Configs.TEXT)  || readerType.equalsIgnoreCase(Configs.SEQ) )
       return;
     try {
       Class<?> classType = Class.forName(readerType);
@@ -447,7 +532,7 @@ public class HdfsSpout extends BaseRichSpout {
   @Override
   public void ack(Object msgId) {
     LOG.trace("Ack received for msg {} on spout {}", msgId, spoutId);
-    if(!ackEnabled) {
+    if ( !ackEnabled ) {
       return;
     }
     MessageId id = (MessageId) msgId;
@@ -455,7 +540,7 @@ public class HdfsSpout extends BaseRichSpout {
     ++acksSinceLastCommit;
     tracker.recordAckedOffset(id.offset);
     commitProgress(tracker.getCommitPosition());
-    if(fileReadCompletely && inflight.isEmpty()) {
+    if ( fileReadCompletely && inflight.isEmpty() ) {
       markFileAsDone(reader.getFilePath());
       reader = null;
     }
@@ -464,7 +549,7 @@ public class HdfsSpout extends BaseRichSpout {
 
   private boolean canCommitNow() {
 
-    if( commitFrequencyCount>0 &&  acksSinceLastCommit >= commitFrequencyCount ) {
+    if ( commitFrequencyCount>0 &&  acksSinceLastCommit >= commitFrequencyCount ) {
       return true;
     }
     return commitTimeElapsed.get();
@@ -474,7 +559,7 @@ public class HdfsSpout extends BaseRichSpout {
   public void fail(Object msgId) {
     LOG.trace("Fail received for msg id {} on spout {}", msgId, spoutId);
     super.fail(msgId);
-    if(ackEnabled) {
+    if ( ackEnabled ) {
       HdfsUtils.Pair<MessageId, List<Object>> item = HdfsUtils.Pair.of(msgId, inflight.remove(msgId));
       retryList.add(item);
     }
@@ -484,7 +569,7 @@ public class HdfsSpout extends BaseRichSpout {
     try {
       // 1) If there are any abandoned files, pick oldest one
       lock = getOldestExpiredLock();
-      if (lock != null) {
+      if ( lock!=null ) {
         LOG.debug("Spout {} now took over ownership of abandoned FileLock {}", spoutId, lock.getLockFile());
         Path file = getFileForLockFile(lock.getLockFile(), sourceDirPath);
         String resumeFromOffset = lock.getLastLogEntry().fileOffset;
@@ -553,20 +638,20 @@ public class HdfsSpout extends BaseRichSpout {
       }
 
       // 3 - if clocks are not in sync ..
-      if( lastExpiredLock == null ) {
+      if ( lastExpiredLock == null ) {
         // just make a note of the oldest expired lock now and check if its still unmodified after lockTimeoutSec
         lastExpiredLock = FileLock.locateOldestExpiredLock(hdfs, lockDirPath, lockTimeoutSec);
         lastExpiredLockTime = System.currentTimeMillis();
         return null;
       }
       // see if lockTimeoutSec time has elapsed since we last selected the lock file
-      if( hasExpired(lastExpiredLockTime) ) {
+      if ( hasExpired(lastExpiredLockTime) ) {
         return null;
       }
 
       // If lock file has expired, then own it
       FileLock.LogEntry lastEntry = FileLock.getLastEntry(hdfs, lastExpiredLock.getKey());
-      if( lastEntry.equals(lastExpiredLock.getValue()) ) {
+      if ( lastEntry.equals(lastExpiredLock.getValue()) ) {
         FileLock result = FileLock.takeOwnership(hdfs, lastExpiredLock.getKey(), lastEntry, spoutId);
         lastExpiredLock = null;
         return  result;
@@ -593,10 +678,10 @@ public class HdfsSpout extends BaseRichSpout {
    */
   private FileReader createFileReader(Path file)
           throws IOException {
-    if(readerType.equalsIgnoreCase(Configs.SEQ)) {
+    if ( readerType.equalsIgnoreCase(Configs.SEQ) ) {
       return new SequenceFileReader(this.hdfs, file, conf);
     }
-    if(readerType.equalsIgnoreCase(Configs.TEXT)) {
+    if ( readerType.equalsIgnoreCase(Configs.TEXT) ) {
       return new TextFileReader(this.hdfs, file, conf);
     }
     try {
@@ -619,10 +704,10 @@ public class HdfsSpout extends BaseRichSpout {
    */
   private FileReader createFileReader(Path file, String offset)
           throws IOException {
-    if(readerType.equalsIgnoreCase(Configs.SEQ)) {
+    if ( readerType.equalsIgnoreCase(Configs.SEQ) ) {
       return new SequenceFileReader(this.hdfs, file, conf, offset);
     }
-    if(readerType.equalsIgnoreCase(Configs.TEXT)) {
+    if ( readerType.equalsIgnoreCase(Configs.TEXT) ) {
       return new TextFileReader(this.hdfs, file, conf, offset);
     }
 
@@ -661,11 +746,11 @@ public class HdfsSpout extends BaseRichSpout {
           throws IOException {
     String lockFileName = lockFile.getName();
     Path dataFile = new Path(sourceDirPath + Path.SEPARATOR + lockFileName + inprogress_suffix);
-    if( hdfs.exists(dataFile) ) {
+    if ( hdfs.exists(dataFile) ) {
       return dataFile;
     }
     dataFile = new Path(sourceDirPath + Path.SEPARATOR +  lockFileName);
-    if(hdfs.exists(dataFile)) {
+    if ( hdfs.exists(dataFile) ) {
       return dataFile;
     }
     return null;
@@ -680,7 +765,7 @@ public class HdfsSpout extends BaseRichSpout {
 
     Path  newFile = new Path( archiveDirPath + Path.SEPARATOR + newName );
     LOG.info("Completed consuming file {}", fileNameMinusSuffix);
-    if (!hdfs.rename(file, newFile) ) {
+    if ( !hdfs.rename(file, newFile) ) {
       throw new IOException("Rename failed for file: " + file);
     }
     LOG.debug("Renamed file {} to {} ", file, newFile);
@@ -709,10 +794,10 @@ public class HdfsSpout extends BaseRichSpout {
 
     @Override
     public int compareTo(MessageId rhs) {
-      if (msgNumber<rhs.msgNumber) {
+      if ( msgNumber<rhs.msgNumber ) {
         return -1;
       }
-      if(msgNumber>rhs.msgNumber) {
+      if ( msgNumber>rhs.msgNumber ) {
         return 1;
       }
       return 0;
