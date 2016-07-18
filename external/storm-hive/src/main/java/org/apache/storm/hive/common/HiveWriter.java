@@ -324,7 +324,7 @@ public class HiveWriter {
     /**
      * if there are remainingTransactions in current txnBatch, begins nextTransactions
      * otherwise creates new txnBatch.
-     * @param boolean rollToNext
+     * @param rollToNext
      */
     private void nextTxn(boolean rollToNext) throws StreamingException, InterruptedException, TxnBatchFailure {
         if(txnBatch.remainingTransactions() == 0) {
