@@ -176,7 +176,8 @@
     (get storm-conf STORM-CLUSTER-METRICS-CONSUMER-REGISTER)))
 
 (defn nimbus-data [conf inimbus]
-  (let [forced-scheduler (.getForcedScheduler inimbus)]
+  (let [forced-scheduler (.getForcedScheduler inimbus)
+        blob-store (Utils/getNimbusBlobStore conf (NimbusInfo/fromConf conf))]
     {:conf conf
      :nimbus-host-port-info (NimbusInfo/fromConf conf)
      :inimbus inimbus
@@ -194,7 +195,7 @@
      :heartbeats-cache (atom {})
      :downloaders (file-cache-map conf)
      :uploaders (file-cache-map conf)
-     :blob-store (Utils/getNimbusBlobStore conf (NimbusInfo/fromConf conf))
+     :blob-store blob-store
      :blob-downloaders (mk-blob-cache-map conf)
      :blob-uploaders (mk-blob-cache-map conf)
      :blob-listers (mk-bloblist-cache-map conf)
@@ -205,7 +206,7 @@
                                  (exit-process! 20 "Error when processing an event")
                                  ))
      :scheduler (mk-scheduler conf inimbus)
-     :leader-elector (zk-leader-elector conf)
+     :leader-elector (zk-leader-elector conf blob-store)
      :id->sched-status (atom {})
      :node-id->resources (atom {}) ;;resources of supervisors
      :id->resources (atom {}) ;;resources of topologies
