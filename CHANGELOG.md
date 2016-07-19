@@ -1,5 +1,4 @@
 ## 1.1.0
- * STORM-1976: Remove cleanup-corrupt-topologies!
  * STORM-1969: Modify HiveTopology to show usage of non-partition table.
  * STORM-1966: Expand metric having Map type as value into multiple metrics based on entries
  * STORM-1737: storm-kafka-client has compilation errors with Apache Kafka 0.10
@@ -57,8 +56,11 @@
  * STORM-1709: Added group by support in storm sql standalone mode
  * STORM-1720: Support GEO in storm-redis
 
-## 1.0.2
+## 1.0.3
+ * STORM-1976: Remove cleanup-corrupt-topologies!
  * STORM-1977 Restore logic: give up leadership when elected as leader but doesn't have one or more topology codes on local
+
+## 1.0.2
  * STORM-1939: Frequent InterruptedException raised by ShellBoltMessageQueue.poll
  * STORM-1928: ShellSpout should check heartbeat while ShellSpout is waiting for subprocess to sync
  * STORM-1922: Supervisor summary default order by host
