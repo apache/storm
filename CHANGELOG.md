@@ -1,5 +1,6 @@
 ## 1.0.3
  * STORM-1730: LocalCluster#shutdown() does not terminate all storm threds/thread pools.
+ * STORM-1976: STORM-1976 Remove cleanup-corrupt-topologies!
 
 ## 1.0.2
  * STORM-1939: Frequent InterruptedException raised by ShellBoltMessageQueue.poll
