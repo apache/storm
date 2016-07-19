@@ -123,6 +123,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.regex.Matcher;
@@ -138,6 +139,9 @@ public class Utils {
     // A singleton instance allows us to mock delegated static methods in our
     // tests by subclassing.
     private static Utils _instance = new Utils();
+
+    // A static flag to indicate if jvm shutdown is in progress
+    private static AtomicReference<Boolean> isJVMShutdownInitiated = new AtomicReference<>(Boolean.FALSE);
 
     /**
      * Provide an instance of this class for delegates to use.  To mock out
@@ -1203,6 +1207,13 @@ public class Utils {
     }
 
     /**
+     * This method can detect if jvm shutdown has been initiated in response to an uncaught exception in executor
+     */
+    public static boolean isShutdownUnderProgress() {
+        return isJVMShutdownInitiated.get();
+    }
+
+    /**
      * Is the cluster configured to interact with ZooKeeper in a secure way?
      * This only works when called from within Nimbus or a Supervisor process.
      * @param conf the storm configuration, not the topology configuration
@@ -1772,6 +1783,7 @@ public class Utils {
     public static void exitProcess (int val, String msg) {
         String combinedErrorMessage = "Halting process: " + msg;
         LOG.error(combinedErrorMessage, new RuntimeException(combinedErrorMessage));
+        isJVMShutdownInitiated.set(Boolean.TRUE);
         Runtime.getRuntime().exit(val);
     }
 

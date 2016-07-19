@@ -205,15 +205,17 @@
      :report-error-and-die (reify
                              Thread$UncaughtExceptionHandler
                              (uncaughtException [this _ error]
-                               (try
-                                 ((:report-error <>) error)
-                                 (catch Exception e
-                                   (log-error e "Error while reporting error to cluster, proceeding with shutdown")))
-                               (if (or
-                                    (Utils/exceptionCauseIsInstanceOf InterruptedException error)
-                                    (Utils/exceptionCauseIsInstanceOf java.io.InterruptedIOException error))
-                                 (log-message "Got interrupted excpetion shutting thread down...")
-                                 ((:suicide-fn <>)))))
+                               (if (Utils/isShutdownUnderProgress)
+                                 (log-warn error "Uncaught exception in thread after jvm shutdown")
+                                 ((try
+                                    ((:report-error <>) error)
+                                    (catch Exception e
+                                      (log-error e "Error while reporting error to cluster, proceeding with shutdown")))
+                                   (if (or
+                                         (Utils/exceptionCauseIsInstanceOf InterruptedException error)
+                                         (Utils/exceptionCauseIsInstanceOf java.io.InterruptedIOException error))
+                                     (log-message "Got interrupted excpetion shutting thread down...")
+                                     ((:suicide-fn <>)))))))
      :sampler (ConfigUtils/mkStatsSampler storm-conf)
      :backpressure (atom false)
      :spout-throttling-metrics (if (= (keyword executor-type) :spout)
