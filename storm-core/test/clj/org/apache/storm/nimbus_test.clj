@@ -1147,37 +1147,6 @@
       (getAllNimbuses [this] `(leader-address))
       (close [this] true))))
 
-(deftest test-cleans-corrupt
-  (with-inprocess-zookeeper zk-port
-    (with-local-tmp [nimbus-dir]
-      (with-open [_ (MockedZookeeper. (proxy [Zookeeper] []
-                      (zkLeaderElectorImpl [conf blob-store] (mock-leader-elector))))]
-        (letlocals
-         (bind conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
-                           {STORM-ZOOKEEPER-SERVERS ["localhost"]
-                            STORM-CLUSTER-MODE "local"
-                            STORM-ZOOKEEPER-PORT zk-port
-                            STORM-LOCAL-DIR nimbus-dir}))
-         (bind cluster-state (ClusterUtils/mkStormClusterState conf nil (ClusterStateContext.)))
-         (bind nimbus (nimbus/service-handler conf (nimbus/standalone-nimbus)))
-         (bind topology (Thrift/buildTopology
-                         {"1" (Thrift/prepareSpoutDetails
-                                (TestPlannerSpout. true) (Integer. 3))}
-                         {}))
-         (submit-local-topology nimbus "t1" {} topology)
-         (submit-local-topology nimbus "t2" {} topology)
-         (bind storm-id1 (StormCommon/getStormId cluster-state "t1"))
-         (bind storm-id2 (StormCommon/getStormId cluster-state "t2"))
-         (.shutdown nimbus)
-         (let [blob-store (Utils/getNimbusBlobStore conf nil)]
-           (nimbus/blob-rm-topology-keys storm-id1 blob-store cluster-state)
-           (.shutdown blob-store))
-         (bind nimbus (nimbus/service-handler conf (nimbus/standalone-nimbus)))
-         (is ( = #{storm-id2} (set (.activeStorms cluster-state))))
-         (.shutdown nimbus)
-         (.disconnect cluster-state)
-         )))))
-
 ;(deftest test-no-overlapping-slots
 ;  ;; test that same node+port never appears across 2 assignments
 ;  )
