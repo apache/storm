@@ -313,12 +313,16 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
                 "kafkaProps=" + kafkaProps +
                 ", keyDeserializer=" + keyDeserializer +
                 ", valueDeserializer=" + valueDeserializer +
-                ", topics=" + getSubscribedTopics() +
-                ", topicWildcardPattern=" + getTopicWildcardPattern() +
-                ", firstPollOffsetStrategy=" + firstPollOffsetStrategy +
                 ", pollTimeoutMs=" + pollTimeoutMs +
                 ", offsetCommitPeriodMs=" + offsetCommitPeriodMs +
                 ", maxRetries=" + maxRetries +
+                ", maxUncommittedOffsets=" + maxUncommittedOffsets +
+                ", firstPollOffsetStrategy=" + firstPollOffsetStrategy +
+                ", kafkaSpoutStreams=" + kafkaSpoutStreams +
+                ", tuplesBuilder=" + tuplesBuilder +
+                ", retryService=" + retryService +
+                ", topics=" + getSubscribedTopics() +
+                ", topicWildcardPattern=" + getTopicWildcardPattern() +
                 '}';
     }
 }
