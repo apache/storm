@@ -1,3 +1,6 @@
+## 1.0.3
+ * STORM-1730: LocalCluster#shutdown() does not terminate all storm threds/thread pools.
+
 ## 1.0.2
  * STORM-1939: Frequent InterruptedException raised by ShellBoltMessageQueue.poll
  * STORM-1968: Storm logviewer does not work for nimbus.log in secure cluster
