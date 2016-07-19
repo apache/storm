@@ -1,4 +1,5 @@
 ## 1.0.3
+ * STORM-1977: Restore logic: give up leadership when elected as leader but doesn't have one or more topology codes on local 
  * STORM-1730: LocalCluster#shutdown() does not terminate all storm threds/thread pools.
  * STORM-1976: STORM-1976 Remove cleanup-corrupt-topologies!
 
