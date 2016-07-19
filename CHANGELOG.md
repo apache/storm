@@ -123,7 +123,6 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0 
- * STORM-1977: Restore logic: give up leadership when elected as leader but doesn't have one or more of topology codes on local
  * STORM-1969: Modify HiveTopology to show usage of non-partition table.
  * STORM-1950: Change response json of "Topology Lag" REST API to keyed by spoutId, topic, partition.
  * STORM-1833: Simple equi-join in storm-sql standalone mode
@@ -155,6 +154,10 @@
  * STORM-1709: Added group by support in storm sql standalone mode
  * STORM-1720: Support GEO in storm-redis
  * STORM-1868: Modify TridentKafkaWordCount to run in distributed mode
+
+## 1.0.3
+ * STORM-1976: Remove cleanup-corrupt-topologies!
+ * STORM-1977: Restore logic: give up leadership when elected as leader but doesn't have one or more of topology codes on local
 
 ## 1.0.2
  * STORM-1939: Frequent InterruptedException raised by ShellBoltMessageQueue.poll
