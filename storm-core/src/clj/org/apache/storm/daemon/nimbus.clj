@@ -1169,19 +1169,6 @@
                                      (> (line :timestamp) cutoff-age)) curr-history))]
       (ls-topo-hist! topo-history-state new-history))))
 
-(defn cleanup-corrupt-topologies! [nimbus]
-  (let [storm-cluster-state (:storm-cluster-state nimbus)
-        blob-store (:blob-store nimbus)
-        code-ids (set (code-ids blob-store))
-        active-topologies (set (.active-storms storm-cluster-state))
-        corrupt-topologies (set/difference active-topologies code-ids)]
-    (doseq [corrupt corrupt-topologies]
-      (log-message "Corrupt topology " corrupt " has state on zookeeper but doesn't have a local dir on Nimbus. Cleaning up...")
-      (.remove-storm! storm-cluster-state corrupt)
-      (if (instance? LocalFsBlobStore blob-store)
-        (doseq [blob-key (get-key-list-from-id (:conf nimbus) corrupt)]
-          (.remove-blobstore-key! storm-cluster-state blob-key))))))
-
 (defn setup-blobstore [nimbus]
   "Sets up blobstore state for all current keys."
   (let [storm-cluster-state (:storm-cluster-state nimbus)
@@ -1410,7 +1397,6 @@
         STORM-VERSION))
 
     (.addToLeaderLockQueue (:leader-elector nimbus))
-    (cleanup-corrupt-topologies! nimbus)
     (when (instance? LocalFsBlobStore blob-store)
       ;register call back for blob-store
       (.blobstore (:storm-cluster-state nimbus) (fn [] (blob-sync conf nimbus)))
