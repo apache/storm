@@ -1,5 +1,6 @@
 ## 1.1.0
- * STORM-1969: Modify HiveTopology to show usage of non-partition table.
+ * STORM-1987: Fix TridentKafkaWordCount arg handling in distributed mode
+ * STORM-1969: Modify HiveTopology to show usage of non-partition table
  * STORM-1966: Expand metric having Map type as value into multiple metrics based on entries
  * STORM-1737: storm-kafka-client has compilation errors with Apache Kafka 0.10
  * STORM-1968: Storm logviewer does not work for nimbus.log in secure cluster
