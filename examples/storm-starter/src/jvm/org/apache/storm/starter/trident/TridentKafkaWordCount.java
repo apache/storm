@@ -213,7 +213,7 @@ public class TridentKafkaWordCount {
             System.exit(1);
         } else if (args.length == 1) {
             zkUrl = args[0];
-        } else if (args.length == 2) {
+        } else {
             zkUrl = args[0];
             brokerUrl = args[1];
         }
