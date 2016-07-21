@@ -1,4 +1,5 @@
 ## 1.0.2
+ * STORM-1964: Unexpected behavior when using count window together with timestamp extraction
  * STORM-1977: Restore logic: give up leadership when elected as leader but doesn't have one or more topology codes on local 
  * STORM-1890 ensure we refetch static resources after package build
  * STORM-1730: LocalCluster#shutdown() does not terminate all storm threds/thread pools.
