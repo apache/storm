@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-1964: Unexpected behavior when using count window together with timestamp extraction
  * STORM-1890: ensure we refetch static resources after package build
  * STORM-1966 Expand metric having Map type as value into multiple metrics based on entries
  * STORM-1737: storm-kafka-client has compilation errors with Apache Kafka 0.10
