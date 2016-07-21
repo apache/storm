@@ -157,11 +157,9 @@
  * STORM-1720: Support GEO in storm-redis
  * STORM-1868: Modify TridentKafkaWordCount to run in distributed mode
 
-## 1.0.3
+## 1.0.2
  * STORM-1976: Remove cleanup-corrupt-topologies!
  * STORM-1977: Restore logic: give up leadership when elected as leader but doesn't have one or more of topology codes on local
-
-## 1.0.2
  * STORM-1939: Frequent InterruptedException raised by ShellBoltMessageQueue.poll
  * STORM-1928: ShellSpout should check heartbeat while ShellSpout is waiting for subprocess to sync
  * STORM-1922: Supervisor summary default order by host
