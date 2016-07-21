@@ -25,7 +25,7 @@
 var fs = require('fs');
 
 function Storm() {
-    this.messagePart = "";
+    this.messagePart = '';
     this.taskIdsCallbacks = [];
     this.isFirstMessage = true;
     this.separator = '\nend\n';
@@ -34,29 +34,29 @@ function Storm() {
 Storm.prototype.sendMsgToParent = function(msg) {
     var str = JSON.stringify(msg);
     process.stdout.write(str + this.separator);
-}
+};
 
 Storm.prototype.sync = function() {
-    this.sendMsgToParent({"command":"sync"});
-}
+    this.sendMsgToParent({command: 'sync'});
+};
 
 Storm.prototype.sendPid = function(heartbeatdir) {
     var pid = process.pid;
-    fs.closeSync(fs.openSync(heartbeatdir + "/" + pid, "w"));
-    this.sendMsgToParent({"pid": pid})
-}
+    fs.closeSync(fs.openSync(heartbeatdir + '/' + pid, 'w'));
+    this.sendMsgToParent({pid: pid});
+};
 
 Storm.prototype.log = function(msg) {
-    this.sendMsgToParent({"command": "log", "msg": msg});
-}
+    this.sendMsgToParent({command: 'log', msg: msg});
+};
 
 Storm.prototype.initSetupInfo = function(setupInfo) {
     var self = this;
     var callback = function() {
         self.sendPid(setupInfo['pidDir']);
-    }
+    };
     this.initialize(setupInfo['conf'], setupInfo['context'], callback);
-}
+};
 
 Storm.prototype.startReadingInput = function() {
     var self = this;
@@ -65,10 +65,10 @@ Storm.prototype.startReadingInput = function() {
         var messages = self.handleNewChunk(chunk);
         messages.forEach(function(message) {
             self.handleNewMessage(message);
-        })
+        });
 
     });
-}
+};
 
 /**
  * receives a new string chunk and returns a list of new messages with the separator removed
@@ -98,11 +98,11 @@ Storm.prototype.handleNewChunk = function(chunk) {
         }
     }
     return messages;
-}
+};
 
 Storm.prototype.isTaskIds = function(msg) {
     return (msg instanceof Array);
-}
+};
 
 Storm.prototype.handleNewMessage = function(msg) {
     var parsedMsg = JSON.parse(msg);
@@ -115,7 +115,7 @@ Storm.prototype.handleNewMessage = function(msg) {
     } else {
         this.handleNewCommand(parsedMsg);
     }
-}
+};
 
 Storm.prototype.handleNewTaskId = function(taskIds) {
     //When new list of task ids arrives, the callback that was passed with the corresponding emit should be called.
@@ -128,7 +128,7 @@ Storm.prototype.handleNewTaskId = function(taskIds) {
     } else {
         throw new Error('Something went wrong, we off the split of task id callbacks');
     }
-}
+};
 
 
 
@@ -166,7 +166,7 @@ Storm.prototype.emit = function(messageDetails, onTaskIds) {
 
     this.taskIdsCallbacks.push(onTaskIds);
     this.__emit(messageDetails);;
-}
+};
 
 
 /**
@@ -192,10 +192,10 @@ Storm.prototype.emit = function(messageDetails, onTaskIds) {
  */
 Storm.prototype.emitDirect = function(commandDetails) {
     if (!commandDetails.task) {
-        throw new Error("Emit direct must receive task id!")
+        throw new Error('Emit direct must receive task id!')
     }
     this.__emit(commandDetails);
-}
+};
 
 /**
  * Initialize storm component according to the configuration received.
@@ -205,13 +205,13 @@ Storm.prototype.emitDirect = function(commandDetails) {
  */
 Storm.prototype.initialize = function(conf, context, done) {
     done();
-}
+};
 
 Storm.prototype.run = function() {
     process.stdout.setEncoding('utf8');
     process.stdin.setEncoding('utf8');
     this.startReadingInput();
-}
+};
 
 function Tuple(id, component, stream, task, values) {
     this.id = id;
@@ -222,12 +222,12 @@ function Tuple(id, component, stream, task, values) {
 }
 
 Tuple.prototype.isTickTuple = function(){
-  return this.task === -1 && this.stream === "__tick";
-}
+    return this.task === -1 && this.stream === '__tick';
+};
 
 Tuple.prototype.isHeartbeatTuple = function(){
-  return this.task === -1 && this.stream === "__heartbeat";
-}
+    return this.task === -1 && this.stream === '__heartbeat';
+};
 
 /**
  * Base class for storm bolt.
@@ -237,7 +237,7 @@ Tuple.prototype.isHeartbeatTuple = function(){
 function BasicBolt() {
     Storm.call(this);
     this.anchorTuple = null;
-};
+}
 
 BasicBolt.prototype = Object.create(Storm.prototype);
 BasicBolt.prototype.constructor = BasicBolt;
@@ -256,7 +256,7 @@ BasicBolt.prototype.__emit = function(commandDetails) {
     var self = this;
 
     var message = {
-        command: "emit",
+        command: 'emit',
         tuple: commandDetails.tuple,
         stream: commandDetails.stream,
         task: commandDetails.task,
@@ -264,11 +264,11 @@ BasicBolt.prototype.__emit = function(commandDetails) {
     };
 
     this.sendMsgToParent(message);
-}
+};
 
 BasicBolt.prototype.handleNewCommand = function(command) {
     var self = this;
-    var tup = new Tuple(command["id"], command["comp"], command["stream"], command["task"], command["tuple"]);
+    var tup = new Tuple(command['id'], command['comp'], command['stream'], command['task'], command['tuple']);
 
     if (tup.isHeartbeatTuple()) {
         self.sync();
@@ -281,9 +281,9 @@ BasicBolt.prototype.handleNewCommand = function(command) {
             return;
         }
         self.ack(tup);
-    }
+    };
     this.process(tup, callback);
-}
+};
 
 /**
  * Implement this method when creating a bolt. This is the main method that provides the logic of the bolt (what
@@ -294,12 +294,12 @@ BasicBolt.prototype.handleNewCommand = function(command) {
 BasicBolt.prototype.process = function(tuple, done) {};
 
 BasicBolt.prototype.ack = function(tup) {
-    this.sendMsgToParent({"command": "ack", "id": tup.id});
-}
+    this.sendMsgToParent({command: 'ack', id: tup.id});
+};
 
 BasicBolt.prototype.fail = function(tup, err) {
-    this.sendMsgToParent({"command": "fail", "id": tup.id});
-}
+    this.sendMsgToParent({command: 'fail', id: tup.id});
+};
 
 /**
  * Base class for storm spout.
@@ -310,7 +310,7 @@ BasicBolt.prototype.fail = function(tup, err) {
  */
 function Spout() {
     Storm.call(this);
-};
+}
 
 Spout.prototype = Object.create(Storm.prototype);
 
@@ -341,20 +341,20 @@ Spout.prototype.handleNewCommand = function(command) {
     var self = this;
     var callback = function() {
         self.sync();
-    }
+    };
 
-    if (command["command"] === "next") {
+    if (command['command'] === 'next') {
         this.nextTuple(callback);
     }
 
-    if (command["command"] === "ack") {
-        this.ack(command["id"], callback);
+    if (command['command'] === 'ack') {
+        this.ack(command['id'], callback);
     }
 
-    if (command["command"] === "fail") {
-        this.fail(command["id"], callback);
+    if (command['command'] === 'fail') {
+        this.fail(command['id'], callback);
     }
-}
+};
 
 /**
  * @param commandDetails json with the required fields:
@@ -366,7 +366,7 @@ Spout.prototype.handleNewCommand = function(command) {
  */
 Spout.prototype.__emit = function(commandDetails) {
     var message = {
-        command: "emit",
+        command: 'emit',
         tuple: commandDetails.tuple,
         id: commandDetails.id,
         stream: commandDetails.stream,
@@ -374,7 +374,7 @@ Spout.prototype.__emit = function(commandDetails) {
     };
 
     this.sendMsgToParent(message);
-}
+};
 
 module.exports.BasicBolt = BasicBolt;
 module.exports.Spout = Spout;

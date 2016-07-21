@@ -1,0 +1,20 @@
+{
+  "name": "storm-multilang-js",
+  "version": "${project.version}",
+  "description": "Base classes for developing Apache Storm multilang components using node.js",
+  "license": "Apache-2.0",
+  "keywords": ["storm"],
+  "homepage": "${project.parent.url}",
+  "bugs": "${project.parent.issueManagement.url}",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/apache/storm.git"
+  },
+  "engine": {
+    "node": ">=4.4.7"
+  },
+  "main": "storm.js",
+  "bin": {
+    "stormjs": "bin/stormjs.js"
+  }
+}
