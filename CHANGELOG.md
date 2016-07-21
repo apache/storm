@@ -1,4 +1,5 @@
 ## 1.0.2
+ * STORM-1890 ensure we refetch static resources after package build
  * STORM-1939: Frequent InterruptedException raised by ShellBoltMessageQueue.poll
  * STORM-1968: Storm logviewer does not work for nimbus.log in secure cluster
  * STORM-1928: ShellSpout should check heartbeat while ShellSpout is waiting for subprocess to sync
