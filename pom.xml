@@ -292,6 +292,7 @@
         <module>external/storm-opentsdb</module>
         <module>external/storm-kafka-monitor</module>
         <module>external/storm-kinesis</module>
+        <module>external/storm-druid</module>
     </modules>
 
     <dependencies>
