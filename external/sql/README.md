@@ -70,17 +70,31 @@ To run this example, users need to include the data sources (`storm-sql-kafka` i
 class path. One approach is to put the required jars into the `extlib` directory:
 
 ```
-$ cp curator-client-2.5.0.jar curator-framework-2.5.0.jar zookeeper-3.4.6.jar
- extlib/
-$ cp scala-library-2.10.4.jar kafka-clients-0.8.2.1.jar kafka_2.10-0.8.2.1.jar metrics-core-2.2.0.jar extlib/
-$ cp json-simple-1.1.1.jar extlib/
-$ cp storm-kafka-*.jar storm-sql-kafka-*.jar storm-sql-runtime-*.jar extlib/
+calcite-avatica-1.4.0-incubating.jar
+calcite-core-1.4.0-incubating.jar
+calcite-linq4j-1.4.0-incubating.jar
+commons-lang-2.6.jar
+curator-client-2.5.0.jar
+curator-framework-2.5.0.jar
+guava-16.0.1.jar
+jackson-annotations-2.6.0.jar
+jackson-core-2.6.3.jar
+jackson-databind-2.6.3.jar
+json-simple-1.1.1.jar
+kafka-clients-0.8.2.1.jar
+kafka_2.10-0.8.2.1.jar
+metrics-core-2.2.0.jar
+scala-library-2.10.4.jar
+storm-kafka-1.0.2.jar
+storm-sql-kafka-1.0.2.jar
+storm-sql-runtime-1.0.2.jar
+zookeeper-3.4.6.jar
 ```
 
 The next step is to submit the SQL statements to StormSQL:
 
 ```
-$ bin/storm sql order_filtering order_filtering.sql
+$ bin/storm sql order_filtering.sql order_filtering
 ```
 
 By now you should be able to see the `order_filtering` topology in the Storm UI.
