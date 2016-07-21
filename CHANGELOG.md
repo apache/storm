@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-1890: ensure we refetch static resources after package build
  * STORM-1988: Kafka Offset not showing due to bad classpath.
  * STORM-1987: Fix TridentKafkaWordCount arg handling in distributed mode
  * STORM-1969: Modify HiveTopology to show usage of non-partition table
