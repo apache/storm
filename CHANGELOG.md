@@ -1,4 +1,5 @@
 ## 1.0.2
+ * STORM-1989: X-Frame-Options support for Storm UI
  * STORM-1962: support python 3 and 2 in multilang
  * STORM-1964: Unexpected behavior when using count window together with timestamp extraction
  * STORM-1977: Restore logic: give up leadership when elected as leader but doesn't have one or more topology codes on local 
