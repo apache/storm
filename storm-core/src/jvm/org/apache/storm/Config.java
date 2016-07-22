@@ -926,6 +926,12 @@ public class Config extends HashMap<String, Object> {
     public static final String UI_HTTPS_NEED_CLIENT_AUTH = "ui.https.need.client.auth";
 
     /**
+     * Value of X-FRAME-OPTIONS HTTP Header option used by Storm UI.
+     */
+    @isString
+    public static final String UI_HTTP_X_FRAME_OPTIONS = "ui.http.x-frame-options";
+
+    /**
      * The host that Pacemaker is running on.
      */
     @isString
