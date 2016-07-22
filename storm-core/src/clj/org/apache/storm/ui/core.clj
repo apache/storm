@@ -1250,8 +1250,10 @@
           https-ts-password (conf UI-HTTPS-TRUSTSTORE-PASSWORD)
           https-ts-type (conf UI-HTTPS-TRUSTSTORE-TYPE)
           https-want-client-auth (conf UI-HTTPS-WANT-CLIENT-AUTH)
-          https-need-client-auth (conf UI-HTTPS-NEED-CLIENT-AUTH)]
+          https-need-client-auth (conf UI-HTTPS-NEED-CLIENT-AUTH)
+          http-x-frame-options (conf UI-HTTP-X-FRAME-OPTIONS)]
       (start-metrics-reporters conf)
+      (validate-x-frame-options! http-x-frame-options)
       (storm-run-jetty {:port (conf UI-PORT)
                         :host (conf UI-HOST)
                         :https-port https-port
@@ -1269,7 +1271,7 @@
                                                     https-want-client-auth)
                                         (doseq [connector (.getConnectors server)]
                                           (.setRequestHeaderSize connector header-buffer-size))
-                                        (config-filter server app filters-confs))}))
+                                        (config-filter server app filters-confs http-x-frame-options))}))
    (catch Exception ex
      (log-error ex))))
 
