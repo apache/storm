@@ -174,13 +174,37 @@
     (.setInitParameter CrossOriginFilter/ACCESS_CONTROL_ALLOW_ORIGIN_HEADER "*")
     ))
 
-(defn config-filter [server handler filters-confs]
-  (if filters-confs
+(defn validate-x-frame-options!
+  [x-frame-options]
+  (if (.startsWith x-frame-options "ALLOW-FROM http") nil
+    (case x-frame-options
+      "DENY" nil
+      "SAMEORIGIN" nil
+      (throw
+        (IllegalArgumentException. "Invalid X-Frame-Option specified!")))))
+
+(defn x-frame-options-filter-handler
+  [x-frame-options]
+  (let [filter (proxy [javax.servlet.Filter] []
+                 (doFilter [request response chain]
+                   (.setHeader response "X-Frame-Options" x-frame-options)
+                   (.doFilter chain request response))
+                 (init [config])
+                 (destroy [])
+                 )]
+    (org.eclipse.jetty.servlet.FilterHolder. filter)))
+
+
+(defn config-filter
+  ([server handler filters-conf] (config-filter server handler filters-conf nil))
+  ([server handler filters-confs http-x-frame-options] (if filters-confs
     (let [servlet-holder (ServletHolder.
                            (ring.util.servlet/servlet handler))
           context (doto (org.eclipse.jetty.servlet.ServletContextHandler. server "/")
                     (.addServlet servlet-holder "/"))]
       (.addFilter context (cors-filter-handler) "/*" (EnumSet/allOf DispatcherType))
+      (if-not (blank? http-x-frame-options)
+        (.addFilter context (x-frame-options-filter-handler http-x-frame-options) "/*" FilterMapping/ALL))
       (doseq [{:keys [filter-name filter-class filter-params]} filters-confs]
         (if filter-class
           (let [filter-holder (doto (org.eclipse.jetty.servlet.FilterHolder.)
@@ -188,7 +212,7 @@
                                 (.setName (or filter-name filter-class))
                                 (.setInitParameters (or filter-params {})))]
             (.addFilter context filter-holder "/*" FilterMapping/ALL))))
-      (.setHandler server context))))
+      (.setHandler server context)))))
 
 (defn ring-response-from-exception [ex]
   {:headers {}

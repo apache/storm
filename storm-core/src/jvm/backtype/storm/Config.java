@@ -691,6 +691,12 @@ public class Config extends HashMap<String, Object> {
     public static final String UI_HTTPS_NEED_CLIENT_AUTH = "ui.https.need.client.auth";
     public static final Object UI_HTTPS_NEED_CLIENT_AUTH_SCHEMA = Boolean.class;
 
+    /**
+     * Value of X-FRAME-OPTIONS HTTP Header option used by Storm UI.
+     */
+    public static final String UI_HTTP_X_FRAME_OPTIONS = "ui.http.x-frame-options";
+    public static final Object UI_HTTP_X_FRAME_OPTIONS_SCHEMA = String.class;
+
 
     /**
      * List of DRPC servers so that the DRPCSpout knows who to talk to.
