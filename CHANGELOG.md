@@ -1,4 +1,5 @@
 ## 0.10.2
+ * STORM-1989: X-Frame-Options support for Storm UI
  * STORM-1834: Documentation How to Generate Certificates For Local Testing SSL Setup
  * STORM-1754: Correct java version in 0.10.x storm-starter
  * STORM-1750: Ensure worker dies when report-error-and-die is called.
