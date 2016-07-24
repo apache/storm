@@ -100,6 +100,7 @@ public class KafkaSpoutTopologyMainNamedTopics {
                 .setOffsetCommitPeriodMs(10_000)
                 .setFirstPollOffsetStrategy(EARLIEST)
                 .setMaxUncommittedOffsets(250)
+                .setAutoCommitIntervalMs(500)
                 .build();
     }
 
