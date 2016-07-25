@@ -2266,6 +2266,36 @@ public class Config extends HashMap<String, Object> {
     @isString
     public static final Object CLIENT_JAR_TRANSFORMER = "client.jartransformer.class";
 
+    /**
+     * Aggregate task level metrics per worker.
+     * If this is set to true, the type of value of DataPoint will be List, which are having task level values.
+     * srcTaskId on {@link org.apache.storm.metric.api.IMetricsConsumer.TaskInfo} will be changed to Constants.SYSTEM_TASK_ID.
+     */
+    @isBoolean
+    public static final String TOPOLOGY_METRICS_AGGREGATE_PER_WORKER = "topology.metrics.aggregate.per.worker";
+
+    /**
+     * Set the limit time difference of holding metric for aggregation.
+     * Metric will be evicted from SystemBolt if it is not aggregated and such condition has been met:
+     * (current timestamp secs - metric timestamp secs) > topology.metrics.aggregate.metric.evict.secs.
+     */
+    @isPositiveNumber
+    public static final String TOPOLOGY_METRICS_AGGREGATE_METRIC_EVICT_SECS = "topology.metrics.aggregate.metric.evict.secs";
+
+    /**
+     * Expand metric with map type as value to multiple metrics.
+     * If you would like to apply filter to expanded metrics, set this to true.
+     */
+    @isBoolean
+    public static final String TOPOLOGY_METRICS_EXPAND_MAP_TYPE = "topology.metrics.expand.map.type";
+
+    /**
+     * Separator between origin metric name and key of entry from map.
+     * Only effective when topology.metrics.expand.map.type is set to true.
+     */
+    @isString
+    public static final String TOPOLOGY_METRICS_METRIC_NAME_SEPARATOR = "topology.metrics.metric.name.separator";
+
     public static void setClasspath(Map conf, String cp) {
         conf.put(Config.TOPOLOGY_CLASSPATH, cp);
     }
