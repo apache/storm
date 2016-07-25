@@ -17,10 +17,10 @@
  */
 package org.apache.storm.kafka;
 
-import kafka.javaapi.consumer.SimpleConsumer;
-
 import java.util.HashMap;
 import java.util.Map;
+
+import kafka.javaapi.consumer.SimpleConsumer;
 
 public class StaticPartitionConnections {
     Map<Integer, SimpleConsumer> _kafka = new HashMap<Integer, SimpleConsumer>();
@@ -38,7 +38,7 @@ public class StaticPartitionConnections {
     public SimpleConsumer getConsumer(int partition) {
         if (!_kafka.containsKey(partition)) {
             Broker hp = hosts.getPartitionInformation().getBrokerFor(partition);
-            _kafka.put(partition, new SimpleConsumer(hp.host, hp.port, _config.socketTimeoutMs, _config.bufferSizeBytes, _config.clientId));
+            _kafka.put(partition, new SimpleConsumer(hp.host, hp.port, _config.socketTimeoutMs, _config.bufferSizeBytes, _config.clientId, _config.securityProtocol));
 
         }
         return _kafka.get(partition);
