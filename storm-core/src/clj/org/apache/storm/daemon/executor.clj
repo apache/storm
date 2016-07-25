@@ -322,7 +322,8 @@
 
 (defn metrics-tick
   [executor-data task-data ^TupleImpl tuple]
-   (let [{:keys [interval->task->metric-registry ^WorkerTopologyContext worker-context]} executor-data
+   (let [{:keys [interval->task->metric-registry ^WorkerTopologyContext worker-context worker]} executor-data
+         system-bolt-receive-queue ((:executor-receive-queue-map worker) [Constants/SYSTEM_TASK_ID Constants/SYSTEM_TASK_ID])
          interval (.getInteger tuple 0)
          task-id (:task-id task-data)
          name->imetric (-> interval->task->metric-registry (get interval) (get task-id))
@@ -340,8 +341,8 @@
                                      (IMetricsConsumer$DataPoint. name value)))))
                           (filter identity)
                           (into []))]
-     (when (seq data-points)
-       (task/send-unanchored task-data Constants/METRICS_STREAM_ID [task-info data-points]))))
+     (let [val [(AddressedTuple. Constants/SYSTEM_TASK_ID (TupleImpl. worker-context [task-info data-points] Constants/SYSTEM_TASK_ID Constants/METRICS_STREAM_ID))]]
+       (disruptor/publish system-bolt-receive-queue val))))
 
 (defn setup-ticks! [worker executor-data]
   (let [storm-conf (:storm-conf executor-data)
