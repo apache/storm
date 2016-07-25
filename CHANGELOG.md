@@ -1,4 +1,5 @@
 ## 1.0.2
+ * STORM-1876: Option to build storm-kafka and storm-kafka-client with different kafka client version
  * STORM-1989: X-Frame-Options support for Storm UI
  * STORM-1962: support python 3 and 2 in multilang
  * STORM-1964: Unexpected behavior when using count window together with timestamp extraction
