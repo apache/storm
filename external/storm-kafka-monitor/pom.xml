@@ -44,10 +44,11 @@
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
+            <version>${storm.kafka.client.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>
-            <artifactId>${kafka.artifact.id}</artifactId>
+            <artifactId>${storm.kafka.artifact.id}</artifactId>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
