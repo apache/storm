@@ -95,8 +95,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>
-            <artifactId>${kafka.artifact.id}</artifactId>
-            <scope>compile</scope>
+            <artifactId>${storm.kafka.artifact.id}</artifactId>
         </dependency>
     </dependencies>
 

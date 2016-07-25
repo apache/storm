@@ -258,11 +258,11 @@
         <calcite.version>1.4.0-incubating</calcite.version>
         <jackson.version>2.6.3</jackson.version>
         <maven-surefire.version>2.18.1</maven-surefire.version>
-        <!-- Kafka version used by old kafka spout code -->
-        <kafka.version>0.8.2.1</kafka.version>
-        <kafka.artifact.id>kafka_2.10</kafka.artifact.id>
+        <!-- Kafka version used by old storm-kafka spout code -->
+        <storm.kafka.version>0.8.2.1</storm.kafka.version>
+        <storm.kafka.artifact.id>kafka_2.10</storm.kafka.artifact.id>
 
-        <!-- kafka version used by new kafka spout code -->
+        <!-- kafka version used by new storm-kafka-client spout code -->
         <storm.kafka.client.version>0.10.0.0</storm.kafka.client.version>
 
 
@@ -876,8 +876,8 @@
             <!-- kafka artifact dependency needed for storm-kafka -->
             <dependency>
                 <groupId>org.apache.kafka</groupId>
-                <artifactId>${kafka.artifact.id}</artifactId>
-                <version>${kafka.version}</version>
+                <artifactId>${storm.kafka.artifact.id}</artifactId>
+                <version>${storm.kafka.version}</version>
                 <scope>provided</scope>
                 <exclusions>
                     <exclusion>
