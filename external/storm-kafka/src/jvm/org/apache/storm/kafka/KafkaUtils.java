@@ -47,7 +47,7 @@ import kafka.message.Message;
 
 public class KafkaUtils {
 
-    public static final Logger LOG = LoggerFactory.getLogger(KafkaUtils.class);
+    private static final Logger LOG = LoggerFactory.getLogger(KafkaUtils.class);
     private static final int NO_OFFSET = -5;
 
     //suppress default constructor for noninstantiablility

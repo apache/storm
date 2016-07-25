@@ -38,7 +38,8 @@ public class PlanCompiler {
   private static final String PACKAGE_NAME = "org.apache.storm.sql.generated";
   private static final String PROLOGUE = NEW_LINE_JOINER.join(
       "// GENERATED CODE", "package " + PACKAGE_NAME + ";", "",
-      "import java.util.Iterator;", "import java.util.Map;",
+      "import java.util.Iterator;", "import java.util.Map;", "import java.util.HashMap;",
+      "import java.util.List;", "import java.util.ArrayList;",
       "import org.apache.storm.tuple.Values;",
       "import org.apache.storm.sql.runtime.AbstractChannelHandler;",
       "import org.apache.storm.sql.runtime.Channels;",
@@ -46,6 +47,8 @@ public class PlanCompiler {
       "import org.apache.storm.sql.runtime.ChannelHandler;",
       "import org.apache.storm.sql.runtime.DataSource;",
       "import org.apache.storm.sql.runtime.AbstractValuesProcessor;",
+      "import com.google.common.collect.ArrayListMultimap;",
+      "import com.google.common.collect.Multimap;",
       "public final class Processor extends AbstractValuesProcessor {", "");
   private static final String INITIALIZER_PROLOGUE = NEW_LINE_JOINER.join(
       "  @Override",
@@ -90,25 +93,20 @@ public class PlanCompiler {
     pw.print("  }\n");
   }
 
-  private void chainOperators(
-      PrintWriter pw, RelNode root, Set<TableScan> tables) {
-    String lastCtx = "r";
-    Queue<RelNode> q = new ArrayDeque<>();
-    q.add(root);
-    RelNode n;
-    while ((n = q.poll()) != null) {
-      pw.print(
-          String.format("    ChannelContext CTX_%d = Channels.chain(%2$s, %3$s);\n",
-              n.getId(), lastCtx, RelNodeCompiler.getStageName(n)));
-      lastCtx = String.format("CTX_%d", n.getId());
+  private void chainOperators(PrintWriter pw, RelNode root, Set<TableScan> tables) {
+    doChainOperators(pw, root, tables, "r");
+  }
 
-      if (n instanceof TableScan) {
-        tables.add((TableScan)n);
-      }
-
-      for (RelNode i : n.getInputs()) {
-        q.add(i);
-      }
+  private void doChainOperators(PrintWriter pw, RelNode node, Set<TableScan> tables, String parentCtx) {
+    pw.print(
+            String.format("    ChannelContext CTX_%d = Channels.chain(%2$s, %3$s);\n",
+                          node.getId(), parentCtx, RelNodeCompiler.getStageName(node)));
+    String currentCtx = String.format("CTX_%d", node.getId());
+    if (node instanceof TableScan) {
+      tables.add((TableScan) node);
+    }
+    for (RelNode i : node.getInputs()) {
+      doChainOperators(pw, i, tables, currentCtx);
     }
   }
 

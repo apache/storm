@@ -103,6 +103,14 @@ public abstract class BaseStatefulWindowedBolt<T extends State> extends BaseWind
         return this;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public BaseStatefulWindowedBolt<T> withLateTupleStream(String streamName) {
+        super.withLateTupleStream(streamName);
+        return this;
+    }
 
     /**
      * {@inheritDoc}

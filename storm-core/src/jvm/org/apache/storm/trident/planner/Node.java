@@ -28,16 +28,15 @@ import org.apache.commons.lang.builder.ToStringStyle;
 
 public class Node extends DefaultResourceDeclarer<Node> implements Serializable {
     private static final AtomicInteger INDEX = new AtomicInteger(0);
-    
     private String nodeId;
-    
+
     public String name = null;
     public Fields allOutputFields;
     public String streamId;
     public Integer parallelismHint = null;
     public NodeStateInfo stateInfo = null;
     public int creationIndex;
-    
+
     public Node(String streamId, String name, Fields allOutputFields) {
         this.nodeId = UUID.randomUUID().toString();
         this.allOutputFields = allOutputFields;
@@ -62,5 +61,9 @@ public class Node extends DefaultResourceDeclarer<Node> implements Serializable 
     @Override
     public String toString() {
         return ToStringBuilder.reflectionToString(this, ToStringStyle.MULTI_LINE_STYLE);
+    }
+
+    public String shortString() {
+        return "nodeId: " + nodeId + ", allOutputFields: " + allOutputFields;
     }
 }

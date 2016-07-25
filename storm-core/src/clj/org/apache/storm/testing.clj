@@ -263,7 +263,7 @@
 
 (def TEST-TIMEOUT-MS
   (let [timeout (System/getenv "STORM_TEST_TIMEOUT_MS")]
-    (Integer/parseInt (if timeout timeout "5000"))))
+    (Integer/parseInt (if timeout timeout "10000"))))
 
 (defmacro while-timeout [timeout-ms condition & body]
   `(let [end-time# (+ (System/currentTimeMillis) ~timeout-ms)]

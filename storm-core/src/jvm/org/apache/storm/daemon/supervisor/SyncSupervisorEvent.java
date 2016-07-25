@@ -142,8 +142,6 @@ public class SyncSupervisorEvent implements Runnable {
                 supervisorData.getiSupervisor().killedWorker(port);
             }
 
-            killExistingWorkersWithChangeInComponents(supervisorData, existingAssignment, newAssignment);
-
             supervisorData.getiSupervisor().assigned(newAssignment.keySet());
             localState.setLocalAssignmentsMap(newAssignment);
             supervisorData.setAssignmentVersions(assignmentsSnapshot);
@@ -154,57 +152,13 @@ public class SyncSupervisorEvent implements Runnable {
                 convertNewAssignment.put(entry.getKey().longValue(), entry.getValue());
             }
             supervisorData.setCurrAssignment(convertNewAssignment);
-            // remove any downloaded code that's no longer assigned or active
-            // important that this happens after setting the local assignment so that
-            // synchronize-supervisor doesn't try to launch workers for which the
-            // resources don't exist
-            if (Utils.isOnWindows()) {
-                shutdownDisallowedWorkers();
-            }
-            for (String stormId : allDownloadedTopologyIds) {
-                if (!stormcodeMap.containsKey(stormId)) {
-                    LOG.info("Removing code for storm id {}.", stormId);
-                    rmTopoFiles(conf, stormId, supervisorData.getLocalizer(), true);
-                }
-            }
+
             syncProcessManager.add(syncProcesses);
         } catch (Exception e) {
             LOG.error("Failed to Sync Supervisor", e);
             throw new RuntimeException(e);
         }
 
-    }
-
-    private void killExistingWorkersWithChangeInComponents(SupervisorData supervisorData, Map<Integer, LocalAssignment> existingAssignment,
-            Map<Integer, LocalAssignment> newAssignment) throws Exception {
-        int now = Time.currentTimeSecs();
-        Map<String, StateHeartbeat> workerIdHbstate = syncProcesses.getLocalWorkerStats(supervisorData, existingAssignment, now);
-        Map<Integer, String> vaildPortToWorkerIds = new HashMap<>();
-        for (Map.Entry<String, StateHeartbeat> entry : workerIdHbstate.entrySet()) {
-            String workerId = entry.getKey();
-            StateHeartbeat stateHeartbeat = entry.getValue();
-            if (stateHeartbeat != null && stateHeartbeat.getState() == State.VALID) {
-                vaildPortToWorkerIds.put(stateHeartbeat.getHeartbeat().get_port(), workerId);
-            }
-        }
-
-        Map<Integer, LocalAssignment> intersectAssignment = new HashMap<>();
-        for (Map.Entry<Integer, LocalAssignment> entry : newAssignment.entrySet()) {
-            Integer port = entry.getKey();
-            if (existingAssignment.containsKey(port)) {
-                intersectAssignment.put(port, entry.getValue());
-            }
-        }
-
-        for (Integer port : intersectAssignment.keySet()) {
-            List<ExecutorInfo> existExecutors = existingAssignment.get(port).get_executors();
-            List<ExecutorInfo> newExecutors = newAssignment.get(port).get_executors();
-            Set<ExecutorInfo> setExitExecutors = new HashSet<>(existExecutors);
-            Set<ExecutorInfo>  setNewExecutors = new HashSet<>(newExecutors);
-            if (!setExitExecutors.equals(setNewExecutors)){
-                syncProcesses.killWorker(supervisorData, supervisorData.getWorkerManager(), vaildPortToWorkerIds.get(port));
-            }
-        }
     }
 
     protected Map<String, Map<String, Object>> getAssignmentsSnapshot(IStormClusterState stormClusterState, List<String> stormIds,
@@ -249,43 +203,6 @@ public class SyncSupervisorEvent implements Runnable {
     }
 
     /**
-     * Remove a reference to a blob when its no longer needed.
-     * 
-     * @param localizer
-     * @param stormId
-     * @param conf
-     */
-    protected void removeBlobReferences(Localizer localizer, String stormId, Map conf) throws Exception {
-        Map stormConf = ConfigUtils.readSupervisorStormConf(conf, stormId);
-        Map<String, Map<String, Object>> blobstoreMap = (Map<String, Map<String, Object>>) stormConf.get(Config.TOPOLOGY_BLOBSTORE_MAP);
-        String user = (String) stormConf.get(Config.TOPOLOGY_SUBMITTER_USER);
-        String topoName = (String) stormConf.get(Config.TOPOLOGY_NAME);
-        if (blobstoreMap != null) {
-            for (Map.Entry<String, Map<String, Object>> entry : blobstoreMap.entrySet()) {
-                String key = entry.getKey();
-                Map<String, Object> blobInfo = entry.getValue();
-                localizer.removeBlobReference(key, user, topoName, SupervisorUtils.shouldUncompressBlob(blobInfo));
-            }
-        }
-    }
-
-    protected void rmTopoFiles(Map conf, String stormId, Localizer localizer, boolean isrmBlobRefs) throws IOException {
-        String path = ConfigUtils.supervisorStormDistRoot(conf, stormId);
-        try {
-            if (isrmBlobRefs) {
-                removeBlobReferences(localizer, stormId, conf);
-            }
-            if (Utils.getBoolean(conf.get(Config.SUPERVISOR_RUN_WORKER_AS_USER), false)) {
-                SupervisorUtils.rmrAsUser(conf, stormId, path);
-            } else {
-                Utils.forceDelete(ConfigUtils.supervisorStormDistRoot(conf, stormId));
-            }
-        } catch (Exception e) {
-            LOG.info("Exception removing: {} ", stormId, e);
-        }
-    }
-
-    /**
      * Check for the files exists to avoid supervisor crashing Also makes sure there is no necessity for locking"
      * 
      * @param conf
@@ -301,7 +218,7 @@ public class SyncSupervisorEvent implements Runnable {
             if (assignedStormIds.contains(stormId)) {
                 if (!SupervisorUtils.doRequiredTopoFilesExist(conf, stormId)) {
                     LOG.debug("Files not present in topology directory");
-                    rmTopoFiles(conf, stormId, localizer, false);
+                    SupervisorUtils.rmTopoFiles(conf, stormId, localizer, false);
                     srashStormIds.add(stormId);
                 }
             }
@@ -608,26 +525,5 @@ public class SyncSupervisorEvent implements Runnable {
             }
         }
         return portTasks;
-    }
-
-    // I konw it's not a good idea to create SyncProcessEvent, but I only hope SyncProcessEvent is responsible for start/shutdown
-    // workers, and SyncSupervisorEvent is responsible for download/remove topologys' binary.
-    protected void shutdownDisallowedWorkers() throws Exception {
-        LocalState localState = supervisorData.getLocalState();
-        Map<Integer, LocalAssignment> assignedExecutors = localState.getLocalAssignmentsMap();
-        if (assignedExecutors == null) {
-            assignedExecutors = new HashMap<>();
-        }
-        int now = Time.currentTimeSecs();
-        Map<String, StateHeartbeat> workerIdHbstate = syncProcesses.getLocalWorkerStats(supervisorData, assignedExecutors, now);
-        LOG.debug("Allocated workers ", assignedExecutors);
-        for (Map.Entry<String, StateHeartbeat> entry : workerIdHbstate.entrySet()) {
-            String workerId = entry.getKey();
-            StateHeartbeat stateHeartbeat = entry.getValue();
-            if (stateHeartbeat.getState() == State.DISALLOWED) {
-                syncProcesses.killWorker(supervisorData, supervisorData.getWorkerManager(), workerId);
-                LOG.debug("{}'s state disallowed, so shutdown this worker");
-            }
-        }
     }
 }

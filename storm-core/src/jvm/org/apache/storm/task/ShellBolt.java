@@ -138,11 +138,11 @@ public class ShellBolt implements IBolt {
         _writerThread = new Thread(new BoltWriterRunnable());
         _writerThread.start();
 
-        heartBeatExecutorService = MoreExecutors.getExitingScheduledExecutorService(new ScheduledThreadPoolExecutor(1));
-        heartBeatExecutorService.scheduleAtFixedRate(new BoltHeartbeatTimerTask(this), 1, 1, TimeUnit.SECONDS);
-
         LOG.info("Start checking heartbeat...");
         setHeartbeat();
+
+        heartBeatExecutorService = MoreExecutors.getExitingScheduledExecutorService(new ScheduledThreadPoolExecutor(1));
+        heartBeatExecutorService.scheduleAtFixedRate(new BoltHeartbeatTimerTask(this), 1, 1, TimeUnit.SECONDS);
     }
 
     public void execute(Tuple input) {
@@ -158,8 +158,8 @@ public class ShellBolt implements IBolt {
 
             _pendingWrites.putBoltMsg(boltMsg);
         } catch(InterruptedException e) {
-            String processInfo = _process.getProcessInfoString() + _process.getProcessTerminationInfoString();
-            throw new RuntimeException("Error during multilang processing " + processInfo, e);
+            // It's likely that Bolt is shutting down so no need to throw RuntimeException
+            // just ignore
         }
     }
 
@@ -361,6 +361,8 @@ public class ShellBolt implements IBolt {
                             break;
                     }
                 } catch (InterruptedException e) {
+                    // It's likely that Bolt is shutting down so no need to die.
+                    // just ignore and loop will be terminated eventually
                 } catch (Throwable t) {
                     die(t);
                 }
@@ -384,10 +386,14 @@ public class ShellBolt implements IBolt {
                     if (write instanceof BoltMsg) {
                         _process.writeBoltMsg((BoltMsg) write);
                     } else if (write instanceof List<?>) {
-                        _process.writeTaskIds((List<Integer>)write);
+                        _process.writeTaskIds((List<Integer>) write);
                     } else if (write != null) {
-                        throw new RuntimeException("Unknown class type to write: " + write.getClass().getName());
+                        throw new RuntimeException(
+                            "Unknown class type to write: " + write.getClass().getName());
                     }
+                } catch (InterruptedException e) {
+                    // It's likely that Bolt is shutting down so no need to die.
+                    // just ignore and loop will be terminated eventually
                 } catch (Throwable t) {
                     die(t);
                 }

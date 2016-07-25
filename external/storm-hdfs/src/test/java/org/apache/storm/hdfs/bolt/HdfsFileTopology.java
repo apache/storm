@@ -106,9 +106,9 @@ public class HdfsFileTopology {
             cluster.shutdown();
             System.exit(0);
         } else if (args.length == 3) {
-            StormSubmitter.submitTopology(args[0], config, builder.createTopology());
+            StormSubmitter.submitTopology(args[2], config, builder.createTopology());
         } else{
-            System.out.println("Usage: HdfsFileTopology [topology name] <yaml config file>");
+            System.out.println("Usage: HdfsFileTopology [hdfs url] [hdfs yaml config file] <topology name>");
         }
     }
 

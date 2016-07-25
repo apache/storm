@@ -21,6 +21,7 @@ package storm.starter;
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.Nimbus;
+import org.apache.storm.hdfs.spout.TextFileReader;
 import org.apache.storm.metric.LoggingMetricsConsumer;
 import org.apache.storm.starter.FastWordCountTopology;
 import org.apache.storm.topology.TopologyBuilder;
@@ -43,7 +44,6 @@ public class HdfsSpoutTopology {
   public static final String SPOUT_ID = "hdfsspout";
   public static final String BOLT_ID = "constbolt";
 
-  public static final int WORKER_NUM = 1;
 
   public static class ConstBolt extends BaseRichBolt {
     private static final long serialVersionUID = -5313598399155365865L;
@@ -101,28 +101,26 @@ public class HdfsSpoutTopology {
     String hdfsUri = args[1];
     String fileFormat = args[2];
     String sourceDir = args[3];
-    String sourceArchiveDir = args[4];
+    String archiveDir = args[4];
     String badDir = args[5];
     int spoutNum = Integer.parseInt(args[6]);
 
     // 2 - create and configure spout and bolt
     ConstBolt bolt = new ConstBolt();
 
-    HdfsSpout spout = new HdfsSpout().withOutputFields("line");
+    HdfsSpout spout =  new HdfsSpout().withOutputFields(TextFileReader.defaultFields)
+                                      .setReaderType(fileFormat)
+                                      .setHdfsUri(hdfsUri)
+                                      .setSourceDir(sourceDir)
+                                      .setArchiveDir(archiveDir)
+                                      .setBadFilesDir(badDir);
+
+    // 3 - Create and configure topology
     Config conf = new Config();
-    conf.put(Configs.SOURCE_DIR, sourceDir);
-    conf.put(Configs.ARCHIVE_DIR, sourceArchiveDir);
-    conf.put(Configs.BAD_DIR, badDir);
-    conf.put(Configs.READER_TYPE, fileFormat);
-    conf.put(Configs.HDFS_URI, hdfsUri);
-    conf.setDebug(true);
     conf.setNumWorkers(1);
     conf.setNumAckers(1);
     conf.setMaxTaskParallelism(1);
-
-    // 3 - Create and configure topology
     conf.setDebug(true);
-    conf.setNumWorkers(WORKER_NUM);
     conf.registerMetricsConsumer(LoggingMetricsConsumer.class);
 
     TopologyBuilder builder = new TopologyBuilder();

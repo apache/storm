@@ -22,7 +22,6 @@ import org.apache.storm.Config;
 import javax.security.auth.login.Configuration;
 import javax.security.auth.login.AppConfigurationEntry;
 import javax.security.auth.Subject;
-import javax.xml.bind.DatatypeConverter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
@@ -30,7 +29,9 @@ import java.io.ObjectOutputStream;
 import java.security.URIParameter;
 import java.security.MessageDigest;
 
+import org.apache.commons.codec.binary.Hex;
 import org.apache.storm.security.INimbusCredentialPlugin;
+import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.File;
@@ -42,7 +43,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.lang.StringBuilder;
 
 public class AuthUtils {
     private static final Logger LOG = LoggerFactory.getLogger(AuthUtils.class);
@@ -65,7 +65,7 @@ public class AuthUtils {
         String loginConfigurationFile = (String)storm_conf.get("java.security.auth.login.config");
         if ((loginConfigurationFile != null) && (loginConfigurationFile.length()>0)) {
             File config_file = new File(loginConfigurationFile);
-            if (! config_file.canRead()) {
+            if (!config_file.canRead()) {
                 throw new RuntimeException("File " + loginConfigurationFile +
                         " cannot be read.");
             }
@@ -81,32 +81,71 @@ public class AuthUtils {
     }
 
     /**
-     * Pull a set of keys out of a Configuration.
-     * @param conf The config to pull the key/value pairs out of.
-     * @param conf_entry The app configuration entry name to get stuff from.
-     * @return Return a map of the configs in conf.
+     * Get configurations for a section
+     * @param configuration The config to pull the key/value pairs out of.
+     * @param section The app configuration entry name to get stuff from.
+     * @return Return array of config entries or null if configuration is null
      */
-    public static SortedMap<String, ?> PullConfig(Configuration conf,
-                                            String conf_entry) throws IOException {
-        if(conf == null) {
+    public static AppConfigurationEntry[] getEntries(Configuration configuration, 
+                                                String section) throws IOException {
+        if (configuration == null) {
             return null;
         }
-        AppConfigurationEntry configurationEntries[] = conf.getAppConfigurationEntry(conf_entry);
-        if(configurationEntries == null) {
-            String errorMessage = "Could not find a '" + conf_entry
-                + "' entry in this configuration: Client cannot start.";
+
+        AppConfigurationEntry configurationEntries[] = configuration.getAppConfigurationEntry(section);
+        if (configurationEntries == null) {
+            String errorMessage = "Could not find a '"+ section + "' entry in this configuration.";
             throw new IOException(errorMessage);
         }
+        return configurationEntries;
+    }
 
+    /**
+     * Pull a set of keys out of a Configuration.
+     * @param configuration The config to pull the key/value pairs out of.
+     * @param section The app configuration entry name to get stuff from.
+     * @return Return a map of the configs in conf.
+     */
+    public static SortedMap<String, ?> pullConfig(Configuration configuration,
+                                            String section) throws IOException {
+        AppConfigurationEntry[] configurationEntries = AuthUtils.getEntries(configuration, section);
+
+        if (configurationEntries == null) {
+            return null;
+        }
+        
         TreeMap<String, Object> results = new TreeMap<>();
 
-        for(AppConfigurationEntry entry: configurationEntries) {
+        for (AppConfigurationEntry entry: configurationEntries) {
             Map<String, ?> options = entry.getOptions();
-            for(String key : options.keySet()) {
+            for (String key : options.keySet()) {
                 results.put(key, options.get(key));
             }
         }
+
         return results;
+    }
+
+    /**
+     * Pull a the value given section and key from Configuration
+     * @param configuration The config to pull the key/value pairs out of.
+     * @param section The app configuration entry name to get stuff from.
+     * @param key The key to look up inside of the section
+     * @return Return a the String value of the configuration value
+     */
+    public static String get(Configuration configuration, String section, String key) throws IOException {
+        AppConfigurationEntry[] configurationEntries = AuthUtils.getEntries(configuration, section);
+
+        if (configurationEntries == null){
+            return null;
+        }
+
+        for (AppConfigurationEntry entry: configurationEntries) {
+            Object val = entry.getOptions().get(key);
+            if (val != null)
+                return (String)val;
+        }
+        return null;
     }
 
     /**
@@ -117,12 +156,11 @@ public class AuthUtils {
     public static IPrincipalToLocal GetPrincipalToLocalPlugin(Map storm_conf) {
         IPrincipalToLocal ptol;
         try {
-          String ptol_klassName = (String) storm_conf.get(Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN);
-          Class klass = Class.forName(ptol_klassName);
-          ptol = (IPrincipalToLocal)klass.newInstance();
-          ptol.prepare(storm_conf);
+            String ptol_klassName = (String) storm_conf.get(Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN);
+            ptol = Utils.newInstance(ptol_klassName);
+            ptol.prepare(storm_conf);
         } catch (Exception e) {
-          throw new RuntimeException(e);
+            throw new RuntimeException(e);
         }
         return ptol;
     }
@@ -136,11 +174,10 @@ public class AuthUtils {
         IGroupMappingServiceProvider gmsp;
         try {
             String gmsp_klassName = (String) storm_conf.get(Config.STORM_GROUP_MAPPING_SERVICE_PROVIDER_PLUGIN);
-            Class klass = Class.forName(gmsp_klassName);
-            gmsp = (IGroupMappingServiceProvider)klass.newInstance();
+            gmsp = Utils.newInstance(gmsp_klassName);
             gmsp.prepare(storm_conf);
         } catch (Exception e) {
-          throw new RuntimeException(e);
+            throw new RuntimeException(e);
         }
         return gmsp;
     }
@@ -156,7 +193,7 @@ public class AuthUtils {
             Collection<String> clazzes = (Collection<String>)conf.get(Config.NIMBUS_CREDENTIAL_RENEWERS);
             if (clazzes != null) {
                 for (String clazz : clazzes) {
-                    ICredentialsRenewer inst = (ICredentialsRenewer)Class.forName(clazz).newInstance();
+                    ICredentialsRenewer inst = Utils.newInstance(clazz);
                     inst.prepare(conf);
                     ret.add(inst);
                 }
@@ -178,7 +215,7 @@ public class AuthUtils {
             Collection<String> clazzes = (Collection<String>)conf.get(Config.NIMBUS_AUTO_CRED_PLUGINS);
             if (clazzes != null) {
                 for (String clazz : clazzes) {
-                    INimbusCredentialPlugin inst = (INimbusCredentialPlugin)Class.forName(clazz).newInstance();
+                    INimbusCredentialPlugin inst = Utils.newInstance(clazz);
                     inst.prepare(conf);
                     ret.add(inst);
                 }
@@ -200,7 +237,7 @@ public class AuthUtils {
             Collection<String> clazzes = (Collection<String>)storm_conf.get(Config.TOPOLOGY_AUTO_CREDENTIALS);
             if (clazzes != null) {
                 for (String clazz : clazzes) {
-                    IAutoCredentials a = (IAutoCredentials)Class.forName(clazz).newInstance();
+                    IAutoCredentials a = Utils.newInstance(clazz);
                     a.prepare(storm_conf);
                     autos.add(a);
                 }
@@ -240,8 +277,8 @@ public class AuthUtils {
      * @param credentials the credentials to pull from
      */
     public static void updateSubject(Subject subject, Collection<IAutoCredentials> autos, Map<String,String> credentials) {
-        if (subject == null) {
-            throw new RuntimeException("The subject cannot be null when updating a subject with credentials");
+        if (subject == null || autos == null) {
+            throw new RuntimeException("The subject or auto credentials cannot be null when updating a subject with credentials");
         }
 
         try {
@@ -257,29 +294,25 @@ public class AuthUtils {
      * Construct a transport plugin per storm configuration
      */
     public static ITransportPlugin GetTransportPlugin(ThriftConnectionType type, Map storm_conf, Configuration login_conf) {
-        ITransportPlugin  transportPlugin;
         try {
             String transport_plugin_klassName = type.getTransportPlugin(storm_conf);
-            Class klass = Class.forName(transport_plugin_klassName);
-            transportPlugin = (ITransportPlugin)klass.newInstance();
+            ITransportPlugin transportPlugin = Utils.newInstance(transport_plugin_klassName);
             transportPlugin.prepare(type, storm_conf, login_conf);
-        } catch(Exception e) {
+            return transportPlugin;
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        return transportPlugin;
     }
 
     private static IHttpCredentialsPlugin GetHttpCredentialsPlugin(Map conf,
             String klassName) {
-        IHttpCredentialsPlugin plugin;
         try {
-            Class klass = Class.forName(klassName);
-            plugin = (IHttpCredentialsPlugin)klass.newInstance();
+            IHttpCredentialsPlugin plugin = Utils.newInstance(klassName);
             plugin.prepare(conf);
-        } catch(Exception e) {
+            return plugin;
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        return plugin;
     }
 
     /**
@@ -304,21 +337,6 @@ public class AuthUtils {
         return AuthUtils.GetHttpCredentialsPlugin(conf, klassName);
     }
 
-    public static String get(Configuration configuration, String section, String key) throws IOException {
-        AppConfigurationEntry configurationEntries[] = configuration.getAppConfigurationEntry(section);
-        if (configurationEntries == null) {
-            String errorMessage = "Could not find a '"+ section + "' entry in this configuration.";
-            throw new IOException(errorMessage);
-        }
-
-        for(AppConfigurationEntry entry: configurationEntries) {
-            Object val = entry.getOptions().get(key);
-            if (val != null)
-                return (String)val;
-        }
-        return null;
-    }
-
     private static final String USERNAME = "username";
     private static final String PASSWORD = "password";
 
@@ -326,26 +344,21 @@ public class AuthUtils {
         String username = null;
         String password = null;
         try {
-            Map<String, ?> results = AuthUtils.PullConfig(login_config, config_section);
+            Map<String, ?> results = AuthUtils.pullConfig(login_config, config_section);
             username = (String)results.get(USERNAME);
             password = (String)results.get(PASSWORD);
         } catch (Exception e) {
             LOG.error("Failed to pull username/password out of jaas conf", e);
         }
 
-        if(username == null || password == null) {
+        if (username == null || password == null) {
             return null;
         }
 
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-512");
             byte[] output = digest.digest((username + ":" + password).getBytes());
-
-            StringBuilder builder = new StringBuilder();
-            for(byte b : output) {
-                builder.append(String.format("%02x", b));
-            }
-            return builder.toString();
+            return Hex.encodeHexString(output);
         } catch (java.security.NoSuchAlgorithmException e) {
             LOG.error("Cant run SHA-512 digest. Algorithm not available.", e);
             throw new RuntimeException(e);
@@ -376,7 +389,7 @@ public class AuthUtils {
     }
 
     public static KerberosTicket cloneKerberosTicket(KerberosTicket kerberosTicket) {
-        if(kerberosTicket != null) {
+        if (kerberosTicket != null) {
             try {
                 return (deserializeKerberosTicket(serializeKerberosTicket(kerberosTicket)));
             } catch (Exception e) {

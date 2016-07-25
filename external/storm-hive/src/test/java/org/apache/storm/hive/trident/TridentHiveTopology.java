@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -26,6 +26,7 @@ import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
+import org.apache.storm.hooks.SubmitterHookException;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.task.TopologyContext;
@@ -41,9 +42,13 @@ import org.apache.storm.trident.Stream;
 import org.apache.storm.trident.TridentState;
 import org.apache.storm.trident.TridentTopology;
 import org.apache.storm.trident.state.StateFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class TridentHiveTopology {
+    private static final Logger LOG = LoggerFactory.getLogger(TridentHiveTopology.class);
+
     public static StormTopology buildTopology(String metaStoreURI, String dbName, String tblName, Object keytab, Object principal) {
         int batchSize = 100;
         FixedBatchSpout spout = new FixedBatchSpout(batchSize);
@@ -93,28 +98,32 @@ public class TridentHiveTopology {
         if(args.length == 3) {
             LocalCluster cluster = new LocalCluster();
             cluster.submitTopology("tridentHiveTopology", conf, buildTopology(metaStoreURI, dbName, tblName,null,null));
-            System.out.println("waiting for 60 seconds");
+            LOG.info("waiting for 60 seconds");
             waitForSeconds(60);
-            System.out.println("killing topology");
+            LOG.info("killing topology");
             cluster.killTopology("tridenHiveTopology");
-            System.out.println("cluster shutdown");
+            LOG.info("cluster shutdown");
             cluster.shutdown();
-            System.out.println("cluster shutdown");
+            LOG.info("cluster shutdown");
             System.exit(0);
         } else if(args.length == 4) {
             try {
                 StormSubmitter.submitTopology(args[3], conf, buildTopology(metaStoreURI, dbName, tblName,null,null));
-            } catch(Exception e) {
-                System.out.println("Failed to submit topology "+e);
+            } catch(SubmitterHookException e) {
+                LOG.warn("Topology is submitted but invoking ISubmitterHook failed", e);
+            } catch (Exception e) {
+                LOG.warn("Failed to submit topology ", e);
             }
         } else if (args.length == 6) {
             try {
                 StormSubmitter.submitTopology(args[3], conf, buildTopology(metaStoreURI, dbName, tblName,args[4],args[5]));
-            } catch(Exception e) {
-                System.out.println("Failed to submit topology "+e);
+            } catch(SubmitterHookException e) {
+                LOG.warn("Topology is submitted but invoking ISubmitterHook failed", e);
+            } catch (Exception e) {
+                LOG.warn("Failed to submit topology ", e);
             }
         } else {
-            System.out.println("Usage: TridentHiveTopology metastoreURI dbName tableName [topologyNamey]");
+            LOG.info("Usage: TridentHiveTopology metastoreURI dbName tableName [topologyNamey]");
         }
     }
 

@@ -18,12 +18,12 @@
 
 package org.apache.storm.solr.topology;
 
+import org.apache.solr.client.solrj.SolrClient;
+import org.apache.solr.client.solrj.impl.CloudSolrClient;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
-import org.apache.solr.client.solrj.SolrClient;
-import org.apache.solr.client.solrj.impl.CloudSolrClient;
 import org.apache.storm.solr.config.SolrCommitStrategy;
 import org.apache.storm.solr.config.SolrConfig;
 
@@ -39,7 +39,7 @@ public abstract class SolrTopology {
         if (args.length == 0) {
             submitTopologyLocalCluster(topology, config);
         } else {
-            submitTopologyRemoteCluster(args[1], topology, config);
+            submitTopologyRemoteCluster(args[0], topology, config);
         }
     }
 
