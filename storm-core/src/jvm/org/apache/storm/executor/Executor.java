@@ -110,6 +110,7 @@ public abstract class Executor implements Callable, EventHandler<Object> {
     protected final Random rand;
     protected final DisruptorQueue transferQueue;
     protected final DisruptorQueue receiveQueue;
+    protected final DisruptorQueue systemBoltReceiveQueue;
     protected Map<Integer, Task> idToTask;
     protected final Map<String, String> credentials;
     protected final Boolean isDebug;
@@ -125,6 +126,7 @@ public abstract class Executor implements Callable, EventHandler<Object> {
         this.openOrPrepareWasCalled = new AtomicBoolean(false);
         this.stormConf = normalizedComponentConf((Map) workerData.get(Constants.STORM_CONF), workerTopologyContext, componentId);
         this.receiveQueue = (DisruptorQueue) (((Map) workerData.get(Constants.EXECUTOR_RECEIVE_QUEUE_MAP)).get(executorId));
+        this.systemBoltReceiveQueue = (DisruptorQueue) ((Map) workerData.get(Constants.EXECUTOR_RECEIVE_QUEUE_MAP)).get(Lists.newArrayList(Constants.SYSTEM_TASK_ID, Constants.SYSTEM_TASK_ID));
         this.stormId = (String) workerData.get(Constants.STORM_ID);
         this.conf = (Map) workerData.get(Constants.CONF);
         this.sharedExecutorData = new HashMap();
@@ -265,6 +267,8 @@ public abstract class Executor implements Callable, EventHandler<Object> {
 
     public void metricsTick(Task taskData, TupleImpl tuple) {
         try {
+            // system-bolt-receive-queue ((:executor-receive-queue-map worker) [Constants/SYSTEM_TASK_ID Constants/SYSTEM_TASK_ID])
+
             Integer interval = tuple.getInteger(0);
             int taskId = taskData.getTaskId();
             Map<Integer, Map<String, IMetric>> taskToMetricToRegistry = intervalToTaskToMetricToRegistry.get(interval);
@@ -285,10 +289,12 @@ public abstract class Executor implements Callable, EventHandler<Object> {
                         dataPoints.add(dataPoint);
                     }
                 }
-                if (!dataPoints.isEmpty()) {
-                    sendUnanchored(taskData, Constants.METRICS_STREAM_ID,
-                            new Values(taskInfo, dataPoints), executorTransfer);
-                }
+
+                TupleImpl metricTuple = new TupleImpl(workerTopologyContext, new Values(taskInfo, dataPoints),
+                        (int) Constants.SYSTEM_TASK_ID, Constants.METRICS_STREAM_ID);
+                List<AddressedTuple> metricsTuple = Lists.newArrayList(
+                        new AddressedTuple((int) Constants.SYSTEM_TASK_ID, metricTuple));
+                systemBoltReceiveQueue.publish(metricsTuple);
             }
         } catch (Exception e) {
             throw Utils.wrapInRuntime(e);
