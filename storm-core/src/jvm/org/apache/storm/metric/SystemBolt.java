@@ -18,18 +18,33 @@
 package org.apache.storm.metric;
 
 import org.apache.storm.Config;
+import org.apache.storm.Constants;
 import org.apache.storm.metric.api.IMetric;
+import org.apache.storm.metric.api.IMetricsConsumer;
+import org.apache.storm.metric.util.DataPointExpander;
 import org.apache.storm.task.IBolt;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.Tuple;
+import org.apache.storm.tuple.Values;
+import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import clojure.lang.AFn;
 import clojure.lang.IFn;
 import clojure.lang.RT;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.lang.management.*;
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryMXBean;
+import java.lang.management.MemoryUsage;
+import java.lang.management.RuntimeMXBean;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 
@@ -37,7 +52,40 @@ import java.util.Map;
 // TaskID is always -1, therefore you can only send-unanchored tuples to co-located SystemBolt.
 // This bolt was conceived to export worker stats via metrics api.
 public class SystemBolt implements IBolt {
+    private static final Logger LOG = LoggerFactory.getLogger(SystemBolt.class);
+    public static final int MAX_ALLOW_DELAY_SECS_OF_TASK_METRICS = 5;
+
     private static boolean _prepareWasCalled = false;
+    private OutputCollector collector;
+    private TopologyContext context;
+    private int metricEvictSecs;
+    private DataPointExpander expander;
+    private boolean aggregateMode;
+    private Map<Integer, Map<Integer, TaskInfoToDataPointsPair>> intervalToTaskToMetricTupleMap;
+
+    private static class TaskInfoToDataPointsPair extends ImmutablePair<IMetricsConsumer.TaskInfo, Collection<IMetricsConsumer.DataPoint>> {
+        public TaskInfoToDataPointsPair(IMetricsConsumer.TaskInfo left, Collection<IMetricsConsumer.DataPoint> right) {
+            super(left, right);
+        }
+    }
+
+    private static class ImmutablePair<L, R> {
+        private L left;
+        private R right;
+
+        public ImmutablePair(L left, R right) {
+            this.left = left;
+            this.right = right;
+        }
+
+        public L getLeft() {
+            return left;
+        }
+
+        public R getRight() {
+            return right;
+        }
+    }
 
     private static class MemoryUsageMetric implements IMetric {
         IFn _getUsage;
@@ -87,10 +135,19 @@ public class SystemBolt implements IBolt {
 
     @Override
     public void prepare(final Map stormConf, TopologyContext context, OutputCollector collector) {
+        this.collector = collector;
+        this.context = context;
+
+        setupMetricsExpander(stormConf);
+        aggregateMode = Utils.getBoolean(stormConf.get(Config.TOPOLOGY_METRICS_AGGREGATE_PER_WORKER), false);
+        metricEvictSecs = Utils.getInt(stormConf.get(Config.TOPOLOGY_METRICS_AGGREGATE_METRIC_EVICT_SECS), MAX_ALLOW_DELAY_SECS_OF_TASK_METRICS);
+
         if(_prepareWasCalled && !"local".equals(stormConf.get(Config.STORM_CLUSTER_MODE))) {
             throw new RuntimeException("A single worker should have 1 SystemBolt instance.");
         }
         _prepareWasCalled = true;
+
+        intervalToTaskToMetricTupleMap = new HashMap<>();
 
         int bucketSize = RT.intCast(stormConf.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS));
 
@@ -143,6 +200,12 @@ public class SystemBolt implements IBolt {
         registerMetrics(context, (Map<String,String>)stormConf.get(Config.TOPOLOGY_WORKER_METRICS), bucketSize);
     }
 
+    private void setupMetricsExpander(Map stormConf) {
+        boolean expandMapType = Utils.getBoolean(stormConf.get(Config.TOPOLOGY_METRICS_EXPAND_MAP_TYPE), false);
+        String metricNameSeparator = Utils.getString(stormConf.get(Config.TOPOLOGY_METRICS_METRIC_NAME_SEPARATOR), ".");
+        this.expander = new DataPointExpander(expandMapType, metricNameSeparator);
+    }
+
     private void registerMetrics(TopologyContext context, Map<String, String> metrics, int bucketSize) {
         if (metrics == null) return;
         for (Map.Entry<String, String> metric: metrics.entrySet()) {
@@ -156,7 +219,103 @@ public class SystemBolt implements IBolt {
 
     @Override
     public void execute(Tuple input) {
-        throw new RuntimeException("Non-system tuples should never be sent to __system bolt.");
+        IMetricsConsumer.TaskInfo taskInfo = (IMetricsConsumer.TaskInfo) input.getValue(0);
+        Collection<IMetricsConsumer.DataPoint> dataPoints = (Collection) input.getValue(1);
+        Collection<IMetricsConsumer.DataPoint> expandedDataPoints = expander.expandDataPoints(dataPoints);
+
+        if (aggregateMode) {
+            handleMetricTupleInAggregateMode(taskInfo, expandedDataPoints);
+        } else {
+            collector.emit(Constants.METRICS_AGGREGATE_STREAM_ID, new Values(taskInfo, expandedDataPoints));
+        }
+    }
+
+    private void handleMetricTupleInAggregateMode(IMetricsConsumer.TaskInfo taskInfo, Collection<IMetricsConsumer.DataPoint> expandedDataPoints) {
+        Map<Integer, TaskInfoToDataPointsPair> taskToMetricTupleMap = intervalToTaskToMetricTupleMap.get(taskInfo.updateIntervalSecs);
+        if (taskToMetricTupleMap == null) {
+            taskToMetricTupleMap = new HashMap<>();
+            intervalToTaskToMetricTupleMap.put(taskInfo.updateIntervalSecs, taskToMetricTupleMap);
+        }
+
+        taskToMetricTupleMap.put(taskInfo.srcTaskId, new TaskInfoToDataPointsPair(taskInfo, expandedDataPoints));
+
+        int currentTimeSec = Time.currentTimeSecs();
+        removeOldPendingMetricTuples(taskToMetricTupleMap, currentTimeSec);
+
+        // since we're removing old metric tuples, this means we're OK to aggregate here
+        if (isOKtoAggregateMetricsTuples(taskToMetricTupleMap)) {
+            Map<IMetricsConsumer.TaskInfo, Collection<IMetricsConsumer.DataPoint>> taskInfoToMetricTupleMap = convertMetricsTupleMapKeyedByTaskInfo(taskToMetricTupleMap, currentTimeSec);
+
+            // let's aggregate by metric name again
+            for (Map.Entry<IMetricsConsumer.TaskInfo, Collection<IMetricsConsumer.DataPoint>> taskInfoToDataPointsEntry : taskInfoToMetricTupleMap.entrySet()) {
+                IMetricsConsumer.TaskInfo taskInfoEntry = taskInfoToDataPointsEntry.getKey();
+                Collection<IMetricsConsumer.DataPoint> dataPointsEntry = taskInfoToDataPointsEntry.getValue();
+                Collection<IMetricsConsumer.DataPoint> aggregatedDataPoints = aggregateDataPointsByMetricName(dataPointsEntry);
+                collector.emit(Constants.METRICS_AGGREGATE_STREAM_ID, new Values(taskInfoEntry, aggregatedDataPoints));
+            }
+
+            // clear out already aggregated metrics
+            taskToMetricTupleMap.clear();
+        }
+    }
+
+    private void removeOldPendingMetricTuples(Map<Integer, TaskInfoToDataPointsPair> taskToMetricTupleMap, int currentTimeSec) {
+        // Remove all tuples which is recorded earlier than currentTimeSec - metricEvictSecs
+        for(Iterator<Map.Entry<Integer, TaskInfoToDataPointsPair>> it = taskToMetricTupleMap.entrySet().iterator(); it.hasNext(); ) {
+            Map.Entry<Integer, TaskInfoToDataPointsPair> taskToMetricTupleEntry = it.next();
+            TaskInfoToDataPointsPair taskInfoToDataPointsPair = taskToMetricTupleEntry.getValue();
+            IMetricsConsumer.TaskInfo taskInfoInEntry = taskInfoToDataPointsPair.getLeft();
+
+            if (currentTimeSec - taskInfoInEntry.timestamp > metricEvictSecs) {
+                it.remove();
+            }
+        }
+    }
+
+    private boolean isOKtoAggregateMetricsTuples(Map<Integer, TaskInfoToDataPointsPair> taskToMetricTupleMap) {
+        return taskToMetricTupleMap.size() == context.getThisWorkerTasks().size();
+    }
+
+    private Map<IMetricsConsumer.TaskInfo, Collection<IMetricsConsumer.DataPoint>> convertMetricsTupleMapKeyedByTaskInfo(Map<Integer, TaskInfoToDataPointsPair> taskToMetricTupleMap, int currentTimeSec) {
+        Map<IMetricsConsumer.TaskInfo, Collection<IMetricsConsumer.DataPoint>> taskInfoToDataPointsMap = new HashMap<>();
+        for (TaskInfoToDataPointsPair taskInfoToDataPoints : taskToMetricTupleMap.values()) {
+            IMetricsConsumer.TaskInfo taskInfoForEntry = taskInfoToDataPoints.getLeft();
+
+            // change task id to system task - the boundary of task id is integer so it is safe
+            // also change timestamp to have same value
+            // others are same, so it would be effectively keyed by component name
+            taskInfoForEntry.srcTaskId = (int) Constants.SYSTEM_TASK_ID;
+            taskInfoForEntry.timestamp = currentTimeSec;
+
+            Collection<IMetricsConsumer.DataPoint> taskInfoToDataPointsList = taskInfoToDataPointsMap.get(taskInfoForEntry);
+            if (taskInfoToDataPointsList == null) {
+                taskInfoToDataPointsList = new ArrayList<>();
+                taskInfoToDataPointsMap.put(taskInfoForEntry, taskInfoToDataPointsList);
+            }
+            taskInfoToDataPointsList.addAll(taskInfoToDataPoints.getRight());
+        }
+        return taskInfoToDataPointsMap;
+    }
+
+    private Collection<IMetricsConsumer.DataPoint> aggregateDataPointsByMetricName(Collection<IMetricsConsumer.DataPoint> dataPoints) {
+        Map<String, List<Object>> aggregatedMap = new HashMap<>();
+        for (IMetricsConsumer.DataPoint dataPoint : dataPoints) {
+            String name = dataPoint.name;
+            List<Object> values = aggregatedMap.get(name);
+            if (values == null) {
+                values = new ArrayList<>();
+                aggregatedMap.put(name, values);
+            }
+            values.add(dataPoint.value);
+        }
+
+        Collection<IMetricsConsumer.DataPoint> ret = new ArrayList<>();
+        for (Map.Entry<String, List<Object>> nameToDataPoints : aggregatedMap.entrySet()) {
+            IMetricsConsumer.DataPoint dataPoint = new IMetricsConsumer.DataPoint(nameToDataPoints.getKey(), nameToDataPoints.getValue());
+            ret.add(dataPoint);
+        }
+
+        return ret;
     }
 
     @Override

@@ -59,6 +59,7 @@
 
 (def SYSTEM-COMPONENT-ID Constants/SYSTEM_COMPONENT_ID)
 (def SYSTEM-TICK-STREAM-ID Constants/SYSTEM_TICK_STREAM_ID)
+(def METRICS-AGGREGATE-STREAM-ID Constants/METRICS_AGGREGATE_STREAM_ID)
 (def METRICS-STREAM-ID Constants/METRICS_STREAM_ID)
 (def METRICS-TICK-STREAM-ID Constants/METRICS_TICK_STREAM_ID)
 (def CREDENTIALS-CHANGED-STREAM-ID Constants/CREDENTIALS_CHANGED_STREAM_ID)
@@ -219,6 +220,7 @@
                         ))]
     (merge spout-inputs bolt-inputs)))
 
+
 (defn add-acker! [storm-conf ^StormTopology ret]
   (let [num-executors (if (nil? (storm-conf TOPOLOGY-ACKER-EXECUTORS)) (storm-conf TOPOLOGY-WORKERS) (storm-conf TOPOLOGY-ACKER-EXECUTORS))
         acker-bolt (thrift/mk-bolt-spec* (acker-inputs ret)
@@ -259,11 +261,6 @@
     (.put_to_bolts ret "__acker" acker-bolt)
     ))
 
-(defn add-metric-streams! [^StormTopology topology]
-  (doseq [[_ component] (all-components topology)
-          :let [common (.get_common component)]]
-    (.put_to_streams common METRICS-STREAM-ID
-                     (thrift/output-fields ["task-info" "data-points"]))))
 
 (defn add-system-streams! [^StormTopology topology]
   (doseq [[_ component] (all-components topology)
@@ -294,18 +291,13 @@
        (number-duplicates)
        (map #(str Constants/METRICS_COMPONENT_ID_PREFIX %))))
 
-(defn metrics-consumer-bolt-specs [storm-conf topology]
-  (let [component-ids-that-emit-metrics (cons SYSTEM-COMPONENT-ID (keys (all-components topology)))
-        inputs (->> (for [comp-id component-ids-that-emit-metrics]
-                      {[comp-id METRICS-STREAM-ID] :shuffle})
-                    (into {}))
-        
-        mk-bolt-spec (fn [class arg p max-retain-metric-tuples whitelist blacklist expandMapType metricNameSeparator]
+(defn metrics-consumer-bolt-specs [storm-conf]
+  (let [inputs {[SYSTEM-COMPONENT-ID METRICS-AGGREGATE-STREAM-ID] :shuffle}
+        mk-bolt-spec (fn [class arg p max-retain-metric-tuples whitelist blacklist]
                        (thrift/mk-bolt-spec*
                         inputs
                         (org.apache.storm.metric.MetricsConsumerBolt. class arg max-retain-metric-tuples
-                                                                      (FilterByMetricName. whitelist blacklist)
-                                                                      (DataPointExpander. expandMapType metricNameSeparator))
+                                                                      (FilterByMetricName. whitelist blacklist))
                         {} :p p :conf {TOPOLOGY-TASKS p}))]
     
     (map
@@ -315,9 +307,7 @@
                                    (or (get register "parallelism.hint") 1)
                                    (or (get register "max.retain.metric.tuples") 100)
                                    (get register "whitelist")
-                                   (get register "blacklist")
-                                   (or (get register "expandMapType") false)
-                                   (or (get register "metricNameSeparator") "."))])
+                                   (get register "blacklist"))])
 
      (metrics-consumer-register-ids storm-conf)
      (get storm-conf TOPOLOGY-METRICS-CONSUMER-REGISTER))))
@@ -343,7 +333,7 @@
     ))
 
 (defn add-metric-components! [storm-conf ^StormTopology topology]  
-  (doseq [[comp-id bolt-spec] (metrics-consumer-bolt-specs storm-conf topology)]
+  (doseq [[comp-id bolt-spec] (metrics-consumer-bolt-specs storm-conf)]
     (.put_to_bolts topology comp-id bolt-spec)))
 
 (defn add-system-components! [conf ^StormTopology topology]
@@ -351,7 +341,9 @@
                           {}
                           (SystemBolt.)
                           {SYSTEM-TICK-STREAM-ID (thrift/output-fields ["rate_secs"])
+                           METRICS-STREAM-ID (thrift/direct-output-fields ["task-info" "data-points"])
                            METRICS-TICK-STREAM-ID (thrift/output-fields ["interval"])
+                           METRICS-AGGREGATE-STREAM-ID (thrift/output-fields ["task-info" "data-points"])
                            CREDENTIALS-CHANGED-STREAM-ID (thrift/output-fields ["creds"])}
                           :p 0
                           :conf {TOPOLOGY-TASKS 0})]
@@ -364,7 +356,6 @@
     (add-eventlogger! storm-conf ret)
     (add-metric-components! storm-conf ret)
     (add-system-components! storm-conf ret)
-    (add-metric-streams! ret)
     (add-system-streams! ret)
     (validate-structure! ret)
     ret
