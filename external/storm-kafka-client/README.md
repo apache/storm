@@ -11,8 +11,6 @@ The `KafkaSpoutTuplesBuilder` wraps all the logic that builds `Tuple`s from `Con
 
 Multiple topics and topic wildcards can use the same `KafkaSpoutTupleBuilder` implementation, as long as the logic to build `Tuple`s from `ConsumerRecord`s is identical.
 
-### <a name="compatibility"></a>Apache Kafka Version Compatibility 
-This spout implementation only supports Apache Kafka version **0.10 or newer**. To use a version of Kafka prior to 0.10, e.g 0.9.x or 0.8.x, please refer to the [prior implementation of Kafka Spout] (https://github.com/apache/storm/tree/master/external/storm-kafka). Note that the prior implementation also works with 0.10, but the goal is to have this new Spout implementation to be the de-facto.
 
 # Usage Examples
 
@@ -131,7 +129,33 @@ Using the Kafka command line tools create three topics [test, test1, test2] and 
 Execute the command `STORM_HOME/bin/storm jar REPO_HOME/storm/external/storm/target/storm-kafka-client-1.0.x.jar org.apache.storm.kafka.spout.test.KafkaSpoutTopologyMain`
 
 With the debug level logs enabled it is possible to see the messages of each topic being redirected to the appropriate Bolt as defined 
-by the streams defined and choice of shuffle grouping.   
+by the streams defined and choice of shuffle grouping.
+
+## Using storm-kafka-client with different versions of kafka
+
+Storm-kafka-client's Kafka dependency is defined as `provided` scope in maven, meaning it will not be pulled in
+as a transitive dependency. This allows you to use a version of Kafka dependency compatible with your kafka cluster.
+
+When building a project with storm-kafka-client, you must explicitly add the Kafka clients dependency. For example, to
+use Kafka-clients 0.10.0.0, you would use the following dependency in your `pom.xml`:
+
+```xml
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+            <version>0.10.0.0</version>
+        </dependency>
+```
+
+You can also override the kafka clients version while building from maven, with parameter `storm.kafka.client.version`
+e.g. `mvn clean install -Dstorm.kafka.client.version=0.10.0.0`
+
+When selecting a kafka client version, you should ensure -
+ 1. kafka api is compatible. storm-kafka-client module only supports **0.10 or newer** kafka client API. For older versions,
+ you can use storm-kafka module (https://github.com/apache/storm/tree/master/external/storm-kafka).
+ 2. The kafka client selected by you should be wire compatible with the broker. e.g. 0.9.x client will not work with
+ 0.8.x broker.
+
 
 #Future Work
  Implement comprehensive metrics. Trident spout is coming soon.
