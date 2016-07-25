@@ -45,19 +45,17 @@ public class MetricsConsumerBolt implements IBolt {
     Object _registrationArgument;
     private final int _maxRetainMetricTuples;
     private Predicate<IMetricsConsumer.DataPoint> _filterPredicate;
-    private final DataPointExpander _expander;
 
     private final BlockingQueue<MetricsTask> _taskQueue;
     private Thread _taskExecuteThread;
     private volatile boolean _running = true;
 
     public MetricsConsumerBolt(String consumerClassName, Object registrationArgument, int maxRetainMetricTuples,
-                               Predicate<IMetricsConsumer.DataPoint> filterPredicate, DataPointExpander expander) {
+                               Predicate<IMetricsConsumer.DataPoint> filterPredicate) {
         _consumerClassName = consumerClassName;
         _registrationArgument = registrationArgument;
         _maxRetainMetricTuples = maxRetainMetricTuples;
         _filterPredicate = filterPredicate;
-        _expander = expander;
 
         if (_maxRetainMetricTuples > 0) {
             _taskQueue = new LinkedBlockingDeque<>(_maxRetainMetricTuples);
@@ -85,8 +83,7 @@ public class MetricsConsumerBolt implements IBolt {
     public void execute(Tuple input) {
         IMetricsConsumer.TaskInfo taskInfo = (IMetricsConsumer.TaskInfo) input.getValue(0);
         Collection<IMetricsConsumer.DataPoint> dataPoints = (Collection) input.getValue(1);
-        Collection<IMetricsConsumer.DataPoint> expandedDataPoints = _expander.expandDataPoints(dataPoints);
-        List<IMetricsConsumer.DataPoint> filteredDataPoints = getFilteredDataPoints(expandedDataPoints);
+        List<IMetricsConsumer.DataPoint> filteredDataPoints = getFilteredDataPoints(dataPoints);
         MetricsTask metricsTask = new MetricsTask(taskInfo, filteredDataPoints);
 
         while (!_taskQueue.offer(metricsTask)) {
