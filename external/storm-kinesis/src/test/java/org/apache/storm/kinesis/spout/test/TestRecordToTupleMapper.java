@@ -27,16 +27,15 @@ public class TestRecordToTupleMapper implements RecordToTupleMapper, Serializabl
         tuple.add(record.getPartitionKey());
         tuple.add(record.getSequenceNumber());
         try {
-            System.out.println("bytebuffer is " + record.getData());
             String data = decoder.decode(record.getData()).toString();
-            System.out.println("data is " + data);
+            LOG.info("data is " + data);
             tuple.add(data);
         } catch (CharacterCodingException e) {
             e.printStackTrace();
-            System.out.println("Exception occured. Emitting tuple with empty string data");
+            LOG.warn("Exception occured. Emitting tuple with empty string data", e);
             tuple.add("");
         }
-        System.out.println("Tuple from record is " + tuple);
+        LOG.info("Tuple from record is " + tuple);
         return tuple;
     }
 }

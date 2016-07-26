@@ -10,6 +10,7 @@ import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.InvalidTopologyException;
 import org.apache.storm.kinesis.spout.CredentialsProviderChain;
 import org.apache.storm.kinesis.spout.ExponentialBackoffRetrier;
+import org.apache.storm.kinesis.spout.KinesisConfig;
 import org.apache.storm.kinesis.spout.KinesisConnectionInfo;
 import org.apache.storm.kinesis.spout.KinesisSpout;
 import org.apache.storm.kinesis.spout.RecordToTupleMapper;
@@ -24,9 +25,10 @@ public class KinesisSpoutTopology {
         RecordToTupleMapper recordToTupleMapper = new TestRecordToTupleMapper();
         KinesisConnectionInfo kinesisConnectionInfo = new KinesisConnectionInfo(new CredentialsProviderChain(), new ClientConfiguration(), Regions.US_WEST_2,
                 1000);
-        org.apache.storm.kinesis.spout.Config config = new org.apache.storm.kinesis.spout.Config(args[1], ShardIteratorType.TRIM_HORIZON,
-                recordToTupleMapper, new Date(), new ExponentialBackoffRetrier(), new ZkInfo(), kinesisConnectionInfo, 10000L);
-        KinesisSpout kinesisSpout = new KinesisSpout(config);
+        ZkInfo zkInfo = new ZkInfo("localhost:2181", "/kinesisOffsets", 20000, 15000, 10000L, 3, 2000);
+        KinesisConfig kinesisConfig = new KinesisConfig(args[1], ShardIteratorType.TRIM_HORIZON,
+                recordToTupleMapper, new Date(), new ExponentialBackoffRetrier(), zkInfo, kinesisConnectionInfo, 10000L);
+        KinesisSpout kinesisSpout = new KinesisSpout(kinesisConfig);
         TopologyBuilder topologyBuilder = new TopologyBuilder();
         topologyBuilder.setSpout("spout", kinesisSpout, 3);
         topologyBuilder.setBolt("bolt", new KinesisBoltTest(), 1).shuffleGrouping("spout");

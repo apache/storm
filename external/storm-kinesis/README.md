@@ -11,9 +11,10 @@ public class KinesisSpoutTopology {
         RecordToTupleMapper recordToTupleMapper = new TestRecordToTupleMapper();
         KinesisConnectionInfo kinesisConnectionInfo = new KinesisConnectionInfo(new CredentialsProviderChain(), new ClientConfiguration(), Regions.US_WEST_2,
                 1000);
-        org.apache.storm.kinesis.spout.Config config = new org.apache.storm.kinesis.spout.Config(args[1], ShardIteratorType.TRIM_HORIZON,
-                recordToTupleMapper, new Date(), new ExponentialBackoffRetrier(), new ZkInfo(), kinesisConnectionInfo, 10000L);
-        KinesisSpout kinesisSpout = new KinesisSpout(config);
+        ZkInfo zkInfo = new ZkInfo("localhost:2181", "/kinesisOffsets", 20000, 15000, 10000L, 3, 2000);
+        KinesisConfig kinesisConfig = new KinesisConfig(args[1], ShardIteratorType.TRIM_HORIZON,
+                recordToTupleMapper, new Date(), new ExponentialBackoffRetrier(), zkInfo, kinesisConnectionInfo, 10000L);
+        KinesisSpout kinesisSpout = new KinesisSpout(kinesisConfig);
         TopologyBuilder topologyBuilder = new TopologyBuilder();
         topologyBuilder.setSpout("spout", kinesisSpout, 3);
         topologyBuilder.setBolt("bolt", new KinesisBoltTest(), 1).shuffleGrouping("spout");
@@ -24,7 +25,7 @@ public class KinesisSpoutTopology {
     }
 }
 ```
-As you can see above the spout takes an object of Config in its constructor. The constructor of Config takes 8 objects as explained below.
+As you can see above the spout takes an object of KinesisConfig in its constructor. The constructor of KinesisConfig takes 8 objects as explained below.
 
 #### `String` streamName
 name of kinesis stream to consume data from
@@ -33,6 +34,7 @@ name of kinesis stream to consume data from
 3 types are supported - TRIM_HORIZON(beginning of shard), LATEST and AT_TIMESTAMP. By default this argument is ignored if state for shards 
 is found in zookeeper. Hence they will apply the first time a topology is started. If you want to use any of these in subsequent runs of the topology, you 
 will need to clear the state of zookeeper node used for storing sequence numbers
+
 #### `RecordToTupleMapper` recordToTupleMapper
 an implementation of `RecordToTupleMapper` interface that spout will call to convert a kinesis record to a storm tuple. It has two methods. getOutputFields 
 tells the spout the fields that will be present in the tuple emitted from the getTuple method. If getTuple returns null, the record will be acked
@@ -69,11 +71,10 @@ message when getNextFailedMessageToRetry is called again
 acked will be called once the failed message was re-emitted and successfully acked by the spout. If it was failed by the spout failed will be called again
 
 #### `ZkInfo` zkInfo
-an object encapsulating information for zookeeper interaction. It has two constructors. Default no args constructor takes zkUrl as first argument which 
-is a comma separated string of zk host and port, zkNode as second that will be used as the root node for storing committed sequence numbers, session timeout
-as third in milliseconds, connection timeout as fourth in milliseconds, commit interval as fifth in milliseconds for committing sequence numbers to zookeeper, 
-retry attempts as sixth for zk client connection retry attempts, retry interval as seventh in milliseconds for time to wait before retrying to connect. Default 
-constructor uses the values ["localhost:2181", "/kinesisOffsets", 20000, 15000, 10000L, 3, 2000]
+an object encapsulating information for zookeeper interaction. The constructor takes zkUrl as first argument which is a comma separated string of zk host and
+port, zkNode as second that will be used as the root node for storing committed sequence numbers, session timeout as third in milliseconds, connection timeout
+as fourth in milliseconds, commit interval as fifth in milliseconds for committing sequence numbers to zookeeper, retry attempts as sixth for zk client
+connection retry attempts, retry interval as seventh in milliseconds for time to wait before retrying to connect. 
 
 #### `KinesisConnectionInfo` kinesisConnectionInfo
 an object that captures arguments for connecting to kinesis using kinesis client. It has a constructor that takes an implementation of `AWSCredentialsProvider`

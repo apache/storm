@@ -58,9 +58,6 @@ public class KinesisConnectionInfo implements Serializable {
         serializedkinesisClientConfig = getKryoSerializedBytes(clientConfiguration);
         this.recordsLimit = recordsLimit;
         this.region = region;
-
-        this.credentialsProvider = null;
-        this.clientConfiguration = null;
     }
 
     public Integer getRecordsLimit() {
@@ -100,29 +97,6 @@ public class KinesisConnectionInfo implements Serializable {
         final Input input = new Input(new ByteArrayInputStream(ser));
         kryo.setInstantiatorStrategy(new StdInstantiatorStrategy());
         return kryo.readClassAndObject(input);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        KinesisConnectionInfo that = (KinesisConnectionInfo) o;
-
-        if (!Arrays.equals(serializedKinesisCredsProvider, that.serializedKinesisCredsProvider)) return false;
-        if (!Arrays.equals(serializedkinesisClientConfig, that.serializedkinesisClientConfig)) return false;
-        if (region != null ? !region.equals(that.region) : that.region != null) return false;
-        return !(recordsLimit != null ? !recordsLimit.equals(that.recordsLimit) : that.recordsLimit != null);
-
-    }
-
-    @Override
-    public int hashCode() {
-        int result = serializedKinesisCredsProvider != null ? Arrays.hashCode(serializedKinesisCredsProvider) : 0;
-        result = 31 * result + (serializedkinesisClientConfig != null ? Arrays.hashCode(serializedkinesisClientConfig) : 0);
-        result = 31 * result + (region != null ? region.hashCode() : 0);
-        result = 31 * result + (recordsLimit != null ? recordsLimit.hashCode() : 0);
-        return result;
     }
 
     @Override

@@ -19,13 +19,11 @@
 package org.apache.storm.kinesis.spout;
 
 import com.amazonaws.services.kinesis.model.ShardIteratorType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.Date;
 
-public class Config implements Serializable {
+public class KinesisConfig implements Serializable {
     // kinesis stream name to read from
     private final String streamName;
     // shard iterator type based on kinesis api - beginning of time, latest, at timestamp are only supported
@@ -45,7 +43,7 @@ public class Config implements Serializable {
     // the acked queue can infinitely grow without any of them being committed to zk. topology max pending does not help since from storm's view they are acked
     private final Long maxUncommittedRecords;
 
-    public Config (String streamName, ShardIteratorType shardIteratorType, RecordToTupleMapper recordToTupleMapper, Date timestamp, FailedMessageRetryHandler
+    public KinesisConfig(String streamName, ShardIteratorType shardIteratorType, RecordToTupleMapper recordToTupleMapper, Date timestamp, FailedMessageRetryHandler
             failedMessageRetryHandler, ZkInfo zkInfo, KinesisConnectionInfo kinesisConnectionInfo, Long maxUncommittedRecords) {
         this.streamName = streamName;
         this.shardIteratorType = shardIteratorType;
@@ -120,39 +118,8 @@ public class Config implements Serializable {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        Config config = (Config) o;
-
-        if (streamName != null ? !streamName.equals(config.streamName) : config.streamName != null) return false;
-        if (shardIteratorType != config.shardIteratorType) return false;
-        if (recordToTupleMapper != null ? !recordToTupleMapper.equals(config.recordToTupleMapper) : config.recordToTupleMapper != null) return false;
-        if (timestamp != null ? !timestamp.equals(config.timestamp) : config.timestamp != null) return false;
-        if (zkInfo != null ? !zkInfo.equals(config.zkInfo) : config.zkInfo != null) return false;
-        if (kinesisConnectionInfo != null ? !kinesisConnectionInfo.equals(config.kinesisConnectionInfo) : config.kinesisConnectionInfo != null) return false;
-        if (maxUncommittedRecords != null ? !maxUncommittedRecords.equals(config.maxUncommittedRecords) : config.maxUncommittedRecords != null) return false;
-        return !(failedMessageRetryHandler != null ? !failedMessageRetryHandler.equals(config.failedMessageRetryHandler) : config.failedMessageRetryHandler
-                != null);
-    }
-
-    @Override
-    public int hashCode() {
-        int result = streamName != null ? streamName.hashCode() : 0;
-        result = 31 * result + (shardIteratorType != null ? shardIteratorType.hashCode() : 0);
-        result = 31 * result + (recordToTupleMapper != null ? recordToTupleMapper.hashCode() : 0);
-        result = 31 * result + (timestamp != null ? timestamp.hashCode() : 0);
-        result = 31 * result + (zkInfo != null ? zkInfo.hashCode() : 0);
-        result = 31 * result + (kinesisConnectionInfo != null ? kinesisConnectionInfo.hashCode() : 0);
-        result = 31 * result + (failedMessageRetryHandler != null ? failedMessageRetryHandler.hashCode() : 0);
-        result = 31 * result + (maxUncommittedRecords != null ? maxUncommittedRecords.hashCode() : 0);
-        return result;
-    }
-
-    @Override
     public String toString() {
-        return "Config{" +
+        return "KinesisConfig{" +
                 "streamName='" + streamName + '\'' +
                 ", shardIteratorType=" + shardIteratorType +
                 ", recordToTupleMapper=" + recordToTupleMapper +

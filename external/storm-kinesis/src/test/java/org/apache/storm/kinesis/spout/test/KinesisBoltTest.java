@@ -21,8 +21,7 @@ public class KinesisBoltTest extends BaseRichBolt {
 
     @Override
     public void execute(Tuple input) {
-        LOG.debug("input = [" + input + "]");
-        System.out.println("input = [" + input + "]");
+        LOG.info("input = [" + input + "]");
         collector.ack(input);
     }
 
