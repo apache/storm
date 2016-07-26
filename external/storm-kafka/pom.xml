@@ -121,7 +121,6 @@
             <groupId>org.apache.kafka</groupId>
             <artifactId>${storm.kafka.artifact.id}</artifactId>
             <version>${storm.kafka.version}</version>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>
