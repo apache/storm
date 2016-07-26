@@ -36,6 +36,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
     public static final long DEFAULT_OFFSET_COMMIT_PERIOD_MS = 15_000;   // 15s
     public static final int DEFAULT_MAX_RETRIES = Integer.MAX_VALUE;     // Retry forever
     public static final int DEFAULT_MAX_UNCOMMITTED_OFFSETS = 10_000;    // 10,000 records
+    private static final long DEFAULT_AUTO_COMMIT_INTERVAL_MS = 500;      // 500 ms
 
     // Kafka property names
     public interface Consumer {
@@ -76,6 +77,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
     private final long offsetCommitPeriodMs;
     private final int maxRetries;
     private final int maxUncommittedOffsets;
+    private final long autoCommitIntervalMs;
     private final FirstPollOffsetStrategy firstPollOffsetStrategy;
     private final KafkaSpoutStreams kafkaSpoutStreams;
     private final KafkaSpoutTuplesBuilder<K, V> tuplesBuilder;
@@ -88,6 +90,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         this.pollTimeoutMs = builder.pollTimeoutMs;
         this.offsetCommitPeriodMs = builder.offsetCommitPeriodMs;
         this.maxRetries = builder.maxRetries;
+        this.autoCommitIntervalMs = builder.autoCommitIntervalMs;
         this.firstPollOffsetStrategy = builder.firstPollOffsetStrategy;
         this.kafkaSpoutStreams = builder.kafkaSpoutStreams;
         this.maxUncommittedOffsets = builder.maxUncommittedOffsets;
@@ -109,6 +112,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         private Deserializer<V> valueDeserializer;
         private long pollTimeoutMs = DEFAULT_POLL_TIMEOUT_MS;
         private long offsetCommitPeriodMs = DEFAULT_OFFSET_COMMIT_PERIOD_MS;
+        private long autoCommitIntervalMs = DEFAULT_AUTO_COMMIT_INTERVAL_MS;
         private int maxRetries = DEFAULT_MAX_RETRIES;
         private FirstPollOffsetStrategy firstPollOffsetStrategy = FirstPollOffsetStrategy.UNCOMMITTED_EARLIEST;
         private final KafkaSpoutStreams kafkaSpoutStreams;
@@ -153,6 +157,13 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
 
             if (retryService == null) {
                 throw new IllegalArgumentException("Must specify at implementation of retry service");
+            }
+
+            if (kafkaProps.containsKey(Consumer.ENABLE_AUTO_COMMIT)) {
+                boolean isEnableAutoCommit = Boolean.valueOf(kafkaProps.get(Consumer.ENABLE_AUTO_COMMIT).toString());
+                if (!isEnableAutoCommit && kafkaProps.containsKey(Consumer.AUTO_COMMIT_INTERVAL_MS)) {
+                    throw new IllegalArgumentException("ENABLE_AUTO_COMMIT conflict with AUTO_COMMIT_INTERVAL_MS");
+                }
             }
 
             this.kafkaProps = kafkaProps;
@@ -229,6 +240,18 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
             return this;
         }
 
+        /**
+         * Defines the auto commit interval of kafka spout when auto.commit.enable is set to true.
+         * @param autoCommitInterval
+         * @return
+         */
+        public Builder<K, V> setAutoCommitIntervalMs(long autoCommitInterval) {
+            if (Boolean.valueOf(kafkaProps.get(Consumer.ENABLE_AUTO_COMMIT).toString())) {
+                this.autoCommitIntervalMs = autoCommitInterval;
+            }
+            return this;
+        }
+
         public KafkaSpoutConfig<K,V> build() {
             return new KafkaSpoutConfig<>(this);
         }
@@ -289,6 +312,10 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
 
     public FirstPollOffsetStrategy getFirstPollOffsetStrategy() {
         return firstPollOffsetStrategy;
+    }
+
+    public long getAutoCommitIntervalMs() {
+        return autoCommitIntervalMs;
     }
 
     public KafkaSpoutStreams getKafkaSpoutStreams() {

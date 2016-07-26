@@ -108,7 +108,9 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         tuplesBuilder = kafkaSpoutConfig.getTuplesBuilder();
 
         if (!consumerAutoCommitMode) {     // If it is auto commit, no need to commit offsets manually
-            commitTimer = new Timer(500, kafkaSpoutConfig.getOffsetsCommitPeriodMs(), TimeUnit.MILLISECONDS);
+            long autoCommitInterval = kafkaSpoutConfig.getAutoCommitIntervalMs();
+            long offsetsCommitPeriod = kafkaSpoutConfig.getOffsetsCommitPeriodMs();
+            commitTimer = new Timer(autoCommitInterval, offsetsCommitPeriod, TimeUnit.MILLISECONDS);
         }
 
         acked = new HashMap<>();
