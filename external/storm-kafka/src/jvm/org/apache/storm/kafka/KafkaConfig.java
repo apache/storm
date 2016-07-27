@@ -17,10 +17,10 @@
  */
 package org.apache.storm.kafka;
 
-import java.io.Serializable;
-
 import org.apache.storm.spout.MultiScheme;
 import org.apache.storm.spout.RawMultiScheme;
+
+import java.io.Serializable;
 
 import kafka.api.FetchRequest;
 
@@ -42,6 +42,7 @@ public class KafkaConfig implements Serializable {
     public boolean useStartOffsetTimeIfOffsetOutOfRange = true;
     public int metricsTimeBucketSizeInSecs = 60;
     public int minFetchByte = FetchRequest.DefaultMinBytes();
+    public String securityProtocol = "PLAINTEXT";
 
 
     public KafkaConfig(BrokerHosts hosts, String topic) {
