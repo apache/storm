@@ -39,7 +39,7 @@ public class Constants {
     public static final String CONF = "conf";
     public static final String PORT = "port";
     public static final String TASK_TO_COMPONENT = "task->component";
-    public static final String COMPONENT_TO_SOTRTED_TASKS = "component->sorted-tasks";
+    public static final String COMPONENT_TO_SORTED_TASKS = "component->sorted-tasks";
     public static final String COMPONENT_TO_STREAM_TO_FIELDS = "component->stream->fields";
     public static final String TASK_IDS = "task-ids";
     public static final String DEFAULT_SHARED_RESOURCES = "default-shared-resources";

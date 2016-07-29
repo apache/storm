@@ -2377,7 +2377,7 @@ public class Utils {
     /**
      * converts a clojure PersistentMap to java HashMap
      */
-    public static Map<String, Object> convertMap(Map map) {
+    public static Map<String, Object> convertClojureMapToJavaMap(Map map) {
         Map<String, Object> ret = new HashMap<>(map.size());
         for (Object obj : map.entrySet()) {
             Map.Entry entry = (Map.Entry) obj;

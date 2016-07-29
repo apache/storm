@@ -179,7 +179,7 @@ public abstract class Executor implements Callable, EventHandler {
     public static Executor mkExecutor(Map workerData, List<Long> executorId, Map<String, String> credentials) {
         Executor executor;
 
-        Map<String, Object> convertedWorkerData = Utils.convertMap(workerData);
+        Map<String, Object> convertedWorkerData = Utils.convertClojureMapToJavaMap(workerData);
         WorkerTopologyContext workerTopologyContext = StormCommon.makeWorkerContext(convertedWorkerData);
         List<Integer> taskIds = StormCommon.executorIdToTasks(executorId);
         String componentId = workerTopologyContext.getComponentId(taskIds.get(0));

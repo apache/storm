@@ -97,7 +97,7 @@
 (defn worker-outbound-tasks
   "Returns seq of task-ids that receive messages from this worker"
   [worker]
-  (let [context (StormCommon/makeWorkerContext (Utils/convertMap worker))
+  (let [context (StormCommon/makeWorkerContext (Utils/convertClojureMapToJavaMap worker))
         components (mapcat
                      (fn [task-id]
                        (->> (.getComponentId context (int task-id))
@@ -514,7 +514,7 @@
         ^IConnection socket (:receiver worker)]
     (log-message "Registering IConnectionCallbacks for " (:assignment-id worker) ":" (:port worker))
     (.registerRecv socket (DeserializingConnectionCallback. (:storm-conf worker)
-                                                            (StormCommon/makeWorkerContext (Utils/convertMap worker))
+                                                            (StormCommon/makeWorkerContext (Utils/convertClojureMapToJavaMap worker))
                                                             transfer-local-fn))))
 
 (defn- close-resources [worker]
@@ -605,7 +605,7 @@
 (defn run-worker-start-hooks [worker]
   (let [topology (:topology worker)
         topo-conf (:storm-conf worker)
-        worker-topology-context (StormCommon/makeWorkerContext (Utils/convertMap worker))
+        worker-topology-context (StormCommon/makeWorkerContext (Utils/convertClojureMapToJavaMap worker))
         hooks (.get_worker_hooks topology)]
     (dofor [hook hooks]
       (let [hook-bytes (Utils/toByteArray hook)

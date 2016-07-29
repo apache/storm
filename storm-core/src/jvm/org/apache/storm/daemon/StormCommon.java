@@ -571,7 +571,7 @@ public class StormCommon {
             Map stormConf = (Map) workerData.get(Constants.STORM_CONF);
             Map<Integer, String> taskToComponent = (Map<Integer, String>) workerData.get(Constants.TASK_TO_COMPONENT);
             Map<String, List<Integer>> componentToSortedTasks =
-                    (Map<String, List<Integer>>) workerData.get(Constants.COMPONENT_TO_SOTRTED_TASKS);
+                    (Map<String, List<Integer>>) workerData.get(Constants.COMPONENT_TO_SORTED_TASKS);
             Map<String, Map<String, Fields>> componentToStreamToFields =
                     (Map<String, Map<String, Fields>>) workerData.get(Constants.COMPONENT_TO_STREAM_TO_FIELDS);
             String stormId = (String) workerData.get(Constants.STORM_ID);
