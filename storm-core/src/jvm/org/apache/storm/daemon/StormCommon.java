@@ -37,6 +37,7 @@ import org.apache.storm.metric.EventLoggerBolt;
 import org.apache.storm.metric.MetricsConsumerBolt;
 import org.apache.storm.metric.SystemBolt;
 import org.apache.storm.metric.filter.FilterByMetricName;
+import org.apache.storm.metric.util.DataPointExpander;
 import org.apache.storm.security.auth.IAuthorizer;
 import org.apache.storm.task.IBolt;
 import org.apache.storm.task.WorkerTopologyContext;
@@ -67,7 +68,6 @@ public class StormCommon {
      * Provide an instance of this class for delegates to use.  To mock out
      * delegated methods, provide an instance of a subclass that overrides the
      * implementation of the delegated method.
-     *
      * @param common a StormCommon instance
      * @return the previously set instance
      */
@@ -83,6 +83,15 @@ public class StormCommon {
 
     public static final String EVENTLOGGER_COMPONENT_ID = "__eventlogger";
     public static final String EVENTLOGGER_STREAM_ID = "__eventlog";
+
+    public static final String TOPOLOGY_METRICS_CONSUMER_CLASS = "class";
+    public static final String TOPOLOGY_METRICS_CONSUMER_ARGUMENT = "argument";
+    public static final String TOPOLOGY_METRICS_CONSUMER_MAX_RETAIN_METRIC_TUPLES = "max.retain.metric.tuples";
+    public static final String TOPOLOGY_METRICS_CONSUMER_PARALLELISM_HINT = "parallelism.hint";
+    public static final String TOPOLOGY_METRICS_CONSUMER_WHITELIST = "whitelist";
+    public static final String TOPOLOGY_METRICS_CONSUMER_BLACKLIST = "blacklist";
+    public static final String TOPOLOGY_METRICS_CONSUMER_EXPAND_MAP_TYPE = "expandMapType";
+    public static final String TOPOLOGY_METRICS_CONSUMER_METRIC_NAME_SEPARATOR = "metricNameSeparator";
 
     @SuppressWarnings("unchecked")
     public static String getStormId(final IStormClusterState stormClusterState, final String topologyName) {
@@ -359,8 +368,8 @@ public class StormCommon {
     }
 
     public static Map<GlobalStreamId, Grouping> eventLoggerInputs(StormTopology topology) {
-        Map<GlobalStreamId, Grouping> inputs = new HashMap<GlobalStreamId, Grouping>();
-        Set<String> allIds = new HashSet<String>();
+        Map<GlobalStreamId, Grouping> inputs = new HashMap<>();
+        Set<String> allIds = new HashSet<>();
         allIds.addAll(topology.get_bolts().keySet());
         allIds.addAll(topology.get_spouts().keySet());
 
@@ -402,20 +411,29 @@ public class StormCommon {
 
         List<Map<String, Object>> registerInfo = (List<Map<String, Object>>) conf.get(Config.TOPOLOGY_METRICS_CONSUMER_REGISTER);
         if (registerInfo != null) {
-            Map<String, Integer> classOccurrencesMap = new HashMap<String, Integer>();
+            Map<String, Integer> classOccurrencesMap = new HashMap<>();
             for (Map<String, Object> info : registerInfo) {
-                String className = (String) info.get("class");
-                Object argument = info.get("argument");
-                Integer maxRetainMetricTuples = Utils.getInt(info.get("max.retain.metric.tuples"), 100);
-                Integer phintNum = Utils.getInt(info.get("parallelism.hint"), 1);
+                String className = (String) info.get(TOPOLOGY_METRICS_CONSUMER_CLASS);
+                Object argument = info.get(TOPOLOGY_METRICS_CONSUMER_ARGUMENT);
+                Integer maxRetainMetricTuples = Utils.getInt(info.get(
+                    TOPOLOGY_METRICS_CONSUMER_MAX_RETAIN_METRIC_TUPLES), 100);
+                Integer phintNum = Utils.getInt(info.get(TOPOLOGY_METRICS_CONSUMER_PARALLELISM_HINT), 1);
                 Map<String, Object> metricsConsumerConf = new HashMap<>();
                 metricsConsumerConf.put(Config.TOPOLOGY_TASKS, phintNum);
-                List<String> whitelist = (List<String>) info.get("whitelist");
-                List<String> blacklist = (List<String>) info.get("blacklist");
+                List<String> whitelist = (List<String>) info.get(
+                    TOPOLOGY_METRICS_CONSUMER_WHITELIST);
+                List<String> blacklist = (List<String>) info.get(
+                    TOPOLOGY_METRICS_CONSUMER_BLACKLIST);
                 FilterByMetricName filterPredicate = new FilterByMetricName(whitelist, blacklist);
+                Boolean expandMapType = Utils.getBoolean(info.get(
+                    TOPOLOGY_METRICS_CONSUMER_EXPAND_MAP_TYPE), false);
+                String metricNameSeparator = Utils.getString(info.get(
+                    TOPOLOGY_METRICS_CONSUMER_METRIC_NAME_SEPARATOR), ".");
+                DataPointExpander expander = new DataPointExpander(expandMapType, metricNameSeparator);
+                MetricsConsumerBolt boltInstance = new MetricsConsumerBolt(className, argument,
+                    maxRetainMetricTuples, filterPredicate, expander);
                 Bolt metricsConsumerBolt = Thrift.prepareSerializedBoltDetails(inputs,
-                        new MetricsConsumerBolt(className, argument, maxRetainMetricTuples, filterPredicate),
-                        null, phintNum, metricsConsumerConf);
+                        boltInstance, null, phintNum, metricsConsumerConf);
 
                 String id = className;
                 if (classOccurrencesMap.containsKey(className)) {

@@ -70,5 +70,6 @@ public interface EvictionPolicy<T> {
      *
      * @param context
      */
-    void setContext(Object context);
+    void setContext(EvictionContext context);
+
 }

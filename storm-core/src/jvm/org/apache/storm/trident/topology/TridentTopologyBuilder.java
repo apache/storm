@@ -17,6 +17,7 @@
  */
 package org.apache.storm.trident.topology;
 
+import org.apache.storm.Config;
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.generated.Grouping;
 import org.apache.storm.generated.StormTopology;
@@ -129,7 +130,7 @@ public class TridentTopologyBuilder {
         return ret;
     }
     
-    public StormTopology buildTopology() {        
+    public StormTopology buildTopology(Map<String, Number> masterCoordResources) {
         TopologyBuilder builder = new TopologyBuilder();
         Map<GlobalStreamId, String> batchIdsForSpouts = fleshOutStreamBatchIds(false);
         Map<GlobalStreamId, String> batchIdsForBolts = fleshOutStreamBatchIds(true);
@@ -195,11 +196,27 @@ public class TridentTopologyBuilder {
                 d.addConfigurations(conf);
             }
         }
-        
-        for(Map.Entry<String, List<String>> entry: batchesToCommitIds.entrySet()) {
-            String batch = entry.getKey();
-            List<String> commitIds = entry.getValue();
-            builder.setSpout(masterCoordinator(batch), new MasterBatchCoordinator(commitIds, batchesToSpouts.get(batch)));
+
+        Number onHeap = masterCoordResources.get(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB);
+        Number offHeap = masterCoordResources.get(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB);
+        Number cpuLoad = masterCoordResources.get(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT);
+
+        for(String batch: batchesToCommitIds.keySet()) {
+            List<String> commitIds = batchesToCommitIds.get(batch);
+            SpoutDeclarer masterCoord = builder.setSpout(masterCoordinator(batch), new MasterBatchCoordinator(commitIds, batchesToSpouts.get(batch)));
+
+            if(onHeap != null) {
+                if(offHeap != null) {
+                    masterCoord.setMemoryLoad(onHeap, offHeap);
+                }
+                else {
+                    masterCoord.setMemoryLoad(onHeap);
+                }
+            }
+
+            if(cpuLoad != null) {
+                masterCoord.setCPULoad(cpuLoad);
+            }
         }
                 
         for(String id: _bolts.keySet()) {

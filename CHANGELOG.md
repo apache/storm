@@ -1,4 +1,16 @@
 ## 2.0.0
+ * STORM-1876: Option to build storm-kafka and storm-kafka-client with different kafka client version
+ * STORM-2000: Package storm-opentsdb as part of external dir in installation
+ * STORM-1962: support python 3 and 2 in multilang
+ * STORM-1964: Unexpected behavior when using count window together with timestamp extraction
+ * STORM-1890: ensure we refetch static resources after package build
+ * STORM-1966 Expand metric having Map type as value into multiple metrics based on entries
+ * STORM-1737: storm-kafka-client has compilation errors with Apache Kafka 0.10
+ * STORM-1910 One topology cannot use hdfs spout to read from two locations
+ * STORM-1916: Add ability for worker-first classpath
+ * STORM-1954: Large Trident topologies can cause memory issues due to DefaultResourceDeclarer object reading config
+ * STORM-1913: Additions and Improvements for Trident RAS API
+ * STORM-1959: Add missing license header to KafkaPartitionOffsetLag
  * STORM-1249: port backtype.storm.security.serialization.BlowfishTupleSerializer-test to java
  * STORM-1238: port backtype.storm.security.auth.ThriftServer-test to java
  * STORM-1237: port backtype.storm.security.auth.ThriftClient-test to java
@@ -116,6 +128,9 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0 
+ * STORM-1988: Kafka Offset not showing due to bad classpath.
+ * STORM-1987: Fix TridentKafkaWordCount arg handling in distributed mode.
+ * STORM-1969: Modify HiveTopology to show usage of non-partition table.
  * STORM-1950: Change response json of "Topology Lag" REST API to keyed by spoutId, topic, partition.
  * STORM-1833: Simple equi-join in storm-sql standalone mode
  * STORM-1866: Update Resource Aware Scheduler Documentation
@@ -148,6 +163,10 @@
  * STORM-1868: Modify TridentKafkaWordCount to run in distributed mode
 
 ## 1.0.2
+ * STORM-1976: Remove cleanup-corrupt-topologies!
+ * STORM-1977: Restore logic: give up leadership when elected as leader but doesn't have one or more of topology codes on local
+ * STORM-1939: Frequent InterruptedException raised by ShellBoltMessageQueue.poll
+ * STORM-1928: ShellSpout should check heartbeat while ShellSpout is waiting for subprocess to sync
  * STORM-1922: Supervisor summary default order by host
  * STORM-1895: blobstore replication-factor argument
  * STORM-118: Docs: typo in transactional-commit-flow.png

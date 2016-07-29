@@ -179,7 +179,8 @@
     (get storm-conf STORM-CLUSTER-METRICS-CONSUMER-REGISTER)))
 
 (defn nimbus-data [conf inimbus]
-  (let [forced-scheduler (.getForcedScheduler inimbus)]
+  (let [forced-scheduler (.getForcedScheduler inimbus)
+        blob-store (Utils/getNimbusBlobStore conf (NimbusInfo/fromConf conf))]
     {:conf conf
      :nimbus-host-port-info (NimbusInfo/fromConf conf)
      :inimbus inimbus
@@ -197,7 +198,7 @@
      :heartbeats-cache (atom {})
      :downloaders (file-cache-map conf)
      :uploaders (file-cache-map conf)
-     :blob-store (Utils/getNimbusBlobStore conf (NimbusInfo/fromConf conf))
+     :blob-store blob-store
      :blob-downloaders (mk-blob-cache-map conf)
      :blob-uploaders (mk-blob-cache-map conf)
      :blob-listers (mk-bloblist-cache-map conf)
@@ -211,7 +212,7 @@
                   (Utils/exitProcess 20 "Error when processing an event"))))
 
      :scheduler (mk-scheduler conf inimbus)
-     :leader-elector (Zookeeper/zkLeaderElector conf)
+     :leader-elector (Zookeeper/zkLeaderElector conf blob-store)
      :id->sched-status (atom {})
      :node-id->resources (atom {}) ;;resources of supervisors
      :id->resources (atom {}) ;;resources of topologies
@@ -1166,19 +1167,6 @@
           topo-history-state (:topo-history-state nimbus)]
           (.filterOldTopologies ^LocalState topo-history-state cutoff-age))))
 
-(defn cleanup-corrupt-topologies! [nimbus]
-  (let [storm-cluster-state (:storm-cluster-state nimbus)
-        blob-store (:blob-store nimbus)
-        code-ids (set (code-ids blob-store))
-        active-topologies (set (.activeStorms storm-cluster-state))
-        corrupt-topologies (set/difference active-topologies code-ids)]
-    (doseq [corrupt corrupt-topologies]
-      (log-message "Corrupt topology " corrupt " has state on zookeeper but doesn't have a local dir on Nimbus. Cleaning up...")
-      (.removeStorm storm-cluster-state corrupt)
-      (if (instance? LocalFsBlobStore blob-store)
-        (doseq [blob-key (get-key-list-from-id (:conf nimbus) corrupt)]
-          (.removeBlobstoreKey storm-cluster-state blob-key))))))
-
 (defn setup-blobstore [nimbus]
   "Sets up blobstore state for all current keys."
   (let [storm-cluster-state (:storm-cluster-state nimbus)
@@ -1553,6 +1541,9 @@
                 storm-conf (if (Utils/isZkAuthenticationConfiguredStormServer conf)
                                 storm-conf
                                 (dissoc storm-conf STORM-ZOOKEEPER-TOPOLOGY-AUTH-SCHEME STORM-ZOOKEEPER-TOPOLOGY-AUTH-PAYLOAD))
+                storm-conf (if (conf STORM-TOPOLOGY-CLASSPATH-BEGINNING-ENABLED)
+                             storm-conf
+                             (dissoc storm-conf TOPOLOGY-CLASSPATH-BEGINNING))
                 total-storm-conf (merge conf storm-conf)
                 topology (normalize-topology total-storm-conf topology)
                 storm-cluster-state (:storm-cluster-state nimbus)]
@@ -2199,7 +2190,6 @@
         STORM-VERSION))
 
     (.addToLeaderLockQueue (:leader-elector nimbus))
-    (cleanup-corrupt-topologies! nimbus)
     (when (instance? LocalFsBlobStore blob-store)
       ;register call back for blob-store
       (.blobstore (:storm-cluster-state nimbus) (fn [] (blob-sync conf nimbus)))

@@ -21,6 +21,7 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.leader.LeaderLatch;
 import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.apache.curator.framework.recipes.leader.Participant;
+import org.apache.storm.blobstore.BlobStore;
 import org.apache.storm.nimbus.ILeaderElector;
 import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.storm.utils.Utils;
@@ -36,16 +37,17 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class LeaderElectorImp implements ILeaderElector {
     private static Logger LOG = LoggerFactory.getLogger(LeaderElectorImp.class);
-     private final Map conf;
-     private final List<String> servers;
-     private final CuratorFramework zk;
-     private final String leaderlockPath;
-     private final String id;
-     private final AtomicReference<LeaderLatch> leaderLatch;
-     private final AtomicReference<LeaderLatchListener> leaderLatchListener;
+    private final Map conf;
+    private final List<String> servers;
+    private final CuratorFramework zk;
+    private final String leaderlockPath;
+    private final String id;
+    private final AtomicReference<LeaderLatch> leaderLatch;
+    private final AtomicReference<LeaderLatchListener> leaderLatchListener;
+    private final BlobStore blobStore;
 
     public LeaderElectorImp(Map conf, List<String> servers, CuratorFramework zk, String leaderlockPath, String id, AtomicReference<LeaderLatch> leaderLatch,
-            AtomicReference<LeaderLatchListener> leaderLatchListener) {
+            AtomicReference<LeaderLatchListener> leaderLatchListener, BlobStore blobStore) {
         this.conf = conf;
         this.servers = servers;
         this.zk = zk;
@@ -53,6 +55,7 @@ public class LeaderElectorImp implements ILeaderElector {
         this.id = id;
         this.leaderLatch = leaderLatch;
         this.leaderLatchListener = leaderLatchListener;
+        this.blobStore = blobStore;
     }
 
     @Override
@@ -65,7 +68,7 @@ public class LeaderElectorImp implements ILeaderElector {
         // if this latch is already closed, we need to create new instance.
         if (LeaderLatch.State.CLOSED.equals(leaderLatch.get().getState())) {
             leaderLatch.set(new LeaderLatch(zk, leaderlockPath));
-            leaderLatchListener.set(Zookeeper.leaderLatchListenerImpl(conf, zk, leaderLatch.get()));
+            leaderLatchListener.set(Zookeeper.leaderLatchListenerImpl(conf, zk, blobStore, leaderLatch.get()));
             LOG.info("LeaderLatch was in closed state. Resetted the leaderLatch and listeners.");
         }
         // Only if the latch is not already started we invoke start

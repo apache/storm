@@ -15,24 +15,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.trident.planner;
+package org.apache.storm.windowing;
 
-import org.apache.storm.tuple.Fields;
+/**
+ * Context information that can be used by the eviction policy
+ */
+public interface EvictionContext {
+    /**
+     * Returns the reference time that the eviction policy could use to
+     * evict the events. In the case of event time processing, this would be
+     * the watermark time.
+     *
+     * @return the reference time in millis
+     */
+    Long getReferenceTime();
 
-public class ProcessorNode extends Node {
-    
-    public boolean committer; // for partitionpersist
-    public TridentProcessor processor;
-    public Fields selfOutFields;
-    
-    public ProcessorNode(String streamId, String name, Fields allOutputFields, Fields selfOutFields, TridentProcessor processor) {
-        super(streamId, name, allOutputFields);
-        this.processor = processor;
-        this.selfOutFields = selfOutFields;
-    }
+    /**
+     * Returns the sliding count for count based windows
+     *
+     * @return the sliding count
+     */
+    Long getSlidingCount();
 
-    @Override
-    public String shortString() {
-        return super.shortString() + ", processor: " + processor + ", selfOutFields: " + selfOutFields;
-    }
+    /**
+     * Returns the current count of events in the queue up to the reference tim
+     * based on which count based evictions can be performed.
+     *
+     * @return the current count
+     */
+    Long getCurrentCount();
 }

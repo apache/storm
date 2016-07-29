@@ -115,7 +115,7 @@ public class TimeTriggerPolicy<T> implements TriggerPolicy<T> {
                      * to evict the events
                      */
                     if (evictionPolicy != null) {
-                        evictionPolicy.setContext(System.currentTimeMillis());
+                        evictionPolicy.setContext(new DefaultEvictionContext(System.currentTimeMillis()));
                     }
                     handler.onTrigger();
                 } catch (Throwable th) {
