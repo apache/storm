@@ -79,6 +79,7 @@ Trident is an alternative interface to Storm. It provides exactly-once processin
 * [MQTT Integration](storm-mqtt.html)
 * [Mongodb Integration](storm-mongodb.html)
 * [Kestrel Integration](Kestrel-and-Storm.html)
+* [DSLs and multilang adapters](DSLs-and-multilang-adapters.html)
 
 ### Advanced
 

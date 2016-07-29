@@ -8,3 +8,5 @@ documentation: true
 * [Clojure DSL](Clojure-DSL.html)
 * [Storm/Esper integration](https://github.com/tomdz/storm-esper): Streaming SQL on top of Storm
 * [io-storm](https://github.com/dan-blanchard/io-storm): Perl multilang adapter
+* [FsShelter](https://github.com/Prolucid/FsShelter): F# DSL and runtime with protobuf multilang 
+
