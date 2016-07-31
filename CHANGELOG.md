@@ -164,6 +164,7 @@
  * STORM-1868: Modify TridentKafkaWordCount to run in distributed mode
 
 ## 1.0.3
+ * STORM-1594: org.apache.storm.tuple.Fields can throw NPE if given invalid field in selector
  * STORM-1995: downloadChunk in nimbus.clj should close the input stream
 
 ## 1.0.2
