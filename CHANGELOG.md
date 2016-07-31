@@ -1,3 +1,6 @@
+## 1.0.3
+ * STORM-1995: downloadChunk in nimbus.clj should close the input stream
+
 ## 1.0.2
  * STORM-1876: Option to build storm-kafka and storm-kafka-client with different kafka client version
  * STORM-1989: X-Frame-Options support for Storm UI
