@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-1285: port backtype.storm.command.get-errors to java
  * STORM-2010: port org.apache.storm.command.heartbeats.clj to Java
  * STORM-2009: port org.apache.storm.blobstore.clj and org.apache.storm.command.blobstore.clj to Java
  * STORM-1876: Option to build storm-kafka and storm-kafka-client with different kafka client version
