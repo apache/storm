@@ -64,6 +64,9 @@
  * STORM-1709: Added group by support in storm sql standalone mode
  * STORM-1720: Support GEO in storm-redis
 
+## 1.0.3
+ * STORM-1995: downloadChunk in nimbus.clj should close the input stream
+
 ## 1.0.2
  * STORM-1976: Remove cleanup-corrupt-topologies!
  * STORM-1977: Restore logic: give up leadership when elected as leader but doesn't have one or more topology codes on local
