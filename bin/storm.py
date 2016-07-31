@@ -326,7 +326,7 @@ def blobstore(*args):
     storm blobstore create mytopo:data.tgz -f data.tgz -a u:alice:rwa,u:bob:rw,o::r
     """
     exec_storm_class(
-        "org.apache.storm.command.blobstore",
+        "org.apache.storm.command.Blobstore",
         args=args,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
