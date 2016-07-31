@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-2009: port org.apache.storm.blobstore.clj and org.apache.storm.command.blobstore.clj to Java
  * STORM-1876: Option to build storm-kafka and storm-kafka-client with different kafka client version
  * STORM-2000: Package storm-opentsdb as part of external dir in installation
  * STORM-1962: support python 3 and 2 in multilang
