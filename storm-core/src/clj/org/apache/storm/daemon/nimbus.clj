@@ -1725,16 +1725,16 @@
         (mark! nimbus:num-downloadChunk-calls)
         (check-authorization! nimbus nil nil "fileDownload")
         (let [downloaders (:downloaders nimbus)
-              ^BufferFileInputStream is (.get downloaders id)]
+              ^BufferInputStream is (.get downloaders id)]
           (when-not is
             (throw (RuntimeException.
-                    "Could not find input stream for that id")))
+                    "Could not find input stream for id " id)))
           (let [ret (.read is)]
             (.put downloaders id is)
             (when (empty? ret)
+              (.close is)
               (.remove downloaders id))
-            (ByteBuffer/wrap ret)
-            )))
+            (ByteBuffer/wrap ret))))
 
       (^String getNimbusConf [this]
         (mark! nimbus:num-getNimbusConf-calls)
