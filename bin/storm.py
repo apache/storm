@@ -338,7 +338,7 @@ def heartbeats(*args):
     get  PATH - Get the heartbeat data at PATH
     """
     exec_storm_class(
-        "org.apache.storm.command.heartbeats",
+        "org.apache.storm.command.Heartbeats",
         args=args,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
