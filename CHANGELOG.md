@@ -163,6 +163,9 @@
  * STORM-1720: Support GEO in storm-redis
  * STORM-1868: Modify TridentKafkaWordCount to run in distributed mode
 
+## 1.0.3
+ * STORM-1995: downloadChunk in nimbus.clj should close the input stream
+
 ## 1.0.2
  * STORM-1976: Remove cleanup-corrupt-topologies!
  * STORM-1977: Restore logic: give up leadership when elected as leader but doesn't have one or more of topology codes on local
