@@ -456,7 +456,7 @@ def get_errors(*args):
         print_usage(command="get_errors")
         sys.exit(2)
     exec_storm_class(
-        "org.apache.storm.command.get_errors",
+        "org.apache.storm.command.GetErrors",
         args=args,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, os.path.join(STORM_DIR, "bin")])
