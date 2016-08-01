@@ -92,7 +92,7 @@ You can submit (run) a topology contained in this uberjar to Storm via the `stor
 
     # Example 2: Run the RollingTopWords in remote/cluster mode,
     #            under the name "production-topology"
-    $ storm jar storm-starter-*.jar org.apache.storm.starter.RollingTopWords production-topology remote
+    $ storm jar target/storm-starter-*.jar org.apache.storm.starter.RollingTopWords production-topology remote
 
 With submitting you can run topologies which use multilang, for example, `WordCountTopology`.
 
