@@ -33,9 +33,11 @@ public class Constants {
     public static final String METRICS_TICK_STREAM_ID = "__metrics_tick";
     public static final String CREDENTIALS_CHANGED_STREAM_ID = "__credentials";
 
+    public static final Object TOPOLOGY = "topology";
     public static final String SYSTEM_TOPOLOGY = "system-topology";
     public static final String STORM_CONF = "storm-conf";
     public static final String STORM_ID = "storm-id";
+    public static final String WORKER_ID = "worker-id";
     public static final String CONF = "conf";
     public static final String PORT = "port";
     public static final String TASK_TO_COMPONENT = "task->component";
@@ -51,5 +53,6 @@ public class Constants {
     public static final String EXECUTOR_RECEIVE_QUEUE_MAP = "executor-receive-queue-map";
     public static final String STORM_ACTIVE_ATOM = "storm-active-atom";
     public static final String COMPONENT_TO_DEBUG_ATOM = "storm-component->debug-atom";
+    public static final Object LOAD_MAPPING = "load-mapping";
 }
     

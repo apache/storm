@@ -18,6 +18,7 @@
 package org.apache.storm.daemon;
 
 import org.apache.storm.Config;
+import org.apache.storm.Constants;
 import org.apache.storm.Thrift;
 import org.apache.storm.daemon.metrics.BuiltinMetrics;
 import org.apache.storm.daemon.metrics.BuiltinMetricsUtil;
@@ -84,9 +85,9 @@ public class Task {
         this.builtInMetrics = BuiltinMetricsUtil.mkData(executor.getType(), this.executorStats);
         this.workerTopologyContext = executor.getWorkerTopologyContext();
         this.emitSampler = ConfigUtils.mkStatsSampler(stormConf);
-        this.loadMapping = (LoadMapping) workerData.get("load-mapping");
-        this.systemTopologyContext = mkTopologyContext((StormTopology) workerData.get("system-topology"));
-        this.userTopologyContext = mkTopologyContext((StormTopology) workerData.get("topology"));
+        this.loadMapping = (LoadMapping) workerData.get(Constants.LOAD_MAPPING);
+        this.systemTopologyContext = mkTopologyContext((StormTopology) workerData.get(Constants.SYSTEM_TOPOLOGY));
+        this.userTopologyContext = mkTopologyContext((StormTopology) workerData.get(Constants.TOPOLOGY));
         this.taskObject = mkTaskObject();
         this.debug = stormConf.containsKey(Config.TOPOLOGY_DEBUG) && (Boolean) stormConf.get(Config.TOPOLOGY_DEBUG);
         this.addTaskHooks();
@@ -178,21 +179,22 @@ public class Task {
     }
 
     private TopologyContext mkTopologyContext(StormTopology topology) throws IOException {
-        Map conf = (Map) workerData.get("conf");
+        Map conf = (Map) workerData.get(Constants.CONF);
         return new TopologyContext(
                 topology,
-                (Map) workerData.get("storm-conf"),
-                (Map<Integer, String>) workerData.get("task->component"),
-                (Map<String, List<Integer>>) workerData.get("component->sorted-tasks"),
-                (Map<String, Map<String, Fields>>) workerData.get("component->stream->fields"),
-                (String) workerData.get("storm-id"),
-                ConfigUtils.supervisorStormResourcesPath(ConfigUtils.supervisorStormDistRoot(conf, (String) workerData.get("storm-id"))),
-                ConfigUtils.workerPidsRoot(conf, (String) workerData.get("worker-id")),
+                (Map) workerData.get(Constants.STORM_CONF),
+                (Map<Integer, String>) workerData.get(Constants.TASK_TO_COMPONENT),
+                (Map<String, List<Integer>>) workerData.get(Constants.COMPONENT_TO_SORTED_TASKS),
+                (Map<String, Map<String, Fields>>) workerData.get(Constants.COMPONENT_TO_STREAM_TO_FIELDS),
+                (String) workerData.get(Constants.STORM_ID),
+                ConfigUtils.supervisorStormResourcesPath(
+                        ConfigUtils.supervisorStormDistRoot(conf, (String) workerData.get(Constants.STORM_ID))),
+                ConfigUtils.workerPidsRoot(conf, (String) workerData.get(Constants.WORKER_ID)),
                 taskId,
-                (Integer) workerData.get("port"),
-                (List<Integer>) workerData.get("task-ids"),
-                (Map<String, Object>) workerData.get("default-shared-resources"),
-                (Map<String, Object>) workerData.get("user-shared-resources"),
+                (Integer) workerData.get(Constants.PORT),
+                (List<Integer>) workerData.get(Constants.TASK_IDS),
+                (Map<String, Object>) workerData.get(Constants.DEFAULT_SHARED_RESOURCES),
+                (Map<String, Object>) workerData.get(Constants.USER_SHARED_RESOURCES),
                 executor.getSharedExecutorData(),
                 executor.getIntervalToTaskToMetricToRegistry(),
                 executor.getOpenOrPrepareWasCalled());
@@ -203,8 +205,8 @@ public class Task {
         Map<String, SpoutSpec> spouts = topology.get_spouts();
         Map<String, Bolt> bolts = topology.get_bolts();
         Map<String, StateSpoutSpec> stateSpouts = topology.get_state_spouts();
-        Object result = null;
-        ComponentObject componentObject = null;
+        Object result;
+        ComponentObject componentObject;
         if (spouts.containsKey(componentId)) {
             componentObject = spouts.get(componentId).get_spout_object();
         } else if (bolts.containsKey(componentId)) {
