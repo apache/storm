@@ -185,6 +185,10 @@ public class TridentBoltExecutor implements IRichBolt {
             throw new IllegalStateException("Method should never be called");
         }
         
+        public void notifyNotHanging() {
+            _delegate.notifyNotHanging();
+        }
+        
         public void reportError(Throwable error) {
             _delegate.reportError(error);
         }

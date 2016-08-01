@@ -55,5 +55,10 @@ public class FreshCollector implements TridentCollector {
 
     public Factory getOutputFactory() {
         return _factory;
+    }
+
+    @Override
+    public void notifyNotHanging() {
+        _triContext.getDelegateCollector().notifyNotHanging();
     }    
 }

@@ -199,6 +199,11 @@ public class RichSpoutBatchExecutor implements ITridentSpout {
         public long getPendingCount() {
             return pendingCount;
         }
+        
+        @Override
+        public void notifyNotHanging() {
+            _collector.notifyNotHanging();
+        }
     }
     
 }

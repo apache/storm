@@ -43,6 +43,11 @@ public class BatchOutputCollectorImpl extends BatchOutputCollector {
         _collector.reportError(error);
     }
     
+    @Override
+    public void notifyNotHanging() {
+        _collector.notifyNotHanging();
+    }
+    
     public void ack(Tuple tup) {
         _collector.ack(tup);
     }

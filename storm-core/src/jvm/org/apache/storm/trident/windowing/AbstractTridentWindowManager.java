@@ -184,6 +184,11 @@ public abstract class AbstractTridentWindowManager<T> implements ITridentWindowM
         public void reportError(Throwable t) {
             delegateCollector.reportError(t);
         }
+        
+        @Override
+        public void notifyNotHanging() {
+            delegateCollector.notifyNotHanging();
+        }
 
     }
 

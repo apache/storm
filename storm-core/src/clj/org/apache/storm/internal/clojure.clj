@@ -182,6 +182,9 @@
 (defn reset-timeout! [collector ^Tuple tuple]
   (.resetTimeout ^OutputCollector (:output-collector collector) tuple))
 
+(defn notify-not-hanging! [collector]
+  (.notifyNotHanging ^OutputCollector (:output-collector collector)))
+
 (defn report-error! [collector ^Tuple tuple]
   (.reportError ^OutputCollector (:output-collector collector) tuple))
 

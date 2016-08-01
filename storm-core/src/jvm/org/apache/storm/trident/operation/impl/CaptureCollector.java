@@ -39,4 +39,9 @@ public class CaptureCollector implements TridentCollector {
     public void reportError(Throwable t) {
         _coll.reportError(t);
     }
+    
+    @Override
+    public void notifyNotHanging() {
+        _coll.notifyNotHanging();
+    }
 }

@@ -45,4 +45,9 @@ public class GroupCollector implements TridentCollector {
         _collector.reportError(t);
     }
     
+    @Override
+    public void notifyNotHanging() {
+        _collector.notifyNotHanging();
+    }
+    
 }
