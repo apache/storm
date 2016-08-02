@@ -71,7 +71,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         LATEST,
         UNCOMMITTED_EARLIEST,
         UNCOMMITTED_LATEST }
-    
+
     public static Builder<String, String> builder(String bootstrapServers, String ... topics) {
         return new Builder<>(bootstrapServers, StringDeserializer.class, StringDeserializer.class, topics);
     }
@@ -102,7 +102,6 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         private RecordTranslator<K, V> translator;
         private long pollTimeoutMs = DEFAULT_POLL_TIMEOUT_MS;
         private long offsetCommitPeriodMs = DEFAULT_OFFSET_COMMIT_PERIOD_MS;
-        private int maxRetries = DEFAULT_MAX_RETRIES;
         private FirstPollOffsetStrategy firstPollOffsetStrategy = FirstPollOffsetStrategy.UNCOMMITTED_EARLIEST;
         private int maxUncommittedOffsets = DEFAULT_MAX_UNCOMMITTED_OFFSETS;
         private KafkaSpoutRetryService retryService = DEFAULT_RETRY_SERVICE;
@@ -161,7 +160,6 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
             this.subscription = builder.subscription;
             this.pollTimeoutMs = builder.pollTimeoutMs;
             this.offsetCommitPeriodMs = builder.offsetCommitPeriodMs;
-            this.maxRetries = builder.maxRetries;
             this.firstPollOffsetStrategy = builder.firstPollOffsetStrategy;
             this.maxUncommittedOffsets = builder.maxUncommittedOffsets;
             //this could result in a lot of class case exceptions at runtime,
@@ -331,20 +329,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
             this.offsetCommitPeriodMs = offsetCommitPeriodMs;
             return this;
         }
-
-        /**
-         * Defines the max number of retrials in case of tuple failure. The default is to retry forever, which means that
-         * no new records are committed until the previous polled records have been acked. This guarantees at once delivery of
-         * all the previously polled records.
-         * By specifying a finite value for maxRetries, the user decides to sacrifice guarantee of delivery for the previous
-         * polled records in favor of processing more records.
-         * @param maxRetries max number of retrials
-         */
-        public Builder<K,V> setMaxRetries(int maxRetries) {
-            this.maxRetries = maxRetries;
-            return this;
-        }
-
+        
         /**
          * Defines the max number of polled offsets (records) that can be pending commit, before another poll can take place.
          * Once this limit is reached, no more offsets (records) can be polled until the next successful commit(s) sets the number
@@ -435,7 +420,6 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
     // Kafka spout configuration
     private final RecordTranslator<K, V> translator;
     private final long offsetCommitPeriodMs;
-    private final int maxRetries;
     private final int maxUncommittedOffsets;
     private final FirstPollOffsetStrategy firstPollOffsetStrategy;
     private final KafkaSpoutRetryService retryService;
@@ -447,7 +431,6 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         this.translator = builder.translator;
         this.pollTimeoutMs = builder.pollTimeoutMs;
         this.offsetCommitPeriodMs = builder.offsetCommitPeriodMs;
-        this.maxRetries = builder.maxRetries;
         this.firstPollOffsetStrategy = builder.firstPollOffsetStrategy;
         this.maxUncommittedOffsets = builder.maxUncommittedOffsets;
         this.retryService = builder.retryService;
@@ -509,10 +492,6 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         return (String) kafkaProps.get(ConsumerConfig.GROUP_ID_CONFIG);
     }
 
-    public int getMaxTupleRetries() {
-        return maxRetries;
-    }
-
     public FirstPollOffsetStrategy getFirstPollOffsetStrategy() {
         return firstPollOffsetStrategy;
     }
@@ -537,7 +516,6 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
                 ", value=" + getValueDeserializer() +
                 ", pollTimeoutMs=" + pollTimeoutMs +
                 ", offsetCommitPeriodMs=" + offsetCommitPeriodMs +
-                ", maxRetries=" + maxRetries +
                 ", maxUncommittedOffsets=" + maxUncommittedOffsets +
                 ", firstPollOffsetStrategy=" + firstPollOffsetStrategy +
                 ", subscription=" + subscription +
