@@ -74,7 +74,6 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
 
     // Kafka spout configuration
     private final long offsetCommitPeriodMs;
-    private final int maxRetries;
     private final int maxUncommittedOffsets;
     private final FirstPollOffsetStrategy firstPollOffsetStrategy;
     private final KafkaSpoutStreams kafkaSpoutStreams;
@@ -87,7 +86,6 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         this.valueDeserializer = builder.valueDeserializer;
         this.pollTimeoutMs = builder.pollTimeoutMs;
         this.offsetCommitPeriodMs = builder.offsetCommitPeriodMs;
-        this.maxRetries = builder.maxRetries;
         this.firstPollOffsetStrategy = builder.firstPollOffsetStrategy;
         this.kafkaSpoutStreams = builder.kafkaSpoutStreams;
         this.maxUncommittedOffsets = builder.maxUncommittedOffsets;
@@ -109,7 +107,6 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         private SerializableDeserializer<V> valueDeserializer;
         private long pollTimeoutMs = DEFAULT_POLL_TIMEOUT_MS;
         private long offsetCommitPeriodMs = DEFAULT_OFFSET_COMMIT_PERIOD_MS;
-        private int maxRetries = DEFAULT_MAX_RETRIES;
         private FirstPollOffsetStrategy firstPollOffsetStrategy = FirstPollOffsetStrategy.UNCOMMITTED_EARLIEST;
         private final KafkaSpoutStreams kafkaSpoutStreams;
         private int maxUncommittedOffsets = DEFAULT_MAX_UNCOMMITTED_OFFSETS;
@@ -194,20 +191,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
             this.offsetCommitPeriodMs = offsetCommitPeriodMs;
             return this;
         }
-
-        /**
-         * Defines the max number of retrials in case of tuple failure. The default is to retry forever, which means that
-         * no new records are committed until the previous polled records have been acked. This guarantees at once delivery of
-         * all the previously polled records.
-         * By specifying a finite value for maxRetries, the user decides to sacrifice guarantee of delivery for the previous
-         * polled records in favor of processing more records.
-         * @param maxRetries max number of retrials
-         */
-        public Builder<K,V> setMaxRetries(int maxRetries) {
-            this.maxRetries = maxRetries;
-            return this;
-        }
-
+        
         /**
          * Defines the max number of polled offsets (records) that can be pending commit, before another poll can take place.
          * Once this limit is reached, no more offsets (records) can be polled until the next successful commit(s) sets the number
@@ -283,10 +267,6 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
                 null;
     }
 
-    public int getMaxTupleRetries() {
-        return maxRetries;
-    }
-
     public FirstPollOffsetStrategy getFirstPollOffsetStrategy() {
         return firstPollOffsetStrategy;
     }
@@ -315,7 +295,6 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
                 ", valueDeserializer=" + valueDeserializer +
                 ", pollTimeoutMs=" + pollTimeoutMs +
                 ", offsetCommitPeriodMs=" + offsetCommitPeriodMs +
-                ", maxRetries=" + maxRetries +
                 ", maxUncommittedOffsets=" + maxUncommittedOffsets +
                 ", firstPollOffsetStrategy=" + firstPollOffsetStrategy +
                 ", kafkaSpoutStreams=" + kafkaSpoutStreams +
