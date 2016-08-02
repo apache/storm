@@ -80,10 +80,13 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
             Map<Long, Long> anchorsToIds = new HashMap<>();
             if (anchors != null) {
                 for (Tuple a : anchors) {
-                    long edgeId = MessageId.generateId(random);
-                    ((TupleImpl) a).updateAckVal(edgeId);
-                    for (Long root_id : a.getMessageId().getAnchorsToIds().keySet()) {
-                        putXor(anchorsToIds, root_id, edgeId);
+                    Set<Long> rootIds = a.getMessageId().getAnchorsToIds().keySet();
+                    if (rootIds.size() > 0) {
+                        long edgeId = MessageId.generateId(random);
+                        ((TupleImpl) a).updateAckVal(edgeId);
+                        for (Long root_id : rootIds) {
+                            putXor(anchorsToIds, root_id, edgeId);
+                        }
                     }
                 }
             }

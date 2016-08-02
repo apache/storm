@@ -78,7 +78,7 @@ public class BoltExecutor extends Executor {
                 BuiltinMetricsUtil.registerQueueMetrics(map, stormConf, userContext);
             }
 
-            IOutputCollector outputCollector = new BoltOutputCollectorImpl(this, taskData, entry.getKey(), rand, isEventLoggers, isDebug);
+            IOutputCollector outputCollector = new BoltOutputCollectorImpl(this, taskData, entry.getKey(), rand, hasEventLoggers, isDebug);
             boltObject.prepare(stormConf, userContext, new OutputCollector(outputCollector));
         }
         openOrPrepareWasCalled.set(true);
@@ -87,12 +87,17 @@ public class BoltExecutor extends Executor {
     }
 
     @Override
-    public Object call() throws Exception {
+    public Callable<Object> call() throws Exception {
         while (!stormActive.get()) {
             Utils.sleep(100);
         }
-        receiveQueue.consumeBatchWhenAvailable(this);
-        return 0L;
+        return new Callable<Object>() {
+            @Override
+            public Object call() throws Exception {
+                receiveQueue.consumeBatchWhenAvailable(BoltExecutor.this);
+                return 0L;
+            }
+        };
     }
 
     @Override

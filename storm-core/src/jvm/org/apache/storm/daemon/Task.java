@@ -120,7 +120,7 @@ public class Task {
         if (null != outTaskId) {
             return Collections.singletonList(outTaskId);
         }
-        return null;
+        return new ArrayList<>(0);
     }
 
     public List<Integer> getOutgoingTasks(String stream, List<Object> values) {

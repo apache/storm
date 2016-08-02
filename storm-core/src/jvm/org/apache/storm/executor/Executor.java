@@ -76,7 +76,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.Callable;
 
-public abstract class Executor implements Callable, EventHandler {
+public abstract class Executor implements Callable, EventHandler<Object> {
 
     private static final Logger LOG = LoggerFactory.getLogger(Executor.class);
 
@@ -113,7 +113,7 @@ public abstract class Executor implements Callable, EventHandler {
     protected Map<Integer, Task> idToTask;
     protected final Map<String, String> credentials;
     protected final Boolean isDebug;
-    protected final Boolean isEventLoggers;
+    protected final Boolean hasEventLoggers;
     protected String hostname;
 
     protected Executor(Map workerData, List<Long> executorId, Map<String, String> credentials) {
@@ -138,7 +138,7 @@ public abstract class Executor implements Callable, EventHandler {
         this.suicideFn = (Runnable) workerData.get(Constants.SUICIDE_FN);
         try {
             this.stormClusterState = ClusterUtils.mkStormClusterState(workerData.get("state-store"), Utils.getWorkerACL(stormConf),
-                    new ClusterStateContext(DaemonType.SUPERVISOR));
+                    new ClusterStateContext(DaemonType.WORKER));
         } catch (Exception e) {
             throw Utils.wrapInRuntime(e);
         }
@@ -167,7 +167,7 @@ public abstract class Executor implements Callable, EventHandler {
         this.isDebug = Utils.getBoolean(stormConf.get(Config.TOPOLOGY_DEBUG), false);
         this.rand = new Random(Utils.secureRandomLong());
         this.credentials = credentials;
-        this.isEventLoggers = StormCommon.hasEventLoggers(stormConf);
+        this.hasEventLoggers = StormCommon.hasEventLoggers(stormConf);
 
         try {
             this.hostname = Utils.hostname(stormConf);
@@ -234,8 +234,9 @@ public abstract class Executor implements Callable, EventHandler {
 
         String handlerName = componentId + "-executor" + executorId;
         Utils.SmartThread handlers =
-                Utils.asyncLoop(this, false, reportErrorDie, Thread.NORM_PRIORITY, false, true, handlerName);
+                Utils.asyncLoop(this, false, reportErrorDie, Thread.NORM_PRIORITY, true, true, handlerName);
         setupTicks(StatsUtil.SPOUT.equals(type));
+
         LOG.info("Finished loading executor " + componentId + ":" + executorId);
         return new ExecutorShutdown(this, Lists.newArrayList(systemThreads, handlers), idToTask);
     }
@@ -376,9 +377,9 @@ public abstract class Executor implements Callable, EventHandler {
                     public void run() {
                         TupleImpl tuple = new TupleImpl(workerTopologyContext, new Values(tickTimeSecs),
                                 (int) Constants.SYSTEM_TASK_ID, Constants.SYSTEM_TICK_STREAM_ID);
-                        List<AddressedTuple> metricTickTuple =
+                        List<AddressedTuple> tickTuple =
                                 Lists.newArrayList(new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple));
-                        receiveQueue.publish(metricTickTuple);
+                        receiveQueue.publish(tickTuple);
                     }
                 });
             }

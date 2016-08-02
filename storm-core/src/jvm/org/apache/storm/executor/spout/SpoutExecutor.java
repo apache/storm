@@ -18,6 +18,7 @@
 package org.apache.storm.executor.spout;
 
 import com.google.common.collect.ImmutableMap;
+import java.util.concurrent.Callable;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.ICredentialsListener;
@@ -105,7 +106,7 @@ public class SpoutExecutor extends Executor {
             ISpout spoutObject = (ISpout) taskData.getTaskObject();
             SpoutOutputCollectorImpl spoutOutputCollector = new SpoutOutputCollectorImpl(
                     spoutObject, this, taskData, entry.getKey(), emittedCount,
-                    hasAckers, rand, isEventLoggers, isDebug, pending);
+                    hasAckers, rand, hasEventLoggers, isDebug, pending);
             SpoutOutputCollector outputCollector = new SpoutOutputCollector(spoutOutputCollector);
             this.outputCollectors.add(outputCollector);
 
@@ -124,52 +125,58 @@ public class SpoutExecutor extends Executor {
     }
 
     @Override
-    public Object call() throws Exception {
+    public Callable<Object> call() throws Exception {
         while (!stormActive.get()) {
             Utils.sleep(100);
         }
-        receiveQueue.consumeBatch(this);
 
-        long currCount = emittedCount.get();
-        boolean throttleOn = backPressureEnabled && this.throttleOn.get();
-        boolean reachedMaxSpoutPending = (maxSpoutPending != 0) && (pending.size() >= maxSpoutPending);
-        boolean isActive = stormActive.get();
-        if (isActive) {
-            if (!lastActive.get()) {
-                lastActive.set(true);
-                LOG.info("Activating spout {}:{}", componentId, idToTask.keySet());
-                for (ISpout spout : spouts) {
-                    spout.activate();
+        return new Callable<Object>() {
+            @Override
+            public Object call() throws Exception {
+                receiveQueue.consumeBatch(SpoutExecutor.this);
+
+                long currCount = emittedCount.get();
+                boolean throttleOn = backPressureEnabled && SpoutExecutor.this.throttleOn.get();
+                boolean reachedMaxSpoutPending = (maxSpoutPending != 0) && (pending.size() >= maxSpoutPending);
+                boolean isActive = stormActive.get();
+                if (isActive) {
+                    if (!lastActive.get()) {
+                        lastActive.set(true);
+                        LOG.info("Activating spout {}:{}", componentId, idToTask.keySet());
+                        for (ISpout spout : spouts) {
+                            spout.activate();
+                        }
+                    }
+                    if (!transferQueue.isFull() && !throttleOn && !reachedMaxSpoutPending) {
+                        for (ISpout spout : spouts) {
+                            spout.nextTuple();
+                        }
+                    }
+                } else {
+                    if (lastActive.get()) {
+                        lastActive.set(false);
+                        LOG.info("Deactivating spout {}:{}", componentId, idToTask.keySet());
+                        for (ISpout spout : spouts) {
+                            spout.deactivate();
+                        }
+                    }
+                    Time.sleep(100);
+                    spoutThrottlingMetrics.skippedInactive(stats);
                 }
-            }
-            if (!transferQueue.isFull() && !throttleOn && !reachedMaxSpoutPending) {
-                for (ISpout spout : spouts) {
-                    spout.nextTuple();
+                if (currCount == emittedCount.get() && isActive) {
+                    emptyEmitStreak.increment();
+                    spoutWaitStrategy.emptyEmit(emptyEmitStreak.get());
+                    if (throttleOn) {
+                        spoutThrottlingMetrics.skippedThrottle(stats);
+                    } else if (reachedMaxSpoutPending) {
+                        spoutThrottlingMetrics.skippedMaxSpout(stats);
+                    }
+                } else {
+                    emptyEmitStreak.set(0);
                 }
+                return 0L;
             }
-        } else {
-            if (lastActive.get()) {
-                lastActive.set(false);
-                LOG.info("Deactivating spout {}:{}", componentId, idToTask.keySet());
-                for (ISpout spout : spouts) {
-                    spout.deactivate();
-                }
-            }
-            Time.sleep(100);
-            spoutThrottlingMetrics.skippedInactive(stats);
-        }
-        if (currCount == emittedCount.get() && isActive) {
-            emptyEmitStreak.increment();
-            spoutWaitStrategy.emptyEmit(emptyEmitStreak.get());
-            if (throttleOn) {
-                spoutThrottlingMetrics.skippedThrottle(stats);
-            } else if (reachedMaxSpoutPending) {
-                spoutThrottlingMetrics.skippedMaxSpout(stats);
-            }
-        } else {
-            emptyEmitStreak.set(0);
-        }
-        return 0L;
+        };
     }
 
     @Override
