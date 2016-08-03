@@ -97,6 +97,7 @@ under the License.
 * Longda Feng ([@longda](https://github.com/longdafeng))
 * John Fang ([@hustfxj](https://github.com/hustfxj))
 * Abhishek Agarwal ([@abhishekagarwal87](https://github.com/abhishekagarwal87))
+* Satish Duggana ([@satishd](https://github.com/satishd))
 
 ## Contributors
 

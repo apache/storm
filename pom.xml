@@ -183,6 +183,15 @@
             </roles>
             <timezone>+5.5</timezone>
         </developer>
+        <developer>
+            <id>satishd</id>
+            <name>Satish Duggana</name>
+            <email>satishd@apache.org</email>
+            <roles>
+                <role>Committer</role>
+            </roles>
+            <timezone>+5.5</timezone>
+        </developer>
     </developers>
 
 
