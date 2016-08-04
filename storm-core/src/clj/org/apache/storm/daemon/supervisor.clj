@@ -28,7 +28,7 @@
   (:import [org.apache.storm.utils NimbusLeaderNotFoundException VersionInfo])
   (:import [java.nio.file Files StandardCopyOption])
   (:import [org.apache.storm Config])
-  (:import [org.apache.storm.generated WorkerResources ProfileAction])
+  (:import [org.apache.storm.generated WorkerResources ProfileAction StormTopology])
   (:import [org.apache.storm.localizer LocalResource])
   (:use [org.apache.storm.daemon common])
   (:require [org.apache.storm.command [healthcheck :as healthcheck]])
@@ -875,14 +875,13 @@
     (worker-launcher-and-wait conf (storm-conf TOPOLOGY-SUBMITTER-USER) ["blob" path] :log-prefix (str "setup blob permissions for " path))))
 
 (defn download-blobs-for-topology!
-  "Download all blobs listed in the topology configuration for a given topology."
-  [conf stormconf-path localizer tmproot]
-  (let [storm-conf (read-supervisor-storm-conf-given-path conf stormconf-path)
-        blobstore-map (storm-conf TOPOLOGY-BLOBSTORE-MAP)
+  "Download all blobs passed by parameters for a given topology."
+  [conf storm-conf localizer tmproot blobs fn-local-resources fn-symlink-name]
+  (let [
         user (storm-conf TOPOLOGY-SUBMITTER-USER)
         topo-name (storm-conf TOPOLOGY-NAME)
         user-dir (.getLocalUserFileCacheDir localizer user)
-        localresources (blobstore-map-to-localresources blobstore-map)]
+        localresources (fn-local-resources blobs)]
     (when localresources
       (when-not (.exists user-dir)
         (FileUtils/forceMkdir user-dir))
@@ -893,13 +892,33 @@
             (let [rsrc-file-path (File. (.getFilePath local-rsrc))
                   key-name (.getName rsrc-file-path)
                   blob-symlink-target-name (.getName (File. (.getCurrentSymlinkPath local-rsrc)))
-                  symlink-name (get-blob-localname (get blobstore-map key-name) key-name)]
+                  symlink-name (fn-symlink-name blobs key-name)]
               (create-symlink! tmproot (.getParent rsrc-file-path) symlink-name
-                blob-symlink-target-name))))
+                               blob-symlink-target-name))))
         (catch AuthorizationException authExp
           (log-error authExp))
         (catch KeyNotFoundException knf
           (log-error knf))))))
+
+(defn download-blobs-in-blobstore-map-for-topology!
+  "Download all blobs listed in the topology configuration for a given topology."
+  [conf stormconf-path localizer tmproot]
+  (let [storm-conf (read-supervisor-storm-conf-given-path conf stormconf-path)
+        blobstore-map (storm-conf TOPOLOGY-BLOBSTORE-MAP)]
+    (download-blobs-for-topology! conf storm-conf localizer tmproot blobstore-map
+                                  (fn [blobs] (blobstore-map-to-localresources blobs))
+                                  (fn [blobs key-name] (get-blob-localname (get blobs key-name) key-name)))))
+
+(defn download-dependencies-for-topology!
+  "Download all dependencies blobs listed in the topology configuration for a given topology."
+  [conf stormconf-path stormcode-path localizer tmproot]
+  (let [storm-conf (read-supervisor-storm-conf-given-path conf stormconf-path)
+        storm-code (read-supervisor-storm-code-given-path stormcode-path)
+        dependencies (concat (.get_dependency_jars ^StormTopology storm-code)
+                             (.get_dependency_artifacts ^StormTopology storm-code))]
+    (download-blobs-for-topology! conf storm-conf localizer tmproot dependencies
+                                  (fn [blobs] (map #(LocalResource. % false) blobs))
+                                  (fn [_ key-name] key-name))))
 
 (defn get-blob-file-names
   [blobstore-map]
@@ -909,13 +928,26 @@
 
 (defn download-blobs-for-topology-succeed?
   "Assert if all blobs are downloaded for the given topology"
+  [target-dir file-names]
+  (if-not (empty? file-names)
+    (every? #(Utils/checkFileExists target-dir %) file-names)
+    true))
+
+(defn download-blobs-in-blobstore-map-for-topology-succeed?
+  "Assert if all blobs in blobstore map are downloaded for the given topology"
   [stormconf-path target-dir]
   (let [storm-conf (clojurify-structure (Utils/fromCompressedJsonConf (FileUtils/readFileToByteArray (File. stormconf-path))))
         blobstore-map (storm-conf TOPOLOGY-BLOBSTORE-MAP)
         file-names (get-blob-file-names blobstore-map)]
-    (if-not (empty? file-names)
-      (every? #(Utils/checkFileExists target-dir %) file-names)
-      true)))
+    (download-blobs-for-topology-succeed? target-dir file-names)))
+
+(defn download-dependencies-for-topology-succeed?
+  "Assert if all dependencies blobs are downloaded for the given topology"
+  [stormcode-path target-dir]
+  (let [storm-code (read-supervisor-storm-code-given-path stormcode-path)
+        file-names (concat (.get_dependency_jars ^StormTopology storm-code)
+                           (.get_dependency_artifacts ^StormTopology storm-code))]
+    (download-blobs-for-topology-succeed? target-dir file-names)))
 
 ;; distributed implementation
 (defmethod download-storm-code
@@ -937,9 +969,11 @@
       (supervisor-stormconf-path tmproot) blobstore)
     (.shutdown blobstore)
     (extract-dir-from-jar (supervisor-stormjar-path tmproot) RESOURCES-SUBDIR tmproot)
-    (download-blobs-for-topology! conf (supervisor-stormconf-path tmproot) localizer
+    (download-blobs-in-blobstore-map-for-topology! conf (supervisor-stormconf-path tmproot) localizer
       tmproot)
-    (if (download-blobs-for-topology-succeed? (supervisor-stormconf-path tmproot) tmproot)
+    (download-dependencies-for-topology! conf (supervisor-stormconf-path tmproot) (supervisor-stormcode-path tmproot) localizer tmproot)
+    (if (and (download-blobs-in-blobstore-map-for-topology-succeed? (supervisor-stormconf-path tmproot) tmproot)
+             (download-dependencies-for-topology-succeed? (supervisor-stormcode-path tmproot) tmproot))
       (do
         (log-message "Successfully downloaded blob resources for storm-id " storm-id)
         (if on-windows?
@@ -1051,12 +1085,17 @@
           stormroot (supervisor-stormdist-root conf storm-id)
           jlp (jlp stormroot conf)
           stormjar (supervisor-stormjar-path stormroot)
+          storm-topology (read-supervisor-topology conf storm-id)
+          dependencies (concat (.get_dependency_jars ^StormTopology storm-topology)
+                               (.get_dependency_artifacts ^StormTopology storm-topology))
+          dependency-locations (map #(File. stormroot %) dependencies)
           storm-conf (read-supervisor-storm-conf conf storm-id)
           topo-classpath (if-let [cp (storm-conf TOPOLOGY-CLASSPATH)]
                            [cp]
                            [])
           classpath (-> (worker-classpath)
                         (add-to-classpath [stormjar])
+                        (add-to-classpath dependency-locations)
                         (add-to-classpath topo-classpath))
           top-gc-opts (storm-conf TOPOLOGY-WORKER-GC-CHILDOPTS)
           mem-onheap (if (and mem-onheap (> mem-onheap 0)) ;; not nil and not zero

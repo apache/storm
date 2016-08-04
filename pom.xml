@@ -262,6 +262,10 @@
         <java.unit.test.include>**/Test*.java, **/*Test.java, **/*TestCase.java</java.unit.test.include>    <!--maven surefire plugin default test list-->
         <!-- by default the clojure test set are all clojure tests that are not integration tests. This property is overridden in the profiles -->
         <clojure.test.set>!integration.*</clojure.test.set>
+
+        <aetherVersion>1.0.0.v20140518</aetherVersion>
+        <mavenVersion>3.1.0</mavenVersion>
+        <wagonVersion>1.0</wagonVersion>
     </properties>
 
     <modules>
@@ -293,6 +297,7 @@
         <module>external/storm-kafka-monitor</module>
         <module>external/storm-kinesis</module>
         <module>external/storm-druid</module>
+        <module>external/storm-submit-tools</module>
     </modules>
 
     <dependencies>

@@ -128,7 +128,8 @@
               (str "Duplicate component ids: " offending))))
     (doseq [f thrift/STORM-TOPOLOGY-FIELDS
             :let [obj-map (.getFieldValue topology f)]]
-      (if-not (ThriftTopologyUtils/isWorkerHook f)
+      (if-not (or (ThriftTopologyUtils/isWorkerHook f)
+                   (ThriftTopologyUtils/isDependencies f))
         (do
           (doseq [id (keys obj-map)]
             (if (Utils/isSystemId id)
@@ -143,7 +144,8 @@
 (defn all-components [^StormTopology topology]
   (apply merge {}
     (for [f thrift/STORM-TOPOLOGY-FIELDS]
-      (if-not (ThriftTopologyUtils/isWorkerHook f)
+      (if-not (or (ThriftTopologyUtils/isWorkerHook f)
+                   (ThriftTopologyUtils/isDependencies f))
         (.getFieldValue topology f)))))
 
 (defn component-conf [component]

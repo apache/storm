@@ -25,7 +25,7 @@
   (:import [java.util UUID])
   (:import [java.io File])
   (:import [java.nio.file Files])
-  (:import [java.nio.file.attribute FileAttribute])
+    (:import [java.nio.file.attribute FileAttribute] (org.apache.storm.topology TopologyBuilder))
   (:use [org.apache.storm config testing util timer])
   (:use [org.apache.storm.daemon common])
   (:require [org.apache.storm.daemon [worker :as worker] [supervisor :as supervisor]]
@@ -275,6 +275,10 @@
           mock-cp (str file-path-separator "base" class-path-separator file-path-separator "stormjar.jar")
           mock-sensitivity "S3"
           mock-cp "/base:/stormjar.jar"
+          builder (TopologyBuilder.)
+           _ (.setSpout builder "wordSpout" (TestWordSpout.) 1)
+           _ (.shuffleGrouping (.setBolt builder "wordCountBolt" (TestWordCounter.) 1) "wordSpout")
+           mock-storm-topology (.createTopology builder)
           exp-args-fn (fn [opts topo-opts classpath]
                        (concat [(supervisor/java-cmd) "-cp" classpath
                                (str "-Dlogfile.name=" "worker.log")
@@ -320,6 +324,7 @@
                                       WORKER-CHILDOPTS string-opts}}]
           (stubbing [read-supervisor-storm-conf {TOPOLOGY-WORKER-CHILDOPTS
                                                    topo-string-opts}
+                     read-supervisor-topology mock-storm-topology
                      add-to-classpath mock-cp
                      supervisor-stormdist-root nil
                      launch-process nil
@@ -344,6 +349,7 @@
                                       WORKER-CHILDOPTS list-opts}}]
           (stubbing [read-supervisor-storm-conf {TOPOLOGY-WORKER-CHILDOPTS
                                                    topo-list-opts}
+                     read-supervisor-topology mock-storm-topology
                      add-to-classpath mock-cp
                      supervisor-stormdist-root nil
                      launch-process nil
@@ -366,6 +372,7 @@
               mock-supervisor {:conf {STORM-CLUSTER-MODE :distributed}}]
           (stubbing [read-supervisor-storm-conf {TOPOLOGY-CLASSPATH topo-cp}
                      supervisor-stormdist-root nil
+                     read-supervisor-topology mock-storm-topology
                      supervisor/jlp nil
                      worker-artifacts-root "/tmp/workers-artifacts"
                      set-worker-user! nil
@@ -388,6 +395,7 @@
               mock-supervisor {:conf {STORM-CLUSTER-MODE :distributed}}]
           (stubbing [read-supervisor-storm-conf {TOPOLOGY-ENVIRONMENT topo-env}
                      supervisor-stormdist-root nil
+                     read-supervisor-topology mock-storm-topology
                      supervisor/jlp nil
                      worker-artifacts-root "/tmp/workers-artifacts"
                      launch-process nil
@@ -412,6 +420,10 @@
           mock-mem-onheap 512
           mock-sensitivity "S3"
           mock-cp "mock-classpath'quote-on-purpose"
+          builder (TopologyBuilder.)
+           _ (.setSpout builder "wordSpout" (TestWordSpout.) 1)
+           _ (.shuffleGrouping (.setBolt builder "wordCountBolt" (TestWordCounter.) 1) "wordSpout")
+           mock-storm-topology (.createTopology builder)
           attrs (make-array FileAttribute 0)
           storm-local (.getCanonicalPath (.toFile (Files/createTempDirectory "storm-local" attrs)))
           worker-script (str storm-local "/workers/" mock-worker-id "/storm-worker-script.sh")
@@ -470,6 +482,7 @@
             (stubbing [read-supervisor-storm-conf {TOPOLOGY-WORKER-CHILDOPTS
                                                    topo-string-opts
                                                    TOPOLOGY-SUBMITTER-USER "me"}
+                       read-supervisor-topology mock-storm-topology
                        add-to-classpath mock-cp
                        supervisor-stormdist-root nil
                        launch-process nil
@@ -501,6 +514,7 @@
             (stubbing [read-supervisor-storm-conf {TOPOLOGY-WORKER-CHILDOPTS
                                                    topo-list-opts
                                                    TOPOLOGY-SUBMITTER-USER "me"}
+                       read-supervisor-topology mock-storm-topology
                        add-to-classpath mock-cp
                        supervisor-stormdist-root nil
                        launch-process nil

@@ -1589,7 +1589,8 @@
          teardown-topo-errors 
          teardown-backpressure-dirs
          nimbus/force-delete-topo-dist-dir
-         nimbus/blob-rm-topology-keys] 
+         nimbus/blob-rm-topology-keys
+         nimbus/blob-rm-dependency-jars-in-topology]
 
         (nimbus/do-cleanup nimbus)
 
@@ -1612,6 +1613,10 @@
         ;; removed blob store topo keys
         (verify-nth-call-args-for 1 nimbus/blob-rm-topology-keys "topo2" mock-blob-store mock-state)
         (verify-nth-call-args-for 2 nimbus/blob-rm-topology-keys "topo3" mock-blob-store mock-state)
+
+        ; removed topology dependencies
+        (verify-nth-call-args-for 1 nimbus/blob-rm-dependency-jars-in-topology "topo2" mock-blob-store mock-state)
+        (verify-nth-call-args-for 2 nimbus/blob-rm-dependency-jars-in-topology "topo3" mock-blob-store mock-state)
 
         ;; remove topos from heartbeat cache
         (is (= (count @hb-cache) 0))))))
