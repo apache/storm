@@ -26,10 +26,8 @@ import org.apache.storm.redis.common.container.JedisCommandsInstanceContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.JedisCommands;
-import sun.misc.BASE64Decoder;
-import sun.misc.BASE64Encoder;
+import org.apache.commons.codec.binary.Base64;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -42,9 +40,7 @@ public class RedisKeyValueState<K, V> implements KeyValueState<K, V> {
     private static final Logger LOG = LoggerFactory.getLogger(RedisKeyValueState.class);
     private static final String COMMIT_TXID_KEY = "commit";
     private static final String PREPARE_TXID_KEY = "prepare";
-
-    private final BASE64Encoder base64Encoder;
-    private final BASE64Decoder base64Decoder;
+    
     private final String namespace;
     private final String prepareNamespace;
     private final String txidNamespace;
@@ -69,8 +65,6 @@ public class RedisKeyValueState<K, V> implements KeyValueState<K, V> {
 
     public RedisKeyValueState(String namespace, JedisCommandsInstanceContainer jedisContainer,
                               Serializer<K> keySerializer, Serializer<V> valueSerializer) {
-        base64Encoder = new BASE64Encoder();
-        base64Decoder = new BASE64Decoder();
         this.namespace = namespace;
         this.prepareNamespace = namespace + "$prepare";
         this.txidNamespace = namespace + "$txid";
@@ -297,14 +291,10 @@ public class RedisKeyValueState<K, V> implements KeyValueState<K, V> {
     }
 
     private String encode(byte[] bytes) {
-        return base64Encoder.encode(bytes);
+        return Base64.encodeBase64String(bytes);
     }
 
     private byte[] decode(String s) {
-        try {
-            return base64Decoder.decodeBuffer(s);
-        } catch (IOException ex) {
-            throw new RuntimeException("Error while decoding string " + s);
-        }
+        return Base64.decodeBase64(s);
     }
 }

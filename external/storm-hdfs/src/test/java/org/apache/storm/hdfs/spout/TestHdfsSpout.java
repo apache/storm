@@ -57,7 +57,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.storm.hdfs.common.HdfsUtils.Pair;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 
 public class TestHdfsSpout {
@@ -704,12 +703,12 @@ public class TestHdfsSpout {
 
     @Override
     public void emitDirect(int arg0, String arg1, List<Object> arg2, Object arg3) {
-      throw new NotImplementedException();
+      throw new RuntimeException("NOT Implemented");
     }
 
     @Override
     public void reportError(Throwable arg0) {
-      throw new NotImplementedException();
+        throw new RuntimeException("NOT Implemented");
     }
 
     @Override
