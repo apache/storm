@@ -74,7 +74,6 @@ public class TestUtilsForBlacklistScheduler {
         Config conf = new Config();
         conf.putAll(config);
         conf.put(Config.TOPOLOGY_NAME, name);
-        conf.put(BlacklistScheduler.BLACKLIST_ENABLE,blacklistEnable);
         StormTopology topology = buildTopology(numSpout, numBolt, spoutParallelism, boltParallelism);
         TopologyDetails topo = new TopologyDetails(name + "-" + launchTime, conf, topology,
                 3,

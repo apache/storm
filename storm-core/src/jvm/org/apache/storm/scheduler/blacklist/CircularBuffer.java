@@ -150,20 +150,4 @@ public final class CircularBuffer<T extends Serializable> extends AbstractCollec
             }
         };
     }
-
-    public static void main(String []args){
-        CircularBuffer circularQueue=new CircularBuffer(14);
-        for(int i=0;i<18;i++){
-            circularQueue.add(i);
-        }
-        System.out.println(circularQueue);
-        for(int i=0;i<19;i++){
-            circularQueue.add(i);
-        }
-        Iterator<Serializable> it=circularQueue.iterator();
-        while(it.hasNext()){
-            System.out.println(it.next());
-        }
-        //System.out.println(circularQueue);
-    }
 }

@@ -15,13 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.scheduler.blacklist.reporter;
+package org.apache.storm.scheduler.blacklist.reporters;
 
 import org.apache.storm.scheduler.blacklist.CircularBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Set;
 

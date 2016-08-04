@@ -2,7 +2,7 @@ package org.apache.storm.scheduler.blacklist.strategies;
 
 import org.apache.storm.scheduler.*;
 import org.apache.storm.scheduler.blacklist.CircularBuffer;
-import org.apache.storm.scheduler.blacklist.reporter.IReporter;
+import org.apache.storm.scheduler.blacklist.reporters.IReporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

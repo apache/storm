@@ -10,7 +10,10 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by howard.li on 2016/7/11.
@@ -29,11 +32,9 @@ public class TestBlacklistScheduler {
 
         Config config = new Config();
         config.putAll(Utils.readDefaultConfig());
-        config.put(BlacklistScheduler.TOLERANCE_TIME,200);
-        config.put(BlacklistScheduler.TOLERANCE_COUNT,2);
-        config.put(BlacklistScheduler.RESUME_TIME,300);
-
-        config.put(BlacklistScheduler.BLACKLIST_ENABLE,true);
+        config.put(Config.BLACKLIST_SCHEDULER_TOLERANCE_TIME,200);
+        config.put(Config.BLACKLIST_SCHEDULER_TOLERANCE_COUNT,2);
+        config.put(Config.BLACKLIST_SCHEDULER_RESUME_TIME,300);
 
         Map<String, TopologyDetails> topoMap = new HashMap<String, TopologyDetails>();
 
@@ -68,11 +69,11 @@ public class TestBlacklistScheduler {
 
         Config config = new Config();
         config.putAll(Utils.readDefaultConfig());
-        config.put(BlacklistScheduler.TOLERANCE_TIME,200);
-        config.put(BlacklistScheduler.TOLERANCE_COUNT,2);
-        config.put(BlacklistScheduler.RESUME_TIME,300);
+        config.put(Config.BLACKLIST_SCHEDULER_TOLERANCE_TIME,200);
+        config.put(Config.BLACKLIST_SCHEDULER_TOLERANCE_COUNT,2);
+        config.put(Config.BLACKLIST_SCHEDULER_RESUME_TIME,300);
 
-        config.put(BlacklistScheduler.BLACKLIST_ENABLE,true);
+        //config.put(Config.BLACKLIST_SCHEDULER_BLACKLIST_ENABLE,true);
 
         Map<String, TopologyDetails> topoMap = new HashMap<String, TopologyDetails>();
 
@@ -108,11 +109,9 @@ public class TestBlacklistScheduler {
 
         Config config = new Config();
         config.putAll(Utils.readDefaultConfig());
-        config.put(BlacklistScheduler.TOLERANCE_TIME,40);
-        config.put(BlacklistScheduler.TOLERANCE_COUNT,2);
-        config.put(BlacklistScheduler.RESUME_TIME,300);
-
-        config.put(BlacklistScheduler.BLACKLIST_ENABLE,true);
+        config.put(Config.BLACKLIST_SCHEDULER_TOLERANCE_TIME,200);
+        config.put(Config.BLACKLIST_SCHEDULER_TOLERANCE_COUNT,2);
+        config.put(Config.BLACKLIST_SCHEDULER_RESUME_TIME,300);
 
         Map<String, TopologyDetails> topoMap = new HashMap<String, TopologyDetails>();
 
@@ -150,11 +149,9 @@ public class TestBlacklistScheduler {
 
         Config config = new Config();
         config.putAll(Utils.readDefaultConfig());
-        config.put(BlacklistScheduler.TOLERANCE_TIME,200);
-        config.put(BlacklistScheduler.TOLERANCE_COUNT,2);
-        config.put(BlacklistScheduler.RESUME_TIME,300);
-
-        config.put(BlacklistScheduler.BLACKLIST_ENABLE,true);
+        config.put(Config.BLACKLIST_SCHEDULER_TOLERANCE_TIME,200);
+        config.put(Config.BLACKLIST_SCHEDULER_TOLERANCE_COUNT,2);
+        config.put(Config.BLACKLIST_SCHEDULER_RESUME_TIME,300);
 
         Map<String, TopologyDetails> topoMap = new HashMap<String, TopologyDetails>();
 
@@ -193,10 +190,10 @@ public class TestBlacklistScheduler {
         INimbus iNimbus=new TestUtilsForBlacklistScheduler.INimbusTest();
         Config config = new Config();
         config.putAll(Utils.readDefaultConfig());
-        config.put(BlacklistScheduler.TOLERANCE_TIME,200);
-        config.put(BlacklistScheduler.TOLERANCE_COUNT,2);
-        config.put(BlacklistScheduler.RESUME_TIME,300);
-        config.put(BlacklistScheduler.BLACKLIST_ENABLE,true);
+        config.put(Config.BLACKLIST_SCHEDULER_TOLERANCE_TIME,200);
+        config.put(Config.BLACKLIST_SCHEDULER_TOLERANCE_COUNT,2);
+        config.put(Config.BLACKLIST_SCHEDULER_RESUME_TIME,300);
+
         Map<String, TopologyDetails> topoMap = new HashMap<String, TopologyDetails>();
         TopologyDetails topo1 = TestUtilsForBlacklistScheduler.getTopology("topo-1", config, 5, 15, 1, 1, currentTime - 2,true);
         TopologyDetails topo2 = TestUtilsForBlacklistScheduler.getTopology("topo-2", config, 5, 15, 1, 1, currentTime - 2,true);
@@ -270,6 +267,47 @@ public class TestBlacklistScheduler {
             }
             count++;
         }
+
+    }
+
+    @Test
+    public void TestResumeBlacklist(){
+        INimbus iNimbus=new TestUtilsForBlacklistScheduler.INimbusTest();
+
+        Map<String, SupervisorDetails> supMap=TestUtilsForBlacklistScheduler.genSupervisors(3,4);
+
+        Config config = new Config();
+        config.putAll(Utils.readDefaultConfig());
+        config.put(BlacklistScheduler.TOLERANCE_TIME,40);
+        config.put(BlacklistScheduler.TOLERANCE_COUNT,2);
+        config.put(BlacklistScheduler.RESUME_TIME,300);
+
+        config.put(BlacklistScheduler.BLACKLIST_ENABLE,true);
+
+        Map<String, TopologyDetails> topoMap = new HashMap<String, TopologyDetails>();
+
+        TopologyDetails topo1 = TestUtilsForBlacklistScheduler.getTopology("topo-1", config, 5, 15, 1, 1, currentTime - 2,true);
+        topoMap.put(topo1.getId(), topo1);
+
+        Cluster cluster = new Cluster(iNimbus, supMap, new HashMap<String, SchedulerAssignmentImpl>(), config);
+        Topologies topologies = new Topologies(topoMap);
+        BlacklistScheduler bs=new BlacklistScheduler();
+        bs.prepare(config);
+        bs.schedule(topologies,cluster);
+        cluster = new Cluster(iNimbus, TestUtilsForBlacklistScheduler.removeSupervisorFromSupervisors(supMap,"sup-0"),TestUtilsForBlacklistScheduler.assignmentMapToImpl(cluster.getAssignments()), config);
+        bs.schedule(topologies,cluster);
+        cluster = new Cluster(iNimbus, TestUtilsForBlacklistScheduler.removeSupervisorFromSupervisors(supMap,"sup-0"),TestUtilsForBlacklistScheduler.assignmentMapToImpl(cluster.getAssignments()), config);
+        bs.schedule(topologies,cluster);
+        cluster = new Cluster(iNimbus, supMap, TestUtilsForBlacklistScheduler.assignmentMapToImpl(cluster.getAssignments()), config);
+        bs.schedule(topologies,new Cluster(iNimbus, supMap, new HashMap<String, SchedulerAssignmentImpl>(), config));
+        Set<String> hosts=new HashSet<>();
+        hosts.add("host-0");
+        Assert.assertEquals("blacklist",hosts, bs.getBlacklistHosts(cluster));
+        for(int i=0;i<300/10+1;i++){
+            bs.schedule(topologies,new Cluster(iNimbus, supMap, new HashMap<String, SchedulerAssignmentImpl>(), config));
+        }
+        hosts.clear();
+        Assert.assertEquals("blacklist",hosts, bs.getBlacklistHosts(cluster));
 
     }
 }
