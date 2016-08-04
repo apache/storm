@@ -329,6 +329,10 @@
                                 <!-- exclude intellij projects -->
                                 <exclude>**/*.iml</exclude>
                                 <exclude>**/.idea/**</exclude>
+                                <!-- exclude eclipse projects -->
+                                <exclude>**/*.classpath</exclude>
+                                <exclude>**/.project</exclude>
+                                <exclude>**/.settings/**</exclude>
                                 <!-- module specific testing artifacts -->
                                 <exclude>**/metastore_db/**</exclude>
                                 <!-- anything written into build should be ignored -->
