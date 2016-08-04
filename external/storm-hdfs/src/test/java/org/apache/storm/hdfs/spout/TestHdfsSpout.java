@@ -703,12 +703,12 @@ public class TestHdfsSpout {
 
     @Override
     public void emitDirect(int arg0, String arg1, List<Object> arg2, Object arg3) {
-      throw new RuntimeException("NOT Implemented");
+      throw new UnsupportedOperationException("NOT Implemented");
     }
 
     @Override
     public void reportError(Throwable arg0) {
-        throw new RuntimeException("NOT Implemented");
+        throw new UnsupportedOperationException("NOT Implemented");
     }
 
     @Override
