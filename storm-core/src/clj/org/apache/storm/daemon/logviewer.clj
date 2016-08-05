@@ -1217,6 +1217,8 @@
                                                     truststore-type
                                                     want-client-auth
                                                     need-client-auth)
+                                        (doseq [connector (.getConnectors server)]
+                                          (.setRequestHeaderSize connector header-buffer-size))
                                         (config-filter server middle filters-confs))}))
   (catch Exception ex
     (log-error ex))))
