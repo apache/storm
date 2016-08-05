@@ -85,7 +85,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -153,7 +152,7 @@ public class Utils {
         return oldInstance;
     }
 
-    private static final Logger LOG = LoggerFactory.getLogger(Utils.class);
+    public static final Logger LOG = LoggerFactory.getLogger(Utils.class);
     public static final String DEFAULT_STREAM_ID = "default";
     public static final String DEFAULT_BLOB_VERSION_SUFFIX = ".version";
     public static final String CURRENT_BLOB_SUFFIX_ID = "current";
@@ -172,10 +171,11 @@ public class Utils {
     public static final int SIGTERM = 15;
 
     static {
-        Map conf = readStormConfig();
+        Map<String, Object> conf = readStormConfig();
         serializationDelegate = getSerializationDelegate(conf);
     }
 
+    @SuppressWarnings("unchecked")
     public static <T> T newInstance(String klass) {
         try {
             return newInstance((Class<T>)Class.forName(klass));
@@ -213,9 +213,9 @@ public class Utils {
         return serializationDelegate.deserialize(serialized, clazz);
     }
 
-    public static <T> T thriftDeserialize(Class c, byte[] b, int offset, int length) {
+    public static <T> T thriftDeserialize(Class<T> c, byte[] b, int offset, int length) {
         try {
-            T ret = (T) c.newInstance();
+            T ret = c.newInstance();
             TDeserializer des = getDes();
             des.deserialize((TBase) ret, b, offset, length);
             return ret;
@@ -353,16 +353,17 @@ public class Utils {
         }
     }
 
-    public static Map findAndReadConfigFile(String name, boolean mustExist) {
+    public static Map<String, Object> findAndReadConfigFile(String name, boolean mustExist) {
         InputStream in = null;
         boolean confFileEmpty = false;
         try {
             in = getConfigFileInputStream(name);
             if (null != in) {
                 Yaml yaml = new Yaml(new SafeConstructor());
-                Map ret = (Map) yaml.load(new InputStreamReader(in));
+                @SuppressWarnings("unchecked")
+                Map<String, Object> ret = (Map<String, Object>) yaml.load(new InputStreamReader(in));
                 if (null != ret) {
-                    return new HashMap(ret);
+                    return new HashMap<>(ret);
                 } else {
                     confFileEmpty = true;
                 }
@@ -374,7 +375,7 @@ public class Utils {
                 else
                     throw new RuntimeException("Could not find config file on classpath " + name);
             } else {
-                return new HashMap();
+                return new HashMap<>();
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -416,16 +417,16 @@ public class Utils {
     }
 
 
-    public static Map findAndReadConfigFile(String name) {
+    public static Map<String, Object> findAndReadConfigFile(String name) {
         return findAndReadConfigFile(name, true);
     }
 
-    public static Map readDefaultConfig() {
+    public static Map<String, Object> readDefaultConfig() {
         return findAndReadConfigFile("defaults.yaml", true);
     }
 
-    public static Map readCommandLineOpts() {
-        Map ret = new HashMap();
+    public static Map<String, Object> readCommandLineOpts() {
+        Map<String, Object> ret = new HashMap<>();
         String commandOptions = System.getProperty("storm.options");
         if (commandOptions != null) {
             /*
@@ -456,10 +457,10 @@ public class Utils {
         return ret;
     }
 
-    public static Map readStormConfig() {
-        Map ret = readDefaultConfig();
+    public static Map<String, Object> readStormConfig() {
+        Map<String, Object> ret = readDefaultConfig();
         String confFile = System.getProperty("storm.conf.file");
-        Map storm;
+        Map<String, Object> storm;
         if (confFile == null || confFile.equals("")) {
             storm = findAndReadConfigFile("storm.yaml", false);
         } else {
@@ -626,6 +627,10 @@ public class Utils {
         return isSuccess;
     }
 
+    public static boolean checkFileExists(File path) {
+        return Files.exists(path.toPath());
+    }
+    
     public static boolean checkFileExists(String path) {
         return Files.exists(new File(path).toPath());
     }
@@ -781,7 +786,7 @@ public class Utils {
         }
     }
 
-    public static <T> T thriftDeserialize(Class c, byte[] b) {
+    public static <T> T thriftDeserialize(Class<T> c, byte[] b) {
         try {
             return Utils.thriftDeserialize(c, b, 0, b.length);
         } catch (Exception e) {
@@ -1990,31 +1995,26 @@ public class Utils {
     }
 
     /**
-     * Creates a symbolic link to the target
+     * Creates a symbolic link to the target and force the creation if the target already exists
      * @param dir the parent directory of the link
      * @param targetDir the parent directory of the link's target
-     * @param filename the file name of the link
      * @param targetFilename the file name of the links target
+     * @param filename the file name of the link
      * @throws IOException
      */
-    public static void createSymlink(String dir, String targetDir,
-            String filename, String targetFilename) throws IOException {
+    public static void forceCreateSymlink(String dir, String targetDir,
+            String targetFilename, String filename) throws IOException {
         Path path = Paths.get(dir, filename).toAbsolutePath();
         Path target = Paths.get(targetDir, targetFilename).toAbsolutePath();
         LOG.debug("Creating symlink [{}] to [{}]", path, target);
-        if (!path.toFile().exists()) {
-            Files.createSymbolicLink(path, target);
+        if (path.toFile().exists()) {
+            if (Files.isSameFile(path, target)) {
+                //It already points where we want it to
+                return;
+            }
+            FileUtils.forceDelete(path.toFile());
         }
-    }
-
-    /**
-     * Convenience method for the case when the link's file name should be the
-     * same as the file name of the target
-     */
-    public static void createSymlink(String dir, String targetDir,
-                                     String targetFilename) throws IOException {
-        Utils.createSymlink(dir, targetDir, targetFilename,
-                            targetFilename);
+        Files.createSymbolicLink(path, target);
     }
 
     /**
@@ -2045,56 +2045,6 @@ public class Utils {
     // Non-static impl methods exist for mocking purposes.
     public String currentClasspathImpl() {
         return System.getProperty("java.class.path");
-    }
-
-    /**
-     * Returns a collection of jar file names found under the given directory.
-     * @param dir the directory to search
-     * @return the jar file names
-     */
-    private static List<String> getFullJars(String dir) {
-        File[] files = new File(dir).listFiles(jarFilter);
-
-        if(files == null) {
-            return new ArrayList<>();
-        }
-
-        List<String> ret = new ArrayList<>(files.length);
-        for (File f : files) {
-            ret.add(Paths.get(dir, f.getName()).toString());
-        }
-        return ret;
-    }
-    private static final FilenameFilter jarFilter = new FilenameFilter() {
-            @Override
-            public boolean accept(File dir, String name) {
-                return name.endsWith(".jar");
-            }
-        };
-
-
-    public static String workerClasspath() {
-        String stormDir = System.getProperty("storm.home");
-
-        if (stormDir == null) {
-            return Utils.currentClasspath();
-        }
-
-        String stormLibDir = Paths.get(stormDir, "lib").toString();
-        String stormConfDir =
-                System.getenv("STORM_CONF_DIR") != null ?
-                System.getenv("STORM_CONF_DIR") :
-                Paths.get(stormDir, "conf").toString();
-        String stormExtlibDir = Paths.get(stormDir, "extlib").toString();
-        String extcp = System.getenv("STORM_EXT_CLASSPATH");
-        List<String> pathElements = new LinkedList<>();
-        pathElements.addAll(Utils.getFullJars(stormLibDir));
-        pathElements.addAll(Utils.getFullJars(stormExtlibDir));
-        pathElements.add(extcp);
-        pathElements.add(stormConfDir);
-
-        return StringUtils.join(pathElements,
-                CLASS_PATH_SEPARATOR);
     }
 
     public static String addToClasspath(String classpath,
@@ -2279,78 +2229,6 @@ public class Utils {
     public static SmartThread asyncLoop(final Callable afn) {
         return asyncLoop(afn, false, null, Thread.NORM_PRIORITY, false, true,
                 null);
-    }
-
-    /**
-     * A callback that can accept an integer.
-     * @param <V> the result type of method <code>call</code>
-     */
-    public interface ExitCodeCallable<V> extends Callable<V> {
-        V call(int exitCode);
-    }
-
-    /**
-     * Launch a new process as per {@link java.lang.ProcessBuilder} with a given
-     * callback.
-     * @param command the command to be executed in the new process
-     * @param environment the environment to be applied to the process. Can be
-     *                    null.
-     * @param logPrefix a prefix for log entries from the output of the process.
-     *                  Can be null.
-     * @param exitCodeCallback code to be called passing the exit code value
-     *                         when the process completes
-     * @param dir the working directory of the new process
-     * @return the new process
-     * @throws IOException
-     * @see java.lang.ProcessBuilder
-     */
-    public static Process launchProcess(List<String> command,
-                                        Map<String,String> environment,
-                                        final String logPrefix,
-                                        final ExitCodeCallable exitCodeCallback,
-                                        File dir)
-            throws IOException {
-        return _instance.launchProcessImpl(command, environment, logPrefix,
-                exitCodeCallback, dir);
-    }
-
-    public Process launchProcessImpl(
-            List<String> command,
-            Map<String,String> cmdEnv,
-            final String logPrefix,
-            final ExitCodeCallable exitCodeCallback,
-            File dir)
-            throws IOException {
-        ProcessBuilder builder = new ProcessBuilder(command);
-        Map<String,String> procEnv = builder.environment();
-        if (dir != null) {
-            builder.directory(dir);
-        }
-        builder.redirectErrorStream(true);
-        if (cmdEnv != null) {
-            procEnv.putAll(cmdEnv);
-        }
-        final Process process = builder.start();
-        if (logPrefix != null || exitCodeCallback != null) {
-            Utils.asyncLoop(new Callable() {
-                public Object call() {
-                    if (logPrefix != null ) {
-                        Utils.readAndLogStream(logPrefix,
-                                process.getInputStream());
-                    }
-                    if (exitCodeCallback != null) {
-                        try {
-                            process.waitFor();
-                        } catch (InterruptedException ie) {
-                            LOG.info("{} interrupted", logPrefix);
-                            exitCodeCallback.call(process.exitValue());
-                        }
-                    }
-                    return null; // Run only once.
-                }
-            });
-        }
-        return process;
     }
 
     public static <T> List<T> interleaveAll(List<List<T>> nodeList) {

@@ -104,7 +104,7 @@ public class PaceMakerStateStorage implements IStateStorage {
     }
 
     @Override
-    public Map get_data_with_version(String path, boolean watch) {
+    public VersionedData<byte[]> get_data_with_version(String path, boolean watch) {
         return stateStorage.get_data_with_version(path, watch);
     }
 

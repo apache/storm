@@ -15,27 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.storm.daemon.supervisor;
 
-package org.apache.storm.daemon.supervisor.timer;
+/**
+ * Could not recover the container.
+ */
+public class ContainerRecoveryException extends RuntimeException {
 
-import java.util.Map;
-
-import org.apache.storm.command.HealthCheck;
-import org.apache.storm.daemon.supervisor.Supervisor;
-
-public class SupervisorHealthCheck implements Runnable {
-    private final Supervisor supervisor;
-
-    public SupervisorHealthCheck(Supervisor supervisor) {
-        this.supervisor = supervisor;
+    public ContainerRecoveryException(String message) {
+        super(message);
     }
 
-    @Override
-    public void run() {
-        Map<String, Object> conf = supervisor.getConf();
-        int healthCode = HealthCheck.healthCheck(conf);
-        if (healthCode != 0) {
-            supervisor.shutdownAllWorkers();
-        }
-    }
 }

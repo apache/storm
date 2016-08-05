@@ -15,21 +15,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.daemon.supervisor.workermanager;
+package org.apache.storm.cluster;
 
-import org.apache.storm.generated.WorkerResources;
-import org.apache.storm.localizer.Localizer;
-import org.apache.storm.utils.Utils;
-
-import java.util.List;
-import java.util.Map;
-
-public interface IWorkerManager {
-    void prepareWorker(Map conf, Localizer localizer);
-
-    void launchWorker(String supervisorId, String assignmentId, String stormId, Long port, String workerId, WorkerResources resources,
-                               Utils.ExitCodeCallable workerExitCallback);
-    void shutdownWorker(String supervisorId, String workerId, Map<String, String> workerThreadPids);
-
-    boolean cleanupWorker(String workerId);
+public class VersionedData<D> {
+    private final int version;
+    private final D data;
+    
+    public VersionedData(int version, D data) {
+        this.version = version;
+        this.data = data;
+    }
+    
+    public int getVersion() {
+        return version;
+    }
+    
+    public D getData() {
+        return data;
+    }
 }

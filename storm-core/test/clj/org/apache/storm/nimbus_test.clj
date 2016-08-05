@@ -1188,6 +1188,14 @@
         (assert-files-in-dir [])
         ))))
 
+(defn wait-for-status [nimbus name status]
+  (while-timeout 5000
+    (let [topo-summary (first (filter (fn [topo] (= name (.get_name topo))) (.get_topologies (.getClusterInfo nimbus))))
+          topo-status (if topo-summary (.get_status topo-summary) "NOT-RUNNING")]
+      (log-message "WAITING FOR "name" TO BE " status " CURRENT " topo-status)
+      (not= topo-status status))
+    (Thread/sleep 100)))
+
 (deftest test-leadership
   "Tests that leader actions can only be performed by master and non leader fails to perform the same actions."
   (with-inprocess-zookeeper zk-port
@@ -1218,7 +1226,7 @@
               (submit-local-topology nimbus "t1" {} topology)
               ;; Instead of sleeping until topology is scheduled, rebalance topology so mk-assignments is called.
               (.rebalance nimbus "t1" (doto (RebalanceOptions.) (.set_wait_secs 0)))
-              (Thread/sleep 1000)
+              (wait-for-status nimbus "t1" "ACTIVE") 
               (.deactivate nimbus "t1")
               (.activate nimbus "t1")
               (.rebalance nimbus "t1" (RebalanceOptions.))

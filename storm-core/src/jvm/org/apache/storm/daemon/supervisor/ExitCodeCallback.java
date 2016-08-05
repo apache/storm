@@ -17,12 +17,14 @@
  */
 package org.apache.storm.daemon.supervisor;
 
-import java.util.Map;
-
-public interface SupervisorDaemon {
-    String getId();
-
-    Map getConf();
-
-    void shutdownAllWorkers();
+/**
+ * A callback that can accept an integer.
+ */
+public interface ExitCodeCallback {
+    
+    /**
+     * The process finished 
+     * @param exitCode the exit code of the finished process.
+     */
+    public void call(int exitCode);
 }
