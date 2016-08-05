@@ -1,4 +1,7 @@
 ## 2.0.0
+ * STORM-2020: Stop using sun internal classes.
+ * STORM-2021: Fix license.
+ * STORM-2022: fix FieldsTest
  * STORM-1285: port backtype.storm.command.get-errors to java
  * STORM-2010: port org.apache.storm.command.heartbeats.clj to Java
  * STORM-2009: port org.apache.storm.blobstore.clj and org.apache.storm.command.blobstore.clj to Java
