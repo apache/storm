@@ -19,14 +19,11 @@ package org.apache.storm.daemon.supervisor;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.storm.Config;
-import org.apache.storm.ProcessSimulator;
-import org.apache.storm.daemon.supervisor.workermanager.IWorkerManager;
 import org.apache.storm.generated.LSWorkerHeartbeat;
 import org.apache.storm.localizer.LocalResource;
 import org.apache.storm.localizer.Localizer;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.LocalState;
-import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.data.ACL;
@@ -36,8 +33,14 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.net.URLDecoder;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Callable;
 
 public class SupervisorUtils {
 
@@ -52,8 +55,8 @@ public class SupervisorUtils {
         _instance = INSTANCE;
     }
 
-    public static Process processLauncher(Map conf, String user, List<String> commandPrefix, List<String> args, Map<String, String> environment, final String logPreFix,
-                                          final Utils.ExitCodeCallable exitCodeCallback, File dir) throws IOException {
+    static Process processLauncher(Map<String, Object> conf, String user, List<String> commandPrefix, List<String> args, Map<String, String> environment, final String logPreFix,
+                                          final ExitCodeCallback exitCodeCallback, File dir) throws IOException {
         if (StringUtils.isBlank(user)) {
             throw new IllegalArgumentException("User cannot be blank when calling processLauncher.");
         }
@@ -73,10 +76,10 @@ public class SupervisorUtils {
         commands.add(user);
         commands.addAll(args);
         LOG.info("Running as user: {} command: {}", user, commands);
-        return Utils.launchProcess(commands, environment, logPreFix, exitCodeCallback, dir);
+        return SupervisorUtils.launchProcess(commands, environment, logPreFix, exitCodeCallback, dir);
     }
 
-    public static int processLauncherAndWait(Map conf, String user, List<String> args, final Map<String, String> environment, final String logPreFix)
+    public static int processLauncherAndWait(Map<String, Object> conf, String user, List<String> args, final Map<String, String> environment, final String logPreFix)
             throws IOException {
         int ret = 0;
         Process process = processLauncher(conf, user, null, args, environment, logPreFix, null, null);
@@ -91,7 +94,7 @@ public class SupervisorUtils {
         return ret;
     }
 
-    public static void setupStormCodeDir(Map conf, Map stormConf, String dir) throws IOException {
+    public static void setupStormCodeDir(Map<String, Object> conf, Map<String, Object> stormConf, String dir) throws IOException {
         if (Utils.getBoolean(conf.get(Config.SUPERVISOR_RUN_WORKER_AS_USER), false)) {
             String logPrefix = "setup conf for " + dir;
             List<String> commands = new ArrayList<>();
@@ -101,7 +104,7 @@ public class SupervisorUtils {
         }
     }
 
-    public static void rmrAsUser(Map conf, String id, String path) throws IOException {
+    public static void rmrAsUser(Map<String, Object> conf, String id, String path) throws IOException {
         String user = Utils.getFileOwner(path);
         String logPreFix = "rmr " + id;
         List<String> commands = new ArrayList<>();
@@ -148,8 +151,8 @@ public class SupervisorUtils {
      * @param stormId
      * @param conf
      */
-    public static void addBlobReferences(Localizer localizer, String stormId, Map conf) throws IOException {
-        Map stormConf = ConfigUtils.readSupervisorStormConf(conf, stormId);
+    static void addBlobReferences(Localizer localizer, String stormId, Map<String, Object> conf) throws IOException {
+        Map<String, Object> stormConf = ConfigUtils.readSupervisorStormConf(conf, stormId);
         Map<String, Map<String, Object>> blobstoreMap = (Map<String, Map<String, Object>>) stormConf.get(Config.TOPOLOGY_BLOBSTORE_MAP);
         String user = (String) stormConf.get(Config.TOPOLOGY_SUBMITTER_USER);
         String topoName = (String) stormConf.get(Config.TOPOLOGY_NAME);
@@ -159,7 +162,7 @@ public class SupervisorUtils {
         }
     }
 
-    public static Set<String> readDownLoadedStormIds(Map conf) throws IOException {
+    public static Set<String> readDownloadedTopologyIds(Map<String, Object> conf) throws IOException {
         Set<String> stormIds = new HashSet<>();
         String path = ConfigUtils.supervisorStormDistRoot(conf);
         Collection<String> rets = Utils.readDirContents(path);
@@ -169,12 +172,12 @@ public class SupervisorUtils {
         return stormIds;
     }
 
-    public static Collection<String> supervisorWorkerIds(Map conf) {
+    public static Collection<String> supervisorWorkerIds(Map<String, Object> conf) {
         String workerRoot = ConfigUtils.workerRoot(conf);
         return Utils.readDirContents(workerRoot);
     }
 
-    public static boolean doRequiredTopoFilesExist(Map conf, String stormId) throws IOException {
+    static boolean doRequiredTopoFilesExist(Map<String, Object> conf, String stormId) throws IOException {
         String stormroot = ConfigUtils.supervisorStormDistRoot(conf, stormId);
         String stormjarpath = ConfigUtils.supervisorStormJarPath(stormroot);
         String stormcodepath = ConfigUtils.supervisorStormCodePath(stormroot);
@@ -197,11 +200,11 @@ public class SupervisorUtils {
      * @return
      * @throws Exception
      */
-    public static Map<String, LSWorkerHeartbeat> readWorkerHeartbeats(Map conf) throws Exception {
+    public static Map<String, LSWorkerHeartbeat> readWorkerHeartbeats(Map<String, Object> conf) throws Exception {
         return _instance.readWorkerHeartbeatsImpl(conf);
     }
 
-    public  Map<String, LSWorkerHeartbeat> readWorkerHeartbeatsImpl(Map conf) throws Exception {
+    public Map<String, LSWorkerHeartbeat> readWorkerHeartbeatsImpl(Map<String, Object> conf) throws Exception {
         Map<String, LSWorkerHeartbeat> workerHeartbeats = new HashMap<>();
 
         Collection<String> workerIds = SupervisorUtils.supervisorWorkerIds(conf);
@@ -223,11 +226,11 @@ public class SupervisorUtils {
      * @return
      * @throws IOException
      */
-    public static LSWorkerHeartbeat readWorkerHeartbeat(Map conf, String workerId) {
+    private static LSWorkerHeartbeat readWorkerHeartbeat(Map<String, Object> conf, String workerId) {
         return _instance.readWorkerHeartbeatImpl(conf, workerId);
     }
 
-    public  LSWorkerHeartbeat readWorkerHeartbeatImpl(Map conf, String workerId) {
+    protected LSWorkerHeartbeat readWorkerHeartbeatImpl(Map<String, Object> conf, String workerId) {
         try {
             LocalState localState = ConfigUtils.workerState(conf, workerId);
             return localState.getWorkerHeartBeat();
@@ -237,89 +240,72 @@ public class SupervisorUtils {
         }
     }
 
-    public static boolean  isWorkerHbTimedOut(int now, LSWorkerHeartbeat whb, Map conf) {
+    public static boolean  isWorkerHbTimedOut(int now, LSWorkerHeartbeat whb, Map<String, Object> conf) {
         return _instance.isWorkerHbTimedOutImpl(now, whb, conf);
     }
 
-    public  boolean  isWorkerHbTimedOutImpl(int now, LSWorkerHeartbeat whb, Map conf) {
+    private  boolean  isWorkerHbTimedOutImpl(int now, LSWorkerHeartbeat whb, Map<String, Object> conf) {
         return (now - whb.get_time_secs()) > Utils.getInt(conf.get(Config.SUPERVISOR_WORKER_TIMEOUT_SECS));
     }
-
-    public static String javaCmd(String cmd) {
-        return _instance.javaCmdImpl(cmd);
-    }
-
-    public String javaCmdImpl(String cmd) {
-        String ret = null;
-        String javaHome = System.getenv().get("JAVA_HOME");
-        if (StringUtils.isNotBlank(javaHome)) {
-            ret = javaHome + Utils.FILE_PATH_SEPARATOR + "bin" + Utils.FILE_PATH_SEPARATOR + cmd;
-        } else {
-            ret = cmd;
+    
+    /**
+     * Launch a new process as per {@link java.lang.ProcessBuilder} with a given
+     * callback.
+     * @param command the command to be executed in the new process
+     * @param environment the environment to be applied to the process. Can be
+     *                    null.
+     * @param logPrefix a prefix for log entries from the output of the process.
+     *                  Can be null.
+     * @param exitCodeCallback code to be called passing the exit code value
+     *                         when the process completes
+     * @param dir the working directory of the new process
+     * @return the new process
+     * @throws IOException
+     * @see java.lang.ProcessBuilder
+     */
+    public static Process launchProcess(List<String> command,
+                                        Map<String,String> environment,
+                                        final String logPrefix,
+                                        final ExitCodeCallback exitCodeCallback,
+                                        File dir)
+            throws IOException {
+        ProcessBuilder builder = new ProcessBuilder(command);
+        Map<String,String> procEnv = builder.environment();
+        if (dir != null) {
+            builder.directory(dir);
         }
-        return ret;
+        builder.redirectErrorStream(true);
+        if (environment != null) {
+            procEnv.putAll(environment);
+        }
+        final Process process = builder.start();
+        if (logPrefix != null || exitCodeCallback != null) {
+            Utils.asyncLoop(new Callable<Object>() {
+                public Object call() {
+                    if (logPrefix != null ) {
+                        Utils.readAndLogStream(logPrefix,
+                                process.getInputStream());
+                    }
+                    if (exitCodeCallback != null) {
+                        try {
+                            process.waitFor();
+                            exitCodeCallback.call(process.exitValue());
+                        } catch (InterruptedException ie) {
+                            LOG.info("{} interrupted", logPrefix);
+                            exitCodeCallback.call(-1);
+                        }
+                    }
+                    return null; // Run only once.
+                }
+            });
+        }
+        return process;
     }
     
-    public static List<ACL> supervisorZkAcls() {
+    static List<ACL> supervisorZkAcls() {
         final List<ACL> acls = new ArrayList<>();
         acls.add(ZooDefs.Ids.CREATOR_ALL_ACL.get(0));
         acls.add(new ACL((ZooDefs.Perms.READ ^ ZooDefs.Perms.CREATE), ZooDefs.Ids.ANYONE_ID_UNSAFE));
         return acls;
     }
-
-    public static void shutdownAllWorkers(Map conf, String supervisorId, Map<String, String> workerThreadPids, Set<String> deadWorkers,
-            IWorkerManager workerManager) {
-        Collection<String> workerIds = SupervisorUtils.supervisorWorkerIds(conf);
-        try {
-            for (String workerId : workerIds) {
-                workerManager.shutdownWorker(supervisorId, workerId, workerThreadPids);
-                boolean success = workerManager.cleanupWorker(workerId);
-                if (success) {
-                    deadWorkers.remove(workerId);
-                }
-            }
-        } catch (Exception e) {
-            LOG.error("shutWorker failed");
-            throw Utils.wrapInRuntime(e);
-        }
-    }
-
-
-    /**
-     * Remove a reference to a blob when its no longer needed.
-     *
-     * @param localizer
-     * @param stormId
-     * @param conf
-     */
-    public static void removeBlobReferences(Localizer localizer, String stormId, Map conf) throws Exception {
-        Map stormConf = ConfigUtils.readSupervisorStormConf(conf, stormId);
-        Map<String, Map<String, Object>> blobstoreMap = (Map<String, Map<String, Object>>) stormConf.get(Config.TOPOLOGY_BLOBSTORE_MAP);
-        String user = (String) stormConf.get(Config.TOPOLOGY_SUBMITTER_USER);
-        String topoName = (String) stormConf.get(Config.TOPOLOGY_NAME);
-        if (blobstoreMap != null) {
-            for (Map.Entry<String, Map<String, Object>> entry : blobstoreMap.entrySet()) {
-                String key = entry.getKey();
-                Map<String, Object> blobInfo = entry.getValue();
-                localizer.removeBlobReference(key, user, topoName, shouldUncompressBlob(blobInfo));
-            }
-        }
-    }
-
-    public static void rmTopoFiles(Map conf, String stormId, Localizer localizer, boolean isrmBlobRefs) throws IOException {
-        String path = ConfigUtils.supervisorStormDistRoot(conf, stormId);
-        try {
-            if (isrmBlobRefs) {
-                removeBlobReferences(localizer, stormId, conf);
-            }
-            if (Utils.getBoolean(conf.get(Config.SUPERVISOR_RUN_WORKER_AS_USER), false)) {
-                SupervisorUtils.rmrAsUser(conf, stormId, path);
-            } else {
-                Utils.forceDelete(ConfigUtils.supervisorStormDistRoot(conf, stormId));
-            }
-        } catch (Exception e) {
-            LOG.info("Exception removing: {} ", stormId, e);
-        }
-    }
-
 }

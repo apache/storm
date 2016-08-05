@@ -15,8 +15,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.daemon.supervisor;
+package org.apache.storm.cluster;
 
-public enum State {
-    VALID, DISALLOWED, NOT_STARTED, TIMED_OUT;
+public class VersionedData<D> {
+    private final int version;
+    private final D data;
+    
+    public VersionedData(int version, D data) {
+        this.version = version;
+        this.data = data;
+    }
+    
+    public int getVersion() {
+        return version;
+    }
+    
+    public D getData() {
+        return data;
+    }
 }

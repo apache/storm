@@ -18,35 +18,24 @@
 
 package org.apache.storm.daemon.supervisor.timer;
 
-import org.apache.storm.command.HealthCheck;
-import org.apache.storm.daemon.supervisor.SupervisorData;
-import org.apache.storm.daemon.supervisor.SupervisorUtils;
-import org.apache.storm.daemon.supervisor.workermanager.IWorkerManager;
-import org.apache.storm.utils.Utils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.Collection;
 import java.util.Map;
 
+import org.apache.storm.command.HealthCheck;
+import org.apache.storm.daemon.supervisor.Supervisor;
+
 public class SupervisorHealthCheck implements Runnable {
+    private final Supervisor supervisor;
 
-    private static final Logger LOG = LoggerFactory.getLogger(SupervisorHealthCheck.class);
-
-    private SupervisorData supervisorData;
-
-    public SupervisorHealthCheck(SupervisorData supervisorData) {
-        this.supervisorData = supervisorData;
+    public SupervisorHealthCheck(Supervisor supervisor) {
+        this.supervisor = supervisor;
     }
 
     @Override
     public void run() {
-        Map conf = supervisorData.getConf();
-        IWorkerManager workerManager = supervisorData.getWorkerManager();
+        Map<String, Object> conf = supervisor.getConf();
         int healthCode = HealthCheck.healthCheck(conf);
         if (healthCode != 0) {
-            SupervisorUtils.shutdownAllWorkers(conf, supervisorData.getSupervisorId(), supervisorData.getWorkerThreadPids(), supervisorData.getDeadWorkers(),
-                    workerManager);
+            supervisor.shutdownAllWorkers();
         }
     }
 }

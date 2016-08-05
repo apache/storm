@@ -17,39 +17,20 @@
  */
 package org.apache.storm.command;
 
-import org.apache.storm.Config;
-import org.apache.storm.daemon.supervisor.StandaloneSupervisor;
-import org.apache.storm.daemon.supervisor.SupervisorData;
-import org.apache.storm.daemon.supervisor.SupervisorUtils;
-import org.apache.storm.daemon.supervisor.workermanager.IWorkerManager;
-import org.apache.storm.utils.ConfigUtils;
-
-import org.eclipse.jetty.util.ConcurrentHashSet;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
-import java.util.Collection;
 import java.util.Map;
 
-public class KillWorkers {
-    private static final Logger LOG = LoggerFactory.getLogger(KillWorkers.class);
+import org.apache.storm.Config;
+import org.apache.storm.daemon.supervisor.StandaloneSupervisor;
+import org.apache.storm.daemon.supervisor.Supervisor;
+import org.apache.storm.utils.ConfigUtils;
 
+public class KillWorkers {
     public static void main(String [] args) throws Exception {
-        Map conf = ConfigUtils.readStormConfig();
+        Map<String, Object> conf = ConfigUtils.readStormConfig();
         conf.put(Config.STORM_LOCAL_DIR, new File((String)conf.get(Config.STORM_LOCAL_DIR)).getCanonicalPath());
-        SupervisorData supervisorData = new SupervisorData(conf, null, new StandaloneSupervisor());
-        IWorkerManager workerManager = supervisorData.getWorkerManager();
-        Collection<String> workerIds = SupervisorUtils.supervisorWorkerIds(conf);
-        String supervisorId = supervisorData.getSupervisorId();
-        Map<String, String> workerToThreadPids = supervisorData.getWorkerThreadPids();
-        ConcurrentHashSet deadWorkers = supervisorData.getDeadWorkers();
-        for (String workerId : workerIds) {
-            LOG.info("Killing worker: {} through CLI.", workerId);
-            workerManager.shutdownWorker(supervisorId, workerId, workerToThreadPids);
-            if (workerManager.cleanupWorker(workerId)) {
-                deadWorkers.remove(workerId);
-            }
+        try (Supervisor supervisor = new Supervisor(conf, null, new StandaloneSupervisor())) {
+            supervisor.shutdownAllWorkers();
         }
     }
 }

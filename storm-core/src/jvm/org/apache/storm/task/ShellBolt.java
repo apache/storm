@@ -26,6 +26,7 @@ import org.apache.storm.multilang.BoltMsg;
 import org.apache.storm.multilang.ShellMsg;
 import org.apache.storm.topology.ReportedFailedException;
 import org.apache.storm.tuple.Tuple;
+import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ShellBoltMessageQueue;
 import org.apache.storm.utils.ShellProcess;
 import clojure.lang.RT;
@@ -90,6 +91,7 @@ public class ShellBolt implements IBolt {
     private ScheduledExecutorService heartBeatExecutorService;
     private AtomicLong lastHeartbeatTimestamp = new AtomicLong();
     private AtomicBoolean sendHeartbeatFlag = new AtomicBoolean(false);
+    private boolean _isLocalMode = false;
 
     public ShellBolt(ShellComponent component) {
         this(component.get_execution_command(), component.get_script());
@@ -106,6 +108,9 @@ public class ShellBolt implements IBolt {
 
     public void prepare(Map stormConf, TopologyContext context,
                         final OutputCollector collector) {
+        if (ConfigUtils.isLocalMode(stormConf)) {
+            _isLocalMode = true;
+        }
         Object maxPending = stormConf.get(Config.TOPOLOGY_SHELLBOLT_MAX_PENDING);
         if (maxPending != null) {
             this._pendingWrites = new ShellBoltMessageQueue(((Number)maxPending).intValue());
@@ -298,7 +303,7 @@ public class ShellBolt implements IBolt {
                 processInfo);
         LOG.error(message, exception);
         _collector.reportError(exception);
-        if (_running || (exception instanceof Error)) { //don't exit if not running, unless it is an Error
+        if (!_isLocalMode && (_running || (exception instanceof Error))) { //don't exit if not running, unless it is an Error
             System.exit(11);
         }
     }

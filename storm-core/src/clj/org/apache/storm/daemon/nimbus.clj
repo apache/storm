@@ -1616,7 +1616,7 @@
                :all-components all-components
                :launch-time-secs launch-time-secs
                :assignment assignment
-               :beats beats
+               :beats (or beats {})
                :topology topology
                :task->component task->component
                :base base}))
@@ -1995,7 +1995,8 @@
               executor-summaries (dofor [[executor [node port]] (:executor->node+port assignment)]
                                    (let [host (-> assignment :node->host (get node))
                                             heartbeat (.get beats (StatsUtil/convertExecutor executor))
-                                            hb (if heartbeat (.get heartbeat "heartbeat"))
+                                            heartbeat (or heartbeat {})
+                                            hb (.get heartbeat "heartbeat")
                                             excutorstats (if hb (.get hb "stats"))
                                             excutorstats (if excutorstats
                                                     (StatsUtil/thriftifyExecutorStats excutorstats))]

@@ -36,13 +36,14 @@
   (:import [org.apache.storm.messaging TransportFactory])
   (:import [org.apache.storm.messaging TaskMessage IContext IConnection ConnectionWithStatus ConnectionWithStatus$Status DeserializingConnectionCallback])
   (:import [org.apache.storm.daemon Shutdownable StormCommon DaemonCommon])
+  (:import [org.apache.storm.daemon.supervisor AdvancedFSOps])
   (:import [org.apache.storm.serialization KryoTupleSerializer])
   (:import [org.apache.storm.generated StormTopology LSWorkerHeartbeat])
   (:import [org.apache.storm.tuple AddressedTuple Fields])
   (:import [org.apache.storm.task WorkerTopologyContext])
   (:import [org.apache.storm Constants])
   (:import [org.apache.storm.security.auth AuthUtils])
-  (:import [org.apache.storm.cluster ClusterStateContext DaemonType ZKStateStorage StormClusterStateImpl ClusterUtils IStateStorage])
+  (:import [org.apache.storm.cluster ClusterStateContext DaemonType ZKStateStorage StormClusterStateImpl ClusterUtils])
   (:import [javax.security.auth Subject])
   (:import [java.security PrivilegedExceptionAction])
   (:import [org.apache.logging.log4j LogManager])
@@ -272,8 +273,8 @@
         receive-queue-map (->> executor-receive-queue-map
                                (mapcat (fn [[e queue]] (for [t (executor->tasks e)] [t queue])))
                                (into {}))
-
-        topology (ConfigUtils/readSupervisorTopology conf storm-id)
+        ops (AdvancedFSOps/make conf)
+        topology (ConfigUtils/readSupervisorTopology conf storm-id ops)
         mq-context  (if mq-context
                       mq-context
                       (TransportFactory/makeContext storm-conf))]
@@ -404,7 +405,7 @@
                assignment (if (= version (:version (get @(:assignment-versions worker) storm-id)))
                             (:data (get @(:assignment-versions worker) storm-id))
                             (let [thriftify-assignment-version (.assignmentInfoWithVersion storm-cluster-state storm-id callback)
-                              new-assignment {:data (clojurify-assignment (.get thriftify-assignment-version (IStateStorage/DATA))) :version version}]
+                              new-assignment {:data (clojurify-assignment (.getData thriftify-assignment-version)) :version version}]
                               (swap! (:assignment-versions worker) assoc storm-id new-assignment)
                               (:data new-assignment)))
               my-assignment (-> assignment

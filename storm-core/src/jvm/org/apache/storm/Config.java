@@ -18,7 +18,6 @@
 package org.apache.storm;
 
 import org.apache.storm.container.ResourceIsolationInterface;
-import org.apache.storm.daemon.supervisor.workermanager.IWorkerManager;
 import org.apache.storm.scheduler.resource.strategies.eviction.IEvictionStrategy;
 import org.apache.storm.scheduler.resource.strategies.priority.ISchedulingPriorityStrategy;
 import org.apache.storm.scheduler.resource.strategies.scheduling.IStrategy;
@@ -2264,20 +2263,14 @@ public class Config extends HashMap<String, Object> {
      * future releases.
      */
     @isString
-    public static final Object CLIENT_JAR_TRANSFORMER = "client.jartransformer.class";
+    public static final String CLIENT_JAR_TRANSFORMER = "client.jartransformer.class";
 
 
     /**
      * The plugin to be used for resource isolation
      */
     @isImplementationOfClass(implementsClass = ResourceIsolationInterface.class)
-    public static final Object STORM_RESOURCE_ISOLATION_PLUGIN = "storm.resource.isolation.plugin";
-
-    /**
-     * The plugin to be used for manager worker
-     */
-    @isImplementationOfClass(implementsClass = IWorkerManager.class)
-    public static final Object STORM_SUPERVISOR_WORKER_MANAGER_PLUGIN = "storm.supervisor.worker.manager.plugin";
+    public static final String STORM_RESOURCE_ISOLATION_PLUGIN = "storm.resource.isolation.plugin";
 
     /**
      * CGroup Setting below
@@ -2287,19 +2280,19 @@ public class Config extends HashMap<String, Object> {
      * root directory of the storm cgroup hierarchy
      */
     @isString
-    public static final Object STORM_CGROUP_HIERARCHY_DIR = "storm.cgroup.hierarchy.dir";
+    public static final String STORM_CGROUP_HIERARCHY_DIR = "storm.cgroup.hierarchy.dir";
 
     /**
      * resources to to be controlled by cgroups
      */
     @isStringList
-    public static final Object STORM_CGROUP_RESOURCES = "storm.cgroup.resources";
+    public static final String STORM_CGROUP_RESOURCES = "storm.cgroup.resources";
 
     /**
      * name for the cgroup hierarchy
      */
     @isString
-    public static final Object STORM_CGROUP_HIERARCHY_NAME = "storm.cgroup.hierarchy.name";
+    public static final String STORM_CGROUP_HIERARCHY_NAME = "storm.cgroup.hierarchy.name";
 
     /**
      * flag to determine whether to use a resource isolation plugin

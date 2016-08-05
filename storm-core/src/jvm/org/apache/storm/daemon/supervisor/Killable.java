@@ -17,29 +17,34 @@
  */
 package org.apache.storm.daemon.supervisor;
 
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
-import org.apache.storm.generated.LSWorkerHeartbeat;
+import java.io.IOException;
 
-public class StateHeartbeat {
-    private State state;
-    private final LSWorkerHeartbeat hb;
-
-    public StateHeartbeat(State state, LSWorkerHeartbeat hb) {
-        this.state = state;
-        this.hb = hb;
-    }
-
-    public State getState() {
-        return this.state;
-    }
-
-    public LSWorkerHeartbeat getHeartbeat() {
-        return this.hb;
-    }
-
-    @Override
-    public String toString() {
-        return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
-    }
+public interface Killable {
+    
+    /**
+     * Kill the processes in this container nicely.
+     * kill -15 equivalent
+     * @throws IOException on any error
+     */
+    public void kill() throws IOException;
+    
+    /**
+     * Kill the processes in this container violently.
+     * kill -9 equivalent
+     * @throws IOException on any error
+     */
+    public void forceKill() throws IOException;
+    
+    /**
+     * @return true if all of the processes are dead, else false
+     * @throws IOException on any error
+     */
+    public boolean areAllProcessesDead() throws IOException;
+    
+    /**
+     * Clean up the container. It is not coming back.
+     * by default do the same thing as when restarting.
+     * @throws IOException on any error
+     */
+    public void cleanUp() throws IOException;
 }

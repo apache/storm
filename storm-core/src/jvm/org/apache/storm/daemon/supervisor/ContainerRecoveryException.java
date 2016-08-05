@@ -15,21 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.daemon.supervisor.workermanager;
+package org.apache.storm.daemon.supervisor;
 
-import org.apache.storm.generated.WorkerResources;
-import org.apache.storm.localizer.Localizer;
-import org.apache.storm.utils.Utils;
+/**
+ * Could not recover the container.
+ */
+public class ContainerRecoveryException extends RuntimeException {
 
-import java.util.List;
-import java.util.Map;
+    public ContainerRecoveryException(String message) {
+        super(message);
+    }
 
-public interface IWorkerManager {
-    void prepareWorker(Map conf, Localizer localizer);
-
-    void launchWorker(String supervisorId, String assignmentId, String stormId, Long port, String workerId, WorkerResources resources,
-                               Utils.ExitCodeCallable workerExitCallback);
-    void shutdownWorker(String supervisorId, String workerId, Map<String, String> workerThreadPids);
-
-    boolean cleanupWorker(String workerId);
 }

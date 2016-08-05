@@ -17,17 +17,18 @@
  */
 package org.apache.storm.testing;
 
-import org.apache.storm.topology.OutputFieldsDeclarer;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.InprocMessaging;
-import java.util.HashMap;
-import java.util.List;
-import java.util.UUID;
 
 
 public class FeederSpout extends BaseRichSpout {
@@ -51,7 +52,15 @@ public class FeederSpout extends BaseRichSpout {
 
     public void feed(List<Object> tuple, Object msgId) {
         InprocMessaging.sendMessage(_id, new Values(tuple, msgId));
-    }    
+    }
+    
+    public void feedNoWait(List<Object> tuple, Object msgId) {
+        InprocMessaging.sendMessageNoWait(_id, new Values(tuple, msgId));
+    }
+    
+    public void waitForReader() {
+        InprocMessaging.waitForReader(_id);
+    }
     
     public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
         _collector = collector;
@@ -63,17 +72,11 @@ public class FeederSpout extends BaseRichSpout {
 
     public void nextTuple() {
         List<Object> toEmit = (List<Object>) InprocMessaging.pollMessage(_id);
-        if(toEmit!=null) {
+        if (toEmit!=null) {
             List<Object> tuple = (List<Object>) toEmit.get(0);
             Object msgId = toEmit.get(1);
             
             _collector.emit(tuple, msgId);
-        } else {
-            try {
-                Thread.sleep(1);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
         }
     }
 

@@ -19,7 +19,7 @@ package org.apache.storm.daemon.supervisor.timer;
 
 import org.apache.storm.Config;
 import org.apache.storm.cluster.IStormClusterState;
-import org.apache.storm.daemon.supervisor.SupervisorData;
+import org.apache.storm.daemon.supervisor.Supervisor;
 import org.apache.storm.generated.SupervisorInfo;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
@@ -33,26 +33,26 @@ public class SupervisorHeartbeat implements Runnable {
 
      private final IStormClusterState stormClusterState;
      private final String supervisorId;
-     private final Map conf;
-     private final SupervisorData supervisorData;
+     private final Map<String, Object> conf;
+     private final Supervisor supervisor;
 
-    public SupervisorHeartbeat(Map conf, SupervisorData supervisorData) {
-        this.stormClusterState = supervisorData.getStormClusterState();
-        this.supervisorId = supervisorData.getSupervisorId();
-        this.supervisorData = supervisorData;
+    public SupervisorHeartbeat(Map<String, Object> conf, Supervisor supervisor) {
+        this.stormClusterState = supervisor.getStormClusterState();
+        this.supervisorId = supervisor.getId();
+        this.supervisor = supervisor;
         this.conf = conf;
     }
 
-    private SupervisorInfo buildSupervisorInfo(Map conf, SupervisorData supervisorData) {
+    private SupervisorInfo buildSupervisorInfo(Map<String, Object> conf, Supervisor supervisor) {
         SupervisorInfo supervisorInfo = new SupervisorInfo();
         supervisorInfo.set_time_secs(Time.currentTimeSecs());
-        supervisorInfo.set_hostname(supervisorData.getHostName());
-        supervisorInfo.set_assignment_id(supervisorData.getAssignmentId());
+        supervisorInfo.set_hostname(supervisor.getHostName());
+        supervisorInfo.set_assignment_id(supervisor.getAssignmentId());
 
         List<Long> usedPorts = new ArrayList<>();
-        usedPorts.addAll(supervisorData.getCurrAssignment().get().keySet());
+        usedPorts.addAll(supervisor.getCurrAssignment().get().keySet());
         supervisorInfo.set_used_ports(usedPorts);
-        List metaDatas = (List)supervisorData.getiSupervisor().getMetadata();
+        List metaDatas = (List)supervisor.getiSupervisor().getMetadata();
         List<Long> portList = new ArrayList<>();
         if (metaDatas != null){
             for (Object data : metaDatas){
@@ -64,8 +64,8 @@ public class SupervisorHeartbeat implements Runnable {
 
         supervisorInfo.set_meta(portList);
         supervisorInfo.set_scheduler_meta((Map<String, String>) conf.get(Config.SUPERVISOR_SCHEDULER_META));
-        supervisorInfo.set_uptime_secs(supervisorData.getUpTime().upTime());
-        supervisorInfo.set_version(supervisorData.getStormVersion());
+        supervisorInfo.set_uptime_secs(supervisor.getUpTime().upTime());
+        supervisorInfo.set_version(supervisor.getStormVersion());
         supervisorInfo.set_resources_map(mkSupervisorCapacities(conf));
         return supervisorInfo;
     }
@@ -81,7 +81,7 @@ public class SupervisorHeartbeat implements Runnable {
 
     @Override
     public void run() {
-        SupervisorInfo supervisorInfo = buildSupervisorInfo(conf, supervisorData);
+        SupervisorInfo supervisorInfo = buildSupervisorInfo(conf, supervisor);
         stormClusterState.supervisorHeartbeat(supervisorId, supervisorInfo);
     }
 }
