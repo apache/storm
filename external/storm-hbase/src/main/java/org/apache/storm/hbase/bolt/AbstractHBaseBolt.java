@@ -29,6 +29,7 @@ import org.apache.storm.hbase.common.HBaseClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -42,7 +43,6 @@ public abstract class AbstractHBaseBolt extends BaseRichBolt {
     protected String tableName;
     protected HBaseMapper mapper;
     protected String configKey;
-    protected int batchSize = 15000;
 
     public AbstractHBaseBolt(String tableName, HBaseMapper mapper) {
         Validate.notEmpty(tableName, "Table name can not be blank or null");
@@ -73,5 +73,14 @@ public abstract class AbstractHBaseBolt extends BaseRichBolt {
         Map<String, Object> hbaseConfMap = new HashMap<String, Object>(conf);
         hbaseConfMap.put(Config.TOPOLOGY_AUTO_CREDENTIALS, map.get(Config.TOPOLOGY_AUTO_CREDENTIALS));
         this.hBaseClient = new HBaseClient(hbaseConfMap, hbConfig, tableName);
+    }
+
+    @Override
+    public void cleanup() {
+        try {
+            hBaseClient.close();
+        } catch (IOException e) {
+            LOG.error("HBase Client Close Failed ", e);
+        }
     }
 }

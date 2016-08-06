@@ -36,4 +36,8 @@ public interface ChannelHandler {
   void channelInactive(ChannelContext ctx);
 
   void exceptionCaught(Throwable cause);
+
+  void flush(ChannelContext ctx);
+
+  void setSource(ChannelContext ctx, Object source);
 }

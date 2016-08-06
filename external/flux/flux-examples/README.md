@@ -39,6 +39,7 @@ Another wordcount example that uses a spout written in JavaScript (node.js), a b
 written in java.
 
 ### [kafka_spout.yaml](src/main/resources/kafka_spout.yaml)
+
 This example illustrates how to configure Storm's `storm-kafka` spout using Flux YAML DSL `components`, `references`,
 and `constructor arguments` constructs.
 
@@ -64,6 +65,7 @@ To run the `simple_hbase.yaml` example, copy the `hbase_bolt.properties` file to
 ```bash
 storm jar ./target/flux-examples-*.jar org.apache.storm.flux.Flux --local ./src/main/resources/simple_hbase.yaml --filter my_hbase_bolt.properties
 ```
+
 ### [simple_windowing.yaml](src/main/resources/simple_windowing.yaml)
 
 This example illustrates how to use Flux to set up a storm topology that contains windowing operations.
@@ -72,4 +74,20 @@ To run,
 
 ```bash
 storm jar ./target/flux-examples-*.jar org.apache.storm.flux.Flux --local ./src/main/resources/simple_windowing.yaml
+```
+
+### [simple_stateful_wordcount.yaml](src/main/resources/simple_stateful_wordcount.yaml)
+
+Flux also supports stateful bolts which is illustrated with this example. It is basically an extension of the basic wordcount example.
+The state is periodically saved (checkpointed) and restored when the topology is restarted.
+
+```bash
+storm jar ./target/flux-examples-*.jar org.apache.storm.flux.Flux --local ./src/main/resources/simple_stateful_wordcount.yaml
+```
+
+By default the state is stored in-memory only. As such you won't see a resumed state unless you configure to use Redis as the state backend.
+Ensure that you have Redis running at `localhost:6379` and that `storm-redis-*.jar` is in the classpath.
+
+```bash
+STORM_EXT_CLASSPATH=../../storm-redis/target storm jar ./target/flux-examples-*.jar -c topology.state.provider=org.apache.storm.redis.state.RedisKeyValueStateProvider org.apache.storm.flux.Flux --local ./src/main/resources/simple_stateful_wordcount.yaml
 ```

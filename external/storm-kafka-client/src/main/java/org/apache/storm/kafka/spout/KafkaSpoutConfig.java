@@ -26,6 +26,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * KafkaSpoutConfig defines the required configuration to connect a consumer to a consumer group, as well as the subscribing topics
@@ -263,10 +264,23 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
     }
 
     /**
-     * @return list of topics subscribed and emitting tuples to a stream as configured by {@link KafkaSpoutStream}
+     * @return list of topics subscribed and emitting tuples to a stream as configured by {@link KafkaSpoutStream},
+     * or null if this stream is associated with a wildcard pattern topic
      */
     public List<String> getSubscribedTopics() {
-        return new ArrayList<>(kafkaSpoutStreams.getTopics());
+        return kafkaSpoutStreams instanceof KafkaSpoutStreamsNamedTopics ?
+            new ArrayList<>(((KafkaSpoutStreamsNamedTopics) kafkaSpoutStreams).getTopics()) :
+            null;
+    }
+
+    /**
+     * @return the wildcard pattern topic associated with this {@link KafkaSpoutStream}, or null
+     * if this stream is associated with a specific named topic
+     */
+    public Pattern getTopicWildcardPattern() {
+        return kafkaSpoutStreams instanceof KafkaSpoutStreamsWildcardTopics ?
+                ((KafkaSpoutStreamsWildcardTopics)kafkaSpoutStreams).getTopicWildcardPattern() :
+                null;
     }
 
     public int getMaxTupleRetries() {
@@ -299,11 +313,16 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
                 "kafkaProps=" + kafkaProps +
                 ", keyDeserializer=" + keyDeserializer +
                 ", valueDeserializer=" + valueDeserializer +
-                ", topics=" + getSubscribedTopics() +
-                ", firstPollOffsetStrategy=" + firstPollOffsetStrategy +
                 ", pollTimeoutMs=" + pollTimeoutMs +
                 ", offsetCommitPeriodMs=" + offsetCommitPeriodMs +
                 ", maxRetries=" + maxRetries +
+                ", maxUncommittedOffsets=" + maxUncommittedOffsets +
+                ", firstPollOffsetStrategy=" + firstPollOffsetStrategy +
+                ", kafkaSpoutStreams=" + kafkaSpoutStreams +
+                ", tuplesBuilder=" + tuplesBuilder +
+                ", retryService=" + retryService +
+                ", topics=" + getSubscribedTopics() +
+                ", topicWildcardPattern=" + getTopicWildcardPattern() +
                 '}';
     }
 }

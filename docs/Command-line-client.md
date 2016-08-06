@@ -20,6 +20,22 @@ These commands are:
 1. supervisor
 1. ui
 1. drpc
+1. blobstore
+1. dev-zookeeper
+1. get-errors
+1. heartbeats
+1. kill_workers
+1. list
+1. logviewer
+1. monitor
+1. node-health-check
+1. pacemaker
+1. set_log_level
+1. shell
+1. sql
+1. upload-credentials
+1. version
+1. help
 
 ### jar
 
@@ -102,3 +118,152 @@ Launches the UI daemon. The UI provides a web interface for a Storm cluster and 
 Syntax: `storm drpc`
 
 Launches a DRPC daemon. This command should be run under supervision with a tool like [daemontools](http://cr.yp.to/daemontools.html) or [monit](http://mmonit.com/monit/). See [Distributed RPC](Distributed-RPC.html) for more information.
+
+### blobstore
+
+Syntax: `storm blobstore cmd`
+
+list [KEY...] - lists blobs currently in the blob store
+
+cat [-f FILE] KEY - read a blob and then either write it to a file, or STDOUT (requires read access).
+
+create [-f FILE] [-a ACL ...] [--replication-factor NUMBER] KEY - create a new blob. Contents comes from a FILE or STDIN. ACL is in the form [uo]:[username]:[r-][w-][a-] can be comma separated list.
+
+update [-f FILE] KEY - update the contents of a blob.  Contents comes from a FILE or STDIN (requires write access).
+
+delete KEY - delete an entry from the blob store (requires write access).
+
+set-acl [-s ACL] KEY - ACL is in the form [uo]:[username]:[r-][w-][a-] can be comma separated list (requires admin access).
+
+replication --read KEY - Used to read the replication factor of the blob.
+
+replication --update --replication-factor NUMBER KEY where NUMBER > 0. It is used to update the replication factor of a blob.
+
+For example, the following would create a mytopo:data.tgz key using the data stored in data.tgz.  User alice would have full access, bob would have read/write access and everyone else would have read access.
+
+storm blobstore create mytopo:data.tgz -f data.tgz -a u:alice:rwa,u:bob:rw,o::r
+
+See [Blobstore(Distcahce)](distcache-blobstore.html) for more information.
+
+### dev-zookeeper
+
+Syntax: `storm dev-zookeeper`
+
+Launches a fresh Zookeeper server using "dev.zookeeper.path" as its local dir and "storm.zookeeper.port" as its port. This is only intended for development/testing, the Zookeeper instance launched is not configured to be used in production.
+
+### get-errors
+
+Syntax: `storm get-errors topology-name`
+
+Get the latest error from the running topology. The returned result contains the key value pairs for component-name and component-error for the components in error. The result is returned in json format.
+
+### heartbeats
+
+Syntax: `storm heartbeats [cmd]`
+
+list PATH - lists heartbeats nodes under PATH currently in the ClusterState.
+get  PATH - Get the heartbeat data at PATH
+
+### kill_workers
+
+Syntax: `storm kill_workers`
+
+Kill the workers running on this supervisor. This command should be run on a supervisor node. If the cluster is running in secure mode, then user needs to have admin rights on the node to be able to successfully kill all workers.
+
+### list
+
+Syntax: `storm list`
+
+List the running topologies and their statuses.
+
+### logviewer
+
+Syntax: `storm logviewer`
+
+Launches the log viewer daemon. It provides a web interface for viewing storm log files. This command should be run under supervision with a tool like daemontools or monit.
+
+See Setting up a Storm cluster for more information.(http://storm.apache.org/documentation/Setting-up-a-Storm-cluster)
+
+### monitor
+
+Syntax: `storm monitor topology-name [-i interval-secs] [-m component-id] [-s stream-id] [-w [emitted | transferred]]`
+
+Monitor given topology's throughput interactively.
+One can specify poll-interval, component-id, stream-id, watch-item[emitted | transferred]
+  By default,
+    poll-interval is 4 seconds;
+    all component-ids will be list;
+    stream-id is 'default';
+    watch-item is 'emitted';
+
+### node-health-check
+
+Syntax: `storm node-health-check`
+
+Run health checks on the local supervisor.
+
+### pacemaker
+
+Syntax: `storm pacemaker`
+
+Launches the Pacemaker daemon. This command should be run under
+supervision with a tool like daemontools or monit.
+
+See Setting up a Storm cluster for more information.(http://storm.apache.org/documentation/Setting-up-a-Storm-cluster)
+
+### set_log_level
+
+Syntax: `storm set_log_level -l [logger name]=[log level][:optional timeout] -r [logger name] topology-name`
+
+Dynamically change topology log levels
+    
+where log level is one of: ALL, TRACE, DEBUG, INFO, WARN, ERROR, FATAL, OFF
+and timeout is integer seconds.
+
+e.g.
+  ./bin/storm set_log_level -l ROOT=DEBUG:30 topology-name
+
+  Set the root logger's level to DEBUG for 30 seconds
+
+  ./bin/storm set_log_level -l com.myapp=WARN topology-name
+
+  Set the com.myapp logger's level to WARN for 30 seconds
+
+  ./bin/storm set_log_level -l com.myapp=WARN -l com.myOtherLogger=ERROR:123 topology-name
+
+  Set the com.myapp logger's level to WARN indifinitely, and com.myOtherLogger to ERROR for 123 seconds
+
+  ./bin/storm set_log_level -r com.myOtherLogger topology-name
+
+  Clears settings, resetting back to the original level
+
+### shell
+
+Syntax: `storm shell resourcesdir command args`
+
+Makes constructing jar and uploading to nimbus for using non JVM languages
+
+eg: `storm shell resources/ python topology.py arg1 arg2`
+
+### sql
+
+Syntax: `storm sql sql-file topology-name`
+
+Compiles the SQL statements into a Trident topology and submits it to Storm.
+
+### upload-credentials
+
+Syntax: `storm upload_credentials topology-name [credkey credvalue]*`
+
+Uploads a new set of credentials to a running topology
+
+### version
+
+Syntax: `storm version`
+
+Prints the version number of this Storm release.
+
+### help
+Syntax: `storm help [command]`
+
+Print one help message or list of available commands

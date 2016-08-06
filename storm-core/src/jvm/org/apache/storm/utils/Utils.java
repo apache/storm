@@ -161,7 +161,7 @@ public class Utils {
     private static ThreadLocal<TDeserializer> threadDes = new ThreadLocal<TDeserializer>();
 
     private static SerializationDelegate serializationDelegate;
-    private static ClassLoader cl = ClassLoader.getSystemClassLoader();
+    private static ClassLoader cl = null;
 
     public static final boolean IS_ON_WINDOWS = "Windows_NT".equals(System.getenv("OS"));
     public static final String FILE_PATH_SEPARATOR = System.getProperty("file.separator");
@@ -238,7 +238,13 @@ public class Utils {
     public static <T> T javaDeserialize(byte[] serialized, Class<T> clazz) {
         try {
             ByteArrayInputStream bis = new ByteArrayInputStream(serialized);
-            ObjectInputStream ois = new ClassLoaderObjectInputStream(cl, bis);
+            ObjectInputStream ois = null;
+            if (null == cl) {
+                ois = new ObjectInputStream(bis);
+            } else {
+                // Use custom class loader set in testing environment
+                ois = new ClassLoaderObjectInputStream(cl, bis);
+            }
             Object ret = ois.readObject();
             ois.close();
             return (T)ret;
@@ -1283,6 +1289,10 @@ public class Utils {
             dump.append('"');
             dump.append(threadInfo.getThreadName());
             dump.append("\" ");
+            dump.append("\n   lock: ");
+            dump.append(threadInfo.getLockName());
+            dump.append(" owner: ");
+            dump.append(threadInfo.getLockOwnerName());
             final Thread.State state = threadInfo.getThreadState();
             dump.append("\n   java.lang.Thread.State: ");
             dump.append(state);
@@ -2082,6 +2092,11 @@ public class Utils {
         return _instance.addToClasspathImpl(classpath, paths);
     }
 
+    public static String addToClasspath(Collection<String> classpaths,
+                Collection<String> paths) {
+        return _instance.addToClasspathImpl(classpaths, paths);
+    }
+
     // Non-static impl methods exist for mocking purposes.
     public String addToClasspathImpl(String classpath,
                 Collection<String> paths) {
@@ -2092,6 +2107,18 @@ public class Utils {
         l.add(classpath);
         l.addAll(paths);
         return StringUtils.join(l, CLASS_PATH_SEPARATOR);
+    }
+
+    public String addToClasspathImpl(Collection<String> classpaths,
+                Collection<String> paths) {
+        List<String> allPaths = new ArrayList<>();
+        if(classpaths != null) {
+            allPaths.addAll(classpaths);
+        }
+        if(paths != null) {
+            allPaths.addAll(paths);
+        }
+        return StringUtils.join(allPaths, CLASS_PATH_SEPARATOR);
     }
 
     public static class UptimeComputer {

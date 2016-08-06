@@ -15,6 +15,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import print_function
 
 import os
 import random
@@ -91,7 +92,7 @@ JAR_JVM_OPTS = shlex.split(os.getenv('STORM_JAR_JVM_OPTS', ''))
 JAVA_HOME = os.getenv('JAVA_HOME', None)
 JAVA_CMD = 'java' if not JAVA_HOME else os.path.join(JAVA_HOME, 'bin', 'java')
 if JAVA_HOME and not os.path.exists(JAVA_CMD):
-    print "ERROR:  JAVA_HOME is invalid.  Could not find bin/java at %s." % JAVA_HOME
+    print("ERROR:  JAVA_HOME is invalid.  Could not find bin/java at %s." % JAVA_HOME)
     sys.exit(1)
 STORM_EXT_CLASSPATH = os.getenv('STORM_EXT_CLASSPATH', None)
 STORM_EXT_CLASSPATH_DAEMON = os.getenv('STORM_EXT_CLASSPATH_DAEMON', None)
@@ -209,8 +210,9 @@ def exec_storm_class(klass, jvmtype="-server", jvmopts=[], extrajars=[], args=[]
     ] + jvmopts + [klass] + list(args)
     print("Running: " + " ".join(all_args))
     sys.stdout.flush()
+    exit_code = 0
     if fork:
-        os.spawnvp(os.P_WAIT, JAVA_CMD, all_args)
+        exit_code = os.spawnvp(os.P_WAIT, JAVA_CMD, all_args)
     elif is_windows():
         # handling whitespaces in JAVA_CMD
         try:
@@ -220,7 +222,7 @@ def exec_storm_class(klass, jvmtype="-server", jvmopts=[], extrajars=[], args=[]
             sys.exit(e.returncode)
     else:
         os.execvp(JAVA_CMD, all_args)
-        os._exit()
+    return exit_code
 
 def jar(jarfile, klass, *args):
     """Syntax: [storm jar topology-jar-path class ...]
@@ -228,22 +230,23 @@ def jar(jarfile, klass, *args):
     Runs the main method of class with the specified arguments.
     The storm jars and configs in ~/.storm are put on the classpath.
     The process is configured so that StormSubmitter
-    (http://storm.apache.org/apidocs/org/apache/storm/StormSubmitter.html)
+    (http://storm.apache.org/releases/current/javadocs/org/apache/storm/StormSubmitter.html)
     will upload the jar at topology-jar-path when the topology is submitted.
     """
     transform_class = confvalue("client.jartransformer.class", [CLUSTER_CONF_DIR])
     if (transform_class != None and transform_class != "null"):
         tmpjar = os.path.join(tempfile.gettempdir(), uuid.uuid1().hex+".jar")
         exec_storm_class("org.apache.storm.daemon.ClientJarTransformerRunner", args=[transform_class, jarfile, tmpjar], fork=True, daemon=False)
-        exec_storm_class(
-            klass,
-            jvmtype="-client",
-            extrajars=[tmpjar, USER_CONF_DIR, STORM_BIN_DIR],
-            args=args,
-            daemon=False,
-            fork=True,
-            jvmopts=JAR_JVM_OPTS + ["-Dstorm.jar=" + tmpjar])
+        topology_runner_exit_code = exec_storm_class(
+                klass,
+                jvmtype="-client",
+                extrajars=[tmpjar, USER_CONF_DIR, STORM_BIN_DIR],
+                args=args,
+                daemon=False,
+                fork=True,
+                jvmopts=JAR_JVM_OPTS + ["-Dstorm.jar=" + tmpjar])
         os.remove(tmpjar)
+        sys.exit(topology_runner_exit_code)
     else:
         exec_storm_class(
             klass,
@@ -254,7 +257,7 @@ def jar(jarfile, klass, *args):
             jvmopts=JAR_JVM_OPTS + ["-Dstorm.jar=" + jarfile])
 
 def sql(sql_file, topology_name):
-    """Syntax: [storm sql sql-file topology]
+    """Syntax: [storm sql sql-file topology-name]
 
     Compiles the SQL statements into a Trident topology and submits it to Storm.
     """
@@ -323,7 +326,7 @@ def blobstore(*args):
     storm blobstore create mytopo:data.tgz -f data.tgz -a u:alice:rwa,u:bob:rw,o::r
     """
     exec_storm_class(
-        "org.apache.storm.command.blobstore",
+        "org.apache.storm.command.Blobstore",
         args=args,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
@@ -335,7 +338,7 @@ def heartbeats(*args):
     get  PATH - Get the heartbeat data at PATH
     """
     exec_storm_class(
-        "org.apache.storm.command.heartbeats",
+        "org.apache.storm.command.Heartbeats",
         args=args,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
@@ -358,26 +361,26 @@ def set_log_level(*args):
     """
     Dynamically change topology log levels
 
-    Syntax: [storm set_log_level -l [logger name]=[log level][:optional timeout] -r [logger name]
+    Syntax: [storm set_log_level -l [logger name]=[log level][:optional timeout] -r [logger name] topology-name]
     where log level is one of:
         ALL, TRACE, DEBUG, INFO, WARN, ERROR, FATAL, OFF
     and timeout is integer seconds.
 
     e.g.
-        ./bin/storm set_log_level -l ROOT=DEBUG:30
+        ./bin/storm set_log_level -l ROOT=DEBUG:30 topology-name
 
         Set the root logger's level to DEBUG for 30 seconds
 
-        ./bin/storm set_log_level -l com.myapp=WARN
+        ./bin/storm set_log_level -l com.myapp=WARN topology-name
 
         Set the com.myapp logger's level to WARN for 30 seconds
 
-        ./bin/storm set_log_level -l com.myapp=WARN -l com.myOtherLogger=ERROR:123
+        ./bin/storm set_log_level -l com.myapp=WARN -l com.myOtherLogger=ERROR:123 topology-name
 
         Set the com.myapp logger's level to WARN indifinitely, and com.myOtherLogger
         to ERROR for 123 seconds
 
-        ./bin/storm set_log_level -r com.myOtherLogger
+        ./bin/storm set_log_level -r com.myOtherLogger topology-name
 
         Clears settings, resetting back to the original level
     """
@@ -453,7 +456,7 @@ def get_errors(*args):
         print_usage(command="get_errors")
         sys.exit(2)
     exec_storm_class(
-        "org.apache.storm.command.get_errors",
+        "org.apache.storm.command.GetErrors",
         args=args,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, os.path.join(STORM_DIR, "bin")])
@@ -483,6 +486,11 @@ def kill_workers(*args):
         extrajars=[USER_CONF_DIR, os.path.join(STORM_DIR, "bin")])
 
 def shell(resourcesdir, command, *args):
+    """Syntax: [storm shell resourcesdir command args]
+
+    Archives resources to jar and uploads jar to Nimbus, and executes following arguments on "local". Useful for non JVM languages.
+    eg: `storm shell resources/ python topology.py arg1 arg2`
+    """
     tmpjarpath = "stormshell" + str(random.randint(0, 10000000)) + ".jar"
     os.system("jar cf %s %s" % (tmpjarpath, resourcesdir))
     runnerargs = [tmpjarpath, command]

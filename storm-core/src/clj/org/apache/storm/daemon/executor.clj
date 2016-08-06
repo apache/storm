@@ -112,6 +112,7 @@
                         TOPOLOGY-BOLTS-SLIDING-INTERVAL-COUNT
                         TOPOLOGY-BOLTS-SLIDING-INTERVAL-DURATION-MS
                         TOPOLOGY-BOLTS-TUPLE-TIMESTAMP-FIELD-NAME
+                        TOPOLOGY-BOLTS-LATE-TUPLE-STREAM
                         TOPOLOGY-BOLTS-TUPLE-TIMESTAMP-MAX-LAG-MS
                         TOPOLOGY-BOLTS-MESSAGE-ID-FIELD-NAME
                         TOPOLOGY-STATE-PROVIDER
@@ -204,7 +205,10 @@
      :report-error-and-die (reify
                              Thread$UncaughtExceptionHandler
                              (uncaughtException [this _ error]
-                               ((:report-error <>) error)
+                               (try
+                                 ((:report-error <>) error)
+                                 (catch Exception e
+                                   (log-error e "Error while reporting error to cluster, proceeding with shutdown")))
                                (if (or
                                     (Utils/exceptionCauseIsInstanceOf InterruptedException error)
                                     (Utils/exceptionCauseIsInstanceOf java.io.InterruptedIOException error))
@@ -285,7 +289,7 @@
                      (.getThisWorkerPort worker-context)
                      (:component-id executor-data)
                      task-id
-                     (long (/ (System/currentTimeMillis) 1000))
+                     (long (Time/currentTimeSecs))
                      interval)
          data-points (->> name->imetric
                           (map (fn [[name imetric]]
@@ -488,11 +492,12 @@
                                    (when pending-for-id
                                      (.put pending id pending-for-id))) 
                               (let [id (.getValue tuple 0)
+                                    time-delta-ms (.getValue tuple 1)
                                     [stored-task-id spout-id tuple-finished-info start-time-ms] (.remove pending id)]
                                 (when spout-id
                                   (when-not (= stored-task-id task-id)
                                     (throw (RuntimeException. (str "Fatal error, mismatched task ids: " task-id " " stored-task-id))))
-                                  (let [time-delta (if start-time-ms (Time/deltaMs start-time-ms))]
+                                  (let [time-delta (if start-time-ms time-delta-ms)]
                                     (condp = stream-id
                                       Acker/ACKER_ACK_STREAM_ID (ack-spout-msg executor-data (get task-datas task-id)
                                                                                spout-id tuple-finished-info time-delta id)

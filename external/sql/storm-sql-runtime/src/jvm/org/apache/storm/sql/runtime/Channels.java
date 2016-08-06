@@ -28,6 +28,16 @@ public class Channels {
 
     @Override
     public void fireChannelInactive() {}
+
+    @Override
+    public void flush() {
+
+    }
+
+    @Override
+    public void setSource(java.lang.Object source) {
+
+    }
   };
 
   private static class ChannelContextAdapter implements ChannelContext {
@@ -49,6 +59,17 @@ public class Channels {
     public void fireChannelInactive() {
       handler.channelInactive(next);
     }
+
+    @Override
+    public void flush() {
+      handler.flush(next);
+    }
+
+    @Override
+    public void setSource(java.lang.Object source) {
+      handler.setSource(next, source);
+      next.setSource(source); // propagate through the chain
+    }
   }
 
   private static class ForwardingChannelContext implements ChannelContext {
@@ -66,6 +87,16 @@ public class Channels {
     @Override
     public void fireChannelInactive() {
       next.fireChannelInactive();
+    }
+
+    @Override
+    public void flush() {
+      next.flush();
+    }
+
+    @Override
+    public void setSource(Object source) {
+      next.setSource(source);
     }
   }
 

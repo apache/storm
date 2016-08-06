@@ -23,30 +23,97 @@ import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;
 
 import java.util.Map;
+import java.util.HashMap;
+import java.util.Iterator;
 
 /**
  * A generic `ShellBolt` implementation that allows you specify output fields
- * without having to subclass `ShellBolt` to do so.
+ * and even streams without having to subclass `ShellBolt` to do so.
  *
  */
 public class FluxShellBolt extends ShellBolt implements IRichBolt{
-    private String[] outputFields;
+    private Map<String, String[]> outputFields;
     private Map<String, Object> componentConfig;
+    
+    /**
+     * Create a ShellBolt with command line arguments
+     * @param command Command line arguments for the bolt
+     */
+    public FluxShellBolt(String[] command){
+        super(command);
+        this.outputFields = new HashMap<String, String[]>();
+    }
 
     /**
      * Create a ShellBolt with command line arguments and output fields
+     * 
+     * Keep this constructor for backward compatibility.
+     * 
      * @param command Command line arguments for the bolt
      * @param outputFields Names of fields the bolt will emit (if any).
      */
-
     public FluxShellBolt(String[] command, String[] outputFields){
-        super(command);
-        this.outputFields = outputFields;
+        this(command);
+        this.setDefaultStream(outputFields);
+    }
+    
+    
+    /**
+     * Set default stream outputFields, this method is called from YAML file:
+     * 
+     * ```
+     * bolts:
+     * - className: org.apache.storm.flux.wrappers.bolts.FluxShellBolt
+     *   id: my_bolt
+     *   constructorArgs:
+     *   - [python, my_bolt.py]
+     *   configMethods:
+     *   - name: setDefaultStream
+     *     args:
+     *     - [word, count]
+     * ```
+     * 
+     * @param outputFields Names of fields the bolt will emit (if any) in default stream.
+     */
+    public void setDefaultStream(String[] outputFields) {
+        this.setNamedStream("default", outputFields);
+    }
+
+    /**
+     * Set custom *named* stream outputFields, this method is called from YAML file:
+     * 
+     * ```
+     * bolts:
+     * - className: org.apache.storm.flux.wrappers.bolts.FluxShellBolt
+     *   id: my_bolt
+     *   constructorArgs:
+     *   - [python, my_bolt.py]
+     *   configMethods:
+     *   - name: setNamedStream
+     *     args:
+     *     - first
+     *     - [word, count]
+     * ```
+     * @param name Name of stream the bolt will emit into.
+     * @param outputFields Names of fields the bolt will emit in custom *named* stream.
+     */
+    public void setNamedStream(String name, String[] outputFields) {
+        this.outputFields.put(name, outputFields);
     }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declare(new Fields(this.outputFields));
+        Iterator it = this.outputFields.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry entryTuple = (Map.Entry)it.next();
+            String key = (String)entryTuple.getKey();
+            String[] value = (String[])entryTuple.getValue();
+            if(key.equals("default")) {
+                declarer.declare(new Fields(value));
+            } else {
+                declarer.declareStream(key, new Fields(value));
+            }
+        }
     }
 
     @Override
