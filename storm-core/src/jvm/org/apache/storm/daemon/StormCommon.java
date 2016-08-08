@@ -17,6 +17,7 @@
  */
 package org.apache.storm.daemon;
 
+import java.io.IOException;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.Thrift;
@@ -298,7 +299,7 @@ public class StormCommon {
         int ackerNum = Utils.getInt(conf.get(Config.TOPOLOGY_ACKER_EXECUTORS), Utils.getInt(conf.get(Config.TOPOLOGY_WORKERS)));
         Map<GlobalStreamId, Grouping> inputs = ackerInputs(topology);
 
-        Map<String, StreamInfo> outputStreams = new HashMap<String, StreamInfo>();
+        Map<String, StreamInfo> outputStreams = new HashMap<>();
         outputStreams.put(Acker.ACKER_ACK_STREAM_ID, Thrift.directOutputFields(Arrays.asList("id", "time-delta-ms")));
         outputStreams.put(Acker.ACKER_FAIL_STREAM_ID, Thrift.directOutputFields(Arrays.asList("id", "time-delta-ms")));
         outputStreams.put(Acker.ACKER_RESET_TIMEOUT_STREAM_ID, Thrift.directOutputFields(Arrays.asList("id", "time-delta-ms")));
@@ -369,8 +370,8 @@ public class StormCommon {
     }
 
     public static Map<GlobalStreamId, Grouping> eventLoggerInputs(StormTopology topology) {
-        Map<GlobalStreamId, Grouping> inputs = new HashMap<GlobalStreamId, Grouping>();
-        Set<String> allIds = new HashSet<String>();
+        Map<GlobalStreamId, Grouping> inputs = new HashMap<>();
+        Set<String> allIds = new HashSet<>();
         allIds.addAll(topology.get_bolts().keySet());
         allIds.addAll(topology.get_spouts().keySet());
 
@@ -412,14 +413,14 @@ public class StormCommon {
 
         List<Map<String, Object>> registerInfo = (List<Map<String, Object>>) conf.get(Config.TOPOLOGY_METRICS_CONSUMER_REGISTER);
         if (registerInfo != null) {
-            Map<String, Integer> classOccurrencesMap = new HashMap<String, Integer>();
+            Map<String, Integer> classOccurrencesMap = new HashMap<>();
             for (Map<String, Object> info : registerInfo) {
                 String className = (String) info.get(TOPOLOGY_METRICS_CONSUMER_CLASS);
                 Object argument = info.get(TOPOLOGY_METRICS_CONSUMER_ARGUMENT);
                 Integer maxRetainMetricTuples = Utils.getInt(info.get(
                     TOPOLOGY_METRICS_CONSUMER_MAX_RETAIN_METRIC_TUPLES), 100);
                 Integer phintNum = Utils.getInt(info.get(TOPOLOGY_METRICS_CONSUMER_PARALLELISM_HINT), 1);
-                Map<String, Object> metricsConsumerConf = new HashMap<String, Object>();
+                Map<String, Object> metricsConsumerConf = new HashMap<>();
                 metricsConsumerConf.put(Config.TOPOLOGY_TASKS, phintNum);
                 List<String> whitelist = (List<String>) info.get(
                     TOPOLOGY_METRICS_CONSUMER_WHITELIST);
@@ -434,7 +435,7 @@ public class StormCommon {
                 MetricsConsumerBolt boltInstance = new MetricsConsumerBolt(className, argument,
                     maxRetainMetricTuples, filterPredicate, expander);
                 Bolt metricsConsumerBolt = Thrift.prepareSerializedBoltDetails(inputs,
-                    boltInstance, null, phintNum, metricsConsumerConf);
+                        boltInstance, null, phintNum, metricsConsumerConf);
 
                 String id = className;
                 if (classOccurrencesMap.containsKey(className)) {
