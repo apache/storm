@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-1277: port backtype.storm.daemon.executor to java
  * STORM-2020: Stop using sun internal classes.
  * STORM-2021: Fix license.
  * STORM-2022: fix FieldsTest
