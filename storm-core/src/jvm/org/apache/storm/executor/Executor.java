@@ -204,8 +204,8 @@ public abstract class Executor implements Callable, EventHandler<Object> {
                 throw Utils.wrapInRuntime(ex);
             }
         }
-        executor.init(idToTask);
 
+        executor.idToTask = idToTask;
         return executor;
     }
 
@@ -242,8 +242,6 @@ public abstract class Executor implements Callable, EventHandler<Object> {
     }
 
     public abstract void tupleActionFn(int taskId, TupleImpl tuple) throws Exception;
-
-    public abstract void init(Map<Integer, Task> idToTask);
 
     @SuppressWarnings("unchecked")
     @Override

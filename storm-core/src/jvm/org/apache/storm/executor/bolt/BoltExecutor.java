@@ -53,9 +53,11 @@ public class BoltExecutor extends Executor {
         this.executeSampler = ConfigUtils.mkStatsSampler(stormConf);
     }
 
-    @Override
     public void init(Map<Integer, Task> idToTask) {
-        this.idToTask = idToTask;
+        while (!stormActive.get()) {
+            Utils.sleep(100);
+        }
+
         LOG.info("Preparing bolt {}:{}", componentId, idToTask.keySet());
         for (Map.Entry<Integer, Task> entry : idToTask.entrySet()) {
             Task taskData = entry.getValue();
@@ -88,9 +90,8 @@ public class BoltExecutor extends Executor {
 
     @Override
     public Callable<Object> call() throws Exception {
-        while (!stormActive.get()) {
-            Utils.sleep(100);
-        }
+        init(idToTask);
+
         return new Callable<Object>() {
             @Override
             public Object call() throws Exception {
