@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-1979: Storm Druid Connector implementation.
  * STORM-1839: Storm spout implementation for Amazon Kinesis Streams.
  * STORM-1876: Option to build storm-kafka and storm-kafka-client with different kafka client version
  * STORM-2000: Package storm-opentsdb as part of external dir in installation
