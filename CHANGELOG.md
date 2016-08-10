@@ -1,5 +1,5 @@
 ## 2.0.0
- * STORM-1979: Storm Druid Connector implementation.
+ * STORM-2026: Inconsistency between (SpoutExecutor, BoltExecutor) and (spout-transfer-fn, bolt-transfer-fn) * STORM-1979: Storm Druid Connector implementation.
  * STORM-1277: port backtype.storm.daemon.executor to java
  * STORM-2020: Stop using sun internal classes.
  * STORM-2021: Fix license.
