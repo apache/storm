@@ -79,8 +79,11 @@ public class SpoutExecutor extends Executor {
         this.spoutThrottlingMetrics = new SpoutThrottlingMetrics();
     }
 
-    @Override
     public void init(final Map<Integer, Task> idToTask) {
+        while (!stormActive.get()) {
+            Utils.sleep(100);
+        }
+
         LOG.info("Opening spout {}:{}", componentId, idToTask.keySet());
         this.idToTask = idToTask;
         this.maxSpoutPending = Utils.getInt(stormConf.get(Config.TOPOLOGY_MAX_SPOUT_PENDING), 0) * idToTask.size();
@@ -126,9 +129,7 @@ public class SpoutExecutor extends Executor {
 
     @Override
     public Callable<Object> call() throws Exception {
-        while (!stormActive.get()) {
-            Utils.sleep(100);
-        }
+        init(idToTask);
 
         return new Callable<Object>() {
             @Override
