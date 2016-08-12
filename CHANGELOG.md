@@ -1,4 +1,5 @@
 ## 1.0.3
+ * STORM-2032: removes warning in case more than one metrics tuple is received
  * STORM-1594: org.apache.storm.tuple.Fields can throw NPE if given invalid field in selector
  * STORM-1995: downloadChunk in nimbus.clj should close the input stream
 
