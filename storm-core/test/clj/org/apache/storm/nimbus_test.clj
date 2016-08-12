@@ -44,7 +44,7 @@
   (:import [org.apache.storm.daemon StormCommon])
   (:import [org.apache.storm.cluster IStormClusterState StormClusterStateImpl ClusterStateContext ClusterUtils])
   (:use [org.apache.storm testing util config log converter])
-    (:require [conjure.core] [org.apache.storm.daemon.worker :as worker])
+    (:require [conjure.core] [org.apache.storm.daemon.worker :as worker] [org.apache.storm.daemon.nimbus :as nimbus])
 
   (:use [conjure core]))
 
@@ -1331,8 +1331,8 @@
                            Mockito/spy)]
             (with-open [- (StormCommonInstaller. common-spy)]
               (stubbing [nimbus/check-authorization! nil
-                       nimbus/try-read-storm-conf expected-conf
-                       nimbus/try-read-storm-topology nil]
+                         nimbus/try-read-storm-conf expected-conf
+                         nimbus/try-read-storm-topology nil]
                 (try
                   (.getTopology nimbus "fake-id")
                   (catch NotAliveException e)
@@ -1510,9 +1510,9 @@
                           (zkLeaderElectorImpl [conf blob-store] nil)))
                   mocked-cluster (MockedCluster. cluster-utils)]
         (stubbing [nimbus/file-cache-map nil
-                 nimbus/mk-blob-cache-map nil
-                 nimbus/mk-bloblist-cache-map nil
-                 nimbus/mk-scheduler nil]
+                   nimbus/mk-blob-cache-map nil
+                   nimbus/mk-bloblist-cache-map nil
+                   nimbus/mk-scheduler nil]
           (nimbus/nimbus-data auth-conf fake-inimbus)
           (.mkStormClusterStateImpl (Mockito/verify cluster-utils (Mockito/times 1)) (Mockito/any) (Mockito/eq expected-acls) (Mockito/any))
           )))))
@@ -1700,10 +1700,10 @@
       (backpressureTopologies [this] bp-topos))))
 
 (deftest cleanup-storm-ids-returns-inactive-topos
-  (let [mock-state (mock-cluster-state (list "topo1") (list "topo1" "topo2" "topo3"))]
-    (stubbing [nimbus/is-leader true
-               nimbus/code-ids {}] 
-    (is (= (nimbus/cleanup-storm-ids mock-state nil) #{"topo2" "topo3"})))))
+         (let [mock-state (mock-cluster-state (list "topo1") (list "topo1" "topo2" "topo3"))]
+              (stubbing [nimbus/is-leader true
+                         nimbus/code-ids {}]
+                        (is (= (nimbus/cleanup-storm-ids mock-state nil) #{"topo2" "topo3"})))))
 
 (deftest cleanup-storm-ids-performs-union-of-storm-ids-with-active-znodes
   (let [active-topos (list "hb1" "e2" "bp3")
@@ -1747,7 +1747,8 @@
          teardown-topo-errors 
          teardown-backpressure-dirs
          nimbus/force-delete-topo-dist-dir
-         nimbus/blob-rm-topology-keys] 
+         nimbus/blob-rm-topology-keys
+         nimbus/blob-rm-dependency-jars-in-topology]
 
         (nimbus/do-cleanup nimbus)
 
@@ -1770,6 +1771,10 @@
         ;; removed blob store topo keys
         (verify-nth-call-args-for 1 nimbus/blob-rm-topology-keys "topo2" mock-blob-store mock-state)
         (verify-nth-call-args-for 2 nimbus/blob-rm-topology-keys "topo3" mock-blob-store mock-state)
+
+        ;; removed topology dependencies
+        (verify-nth-call-args-for 1 nimbus/blob-rm-dependency-jars-in-topology "topo2" mock-blob-store mock-state)
+        (verify-nth-call-args-for 2 nimbus/blob-rm-dependency-jars-in-topology "topo3" mock-blob-store mock-state)
 
         ;; remove topos from heartbeat cache
         (is (= (count @hb-cache) 0))))))

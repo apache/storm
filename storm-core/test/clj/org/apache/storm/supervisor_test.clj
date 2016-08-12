@@ -37,7 +37,7 @@
   (:import [org.apache.storm.utils Utils IPredicate])
   (:import [org.apache.storm.cluster StormClusterStateImpl ClusterStateContext ClusterUtils]
            [org.apache.storm.utils.staticmocking ConfigUtilsInstaller UtilsInstaller])
-  (:import [java.nio.file.attribute FileAttribute])
+  (:import [java.nio.file.attribute FileAttribute] (org.apache.storm.topology TopologyBuilder))
   (:import [org.apache.storm.daemon StormCommon])
   (:use [org.apache.storm config testing util log converter])
   (:use [org.apache.storm.daemon common])
@@ -304,6 +304,10 @@
           mock-worker-id "fake-worker-id"
           mock-cp (str Utils/FILE_PATH_SEPARATOR "base" Utils/CLASS_PATH_SEPARATOR Utils/FILE_PATH_SEPARATOR "stormjar.jar")
           mock-sensitivity "S3"
+          builder (TopologyBuilder.)
+           _ (.setSpout builder "wordSpout" (TestWordSpout.) 1)
+           _ (.shuffleGrouping (.setBolt builder "wordCountBolt" (TestWordCounter.) 1) "wordSpout")
+           mock-storm-topology (.createTopology builder)
           exp-args-fn (fn [opts topo-opts classpath]
                         (let [file-prefix (let [os (System/getProperty "os.name")]
                                             (if (.startsWith os "Windows") (str "file:///")
@@ -365,8 +369,9 @@
                           (supervisorStormDistRootImpl ([conf] nil)
                                                        ([conf storm-id] nil))
                           (readSupervisorStormConfImpl [conf storm-id] mocked-supervisor-storm-conf)
+                          (readSupervisorTopologyImpl [conf storm-id] mock-storm-topology)
                           (setWorkerUserWSEImpl [conf worker-id user] nil)
-                         (workerRootImpl [conf] "/tmp/workers")
+                          (workerRootImpl [conf] "/tmp/workers")
                           (workerArtifactsRootImpl [conf] "/tmp/workers-artifacts"))
               worker-manager (proxy [DefaultWorkerManager] []
                                (jlp [stormRoot conf] ""))
@@ -400,6 +405,7 @@
                           (supervisorStormDistRootImpl ([conf] nil)
                                                        ([conf storm-id] nil))
                           (readSupervisorStormConfImpl [conf storm-id] mocked-supervisor-storm-conf)
+                          (readSupervisorTopologyImpl [conf storm-id] mock-storm-topology)
                           (setWorkerUserWSEImpl [conf worker-id user] nil)
                           (workerRootImpl [conf] "/tmp/workers")
                           (workerArtifactsRootImpl [conf] "/tmp/workers-artifacts"))
@@ -437,6 +443,7 @@
                           (supervisorStormDistRootImpl ([conf] nil)
                                                        ([conf storm-id] nil))
                           (readSupervisorStormConfImpl [conf storm-id] mocked-supervisor-storm-conf)
+                          (readSupervisorTopologyImpl [conf storm-id] mock-storm-topology)
                           (setWorkerUserWSEImpl [conf worker-id user] nil)
                           (workerRootImpl [conf] "/tmp/workers")
                           (workerArtifactsRootImpl [conf] "/tmp/workers-artifacts"))
@@ -475,6 +482,7 @@
                           (supervisorStormDistRootImpl ([conf] nil)
                                                        ([conf storm-id] nil))
                           (readSupervisorStormConfImpl [conf storm-id] mocked-supervisor-storm-conf)
+                          (readSupervisorTopologyImpl [conf storm-id] mock-storm-topology)
                           (setWorkerUserWSEImpl [conf worker-id user] nil)
                           (workerRootImpl [conf] "/tmp/workers")
                           (workerArtifactsRootImpl [conf] "/tmp/workers-artifacts"))
@@ -533,6 +541,10 @@
           mock-worker-id "fake-worker-id"
           mock-sensitivity "S3"
           mock-cp "mock-classpath'quote-on-purpose"
+          builder (TopologyBuilder.)
+           _ (.setSpout builder "wordSpout" (TestWordSpout.) 1)
+           _ (.shuffleGrouping (.setBolt builder "wordCountBolt" (TestWordCounter.) 1) "wordSpout")
+          mock-storm-topology (.createTopology builder)
           attrs (make-array FileAttribute 0)
           storm-local (.getCanonicalPath (.toFile (Files/createTempDirectory "storm-local" attrs)))
           worker-script (str storm-local Utils/FILE_PATH_SEPARATOR "workers" Utils/FILE_PATH_SEPARATOR mock-worker-id Utils/FILE_PATH_SEPARATOR "storm-worker-script.sh")
@@ -596,6 +608,7 @@
                           (supervisorStormDistRootImpl ([conf] nil)
                                                        ([conf storm-id] nil))
                           (readSupervisorStormConfImpl [conf storm-id] mocked-supervisor-storm-conf)
+                          (readSupervisorTopologyImpl [conf storm-id] mock-storm-topology)
                           (setWorkerUserWSEImpl [conf worker-id user] nil))
                 utils-spy (->>
                             (proxy [Utils] []
@@ -644,6 +657,7 @@
                           (supervisorStormDistRootImpl ([conf] nil)
                                                        ([conf storm-id] nil))
                           (readSupervisorStormConfImpl [conf storm-id] mocked-supervisor-storm-conf)
+                          (readSupervisorTopologyImpl [conf storm-id] mock-storm-topology)
                           (setWorkerUserWSEImpl [conf worker-id user] nil))
                 utils-spy (->>
                             (proxy [Utils] []

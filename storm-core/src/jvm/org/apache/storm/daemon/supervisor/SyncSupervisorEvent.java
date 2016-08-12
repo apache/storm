@@ -327,7 +327,9 @@ public class SyncSupervisorEvent implements Runnable {
         blobStore.shutdown();
         Utils.extractDirFromJar(jarPath, ConfigUtils.RESOURCES_SUBDIR, tmproot);
         downloadBlobsForTopology(conf, confPath, localizer, tmproot);
-        if (didDownloadBlobsForTopologySucceed(confPath, tmproot)) {
+        downloadDependenciesForTopology(conf, confPath, codePath, localizer, tmproot);
+        if (areBlobsInBlobStoreMapDownloaded(confPath, tmproot) &&
+                areDependencyFilesDownloaded(codePath, tmproot)) {
             LOG.info("Successfully downloaded blob resources for storm-id {}", stormId);
             if (Utils.isOnWindows()) {
                 // Files/move with non-empty directory doesn't work well on Windows
@@ -344,12 +346,29 @@ public class SyncSupervisorEvent implements Runnable {
 
     /**
      * Assert if all blobs are downloaded for the given topology
-     * 
+     *
+     * @param targetDir
+     * @param blobFileNames
+     * @return
+     */
+    protected boolean areBlobsDownloaded(String targetDir, List<String> blobFileNames) throws IOException {
+        for (String string : blobFileNames) {
+            if (!Utils.checkFileExists(targetDir, string)) {
+                LOG.info("Fail to find downloaded file: dir {} filename {}", targetDir, string);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Assert if all blobs in blobstore map are downloaded for the given topology
+     *
      * @param stormconfPath
      * @param targetDir
      * @return
      */
-    protected boolean didDownloadBlobsForTopologySucceed(String stormconfPath, String targetDir) throws IOException {
+    protected boolean areBlobsInBlobStoreMapDownloaded(String stormconfPath, String targetDir) throws IOException {
         Map stormConf = Utils.fromCompressedJsonConf(FileUtils.readFileToByteArray(new File(stormconfPath)));
         Map<String, Map<String, Object>> blobstoreMap = (Map<String, Map<String, Object>>) stormConf.get(Config.TOPOLOGY_BLOBSTORE_MAP);
         List<String> blobFileNames = new ArrayList<>();
@@ -366,12 +385,27 @@ public class SyncSupervisorEvent implements Runnable {
                 blobFileNames.add(ret);
             }
         }
-        for (String string : blobFileNames) {
-            if (!Utils.checkFileExists(string))
-                return false;
-        }
-        return true;
+
+        return areBlobsDownloaded(targetDir, blobFileNames);
     }
+
+    /**
+     * Assert if all dependencies blobs are downloaded for the given topology
+     * 
+     * @param stormcodePath
+     * @param targetDir
+     * @return
+     */
+    protected boolean areDependencyFilesDownloaded(String stormcodePath, String targetDir) throws IOException {
+        StormTopology stormCode = ConfigUtils.readSupervisorStormCodeGivenPath(stormcodePath);
+        List<String> blobFileNames = new ArrayList<>();
+        blobFileNames.addAll(stormCode.get_dependency_jars());
+        blobFileNames.addAll(stormCode.get_dependency_artifacts());
+
+        return areBlobsDownloaded(targetDir, blobFileNames);
+    }
+
+    // FIXME: refactor to downloadBlobsForTopology and downloadDependenciesForTopology to extract common code like 1.x of supervisor.clj
 
     /**
      * Download all blobs listed in the topology configuration for a given topology.
@@ -419,8 +453,57 @@ public class SyncSupervisorEvent implements Runnable {
         }
     }
 
+    /**
+     * Download all dependencies blobs listed in the topology configuration for a given topology.
+     *
+     * @param conf
+     * @param stormconfPath
+     * @param stormcodePath
+     * @param localizer
+     * @param tmpRoot
+     */
+    protected void downloadDependenciesForTopology(Map conf, String stormconfPath, String stormcodePath, Localizer localizer, String tmpRoot) throws IOException {
+        Map stormConf = ConfigUtils.readSupervisorStormConfGivenPath(conf, stormconfPath);
+        StormTopology stormCode = ConfigUtils.readSupervisorStormCodeGivenPath(stormcodePath);
+
+        List<String> dependencies = new ArrayList<>();
+        dependencies.addAll(stormCode.get_dependency_jars());
+        dependencies.addAll(stormCode.get_dependency_artifacts());
+
+        String user = (String) stormConf.get(Config.TOPOLOGY_SUBMITTER_USER);
+        String topoName = (String) stormConf.get(Config.TOPOLOGY_NAME);
+        File userDir = localizer.getLocalUserFileCacheDir(user);
+
+        List<LocalResource> localResourceList = new ArrayList<>();
+        for (String dependency : dependencies) {
+            localResourceList.add(new LocalResource(dependency, false));
+        }
+
+        if (localResourceList.size() > 0) {
+            if (!userDir.exists()) {
+                FileUtils.forceMkdir(userDir);
+            }
+            try {
+                List<LocalizedResource> localizedResources = localizer.getBlobs(localResourceList, user, topoName, userDir);
+                setupBlobPermission(conf, user, userDir.toString());
+                for (LocalizedResource localizedResource : localizedResources) {
+                    File rsrcFilePath = new File(localizedResource.getFilePath());
+                    String keyName = rsrcFilePath.getName();
+                    String blobSymlinkTargetName = new File(localizedResource.getCurrentSymlinkPath()).getName();
+
+                    String symlinkName = keyName;
+                    Utils.createSymlink(tmpRoot, rsrcFilePath.getParent(), symlinkName, blobSymlinkTargetName);
+                }
+            } catch (AuthorizationException authExp) {
+                LOG.error("AuthorizationException error {}", authExp);
+            } catch (KeyNotFoundException knf) {
+                LOG.error("KeyNotFoundException error {}", knf);
+            }
+        }
+    }
+
     protected void setupBlobPermission(Map conf, String user, String path) throws IOException {
-        if (Utils.getBoolean(Config.SUPERVISOR_RUN_WORKER_AS_USER, false)) {
+        if (Utils.getBoolean(conf.get(Config.SUPERVISOR_RUN_WORKER_AS_USER), false)) {
             String logPrefix = "setup blob permissions for " + path;
             SupervisorUtils.processLauncherAndWait(conf, user, Arrays.asList("blob", path), null, logPrefix);
         }

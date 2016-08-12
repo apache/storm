@@ -132,7 +132,7 @@ public class StormCommon {
         List<String> componentIds = new ArrayList<>();
 
         for (StormTopology._Fields field : Thrift.getTopologyFields()) {
-            if (!ThriftTopologyUtils.isWorkerHook(field)) {
+            if (!ThriftTopologyUtils.isWorkerHook(field) && !ThriftTopologyUtils.isDependencies(field)) {
                 Object value = topology.getFieldValue(field);
                 Map<String, Object> componentMap = (Map<String, Object>) value;
                 componentIds.addAll(componentMap.keySet());
@@ -173,7 +173,7 @@ public class StormCommon {
         Map<String, Object> components = new HashMap<>();
         List<StormTopology._Fields> topologyFields = Arrays.asList(Thrift.getTopologyFields());
         for (StormTopology._Fields field : topologyFields) {
-            if (!ThriftTopologyUtils.isWorkerHook(field)) {
+            if (!ThriftTopologyUtils.isWorkerHook(field) && !ThriftTopologyUtils.isDependencies(field)) {
                 components.putAll(((Map) topology.getFieldValue(field)));
             }
         }

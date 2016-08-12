@@ -31,7 +31,7 @@
   (:import [java.nio ByteBuffer]
            [java.util Collections List HashMap ArrayList Iterator])
   (:import [org.apache.storm.blobstore AtomicOutputStream BlobStoreAclHandler
-            InputStreamWithMeta KeyFilter KeySequenceNumber BlobSynchronizer])
+            InputStreamWithMeta KeyFilter KeySequenceNumber BlobSynchronizer BlobStoreUtils])
   (:import [java.io File FileOutputStream FileInputStream])
   (:import [java.net InetAddress ServerSocket BindException])
   (:import [java.nio.channels Channels WritableByteChannel])
@@ -1208,6 +1208,17 @@
     (catch Exception e
       (log-message "Exception" e))))
 
+(defn blob-rm-dependency-jars-in-topology [id blob-store storm-cluster-state]
+  (try
+    (let [storm-topology (read-storm-topology-as-nimbus id blob-store)
+          dependency-jars (.get_dependency_jars ^StormTopology storm-topology)]
+      (log-message "Removing dependency jars from blobs - " dependency-jars)
+      (when-not (empty? dependency-jars)
+        (doseq [key dependency-jars]
+          (blob-rm-key blob-store key storm-cluster-state))))
+    (catch Exception e
+      (log-message "Exception" e))))
+
 (defn blob-rm-topology-keys [id blob-store storm-cluster-state]
   (blob-rm-key blob-store (ConfigUtils/masterStormJarKey id) storm-cluster-state)
   (blob-rm-key blob-store (ConfigUtils/masterStormConfKey id) storm-cluster-state)
@@ -1230,6 +1241,7 @@
             (.teardownHeartbeats storm-cluster-state id)
             (.teardownTopologyErrors storm-cluster-state id)
             (.removeBackpressure storm-cluster-state id)
+            (blob-rm-dependency-jars-in-topology id blob-store storm-cluster-state)
             (force-delete-topo-dist-dir conf id)
             (blob-rm-topology-keys id blob-store storm-cluster-state)
             (swap! (:heartbeats-cache nimbus) dissoc id)))))
