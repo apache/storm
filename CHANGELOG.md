@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-2023: Add calcite-core to dependency of storm-sql-runtime
  * STORM-2036: Fix minor bug in RAS Tests
  * STORM-1979: Storm Druid Connector implementation.
  * STORM-1839: Storm spout implementation for Amazon Kinesis Streams.
