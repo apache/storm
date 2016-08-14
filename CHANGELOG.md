@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-1913: Additions and Improvements for Trident RAS API
  * STORM-2037: debug operation should be whitelisted in SimpleAclAuthorizer.
  * STORM-2023: Add calcite-core to dependency of storm-sql-runtime
  * STORM-2036: Fix minor bug in RAS Tests
