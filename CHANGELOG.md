@@ -1,5 +1,6 @@
 ## 2.0.0
- * STORM-2036:Fix minor bug in RAS Tests
+ * STORM-2037: debug operation should be whitelisted in SimpleAclAuthorizer.
+ * STORM-2036: Fix minor bug in RAS Tests
  * STORM-2026: Inconsistency between (SpoutExecutor, BoltExecutor) and (spout-transfer-fn, bolt-transfer-fn) * STORM-1979: Storm Druid Connector implementation.
  * STORM-1277: port backtype.storm.daemon.executor to java
  * STORM-2020: Stop using sun internal classes.
@@ -13,9 +14,9 @@
  * STORM-1962: support python 3 and 2 in multilang
  * STORM-1964: Unexpected behavior when using count window together with timestamp extraction
  * STORM-1890: ensure we refetch static resources after package build
- * STORM-1966 Expand metric having Map type as value into multiple metrics based on entries
+ * STORM-1966: Expand metric having Map type as value into multiple metrics based on entries
  * STORM-1737: storm-kafka-client has compilation errors with Apache Kafka 0.10
- * STORM-1910 One topology cannot use hdfs spout to read from two locations
+ * STORM-1910: One topology cannot use hdfs spout to read from two locations
  * STORM-1916: Add ability for worker-first classpath
  * STORM-1954: Large Trident topologies can cause memory issues due to DefaultResourceDeclarer object reading config
  * STORM-1913: Additions and Improvements for Trident RAS API
