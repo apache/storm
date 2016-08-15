@@ -1,4 +1,27 @@
 ## 1.0.2
+ * STORM-1876: Option to build storm-kafka and storm-kafka-client with different kafka client version
+ * STORM-1989: X-Frame-Options support for Storm UI
+ * STORM-1962: support python 3 and 2 in multilang
+ * STORM-1964: Unexpected behavior when using count window together with timestamp extraction
+ * STORM-1977: Restore logic: give up leadership when elected as leader but doesn't have one or more topology codes on local 
+ * STORM-1890 ensure we refetch static resources after package build
+ * STORM-1730: LocalCluster#shutdown() does not terminate all storm threds/thread pools.
+ * STORM-1976: STORM-1976 Remove cleanup-corrupt-topologies!
+ * STORM-1939: Frequent InterruptedException raised by ShellBoltMessageQueue.poll
+ * STORM-1968: Storm logviewer does not work for nimbus.log in secure cluster
+ * STORM-1928: ShellSpout should check heartbeat while ShellSpout is waiting for subprocess to sync
+ * STORM-1922: Supervisor summary default order by host
+ * STORM-1956: Disabling Backpressure by default
+ * STORM-1934: Fix race condition between sync-supervisor and sync-processes
+ * STORM-1895: blobstore replication-factor argument
+ * STORM-118: Docs: typo in transactional-commit-flow.png
+ * STORM-1633: Document blobstore to command-line-client.md
+ * STORM-1899: Release HBase connection when topology shutdown
+ * STORM-1844: Some tests are flaky due to low timeout
+ * STORM-1946: initialize lastHeartbeatTimestamp before starting heartbeat task
+ * STORM-1941 Nimbus discovery can fail when zookeeper reconnect happens
+ * STORM-1937 Fix WindowTridentProcessor cause NullPointerException
+ * STORM-1924: Add a config file parameter to HDFS test topologies
  * STORM-1705: Cap number of retries for a failed message
  * STORM-1884: Prioritize pendingPrepare over pendingCommit
  * STORM-1575: fix TwitterSampleSpout NPE on close
@@ -375,6 +398,13 @@
  * STORM-901: Worker Artifacts Directory
  * STORM-1144: Display requested and assigned cpu/mem resources for schedulers in UI
  * STORM-1217: making small fixes in RAS
+
+## 0.10.2
+ * STORM-1834: Documentation How to Generate Certificates For Local Testing SSL Setup
+ * STORM-1754: Correct java version in 0.10.x storm-starter
+ * STORM-1750: Ensure worker dies when report-error-and-die is called.
+ * STORM-1739: update the minor JAVA version dependency in 0.10.0 and above
+ * STORM-1733: Flush stdout and stderr before calling "os.execvp" to prevent log loss
 
 ## 0.10.1
  * STORM-584: Fix logging for LoggingMetricsConsumer metrics.log file

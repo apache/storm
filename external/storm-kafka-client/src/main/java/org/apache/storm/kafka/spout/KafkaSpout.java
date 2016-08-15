@@ -45,6 +45,7 @@ import java.util.NavigableSet;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST;
 import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.LATEST;
@@ -343,7 +344,16 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     private void subscribeKafkaConsumer() {
         kafkaConsumer = new KafkaConsumer<>(kafkaSpoutConfig.getKafkaProps(),
                 kafkaSpoutConfig.getKeyDeserializer(), kafkaSpoutConfig.getValueDeserializer());
-        kafkaConsumer.subscribe(kafkaSpoutConfig.getSubscribedTopics(), new KafkaSpoutConsumerRebalanceListener());
+
+        if (kafkaSpoutStreams instanceof KafkaSpoutStreamsNamedTopics) {
+            final List<String> topics = ((KafkaSpoutStreamsNamedTopics) kafkaSpoutStreams).getTopics();
+            kafkaConsumer.subscribe(topics, new KafkaSpoutConsumerRebalanceListener());
+            LOG.info("Kafka consumer subscribed topics {}", topics);
+        } else if (kafkaSpoutStreams instanceof KafkaSpoutStreamsWildcardTopics) {
+            final Pattern pattern = ((KafkaSpoutStreamsWildcardTopics) kafkaSpoutStreams).getTopicWildcardPattern();
+            kafkaConsumer.subscribe(pattern, new KafkaSpoutConsumerRebalanceListener());
+            LOG.info("Kafka consumer subscribed topics matching wildcard pattern [{}]", pattern);
+        }
         // Initial poll to get the consumer registration process going.
         // KafkaSpoutConsumerRebalanceListener will be called following this poll, upon partition registration
         kafkaConsumer.poll(0);
@@ -379,6 +389,37 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     @Override
     public String toString() {
         return "{acked=" + acked + "} ";
+    }
+
+    @Override
+    public Map<String, Object> getComponentConfiguration () {
+        Map<String, Object> configuration = super.getComponentConfiguration();
+        if (configuration == null) {
+            configuration = new HashMap<>();
+        }
+        String configKeyPrefix = "config.";
+
+        if (kafkaSpoutStreams instanceof KafkaSpoutStreamsNamedTopics) {
+            configuration.put(configKeyPrefix + "topics", getNamedTopics());
+        } else if (kafkaSpoutStreams instanceof KafkaSpoutStreamsWildcardTopics) {
+            configuration.put(configKeyPrefix + "topics", getWildCardTopics());
+        }
+
+        configuration.put(configKeyPrefix + "groupid", kafkaSpoutConfig.getConsumerGroupId());
+        configuration.put(configKeyPrefix + "bootstrap.servers", kafkaSpoutConfig.getKafkaProps().get("bootstrap.servers"));
+        return configuration;
+    }
+
+    private String getNamedTopics() {
+        StringBuilder topics = new StringBuilder();
+        for (String topic: kafkaSpoutConfig.getSubscribedTopics()) {
+            topics.append(topic).append(",");
+        }
+        return topics.toString();
+    }
+
+    private String getWildCardTopics() {
+        return kafkaSpoutConfig.getTopicWildcardPattern().toString();
     }
 
     // ======= Offsets Commit Management ==========

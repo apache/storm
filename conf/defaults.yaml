@@ -89,6 +89,7 @@ ui.filter.params: null
 ui.users: null
 ui.header.buffer.bytes: 4096
 ui.http.creds.plugin: org.apache.storm.security.auth.DefaultHttpCredentialsPlugin
+ui.http.x-frame-options: DENY
 
 logviewer.port: 8000
 logviewer.childopts: "-Xmx128m"
@@ -187,7 +188,7 @@ task.refresh.poll.secs: 10
 task.credentials.poll.secs: 30
 
 # now should be null by default
-topology.backpressure.enable: true
+topology.backpressure.enable: false
 backpressure.disruptor.high.watermark: 0.9
 backpressure.disruptor.low.watermark: 0.4
 
