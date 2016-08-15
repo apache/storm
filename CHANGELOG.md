@@ -1,3 +1,7 @@
+## 0.9.7
+ * STORM-442: multilang ShellBolt/ShellSpout die() can be hang when Exception happened
+ * STORM-1928: ShellSpout should check heartbeat while ShellSpout is waiting for subprocess to sync
+
 ## 0.9.6
  * STORM-1027: Use overflow buffer for emitting metrics
  * STORM-996: netty-unit-tests/test-batch demonstrates out-of-order delivery
