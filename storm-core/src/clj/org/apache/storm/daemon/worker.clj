@@ -160,10 +160,10 @@
   check highWaterMark and lowWaterMark for backpressure"
   (disruptor/disruptor-backpressure-handler
     (fn []
-      (reset! (:transfer-backpressure worker) true)
+      (log-debug "worker " (:worker-id worker) " transfer-queue is congested, set backpressure flag true")
       (WorkerBackpressureThread/notifyBackpressureChecker (:backpressure-trigger worker)))
     (fn []
-      (reset! (:transfer-backpressure worker) false)
+      (log-debug "worker " (:worker-id worker) " transfer-queue is not congested, set backpressure flag false")
       (WorkerBackpressureThread/notifyBackpressureChecker (:backpressure-trigger worker)))))
 
 (defn mk-transfer-fn [worker]
@@ -316,7 +316,6 @@
       :load-mapping (LoadMapping.)
       :assignment-versions assignment-versions
       :backpressure (atom false) ;; whether this worker is going slow
-      :transfer-backpressure (atom false) ;; if the transfer queue is backed-up
       :backpressure-trigger (atom false) ;; a trigger for synchronization with executors
       :throttle-on (atom false) ;; whether throttle is activated for spouts
       )))
@@ -649,11 +648,11 @@
         backpressure-thread (WorkerBackpressureThread. (:backpressure-trigger worker) worker backpressure-handler)
         _ (if ((:storm-conf worker) TOPOLOGY-BACKPRESSURE-ENABLE) 
             (.start backpressure-thread))
-        callback (fn cb [& ignored]
+        topology-backpressure-callback (fn cb [& ignored]
                    (let [throttle-on (.topology-backpressure storm-cluster-state storm-id cb)]
                      (reset! (:throttle-on worker) throttle-on)))
         _ (if ((:storm-conf worker) TOPOLOGY-BACKPRESSURE-ENABLE)
-            (.topology-backpressure storm-cluster-state storm-id callback))
+            (.topology-backpressure storm-cluster-state storm-id topology-backpressure-callback))
 
         shutdown* (fn []
                     (log-message "Shutting down worker " storm-id " " assignment-id " " port)
@@ -721,12 +720,6 @@
                                         (AuthUtils/updateSubject subject auto-creds new-creds)
                                         (dofor [e @executors] (.credentials-changed e new-creds))
                                         (reset! credentials new-creds))))
-       check-throttle-changed (fn []
-                                (let [callback (fn cb [& ignored]
-                                                 (let [throttle-on (.topology-backpressure (:storm-cluster-state worker) storm-id cb)]
-                                                   (reset! (:throttle-on worker) throttle-on)))
-                                      new-throttle-on (.topology-backpressure (:storm-cluster-state worker) storm-id callback)]
-                                    (reset! (:throttle-on worker) new-throttle-on)))
         check-log-config-changed (fn []
                                   (let [log-config (.topology-log-config (:storm-cluster-state worker) storm-id nil)]
                                     (process-log-config-change latest-log-config original-log-levels log-config)
@@ -743,7 +736,7 @@
                         (fn [& args]
                           (check-credentials-changed)
                           (if ((:storm-conf worker) TOPOLOGY-BACKPRESSURE-ENABLE)
-                            (check-throttle-changed))))
+                            (topology-backpressure-callback))))
     ;; The jitter allows the clients to get the data at different times, and avoids thundering herd
     (when-not (.get conf TOPOLOGY-DISABLE-LOADAWARE-MESSAGING)
       (schedule-recurring-with-jitter (:refresh-load-timer worker) 0 1 500 refresh-load))
