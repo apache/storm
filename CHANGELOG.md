@@ -1,4 +1,8 @@
 ## 2.0.0
+ * STORM-1256: port backtype.storm.utils.ZookeeperServerCnxnFactory-test to java
+ * STORM-1251: port backtype.storm.serialization.SerializationFactory-test to java
+ * STORM-1240: port backtype.storm.security.auth.authorizer.DRPCSimpleACLAuthorizer-test to java
+ * STORM-1234: port backtype.storm.security.auth.DefaultHttpCredentialsPlugin-test to java
  * STORM-2037: debug operation should be whitelisted in SimpleAclAuthorizer.
  * STORM-2036: Fix minor bug in RAS Tests
  * STORM-2026: Inconsistency between (SpoutExecutor, BoltExecutor) and (spout-transfer-fn, bolt-transfer-fn) * STORM-1979: Storm Druid Connector implementation.
