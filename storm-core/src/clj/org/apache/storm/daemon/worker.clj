@@ -738,9 +738,7 @@
                           (check-credentials-changed)))
 
     (if ((:storm-conf worker) TOPOLOGY-BACKPRESSURE-ENABLE)
-      (schedule-recurring (:refresh-backpressure-timer worker) 0 (conf TASK-BACKPRESSURE-POLL-SECS)
-        (fn [] 
-          (topology-backpressure-callback))))
+      (schedule-recurring (:refresh-backpressure-timer worker) 0 (conf TASK-BACKPRESSURE-POLL-SECS) topology-backpressure-callback))
 
     ;; The jitter allows the clients to get the data at different times, and avoids thundering herd
     (when-not (.get conf TOPOLOGY-DISABLE-LOADAWARE-MESSAGING)
