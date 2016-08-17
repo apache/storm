@@ -331,7 +331,7 @@
       :load-mapping (LoadMapping.)
       :assignment-versions assignment-versions
       :backpressure (AtomicBoolean. false) ;; whether this worker is going slow
-      :backpressure-trigger (AtomicBoolean. false) ;; a trigger for synchronization with executors
+      :backpressure-trigger (Object.) ;; a trigger for synchronization with executors
       :throttle-on (AtomicBoolean. false) ;; whether throttle is activated for spouts
       )))
 
