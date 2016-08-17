@@ -398,6 +398,9 @@ public class NimbusBlobStore extends ClientBlobStore {
 
     @Override
     public boolean setClient(Map conf, NimbusClient client) {
+        if (this.client != null) {
+            this.client.close();
+        }
         this.client = client;
         if (conf != null) {
             this.bufferSize = Utils.getInt(conf.get(Config.STORM_BLOBSTORE_INPUTSTREAM_BUFFER_SIZE_BYTES), bufferSize);
