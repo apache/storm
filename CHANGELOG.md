@@ -1,5 +1,6 @@
 ## 0.10.2
  * STORM-1609: Netty Client is not best effort delivery on failed Connection
+ * STORM-1928: ShellSpout should check heartbeat while ShellSpout is waiting for subprocess to sync
  * STORM-1989: X-Frame-Options support for Storm UI
  * STORM-1834: Documentation How to Generate Certificates For Local Testing SSL Setup
  * STORM-1754: Correct java version in 0.10.x storm-starter
