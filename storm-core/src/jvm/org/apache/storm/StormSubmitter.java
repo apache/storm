@@ -234,9 +234,8 @@ public class StormSubmitter {
                     throw new RuntimeException("Topology with name `" + name + "` already exists on cluster");
                 }
                 String jar = submitJarAs(conf, System.getProperty("storm.jar"), progressListener, asUser);
-                try {
+                try (NimbusClient client = NimbusClient.getConfiguredClientAs(conf, asUser)){
                     LOG.info("Submitting topology " + name + " in distributed mode with conf " + serConf);
-                    NimbusClient client = NimbusClient.getConfiguredClientAs(conf, asUser);
                     if (opts != null) {
                         client.getClient().submitTopologyWithOpts(name, jar, serConf, topology, opts);
                     } else {
@@ -368,8 +367,7 @@ public class StormSubmitter {
     }
 
     private static boolean topologyNameExists(Map conf, String name, String asUser) {
-        NimbusClient client = NimbusClient.getConfiguredClientAs(conf, asUser);
-        try {
+        try (NimbusClient client = NimbusClient.getConfiguredClientAs(conf, asUser)) {
             ClusterSummary summary = client.getClient().getClusterInfo();
             for(TopologySummary s : summary.get_topologies()) {
                 if(s.get_name().equals(name)) {
@@ -380,8 +378,6 @@ public class StormSubmitter {
 
         } catch(Exception e) {
             throw new RuntimeException(e);
-        } finally {
-            client.close();
         }
     }
 
@@ -405,8 +401,7 @@ public class StormSubmitter {
             throw new RuntimeException("Must submit topologies using the 'storm' client script so that StormSubmitter knows which jar to upload.");
         }
 
-        NimbusClient client = NimbusClient.getConfiguredClientAs(conf, asUser);
-        try {
+        try (NimbusClient client = NimbusClient.getConfiguredClientAs(conf, asUser)) {
             String uploadLocation = client.getClient().beginFileUpload();
             LOG.info("Uploading topology jar " + localJar + " to assigned location: " + uploadLocation);
             BufferFileInputStream is = new BufferFileInputStream(localJar, THRIFT_CHUNK_SIZE_BYTES);
@@ -437,8 +432,6 @@ public class StormSubmitter {
             return uploadLocation;
         } catch(Exception e) {
             throw new RuntimeException(e);
-        } finally {
-            client.close();
         }
     }
 

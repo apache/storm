@@ -62,8 +62,7 @@ public class NimbusClient extends ThriftClient {
         for (String host : seeds) {
             int port = Integer.parseInt(conf.get(Config.NIMBUS_THRIFT_PORT).toString());
             ClusterSummary clusterInfo;
-            try {
-                NimbusClient client = new NimbusClient(conf, host, port, null, asUser);
+            try (NimbusClient client = new NimbusClient(conf, host, port, null, asUser)) {
                 clusterInfo = client.getClient().getClusterInfo();
             } catch (Exception e) {
                 LOG.warn("Ignoring exception while trying to get leader nimbus info from " + host
