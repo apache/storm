@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-2042: Nimbus client connections not closed properly causing connection leaks
  * STORM-1766: A better algorithm server rack selection for RAS
  * STORM-1913: Additions and Improvements for Trident RAS API
  * STORM-2037: debug operation should be whitelisted in SimpleAclAuthorizer.
