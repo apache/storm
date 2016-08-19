@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-2041: Make Java 8 as minimum requirement for 2.0 release
  * STORM-1256: port backtype.storm.utils.ZookeeperServerCnxnFactory-test to java
  * STORM-1251: port backtype.storm.serialization.SerializationFactory-test to java
  * STORM-1240: port backtype.storm.security.auth.authorizer.DRPCSimpleACLAuthorizer-test to java
