@@ -1298,7 +1298,7 @@
                   (when-not (= orig-creds new-creds)
                     (.set-credentials! storm-cluster-state id new-creds topology-conf)
                     ))))))))
-    (log-message "not a leader skipping , credential renweal.")))
+    (log-message "not a leader, skipping credential renewal.")))
 
 (defn validate-topology-size [topo-conf nimbus-conf topology]
   (let [workers-count (get topo-conf TOPOLOGY-WORKERS)
