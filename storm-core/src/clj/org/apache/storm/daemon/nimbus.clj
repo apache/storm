@@ -1302,7 +1302,7 @@
                   (when-not (= orig-creds new-creds)
                     (.setCredentials storm-cluster-state id (thriftify-credentials new-creds) topology-conf)
                     ))))))))
-    (log-message "not a leader skipping , credential renweal.")))
+    (log-message "not a leader, skipping credential renewal.")))
 
 ;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn validate-topology-size [topo-conf nimbus-conf topology]
