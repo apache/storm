@@ -65,6 +65,7 @@ public class SimpleACLAuthorizer implements IAuthorizer {
             "dumpProfile",
             "dumpJstack",
             "dumpHeap",
+            "debug",
             "getLogConfig"));
 
     protected Set<String> _admins;

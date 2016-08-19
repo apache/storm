@@ -183,6 +183,15 @@
             </roles>
             <timezone>+5.5</timezone>
         </developer>
+        <developer>
+            <id>satishd</id>
+            <name>Satish Duggana</name>
+            <email>satishd@apache.org</email>
+            <roles>
+                <role>Committer</role>
+            </roles>
+            <timezone>+5.5</timezone>
+        </developer>
     </developers>
 
 
@@ -301,6 +310,8 @@
         <module>external/storm-kafka-client</module>
         <module>external/storm-opentsdb</module>
         <module>external/storm-kafka-monitor</module>
+        <module>external/storm-kinesis</module>
+        <module>external/storm-druid</module>
     </modules>
 
     <dependencies>
@@ -338,6 +349,10 @@
                                 <!-- exclude intellij projects -->
                                 <exclude>**/*.iml</exclude>
                                 <exclude>**/.idea/**</exclude>
+                                <!-- exclude eclipse projects -->
+                                <exclude>**/*.classpath</exclude>
+                                <exclude>**/.project</exclude>
+                                <exclude>**/.settings/**</exclude>
                                 <!-- module specific testing artifacts -->
                                 <exclude>**/metastore_db/**</exclude>
                                 <!-- anything written into build should be ignored -->
@@ -1064,8 +1079,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>1.7</source>
-                    <target>1.7</target>
+                    <source>1.8</source>
+                    <target>1.8</target>
                 </configuration>
             </plugin>
             <plugin>

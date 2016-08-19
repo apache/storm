@@ -1,4 +1,16 @@
 ## 2.0.0
+ * STORM-2041: Make Java 8 as minimum requirement for 2.0 release
+ * STORM-1256: port backtype.storm.utils.ZookeeperServerCnxnFactory-test to java
+ * STORM-1251: port backtype.storm.serialization.SerializationFactory-test to java
+ * STORM-1240: port backtype.storm.security.auth.authorizer.DRPCSimpleACLAuthorizer-test to java
+ * STORM-1234: port backtype.storm.security.auth.DefaultHttpCredentialsPlugin-test to java
+ * STORM-2037: debug operation should be whitelisted in SimpleAclAuthorizer.
+ * STORM-2036: Fix minor bug in RAS Tests
+ * STORM-2026: Inconsistency between (SpoutExecutor, BoltExecutor) and (spout-transfer-fn, bolt-transfer-fn) * STORM-1979: Storm Druid Connector implementation.
+ * STORM-1277: port backtype.storm.daemon.executor to java
+ * STORM-2020: Stop using sun internal classes.
+ * STORM-2021: Fix license.
+ * STORM-2022: fix FieldsTest
  * STORM-1285: port backtype.storm.command.get-errors to java
  * STORM-2010: port org.apache.storm.command.heartbeats.clj to Java
  * STORM-2009: port org.apache.storm.blobstore.clj and org.apache.storm.command.blobstore.clj to Java
@@ -7,9 +19,9 @@
  * STORM-1962: support python 3 and 2 in multilang
  * STORM-1964: Unexpected behavior when using count window together with timestamp extraction
  * STORM-1890: ensure we refetch static resources after package build
- * STORM-1966 Expand metric having Map type as value into multiple metrics based on entries
+ * STORM-1966: Expand metric having Map type as value into multiple metrics based on entries
  * STORM-1737: storm-kafka-client has compilation errors with Apache Kafka 0.10
- * STORM-1910 One topology cannot use hdfs spout to read from two locations
+ * STORM-1910: One topology cannot use hdfs spout to read from two locations
  * STORM-1916: Add ability for worker-first classpath
  * STORM-1954: Large Trident topologies can cause memory issues due to DefaultResourceDeclarer object reading config
  * STORM-1913: Additions and Improvements for Trident RAS API
@@ -131,6 +143,8 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0 
+ * STORM-2023: Add calcite-core to dependency of storm-sql-runtime
+ * STORM-1839: Storm spout implementation for Amazon Kinesis Streams.
  * STORM-1988: Kafka Offset not showing due to bad classpath.
  * STORM-1987: Fix TridentKafkaWordCount arg handling in distributed mode.
  * STORM-1969: Modify HiveTopology to show usage of non-partition table.
@@ -166,6 +180,8 @@
  * STORM-1868: Modify TridentKafkaWordCount to run in distributed mode
 
 ## 1.0.3
+ * STORM-2042: Nimbus client connections not closed properly causing connection leaks
+ * STORM-2032: removes warning in case more than one metrics tuple is received
  * STORM-1594: org.apache.storm.tuple.Fields can throw NPE if given invalid field in selector
  * STORM-1995: downloadChunk in nimbus.clj should close the input stream
 

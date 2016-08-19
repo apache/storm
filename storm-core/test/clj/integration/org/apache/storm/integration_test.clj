@@ -403,17 +403,18 @@
 (def bolt-prepared? (atom false))
 (defbolt prepare-tracked-bolt [] {:prepare true}
   [conf context collector]  
-  (reset! bolt-prepared? true)
   (bolt
    (execute [tuple]
+            (reset! bolt-prepared? true)
             (ack! collector tuple))))
 
 (def spout-opened? (atom false))
 (defspout open-tracked-spout ["val"]
   [conf context collector]
-  (reset! spout-opened? true)
   (spout
-   (nextTuple [])))
+    (nextTuple []
+      (reset! spout-opened? true)
+      )))
 
 (deftest test-submit-inactive-topology
   (with-simulated-time-local-cluster [cluster :daemon-conf {TOPOLOGY-ENABLE-MESSAGE-TIMEOUTS true}]
@@ -440,8 +441,8 @@
       (advance-cluster-time cluster 9)
       (is (not @bolt-prepared?))
       (is (not @spout-opened?))        
-      (.activate (:nimbus cluster) "test")              
-      
+      (.activate (:nimbus cluster) "test")
+
       (advance-cluster-time cluster 12)
       (assert-acked tracker 1)
       (is @bolt-prepared?)

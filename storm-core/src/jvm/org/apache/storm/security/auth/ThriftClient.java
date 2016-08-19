@@ -27,7 +27,7 @@ import org.apache.thrift.transport.TTransport;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.Config;
 
-public class ThriftClient {
+public class ThriftClient implements AutoCloseable {
     private TTransport _transport;
     protected TProtocol _protocol;
     private String _host;
@@ -106,6 +106,7 @@ public class ThriftClient {
         }
     }
 
+    @Override
     public synchronized void close() {
         if (_transport != null) {
             _transport.close();
