@@ -17,6 +17,7 @@
  */
 package org.apache.storm.elasticsearch.common;
 
+import java.net.InetSocketAddress;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -59,7 +60,7 @@ final class TransportAddresses implements Iterable<InetSocketTransportAddress> {
                     "Incorrect Elasticsearch node format, should follow {host}" + DELIMETER + "{port} pattern");
         }
         String hostname = hostname(hostAndPort[0]);
-        return new InetSocketTransportAddress(hostname, port(hostAndPort[1]));
+        return new InetSocketTransportAddress(new InetSocketAddress(hostname, port(hostAndPort[1])));
     }
 
     private String hostname(String input) {

@@ -23,29 +23,31 @@ import org.junit.Test;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertThat;
 
+import java.net.InetSocketAddress;
+
 public class TransportAddressesTest {
 
     @Test
     public void readsMultipleHosts() throws Exception {
-        String[] hosts = new String[] {"h1:1000", "h2:10003"};
+        String[] hosts = new String[] {"localhost:1000", "localhost:10003"};
         TransportAddresses addresses = new TransportAddresses(hosts);
-        assertThat(addresses, containsInAnyOrder(new InetSocketTransportAddress("h1", 1000),
-                                                 new InetSocketTransportAddress("h2", 10003)));
+        assertThat(addresses, containsInAnyOrder(new InetSocketTransportAddress(new InetSocketAddress("localhost", 1000)),
+                                                 new InetSocketTransportAddress(new InetSocketAddress("localhost", 10003))));
     }
 
     @Test
     public void stripsSpaces() throws Exception {
-        String[] hosts = new String[] {"h1:1000", " h2:10003 "};
+        String[] hosts = new String[] {"localhost:1000", "localhost:10003 "};
         TransportAddresses addresses = new TransportAddresses(hosts);
-        assertThat(addresses, containsInAnyOrder(new InetSocketTransportAddress("h1", 1000),
-                                                 new InetSocketTransportAddress("h2", 10003)));
+        assertThat(addresses, containsInAnyOrder(new InetSocketTransportAddress(new InetSocketAddress("localhost", 1000)),
+                                                 new InetSocketTransportAddress(new InetSocketAddress("localhost", 10003))));
     }
 
     @Test
     public void readsOneHost() throws Exception {
-        String[] hosts = new String[] {"h1:1000"};
+        String[] hosts = new String[] {"localhost:1000"};
         TransportAddresses addresses = new TransportAddresses(hosts);
-        assertThat(addresses, containsInAnyOrder(new InetSocketTransportAddress("h1", 1000)));
+        assertThat(addresses, containsInAnyOrder(new InetSocketTransportAddress(new InetSocketAddress("localhost", 1000))));
     }
 
     @Test(expected = IllegalArgumentException.class)

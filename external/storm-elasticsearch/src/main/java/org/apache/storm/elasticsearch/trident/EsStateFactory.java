@@ -26,7 +26,7 @@ import org.apache.storm.trident.state.StateFactory;
 
 import java.util.Map;
 
-import static org.elasticsearch.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * StateFactory for providing EsState.

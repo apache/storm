@@ -26,7 +26,7 @@ import org.apache.storm.elasticsearch.common.EsTupleMapper;
 
 import java.util.Map;
 
-import static org.elasticsearch.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Basic bolt for storing tuple to ES document.
