@@ -112,3 +112,23 @@ PRE.jsonFormatter-codeContainer {
   width: 1em;
 }
 
+.worker-component-button {
+  margin-right: 2px;
+  margin-top: 2px;
+}
+
+.worker-component-button .badge {
+  margin-left: 2px; 
+}
+
+.worker-child-row {
+  padding: 10px;
+}
+
+.supervisor-page #toggle-sys {
+  padding: 10px;
+}
+
+#toggle-on-components-btn .btn {
+  margin: 10px;
+}

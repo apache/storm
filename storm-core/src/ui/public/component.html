@@ -162,6 +162,12 @@ $(document).ready(function() {
         }
     });
 
+    function renderSupervisorPageLink(data, type, row, meta) {
+        return type === 'display' ? 
+                   ("<a href='/supervisor.html?host=" + data + "'>" + data + "</a>") :
+                   data; 
+    }
+
     function renderActionCheckbox(data, type, row, meta) {
       var host_port = row[2]+':'+$(row[3])[0].text;
       switch(type) {
@@ -252,6 +258,7 @@ $(document).ready(function() {
                 //id, uptime, host, port, actions, emitted, transferred, complete latency, acked, failed
                 dtAutoPage("#executor-stats-table", {
                   columnDefs: [
+                    {render: renderSupervisorPageLink, searchable: true, targets: [2]},
                     {render: renderActionCheckbox, searchable: false, targets: [4]},
                     {type: "num", targets: [5, 6, 7, 8, 9]},
                     {type: "time-str", targets: [1]},
@@ -287,6 +294,7 @@ $(document).ready(function() {
                 //id, uptime, host, port, actions, emitted, transferred, capacity, execute latency, executed, process latency, acked, failed
                 dtAutoPage("#executor-stats-table", {
                   columnDefs: [
+                    {render: renderSupervisorPageLink, searchable: true, targets: [2]},
                     {render: renderActionCheckbox, searchable: false, targets: [4]},
                     {type: "num", targets: [5, 6, 7, 8, 9, 10, 11, 12]},
                     {type: "time-str", targets: [1]},

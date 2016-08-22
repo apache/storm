@@ -33,7 +33,7 @@
   (:import [org.apache.storm.generated Credentials NotAliveException SubmitOptions
             TopologyInitialStatus TopologyStatus AlreadyAliveException KillOptions RebalanceOptions
             InvalidTopologyException AuthorizationException
-            LogConfig LogLevel LogLevelAction])
+            LogConfig LogLevel LogLevelAction Assignment NodeInfo])
   (:import [java.util HashMap])
   (:import [java.io File])
   (:import [org.apache.storm.utils Time Utils Utils$UptimeComputer ConfigUtils IPredicate StormCommonInstaller]
@@ -1357,7 +1357,45 @@
                     nimbus/check-authorization!
                       [1 2 3] expected-name expected-conf expected-operation)
                   (verify-first-call-args-for-indices
-                    nimbus/try-read-storm-topology [0] "fake-id"))))))))))
+                    nimbus/try-read-storm-topology [0] "fake-id"))))))
+
+        (testing "getSupervisorPageInfo only calls check-authorization as getTopology"
+          (let [expected-operation "getTopology"
+                assignment (doto (Assignment.)
+                             (.set_executor_node_port {[1 1] (NodeInfo. "super1" #{1}),
+                                                       [2 2] (NodeInfo. "super2" #{2})}))
+                clojurified-assignment (clojurify-assignment assignment)
+                topo-assignment {expected-name assignment}
+                check-auth-state (atom [])
+                mock-check-authorization (fn [nimbus storm-name storm-conf operation] 
+                                           (swap! check-auth-state conj {:nimbus nimbus
+                                                                         :storm-name storm-name
+                                                                         :storm-conf storm-conf
+                                                                         :operation operation}))]
+            (stubbing [nimbus/check-authorization! mock-check-authorization
+                       nimbus/try-read-storm-conf expected-conf
+                       nimbus/try-read-storm-topology nil
+                       nimbus/get-clojurified-task-info {}
+                       nimbus/all-supervisor-info {"super1" {:hostname "host1", :meta [1234], :uptime-secs 123}
+                                                   "super2" {:hostname "host2", :meta [1234], :uptime-secs 123}}
+                       clojurify-assignment clojurified-assignment
+                       nimbus/topology-assignments topo-assignment
+                       nimbus/get-launch-time-secs 0]
+              ;; not called yet
+              (verify-call-times-for nimbus/check-authorization! 0)
+              (.getSupervisorPageInfo nimbus "super1" nil true)
+ 
+              ;; afterwards, it should get called twice
+              (verify-call-times-for nimbus/check-authorization! 2)
+              (let [first-call (nth @check-auth-state 0)
+                    second-call (nth @check-auth-state 1)]
+                 (is (= expected-name (:storm-name first-call)))
+                 (is (= expected-conf (:storm-conf first-call)))
+                 (is (= "getTopology" (:operation first-call)))
+ 
+                 (is (= expected-name (:storm-name second-call)))
+                 (is (= expected-conf (:storm-conf second-call)))
+                 (is (= "getSupervisorPageInfo" (:operation second-call)))))))))))
 
 (deftest test-nimbus-iface-getTopology-methods-throw-correctly
   (with-local-cluster [cluster]
@@ -1414,7 +1452,8 @@
                         :status {:type bogus-type}}
                 }
         ]
-      (stubbing [nimbus/nimbus-topology-bases bogus-bases
+      (stubbing [nimbus/get-resources-for-topology nil
+                 nimbus/nimbus-topology-bases bogus-bases
                  nimbus/get-blob-replication-count 1]
         (let [topos (.get_topologies (.getClusterInfo nimbus))]
           ; The number of topologies in the summary is correct.
@@ -1769,3 +1808,37 @@
         (is (= (count @hb-cache) 2))
         (is (contains? @hb-cache "topo1"))
         (is (contains? @hb-cache "topo2"))))))
+
+
+(deftest user-topologies-for-supervisor
+  (let [assignment (doto (Assignment.)
+                     (.set_executor_node_port {[1 1] (NodeInfo. "super1" #{1}),
+                                               [2 2] (NodeInfo. "super2" #{2})}))
+        assignment2 (doto (Assignment.)
+                     (.set_executor_node_port {[1 1] (NodeInfo. "super2" #{2}),
+                                               [2 2] (NodeInfo. "super2" #{2})}))
+        assignments {"topo1" assignment, "topo2" assignment2}]
+    (stubbing [nimbus/is-authorized? true]
+      (let [topos1 (nimbus/user-and-supervisor-topos nil nil nil assignments "super1")
+            topos2 (nimbus/user-and-supervisor-topos nil nil nil assignments "super2")]
+        (is (= (list "topo1") (:supervisor-topologies topos1)))
+        (is (= #{"topo1"} (:user-topologies topos1))) 
+        (is (= (list "topo1" "topo2") (:supervisor-topologies topos2)))
+        (is (= #{"topo1" "topo2"} (:user-topologies topos2)))))))
+
+(defn- mock-check-auth 
+  [nimbus conf blob-store op topo-name]
+  (= topo-name "authorized"))
+
+(deftest user-topologies-for-supervisor-with-unauthorized-user
+  (let [assignment (doto (Assignment.)
+                     (.set_executor_node_port {[1 1] (NodeInfo. "super1" #{1}),
+                                               [2 2] (NodeInfo. "super2" #{2})}))
+        assignment2 (doto (Assignment.)
+                     (.set_executor_node_port {[1 1] (NodeInfo. "super1" #{2}),
+                                               [2 2] (NodeInfo. "super2" #{2})}))
+        assignments {"topo1" assignment, "authorized" assignment2}] 
+    (stubbing [nimbus/is-authorized? mock-check-auth]
+      (let [topos (nimbus/user-and-supervisor-topos nil nil nil assignments "super1")]
+        (is (= (list "topo1" "authorized") (:supervisor-topologies topos)))
+        (is (= #{"authorized"} (:user-topologies topos)))))))
