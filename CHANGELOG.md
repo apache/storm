@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-1994: Add table with per-topology & worker resource usage and components in (new) supervisor and topology pages
  * STORM-2042: Nimbus client connections not closed properly causing connection leaks
  * STORM-1766: A better algorithm server rack selection for RAS
  * STORM-1913: Additions and Improvements for Trident RAS API
