@@ -202,7 +202,7 @@ public class SpoutExecutor extends Executor {
             Long id = (Long) tuple.getValue(0);
             Long timeDeltaMs = (Long) tuple.getValue(1);
             TupleInfo tupleInfo = (TupleInfo) pending.remove(id);
-            if (tupleInfo.getMessageId() != null) {
+            if (tupleInfo != null && tupleInfo.getMessageId() != null) {
                 if (taskId != tupleInfo.getTaskId()) {
                     throw new RuntimeException("Fatal error, mismatched task ids: " + taskId + " " + tupleInfo.getTaskId());
                 }
