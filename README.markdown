@@ -272,6 +272,7 @@ under the License.
 * Manikumar Reddy O ([@omkreddy](https://github.com/omkreddy))
 * Dohyun Lee ([@leedohyun](https://github.com/leedohyun))
 * Arthur Maciejewicz ([@Zintinio](https://github.com/Zintinio]))
+* Juan Paulo Gutierrez ([@juanpaulo](https://github.com/juanpaulo))
 
 ## Acknowledgements
 
