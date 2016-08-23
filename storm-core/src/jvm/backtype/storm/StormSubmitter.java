@@ -125,12 +125,9 @@ public class StormSubmitter {
                 LOG.info("Pushing Credentials to topology " + name + " in local mode");
                 localNimbus.uploadNewCredentials(name, new Credentials(fullCreds));
             } else {
-                NimbusClient client = NimbusClient.getConfiguredClient(conf);
-                try {
+                try (NimbusClient client = NimbusClient.getConfiguredClient(conf)) {
                     LOG.info("Uploading new credentials to " +  name);
                     client.getClient().uploadNewCredentials(name, new Credentials(fullCreds));
-                } finally {
-                    client.close();
                 }
             }
             LOG.info("Finished submitting topology: " +  name);
@@ -222,12 +219,11 @@ public class StormSubmitter {
                 }
             } else {
                 String serConf = JSONValue.toJSONString(stormConf);
-                NimbusClient client = NimbusClient.getConfiguredClientAs(conf, asUser);
                 if(topologyNameExists(conf, name, asUser)) {
                     throw new RuntimeException("Topology with name `" + name + "` already exists on cluster");
                 }
                 String jar = submitJarAs(conf, System.getProperty("storm.jar"), progressListener, asUser);
-                try {
+                try (NimbusClient client = NimbusClient.getConfiguredClientAs(conf, asUser)) {
                     LOG.info("Submitting topology " +  name + " in distributed mode with conf " + serConf);
                     if(opts!=null) {
                         client.getClient().submitTopologyWithOpts(name, jar, serConf, topology, opts);
@@ -241,8 +237,6 @@ public class StormSubmitter {
                 } catch(AlreadyAliveException e) {
                     LOG.warn("Topology already alive exception", e);
                     throw e;
-                } finally {
-                    client.close();
                 }
             }
             LOG.info("Finished submitting topology: " +  name);
@@ -328,8 +322,7 @@ public class StormSubmitter {
     }
 
     private static boolean topologyNameExists(Map conf, String name, String asUser) {
-        NimbusClient client = NimbusClient.getConfiguredClientAs(conf, asUser);
-        try {
+        try (NimbusClient client = NimbusClient.getConfiguredClientAs(conf, asUser)) {
             ClusterSummary summary = client.getClient().getClusterInfo();
             for(TopologySummary s : summary.get_topologies()) {
                 if(s.get_name().equals(name)) {  
@@ -340,8 +333,6 @@ public class StormSubmitter {
 
         } catch(Exception e) {
             throw new RuntimeException(e);
-        } finally {
-            client.close();
         }
     }
 
@@ -365,8 +356,7 @@ public class StormSubmitter {
             throw new RuntimeException("Must submit topologies using the 'storm' client script so that StormSubmitter knows which jar to upload.");
         }
 
-        NimbusClient client = NimbusClient.getConfiguredClientAs(conf, asUser);
-        try {
+        try (NimbusClient client = NimbusClient.getConfiguredClientAs(conf, asUser)) {
             String uploadLocation = client.getClient().beginFileUpload();
             LOG.info("Uploading topology jar " + localJar + " to assigned location: " + uploadLocation);
             BufferFileInputStream is = new BufferFileInputStream(localJar, THRIFT_CHUNK_SIZE_BYTES);
@@ -397,8 +387,6 @@ public class StormSubmitter {
             return uploadLocation;
         } catch(Exception e) {
             throw new RuntimeException(e);
-        } finally {
-            client.close();
         }
     }
 

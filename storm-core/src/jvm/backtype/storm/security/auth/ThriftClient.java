@@ -30,7 +30,7 @@ import backtype.storm.utils.Utils;
 import backtype.storm.Config;
 import backtype.storm.security.auth.TBackoffConnect;
 
-public class ThriftClient {	
+public class ThriftClient implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(ThriftClient.class);
     private TTransport _transport;
     protected TProtocol _protocol;
@@ -110,6 +110,7 @@ public class ThriftClient {
         }
     }
 
+    @Override
     public synchronized void close() {
         if (_transport != null) {
             _transport.close();
