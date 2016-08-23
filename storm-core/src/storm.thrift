@@ -118,6 +118,8 @@ struct StormTopology {
   2: required map<string, Bolt> bolts;
   3: required map<string, StateSpoutSpec> state_spouts;
   4: optional list<binary> worker_hooks;
+  5: optional list<string> dependency_jars;
+  6: optional list<string> dependency_artifacts;
 }
 
 exception AlreadyAliveException {
@@ -309,11 +311,6 @@ struct TopologyStats {
 5: optional map<string, i64> window_to_failed;
 }
 
-struct SupervisorPageInfo {
-  1: optional list<SupervisorSummary> supervisor_summaries;
-  2: optional list<WorkerSummary> worker_summaries;
-}
-
 struct WorkerSummary {
   1: optional string supervisor_id; 
   2: optional string host;
@@ -330,6 +327,11 @@ struct WorkerSummary {
 524: optional double assigned_memonheap;
 525: optional double assigned_memoffheap;
 526: optional double assigned_cpu;
+}
+
+struct SupervisorPageInfo {
+  1: optional list<SupervisorSummary> supervisor_summaries;
+  2: optional list<WorkerSummary> worker_summaries;
 }
 
 struct TopologyPageInfo {

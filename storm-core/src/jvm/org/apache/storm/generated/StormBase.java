@@ -1090,15 +1090,15 @@ public class StormBase implements org.apache.thrift.TBase<StormBase, StormBase._
           case 4: // COMPONENT_EXECUTORS
             if (schemeField.type == org.apache.thrift.protocol.TType.MAP) {
               {
-                org.apache.thrift.protocol.TMap _map638 = iprot.readMapBegin();
-                struct.component_executors = new HashMap<String,Integer>(2*_map638.size);
-                String _key639;
-                int _val640;
-                for (int _i641 = 0; _i641 < _map638.size; ++_i641)
+                org.apache.thrift.protocol.TMap _map654 = iprot.readMapBegin();
+                struct.component_executors = new HashMap<String,Integer>(2*_map654.size);
+                String _key655;
+                int _val656;
+                for (int _i657 = 0; _i657 < _map654.size; ++_i657)
                 {
-                  _key639 = iprot.readString();
-                  _val640 = iprot.readI32();
-                  struct.component_executors.put(_key639, _val640);
+                  _key655 = iprot.readString();
+                  _val656 = iprot.readI32();
+                  struct.component_executors.put(_key655, _val656);
                 }
                 iprot.readMapEnd();
               }
@@ -1143,16 +1143,16 @@ public class StormBase implements org.apache.thrift.TBase<StormBase, StormBase._
           case 9: // COMPONENT_DEBUG
             if (schemeField.type == org.apache.thrift.protocol.TType.MAP) {
               {
-                org.apache.thrift.protocol.TMap _map642 = iprot.readMapBegin();
-                struct.component_debug = new HashMap<String,DebugOptions>(2*_map642.size);
-                String _key643;
-                DebugOptions _val644;
-                for (int _i645 = 0; _i645 < _map642.size; ++_i645)
+                org.apache.thrift.protocol.TMap _map658 = iprot.readMapBegin();
+                struct.component_debug = new HashMap<String,DebugOptions>(2*_map658.size);
+                String _key659;
+                DebugOptions _val660;
+                for (int _i661 = 0; _i661 < _map658.size; ++_i661)
                 {
-                  _key643 = iprot.readString();
-                  _val644 = new DebugOptions();
-                  _val644.read(iprot);
-                  struct.component_debug.put(_key643, _val644);
+                  _key659 = iprot.readString();
+                  _val660 = new DebugOptions();
+                  _val660.read(iprot);
+                  struct.component_debug.put(_key659, _val660);
                 }
                 iprot.readMapEnd();
               }
@@ -1192,10 +1192,10 @@ public class StormBase implements org.apache.thrift.TBase<StormBase, StormBase._
           oprot.writeFieldBegin(COMPONENT_EXECUTORS_FIELD_DESC);
           {
             oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.I32, struct.component_executors.size()));
-            for (Map.Entry<String, Integer> _iter646 : struct.component_executors.entrySet())
+            for (Map.Entry<String, Integer> _iter662 : struct.component_executors.entrySet())
             {
-              oprot.writeString(_iter646.getKey());
-              oprot.writeI32(_iter646.getValue());
+              oprot.writeString(_iter662.getKey());
+              oprot.writeI32(_iter662.getValue());
             }
             oprot.writeMapEnd();
           }
@@ -1233,10 +1233,10 @@ public class StormBase implements org.apache.thrift.TBase<StormBase, StormBase._
           oprot.writeFieldBegin(COMPONENT_DEBUG_FIELD_DESC);
           {
             oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.STRUCT, struct.component_debug.size()));
-            for (Map.Entry<String, DebugOptions> _iter647 : struct.component_debug.entrySet())
+            for (Map.Entry<String, DebugOptions> _iter663 : struct.component_debug.entrySet())
             {
-              oprot.writeString(_iter647.getKey());
-              _iter647.getValue().write(oprot);
+              oprot.writeString(_iter663.getKey());
+              _iter663.getValue().write(oprot);
             }
             oprot.writeMapEnd();
           }
@@ -1286,10 +1286,10 @@ public class StormBase implements org.apache.thrift.TBase<StormBase, StormBase._
       if (struct.is_set_component_executors()) {
         {
           oprot.writeI32(struct.component_executors.size());
-          for (Map.Entry<String, Integer> _iter648 : struct.component_executors.entrySet())
+          for (Map.Entry<String, Integer> _iter664 : struct.component_executors.entrySet())
           {
-            oprot.writeString(_iter648.getKey());
-            oprot.writeI32(_iter648.getValue());
+            oprot.writeString(_iter664.getKey());
+            oprot.writeI32(_iter664.getValue());
           }
         }
       }
@@ -1308,10 +1308,10 @@ public class StormBase implements org.apache.thrift.TBase<StormBase, StormBase._
       if (struct.is_set_component_debug()) {
         {
           oprot.writeI32(struct.component_debug.size());
-          for (Map.Entry<String, DebugOptions> _iter649 : struct.component_debug.entrySet())
+          for (Map.Entry<String, DebugOptions> _iter665 : struct.component_debug.entrySet())
           {
-            oprot.writeString(_iter649.getKey());
-            _iter649.getValue().write(oprot);
+            oprot.writeString(_iter665.getKey());
+            _iter665.getValue().write(oprot);
           }
         }
       }
@@ -1329,15 +1329,15 @@ public class StormBase implements org.apache.thrift.TBase<StormBase, StormBase._
       BitSet incoming = iprot.readBitSet(6);
       if (incoming.get(0)) {
         {
-          org.apache.thrift.protocol.TMap _map650 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.I32, iprot.readI32());
-          struct.component_executors = new HashMap<String,Integer>(2*_map650.size);
-          String _key651;
-          int _val652;
-          for (int _i653 = 0; _i653 < _map650.size; ++_i653)
+          org.apache.thrift.protocol.TMap _map666 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.I32, iprot.readI32());
+          struct.component_executors = new HashMap<String,Integer>(2*_map666.size);
+          String _key667;
+          int _val668;
+          for (int _i669 = 0; _i669 < _map666.size; ++_i669)
           {
-            _key651 = iprot.readString();
-            _val652 = iprot.readI32();
-            struct.component_executors.put(_key651, _val652);
+            _key667 = iprot.readString();
+            _val668 = iprot.readI32();
+            struct.component_executors.put(_key667, _val668);
           }
         }
         struct.set_component_executors_isSet(true);
@@ -1361,16 +1361,16 @@ public class StormBase implements org.apache.thrift.TBase<StormBase, StormBase._
       }
       if (incoming.get(5)) {
         {
-          org.apache.thrift.protocol.TMap _map654 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
-          struct.component_debug = new HashMap<String,DebugOptions>(2*_map654.size);
-          String _key655;
-          DebugOptions _val656;
-          for (int _i657 = 0; _i657 < _map654.size; ++_i657)
+          org.apache.thrift.protocol.TMap _map670 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
+          struct.component_debug = new HashMap<String,DebugOptions>(2*_map670.size);
+          String _key671;
+          DebugOptions _val672;
+          for (int _i673 = 0; _i673 < _map670.size; ++_i673)
           {
-            _key655 = iprot.readString();
-            _val656 = new DebugOptions();
-            _val656.read(iprot);
-            struct.component_debug.put(_key655, _val656);
+            _key671 = iprot.readString();
+            _val672 = new DebugOptions();
+            _val672.read(iprot);
+            struct.component_debug.put(_key671, _val672);
           }
         }
         struct.set_component_debug_isSet(true);
