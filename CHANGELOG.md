@@ -144,6 +144,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0 
+ * STORM-2016: Topology submission improvement: support adding local jars and maven artifacts on submission
  * STORM-1994: Add table with per-topology & worker resource usage and components in (new) supervisor and topology pages
  * STORM-2023: Add calcite-core to dependency of storm-sql-runtime
  * STORM-1839: Storm spout implementation for Amazon Kinesis Streams.
