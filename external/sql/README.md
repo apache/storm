@@ -67,21 +67,13 @@ table `ORDERS`, calculates the total price and inserts matching records into the
 `LARGE_ORDER`.
 
 To run this example, users need to include the data sources (`storm-sql-kafka` in this case) and its dependency in the
-class path. One approach is to put the required jars into the `extlib` directory:
+class path. Dependencies for Storm SQL are automatically handled when users run `storm sql`. Users can include data sources at the submission step like below:
 
 ```
-$ cp curator-client-2.5.0.jar curator-framework-2.5.0.jar zookeeper-3.4.6.jar
- extlib/
-$ cp scala-library-2.10.4.jar kafka-clients-0.8.2.1.jar kafka_2.10-0.8.2.1.jar metrics-core-2.2.0.jar extlib/
-$ cp json-simple-1.1.1.jar extlib/
-$ cp storm-kafka-*.jar storm-sql-kafka-*.jar storm-sql-runtime-*.jar extlib/
+$ bin/storm sql order_filtering.sql order_filtering --artifacts "org.apache.storm:storm-sql-kafka:2.0.0-SNAPSHOT,org.apache.storm:storm-kafka:2.0.0-SNAPSHOT,org.apache.kafka:kafka_2.10:0.8.2.2\!org.slf4j:slf4j-log4j12,org.apache.kafka:kafka-clients:0.8.2.2"
 ```
 
-The next step is to submit the SQL statements to StormSQL:
-
-```
-$ bin/storm sql order_filtering order_filtering.sql
-```
+Above command submits the SQL statements to StormSQL. Users need to modify each artifacts' version if users are using different version of Storm or Kafka. 
 
 By now you should be able to see the `order_filtering` topology in the Storm UI.
 
