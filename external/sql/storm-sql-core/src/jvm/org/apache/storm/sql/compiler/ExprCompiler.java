@@ -20,6 +20,7 @@ package org.apache.storm.sql.compiler;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import com.google.common.primitives.Primitives;
 import org.apache.calcite.adapter.enumerable.NullPolicy;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
 import org.apache.calcite.linq4j.tree.Primitive;
@@ -67,8 +68,9 @@ public class ExprCompiler implements RexVisitor<String> {
   public String visitInputRef(RexInputRef rexInputRef) {
     String name = reserveName();
     String typeName = javaTypeName(rexInputRef);
+    String boxedTypeName = boxedJavaTypeName(rexInputRef);
     pw.print(String.format("%s %s = (%s)(_data.get(%d));\n", typeName, name,
-                           typeName, rexInputRef.getIndex()));
+                           boxedTypeName, rexInputRef.getIndex()));
     return name;
   }
 
@@ -147,6 +149,16 @@ public class ExprCompiler implements RexVisitor<String> {
   private String javaTypeName(RexNode node) {
     Type ty = typeFactory.getJavaClass(node.getType());
     return ((Class<?>)ty).getCanonicalName();
+  }
+
+  private String boxedJavaTypeName(RexNode node) {
+    Type ty = typeFactory.getJavaClass(node.getType());
+    Class clazz = (Class<?>)ty;
+    if (clazz.isPrimitive()) {
+      clazz = Primitives.wrap(clazz);
+    }
+
+    return clazz.getCanonicalName();
   }
 
   private String reserveName() {
@@ -479,7 +491,7 @@ public class ExprCompiler implements RexVisitor<String> {
         RexNode op = call.getOperands().get(0);
         String lhs = op.accept(compiler);
         pw.print(String.format("final %1$s %2$s = (%1$s) %3$s;\n",
-                               compiler.javaTypeName(call), val, lhs));
+                               compiler.boxedJavaTypeName(call), val, lhs));
         return val;
       }
     };

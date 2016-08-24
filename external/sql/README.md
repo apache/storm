@@ -19,6 +19,7 @@ The following features are supported in the current repository:
 * Streaming from and to external data sources
 * Filtering tuples
 * Projections
+* Aggregations (Grouping)
 
 ## Specifying External Data Sources
 
@@ -79,8 +80,7 @@ By now you should be able to see the `order_filtering` topology in the Storm UI.
 
 ## Current Limitations
 
-Aggregation, windowing and joining tables are yet to be implemented. Specifying parallelism hints in the topology is not
-yet supported.
+Windowing and joining tables are yet to be implemented. Specifying parallelism hints in the topology is not yet supported. Supported aggregation functions are 'SUM', 'AVG', 'COUNT', 'MIN', 'MAX'. (Planned to address UDF - user defined functions.)
 
 Users also need to provide the dependency of the external data sources in the `extlib` directory. Otherwise the topology
 will fail to run because of `ClassNotFoundException`.
