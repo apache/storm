@@ -55,11 +55,11 @@ spouts:
       - ["word"]
     configMethods:
       - name: "addComponentConfig"
-        args: ["rabbitmq.configfile", "etc/rabbit.yml"]
+        args: ["rabbitmq.configfile", "etc/rabbit.yml", "hello"]
       - name: "addComponentConfig"
         args:
         - "publisher.data_paths"
-        - ["actions"]
+        - ["actions", "hello"]
     parallelism: 1
     # ...
 
@@ -74,11 +74,11 @@ bolts:
       - ["word"]
     configMethods:
       - name: "addComponentConfig"
-        args: ["rabbitmq.configfile", "etc/rabbit.yml"]
+        args: ["rabbitmq.configfile", "etc/rabbit.yml", "hello"]
       - name: "addComponentConfig"
         args:
         - "publisher.data_paths"
-        - ["actions"]
+        - ["actions", "hello"]
     parallelism: 1
     # ...
 
