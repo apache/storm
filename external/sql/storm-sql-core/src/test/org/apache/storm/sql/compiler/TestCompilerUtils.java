@@ -26,6 +26,7 @@ import org.apache.calcite.rel.type.RelDataTypeSystem;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.schema.StreamableTable;
 import org.apache.calcite.schema.Table;
+import org.apache.calcite.schema.impl.AggregateFunctionImpl;
 import org.apache.calcite.schema.impl.ScalarFunctionImpl;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperatorTable;
@@ -48,6 +49,29 @@ public class TestCompilerUtils {
     public static class MyPlus {
         public static Integer eval(Integer x, Integer y) {
             return x + y;
+        }
+    }
+
+    public static class MyStaticSumFunction {
+        public static long init() {
+            return 0L;
+        }
+        public static long add(long accumulator, int v) {
+            return accumulator + v;
+        }
+    }
+
+    public static class MySumFunction {
+        public MySumFunction() {
+        }
+        public long init() {
+            return 0L;
+        }
+        public long add(long accumulator, int v) {
+            return accumulator + v;
+        }
+        public long result(long accumulator) {
+            return accumulator;
         }
     }
 
@@ -91,12 +115,21 @@ public class TestCompilerUtils {
                 .field("NAME", typeFactory.createType(String.class))
                 .field("ADDR", typeFactory.createType(String.class))
                 .field("AGE", SqlTypeName.INTEGER)
+                .field("SCORE", SqlTypeName.INTEGER)
                 .build();
         Table table = streamableTable.stream();
         schema.add("FOO", table);
         schema.add("BAR", table);
+        schema.add("MYSTATICSUM", AggregateFunctionImpl.create(MyStaticSumFunction.class));
+        schema.add("MYSUM", AggregateFunctionImpl.create(MySumFunction.class));
+        List<SqlOperatorTable> sqlOperatorTables = new ArrayList<>();
+        sqlOperatorTables.add(SqlStdOperatorTable.instance());
+        sqlOperatorTables.add(new CalciteCatalogReader(CalciteSchema.from(schema),
+                false,
+                Collections.<String>emptyList(), typeFactory));
+        SqlOperatorTable chainedSqlOperatorTable = new ChainedSqlOperatorTable(sqlOperatorTables);
         FrameworkConfig config = Frameworks.newConfigBuilder().defaultSchema(
-                schema).build();
+                schema).operatorTable(chainedSqlOperatorTable).build();
         Planner planner = Frameworks.getPlanner(config);
         SqlNode parse = planner.parse(sql);
         SqlNode validate = planner.validate(parse);
