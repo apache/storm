@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-1434: Support the GROUP BY clause in StormSQL
  * STORM-2016: Topology submission improvement: support adding local jars and maven artifacts on submission
  * STORM-1994: Add table with per-topology & worker resource usage and components in (new) supervisor and topology pages
  * STORM-2042: Nimbus client connections not closed properly causing connection leaks
