@@ -27,7 +27,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.github.ptgoetz</groupId>
 	<artifactId>storm-jms</artifactId>
-	<version>1.0.2-SNAPSHOT</version>
+	<version>1.0.2</version>
 	<name>Storm JMS</name>
 	<description>Storm JMS Components</description>
 
@@ -106,6 +106,14 @@
 				<configuration>
 					<source>1.6</source>
 					<target>1.6</target>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>2.9</version>
+				<configuration>
+					<additionalparam>-Xdoclint:none</additionalparam>
 				</configuration>
 			</plugin>
 		</plugins>
