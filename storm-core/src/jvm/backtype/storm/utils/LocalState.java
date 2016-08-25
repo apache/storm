@@ -25,6 +25,7 @@ import java.io.File;
 import java.util.Map;
 import java.util.HashMap;
 import java.io.IOException;
+import java.io.StreamCorruptedException;
 
 
 /**
@@ -61,8 +62,16 @@ public class LocalState {
             byte[] serialized = FileUtils.readFileToByteArray(new File(latestPath));
             if (serialized.length == 0) {
                 LOG.warn("LocalState file '{}' contained no data, resetting state", latestPath);
-            } else {
+                return result;
+            }
+            try {
                 result = (Map<Object, Object>) Utils.deserialize(serialized);
+            } catch (RuntimeException e) {
+                if (e.getCause() instanceof StreamCorruptedException) {
+                    LOG.warn("Corrupt serialization stream in LocalState file '{}', resetting state", latestPath);
+                } else {
+                    throw e;
+                }
             }
         }
         return result;
