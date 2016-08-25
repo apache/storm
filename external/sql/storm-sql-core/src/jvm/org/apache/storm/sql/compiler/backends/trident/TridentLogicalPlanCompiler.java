@@ -29,12 +29,16 @@ import org.apache.calcite.rel.core.Filter;
 import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableScan;
+import org.apache.calcite.schema.impl.AggregateFunctionImpl;
+import org.apache.calcite.sql.SqlAggFunction;
+import org.apache.calcite.sql.validate.SqlUserDefinedAggFunction;
 import org.apache.storm.sql.compiler.ExprCompiler;
 import org.apache.storm.sql.compiler.PostOrderRelNodeVisitor;
 import org.apache.storm.sql.runtime.ISqlTridentDataSource;
 import org.apache.storm.sql.runtime.trident.functions.EvaluationFilter;
 import org.apache.storm.sql.runtime.trident.functions.EvaluationFunction;
 import org.apache.storm.sql.runtime.trident.functions.ForwardFunction;
+import org.apache.storm.sql.runtime.trident.functions.UDAFWrappedAggregator;
 import org.apache.storm.sql.runtime.trident.operations.CountBy;
 import org.apache.storm.sql.runtime.trident.operations.DivideForAverage;
 import org.apache.storm.sql.runtime.trident.operations.MaxBy;
@@ -221,6 +225,7 @@ public class TridentLogicalPlanCompiler extends PostOrderRelNodeVisitor<IAggrega
     private void appendAggregationInChain(ChainedAggregatorDeclarer chainedDeclarer, List<String> groupByFieldNames,
                                           Stream inputStream, AggregateCall call, List<TransformInformation> transformsAfterChained) {
         String outputField = call.getName();
+        SqlAggFunction aggFunction = call.getAggregation();
         String aggregationName = call.getAggregation().getName();
 
         // only count can have no argument
@@ -234,30 +239,54 @@ public class TridentLogicalPlanCompiler extends PostOrderRelNodeVisitor<IAggrega
             }
         }
 
-        switch (aggregationName.toUpperCase()) {
-            case "COUNT":
-                appendCountFunctionToChain(chainedDeclarer, groupByFieldNames, inputStream, call, outputField);
-                break;
+        if (aggFunction instanceof SqlUserDefinedAggFunction) {
+            appendUDAFToChain(chainedDeclarer, groupByFieldNames, inputStream, call, outputField);
+        } else {
+            switch (aggregationName.toUpperCase()) {
+                case "COUNT":
+                    appendCountFunctionToChain(chainedDeclarer, groupByFieldNames, inputStream, call, outputField);
+                    break;
 
-            case "MAX":
-                appendMaxFunctionToChain(chainedDeclarer, groupByFieldNames, inputStream, call, outputField);
-                break;
+                case "MAX":
+                    appendMaxFunctionToChain(chainedDeclarer, groupByFieldNames, inputStream, call, outputField);
+                    break;
 
-            case "MIN":
-                appendMinFunctionToChain(chainedDeclarer, groupByFieldNames, inputStream, call, outputField);
-                break;
+                case "MIN":
+                    appendMinFunctionToChain(chainedDeclarer, groupByFieldNames, inputStream, call, outputField);
+                    break;
 
-            case "SUM":
-                appendSumFunctionToChain(chainedDeclarer, groupByFieldNames, inputStream, call, outputField);
-                break;
+                case "SUM":
+                    appendSumFunctionToChain(chainedDeclarer, groupByFieldNames, inputStream, call, outputField);
+                    break;
 
-            case "AVG":
-                appendAvgFunctionToChain(chainedDeclarer, groupByFieldNames, inputStream, call, outputField, transformsAfterChained);
-                break;
+                case "AVG":
+                    appendAvgFunctionToChain(chainedDeclarer, groupByFieldNames, inputStream, call, outputField, transformsAfterChained);
+                    break;
 
-            default:
-                throw new UnsupportedOperationException("Not supported function: " + aggregationName.toUpperCase());
+                default:
+                    throw new UnsupportedOperationException("Not supported function: " + aggregationName.toUpperCase());
+            }
         }
+    }
+
+    private void appendUDAFToChain(ChainedAggregatorDeclarer chainedDeclarer, List<String> groupByFieldNames, Stream inputStream, 
+                                   AggregateCall call, String outputField) {
+        AggregateFunctionImpl aggFunction = (AggregateFunctionImpl) ((SqlUserDefinedAggFunction) call.getAggregation()).function;
+
+        List<String> inputFields = new ArrayList<>(groupByFieldNames);
+        Integer fieldIdx = call.getArgList().get(0);
+        String inputFieldName = inputStream.getOutputFields().get(fieldIdx);
+        inputFields.add(inputFieldName);
+
+        Class<?> capturedTargetClazz = getAggrCallReturnJavaType(call);
+
+        List<String> outputFields = new ArrayList<>(groupByFieldNames);
+        outputFields.add(outputField);
+
+        UDAFWrappedAggregator aggregator = new UDAFWrappedAggregator(aggFunction.declaringClass.getName(),
+                aggFunction.isStatic, inputFieldName, capturedTargetClazz);
+
+        chainedDeclarer.aggregate(new Fields(inputFields), aggregator, new Fields(outputField));
     }
 
     private void appendAvgFunctionToChain(ChainedAggregatorDeclarer chainedDeclarer, List<String> groupByFieldNames,
