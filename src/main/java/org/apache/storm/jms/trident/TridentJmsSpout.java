@@ -19,17 +19,17 @@ import org.apache.storm.jms.JmsTupleProducer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import storm.trident.operation.TridentCollector;
-import storm.trident.spout.ITridentSpout;
-import storm.trident.topology.TransactionAttempt;
-import backtype.storm.Config;
-import backtype.storm.generated.StreamInfo;
-import backtype.storm.task.TopologyContext;
-import backtype.storm.topology.OutputFieldsGetter;
-import backtype.storm.tuple.Fields;
-import backtype.storm.tuple.Values;
-import backtype.storm.utils.RotatingMap;
-import backtype.storm.utils.Utils;
+import org.apache.storm.trident.operation.TridentCollector;
+import org.apache.storm.trident.spout.ITridentSpout;
+import org.apache.storm.trident.topology.TransactionAttempt;
+import org.apache.storm.Config;
+import org.apache.storm.generated.StreamInfo;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.OutputFieldsGetter;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Values;
+import org.apache.storm.utils.RotatingMap;
+import org.apache.storm.utils.Utils;
 
 /**
  * Trident implementation of the JmsSpout, based on code provided by P. Taylor Goetz - https://github.com/ptgoetz
@@ -146,7 +146,7 @@ public class TridentJmsSpout implements ITridentSpout<JmsBatch> {
     }
     
     @Override
-    public storm.trident.spout.ITridentSpout.BatchCoordinator<JmsBatch> getCoordinator(
+    public ITridentSpout.BatchCoordinator<JmsBatch> getCoordinator(
             String txStateId, @SuppressWarnings("rawtypes") Map conf, TopologyContext context) {
         return new JmsBatchCoordinator(name);
     }

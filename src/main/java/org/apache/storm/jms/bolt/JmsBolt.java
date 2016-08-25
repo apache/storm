@@ -10,19 +10,19 @@ import javax.jms.Message;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 
-import backtype.storm.topology.base.BaseRichBolt;
+import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.jms.JmsMessageProducer;
 import org.apache.storm.jms.JmsProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import backtype.storm.task.OutputCollector;
-import backtype.storm.task.TopologyContext;
-import backtype.storm.topology.OutputFieldsDeclarer;
-import backtype.storm.tuple.Tuple;
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.tuple.Tuple;
 
 /**
- * A JmsBolt receives <code>backtype.storm.tuple.Tuple</code> objects from a Storm
+ * A JmsBolt receives <code>org.apache.storm.tuple.Tuple</code> objects from a Storm
  * topology and publishes JMS Messages to a destination (topic or queue).
  * <p/>
  * To use a JmsBolt in a topology, the following must be supplied:
@@ -34,7 +34,7 @@ import backtype.storm.tuple.Tuple;
  * and <code>javax.jms.Destination</code> objects requied to publish JMS messages.
  * <p/>
  * The JmsBolt uses a <code>JmsMessageProducer</code> to translate 
- * <code>backtype.storm.tuple.Tuple</code> objects into
+ * <code>org.apache.storm.tuple.Tuple</code> objects into
  * <code>javax.jms.Message</code> objects for publishing.
  * <p/>
  * Both JmsProvider and JmsMessageProducer must be set, or the bolt will

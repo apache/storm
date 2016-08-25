@@ -1,7 +1,6 @@
 package org.apache.storm.jms.trident;
 
-import backtype.storm.tuple.Tuple;
-import storm.trident.tuple.TridentTuple;
+import org.apache.storm.trident.tuple.TridentTuple;
 
 import javax.jms.JMSException;
 import javax.jms.Message;

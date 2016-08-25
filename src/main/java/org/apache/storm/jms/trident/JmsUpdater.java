@@ -17,10 +17,10 @@
  */
 package org.apache.storm.jms.trident;
 
-import backtype.storm.topology.FailedException;
-import storm.trident.operation.TridentCollector;
-import storm.trident.state.BaseStateUpdater;
-import storm.trident.tuple.TridentTuple;
+import org.apache.storm.topology.FailedException;
+import org.apache.storm.trident.operation.TridentCollector;
+import org.apache.storm.trident.state.BaseStateUpdater;
+import org.apache.storm.trident.tuple.TridentTuple;
 
 import javax.jms.JMSException;
 import java.util.List;

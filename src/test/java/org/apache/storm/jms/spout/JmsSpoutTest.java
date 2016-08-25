@@ -32,12 +32,15 @@ import javax.jms.TextMessage;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.mortbay.log.Log;
 
 import org.apache.storm.jms.JmsProvider;
-import backtype.storm.spout.SpoutOutputCollector;
+import org.apache.storm.spout.SpoutOutputCollector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class JmsSpoutTest {
+    private static final Logger LOG = LoggerFactory.getLogger(JmsSpoutTest.class);
+
     @Test
     public void testFailure() throws JMSException, Exception{
         JmsSpout spout = new JmsSpout();
@@ -77,7 +80,7 @@ public class JmsSpoutTest {
         MessageProducer producer = mySess.createProducer(destination);
         TextMessage msg = mySess.createTextMessage();
         msg.setText("Hello World");
-        Log.debug("Sending Message: " + msg.getText());
+        LOG.info("Sending Message: {}", msg.getText());
         producer.send(msg);
         return msg;
     }

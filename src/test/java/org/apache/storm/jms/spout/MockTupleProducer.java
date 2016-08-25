@@ -22,9 +22,9 @@ import javax.jms.Message;
 import javax.jms.TextMessage;
 
 import org.apache.storm.jms.JmsTupleProducer;
-import backtype.storm.topology.OutputFieldsDeclarer;
-import backtype.storm.tuple.Fields;
-import backtype.storm.tuple.Values;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Values;
 
 public class MockTupleProducer implements JmsTupleProducer {
     private static final long serialVersionUID = 1L;

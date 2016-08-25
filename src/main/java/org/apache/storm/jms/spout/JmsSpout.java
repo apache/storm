@@ -13,17 +13,17 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
 import javax.jms.Session;
 
-import backtype.storm.topology.base.BaseRichSpout;
+import org.apache.storm.topology.base.BaseRichSpout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.storm.jms.JmsProvider;
 import org.apache.storm.jms.JmsTupleProducer;
-import backtype.storm.spout.SpoutOutputCollector;
-import backtype.storm.task.TopologyContext;
-import backtype.storm.topology.OutputFieldsDeclarer;
-import backtype.storm.tuple.Values;
-import backtype.storm.utils.Utils;
+import org.apache.storm.spout.SpoutOutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.tuple.Values;
+import org.apache.storm.utils.Utils;
 
 /**
  * A Storm <code>Spout</code> implementation that listens to a JMS topic or queue
@@ -117,7 +117,7 @@ public class JmsSpout extends BaseRichSpout implements MessageListener {
 	/**
 	 * Set the <code>JmsTupleProducer</code>
 	 * implementation that will convert <code>javax.jms.Message</code>
-	 * object to <code>backtype.storm.tuple.Values</code> objects
+	 * object to <code>org.apache.storm.tuple.Values</code> objects
 	 * to be emitted.
 	 * 
 	 * @param producer
