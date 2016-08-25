@@ -262,11 +262,11 @@ public class TestUtils {
 
     private static class MockGroupedSpout implements IBatchSpout {
       private final ArrayList<Values> RECORDS = new ArrayList<>();
-      private final Fields OUTPUT_FIELDS = new Fields("ID", "GRPID", "NAME", "ADDR", "AGE");
+      private final Fields OUTPUT_FIELDS = new Fields("ID", "GRPID", "NAME", "ADDR", "AGE", "SCORE");
 
       public MockGroupedSpout() {
         for (int i = 0; i < 5; ++i) {
-          RECORDS.add(new Values(i, 0, "x", "y", 5 - i));
+          RECORDS.add(new Values(i, 0, "x", "y", 5 - i, i * 10));
         }
       }
 
