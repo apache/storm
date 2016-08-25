@@ -1,7 +1,7 @@
 ## About Storm JMS
 Storm JMS is a generic framework for integrating JMS messaging within the Storm framework.
 
-The [Storm Rationale page](https://github.com/nathanmarz/storm/wiki/Rationale) explains what storm is and why it was built.
+The [Storm Rationale page](https://storm.apache.org/releases/1.0.2/Rationale.html) explains what storm is and why it was built.
 
 Storm-JMS allows you to inject data into Storm via a generic JMS spout, as well as consume data from Storm via a generic JMS bolt.
 
@@ -21,11 +21,8 @@ The JMS Bolt component allows for data within a Storm topology to be published t
 A JMS Bolt connects to a JMS Destination, and publishes JMS Messages based on the Storm "Tuple" objects it receives.
 
 ## Project Location
-Primary development of storm-cassandra will take place at: 
-https://github.com/ptgoetz/storm-cassandra
-
-Point/stable (non-SNAPSHOT) release souce code will be pushed to:
-https://github.com/nathanmarz/storm-contrib
+Primary development of storm-jms will take place at: 
+https://github.com/ptgoetz/storm-jms
 
 Maven artifacts for releases will be available on maven central.
 

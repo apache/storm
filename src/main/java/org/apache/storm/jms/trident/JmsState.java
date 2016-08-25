@@ -17,6 +17,7 @@
  */
 package org.apache.storm.jms.trident;
 
+import org.apache.storm.jms.JmsMessageProducer;
 import org.apache.storm.jms.JmsProvider;
 import org.apache.storm.topology.FailedException;
 import org.slf4j.Logger;
@@ -45,7 +46,7 @@ public class JmsState implements State {
 
     public static class Options implements Serializable {
         private JmsProvider jmsProvider;
-        private TridentJmsMessageProducer msgProducer;
+        private JmsMessageProducer msgProducer;
         private int jmsAcknowledgeMode = Session.AUTO_ACKNOWLEDGE;
         private boolean jmsTransactional = true;
 
@@ -54,7 +55,7 @@ public class JmsState implements State {
             return this;
         }
 
-        public Options withMessageProducer(TridentJmsMessageProducer msgProducer) {
+        public Options withMessageProducer(JmsMessageProducer msgProducer) {
             this.msgProducer = msgProducer;
             return this;
         }

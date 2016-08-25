@@ -6,7 +6,7 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.Session;
 
-import org.apache.storm.tuple.Tuple;
+import org.apache.storm.tuple.ITuple;
 /**
  * JmsMessageProducer implementations are responsible for translating
  * a <code>org.apache.storm.tuple.Values</code> instance into a 
@@ -28,5 +28,5 @@ public interface JmsMessageProducer extends Serializable{
 	 * @return
 	 * @throws JMSException
 	 */
-	public Message toMessage(Session session, Tuple input) throws JMSException;
+	public Message toMessage(Session session, ITuple input) throws JMSException;
 }
