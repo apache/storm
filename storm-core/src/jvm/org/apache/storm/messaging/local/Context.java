@@ -17,6 +17,7 @@
  */
 package org.apache.storm.messaging.local;
 
+import java.lang.Thread.UncaughtExceptionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,7 +44,7 @@ public class Context implements IContext {
     private static final Logger LOG = LoggerFactory.getLogger(Context.class);
 
     private static class LocalServer implements IConnection {
-        IConnectionCallback _cb;
+        volatile IConnectionCallback _cb;
         final ConcurrentHashMap<Integer, Double> _load = new ConcurrentHashMap<>();
 
         @Override
@@ -105,8 +106,12 @@ public class Context implements IContext {
             _pendingFlusher.scheduleAtFixedRate(new Runnable(){
                 @Override
                 public void run(){
-                    //Ensure messages are flushed even if no more sends are performed
-                    flushPending();
+                    try {
+                        //Ensure messages are flushed even if no more sends are performed
+                        flushPending();
+                    } catch (Throwable t) {
+                        LOG.error("Uncaught throwable in pending message flusher thread, messages may be lost", t);
+                    }
                 }
             }, 5, 5, TimeUnit.SECONDS);
         }
@@ -117,7 +122,7 @@ public class Context implements IContext {
         }
         
         private void flushPending(){
-            if (!_pendingDueToUnregisteredServer.isEmpty()) {
+            if (_server._cb != null && !_pendingDueToUnregisteredServer.isEmpty()) {
                 ArrayList<TaskMessage> ret = new ArrayList<>();
                 _pendingDueToUnregisteredServer.drainTo(ret);
                 _server._cb.recv(ret);
