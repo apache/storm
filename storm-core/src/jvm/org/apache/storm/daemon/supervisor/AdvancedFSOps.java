@@ -77,7 +77,7 @@ public class AdvancedFSOps {
         @Override
         public void deleteIfExists(File path, String user, String logPrefix) throws IOException {
             String absolutePath = path.getAbsolutePath();
-            LOG.debug("Deleting path {}", absolutePath);
+            LOG.info("Deleting path {}", absolutePath);
             if (user == null) {
                 user = Files.getOwner(path.toPath()).getName();
             }
@@ -184,7 +184,7 @@ public class AdvancedFSOps {
      * @throws IOException on any error.
      */
     public void deleteIfExists(File path, String user, String logPrefix) throws IOException {
-        LOG.debug("Deleting path {}", path);
+        LOG.info("Deleting path {}", path);
         Path p = path.toPath();
         if (Files.exists(p)) {
             try {
@@ -199,7 +199,7 @@ public class AdvancedFSOps {
      * @throws IOException on any error.
      */
     public void deleteIfExists(File path) throws IOException {
-        LOG.debug("Deleting path {}", path);
+        LOG.info("Deleting path {}", path);
         Path p = path.toPath();
         if (Files.exists(p)) {
             try {
