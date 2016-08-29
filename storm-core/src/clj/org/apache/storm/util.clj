@@ -1098,10 +1098,19 @@
     coll))
 
 (defn log-thrift-access
-  [request-id remoteAddress principal operation]
+  [request-id remoteAddress principal operation storm-name arg]
   (doto
     (ThriftAccessLogger.)
-    (.log (str "Request ID: " request-id " access from: " remoteAddress " principal: " principal " operation: " operation))))
+    (.log (str "Request ID: " request-id 
+               " access from: " remoteAddress 
+               " principal: " principal 
+               " operation: " operation
+              (if storm-name 
+                (str " storm-name: " storm-name) "")
+              (if (and (not-nil? arg)
+                       (.startsWith arg "access"))
+                (str " access result: " arg)
+                (str " function: " arg))))))
 
 (def DISALLOWED-KEY-NAME-STRS #{"/" "." ":" "\\"})
 
