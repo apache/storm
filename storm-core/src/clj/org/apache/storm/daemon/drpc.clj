@@ -57,7 +57,7 @@
 (defn check-authorization
   ([aclHandler mapping operation context function]
     (if (not-nil? context)
-      (log-thrift-access (.requestID context) (.remoteAddress context) (.principal context) operation nil function))
+      (log-thrift-access-function (.requestID context) (.remoteAddress context) (.principal context) operation function))
     (if aclHandler
       (let [context (or context (ReqContext/context))]
         (if-not (.permit aclHandler context operation mapping)
