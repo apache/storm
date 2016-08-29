@@ -17,7 +17,6 @@
  */
 package org.apache.storm.messaging.local;
 
-import java.lang.Thread.UncaughtExceptionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -111,6 +110,7 @@ public class Context implements IContext {
                         flushPending();
                     } catch (Throwable t) {
                         LOG.error("Uncaught throwable in pending message flusher thread, messages may be lost", t);
+                        throw t;
                     }
                 }
             }, 5, 5, TimeUnit.SECONDS);
@@ -169,6 +169,11 @@ public class Context implements IContext {
         @Override
         public void close() {
             _pendingFlusher.shutdown();
+            try{
+                _pendingFlusher.awaitTermination(5, TimeUnit.SECONDS);
+            } catch (InterruptedException e){
+                throw new RuntimeException("Interrupted while awaiting flusher shutdown", e);
+            }
         }
     };
 
