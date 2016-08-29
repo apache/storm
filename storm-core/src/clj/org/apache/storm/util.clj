@@ -1096,20 +1096,30 @@
     (assoc coll k (apply str (repeat (count (coll k)) "#")))
     coll))
 
+(defn- log-thrift-access-base
+  [request-id remoteAddress principal operation]
+  (str "Request ID: " request-id 
+       " access from: " remoteAddress 
+       " principal: " principal 
+       " operation: " operation))
+
 (defn log-thrift-access
-  [request-id remoteAddress principal operation storm-name arg]
+  [request-id remoteAddress principal operation storm-name access-result]
   (doto
     (ThriftAccessLogger.)
-    (.log (str "Request ID: " request-id 
-               " access from: " remoteAddress 
-               " principal: " principal 
-               " operation: " operation
-              (if storm-name 
-                (str " storm-name: " storm-name) "")
-              (if (and (not-nil? arg)
-                       (.startsWith arg "access"))
-                (str " access result: " arg)
-                (str " function: " arg))))))
+    (.log (str (log-thrift-access-base request-id remoteAddress principal operation)
+               (if storm-name 
+                 (str " storm-name: " storm-name) "")
+               (if access-result
+                 (str " access result: " access-result) "")))))
+
+(defn log-thrift-access-function
+  [request-id remoteAddress principal operation function]
+  (doto
+    (ThriftAccessLogger.)
+    (.log (str (log-thrift-access-base request-id remoteAddress principal operation)
+               (if function 
+                 (str " function: " function) "")))))
 
 (def DISALLOWED-KEY-NAME-STRS #{"/" "." ":" "\\"})
 
