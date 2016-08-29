@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-2052: Kafka Spout New Client API - Log Improvements and Parameter Tuning for Better Performance.
  * STORM-2050: [storm-sql] Support User Defined Aggregate Function for Trident mode
  * STORM-1434: Support the GROUP BY clause in StormSQL
  * STORM-2016: Topology submission improvement: support adding local jars and maven artifacts on submission
