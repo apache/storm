@@ -32,10 +32,10 @@ import java.util.regex.Pattern;
  * KafkaSpoutConfig defines the required configuration to connect a consumer to a consumer group, as well as the subscribing topics
  */
 public class KafkaSpoutConfig<K, V> implements Serializable {
-    public static final long DEFAULT_POLL_TIMEOUT_MS = 2_000;            // 2s
-    public static final long DEFAULT_OFFSET_COMMIT_PERIOD_MS = 15_000;   // 15s
+    public static final long DEFAULT_POLL_TIMEOUT_MS = 200;            // 200ms
+    public static final long DEFAULT_OFFSET_COMMIT_PERIOD_MS = 30_000;   // 30s
     public static final int DEFAULT_MAX_RETRIES = Integer.MAX_VALUE;     // Retry forever
-    public static final int DEFAULT_MAX_UNCOMMITTED_OFFSETS = 10_000;    // 10,000 records
+    public static final int DEFAULT_MAX_UNCOMMITTED_OFFSETS = 10_000_000;    // 10,000,000 records => 80MBs of memory footprint in the worst case
 
     // Kafka property names
     public interface Consumer {
