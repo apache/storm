@@ -273,7 +273,7 @@
         receive-queue-map (->> executor-receive-queue-map
                                (mapcat (fn [[e queue]] (for [t (executor->tasks e)] [t queue])))
                                (into {}))
-        ops (AdvancedFSOps/mk conf)
+        ops (AdvancedFSOps/make conf)
         topology (ConfigUtils/readSupervisorTopology conf storm-id ops)
         mq-context  (if mq-context
                       mq-context

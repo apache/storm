@@ -299,7 +299,7 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
                 .build());
         _basicPending = new HashMap<>();
         _blobPending = new HashMap<>();
-        _fsOps = AdvancedFSOps.mk(_conf);
+        _fsOps = AdvancedFSOps.make(_conf);
     }
 
     @Override

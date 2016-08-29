@@ -2256,14 +2256,14 @@ public class Config extends HashMap<String, Object> {
      * future releases.
      */
     @isString
-    public static final Object CLIENT_JAR_TRANSFORMER = "client.jartransformer.class";
+    public static final String CLIENT_JAR_TRANSFORMER = "client.jartransformer.class";
 
 
     /**
      * The plugin to be used for resource isolation
      */
     @isImplementationOfClass(implementsClass = ResourceIsolationInterface.class)
-    public static final Object STORM_RESOURCE_ISOLATION_PLUGIN = "storm.resource.isolation.plugin";
+    public static final String STORM_RESOURCE_ISOLATION_PLUGIN = "storm.resource.isolation.plugin";
 
     /**
      * CGroup Setting below
@@ -2273,19 +2273,19 @@ public class Config extends HashMap<String, Object> {
      * root directory of the storm cgroup hierarchy
      */
     @isString
-    public static final Object STORM_CGROUP_HIERARCHY_DIR = "storm.cgroup.hierarchy.dir";
+    public static final String STORM_CGROUP_HIERARCHY_DIR = "storm.cgroup.hierarchy.dir";
 
     /**
      * resources to to be controlled by cgroups
      */
     @isStringList
-    public static final Object STORM_CGROUP_RESOURCES = "storm.cgroup.resources";
+    public static final String STORM_CGROUP_RESOURCES = "storm.cgroup.resources";
 
     /**
      * name for the cgroup hierarchy
      */
     @isString
-    public static final Object STORM_CGROUP_HIERARCHY_NAME = "storm.cgroup.hierarchy.name";
+    public static final String STORM_CGROUP_HIERARCHY_NAME = "storm.cgroup.hierarchy.name";
 
     /**
      * flag to determine whether to use a resource isolation plugin

@@ -45,7 +45,7 @@ public abstract class ContainerLauncher {
      * @return the proper container launcher
      * @throws IOException on any error
      */
-    public static ContainerLauncher mk(Map<String, Object> conf, String supervisorId, IContext sharedContext) throws IOException {
+    public static ContainerLauncher make(Map<String, Object> conf, String supervisorId, IContext sharedContext) throws IOException {
         if (ConfigUtils.isLocalMode(conf)) {
             return new LocalContainerLauncher(conf, supervisorId, sharedContext);
         }
@@ -88,12 +88,14 @@ public abstract class ContainerLauncher {
     public abstract Container recoverContainer(int port, LocalAssignment assignment, LocalState state) throws IOException;
     
     /**
-     * Try to recover a container with just the worker ID.  
-     * The result is really only useful for killing the container.
+     * Try to recover a container using just the worker ID.  
+     * The result is really only useful for killing the container
+     * and so is returning a Killable.  Even if a Container is returned
+     * do not case the result to Container because only the Killable APIs
+     * are guaranteed to work. 
      * @param workerId the id of the worker to use
-     * @return a Container that can be killed.
+     * @return a Killable that can be used to kill the underlying container.
      * @throws IOException on any error
      */
     public abstract Killable recoverContainer(String workerId) throws IOException;
-
 }

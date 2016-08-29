@@ -284,7 +284,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
             readState.shutdownAllWorkers();
         } else {
             try {
-                ContainerLauncher launcher = ContainerLauncher.mk(getConf(), getId(), getSharedContext());
+                ContainerLauncher launcher = ContainerLauncher.make(getConf(), getId(), getSharedContext());
                 Collection<String> workerIds = SupervisorUtils.supervisorWorkerIds(conf);
                 HashSet<Killable> containers = new HashSet<>();
                 for (String workerId : workerIds) {

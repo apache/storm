@@ -17,7 +17,6 @@
  */
 package org.apache.storm.cluster;
 
-import clojure.lang.*;
 import org.apache.commons.lang.StringUtils;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.state.*;
@@ -172,7 +171,7 @@ public class StormClusterStateImpl implements IStormClusterState {
         Integer version = 0;
         VersionedData<byte[]> dataWithVersion = stateStorage.get_data_with_version(ClusterUtils.assignmentPath(stormId), callback != null);
         if (dataWithVersion != null) {
-            assignment = ClusterUtils.maybeDeserialize((byte[]) dataWithVersion.getData(), Assignment.class);
+            assignment = ClusterUtils.maybeDeserialize(dataWithVersion.getData(), Assignment.class);
             version = dataWithVersion.getVersion();
         }
         return new VersionedData<Assignment>(version, assignment);

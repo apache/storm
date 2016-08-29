@@ -231,20 +231,23 @@ public class BasicContainer extends Container {
      * @return the command to run for profiling.
      */
     private List<String> mkProfileCommand(ProfileAction action, boolean stop, String workerPid, String targetDir) {
-        if (action == ProfileAction.JMAP_DUMP) {
-            return jmapDumpCmd(workerPid, targetDir);
-        } else if (action == ProfileAction.JSTACK_DUMP) {
-            return jstackDumpCmd(workerPid, targetDir);
-        } else if (action == ProfileAction.JPROFILE_DUMP) {
-            return jprofileDump(workerPid, targetDir);
-        } else if (action == ProfileAction.JVM_RESTART) {
-            return jprofileJvmRestart(workerPid);
-        } else if (!stop && action == ProfileAction.JPROFILE_STOP) {
-            return jprofileStart(workerPid);
-        } else if (stop && action == ProfileAction.JPROFILE_STOP) {
-            return jprofileStop(workerPid, targetDir);
+        switch(action) {
+            case JMAP_DUMP:
+                return jmapDumpCmd(workerPid, targetDir);
+            case JSTACK_DUMP:
+                return jstackDumpCmd(workerPid, targetDir);
+            case JPROFILE_DUMP:
+                return jprofileDump(workerPid, targetDir);
+            case JVM_RESTART:
+                return jprofileJvmRestart(workerPid);
+            case JPROFILE_STOP:
+                if (stop) {
+                    return jprofileStop(workerPid, targetDir);
+                }
+                return jprofileStart(workerPid);
+            default:
+                return Lists.newArrayList();
         }
-        return Lists.newArrayList();
     }
 
     private List<String> jmapDumpCmd(String pid, String targetDir) {

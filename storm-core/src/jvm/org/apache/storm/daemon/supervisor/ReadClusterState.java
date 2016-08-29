@@ -90,7 +90,7 @@ public class ReadClusterState implements Runnable, AutoCloseable {
         this.clusterState = clusterState;
         this.cachedAssignments = cachedAssignments;
         
-        this.launcher = ContainerLauncher.mk(superConf, assignmentId, sharedContext);
+        this.launcher = ContainerLauncher.make(superConf, assignmentId, sharedContext);
         
         @SuppressWarnings("unchecked")
         List<Number> ports = (List<Number>)superConf.get(Config.SUPERVISOR_SLOTS_PORTS);

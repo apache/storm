@@ -95,7 +95,7 @@ public abstract class Container implements Killable {
     
     protected Container(int port, LocalAssignment assignment, Map<String, Object> conf, 
             String supervisorId, ResourceIsolationInterface resourceIsolationManager) throws IOException {
-        this(AdvancedFSOps.mk(conf), port, assignment, conf, null, supervisorId, resourceIsolationManager);
+        this(AdvancedFSOps.make(conf), port, assignment, conf, null, supervisorId, resourceIsolationManager);
     }
     
     /**
@@ -108,7 +108,7 @@ public abstract class Container implements Killable {
      */
     protected Container(String workerId, Map<String, Object> conf, 
             String supervisorId, ResourceIsolationInterface resourceIsolationManager) throws IOException {
-        this(AdvancedFSOps.mk(conf), -1, null, conf, null, supervisorId, resourceIsolationManager);
+        this(AdvancedFSOps.make(conf), -1, null, conf, null, supervisorId, resourceIsolationManager);
     }
     
     /**
@@ -157,7 +157,7 @@ public abstract class Container implements Killable {
     public LSWorkerHeartbeat readHeartbeat() throws IOException {
         LocalState localState = ConfigUtils.workerState(_conf, _workerId);
         LSWorkerHeartbeat hb = localState.getWorkerHeartBeat();
-        LOG.warn("{}: Reading heartbeat {}", _workerId, hb);
+        LOG.trace("{}: Reading heartbeat {}", _workerId, hb);
         return hb;
     }
 
@@ -177,7 +177,7 @@ public abstract class Container implements Killable {
     
     private boolean isWindowsProcessAlive(long pid, String user) throws IOException {
         boolean ret = false;
-        ProcessBuilder pb = new ProcessBuilder("tasklist", "/nh", "/fi", "pid eq"+pid);
+        ProcessBuilder pb = new ProcessBuilder("tasklist", "/nh", "/fi", "pid eq" + pid);
         pb.redirectError(Redirect.INHERIT);
         Process p = pb.start();
         try (BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
@@ -217,7 +217,7 @@ public abstract class Container implements Killable {
         boolean allDead = true;
         for (Long pid: pids) {
             if (!isProcessAlive(pid, user)) {
-                LOG.warn("{}: PID {} is dead", _workerId, pid);
+                LOG.debug("{}: PID {} is dead", _workerId, pid);
             } else {
                 allDead = false;
                 break;
@@ -240,7 +240,9 @@ public abstract class Container implements Killable {
      */
     protected void setup() throws IOException {
         if (_port <= 0) {
-            throw new IllegalStateException("Cannot setup a container recovered with just a worker id");
+            //With healthcheck and others at times the Container was not constructed with enough information
+            // to relaunch it, just enough to kill it.  This is marked by having the port be invalid.
+            throw new IllegalStateException("Cannot setup a container recovered for killing");
         }
         if (!_ops.doRequiredTopoFilesExist(_conf, _topologyId)) {
             LOG.info("Missing topology storm code, so can't launch  worker with assignment {} for this supervisor {} on port {} with id {}", _assignment,
@@ -280,7 +282,6 @@ public abstract class Container implements Killable {
         data.put("worker-id", _workerId);
 
         Set<String> logsGroups = new HashSet<>();
-        //for supervisor-test
         if (_topoConf.get(Config.LOGS_GROUPS) != null) {
             List<String> groups = (List<String>) _topoConf.get(Config.LOGS_GROUPS);
             for (String group : groups){
@@ -431,7 +432,6 @@ public abstract class Container implements Killable {
      * @throws IOException on any error
      */
     public void cleanUpForRestart() throws IOException {
-        // and another API to cleanup with everything is dead
         LOG.info("Cleaning up {}:{}", _supervisorId, _workerId);
         Set<Long> pids = getAllPids();
         String user = getWorkerUser();

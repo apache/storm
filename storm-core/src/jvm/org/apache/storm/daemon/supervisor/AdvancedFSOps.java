@@ -48,7 +48,7 @@ public class AdvancedFSOps {
      * @param conf the configuration of the process
      * @return the appropriate instance of the class for this config and environment.
      */
-    public static AdvancedFSOps mk(Map<String, Object> conf) {
+    public static AdvancedFSOps make(Map<String, Object> conf) {
         if (Utils.isOnWindows()) {
             return new AdvancedWindowsFSOps(conf);
         }
@@ -63,7 +63,7 @@ public class AdvancedFSOps {
         
         public AdvancedRunAsUserFSOps(Map<String, Object> conf) {
             if (Utils.isOnWindows()) {
-                throw new RuntimeException("ERROR: Windows doesn't support running workers as different users yet");
+                throw new UnsupportedOperationException("ERROR: Windows doesn't support running workers as different users yet");
             }
             _conf = conf;
         }
@@ -167,7 +167,7 @@ public class AdvancedFSOps {
     
     /**
      * Setup permissions properly for an internal blob store path
-     * @param path the path to the permissions
+     * @param path the path to set the permissions on
      * @param user the user to change the permissions for
      * @throws IOException on any error
      */

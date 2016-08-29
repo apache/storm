@@ -217,7 +217,6 @@ public class CgroupManager implements ResourceIsolationInterface {
             LOG.warn("cgroup {} doesn't exist!", workerGroup);
             return null;
         }
-        Set<Long> ret = new HashSet<>();
         return workerGroup.getPids();
     }
 }
