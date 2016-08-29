@@ -289,9 +289,10 @@ public class SupervisorUtils {
                     if (exitCodeCallback != null) {
                         try {
                             process.waitFor();
-                        } catch (InterruptedException ie) {
-                            Utils.LOG.info("{} interrupted", logPrefix);
                             exitCodeCallback.call(process.exitValue());
+                        } catch (InterruptedException ie) {
+                            LOG.info("{} interrupted", logPrefix);
+                            exitCodeCallback.call(-1);
                         }
                     }
                     return null; // Run only once.

@@ -159,6 +159,7 @@ public class BasicContainer extends Container {
     @Override
     public void relaunch() throws IOException {
         createNewWorkerId();
+        setup();
         launch();
     }
 

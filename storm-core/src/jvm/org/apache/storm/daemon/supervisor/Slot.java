@@ -49,7 +49,7 @@ public class Slot extends Thread implements AutoCloseable {
     static enum MachineState {
         EMPTY,
         RUNNING,
-        WATING_FOR_WORKER_START,
+        WAITING_FOR_WORKER_START,
         KILL_AND_RELAUNCH,
         KILL,
         WAITING_FOR_BASIC_LOCALIZATION,
@@ -137,6 +137,22 @@ public class Slot extends Thread implements AutoCloseable {
             this.pendingStopProfileActions = pendingStopProfileActions;
         }
         
+        public String toString() {
+            StringBuffer sb = new StringBuffer();
+            sb.append(state);
+            if (state == MachineState.WAITING_FOR_WORKER_START ||
+                state == MachineState.KILL ||
+                state == MachineState.KILL_AND_RELAUNCH) {
+                sb.append(" msInState: ");
+                sb.append(Time.currentTimeMillis() - startTime);
+            }
+            if (container != null) {
+                sb.append(" container: ");
+                sb.append(container);
+            }
+            return sb.toString();
+        }
+
         public DynamicState withNewAssignment(LocalAssignment newAssignment) {
             return new DynamicState(this.state, newAssignment,
                     this.container, this.currentAssignment,
@@ -165,7 +181,7 @@ public class Slot extends Thread implements AutoCloseable {
             long newStartTime = this.startTime;
             if (state == MachineState.KILL ||
                     state == MachineState.KILL_AND_RELAUNCH ||
-                    state == MachineState.WATING_FOR_WORKER_START) {
+                    state == MachineState.WAITING_FOR_WORKER_START) {
                 newStartTime = Time.currentTimeMillis();
             }
             return new DynamicState(state, this.newAssignment,
@@ -251,7 +267,7 @@ public class Slot extends Thread implements AutoCloseable {
                 return handleEmpty(dynamicState, staticState);
             case RUNNING:
                 return handleRunning(dynamicState, staticState);
-            case WATING_FOR_WORKER_START:
+            case WAITING_FOR_WORKER_START:
                 return handleWaitingForWorkerStart(dynamicState, staticState);
             case KILL_AND_RELAUNCH:
                 return handleKillAndRelaunch(dynamicState, staticState);
@@ -368,7 +384,7 @@ public class Slot extends Thread implements AutoCloseable {
                 return prepareForNewAssignmentOnEmptySlot(dynamicState, staticState);
             }
             Container c = staticState.containerLauncher.launchContainer(staticState.port, dynamicState.pendingLocalization, staticState.localState);
-            return dynamicState.withCurrentAssignment(c, dynamicState.pendingLocalization).withState(MachineState.WATING_FOR_WORKER_START).withPendingLocalization(null, null);
+            return dynamicState.withCurrentAssignment(c, dynamicState.pendingLocalization).withState(MachineState.WAITING_FOR_WORKER_START).withPendingLocalization(null, null);
         } catch (TimeoutException e) {
             //We waited for 1 second loop around and try again....
             return dynamicState;
@@ -445,7 +461,7 @@ public class Slot extends Thread implements AutoCloseable {
             if (equivilant(dynamicState.newAssignment, dynamicState.currentAssignment)) {
                 dynamicState.container.cleanUpForRestart();
                 dynamicState.container.relaunch();
-                return dynamicState.withState(MachineState.WATING_FOR_WORKER_START);
+                return dynamicState.withState(MachineState.WAITING_FOR_WORKER_START);
             }
             //Scheduling changed after we killed all of the processes
             return prepareForNewAssignmentOnEmptySlot(cleanupCurrentContainer(dynamicState, staticState, null), staticState);
@@ -459,7 +475,7 @@ public class Slot extends Thread implements AutoCloseable {
     }
 
     /**
-     * State Transitions for WATING_FOR_WORKER_START state.
+     * State Transitions for WAITING_FOR_WORKER_START state.
      * PRECONDITION: container != null && currentAssignment != null
      * @param dynamicState current state
      * @param staticState static data
@@ -684,8 +700,9 @@ public class Slot extends Thread implements AutoCloseable {
                 DynamicState nextState = 
                         stateMachineStep(dynamicState.withNewAssignment(localNewAssignment)
                                 .withProfileActions(origProfileActions, dynamicState.pendingStopProfileActions), staticState);
-                if (dynamicState.state != MachineState.EMPTY && nextState.state != MachineState.EMPTY) {
-                    LOG.warn("SLOT {}: STATE {} -> {}", staticState.port, dynamicState.state, nextState.state);
+
+                if (LOG.isDebugEnabled() || dynamicState.state != nextState.state) {
+                    LOG.info("STATE {} -> {}", dynamicState, nextState);
                 }
                 //Save the current state for recovery
                 if (!equivilant(nextState.currentAssignment, dynamicState.currentAssignment)) {

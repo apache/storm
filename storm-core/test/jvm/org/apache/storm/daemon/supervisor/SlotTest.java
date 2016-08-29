@@ -180,7 +180,7 @@ public class SlotTest {
             nextState = Slot.stateMachineStep(nextState, staticState);
             verify(blobFuture).get(1000, TimeUnit.MILLISECONDS);
             verify(containerLauncher).launchContainer(port, newAssignment, state);
-            assertEquals(MachineState.WATING_FOR_WORKER_START, nextState.state);
+            assertEquals(MachineState.WAITING_FOR_WORKER_START, nextState.state);
             assertSame("pendingDownload is not null", null, nextState.pendingDownload);
             assertSame(null, nextState.pendingLocalization);
             assertSame(newAssignment, nextState.currentAssignment);
@@ -251,11 +251,11 @@ public class SlotTest {
             assertTrue(Time.currentTimeMillis() > 2000);
             
             nextState = Slot.stateMachineStep(nextState, staticState);
-            assertEquals(MachineState.WATING_FOR_WORKER_START, nextState.state);
+            assertEquals(MachineState.WAITING_FOR_WORKER_START, nextState.state);
             verify(container).relaunch();
             
             nextState = Slot.stateMachineStep(nextState, staticState);
-            assertEquals(MachineState.WATING_FOR_WORKER_START, nextState.state);
+            assertEquals(MachineState.WAITING_FOR_WORKER_START, nextState.state);
             assertTrue(Time.currentTimeMillis() > 3000);
             
             nextState = Slot.stateMachineStep(nextState, staticState);
@@ -338,7 +338,7 @@ public class SlotTest {
             nextState = Slot.stateMachineStep(nextState, staticState);
             verify(blobFuture).get(1000, TimeUnit.MILLISECONDS);
             verify(containerLauncher).launchContainer(port, nAssignment, state);
-            assertEquals(MachineState.WATING_FOR_WORKER_START, nextState.state);
+            assertEquals(MachineState.WAITING_FOR_WORKER_START, nextState.state);
             assertSame("pendingDownload is not null", null, nextState.pendingDownload);
             assertSame(null, nextState.pendingLocalization);
             assertSame(nAssignment, nextState.currentAssignment);

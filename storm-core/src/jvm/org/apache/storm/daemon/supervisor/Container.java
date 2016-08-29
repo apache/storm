@@ -87,6 +87,11 @@ public abstract class Container implements Killable {
             _topoConf = topoConf;
         }
     }
+
+    @Override
+    public String toString() {
+        return this.getClass().getSimpleName() + " topo:" + _topologyId + " worker:" + _workerId;
+    }
     
     protected Map<String, Object> readTopoConf() throws IOException {
         assert(_topologyId != null);
@@ -248,8 +253,9 @@ public abstract class Container implements Killable {
             LOG.info("Missing topology storm code, so can't launch  worker with assignment {} for this supervisor {} on port {} with id {}", _assignment,
                     _supervisorId, _port, _workerId);
             throw new IllegalStateException("Not all needed files are here!!!!");
-        }
-    
+        } 
+        LOG.info("Setting up {}:{}", _supervisorId, _workerId);
+
         _ops.forceMkdir(new File(ConfigUtils.workerPidsRoot(_conf, _workerId)));
         _ops.forceMkdir(new File(ConfigUtils.workerTmpRoot(_conf, _workerId)));
         _ops.forceMkdir(new File(ConfigUtils.workerHeartbeatsRoot(_conf, _workerId)));
