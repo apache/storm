@@ -112,6 +112,7 @@ public class ResourceAwareScheduler implements IScheduler {
         cluster.setStatusMap(schedulingState.cluster.getStatusMap());
         cluster.setSupervisorsResourcesMap(schedulingState.cluster.getSupervisorsResourcesMap());
         cluster.setTopologyResourcesMap(schedulingState.cluster.getTopologyResourcesMap());
+        cluster.setWorkerResourcesMap(schedulingState.cluster.getWorkerResourcesMap());
         //updating resources used by supervisor
         updateSupervisorsResources(cluster, topologies);
     }
@@ -243,6 +244,8 @@ public class ResourceAwareScheduler implements IScheduler {
             double assignedMemOffHeap = 0.0;
             double assignedCpu = 0.0;
 
+            Map<WorkerSlot, Double[]> workerResources = new HashMap<WorkerSlot, Double[]>();
+
             Set<String> nodesUsed = new HashSet<String>();
             for (Map.Entry<WorkerSlot, Collection<ExecutorDetails>> workerToTasksEntry : schedulerAssignmentMap.entrySet()) {
                 WorkerSlot targetSlot = workerToTasksEntry.getKey();
@@ -265,6 +268,11 @@ public class ResourceAwareScheduler implements IScheduler {
                 assignedMemOnHeap += targetSlot.getAllocatedMemOnHeap();
                 assignedMemOffHeap += targetSlot.getAllocatedMemOffHeap();
                 assignedCpu += targetSlot.getAllocatedCpu();
+
+                Double[] worker_resources = {
+                    requestedMemOnHeap, requestedMemOffHeap, requestedCpu,
+                    targetSlot.getAllocatedMemOnHeap(), targetSlot.getAllocatedMemOffHeap(), targetSlot.getAllocatedCpu()};
+                workerResources.put (targetSlot, worker_resources);
             }
 
             Double[] resources = {requestedMemOnHeap, requestedMemOffHeap, requestedCpu,
@@ -275,6 +283,7 @@ public class ResourceAwareScheduler implements IScheduler {
                     assignedMemOnHeap, assignedMemOffHeap, assignedCpu);
             //updating resources used for a topology
             this.schedulingState.cluster.setTopologyResources(td.getId(), resources);
+            this.schedulingState.cluster.setWorkerResources(td.getId(), workerResources);
             return true;
         } else {
             LOG.warn("schedulerAssignmentMap for topo {} is null. This shouldn't happen!", td.getName());

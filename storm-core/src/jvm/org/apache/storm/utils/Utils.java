@@ -17,6 +17,7 @@
  */
 package org.apache.storm.utils;
 
+import clojure.lang.Keyword;
 import com.google.common.annotations.VisibleForTesting;
 
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
@@ -630,7 +631,7 @@ public class Utils {
     }
 
     public static boolean checkFileExists(String dir, String file) {
-        return checkFileExists(dir + "/" + file);
+        return checkFileExists(dir + FILE_PATH_SEPARATOR + file);
     }
 
     public static boolean CheckDirExists(String dir) {
@@ -1775,6 +1776,15 @@ public class Utils {
         Runtime.getRuntime().exit(val);
     }
 
+    public static Runnable mkSuicideFn() {
+        return new Runnable() {
+            @Override
+            public void run() {
+                Utils.exitProcess(1, "Worker died");
+            }
+        };
+    }
+
     /**
      * "{:a 1 :b 1 :c 2} -> {1 [:a :b] 2 :c}"
      *
@@ -1983,12 +1993,12 @@ public class Utils {
      * Creates a symbolic link to the target
      * @param dir the parent directory of the link
      * @param targetDir the parent directory of the link's target
-     * @param targetFilename the file name of the links target
      * @param filename the file name of the link
+     * @param targetFilename the file name of the links target
      * @throws IOException
      */
     public static void createSymlink(String dir, String targetDir,
-            String targetFilename, String filename) throws IOException {
+            String filename, String targetFilename) throws IOException {
         Path path = Paths.get(dir, filename).toAbsolutePath();
         Path target = Paths.get(targetDir, targetFilename).toAbsolutePath();
         LOG.debug("Creating symlink [{}] to [{}]", path, target);
@@ -2379,6 +2389,25 @@ public class Utils {
         }
 
         return rtn;
+    }
+
+    /**
+     * converts a clojure PersistentMap to java HashMap
+     */
+    public static Map<String, Object> convertClojureMapToJavaMap(Map map) {
+        Map<String, Object> ret = new HashMap<>(map.size());
+        for (Object obj : map.entrySet()) {
+            Map.Entry entry = (Map.Entry) obj;
+            Keyword keyword = (Keyword) entry.getKey();
+            String key = keyword.getName();
+            if (key.startsWith(":")) {
+                key = key.substring(1, key.length());
+            }
+            Object value = entry.getValue();
+            ret.put(key, value);
+        }
+
+        return ret;
     }
 
 }

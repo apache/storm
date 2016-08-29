@@ -183,6 +183,15 @@
             </roles>
             <timezone>+5.5</timezone>
         </developer>
+        <developer>
+            <id>satishd</id>
+            <name>Satish Duggana</name>
+            <email>satishd@apache.org</email>
+            <roles>
+                <role>Committer</role>
+            </roles>
+            <timezone>+5.5</timezone>
+        </developer>
     </developers>
 
 
@@ -256,16 +265,26 @@
         <metrics-clojure.version>2.5.1</metrics-clojure.version>
         <hdrhistogram.version>2.1.7</hdrhistogram.version>
         <calcite.version>1.4.0-incubating</calcite.version>
+        <janino.version>2.7.8</janino.version>
         <jackson.version>2.6.3</jackson.version>
         <maven-surefire.version>2.18.1</maven-surefire.version>
-        <kafka.version>0.10.0.0</kafka.version>
-        <kafka.artifact.id>kafka_2.11</kafka.artifact.id>
+        <!-- Kafka version used by old storm-kafka spout code -->
+        <storm.kafka.version>0.8.2.1</storm.kafka.version>
+        <storm.kafka.artifact.id>kafka_2.10</storm.kafka.artifact.id>
+
+        <!-- kafka version used by new storm-kafka-client spout code -->
+        <storm.kafka.client.version>0.10.0.0</storm.kafka.client.version>
+
 
         <!-- Java and clojure build lifecycle test properties are defined here to avoid having to create a default profile -->
         <java.unit.test.exclude>org.apache.storm.testing.IntegrationTest</java.unit.test.exclude>
         <java.unit.test.include>**/Test*.java, **/*Test.java, **/*TestCase.java</java.unit.test.include>    <!--maven surefire plugin default test list-->
         <!-- by default the clojure test set are all clojure tests that are not integration tests. This property is overridden in the profiles -->
         <clojure.test.set>!integration.*</clojure.test.set>
+
+        <aetherVersion>1.0.0.v20140518</aetherVersion>
+        <mavenVersion>3.1.0</mavenVersion>
+        <wagonVersion>1.0</wagonVersion>
     </properties>
 
     <modules>
@@ -296,6 +315,9 @@
         <module>external/storm-kafka-client</module>
         <module>external/storm-opentsdb</module>
         <module>external/storm-kafka-monitor</module>
+        <module>external/storm-kinesis</module>
+        <module>external/storm-druid</module>
+        <module>external/storm-submit-tools</module>
     </modules>
 
     <dependencies>
@@ -333,6 +355,10 @@
                                 <!-- exclude intellij projects -->
                                 <exclude>**/*.iml</exclude>
                                 <exclude>**/.idea/**</exclude>
+                                <!-- exclude eclipse projects -->
+                                <exclude>**/*.classpath</exclude>
+                                <exclude>**/.project</exclude>
+                                <exclude>**/.settings/**</exclude>
                                 <!-- module specific testing artifacts -->
                                 <exclude>**/metastore_db/**</exclude>
                                 <!-- anything written into build should be ignored -->
@@ -862,15 +888,24 @@
                 <artifactId>calcite-core</artifactId>
                 <version>${calcite.version}</version>
             </dependency>
+            <!-- used by storm-sql-core and storm-sql-runtime -->
+            <dependency>
+                <groupId>org.codehaus.janino</groupId>
+                <artifactId>janino</artifactId>
+                <version>${janino.version}</version>
+            </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
                 <version>${jackson.version}</version>
             </dependency>
+
+            <!-- kafka artifact dependency needed for storm-kafka -->
             <dependency>
                 <groupId>org.apache.kafka</groupId>
-                <artifactId>${kafka.artifact.id}</artifactId>
-                <version>${kafka.version}</version>
+                <artifactId>${storm.kafka.artifact.id}</artifactId>
+                <version>${storm.kafka.version}</version>
+                <scope>provided</scope>
                 <exclusions>
                     <exclusion>
                         <groupId>org.apache.zookeeper</groupId>
@@ -889,7 +924,8 @@
             <dependency>
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka-clients</artifactId>
-                <version>${kafka.version}</version>
+                <version>${storm.kafka.client.version}</version>
+                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>uk.org.lidalia</groupId>
@@ -1055,8 +1091,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>1.7</source>
-                    <target>1.7</target>
+                    <source>1.8</source>
+                    <target>1.8</target>
                 </configuration>
             </plugin>
             <plugin>

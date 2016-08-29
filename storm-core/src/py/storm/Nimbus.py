@@ -315,6 +315,15 @@ class Iface:
     """
     pass
 
+  def getSupervisorPageInfo(self, id, host, is_include_sys):
+    """
+    Parameters:
+     - id
+     - host
+     - is_include_sys
+    """
+    pass
+
   def getComponentPageInfo(self, topology_id, component_id, window, is_include_sys):
     """
     Parameters:
@@ -1625,6 +1634,45 @@ class Client(Iface):
       raise result.aze
     raise TApplicationException(TApplicationException.MISSING_RESULT, "getTopologyPageInfo failed: unknown result")
 
+  def getSupervisorPageInfo(self, id, host, is_include_sys):
+    """
+    Parameters:
+     - id
+     - host
+     - is_include_sys
+    """
+    self.send_getSupervisorPageInfo(id, host, is_include_sys)
+    return self.recv_getSupervisorPageInfo()
+
+  def send_getSupervisorPageInfo(self, id, host, is_include_sys):
+    self._oprot.writeMessageBegin('getSupervisorPageInfo', TMessageType.CALL, self._seqid)
+    args = getSupervisorPageInfo_args()
+    args.id = id
+    args.host = host
+    args.is_include_sys = is_include_sys
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_getSupervisorPageInfo(self):
+    iprot = self._iprot
+    (fname, mtype, rseqid) = iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(iprot)
+      iprot.readMessageEnd()
+      raise x
+    result = getSupervisorPageInfo_result()
+    result.read(iprot)
+    iprot.readMessageEnd()
+    if result.success is not None:
+      return result.success
+    if result.e is not None:
+      raise result.e
+    if result.aze is not None:
+      raise result.aze
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "getSupervisorPageInfo failed: unknown result")
+
   def getComponentPageInfo(self, topology_id, component_id, window, is_include_sys):
     """
     Parameters:
@@ -1850,6 +1898,7 @@ class Processor(Iface, TProcessor):
     self._processMap["getTopologyInfo"] = Processor.process_getTopologyInfo
     self._processMap["getTopologyInfoWithOpts"] = Processor.process_getTopologyInfoWithOpts
     self._processMap["getTopologyPageInfo"] = Processor.process_getTopologyPageInfo
+    self._processMap["getSupervisorPageInfo"] = Processor.process_getSupervisorPageInfo
     self._processMap["getComponentPageInfo"] = Processor.process_getComponentPageInfo
     self._processMap["getTopologyConf"] = Processor.process_getTopologyConf
     self._processMap["getTopology"] = Processor.process_getTopology
@@ -2735,6 +2784,31 @@ class Processor(Iface, TProcessor):
       logging.exception(ex)
       result = TApplicationException(TApplicationException.INTERNAL_ERROR, 'Internal error')
     oprot.writeMessageBegin("getTopologyPageInfo", msg_type, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_getSupervisorPageInfo(self, seqid, iprot, oprot):
+    args = getSupervisorPageInfo_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = getSupervisorPageInfo_result()
+    try:
+      result.success = self._handler.getSupervisorPageInfo(args.id, args.host, args.is_include_sys)
+      msg_type = TMessageType.REPLY
+    except (TTransport.TTransportException, KeyboardInterrupt, SystemExit):
+      raise
+    except NotAliveException as e:
+      msg_type = TMessageType.REPLY
+      result.e = e
+    except AuthorizationException as aze:
+      msg_type = TMessageType.REPLY
+      result.aze = aze
+    except Exception as ex:
+      msg_type = TMessageType.EXCEPTION
+      logging.exception(ex)
+      result = TApplicationException(TApplicationException.INTERNAL_ERROR, 'Internal error')
+    oprot.writeMessageBegin("getSupervisorPageInfo", msg_type, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
@@ -4723,11 +4797,11 @@ class getComponentPendingProfileActions_result:
       if fid == 0:
         if ftype == TType.LIST:
           self.success = []
-          (_etype662, _size659) = iprot.readListBegin()
-          for _i663 in xrange(_size659):
-            _elem664 = ProfileRequest()
-            _elem664.read(iprot)
-            self.success.append(_elem664)
+          (_etype706, _size703) = iprot.readListBegin()
+          for _i707 in xrange(_size703):
+            _elem708 = ProfileRequest()
+            _elem708.read(iprot)
+            self.success.append(_elem708)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -4744,8 +4818,8 @@ class getComponentPendingProfileActions_result:
     if self.success is not None:
       oprot.writeFieldBegin('success', TType.LIST, 0)
       oprot.writeListBegin(TType.STRUCT, len(self.success))
-      for iter665 in self.success:
-        iter665.write(oprot)
+      for iter709 in self.success:
+        iter709.write(oprot)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -8420,6 +8494,190 @@ class getTopologyPageInfo_result:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
     oprot.writeStructBegin('getTopologyPageInfo_result')
+    if self.success is not None:
+      oprot.writeFieldBegin('success', TType.STRUCT, 0)
+      self.success.write(oprot)
+      oprot.writeFieldEnd()
+    if self.e is not None:
+      oprot.writeFieldBegin('e', TType.STRUCT, 1)
+      self.e.write(oprot)
+      oprot.writeFieldEnd()
+    if self.aze is not None:
+      oprot.writeFieldBegin('aze', TType.STRUCT, 2)
+      self.aze.write(oprot)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.success)
+    value = (value * 31) ^ hash(self.e)
+    value = (value * 31) ^ hash(self.aze)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class getSupervisorPageInfo_args:
+  """
+  Attributes:
+   - id
+   - host
+   - is_include_sys
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'id', None, None, ), # 1
+    (2, TType.STRING, 'host', None, None, ), # 2
+    (3, TType.BOOL, 'is_include_sys', None, None, ), # 3
+  )
+
+  def __init__(self, id=None, host=None, is_include_sys=None,):
+    self.id = id
+    self.host = host
+    self.is_include_sys = is_include_sys
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRING:
+          self.id = iprot.readString().decode('utf-8')
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.STRING:
+          self.host = iprot.readString().decode('utf-8')
+        else:
+          iprot.skip(ftype)
+      elif fid == 3:
+        if ftype == TType.BOOL:
+          self.is_include_sys = iprot.readBool()
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('getSupervisorPageInfo_args')
+    if self.id is not None:
+      oprot.writeFieldBegin('id', TType.STRING, 1)
+      oprot.writeString(self.id.encode('utf-8'))
+      oprot.writeFieldEnd()
+    if self.host is not None:
+      oprot.writeFieldBegin('host', TType.STRING, 2)
+      oprot.writeString(self.host.encode('utf-8'))
+      oprot.writeFieldEnd()
+    if self.is_include_sys is not None:
+      oprot.writeFieldBegin('is_include_sys', TType.BOOL, 3)
+      oprot.writeBool(self.is_include_sys)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.id)
+    value = (value * 31) ^ hash(self.host)
+    value = (value * 31) ^ hash(self.is_include_sys)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class getSupervisorPageInfo_result:
+  """
+  Attributes:
+   - success
+   - e
+   - aze
+  """
+
+  thrift_spec = (
+    (0, TType.STRUCT, 'success', (SupervisorPageInfo, SupervisorPageInfo.thrift_spec), None, ), # 0
+    (1, TType.STRUCT, 'e', (NotAliveException, NotAliveException.thrift_spec), None, ), # 1
+    (2, TType.STRUCT, 'aze', (AuthorizationException, AuthorizationException.thrift_spec), None, ), # 2
+  )
+
+  def __init__(self, success=None, e=None, aze=None,):
+    self.success = success
+    self.e = e
+    self.aze = aze
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 0:
+        if ftype == TType.STRUCT:
+          self.success = SupervisorPageInfo()
+          self.success.read(iprot)
+        else:
+          iprot.skip(ftype)
+      elif fid == 1:
+        if ftype == TType.STRUCT:
+          self.e = NotAliveException()
+          self.e.read(iprot)
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.STRUCT:
+          self.aze = AuthorizationException()
+          self.aze.read(iprot)
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('getSupervisorPageInfo_result')
     if self.success is not None:
       oprot.writeFieldBegin('success', TType.STRUCT, 0)
       self.success.write(oprot)
