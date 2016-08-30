@@ -22,13 +22,16 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.primitives.Primitives;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
+import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Aggregate;
 import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.calcite.rel.core.Filter;
+import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableScan;
+import org.apache.calcite.rel.logical.LogicalJoin;
 import org.apache.calcite.schema.impl.AggregateFunctionImpl;
 import org.apache.calcite.sql.SqlAggFunction;
 import org.apache.calcite.sql.validate.SqlUserDefinedAggFunction;
@@ -44,6 +47,8 @@ import org.apache.storm.sql.runtime.trident.operations.DivideForAverage;
 import org.apache.storm.sql.runtime.trident.operations.MaxBy;
 import org.apache.storm.sql.runtime.trident.operations.MinBy;
 import org.apache.storm.sql.runtime.trident.operations.SumBy;
+import org.apache.storm.trident.JoinOutFieldsMode;
+import org.apache.storm.trident.JoinType;
 import org.apache.storm.trident.Stream;
 import org.apache.storm.trident.TridentTopology;
 import org.apache.storm.trident.fluent.ChainedAggregatorDeclarer;
@@ -131,8 +136,58 @@ public class TridentLogicalPlanCompiler extends PostOrderRelNodeVisitor<IAggrega
     }
 
     @Override
+    public IAggregatableStream visitJoin(Join join, List<IAggregatableStream> inputStreams) throws Exception {
+        if (inputStreams.size() != 2) {
+            throw new RuntimeException("Join is a BiRel");
+        }
+
+        int[] ordinals = new int[2];
+        if (!RelOptUtil.analyzeSimpleEquiJoin((LogicalJoin) join, ordinals)) {
+            throw new UnsupportedOperationException("Only simple equi joins are supported");
+        }
+
+        List<JoinType> joinTypes = new ArrayList<>();
+        switch (join.getJoinType()) {
+            case INNER:
+                joinTypes.add(JoinType.INNER);
+                joinTypes.add(JoinType.INNER);
+                break;
+
+            case LEFT:
+                joinTypes.add(JoinType.INNER);
+                joinTypes.add(JoinType.OUTER);
+                break;
+
+            case RIGHT:
+                joinTypes.add(JoinType.OUTER);
+                joinTypes.add(JoinType.INNER);
+                break;
+
+            case FULL:
+                joinTypes.add(JoinType.OUTER);
+                joinTypes.add(JoinType.OUTER);
+                break;
+
+            default:
+                throw new UnsupportedOperationException("Unsupported join type: " + join.getJoinType());
+        }
+
+        String leftJoinFieldName = join.getLeft().getRowType().getFieldNames().get(ordinals[0]);
+        String rightJoinFieldName = join.getRight().getRowType().getFieldNames().get(ordinals[1]);
+
+        Stream leftInputStream = inputStreams.get(0).toStream();
+        Stream rightInputStream = inputStreams.get(1).toStream();
+        String stageName = getStageName(join);
+
+        return topology
+                .join(leftInputStream, new Fields(leftJoinFieldName), rightInputStream, new Fields(rightJoinFieldName),
+                        new Fields(join.getRowType().getFieldNames()), joinTypes, JoinOutFieldsMode.PRESERVE)
+                .name(stageName);
+    }
+
+    @Override
     public IAggregatableStream visitProject(Project project, List<IAggregatableStream> inputStreams) throws Exception {
-        if (inputStreams.size() > 1) {
+        if (inputStreams.size() != 1) {
             throw new RuntimeException("Project is a SingleRel");
         }
 
@@ -171,7 +226,7 @@ public class TridentLogicalPlanCompiler extends PostOrderRelNodeVisitor<IAggrega
 
     @Override
     public IAggregatableStream visitFilter(Filter filter, List<IAggregatableStream> inputStreams) throws Exception {
-        if (inputStreams.size() > 1) {
+        if (inputStreams.size() != 1) {
             throw new RuntimeException("Filter is a SingleRel");
         }
 
@@ -190,7 +245,7 @@ public class TridentLogicalPlanCompiler extends PostOrderRelNodeVisitor<IAggrega
 
     @Override
     public IAggregatableStream visitAggregate(Aggregate aggregate, List<IAggregatableStream> inputStreams) throws Exception {
-        if (inputStreams.size() > 1) {
+        if (inputStreams.size() != 1) {
             throw new RuntimeException("Aggregate is a SingleRel");
         }
 
