@@ -424,8 +424,7 @@ public class BasicContainer extends Container {
         } else {
             log4jConfigurationDir = stormHome + Utils.FILE_PATH_SEPARATOR + "log4j2";
         }
-        
-
+ 
         if (Utils.IS_ON_WINDOWS && !log4jConfigurationDir.startsWith("file:")) {
             log4jConfigurationDir = "file:///" + log4jConfigurationDir;
         }

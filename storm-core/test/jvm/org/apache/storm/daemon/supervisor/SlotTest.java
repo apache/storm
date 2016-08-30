@@ -99,16 +99,16 @@ public class SlotTest {
         LocalAssignment b = mkLocalAssignment("B", mkExecutorInfoList(1,2,3,4,5,6), mkWorkerResources(100.0, 100.0, 100.0));
         LocalAssignment bReordered = mkLocalAssignment("B", mkExecutorInfoList(6,5,4,3,2,1), mkWorkerResources(100.0, 100.0, 100.0));
 
-        assertTrue(Slot.equivilant(null, null));
-        assertTrue(Slot.equivilant(a, a));
-        assertTrue(Slot.equivilant(b, bReordered));
-        assertTrue(Slot.equivilant(bReordered, b));
+        assertTrue(Slot.equivalent(null, null));
+        assertTrue(Slot.equivalent(a, a));
+        assertTrue(Slot.equivalent(b, bReordered));
+        assertTrue(Slot.equivalent(bReordered, b));
         
-        assertFalse(Slot.equivilant(a, aResized));
-        assertFalse(Slot.equivilant(aResized, a));
-        assertFalse(Slot.equivilant(a, null));
-        assertFalse(Slot.equivilant(null, b));
-        assertFalse(Slot.equivilant(a, b));
+        assertFalse(Slot.equivalent(a, aResized));
+        assertFalse(Slot.equivalent(aResized, a));
+        assertFalse(Slot.equivalent(a, null));
+        assertFalse(Slot.equivalent(null, b));
+        assertFalse(Slot.equivalent(a, b));
     }
     
     @Test

@@ -285,7 +285,13 @@ public class AdvancedFSOps {
     public String slurpString(File location) throws IOException {
         return FileUtils.readFileToString(location, "UTF-8");
     }
-    
+
+    /**
+     * Read the contents of a file into a byte array.
+     * @param localtion the file to read
+     * @return the contents of the file
+     * @throws IOException on any error
+     */ 
     public byte[] slurp(File location) throws IOException {
         return FileUtils.readFileToByteArray(location);
     }

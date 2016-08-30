@@ -219,7 +219,7 @@ public class ReadClusterState implements Runnable, AutoCloseable {
                     if (!portLA.containsKey(port)) {
                         portLA.put(port, la);
                     } else {
-                        throw new RuntimeException("Should not have multiple topologys assigned to one port");
+                        throw new RuntimeException("Should not have multiple topologies assigned to one port");
                     }
                 }
             }

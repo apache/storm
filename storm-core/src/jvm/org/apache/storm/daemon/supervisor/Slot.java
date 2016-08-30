@@ -237,7 +237,7 @@ public class Slot extends Thread implements AutoCloseable {
         }
     }
     
-    static boolean equivilant(LocalAssignment a, LocalAssignment b) {
+    static boolean equivalent(LocalAssignment a, LocalAssignment b) {
         if (a == null && b == null) {
             return true;
         } if (a != null && b != null) {
@@ -378,7 +378,7 @@ public class Slot extends Thread implements AutoCloseable {
         try {
             dynamicState.pendingDownload.get(1000, TimeUnit.MILLISECONDS);
             //Downloading of all blobs finished.
-            if (!equivilant(dynamicState.newAssignment, dynamicState.pendingLocalization)) {
+            if (!equivalent(dynamicState.newAssignment, dynamicState.pendingLocalization)) {
                 //Scheduling changed
                 staticState.localizer.releaseSlotFor(dynamicState.pendingLocalization.get_topology_id(), staticState.port);
                 return prepareForNewAssignmentOnEmptySlot(dynamicState, staticState);
@@ -458,7 +458,7 @@ public class Slot extends Thread implements AutoCloseable {
         assert(dynamicState.currentAssignment != null);
         
         if (dynamicState.container.areAllProcessesDead()) {
-            if (equivilant(dynamicState.newAssignment, dynamicState.currentAssignment)) {
+            if (equivalent(dynamicState.newAssignment, dynamicState.currentAssignment)) {
                 dynamicState.container.cleanUpForRestart();
                 dynamicState.container.relaunch();
                 return dynamicState.withState(MachineState.WAITING_FOR_WORKER_START);
@@ -494,7 +494,7 @@ public class Slot extends Thread implements AutoCloseable {
             }
         }
         
-        if (!equivilant(dynamicState.newAssignment, dynamicState.currentAssignment)) {
+        if (!equivalent(dynamicState.newAssignment, dynamicState.currentAssignment)) {
             //We were rescheduled while waiting for the worker to come up
             return Slot.killContainerForChangedAssignment(dynamicState, staticState);
         }
@@ -522,7 +522,7 @@ public class Slot extends Thread implements AutoCloseable {
         assert(dynamicState.container != null);
         assert(dynamicState.currentAssignment != null);
         
-        if (!equivilant(dynamicState.newAssignment, dynamicState.currentAssignment)) {
+        if (!equivalent(dynamicState.newAssignment, dynamicState.currentAssignment)) {
             LOG.warn("SLOT {}: Assignment Changed from {} to {}", staticState.port, dynamicState.currentAssignment, dynamicState.newAssignment);
             //Scheduling changed while running...
             return killContainerForChangedAssignment(dynamicState, staticState);
@@ -598,7 +598,7 @@ public class Slot extends Thread implements AutoCloseable {
     }
 
     static DynamicState handleEmpty(DynamicState dynamicState, StaticState staticState) throws InterruptedException {
-        if (!equivilant(dynamicState.newAssignment, dynamicState.currentAssignment)) {
+        if (!equivalent(dynamicState.newAssignment, dynamicState.currentAssignment)) {
             return prepareForNewAssignmentOnEmptySlot(dynamicState, staticState);
         }
         //Both assignments are null, just wait
@@ -618,17 +618,17 @@ public class Slot extends Thread implements AutoCloseable {
     private final IStormClusterState clusterState;
     private volatile boolean done = false;
     private volatile DynamicState dynamicState;
-    private final AtomicReference<Map<Long, LocalAssignment>> cachedCurrentAssignmants;
+    private final AtomicReference<Map<Long, LocalAssignment>> cachedCurrentAssignments;
     
     public Slot(ILocalizer localizer, Map<String, Object> conf, 
             ContainerLauncher containerLauncher, String host,
             int port, LocalState localState,
             IStormClusterState clusterState,
             ISupervisor iSupervisor,
-            AtomicReference<Map<Long, LocalAssignment>> cachedCurrentAssignmants) throws Exception {
+            AtomicReference<Map<Long, LocalAssignment>> cachedCurrentAssignments) throws Exception {
         super("SLOT_"+port);
 
-        this.cachedCurrentAssignmants = cachedCurrentAssignmants;
+        this.cachedCurrentAssignments = cachedCurrentAssignments;
         this.clusterState = clusterState;
         Map<Integer, LocalAssignment> assignments = localState.getLocalAssignmentsMap();
         LocalAssignment currentAssignment = null;
@@ -705,7 +705,7 @@ public class Slot extends Thread implements AutoCloseable {
                     LOG.info("STATE {} -> {}", dynamicState, nextState);
                 }
                 //Save the current state for recovery
-                if (!equivilant(nextState.currentAssignment, dynamicState.currentAssignment)) {
+                if (!equivalent(nextState.currentAssignment, dynamicState.currentAssignment)) {
                     LOG.warn("SLOT {}: Changing current assignment from {} to {}", staticState.port, dynamicState.currentAssignment, nextState.currentAssignment);
                     synchronized(staticState.localState) {
                         Map<Integer, LocalAssignment> assignments = staticState.localState.getLocalAssignmentsMap();
@@ -723,14 +723,14 @@ public class Slot extends Thread implements AutoCloseable {
                     Map<Long, LocalAssignment> orig = null;
                     do {
                         Long lport = new Long(staticState.port);
-                        orig = cachedCurrentAssignmants.get();
+                        orig = cachedCurrentAssignments.get();
                         update = new HashMap<>(orig);
                         if (nextState.currentAssignment == null) {
                             update.remove(lport);
                         } else {
                             update.put(lport, nextState.currentAssignment);
                         }
-                    } while (!cachedCurrentAssignmants.compareAndSet(orig, update));
+                    } while (!cachedCurrentAssignments.compareAndSet(orig, update));
                 }
                 
                 // clean up the profiler actions that are not being processed
