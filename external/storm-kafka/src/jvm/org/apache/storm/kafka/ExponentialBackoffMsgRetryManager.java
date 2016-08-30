@@ -17,6 +17,7 @@
  */
 package org.apache.storm.kafka;
 
+import org.apache.storm.utils.Time;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Map;
@@ -80,7 +81,7 @@ public class ExponentialBackoffMsgRetryManager implements FailedMsgRetryManager 
     public Long nextFailedMessageToRetry() {
         if (this.waiting.size() > 0) {
             MessageRetryRecord first = this.waiting.peek();
-            if (System.currentTimeMillis() >= first.retryTimeUTC) {
+            if (Time.currentTimeMillis() >= first.retryTimeUTC) {
                 if (this.records.containsKey(first.offset)) {
                     return first.offset;
                 } else {
@@ -98,7 +99,7 @@ public class ExponentialBackoffMsgRetryManager implements FailedMsgRetryManager 
         MessageRetryRecord record = this.records.get(offset);
         return record != null &&
                 this.waiting.contains(record) &&
-                System.currentTimeMillis() >= record.retryTimeUTC;
+                Time.currentTimeMillis() >= record.retryTimeUTC;
     }
 
     @Override
@@ -149,7 +150,7 @@ public class ExponentialBackoffMsgRetryManager implements FailedMsgRetryManager 
         private MessageRetryRecord(long offset, int retryNum) {
             this.offset = offset;
             this.retryNum = retryNum;
-            this.retryTimeUTC = System.currentTimeMillis() + calculateRetryDelay();
+            this.retryTimeUTC = Time.currentTimeMillis() + calculateRetryDelay();
         }
 
         /**
