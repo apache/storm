@@ -28,6 +28,7 @@ The following features are supported in the current repository:
 * Projections
 * Aggregations (Grouping)
 * User defined function (scalar and aggregate)
+* Join (Inner, Left outer, Right outer, Full outer)
 
 ## Specifying External Data Sources
 
@@ -94,7 +95,7 @@ and class for aggregate function is here:
   }
 ```
 
-If users doesn't define `result` method, result is the last return value of `add` method.
+If users don't define `result` method, result is the last return value of `add` method.
 Users need to define `result` method only when we need to transform accumulated value.
 
 ## Example: Filtering Kafka Stream
@@ -128,6 +129,13 @@ By now you should be able to see the `order_filtering` topology in the Storm UI.
 
 ## Current Limitations
 
-Aggregation, windowing and joining tables are yet to be implemented. Specifying parallelism hints in the topology is not yet supported. All processors have a parallelism hint of 1.
-
-The current implementation of the Kafka connector in StormSQL assumes both the input and the output are in JSON formats. The connector has not yet recognized the `INPUTFORMAT` and `OUTPUTFORMAT` clauses yet.
+- Windowing is yet to be implemented.
+- Only equi-join (single field equality) is supported for joining table.
+- Joining table only applies within each small batch that comes off of the spout.
+  - Not across batches.
+  - Limitation came from `join` feature of Trident.
+  - Please refer this doc: `Trident API Overview` for details.
+- Specifying parallelism hints in the topology is not yet supported. 
+  - All processors have a parallelism hint of 1.
+- The current implementation of the Kafka connector in StormSQL assumes both the input and the output are in JSON formats. 
+  - The connector has not yet recognized the `INPUTFORMAT` and `OUTPUTFORMAT` clauses yet.
