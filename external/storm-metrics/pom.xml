@@ -77,7 +77,7 @@
             <configuration>
               <tasks>
                 <echo message="Downloading sigar native binaries..." />
-                <get src="${sigar.download.url}" dest="${sigar.download.path}/" skipExisting="true" />
+                <get src="${sigar.download.url}" dest="${sigar.download.path}/" skipExisting="true" maxtime="180"/>
                 <checksum file="${sigar.download.path}/hyperic-sigar-${sigar.version}.zip" algorithm="SHA1" property="${sigar.SHA1}" verifyProperty="validChecksum" />
                 <fail message="Checksum validation failed for hyperic-sigar-${sigar.version}.zip">
                   <condition>
