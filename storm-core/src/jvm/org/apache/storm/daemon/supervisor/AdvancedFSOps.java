@@ -184,13 +184,8 @@ public class AdvancedFSOps {
      * @throws IOException on any error.
      */
     public void deleteIfExists(File path, String user, String logPrefix) throws IOException {
-        LOG.info("Deleting path {}", path);
-        Path p = path.toPath();
-        if (Files.exists(p)) {
-            try {
-                FileUtils.forceDelete(path);
-            } catch (FileNotFoundException ignored) {}
-        }
+        //by default no need to do this as a different user
+        deleteIfExists(path);
     }
     
     /**

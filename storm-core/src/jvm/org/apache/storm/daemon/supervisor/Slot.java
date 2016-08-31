@@ -433,10 +433,6 @@ public class Slot extends Thread implements AutoCloseable {
             return cleanupCurrentContainer(dynamicState, staticState, 
                     dynamicState.pendingLocalization == null ? MachineState.EMPTY : MachineState.WAITING_FOR_BASIC_LOCALIZATION);
         }
-        
-        if ((Time.currentTimeMillis() - dynamicState.startTime) > 120000) {
-            throw new RuntimeException("Not all processes in " + dynamicState.container + " exited after 120 seconds");
-        }
 
         LOG.warn("SLOT {} force kill and wait...", staticState.port);
         dynamicState.container.forceKill();
@@ -466,6 +462,7 @@ public class Slot extends Thread implements AutoCloseable {
             //Scheduling changed after we killed all of the processes
             return prepareForNewAssignmentOnEmptySlot(cleanupCurrentContainer(dynamicState, staticState, null), staticState);
         }
+        //The child processes typically exit in < 1 sec.  If 2 mins later they are still around something is wrong
         if ((Time.currentTimeMillis() - dynamicState.startTime) > 120000) {
             throw new RuntimeException("Not all processes in " + dynamicState.container + " exited after 120 seconds");
         }
