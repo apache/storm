@@ -54,6 +54,7 @@ nimbus.file.copy.expiration.secs: 600
 nimbus.topology.validator: "backtype.storm.nimbus.DefaultTopologyValidator"
 
 ### ui.* configs are for the master
+ui.host: 0.0.0.0
 ui.port: 8080
 ui.childopts: "-Xmx768m"
 
