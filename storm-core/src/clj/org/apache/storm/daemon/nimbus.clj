@@ -1102,12 +1102,12 @@
            impersonation-authorizer (:impersonation-authorization-handler nimbus)
            ctx (or context (ReqContext/context))
            check-conf (if storm-conf storm-conf (if storm-name {TOPOLOGY-NAME storm-name}))]
-       (ThriftAccessLogger/logAccess (.requestID ctx) (.remoteAddress ctx) (.principal ctx) operation)
        (if (.isImpersonating ctx)
          (do
           (log-warn "principal: " (.realPrincipal ctx) " is trying to impersonate principal: " (.principal ctx))
           (if impersonation-authorizer
-           (if-not (.permit impersonation-authorizer ctx operation check-conf)
+           (when-not (.permit impersonation-authorizer ctx operation check-conf)
+             (ThriftAccessLogger/logAccess (.requestID ctx) (.remoteAddress ctx) (.principal ctx) operation storm-name "access-denied")
              (throw (AuthorizationException. (str "principal " (.realPrincipal ctx) " is not authorized to impersonate
                         principal " (.principal ctx) " from host " (.remoteAddress ctx) " Please see SECURITY.MD to learn
                         how to configure impersonation acls."))))
@@ -1116,8 +1116,10 @@
 
        (if aclHandler
          (if-not (.permit aclHandler ctx operation check-conf)
-           (throw (AuthorizationException. (str operation (if storm-name (str " on topology " storm-name)) " is not authorized")))
-           ))))
+           (do
+             (ThriftAccessLogger/logAccess (.requestID ctx) (.remoteAddress ctx) (.principal ctx) operation storm-name "access-denied")
+             (throw (AuthorizationException. (str operation (if storm-name (str " on topology " storm-name)) " is not authorized"))))
+           (ThriftAccessLogger/logAccess (.requestID ctx) (.remoteAddress ctx) (.principal ctx) operation storm-name "access-granted")))))
   ([nimbus storm-name storm-conf operation]
      (check-authorization! nimbus storm-name storm-conf operation (ReqContext/context))))
 
