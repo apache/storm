@@ -55,9 +55,9 @@
   (@queues-atom function))
 
 (defn check-authorization
-  ([aclHandler mapping operation context]
+  ([aclHandler mapping operation context function]
     (if (not-nil? context)
-      (log-thrift-access (.requestID context) (.remoteAddress context) (.principal context) operation))
+      (log-thrift-access-function (.requestID context) (.remoteAddress context) (.principal context) operation function))
     (if aclHandler
       (let [context (or context (ReqContext/context))]
         (if-not (.permit aclHandler context operation mapping)
@@ -66,8 +66,8 @@
               (throw (AuthorizationException.
                        (str "DRPC request '" operation "' for '"
                             user "' user is not authorized"))))))))
-  ([aclHandler mapping operation]
-    (check-authorization aclHandler mapping operation (ReqContext/context))))
+  ([aclHandler mapping operation function]
+    (check-authorization aclHandler mapping operation (ReqContext/context) function)))
 
 ;; TODO: change this to use TimeCacheMap
 (defn service-handler [conf]
@@ -102,7 +102,8 @@
         (log-debug "Received DRPC request for " function " (" args ") at " (System/currentTimeMillis))
         (check-authorization drpc-acl-handler
                              {DRPCAuthorizerBase/FUNCTION_NAME function}
-                             "execute")
+                             "execute"
+                             function)
         (let [id (str (swap! ctr (fn [v] (mod (inc v) 1000000000))))
               ^Semaphore sem (Semaphore. 0)
               req (DRPCRequest. args id)
@@ -132,7 +133,8 @@
         (when-let [func (@id->function id)]
           (check-authorization drpc-acl-handler
                                {DRPCAuthorizerBase/FUNCTION_NAME func}
-                               "result")
+                               "result" 
+                               func)
           (let [^Semaphore sem (@id->sem id)]
             (log-debug "Received result " result " for " id " at " (System/currentTimeMillis))
             (when sem
@@ -146,7 +148,8 @@
         (when-let [func (@id->function id)]
           (check-authorization drpc-acl-handler
                                {DRPCAuthorizerBase/FUNCTION_NAME func}
-                               "failRequest")
+                               "failRequest"
+                               func)
           (let [^Semaphore sem (@id->sem id)]
             (when sem
               (swap! id->result assoc id (DRPCExecutionException. "Request failed"))
@@ -157,7 +160,8 @@
         (mark! drpc:num-fetchRequest-calls)
         (check-authorization drpc-acl-handler
                              {DRPCAuthorizerBase/FUNCTION_NAME func}
-                             "fetchRequest")
+                             "fetchRequest"
+                             func)
         (let [^ConcurrentLinkedQueue queue (acquire-queue request-queues func)
               ret (.poll queue)]
           (if ret
