@@ -120,9 +120,9 @@ public class KafkaDataSourcesProvider implements DataSourcesProvider {
     private final String topic;
     private final int primaryKeyIndex;
     private final List<String> fields;
-    private final Properties producerProperties;
+    private final String producerProperties;
     private KafkaTridentDataSource(TridentKafkaConfig conf, String topic, int primaryKeyIndex,
-                                   Properties producerProperties, List<String> fields) {
+                                   String producerProperties, List<String> fields) {
       this.conf = conf;
       this.topic = topic;
       this.primaryKeyIndex = primaryKeyIndex;
@@ -137,7 +137,22 @@ public class KafkaDataSourcesProvider implements DataSourcesProvider {
 
     @Override
     public Function getConsumer() {
-      return new KafkaTridentSink(topic, primaryKeyIndex, producerProperties, fields);
+      Preconditions.checkNotNull(producerProperties,
+          "Writable Kafka Table " + topic + " must contain producer config");
+      Properties props = new Properties();
+      try {
+        ObjectMapper mapper = new ObjectMapper();
+        @SuppressWarnings("unchecked")
+        HashMap<String, Object> map = mapper.readValue(producerProperties, HashMap.class);
+        @SuppressWarnings("unchecked")
+        HashMap<String, Object> producerConfig = (HashMap<String, Object>) map.get("producer");
+        props.putAll(producerConfig);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+      Preconditions.checkState(props.containsKey("bootstrap.servers"),
+          "Writable Kafka Table " + topic + " must contain \"bootstrap.servers\" config");
+      return new KafkaTridentSink(topic, primaryKeyIndex, props, fields);
     }
   }
 
@@ -172,19 +187,8 @@ public class KafkaDataSourcesProvider implements DataSourcesProvider {
     }
     Preconditions.checkState(primaryIndex != -1, "Kafka stream table must have a primary key");
     conf.scheme = new SchemeAsMultiScheme(new JsonScheme(fieldNames));
-    ObjectMapper mapper = new ObjectMapper();
-    Properties producerProp = new Properties();
-    try {
-      @SuppressWarnings("unchecked")
-      HashMap<String, Object> map = mapper.readValue(properties, HashMap.class);
-      @SuppressWarnings("unchecked")
-      HashMap<String, Object> producerConfig = (HashMap<String, Object>) map.get("producer");
-      Preconditions.checkNotNull(producerConfig, "Kafka Table must contain producer config");
-      producerProp.putAll(producerConfig);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-    return new KafkaTridentDataSource(conf, topic, primaryIndex, producerProp, fieldNames);
+
+    return new KafkaTridentDataSource(conf, topic, primaryIndex, properties, fieldNames);
   }
 
   private static Map<String, String> parseURIParams(String query) {
