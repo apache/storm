@@ -171,12 +171,23 @@ public class KafkaDataSourcesProvider implements DataSourcesProvider {
       }
     }
     Preconditions.checkState(primaryIndex != -1, "Kafka stream table must have a primary key");
-    conf.scheme = new SchemeAsMultiScheme(new JsonScheme(fieldNames));
     ObjectMapper mapper = new ObjectMapper();
     Properties producerProp = new Properties();
     try {
       @SuppressWarnings("unchecked")
       HashMap<String, Object> map = mapper.readValue(properties, HashMap.class);
+      if(!map.containsKey("scheme")){
+        conf.scheme = new SchemeAsMultiScheme(new JsonScheme(fieldNames));
+      }else{
+        String scheme = (String)map.get("scheme");
+        if(scheme.toUpperCase().equals("JSON")){
+          conf.scheme = new SchemeAsMultiScheme(new JsonScheme(fieldNames));
+        }else if(scheme.toUpperCase().equals("csv")){
+          conf.scheme = new SchemeAsMultiScheme(new CsvScheme(fields));
+        }else{
+          throw new UnsupportedOperationException(String.format("%s: Unsupport scheme",scheme));
+        }
+      }
       @SuppressWarnings("unchecked")
       HashMap<String, Object> producerConfig = (HashMap<String, Object>) map.get("producer");
       Preconditions.checkNotNull(producerConfig, "Kafka Table must contain producer config");
