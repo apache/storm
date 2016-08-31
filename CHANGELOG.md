@@ -186,6 +186,7 @@
  * STORM-1868: Modify TridentKafkaWordCount to run in distributed mode
 
 ## 1.0.3
+ * STORM-2039: Backpressure refactoring in worker and executor
  * STORM-2064: Add storm name and function, access result and function to log-thrift-access
  * STORM-2063: Add thread name in worker logs
  * STORM-2047: Add note to add logviewer hosts to browser whitelist
