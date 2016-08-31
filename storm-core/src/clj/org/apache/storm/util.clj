@@ -494,7 +494,8 @@
                        (kill-fn t)))))]
     (.setDaemon thread daemon)
     (.setPriority thread priority)
-    (when thread-name
+    (when-not (clojure.string/blank? thread-name)
+      ;; if thead-name is blank, just use the default thread name
       (.setName thread (str (.getName thread) "-" thread-name)))
     (when start
       (.start thread))
