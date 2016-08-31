@@ -227,7 +227,7 @@ function renderLogLevelForm (template, responseData){
     };
     if (!responseData) {
         var topologyId = $.url("?id");
-        getStatic ('/api/v1/topology/' + topologyId + '/logconfig', renderImpl);
+        $.get('/api/v1/topology/' + topologyId + '/logconfig', renderImpl);
     } else {
         renderImpl (responseData);
     }
