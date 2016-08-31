@@ -66,12 +66,7 @@ public class BasicContainerTest {
         public List<String> substituteChildopts(Object value, int memOnheap) {
             return super.substituteChildopts(value, memOnheap);
         }
-        
-        @Override
-        public void cleanUpForRestart() throws IOException {
-            //NOOP already tested in Container Test
-        }
-        
+               
         @Override
         protected boolean runProfilingCommand(List<String> command, Map<String, String> env, String logPrefix,
                 File targetDir) throws IOException, InterruptedException {

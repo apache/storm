@@ -23,10 +23,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang.StringUtils;
@@ -106,6 +108,7 @@ public class BasicContainer extends Container {
                 if (wid == null) {
                     throw new ContainerRecoveryException("Could not find worker id for " + port + " " + assignment);
                 }
+                LOG.info("Recovered Worker {}", wid);
                 _workerId = wid;
             }
         } else {
@@ -141,18 +144,31 @@ public class BasicContainer extends Container {
             if (workerToPort == null) {
                 workerToPort = new HashMap<>(1);
             }
+            removeWorkersOn(workerToPort, _port);
             workerToPort.put(_workerId, _port);
             _localState.setApprovedWorkers(workerToPort);
+            LOG.info("Created Worker ID {}", _workerId);
+        }
+    }
+
+    private static void removeWorkersOn(Map<String, Integer> workerToPort, int _port) {
+        for (Iterator<Entry<String, Integer>> i = workerToPort.entrySet().iterator(); i.hasNext();) {
+            Entry<String, Integer> found = i.next();
+            if (_port == found.getValue().intValue()) {
+                i.remove();
+            }
         }
     }
 
     @Override
-    public void cleanUp() throws IOException {
-        cleanUpForRestart();
+    public void cleanUpForRestart() throws IOException {
+        super.cleanUpForRestart();
         synchronized (_localState) {
             Map<String, Integer> workersToPort = _localState.getApprovedWorkers();
             workersToPort.remove(_workerId);
+            removeWorkersOn(workersToPort, _port);
             _localState.setApprovedWorkers(workersToPort);
+            LOG.info("Removed Worker ID {}", _workerId);
         }
     }
 
