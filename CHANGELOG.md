@@ -1,4 +1,5 @@
 ## 1.0.3
+ * STORM-2063: Add thread name in worker logs
  * STORM-2042: Nimbus client connections not closed properly causing connection leaks
  * STORM-2032: removes warning in case more than one metrics tuple is received
  * STORM-1594: org.apache.storm.tuple.Fields can throw NPE if given invalid field in selector
