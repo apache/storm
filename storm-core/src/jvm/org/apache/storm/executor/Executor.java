@@ -100,7 +100,6 @@ public abstract class Executor implements Callable, EventHandler<Object> {
     protected final Map<String, Map<String, LoadAwareCustomStreamGrouping>> streamToComponentToGrouper;
     protected final ReportErrorAndDie reportErrorDie;
     protected final Callable<Boolean> sampler;
-    protected final AtomicBoolean backpressure;
     protected ExecutorTransfer executorTransfer;
     protected final String type;
     protected final AtomicBoolean throttleOn;
@@ -162,7 +161,6 @@ public abstract class Executor implements Callable, EventHandler<Object> {
         this.reportError = new ReportError(stormConf, stormClusterState, stormId, componentId, workerTopologyContext);
         this.reportErrorDie = new ReportErrorAndDie(reportError, suicideFn);
         this.sampler = ConfigUtils.mkStatsSampler(stormConf);
-        this.backpressure = new AtomicBoolean(false);
         this.throttleOn = (AtomicBoolean) workerData.get(Constants.THROTTLE_ON);
         this.isDebug = Utils.getBoolean(stormConf.get(Config.TOPOLOGY_DEBUG), false);
         this.rand = new Random(Utils.secureRandomLong());
@@ -341,20 +339,14 @@ public abstract class Executor implements Callable, EventHandler<Object> {
         receiveQueue.registerBackpressureCallback(new DisruptorBackpressureCallback() {
             @Override
             public void highWaterMark() throws Exception {
-                if (!backpressure.get()) {
-                    backpressure.set(true);
-                    LOG.debug("executor " + executorId + " is congested, set backpressure flag true");
-                    WorkerBackpressureThread.notifyBackpressureChecker(workerData.get("backpressure-trigger"));
-                }
+                LOG.debug("executor " + executorId + " is congested, set backpressure flag true");
+                WorkerBackpressureThread.notifyBackpressureChecker(workerData.get("backpressure-trigger"));
             }
 
             @Override
             public void lowWaterMark() throws Exception {
-                if (backpressure.get()) {
-                    backpressure.set(false);
-                    LOG.debug("executor " + executorId + " is not-congested, set backpressure flag false");
-                    WorkerBackpressureThread.notifyBackpressureChecker(workerData.get("backpressure-trigger"));
-                }
+                LOG.debug("executor " + executorId + " is not-congested, set backpressure flag false");
+                WorkerBackpressureThread.notifyBackpressureChecker(workerData.get("backpressure-trigger"));
             }
         });
         receiveQueue.setHighWaterMark(Utils.getDouble(stormConf.get(Config.BACKPRESSURE_DISRUPTOR_HIGH_WATERMARK)));
@@ -535,8 +527,8 @@ public abstract class Executor implements Callable, EventHandler<Object> {
         return receiveQueue;
     }
 
-    public AtomicBoolean getBackpressure() {
-        return backpressure;
+    public boolean getBackpressure() {
+        return receiveQueue.getThrottleOn();
     }
 
     public DisruptorQueue getTransferWorkerQueue() {
