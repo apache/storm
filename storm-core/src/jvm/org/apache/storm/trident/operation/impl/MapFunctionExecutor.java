@@ -20,6 +20,7 @@ package org.apache.storm.trident.operation.impl;
 import org.apache.storm.trident.operation.BaseOperation;
 import org.apache.storm.trident.operation.Function;
 import org.apache.storm.trident.operation.MapFunction;
+import org.apache.storm.trident.operation.Operation;
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.operation.TridentOperationContext;
 import org.apache.storm.trident.tuple.TridentTuple;
@@ -32,6 +33,26 @@ public class MapFunctionExecutor extends BaseOperation implements Function {
 
     public MapFunctionExecutor(MapFunction function) {
         this.function = function;
+    }
+
+    @Override
+    public void prepare(Map conf, TridentOperationContext context) {
+        // If MapFunction is aware of prepare, let it handle preparation
+        if (function instanceof Operation) {
+            ((Operation) function).prepare(conf, context);
+        } else {
+            super.prepare(conf, context);
+        }
+    }
+
+    @Override
+    public void cleanup() {
+        // If MapFunction is aware of cleanup, let it handle cleaning up
+        if (function instanceof Operation) {
+            ((Operation) function).cleanup();
+        } else {
+            super.cleanup();
+        }
     }
 
     @Override
