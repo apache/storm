@@ -78,6 +78,7 @@
  * STORM-1720: Support GEO in storm-redis
 
 ## 1.0.3
+ * STORM-2064: Add storm name and function, access result and function to log-thrift-access
  * STORM-2063: Add thread name in worker logs
  * STORM-2042: Nimbus client connections not closed properly causing connection leaks
  * STORM-2032: removes warning in case more than one metrics tuple is received
