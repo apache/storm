@@ -18,8 +18,7 @@
  */
 package org.apache.storm.sql.runtime.trident.functions;
 
-import org.apache.storm.trident.operation.BaseFunction;
-import org.apache.storm.trident.operation.TridentCollector;
+import org.apache.storm.trident.operation.OperationAwareMapFunction;
 import org.apache.storm.trident.operation.TridentOperationContext;
 import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.tuple.Values;
@@ -32,13 +31,13 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Map;
 
-public class EvaluationFunction extends BaseFunction {
-    private static final Logger LOG = LoggerFactory.getLogger(EvaluationFunction.class);
+public class EvaluationMapFunction implements OperationAwareMapFunction {
+    private static final Logger LOG = LoggerFactory.getLogger(EvaluationMapFunction.class);
 
     private transient ScriptEvaluator evaluator;
     private final String expression;
 
-    public EvaluationFunction(String expression) {
+    public EvaluationMapFunction(String expression) {
         this.expression = expression;
     }
 
@@ -54,9 +53,13 @@ public class EvaluationFunction extends BaseFunction {
     }
 
     @Override
-    public void execute(TridentTuple tuple, TridentCollector collector) {
+    public void cleanup() {
+    }
+
+    @Override
+    public Values execute(TridentTuple input) {
         try {
-            collector.emit((Values) evaluator.evaluate(new Object[] {tuple.getValues()}));
+            return (Values) evaluator.evaluate(new Object[] {input.getValues()});
         } catch (InvocationTargetException e) {
             throw new RuntimeException(e);
         }
