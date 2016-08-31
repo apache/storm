@@ -89,6 +89,10 @@ public class KafkaOffsetLagUtil {
                     printUsageAndExit(options, OPTION_ZK_SERVERS_LONG + " and " + OPTION_ZK_COMMITTED_NODE_LONG + " are required  with " +
                             OPTION_OLD_CONSUMER_LONG);
                 }
+                String zkNode = commandLine.getOptionValue(OPTION_ZK_COMMITTED_NODE_LONG);
+                if (zkNode == null || zkNode.length() <= 1) {
+                	 printUsageAndExit(options, OPTION_ZK_COMMITTED_NODE_LONG+" '"+zkNode+"' is invalid.");
+                }
                 String[] topics = commandLine.getOptionValue(OPTION_TOPIC_LONG).split(",");
                 if (topics != null && topics.length > 1) {
                     printUsageAndExit(options, "Multiple topics not supported with option " + OPTION_OLD_CONSUMER_LONG + ". Either a single topic or a " +
@@ -373,8 +377,12 @@ public class KafkaOffsetLagUtil {
         curatorFramework.start();
         String partitionPrefix = "partition_";
         String zkPath = oldKafkaSpoutOffsetQuery.getZkPath();
-        if (!zkPath.endsWith("/")) {
-            zkPath += "/";
+         if (zkPath.endsWith("/")) {
+            zkPath = zkPath.substring(0, zkPath.length()-1);
+        }
+        if (curatorFramework.checkExists().forPath(zkPath) == null) {
+        	System.out.printf("--zk-node '%s' is not exists.%n", zkPath);
+        	System.exit(1);
         }
         byte[] zkData;
         try {
@@ -382,7 +390,7 @@ public class KafkaOffsetLagUtil {
                 for (Map.Entry<String, List<Integer>> topicEntry: topicPartitions.entrySet()) {
                     Map<Integer, Long> partitionOffsets = new HashMap<>();
                     for (Integer partition: topicEntry.getValue()) {
-                        String path = zkPath + (oldKafkaSpoutOffsetQuery.isWildCardTopic() ? topicEntry.getKey() + "/" : "") + partitionPrefix + partition;
+                        String path = zkPath + "/" + (oldKafkaSpoutOffsetQuery.isWildCardTopic() ? topicEntry.getKey() + "/" : "") + partitionPrefix + partition;
                         if (curatorFramework.checkExists().forPath(path) != null) {
                             zkData = curatorFramework.getData().forPath(path);
                             Map<Object, Object> offsetData = (Map<Object, Object>) JSONValue.parse(new String(zkData, "UTF-8"));
