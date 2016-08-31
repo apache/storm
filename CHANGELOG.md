@@ -1,4 +1,5 @@
 ## 1.0.3
+ * STORM-1646: Fix ExponentialBackoffMsgRetryManager test
  * STORM-2039: Backpressure refactoring in worker and executor
  * STORM-2064: Add storm name and function, access result and function to log-thrift-access
  * STORM-2063: Add thread name in worker logs
