@@ -186,6 +186,7 @@
  * STORM-1868: Modify TridentKafkaWordCount to run in distributed mode
 
 ## 1.0.3
+ * STORM-2056: Bugs in logviewer
  * STORM-1646: Fix ExponentialBackoffMsgRetryManager test
  * STORM-2039: Backpressure refactoring in worker and executor
  * STORM-2064: Add storm name and function, access result and function to log-thrift-access
