@@ -26,6 +26,8 @@ The following features are supported in the current repository:
 * Streaming from and to external data sources
 * Filtering tuples
 * Projections
+* Aggregations (Grouping)
+* User defined function (scalar and aggregate)
 
 ## Specifying External Data Sources
 
@@ -52,6 +54,49 @@ CREATE EXTERNAL TABLE FOO (ID INT PRIMARY KEY) LOCATION 'kafka://localhost:2181/
 
 Users plug in external data sources through implementing the `ISqlTridentDataSource` interface and registers them using the mechanisms of Java's service loader. The external data source will be chosen based on the scheme of the URI of the tables. Please refer to the implementation of `storm-sql-kafka` for more details.
 
+## Specifying User Defined Function (UDF)
+
+Users can define user defined function (scalar or aggregate) using `CREATE FUNCTION` statement.
+For example, the following statement defines `MYPLUS` function which uses `org.apache.storm.sql.TestUtils$MyPlus` class.
+
+```
+CREATE FUNCTION MYPLUS AS 'org.apache.storm.sql.TestUtils$MyPlus'
+```
+
+Storm SQL determines whether the function as scalar or aggregate by checking which methods are defined.
+If the class defines `evaluate` method, Storm SQL treats the function as `scalar`,
+and if the class defines `add` method, Storm SQL treats the function as `aggregate`.
+
+Example of class for scalar function is here:
+
+```
+  public class MyPlus {
+    public static Integer evaluate(Integer x, Integer y) {
+      return x + y;
+    }
+  }
+
+```
+
+and class for aggregate function is here:
+
+```
+  public class MyConcat {
+    public static String init() {
+      return "";
+    }
+    public static String add(String accumulator, String val) {
+      return accumulator + val;
+    }
+    public static String result(String accumulator) {
+      return accumulator;
+    }
+  }
+```
+
+If users doesn't define `result` method, result is the last return value of `add` method.
+Users need to define `result` method only when we need to transform accumulated value.
+
 ## Example: Filtering Kafka Stream
 
 Let's say there is a Kafka stream that represents the transactions of orders. Each message in the stream contains the id of the order, the unit price of the product and the quantity of the orders. The goal is to filter orders where the transactions are significant and to insert these orders into another Kafka stream for further analysis.
@@ -69,29 +114,19 @@ Current implementation of `storm-sql-kafka` requires specifying both `LOCATION` 
 
 Similarly, the second statement specifies the table `LARGE_ORDERS` which represents the output stream. The third statement is a `SELECT` statement which defines the topology: it instructs StormSQL to filter all orders in the external table `ORDERS`, calculates the total price and inserts matching records into the Kafka stream specified by `LARGE_ORDER`.
 
-To run this example, users need to include the data sources (`storm-sql-kafka` in this case) and its dependency in the class path. One approach is to put the required jars into the `extlib` directory:
+To run this example, users need to include the data sources (`storm-sql-kafka` in this case) and its dependency in the
+class path. Dependencies for Storm SQL are automatically handled when users run `storm sql`. Users can include data sources at the submission step like below:
 
 ```
-$ cp curator-client-2.5.0.jar curator-framework-2.5.0.jar zookeeper-3.4.6.jar
- extlib/
-$ cp scala-library-2.10.4.jar kafka-clients-0.8.2.1.jar kafka_2.10-0.8.2.1.jar metrics-core-2.2.0.jar extlib/
-$ cp json-simple-1.1.1.jar extlib/
-$ cp jackson-annotations-2.6.0.jar extlib/
-$ cp storm-kafka-*.jar storm-sql-kafka-*.jar storm-sql-runtime-*.jar extlib/
+$ bin/storm sql order_filtering.sql order_filtering --artifacts "org.apache.storm:storm-sql-kafka:2.0.0-SNAPSHOT,org.apache.storm:storm-kafka:2.0.0-SNAPSHOT,org.apache.kafka:kafka_2.10:0.8.2.2\!org.slf4j:slf4j-log4j12,org.apache.kafka:kafka-clients:0.8.2.2"
 ```
 
-The next step is to submit the SQL statements to StormSQL:
-
-```
-$ bin/storm sql order_filtering order_filtering.sql
-```
+Above command submits the SQL statements to StormSQL. Users need to modify each artifacts' version if users are using different version of Storm or Kafka. 
 
 By now you should be able to see the `order_filtering` topology in the Storm UI.
 
 ## Current Limitations
 
 Aggregation, windowing and joining tables are yet to be implemented. Specifying parallelism hints in the topology is not yet supported. All processors have a parallelism hint of 1.
-
-Users also need to provide the dependency of the external data sources in the `extlib` directory. Otherwise the topology will fail to run because of `ClassNotFoundException`.
 
 The current implementation of the Kafka connector in StormSQL assumes both the input and the output are in JSON formats. The connector has not yet recognized the `INPUTFORMAT` and `OUTPUTFORMAT` clauses yet.

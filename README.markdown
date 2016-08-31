@@ -270,6 +270,9 @@ under the License.
 * Slava Andreyev ([@slava92](https://github.com/slava92))
 * Pavel Grochal ([@Darkless012](https://github.com/Darkless012))
 * Manikumar Reddy O ([@omkreddy](https://github.com/omkreddy))
+* Dohyun Lee ([@leedohyun](https://github.com/leedohyun))
+* Arthur Maciejewicz ([@Zintinio](https://github.com/Zintinio]))
+* Juan Paulo Gutierrez ([@juanpaulo](https://github.com/juanpaulo)) 
 
 ## Acknowledgements
 

@@ -397,6 +397,13 @@
                 <include>README.*</include>
             </includes>
         </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-submit-tools/target</directory>
+            <outputDirectory>external/storm-submit-tools</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
+            </includes>
+        </fileSet>
         <!-- $STORM_HOME/extlib -->
         <fileSet>
             <directory></directory>

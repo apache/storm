@@ -104,12 +104,8 @@ public class KafkaSpoutTopologyMainNamedTopics {
     }
 
     protected KafkaSpoutRetryService getRetryService() {
-            return new KafkaSpoutRetryExponentialBackoff(getTimeInterval(500, TimeUnit.MICROSECONDS),
+            return new KafkaSpoutRetryExponentialBackoff(TimeInterval.microSeconds(500),
                     TimeInterval.milliSeconds(2), Integer.MAX_VALUE, TimeInterval.seconds(10));
-    }
-
-    protected TimeInterval getTimeInterval(long delay, TimeUnit timeUnit) {
-        return new TimeInterval(delay, timeUnit);
     }
 
     protected Map<String,Object> getKafkaConsumerProps() {

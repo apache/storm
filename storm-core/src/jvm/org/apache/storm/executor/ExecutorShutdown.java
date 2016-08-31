@@ -70,7 +70,7 @@ public class ExecutorShutdown implements Shutdownable, IRunningExecutor {
 
     @Override
     public boolean getBackPressureFlag() {
-        return executor.getBackpressure().get();
+        return executor.getBackpressure();
     }
 
     @Override

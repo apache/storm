@@ -23,6 +23,7 @@ import org.apache.storm.Config;
 import org.apache.storm.ILocalCluster;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.generated.StormTopology;
+import org.apache.storm.sql.runtime.AbstractValuesProcessor;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.Utils;
@@ -39,7 +40,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.apache.storm.trident.TridentTopology;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
@@ -47,7 +50,7 @@ import static org.apache.storm.sql.TestUtils.MockSqlTridentDataSource.CollectDat
 
 public class TestPlanCompiler {
   private final JavaTypeFactory typeFactory = new JavaTypeFactoryImpl(
-      RelDataTypeSystem.DEFAULT);
+          RelDataTypeSystem.DEFAULT);
 
   @Before
   public void setUp() {
@@ -59,10 +62,10 @@ public class TestPlanCompiler {
     final int EXPECTED_VALUE_SIZE = 2;
     String sql = "SELECT ID FROM FOO WHERE ID > 2";
     TestCompilerUtils.CalciteState state = TestCompilerUtils.sqlOverDummyTable(sql);
-    PlanCompiler compiler = new PlanCompiler(typeFactory);
-    final AbstractTridentProcessor proc = compiler.compile(state.tree());
     final Map<String, ISqlTridentDataSource> data = new HashMap<>();
     data.put("FOO", new TestUtils.MockSqlTridentDataSource());
+    PlanCompiler compiler = new PlanCompiler(data, typeFactory);
+    final AbstractTridentProcessor proc = compiler.compileForTest(state.tree());
     final TridentTopology topo = proc.build(data);
     Fields f = proc.outputStream().getOutputFields();
     proc.outputStream().each(f, new CollectDataFunction(), new Fields()).toStream();
@@ -71,18 +74,102 @@ public class TestPlanCompiler {
   }
 
   @Test
+  public void testCompileGroupByExp() throws Exception {
+    final int EXPECTED_VALUE_SIZE = 1;
+    final Map<String, ISqlTridentDataSource> data = new HashMap<>();
+    data.put("FOO", new TestUtils.MockSqlTridentGroupedDataSource());
+    String sql = "SELECT GRPID, COUNT(*) AS CNT, MAX(AGE) AS MAX_AGE, MIN(AGE) AS MIN_AGE, AVG(AGE) AS AVG_AGE, MAX(AGE) - MIN(AGE) AS DIFF FROM FOO GROUP BY GRPID";
+    TestCompilerUtils.CalciteState state = TestCompilerUtils.sqlOverDummyGroupByTable(sql);
+    PlanCompiler compiler = new PlanCompiler(data, typeFactory);
+    final AbstractTridentProcessor proc = compiler.compileForTest(state.tree());
+    final TridentTopology topo = proc.build(data);
+    Fields f = proc.outputStream().getOutputFields();
+    proc.outputStream().each(f, new CollectDataFunction(), new Fields()).toStream();
+    runTridentTopology(EXPECTED_VALUE_SIZE, proc, topo);
+
+    Assert.assertArrayEquals(new Values[] { new Values(0, 5L, 5, 1, 3, 4)}, getCollectedValues().toArray());
+  }
+
+  @Test
+  public void testCompileGroupByExpWithExprInAggCall() throws Exception {
+    final int EXPECTED_VALUE_SIZE = 1;
+    final Map<String, ISqlTridentDataSource> data = new HashMap<>();
+    data.put("FOO", new TestUtils.MockSqlTridentGroupedDataSource());
+    String sql = "SELECT GRPID, COUNT(*) AS CNT, MAX(SCORE - AGE) AS MAX_SCORE_MINUS_AGE FROM FOO GROUP BY GRPID";
+    TestCompilerUtils.CalciteState state = TestCompilerUtils.sqlOverDummyGroupByTable(sql);
+    PlanCompiler compiler = new PlanCompiler(data, typeFactory);
+    final AbstractTridentProcessor proc = compiler.compileForTest(state.tree());
+    final TridentTopology topo = proc.build(data);
+    Fields f = proc.outputStream().getOutputFields();
+    proc.outputStream().each(f, new CollectDataFunction(), new Fields()).toStream();
+    runTridentTopology(EXPECTED_VALUE_SIZE, proc, topo);
+
+    Assert.assertArrayEquals(new Values[] { new Values(0, 5L, 39)}, getCollectedValues().toArray());
+  }
+
+  @Test
   public void testInsert() throws Exception {
     final int EXPECTED_VALUE_SIZE = 1;
     String sql = "INSERT INTO BAR SELECT ID, NAME, ADDR FROM FOO WHERE ID > 3";
     TestCompilerUtils.CalciteState state = TestCompilerUtils.sqlOverDummyTable(sql);
-    PlanCompiler compiler = new PlanCompiler(typeFactory);
-    final AbstractTridentProcessor proc = compiler.compile(state.tree());
     final Map<String, ISqlTridentDataSource> data = new HashMap<>();
     data.put("FOO", new TestUtils.MockSqlTridentDataSource());
     data.put("BAR", new TestUtils.MockSqlTridentDataSource());
+    PlanCompiler compiler = new PlanCompiler(data, typeFactory);
+    final AbstractTridentProcessor proc = compiler.compileForTest(state.tree());
     final TridentTopology topo = proc.build(data);
     runTridentTopology(EXPECTED_VALUE_SIZE, proc, topo);
     Assert.assertArrayEquals(new Values[] { new Values(4, "x", "y")}, getCollectedValues().toArray());
+  }
+
+  @Test
+  public void testLogicalExpr() throws Exception {
+    final int EXPECTED_VALUE_SIZE = 1;
+    String sql = "SELECT ID > 0 OR ID < 1, ID > 0 AND ID < 1, NOT (ID > 0 AND ID < 1) FROM FOO WHERE ID > 0 AND ID < 2";
+    TestCompilerUtils.CalciteState state = TestCompilerUtils.sqlOverDummyTable(sql);
+    Map<String, ISqlTridentDataSource> data = new HashMap<>();
+    data.put("FOO", new TestUtils.MockSqlTridentDataSource());
+    PlanCompiler compiler = new PlanCompiler(data, typeFactory);
+    AbstractTridentProcessor proc = compiler.compileForTest(state.tree());
+    final TridentTopology topo = proc.build(data);
+    Fields f = proc.outputStream().getOutputFields();
+    proc.outputStream().each(f, new CollectDataFunction(), new Fields()).toStream();
+    runTridentTopology(EXPECTED_VALUE_SIZE, proc, topo);
+    Assert.assertArrayEquals(new Values[] { new Values(true, false, true) }, getCollectedValues().toArray());
+  }
+
+  @Test
+  public void testUdf() throws Exception {
+    int EXPECTED_VALUE_SIZE = 1;
+    String sql = "SELECT MYPLUS(ID, 3)" +
+            "FROM FOO " +
+            "WHERE ID = 2";
+    TestCompilerUtils.CalciteState state = TestCompilerUtils.sqlOverDummyTable(sql);
+    Map<String, ISqlTridentDataSource> data = new HashMap<>();
+    data.put("FOO", new TestUtils.MockSqlTridentDataSource());
+    PlanCompiler compiler = new PlanCompiler(data, typeFactory);
+    AbstractTridentProcessor proc = compiler.compileForTest(state.tree());
+    final TridentTopology topo = proc.build(data);
+    Fields f = proc.outputStream().getOutputFields();
+    proc.outputStream().each(f, new CollectDataFunction(), new Fields()).toStream();
+    runTridentTopology(EXPECTED_VALUE_SIZE, proc, topo);
+    Assert.assertArrayEquals(new Values[] { new Values(5) }, getCollectedValues().toArray());
+  }
+
+  @Test
+  public void testUdaf() throws Exception {
+    int EXPECTED_VALUE_SIZE = 1;
+    String sql = "SELECT GRPID, COUNT(*) AS CNT, MYSTATICSUM(AGE) AS MY_STATIC_SUM, MYSUM(AGE) AS MY_SUM FROM FOO GROUP BY GRPID";
+    TestCompilerUtils.CalciteState state = TestCompilerUtils.sqlOverDummyGroupByTable(sql);
+    Map<String, ISqlTridentDataSource> data = new HashMap<>();
+    data.put("FOO", new TestUtils.MockSqlTridentGroupedDataSource());
+    PlanCompiler compiler = new PlanCompiler(data, typeFactory);
+    AbstractTridentProcessor proc = compiler.compileForTest(state.tree());
+    final TridentTopology topo = proc.build(data);
+    Fields f = proc.outputStream().getOutputFields();
+    proc.outputStream().each(f, new CollectDataFunction(), new Fields()).toStream();
+    runTridentTopology(EXPECTED_VALUE_SIZE, proc, topo);
+    Assert.assertArrayEquals(new Values[] { new Values(0, 5L, 15L, 15L) }, getCollectedValues().toArray());
   }
 
   private void runTridentTopology(final int expectedValueSize, AbstractTridentProcessor proc,

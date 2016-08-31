@@ -196,13 +196,13 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
   }
 
   @Override
-  public Void visitDelta(Delta delta) throws Exception {
+  public Void visitDelta(Delta delta, List<Void> inputStreams) throws Exception {
     pw.print(String.format(STAGE_PASSTHROUGH, getStageName(delta)));
     return null;
   }
 
   @Override
-  public Void visitFilter(Filter filter) throws Exception {
+  public Void visitFilter(Filter filter, List<Void> inputStreams) throws Exception {
     beginStage(filter);
     ExprCompiler compiler = new ExprCompiler(pw, typeFactory);
     String r = filter.getCondition().accept(compiler);
@@ -216,7 +216,7 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
   }
 
   @Override
-  public Void visitProject(Project project) throws Exception {
+  public Void visitProject(Project project, List<Void> inputStreams) throws Exception {
     beginStage(project);
     ExprCompiler compiler = new ExprCompiler(pw, typeFactory);
     int size = project.getChildExps().size();
@@ -232,18 +232,18 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
   }
 
   @Override
-  public Void defaultValue(RelNode n) {
+  public Void defaultValue(RelNode n, List<Void> inputStreams) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public Void visitTableScan(TableScan scan) throws Exception {
+  public Void visitTableScan(TableScan scan, List<Void> inputStreams) throws Exception {
     pw.print(String.format(STAGE_ENUMERABLE_TABLE_SCAN, getStageName(scan)));
     return null;
   }
 
   @Override
-  public Void visitAggregate(Aggregate aggregate) throws Exception {
+  public Void visitAggregate(Aggregate aggregate, List<Void> inputStreams) throws Exception {
     beginAggregateStage(aggregate);
     pw.println("        List<Object> curGroupValues = _data == null ? null : getGroupValues(_data);");
     pw.println("        if (prevGroupValues != null && !prevGroupValues.equals(curGroupValues)) {");
@@ -262,7 +262,7 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
   }
 
   @Override
-  public Void visitJoin(Join join) {
+  public Void visitJoin(Join join, List<Void> inputStreams) {
     beginJoinStage(join);
     pw.println("        if (source == left) {");
     pw.println("            leftRows.add(_data);");

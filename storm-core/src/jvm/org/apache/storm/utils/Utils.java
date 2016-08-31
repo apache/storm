@@ -631,7 +631,7 @@ public class Utils {
     }
 
     public static boolean checkFileExists(String dir, String file) {
-        return checkFileExists(dir + "/" + file);
+        return checkFileExists(dir + FILE_PATH_SEPARATOR + file);
     }
 
     public static boolean CheckDirExists(String dir) {
@@ -1993,12 +1993,12 @@ public class Utils {
      * Creates a symbolic link to the target
      * @param dir the parent directory of the link
      * @param targetDir the parent directory of the link's target
-     * @param targetFilename the file name of the links target
      * @param filename the file name of the link
+     * @param targetFilename the file name of the links target
      * @throws IOException
      */
     public static void createSymlink(String dir, String targetDir,
-            String targetFilename, String filename) throws IOException {
+            String filename, String targetFilename) throws IOException {
         Path path = Paths.get(dir, filename).toAbsolutePath();
         Path target = Paths.get(targetDir, targetFilename).toAbsolutePath();
         LOG.debug("Creating symlink [{}] to [{}]", path, target);

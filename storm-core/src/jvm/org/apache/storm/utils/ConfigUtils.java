@@ -252,6 +252,10 @@ public class ConfigUtils {
         return ret;
     }
 
+    public static StormTopology readSupervisorStormCodeGivenPath(String stormCodePath) throws IOException {
+        return Utils.deserialize(FileUtils.readFileToByteArray(new File(stormCodePath)), StormTopology.class);
+    }
+
     public static String masterStormJarPath(String stormRoot) {
         return (stormRoot + FILE_SEPARATOR + "stormjar.jar");
     }
@@ -359,10 +363,15 @@ public class ConfigUtils {
         return readSupervisorStormConfGivenPath(conf, confPath);
     }
 
+    // we use this "weird" wrapper pattern temporarily for mocking in clojure test
     public static StormTopology readSupervisorTopology(Map conf, String stormId) throws IOException {
+        return _instance.readSupervisorTopologyImpl(conf, stormId);
+    }
+
+    public StormTopology readSupervisorTopologyImpl(Map conf, String stormId) throws IOException {
         String stormRoot = supervisorStormDistRoot(conf, stormId);
         String topologyPath = supervisorStormCodePath(stormRoot);
-        return Utils.deserialize(FileUtils.readFileToByteArray(new File(topologyPath)), StormTopology.class);
+        return readSupervisorStormCodeGivenPath(topologyPath);
     }
 
     public static String workerUserRoot(Map conf) {
