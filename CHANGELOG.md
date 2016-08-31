@@ -186,6 +186,7 @@
  * STORM-1868: Modify TridentKafkaWordCount to run in distributed mode
 
 ## 1.0.3
+ * STORM-2063: Add thread name in worker logs
  * STORM-2047: Add note to add logviewer hosts to browser whitelist
  * STORM-2042: Nimbus client connections not closed properly causing connection leaks
  * STORM-2032: removes warning in case more than one metrics tuple is received
