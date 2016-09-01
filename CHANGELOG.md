@@ -1,4 +1,5 @@
 ## 1.0.3
+ * STORM-2070: Fix sigar native binary download link
  * STORM-2056: Bugs in logviewer
  * STORM-1646: Fix ExponentialBackoffMsgRetryManager test
  * STORM-2039: Backpressure refactoring in worker and executor
