@@ -23,7 +23,6 @@ import java.util.Map;
 import org.apache.storm.utils.Utils;
 
 public abstract class BaseConfigurationDeclarer<T extends ComponentConfigurationDeclarer> implements ComponentConfigurationDeclarer<T> {
-    private Map conf = Utils.readStormConfig();
     @Override
     public T addConfiguration(String config, Object value) {
         Map<String, Object> configMap = new HashMap<>();
