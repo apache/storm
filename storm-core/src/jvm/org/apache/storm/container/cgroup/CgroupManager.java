@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -215,7 +216,7 @@ public class CgroupManager implements ResourceIsolationInterface {
         CgroupCommon workerGroup = new CgroupCommon(workerId, this.hierarchy, this.rootCgroup);
         if (!this.rootCgroup.getChildren().contains(workerGroup)) {
             LOG.warn("cgroup {} doesn't exist!", workerGroup);
-            return null;
+            return Collections.emptySet();
         }
         return workerGroup.getPids();
     }

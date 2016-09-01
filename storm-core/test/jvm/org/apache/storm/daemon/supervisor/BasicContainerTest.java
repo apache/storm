@@ -94,7 +94,7 @@ public class BasicContainerTest {
         }
         
         @Override
-        protected String jlp(String stormRoot, Map<String, Object> conf) {
+        protected String javaLibraryPath(String stormRoot, Map<String, Object> conf) {
             return "JLP";
         }
     }
@@ -186,7 +186,7 @@ public class BasicContainerTest {
         
         mc.cleanUp();
         
-        assertNotNull(mc._workerId);
+        assertNull(mc._workerId);
         verify(ls).getApprovedWorkers();
         Map<String, Integer> expectedNewState = new HashMap<String, Integer>();
         verify(ls).setApprovedWorkers(expectedNewState);

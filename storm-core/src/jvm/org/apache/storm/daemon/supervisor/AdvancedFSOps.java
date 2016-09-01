@@ -114,7 +114,7 @@ public class AdvancedFSOps {
         }
         
         @Override
-        public void moveDriectoryPreferAtomic(File fromDir, File toDir) throws IOException {
+        public void moveDirectoryPreferAtomic(File fromDir, File toDir) throws IOException {
             // Files/move with non-empty directory doesn't work well on Windows
             // This is not atomic but it does work
             FileUtils.moveDirectory(fromDir, toDir);
@@ -153,7 +153,7 @@ public class AdvancedFSOps {
      * @param toDir where to move it from
      * @throws IOException on any error
      */
-    public void moveDriectoryPreferAtomic(File fromDir, File toDir) throws IOException {
+    public void moveDirectoryPreferAtomic(File fromDir, File toDir) throws IOException {
         FileUtils.forceMkdir(toDir);
         Files.move(fromDir.toPath(), toDir.toPath(), StandardCopyOption.ATOMIC_MOVE);
     }

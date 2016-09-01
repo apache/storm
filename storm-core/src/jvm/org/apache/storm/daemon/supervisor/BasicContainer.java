@@ -138,6 +138,7 @@ public class BasicContainer extends Container {
             throw new IllegalStateException(
                     "Cannot create a worker id for a container recovered with just a worker id");
         }
+        assert(_workerId == null);
         synchronized (_localState) {
             _workerId = Utils.uuid();
             Map<String, Integer> workerToPort = _localState.getApprovedWorkers();
@@ -162,13 +163,14 @@ public class BasicContainer extends Container {
 
     @Override
     public void cleanUpForRestart() throws IOException {
+        String origWorkerId = _workerId;
         super.cleanUpForRestart();
         synchronized (_localState) {
             Map<String, Integer> workersToPort = _localState.getApprovedWorkers();
-            workersToPort.remove(_workerId);
+            workersToPort.remove(origWorkerId);
             removeWorkersOn(workersToPort, _port);
             _localState.setApprovedWorkers(workersToPort);
-            LOG.info("Removed Worker ID {}", _workerId);
+            LOG.info("Removed Worker ID {}", origWorkerId);
         }
     }
 
@@ -298,7 +300,7 @@ public class BasicContainer extends Container {
      * @param conf the config for the supervisor.
      * @return the java.library.path/LD_LIBRARY_PATH to use so native libraries load correctly.
      */
-    protected String jlp(String stormRoot, Map<String, Object> conf) {
+    protected String javaLibraryPath(String stormRoot, Map<String, Object> conf) {
         String resourceRoot = stormRoot + Utils.FILE_PATH_SEPARATOR + ConfigUtils.RESOURCES_SUBDIR;
         String os = System.getProperty("os.name").replaceAll("\\s+", "_");
         String arch = System.getProperty("os.arch");
@@ -612,7 +614,7 @@ public class BasicContainer extends Container {
         final WorkerResources resources = _assignment.get_resources();
         final int memOnheap = getMemOnHeap(resources);
         final String stormRoot = ConfigUtils.supervisorStormDistRoot(_conf, _topologyId);
-        final String jlp = jlp(stormRoot, _conf);
+        final String jlp = javaLibraryPath(stormRoot, _conf);
         
         List<String> commandList = mkLaunchCommand(memOnheap, stormRoot, jlp);
 

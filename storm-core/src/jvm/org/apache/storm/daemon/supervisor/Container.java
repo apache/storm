@@ -387,9 +387,8 @@ public abstract class Container implements Killable {
         
         if (_resourceIsolationManager != null) {
             Set<Long> morePids = _resourceIsolationManager.getRunningPIDs(_workerId);
-            if (morePids != null) {
-                ret.addAll(morePids);
-            }
+            assert(morePids != null);
+            ret.addAll(morePids);
         }
         
         return ret;
@@ -402,23 +401,13 @@ public abstract class Container implements Killable {
     protected String getWorkerUser() throws IOException {
         LOG.info("GET worker-user for {}", _workerId);
         File file = new File(ConfigUtils.workerUserFile(_conf, _workerId));
-        
-        if (file.exists()) {
-            try (InputStream in = new FileInputStream(file);
-                    Reader reader = new InputStreamReader(in);
-                    BufferedReader br = new BufferedReader(reader);) {
-                StringBuilder sb = new StringBuilder();
-                int r;
-                while ((r = br.read()) != -1) {
-                    char ch = (char) r;
-                    sb.append(ch);
-                }
-                String ret = sb.toString().trim();
-                return ret;
-            }
-        } else {
+
+        if (_ops.fileExists(file)) {
+            return _ops.slurpString(file).trim();
+        } else if (_topoConf != null) { 
             return (String) _topoConf.get(Config.TOPOLOGY_SUBMITTER_USER);
         }
+        return System.getProperty("user.name");
     }
     
     protected void saveWorkerUser(String user) throws IOException {
@@ -435,6 +424,7 @@ public abstract class Container implements Killable {
      * Clean up the container partly preparing for restart.
      * By default delete all of the temp directories we are going
      * to get a new worker_id anyways.
+     * POST CONDITION: the workerId will be set to null
      * @throws IOException on any error
      */
     public void cleanUpForRestart() throws IOException {
@@ -459,6 +449,7 @@ public abstract class Container implements Killable {
         _ops.deleteIfExists(new File(ConfigUtils.workerTmpRoot(_conf, _workerId)), user, _workerId);
         _ops.deleteIfExists(new File(ConfigUtils.workerRoot(_conf, _workerId)), user, _workerId);
         deleteSavedWorkerUser();
+        _workerId = null;
     }
     
     /**

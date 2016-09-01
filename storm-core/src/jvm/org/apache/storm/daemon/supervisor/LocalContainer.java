@@ -46,6 +46,7 @@ public class LocalContainer extends Container {
     
     @Override
     public void launch() throws IOException {
+        //TODO when worker goes to java, just call it directly (not through clojure)
         IFn mkWorker = Clojure.var("org.apache.storm.daemon.worker", "mk-worker");
 
         Shutdownable worker = (Shutdownable) mkWorker.invoke(_conf, _sharedContext, _topologyId, _supervisorId, _port, _workerId);

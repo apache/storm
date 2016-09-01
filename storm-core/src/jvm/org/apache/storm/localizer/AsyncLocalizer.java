@@ -136,7 +136,7 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
                     blobStore.shutdown();
                 }
                 Utils.extractDirFromJar(jarPath, ConfigUtils.RESOURCES_SUBDIR, tmproot);
-                _fsOps.moveDriectoryPreferAtomic(new File(tmproot), new File(stormroot));
+                _fsOps.moveDirectoryPreferAtomic(new File(tmproot), new File(stormroot));
                 SupervisorUtils.setupStormCodeDir(_conf, ConfigUtils.readSupervisorStormConf(_conf, _topologyId), stormroot);
                 deleteAll = false;
             } finally {
@@ -212,7 +212,7 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
                         FileUtils.copyDirectory(new File(url.getFile()), (new File(targetDir)));
                     }
                 }
-                _fsOps.moveDriectoryPreferAtomic(new File(tmproot), new File(stormroot));
+                _fsOps.moveDirectoryPreferAtomic(new File(tmproot), new File(stormroot));
                 SupervisorUtils.setupStormCodeDir(_conf, ConfigUtils.readSupervisorStormConf(_conf, _topologyId), stormroot);
                 deleteAll = false;
             } finally {

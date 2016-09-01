@@ -68,7 +68,7 @@ public interface ResourceIsolationInterface {
      * Get the list of PIDs currently in an isolated container
      * @param workerId the id of the worker to get these for
      * @return the set of PIDs, this will be combined with
-     * other ways of getting PIDs. An Empty set or null if
+     * other ways of getting PIDs. An Empty set if
      * no PIDs are found.
      * @throws IOException on any error
      */
