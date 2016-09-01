@@ -489,6 +489,7 @@ public class BasicContainer extends Container {
         String log4jConfigurationFile = getWorkerLoggingConfigFile(stormHome);
         
         List<String> commonParams = new ArrayList<>();
+        commonParams.add("-Dlogging.sensitivity=" + OR((String) _topoConf.get(Config.TOPOLOGY_LOGGING_SENSITIVITY), "S3"));
         commonParams.add("-Dlogfile.name=worker.log");
         commonParams.add("-Dstorm.home=" + stormHome);
         commonParams.add("-Dworkers.artifacts=" + workersArtifacts);
@@ -498,6 +499,7 @@ public class BasicContainer extends Container {
         commonParams.add("-Dstorm.log.dir=" + stormLogDir);
         commonParams.add("-Dlog4j.configurationFile=" + log4jConfigurationFile);
         commonParams.add("-DLog4jContextSelector=org.apache.logging.log4j.core.selector.BasicContextSelector");
+        commonParams.add("-Dstorm.local.dir=" + _conf.get(Config.STORM_LOCAL_DIR));
         return commonParams;
     }
     
@@ -582,7 +584,6 @@ public class BasicContainer extends Container {
         commandList.add("-Dstorm.conf.file=" + stormConfFile);
         commandList.add("-Dstorm.options=" + stormOptions);
         commandList.add("-Djava.io.tmpdir=" + workerTmpDir);
-        commandList.add("-Dlogging.sensitivity=" + OR((String) _topoConf.get(Config.TOPOLOGY_LOGGING_SENSITIVITY), "S3"));
         commandList.addAll(classPathParams);
         commandList.add("org.apache.storm.daemon.worker");
         commandList.add(_topologyId);
@@ -592,7 +593,11 @@ public class BasicContainer extends Container {
         
         return commandList;
     }
-    
+
+    public List<String> updateCommandForIsolation(List<String> command) {
+        return _resourceIsolationManager.getLaunchCommand(_workerId, command);
+    }
+
     @Override
     public void launch() throws IOException {
         if (_port <= 0) {
@@ -632,7 +637,7 @@ public class BasicContainer extends Container {
             map.put("cpu", cpuValue);
             map.put("memory", memoryValue);
             _resourceIsolationManager.reserveResourcesForWorker(_workerId, map);
-            commandList = _resourceIsolationManager.getLaunchCommand(_workerId, commandList);
+            commandList = updateCommandForIsolation(commandList);
         }
 
         LOG.info("Launching worker with command: {}. ", Utils.shellCmd(commandList));

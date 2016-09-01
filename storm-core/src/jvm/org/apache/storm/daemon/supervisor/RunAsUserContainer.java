@@ -84,7 +84,14 @@ public class RunAsUserContainer extends BasicContainer {
         int ret = SupervisorUtils.processLauncherAndWait(_conf, user, args, env, logPrefix);
         return ret == 0;
     }
-    
+
+    @Override
+    public List<String> updateCommandForIsolation(List<String> command) {
+        //With run as user we do the isolation before switching users, so don't modify the original
+        // command line
+        return command;
+    }   
+
     @Override
     protected void launchWorkerProcess(List<String> command, Map<String, String> env, 
             String logPrefix, ExitCodeCallback processExitCallback, File targetDir) throws IOException {

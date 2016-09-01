@@ -137,6 +137,7 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
                 }
                 Utils.extractDirFromJar(jarPath, ConfigUtils.RESOURCES_SUBDIR, tmproot);
                 _fsOps.moveDriectoryPreferAtomic(new File(tmproot), new File(stormroot));
+                SupervisorUtils.setupStormCodeDir(_conf, ConfigUtils.readSupervisorStormConf(_conf, _topologyId), stormroot);
                 deleteAll = false;
             } finally {
                 if (deleteAll) {
