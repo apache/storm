@@ -17,7 +17,6 @@
  */
 package org.apache.storm.sql.compiler;
 
-import com.google.common.collect.ImmutableList;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
 import org.apache.calcite.jdbc.CalciteSchema;
 import org.apache.calcite.jdbc.JavaTypeFactoryImpl;
@@ -27,6 +26,7 @@ import org.apache.calcite.rel.type.RelDataTypeSystem;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.schema.StreamableTable;
 import org.apache.calcite.schema.Table;
+import org.apache.calcite.schema.impl.AggregateFunctionImpl;
 import org.apache.calcite.schema.impl.ScalarFunctionImpl;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperatorTable;
@@ -52,6 +52,29 @@ public class TestCompilerUtils {
         }
     }
 
+    public static class MyStaticSumFunction {
+        public static long init() {
+            return 0L;
+        }
+        public static long add(long accumulator, int v) {
+            return accumulator + v;
+        }
+    }
+
+    public static class MySumFunction {
+        public MySumFunction() {
+        }
+        public long init() {
+            return 0L;
+        }
+        public long add(long accumulator, int v) {
+            return accumulator + v;
+        }
+        public long result(long accumulator) {
+            return accumulator;
+        }
+    }
+
     public static CalciteState sqlOverDummyTable(String sql)
             throws RelConversionException, ValidationException, SqlParseException {
         SchemaPlus schema = Frameworks.createRootSchema(true);
@@ -65,8 +88,48 @@ public class TestCompilerUtils {
         Table table = streamableTable.stream();
         schema.add("FOO", table);
         schema.add("BAR", table);
+        schema.add("MYPLUS", ScalarFunctionImpl.create(MyPlus.class, "eval"));
+        List<SqlOperatorTable> sqlOperatorTables = new ArrayList<>();
+        sqlOperatorTables.add(SqlStdOperatorTable.instance());
+        sqlOperatorTables.add(new CalciteCatalogReader(CalciteSchema.from(schema),
+                false,
+                Collections.<String>emptyList(), typeFactory));
+        SqlOperatorTable chainedSqlOperatorTable = new ChainedSqlOperatorTable(sqlOperatorTables);
         FrameworkConfig config = Frameworks.newConfigBuilder().defaultSchema(
-                schema).build();
+                schema).operatorTable(chainedSqlOperatorTable).build();
+        Planner planner = Frameworks.getPlanner(config);
+        SqlNode parse = planner.parse(sql);
+        SqlNode validate = planner.validate(parse);
+        RelNode tree = planner.convert(validate);
+        return new CalciteState(schema, tree);
+    }
+
+    public static CalciteState sqlOverDummyGroupByTable(String sql)
+            throws RelConversionException, ValidationException, SqlParseException {
+        SchemaPlus schema = Frameworks.createRootSchema(true);
+        JavaTypeFactory typeFactory = new JavaTypeFactoryImpl
+                (RelDataTypeSystem.DEFAULT);
+        StreamableTable streamableTable = new CompilerUtil.TableBuilderInfo(typeFactory)
+                .field("ID", SqlTypeName.INTEGER)
+                .field("GRPID", SqlTypeName.INTEGER)
+                .field("NAME", typeFactory.createType(String.class))
+                .field("ADDR", typeFactory.createType(String.class))
+                .field("AGE", SqlTypeName.INTEGER)
+                .field("SCORE", SqlTypeName.INTEGER)
+                .build();
+        Table table = streamableTable.stream();
+        schema.add("FOO", table);
+        schema.add("BAR", table);
+        schema.add("MYSTATICSUM", AggregateFunctionImpl.create(MyStaticSumFunction.class));
+        schema.add("MYSUM", AggregateFunctionImpl.create(MySumFunction.class));
+        List<SqlOperatorTable> sqlOperatorTables = new ArrayList<>();
+        sqlOperatorTables.add(SqlStdOperatorTable.instance());
+        sqlOperatorTables.add(new CalciteCatalogReader(CalciteSchema.from(schema),
+                false,
+                Collections.<String>emptyList(), typeFactory));
+        SqlOperatorTable chainedSqlOperatorTable = new ChainedSqlOperatorTable(sqlOperatorTables);
+        FrameworkConfig config = Frameworks.newConfigBuilder().defaultSchema(
+                schema).operatorTable(chainedSqlOperatorTable).build();
         Planner planner = Frameworks.getPlanner(config);
         SqlNode parse = planner.parse(sql);
         SqlNode validate = planner.validate(parse);

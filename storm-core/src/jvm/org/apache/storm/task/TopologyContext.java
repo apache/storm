@@ -17,6 +17,7 @@
  */
 package org.apache.storm.task;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.generated.Grouping;
 import org.apache.storm.generated.StormTopology;
@@ -55,16 +56,25 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
     private List<ITaskHook> _hooks = new ArrayList<>();
     private Map<String, Object> _executorData;
     private Map<Integer,Map<Integer, Map<String, IMetric>>> _registeredMetrics;
-    private clojure.lang.Atom _openOrPrepareWasCalled;
+    private AtomicBoolean _openOrPrepareWasCalled;
 
 
-    public TopologyContext(StormTopology topology, Map stormConf,
-            Map<Integer, String> taskToComponent, Map<String, List<Integer>> componentToSortedTasks,
-            Map<String, Map<String, Fields>> componentToStreamToFields,
-            String stormId, String codeDir, String pidDir, Integer taskId,
-            Integer workerPort, List<Integer> workerTasks, Map<String, Object> defaultResources,
-            Map<String, Object> userResources, Map<String, Object> executorData, Map<Integer, Map<Integer, Map<String, IMetric>>> registeredMetrics,
-            clojure.lang.Atom openOrPrepareWasCalled) {
+    public TopologyContext(StormTopology topology,
+                           Map stormConf,
+                           Map<Integer, String> taskToComponent,
+                           Map<String, List<Integer>> componentToSortedTasks,
+                           Map<String, Map<String, Fields>> componentToStreamToFields,
+                           String stormId,
+                           String codeDir,
+                           String pidDir,
+                           Integer taskId,
+                           Integer workerPort,
+                           List<Integer> workerTasks,
+                           Map<String, Object> defaultResources,
+                           Map<String, Object> userResources,
+                           Map<String, Object> executorData,
+                           Map<Integer, Map<Integer, Map<String, IMetric>>> registeredMetrics,
+                           AtomicBoolean openOrPrepareWasCalled) {
         super(topology, stormConf, taskToComponent, componentToSortedTasks,
                 componentToStreamToFields, stormId, codeDir, pidDir,
                 workerPort, workerTasks, defaultResources, userResources);
@@ -312,7 +322,7 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
      * @return The IMetric argument unchanged.
      */
     public <T extends IMetric> T registerMetric(String name, T metric, int timeBucketSizeInSecs) {
-        if((Boolean) _openOrPrepareWasCalled.deref()) {
+        if(_openOrPrepareWasCalled.get()) {
             throw new RuntimeException("TopologyContext.registerMetric can only be called from within overridden " +
                                        "IBolt::prepare() or ISpout::open() method.");
         }

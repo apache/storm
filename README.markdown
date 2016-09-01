@@ -97,6 +97,7 @@ under the License.
 * Longda Feng ([@longda](https://github.com/longdafeng))
 * John Fang ([@hustfxj](https://github.com/hustfxj))
 * Abhishek Agarwal ([@abhishekagarwal87](https://github.com/abhishekagarwal87))
+* Satish Duggana ([@satishd](https://github.com/satishd))
 
 ## Contributors
 
@@ -268,7 +269,10 @@ under the License.
 * wangperry ([@wangperry](https://github.com/wangperry))
 * Slava Andreyev ([@slava92](https://github.com/slava92))
 * Pavel Grochal ([@Darkless012](https://github.com/Darkless012))
-
+* Manikumar Reddy O ([@omkreddy](https://github.com/omkreddy))
+* Dohyun Lee ([@leedohyun](https://github.com/leedohyun))
+* Arthur Maciejewicz ([@Zintinio](https://github.com/Zintinio]))
+* Juan Paulo Gutierrez ([@juanpaulo](https://github.com/juanpaulo)) 
 
 ## Acknowledgements
 

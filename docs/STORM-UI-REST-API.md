@@ -125,6 +125,7 @@ Response fields:
 |uptimeSeconds| Integer| Shows how long the supervisor is running in seconds|
 |slotsTotal| Integer| Total number of available worker slots for this supervisor|
 |slotsUsed| Integer| Number of worker slots used on this supervisor|
+|schedulerDisplayResource| Boolean | Whether to display scheduler resource information|
 |totalMem| Double| Total memory capacity on this supervisor|
 |totalCpu| Double| Total CPU capacity on this supervisor|
 |usedMem| Double| Used memory capacity on this supervisor|
@@ -207,6 +208,123 @@ Sample response:
 }
 ```
 
+### /api/v1/supervisor (GET)
+
+Returns summary for a supervisor by id, or all supervisors running on a host.
+
+Examples:
+
+```no-highlight
+ 1. By host: http://ui-daemon-host-name:8080/api/v1/supervisor?host=supervisor-daemon-host-name
+ 2. By id: http://ui-daemon-host-name:8080/api/v1/supervisor?id=f5449110-1daa-43e2-89e3-69917b16dec9-192.168.1.1
+```
+
+Request parameters:
+
+|Parameter |Value   |Description  |
+|----------|--------|-------------|
+|id   	   |String. Supervisor id | If specified, respond with the supervisor and worker stats with id. Note that when id is specified, the host argument is ignored. |
+|host      |String. Host name| If specified, respond with all supervisors and worker stats in the host (normally just one)|
+|sys       |String. Values 1 or 0. Default value 0| Controls including sys stats part of the response|
+
+Response fields:
+
+|Field  |Value|Description|
+|---	|---	|---
+|supervisors| Array| Array of supervisor summaries|
+|workers| Array| Array of worker summaries |
+|schedulerDisplayResource| Boolean | Whether to display scheduler resource information|
+
+Each supervisor is defined by:
+
+|Field  |Value|Description|
+|---	|---	|---
+|id| String | Supervisor's id|
+|host| String| Supervisor's host name|
+|uptime| String| Shows how long the supervisor is running|
+|uptimeSeconds| Integer| Shows how long the supervisor is running in seconds|
+|slotsTotal| Integer| Total number of worker slots for this supervisor|
+|slotsUsed| Integer| Number of worker slots used on this supervisor|
+|totalMem| Double| Total memory capacity on this supervisor|
+|totalCpu| Double| Total CPU capacity on this supervisor|
+|usedMem| Double| Used memory capacity on this supervisor|
+|usedCpu| Double| Used CPU capacity on this supervisor|
+
+Each worker is defined by:
+
+|Field  |Value  |Description|
+|-------|-------|-----------|
+|supervisorId | String| Supervisor's id|
+|host | String | Worker's host name|
+|port | Integer | Worker's port|
+|topologyId | String | Topology Id|
+|topologyName | String | Topology Name|
+|executorsTotal | Integer | Number of executors used by the topology in this worker|
+|assignedMemOnHeap | Double | Assigned On-Heap Memory by Scheduler (MB)|
+|assignedMemOffHeap | Double | Assigned Off-Heap Memory by Scheduler (MB)|
+|assignedCpu | Number | Assigned CPU by Scheduler (%)| 
+|componentNumTasks | Dictionary | Components -> # of executing tasks|
+|uptime| String| Shows how long the worker is running|
+|uptimeSeconds| Integer| Shows how long the worker is running in seconds|
+|workerLogLink | String | Link to worker log viewer page|
+
+Sample response:
+
+```json
+{
+    "supervisors": [{ 
+        "totalMem": 4096.0, 
+        "host":"192.168.10.237",
+        "id":"bdfe8eff-f1d8-4bce-81f5-9d3ae1bf432e-169.254.129.212",
+        "uptime":"7m 8s",
+        "totalCpu":400.0,
+        "usedCpu":495.0,
+        "usedMem":3432.0,
+        "slotsUsed":2,
+        "version":"0.10.1",
+        "slotsTotal":4,
+        "uptimeSeconds":428
+    }],
+    "schedulerDisplayResource":true,
+    "workers":[{
+        "topologyName":"ras",
+        "topologyId":"ras-4-1460229987",
+        "host":"192.168.10.237",
+        "supervisorId":"bdfe8eff-f1d8-4bce-81f5-9d3ae1bf432e-169.254.129.212",
+        "assignedMemOnHeap":704.0,
+        "uptime":"2m 47s",
+        "uptimeSeconds":167,
+        "port":6707,
+        "workerLogLink":"http:\/\/192.168.10.237:8000\/log?file=ras-4-1460229987%2F6707%2Fworker.log",
+        "componentNumTasks": {
+            "word":5
+        },
+        "executorsTotal":8,
+        "assignedCpu":130.0,
+        "assignedMemOffHeap":80.0
+    },
+    {
+        "topologyName":"ras",
+        "topologyId":"ras-4-1460229987",
+        "host":"192.168.10.237",
+        "supervisorId":"bdfe8eff-f1d8-4bce-81f5-9d3ae1bf432e-169.254.129.212",
+        "assignedMemOnHeap":904.0,
+        "uptime":"2m 53s",
+        "port":6706,
+        "workerLogLink":"http:\/\/192.168.10.237:8000\/log?file=ras-4-1460229987%2F6706%2Fworker.log",
+        "componentNumTasks":{
+            "exclaim2":2,
+            "exclaim1":3,
+            "word":5
+        },
+        "executorsTotal":10,
+        "uptimeSeconds":173,
+        "assignedCpu":165.0,
+        "assignedMemOffHeap":80.0
+    }]
+}
+```
+
 ### /api/v1/topology/summary (GET)
 
 Returns summary information for all topologies.
@@ -232,6 +350,7 @@ Response fields:
 |assignedMemOffHeap| Double|Assigned Off-Heap Memory by Scheduler (MB)|
 |assignedTotalMem| Double|Assigned Total Memory by Scheduler (MB)|
 |assignedCpu| Double|Assigned CPU by Scheduler (%)|
+|schedulerDisplayResource| Boolean | Whether to display scheduler resource information|
 
 Sample response:
 
@@ -257,7 +376,7 @@ Sample response:
             "assignedTotalMem": 768,
             "assignedCpu": 80
         }
-    ]
+    ],
     "schedulerDisplayResource": true
 }
 ```

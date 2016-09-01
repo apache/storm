@@ -261,8 +261,8 @@ public class KafkaOffsetLagUtil {
             Map<String, Map<Integer, Long>> oldConsumerOffsets = getOldConsumerOffsetsFromZk(topicPartitions, oldKafkaSpoutOffsetQuery);
             for (Map.Entry<String, Map<Integer, Long>> topicOffsets: logHeadOffsets.entrySet()) {
                 for (Map.Entry<Integer, Long> partitionOffsets: topicOffsets.getValue().entrySet()) {
-                    Long consumerCommittedOffset = oldConsumerOffsets.get(topicOffsets.getKey()) != null ? oldConsumerOffsets.get(topicOffsets.getKey()).get
-                            (partitionOffsets.getKey()) : -1;
+                    Long consumerCommittedOffset = oldConsumerOffsets.get(topicOffsets.getKey()) != null ? (Long) oldConsumerOffsets.get(topicOffsets.getKey()).get
+                        (partitionOffsets.getKey()) : -1;
                     consumerCommittedOffset = (consumerCommittedOffset == null ? -1 : consumerCommittedOffset);
                     KafkaOffsetLagResult kafkaOffsetLagResult = new KafkaOffsetLagResult(topicOffsets.getKey(), partitionOffsets.getKey(),
                             consumerCommittedOffset, partitionOffsets.getValue());

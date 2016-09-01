@@ -118,6 +118,8 @@ struct StormTopology {
   2: required map<string, Bolt> bolts;
   3: required map<string, StateSpoutSpec> state_spouts;
   4: optional list<binary> worker_hooks;
+  5: optional list<string> dependency_jars;
+  6: optional list<string> dependency_artifacts;
 }
 
 exception AlreadyAliveException {
@@ -309,6 +311,29 @@ struct TopologyStats {
 5: optional map<string, i64> window_to_failed;
 }
 
+struct WorkerSummary {
+  1: optional string supervisor_id; 
+  2: optional string host;
+  3: optional i32 port;
+  4: optional string topology_id;
+  5: optional string topology_name;
+  6: optional i32 num_executors;
+  7: optional map<string, i64> component_to_num_tasks;
+  8: optional i32 time_secs;
+  9: optional i32 uptime_secs;
+521: optional double requested_memonheap;
+522: optional double requested_memoffheap;
+523: optional double requested_cpu;
+524: optional double assigned_memonheap;
+525: optional double assigned_memoffheap;
+526: optional double assigned_cpu;
+}
+
+struct SupervisorPageInfo {
+  1: optional list<SupervisorSummary> supervisor_summaries;
+  2: optional list<WorkerSummary> worker_summaries;
+}
+
 struct TopologyPageInfo {
  1: required string id;
  2: optional string name;
@@ -325,6 +350,7 @@ struct TopologyPageInfo {
 13: optional string owner;
 14: optional DebugOptions debug_options;
 15: optional i32 replication_count;
+16: optional list<WorkerSummary> workers;
 521: optional double requested_memonheap;
 522: optional double requested_memoffheap;
 523: optional double requested_cpu;
@@ -642,6 +668,7 @@ service Nimbus {
   TopologyInfo getTopologyInfo(1: string id) throws (1: NotAliveException e, 2: AuthorizationException aze);
   TopologyInfo getTopologyInfoWithOpts(1: string id, 2: GetInfoOptions options) throws (1: NotAliveException e, 2: AuthorizationException aze);
   TopologyPageInfo getTopologyPageInfo(1: string id, 2: string window, 3: bool is_include_sys) throws (1: NotAliveException e, 2: AuthorizationException aze);
+  SupervisorPageInfo getSupervisorPageInfo(1: string id, 2: string host, 3: bool is_include_sys) throws (1: NotAliveException e, 2: AuthorizationException aze);
   ComponentPageInfo getComponentPageInfo(1: string topology_id, 2: string component_id, 3: string window, 4: bool is_include_sys) throws (1: NotAliveException e, 2: AuthorizationException aze);
   //returns json
   string getTopologyConf(1: string id) throws (1: NotAliveException e, 2: AuthorizationException aze);

@@ -81,7 +81,9 @@ curl  -i --negotiate -u:anyUser  -b ~/cookiejar.txt -c ~/cookiejar.txt  http://s
 
 1. Firefox: Goto about:config and search for network.negotiate-auth.trusted-uris double-click to  add value "http://storm-ui-hostname:8080"
 2. Google-chrome:  start from command line with: google-chrome --auth-server-whitelist="*storm-ui-hostname" --auth-negotiate-delegate-whitelist="*storm-ui-hostname"   
-3. IE:  Configure trusted websites to include "storm-ui-hostname" and allow negotiation for that website 
+3. IE:  Configure trusted websites to include "storm-ui-hostname" and allow negotiation for that website
+
+**Note**: For viewing any logs via `logviewer` in secure mode, all the hosts that runs `logviewer` should also be added to the above white list. For big clusters you could white list the host's domain (for e.g. set `network.negotiate-auth.trusted-uris` to `.yourdomain.com`).
 
 **Caution**: In AD MIT Keberos setup the key size is bigger than the default UI jetty server request header size. Make sure you set ui.header.buffer.bytes to 65536 in storm.yaml. More details are on [STORM-633](https://issues.apache.org/jira/browse/STORM-633)
 

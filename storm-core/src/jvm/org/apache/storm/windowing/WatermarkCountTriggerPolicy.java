@@ -74,7 +74,7 @@ public class WatermarkCountTriggerPolicy<T> implements TriggerPolicy<T> {
         long watermarkTs = waterMarkEvent.getTimestamp();
         List<Long> eventTs = windowManager.getSlidingCountTimestamps(lastProcessedTs, watermarkTs, count);
         for (long ts : eventTs) {
-            evictionPolicy.setContext(ts);
+            evictionPolicy.setContext(new DefaultEvictionContext(ts, null, Long.valueOf(count)));
             handler.onTrigger();
             lastProcessedTs = ts;
         }
