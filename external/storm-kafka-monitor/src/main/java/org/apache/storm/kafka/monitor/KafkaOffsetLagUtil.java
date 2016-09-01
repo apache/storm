@@ -89,10 +89,6 @@ public class KafkaOffsetLagUtil {
                     printUsageAndExit(options, OPTION_ZK_SERVERS_LONG + " and " + OPTION_ZK_COMMITTED_NODE_LONG + " are required  with " +
                             OPTION_OLD_CONSUMER_LONG);
                 }
-                String zkNode = commandLine.getOptionValue(OPTION_ZK_COMMITTED_NODE_LONG);
-                if (zkNode == null || zkNode.length() <= 1) {
-                	 printUsageAndExit(options, OPTION_ZK_COMMITTED_NODE_LONG+" '"+zkNode+"' is invalid.");
-                }
                 String[] topics = commandLine.getOptionValue(OPTION_TOPIC_LONG).split(",");
                 if (topics != null && topics.length > 1) {
                     printUsageAndExit(options, "Multiple topics not supported with option " + OPTION_OLD_CONSUMER_LONG + ". Either a single topic or a " +
@@ -377,12 +373,11 @@ public class KafkaOffsetLagUtil {
         curatorFramework.start();
         String partitionPrefix = "partition_";
         String zkPath = oldKafkaSpoutOffsetQuery.getZkPath();
-         if (zkPath.endsWith("/")) {
+        if (zkPath.endsWith("/")) {
             zkPath = zkPath.substring(0, zkPath.length()-1);
         }
         if (curatorFramework.checkExists().forPath(zkPath) == null) {
-        	System.out.printf("--zk-node '%s' is not exists.%n", zkPath);
-        	System.exit(1);
+            throw new IllegalArgumentException(OPTION_ZK_COMMITTED_NODE_LONG+" '"+zkPath+"' dose not exists.");
         }
         byte[] zkData;
         try {
