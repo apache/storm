@@ -38,8 +38,9 @@ public interface ILocalizer {
      * @param topologyId the id of the topology to download them for
      * @param port the port the topology is running on
      * @return a future to let you know when they are done.
+     * @throws IOException on error 
      */
-    Future<Void> requestDownloadBaseTopologyBlobs(String topologyId, int port);
+    Future<Void> requestDownloadBaseTopologyBlobs(String topologyId, int port) throws IOException;
 
     /**
      * Download the blobs for this topology (reading in list in from the config)

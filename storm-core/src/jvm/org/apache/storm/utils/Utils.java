@@ -569,6 +569,11 @@ public class Utils {
      */
     public static void downloadResourcesAsSupervisor(String key, String localFile,
                                                      ClientBlobStore cb) throws AuthorizationException, KeyNotFoundException, IOException {
+        _instance.downloadResourcesAsSupervisorImpl(key, localFile, cb);
+    }
+
+    public void downloadResourcesAsSupervisorImpl(String key, String localFile,
+            ClientBlobStore cb) throws AuthorizationException, KeyNotFoundException, IOException {
         final int MAX_RETRY_ATTEMPTS = 2;
         final int ATTEMPTS_INTERVAL_TIME = 100;
         for (int retryAttempts = 0; retryAttempts < MAX_RETRY_ATTEMPTS; retryAttempts++) {
@@ -587,11 +592,8 @@ public class Utils {
 
     private static boolean downloadResourcesAsSupervisorAttempt(ClientBlobStore cb, String key, String localFile) {
         boolean isSuccess = false;
-        FileOutputStream out = null;
-        InputStreamWithMeta in = null;
-        try {
-            out = new FileOutputStream(localFile);
-            in = cb.getBlob(key);
+        try (FileOutputStream out = new FileOutputStream(localFile);
+                InputStreamWithMeta in = cb.getBlob(key);) {
             long fileSize = in.getFileLength();
 
             byte[] buffer = new byte[1024];
@@ -605,17 +607,6 @@ public class Utils {
             isSuccess = (fileSize == downloadFileSize);
         } catch (TException | IOException e) {
             LOG.error("An exception happened while downloading {} from blob store.", localFile, e);
-        } finally {
-            try {
-                if (out != null) {
-                    out.close();
-                }
-            } catch (IOException ignored) {}
-            try {
-                if (in != null) {
-                    in.close();
-                }
-            } catch (IOException ignored) {}
         }
         if (!isSuccess) {
             try {
@@ -1877,9 +1868,12 @@ public class Utils {
      * @param jarpath Path to the jar file
      * @param dir Directory in the jar to pull out
      * @param destdir Path to the directory where the extracted directory will be put
-     *
      */
-    public static void extractDirFromJar(String jarpath, String dir, String destdir) {
+    public static void extractDirFromJar(String jarpath, String dir, File destdir) {
+        _instance.extractDirFromJarImpl(jarpath, dir, destdir);
+    }
+    
+    public void extractDirFromJarImpl(String jarpath, String dir, File destdir) {
         try (JarFile jarFile = new JarFile(jarpath)) {
             Enumeration<JarEntry> jarEnums = jarFile.entries();
             while (jarEnums.hasMoreElements()) {

@@ -19,10 +19,11 @@ package org.apache.storm.daemon.supervisor;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.Writer;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -109,7 +110,7 @@ public class AdvancedFSOps {
         }
         
         @Override
-        public void restrictDirectoryPermissions(String dir) throws IOException {
+        public void restrictDirectoryPermissions(File dir) throws IOException {
             //NOOP, if windows gets support for run as user we will need to find a way to suppor this
         }
         
@@ -139,12 +140,12 @@ public class AdvancedFSOps {
      * @param dir the directory to change permissions on
      * @throws IOException on any error
      */
-    public void restrictDirectoryPermissions(String dir) throws IOException {
+    public void restrictDirectoryPermissions(File dir) throws IOException {
         Set<PosixFilePermission> perms = new HashSet<>(
                 Arrays.asList(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE,
                         PosixFilePermission.OWNER_EXECUTE, PosixFilePermission.GROUP_READ,
                         PosixFilePermission.GROUP_EXECUTE));
-        Files.setPosixFilePermissions(FileSystems.getDefault().getPath(dir), perms);
+        Files.setPosixFilePermissions(dir.toPath(), perms);
     }
 
     /**
@@ -163,6 +164,16 @@ public class AdvancedFSOps {
      */
     public boolean supportsAtomicDirectoryMove() {
         return true;
+    }
+    
+    /**
+     * Copy a directory
+     * @param fromDir from where
+     * @param toDir to where
+     * @throws IOException on any error
+     */
+    public void copyDirectory(File fromDir, File toDir) throws IOException {
+        FileUtils.copyDirectory(fromDir, toDir);
     }
     
     /**
@@ -253,6 +264,16 @@ public class AdvancedFSOps {
      */
     public Writer getWriter(File file) throws IOException {
         return new FileWriter(file);
+    }
+    
+    /**
+     * Get an output stream to write to a given file
+     * @param file the file to write to
+     * @return an OutputStream for that file
+     * @throws IOException on any error
+     */
+    public OutputStream getOutputStream(File file) throws IOException {
+        return new FileOutputStream(file);
     }
     
     /**

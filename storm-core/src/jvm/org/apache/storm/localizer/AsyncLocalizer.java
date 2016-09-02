@@ -18,8 +18,8 @@
 package org.apache.storm.localizer;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.JarURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
@@ -32,7 +32,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.storm.Config;
 import org.apache.storm.blobstore.BlobStore;
 import org.apache.storm.blobstore.ClientBlobStore;
@@ -97,20 +96,40 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
     private final AdvancedFSOps _fsOps;
 
     private class DownloadBaseBlobsDistributed implements Callable<Void> {
-        private final String _topologyId;
+        protected final String _topologyId;
+        protected final File _stormRoot;
         
-        public DownloadBaseBlobsDistributed(String topologyId) {
-            this._topologyId = topologyId;
+        public DownloadBaseBlobsDistributed(String topologyId) throws IOException {
+            _topologyId = topologyId;
+            _stormRoot = new File(ConfigUtils.supervisorStormDistRoot(_conf, _topologyId));
+        }
+        
+        protected void downloadBaseBlobs(File tmproot) throws Exception {
+            String stormJarKey = ConfigUtils.masterStormJarKey(_topologyId);
+            String stormCodeKey = ConfigUtils.masterStormCodeKey(_topologyId);
+            String stormConfKey = ConfigUtils.masterStormConfKey(_topologyId);
+            String jarPath = ConfigUtils.supervisorStormJarPath(tmproot.getAbsolutePath());
+            String codePath = ConfigUtils.supervisorStormCodePath(tmproot.getAbsolutePath());
+            String confPath = ConfigUtils.supervisorStormConfPath(tmproot.getAbsolutePath());
+            _fsOps.forceMkdir(tmproot);
+            _fsOps.restrictDirectoryPermissions(tmproot);
+            ClientBlobStore blobStore = Utils.getClientBlobStoreForSupervisor(_conf);
+            try {
+                Utils.downloadResourcesAsSupervisor(stormJarKey, jarPath, blobStore);
+                Utils.downloadResourcesAsSupervisor(stormCodeKey, codePath, blobStore);
+                Utils.downloadResourcesAsSupervisor(stormConfKey, confPath, blobStore);
+            } finally {
+                blobStore.shutdown();
+            }
+            Utils.extractDirFromJar(jarPath, ConfigUtils.RESOURCES_SUBDIR, tmproot);
         }
         
         @Override
         public Void call() throws Exception {
-            String stormroot = ConfigUtils.supervisorStormDistRoot(_conf, _topologyId);
-            File sr = new File(stormroot);
-            if (sr.exists()) {
+            if (_fsOps.fileExists(_stormRoot)) {
                 if (!_fsOps.supportsAtomicDirectoryMove()) {
                     LOG.warn("{} may have partially downloaded blobs, recovering", _topologyId);
-                    Utils.forceDelete(stormroot);
+                    _fsOps.deleteIfExists(_stormRoot);
                 } else {
                     LOG.warn("{} already downloaded blobs, skipping", _topologyId);
                     return null;
@@ -118,81 +137,47 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
             }
             boolean deleteAll = true;
             String tmproot = ConfigUtils.supervisorTmpDir(_conf) + Utils.FILE_PATH_SEPARATOR + Utils.uuid();
+            File tr = new File(tmproot);
             try {
-                String stormJarKey = ConfigUtils.masterStormJarKey(_topologyId);
-                String stormCodeKey = ConfigUtils.masterStormCodeKey(_topologyId);
-                String stormConfKey = ConfigUtils.masterStormConfKey(_topologyId);
-                String jarPath = ConfigUtils.supervisorStormJarPath(tmproot);
-                String codePath = ConfigUtils.supervisorStormCodePath(tmproot);
-                String confPath = ConfigUtils.supervisorStormConfPath(tmproot);
-                FileUtils.forceMkdir(new File(tmproot));
-                _fsOps.restrictDirectoryPermissions(tmproot);
-                ClientBlobStore blobStore = Utils.getClientBlobStoreForSupervisor(_conf);
-                try {
-                    Utils.downloadResourcesAsSupervisor(stormJarKey, jarPath, blobStore);
-                    Utils.downloadResourcesAsSupervisor(stormCodeKey, codePath, blobStore);
-                    Utils.downloadResourcesAsSupervisor(stormConfKey, confPath, blobStore);
-                } finally {
-                    blobStore.shutdown();
-                }
-                Utils.extractDirFromJar(jarPath, ConfigUtils.RESOURCES_SUBDIR, tmproot);
-                _fsOps.moveDirectoryPreferAtomic(new File(tmproot), new File(stormroot));
-                SupervisorUtils.setupStormCodeDir(_conf, ConfigUtils.readSupervisorStormConf(_conf, _topologyId), stormroot);
+                downloadBaseBlobs(tr);
+                _fsOps.moveDirectoryPreferAtomic(tr, _stormRoot);
+                _fsOps.setupStormCodeDir(ConfigUtils.readSupervisorStormConf(_conf, _topologyId), _stormRoot);
                 deleteAll = false;
             } finally {
                 if (deleteAll) {
                     LOG.info("Failed to download basic resources for topology-id {}", _topologyId);
-                    Utils.forceDelete(tmproot);
-                    Utils.forceDelete(stormroot);
+                    _fsOps.deleteIfExists(tr);
+                    _fsOps.deleteIfExists(_stormRoot);
                 }
             }
             return null;
         }
     }
     
-    private class DownloadBaseBlobsLocal implements Callable<Void> {
-        private final String _topologyId;
-        
-        public DownloadBaseBlobsLocal(String topologyId) {
-            this._topologyId = topologyId;
+    private class DownloadBaseBlobsLocal extends DownloadBaseBlobsDistributed {
+
+        public DownloadBaseBlobsLocal(String topologyId) throws IOException {
+            super(topologyId);
         }
         
         @Override
-        public Void call() throws Exception {
-            String stormroot = ConfigUtils.supervisorStormDistRoot(_conf, _topologyId);
-            File sr = new File(stormroot);
-            if (sr.exists()) {
-                if (!_fsOps.supportsAtomicDirectoryMove()) {
-                    LOG.warn("{} may have partially downloaded blobs, recovering", _topologyId);
-                    Utils.forceDelete(stormroot);
-                } else {
-                    LOG.warn("{} already downloaded blobs, skipping", _topologyId);
-                    return null;
-                }
-            }
-            boolean deleteAll = true;
-            String tmproot = ConfigUtils.supervisorTmpDir(_conf) + Utils.FILE_PATH_SEPARATOR + Utils.uuid();
+        protected void downloadBaseBlobs(File tmproot) throws Exception {
+            _fsOps.forceMkdir(tmproot);
+            String stormCodeKey = ConfigUtils.masterStormCodeKey(_topologyId);
+            String stormConfKey = ConfigUtils.masterStormConfKey(_topologyId);
+            File codePath = new File(ConfigUtils.supervisorStormCodePath(tmproot.getAbsolutePath()));
+            File confPath = new File(ConfigUtils.supervisorStormConfPath(tmproot.getAbsolutePath()));
+            BlobStore blobStore = Utils.getNimbusBlobStore(_conf, null);
             try {
-                BlobStore blobStore = Utils.getNimbusBlobStore(_conf, null, null);
-                FileOutputStream codeOutStream = null;
-                FileOutputStream confOutStream = null;
-                try {
-                    FileUtils.forceMkdir(new File(tmproot));
-                    String stormCodeKey = ConfigUtils.masterStormCodeKey(_topologyId);
-                    String stormConfKey = ConfigUtils.masterStormConfKey(_topologyId);
-                    String codePath = ConfigUtils.supervisorStormCodePath(tmproot);
-                    String confPath = ConfigUtils.supervisorStormConfPath(tmproot);
-                    codeOutStream = new FileOutputStream(codePath);
+                try (OutputStream codeOutStream = _fsOps.getOutputStream(codePath)){
                     blobStore.readBlobTo(stormCodeKey, codeOutStream, null);
-                    confOutStream = new FileOutputStream(confPath);
-                    blobStore.readBlobTo(stormConfKey, confOutStream, null);
-                } finally {
-                    if (codeOutStream != null)
-                        codeOutStream.close();
-                    if (confOutStream != null)
-                        codeOutStream.close();
-                    blobStore.shutdown();
                 }
+                try (OutputStream confOutStream = _fsOps.getOutputStream(confPath)) {
+                    blobStore.readBlobTo(stormConfKey, confOutStream, null);
+                }
+            } finally {
+                blobStore.shutdown();
+            }
 
                 ClassLoader classloader = Thread.currentThread().getContextClassLoader();
                 String resourcesJar = AsyncLocalizer.resourcesJar();
@@ -200,29 +185,18 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
 
                 String targetDir = tmproot + Utils.FILE_PATH_SEPARATOR + ConfigUtils.RESOURCES_SUBDIR;
 
-                if (resourcesJar != null) {
-                    LOG.info("Extracting resources from jar at {} to {}", resourcesJar, targetDir);
-                    Utils.extractDirFromJar(resourcesJar, ConfigUtils.RESOURCES_SUBDIR, stormroot);
-                } else if (url != null) {
-                    LOG.info("Copying resources at {} to {} ", url.toString(), targetDir);
-                    if (url.getProtocol() == "jar") {
-                        JarURLConnection urlConnection = (JarURLConnection) url.openConnection();
-                        Utils.extractDirFromJar(urlConnection.getJarFileURL().getFile(), ConfigUtils.RESOURCES_SUBDIR, stormroot);
-                    } else {
-                        FileUtils.copyDirectory(new File(url.getFile()), (new File(targetDir)));
-                    }
-                }
-                _fsOps.moveDirectoryPreferAtomic(new File(tmproot), new File(stormroot));
-                SupervisorUtils.setupStormCodeDir(_conf, ConfigUtils.readSupervisorStormConf(_conf, _topologyId), stormroot);
-                deleteAll = false;
-            } finally {
-                if (deleteAll) {
-                    LOG.info("Failed to download basic resources for topology-id {}", _topologyId);
-                    Utils.forceDelete(tmproot);
-                    Utils.forceDelete(stormroot);
+            if (resourcesJar != null) {
+                LOG.info("Extracting resources from jar at {} to {}", resourcesJar, targetDir);
+                Utils.extractDirFromJar(resourcesJar, ConfigUtils.RESOURCES_SUBDIR, _stormRoot);
+            } else if (url != null) {
+                LOG.info("Copying resources at {} to {} ", url.toString(), targetDir);
+                if (url.getProtocol() == "jar") {
+                    JarURLConnection urlConnection = (JarURLConnection) url.openConnection();
+                    Utils.extractDirFromJar(urlConnection.getJarFileURL().getFile(), ConfigUtils.RESOURCES_SUBDIR, _stormRoot);
+                } else {
+                    _fsOps.copyDirectory(new File(url.getFile()), new File(targetDir));
                 }
             }
-            return null;
         }
     }
     
@@ -265,15 +239,15 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
             
             if (!localResourceList.isEmpty()) {
                 File userDir = _localizer.getLocalUserFileCacheDir(user);
-                if (!userDir.exists()) {
-                    FileUtils.forceMkdir(userDir);
+                if (!_fsOps.fileExists(userDir)) {
+                    _fsOps.forceMkdir(userDir);
                 }
                 List<LocalizedResource> localizedResources = _localizer.getBlobs(localResourceList, user, topoName, userDir);
                 _fsOps.setupBlobPermissions(userDir, user);
                 for (LocalizedResource localizedResource : localizedResources) {
-                    File rsrcFilePath = new File(localizedResource.getFilePath());
-                    String keyName = rsrcFilePath.getName();
-                    String blobSymlinkTargetName = new File(localizedResource.getCurrentSymlinkPath()).getName();
+                    String keyName = localizedResource.getKey();
+                    //The sym link we are pointing to
+                    File rsrcFilePath = new File(localizedResource.getCurrentSymlinkPath());
 
                     String symlinkName = null;
                     Map<String, Object> blobInfo = blobstoreMap.get(keyName);
@@ -282,7 +256,7 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
                     } else {
                         symlinkName = keyName;
                     }
-                    Utils.forceCreateSymlink(stormroot, rsrcFilePath.getParent(), symlinkName, blobSymlinkTargetName);
+                    _fsOps.createSymlink(new File(stormroot, symlinkName), rsrcFilePath);
                 }
             }
 
@@ -290,7 +264,8 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
         }
     }
     
-    public AsyncLocalizer(Map<String, Object> conf, Localizer localizer) {
+    //Visible for testing
+    AsyncLocalizer(Map<String, Object> conf, Localizer localizer, AdvancedFSOps ops) {
         _conf = conf;
         _isLocalMode = ConfigUtils.isLocalMode(conf);
         _localizer = localizer;
@@ -300,11 +275,15 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
                 .build());
         _basicPending = new HashMap<>();
         _blobPending = new HashMap<>();
-        _fsOps = AdvancedFSOps.make(_conf);
+        _fsOps = ops;
+    }
+    
+    public AsyncLocalizer(Map<String, Object> conf, Localizer localizer) {
+        this(conf, localizer, AdvancedFSOps.make(conf));
     }
 
     @Override
-    public synchronized Future<Void> requestDownloadBaseTopologyBlobs(final String topologyId, final int port) {
+    public synchronized Future<Void> requestDownloadBaseTopologyBlobs(final String topologyId, final int port) throws IOException {
         LocalDownloadedResource localResource = _basicPending.get(topologyId);
         if (localResource == null) {
             Callable<Void> c;

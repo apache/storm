@@ -17,6 +17,7 @@
  */
 package org.apache.storm.daemon.supervisor;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -288,8 +289,9 @@ public class Slot extends Thread implements AutoCloseable {
      * @param dynamicState current state
      * @param staticState static data
      * @return the next state
+     * @throws IOException on any error
      */
-    static DynamicState prepareForNewAssignmentOnEmptySlot(DynamicState dynamicState, StaticState staticState) {
+    static DynamicState prepareForNewAssignmentOnEmptySlot(DynamicState dynamicState, StaticState staticState) throws IOException {
         assert(dynamicState.container == null);
         
         if (dynamicState.newAssignment == null) {
@@ -594,7 +596,7 @@ public class Slot extends Thread implements AutoCloseable {
         return dynamicState;
     }
 
-    static DynamicState handleEmpty(DynamicState dynamicState, StaticState staticState) throws InterruptedException {
+    static DynamicState handleEmpty(DynamicState dynamicState, StaticState staticState) throws InterruptedException, IOException {
         if (!equivalent(dynamicState.newAssignment, dynamicState.currentAssignment)) {
             return prepareForNewAssignmentOnEmptySlot(dynamicState, staticState);
         }
