@@ -1,12 +1,13 @@
-/*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -37,16 +38,8 @@ public class Booter {
             RepositorySystem system, String localRepoPath) {
         MavenRepositorySystemSession session = new MavenRepositorySystemSession();
 
-        // find homedir
-        String home = System.getProperty("storm.home");
-        if (home == null) {
-            home = ".";
-        }
-
-        String path = home + "/" + localRepoPath;
-
         LocalRepository localRepo =
-                new LocalRepository(new File(path).getAbsolutePath());
+                new LocalRepository(new File(localRepoPath).getAbsolutePath());
         session.setLocalRepositoryManager(system.newLocalRepositoryManager(localRepo));
 
         return session;
