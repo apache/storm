@@ -79,6 +79,7 @@
  * STORM-1720: Support GEO in storm-redis
 
 ## 1.0.3
+ * STORM-1344: Remove sql command from storm-jdbc build
  * STORM-2070: Fix sigar native binary download link
  * STORM-2056: Bugs in logviewer
  * STORM-1646: Fix ExponentialBackoffMsgRetryManager test
