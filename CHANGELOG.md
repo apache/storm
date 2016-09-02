@@ -1,7 +1,5 @@
-## 0.10.3
- * STORM-2042: Nimbus client connections not closed properly causing connection leaks
-
 ## 0.10.2
+ * STORM-2042: Nimbus client connections not closed properly causing connection leaks
  * STORM-1609: Netty Client is not best effort delivery on failed Connection
  * STORM-1928: ShellSpout should check heartbeat while ShellSpout is waiting for subprocess to sync
  * STORM-1989: X-Frame-Options support for Storm UI
