@@ -692,6 +692,15 @@ public class Slot extends Thread implements AutoCloseable {
         }
     }
     
+    public String getWorkerId() {
+        String workerId = null;
+        Container c = dynamicState.container;
+        if (c != null) {
+            workerId = c.getWorkerId();
+        }
+        return workerId;
+    }
+    
     public void run() {
         try {
             while(!done) {

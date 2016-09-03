@@ -522,4 +522,10 @@ public abstract class Container implements Killable {
      */
     public abstract boolean runProfiling(ProfileRequest request, boolean stop) throws IOException, InterruptedException;
 
+    /**
+     * @return the id of the container or null if there is no worker id right now.
+     */
+    public String getWorkerId() {
+        return _workerId;
+    }
 }

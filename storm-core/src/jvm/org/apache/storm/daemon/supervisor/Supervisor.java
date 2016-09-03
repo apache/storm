@@ -278,6 +278,39 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
             LOG.error("Error Shutting down", e);
         }
     }
+    
+    void killWorkers(Collection<String> workerIds, ContainerLauncher launcher) throws InterruptedException, IOException {
+        HashSet<Killable> containers = new HashSet<>();
+        for (String workerId : workerIds) {
+            try {
+                Killable k = launcher.recoverContainer(workerId, localState);
+                if (!k.areAllProcessesDead()) {
+                    k.kill();
+                    containers.add(k);
+                } else {
+                    k.cleanUp();
+                }
+            } catch (Exception e) {
+                LOG.error("Error trying to kill {}", workerId, e);
+            }
+        }
+        int shutdownSleepSecs = Utils.getInt(conf.get(Config.SUPERVISOR_WORKER_SHUTDOWN_SLEEP_SECS), 1);
+        if (!containers.isEmpty()) {
+            Time.sleepSecs(shutdownSleepSecs);
+        }
+        for (Killable k: containers) {
+            try {
+                k.forceKill();
+                while(!k.areAllProcessesDead()) {
+                    Time.sleep(100);
+                    k.forceKill();
+                }
+                k.cleanUp();
+            } catch (Exception e) {
+                LOG.error("Error trying to clean up {}", k, e);
+            }
+        }
+    }
 
     public void shutdownAllWorkers() {
         if (readState != null) {
@@ -285,39 +318,8 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
         } else {
             try {
                 ContainerLauncher launcher = ContainerLauncher.make(getConf(), getId(), getSharedContext());
-                Collection<String> workerIds = SupervisorUtils.supervisorWorkerIds(conf);
-                HashSet<Killable> containers = new HashSet<>();
-                for (String workerId : workerIds) {
-                    try {
-                        Killable k = launcher.recoverContainer(workerId, localState);
-                        if (!k.areAllProcessesDead()) {
-                            k.kill();
-                            containers.add(k);
-                        } else {
-                            k.cleanUp();
-                        }
-                    } catch (Exception e) {
-                        LOG.error("Error trying to kill {}", workerId, e);
-                    }
-                }
-                int shutdownSleepSecs = Utils.getInt(conf.get(Config.SUPERVISOR_WORKER_SHUTDOWN_SLEEP_SECS), 1);
-                if (!containers.isEmpty()) {
-                    Time.sleepSecs(shutdownSleepSecs);
-                }
-                for (Killable k: containers) {
-                    try {
-                        k.forceKill();
-                        while(!k.areAllProcessesDead()) {
-                            Time.sleep(100);
-                            k.forceKill();
-                        }
-                        k.cleanUp();
-                    } catch (Exception e) {
-                        LOG.error("Error trying to clean up {}", k, e);
-                    }
-                }
+                killWorkers(SupervisorUtils.supervisorWorkerIds(conf), launcher);
             } catch (Exception e) {
-                LOG.error("shutWorker failed");
                 throw Utils.wrapInRuntime(e);
             }
         }

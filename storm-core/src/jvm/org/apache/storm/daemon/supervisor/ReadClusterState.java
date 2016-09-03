@@ -18,6 +18,7 @@
 package org.apache.storm.daemon.supervisor;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -40,7 +41,6 @@ import org.apache.storm.generated.NodeInfo;
 import org.apache.storm.generated.ProfileRequest;
 import org.apache.storm.generated.WorkerResources;
 import org.apache.storm.localizer.ILocalizer;
-import org.apache.storm.messaging.IContext;
 import org.apache.storm.scheduler.ISupervisor;
 import org.apache.storm.utils.LocalState;
 import org.apache.storm.utils.Time;
@@ -66,36 +66,39 @@ public class ReadClusterState implements Runnable, AutoCloseable {
     private final AtomicReference<Map<Long, LocalAssignment>> cachedAssignments;
     
     public ReadClusterState(Supervisor supervisor) throws Exception {
-        this(supervisor.getConf(), supervisor.getStormClusterState(), supervisor.getEventManger(),
-                supervisor.getAssignmentId(), supervisor.getiSupervisor(),
-                supervisor.getAsyncLocalizer(), supervisor.getHostName(),
-                supervisor.getLocalState(), supervisor.getStormClusterState(),
-                supervisor.getCurrAssignment(), supervisor.getSharedContext());
-    }
-    
-    public ReadClusterState(Map<String, Object> superConf, IStormClusterState stormClusterState,
-            EventManager syncSupEventManager, String assignmentId, ISupervisor iSuper,
-            ILocalizer localizer, String host, LocalState localState,
-            IStormClusterState clusterState, AtomicReference<Map<Long, LocalAssignment>> cachedAssignments,
-            IContext sharedContext) throws Exception{
-        this.superConf = superConf;
-        this.stormClusterState = stormClusterState;
-        this.syncSupEventManager = syncSupEventManager;
+        this.superConf = supervisor.getConf();
+        this.stormClusterState = supervisor.getStormClusterState();
+        this.syncSupEventManager = supervisor.getEventManger();
         this.assignmentVersions = new AtomicReference<Map<String, VersionedData<Assignment>>>(new HashMap<String, VersionedData<Assignment>>());
-        this.assignmentId = assignmentId;
-        this.iSuper = iSuper;
-        this.localizer = localizer;
-        this.host = host;
-        this.localState = localState;
-        this.clusterState = clusterState;
-        this.cachedAssignments = cachedAssignments;
+        this.assignmentId = supervisor.getAssignmentId();
+        this.iSuper = supervisor.getiSupervisor();
+        this.localizer = supervisor.getAsyncLocalizer();
+        this.host = supervisor.getHostName();
+        this.localState = supervisor.getLocalState();
+        this.clusterState = supervisor.getStormClusterState();
+        this.cachedAssignments = supervisor.getCurrAssignment();
         
-        this.launcher = ContainerLauncher.make(superConf, assignmentId, sharedContext);
+        this.launcher = ContainerLauncher.make(superConf, assignmentId, supervisor.getSharedContext());
         
         @SuppressWarnings("unchecked")
         List<Number> ports = (List<Number>)superConf.get(Config.SUPERVISOR_SLOTS_PORTS);
         for (Number port: ports) {
             slots.put(port.intValue(), mkSlot(port.intValue()));
+        }
+        
+        try {
+            Collection<String> workers = SupervisorUtils.supervisorWorkerIds(superConf);
+            for (Slot slot: slots.values()) {
+                String workerId = slot.getWorkerId();
+                if (workerId != null) {
+                    workers.remove(workerId);
+                }
+            }
+            if (!workers.isEmpty()) {
+                supervisor.killWorkers(workers, launcher);
+            }
+        } catch (Exception e) {
+            LOG.warn("Error trying to clean up old workers", e);
         }
     }
 
