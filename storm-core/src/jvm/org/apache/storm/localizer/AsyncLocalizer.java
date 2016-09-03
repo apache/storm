@@ -38,6 +38,7 @@ import org.apache.storm.blobstore.ClientBlobStore;
 import org.apache.storm.daemon.Shutdownable;
 import org.apache.storm.daemon.supervisor.AdvancedFSOps;
 import org.apache.storm.daemon.supervisor.SupervisorUtils;
+import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.Utils;
@@ -283,7 +284,8 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
     }
 
     @Override
-    public synchronized Future<Void> requestDownloadBaseTopologyBlobs(final String topologyId, final int port) throws IOException {
+    public synchronized Future<Void> requestDownloadBaseTopologyBlobs(final LocalAssignment assignment, final int port) throws IOException {
+        final String topologyId = assignment.get_topology_id();
         LocalDownloadedResource localResource = _basicPending.get(topologyId);
         if (localResource == null) {
             Callable<Void> c;
@@ -295,7 +297,7 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
             localResource = new LocalDownloadedResource(_execService.submit(c));
             _basicPending.put(topologyId, localResource);
         }
-        return localResource.reserve(port);
+        return localResource.reserve(port, assignment);
     }
 
     private static String resourcesJar() throws IOException {
@@ -325,7 +327,8 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
     }
     
     @Override
-    public synchronized void recoverRunningTopology(String topologyId, int port) {
+    public synchronized void recoverRunningTopology(LocalAssignment assignment, int port) {
+        final String topologyId = assignment.get_topology_id();
         LocalDownloadedResource localResource = _basicPending.get(topologyId);
         if (localResource == null) {
             localResource = new LocalDownloadedResource(new AllDoneFuture());
@@ -339,22 +342,24 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
     }
     
     @Override
-    public synchronized Future<Void> requestDownloadTopologyBlobs(String topologyId, int port) {
+    public synchronized Future<Void> requestDownloadTopologyBlobs(LocalAssignment assignment, int port) {
+        final String topologyId = assignment.get_topology_id();
         LocalDownloadedResource localResource = _blobPending.get(topologyId);
         if (localResource == null) {
             Callable<Void> c = new DownloadBlobs(topologyId);
             localResource = new LocalDownloadedResource(_execService.submit(c));
             _blobPending.put(topologyId, localResource);
         }
-        return localResource.reserve(port);
+        return localResource.reserve(port, assignment);
     }
 
     @Override
-    public synchronized void releaseSlotFor(String topologyId, int port) throws IOException {
+    public synchronized void releaseSlotFor(LocalAssignment assignment, int port) throws IOException {
+        final String topologyId = assignment.get_topology_id();
         LOG.warn("Releaseing slot for {} {}", topologyId, port);
         LocalDownloadedResource localResource = _blobPending.get(topologyId);
-        if (localResource == null || !localResource.release(port)) {
-            LOG.warn("Released blob reference {} {} for something that we didn't have {}", topologyId, port, localResource.getPorts());
+        if (localResource == null || !localResource.release(port, assignment)) {
+            LOG.warn("Released blob reference {} {} for something that we didn't have {}", topologyId, port, localResource);
         } else if (localResource.isDone()){
             LOG.warn("Released blob reference {} {} Cleaning up BLOB references...", topologyId, port);
             _blobPending.remove(topologyId);
@@ -376,19 +381,19 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
                 }
             }
         } else {
-            LOG.warn("Released blob reference {} {} still waiting on {}", topologyId, port, localResource.getPorts());
+            LOG.warn("Released blob reference {} {} still waiting on {}", topologyId, port, localResource);
         }
         
         localResource = _basicPending.get(topologyId);
-        if (localResource == null || !localResource.release(port)) {
-            LOG.warn("Released basic reference {} {} for something that we didn't have {}", topologyId, port, localResource.getPorts());
+        if (localResource == null || !localResource.release(port, assignment)) {
+            LOG.warn("Released basic reference {} {} for something that we didn't have {}", topologyId, port, localResource);
         } else if (localResource.isDone()){
             LOG.warn("Released blob reference {} {} Cleaning up basic files...", topologyId, port);
             _basicPending.remove(topologyId);
             String path = ConfigUtils.supervisorStormDistRoot(_conf, topologyId);
             _fsOps.deleteIfExists(new File(path), null, "rmr "+topologyId);
         } else {
-            LOG.warn("Released basic reference {} {} still waiting on {}", topologyId, port, localResource.getPorts());
+            LOG.warn("Released basic reference {} {} still waiting on {}", topologyId, port, localResource);
         }
     }
 

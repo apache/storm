@@ -20,6 +20,8 @@ package org.apache.storm.localizer;
 import java.io.IOException;
 import java.util.concurrent.Future;
 
+import org.apache.storm.generated.LocalAssignment;
+
 /**
  * Download blobs from the blob store and keep them up to date.
  */
@@ -27,36 +29,36 @@ public interface ILocalizer {
 
     /**
      * Recover a running topology by incrementing references for what it has already downloaded.
-     * @param topologyId the topology the slot is using
+     * @param assignment the assignment the resources are for
      * @param port the port the topology is running in.
      */
-    void recoverRunningTopology(String topologyId, int port);
+    void recoverRunningTopology(LocalAssignment assignemnt, int port);
     
     /**
      * Download storm.jar, storm.conf, and storm.ser for this topology if not done so already,
      * and inc a reference count on them.
-     * @param topologyId the id of the topology to download them for
+     * @param assignment the assignment the resources are for
      * @param port the port the topology is running on
      * @return a future to let you know when they are done.
      * @throws IOException on error 
      */
-    Future<Void> requestDownloadBaseTopologyBlobs(String topologyId, int port) throws IOException;
+    Future<Void> requestDownloadBaseTopologyBlobs(LocalAssignment assignment, int port) throws IOException;
 
     /**
      * Download the blobs for this topology (reading in list in from the config)
      * and inc reference count for these blobs.
      * PRECONDITION: requestDownloadBaseTopologyBlobs has completed downloading.
-     * @param topologyId the id of the topology to download them for
+     * @param assignment the assignment the resources are for
      * @param port the port the topology is running on
      * @return a future to let you know when they are done.
      */
-    Future<Void> requestDownloadTopologyBlobs(String topologyId, int port);
+    Future<Void> requestDownloadTopologyBlobs(LocalAssignment assignment, int port);
     
     /**
      * dec reference count on all blobs associated with this topology.
-     * @param topologyId the topology to release
+     * @param assignment the assignment the resources are for
      * @param port the port the topology is running on
      * @throws IOException on any error
      */
-    void releaseSlotFor(String topologyId, int port) throws IOException;
+    void releaseSlotFor(LocalAssignment assignment, int port) throws IOException;
 }

@@ -34,6 +34,8 @@ import org.junit.Test;
 
 import org.apache.storm.Config;
 import org.apache.storm.blobstore.ClientBlobStore;
+import org.apache.storm.generated.ExecutorInfo;
+import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.localizer.LocalizedResource;
 import org.apache.storm.localizer.Localizer;
@@ -45,6 +47,12 @@ public class AsyncLocalizerTest {
     @Test
     public void testRequestDownloadBaseTopologyBlobs() throws Exception {
         final String topoId = "TOPO";
+        LocalAssignment la = new LocalAssignment();
+        la.set_topology_id(topoId);
+        ExecutorInfo ei = new ExecutorInfo();
+        ei.set_task_start(1);
+        ei.set_task_end(1);
+        la.add_to_executors(ei);
         final int port = 8080;
         final String jarKey = topoId + "-stormjar.jar";
         final String codeKey = topoId + "-stormcode.ser";
@@ -74,7 +82,7 @@ public class AsyncLocalizerTest {
             when(mockedU.newInstanceImpl(ClientBlobStore.class)).thenReturn(blobStore);
             when(mockedCU.readSupervisorStormConfImpl(conf, topoId)).thenReturn(topoConf);
 
-            Future<Void> f = al.requestDownloadBaseTopologyBlobs(topoId, port);
+            Future<Void> f = al.requestDownloadBaseTopologyBlobs(la, port);
             f.get(20, TimeUnit.SECONDS);
             // We should be done now...
             
@@ -99,6 +107,12 @@ public class AsyncLocalizerTest {
     @Test
     public void testRequestDownloadTopologyBlobs() throws Exception {
         final String topoId = "TOPO-12345";
+        LocalAssignment la = new LocalAssignment();
+        la.set_topology_id(topoId);
+        ExecutorInfo ei = new ExecutorInfo();
+        ei.set_task_start(1);
+        ei.set_task_end(1);
+        la.add_to_executors(ei);
         final String topoName = "TOPO";
         final int port = 8080;
         final String user = "user";
@@ -153,7 +167,7 @@ public class AsyncLocalizerTest {
             
             when(localizer.getBlobs(any(List.class), eq(user), eq(topoName), eq(userDir))).thenReturn(localizedList);
             
-            Future<Void> f = al.requestDownloadTopologyBlobs(topoId, port);
+            Future<Void> f = al.requestDownloadTopologyBlobs(la, port);
             f.get(20, TimeUnit.SECONDS);
             // We should be done now...
             

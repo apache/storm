@@ -150,11 +150,11 @@ public class SlotTest {
             
             @SuppressWarnings("unchecked")
             Future<Void> baseFuture = mock(Future.class);
-            when(localizer.requestDownloadBaseTopologyBlobs(topoId, port)).thenReturn(baseFuture);
+            when(localizer.requestDownloadBaseTopologyBlobs(newAssignment, port)).thenReturn(baseFuture);
             
             @SuppressWarnings("unchecked")
             Future<Void> blobFuture = mock(Future.class);
-            when(localizer.requestDownloadTopologyBlobs(topoId, port)).thenReturn(blobFuture);
+            when(localizer.requestDownloadTopologyBlobs(newAssignment, port)).thenReturn(blobFuture);
             
             ISupervisor iSuper = mock(ISupervisor.class);
             StaticState staticState = new StaticState(localizer, 5000, 120000, 1000, 1000,
@@ -163,7 +163,7 @@ public class SlotTest {
                     .withNewAssignment(newAssignment);
             
             DynamicState nextState = Slot.stateMachineStep(dynamicState, staticState);
-            verify(localizer).requestDownloadBaseTopologyBlobs(topoId, port);
+            verify(localizer).requestDownloadBaseTopologyBlobs(newAssignment, port);
             assertEquals(MachineState.WAITING_FOR_BASIC_LOCALIZATION, nextState.state);
             assertSame("pendingDownload not set properly", baseFuture, nextState.pendingDownload);
             assertEquals(newAssignment, nextState.pendingLocalization);
@@ -171,7 +171,7 @@ public class SlotTest {
             
             nextState = Slot.stateMachineStep(nextState, staticState);
             verify(baseFuture).get(1000, TimeUnit.MILLISECONDS);
-            verify(localizer).requestDownloadTopologyBlobs(topoId, port);
+            verify(localizer).requestDownloadTopologyBlobs(newAssignment, port);
             assertEquals(MachineState.WAITING_FOR_BLOB_LOCALIZATION, nextState.state);
             assertSame("pendingDownload not set properly", blobFuture, nextState.pendingDownload);
             assertEquals(newAssignment, nextState.pendingLocalization);
@@ -295,11 +295,11 @@ public class SlotTest {
             
             @SuppressWarnings("unchecked")
             Future<Void> baseFuture = mock(Future.class);
-            when(localizer.requestDownloadBaseTopologyBlobs(nTopoId, port)).thenReturn(baseFuture);
+            when(localizer.requestDownloadBaseTopologyBlobs(nAssignment, port)).thenReturn(baseFuture);
             
             @SuppressWarnings("unchecked")
             Future<Void> blobFuture = mock(Future.class);
-            when(localizer.requestDownloadTopologyBlobs(nTopoId, port)).thenReturn(blobFuture);
+            when(localizer.requestDownloadTopologyBlobs(nAssignment, port)).thenReturn(blobFuture);
             
             ISupervisor iSuper = mock(ISupervisor.class);
             StaticState staticState = new StaticState(localizer, 5000, 120000, 1000, 1000,
@@ -309,7 +309,7 @@ public class SlotTest {
             DynamicState nextState = Slot.stateMachineStep(dynamicState, staticState);
             assertEquals(MachineState.KILL, nextState.state);
             verify(cContainer).kill();
-            verify(localizer).requestDownloadBaseTopologyBlobs(nTopoId, port);
+            verify(localizer).requestDownloadBaseTopologyBlobs(nAssignment, port);
             assertSame("pendingDownload not set properly", baseFuture, nextState.pendingDownload);
             assertEquals(nAssignment, nextState.pendingLocalization);
             assertTrue(Time.currentTimeMillis() > 1000);
@@ -324,13 +324,13 @@ public class SlotTest {
             nextState = Slot.stateMachineStep(nextState, staticState);
             assertEquals(MachineState.WAITING_FOR_BASIC_LOCALIZATION, nextState.state);
             verify(cContainer).cleanUp();
-            verify(localizer).releaseSlotFor(cTopoId, port);
+            verify(localizer).releaseSlotFor(cAssignment, port);
             assertTrue(Time.currentTimeMillis() > 2000);
             
             nextState = Slot.stateMachineStep(nextState, staticState);
             assertEquals(MachineState.WAITING_FOR_BLOB_LOCALIZATION, nextState.state);
             verify(baseFuture).get(1000, TimeUnit.MILLISECONDS);
-            verify(localizer).requestDownloadTopologyBlobs(nTopoId, port);
+            verify(localizer).requestDownloadTopologyBlobs(nAssignment, port);
             assertSame("pendingDownload not set properly", blobFuture, nextState.pendingDownload);
             assertEquals(nAssignment, nextState.pendingLocalization);
             assertTrue(Time.currentTimeMillis() > 2000);
@@ -416,7 +416,7 @@ public class SlotTest {
             nextState = Slot.stateMachineStep(nextState, staticState);
             assertEquals(MachineState.EMPTY, nextState.state);
             verify(cContainer).cleanUp();
-            verify(localizer).releaseSlotFor(cTopoId, port);
+            verify(localizer).releaseSlotFor(cAssignment, port);
             assertEquals(null, nextState.container);
             assertEquals(null, nextState.currentAssignment);
             assertTrue(Time.currentTimeMillis() > 2000);

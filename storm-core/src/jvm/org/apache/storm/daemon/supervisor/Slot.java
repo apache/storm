@@ -299,7 +299,7 @@ public class Slot extends Thread implements AutoCloseable {
         if (dynamicState.newAssignment == null) {
             return dynamicState.withState(MachineState.EMPTY);
         }
-        Future<Void> pendingDownload = staticState.localizer.requestDownloadBaseTopologyBlobs(dynamicState.newAssignment.get_topology_id(), staticState.port);
+        Future<Void> pendingDownload = staticState.localizer.requestDownloadBaseTopologyBlobs(dynamicState.newAssignment, staticState.port);
         return dynamicState.withPendingLocalization(dynamicState.newAssignment, pendingDownload).withState(MachineState.WAITING_FOR_BASIC_LOCALIZATION);
     }
     
@@ -318,7 +318,7 @@ public class Slot extends Thread implements AutoCloseable {
         dynamicState.container.kill();
         Future<Void> pendingDownload = null;
         if (dynamicState.newAssignment != null) {
-            pendingDownload = staticState.localizer.requestDownloadBaseTopologyBlobs(dynamicState.newAssignment.get_topology_id(), staticState.port);
+            pendingDownload = staticState.localizer.requestDownloadBaseTopologyBlobs(dynamicState.newAssignment, staticState.port);
         }
         Time.sleep(staticState.killSleepMs);
         return dynamicState.withPendingLocalization(dynamicState.newAssignment, pendingDownload).withState(MachineState.KILL);
@@ -357,7 +357,7 @@ public class Slot extends Thread implements AutoCloseable {
         assert(dynamicState.currentAssignment != null);
         
         dynamicState.container.cleanUp();
-        staticState.localizer.releaseSlotFor(dynamicState.currentAssignment.get_topology_id(), staticState.port);
+        staticState.localizer.releaseSlotFor(dynamicState.currentAssignment, staticState.port);
         DynamicState ret = dynamicState.withCurrentAssignment(null, null);
         if (nextState != null) {
             ret = ret.withState(nextState);
@@ -384,7 +384,7 @@ public class Slot extends Thread implements AutoCloseable {
             //Downloading of all blobs finished.
             if (!equivalent(dynamicState.newAssignment, dynamicState.pendingLocalization)) {
                 //Scheduling changed
-                staticState.localizer.releaseSlotFor(dynamicState.pendingLocalization.get_topology_id(), staticState.port);
+                staticState.localizer.releaseSlotFor(dynamicState.pendingLocalization, staticState.port);
                 return prepareForNewAssignmentOnEmptySlot(dynamicState, staticState);
             }
             Container c = staticState.containerLauncher.launchContainer(staticState.port, dynamicState.pendingLocalization, staticState.localState);
@@ -412,7 +412,7 @@ public class Slot extends Thread implements AutoCloseable {
         //Ignore changes to scheduling while downloading the topology code
         try {
             dynamicState.pendingDownload.get(1000, TimeUnit.MILLISECONDS);
-            Future<Void> pendingDownload = staticState.localizer.requestDownloadTopologyBlobs(dynamicState.pendingLocalization.get_topology_id(), staticState.port);
+            Future<Void> pendingDownload = staticState.localizer.requestDownloadTopologyBlobs(dynamicState.pendingLocalization, staticState.port);
             return dynamicState.withPendingLocalization(pendingDownload).withState(MachineState.WAITING_FOR_BLOB_LOCALIZATION);
         } catch (TimeoutException e) {
             return dynamicState;
@@ -662,7 +662,7 @@ public class Slot extends Thread implements AutoCloseable {
         this.newAssignment.set(dynamicState.newAssignment);
         if (MachineState.RUNNING == dynamicState.state) {
             //We are running so we should recover the blobs.
-            staticState.localizer.recoverRunningTopology(currentAssignment.get_topology_id(), port);
+            staticState.localizer.recoverRunningTopology(currentAssignment, port);
         }
         LOG.warn("SLOT {}:{} Starting in state {} - assignment {}", staticState.host, staticState.port, dynamicState.state, dynamicState.currentAssignment);
     }
