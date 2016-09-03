@@ -94,8 +94,10 @@ public abstract class ContainerLauncher {
      * do not case the result to Container because only the Killable APIs
      * are guaranteed to work. 
      * @param workerId the id of the worker to use
+     * @param localState the state of the running supervisor
      * @return a Killable that can be used to kill the underlying container.
      * @throws IOException on any error
+     * @throws ContainerRecoveryException if the Container could not be recovered
      */
-    public abstract Killable recoverContainer(String workerId) throws IOException;
+    public abstract Killable recoverContainer(String workerId, LocalState localState) throws IOException, ContainerRecoveryException;
 }

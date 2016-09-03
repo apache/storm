@@ -288,12 +288,16 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
                 Collection<String> workerIds = SupervisorUtils.supervisorWorkerIds(conf);
                 HashSet<Killable> containers = new HashSet<>();
                 for (String workerId : workerIds) {
-                    Killable k = launcher.recoverContainer(workerId);
-                    if (!k.areAllProcessesDead()) {
-                        k.kill();
-                        containers.add(k);
-                    } else {
-                        k.cleanUp();
+                    try {
+                        Killable k = launcher.recoverContainer(workerId, localState);
+                        if (!k.areAllProcessesDead()) {
+                            k.kill();
+                            containers.add(k);
+                        } else {
+                            k.cleanUp();
+                        }
+                    } catch (Exception e) {
+                        LOG.error("Error trying to kill {}", workerId, e);
                     }
                 }
                 int shutdownSleepSecs = Utils.getInt(conf.get(Config.SUPERVISOR_WORKER_SHUTDOWN_SLEEP_SECS), 1);
@@ -301,12 +305,16 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
                     Time.sleepSecs(shutdownSleepSecs);
                 }
                 for (Killable k: containers) {
-                    k.forceKill();
-                    while(!k.areAllProcessesDead()) {
-                        Time.sleep(100);
+                    try {
                         k.forceKill();
+                        while(!k.areAllProcessesDead()) {
+                            Time.sleep(100);
+                            k.forceKill();
+                        }
+                        k.cleanUp();
+                    } catch (Exception e) {
+                        LOG.error("Error trying to clean up {}", k, e);
                     }
-                    k.cleanUp();
                 }
             } catch (Exception e) {
                 LOG.error("shutWorker failed");

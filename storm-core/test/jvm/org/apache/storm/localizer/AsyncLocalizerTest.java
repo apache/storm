@@ -122,7 +122,6 @@ public class AsyncLocalizerTest {
         final String stormLocal = "/tmp/storm-local/";
         final File userDir = new File(stormLocal, user);
         final String stormRoot = stormLocal+topoId+"/";
-        final File stormcode = new File(stormRoot, "stormcode.ser");
         
         final String localizerRoot = "/tmp/storm-localizer/";
         final String simpleLocalFile = localizerRoot + user + "/simple";

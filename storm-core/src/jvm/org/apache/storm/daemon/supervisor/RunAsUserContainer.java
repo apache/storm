@@ -33,17 +33,11 @@ import org.slf4j.LoggerFactory;
 public class RunAsUserContainer extends BasicContainer {
     private static final Logger LOG = LoggerFactory.getLogger(RunAsUserContainer.class);
 
-    public RunAsUserContainer(int port, LocalAssignment assignment, Map<String, Object> conf, String supervisorId,
-            LocalState state, ResourceIsolationInterface resourceIsolationManager, boolean recover) throws IOException {
-        super(port, assignment, conf, supervisorId, state, resourceIsolationManager, recover);
-        if (Utils.isOnWindows()) {
-            throw new UnsupportedOperationException("ERROR: Windows doesn't support running workers as different users yet");
-        }
-    }
-
-    public RunAsUserContainer(String workerId, Map<String, Object> conf, String supervisorId,
-            ResourceIsolationInterface resourceIsolationManager) throws IOException {
-        super(workerId, conf, supervisorId, resourceIsolationManager);
+    public RunAsUserContainer(ContainerType type, Map<String, Object> conf, String supervisorId, int port,
+            LocalAssignment assignment, ResourceIsolationInterface resourceIsolationManager, LocalState localState,
+            String workerId, Map<String, Object> topoConf, AdvancedFSOps ops, String profileCmd) throws IOException {
+        super(type, conf, supervisorId, port, assignment, resourceIsolationManager, localState, workerId, topoConf, ops,
+                profileCmd);
         if (Utils.isOnWindows()) {
             throw new UnsupportedOperationException("ERROR: Windows doesn't support running workers as different users yet");
         }

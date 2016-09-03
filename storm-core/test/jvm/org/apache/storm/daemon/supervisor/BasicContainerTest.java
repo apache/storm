@@ -14,6 +14,7 @@ import java.util.Map;
 
 import org.apache.storm.Config;
 import org.apache.storm.container.ResourceIsolationInterface;
+import org.apache.storm.daemon.supervisor.Container.ContainerType;
 import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.generated.ProfileAction;
 import org.apache.storm.generated.ProfileRequest;
@@ -36,22 +37,18 @@ public class BasicContainerTest {
     }
     
     public static class MockBasicContainer extends BasicContainer {
+        public MockBasicContainer(ContainerType type, Map<String, Object> conf, String supervisorId, int port,
+                LocalAssignment assignment, ResourceIsolationInterface resourceIsolationManager, LocalState localState,
+                String workerId, Map<String, Object> topoConf, AdvancedFSOps ops, String profileCmd)
+                throws IOException {
+            super(type, conf, supervisorId, port, assignment, resourceIsolationManager, localState, workerId, topoConf, ops,
+                    profileCmd);
+        }
+
         public final List<CommandRun> profileCmds = new ArrayList<>();
         public final List<CommandRun> workerCmds = new ArrayList<>();
         
-        public MockBasicContainer(int port, LocalAssignment assignment, Map<String, Object> conf,
-                String supervisorId, LocalState localState, ResourceIsolationInterface resourceIsolationManager,
-                boolean recover) throws IOException {
-            super(port, assignment, conf, supervisorId, localState, resourceIsolationManager, recover);
-        }
-        
-        public MockBasicContainer(AdvancedFSOps ops, int port, LocalAssignment assignment,
-                Map<String, Object> conf, Map<String, Object> topoConf, String supervisorId, 
-                ResourceIsolationInterface resourceIsolationManager, LocalState localState,
-                String profileCmd) throws IOException {
-            super(ops, port, assignment, conf, topoConf, supervisorId, resourceIsolationManager, localState, profileCmd);
-        }
-        
+
         @Override
         protected Map<String, Object> readTopoConf() throws IOException {
             return new HashMap<>();
@@ -106,14 +103,15 @@ public class BasicContainerTest {
         LocalAssignment la = new LocalAssignment();
         la.set_topology_id(topoId);
         
+        Map<String, Object> superConf = new HashMap<>();
         AdvancedFSOps ops = mock(AdvancedFSOps.class);
+        when(ops.doRequiredTopoFilesExist(superConf, topoId)).thenReturn(true);
         
         LocalState ls = mock(LocalState.class);
         
-        MockBasicContainer mc = new MockBasicContainer(ops, port, la, new HashMap<String, Object>(), 
-                new HashMap<String, Object>(), "SUPERVISOR", null, ls, "profile");
-        
-        mc.createNewWorkerId();
+        MockBasicContainer mc = new MockBasicContainer(ContainerType.LAUNCH, superConf, 
+                "SUPERVISOR", port, la, null, ls, null, new HashMap<>(), ops, "profile");
+        //null worker id means generate one...
         
         assertNotNull(mc._workerId);
         verify(ls).getApprovedWorkers();
@@ -136,8 +134,12 @@ public class BasicContainerTest {
         LocalState ls = mock(LocalState.class);
         when(ls.getApprovedWorkers()).thenReturn(workerState);
         
-        MockBasicContainer mc = new MockBasicContainer(port, la, new HashMap<String, Object>(), 
-                "SUPERVISOR", ls, null, true);
+        Map<String, Object> superConf = new HashMap<>();
+        AdvancedFSOps ops = mock(AdvancedFSOps.class);
+        when(ops.doRequiredTopoFilesExist(superConf, topoId)).thenReturn(true);
+        
+        MockBasicContainer mc = new MockBasicContainer(ContainerType.RECOVER_FULL, superConf, 
+                "SUPERVISOR", port, la, null, ls, null, new HashMap<>(), ops, "profile");
         
         assertEquals(workerId, mc._workerId);
     }
@@ -156,8 +158,8 @@ public class BasicContainerTest {
         when(ls.getApprovedWorkers()).thenReturn(workerState);
         
         try {
-            new MockBasicContainer(port, la, new HashMap<String, Object>(), 
-                    "SUPERVISOR", ls, null, true);
+            new MockBasicContainer(ContainerType.RECOVER_FULL, new HashMap<String, Object>(), 
+                    "SUPERVISOR", port, la, null, ls, null, new HashMap<>(), null, "profile");
             fail("Container recovered worker incorrectly");
         } catch (ContainerRecoveryException e) {
             //Expected
@@ -172,7 +174,9 @@ public class BasicContainerTest {
         LocalAssignment la = new LocalAssignment();
         la.set_topology_id(topoId);
         
+        Map<String, Object> superConf = new HashMap<>();
         AdvancedFSOps ops = mock(AdvancedFSOps.class);
+        when(ops.doRequiredTopoFilesExist(superConf, topoId)).thenReturn(true);
         
         Map<String, Integer> workerState = new HashMap<String, Integer>();
         workerState.put(workerId, port);
@@ -180,9 +184,8 @@ public class BasicContainerTest {
         LocalState ls = mock(LocalState.class);
         when(ls.getApprovedWorkers()).thenReturn(new HashMap<>(workerState));
         
-        MockBasicContainer mc = new MockBasicContainer(ops, port, la, new HashMap<String, Object>(), 
-                new HashMap<String, Object>(), "SUPERVISOR", null, ls, "profile");
-        mc._workerId = workerId;
+        MockBasicContainer mc = new MockBasicContainer(ContainerType.LAUNCH, superConf, 
+                "SUPERVISOR", port, la, null, ls, workerId, new HashMap<>(), ops, "profile");
         
         mc.cleanUp();
         
@@ -210,13 +213,13 @@ public class BasicContainerTest {
         la.set_topology_id(topoId);
         
         AdvancedFSOps ops = mock(AdvancedFSOps.class);
+        when(ops.doRequiredTopoFilesExist(superConf, topoId)).thenReturn(true);
         when(ops.slurpString(workerArtifactsPid)).thenReturn(String.valueOf(pid));
         
         LocalState ls = mock(LocalState.class);
         
-        MockBasicContainer mc = new MockBasicContainer(ops, port, la, superConf, 
-                new HashMap<String, Object>(), "SUPERVISOR", null, ls, "profile");
-        mc._workerId = workerId;
+        MockBasicContainer mc = new MockBasicContainer(ContainerType.LAUNCH, superConf, 
+                "SUPERVISOR", port, la, null, ls, workerId, new HashMap<>(), ops, "profile");
         
         //HEAP DUMP
         ProfileRequest req = new ProfileRequest();
@@ -364,15 +367,15 @@ public class BasicContainerTest {
         la.set_topology_id(topoId);
         
         AdvancedFSOps ops = mock(AdvancedFSOps.class);
+        when(ops.doRequiredTopoFilesExist(superConf, topoId)).thenReturn(true);
         when(ops.slurp(stormcode)).thenReturn(serializedState);
         
         LocalState ls = mock(LocalState.class);
         
         
         checkpoint(() -> {
-            MockBasicContainer mc = new MockBasicContainer(ops, port, la, superConf, 
-                    new HashMap<String, Object>(), "SUPERVISOR", null, ls, "profile");
-            mc._workerId = workerId;
+            MockBasicContainer mc = new MockBasicContainer(ContainerType.LAUNCH, superConf, 
+                    "SUPERVISOR", port, la, null, ls, workerId, new HashMap<>(), ops, "profile");
 
             mc.launch();
 
@@ -436,13 +439,15 @@ public class BasicContainerTest {
         LocalAssignment la = new LocalAssignment();
         la.set_topology_id(topoId);
         
+        Map<String, Object> superConf = new HashMap<>();
+        
         AdvancedFSOps ops = mock(AdvancedFSOps.class);
+        when(ops.doRequiredTopoFilesExist(superConf, topoId)).thenReturn(true);
         
         LocalState ls = mock(LocalState.class);
         
-        MockBasicContainer mc = new MockBasicContainer(ops, port, la, new HashMap<String, Object>(), 
-                new HashMap<String, Object>(), "SUPERVISOR", null, ls, "profile");
-        mc._workerId = workerId;
+        MockBasicContainer mc = new MockBasicContainer(ContainerType.LAUNCH, superConf, 
+                "SUPERVISOR", port, la, null, ls, workerId, new HashMap<>(), ops, "profile");
         
         assertListEquals(Arrays.asList(
                 "-Xloggc:/tmp/storm/logs/gc.worker-9999-s-01-w-01-9999.log",

@@ -34,6 +34,7 @@ import java.util.Set;
 
 import org.apache.storm.Config;
 import org.apache.storm.container.ResourceIsolationInterface;
+import org.apache.storm.daemon.supervisor.Container.ContainerType;
 import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.generated.ProfileRequest;
 import org.junit.Test;
@@ -43,17 +44,16 @@ import com.google.common.base.Joiner;
 
 public class ContainerTest {
     public static class MockContainer extends Container {
+        
+        protected MockContainer(ContainerType type, Map<String, Object> conf, String supervisorId, int port,
+                LocalAssignment assignment, ResourceIsolationInterface resourceIsolationManager, String workerId,
+                Map<String, Object> topoConf, AdvancedFSOps ops) throws IOException {
+            super(type, conf, supervisorId, port, assignment, resourceIsolationManager, workerId, topoConf, ops);
+        }
+
         public final List<Long> killedPids = new ArrayList<>();
         public final List<Long> forceKilledPids = new ArrayList<>();
         public final Set<Long> allPids = new HashSet<>();
-
-        protected MockContainer(AdvancedFSOps ops, int port, LocalAssignment assignment,
-                Map<String, Object> conf, Map<String, Object> topoConf,
-                String supervisorId, ResourceIsolationInterface resourceIsolationManager,
-                String workerId) throws IOException {
-            super(ops, port, assignment, conf, topoConf, supervisorId, resourceIsolationManager);
-            _workerId = workerId;
-        }
 
         @Override
         protected void kill(long pid) {
@@ -95,11 +95,14 @@ public class ContainerTest {
 
     @Test
     public void testKill() throws Exception {
+        final String topoId = "test_topology";
+        final Map<String, Object> superConf = new HashMap<>();
         AdvancedFSOps ops = mock(AdvancedFSOps.class);
+        when(ops.doRequiredTopoFilesExist(superConf, topoId)).thenReturn(true);
         LocalAssignment la = new LocalAssignment();
-        la.set_topology_id("test_topology");
-        MockContainer mc = new MockContainer(ops, 8080, la, new HashMap<>(), 
-                new HashMap<>(), "SUPERVISOR", null, "worker");
+        la.set_topology_id(topoId);
+        MockContainer mc = new MockContainer(ContainerType.LAUNCH, superConf, 
+                "SUPERVISOR", 8080, la, null, "worker", new HashMap<>(), ops);
         mc.kill();
         assertEquals(Collections.EMPTY_LIST, mc.killedPids);
         assertEquals(Collections.EMPTY_LIST, mc.forceKilledPids);
@@ -179,7 +182,8 @@ public class ContainerTest {
         
         LocalAssignment la = new LocalAssignment();
         la.set_topology_id(topoId);
-        MockContainer mc = new MockContainer(ops, port, la, superConf,  topoConf, "SUPERVISOR", null, workerId);
+        MockContainer mc = new MockContainer(ContainerType.LAUNCH, superConf, 
+                "SUPERVISOR", 8080, la, null, workerId, topoConf, ops);
         
         mc.setup();
         
@@ -248,7 +252,8 @@ public class ContainerTest {
         
         LocalAssignment la = new LocalAssignment();
         la.set_topology_id(topoId);
-        MockContainer mc = new MockContainer(ops, port, la, superConf,  topoConf, "SUPERVISOR", iso, workerId);
+        MockContainer mc = new MockContainer(ContainerType.LAUNCH, superConf, 
+                "SUPERVISOR", port, la, iso, workerId, topoConf, ops);
         mc.allPids.add(pid);
         
         mc.cleanUp();

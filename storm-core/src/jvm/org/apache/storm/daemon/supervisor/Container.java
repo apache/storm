@@ -19,13 +19,11 @@ package org.apache.storm.daemon.supervisor;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.Reader;
 import java.io.Writer;
 import java.lang.ProcessBuilder.Redirect;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -49,45 +47,104 @@ import org.yaml.snakeyaml.Yaml;
  * Represents a container that a worker will run in.
  */
 public abstract class Container implements Killable {
-    private static final Logger LOG = LoggerFactory.getLogger(BasicContainer.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Container.class);
+    public static enum ContainerType {
+        LAUNCH(false, false),
+        RECOVER_FULL(true, false),
+        RECOVER_PARTIAL(true, true);
+
+        private final boolean _recovery;
+        private final boolean _onlyKillable;
+        
+        ContainerType(boolean recovery, boolean onlyKillable) {
+            _recovery = recovery;
+            _onlyKillable = onlyKillable;
+        }
+        
+        public boolean isRecovery() {
+            return _recovery;
+        }
+        
+        public void assertFull() {
+            if (_onlyKillable) {
+                throw new IllegalStateException("Container is only Killable.");
+            }
+        }
+        
+        public boolean isOnlyKillable() {
+            return _onlyKillable;
+        }
+    }
+    
     protected final Map<String, Object> _conf;
-    protected final Map<String, Object> _topoConf;
-    protected String _workerId;
-    protected final String _topologyId;
+    protected final Map<String, Object> _topoConf; //Not set if RECOVER_PARTIAL
+    protected String _workerId; 
+    protected final String _topologyId; //Not set if RECOVER_PARTIAL
     protected final String _supervisorId;
-    protected final int _port;
-    protected final LocalAssignment _assignment;
+    protected final int _port; //Not set if RECOVER_PARTIAL
+    protected final LocalAssignment _assignment; //Not set if RECOVER_PARTIAL
     protected final AdvancedFSOps _ops;
     protected final ResourceIsolationInterface _resourceIsolationManager;
+    protected ContainerType _type;
     
-    //Exposed for testing
-    protected Container(AdvancedFSOps ops, int port, LocalAssignment assignment,
-            Map<String, Object> conf, Map<String, Object> topoConf, String supervisorId, 
-            ResourceIsolationInterface resourceIsolationManager) throws IOException {
-        assert((assignment == null && port <= 0) ||
-                (assignment != null && port > 0));
+    /**
+     * Create a new Container.
+     * @param type the type of container being made.
+     * @param conf the supervisor config
+     * @param supervisorId the ID of the supervisor this is a part of.
+     * @param port the port the container is on.  Should be <= 0 if only a partial recovery
+     * @param assignment the assignment for this container. Should be null if only a partial recovery.
+     * @param resourceIsolationManager used to isolate resources for a container can be null if no isolation is used.
+     * @param workerId the id of the worker to use.  Must not be null if doing a partial recovery.
+     * @param topoConf the config of the topology (mostly for testing) if null 
+     * and not a partial recovery the real conf is read.
+     * @param ops file system operations (mostly for testing) if null a new one is made
+     * @throws IOException on any error.
+     */
+    protected Container(ContainerType type, Map<String, Object> conf, String supervisorId,
+            int port, LocalAssignment assignment, ResourceIsolationInterface resourceIsolationManager,
+            String workerId, Map<String, Object> topoConf,  AdvancedFSOps ops) throws IOException {
+        assert(type != null);
         assert(conf != null);
-        assert(ops != null);
         assert(supervisorId != null);
         
+        if (ops == null) {
+            ops = AdvancedFSOps.make(conf);
+        }
+        
+        _workerId = workerId;
+        _type = type;
         _port = port;
         _ops = ops;
-        _assignment = assignment;
-        if (assignment != null) {
-            _topologyId = assignment.get_topology_id();
-        } else {
-            _topologyId = null;
-        }
         _conf = conf;
         _supervisorId = supervisorId;
         _resourceIsolationManager = resourceIsolationManager;
-        if (topoConf == null) {
-            _topoConf = readTopoConf();
+        _assignment = assignment;
+        
+        if (_type.isOnlyKillable()) {
+            assert(_assignment == null);
+            assert(_port <= 0);
+            assert(_workerId != null);
+            _topologyId = null;
+            _topoConf = null;
         } else {
-            _topoConf = topoConf;
+            assert(assignment != null);
+            assert(port > 0);
+            _topologyId = assignment.get_topology_id();
+            if (!_ops.doRequiredTopoFilesExist(_conf, _topologyId)) {
+                LOG.info("Missing topology storm code, so can't launch  worker with assignment {} for this supervisor {} on port {} with id {}", _assignment,
+                        _supervisorId, _port, _workerId);
+                throw new ContainerRecoveryException("Missing required topology files...");
+            }
+            if (topoConf == null) {
+                _topoConf = readTopoConf();
+            } else {
+                //For testing...
+                _topoConf = topoConf;
+            }
         }
     }
-
+    
     @Override
     public String toString() {
         return this.getClass().getSimpleName() + " topo:" + _topologyId + " worker:" + _workerId;
@@ -96,24 +153,6 @@ public abstract class Container implements Killable {
     protected Map<String, Object> readTopoConf() throws IOException {
         assert(_topologyId != null);
         return ConfigUtils.readSupervisorStormConf(_conf, _topologyId);
-    }
-    
-    protected Container(int port, LocalAssignment assignment, Map<String, Object> conf, 
-            String supervisorId, ResourceIsolationInterface resourceIsolationManager) throws IOException {
-        this(AdvancedFSOps.make(conf), port, assignment, conf, null, supervisorId, resourceIsolationManager);
-    }
-    
-    /**
-     * Constructor to use when trying to recover a container from just the worker ID.
-     * @param workerId the id of the worker
-     * @param conf the config of the supervisor
-     * @param supervisorId the id of the supervisor
-     * @param resourceIsolationManager the isolation manager.
-     * @throws IOException on any error
-     */
-    protected Container(String workerId, Map<String, Object> conf, 
-            String supervisorId, ResourceIsolationInterface resourceIsolationManager) throws IOException {
-        this(AdvancedFSOps.make(conf), -1, null, conf, null, supervisorId, resourceIsolationManager);
     }
     
     /**
@@ -244,11 +283,7 @@ public abstract class Container implements Killable {
      * @throws IOException on any error
      */
     protected void setup() throws IOException {
-        if (_port <= 0) {
-            //With healthcheck and others at times the Container was not constructed with enough information
-            // to relaunch it, just enough to kill it.  This is marked by having the port be invalid.
-            throw new IllegalStateException("Cannot setup a container recovered for killing");
-        }
+        _type.assertFull();
         if (!_ops.doRequiredTopoFilesExist(_conf, _topologyId)) {
             LOG.info("Missing topology storm code, so can't launch  worker with assignment {} for this supervisor {} on port {} with id {}", _assignment,
                     _supervisorId, _port, _workerId);
@@ -280,9 +315,7 @@ public abstract class Container implements Killable {
      */
     @SuppressWarnings("unchecked")
     protected void writeLogMetadata(String user) throws IOException {
-        if (_port <= 0) {
-            throw new IllegalStateException("Cannot setup a container recovered with just a worker id");
-        }
+        _type.assertFull();
         Map<String, Object> data = new HashMap<>();
         data.put(Config.TOPOLOGY_SUBMITTER_USER, user);
         data.put("worker-id", _workerId);
@@ -328,9 +361,7 @@ public abstract class Container implements Killable {
      * @throws IOException on any error
      */
     protected void createArtifactsLink() throws IOException {
-        if (_port <= 0) {
-            throw new IllegalStateException("Cannot setup a container recovered with just a worker id");
-        }
+        _type.assertFull();
         File workerDir = new File(ConfigUtils.workerRoot(_conf, _workerId));
         File topoDir = new File(ConfigUtils.workerArtifactsRoot(_conf, _topologyId, _port));
         if (_ops.fileExists(workerDir)) {
@@ -345,6 +376,7 @@ public abstract class Container implements Killable {
      * @throws IOException on any error.
      */
     protected void createBlobstoreLinks() throws IOException {
+        _type.assertFull();
         String stormRoot = ConfigUtils.supervisorStormDistRoot(_conf, _topologyId);
         String workerRoot = ConfigUtils.workerRoot(_conf, _workerId);
         
@@ -407,10 +439,19 @@ public abstract class Container implements Killable {
         } else if (_topoConf != null) { 
             return (String) _topoConf.get(Config.TOPOLOGY_SUBMITTER_USER);
         }
-        return System.getProperty("user.name");
+        if (ConfigUtils.isLocalMode(_conf)) {
+            return System.getProperty("user.name");
+        } else {
+            File f = new File(ConfigUtils.workerArtifactsRoot(_conf));
+            if (f.exists()) {
+                return Files.getOwner(f.toPath()).getName();
+            }
+            throw new IllegalStateException("Could not recover the user for " + _workerId);
+        }
     }
     
     protected void saveWorkerUser(String user) throws IOException {
+        _type.assertFull();
         LOG.info("SET worker-user {} {}", _workerId, user);
         _ops.dump(new File(ConfigUtils.workerUserFile(_conf, _workerId)), user);
     }

@@ -40,7 +40,7 @@ public class LocalContainerLauncher extends ContainerLauncher {
 
     @Override
     public Container launchContainer(int port, LocalAssignment assignment, LocalState state) throws IOException {
-        LocalContainer ret = new LocalContainer(port, assignment, _conf, _supervisorId, _sharedContext);
+        LocalContainer ret = new LocalContainer(_conf, _supervisorId, port, assignment, _sharedContext);
         ret.setup();
         ret.launch();
         return ret;
@@ -53,8 +53,8 @@ public class LocalContainerLauncher extends ContainerLauncher {
     }
 
     @Override
-    public Killable recoverContainer(String workerId) throws IOException {
+    public Killable recoverContainer(String workerId, LocalState localState) throws IOException {
         //We are in the same process we cannot recover anything
-        return null;
+        throw new ContainerRecoveryException("Local Mode Recovery is not supported");
     }
 }

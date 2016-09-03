@@ -80,24 +80,31 @@ public class BasicContainer extends Container {
             _exitedEarly = true;
         }
     }
-
-    //For testing purposes
-    public BasicContainer(AdvancedFSOps ops, int port, LocalAssignment assignment,
-            Map<String, Object> conf, Map<String, Object> topoConf, String supervisorId, 
-            ResourceIsolationInterface resourceIsolationManager, LocalState localState,
-            String profileCmd) throws IOException {
-        super(ops, port, assignment, conf, topoConf, supervisorId, resourceIsolationManager);
-        _localState = localState;
-        _profileCmd = profileCmd;
-    }
     
-    public BasicContainer(int port, LocalAssignment assignment, Map<String, Object> conf, String supervisorId,
-            LocalState localState, ResourceIsolationInterface resourceIsolationManager, boolean recover)
-            throws IOException {
-        super(port, assignment, conf, supervisorId, resourceIsolationManager);
+    /**
+     * Create a new BasicContainer
+     * @param type the type of container being made.
+     * @param conf the supervisor config
+     * @param supervisorId the ID of the supervisor this is a part of.
+     * @param port the port the container is on.  Should be <= 0 if only a partial recovery
+     * @param assignment the assignment for this container. Should be null if only a partial recovery.
+     * @param resourceIsolationManager used to isolate resources for a container can be null if no isolation is used.
+     * @param localState the local state of the supervisor.  May be null if partial recovery
+     * @param workerId the id of the worker to use.  Must not be null if doing a partial recovery.
+     * @param ops file system operations (mostly for testing) if null a new one is made
+     * @param topoConf the config of the topology (mostly for testing) if null 
+     * and not a partial recovery the real conf is read.
+     * @param profileCmd the command to use when profiling (used for testing)
+     */
+    public BasicContainer(ContainerType type, Map<String, Object> conf, String supervisorId, int port,
+            LocalAssignment assignment, ResourceIsolationInterface resourceIsolationManager,
+            LocalState localState, String workerId, Map<String, Object> topoConf, 
+            AdvancedFSOps ops, String profileCmd) throws IOException {
+        super(type, conf, supervisorId, port, assignment, resourceIsolationManager, workerId, topoConf, ops);
+        assert(localState != null);
         _localState = localState;
 
-        if (recover) {
+        if (type.isRecovery() && !type.isOnlyKillable()) {
             synchronized (localState) {
                 String wid = null;
                 Map<String, Integer> workerToPort = localState.getApprovedWorkers();
@@ -112,20 +119,15 @@ public class BasicContainer extends Container {
                 LOG.info("Recovered Worker {}", wid);
                 _workerId = wid;
             }
-        } else {
+        } else if (_workerId == null){
             createNewWorkerId();
         }
 
-        _profileCmd = _stormHome + Utils.FILE_PATH_SEPARATOR + "bin" + Utils.FILE_PATH_SEPARATOR
-                + conf.get(Config.WORKER_PROFILER_COMMAND);
-    }
-
-    public BasicContainer(String workerId, Map<String, Object> conf, String supervisorId,
-            ResourceIsolationInterface resourceIsolationManager) throws IOException {
-        super(-1, null, conf, supervisorId, resourceIsolationManager);
-        _localState = null;
-        _workerId = workerId;
-        _profileCmd = null;
+        if (profileCmd == null) {
+            profileCmd = _stormHome + Utils.FILE_PATH_SEPARATOR + "bin" + Utils.FILE_PATH_SEPARATOR
+                    + conf.get(Config.WORKER_PROFILER_COMMAND);
+        }
+        _profileCmd = profileCmd;
     }
 
     /**
@@ -134,10 +136,7 @@ public class BasicContainer extends Container {
      * We will lose track of the process.
      */
     protected void createNewWorkerId() {
-        if (_port <= 0) {
-            throw new IllegalStateException(
-                    "Cannot create a worker id for a container recovered with just a worker id");
-        }
+        _type.assertFull();
         assert(_workerId == null);
         synchronized (_localState) {
             _workerId = Utils.uuid();
@@ -156,6 +155,7 @@ public class BasicContainer extends Container {
         for (Iterator<Entry<String, Integer>> i = workerToPort.entrySet().iterator(); i.hasNext();) {
             Entry<String, Integer> found = i.next();
             if (_port == found.getValue().intValue()) {
+                LOG.warn("Deleting worker {} from state", found.getKey());
                 i.remove();
             }
         }
@@ -176,6 +176,9 @@ public class BasicContainer extends Container {
 
     @Override
     public void relaunch() throws IOException {
+        _type.assertFull();
+        //We are launching it now...
+        _type = ContainerType.LAUNCH;
         createNewWorkerId();
         setup();
         launch();
@@ -205,6 +208,7 @@ public class BasicContainer extends Container {
      */
     protected boolean runProfilingCommand(List<String> command, Map<String, String> env, String logPrefix,
             File targetDir) throws IOException, InterruptedException {
+        _type.assertFull();
         Process p = SupervisorUtils.launchProcess(command, env, logPrefix, null, targetDir);
         int ret = p.waitFor();
         return ret == 0;
@@ -212,9 +216,7 @@ public class BasicContainer extends Container {
 
     @Override
     public boolean runProfiling(ProfileRequest request, boolean stop) throws IOException, InterruptedException {
-        if (_port <= 0) {
-            throw new IllegalStateException("Cannot profile a container recovered with just a worker id");
-        }
+        _type.assertFull();
         String targetDir = ConfigUtils.workerArtifactsRoot(_conf, _topologyId, _port);
 
         @SuppressWarnings("unchecked")
@@ -598,9 +600,7 @@ public class BasicContainer extends Container {
 
     @Override
     public void launch() throws IOException {
-        if (_port <= 0) {
-            throw new IllegalStateException("Cannot launch a container recovered with just a worker id");
-        }
+        _type.assertFull();
         LOG.info("Launching worker with assignment {} for this supervisor {} on port {} with id {}", _assignment,
                 _supervisorId, _port, _workerId);
         String logPrefix = "Worker Process " + _workerId;

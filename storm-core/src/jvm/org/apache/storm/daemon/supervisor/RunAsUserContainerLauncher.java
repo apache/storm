@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.Map;
 
 import org.apache.storm.container.ResourceIsolationInterface;
+import org.apache.storm.daemon.supervisor.Container.ContainerType;
 import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.utils.LocalState;
 
@@ -37,8 +38,8 @@ public class RunAsUserContainerLauncher extends ContainerLauncher {
 
     @Override
     public Container launchContainer(int port, LocalAssignment assignment, LocalState state) throws IOException {
-        Container container = new RunAsUserContainer(port, assignment, _conf, _supervisorId, state,
-                _resourceIsolationManager, false);
+        Container container = new RunAsUserContainer(ContainerType.LAUNCH, _conf, _supervisorId, port, assignment,
+                _resourceIsolationManager, state, null, null, null, null);
         container.setup();
         container.launch();
         return container;
@@ -48,8 +49,8 @@ public class RunAsUserContainerLauncher extends ContainerLauncher {
     public Container recoverContainer(int port, LocalAssignment assignment, LocalState state) throws IOException {
         Container container = null;
         try {
-            container = new RunAsUserContainer(port, assignment, _conf, _supervisorId, state, 
-                    _resourceIsolationManager, true);
+            container = new RunAsUserContainer(ContainerType.RECOVER_FULL, _conf, _supervisorId, port, assignment,
+                    _resourceIsolationManager, state, null, null, null, null);
         } catch (ContainerRecoveryException e) {
             // We could not recover return null
         }
@@ -57,15 +58,9 @@ public class RunAsUserContainerLauncher extends ContainerLauncher {
     }
     
     @Override
-    public Killable recoverContainer(String workerId) throws IOException {
-        Container container = null;
-        try {
-            container = new RunAsUserContainer(workerId, _conf, _supervisorId, 
-                    _resourceIsolationManager);
-        } catch (ContainerRecoveryException e) {
-            // We could not recover return null
-        }
-        return container;
+    public Killable recoverContainer(String workerId, LocalState localState) throws IOException {
+        return new RunAsUserContainer(ContainerType.RECOVER_PARTIAL, _conf, _supervisorId, -1, null,
+                _resourceIsolationManager, localState, workerId, null, null, null);
     }
 
 }
