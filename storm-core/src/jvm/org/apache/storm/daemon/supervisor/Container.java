@@ -191,7 +191,8 @@ public abstract class Container implements Killable {
                     //Example line: "User Name:    exampleDomain\exampleUser"
                     List<String> userNameLineSplitOnWhitespace = Arrays.asList(read.split(":"));
                     if(userNameLineSplitOnWhitespace.size() == 2){
-                        String processUser = userNameLineSplitOnWhitespace.get(1).trim();
+                        List<String> userAndMaybeDomain = Arrays.asList(userNameLineSplitOnWhitespace.get(1).trim().split("\\\\"));
+                        String processUser = userAndMaybeDomain.size() == 2 ? userAndMaybeDomain.get(1) : userAndMaybeDomain.get(0);
                         if(user.equals(processUser)){
                             ret = true;
                         } else {
