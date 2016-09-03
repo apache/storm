@@ -1989,29 +1989,6 @@ public class Utils {
     }
 
     /**
-     * Creates a symbolic link to the target and force the creation if the target already exists
-     * @param dir the parent directory of the link
-     * @param targetDir the parent directory of the link's target
-     * @param targetFilename the file name of the links target
-     * @param filename the file name of the link
-     * @throws IOException
-     */
-    public static void forceCreateSymlink(String dir, String targetDir,
-            String targetFilename, String filename) throws IOException {
-        Path path = Paths.get(dir, filename).toAbsolutePath();
-        Path target = Paths.get(targetDir, targetFilename).toAbsolutePath();
-        LOG.debug("Creating symlink [{}] to [{}]", path, target);
-        if (path.toFile().exists()) {
-            if (Files.isSameFile(path, target)) {
-                //It already points where we want it to
-                return;
-            }
-            FileUtils.forceDelete(path.toFile());
-        }
-        Files.createSymbolicLink(path, target);
-    }
-
-    /**
      * Returns a Collection of file names found under the given directory.
      * @param dir a directory
      * @return the Collection of file names

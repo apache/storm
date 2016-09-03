@@ -37,7 +37,7 @@ public class RunAsUserContainer extends BasicContainer {
             LocalState state, ResourceIsolationInterface resourceIsolationManager, boolean recover) throws IOException {
         super(port, assignment, conf, supervisorId, state, resourceIsolationManager, recover);
         if (Utils.isOnWindows()) {
-            throw new RuntimeException("ERROR: Windows doesn't support running workers as different users yet");
+            throw new UnsupportedOperationException("ERROR: Windows doesn't support running workers as different users yet");
         }
     }
 
@@ -45,7 +45,7 @@ public class RunAsUserContainer extends BasicContainer {
             ResourceIsolationInterface resourceIsolationManager) throws IOException {
         super(workerId, conf, supervisorId, resourceIsolationManager);
         if (Utils.isOnWindows()) {
-            throw new RuntimeException("ERROR: Windows doesn't support running workers as different users yet");
+            throw new UnsupportedOperationException("ERROR: Windows doesn't support running workers as different users yet");
         }
     }
 
@@ -84,13 +84,6 @@ public class RunAsUserContainer extends BasicContainer {
         int ret = SupervisorUtils.processLauncherAndWait(_conf, user, args, env, logPrefix);
         return ret == 0;
     }
-
-    @Override
-    public List<String> updateCommandForIsolation(List<String> command) {
-        //With run as user we do the isolation before switching users, so don't modify the original
-        // command line
-        return command;
-    }   
 
     @Override
     protected void launchWorkerProcess(List<String> command, Map<String, String> env, 

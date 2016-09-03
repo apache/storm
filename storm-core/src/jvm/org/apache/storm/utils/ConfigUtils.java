@@ -360,8 +360,11 @@ public class ConfigUtils {
         return readSupervisorStormConfGivenPath(conf, confPath);
     }
 
-    // we use this "weird" wrapper pattern temporarily for mocking in clojure test
     public static StormTopology readSupervisorTopology(Map conf, String stormId, AdvancedFSOps ops) throws IOException {
+        return _instance.readSupervisorTopologyImpl(conf, stormId, ops);
+    }
+  
+    public StormTopology readSupervisorTopologyImpl(Map conf, String stormId, AdvancedFSOps ops) throws IOException {
         String stormRoot = supervisorStormDistRoot(conf, stormId);
         String topologyPath = supervisorStormCodePath(stormRoot);
         return readSupervisorStormCodeGivenPath(topologyPath, ops);
@@ -465,7 +468,7 @@ public class ConfigUtils {
     }
     
     public static String workerPidPath(Map<String, Object> conf, String id, long pid) {
-        return (workerPidsRoot(conf, id) + FILE_SEPARATOR + pid);
+        return workerPidPath(conf, id, String.valueOf(pid));
     }
 
     public static String workerHeartbeatsRoot(Map conf, String id) {

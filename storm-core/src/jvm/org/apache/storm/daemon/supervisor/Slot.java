@@ -241,7 +241,8 @@ public class Slot extends Thread implements AutoCloseable {
     static boolean equivalent(LocalAssignment a, LocalAssignment b) {
         if (a == null && b == null) {
             return true;
-        } if (a != null && b != null) {
+        }
+        if (a != null && b != null) {
             if (a.get_topology_id().equals(b.get_topology_id())) {
                 Set<ExecutorInfo> aexec = new HashSet<>(a.get_executors());
                 Set<ExecutorInfo> bexec = new HashSet<>(b.get_executors());
@@ -250,7 +251,8 @@ public class Slot extends Thread implements AutoCloseable {
                     boolean bHasResources = b.is_set_resources();
                     if (!aHasResources && !bHasResources) {
                         return true;
-                    } else if (aHasResources && bHasResources) {
+                    }
+                    if (aHasResources && bHasResources) {
                         if (a.get_resources().equals(b.get_resources())) {
                             return true;
                         }
@@ -534,7 +536,8 @@ public class Slot extends Thread implements AutoCloseable {
         LSWorkerHeartbeat hb = dynamicState.container.readHeartbeat();
         if (hb == null) {
             LOG.warn("SLOT {}: HB returned as null", staticState.port);
-            //This should never happen, but to be safe
+            //This can happen if the supervisor crashed after launching a
+            // worker that never came up.
             return killAndRelaunchContainer(dynamicState, staticState);
         }
         

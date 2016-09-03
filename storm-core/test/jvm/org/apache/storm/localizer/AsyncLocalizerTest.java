@@ -118,7 +118,6 @@ public class AsyncLocalizerTest {
         st.set_spouts(new HashMap<>());
         st.set_bolts(new HashMap<>());
         st.set_state_spouts(new HashMap<>());
-        byte [] serializedState = Utils.gzip(Utils.thriftSerialize(st)); 
  
         Map<String, Map<String, Object>> topoBlobMap = new HashMap<>();
         Map<String, Object> simple = new HashMap<>();
@@ -148,7 +147,7 @@ public class AsyncLocalizerTest {
         try {
             when(mockedCU.supervisorStormDistRootImpl(conf, topoId)).thenReturn(stormRoot);
             when(mockedCU.readSupervisorStormConfImpl(conf, topoId)).thenReturn(topoConf);
-            when(ops.slurp(stormcode)).thenReturn(serializedState);
+            when(mockedCU.readSupervisorTopologyImpl(conf, topoId, ops)).thenReturn(st);
             
             when(localizer.getLocalUserFileCacheDir(user)).thenReturn(userDir);
             

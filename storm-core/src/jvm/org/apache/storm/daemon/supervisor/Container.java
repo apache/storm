@@ -182,7 +182,7 @@ public abstract class Container implements Killable {
     
     private boolean isWindowsProcessAlive(long pid, String user) throws IOException {
         boolean ret = false;
-        ProcessBuilder pb = new ProcessBuilder("tasklist", "/nh", "/fi", "pid eq" + pid);
+        ProcessBuilder pb = new ProcessBuilder("tasklist", "/nh", "/fi", "pid eq " + pid);
         pb.redirectError(Redirect.INHERIT);
         Process p = pb.start();
         try (BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()))) {

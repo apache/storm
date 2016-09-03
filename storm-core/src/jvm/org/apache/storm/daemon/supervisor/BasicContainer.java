@@ -64,6 +64,7 @@ public class BasicContainer extends Container {
     
     protected final LocalState _localState;
     protected final String _profileCmd;
+    protected final String _stormHome = System.getProperty("storm.home");
     protected volatile boolean _exitedEarly = false;
 
     private class ProcessExitCallback implements ExitCodeCallback {
@@ -115,8 +116,7 @@ public class BasicContainer extends Container {
             createNewWorkerId();
         }
 
-        String stormHome = System.getProperty("storm.home");
-        _profileCmd = stormHome + Utils.FILE_PATH_SEPARATOR + "bin" + Utils.FILE_PATH_SEPARATOR
+        _profileCmd = _stormHome + Utils.FILE_PATH_SEPARATOR + "bin" + Utils.FILE_PATH_SEPARATOR
                 + conf.get(Config.WORKER_PROFILER_COMMAND);
     }
 
@@ -327,14 +327,12 @@ public class BasicContainer extends Container {
     }
     
     protected List<String> frameworkClasspath() {
-        String stormHome = System.getProperty("storm.home");
-
-        File stormLibDir = new File(stormHome, "lib");
+        File stormLibDir = new File(_stormHome, "lib");
         String stormConfDir =
                 System.getenv("STORM_CONF_DIR") != null ?
                 System.getenv("STORM_CONF_DIR") :
-                new File(stormHome, "conf").getAbsolutePath();
-        File stormExtlibDir = new File(stormHome, "extlib");
+                new File(_stormHome, "conf").getAbsolutePath();
+        File stormExtlibDir = new File(_stormHome, "extlib");
         String extcp = System.getenv("STORM_EXT_CLASSPATH");
         List<String> pathElements = new LinkedList<>();
         pathElements.addAll(getFullJars(stormLibDir));
@@ -429,18 +427,21 @@ public class BasicContainer extends Container {
      */
     protected void launchWorkerProcess(List<String> command, Map<String, String> env, String logPrefix,
             ExitCodeCallback processExitCallback, File targetDir) throws IOException {
+        if (_resourceIsolationManager != null) {
+          command = _resourceIsolationManager.getLaunchCommand(_workerId, command);
+        }
         SupervisorUtils.launchProcess(command, env, logPrefix, processExitCallback, targetDir);
     }
 
-    private String getWorkerLoggingConfigFile(String stormHome) {
+    private String getWorkerLoggingConfigFile() {
         String log4jConfigurationDir = (String) (_conf.get(Config.STORM_LOG4J2_CONF_DIR));
 
         if (StringUtils.isNotBlank(log4jConfigurationDir)) {
             if (!Utils.isAbsolutePath(log4jConfigurationDir)) {
-                log4jConfigurationDir = stormHome + Utils.FILE_PATH_SEPARATOR + log4jConfigurationDir;
+                log4jConfigurationDir = _stormHome + Utils.FILE_PATH_SEPARATOR + log4jConfigurationDir;
             }
         } else {
-            log4jConfigurationDir = stormHome + Utils.FILE_PATH_SEPARATOR + "log4j2";
+            log4jConfigurationDir = _stormHome + Utils.FILE_PATH_SEPARATOR + "log4j2";
         }
  
         if (Utils.IS_ON_WINDOWS && !log4jConfigurationDir.startsWith("file:")) {
@@ -485,15 +486,14 @@ public class BasicContainer extends Container {
      * @return a list of command line options
      */
     private List<String> getCommonParams() {
-        final String stormHome = ConfigUtils.concatIfNotNull(System.getProperty("storm.home"));
         final String workersArtifacts = ConfigUtils.workerArtifactsRoot(_conf);
         String stormLogDir = ConfigUtils.getLogDir();
-        String log4jConfigurationFile = getWorkerLoggingConfigFile(stormHome);
+        String log4jConfigurationFile = getWorkerLoggingConfigFile();
         
         List<String> commonParams = new ArrayList<>();
         commonParams.add("-Dlogging.sensitivity=" + OR((String) _topoConf.get(Config.TOPOLOGY_LOGGING_SENSITIVITY), "S3"));
         commonParams.add("-Dlogfile.name=worker.log");
-        commonParams.add("-Dstorm.home=" + stormHome);
+        commonParams.add("-Dstorm.home=" + OR(_stormHome, ""));
         commonParams.add("-Dworkers.artifacts=" + workersArtifacts);
         commonParams.add("-Dstorm.id=" + _topologyId);
         commonParams.add("-Dworker.id=" + _workerId);
@@ -596,10 +596,6 @@ public class BasicContainer extends Container {
         return commandList;
     }
 
-    public List<String> updateCommandForIsolation(List<String> command) {
-        return _resourceIsolationManager.getLaunchCommand(_workerId, command);
-    }
-
     @Override
     public void launch() throws IOException {
         if (_port <= 0) {
@@ -626,8 +622,6 @@ public class BasicContainer extends Container {
         }
         topEnvironment.put("LD_LIBRARY_PATH", jlp);
 
-        // {"cpu" cpu "memory" (+ mem-onheap mem-offheap (int (Math/ceil (conf
-        // STORM-CGROUP-MEMORY-LIMIT-TOLERANCE-MARGIN-MB))))
         if (_resourceIsolationManager != null) {
             int memoffheap = (int) Math.ceil(resources.get_mem_off_heap());
             int cpu = (int) Math.ceil(resources.get_cpu());
@@ -639,7 +633,6 @@ public class BasicContainer extends Container {
             map.put("cpu", cpuValue);
             map.put("memory", memoryValue);
             _resourceIsolationManager.reserveResourcesForWorker(_workerId, map);
-            commandList = updateCommandForIsolation(commandList);
         }
 
         LOG.info("Launching worker with command: {}. ", Utils.shellCmd(commandList));

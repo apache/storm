@@ -219,7 +219,8 @@ public class ReadClusterState implements Runnable, AutoCloseable {
                     if (!portLA.containsKey(port)) {
                         portLA.put(port, la);
                     } else {
-                        throw new RuntimeException("Should not have multiple topologies assigned to one port");
+                        throw new RuntimeException("Should not have multiple topologies assigned to one port "
+                          + port + " " + la + " " + portLA);
                     }
                 }
             }
@@ -275,11 +276,7 @@ public class ReadClusterState implements Runnable, AutoCloseable {
 
     public synchronized void shutdownAllWorkers() {
         for (Slot slot: slots.values()) {
-            try {
-                slot.setNewAssignment(null);
-            } catch (Exception e) {
-                LOG.error("Error trying to shutdown workers in {}", slot, e);
-            }
+            slot.setNewAssignment(null);
         }
 
         for (Slot slot: slots.values()) {
