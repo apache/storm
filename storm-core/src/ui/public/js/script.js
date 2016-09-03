@@ -411,6 +411,8 @@ var makeWorkerStatsTable = function (response, elId, parentId, type) {
         initComplete: function (){
             // add a "Toggle Components" button
             renderToggleComponents ($(elId + '_filter'), elId);
+        },
+        drawCallback: function (){
             initializeComponents();
         }
     });
@@ -421,11 +423,6 @@ var makeWorkerStatsTable = function (response, elId, parentId, type) {
         var tr = $(this).closest('tr');
         var row = workerStatsTable.row(tr);
         showComponents(row, !row.child.isShown());
-    });
-
-    $(elId + '_paginate').on('click', function(){
-        // when we change pages, re-initialize components
-        initializeComponents();
     });
 
     $(parentId + ' #toggle-on-components-btn').on('click', 'input', function (){
