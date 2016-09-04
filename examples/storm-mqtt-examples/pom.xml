@@ -32,14 +32,24 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <provided.scope>provided</provided.scope>
   </properties>
+
+  <profiles>
+    <profile>
+      <id>intellij</id>
+      <properties>
+        <provided.scope>compile</provided.scope>
+      </properties>
+    </profile>
+  </profiles>
 
   <dependencies>
    <dependency>
       <groupId>org.apache.storm</groupId>
       <artifactId>storm-core</artifactId>
       <version>${project.version}</version>
-      <scope>provided</scope>
+      <scope>${provided.scope}</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.storm</groupId>
