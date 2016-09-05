@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-2052: Kafka Spout New Client API - Log Improvements and Parameter Tuning for Better Performance
  * STORM-2045: fixed SpoutExecutor NPE
  * STORM-2041: Make Java 8 as minimum requirement for 2.0 release
  * STORM-1256: port backtype.storm.utils.ZookeeperServerCnxnFactory-test to java
@@ -144,6 +145,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0 
+ * STORM-1459: Allow not specifying producer properties in read-only Kafka table in StormSQL
  * STORM-2050: [storm-sql] Support User Defined Aggregate Function for Trident mode
  * STORM-1434: Support the GROUP BY clause in StormSQL
  * STORM-2016: Topology submission improvement: support adding local jars and maven artifacts on submission
@@ -185,6 +187,13 @@
  * STORM-1868: Modify TridentKafkaWordCount to run in distributed mode
 
 ## 1.0.3
+ * STORM-1344: Remove sql command from storm-jdbc build
+ * STORM-2070: Fix sigar native binary download link
+ * STORM-2056: Bugs in logviewer
+ * STORM-1646: Fix ExponentialBackoffMsgRetryManager test
+ * STORM-2039: Backpressure refactoring in worker and executor
+ * STORM-2064: Add storm name and function, access result and function to log-thrift-access
+ * STORM-2063: Add thread name in worker logs
  * STORM-2047: Add note to add logviewer hosts to browser whitelist
  * STORM-2042: Nimbus client connections not closed properly causing connection leaks
  * STORM-2032: removes warning in case more than one metrics tuple is received
