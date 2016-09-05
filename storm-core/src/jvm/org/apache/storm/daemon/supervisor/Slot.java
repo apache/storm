@@ -148,7 +148,7 @@ public class Slot extends Thread implements AutoCloseable {
                 sb.append(Time.currentTimeMillis() - startTime);
             }
             if (container != null) {
-                sb.append(" container: ");
+                sb.append(" ");
                 sb.append(container);
             }
             return sb.toString();

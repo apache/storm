@@ -100,13 +100,22 @@ public class ReadClusterState implements Runnable, AutoCloseable {
         } catch (Exception e) {
             LOG.warn("Error trying to clean up old workers", e);
         }
+
+        //All the slots/assignments should be recovered now, so we can clean up anything that we don't expect to be here
+        try {
+            localizer.cleanupUnusedTopologies();
+        } catch (Exception e) {
+            LOG.warn("Error trying to clean up old topologies", e);
+        }
+        
+        for (Slot slot: slots.values()) {
+            slot.start();
+        }
     }
 
     private Slot mkSlot(int port) throws Exception {
-        Slot slot = new Slot(localizer, superConf, launcher, host, port,
+        return new Slot(localizer, superConf, launcher, host, port,
                 localState, clusterState, iSuper, cachedAssignments);
-        slot.start();
-        return slot;
     }
     
     @Override
@@ -161,6 +170,7 @@ public class ReadClusterState implements Runnable, AutoCloseable {
                 if (slot == null) {
                     slot = mkSlot(port);
                     slots.put(port, slot);
+                    slot.start();
                 }
                 slot.setNewAssignment(allAssignments.get(port));
                 slot.addProfilerActions(filtered.get(port));

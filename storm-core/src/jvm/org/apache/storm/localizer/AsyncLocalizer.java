@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.JarURLConnection;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -146,7 +147,7 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
                 deleteAll = false;
             } finally {
                 if (deleteAll) {
-                    LOG.info("Failed to download basic resources for topology-id {}", _topologyId);
+                    LOG.warn("Failed to download basic resources for topology-id {}", _topologyId);
                     _fsOps.deleteIfExists(tr);
                     _fsOps.deleteIfExists(_stormRoot);
                 }
@@ -180,11 +181,11 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
                 blobStore.shutdown();
             }
 
-                ClassLoader classloader = Thread.currentThread().getContextClassLoader();
-                String resourcesJar = AsyncLocalizer.resourcesJar();
-                URL url = classloader.getResource(ConfigUtils.RESOURCES_SUBDIR);
+            ClassLoader classloader = Thread.currentThread().getContextClassLoader();
+            String resourcesJar = AsyncLocalizer.resourcesJar();
+            URL url = classloader.getResource(ConfigUtils.RESOURCES_SUBDIR);
 
-                String targetDir = tmproot + Utils.FILE_PATH_SEPARATOR + ConfigUtils.RESOURCES_SUBDIR;
+            String targetDir = tmproot + Utils.FILE_PATH_SEPARATOR + ConfigUtils.RESOURCES_SUBDIR;
 
             if (resourcesJar != null) {
                 LOG.info("Extracting resources from jar at {} to {}", resourcesJar, targetDir);
@@ -297,7 +298,9 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
             localResource = new LocalDownloadedResource(_execService.submit(c));
             _basicPending.put(topologyId, localResource);
         }
-        return localResource.reserve(port, assignment);
+        Future<Void> ret = localResource.reserve(port, assignment);
+        LOG.debug("Reserved basic {} {}", topologyId, localResource);
+        return ret;
     }
 
     private static String resourcesJar() throws IOException {
@@ -334,11 +337,16 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
             localResource = new LocalDownloadedResource(new AllDoneFuture());
             _basicPending.put(topologyId, localResource);
         }
+        localResource.reserve(port, assignment);
+        LOG.debug("Recovered basic {} {}", topologyId, localResource);
+        
         localResource = _blobPending.get(topologyId);
         if (localResource == null) {
             localResource = new LocalDownloadedResource(new AllDoneFuture());
             _blobPending.put(topologyId, localResource);
         }
+        localResource.reserve(port, assignment);
+        LOG.debug("Recovered blobs {} {}", topologyId, localResource);
     }
     
     @Override
@@ -350,18 +358,20 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
             localResource = new LocalDownloadedResource(_execService.submit(c));
             _blobPending.put(topologyId, localResource);
         }
-        return localResource.reserve(port, assignment);
+        Future<Void> ret = localResource.reserve(port, assignment);
+        LOG.debug("Reserved blobs {} {}", topologyId, localResource);
+        return ret;
     }
 
     @Override
     public synchronized void releaseSlotFor(LocalAssignment assignment, int port) throws IOException {
         final String topologyId = assignment.get_topology_id();
-        LOG.warn("Releaseing slot for {} {}", topologyId, port);
+        LOG.debug("Releaseing slot for {} {}", topologyId, port);
         LocalDownloadedResource localResource = _blobPending.get(topologyId);
         if (localResource == null || !localResource.release(port, assignment)) {
             LOG.warn("Released blob reference {} {} for something that we didn't have {}", topologyId, port, localResource);
         } else if (localResource.isDone()){
-            LOG.warn("Released blob reference {} {} Cleaning up BLOB references...", topologyId, port);
+            LOG.info("Released blob reference {} {} Cleaning up BLOB references...", topologyId, port);
             _blobPending.remove(topologyId);
             Map<String, Object> topoConf = ConfigUtils.readSupervisorStormConf(_conf, topologyId);
             @SuppressWarnings("unchecked")
@@ -381,19 +391,34 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
                 }
             }
         } else {
-            LOG.warn("Released blob reference {} {} still waiting on {}", topologyId, port, localResource);
+            LOG.debug("Released blob reference {} {} still waiting on {}", topologyId, port, localResource);
         }
         
         localResource = _basicPending.get(topologyId);
         if (localResource == null || !localResource.release(port, assignment)) {
             LOG.warn("Released basic reference {} {} for something that we didn't have {}", topologyId, port, localResource);
         } else if (localResource.isDone()){
-            LOG.warn("Released blob reference {} {} Cleaning up basic files...", topologyId, port);
+            LOG.info("Released blob reference {} {} Cleaning up basic files...", topologyId, port);
             _basicPending.remove(topologyId);
             String path = ConfigUtils.supervisorStormDistRoot(_conf, topologyId);
             _fsOps.deleteIfExists(new File(path), null, "rmr "+topologyId);
         } else {
-            LOG.warn("Released basic reference {} {} still waiting on {}", topologyId, port, localResource);
+            LOG.debug("Released basic reference {} {} still waiting on {}", topologyId, port, localResource);
+        }
+    }
+
+    @Override
+    public synchronized void cleanupUnusedTopologies() throws IOException {
+        File distRoot = new File(ConfigUtils.supervisorStormDistRoot(_conf));
+        LOG.info("Cleaning up unused topologies in {}", distRoot);
+        File[] children = distRoot.listFiles();
+        if (children != null) {
+            for (File topoDir : children) {
+                String topoId = URLDecoder.decode(topoDir.getName(), "UTF-8");
+                if (_basicPending.get(topoId) == null && _blobPending.get(topoId) == null) {
+                    _fsOps.deleteIfExists(topoDir, null, "rmr " + topoId);
+                }
+            }
         }
     }
 

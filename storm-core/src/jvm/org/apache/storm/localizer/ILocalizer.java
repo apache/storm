@@ -61,4 +61,10 @@ public interface ILocalizer {
      * @throws IOException on any error
      */
     void releaseSlotFor(LocalAssignment assignment, int port) throws IOException;
+    
+    /**
+     * Clean up any topologies that are not in use right now.
+     * @throws IOException on any error.
+     */
+    void cleanupUnusedTopologies() throws IOException;
 }

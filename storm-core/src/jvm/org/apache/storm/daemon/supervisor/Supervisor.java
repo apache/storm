@@ -204,6 +204,9 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
         Integer heartbeatFrequency = Utils.getInt(conf.get(Config.SUPERVISOR_HEARTBEAT_FREQUENCY_SECS));
         heartbeatTimer.scheduleRecurring(0, heartbeatFrequency, hb);
 
+        this.eventManager = new EventManagerImp(false);
+        this.readState = new ReadClusterState(this);
+        
         Set<String> downloadedStormIds = SupervisorUtils.readDownLoadedStormIds(conf);
         for (String stormId : downloadedStormIds) {
             SupervisorUtils.addBlobReferences(localizer, stormId, conf);
@@ -211,8 +214,6 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
         // do this after adding the references so we don't try to clean things being used
         localizer.startCleaner();
 
-        this.eventManager = new EventManagerImp(false);
-        this.readState = new ReadClusterState(this);
         UpdateBlobs updateBlobsThread = new UpdateBlobs(this);
 
         if ((Boolean) conf.get(Config.SUPERVISOR_ENABLE)) {

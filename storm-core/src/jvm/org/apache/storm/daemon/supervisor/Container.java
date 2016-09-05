@@ -147,7 +147,7 @@ public abstract class Container implements Killable {
     
     @Override
     public String toString() {
-        return this.getClass().getSimpleName() + " topo:" + _topologyId + " worker:" + _workerId;
+        return "topo:" + _topologyId + " worker:" + _workerId;
     }
     
     protected Map<String, Object> readTopoConf() throws IOException {
