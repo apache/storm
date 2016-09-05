@@ -141,12 +141,8 @@ public class Slot extends Thread implements AutoCloseable {
         public String toString() {
             StringBuffer sb = new StringBuffer();
             sb.append(state);
-            if (state == MachineState.WAITING_FOR_WORKER_START ||
-                state == MachineState.KILL ||
-                state == MachineState.KILL_AND_RELAUNCH) {
-                sb.append(" msInState: ");
-                sb.append(Time.currentTimeMillis() - startTime);
-            }
+            sb.append(" msInState: ");
+            sb.append(Time.currentTimeMillis() - startTime);
             if (container != null) {
                 sb.append(" ");
                 sb.append(container);
@@ -179,12 +175,7 @@ public class Slot extends Thread implements AutoCloseable {
         }
         
         public DynamicState withState(final MachineState state) {
-            long newStartTime = this.startTime;
-            if (state == MachineState.KILL ||
-                    state == MachineState.KILL_AND_RELAUNCH ||
-                    state == MachineState.WAITING_FOR_WORKER_START) {
-                newStartTime = Time.currentTimeMillis();
-            }
+            long newStartTime = Time.currentTimeMillis();
             return new DynamicState(state, this.newAssignment,
                     this.container, this.currentAssignment,
                     this.pendingLocalization, newStartTime,
@@ -379,6 +370,9 @@ public class Slot extends Thread implements AutoCloseable {
         assert(dynamicState.pendingDownload != null);
         assert(dynamicState.container == null);
         
+        //Ignore changes to scheduling while downloading the topology blobs
+        // We don't support canceling the download through the future yet,
+        // so to keep everything in sync, just wait
         try {
             dynamicState.pendingDownload.get(1000, TimeUnit.MILLISECONDS);
             //Downloading of all blobs finished.
@@ -410,6 +404,8 @@ public class Slot extends Thread implements AutoCloseable {
         assert(dynamicState.container == null);
         
         //Ignore changes to scheduling while downloading the topology code
+        // We don't support canceling the download through the future yet,
+        // so to keep everything in sync, just wait
         try {
             dynamicState.pendingDownload.get(1000, TimeUnit.MILLISECONDS);
             Future<Void> pendingDownload = staticState.localizer.requestDownloadTopologyBlobs(dynamicState.pendingLocalization, staticState.port);
@@ -497,15 +493,14 @@ public class Slot extends Thread implements AutoCloseable {
         
         if (!equivalent(dynamicState.newAssignment, dynamicState.currentAssignment)) {
             //We were rescheduled while waiting for the worker to come up
+            LOG.warn("SLOT {}: Assignment Changed from {} to {}", staticState.port, dynamicState.currentAssignment, dynamicState.newAssignment);
             return Slot.killContainerForChangedAssignment(dynamicState, staticState);
         }
         
         long timeDiffms = (Time.currentTimeMillis() - dynamicState.startTime);
         if (timeDiffms > staticState.firstHbTimeoutMs) {
             LOG.warn("SLOT {}: Container {} failed to launch in {} ms.", staticState.port, dynamicState.container, staticState.firstHbTimeoutMs);
-            dynamicState.container.kill();
-            Time.sleep(staticState.killSleepMs);
-            return dynamicState.withState(MachineState.KILL_AND_RELAUNCH);
+            return killAndRelaunchContainer(dynamicState, staticState);
         }
         Time.sleep(1000);
         return dynamicState;

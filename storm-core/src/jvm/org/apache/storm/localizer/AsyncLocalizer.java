@@ -192,7 +192,7 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
                 Utils.extractDirFromJar(resourcesJar, ConfigUtils.RESOURCES_SUBDIR, _stormRoot);
             } else if (url != null) {
                 LOG.info("Copying resources at {} to {} ", url.toString(), targetDir);
-                if (url.getProtocol() == "jar") {
+                if ("jar".equals(url.getProtocol())) {
                     JarURLConnection urlConnection = (JarURLConnection) url.openConnection();
                     Utils.extractDirFromJar(urlConnection.getJarFileURL().getFile(), ConfigUtils.RESOURCES_SUBDIR, _stormRoot);
                 } else {
@@ -366,7 +366,7 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
     @Override
     public synchronized void releaseSlotFor(LocalAssignment assignment, int port) throws IOException {
         final String topologyId = assignment.get_topology_id();
-        LOG.debug("Releaseing slot for {} {}", topologyId, port);
+        LOG.debug("Releasing slot for {} {}", topologyId, port);
         LocalDownloadedResource localResource = _blobPending.get(topologyId);
         if (localResource == null || !localResource.release(port, assignment)) {
             LOG.warn("Released blob reference {} {} for something that we didn't have {}", topologyId, port, localResource);
