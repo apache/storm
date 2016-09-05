@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-2054: DependencyResolver should be aware of relative path and absolute path
  * STORM-2052: Kafka Spout New Client API - Log Improvements and Parameter Tuning for Better Performance
  * STORM-2045: fixed SpoutExecutor NPE
  * STORM-2041: Make Java 8 as minimum requirement for 2.0 release
