@@ -298,8 +298,8 @@
             </includes>
         </fileSet>
         <fileSet>
-            <directory>${project.basedir}/../../external/sql/storm-sql-kafka/target</directory>
-            <outputDirectory>external/sql/storm-sql-kafka</outputDirectory>
+            <directory>${project.basedir}/../../external/sql/storm-sql-external/storm-sql-kafka/target</directory>
+            <outputDirectory>external/sql/storm-sql-external/storm-sql-kafka</outputDirectory>
             <includes>
                 <include>storm*jar</include>
             </includes>
