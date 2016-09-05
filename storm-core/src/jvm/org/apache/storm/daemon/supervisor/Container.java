@@ -25,6 +25,7 @@ import java.io.Writer;
 import java.lang.ProcessBuilder.Redirect;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -221,12 +222,29 @@ public abstract class Container implements Killable {
     
     private boolean isWindowsProcessAlive(long pid, String user) throws IOException {
         boolean ret = false;
-        ProcessBuilder pb = new ProcessBuilder("tasklist", "/nh", "/fi", "pid eq " + pid);
+        ProcessBuilder pb = new ProcessBuilder("tasklist", "/fo", "list", "/fi", "pid eq " + pid, "/v");
         pb.redirectError(Redirect.INHERIT);
         Process p = pb.start();
         try (BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
-            if (in.readLine() != null) {
-                ret = true;
+            String read;
+            while ((read = in.readLine()) != null) {
+                if (read.contains("User Name:")) { //Check for : in case someone called their user "User Name"
+                    //This line contains the user name for the pid we're looking up
+                    //Example line: "User Name:    exampleDomain\exampleUser"
+                    List<String> userNameLineSplitOnWhitespace = Arrays.asList(read.split(":"));
+                    if(userNameLineSplitOnWhitespace.size() == 2){
+                        List<String> userAndMaybeDomain = Arrays.asList(userNameLineSplitOnWhitespace.get(1).trim().split("\\\\"));
+                        String processUser = userAndMaybeDomain.size() == 2 ? userAndMaybeDomain.get(1) : userAndMaybeDomain.get(0);
+                        if(user.equals(processUser)){
+                            ret = true;
+                        } else {
+                            LOG.info("Found {} running as {}, but expected it to be {}", pid, processUser, user);
+                        }
+                    } else {
+                        LOG.error("Received unexpected output from tasklist command. Expected one colon in user name line. Line was {}", read);
+                    }
+                    break;
+                }
             }
         }
         return ret;
