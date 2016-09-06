@@ -51,8 +51,6 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 /**
  * This is a wrapper around the Localizer class that provides the desired
  * async interface to Slot.
- * TODO once we have replaced the original supervisor merge this with
- * Localizer and optimize them
  */
 public class AsyncLocalizer implements ILocalizer, Shutdownable {
     /**
