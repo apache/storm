@@ -80,6 +80,7 @@
  * STORM-1720: Support GEO in storm-redis
 
 ## 1.0.3
+ * STORM-2079: Unneccessary readStormConfig operation
  * STORM-2081: create external directory for storm-sql various data sources and move storm-sql-kafka to it
  * STORM-2054: DependencyResolver should be aware of relative path and absolute path
  * STORM-1344: Remove sql command from storm-jdbc build
