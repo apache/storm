@@ -1,4 +1,5 @@
 ## 1.0.3
+ * STORM-2081: create external directory for storm-sql various data sources and move storm-sql-kafka to it
  * STORM-2070: Fix sigar native binary download link
  * STORM-2056: Bugs in logviewer
  * STORM-1646: Fix ExponentialBackoffMsgRetryManager test
