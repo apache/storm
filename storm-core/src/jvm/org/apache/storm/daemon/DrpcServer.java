@@ -221,7 +221,7 @@ public class DrpcServer implements DistributedRPC.Iface, DistributedRPCInvocatio
         LOG.debug("Received DRPC request for {} ({}) at {} ", functionName, funcArgs, System.currentTimeMillis());
         Map<String, String> map = new HashMap<>();
         map.put(DRPCAuthorizerBase.FUNCTION_NAME, functionName);
-        checkAuthorization(authorizer, map, "execute");
+        checkAuthorization(authorizer, map, "execute", functionName);
 
         int newid = 0;
         int orig = 0;
@@ -265,7 +265,7 @@ public class DrpcServer implements DistributedRPC.Iface, DistributedRPCInvocatio
         InternalRequest internalRequest = this.outstandingRequests.get(id);
         if (internalRequest != null) {
             Map<String, String> map = ImmutableMap.of(DRPCAuthorizerBase.FUNCTION_NAME, internalRequest.function);
-            checkAuthorization(authorizer, map, "result");
+            checkAuthorization(authorizer, map, "result", internalRequest.function);
             Semaphore sem = internalRequest.sem;
             LOG.debug("Received result {} for {} at {}", result, id, System.currentTimeMillis());
             if (sem != null) {
@@ -280,7 +280,7 @@ public class DrpcServer implements DistributedRPC.Iface, DistributedRPCInvocatio
         meterFetchRequestCalls.mark();
         Map<String, String> map = new HashMap<>();
         map.put(DRPCAuthorizerBase.FUNCTION_NAME, functionName);
-        checkAuthorization(authorizer, map, "fetchRequest");
+        checkAuthorization(authorizer, map, "fetchRequest", functionName);
         ConcurrentLinkedQueue<DRPCRequest> queue = acquireQueue(functionName);
         DRPCRequest req = queue.poll();
         if (req != null) {
@@ -298,7 +298,7 @@ public class DrpcServer implements DistributedRPC.Iface, DistributedRPCInvocatio
         if (internalRequest != null) {
             Map<String, String> map = new HashMap<>();
             map.put(DRPCAuthorizerBase.FUNCTION_NAME, internalRequest.function);
-            checkAuthorization(authorizer, map, "failRequest");
+            checkAuthorization(authorizer, map, "failRequest", internalRequest.function);
             Semaphore sem = internalRequest.sem;
             if (sem != null) {
                 internalRequest.result = new DRPCExecutionException("Request failed");
@@ -319,9 +319,9 @@ public class DrpcServer implements DistributedRPC.Iface, DistributedRPCInvocatio
         return reqQueue;
     }
 
-    private void checkAuthorization(IAuthorizer aclHandler, Map mapping, String operation, ReqContext reqContext) throws AuthorizationException {
+    private void checkAuthorization(IAuthorizer aclHandler, Map mapping, String operation, ReqContext reqContext, String function) throws AuthorizationException {
         if (reqContext != null) {
-            ThriftAccessLogger.logAccess(reqContext.requestID(), reqContext.remoteAddress(), reqContext.principal(), operation);
+            ThriftAccessLogger.logAccessFunction(reqContext.requestID(), reqContext.remoteAddress(), reqContext.principal(), operation, function);
         }
         if (aclHandler != null) {
             if (reqContext == null)
@@ -334,8 +334,8 @@ public class DrpcServer implements DistributedRPC.Iface, DistributedRPCInvocatio
         }
     }
 
-    private void checkAuthorization(IAuthorizer aclHandler, Map mapping, String operation) throws AuthorizationException {
-        checkAuthorization(aclHandler, mapping, operation, ReqContext.context());
+    private void checkAuthorization(IAuthorizer aclHandler, Map mapping, String operation, String function) throws AuthorizationException {
+        checkAuthorization(aclHandler, mapping, operation, ReqContext.context(), function);
     }
 
     // TO be replaced by Common.mkAuthorizationHandler

@@ -18,9 +18,11 @@
 package org.apache.storm.daemon;
 
 import org.apache.storm.Config;
+import org.apache.storm.Constants;
 import org.apache.storm.Thrift;
 import org.apache.storm.daemon.metrics.BuiltinMetrics;
 import org.apache.storm.daemon.metrics.BuiltinMetricsUtil;
+import org.apache.storm.executor.Executor;
 import org.apache.storm.generated.Bolt;
 import org.apache.storm.generated.ComponentObject;
 import org.apache.storm.generated.JavaObject;
@@ -32,7 +34,6 @@ import org.apache.storm.grouping.LoadAwareCustomStreamGrouping;
 import org.apache.storm.grouping.LoadMapping;
 import org.apache.storm.hooks.ITaskHook;
 import org.apache.storm.hooks.info.EmitInfo;
-import org.apache.storm.metric.api.IMetric;
 import org.apache.storm.spout.ShellSpout;
 import org.apache.storm.stats.CommonStats;
 import org.apache.storm.task.ShellBolt;
@@ -57,7 +58,7 @@ public class Task {
 
     private static final Logger LOG = LoggerFactory.getLogger(Task.class);
 
-    private Map executorData;
+    private Executor executor;
     private Map workerData;
     private TopologyContext systemTopologyContext;
     private TopologyContext userTopologyContext;
@@ -65,7 +66,7 @@ public class Task {
     private LoadMapping loadMapping;
     private Integer taskId;
     private String componentId;
-    private Object taskObject;  // Spout/Bolt object
+    private Object taskObject; // Spout/Bolt object
     private Map stormConf;
     private Callable<Boolean> emitSampler;
     private CommonStats executorStats;
@@ -73,20 +74,20 @@ public class Task {
     private BuiltinMetrics builtInMetrics;
     private boolean debug;
 
-    public Task(Map executorData, Integer taskId) throws IOException {
+    public Task(Executor executor, Integer taskId) throws IOException {
         this.taskId = taskId;
-        this.executorData = executorData;
-        this.workerData = (Map) executorData.get("worker");
-        this.stormConf = (Map) executorData.get("storm-conf");
-        this.componentId = (String) executorData.get("component-id");
-        this.streamComponentToGrouper = (Map<String, Map<String, LoadAwareCustomStreamGrouping>>) executorData.get("stream->component->grouper");
-        this.executorStats = (CommonStats) executorData.get("stats");
-        this.builtInMetrics = BuiltinMetricsUtil.mkData((String) executorData.get("type"), this.executorStats);
-        this.workerTopologyContext = (WorkerTopologyContext) executorData.get("worker-context");
+        this.executor = executor;
+        this.workerData = executor.getWorkerData();
+        this.stormConf = executor.getStormConf();
+        this.componentId = executor.getComponentId();
+        this.streamComponentToGrouper = executor.getStreamToComponentToGrouper();
+        this.executorStats = executor.getStats();
+        this.builtInMetrics = BuiltinMetricsUtil.mkData(executor.getType(), this.executorStats);
+        this.workerTopologyContext = executor.getWorkerTopologyContext();
         this.emitSampler = ConfigUtils.mkStatsSampler(stormConf);
-        this.loadMapping = (LoadMapping) workerData.get("load-mapping");
-        this.systemTopologyContext = mkTopologyContext((StormTopology) workerData.get("system-topology"));
-        this.userTopologyContext = mkTopologyContext((StormTopology) workerData.get("topology"));
+        this.loadMapping = (LoadMapping) workerData.get(Constants.LOAD_MAPPING);
+        this.systemTopologyContext = mkTopologyContext((StormTopology) workerData.get(Constants.SYSTEM_TOPOLOGY));
+        this.userTopologyContext = mkTopologyContext((StormTopology) workerData.get(Constants.TOPOLOGY));
         this.taskObject = mkTaskObject();
         this.debug = stormConf.containsKey(Config.TOPOLOGY_DEBUG) && (Boolean) stormConf.get(Config.TOPOLOGY_DEBUG);
         this.addTaskHooks();
@@ -119,13 +120,14 @@ public class Task {
         if (null != outTaskId) {
             return Collections.singletonList(outTaskId);
         }
-        return null;
+        return new ArrayList<>(0);
     }
 
     public List<Integer> getOutgoingTasks(String stream, List<Object> values) {
         if (debug) {
             LOG.info("Emitting: {} {} {}", componentId, stream, values);
         }
+
         List<Integer> outTasks = new ArrayList<>();
         if (!streamComponentToGrouper.containsKey(stream)) {
             throw new IllegalArgumentException("Unknown stream ID: " + stream);
@@ -164,7 +166,7 @@ public class Task {
         return componentId;
     }
 
-    public TopologyContext getUserContext() throws IOException {
+    public TopologyContext getUserContext() {
         return userTopologyContext;
     }
 
@@ -177,25 +179,25 @@ public class Task {
     }
 
     private TopologyContext mkTopologyContext(StormTopology topology) throws IOException {
-        Map conf = (Map) workerData.get("conf");
+        Map conf = (Map) workerData.get(Constants.CONF);
         return new TopologyContext(
-            topology,
-            (Map) workerData.get("storm-conf"),
-            (Map<Integer, String>) workerData.get("task->component"),
-            (Map<String, List<Integer>>) workerData.get("component->sorted-tasks"),
-            (Map<String, Map<String, Fields>>) workerData.get("component->stream->fields"),
-            (String) workerData.get("storm-id"),
-            ConfigUtils.supervisorStormResourcesPath(ConfigUtils.supervisorStormDistRoot(conf, (String) workerData.get("storm-id"))),
-            ConfigUtils.workerPidsRoot(conf, (String) workerData.get("worker-id")),
-            taskId,
-            (Integer) workerData.get("port"),
-            (List<Integer>) workerData.get("task-ids"),
-            (Map<String, Object>) workerData.get("default-shared-resources"),
-            (Map<String, Object>) workerData.get("user-shared-resources"),
-            (Map<String, Object>) executorData.get("shared-executor-data"),
-            (Map<Integer, Map<Integer, Map<String, IMetric>>>) executorData.get("interval->task->metric-registry"),
-            (clojure.lang.Atom) executorData.get("open-or-prepare-was-called?")
-        );
+                topology,
+                (Map) workerData.get(Constants.STORM_CONF),
+                (Map<Integer, String>) workerData.get(Constants.TASK_TO_COMPONENT),
+                (Map<String, List<Integer>>) workerData.get(Constants.COMPONENT_TO_SORTED_TASKS),
+                (Map<String, Map<String, Fields>>) workerData.get(Constants.COMPONENT_TO_STREAM_TO_FIELDS),
+                (String) workerData.get(Constants.STORM_ID),
+                ConfigUtils.supervisorStormResourcesPath(
+                        ConfigUtils.supervisorStormDistRoot(conf, (String) workerData.get(Constants.STORM_ID))),
+                ConfigUtils.workerPidsRoot(conf, (String) workerData.get(Constants.WORKER_ID)),
+                taskId,
+                (Integer) workerData.get(Constants.PORT),
+                (List<Integer>) workerData.get(Constants.TASK_IDS),
+                (Map<String, Object>) workerData.get(Constants.DEFAULT_SHARED_RESOURCES),
+                (Map<String, Object>) workerData.get(Constants.USER_SHARED_RESOURCES),
+                executor.getSharedExecutorData(),
+                executor.getIntervalToTaskToMetricToRegistry(),
+                executor.getOpenOrPrepareWasCalled());
     }
 
     private Object mkTaskObject() {
@@ -203,8 +205,8 @@ public class Task {
         Map<String, SpoutSpec> spouts = topology.get_spouts();
         Map<String, Bolt> bolts = topology.get_bolts();
         Map<String, StateSpoutSpec> stateSpouts = topology.get_state_spouts();
-        Object result = null;
-        ComponentObject componentObject = null;
+        Object result;
+        ComponentObject componentObject;
         if (spouts.containsKey(componentId)) {
             componentObject = spouts.get(componentId).get_spout_object();
         } else if (bolts.containsKey(componentId)) {

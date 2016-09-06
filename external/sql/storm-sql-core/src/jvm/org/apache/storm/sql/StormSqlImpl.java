@@ -119,14 +119,17 @@ class StormSqlImpl extends StormSql {
         SqlNode validate = planner.validate(parse);
         RelNode tree = planner.convert(validate);
         org.apache.storm.sql.compiler.backends.trident.PlanCompiler compiler =
-            new org.apache.storm.sql.compiler.backends.trident.PlanCompiler(typeFactory);
-        AbstractTridentProcessor proc = compiler.compile(tree);
-        TridentTopology topo = proc.build(dataSources);
+                new org.apache.storm.sql.compiler.backends.trident.PlanCompiler(dataSources, typeFactory);
+        TridentTopology topo = compiler.compile(tree);
         Path jarPath = null;
         try {
+          // PlanCompiler configures the topology without any new classes, so we don't need to add anything into topology jar
+          // packaging empty jar since topology jar is needed for topology submission
+          // Topology will be serialized and sent to Nimbus, and deserialized and executed in workers.
+
           jarPath = Files.createTempFile("storm-sql", ".jar");
           System.setProperty("storm.jar", jarPath.toString());
-          packageTopology(jarPath, compiler.getCompilingClassLoader(), proc);
+          packageEmptyTopology(jarPath);
           StormSubmitter.submitTopologyAs(name, stormConf, topo.build(), opts, progressListener, asUser);
         } finally {
           if (jarPath != null) {
@@ -137,18 +140,12 @@ class StormSqlImpl extends StormSql {
     }
   }
 
-  private void packageTopology(Path jar, CompilingClassLoader cl, AbstractTridentProcessor processor) throws IOException {
+  private void packageEmptyTopology(Path jar) throws IOException {
     Manifest manifest = new Manifest();
     Attributes attr = manifest.getMainAttributes();
     attr.put(Attributes.Name.MANIFEST_VERSION, "1.0");
-    attr.put(Attributes.Name.MAIN_CLASS, processor.getClass().getCanonicalName());
     try (JarOutputStream out = new JarOutputStream(
         new BufferedOutputStream(new FileOutputStream(jar.toFile())), manifest)) {
-      for (Map.Entry<String, ByteArrayOutputStream> e : cl.getClasses().entrySet()) {
-        out.putNextEntry(new ZipEntry(e.getKey().replace(".", "/") + ".class"));
-        out.write(e.getValue().toByteArray());
-        out.closeEntry();
-      }
     }
   }
 

@@ -117,7 +117,7 @@ public class KafkaSpoutRetryExponentialBackoff implements KafkaSpoutRetryService
         }
 
         public static TimeInterval microSeconds(long length) {
-            return new TimeInterval(length, TimeUnit.MILLISECONDS);
+            return new TimeInterval(length, TimeUnit.MICROSECONDS);
         }
 
         public long lengthNanos() {

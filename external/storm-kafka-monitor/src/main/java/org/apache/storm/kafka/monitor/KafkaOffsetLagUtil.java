@@ -261,8 +261,8 @@ public class KafkaOffsetLagUtil {
             Map<String, Map<Integer, Long>> oldConsumerOffsets = getOldConsumerOffsetsFromZk(topicPartitions, oldKafkaSpoutOffsetQuery);
             for (Map.Entry<String, Map<Integer, Long>> topicOffsets: logHeadOffsets.entrySet()) {
                 for (Map.Entry<Integer, Long> partitionOffsets: topicOffsets.getValue().entrySet()) {
-                    Long consumerCommittedOffset = oldConsumerOffsets.get(topicOffsets.getKey()) != null ? oldConsumerOffsets.get(topicOffsets.getKey()).get
-                            (partitionOffsets.getKey()) : -1;
+                    Long consumerCommittedOffset = oldConsumerOffsets.get(topicOffsets.getKey()) != null ? (Long) oldConsumerOffsets.get(topicOffsets.getKey()).get
+                        (partitionOffsets.getKey()) : -1;
                     consumerCommittedOffset = (consumerCommittedOffset == null ? -1 : consumerCommittedOffset);
                     KafkaOffsetLagResult kafkaOffsetLagResult = new KafkaOffsetLagResult(topicOffsets.getKey(), partitionOffsets.getKey(),
                             consumerCommittedOffset, partitionOffsets.getValue());
@@ -373,8 +373,11 @@ public class KafkaOffsetLagUtil {
         curatorFramework.start();
         String partitionPrefix = "partition_";
         String zkPath = oldKafkaSpoutOffsetQuery.getZkPath();
-        if (!zkPath.endsWith("/")) {
-            zkPath += "/";
+        if (zkPath.endsWith("/")) {
+            zkPath = zkPath.substring(0, zkPath.length()-1);
+        }
+        if (curatorFramework.checkExists().forPath(zkPath) == null) {
+            throw new IllegalArgumentException(OPTION_ZK_COMMITTED_NODE_LONG+" '"+zkPath+"' dose not exists.");
         }
         byte[] zkData;
         try {
@@ -382,7 +385,7 @@ public class KafkaOffsetLagUtil {
                 for (Map.Entry<String, List<Integer>> topicEntry: topicPartitions.entrySet()) {
                     Map<Integer, Long> partitionOffsets = new HashMap<>();
                     for (Integer partition: topicEntry.getValue()) {
-                        String path = zkPath + (oldKafkaSpoutOffsetQuery.isWildCardTopic() ? topicEntry.getKey() + "/" : "") + partitionPrefix + partition;
+                        String path = zkPath + "/" + (oldKafkaSpoutOffsetQuery.isWildCardTopic() ? topicEntry.getKey() + "/" : "") + partitionPrefix + partition;
                         if (curatorFramework.checkExists().forPath(path) != null) {
                             zkData = curatorFramework.getData().forPath(path);
                             Map<Object, Object> offsetData = (Map<Object, Object>) JSONValue.parse(new String(zkData, "UTF-8"));
