@@ -11,6 +11,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+du $HOME/.m2/repository
+
 echo "Python version :  " `python -V 2>&1`
 echo "Maven version  :  " `mvn -v`
 
