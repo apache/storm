@@ -252,11 +252,6 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
         </dependency>
@@ -498,7 +493,6 @@
                             <include>clj-time:clj-time</include>
                             <include>org.apache.thrift:*</include>
                             <include>io.netty:netty</include>
-                            <include>com.google.guava:guava</include>
                             <include>org.apache.httpcomponents:http*</include>
                             <include>org.apache.zookeeper:zookeeper</include>
                             <include>org.apache.curator:*</include>
