@@ -79,6 +79,7 @@
  * STORM-1720: Support GEO in storm-redis
 
 ## 1.0.3
+ * STORM-2054: DependencyResolver should be aware of relative path and absolute path
  * STORM-1344: Remove sql command from storm-jdbc build
  * STORM-2070: Fix sigar native binary download link
  * STORM-2056: Bugs in logviewer
