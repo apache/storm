@@ -2,7 +2,7 @@ package org.apache.storm.scheduler.blacklist;
 
 import org.apache.storm.Config;
 import org.apache.storm.scheduler.*;
-import org.apache.storm.scheduler.blacklist.reporter.IReporter;
+import org.apache.storm.scheduler.blacklist.reporters.IReporter;
 import org.apache.storm.scheduler.blacklist.strategies.IBlacklistStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,23 +18,9 @@ public class BlacklistScheduler implements IScheduler {
     @SuppressWarnings("rawtypes")
     private Map _conf;
 
-    public static final String BLACKLIST_ENABLE="topology.scheduler.blacklist.enable";
-
-    public static final String TOLERANCE_TIME="storm.scheduler.blacklist.tolerance.time.secs";
-    public static final String TOLERANCE_COUNT="storm.scheduler.blacklist.tolerance.count";
-    public static final String RESUME_TIME="storm.scheduler.blacklist.resume.time.secs";
-    public static final String REPORTER ="storm.scheduler.blacklist.reporter";
-    public static final String STRATEGY ="storm.scheduler.blacklist.reporter";
-
-    public static final int DEFAULT_TOLERANCE_TIME=5*60;
-    public static final int DEFAULT_TOLERANCE_COUNT=3;
-    public static final int DEFAULT_RESUME_TIME=30*60;
-    public static final String DEFAULT_REPORTER="org.apache.storm.scheduler.blacklist.reporter.LogReporter";
-    public static final String DEFAULT_STRATEGY="org.apache.storm.scheduler.blacklist.strategies.DefaultBlacklistStrategy";
-
-    private int toleranceTime=DEFAULT_TOLERANCE_TIME;
-    private int toleranceCount=DEFAULT_TOLERANCE_COUNT;
-    private int resumeTime=DEFAULT_RESUME_TIME;
+    private int toleranceTime;
+    private int toleranceCount;
+    private int resumeTime;
     private IReporter reporter;
     private IBlacklistStrategy blacklistStrategy;
 
@@ -45,7 +31,6 @@ public class BlacklistScheduler implements IScheduler {
 
     //key is supervisor key ,value is supervisor ports
     private CircularBuffer<HashMap<String,Set<Integer>>> toleranceBuffer;
-    private Set<WorkerSlot> slotsInBlacklistTopology;
 
     @Override
     public void prepare(Map conf) {
@@ -54,16 +39,16 @@ public class BlacklistScheduler implements IScheduler {
         defaultScheduler=new DefaultScheduler();
         defaultScheduler.prepare(conf);
         _conf=conf;
-        if(_conf.containsKey(TOLERANCE_TIME)){
-            toleranceTime=(Integer)_conf.get(TOLERANCE_TIME);
+        if(_conf.containsKey(Config.BLACKLIST_SCHEDULER_TOLERANCE_TIME)){
+            toleranceTime=(Integer)_conf.get(Config.BLACKLIST_SCHEDULER_TOLERANCE_TIME);
         }
-        if(_conf.containsKey(TOLERANCE_COUNT)){
-            toleranceCount=(Integer)_conf.get(TOLERANCE_COUNT);
+        if(_conf.containsKey(Config.BLACKLIST_SCHEDULER_TOLERANCE_COUNT)){
+            toleranceCount=(Integer)_conf.get(Config.BLACKLIST_SCHEDULER_TOLERANCE_COUNT);
         }
-        if(_conf.containsKey(RESUME_TIME)){
-            resumeTime=(Integer)_conf.get(RESUME_TIME);
+        if(_conf.containsKey(Config.BLACKLIST_SCHEDULER_RESUME_TIME)){
+            resumeTime=(Integer)_conf.get(Config.BLACKLIST_SCHEDULER_RESUME_TIME);
         }
-        String reporterClassName=_conf.containsKey(REPORTER)?(String)_conf.get(REPORTER):DEFAULT_REPORTER;
+        String reporterClassName=_conf.containsKey(Config.BLACKLIST_SCHEDULER_REPORTER)?(String)_conf.get(Config.BLACKLIST_SCHEDULER_REPORTER):"";
         try {
             reporter=(IReporter)Class.forName(reporterClassName).newInstance();
         } catch (ClassNotFoundException e) {
@@ -74,7 +59,7 @@ public class BlacklistScheduler implements IScheduler {
             LOG.error("Throw illegalAccessException blacklist reporter for name {}", reporterClassName);
         }
 
-        String strategyClassName=_conf.containsKey(STRATEGY)?(String)_conf.get(STRATEGY):DEFAULT_STRATEGY;
+        String strategyClassName=_conf.containsKey(Config.BLACKLIST_SCHEDULER_STRATEGY)?(String)_conf.get(Config.BLACKLIST_SCHEDULER_STRATEGY):"";
         try {
             blacklistStrategy=(IBlacklistStrategy)Class.forName(strategyClassName).newInstance();
         } catch (ClassNotFoundException e) {
@@ -109,29 +94,11 @@ public class BlacklistScheduler implements IScheduler {
         LOG.info("UsedSlots: "+cluster.getUsedSlots());
 
         blacklistStrategy.resumeFromBlacklist();
-        //blacklistStrategy.releaseBlacklistWhenNeeded(cluster,topologies);
         badSupervisors(supervisors);
         cluster.setBlacklistedHosts(getBlacklistHosts(cluster,topologies));
         removeLongTimeDisappearFromCache();
 
         defaultScheduler.schedule(topologies,cluster);
-
-        //add to slotsInBlacklistTopology after all Assignment. So it can be used in next time assignment
-        slotsInBlacklistTopology =new HashSet<>();
-        for(TopologyDetails topologyDetails :topologies.getTopologies()){
-            cluster.needsScheduling(topologyDetails);
-            Map config=topologyDetails.getConf();
-            if(config.containsKey(BLACKLIST_ENABLE) ? (boolean)config.get(BLACKLIST_ENABLE) : (boolean)_conf.get(BLACKLIST_ENABLE)){
-                LOG.info("topology {} enable blacklist scheduler",topologyDetails.getName() );
-                Collection<WorkerSlot> usedSlots = cluster.getUsedSlotsByTopologyId(topologyDetails.getId());
-                if(usedSlots==null){
-                    LOG.error("default scheduler doesn't assign anything for topology {} ,should never happened.",topologyDetails.getName());
-                }else{
-                    LOG.info("topology {} uses slots: {}",topologyDetails.getName(),usedSlots);
-                    slotsInBlacklistTopology.addAll(usedSlots);
-                }
-            }
-        }
     }
 
     private void badSupervisors(Map<String, SupervisorDetails> supervisors){
@@ -173,9 +140,7 @@ public class BlacklistScheduler implements IScheduler {
         Set<Integer> difference=Sets.difference(cachedSupervisorPorts,supervisorPorts);
         Set<Integer> badSlots=new HashSet<>();
         for(int port :difference){
-            if(slotsInBlacklistTopology.contains(new WorkerSlot(supervisorKey,port))){
-                badSlots.add(port);
-            }
+            badSlots.add(port);
         }
         return badSlots;
     }
@@ -185,7 +150,6 @@ public class BlacklistScheduler implements IScheduler {
         Set<String> blacklistHost=new HashSet<>();
         for(String supervisor:blacklist){
             String host=cluster.getHost(supervisor);
-            //LOG.info("add supervisor {} to blacklist ,host is :{}",supervisor,host);
             if(host!=null){
                 blacklistHost.add(host);
             }else{
