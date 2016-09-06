@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-2074: fix storm-kafka-monitor NPE bug
  * STORM-1459: Allow not specifying producer properties in read-only Kafka table in StormSQL
  * STORM-2052: Kafka Spout New Client API - Log Improvements and Parameter Tuning for Better Performance.
  * STORM-2050: [storm-sql] Support User Defined Aggregate Function for Trident mode
