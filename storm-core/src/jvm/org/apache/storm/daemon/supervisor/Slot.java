@@ -658,6 +658,7 @@ public class Slot extends Thread implements AutoCloseable {
         if (MachineState.RUNNING == dynamicState.state) {
             //We are running so we should recover the blobs.
             staticState.localizer.recoverRunningTopology(currentAssignment, port);
+            saveNewAssignment(currentAssignment);
         }
         LOG.warn("SLOT {}:{} Starting in state {} - assignment {}", staticState.host, staticState.port, dynamicState.state, dynamicState.currentAssignment);
     }
@@ -696,6 +697,33 @@ public class Slot extends Thread implements AutoCloseable {
         return workerId;
     }
     
+    private void saveNewAssignment(LocalAssignment assignment) {
+        synchronized(staticState.localState) {
+            Map<Integer, LocalAssignment> assignments = staticState.localState.getLocalAssignmentsMap();
+            if (assignments == null) {
+                assignments = new HashMap<>();
+            }
+            if (assignment == null) {
+                assignments.remove(staticState.port);
+            } else {
+                assignments.put(staticState.port, assignment);
+            }
+            staticState.localState.setLocalAssignmentsMap(assignments);
+        }
+        Map<Long, LocalAssignment> update = null;
+        Map<Long, LocalAssignment> orig = null;
+        do {
+            Long lport = new Long(staticState.port);
+            orig = cachedCurrentAssignments.get();
+            update = new HashMap<>(orig);
+            if (assignment == null) {
+                update.remove(lport);
+            } else {
+                update.put(lport, assignment);
+            }
+        } while (!cachedCurrentAssignments.compareAndSet(orig, update));
+    }
+    
     public void run() {
         try {
             while(!done) {
@@ -713,30 +741,7 @@ public class Slot extends Thread implements AutoCloseable {
                 //Save the current state for recovery
                 if (!equivalent(nextState.currentAssignment, dynamicState.currentAssignment)) {
                     LOG.warn("SLOT {}: Changing current assignment from {} to {}", staticState.port, dynamicState.currentAssignment, nextState.currentAssignment);
-                    synchronized(staticState.localState) {
-                        Map<Integer, LocalAssignment> assignments = staticState.localState.getLocalAssignmentsMap();
-                        if (assignments == null) {
-                            assignments = new HashMap<>();
-                        }
-                        if (nextState.currentAssignment == null) {
-                            assignments.remove(staticState.port);
-                        } else {
-                            assignments.put(staticState.port, nextState.currentAssignment);
-                        }
-                        staticState.localState.setLocalAssignmentsMap(assignments);
-                    }
-                    Map<Long, LocalAssignment> update = null;
-                    Map<Long, LocalAssignment> orig = null;
-                    do {
-                        Long lport = new Long(staticState.port);
-                        orig = cachedCurrentAssignments.get();
-                        update = new HashMap<>(orig);
-                        if (nextState.currentAssignment == null) {
-                            update.remove(lport);
-                        } else {
-                            update.put(lport, nextState.currentAssignment);
-                        }
-                    } while (!cachedCurrentAssignments.compareAndSet(orig, update));
+                    saveNewAssignment(nextState.currentAssignment);
                 }
                 
                 // clean up the profiler actions that are not being processed
