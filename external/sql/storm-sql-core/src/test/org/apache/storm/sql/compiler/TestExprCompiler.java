@@ -64,7 +64,7 @@ public class TestExprCompiler {
       project.getChildExps().get(0).accept(compiler);
     }
 
-    assertThat(sw.toString(), containsString("(int)(_data.get(0));"));
+    assertThat(sw.toString(), containsString("(java.lang.Integer)(_data.get(0));"));
   }
 
   @Test

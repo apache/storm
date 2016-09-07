@@ -16,7 +16,6 @@ env:
 
 language: java
 jdk:
-  - oraclejdk7
   - oraclejdk8
 before_install:
   - rvm use 2.1.5 --install

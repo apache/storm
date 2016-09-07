@@ -120,6 +120,15 @@ The current version of Flux is available in Maven Central at the following coord
 </dependency>
 ```
 
+Using shell spouts and bolts requires additional Flux Wrappers library:
+```xml
+<dependency>
+    <groupId>org.apache.storm</groupId>
+    <artifactId>flux-wrappers</artifactId>
+    <version>${storm.version}</version>
+</dependency>
+```
+
 #### Creating a Flux-Enabled Topology JAR
 The example below illustrates Flux usage with the Maven shade plugin:
 
@@ -130,6 +139,12 @@ The example below illustrates Flux usage with the Maven shade plugin:
     <dependency>
         <groupId>org.apache.storm</groupId>
         <artifactId>flux-core</artifactId>
+        <version>${storm.version}</version>
+    </dependency>
+    <!-- Flux Wrappers include -->
+    <dependency>
+        <groupId>org.apache.storm</groupId>
+        <artifactId>flux-wrappers</artifactId>
         <version>${storm.version}</version>
     </dependency>
 
@@ -237,9 +252,9 @@ Parsing file: /Users/hsimpson/Projects/donut_domination/storm/shell_test.yaml
 ---------- TOPOLOGY DETAILS ----------
 Name: shell-topology
 --------------- SPOUTS ---------------
-sentence-spout[1](org.apache.storm.flux.spouts.GenericShellSpout)
+sentence-spout[1](org.apache.storm.flux.wrappers.spouts.FluxShellSpout)
 ---------------- BOLTS ---------------
-splitsentence[1](org.apache.storm.flux.bolts.GenericShellBolt)
+splitsentence[1](org.apache.storm.flux.wrappers.bolts.FluxShellBolt)
 log[1](org.apache.storm.flux.wrappers.bolts.LogInfoBolt)
 count[1](org.apache.storm.testing.TestWordCounter)
 --------------- STREAMS ---------------
@@ -554,7 +569,7 @@ Shell spout example:
 ```yaml
 spouts:
   - id: "sentence-spout"
-    className: "org.apache.storm.flux.spouts.GenericShellSpout"
+    className: "org.apache.storm.flux.wrappers.spouts.FluxShellSpout"
     # shell spout constructor takes 2 arguments: String[], String[]
     constructorArgs:
       # command line
@@ -627,7 +642,7 @@ Bolt Examples:
 # bolt definitions
 bolts:
   - id: "splitsentence"
-    className: "org.apache.storm.flux.bolts.GenericShellBolt"
+    className: "org.apache.storm.flux.wrappers.bolts.FluxShellBolt"
     constructorArgs:
       # command line
       - ["python", "splitsentence.py"]
@@ -762,7 +777,7 @@ config:
 # spout definitions
 spouts:
   - id: "sentence-spout"
-    className: "org.apache.storm.flux.spouts.GenericShellSpout"
+    className: "org.apache.storm.flux.wrappers.spouts.FluxShellSpout"
     # shell spout constructor takes 2 arguments: String[], String[]
     constructorArgs:
       # command line
@@ -774,7 +789,7 @@ spouts:
 # bolt definitions
 bolts:
   - id: "splitsentence"
-    className: "org.apache.storm.flux.bolts.GenericShellBolt"
+    className: "org.apache.storm.flux.wrappers.bolts.FluxShellBolt"
     constructorArgs:
       # command line
       - ["python", "splitsentence.py"]

@@ -22,6 +22,7 @@ import org.apache.storm.Config;
 import org.apache.storm.ProcessSimulator;
 import org.apache.storm.container.cgroup.CgroupManager;
 import org.apache.storm.daemon.supervisor.SupervisorUtils;
+import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.WorkerResources;
 import org.apache.storm.localizer.Localizer;
 import org.apache.storm.utils.ConfigUtils;
@@ -89,9 +90,24 @@ public class DefaultWorkerManager implements IWorkerManager {
 
             String stormJar = ConfigUtils.supervisorStormJarPath(stormRoot);
 
+            StormTopology stormTopology = ConfigUtils.readSupervisorTopology(conf, stormId);
+
+            List<String> dependencyLocations = new ArrayList<>();
+            if (stormTopology.get_dependency_jars() != null) {
+                for (String dependency : stormTopology.get_dependency_jars()) {
+                    dependencyLocations.add(new File(stormRoot, dependency).getAbsolutePath());
+                }
+            }
+
+            if (stormTopology.get_dependency_artifacts() != null) {
+                for (String dependency : stormTopology.get_dependency_artifacts()) {
+                    dependencyLocations.add(new File(stormRoot, dependency).getAbsolutePath());
+                }
+            }
+
             Map stormConf = ConfigUtils.readSupervisorStormConf(conf, stormId);
 
-            String workerClassPath = getWorkerClassPath(stormJar, stormConf);
+            String workerClassPath = getWorkerClassPath(stormJar, stormConf, dependencyLocations);
 
             Object topGcOptsObject = stormConf.get(Config.TOPOLOGY_WORKER_GC_CHILDOPTS);
             List<String> topGcOpts = new ArrayList<>();
@@ -343,7 +359,7 @@ public class DefaultWorkerManager implements IWorkerManager {
         return ret;
     }
 
-    protected String getWorkerClassPath(String stormJar, Map stormConf) {
+    protected String getWorkerClassPath(String stormJar, Map stormConf, List<String> dependencyLocations) {
         List<String> topoClasspath = new ArrayList<>();
         Object object = stormConf.get(Config.TOPOLOGY_CLASSPATH);
 
@@ -367,7 +383,8 @@ public class DefaultWorkerManager implements IWorkerManager {
 
         String classPath = Utils.addToClasspath(firstClasspathList, Arrays.asList(Utils.workerClasspath()));
         String classAddPath = Utils.addToClasspath(classPath, Arrays.asList(stormJar));
-        return Utils.addToClasspath(classAddPath, topoClasspath);
+        String classDepAddedPath = Utils.addToClasspath(classAddPath, dependencyLocations);
+        return Utils.addToClasspath(classDepAddedPath, topoClasspath);
     }
 
     private static String substituteChildOptsInternal(String string,  String workerId, String stormId, Long port, int memOnheap) {
