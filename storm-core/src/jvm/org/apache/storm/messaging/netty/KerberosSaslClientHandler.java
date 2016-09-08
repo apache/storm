@@ -37,11 +37,13 @@ public class KerberosSaslClientHandler extends SimpleChannelUpstreamHandler {
     /** Used for client or server's token to send or receive from each other. */
     private Map storm_conf;
     private String jaas_section;
+    private String host;
 
-    public KerberosSaslClientHandler(ISaslClient client, Map storm_conf, String jaas_section) throws IOException {
+    public KerberosSaslClientHandler(ISaslClient client, Map storm_conf, String jaas_section, String host) throws IOException {
         this.client = client;
         this.storm_conf = storm_conf;
         this.jaas_section = jaas_section;
+        this.host = host;
         start_time = System.currentTimeMillis();
     }
 
@@ -62,7 +64,7 @@ public class KerberosSaslClientHandler extends SimpleChannelUpstreamHandler {
             if (saslNettyClient == null) {
                 LOG.debug("Creating saslNettyClient now for channel: {}",
                           channel);
-                saslNettyClient = new KerberosSaslNettyClient(storm_conf, jaas_section);
+                saslNettyClient = new KerberosSaslNettyClient(storm_conf, jaas_section, host);
                 KerberosSaslNettyClientState.getKerberosSaslNettyClient.set(channel,
                                                                             saslNettyClient);
             }

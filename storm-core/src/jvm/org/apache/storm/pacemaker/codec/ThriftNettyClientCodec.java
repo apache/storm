@@ -47,11 +47,13 @@ public class ThriftNettyClientCodec {
     private PacemakerClient client;
     private AuthMethod authMethod;
     private Map storm_conf;
+    private String host;
 
-    public ThriftNettyClientCodec(PacemakerClient pacemaker_client, Map storm_conf, AuthMethod authMethod) {
+    public ThriftNettyClientCodec(PacemakerClient pacemaker_client, Map storm_conf, AuthMethod authMethod, String host) {
         client = pacemaker_client;
         this.authMethod = authMethod;
         this.storm_conf = storm_conf;
+        this.host = host;
     }
 
     public ChannelPipelineFactory pipelineFactory() {
@@ -67,7 +69,8 @@ public class ThriftNettyClientCodec {
                         pipeline.addLast(KERBEROS_HANDLER,
                                          new KerberosSaslClientHandler(client,
                                                                        storm_conf,
-                                                                       AuthUtils.LOGIN_CONTEXT_PACEMAKER_CLIENT));
+                                                                       AuthUtils.LOGIN_CONTEXT_PACEMAKER_CLIENT,
+                                                                       host));
                     }
                     catch (IOException e) {
                         throw new RuntimeException(e);
