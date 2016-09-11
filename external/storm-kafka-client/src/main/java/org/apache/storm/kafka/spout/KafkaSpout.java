@@ -77,7 +77,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     private KafkaSpoutStreams kafkaSpoutStreams;                        // Object that wraps all the logic to declare output fields and emit tuples
     private transient KafkaSpoutTuplesBuilder<K, V> tuplesBuilder;      // Object that contains the logic to build tuples for each ConsumerRecord
 
-    private transient Map<TopicPartition, OffsetEntry> acked;           // Tuples that were successfully acked. These tuples will be committed periodically when the commit timer expires, after consumer rebalance, or on close/deactivate
+    transient Map<TopicPartition, OffsetEntry> acked;           // Tuples that were successfully acked. These tuples will be committed periodically when the commit timer expires, after consumer rebalance, or on close/deactivate
     private transient Set<KafkaSpoutMessageId> emitted;                 // Tuples that have been emitted but that are "on the wire", i.e. pending being acked or failed
     private transient Iterator<ConsumerRecord<K, V>> waitingToEmit;         // Records that have been polled and are queued to be emitted in the nextTuple() call. One record is emitted per nextTuple()
     private transient long numUncommittedOffsets;                       // Number of offsets that have been polled and emitted but not yet been committed
@@ -266,19 +266,22 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
             if (offsetAndMeta != null) {
                 kafkaConsumer.seek(rtp, offsetAndMeta.offset() + 1);  // seek to the next offset that is ready to commit in next commit cycle
             } else {
-                kafkaConsumer.seekToEnd(toArrayList(rtp));    // Seek to last committed offset
+                kafkaConsumer.seek(rtp, acked.get(rtp).committedOffset + 1);    // Seek to last committed offset
             }
         }
     }
 
     // ======== emit  =========
     private void emit() {
-        emitTupleIfNotEmitted(waitingToEmit.next());
-        waitingToEmit.remove();
+        while(!emitTupleIfNotEmitted(waitingToEmit.next()) && waitingToEmit.hasNext()) {
+            waitingToEmit.remove();
+        }
     }
 
-    // emits one tuple per record
-    private void emitTupleIfNotEmitted(ConsumerRecord<K, V> record) {
+
+    //Emits one tuple per record
+    //@return true if tuple was emitted
+    private boolean emitTupleIfNotEmitted(ConsumerRecord<K, V> record) {
         final TopicPartition tp = new TopicPartition(record.topic(), record.partition());
         final KafkaSpoutMessageId msgId = new KafkaSpoutMessageId(record);
 
@@ -295,7 +298,9 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                 retryService.remove(msgId);  // re-emitted hence remove from failed
             }
             LOG.trace("Emitted tuple [{}] for record [{}]", tuple, record);
+            return true;
         }
+        return false;
     }
 
     private void commitOffsetsForAckedTuples() {
@@ -451,7 +456,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     /**
      * This class is not thread safe
      */
-    private class OffsetEntry {
+    class OffsetEntry {
         private final TopicPartition tp;
         private final long initialFetchOffset;  /* First offset to be fetched. It is either set to the beginning, end, or to the first uncommitted offset.
                                                  * Initial value depends on offset strategy. See KafkaSpoutConsumerRebalanceListener */
@@ -479,7 +484,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
             KafkaSpoutMessageId nextCommitMsg = null;     // this is a convenience variable to make it faster to create OffsetAndMetadata
 
             for (KafkaSpoutMessageId currAckedMsg : ackedMsgs) {  // complexity is that of a linear scan on a TreeMap
-                if ((currOffset = currAckedMsg.offset()) == initialFetchOffset || currOffset == nextCommitOffset + 1) {            // found the next offset to commit
+                if ((currOffset = currAckedMsg.offset()) == nextCommitOffset + 1) {            // found the next offset to commit
                     found = true;
                     nextCommitMsg = currAckedMsg;
                     nextCommitOffset = currOffset;
@@ -487,8 +492,9 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                     LOG.debug("topic-partition [{}] has non-continuous offset [{}]. It will be processed in a subsequent batch.", tp, currOffset);
                     break;
                 } else {
-                    LOG.debug("topic-partition [{}] has unexpected offset [{}].", tp, currOffset);
-                    break;
+                    //Received a redundant ack. Ignore and continue processing.
+                    LOG.warn("topic-partition [{}] has unexpected offset [{}]. Current committed Offset [{}]",
+                            tp, currOffset,  committedOffset);
                 }
             }
 
@@ -530,6 +536,10 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                         numCommittedOffsets, tp, numUncommittedOffsets);
             }
             LOG.trace("{}", this);
+        }
+
+        long getCommittedOffset() {
+            return committedOffset;
         }
 
         public boolean isEmpty() {
