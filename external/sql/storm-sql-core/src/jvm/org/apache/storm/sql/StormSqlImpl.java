@@ -18,10 +18,12 @@
 package org.apache.storm.sql;
 
 import org.apache.calcite.jdbc.CalciteSchema;
+import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.prepare.CalciteCatalogReader;
 import org.apache.calcite.schema.Function;
 import org.apache.calcite.schema.impl.AggregateFunctionImpl;
 import org.apache.calcite.schema.impl.ScalarFunctionImpl;
+import org.apache.calcite.sql.SqlExplainLevel;
 import org.apache.calcite.sql.SqlOperatorTable;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.util.ChainedSqlOperatorTable;
@@ -137,6 +139,41 @@ class StormSqlImpl extends StormSql {
           }
         }
       }
+    }
+  }
+
+  @Override
+  public void explain(Iterable<String> statements) throws Exception {
+    Map<String, ISqlTridentDataSource> dataSources = new HashMap<>();
+    for (String sql : statements) {
+      StormParser parser = new StormParser(sql);
+      SqlNode node = parser.impl().parseSqlStmtEof();
+
+      System.out.println("===========================================================");
+      System.out.println("query>");
+      System.out.println(sql);
+      System.out.println("-----------------------------------------------------------");
+
+      if (node instanceof SqlCreateTable) {
+        handleCreateTableForTrident((SqlCreateTable) node, dataSources);
+        System.out.println("No plan presented on DDL");
+      } else if (node instanceof SqlCreateFunction) {
+        handleCreateFunction((SqlCreateFunction) node);
+        System.out.println("No plan presented on DDL");
+      } else {
+        FrameworkConfig config = buildFrameWorkConfig();
+        Planner planner = Frameworks.getPlanner(config);
+        SqlNode parse = planner.parse(sql);
+        SqlNode validate = planner.validate(parse);
+        RelNode tree = planner.convert(validate);
+
+        // TODO: change to all attributes when we change to cost-based planner
+        String plan = RelOptUtil.toString(tree, SqlExplainLevel.NON_COST_ATTRIBUTES);
+        System.out.println("plan>");
+        System.out.println(plan);
+      }
+
+      System.out.println("===========================================================");
     }
   }
 

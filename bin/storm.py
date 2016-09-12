@@ -323,9 +323,10 @@ def jar(jarfile, klass, *args):
                     ["-Dstorm.dependency.artifacts=" + json.dumps(artifact_to_file_jars)])
 
 def sql(sql_file, topology_name):
-    """Syntax: [storm sql sql-file topology-name]
+    """Syntax: [storm sql sql-file topology-name], or [storm sql sql-file --explain] when activating explain mode
 
     Compiles the SQL statements into a Trident topology and submits it to Storm.
+    If user activates explain mode, SQL Runner analyzes each query statement and shows query plan instead of submitting topology.
 
     --jars and --artifacts options available for jar are also applied to sql command.
     Please refer "help jar" to see how to use --jars and --artifacts options.
@@ -349,11 +350,16 @@ def sql(sql_file, topology_name):
     # include this for running StormSqlRunner, but not for generated topology
     extrajars.extend(sql_core_jars)
 
+    if topology_name == "--explain":
+        args = ["--file", sql_file, "--explain"]
+    else:
+        args = ["--file", sql_file, "--topology", topology_name]
+
     exec_storm_class(
         "org.apache.storm.sql.StormSqlRunner",
         jvmtype="-client",
         extrajars=extrajars,
-        args=[sql_file, topology_name],
+        args=args,
         daemon=False,
         jvmopts=["-Dstorm.dependency.jars=" + ",".join(local_jars)] +
                 ["-Dstorm.dependency.artifacts=" + json.dumps(artifact_to_file_jars)])
