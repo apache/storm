@@ -26,6 +26,7 @@ import org.apache.storm.kafka.trident.OpaqueTridentKafkaSpout;
 import org.apache.storm.kafka.trident.TridentKafkaConfig;
 import org.apache.storm.kafka.trident.TridentKafkaState;
 import org.apache.storm.kafka.trident.mapper.TridentTupleToKafkaMapper;
+import org.apache.storm.kafka.trident.selector.DefaultTopicSelector;
 import org.apache.storm.kafka.trident.selector.KafkaTopicSelector;
 import org.apache.storm.trident.operation.BaseFunction;
 import org.apache.storm.trident.operation.Function;
@@ -46,18 +47,6 @@ import java.util.*;
  */
 public class KafkaDataSourcesProvider implements DataSourcesProvider {
   private static final int DEFAULT_ZK_PORT = 2181;
-  private static class StaticTopicSelector implements KafkaTopicSelector {
-    private final String topic;
-
-    private StaticTopicSelector(String topic) {
-      this.topic = topic;
-    }
-
-    @Override
-    public String getTopic(TridentTuple tuple) {
-      return topic;
-    }
-  }
 
   private static class SqlKafkaMapper implements TridentTupleToKafkaMapper<Object, ByteBuffer> {
     private final int primaryKeyIndex;
@@ -104,7 +93,7 @@ public class KafkaDataSourcesProvider implements DataSourcesProvider {
       JsonSerializer serializer = new JsonSerializer(fieldNames);
       SqlKafkaMapper m = new SqlKafkaMapper(primaryKeyIndex, serializer);
       state = new TridentKafkaState()
-          .withKafkaTopicSelector(new StaticTopicSelector(topic))
+          .withKafkaTopicSelector(new DefaultTopicSelector(topic))
           .withTridentTupleToKafkaMapper(m);
       state.prepare(producerProperties);
     }
