@@ -189,6 +189,7 @@
  * STORM-1868: Modify TridentKafkaWordCount to run in distributed mode
 
 ## 1.0.3
+ * STORM-2086: use DefaultTopicSelector instead of creating a new one
  * STORM-2079: Unneccessary readStormConfig operation
  * STORM-2081: create external directory for storm-sql various data sources and move storm-sql-kafka to it
  * STORM-1344: Remove sql command from storm-jdbc build
