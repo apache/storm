@@ -10,7 +10,7 @@
  * STORM-1234: port backtype.storm.security.auth.DefaultHttpCredentialsPlugin-test to java
  * STORM-2037: debug operation should be whitelisted in SimpleAclAuthorizer.
  * STORM-2036: Fix minor bug in RAS Tests
- * STORM-2026: Inconsistency between (SpoutExecutor, BoltExecutor) and (spout-transfer-fn, bolt-transfer-fn) * STORM-1979: Storm Druid Connector implementation.
+ * STORM-2026: Inconsistency between (SpoutExecutor, BoltExecutor) and (spout-transfer-fn, bolt-transfer-fn)
  * STORM-1277: port backtype.storm.daemon.executor to java
  * STORM-2020: Stop using sun internal classes.
  * STORM-2021: Fix license.
@@ -146,7 +146,8 @@
  * STORM-1521: When using Kerberos login from keytab with multiple bolts/executors ticket is not renewed in hbase bolt.
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
-## 1.1.0 
+## 1.1.0
+ * STORM-1979: Storm Druid Connector implementation.
  * STORM-2057: Support JOIN statement in Storm SQL
  * STORM-1970: external project examples refator
  * STORM-2074: fix storm-kafka-monitor NPE bug
