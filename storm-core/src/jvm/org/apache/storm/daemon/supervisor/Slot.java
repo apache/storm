@@ -167,11 +167,7 @@ public class Slot extends Thread implements AutoCloseable {
         }
         
         public DynamicState withPendingLocalization(Future<Void> pendingDownload) {
-            return new DynamicState(this.state, this.newAssignment,
-                    this.container, this.currentAssignment,
-                    this.pendingLocalization, this.startTime,
-                    pendingDownload, this.profileActions,
-                    this.pendingStopProfileActions);
+            return withPendingLocalization(this.pendingLocalization, pendingDownload);
         }
         
         public DynamicState withState(final MachineState state) {
@@ -225,7 +221,7 @@ public class Slot extends Thread implements AutoCloseable {
         
         @Override
         public String toString() {
-            return "{ "+topoId + ": " + request + " }";
+            return "{ " + topoId + ": " + request + " }";
         }
     }
     

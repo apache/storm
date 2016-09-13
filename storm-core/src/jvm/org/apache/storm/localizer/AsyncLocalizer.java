@@ -250,10 +250,15 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
                     File rsrcFilePath = new File(localizedResource.getCurrentSymlinkPath());
 
                     String symlinkName = null;
-                    Map<String, Object> blobInfo = blobstoreMap.get(keyName);
-                    if (blobInfo != null && blobInfo.containsKey("localname")) {
-                        symlinkName = (String) blobInfo.get("localname");
+                    if (blobstoreMap != null) {
+                        Map<String, Object> blobInfo = blobstoreMap.get(keyName);
+                        if (blobInfo != null && blobInfo.containsKey("localname")) {
+                            symlinkName = (String) blobInfo.get("localname");
+                        } else {
+                            symlinkName = keyName;
+                        }
                     } else {
+                        // all things are from dependencies
                         symlinkName = keyName;
                     }
                     _fsOps.createSymlink(new File(stormroot, symlinkName), rsrcFilePath);
@@ -306,25 +311,15 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
         if (path == null) {
             return null;
         }
-        String[] paths = path.split(File.pathSeparator);
-        List<String> jarPaths = new ArrayList<String>();
-        for (String s : paths) {
-            if (s.endsWith(".jar")) {
-                jarPaths.add(s);
+        
+        for (String jpath : path.split(File.pathSeparator)) {
+            if (jpath.endsWith(".jar")) {
+                if (Utils.zipDoesContainDir(jpath, ConfigUtils.RESOURCES_SUBDIR)) {
+                    return jpath;
+                }
             }
         }
-
-        List<String> rtn = new ArrayList<String>();
-        int size = jarPaths.size();
-        for (int i = 0; i < size; i++) {
-            if (Utils.zipDoesContainDir(jarPaths.get(i), ConfigUtils.RESOURCES_SUBDIR)) {
-                rtn.add(jarPaths.get(i));
-            }
-        }
-        if (rtn.size() == 0)
-            return null;
-
-        return rtn.get(0);
+        return null;
     }
     
     @Override
