@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.sql.kafka;
+package org.apache.storm.sql.runtime.serde.json;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -23,16 +23,17 @@ import com.google.common.base.Preconditions;
 import org.apache.storm.sql.runtime.IOutputSerializer;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.io.StringWriter;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-class JsonSerializer implements IOutputSerializer {
+public class JsonSerializer implements IOutputSerializer, Serializable {
   private final List<String> fieldNames;
-  private transient final JsonFactory jsonFactory;
+  private final JsonFactory jsonFactory;
 
-  JsonSerializer(List<String> fieldNames) {
+  public JsonSerializer(List<String> fieldNames) {
     this.fieldNames = fieldNames;
     jsonFactory = new JsonFactory();
   }
