@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-2057: Support JOIN statement in Storm SQL
  * STORM-1970: external project examples refator
  * STORM-2074: fix storm-kafka-monitor NPE bug
  * STORM-1459: Allow not specifying producer properties in read-only Kafka table in StormSQL
