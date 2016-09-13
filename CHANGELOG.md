@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-2067: Fix "array element type mismatch" from compute-executors in nimbus.clj
  * STORM-2054: DependencyResolver should be aware of relative path and absolute path
  * STORM-2052: Kafka Spout New Client API - Log Improvements and Parameter Tuning for Better Performance
  * STORM-2045: fixed SpoutExecutor NPE
@@ -146,6 +147,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0 
+ * STORM-2057: Support JOIN statement in Storm SQL
  * STORM-1970: external project examples refator
  * STORM-2074: fix storm-kafka-monitor NPE bug
  * STORM-1459: Allow not specifying producer properties in read-only Kafka table in StormSQL
