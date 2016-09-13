@@ -27,6 +27,7 @@ import org.apache.storm.grouping.CustomStreamGrouping;
 import org.apache.storm.topology.BoltDeclarer;
 import org.apache.storm.topology.IRichSpout;
 import org.apache.storm.topology.SpoutDeclarer;
+import org.apache.storm.trident.operation.impl.PreservingFieldsOrderJoinerMultiReducer;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.Utils;
 
@@ -46,7 +47,6 @@ import org.apache.storm.trident.graph.GraphGrouper;
 import org.apache.storm.trident.graph.Group;
 import org.apache.storm.trident.operation.DefaultResourceDeclarer;
 import org.apache.storm.trident.operation.GroupedMultiReducer;
-import org.apache.storm.trident.operation.ITridentResource;
 import org.apache.storm.trident.operation.MultiReducer;
 import org.apache.storm.trident.operation.impl.FilterExecutor;
 import org.apache.storm.trident.operation.impl.GroupedMultiReducerExecutor;
@@ -262,19 +262,57 @@ public class TridentTopology {
     }
     
     public Stream join(List<Stream> streams, List<Fields> joinFields, Fields outFields, JoinType type) {
-        return join(streams, joinFields, outFields, repeat(streams.size(), type));        
+        return join(streams, joinFields, outFields, repeat(streams.size(), type));
     }
 
     public Stream join(Stream s1, Fields joinFields1, Stream s2, Fields joinFields2, Fields outFields, List<JoinType> mixed) {
-        return join(Arrays.asList(s1, s2), Arrays.asList(joinFields1, joinFields2), outFields, mixed);        
+        return join(Arrays.asList(s1, s2), Arrays.asList(joinFields1, joinFields2), outFields, mixed);
         
     }
     
     public Stream join(List<Stream> streams, List<Fields> joinFields, Fields outFields, List<JoinType> mixed) {
-        return multiReduce(strippedInputFields(streams, joinFields),
-              groupedStreams(streams, joinFields),
-              new JoinerMultiReducer(mixed, joinFields.get(0).size(), strippedInputFields(streams, joinFields)),
-              outFields);
+        return join(streams, joinFields, outFields, mixed, JoinOutFieldsMode.COMPACT);
+    }
+
+    public Stream join(Stream s1, Fields joinFields1, Stream s2, Fields joinFields2, Fields outFields, JoinOutFieldsMode mode) {
+        return join(Arrays.asList(s1, s2), Arrays.asList(joinFields1, joinFields2), outFields, mode);
+    }
+
+    public Stream join(List<Stream> streams, List<Fields> joinFields, Fields outFields, JoinOutFieldsMode mode) {
+        return join(streams, joinFields, outFields, JoinType.INNER, mode);
+    }
+
+    public Stream join(Stream s1, Fields joinFields1, Stream s2, Fields joinFields2, Fields outFields, JoinType type, JoinOutFieldsMode mode) {
+        return join(Arrays.asList(s1, s2), Arrays.asList(joinFields1, joinFields2), outFields, type, mode);
+    }
+
+    public Stream join(List<Stream> streams, List<Fields> joinFields, Fields outFields, JoinType type, JoinOutFieldsMode mode) {
+        return join(streams, joinFields, outFields, repeat(streams.size(), type), mode);
+    }
+
+    public Stream join(Stream s1, Fields joinFields1, Stream s2, Fields joinFields2, Fields outFields, List<JoinType> mixed, JoinOutFieldsMode mode) {
+        return join(Arrays.asList(s1, s2), Arrays.asList(joinFields1, joinFields2), outFields, mixed, mode);
+
+    }
+
+    public Stream join(List<Stream> streams, List<Fields> joinFields, Fields outFields, List<JoinType> mixed, JoinOutFieldsMode mode) {
+        switch (mode) {
+            case COMPACT:
+                return multiReduce(strippedInputFields(streams, joinFields),
+                        groupedStreams(streams, joinFields),
+                        new JoinerMultiReducer(mixed, joinFields.get(0).size(), strippedInputFields(streams, joinFields)),
+                        outFields);
+
+            case PRESERVE:
+                return multiReduce(strippedInputFields(streams, joinFields),
+                        groupedStreams(streams, joinFields),
+                        new PreservingFieldsOrderJoinerMultiReducer(mixed, joinFields.get(0).size(),
+                                getAllOutputFields(streams), joinFields, strippedInputFields(streams, joinFields)),
+                        outFields);
+
+            default:
+                throw new IllegalArgumentException("Unsupported out-fields mode: " + mode);
+        }
     }
 
     public TridentTopology setResourceDefaults(DefaultResourceDeclarer defaults) {
