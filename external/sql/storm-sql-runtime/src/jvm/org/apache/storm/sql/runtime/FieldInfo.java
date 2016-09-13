@@ -17,10 +17,12 @@
  */
 package org.apache.storm.sql.runtime;
 
+import java.io.Serializable;
+
 /**
  * Describe each column of the field
  */
-public class FieldInfo {
+public class FieldInfo implements Serializable {
   private final String name;
   private final Class<?> type;
   private final boolean isPrimary;

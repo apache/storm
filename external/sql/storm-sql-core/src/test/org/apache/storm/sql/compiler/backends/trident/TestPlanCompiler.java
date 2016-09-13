@@ -29,7 +29,6 @@ import org.apache.storm.ILocalCluster;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.sql.TestUtils;
-import org.apache.storm.sql.TestUtils.MockSqlTridentDataSource.CollectDataFunction;
 import org.apache.storm.sql.compiler.TestCompilerUtils;
 import org.apache.storm.sql.runtime.ISqlTridentDataSource;
 import org.apache.storm.sql.runtime.trident.AbstractTridentProcessor;
@@ -46,7 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-import static org.apache.storm.sql.TestUtils.MockSqlTridentDataSource.CollectDataFunction.getCollectedValues;
+import static org.apache.storm.sql.TestUtils.MockState.getCollectedValues;
 
 public class TestPlanCompiler {
   private final JavaTypeFactory typeFactory = new JavaTypeFactoryImpl(
@@ -68,7 +67,8 @@ public class TestPlanCompiler {
     final AbstractTridentProcessor proc = compiler.compileForTest(state.tree());
     final TridentTopology topo = proc.build(data);
     Fields f = proc.outputStream().getOutputFields();
-    proc.outputStream().each(f, new CollectDataFunction(), new Fields()).toStream();
+    proc.outputStream().partitionPersist(new TestUtils.MockStateFactory(),
+            f, new TestUtils.MockStateUpdater(), new Fields());
     runTridentTopology(EXPECTED_VALUE_SIZE, proc, topo);
     Assert.assertArrayEquals(new Values[] { new Values(3), new Values(4)}, getCollectedValues().toArray());
   }
@@ -84,7 +84,8 @@ public class TestPlanCompiler {
     final AbstractTridentProcessor proc = compiler.compileForTest(state.tree());
     final TridentTopology topo = proc.build(data);
     Fields f = proc.outputStream().getOutputFields();
-    proc.outputStream().each(f, new CollectDataFunction(), new Fields()).toStream();
+    proc.outputStream().partitionPersist(new TestUtils.MockStateFactory(),
+            f, new TestUtils.MockStateUpdater(), new Fields());
     runTridentTopology(EXPECTED_VALUE_SIZE, proc, topo);
 
     Assert.assertArrayEquals(new Values[] { new Values(0, 5L, 5, 1, 3, 4)}, getCollectedValues().toArray());
@@ -101,7 +102,8 @@ public class TestPlanCompiler {
     final AbstractTridentProcessor proc = compiler.compileForTest(state.tree());
     final TridentTopology topo = proc.build(data);
     Fields f = proc.outputStream().getOutputFields();
-    proc.outputStream().each(f, new CollectDataFunction(), new Fields()).toStream();
+    proc.outputStream().partitionPersist(new TestUtils.MockStateFactory(),
+            f, new TestUtils.MockStateUpdater(), new Fields());
     runTridentTopology(EXPECTED_VALUE_SIZE, proc, topo);
 
     Assert.assertArrayEquals(new Values[] { new Values(0, 5L, 39)}, getCollectedValues().toArray());
@@ -119,7 +121,8 @@ public class TestPlanCompiler {
     final AbstractTridentProcessor proc = compiler.compileForTest(state.tree());
     final TridentTopology topo = proc.build(data);
     Fields f = proc.outputStream().getOutputFields();
-    proc.outputStream().each(f, new CollectDataFunction(), new Fields()).toStream();
+    proc.outputStream().partitionPersist(new TestUtils.MockStateFactory(),
+            f, new TestUtils.MockStateUpdater(), new Fields());
     runTridentTopology(EXPECTED_VALUE_SIZE, proc, topo);
 
     assertListsAreEqualIgnoringOrder(Lists.newArrayList(new Values(1, 2L), new Values(0, 2L)), getCollectedValues());
@@ -137,7 +140,8 @@ public class TestPlanCompiler {
     final AbstractTridentProcessor proc = compiler.compileForTest(state.tree());
     final TridentTopology topo = proc.build(data);
     Fields f = proc.outputStream().getOutputFields();
-    proc.outputStream().each(f, new CollectDataFunction(), new Fields()).toStream();
+    proc.outputStream().partitionPersist(new TestUtils.MockStateFactory(),
+            f, new TestUtils.MockStateUpdater(), new Fields());
     runTridentTopology(EXPECTED_VALUE_SIZE, proc, topo);
 
     assertListsAreEqualIgnoringOrder(Lists.newArrayList(new Values(2, null), new Values(3, null), new Values(4, null)), getCollectedValues());
@@ -155,7 +159,8 @@ public class TestPlanCompiler {
     final AbstractTridentProcessor proc = compiler.compileForTest(state.tree());
     final TridentTopology topo = proc.build(data);
     Fields f = proc.outputStream().getOutputFields();
-    proc.outputStream().each(f, new CollectDataFunction(), new Fields()).toStream();
+    proc.outputStream().partitionPersist(new TestUtils.MockStateFactory(),
+            f, new TestUtils.MockStateUpdater(), new Fields());
     runTridentTopology(EXPECTED_VALUE_SIZE, proc, topo);
 
     assertListsAreEqualIgnoringOrder(Lists.newArrayList(new Values(2, null), new Values(3, null), new Values(4, null)), getCollectedValues());
@@ -173,7 +178,8 @@ public class TestPlanCompiler {
     final AbstractTridentProcessor proc = compiler.compileForTest(state.tree());
     final TridentTopology topo = proc.build(data);
     Fields f = proc.outputStream().getOutputFields();
-    proc.outputStream().each(f, new CollectDataFunction(), new Fields()).toStream();
+    proc.outputStream().partitionPersist(new TestUtils.MockStateFactory(),
+            f, new TestUtils.MockStateUpdater(), new Fields());
     runTridentTopology(EXPECTED_VALUE_SIZE, proc, topo);
 
     assertListsAreEqualIgnoringOrder(Lists.newArrayList(new Values(null, "dept-2"), new Values(null, "dept-3"), new Values(null, "dept-4"),
@@ -207,7 +213,8 @@ public class TestPlanCompiler {
     AbstractTridentProcessor proc = compiler.compileForTest(state.tree());
     final TridentTopology topo = proc.build(data);
     Fields f = proc.outputStream().getOutputFields();
-    proc.outputStream().each(f, new CollectDataFunction(), new Fields()).toStream();
+    proc.outputStream().partitionPersist(new TestUtils.MockStateFactory(),
+            f, new TestUtils.MockStateUpdater(), new Fields());
     runTridentTopology(EXPECTED_VALUE_SIZE, proc, topo);
     Assert.assertArrayEquals(new Values[] { new Values(true, false, true) }, getCollectedValues().toArray());
   }
@@ -225,7 +232,8 @@ public class TestPlanCompiler {
     AbstractTridentProcessor proc = compiler.compileForTest(state.tree());
     final TridentTopology topo = proc.build(data);
     Fields f = proc.outputStream().getOutputFields();
-    proc.outputStream().each(f, new CollectDataFunction(), new Fields()).toStream();
+    proc.outputStream().partitionPersist(new TestUtils.MockStateFactory(),
+            f, new TestUtils.MockStateUpdater(), new Fields());
     runTridentTopology(EXPECTED_VALUE_SIZE, proc, topo);
     Assert.assertArrayEquals(new Values[] { new Values(5) }, getCollectedValues().toArray());
   }
@@ -241,7 +249,8 @@ public class TestPlanCompiler {
     AbstractTridentProcessor proc = compiler.compileForTest(state.tree());
     final TridentTopology topo = proc.build(data);
     Fields f = proc.outputStream().getOutputFields();
-    proc.outputStream().each(f, new CollectDataFunction(), new Fields()).toStream();
+    proc.outputStream().partitionPersist(new TestUtils.MockStateFactory(),
+            f, new TestUtils.MockStateUpdater(), new Fields());
     runTridentTopology(EXPECTED_VALUE_SIZE, proc, topo);
     Assert.assertArrayEquals(new Values[] { new Values(0, 5L, 15L, 15L) }, getCollectedValues().toArray());
   }

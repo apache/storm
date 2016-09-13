@@ -21,7 +21,13 @@ package org.apache.storm.sql;
 
 import org.apache.storm.ILocalCluster;
 import org.apache.storm.LocalCluster;
+import org.apache.storm.sql.runtime.SimpleSqlTridentConsumer;
+import org.apache.storm.task.IMetricsContext;
 import org.apache.storm.task.TopologyContext;
+import org.apache.storm.trident.operation.TridentOperationContext;
+import org.apache.storm.trident.state.State;
+import org.apache.storm.trident.state.StateFactory;
+import org.apache.storm.trident.state.StateUpdater;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.sql.runtime.ChannelContext;
@@ -188,6 +194,60 @@ public class TestUtils {
     }
   }
 
+  public static class MockState implements State {
+    /**
+     * Collect all values in a static variable as the instance will go through serialization and deserialization.
+     * NOTE: This should be cleared before or after running each test.
+     */
+    private transient static final List<List<Object> > VALUES = new ArrayList<>();
+
+    public static List<List<Object>> getCollectedValues() {
+      return VALUES;
+    }
+
+    @Override
+    public void beginCommit(Long txid) {
+      // NOOP
+    }
+
+    @Override
+    public void commit(Long txid) {
+      // NOOP
+    }
+
+    public void updateState(List<TridentTuple> tuples, TridentCollector collector) {
+      for (TridentTuple tuple : tuples) {
+        VALUES.add(tuple.getValues());
+      }
+    }
+  }
+
+  public static class MockStateFactory implements StateFactory {
+
+    @Override
+    public State makeState(Map conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
+      return new MockState();
+    }
+  }
+
+  public static class MockStateUpdater implements StateUpdater<MockState> {
+
+    @Override
+    public void updateState(MockState state, List<TridentTuple> tuples, TridentCollector collector) {
+      state.updateState(tuples, collector);
+    }
+
+    @Override
+    public void prepare(Map conf, TridentOperationContext context) {
+      // NOOP
+    }
+
+    @Override
+    public void cleanup() {
+      // NOOP
+    }
+  }
+
   public static class MockSqlTridentDataSource implements ISqlTridentDataSource {
     @Override
     public IBatchSpout getProducer() {
@@ -195,23 +255,8 @@ public class TestUtils {
     }
 
     @Override
-    public Function getConsumer() {
-      return new CollectDataFunction();
-    }
-
-    public static class CollectDataFunction extends BaseFunction {
-      /**
-       * Collect all values in a static variable as the instance will go through serialization and deserialization.
-       */
-      private transient static final List<List<Object> > VALUES = new ArrayList<>();
-      public static List<List<Object>> getCollectedValues() {
-        return VALUES;
-      }
-
-      @Override
-      public void execute(TridentTuple tuple, TridentCollector collector) {
-        VALUES.add(tuple.getValues());
-      }
+    public SqlTridentConsumer getConsumer() {
+      return new SimpleSqlTridentConsumer(new MockStateFactory(), new MockStateUpdater());
     }
 
     private static class MockSpout implements IBatchSpout {
@@ -269,23 +314,8 @@ public class TestUtils {
     }
 
     @Override
-    public Function getConsumer() {
-      return new CollectDataFunction();
-    }
-
-    public static class CollectDataFunction extends BaseFunction {
-      /**
-       * Collect all values in a static variable as the instance will go through serialization and deserialization.
-       */
-      private transient static final List<List<Object> > VALUES = new ArrayList<>();
-      public static List<List<Object>> getCollectedValues() {
-        return VALUES;
-      }
-
-      @Override
-      public void execute(TridentTuple tuple, TridentCollector collector) {
-        VALUES.add(tuple.getValues());
-      }
+    public SqlTridentConsumer getConsumer() {
+      return new SimpleSqlTridentConsumer(new MockStateFactory(), new MockStateUpdater());
     }
 
     private static class MockGroupedSpout implements IBatchSpout {
@@ -343,23 +373,8 @@ public class TestUtils {
     }
 
     @Override
-    public Function getConsumer() {
-      return new CollectDataFunction();
-    }
-
-    public static class CollectDataFunction extends BaseFunction {
-      /**
-       * Collect all values in a static variable as the instance will go through serialization and deserialization.
-       */
-      private transient static final List<List<Object> > VALUES = new ArrayList<>();
-      public static List<List<Object>> getCollectedValues() {
-        return VALUES;
-      }
-
-      @Override
-      public void execute(TridentTuple tuple, TridentCollector collector) {
-        VALUES.add(tuple.getValues());
-      }
+    public SqlTridentConsumer getConsumer() {
+      return new SimpleSqlTridentConsumer(new MockStateFactory(), new MockStateUpdater());
     }
 
     private static class MockSpout implements IBatchSpout {
@@ -420,23 +435,8 @@ public class TestUtils {
     }
 
     @Override
-    public Function getConsumer() {
-      return new CollectDataFunction();
-    }
-
-    public static class CollectDataFunction extends BaseFunction {
-      /**
-       * Collect all values in a static variable as the instance will go through serialization and deserialization.
-       */
-      private transient static final List<List<Object> > VALUES = new ArrayList<>();
-      public static List<List<Object>> getCollectedValues() {
-        return VALUES;
-      }
-
-      @Override
-      public void execute(TridentTuple tuple, TridentCollector collector) {
-        VALUES.add(tuple.getValues());
-      }
+    public SqlTridentConsumer getConsumer() {
+      return new SimpleSqlTridentConsumer(new MockStateFactory(), new MockStateUpdater());
     }
 
     private static class MockSpout implements IBatchSpout {
@@ -517,9 +517,5 @@ public class TestUtils {
   public static long monotonicNow() {
     final long NANOSECONDS_PER_MILLISECOND = 1000000;
     return System.nanoTime() / NANOSECONDS_PER_MILLISECOND;
-  }
-
-  public static ILocalCluster newLocalCluster() {
-    return new LocalCluster();
   }
 }
