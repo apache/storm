@@ -20,6 +20,7 @@ package org.apache.storm.sql.compiler;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
 import org.apache.calcite.jdbc.CalciteSchema;
 import org.apache.calcite.jdbc.JavaTypeFactoryImpl;
+import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.prepare.CalciteCatalogReader;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataTypeSystem;
@@ -28,6 +29,7 @@ import org.apache.calcite.schema.StreamableTable;
 import org.apache.calcite.schema.Table;
 import org.apache.calcite.schema.impl.AggregateFunctionImpl;
 import org.apache.calcite.schema.impl.ScalarFunctionImpl;
+import org.apache.calcite.sql.SqlExplainLevel;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperatorTable;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
@@ -39,6 +41,7 @@ import org.apache.calcite.tools.Frameworks;
 import org.apache.calcite.tools.Planner;
 import org.apache.calcite.tools.RelConversionException;
 import org.apache.calcite.tools.ValidationException;
+import org.apache.storm.sql.parser.ColumnConstraint;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -101,6 +104,7 @@ public class TestCompilerUtils {
         SqlNode parse = planner.parse(sql);
         SqlNode validate = planner.validate(parse);
         RelNode tree = planner.convert(validate);
+        System.out.println(RelOptUtil.toString(tree, SqlExplainLevel.ALL_ATTRIBUTES));
         return new CalciteState(schema, tree);
     }
 
@@ -134,6 +138,7 @@ public class TestCompilerUtils {
         SqlNode parse = planner.parse(sql);
         SqlNode validate = planner.validate(parse);
         RelNode tree = planner.convert(validate);
+        System.out.println(RelOptUtil.toString(tree, SqlExplainLevel.ALL_ATTRIBUTES));
         return new CalciteState(schema, tree);
     }
 
@@ -165,6 +170,45 @@ public class TestCompilerUtils {
         SqlNode parse = planner.parse(sql);
         SqlNode validate = planner.validate(parse);
         RelNode tree = planner.convert(validate);
+        System.out.println(RelOptUtil.toString(tree, SqlExplainLevel.ALL_ATTRIBUTES));
+        return new CalciteState(schema, tree);
+    }
+
+    public static CalciteState sqlOverSimpleEquiJoinTables(String sql)
+            throws RelConversionException, ValidationException, SqlParseException {
+        SchemaPlus schema = Frameworks.createRootSchema(true);
+        JavaTypeFactory typeFactory = new JavaTypeFactoryImpl
+                (RelDataTypeSystem.DEFAULT);
+
+        StreamableTable streamableTable = new CompilerUtil.TableBuilderInfo(typeFactory)
+                .field("EMPID", SqlTypeName.INTEGER)
+                .field("EMPNAME", SqlTypeName.VARCHAR)
+                .field("DEPTID", SqlTypeName.INTEGER)
+                .build();
+        Table table = streamableTable.stream();
+
+        StreamableTable streamableTable2 = new CompilerUtil.TableBuilderInfo(typeFactory)
+                .field("DEPTID", SqlTypeName.INTEGER)
+                .field("DEPTNAME", SqlTypeName.VARCHAR)
+                .build();
+        Table table2 = streamableTable2.stream();
+
+        schema.add("EMP", table);
+        schema.add("DEPT", table2);
+
+        List<SqlOperatorTable> sqlOperatorTables = new ArrayList<>();
+        sqlOperatorTables.add(SqlStdOperatorTable.instance());
+        sqlOperatorTables.add(new CalciteCatalogReader(CalciteSchema.from(schema),
+                false,
+                Collections.<String>emptyList(), typeFactory));
+        SqlOperatorTable chainedSqlOperatorTable = new ChainedSqlOperatorTable(sqlOperatorTables);
+        FrameworkConfig config = Frameworks.newConfigBuilder().defaultSchema(
+                schema).operatorTable(chainedSqlOperatorTable).build();
+        Planner planner = Frameworks.getPlanner(config);
+        SqlNode parse = planner.parse(sql);
+        SqlNode validate = planner.validate(parse);
+        RelNode tree = planner.convert(validate);
+        System.out.println(RelOptUtil.toString(tree, SqlExplainLevel.ALL_ATTRIBUTES));
         return new CalciteState(schema, tree);
     }
 

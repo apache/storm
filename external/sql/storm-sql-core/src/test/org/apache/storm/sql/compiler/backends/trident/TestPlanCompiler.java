@@ -108,6 +108,80 @@ public class TestPlanCompiler {
   }
 
   @Test
+  public void testCompileEquiJoinAndGroupBy() throws Exception {
+    final int EXPECTED_VALUE_SIZE = 2;
+    final Map<String, ISqlTridentDataSource> data = new HashMap<>();
+    data.put("EMP", new TestUtils.MockSqlTridentJoinDataSourceEmp());
+    data.put("DEPT", new TestUtils.MockSqlTridentJoinDataSourceDept());
+    String sql = "SELECT d.DEPTID, count(EMPID) FROM EMP AS e JOIN DEPT AS d ON e.DEPTID = d.DEPTID WHERE e.EMPID > 0 GROUP BY d.DEPTID";
+    TestCompilerUtils.CalciteState state = TestCompilerUtils.sqlOverSimpleEquiJoinTables(sql);
+    PlanCompiler compiler = new PlanCompiler(data, typeFactory);
+    final AbstractTridentProcessor proc = compiler.compileForTest(state.tree());
+    final TridentTopology topo = proc.build(data);
+    Fields f = proc.outputStream().getOutputFields();
+    proc.outputStream().each(f, new CollectDataFunction(), new Fields()).toStream();
+    runTridentTopology(EXPECTED_VALUE_SIZE, proc, topo);
+
+    Assert.assertArrayEquals(new Values[] { new Values(1, 2L), new Values(0, 2L)}, getCollectedValues().toArray());
+  }
+
+  @Test
+  public void testCompileEquiJoinWithLeftOuterJoin() throws Exception {
+    final int EXPECTED_VALUE_SIZE = 3;
+    final Map<String, ISqlTridentDataSource> data = new HashMap<>();
+    data.put("EMP", new TestUtils.MockSqlTridentJoinDataSourceEmp());
+    data.put("DEPT", new TestUtils.MockSqlTridentJoinDataSourceDept());
+    String sql = "SELECT d.DEPTID, e.DEPTID FROM DEPT AS d LEFT OUTER JOIN EMP AS e ON d.DEPTID = e.DEPTID WHERE e.EMPID is null";
+    TestCompilerUtils.CalciteState state = TestCompilerUtils.sqlOverSimpleEquiJoinTables(sql);
+    PlanCompiler compiler = new PlanCompiler(data, typeFactory);
+    final AbstractTridentProcessor proc = compiler.compileForTest(state.tree());
+    final TridentTopology topo = proc.build(data);
+    Fields f = proc.outputStream().getOutputFields();
+    proc.outputStream().each(f, new CollectDataFunction(), new Fields()).toStream();
+    runTridentTopology(EXPECTED_VALUE_SIZE, proc, topo);
+
+    Assert.assertArrayEquals(new Values[] { new Values(2, null), new Values(3, null), new Values(4, null)}, getCollectedValues().toArray());
+  }
+
+  @Test
+  public void testCompileEquiJoinWithRightOuterJoin() throws Exception {
+    final int EXPECTED_VALUE_SIZE = 3;
+    final Map<String, ISqlTridentDataSource> data = new HashMap<>();
+    data.put("EMP", new TestUtils.MockSqlTridentJoinDataSourceEmp());
+    data.put("DEPT", new TestUtils.MockSqlTridentJoinDataSourceDept());
+    String sql = "SELECT d.DEPTID, e.DEPTID FROM EMP AS e RIGHT OUTER JOIN DEPT AS d ON e.DEPTID = d.DEPTID WHERE e.EMPID is null";
+    TestCompilerUtils.CalciteState state = TestCompilerUtils.sqlOverSimpleEquiJoinTables(sql);
+    PlanCompiler compiler = new PlanCompiler(data, typeFactory);
+    final AbstractTridentProcessor proc = compiler.compileForTest(state.tree());
+    final TridentTopology topo = proc.build(data);
+    Fields f = proc.outputStream().getOutputFields();
+    proc.outputStream().each(f, new CollectDataFunction(), new Fields()).toStream();
+    runTridentTopology(EXPECTED_VALUE_SIZE, proc, topo);
+
+    Assert.assertArrayEquals(new Values[] { new Values(2, null), new Values(3, null), new Values(4, null)}, getCollectedValues().toArray());
+  }
+
+  @Test
+  public void testCompileEquiJoinWithFullOuterJoin() throws Exception {
+    final int EXPECTED_VALUE_SIZE = 8;
+    final Map<String, ISqlTridentDataSource> data = new HashMap<>();
+    data.put("EMP", new TestUtils.MockSqlTridentJoinDataSourceEmp());
+    data.put("DEPT", new TestUtils.MockSqlTridentJoinDataSourceDept());
+    String sql = "SELECT e.DEPTID, d.DEPTNAME FROM EMP AS e FULL OUTER JOIN DEPT AS d ON e.DEPTID = d.DEPTID WHERE (d.DEPTNAME is null OR e.EMPNAME is null)";
+    TestCompilerUtils.CalciteState state = TestCompilerUtils.sqlOverSimpleEquiJoinTables(sql);
+    PlanCompiler compiler = new PlanCompiler(data, typeFactory);
+    final AbstractTridentProcessor proc = compiler.compileForTest(state.tree());
+    final TridentTopology topo = proc.build(data);
+    Fields f = proc.outputStream().getOutputFields();
+    proc.outputStream().each(f, new CollectDataFunction(), new Fields()).toStream();
+    runTridentTopology(EXPECTED_VALUE_SIZE, proc, topo);
+
+    Assert.assertArrayEquals(new Values[] { new Values(null, "dept-2"), new Values(null, "dept-3"), new Values(null, "dept-4"),
+      new Values(10, null), new Values(11, null), new Values(12, null), new Values(13, null), new Values(14, null)},
+            getCollectedValues().toArray());
+  }
+
+  @Test
   public void testInsert() throws Exception {
     final int EXPECTED_VALUE_SIZE = 1;
     String sql = "INSERT INTO BAR SELECT ID, NAME, ADDR FROM FOO WHERE ID > 3";
