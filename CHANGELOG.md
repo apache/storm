@@ -158,8 +158,6 @@
  * STORM-2023: Add calcite-core to dependency of storm-sql-runtime
  * STORM-1839: Storm spout implementation for Amazon Kinesis Streams.
  * STORM-1988: Kafka Offset not showing due to bad classpath.
- * STORM-1987: Fix TridentKafkaWordCount arg handling in distributed mode.
- * STORM-1969: Modify HiveTopology to show usage of non-partition table.
  * STORM-1950: Change response json of "Topology Lag" REST API to keyed by spoutId, topic, partition.
  * STORM-1833: Simple equi-join in storm-sql standalone mode
  * STORM-1866: Update Resource Aware Scheduler Documentation
@@ -179,7 +177,6 @@
  * STORM-1907: PartitionedTridentSpoutExecutor has incompatible types that cause ClassCastException
  * STORM-1136: Command line module to return kafka spout offsets lag and display in storm ui.
  * STORM-1911: IClusterMetricsConsumer should use seconds to timestamp unit
- * STORM-1849: HDFSFileTopology should use the 3rd argument as topologyName
  * STORM-1906: Window count/length of zero should be disallowed
  * STORM-1893: Support OpenTSDB for storing timeseries data.
  * STORM-1723: Introduce ClusterMetricsConsumer
@@ -192,6 +189,9 @@
  * STORM-1868: Modify TridentKafkaWordCount to run in distributed mode
 
 ## 1.0.3
+ * STORM-1987: Fix TridentKafkaWordCount arg handling in distributed mode.
+ * STORM-1969: Modify HiveTopology to show usage of non-partition table.
+ * STORM-1849: HDFSFileTopology should use the 3rd argument as topologyName
  * STORM-2086: use DefaultTopicSelector instead of creating a new one
  * STORM-2079: Unneccessary readStormConfig operation
  * STORM-2081: create external directory for storm-sql various data sources and move storm-sql-kafka to it
