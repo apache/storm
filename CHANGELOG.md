@@ -1,4 +1,7 @@
 ## 1.0.3
+ * STORM-1987: Fix TridentKafkaWordCount arg handling in distributed mode.
+ * STORM-1969: Modify HiveTopology to show usage of non-partition table.
+ * STORM-1849: HDFSFileTopology should use the 3rd argument as topologyName
  * STORM-2086: use DefaultTopicSelector instead of creating a new one
  * STORM-2079: Unneccessary readStormConfig operation
  * STORM-2081: create external directory for storm-sql various data sources and move storm-sql-kafka to it
