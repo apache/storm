@@ -1218,8 +1218,19 @@
               (submit-local-topology nimbus "t1" {} topology)
               ;; Instead of sleeping until topology is scheduled, rebalance topology so mk-assignments is called.
               (.rebalance nimbus "t1" (doto (RebalanceOptions.) (.set_wait_secs 0)))
-              (Thread/sleep 1000)
-              (.deactivate nimbus "t1")
+              ;; One second doesn't work on all systems, especially vms, as the state change may not yet have
+              ;; completed.  We can work around this by trying it five times, wating one second in between.
+              (loop [n 5]
+                (if-let [continue? (try
+                                     (do
+                                       (Thread/sleep 1000)
+                                       (.deactivate nimbus "t1")
+                                       true)
+                                     (catch Exception e
+                                       (when (zero? n)
+                                         (throw e))))]
+                  true
+                  (recur (dec n))))
               (.activate nimbus "t1")
               (.rebalance nimbus "t1" (RebalanceOptions.))
               (.killTopology nimbus "t1")
