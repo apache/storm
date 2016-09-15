@@ -572,6 +572,22 @@ def kill_workers(*args):
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, os.path.join(STORM_DIR, "bin")])
 
+def admin_command(*args):
+    """Syntax: [storm admin_command cmd]
+
+    This is a proxy of nimbus and allow to execute admin commands. As of now it supports
+    command to remove corrupt topologies.
+    Nimbus doesn't clean up corrupted topologies automatically. This command should clean
+    up corrupt topologies i.e.topologies whose codes are not available on blobstore.
+    In future this command would support more admin commnds.
+    """
+    exec_storm_class(
+        "org.apache.storm.command.AdminCommands",
+        args=args,
+        jvmtype="-client",
+        extrajars=[USER_CONF_DIR, os.path.join(STORM_DIR, "bin")])
+
+
 def shell(resourcesdir, command, *args):
     """Syntax: [storm shell resourcesdir command args]
 
