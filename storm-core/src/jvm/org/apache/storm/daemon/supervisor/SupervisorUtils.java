@@ -162,7 +162,7 @@ public class SupervisorUtils {
         }
     }
 
-    public static Set<String> readDownLoadedStormIds(Map<String, Object> conf) throws IOException {
+    public static Set<String> readDownloadedTopologyIds(Map<String, Object> conf) throws IOException {
         Set<String> stormIds = new HashSet<>();
         String path = ConfigUtils.supervisorStormDistRoot(conf);
         Collection<String> rets = Utils.readDirContents(path);

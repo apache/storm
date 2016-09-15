@@ -207,9 +207,9 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
         this.eventManager = new EventManagerImp(false);
         this.readState = new ReadClusterState(this);
         
-        Set<String> downloadedStormIds = SupervisorUtils.readDownLoadedStormIds(conf);
-        for (String stormId : downloadedStormIds) {
-            SupervisorUtils.addBlobReferences(localizer, stormId, conf);
+        Set<String> downloadedTopoIds = SupervisorUtils.readDownloadedTopologyIds(conf);
+        for (String topoId : downloadedTopoIds) {
+            SupervisorUtils.addBlobReferences(localizer, topoId, conf);
         }
         // do this after adding the references so we don't try to clean things being used
         localizer.startCleaner();
@@ -302,7 +302,12 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
         for (Killable k: containers) {
             try {
                 k.forceKill();
+                long start = Time.currentTimeMillis();
                 while(!k.areAllProcessesDead()) {
+                    if ((Time.currentTimeMillis() - start) > 10_000) {
+                        throw new RuntimeException("Giving up on killing " + k 
+                                + " after " + (Time.currentTimeMillis() - start) + " ms");
+                    }
                     Time.sleep(100);
                     k.forceKill();
                 }

@@ -53,12 +53,7 @@ import com.google.common.collect.Lists;
  */
 public class BasicContainer extends Container {
     private static final Logger LOG = LoggerFactory.getLogger(BasicContainer.class);
-    private static final FilenameFilter jarFilter = new FilenameFilter() {
-        @Override
-        public boolean accept(File dir, String name) {
-            return name.endsWith(".jar");
-        }
-    };
+    private static final FilenameFilter jarFilter = (dir, name) -> name.endsWith(".jar");
     private static final Joiner CPJ = 
             Joiner.on(Utils.CLASS_PATH_SEPARATOR).skipNulls();
     
@@ -91,12 +86,31 @@ public class BasicContainer extends Container {
      * @param resourceIsolationManager used to isolate resources for a container can be null if no isolation is used.
      * @param localState the local state of the supervisor.  May be null if partial recovery
      * @param workerId the id of the worker to use.  Must not be null if doing a partial recovery.
+     */
+    public BasicContainer(ContainerType type, Map<String, Object> conf, String supervisorId, int port,
+            LocalAssignment assignment, ResourceIsolationInterface resourceIsolationManager,
+            LocalState localState, String workerId) throws IOException {
+        this(type, conf, supervisorId, port, assignment, resourceIsolationManager, localState, workerId, null, null, null);
+    }
+    
+    /**
+     * Create a new BasicContainer
+     * @param type the type of container being made.
+     * @param conf the supervisor config
+     * @param supervisorId the ID of the supervisor this is a part of.
+     * @param port the port the container is on.  Should be <= 0 if only a partial recovery
+     * @param assignment the assignment for this container. Should be null if only a partial recovery.
+     * @param resourceIsolationManager used to isolate resources for a container can be null if no isolation is used.
+     * @param localState the local state of the supervisor.  May be null if partial recovery
+     * @param workerId the id of the worker to use.  Must not be null if doing a partial recovery.
      * @param ops file system operations (mostly for testing) if null a new one is made
      * @param topoConf the config of the topology (mostly for testing) if null 
      * and not a partial recovery the real conf is read.
      * @param profileCmd the command to use when profiling (used for testing)
+     * @throws IOException on any error
+     * @throws ContainerRecoveryException if the Container could not be recovered.
      */
-    public BasicContainer(ContainerType type, Map<String, Object> conf, String supervisorId, int port,
+    BasicContainer(ContainerType type, Map<String, Object> conf, String supervisorId, int port,
             LocalAssignment assignment, ResourceIsolationInterface resourceIsolationManager,
             LocalState localState, String workerId, Map<String, Object> topoConf, 
             AdvancedFSOps ops, String profileCmd) throws IOException {

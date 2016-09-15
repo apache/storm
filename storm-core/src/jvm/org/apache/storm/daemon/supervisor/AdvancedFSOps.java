@@ -111,7 +111,7 @@ public class AdvancedFSOps {
         
         @Override
         public void restrictDirectoryPermissions(File dir) throws IOException {
-            //NOOP, if windows gets support for run as user we will need to find a way to suppor this
+            //NOOP, if windows gets support for run as user we will need to find a way to support this
         }
         
         @Override
@@ -248,7 +248,7 @@ public class AdvancedFSOps {
     
     /**
      * Check if a file exists or not
-     * @param path the path the check
+     * @param path the path to check
      * @return true if it exists else false
      * @throws IOException on any error.
      */

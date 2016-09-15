@@ -35,6 +35,12 @@ public class RunAsUserContainer extends BasicContainer {
 
     public RunAsUserContainer(ContainerType type, Map<String, Object> conf, String supervisorId, int port,
             LocalAssignment assignment, ResourceIsolationInterface resourceIsolationManager, LocalState localState,
+            String workerId) throws IOException {
+        this(type, conf, supervisorId, port, assignment, resourceIsolationManager, localState, workerId, null, null, null);
+    }
+    
+    RunAsUserContainer(ContainerType type, Map<String, Object> conf, String supervisorId, int port,
+            LocalAssignment assignment, ResourceIsolationInterface resourceIsolationManager, LocalState localState,
             String workerId, Map<String, Object> topoConf, AdvancedFSOps ops, String profileCmd) throws IOException {
         super(type, conf, supervisorId, port, assignment, resourceIsolationManager, localState, workerId, topoConf, ops,
                 profileCmd);
@@ -64,7 +70,7 @@ public class RunAsUserContainer extends BasicContainer {
     protected boolean runProfilingCommand(List<String> command, Map<String, String> env, String logPrefix, File targetDir) throws IOException, InterruptedException {
         String user = this.getWorkerUser();
         String td = targetDir.getAbsolutePath();
-        LOG.info("Running as user:{} command:{}", user, command);
+        LOG.info("Running as user: {} command: {}", user, command);
         String containerFile = Utils.containerFilePath(td);
         if (Utils.checkFileExists(containerFile)) {
             SupervisorUtils.rmrAsUser(_conf, containerFile, containerFile);

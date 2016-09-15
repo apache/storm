@@ -127,7 +127,7 @@ public class ReadClusterState implements Runnable, AutoCloseable {
                     getAssignmentsSnapshot(stormClusterState, stormIds, assignmentVersions.get(), syncCallback);
             
             Map<Integer, LocalAssignment> allAssignments =
-                    readAssignments(assignmentsSnapshot, assignmentId, readRetry);
+                    readAssignments(assignmentsSnapshot);
             if (allAssignments == null) {
                 //Something odd happened try again later
                 return;
@@ -213,10 +213,9 @@ public class ReadClusterState implements Runnable, AutoCloseable {
         return ret;
     }
     
-    protected Map<Integer, LocalAssignment> readAssignments(Map<String, VersionedData<Assignment>> assignmentsSnapshot,
-            String assignmentId, AtomicInteger retries) {
+    protected Map<Integer, LocalAssignment> readAssignments(Map<String, VersionedData<Assignment>> assignmentsSnapshot) {
         try {
-            Map<Integer, LocalAssignment> portLA = new HashMap<Integer, LocalAssignment>();
+            Map<Integer, LocalAssignment> portLA = new HashMap<>();
             for (Map.Entry<String, VersionedData<Assignment>> assignEntry : assignmentsSnapshot.entrySet()) {
                 String topoId = assignEntry.getKey();
                 Assignment assignment = assignEntry.getValue().getData();
@@ -237,15 +236,15 @@ public class ReadClusterState implements Runnable, AutoCloseable {
                     }
                 }
             }
-            retries.set(0);
+            readRetry.set(0);
             return portLA;
         } catch (RuntimeException e) {
-            if (retries.get() > 2) {
+            if (readRetry.get() > 2) {
                 throw e;
             } else {
-                retries.addAndGet(1);
+                readRetry.addAndGet(1);
             }
-            LOG.warn("{} : retrying {} of 3", e.getMessage(), retries.get());
+            LOG.warn("{} : retrying {} of 3", e.getMessage(), readRetry.get());
             return null;
         }
     }
@@ -271,7 +270,7 @@ public class ReadClusterState implements Runnable, AutoCloseable {
                     for (Long port : entry.getValue().get_port()) {
                         LocalAssignment localAssignment = portTasks.get(port.intValue());
                         if (localAssignment == null) {
-                            List<ExecutorInfo> executors = new ArrayList<ExecutorInfo>();
+                            List<ExecutorInfo> executors = new ArrayList<>();
                             localAssignment = new LocalAssignment(stormId, executors);
                             if (slotsResources.containsKey(port)) {
                                 localAssignment.set_resources(slotsResources.get(port));

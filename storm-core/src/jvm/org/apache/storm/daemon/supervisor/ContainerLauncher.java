@@ -84,8 +84,9 @@ public abstract class ContainerLauncher {
      * @param state the current state of the supervisor
      * @return The container that can be used to manage the processes.
      * @throws IOException on any error
+     * @throws ContainerRecoveryException if the Container could not be recovered
      */
-    public abstract Container recoverContainer(int port, LocalAssignment assignment, LocalState state) throws IOException;
+    public abstract Container recoverContainer(int port, LocalAssignment assignment, LocalState state) throws IOException, ContainerRecoveryException;
     
     /**
      * Try to recover a container using just the worker ID.  

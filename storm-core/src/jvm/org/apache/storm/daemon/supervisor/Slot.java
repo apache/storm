@@ -150,6 +150,12 @@ public class Slot extends Thread implements AutoCloseable {
             return sb.toString();
         }
 
+        /**
+         * Set the new assignment for the state.  This should never be called from within the state machine.
+         * It is an input from outside.
+         * @param newAssignment the new assignment to set
+         * @return the updated DynamicState.
+         */
         public DynamicState withNewAssignment(LocalAssignment newAssignment) {
             return new DynamicState(this.state, newAssignment,
                     this.container, this.currentAssignment,
@@ -273,14 +279,14 @@ public class Slot extends Thread implements AutoCloseable {
     }
     
     /**
-     * Prepare for a new assignment my downloading new required blobs, or going to empty if there is nothing to download.
+     * Prepare for a new assignment by downloading new required blobs, or going to empty if there is nothing to download.
      * PRECONDITION: The slot should be empty
      * @param dynamicState current state
      * @param staticState static data
      * @return the next state
      * @throws IOException on any error
      */
-    static DynamicState prepareForNewAssignmentOnEmptySlot(DynamicState dynamicState, StaticState staticState) throws IOException {
+    static DynamicState prepareForNewAssignmentNoWorkersRunning(DynamicState dynamicState, StaticState staticState) throws IOException {
         assert(dynamicState.container == null);
         
         if (dynamicState.newAssignment == null) {
@@ -342,6 +348,7 @@ public class Slot extends Thread implements AutoCloseable {
     static DynamicState cleanupCurrentContainer(DynamicState dynamicState, StaticState staticState, MachineState nextState) throws Exception {
         assert(dynamicState.container != null);
         assert(dynamicState.currentAssignment != null);
+        assert(dynamicState.container.areAllProcessesDead());
         
         dynamicState.container.cleanUp();
         staticState.localizer.releaseSlotFor(dynamicState.currentAssignment, staticState.port);
@@ -375,7 +382,7 @@ public class Slot extends Thread implements AutoCloseable {
             if (!equivalent(dynamicState.newAssignment, dynamicState.pendingLocalization)) {
                 //Scheduling changed
                 staticState.localizer.releaseSlotFor(dynamicState.pendingLocalization, staticState.port);
-                return prepareForNewAssignmentOnEmptySlot(dynamicState, staticState);
+                return prepareForNewAssignmentNoWorkersRunning(dynamicState, staticState);
             }
             Container c = staticState.containerLauncher.launchContainer(staticState.port, dynamicState.pendingLocalization, staticState.localState);
             return dynamicState.withCurrentAssignment(c, dynamicState.pendingLocalization).withState(MachineState.WAITING_FOR_WORKER_START).withPendingLocalization(null, null);
@@ -456,10 +463,10 @@ public class Slot extends Thread implements AutoCloseable {
                 return dynamicState.withState(MachineState.WAITING_FOR_WORKER_START);
             }
             //Scheduling changed after we killed all of the processes
-            return prepareForNewAssignmentOnEmptySlot(cleanupCurrentContainer(dynamicState, staticState, null), staticState);
+            return prepareForNewAssignmentNoWorkersRunning(cleanupCurrentContainer(dynamicState, staticState, null), staticState);
         }
         //The child processes typically exit in < 1 sec.  If 2 mins later they are still around something is wrong
-        if ((Time.currentTimeMillis() - dynamicState.startTime) > 120000) {
+        if ((Time.currentTimeMillis() - dynamicState.startTime) > 120_000) {
             throw new RuntimeException("Not all processes in " + dynamicState.container + " exited after 120 seconds");
         }
         dynamicState.container.forceKill();
@@ -490,7 +497,7 @@ public class Slot extends Thread implements AutoCloseable {
         if (!equivalent(dynamicState.newAssignment, dynamicState.currentAssignment)) {
             //We were rescheduled while waiting for the worker to come up
             LOG.warn("SLOT {}: Assignment Changed from {} to {}", staticState.port, dynamicState.currentAssignment, dynamicState.newAssignment);
-            return Slot.killContainerForChangedAssignment(dynamicState, staticState);
+            return killContainerForChangedAssignment(dynamicState, staticState);
         }
         
         long timeDiffms = (Time.currentTimeMillis() - dynamicState.startTime);
@@ -592,7 +599,7 @@ public class Slot extends Thread implements AutoCloseable {
 
     static DynamicState handleEmpty(DynamicState dynamicState, StaticState staticState) throws InterruptedException, IOException {
         if (!equivalent(dynamicState.newAssignment, dynamicState.currentAssignment)) {
-            return prepareForNewAssignmentOnEmptySlot(dynamicState, staticState);
+            return prepareForNewAssignmentNoWorkersRunning(dynamicState, staticState);
         }
         //Both assignments are null, just wait
         if (dynamicState.profileActions != null && !dynamicState.profileActions.isEmpty()) {
@@ -630,7 +637,11 @@ public class Slot extends Thread implements AutoCloseable {
         }
         Container container = null;
         if (currentAssignment != null) { 
-            container = containerLauncher.recoverContainer(port, currentAssignment, localState);
+            try {
+                container = containerLauncher.recoverContainer(port, currentAssignment, localState);
+            } catch (ContainerRecoveryException e) {
+                //We could not recover container will be null.
+            }
         }
         
         LocalAssignment newAssignment = currentAssignment;
@@ -723,12 +734,11 @@ public class Slot extends Thread implements AutoCloseable {
     public void run() {
         try {
             while(!done) {
-                LocalAssignment localNewAssignment = newAssignment.get();
                 Set<TopoProfileAction> origProfileActions = new HashSet<>(profiling.get());
                 Set<TopoProfileAction> removed = new HashSet<>(origProfileActions);
                 
                 DynamicState nextState = 
-                        stateMachineStep(dynamicState.withNewAssignment(localNewAssignment)
+                        stateMachineStep(dynamicState.withNewAssignment(newAssignment.get())
                                 .withProfileActions(origProfileActions, dynamicState.pendingStopProfileActions), staticState);
 
                 if (LOG.isDebugEnabled() || dynamicState.state != nextState.state) {
@@ -736,7 +746,7 @@ public class Slot extends Thread implements AutoCloseable {
                 }
                 //Save the current state for recovery
                 if (!equivalent(nextState.currentAssignment, dynamicState.currentAssignment)) {
-                    LOG.warn("SLOT {}: Changing current assignment from {} to {}", staticState.port, dynamicState.currentAssignment, nextState.currentAssignment);
+                    LOG.info("SLOT {}: Changing current assignment from {} to {}", staticState.port, dynamicState.currentAssignment, nextState.currentAssignment);
                     saveNewAssignment(nextState.currentAssignment);
                 }
                 
@@ -757,7 +767,6 @@ public class Slot extends Thread implements AutoCloseable {
                     copy.removeAll(removed);
                 } while (!profiling.compareAndSet(orig, copy));
                 dynamicState = nextState;
-                newAssignment.compareAndSet(localNewAssignment, dynamicState.newAssignment);
             }
         } catch (Throwable e) {
             if (!Utils.exceptionCauseIsInstanceOf(InterruptedException.class, e)) {

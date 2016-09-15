@@ -49,7 +49,7 @@ public class LocalContainerLauncher extends ContainerLauncher {
     @Override
     public Container recoverContainer(int port, LocalAssignment assignment, LocalState state) throws IOException {
         //We are in the same process we cannot recover anything
-        return null;
+        throw new ContainerRecoveryException("Local Mode Recovery is not supported");
     }
 
     @Override

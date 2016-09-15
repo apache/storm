@@ -42,7 +42,7 @@ public class BasicContainerLauncher extends ContainerLauncher {
     @Override
     public Container launchContainer(int port, LocalAssignment assignment, LocalState state) throws IOException {
         Container container = new BasicContainer(ContainerType.LAUNCH, _conf, _supervisorId, port, assignment,
-                _resourceIsolationManager, state, null, null, null, null);
+                _resourceIsolationManager, state, null);
         container.setup();
         container.launch();
         return container;
@@ -50,19 +50,13 @@ public class BasicContainerLauncher extends ContainerLauncher {
 
     @Override
     public Container recoverContainer(int port, LocalAssignment assignment, LocalState state) throws IOException {
-        Container container = null;
-        try {
-            container = new BasicContainer(ContainerType.RECOVER_FULL, _conf, _supervisorId, port, assignment,
-                    _resourceIsolationManager, state, null, null, null, null);
-        } catch (ContainerRecoveryException e) {
-            // We could not recover return null
-        }
-        return container;
+        return new BasicContainer(ContainerType.RECOVER_FULL, _conf, _supervisorId, port, assignment,
+                _resourceIsolationManager, state, null);
     }
 
     @Override
     public Killable recoverContainer(String workerId, LocalState localState) throws IOException {
         return new BasicContainer(ContainerType.RECOVER_PARTIAL, _conf, _supervisorId, -1, null,
-                    _resourceIsolationManager, localState, workerId, null, null, null);
+                    _resourceIsolationManager, localState, workerId);
     }
 }
