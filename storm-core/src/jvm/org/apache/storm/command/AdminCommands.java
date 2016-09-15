@@ -21,12 +21,16 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Sets;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.storm.Config;
+import org.apache.storm.blobstore.BlobStore;
 import org.apache.storm.blobstore.ClientBlobStore;
+import org.apache.storm.blobstore.KeyFilter;
+import org.apache.storm.blobstore.LocalFsBlobStore;
 import org.apache.storm.callback.DefaultWatcherCallBack;
 import org.apache.storm.cluster.ClusterStateContext;
 import org.apache.storm.cluster.ClusterUtils;
 import org.apache.storm.cluster.DaemonType;
 import org.apache.storm.cluster.IStormClusterState;
+import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.zookeeper.Zookeeper;
 import org.apache.zookeeper.ZooDefs;
@@ -40,7 +44,7 @@ import java.util.*;
 public class AdminCommands {
 
     private static final Logger LOG = LoggerFactory.getLogger(Deactivate.class);
-    private static ClientBlobStore clientBlobStore;
+    private static BlobStore nimbusBlobStore;
     private static IStormClusterState stormClusterState;
     private static CuratorFramework zk;
     private static Map conf;
@@ -65,7 +69,7 @@ public class AdminCommands {
 
     private static void initialize() {
         Map conf = ConfigUtils.readStormConfig();
-        ClientBlobStore clientBlobStore = Utils.getClientBlobStore(conf);
+        BlobStore nimbusBlobStore = Utils.getNimbusBlobStore (conf, NimbusInfo.fromConf(conf));
         List<String> servers = (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS);
         Object port = conf.get(Config.STORM_ZOOKEEPER_PORT);
         List<ACL> acls = null;
@@ -73,10 +77,10 @@ public class AdminCommands {
             acls = adminZkAcls();
         }
         try {
-            IStormClusterState stormClusterState = ClusterUtils.mkStormClusterState(conf, acls, new ClusterStateContext(DaemonType.UNKNOWN));
+            IStormClusterState stormClusterState = ClusterUtils.mkStormClusterState(conf, acls, new ClusterStateContext(DaemonType.NIMBUS));
         } catch (Exception e) {
             LOG.error("admin can't create stormClusterState");
-            throw Utils.wrapInRuntime(e);
+            new RuntimeException(e);
         }
         CuratorFramework zk = Zookeeper.mkClient(conf, servers, port, "", new DefaultWatcherCallBack(),conf);
     }
@@ -89,26 +93,41 @@ public class AdminCommands {
         return acls;
     }
 
+    private static Set<String> getKeyListFromId( String corruptId) {
+        Set<String> keyLists = new HashSet<>();
+        keyLists.add(ConfigUtils.masterStormCodeKey(corruptId));
+        keyLists.add(ConfigUtils.masterStormConfKey(corruptId));
+        if(!ConfigUtils.isLocalMode(conf)) {
+            ConfigUtils.masterStormJarKey(corruptId);
+        }
+        return keyLists;
+    }
+
     private static void removeCorruptTopologies( ) {
         Iterator<String> corruptTopologies = listCorruptTopologies();
         while(corruptTopologies.hasNext()) {
-            stormClusterState.removeStorm(corruptTopologies.next());
+            String corruptId = corruptTopologies.next();
+            stormClusterState.removeStorm(corruptId);
+            if(nimbusBlobStore instanceof LocalFsBlobStore) {
+                Iterator<String> blobKeys = getKeyListFromId(corruptId).iterator();
+                while(blobKeys.hasNext()) {
+                    stormClusterState.removeBlobstoreKey(blobKeys.next());
+                }
+            }
         }
     }
 
     private static Iterator<String> listCorruptTopologies() {
-        Iterator<String> blobStoreTopologyIds = clientBlobStore.listKeys();
-        Set<String> activeTopologyIds = new HashSet<>(Zookeeper.getChildren(zk, conf.get(Config.STORM_ZOOKEEPER_ROOT) + ClusterUtils.STORMS_SUBTREE, false));
-        HashSet<String> blobTopologyIds = Sets.newHashSet(blobStoreTopologyIds);
-        Sets.SetView<String> diffTopology = Sets.difference(activeTopologyIds, blobTopologyIds);
+        Set<String> blobStoreTopologyIds = nimbusBlobStore.filterAndListKeys(new KeyFilter<String>() {
+            @Override
+            public String filter(String key) {
+                return ConfigUtils.getIdFromBlobKey(key);
+            }
+        });
+        Set<String> activeTopologyIds = new HashSet<>(stormClusterState.activeStorms());
+        Sets.SetView<String> diffTopology = Sets.difference(activeTopologyIds, blobStoreTopologyIds);
         LOG.info("active-topology-ids [{}] blob-topology-ids [{}] diff-topology [{}]",
-                generateJoinedString(activeTopologyIds), generateJoinedString(blobTopologyIds),
-                generateJoinedString(diffTopology));
+                activeTopologyIds.toString(), blobStoreTopologyIds.toString(),diffTopology.toString());
         return diffTopology.iterator();
     }
-
-    private static String generateJoinedString(Set<String> activeTopologyIds) {
-        return Joiner.on(",").join(activeTopologyIds);
-    }
-
 }
