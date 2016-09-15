@@ -320,22 +320,19 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
 
   private String doAggregateResult(AggregateFunctionImpl aggFn, String varName, Type ty, PrintWriter pw) {
     String resultName = varName + "_result";
+    Class<?> accumulatorType = aggFn.accumulatorType;
+    Class<?> resultType = aggFn.resultType;
     List<String> args = new ArrayList<>();
     if (!aggFn.isStatic) {
       String aggObjName = String.format("%s_obj", varName);
-      String aggObjClassName = (aggFn.initMethod.getDeclaringClass().getCanonicalName());
-      boolean genericType = aggFn.initMethod.getDeclaringClass().getTypeParameters().length > 0;
-      if (genericType) {
-        pw.println("          @SuppressWarnings(\"unchecked\")");
-        pw.print(String.format("          final %1$s<%3$s> %2$s = (%1$s<%3$s>) accumulators.get(\"%2$s\");", aggObjClassName,
-                                 aggObjName, Primitives.wrap((Class<?>) ty).getCanonicalName()));
-      } else {
-        pw.print(String.format("          final %1$s %2$s = (%1$s) accumulators.get(\"%2$s\");", aggObjClassName, aggObjName));
-      }
+      String aggObjClassName = aggFn.initMethod.getDeclaringClass().getCanonicalName();
+      pw.println("          @SuppressWarnings(\"unchecked\")");
+      pw.println(String.format("          final %1$s %2$s = (%1$s) accumulators.get(\"%2$s\");", aggObjClassName,
+              aggObjName));
       args.add(aggObjName);
     }
-    args.add(String.format("(%s)accumulators.get(\"%s\")", ((Class<?>) ty).getCanonicalName(), varName));
-    pw.print(String.format("          final %s %s = %s;", ((Class<?>) ty).getCanonicalName(),
+    args.add(String.format("(%s)accumulators.get(\"%s\")", accumulatorType.getCanonicalName(), varName));
+    pw.println(String.format("          final %s %s = %s;", resultType.getCanonicalName(),
                              resultName, ExprCompiler.printMethodCall(aggFn.resultMethod, args)));
 
     return resultName;
@@ -350,8 +347,6 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
         if (call.getArgList().size() != 0) {
           throw new UnsupportedOperationException("Count with nullable fields");
         }
-      } else {
-        throw new IllegalArgumentException("Aggregate call should have one argument");
       }
     }
     if (aggFunction instanceof SqlUserDefinedAggFunction) {
@@ -378,30 +373,28 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
 
   private void doAggregate(AggregateFunctionImpl aggFn, String varName, Type ty, List<Integer> argList) {
     List<String> args = new ArrayList<>();
+    Class<?> accumulatorType = aggFn.accumulatorType;
     if (!aggFn.isStatic) {
       String aggObjName = String.format("%s_obj", varName);
       String aggObjClassName = aggFn.initMethod.getDeclaringClass().getCanonicalName();
       pw.println(String.format("          if (!accumulators.containsKey(\"%s\")) { ", aggObjName));
       pw.println(String.format("            accumulators.put(\"%s\", new %s());", aggObjName, aggObjClassName));
       pw.println("          }");
-      boolean genericType = aggFn.initMethod.getDeclaringClass().getTypeParameters().length > 0;
-      if (genericType) {
-        pw.println("          @SuppressWarnings(\"unchecked\")");
-        pw.println(String.format("          final %1$s<%3$s> %2$s = (%1$s<%3$s>) accumulators.get(\"%2$s\");", aggObjClassName,
-                                 aggObjName, Primitives.wrap((Class<?>) ty).getCanonicalName()));
-      } else {
-        pw.println(String.format("          final %1$s %2$s = (%1$s) accumulators.get(\"%2$s\");", aggObjClassName, aggObjName));
-      }
+      pw.println("          @SuppressWarnings(\"unchecked\")");
+      pw.println(String.format("          final %1$s %2$s = (%1$s) accumulators.get(\"%2$s\");", aggObjClassName,
+              aggObjName));
       args.add(aggObjName);
     }
     args.add(String.format("%1$s == null ? %2$s : (%3$s) %1$s",
                            "accumulators.get(\"" + varName + "\")",
                            ExprCompiler.printMethodCall(aggFn.initMethod, args),
-                           Primitives.wrap((Class<?>) ty).getCanonicalName()));
+                           accumulatorType.getCanonicalName()));
     if (argList.isEmpty()) {
       args.add("EMPTY_VALUES");
     } else {
-      args.add(String.format("(%s) %s", ((Class<?>) ty).getCanonicalName(), "_data.get(" + argList.get(0) + ")"));
+      for (int i = 0; i < aggFn.valueTypes.size(); i++) {
+        args.add(String.format("(%s) %s", aggFn.valueTypes.get(i).getCanonicalName(), "_data.get(" + argList.get(i) + ")"));
+      }
     }
     pw.print(String.format("          accumulators.put(\"%s\", %s);\n",
                            varName,

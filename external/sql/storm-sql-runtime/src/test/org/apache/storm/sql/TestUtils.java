@@ -36,9 +36,11 @@ import org.apache.storm.trident.tuple.TridentTuple;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.PriorityQueue;
 
 public class TestUtils {
   public static class MyPlus {
@@ -56,6 +58,25 @@ public class TestUtils {
     }
     public static String result(String accumulator) {
       return accumulator;
+    }
+  }
+
+
+  public static class TopN {
+    public static PriorityQueue<Integer> init() {
+      return new PriorityQueue<>();
+    }
+    public static PriorityQueue<Integer> add(PriorityQueue<Integer> accumulator, Integer n, Integer val) {
+      if (accumulator.size() >= n) {
+        accumulator.remove();
+      }
+      accumulator.add(val);
+      return accumulator;
+    }
+    public static List<Integer> result(PriorityQueue<Integer> accumulator) {
+      List<Integer> res = new ArrayList<>(accumulator);
+      Collections.reverse(res);
+      return res;
     }
   }
 
