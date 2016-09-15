@@ -292,7 +292,8 @@ public class TestStormSql {
     List<String> stmt = new ArrayList<>();
     stmt.add("CREATE EXTERNAL TABLE FOO (ID INT PRIMARY KEY, SALARY INT, PCT DOUBLE, NAME VARCHAR) LOCATION 'mockgroup:///foo'");
     stmt.add("CREATE FUNCTION MYCONCAT AS 'org.apache.storm.sql.TestUtils$MyConcat'");
-    stmt.add("SELECT STREAM ID, SUM(SALARY), MYCONCAT(NAME) FROM FOO GROUP BY (ID)");
+    stmt.add("CREATE FUNCTION TOPN AS 'org.apache.storm.sql.TestUtils$TopN'");
+    stmt.add("SELECT STREAM ID, SUM(SALARY), MYCONCAT(NAME), TOPN(2, SALARY) FROM FOO GROUP BY (ID)");
     StormSql sql = StormSql.construct();
     List<Values> values = new ArrayList<>();
     ChannelHandler h = new TestUtils.CollectDataChannelHandler(values);
@@ -300,12 +301,16 @@ public class TestStormSql {
     Assert.assertEquals(4, values.size());
     Assert.assertEquals(3, values.get(0).get(1));
     Assert.assertEquals("xxx", values.get(0).get(2));
+    Assert.assertEquals(Arrays.asList(2, 1), values.get(0).get(3));
     Assert.assertEquals(12, values.get(1).get(1));
     Assert.assertEquals("xxx", values.get(1).get(2));
+    Assert.assertEquals(Arrays.asList(5, 4), values.get(1).get(3));
     Assert.assertEquals(21, values.get(2).get(1));
     Assert.assertEquals("xxx", values.get(2).get(2));
+    Assert.assertEquals(Arrays.asList(8, 7), values.get(2).get(3));
     Assert.assertEquals(9, values.get(3).get(1));
     Assert.assertEquals("x", values.get(3).get(2));
+    Assert.assertEquals(Arrays.asList(9), values.get(3).get(3));
   }
 
   @Test
