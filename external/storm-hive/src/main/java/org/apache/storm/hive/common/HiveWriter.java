@@ -216,11 +216,11 @@ public class HiveWriter {
     }
 
     private void commitTxn() throws CommitFailure, InterruptedException {
-        LOG.debug("Committing Txn id {} to {}", txnBatch.getCurrentTxnId() , endPoint);
         try {
             callWithTimeout(new CallRunner<Void>() {
                     @Override
                     public Void call() throws Exception {
+                        LOG.debug("Committing Txn id {} to {}", txnBatch.getCurrentTxnId() , endPoint);
                         txnBatch.commit(); // could block
                         return null;
                     }
@@ -256,10 +256,11 @@ public class HiveWriter {
             batch = callWithTimeout(new CallRunner<TransactionBatch>() {
                 @Override
                 public TransactionBatch call() throws Exception {
-                    return connection.fetchTransactionBatch(txnsPerBatch, recordWriter); // could block
+                    TransactionBatch transactionBatch = connection.fetchTransactionBatch(txnsPerBatch, recordWriter); // could block
+                    transactionBatch.beginNextTransaction();
+                    return transactionBatch;
                 }
             });
-            batch.beginNextTransaction();
             LOG.debug("Acquired {}. Switching to first txn", batch);
         } catch(TimeoutException e) {
             throw new TxnBatchFailure(endPoint, e);
@@ -304,11 +305,11 @@ public class HiveWriter {
      * Aborts current Txn in the txnBatch.
      */
     private void abortTxn() throws InterruptedException {
-        LOG.info("Aborting Txn id {} on End Point {}", txnBatch.getCurrentTxnId(), endPoint);
         try {
             callWithTimeout(new CallRunner<Void>() {
                     @Override
                         public Void call() throws StreamingException, InterruptedException {
+                        LOG.info("Aborting Txn id {} on End Point {}", txnBatch.getCurrentTxnId(), endPoint);
                         txnBatch.abort(); // could block
                         return null;
                     }
@@ -327,7 +328,7 @@ public class HiveWriter {
     /**
      * if there are remainingTransactions in current txnBatch, begins nextTransactions
      * otherwise creates new txnBatch.
-     * @param boolean rollToNext
+     * @param rollToNext
      */
     private void nextTxn(boolean rollToNext) throws StreamingException, InterruptedException, TxnBatchFailure {
         if(txnBatch.remainingTransactions() == 0) {
@@ -338,7 +339,26 @@ public class HiveWriter {
             }
         } else if(rollToNext) {
             LOG.debug("Switching to next Txn for {}", endPoint);
-            txnBatch.beginNextTransaction(); // does not block
+            beginNextTxn();
+        }
+    }
+
+    private void beginNextTxn() throws InterruptedException {
+        try {
+            callWithTimeout(new CallRunner<Void>() {
+                @Override
+                public Void call() throws StreamingException, InterruptedException {
+                    LOG.debug("begin new Txn End Point {}", endPoint);
+                    txnBatch.beginNextTransaction(); // does not block
+                    return null;
+                }
+            });
+        } catch (InterruptedException e) {
+            throw e;
+        } catch (TimeoutException e) {
+            LOG.warn("Timeout while aborting Txn " + txnBatch.getCurrentTxnId() + " on EndPoint: " + endPoint, e);
+        } catch (Exception e) {
+            LOG.warn("Error starting a new Txn " + txnBatch.getCurrentTxnId() + " on EndPoint: " + endPoint, e);
         }
     }
 
