@@ -160,6 +160,10 @@
             <artifactId>commons-compress</artifactId>
         </dependency>
         <dependency>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-exec</artifactId>
             <scope>compile</scope>
@@ -372,6 +376,10 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <sourceDirectory>src/jvm</sourceDirectory>
@@ -516,10 +524,12 @@
                             <include>commons-collections:commons-collections</include>
                             <include>org.apache.hadoop:hadoop-auth</include>
                             <include>commons-cli:commons-cli</include>
+                            <include>org.apache.httpcomponents:httpclient</include>
                             <include>commons-io:commons-io</include>
                             <include>commons-codec:commons-codec</include>
                             <include>commons-fileupload:commons-fileupload</include>
                             <include>commons-lang:commons-lang</include>
+                            <include>commons-logging:commons-logging</include>
                             <include>com.googlecode.json-simple:json-simple</include>
                             <include>org.clojure:math.numeric-tower</include>
                             <include>org.clojure:tools.cli</include>
@@ -658,6 +668,10 @@
                           <shadedPattern>org.apache.storm.shade.org.apache.commons.cli</shadedPattern>
                         </relocation>
                         <relocation>
+                          <pattern>org.apache.commons.logging</pattern>
+                          <shadedPattern>org.apache.storm.shade.org.apache.commons.logging</shadedPattern>
+                        </relocation>
+                        <relocation>
                           <pattern>org.apache.commons.io</pattern>
                           <shadedPattern>org.apache.storm.shade.org.apache.commons.io</shadedPattern>
                         </relocation>
@@ -682,8 +696,12 @@
                           <shadedPattern>org.apache.storm.shade.org.apache.commons.lang</shadedPattern>
                         </relocation>
                         <relocation>
-                            <pattern>org.apache.commons.collections</pattern>
-                            <shadedPattern>org.apache.storm.shade.org.apache.commons.collections</shadedPattern>
+                          <pattern>org.apache.commons.collections</pattern>
+                          <shadedPattern>org.apache.storm.shade.org.apache.commons.collections</shadedPattern>
+                        </relocation>
+                        <relocation>
+                          <pattern>org.apache.httpcomponents</pattern>
+                          <shadedPattern>org.apache.storm.shade.org.apache.httpcomponents</shadedPattern>
                         </relocation>
                         <relocation>
                           <pattern>org.json.simple</pattern>
@@ -796,6 +814,13 @@
                             <artifact>org.apache.zookeeper:zookeeper</artifact>
                             <excludes>
                                 <exclude>LICENSE.txt</exclude>
+                            </excludes>
+                        </filter>
+                        <filter>
+                            <artifact>commons-logging:commons-logging</artifact>
+                            <excludes>
+                                <exclude>META-INF/LICENSE.txt</exclude>
+                                <exclude>META-INF/NOTICE.txt</exclude>
                             </excludes>
                         </filter>
                         <filter>

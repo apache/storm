@@ -29,19 +29,35 @@ import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.IScheduler;
 import org.apache.storm.scheduler.Topologies;
 import org.apache.storm.scheduler.TopologyDetails;
+import org.apache.storm.scheduler.utils.IConfigLoader;
+import org.apache.storm.scheduler.utils.SchedulerUtils;
 import org.apache.storm.utils.Utils;
 
 public class MultitenantScheduler implements IScheduler {
   private static final Logger LOG = LoggerFactory.getLogger(MultitenantScheduler.class);
   @SuppressWarnings("rawtypes")
   private Map _conf;
+  IConfigLoader _configLoader;
   
   @Override
   public void prepare(@SuppressWarnings("rawtypes") Map conf) {
     _conf = conf;
+    _configLoader = SchedulerUtils.getConfigLoader(conf, Config.MULTITENANT_SCHEDULER_USER_POOLS_LOADER,
+        Config.MULTITENANT_SCHEDULER_USER_POOLS_LOADER_PARAMS);
   }
  
   private Map<String, Number> getUserConf() {
+    // Try the loader plugin, if configured
+    if (_configLoader != null) {
+        Map<String, Number> ret = (Map<String, Number>)_configLoader.load();
+        if (ret != null) {
+            return ret;
+        } else {
+            LOG.debug("Config loader returned null");
+        }
+    }
+
+    // If that fails, fall back on config
     Map<String, Number> ret = (Map<String, Number>)_conf.get(Config.MULTITENANT_SCHEDULER_USER_POOLS);
     if (ret == null) {
       ret = new HashMap<>();

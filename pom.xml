@@ -238,6 +238,7 @@
         <java_jmx.version>0.3.1</java_jmx.version>
         <compojure.version>1.1.9</compojure.version>
         <hiccup.version>0.3.6</hiccup.version>
+        <commons-logging.version>1.2</commons-logging.version>
         <commons-compress.version>1.4.1</commons-compress.version>
         <commons-io.version>2.5</commons-io.version>
         <commons-lang.version>2.5</commons-lang.version>
@@ -624,6 +625,11 @@
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
                 <version>${commons-io.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-logging</groupId>
+                <artifactId>commons-logging</artifactId>
+                <version>${commons-logging.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>

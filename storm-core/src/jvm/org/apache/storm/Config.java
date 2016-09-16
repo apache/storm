@@ -2186,12 +2186,36 @@ public class Config extends HashMap<String, Object> {
     @isMapEntryType(keyType = String.class, valueType = Number.class)
     public static final String MULTITENANT_SCHEDULER_USER_POOLS = "multitenant.scheduler.user.pools";
 
+     /**
+     * A plugin that should load the user pools for the multitenant scheduler
+     */
+    @isString
+    public static final String MULTITENANT_SCHEDULER_USER_POOLS_LOADER = "multitenant.scheduler.user.pools.loader";
+
+    /**
+     * Configuration elements for scheduler config loader
+     */
+    @isMapEntryType(keyType = String.class, valueType = String.class)
+    public static final String MULTITENANT_SCHEDULER_USER_POOLS_LOADER_PARAMS = "multitenant.scheduler.user.pools.loader.params";
+
     /**
      * A map of users to another map of the resource guarantees of the user. Used by Resource Aware Scheduler to ensure
      * per user resource guarantees.
      */
     @isMapEntryCustom(keyValidatorClasses = {StringValidator.class}, valueValidatorClasses = {UserResourcePoolEntryValidator.class})
     public static final String RESOURCE_AWARE_SCHEDULER_USER_POOLS = "resource.aware.scheduler.user.pools";
+
+     /**
+     * A plugin that should load the user pools for the resource aware scheduler
+     */
+    @isString
+    public static final String RESOURCE_AWARE_SCHEDULER_USER_POOLS_LOADER = "resource.aware.scheduler.user.pools.loader";
+
+    /**
+     * Configuration elements for scheduler config loader
+     */
+    @isMapEntryType(keyType = String.class, valueType = String.class)
+    public static final String RESOURCE_AWARE_SCHEDULER_USER_POOLS_LOADER_PARAMS = "resource.aware.scheduler.user.pools.loader.params";
 
     /**
      * The class that specifies the eviction strategy to use in ResourceAwareScheduler

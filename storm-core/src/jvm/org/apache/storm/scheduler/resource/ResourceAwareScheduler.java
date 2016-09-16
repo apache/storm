@@ -32,6 +32,8 @@ import org.apache.storm.scheduler.IScheduler;
 import org.apache.storm.scheduler.Topologies;
 import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.WorkerSlot;
+import org.apache.storm.scheduler.utils.IConfigLoader;
+import org.apache.storm.scheduler.utils.SchedulerUtils;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -46,6 +48,7 @@ public class ResourceAwareScheduler implements IScheduler {
 
     @SuppressWarnings("rawtypes")
     private Map conf;
+    private IConfigLoader configLoader;
 
     private static final Logger LOG = LoggerFactory
             .getLogger(ResourceAwareScheduler.class);
@@ -53,7 +56,8 @@ public class ResourceAwareScheduler implements IScheduler {
     @Override
     public void prepare(Map conf) {
         this.conf = conf;
-
+        this.configLoader = SchedulerUtils.getConfigLoader(conf, Config.RESOURCE_AWARE_SCHEDULER_USER_POOLS_LOADER,
+            Config.RESOURCE_AWARE_SCHEDULER_USER_POOLS_LOADER_PARAMS);
     }
 
     @Override
@@ -335,6 +339,15 @@ public class ResourceAwareScheduler implements IScheduler {
         return this.schedulingState.userMap;
     }
 
+    private Object readFromLoader() {
+        // If loader plugin is not configured, then leave and fall back
+        if (this.configLoader == null) {
+            return null;
+        }
+
+        return configLoader.load();
+    }
+
     /**
      * Intialize scheduling and running queues
      *
@@ -376,18 +389,12 @@ public class ResourceAwareScheduler implements IScheduler {
         this.schedulingState = new SchedulingState(userMap, cluster, topologies, this.conf);
     }
 
-    /**
-     * Get resource guarantee configs
-     *
-     * @return a map that contains resource guarantees of every user of the following format
-     * {userid->{resourceType->amountGuaranteed}}
-     */
-    private Map<String, Map<String, Double>> getUserResourcePools() {
-        Object raw = this.conf.get(Config.RESOURCE_AWARE_SCHEDULER_USER_POOLS);
+    private Map<String, Map<String, Double>> convertToDouble(Map<String, Map<String, Number>> raw) {
+
         Map<String, Map<String, Double>> ret = new HashMap<String, Map<String, Double>>();
 
         if (raw != null) {
-            for (Map.Entry<String, Map<String, Number>> userPoolEntry : ((Map<String, Map<String, Number>>) raw).entrySet()) {
+            for (Map.Entry<String, Map<String, Number>> userPoolEntry : raw.entrySet()) {
                 String user = userPoolEntry.getKey();
                 ret.put(user, new HashMap<String, Double>());
                 for (Map.Entry<String, Number> resourceEntry : userPoolEntry.getValue().entrySet()) {
@@ -395,6 +402,25 @@ public class ResourceAwareScheduler implements IScheduler {
                 }
             }
         }
+
+        return ret;
+    }
+
+    /**
+     * Get resource guarantee configs
+     *
+     * @return a map that contains resource guarantees of every user of the following format
+     * {userid->{resourceType->amountGuaranteed}}
+     */
+    private Map<String, Map<String, Double>> getUserResourcePools() {
+        Object raw = readFromLoader();
+        if (raw != null) {
+            return convertToDouble((Map<String, Map<String, Number>>) raw);
+        }
+
+        raw = this.conf.get(Config.RESOURCE_AWARE_SCHEDULER_USER_POOLS);
+
+        Map<String, Map<String, Double>> ret = convertToDouble((Map<String, Map<String, Number>>) raw);
 
         Map fromFile = Utils.findAndReadConfigFile("user-resource-pools.yaml", false);
         Map<String, Map<String, Number>> tmp = (Map<String, Map<String, Number>>) fromFile.get(Config.RESOURCE_AWARE_SCHEDULER_USER_POOLS);
