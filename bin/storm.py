@@ -836,7 +836,7 @@ COMMANDS = {"jar": jar, "kill": kill, "shell": shell, "nimbus": nimbus, "ui": ui
             "list": listtopos, "dev-zookeeper": dev_zookeeper, "version": version, "monitor": monitor,
             "upload-credentials": upload_credentials, "pacemaker": pacemaker, "heartbeats": heartbeats, "blobstore": blobstore,
             "get-errors": get_errors, "set_log_level": set_log_level, "kill_workers": kill_workers,
-            "node-health-check": healthcheck, "sql": sql}
+            "node-health-check": healthcheck, "sql": sql, "admin_command": admin_command}
 
 def parse_config(config_list):
     global CONFIG_OPTS
