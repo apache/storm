@@ -147,6 +147,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0
+ * STORM-2092: optimize TridentKafkaState batch sending
  * STORM-1979: Storm Druid Connector implementation.
  * STORM-2057: Support JOIN statement in Storm SQL
  * STORM-1970: external project examples refator
