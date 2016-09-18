@@ -88,16 +88,23 @@ public class TridentKafkaState implements State {
                 }
             }
 
-            for (int i = 0 ; i < futures.size(); i++) {
-                Future<RecordMetadata> future = futures.get(i);
+            List<ExecutionException> exceptions = new ArrayList<>(futures.size());
+            for (Future<RecordMetadata> future : futures) {
                 try {
                     future.get();
                 } catch (ExecutionException e) {
-                    String errorMsg = "Could not retrieve result for message with key = "
-                            + mapper.getKeyFromTuple(tuples.get(i)) + " from topic = " + topic;
-                    LOG.error(errorMsg, e);
-                    throw new FailedException(errorMsg, e);
+                    exceptions.add(e);
                 }
+            }
+
+            if(exceptions.size() > 0){
+                String errorMsg = "Could not retrieve result for messages " + tuples + " from topic = " + topic 
+                        + " because of the following exceptions: \n";
+                for (ExecutionException exception : exceptions) {
+                    errorMsg = errorMsg + exception.getMessage() + "\n";
+                }
+                LOG.error(errorMsg);
+                throw new FailedException(errorMsg);
             }
         } catch (Exception ex) {
             String errorMsg = "Could not send messages " + tuples + " to topic = " + topic;
