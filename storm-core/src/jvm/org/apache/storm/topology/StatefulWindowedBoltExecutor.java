@@ -207,14 +207,14 @@ public class StatefulWindowedBoltExecutor<T extends State> extends WindowedBoltE
             }
 
             @Override
-            public void onActivation(List<Tuple> events, List<Tuple> newEvents, List<Tuple> expired) {
+            public void onActivation(List<Tuple> events, List<Tuple> newEvents, List<Tuple> expired, Long timestamp) {
                 if (isRecovering()) {
                     String msg = String.format("Unexpected activation with events %s, newEvents %s, expired %s in recovering state. " +
                                                        "recoveryStates %s ", events, newEvents, expired, recoveryStates);
                     LOG.error(msg);
                     throw new IllegalStateException(msg);
                 } else {
-                    parentListener.onActivation(events, newEvents, expired);
+                    parentListener.onActivation(events, newEvents, expired, timestamp);
                     updateWindowState(expired, newEvents);
                 }
             }

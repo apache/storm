@@ -60,7 +60,7 @@ public class WindowManagerTest {
         }
 
         @Override
-        public void onActivation(List<Integer> events, List<Integer> newEvents, List<Integer> expired) {
+        public void onActivation(List<Integer> events, List<Integer> newEvents, List<Integer> expired, Long timestamp) {
             onActivationEvents = events;
             allOnActivationEvents.add(events);
             onActivationNewEvents = newEvents;
