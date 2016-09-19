@@ -59,15 +59,8 @@
                                                                 (is (Time/isSimulating)))))
     (is (not (Time/isSimulating)))))
 
-(deftest test-complete-topology
-  (doseq [zmq-on? [true false]
-          :let [daemon-conf (doto (Config.)
-                              (.put STORM-LOCAL-MODE-ZMQ zmq-on?))
-                mk-cluster-param (doto (MkClusterParam.)
-                                   (.setSupervisors (int 4))
-                                   (.setDaemonConf daemon-conf))]]
-    (Testing/withSimulatedTimeLocalCluster
-     (reify TestJob
+(def complete-topology-testjob
+  (reify TestJob
        (^void run [this ^ILocalCluster cluster]
          (let [topology (thrift/mk-topology
                          {"1" (thrift/mk-spout-spec (TestWordSpout. true) :parallelism-hint 3)}
@@ -97,7 +90,19 @@
                   (Testing/readTuples results "3")))
            (is (= [[1] [2] [3] [4]]
                   (Testing/readTuples results "4")))
-           ))))))
+           ))))
+
+(deftest test-complete-topology
+  (doseq [zmq-on? [true false]
+          :let [daemon-conf (doto (Config.)
+                              (.put STORM-LOCAL-MODE-ZMQ zmq-on?))
+                mk-cluster-param (doto (MkClusterParam.)
+                                   (.setSupervisors (int 4))
+                                   (.setDaemonConf daemon-conf))]]
+    (Testing/withSimulatedTimeLocalCluster
+      mk-cluster-param complete-topology-testjob )
+    (Testing/withLocalCluster
+      mk-cluster-param complete-topology-testjob)))
 
 (deftest test-with-tracked-cluster
   (Testing/withTrackedCluster
