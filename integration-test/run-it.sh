@@ -62,9 +62,11 @@ list_storm_processes || true
 sudo bash ${SCRIPT_DIR}/config/common.sh
 sudo bash ${SCRIPT_DIR}/config/install-zookeeper.sh
 sudo bash ${SCRIPT_DIR}/config/install-storm.sh $storm_binary_zip
+export JAVA_HOME
+env
 function start_storm_process() {
     echo starting: storm $1
-    sudo su storm -c "cd /home/storm && storm $1" &
+    sudo su storm -c "export JAVA_HOME=${JAVA_HOME} && cd /home/storm && storm $1" &
 }
 start_storm_process nimbus
 start_storm_process ui
