@@ -1,0 +1,5 @@
+127.0.0.1 localhost localhost
+192.168.50.3 zookeeper zookeeper
+192.168.50.4 nimbus nimbus
+192.168.50.5 supervisor1 supervisor1
+192.168.50.6 supervisor2 supervisor2
