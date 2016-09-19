@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-2018: Supervisor V2
  * STORM-2098: DruidBeamBolt: Pass DruidConfig.Builder as constructor argument
  * STORM-2067: Fix "array element type mismatch" from compute-executors in nimbus.clj
  * STORM-2054: DependencyResolver should be aware of relative path and absolute path
