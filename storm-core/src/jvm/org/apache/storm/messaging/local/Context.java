@@ -122,19 +122,21 @@ public class Context implements IContext {
         }
         
         private void flushPending(){
-            if (_server._cb != null && !_pendingDueToUnregisteredServer.isEmpty()) {
+            IConnectionCallback serverCb = _server._cb;
+            if (serverCb != null && !_pendingDueToUnregisteredServer.isEmpty()) {
                 ArrayList<TaskMessage> ret = new ArrayList<>();
                 _pendingDueToUnregisteredServer.drainTo(ret);
-                _server._cb.recv(ret);
+                serverCb.recv(ret);
             }
         }
         
         @Override
         public void send(int taskId,  byte[] payload) {
             TaskMessage message = new TaskMessage(taskId, payload);
-            if (_server._cb != null) {
+            IConnectionCallback serverCb = _server._cb;
+            if (serverCb != null) {
                 flushPending();
-                _server._cb.recv(Arrays.asList(message));
+                serverCb.recv(Arrays.asList(message));
             } else {
                 _pendingDueToUnregisteredServer.add(message);
             }
@@ -142,13 +144,14 @@ public class Context implements IContext {
  
         @Override
         public void send(Iterator<TaskMessage> msgs) {
-            if (_server._cb != null) {
+            IConnectionCallback serverCb = _server._cb;
+            if (serverCb != null) {
                 flushPending();
                 ArrayList<TaskMessage> ret = new ArrayList<>();
                 while (msgs.hasNext()) {
                     ret.add(msgs.next());
                 }
-                _server._cb.recv(ret);
+                serverCb.recv(ret);
             } else {
                 while(msgs.hasNext()){
                     _pendingDueToUnregisteredServer.add(msgs.next());
