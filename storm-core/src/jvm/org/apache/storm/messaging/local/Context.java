@@ -110,7 +110,7 @@ public class Context implements IContext {
                         flushPending();
                     } catch (Throwable t) {
                         LOG.error("Uncaught throwable in pending message flusher thread, messages may be lost", t);
-                        throw t;
+                        throw new RuntimeException(t);
                     }
                 }
             }, 5, 5, TimeUnit.SECONDS);
