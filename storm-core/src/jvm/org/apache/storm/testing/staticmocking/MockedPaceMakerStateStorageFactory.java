@@ -19,14 +19,14 @@ package org.apache.storm.testing.staticmocking;
 
 import org.apache.storm.cluster.PaceMakerStateStorageFactory;
 
-public class MockedPaceMakerStateStorageFactory implements AutoCloseable{
+public class MockedPaceMakerStateStorageFactory {//implements AutoCloseable{
 
-    public MockedPaceMakerStateStorageFactory(PaceMakerStateStorageFactory inst) {
-        PaceMakerStateStorageFactory.setInstance(inst);
-    }
-
-    @Override
-    public void close() throws Exception {
-        PaceMakerStateStorageFactory.resetInstance();
-    }
+//    public MockedPaceMakerStateStorageFactory(PaceMakerStateStorageFactory inst) {
+//        PaceMakerStateStorageFactory.setInstance(inst);
+//    }
+//
+     //    @Override
+//    public void close() throws Exception {
+//        PaceMakerStateStorageFactory.resetInstance();
+//    }
 }
