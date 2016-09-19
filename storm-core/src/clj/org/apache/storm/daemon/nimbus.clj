@@ -637,16 +637,17 @@
         storm-conf (read-storm-conf-as-nimbus storm-id blob-store)
         topology (read-storm-topology-as-nimbus storm-id blob-store)
         task->component (get-clojurified-task-info topology storm-conf)]
-    (->> (StormCommon/stormTaskInfo topology storm-conf)
-         (Utils/reverseMap)
-         clojurify-structure
-         (map-val sort)
-         ((fn [ & maps ] (Utils/joinMaps (into-array Map (into [component->executors] maps)))))
-         (clojurify-structure)
-         (map-val (partial apply (fn part-fixed [a b] (Utils/partitionFixed a b))))
-         (mapcat second)
-         (map to-executor-id)
-         )))
+    (if (nil? component->executors)
+      []
+      (->> (StormCommon/stormTaskInfo topology storm-conf)
+           (Utils/reverseMap)
+           clojurify-structure
+           (map-val sort)
+           ((fn [ & maps ] (Utils/joinMaps (into-array Map (into [component->executors] maps)))))
+           (clojurify-structure)
+           (map-val (partial apply (fn part-fixed [a b] (Utils/partitionFixed a b))))
+           (mapcat second)
+           (map to-executor-id)))))
 
 (defn- compute-executor->component [nimbus storm-id]
   (let [conf (:conf nimbus)
