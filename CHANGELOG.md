@@ -1,4 +1,6 @@
 ## 2.0.0
+ * STORM-2098: DruidBeamBolt: Pass DruidConfig.Builder as constructor argument
+ * STORM-2067: Fix "array element type mismatch" from compute-executors in nimbus.clj
  * STORM-2054: DependencyResolver should be aware of relative path and absolute path
  * STORM-2052: Kafka Spout New Client API - Log Improvements and Parameter Tuning for Better Performance
  * STORM-2045: fixed SpoutExecutor NPE
@@ -9,7 +11,7 @@
  * STORM-1234: port backtype.storm.security.auth.DefaultHttpCredentialsPlugin-test to java
  * STORM-2037: debug operation should be whitelisted in SimpleAclAuthorizer.
  * STORM-2036: Fix minor bug in RAS Tests
- * STORM-2026: Inconsistency between (SpoutExecutor, BoltExecutor) and (spout-transfer-fn, bolt-transfer-fn) * STORM-1979: Storm Druid Connector implementation.
+ * STORM-2026: Inconsistency between (SpoutExecutor, BoltExecutor) and (spout-transfer-fn, bolt-transfer-fn)
  * STORM-1277: port backtype.storm.daemon.executor to java
  * STORM-2020: Stop using sun internal classes.
  * STORM-2021: Fix license.
@@ -145,7 +147,11 @@
  * STORM-1521: When using Kerberos login from keytab with multiple bolts/executors ticket is not renewed in hbase bolt.
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
-## 1.1.0 
+## 1.1.0
+ * STORM-2092: optimize TridentKafkaState batch sending
+ * STORM-1979: Storm Druid Connector implementation.
+ * STORM-2057: Support JOIN statement in Storm SQL
+ * STORM-1970: external project examples refator
  * STORM-2074: fix storm-kafka-monitor NPE bug
  * STORM-1459: Allow not specifying producer properties in read-only Kafka table in StormSQL
  * STORM-2050: [storm-sql] Support User Defined Aggregate Function for Trident mode
@@ -155,8 +161,6 @@
  * STORM-2023: Add calcite-core to dependency of storm-sql-runtime
  * STORM-1839: Storm spout implementation for Amazon Kinesis Streams.
  * STORM-1988: Kafka Offset not showing due to bad classpath.
- * STORM-1987: Fix TridentKafkaWordCount arg handling in distributed mode.
- * STORM-1969: Modify HiveTopology to show usage of non-partition table.
  * STORM-1950: Change response json of "Topology Lag" REST API to keyed by spoutId, topic, partition.
  * STORM-1833: Simple equi-join in storm-sql standalone mode
  * STORM-1866: Update Resource Aware Scheduler Documentation
@@ -176,7 +180,6 @@
  * STORM-1907: PartitionedTridentSpoutExecutor has incompatible types that cause ClassCastException
  * STORM-1136: Command line module to return kafka spout offsets lag and display in storm ui.
  * STORM-1911: IClusterMetricsConsumer should use seconds to timestamp unit
- * STORM-1849: HDFSFileTopology should use the 3rd argument as topologyName
  * STORM-1906: Window count/length of zero should be disallowed
  * STORM-1893: Support OpenTSDB for storing timeseries data.
  * STORM-1723: Introduce ClusterMetricsConsumer
@@ -189,6 +192,10 @@
  * STORM-1868: Modify TridentKafkaWordCount to run in distributed mode
 
 ## 1.0.3
+ * STORM-1987: Fix TridentKafkaWordCount arg handling in distributed mode.
+ * STORM-1969: Modify HiveTopology to show usage of non-partition table.
+ * STORM-1849: HDFSFileTopology should use the 3rd argument as topologyName
+ * STORM-2086: use DefaultTopicSelector instead of creating a new one
  * STORM-2079: Unneccessary readStormConfig operation
  * STORM-2081: create external directory for storm-sql various data sources and move storm-sql-kafka to it
  * STORM-1344: Remove sql command from storm-jdbc build

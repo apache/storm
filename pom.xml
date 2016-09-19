@@ -295,6 +295,9 @@
         <module>storm-buildtools/storm-maven-plugins</module>
         <module>storm-core</module>
         <module>storm-rename-hack</module>
+        <module>storm-clojure</module>
+
+        <!-- externals -->
         <module>external/storm-kafka</module>
         <module>external/storm-hdfs</module>
         <module>external/storm-hbase</module>
@@ -310,14 +313,26 @@
         <module>external/storm-cassandra</module>
         <module>external/storm-mqtt</module>
         <module>external/storm-mongodb</module>
-        <module>examples/storm-starter</module>
-        <module>storm-clojure</module>
         <module>external/storm-kafka-client</module>
         <module>external/storm-opentsdb</module>
         <module>external/storm-kafka-monitor</module>
         <module>external/storm-kinesis</module>
         <module>external/storm-druid</module>
         <module>external/storm-submit-tools</module>
+
+        <!-- examples -->
+        <module>examples/storm-starter</module>
+        <module>examples/storm-mongodb-examples</module>
+        <module>examples/storm-redis-examples</module>
+        <module>examples/storm-opentsdb-examples</module>
+        <module>examples/storm-solr-examples</module>
+        <module>examples/storm-kafka-examples</module>
+        <module>examples/storm-jdbc-examples</module>
+        <module>examples/storm-hdfs-examples</module>
+        <module>examples/storm-hbase-examples</module>
+        <module>examples/storm-hive-examples</module>
+        <module>examples/storm-elasticsearch-examples</module>
+        <module>examples/storm-mqtt-examples</module>
     </modules>
 
     <dependencies>
