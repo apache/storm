@@ -55,9 +55,9 @@ public class DruidBeamBolt<E> extends BaseRichBolt {
     private Tranquilizer<E> tranquilizer = null;
     private ITupleDruidEventMapper<E> druidEventMapper = null;
 
-    public DruidBeamBolt(DruidBeamFactory<E> beamFactory, ITupleDruidEventMapper<E> druidEventMapper, DruidConfig druidConfig) {
+    public DruidBeamBolt(DruidBeamFactory<E> beamFactory, ITupleDruidEventMapper<E> druidEventMapper, DruidConfig.Builder druidConfigBuilder) {
         this.beamFactory = beamFactory;
-        this.druidConfig = druidConfig;
+        this.druidConfig = druidConfigBuilder.build();
         this.druidEventMapper = druidEventMapper;
     }
 
