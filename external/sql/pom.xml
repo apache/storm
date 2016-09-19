@@ -40,5 +40,6 @@
         <module>storm-sql-core</module>
         <module>storm-sql-runtime</module>
         <module>storm-sql-external/storm-sql-kafka</module>
+        <module>storm-sql-external/storm-sql-redis</module>
     </modules>
 </project>
