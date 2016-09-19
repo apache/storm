@@ -19,34 +19,34 @@
  */
 package org.apache.storm.sql.compiler.backends.trident;
 
+import com.google.common.collect.Lists;
+import org.apache.calcite.adapter.java.JavaTypeFactory;
+import org.apache.calcite.jdbc.JavaTypeFactoryImpl;
+import org.apache.calcite.rel.type.RelDataTypeSystem;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.storm.Config;
 import org.apache.storm.ILocalCluster;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.generated.StormTopology;
-import org.apache.storm.sql.runtime.AbstractValuesProcessor;
-import org.apache.storm.tuple.Fields;
-import org.apache.storm.tuple.Values;
-import org.apache.storm.utils.Utils;
-import org.apache.calcite.adapter.java.JavaTypeFactory;
-import org.apache.calcite.jdbc.JavaTypeFactoryImpl;
-import org.apache.calcite.rel.type.RelDataTypeSystem;
 import org.apache.storm.sql.TestUtils;
 import org.apache.storm.sql.TestUtils.MockSqlTridentDataSource.CollectDataFunction;
 import org.apache.storm.sql.compiler.TestCompilerUtils;
 import org.apache.storm.sql.runtime.ISqlTridentDataSource;
 import org.apache.storm.sql.runtime.trident.AbstractTridentProcessor;
+import org.apache.storm.trident.TridentTopology;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Values;
+import org.apache.storm.utils.Utils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.apache.storm.trident.TridentTopology;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-import static org.apache.storm.sql.TestUtils.MockSqlTridentDataSource.CollectDataFunction.*;
+import static org.apache.storm.sql.TestUtils.MockSqlTridentDataSource.CollectDataFunction.getCollectedValues;
 
 public class TestPlanCompiler {
   private final JavaTypeFactory typeFactory = new JavaTypeFactoryImpl(
@@ -122,7 +122,7 @@ public class TestPlanCompiler {
     proc.outputStream().each(f, new CollectDataFunction(), new Fields()).toStream();
     runTridentTopology(EXPECTED_VALUE_SIZE, proc, topo);
 
-    Assert.assertArrayEquals(new Values[] { new Values(1, 2L), new Values(0, 2L)}, getCollectedValues().toArray());
+    assertListsAreEqualIgnoringOrder(Lists.newArrayList(new Values(1, 2L), new Values(0, 2L)), getCollectedValues());
   }
 
   @Test
@@ -140,7 +140,7 @@ public class TestPlanCompiler {
     proc.outputStream().each(f, new CollectDataFunction(), new Fields()).toStream();
     runTridentTopology(EXPECTED_VALUE_SIZE, proc, topo);
 
-    Assert.assertArrayEquals(new Values[] { new Values(2, null), new Values(3, null), new Values(4, null)}, getCollectedValues().toArray());
+    assertListsAreEqualIgnoringOrder(Lists.newArrayList(new Values(2, null), new Values(3, null), new Values(4, null)), getCollectedValues());
   }
 
   @Test
@@ -158,7 +158,7 @@ public class TestPlanCompiler {
     proc.outputStream().each(f, new CollectDataFunction(), new Fields()).toStream();
     runTridentTopology(EXPECTED_VALUE_SIZE, proc, topo);
 
-    Assert.assertArrayEquals(new Values[] { new Values(2, null), new Values(3, null), new Values(4, null)}, getCollectedValues().toArray());
+    assertListsAreEqualIgnoringOrder(Lists.newArrayList(new Values(2, null), new Values(3, null), new Values(4, null)), getCollectedValues());
   }
 
   @Test
@@ -176,9 +176,9 @@ public class TestPlanCompiler {
     proc.outputStream().each(f, new CollectDataFunction(), new Fields()).toStream();
     runTridentTopology(EXPECTED_VALUE_SIZE, proc, topo);
 
-    Assert.assertArrayEquals(new Values[] { new Values(null, "dept-2"), new Values(null, "dept-3"), new Values(null, "dept-4"),
-      new Values(10, null), new Values(11, null), new Values(12, null), new Values(13, null), new Values(14, null)},
-            getCollectedValues().toArray());
+    assertListsAreEqualIgnoringOrder(Lists.newArrayList(new Values(null, "dept-2"), new Values(null, "dept-3"), new Values(null, "dept-4"),
+            new Values(10, null), new Values(11, null), new Values(12, null), new Values(13, null), new Values(14, null)),
+            getCollectedValues());
   }
 
   @Test
@@ -273,5 +273,10 @@ public class TestPlanCompiler {
     while (TestUtils.monotonicNow() - start < timeout && cond.call()) {
       Thread.sleep(100);
     }
+  }
+
+  private void assertListsAreEqualIgnoringOrder(List<Values> expected, List<List<Object>> actual) {
+    Assert.assertTrue("Two lists are not same (even ignoring order)!\n"+ "Expected: " + expected + "\n" + "Actual: " + actual,
+            CollectionUtils.isEqualCollection(expected, actual));
   }
 }
