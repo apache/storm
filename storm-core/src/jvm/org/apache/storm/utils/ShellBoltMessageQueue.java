@@ -55,9 +55,9 @@ public class ShellBoltMessageQueue implements Serializable {
      * @param taskIds task ids that received the tuples
      */
     public void putTaskIds(List<Integer> taskIds) {
-        taskIdsQueue.add(taskIds);
         takeLock.lock();
         try {
+            taskIdsQueue.add(taskIds);
             notEmpty.signal();
         } finally {
             takeLock.unlock();
