@@ -179,7 +179,7 @@
                     <properties>
                         <property>
                             <name>listener</name>
-                            <value>com.hortonworks.storm.st.meta.TestngListener</value>
+                            <value>org.apache.storm.st.meta.TestngListener</value>
                         </property>
                     </properties>
                     <systemPropertyVariables>
