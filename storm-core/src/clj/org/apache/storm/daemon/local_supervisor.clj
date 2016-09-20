@@ -13,21 +13,16 @@
 ;; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
-(ns org.apache.storm.command.kill-workers
-  (:import [java.io File])
+(ns org.apache.storm.daemon.local-supervisor
+  (:import [org.apache.storm.daemon.supervisor Supervisor]
+           [org.apache.storm.utils ConfigUtils])
   (:use [org.apache.storm.daemon common])
-  (:use [org.apache.storm util config])
-  (:require [org.apache.storm.daemon
-             [supervisor :as supervisor]])
   (:gen-class))
 
-(defn -main 
-  "Construct the supervisor-data from scratch and kill the workers on this supervisor"
-  [& args]
-  (let [conf (read-storm-config)
-        conf (assoc conf STORM-LOCAL-DIR (. (File. (conf STORM-LOCAL-DIR)) getCanonicalPath))
-        isupervisor (supervisor/standalone-supervisor)
-        supervisor-data (supervisor/supervisor-data conf nil isupervisor)
-        ids (supervisor/my-worker-ids conf)]
-    (doseq [id ids]
-      (supervisor/shutdown-worker supervisor-data id))))
+(defserverfn mk-local-supervisor [conf shared-context isupervisor]
+  (if (not (ConfigUtils/isLocalMode conf))
+    (throw
+      (IllegalArgumentException. "Cannot start server in distrubuted mode!")))
+  (let [supervisor-server (Supervisor. conf shared-context isupervisor)]
+    (.launch supervisor-server)
+    supervisor-server))

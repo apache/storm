@@ -20,10 +20,14 @@
   (:import [org.apache.storm.generated InvalidTopologyException SubmitOptions TopologyInitialStatus RebalanceOptions])
   (:import [org.apache.storm.testing TestWordCounter TestWordSpout TestGlobalCount
             TestAggregatesCounter TestConfBolt AckFailMapTracker AckTracker TestPlannerSpout])
+  (:import [org.apache.storm.task WorkerTopologyContext])
   (:import [org.apache.storm.utils Time])
   (:import [org.apache.storm.tuple Fields])
+  (:import [org.mockito Mockito])
   (:use [org.apache.storm testing config clojure util])
   (:use [org.apache.storm.daemon common])
+  (:require [org.apache.storm [cluster :as cluster]])
+  (:require [org.apache.storm.daemon [executor :as executor]])
   (:require [org.apache.storm [thrift :as thrift]]))
 
 (deftest test-basic-topology
@@ -115,7 +119,6 @@
                              "timeout-tester"
                              {TOPOLOGY-MESSAGE-TIMEOUT-SECS 10}
                              topology)
-      (advance-cluster-time cluster 11)
       (.feed feeder ["a"] 1)
       (.feed feeder ["b"] 2)
       (.feed feeder ["c"] 3)
@@ -282,7 +285,6 @@
                              "acking-test1"
                              {}
                              (:topology tracked))
-      (advance-cluster-time cluster 11)
       (.feed feeder1 [1])
       (tracked-wait tracked 1)
       (checker1 0)
@@ -325,7 +327,6 @@
                              "test-acking2"
                              {}
                              (:topology tracked))
-      (advance-cluster-time cluster 11)
       (.feed feeder [1])
       (tracked-wait tracked 1)
       (checker 0)
@@ -371,8 +372,7 @@
         {TOPOLOGY-MESSAGE-TIMEOUT-SECS 10}
         topology
         (SubmitOptions. TopologyInitialStatus/INACTIVE))
-      (advance-cluster-time cluster 11)
-      (.feed feeder ["a"] 1)
+      (.feedNoWait feeder ["a"] 1)
       (advance-cluster-time cluster 9)
       (is (not @bolt-prepared?))
       (is (not @spout-opened?))        
@@ -396,7 +396,6 @@
                              "test"
                              {}
                              (:topology tracked))
-      (advance-cluster-time cluster 11)
       (.feed feeder [1])
       (tracked-wait tracked 1)
       (checker 1)
@@ -595,60 +594,42 @@
              (read-tuples results "2")
              )))))
 
-(defbolt report-errors-bolt {}
-  [tuple collector]
-  (doseq [i (range (.getValue tuple 0))]
-    (report-error! collector (RuntimeException.)))
-  (ack! collector tuple))
-
+;;This is more of a unit test, but getting the timing right for
+;; an integration test is really hard
 (deftest test-throttled-errors
   (with-simulated-time
-    (with-tracked-cluster [cluster]
-      (let [state (:storm-cluster-state cluster)
-            [feeder checker] (ack-tracking-feeder ["num"])
-            tracked (mk-tracked-topology
-                     cluster
-                     (topology
-                       {"1" (spout-spec feeder)}
-                       {"2" (bolt-spec {"1" :shuffle} report-errors-bolt)}))
-            _       (submit-local-topology (:nimbus cluster)
-                                             "test-errors"
-                                             {TOPOLOGY-ERROR-THROTTLE-INTERVAL-SECS 10
-                                              TOPOLOGY-MAX-ERROR-REPORT-PER-INTERVAL 4
-                                              TOPOLOGY-DEBUG true
-                                              }
-                                             (:topology tracked))
-            _ (advance-cluster-time cluster 11)
-            storm-id (get-storm-id state "test-errors")
-            errors-count (fn [] (count (.errors state storm-id "2")))]
-
-        (is (nil? (.last-error state storm-id "2")))
-
-        ;; so it launches the topology
-        (advance-cluster-time cluster 2)
-        (.feed feeder [6])
-        (tracked-wait tracked 1)
-        (is (= 4 (errors-count)))
-        (is (.last-error state storm-id "2"))
-        
-        (advance-time-secs! 5)
-        (.feed feeder [2])
-        (tracked-wait tracked 1)
-        (is (= 4 (errors-count)))
-        (is (.last-error state storm-id "2"))
-        
-        (advance-time-secs! 6)
-        (.feed feeder [2])
-        (tracked-wait tracked 1)
-        (is (= 6 (errors-count)))
-        (is (.last-error state storm-id "2"))
-        
-        (advance-time-secs! 6)
-        (.feed feeder [3])
-        (tracked-wait tracked 1)
-        (is (= 8 (errors-count)))
-        (is (.last-error state storm-id "2"))))))
-
+    (let [error-count (atom 0)
+          worker-context (Mockito/mock WorkerTopologyContext)
+          cluster-state
+             (reify cluster/StormClusterState
+               (report-error
+                 [this storm-id component-id node port error]
+                 (swap! error-count inc)))
+          error-fn (executor/throttled-report-error-fn 
+            {:storm-conf {TOPOLOGY-ERROR-THROTTLE-INTERVAL-SECS 10
+                          TOPOLOGY-MAX-ERROR-REPORT-PER-INTERVAL 4}
+             :storm-cluster-state cluster-state
+             :storm-id "topo"
+             :component-id "comp"
+             :worker-context worker-context})]
+        (. (Mockito/when (.getThisWorkerPort worker-context)) (thenReturn (Integer. 8080))) 
+        (error-fn (RuntimeException. "ERROR-1"))
+        (is (= 1 @error-count))
+        (error-fn (RuntimeException. "ERROR-2"))
+        (is (= 2 @error-count))
+        (error-fn (RuntimeException. "ERROR-3"))
+        (is (= 3 @error-count))
+        (error-fn (RuntimeException. "ERROR-4"))
+        (is (= 4 @error-count))
+        ;;Ignored
+        (error-fn (RuntimeException. "ERROR-5"))
+        (is (= 4 @error-count))
+        (Time/advanceTime 9000)
+        (error-fn (RuntimeException. "ERROR-6"))
+        (is (= 4 @error-count))
+        (Time/advanceTime 2000)
+        (error-fn (RuntimeException. "ERROR-7"))
+        (is (= 5 @error-count)))))
 
 (deftest test-acking-branching-complex
   ;; test acking with branching in the topology

@@ -259,7 +259,7 @@ public class LocalizerTest {
 
   // archive passed in must contain symlink named tmptestsymlink if not a zip file
   public void testArchives(String archivePath, boolean supportSymlinks, int size) throws Exception {
-    if (isOnWindows()) {
+    if (Utils.isOnWindows()) {
       // Windows should set this to false cause symlink in compressed file doesn't work properly.
       supportSymlinks = false;
     }
@@ -668,12 +668,5 @@ public class LocalizerTest {
     assertTrue("blob version file not created", versionFile.exists());
     assertEquals("blob version not correct", 3, Utils.localVersionOfBlob(keyFile.toString()));
     assertTrue("blob file with version 3 not created", new File(keyFile + ".3").exists());
-  }
-
-  private boolean isOnWindows() {
-    if (System.getenv("OS") != null) {
-      return System.getenv("OS").equals("Windows_NT");
-    }
-    return false;
   }
 }
