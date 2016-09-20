@@ -43,17 +43,24 @@
               Used slots
             </span>
           </th>
+          {{#schedulerDisplayResource}}
           <th>
             <span data-toggle="tooltip" data-placement="top" title="Memory capacity of a supervisor.">
               Total Mem (MB)
             </span>
           </th>
+          {{/schedulerDisplayResource}}
           <th>
             <span data-toggle="tooltip" data-placement="top" title="Memory that has been allocated.">
               Used Mem (MB)
             </span>
           </th>
           {{#schedulerDisplayResource}}
+          <th>
+            <span data-toggle="tooltip" data-placement="left" title="The amount of Memory available in megabytes.">
+              Avail Mem (MB)
+            </span>
+          </th>
           <th>
             <span data-toggle="tooltip" data-placement="top" title="CPU capacity of a supervisor. Every 100 means one core.">
               Total CPU (%)
@@ -62,6 +69,11 @@
           <th>
             <span data-toggle="tooltip" data-placement="top" title="CPU that has been allocated. Every 100 means one core">
               Used CPU (%)
+            </span>
+          </th>
+          <th>
+            <span data-toggle="tooltip" data-placement="left" title="The amount of CPU that is available. Every 100 means one core.">
+              Avail CPU (%)
             </span>
           </th>
           {{/schedulerDisplayResource}}
@@ -80,11 +92,15 @@
             <td>{{uptime}}</td>
             <td>{{slotsTotal}}</td>
             <td>{{slotsUsed}}</td>
+            {{#schedulerDisplayResource}}
             <td>{{totalMem}}</td>
+            {{/schedulerDisplayResource}}
             <td>{{usedMem}}</td>
             {{#schedulerDisplayResource}}
+            <td>{{availMem}}</td>
             <td>{{totalCpu}}</td>
             <td>{{usedCpu}}</td>
+            <td>{{availCpu}}</td>
             {{/schedulerDisplayResource}}
             <td>{{version}}</td>
           </tr>
