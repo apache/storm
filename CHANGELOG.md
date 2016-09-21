@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-2100: Fix Trident SQL join tests to not rely on ordering
  * STORM-1837: Fix complete-topology and prevent message loss
  * STORM-2098: DruidBeamBolt: Pass DruidConfig.Builder as constructor argument
  * STORM-2092: optimize TridentKafkaState batch sending
