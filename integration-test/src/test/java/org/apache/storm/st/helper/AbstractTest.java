@@ -19,9 +19,6 @@ package org.apache.storm.st.helper;
 
 import org.apache.storm.st.wrapper.StormCluster;
 
-/**
- * Created by temp on 5/2/16.
- */
 public abstract class AbstractTest {
     protected final StormCluster cluster = new StormCluster();
     static {

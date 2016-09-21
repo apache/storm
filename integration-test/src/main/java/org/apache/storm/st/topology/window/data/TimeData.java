@@ -26,9 +26,6 @@ import org.apache.storm.tuple.Values;
 import java.util.Collection;
 import java.util.Date;
 
-/**
- * Created by temp on 5/12/16.
- */
 public class TimeData implements Comparable<TimeData>, FromJson<TimeData> {
     public static final TimeData CLS = new TimeData(-1);
     private static final String NUMBER_FIELD_NAME = "number";

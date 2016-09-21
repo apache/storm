@@ -26,9 +26,6 @@ import java.io.File;
 import java.util.Collection;
 import java.util.List;
 
-/**
- * Created by temp on 4/28/16.
- */
 public class AssertUtil {
     private static Logger log = LoggerFactory.getLogger(AssertUtil.class);
 

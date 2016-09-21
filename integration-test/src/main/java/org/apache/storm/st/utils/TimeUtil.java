@@ -24,9 +24,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.TimeUnit;
 
-/**
- * Created by temp on 4/28/16.
- */
 public class TimeUtil {
     private static Logger log = LoggerFactory.getLogger(TimeUtil.class);
 

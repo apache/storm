@@ -17,9 +17,6 @@
 
 package org.apache.storm.st.topology.window.data;
 
-/**
- * Created by temp on 5/23/16.
- */
 public interface FromJson<T> {
     T fromJson(String jsonStr);
 }

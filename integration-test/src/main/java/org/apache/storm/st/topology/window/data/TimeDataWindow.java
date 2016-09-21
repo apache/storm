@@ -29,9 +29,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * Created by temp on 5/23/16.
- */
 public class TimeDataWindow extends ArrayList<TimeData> implements FromJson<TimeDataWindow> {
     public static final TimeDataWindow CLS = new TimeDataWindow();
     private static final Type listType = new TypeToken<List<TimeData>>() {}.getType();

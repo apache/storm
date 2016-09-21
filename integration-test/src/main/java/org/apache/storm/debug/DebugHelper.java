@@ -24,9 +24,6 @@ import org.slf4j.LoggerFactory;
 import java.net.URL;
 import java.net.URLClassLoader;
 
-/**
- * Created by temp on 6/3/16.
- */
 public class DebugHelper {
     private static final Logger LOG = LoggerFactory.getLogger(DebugHelper.class);
 

@@ -19,9 +19,6 @@ package org.apache.storm.st.utils;
 
 import org.apache.commons.lang.StringUtils;
 
-/**
- * Created by temp on 5/3/16.
- */
 public class StringDecorator {
 
     private static final String UNIQUE_PREFIX = "---bed91874d79720f7e324c43d49dba4ff---";

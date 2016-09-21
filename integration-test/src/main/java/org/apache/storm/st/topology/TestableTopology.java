@@ -21,9 +21,6 @@ import org.apache.storm.generated.StormTopology;
 
 import java.util.List;
 
-/**
- * Created by temp on 5/3/16.
- */
 public interface TestableTopology {
     String DUMMY_FIELD = "dummy";
     List<String> getExpectedOutput();
