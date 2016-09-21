@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-2100: Fix Trident SQL join tests to not rely on ordering
  * STORM-2018: Supervisor V2
  * STORM-2098: DruidBeamBolt: Pass DruidConfig.Builder as constructor argument
  * STORM-2067: Fix "array element type mismatch" from compute-executors in nimbus.clj
