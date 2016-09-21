@@ -394,10 +394,10 @@
                                            sup-avail-cpu (max (- sup-total-cpu (.get_used_cpu s)) 0.0)]]
                                  [sup-total-mem sup-total-cpu sup-avail-mem sup-avail-cpu]))
                              [0.0 0.0 0.0 0.0])
-           totalMem (nth resourceSummary 0)
-           totalCpu (nth resourceSummary 1)
-           availMem (nth resourceSummary 2)
-           availCpu (nth resourceSummary 3)]
+           total-mem (nth resourceSummary 0)
+           total-cpu (nth resourceSummary 1)
+           avail-mem (nth resourceSummary 2)
+           avail-cpu (nth resourceSummary 3)]
        {"user" user
         "stormVersion" STORM-VERSION
         "supervisors" (count sups)
@@ -408,12 +408,12 @@
         "executorsTotal" total-executors
         "tasksTotal" total-tasks
         "schedulerDisplayResource" (*STORM-CONF* Config/SCHEDULER_DISPLAY_RESOURCE)
-        "totalMem" totalMem
-        "totalCpu" totalCpu
-        "availMem" availMem
-        "availCpu" availCpu
-        "memAssignedPercentUtil" (if (and (not (nil? totalMem)) (> totalMem 0.0)) (format "%.1f" (* (/ (- totalMem availMem) totalMem) 100.0)) 0.0)
-        "cpuAssignedPercentUtil" (if (and (not (nil? totalCpu)) (> totalCpu 0.0)) (format "%.1f" (* (/ (- totalCpu availCpu) totalCpu) 100.0)) 0.0)})))
+        "totalMem" total-mem
+        "totalCpu" total-cpu
+        "availMem" avail-mem
+        "availCpu" avail-cpu
+        "memAssignedPercentUtil" (if (and (not (nil? total-mem)) (> total-mem 0.0)) (format "%.1f" (* (/ (- total-mem avail-mem) total-mem) 100.0)) 0.0)
+        "cpuAssignedPercentUtil" (if (and (not (nil? total-cpu)) (> total-cpu 0.0)) (format "%.1f" (* (/ (- total-cpu avail-cpu) total-cpu) 100.0)) 0.0)})))
 
 (defn convert-to-nimbus-summary[nimbus-seed]
   (let [[host port] (.split nimbus-seed ":")]
