@@ -31,9 +31,12 @@ import java.util.Map;
 
 import org.apache.storm.Config;
 import org.apache.storm.daemon.supervisor.Container.ContainerType;
+import org.apache.storm.generated.Bolt;
 import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.generated.ProfileAction;
 import org.apache.storm.generated.ProfileRequest;
+import org.apache.storm.generated.SpoutSpec;
+import org.apache.storm.generated.StateSpoutSpec;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.utils.LocalState;
 import org.apache.storm.utils.Utils;
@@ -126,7 +129,7 @@ public class BasicContainerTest {
         LocalState ls = mock(LocalState.class);
         
         MockBasicContainer mc = new MockBasicContainer(ContainerType.LAUNCH, superConf, 
-                "SUPERVISOR", port, la, ls, null, new HashMap<>(), ops, "profile");
+                "SUPERVISOR", port, la, ls, null, new HashMap<String, Object>(), ops, "profile");
         //null worker id means generate one...
         
         assertNotNull(mc._workerId);
@@ -155,7 +158,7 @@ public class BasicContainerTest {
         when(ops.doRequiredTopoFilesExist(superConf, topoId)).thenReturn(true);
         
         MockBasicContainer mc = new MockBasicContainer(ContainerType.RECOVER_FULL, superConf, 
-                "SUPERVISOR", port, la, ls, null, new HashMap<>(), ops, "profile");
+                "SUPERVISOR", port, la, ls, null, new HashMap<String, Object>(), ops, "profile");
         
         assertEquals(workerId, mc._workerId);
     }
@@ -175,7 +178,7 @@ public class BasicContainerTest {
         
         try {
             new MockBasicContainer(ContainerType.RECOVER_FULL, new HashMap<String, Object>(), 
-                    "SUPERVISOR", port, la, ls, null, new HashMap<>(), null, "profile");
+                    "SUPERVISOR", port, la, ls, null, new HashMap<String, Object>(), null, "profile");
             fail("Container recovered worker incorrectly");
         } catch (ContainerRecoveryException e) {
             //Expected
@@ -201,7 +204,7 @@ public class BasicContainerTest {
         when(ls.getApprovedWorkers()).thenReturn(new HashMap<>(workerState));
         
         MockBasicContainer mc = new MockBasicContainer(ContainerType.LAUNCH, superConf, 
-                "SUPERVISOR", port, la, ls, workerId, new HashMap<>(), ops, "profile");
+                "SUPERVISOR", port, la, ls, workerId, new HashMap<String, Object>(), ops, "profile");
         
         mc.cleanUp();
         
@@ -235,7 +238,7 @@ public class BasicContainerTest {
         LocalState ls = mock(LocalState.class);
         
         MockBasicContainer mc = new MockBasicContainer(ContainerType.LAUNCH, superConf, 
-                "SUPERVISOR", port, la, ls, workerId, new HashMap<>(), ops, "profile");
+                "SUPERVISOR", port, la, ls, workerId, new HashMap<String, Object>(), ops, "profile");
         
         //HEAP DUMP
         ProfileRequest req = new ProfileRequest();
@@ -369,9 +372,9 @@ public class BasicContainerTest {
         final String workerTmpDir = ContainerTest.asAbsPath(workerRoot, "tmp");
         
         final StormTopology st = new StormTopology();
-        st.set_spouts(new HashMap<>());
-        st.set_bolts(new HashMap<>());
-        st.set_state_spouts(new HashMap<>());
+        st.set_spouts(new HashMap<String, SpoutSpec>());
+        st.set_bolts(new HashMap<String, Bolt>());
+        st.set_state_spouts(new HashMap<String, StateSpoutSpec>());
         byte [] serializedState = Utils.gzip(Utils.thriftSerialize(st));
         
         final Map<String, Object> superConf = new HashMap<>();
@@ -379,19 +382,21 @@ public class BasicContainerTest {
         superConf.put(Config.STORM_WORKERS_ARTIFACTS_DIR, stormLocal);
         superConf.put(Config.STORM_LOG4J2_CONF_DIR, log4jdir);
         
-        LocalAssignment la = new LocalAssignment();
+        final LocalAssignment la = new LocalAssignment();
         la.set_topology_id(topoId);
         
-        AdvancedFSOps ops = mock(AdvancedFSOps.class);
+        final AdvancedFSOps ops = mock(AdvancedFSOps.class);
         when(ops.doRequiredTopoFilesExist(superConf, topoId)).thenReturn(true);
         when(ops.slurp(stormcode)).thenReturn(serializedState);
         
-        LocalState ls = mock(LocalState.class);
+        final LocalState ls = mock(LocalState.class);
         
         
-        checkpoint(() -> {
+        checkpoint(new Run() {
+          @Override
+          public void run() throws Exception {
             MockBasicContainer mc = new MockBasicContainer(ContainerType.LAUNCH, superConf, 
-                    "SUPERVISOR", port, la, ls, workerId, new HashMap<>(), ops, "profile");
+                    "SUPERVISOR", port, la, ls, workerId, new HashMap<String, Object>(), ops, "profile");
 
             mc.launch();
 
@@ -440,7 +445,7 @@ public class BasicContainerTest {
                     workerId
                     ), cmd.cmd);
             assertEquals(new File(workerRoot), cmd.pwd);
-          }, 
+          }}, 
           "storm.home", stormHome,
           "storm.log.dir", stormLogDir);
     }
@@ -463,7 +468,7 @@ public class BasicContainerTest {
         LocalState ls = mock(LocalState.class);
         
         MockBasicContainer mc = new MockBasicContainer(ContainerType.LAUNCH, superConf, 
-                "SUPERVISOR", port, la, ls, workerId, new HashMap<>(), ops, "profile");
+                "SUPERVISOR", port, la, ls, workerId, new HashMap<String, Object>(), ops, "profile");
         
         assertListEquals(Arrays.asList(
                 "-Xloggc:/tmp/storm/logs/gc.worker-9999-s-01-w-01-9999.log",
@@ -477,7 +482,7 @@ public class BasicContainerTest {
                 "-Xmx512m"),
                 mc.substituteChildopts(Arrays.asList("-Xloggc:/tmp/storm/logs/gc.worker-%ID%-%TOPOLOGY-ID%-%WORKER-ID%-%WORKER-PORT%.log","-Xms256m","-Xmx%HEAP-MEM%m"), memOnheap));
         
-        assertListEquals(Collections.emptyList(), 
+        assertListEquals(Collections.<String>emptyList(), 
                 mc.substituteChildopts(null));
     }
 }

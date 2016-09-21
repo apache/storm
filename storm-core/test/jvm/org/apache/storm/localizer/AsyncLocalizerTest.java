@@ -34,8 +34,11 @@ import org.junit.Test;
 
 import org.apache.storm.Config;
 import org.apache.storm.blobstore.ClientBlobStore;
+import org.apache.storm.generated.Bolt;
 import org.apache.storm.generated.ExecutorInfo;
 import org.apache.storm.generated.LocalAssignment;
+import org.apache.storm.generated.SpoutSpec;
+import org.apache.storm.generated.StateSpoutSpec;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.localizer.LocalizedResource;
 import org.apache.storm.localizer.Localizer;
@@ -128,9 +131,9 @@ public class AsyncLocalizerTest {
         final String simpleCurrentLocalFile = localizerRoot + user + "/simple.current";
        
         final StormTopology st = new StormTopology();
-        st.set_spouts(new HashMap<>());
-        st.set_bolts(new HashMap<>());
-        st.set_state_spouts(new HashMap<>());
+        st.set_spouts(new HashMap<String, SpoutSpec>());
+        st.set_bolts(new HashMap<String, Bolt>());
+        st.set_state_spouts(new HashMap<String, StateSpoutSpec>());
  
         Map<String, Map<String, Object>> topoBlobMap = new HashMap<>();
         Map<String, Object> simple = new HashMap<>();

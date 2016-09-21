@@ -52,7 +52,12 @@ import com.google.common.collect.Lists;
  */
 public class BasicContainer extends Container {
     private static final Logger LOG = LoggerFactory.getLogger(BasicContainer.class);
-    private static final FilenameFilter jarFilter = (dir, name) -> name.endsWith(".jar");
+    private static final FilenameFilter jarFilter = new FilenameFilter() {
+        @Override
+        public boolean accept(File dir, String name) {
+            return name.endsWith(".jar");
+        }
+    };
     private static final Joiner CPJ = 
             Joiner.on(Utils.CLASS_PATH_SEPARATOR).skipNulls();
     
@@ -334,9 +339,11 @@ public class BasicContainer extends Container {
         if (files == null) {
             return Collections.emptyList();
         }
-
-        return Arrays.stream(files).map(f -> f.getAbsolutePath())
-                .collect(Collectors.toList());
+        ArrayList<String> ret = new ArrayList<>(files.length);
+        for (File f: files) {
+            ret.add(f.getAbsolutePath());
+        }
+        return ret;
     }
     
     protected List<String> frameworkClasspath() {

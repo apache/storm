@@ -241,7 +241,12 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
                 throw new IllegalArgumentException("Cannot start server in local mode!");
             }
             launch();
-            Utils.addShutdownHookWithForceKillIn1Sec(() -> {this.close();});
+            Utils.addShutdownHookWithForceKillIn1Sec(new Runnable(){ 
+                @Override
+                public void run() {
+                    close();
+                }
+            });
             registerWorkerNumGauge("supervisor:num-slots-used-gauge", conf);
             StormMetricsRegistry.startMetricsReporters(conf);
         } catch (Exception e) {

@@ -69,7 +69,7 @@ public class ReadClusterState implements Runnable, AutoCloseable {
         this.superConf = supervisor.getConf();
         this.stormClusterState = supervisor.getStormClusterState();
         this.syncSupEventManager = supervisor.getEventManger();
-        this.assignmentVersions = new AtomicReference<>(new HashMap<>());
+        this.assignmentVersions = new AtomicReference<Map<String, VersionedData<Assignment>>>(new HashMap<String, VersionedData<Assignment>>());
         this.assignmentId = supervisor.getAssignmentId();
         this.iSuper = supervisor.getiSupervisor();
         this.localizer = supervisor.getAsyncLocalizer();

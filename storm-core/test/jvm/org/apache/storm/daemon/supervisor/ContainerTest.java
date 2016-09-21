@@ -101,7 +101,7 @@ public class ContainerTest {
         LocalAssignment la = new LocalAssignment();
         la.set_topology_id(topoId);
         MockContainer mc = new MockContainer(ContainerType.LAUNCH, superConf, 
-                "SUPERVISOR", 8080, la, "worker", new HashMap<>(), ops);
+                "SUPERVISOR", 8080, la, "worker", new HashMap<String, Object>(), ops);
         mc.kill();
         assertEquals(Collections.EMPTY_LIST, mc.killedPids);
         assertEquals(Collections.EMPTY_LIST, mc.forceKilledPids);
