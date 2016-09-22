@@ -42,16 +42,40 @@
             <outputDirectory>bin</outputDirectory>
             <includes>
                 <include>storm*</include>
+                <include>flight.bash</include>
             </includes>
             <fileMode>0755</fileMode>
         </fileSet>
+        <!--
+            Allow for variable substitution for cache busting in HTML files and script.js
+            See storm-dist/binary/pom.xml for custom variables that will be substituted in.
+
+            The source files should have a ${variable to be replaced} wherever
+            maven assembly plugin should inject a value.
+        -->
+        <fileSet>
+            <directory>${project.basedir}/../../storm-core/src/ui/public</directory>
+            <outputDirectory>public</outputDirectory>
+            <includes>
+                <include>*.html</include>
+                <include>js/script.js</include>
+            </includes>
+            <excludes/>
+            <filtered>true</filtered>
+        </fileSet>
+        <!--
+            Include rest of public/ directory, without any filtering
+        -->
         <fileSet>
             <directory>${project.basedir}/../../storm-core/src/ui/public</directory>
             <outputDirectory>public</outputDirectory>
             <includes>
                 <include>*/**</include>
             </includes>
-            <excludes/>
+            <excludes>
+                <exclude>*.html</exclude>
+                <exclude>js/script.js</exclude>
+            </excludes>
         </fileSet>
         <fileSet>
             <directory>${project.basedir}/../../examples</directory>
@@ -78,6 +102,20 @@
         <fileSet>
             <directory>${project.basedir}/../../external/storm-kafka</directory>
             <outputDirectory>external/storm-kafka</outputDirectory>
+            <includes>
+                <include>README.*</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-kinesis/target</directory>
+            <outputDirectory>external/storm-kinesis</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-kinesis</directory>
+            <outputDirectory>external/storm-kinesis</outputDirectory>
             <includes>
                 <include>README.*</include>
             </includes>
@@ -245,8 +283,127 @@
                 <include>README.*</include>
             </includes>
         </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-cassandra/target</directory>
+            <outputDirectory>external/storm-cassandra</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/sql/storm-sql-core/target/app-assembler/repo</directory>
+            <outputDirectory>external/sql/storm-sql-core</outputDirectory>
+            <includes>
+                <include>*jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/sql/storm-sql-external/storm-sql-kafka/target</directory>
+            <outputDirectory>external/sql/storm-sql-external/storm-sql-kafka</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/sql/storm-sql-runtime/target/app-assembler/repo</directory>
+            <outputDirectory>external/sql/storm-sql-runtime</outputDirectory>
+            <includes>
+                <include>*jar</include>
+            </includes>
+        </fileSet>
 
+        <fileSet>
+            <directory>${project.basedir}/../../external/sql</directory>
+            <outputDirectory>external/sql</outputDirectory>
+            <includes>
+                <include>README.*</include>
+            </includes>
+        </fileSet>
 
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-mqtt</directory>
+            <outputDirectory>external/storm-mqtt</outputDirectory>
+            <includes>
+                <include>README.*</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-mqtt/core/target</directory>
+            <outputDirectory>external/storm-mqtt</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-mqtt/examples/target</directory>
+            <outputDirectory>external/storm-mqtt</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-mongodb/target</directory>
+            <outputDirectory>external/storm-mongodb</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-mongodb</directory>
+            <outputDirectory>external/storm-mongodb</outputDirectory>
+            <includes>
+                <include>README.*</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-kafka-client/target</directory>
+            <outputDirectory>external/storm-kafka-client</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-kafka-client</directory>
+            <outputDirectory>external/storm-kafka-client</outputDirectory>
+            <includes>
+                <include>README.*</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-opentsdb</directory>
+            <outputDirectory>external/storm-opentsdb</outputDirectory>
+            <includes>
+                <include>README.*</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-opentsdb/target</directory>
+            <outputDirectory>external/storm-opentsdb</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-druid/target</directory>
+            <outputDirectory>external/storm-druid</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-druid</directory>
+            <outputDirectory>external/storm-druid</outputDirectory>
+            <includes>
+                <include>README.*</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-submit-tools/target</directory>
+            <outputDirectory>external/storm-submit-tools</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
+            </includes>
+        </fileSet>
         <!-- $STORM_HOME/extlib -->
         <fileSet>
             <directory></directory>
@@ -261,6 +418,14 @@
             <outputDirectory>extlib-daemon</outputDirectory>
             <includes>
                 <include></include>
+            </includes>
+        </fileSet>
+        <!-- $STORM_HOME/toollib -->
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-kafka-monitor/target</directory>
+            <outputDirectory>toollib</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
             </includes>
         </fileSet>
 
@@ -290,6 +455,18 @@
             <destName>storm_env.ini</destName>
             <fileMode>0644</fileMode>
         </file>
+        <file>
+            <source>${project.basedir}/../../conf/storm-env.sh</source>
+            <outputDirectory>/conf</outputDirectory>
+            <destName>storm-env.sh</destName>
+            <fileMode>0755</fileMode>
+        </file>
+        <file>
+            <source>${project.basedir}/../../VERSION</source>
+            <outputDirectory>/</outputDirectory>
+            <destName>RELEASE</destName>
+            <filtered>true</filtered>
+        </file>
         <!-- TODO this should be a generated file from "target" -->
         <file>
             <source>${project.basedir}/../../log4j2/cluster.xml</source>
@@ -316,11 +493,6 @@
             <source>${project.basedir}/../../README.markdown</source>
             <outputDirectory>/</outputDirectory>
         </file>
-        <file>
-            <source>${project.basedir}/../../DISCLAIMER</source>
-            <outputDirectory>/</outputDirectory>
-        </file>
-
         <file>
             <source>${project.basedir}/../../CHANGELOG.md</source>
             <outputDirectory>/</outputDirectory>

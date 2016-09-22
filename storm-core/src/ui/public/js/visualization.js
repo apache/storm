@@ -379,7 +379,7 @@ function jsError(other) {
   try {
     other();
   } catch (err) {
-    $.get("/templates/json-error-template.html", function(template) {
+    getStatic("/templates/json-error-template.html", function(template) {
       $("#json-response-error").append(Mustache.render($(template).filter("#json-error-template").html(),{error: "JS Error", errorMessage: err}));
     });
   }
@@ -388,7 +388,7 @@ function jsError(other) {
 var should_update;
 function show_visualization(sys) {
     $.getJSON("/api/v1/topology/"+$.url("?id")+"/visualization-init",function(response,status,jqXHR) {
-        $.get("/templates/topology-page-template.html", function(template) {
+        getStatic("/templates/topology-page-template.html", function(template) {
             jsError(function() {
                 var topologyVisualization = $("#visualization-container");
                 topologyVisualization.append(

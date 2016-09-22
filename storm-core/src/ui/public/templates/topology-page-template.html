@@ -29,40 +29,52 @@
           </span>
         </th>
         <th>
-          <span data-toggle="tooltip" data-placement="above" title="The user that submitted the Topology, if authentication is enabled.">
+          <span data-toggle="tooltip" data-placement="top" title="The user that submitted the Topology, if authentication is enabled.">
             Owner
           </span>
         </th>
         <th>
-          <span data-toggle="tooltip" data-placement="above" title="The status can be one of ACTIVE, INACTIVE, KILLED, or REBALANCING.">
+          <span data-toggle="tooltip" data-placement="top" title="The status can be one of ACTIVE, INACTIVE, KILLED, or REBALANCING.">
             Status
           </span>
         </th>
         <th>
-          <span data-toggle="tooltip" data-placement="above" title="The time since the Topology was submitted.">
+          <span data-toggle="tooltip" data-placement="top" title="The time since the Topology was submitted.">
             Uptime
           </span>
         </th>
         <th>
-          <span data-toggle="tooltip" data-placement="above" title="The number of Workers (processes).">
+          <span data-toggle="tooltip" data-placement="top" title="The number of Workers (processes).">
             Num workers
           </span>
         </th>
         <th>
-          <span data-toggle="tooltip" data-placement="above" title="Executors are threads in a Worker process.">
+          <span data-toggle="tooltip" data-placement="top" title="Executors are threads in a Worker process.">
             Num executors
           </span>
         </th>
         <th>
-          <span data-toggle="tooltip" data-placement="above" title="A Task is an instance of a Bolt or Spout. The number of Tasks is almost always equal to the number of Executors.">
+          <span data-toggle="tooltip" data-placement="top" title="A Task is an instance of a Bolt or Spout. The number of Tasks is almost always equal to the number of Executors.">
             Num tasks
           </span>
         </th>
         <th>
-          <span cdata-toggle="tooltip" data-placement="above" title="Number of nimbus hosts on which this topology's code is replicated. ">
+          <span data-toggle="tooltip" data-placement="top" title="Number of nimbus hosts on which this topology's code is replicated.">
             Replication count
           </span>
         </th>
+        <th>
+          <span data-toggle="tooltip" data-placement="top" title="Assigned Total Memory by Scheduler.">
+            Assigned Mem (MB)
+          </span>
+        </th>
+        {{#schedulerDisplayResource}}
+        <th>
+          <span data-toggle="tooltip" data-placement="top" title="Assigned Total CPU by Scheduler. Every 100 means 1 core.">
+            Assigned CPU (%)
+          </span>
+        </th>
+        {{/schedulerDisplayResource}}
         <th>
           <span data-toggle="tooltip" data-placement="left" title="This shows information from the scheduler about the latest attempt to schedule the Topology on the cluster.">
             Scheduler Info
@@ -81,8 +93,72 @@
         <td>{{executorsTotal}}</td>
         <td>{{tasksTotal}}</td>
         <td>{{replicationCount}}</td>
+        <td>{{assignedTotalMem}}</td>
+        {{#schedulerDisplayResource}}
+        <td>{{assignedCpu}}</td>
+        {{/schedulerDisplayResource}}
         <td>{{schedulerInfo}}</td>
       </tr>
+    </tbody>
+  </table>
+</script>
+<script id="topology-resources-template" type="text/html">
+  <table id="topology-resources-table" class="table compact">
+    <thead>
+      <tr>
+         <th>
+           <span data-toggle="tooltip" data-placement="right" title="The name given to the topology by when it was submitted.">
+             Name
+           </span>
+         </th>
+         <th>
+           <span data-toggle="tooltip" data-placement="right" title="The unique ID given to a Topology each time it is launched.">
+             Id
+           </span>
+         </th>
+         <th>
+           <span data-toggle="tooltip" data-placement="top" title="Requested Total On-Heap Memory by User.">
+             Requested On-Heap Memory (MB)
+           </span>
+         </th>
+         <th>
+           <span data-toggle="tooltip" data-placement="top" title="Assigned Total On-Heap Memory by Scheduler.">
+             Assigned On-Heap Memory (MB)
+           </span>
+         </th>
+         <th>
+           <span data-toggle="tooltip" data-placement="top" title="Requested Total Off-Heap Memory by User.">
+             Requested Off-Heap Memory (MB)
+           </span>
+         </th>
+         <th>
+           <span data-toggle="tooltip" data-placement="top" title="Assigned Total Off-Heap Memory by Scheduler.">
+             Assigned Off-Heap Memory (MB)
+           </span>
+         </th>
+         <th>
+           <span data-toggle="tooltip" data-placement="top" title="Requested Total CPU by User. Every 100 means 1 core.">
+             Requested CPU (%)
+           </span>
+         </th>
+         <th>
+             <span data-toggle="tooltip" data-placement="left" title="Assigned Total CPU by Scheduler. Every 100 means 1 core.">
+               Assigned CPU (%)
+             </span>
+         </th>
+      </tr>
+    </thead>
+    <tbody>
+    <tr>
+      <td>{{name}}</td>
+      <td>{{id}}</td>
+      <td>{{requestedMemOnHeap}}</td>
+      <td>{{assignedMemOnHeap}}</td>
+      <td>{{requestedMemOffHeap}}</td>
+      <td>{{assignedMemOffHeap}}</td>
+      <td>{{requestedCpu}}</td>
+      <td>{{assignedCpu}}</td>
+    </tr>
     </tbody>
   </table>
 </script>
@@ -97,22 +173,22 @@
           </span>
         </th>
         <th>
-          <span data-toggle="tooltip" data-placement="above" title="The number of Tuples emitted.">
+          <span data-toggle="tooltip" data-placement="top" title="The number of Tuples emitted.">
             Emitted
           </span>
         </th>
         <th>
-          <span data-toggle="tooltip" data-placement="above" title="The number of Tuples emitted that sent to one or more bolts.">
+          <span data-toggle="tooltip" data-placement="top" title="The number of Tuples emitted that sent to one or more bolts.">
             Transferred
           </span>
         </th>
         <th>
-          <span data-toggle="tooltip" data-placement="above" title="The average time a Tuple &quot;tree&quot; takes to be completely processed by the Topology. A value of 0 is expected if no acking is done.">
+          <span data-toggle="tooltip" data-placement="top" title="The average time a Tuple &quot;tree&quot; takes to be completely processed by the Topology. A value of 0 is expected if no acking is done.">
             Complete latency (ms)
           </span>
         </th>
         <th>
-          <span data-toggle="tooltip" data-placement="above" title="The number of Tuple &quot;trees&quot; successfully processed. A value of 0 is expected if no acking is done.">
+          <span data-toggle="tooltip" data-placement="top" title="The number of Tuple &quot;trees&quot; successfully processed. A value of 0 is expected if no acking is done.">
             Acked
           </span>
         </th>
@@ -134,6 +210,92 @@
         <td>{{failed}}</td>
       </tr>
       {{/topologyStats}}
+    </tbody>
+  </table>
+</script>
+
+<script id="topology-kafka-spouts-lag-template" type="text/html">
+  <h2>Kafka Spouts Lag</h2>
+  <table class="table table-striped compact" id="topology-kafka-spouts-lag-table">
+    <thead>
+      <tr>
+        <th>
+          <span data-toggle="tooltip" data-placement="right" title="Kafka spout id">
+            Id
+          </span>
+        </th>
+        <th>
+          <span data-toggle="tooltip" data-placement="top" title="Topic">
+            Topic
+          </span>
+        </th>
+        <th>
+          <span data-toggle="tooltip" data-placement="top" title="Partition">
+            Partition
+          </span>
+        </th>
+        <th>
+          <span data-toggle="tooltip" data-placement="top" title="Latest Offset">
+            Latest Offset
+          </span>
+        </th>
+        <th>
+          <span data-toggle="tooltip" data-placement="top" title="Offset of last spout message successfully acked">
+            Spout Committed Offset
+          </span>
+        </th>
+        <th>
+          <span data-toggle="tooltip" data-placement="left" title="Lag">
+            Lag
+          </span>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#kafkaSpoutsLagResults}}
+      <tr>
+        <td>{{id}}</td>
+        <td>{{topic}}</td>
+        <td>{{partition}}</td>
+        <td>{{logHeadOffset}}</td>
+        <td>{{consumerCommittedOffset}}</td>
+        <td>{{lag}}</td>
+      </tr>
+      {{/kafkaSpoutsLagResults}}
+    </tbody>
+  </table>
+</script>
+
+<script id="topology-spouts-lag-error-template" type="text/html">
+  <h2>Topology spouts lag error</h2>
+  <table class="table table-striped compact" id="topology-spouts-lag-error-table">
+    <thead>
+      <tr>
+        <th>
+          <span data-toggle="tooltip" data-placement="right" title="Spout id">
+            Id
+          </span>
+        </th>
+        <th>
+          <span data-toggle="tooltip" data-placement="top" title="Type of spout">
+            Type
+          </span>
+        </th>
+        <th>
+          <span data-toggle="tooltip" data-placement="left" title="Message to denote the reason for failure to get the lag">
+            Message
+          </span>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#spoutsLagErrorResults}}
+      <tr>
+        <td>{{spoutId}}</td>
+        <td>{{spoutType}}</td>
+        <td>{{errorInfo}}</td>
+      </tr>
+      {{/spoutsLagErrorResults}}
     </tbody>
   </table>
 </script>
@@ -201,17 +363,17 @@
           </span>
         </th>
         <th class="header">
-          <span data-toggle="tooltip" data-placement="above" title="A Task is an instance of a Bolt or Spout. The number of Tasks is almost always equal to the number of Executors.">
+          <span data-toggle="tooltip" data-placement="top" title="A Task is an instance of a Bolt or Spout. The number of Tasks is almost always equal to the number of Executors.">
             Tasks
           </span>
         </th>
         <th class="header">
-          <span data-toggle="tooltip" data-placement="above" title="The number of Tuples emitted.">
+          <span data-toggle="tooltip" data-placement="top" title="The number of Tuples emitted.">
             Emitted
           </span>
         </th>
         <th class="header">
-          <span data-toggle="tooltip" data-placement="above" title="The number of Tuples emitted that sent to one or more bolts.">
+          <span data-toggle="tooltip" data-placement="top" title="The number of Tuples emitted that sent to one or more bolts.">
             Transferred
           </span>
         </th>
@@ -221,17 +383,17 @@
           </span>
         </th>
         <th class="header">
-          <span data-toggle="tooltip" data-placement="above" title="The average time a Tuple &quot;tree&quot; takes to be completely processed by the Topology. A value of 0 is expected if no acking is done.">
+          <span data-toggle="tooltip" data-placement="top" title="The average time a Tuple &quot;tree&quot; takes to be completely processed by the Topology. A value of 0 is expected if no acking is done.">
             Complete latency (ms)
           </span>
         </th>
         <th class="header">
-          <span data-toggle="tooltip" data-placement="above" title="The number of Tuple &quot;trees&quot; successfully processed. A value of 0 is expected if no acking is done.">
+          <span data-toggle="tooltip" data-placement="top" title="The number of Tuple &quot;trees&quot; successfully processed. A value of 0 is expected if no acking is done.">
             Acked
           </span>
         </th>
         <th class="header">
-          <span data-toggle="tooltip" data-placement="above" title="The number of Tuple &quot;trees&quot; that were explicitly failed or timed out before acking was completed. A value of 0 is expected if no acking is done.">
+          <span data-toggle="tooltip" data-placement="top" title="The number of Tuple &quot;trees&quot; that were explicitly failed or timed out before acking was completed. A value of 0 is expected if no acking is done.">
             Failed
           </span>
         </th>
@@ -263,7 +425,9 @@
           <span id="{{errorLapsedSecs}}" class="errorSpan">{{lastError}}</span>
         </td>
         <td>
+          {{#errorTime}}
           <span id="{{errorTime}}" class="errorTime" data-toggle="tooltip" title="{{errorLapsedSecs}}">{{errorTime}}</span>
+          {{/errorTime}}
         </td>
         {{/spouts}}
     </tbody>
@@ -284,27 +448,27 @@
           </span>
         </th>
         <th class="header">
-          <span data-toggle="tooltip" data-placement="above" title="A Task is an instance of a Bolt or Spout. The number of Tasks is almost always equal to the number of Executors.">
+          <span data-toggle="tooltip" data-placement="top" title="A Task is an instance of a Bolt or Spout. The number of Tasks is almost always equal to the number of Executors.">
             Tasks
           </span>
         </th>
         <th class="header">
-          <span data-toggle="tooltip" data-placement="above" title="The number of Tuples emitted.">
+          <span data-toggle="tooltip" data-placement="top" title="The number of Tuples emitted.">
             Emitted
           </span>
         </th>
         <th class="header">
-          <span data-toggle="tooltip" data-placement="above" title="The number of Tuples emitted that sent to one or more bolts.">
+          <span data-toggle="tooltip" data-placement="top" title="The number of Tuples emitted that sent to one or more bolts.">
             Transferred
           </span>
         </th>
         <th class="header">
-          <span data-original-title="If this is around 1.0, the corresponding Bolt is running as fast as it can, so you may want to increase the Bolt's parallelism. This is (number executed * average execute latency) / measurement time." data-toggle="tooltip" data-placement="above">
+          <span data-original-title="If this is around 1.0, the corresponding Bolt is running as fast as it can, so you may want to increase the Bolt's parallelism. This is (number executed * average execute latency) / measurement time." data-toggle="tooltip" data-placement="top">
             Capacity (last 10m)
           </span>
         </th>
         <th class="header">
-          <span data-toggle="tooltip" data-placement="above" title="The average time a Tuple spends in the execute method. The execute method may complete without sending an Ack for the tuple.">
+          <span data-toggle="tooltip" data-placement="top" title="The average time a Tuple spends in the execute method. The execute method may complete without sending an Ack for the tuple.">
             Execute latency (ms)
           </span>
         </th>
@@ -314,17 +478,17 @@
         </span>
         </th>
         <th class="header">
-          <span data-toggle="tooltip" data-placement="above" title="The number of incoming Tuples processed.">
+          <span data-toggle="tooltip" data-placement="top" title="The number of incoming Tuples processed.">
             Executed
           </span>
         </th>
         <th class="header">
-          <span data-toggle="tooltip" data-placement="above" title="The average time it takes to Ack a Tuple after it is first received.  Bolts that join, aggregate or batch may not Ack a tuple until a number of other Tuples have been received.">
+          <span data-toggle="tooltip" data-placement="top" title="The average time it takes to Ack a Tuple after it is first received.  Bolts that join, aggregate or batch may not Ack a tuple until a number of other Tuples have been received.">
             Process latency (ms)
           </span>
         </th>
         <th class="header">
-          <span data-toggle="tooltip" data-placement="above" title="The number of Tuples acknowledged by this Bolt.">
+          <span data-toggle="tooltip" data-placement="top" title="The number of Tuples acknowledged by this Bolt.">
             Acked
           </span>
         </th>
@@ -363,12 +527,64 @@
           <span id="{{errorLapsedSecs}}" class="errorSpan">{{lastError}}</span>
         </td>
         <td>
+          {{#errorTime}}
           <span id="{{errorTime}}" class="errorTime" data-toggle="tooltip" title="{{errorLapsedSecs}}">{{errorTime}}</span>
+          {{/errorTime}}
         </td>
         {{/bolts}}
     </tbody>
 </script>
-
+<script id="worker-stats-template" type="text/html">
+  <h2>Worker Resources</h2>
+  <table class="table table-striped compact" id="worker-stats-table">
+    <thead>
+      <tr>
+        <th class="header headerSortDown">
+          <span data-original-title="The hostname reported by the remote host. (Note that this hostname is not the result of a reverse lookup at the Nimbus node.)" data-toggle="tooltip" data-placement="top">
+            Host
+          </span>
+        </th>
+        <th class="header">
+          <span data-toggle="tooltip" data-placement="top" title="A unique identifier given to a Supervisor when it joins the cluster.">
+            Supervisor Id
+          </span>
+        </th>
+        <th class="header">
+          <span data-toggle="tooltip" data-placement="top" title="The port number used by the Worker. Click on the port number to open the logviewer page for this Worker.">
+            Port 
+          </span>
+        </th>
+        <th class="header">
+          <span data-toggle="tooltip" data-placement="top" title="The length of time a Worker has been alive.">
+            Uptime
+          </span>
+        </th>
+        <th class="header">
+          <span data-toggle="tooltip" data-placement="top" title="The number of executors">
+            Num executors
+          </span>
+        </th>
+        <th class="header">
+          <span data-toggle="tooltip" data-placement="top" title="Assigned Total Memory by Scheduler.">
+            Assigned Mem (MB)
+          </span>
+        </th>
+        {{#schedulerDisplayResource}}
+        <th class="header">
+          <span data-toggle="tooltip" data-placement="top" title="Assigned Total CPU by Scheduler. Every 100 means 1 core.">
+            Assigned CPU (%)
+          </span>
+        </th>
+        {{/schedulerDisplayResource}}
+        <th class="header">
+          <span data-toggle="tooltip" data-placement="top" title="The components running in this worker and the number of tasks per component.">
+            Components
+          </span>
+        </th>
+    </tr></thead>
+    <tbody>
+    </tbody>
+</script>
 <script id="topology-actions-template" type="text/html">
   <h2>Topology actions</h2>
   <p id="topology-actions">
@@ -376,7 +592,13 @@
     <input {{deactivateStatus}} onclick="confirmAction('{{encodedId}}', '{{name}}', 'deactivate', false)" type="button" value="Deactivate" class="btn btn-default">
     <input {{rebalanceStatus}} onclick="confirmAction('{{encodedId}}', '{{name}}', 'rebalance', true, {{msgTimeout}}, 'wait time in seconds')" type="button" value="Rebalance" class="btn btn-default">
     <input {{killStatus}} onclick="confirmAction('{{encodedId}}', '{{name}}', 'kill', true, 30, 'wait time in seconds')" type="button" value="Kill" class="btn btn-default">
-    <input {{startDebugStatus}} onclick="confirmAction('{{encodedId}}', '{{name}}', 'debug/enable', true, {{currentSamplingPct}}, 'sampling percentage', 'debug')" type="button" value="Debug" class="btn btn-default">
+    {{#loggersDisabled}}
+    <span style="display:inline-block;" data-toggle="tooltip" title="" data-original-title="To debug, set topology.eventlogger.executors to a value > 0">
+    {{/loggersDisabled}}
+      <input {{startDebugStatus}} onclick="confirmAction('{{encodedId}}', '{{name}}', 'debug/enable', true, {{currentSamplingPct}}, 'sampling percentage', 'debug')" type="button" value="Debug" class="btn btn-default" >
+    {{#loggersDisabled}}
+    </span>
+    {{/loggersDisabled}}
     <input {{stopDebugStatus}} onclick="confirmAction('{{encodedId}}', '{{name}}', 'debug/disable', false, 0, 'sampling percentage', 'stop debugging')" type="button" value="Stop Debug" class="btn btn-default">
     <input type="button" {{logLevel}} value="Change Log Level" onclick="toggleChangeLogLevel()" class="btn btn-default">
   </p>
@@ -385,6 +607,17 @@
     once user clicks on "Change Log Level"
   -->
   <div id="change-log-level" style="display:none"></div>
+</script>
+
+<script id="search-form-template" type="text/html">
+  <form action="search_result.html" id="search-box">
+    Search {{id}}:
+    <input type="text" name="search">
+    <input type="hidden" name="id" value="{{id}}">
+    <input type="hidden" name="count" value="1">
+    <input type="submit" value="Search">
+    Search Archived Logs: <input type="checkbox" name="searchArchived" value="checked">
+  </form>
 </script>
 
 <script id="log-level-and-timeout" type="text/html" class="partials">
@@ -448,3 +681,4 @@
       </table>
   </div>
 </script>
+

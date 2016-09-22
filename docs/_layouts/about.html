@@ -1,10 +1,7 @@
 ---
 layout: default
-title: About Storm
+title: Project Information
 items:
-    - 
-      - "/about/integrates.html"
-      - "Integrates"
     - 
       - "/about/simple-api.html"
       - "Simple API"
@@ -27,14 +24,20 @@ items:
       - "/about/free-and-open-source.html"
       - "Free and open source"
 ---
+<div class="download-block">
+    <div class="row">
+          <div class="col-md-3">
+          <ul class="news">
+          {% for post in page.items %}
+                      <li>
+                      <a href="{{ post[0] }}">{{ post[1] }}</a>
+                      </li>
+          {% endfor %}
+          </ul>
+          </div>
+          <div class="col-md-9">
+                    {{ content }}
 
-<div id="sidebar">
-  <ul>
-  {% for post in page.items %}
-<li><a class="{% if page.url == post[0] then %}current{% else %}{% endif %}" href="{{ post[0] }}">{{ post[1] }}</a></li>
-  {% endfor %}
-  </ul>
-</div>
-<div id="aboutcontent">
-{{ content }}
+        </div>
+    </div>
 </div>

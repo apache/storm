@@ -17,14 +17,14 @@
  */
 package org.apache.storm.redis.common.mapper;
 
-import backtype.storm.topology.OutputFieldsDeclarer;
-import backtype.storm.tuple.ITuple;
-import backtype.storm.tuple.Values;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.tuple.ITuple;
+import org.apache.storm.tuple.Values;
 
 import java.util.List;
 
 /**
- * RedisStoreMapper is for defining spec. which is used for querying value from Redis and converting response to tuple.
+ * RedisLookupMapper is for defining spec. which is used for querying value from Redis and converting response to tuple.
  */
 public interface RedisLookupMapper extends TupleMapper, RedisMapper {
     /**

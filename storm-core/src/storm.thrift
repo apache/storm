@@ -22,7 +22,7 @@
  * details.
  */
 
-namespace java backtype.storm.generated
+namespace java org.apache.storm.generated
 
 union JavaObjectArg {
   1: i32 int_arg;
@@ -116,6 +116,9 @@ struct StormTopology {
   1: required map<string, SpoutSpec> spouts;
   2: required map<string, Bolt> bolts;
   3: required map<string, StateSpoutSpec> state_spouts;
+  4: optional list<binary> worker_hooks;
+  5: optional list<string> dependency_jars;
+  6: optional list<string> dependency_artifacts;
 }
 
 exception AlreadyAliveException {
@@ -134,6 +137,14 @@ exception InvalidTopologyException {
   1: required string msg;
 }
 
+exception KeyNotFoundException {
+  1: required string msg;
+}
+
+exception KeyAlreadyExistsException {
+  1: required string msg;
+}
+
 struct TopologySummary {
   1: required string id;
   2: required string name;
@@ -145,6 +156,12 @@ struct TopologySummary {
 513: optional string sched_status;
 514: optional string owner;
 515: optional i32 replication_count;
+521: optional double requested_memonheap;
+522: optional double requested_memoffheap;
+523: optional double requested_cpu;
+524: optional double assigned_memonheap;
+525: optional double assigned_memoffheap;
+526: optional double assigned_cpu;
 }
 
 struct SupervisorSummary {
@@ -155,6 +172,8 @@ struct SupervisorSummary {
   5: required string supervisor_id;
   6: optional string version = "VERSION_NOT_PROVIDED";
   7: optional map<string, double> total_resources;
+  8: optional double used_mem;
+  9: optional double used_cpu;
 }
 
 struct NimbusSummary {
@@ -167,6 +186,8 @@ struct NimbusSummary {
 
 struct ClusterSummary {
   1: required list<SupervisorSummary> supervisors;
+  //@deprecated, please use nimbuses.uptime_secs instead.
+  2: optional i32 nimbus_uptime_secs = 0;
   3: required list<TopologySummary> topologies;
   4: required list<NimbusSummary> nimbuses;
 }
@@ -221,6 +242,11 @@ struct ExecutorSummary {
   7: optional ExecutorStats stats;
 }
 
+struct DebugOptions {
+  1: optional bool enable
+  2: optional double samplingpct
+}
+
 struct TopologyInfo {
   1: required string id;
   2: required string name;
@@ -232,11 +258,12 @@ struct TopologyInfo {
 513: optional string sched_status;
 514: optional string owner;
 515: optional i32 replication_count;
-}
-
-struct DebugOptions {
-  1: optional bool enable
-  2: optional double samplingpct
+521: optional double requested_memonheap;
+522: optional double requested_memoffheap;
+523: optional double requested_cpu;
+524: optional double assigned_memonheap;
+525: optional double assigned_memoffheap;
+526: optional double assigned_cpu;
 }
 
 struct CommonAggregateStats {
@@ -286,6 +313,29 @@ struct TopologyStats {
 6: optional map<string, double> window_to_throughput;
 }
 
+struct WorkerSummary {
+  1: optional string supervisor_id; 
+  2: optional string host;
+  3: optional i32 port;
+  4: optional string topology_id;
+  5: optional string topology_name;
+  6: optional i32 num_executors;
+  7: optional map<string, i64> component_to_num_tasks;
+  8: optional i32 time_secs;
+  9: optional i32 uptime_secs;
+521: optional double requested_memonheap;
+522: optional double requested_memoffheap;
+523: optional double requested_cpu;
+524: optional double assigned_memonheap;
+525: optional double assigned_memoffheap;
+526: optional double assigned_cpu;
+}
+
+struct SupervisorPageInfo {
+  1: optional list<SupervisorSummary> supervisor_summaries;
+  2: optional list<WorkerSummary> worker_summaries;
+}
+
 struct TopologyPageInfo {
  1: required string id;
  2: optional string name;
@@ -302,6 +352,13 @@ struct TopologyPageInfo {
 13: optional string owner;
 14: optional DebugOptions debug_options;
 15: optional i32 replication_count;
+16: optional list<WorkerSummary> workers;
+521: optional double requested_memonheap;
+522: optional double requested_memoffheap;
+523: optional double requested_cpu;
+524: optional double assigned_memonheap;
+525: optional double assigned_memoffheap;
+526: optional double assigned_cpu;
 }
 
 struct ExecutorAggregateStats {
@@ -348,6 +405,42 @@ enum TopologyInitialStatus {
 struct SubmitOptions {
   1: required TopologyInitialStatus initial_status;
   2: optional Credentials creds;
+}
+
+enum AccessControlType {
+  OTHER = 1,
+  USER = 2
+  //eventually ,GROUP=3
+}
+
+struct AccessControl {
+  1: required AccessControlType type;
+  2: optional string name; //Name of user or group in ACL
+  3: required i32 access; //bitmasks READ=0x1, WRITE=0x2, ADMIN=0x4
+}
+
+struct SettableBlobMeta {
+  1: required list<AccessControl> acl;
+  2: optional i32 replication_factor
+}
+
+struct ReadableBlobMeta {
+  1: required SettableBlobMeta settable;
+  //This is some indication of a version of a BLOB.  The only guarantee is
+  // if the data changed in the blob the version will be different.
+  2: required i64 version;
+}
+
+struct ListBlobsResult {
+  1: required list<string> keys;
+  2: required string session;
+}
+
+struct BeginDownloadResult {
+  //Same version as in ReadableBlobMeta
+  1: required i64 version;
+  2: required string session;
+  3: optional i64 data_size;
 }
 
 struct SupervisorInfo {
@@ -445,10 +538,36 @@ struct LSWorkerHeartbeat {
    4: required i32 port;
 }
 
+struct LSTopoHistory {
+   1: required string topology_id;
+   2: required i64 time_stamp;
+   3: required list<string> users;
+   4: required list<string> groups;
+}
+
+struct LSTopoHistoryList {
+  1: required list<LSTopoHistory> topo_history;
+}
+
 enum NumErrorsChoice {
   ALL,
   NONE,
   ONE
+}
+
+enum ProfileAction {
+  JPROFILE_STOP,
+  JPROFILE_START,
+  JPROFILE_DUMP,
+  JMAP_DUMP,
+  JSTACK_DUMP,
+  JVM_RESTART
+}
+
+struct ProfileRequest {
+  1: required NodeInfo nodeInfo,
+  2: required ProfileAction action,
+  3: optional i64 time_stamp; 
 }
 
 struct GetInfoOptions {
@@ -487,6 +606,10 @@ struct LogConfig {
   2: optional map<string, LogLevel> named_logger_level;
 }
 
+struct TopologyHistoryInfo {
+  1: list<string> topo_ids;
+}
+
 service Nimbus {
   void submitTopology(1: string name, 2: string uploadedJarLocation, 3: string jsonConf, 4: StormTopology topology) throws (1: AlreadyAliveException e, 2: InvalidTopologyException ite, 3: AuthorizationException aze);
   void submitTopologyWithOpts(1: string name, 2: string uploadedJarLocation, 3: string jsonConf, 4: StormTopology topology, 5: SubmitOptions options) throws (1: AlreadyAliveException e, 2: InvalidTopologyException ite, 3: AuthorizationException aze);
@@ -507,14 +630,35 @@ service Nimbus {
   * The 'samplingPercentage' will limit loggging to a percentage of generated tuples.
   **/
   void debug(1: string name, 2: string component, 3: bool enable, 4: double samplingPercentage) throws (1: NotAliveException e, 2: AuthorizationException aze);
+
+  // dynamic profile actions
+  void setWorkerProfiler(1: string id, 2: ProfileRequest  profileRequest);
+  list<ProfileRequest> getComponentPendingProfileActions(1: string id, 2: string component_id, 3: ProfileAction action);
+
   void uploadNewCredentials(1: string name, 2: Credentials creds) throws (1: NotAliveException e, 2: InvalidTopologyException ite, 3: AuthorizationException aze);
+
+  string beginCreateBlob(1: string key, 2: SettableBlobMeta meta) throws (1: AuthorizationException aze, 2: KeyAlreadyExistsException kae);
+  string beginUpdateBlob(1: string key) throws (1: AuthorizationException aze, 2: KeyNotFoundException knf);
+  void uploadBlobChunk(1: string session, 2: binary chunk) throws (1: AuthorizationException aze);
+  void finishBlobUpload(1: string session) throws (1: AuthorizationException aze);
+  void cancelBlobUpload(1: string session) throws (1: AuthorizationException aze);
+  ReadableBlobMeta getBlobMeta(1: string key) throws (1: AuthorizationException aze, 2: KeyNotFoundException knf);
+  void setBlobMeta(1: string key, 2: SettableBlobMeta meta) throws (1: AuthorizationException aze, 2: KeyNotFoundException knf);
+  BeginDownloadResult beginBlobDownload(1: string key) throws (1: AuthorizationException aze, 2: KeyNotFoundException knf);
+  binary downloadBlobChunk(1: string session) throws (1: AuthorizationException aze);
+  void deleteBlob(1: string key) throws (1: AuthorizationException aze, 2: KeyNotFoundException knf);
+  ListBlobsResult listBlobs(1: string session); //empty string "" means start at the beginning
+  i32 getBlobReplication(1: string key) throws (1: AuthorizationException aze, 2: KeyNotFoundException knf);
+  i32 updateBlobReplication(1: string key, 2: i32 replication) throws (1: AuthorizationException aze, 2: KeyNotFoundException knf);
+  void createStateInZookeeper(1: string key); // creates state in zookeeper when blob is uploaded through command line
 
   // need to add functions for asking about status of storms, what nodes they're running on, looking at task logs
 
   string beginFileUpload() throws (1: AuthorizationException aze);
   void uploadChunk(1: string location, 2: binary chunk) throws (1: AuthorizationException aze);
   void finishFileUpload(1: string location) throws (1: AuthorizationException aze);
-  
+
+  //@deprecated beginBlobDownload does that
   string beginFileDownload(1: string file) throws (1: AuthorizationException aze);
   //can stop downloading chunks when receive 0-length byte array back
   binary downloadChunk(1: string id) throws (1: AuthorizationException aze);
@@ -526,6 +670,7 @@ service Nimbus {
   TopologyInfo getTopologyInfo(1: string id) throws (1: NotAliveException e, 2: AuthorizationException aze);
   TopologyInfo getTopologyInfoWithOpts(1: string id, 2: GetInfoOptions options) throws (1: NotAliveException e, 2: AuthorizationException aze);
   TopologyPageInfo getTopologyPageInfo(1: string id, 2: string window, 3: bool is_include_sys) throws (1: NotAliveException e, 2: AuthorizationException aze);
+  SupervisorPageInfo getSupervisorPageInfo(1: string id, 2: string host, 3: bool is_include_sys) throws (1: NotAliveException e, 2: AuthorizationException aze);
   ComponentPageInfo getComponentPageInfo(1: string topology_id, 2: string component_id, 3: string window, 4: bool is_include_sys) throws (1: NotAliveException e, 2: AuthorizationException aze);
   //returns json
   string getTopologyConf(1: string id) throws (1: NotAliveException e, 2: AuthorizationException aze);
@@ -537,6 +682,7 @@ service Nimbus {
    * Returns the user specified topology as submitted originally. Compare {@link #getTopology(String id)}.
    */
   StormTopology getUserTopology(1: string id) throws (1: NotAliveException e, 2: AuthorizationException aze);
+  TopologyHistoryInfo getTopologyHistory(1: string user) throws (1: AuthorizationException aze);
 }
 
 struct DRPCRequest {
@@ -556,4 +702,62 @@ service DistributedRPCInvocations {
   void result(1: string id, 2: string result) throws (1: AuthorizationException aze);
   DRPCRequest fetchRequest(1: string functionName) throws (1: AuthorizationException aze);
   void failRequest(1: string id) throws (1: AuthorizationException aze);  
+}
+
+enum HBServerMessageType {
+  CREATE_PATH,
+  CREATE_PATH_RESPONSE,
+  EXISTS,
+  EXISTS_RESPONSE,
+  SEND_PULSE,
+  SEND_PULSE_RESPONSE,
+  GET_ALL_PULSE_FOR_PATH,
+  GET_ALL_PULSE_FOR_PATH_RESPONSE,
+  GET_ALL_NODES_FOR_PATH,
+  GET_ALL_NODES_FOR_PATH_RESPONSE,
+  GET_PULSE,
+  GET_PULSE_RESPONSE,
+  DELETE_PATH,
+  DELETE_PATH_RESPONSE,
+  DELETE_PULSE_ID,
+  DELETE_PULSE_ID_RESPONSE,
+  CONTROL_MESSAGE,
+  SASL_MESSAGE_TOKEN,
+  NOT_AUTHORIZED
+}
+
+struct HBPulse {
+  1: required string id;
+  2: binary details;
+}
+
+struct HBRecords {
+  1: list<HBPulse> pulses;
+}
+
+struct HBNodes {
+  1: list<string> pulseIds;
+}
+
+union HBMessageData {
+  1: string path,
+  2: HBPulse pulse,
+  3: bool boolval,
+  4: HBRecords records,
+  5: HBNodes nodes,
+  7: optional binary message_blob;
+}
+
+struct HBMessage {
+  1: HBServerMessageType type,
+  2: HBMessageData data,
+  3: optional i32 message_id = -1,
+}
+
+exception HBAuthorizationException {
+  1: required string msg;
+}
+
+exception HBExecutionException {
+  1: required string msg;
 }

@@ -17,12 +17,12 @@
  */
 package org.apache.storm.flux;
 
-import backtype.storm.Config;
-import backtype.storm.generated.StormTopology;
-import backtype.storm.grouping.CustomStreamGrouping;
-import backtype.storm.topology.*;
-import backtype.storm.tuple.Fields;
-import backtype.storm.utils.Utils;
+import org.apache.storm.Config;
+import org.apache.storm.generated.StormTopology;
+import org.apache.storm.grouping.CustomStreamGrouping;
+import org.apache.storm.topology.*;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.utils.Utils;
 import org.apache.storm.flux.api.TopologySource;
 import org.apache.storm.flux.model.*;
 import org.slf4j.Logger;
@@ -35,7 +35,7 @@ public class FluxBuilder {
     private static Logger LOG = LoggerFactory.getLogger(FluxBuilder.class);
 
     /**
-     * Given a topology definition, return a populated `backtype.storm.Config` instance.
+     * Given a topology definition, return a populated `org.apache.storm.Config` instance.
      *
      * @param topologyDef
      * @return
@@ -59,7 +59,7 @@ public class FluxBuilder {
      * @throws InvocationTargetException
      */
     public static StormTopology buildTopology(ExecutionContext context) throws IllegalAccessException,
-            InstantiationException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException {
+            InstantiationException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException, NoSuchFieldException {
 
         StormTopology topology = null;
         TopologyDef topologyDef = context.getTopologyDef();
@@ -103,7 +103,7 @@ public class FluxBuilder {
 
     /**
      * Given a `java.lang.Object` instance and a method name, attempt to find a method that matches the input
-     * parameter: `java.util.Map` or `backtype.storm.Config`.
+     * parameter: `java.util.Map` or `org.apache.storm.Config`.
      *
      * @param topologySource object to inspect for the specified method
      * @param methodName name of the method to look for
@@ -145,7 +145,7 @@ public class FluxBuilder {
      */
     private static void buildStreamDefinitions(ExecutionContext context, TopologyBuilder builder)
             throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException,
-            IllegalAccessException {
+            IllegalAccessException, NoSuchFieldException {
         TopologyDef topologyDef = context.getTopologyDef();
         // process stream definitions
         HashMap<String, BoltDeclarer> declarers = new HashMap<String, BoltDeclarer>();
@@ -164,6 +164,22 @@ public class FluxBuilder {
                     declarer = builder.setBolt(
                             stream.getTo(),
                             (IBasicBolt) boltObj,
+                            topologyDef.parallelismForBolt(stream.getTo()));
+                    declarers.put(stream.getTo(), declarer);
+                }
+            } else if (boltObj instanceof IWindowedBolt) {
+                if(declarer == null) {
+                    declarer = builder.setBolt(
+                            stream.getTo(),
+                            (IWindowedBolt) boltObj,
+                            topologyDef.parallelismForBolt(stream.getTo()));
+                    declarers.put(stream.getTo(), declarer);
+                }
+            } else if (boltObj instanceof IStatefulBolt) {
+                if(declarer == null) {
+                    declarer = builder.setBolt(
+                            stream.getTo(),
+                            (IStatefulBolt) boltObj,
                             topologyDef.parallelismForBolt(stream.getTo()));
                     declarers.put(stream.getTo(), declarer);
                 }
@@ -211,7 +227,7 @@ public class FluxBuilder {
     }
 
     private static void applyProperties(ObjectDef bean, Object instance, ExecutionContext context) throws
-            IllegalAccessException, InvocationTargetException {
+            IllegalAccessException, InvocationTargetException, NoSuchFieldException {
         List<PropertyDef> props = bean.getProperties();
         Class clazz = instance.getClass();
         if (props != null) {
@@ -234,13 +250,8 @@ public class FluxBuilder {
         }
     }
 
-    private static Field findPublicField(Class clazz, String property, Object arg) {
-        Field field = null;
-        try {
-            field = clazz.getField(property);
-        } catch (NoSuchFieldException e) {
-            LOG.warn("Could not find setter or public variable for property: " + property, e);
-        }
+    private static Field findPublicField(Class clazz, String property, Object arg) throws NoSuchFieldException {
+        Field field = clazz.getField(property);
         return field;
     }
 
@@ -276,7 +287,7 @@ public class FluxBuilder {
     }
 
     private static Object buildObject(ObjectDef def, ExecutionContext context) throws ClassNotFoundException,
-            IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
+            IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException, NoSuchFieldException {
         Class clazz = Class.forName(def.getClassName());
         Object obj = null;
         if (def.hasConstructorArgs()) {
@@ -305,7 +316,7 @@ public class FluxBuilder {
 
     private static StormTopology buildExternalTopology(ObjectDef def, ExecutionContext context)
             throws ClassNotFoundException, IllegalAccessException, InstantiationException, NoSuchMethodException,
-            InvocationTargetException {
+            InvocationTargetException, NoSuchFieldException {
 
         Object topologySource = buildObject(def, context);
 
@@ -322,7 +333,7 @@ public class FluxBuilder {
 
     private static CustomStreamGrouping buildCustomStreamGrouping(ObjectDef def, ExecutionContext context)
             throws ClassNotFoundException,
-            IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
+            IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException, NoSuchFieldException {
         Object grouping = buildObject(def, context);
         return (CustomStreamGrouping)grouping;
     }
@@ -332,7 +343,7 @@ public class FluxBuilder {
      * keyed by the component id.
      */
     private static void buildComponents(ExecutionContext context) throws ClassNotFoundException, NoSuchMethodException,
-            IllegalAccessException, InvocationTargetException, InstantiationException {
+            IllegalAccessException, InvocationTargetException, InstantiationException, NoSuchFieldException {
         Collection<BeanDef> cDefs = context.getTopologyDef().getComponents();
         if (cDefs != null) {
             for (BeanDef bean : cDefs) {
@@ -344,7 +355,7 @@ public class FluxBuilder {
 
 
     private static void buildSpouts(ExecutionContext context, TopologyBuilder builder) throws ClassNotFoundException,
-            NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+            NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchFieldException {
         for (SpoutDef sd : context.getTopologyDef().getSpouts()) {
             IRichSpout spout = buildSpout(sd, context);
             builder.setSpout(sd.getId(), spout, sd.getParallelism());
@@ -357,7 +368,7 @@ public class FluxBuilder {
      * in the given spout class. Perform list to array conversion as necessary.
      */
     private static IRichSpout buildSpout(SpoutDef def, ExecutionContext context) throws ClassNotFoundException,
-            IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
+            IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException, NoSuchFieldException {
         return (IRichSpout)buildObject(def, context);
     }
 
@@ -366,7 +377,7 @@ public class FluxBuilder {
      * Attempt to coerce the given constructor arguments to a matching bolt constructor as much as possible.
      */
     private static void buildBolts(ExecutionContext context) throws ClassNotFoundException, IllegalAccessException,
-            InstantiationException, NoSuchMethodException, InvocationTargetException {
+            InstantiationException, NoSuchMethodException, InvocationTargetException, NoSuchFieldException {
         for (BoltDef def : context.getTopologyDef().getBolts()) {
             Class clazz = Class.forName(def.getClassName());
             Object bolt = buildObject(def, context);
@@ -417,6 +428,9 @@ public class FluxBuilder {
         Class clazz = instance.getClass();
         for(ConfigMethodDef methodDef : methodDefs){
             List<Object> args = methodDef.getArgs();
+            if (args == null){
+                args = new ArrayList();
+            }
             if(methodDef.hasReferences()){
                 args = resolveReferences(args, context);
             }
@@ -444,7 +458,13 @@ public class FluxBuilder {
             Class[] paramClasses = method.getParameterTypes();
             if (paramClasses.length == args.size() && method.getName().equals(methodName)) {
                 LOG.debug("found constructor with same number of args..");
-                boolean invokable = canInvokeWithArgs(args, method.getParameterTypes());
+                boolean invokable = false;
+                if (args.size() == 0){
+                    // it's a method with zero args
+                    invokable = true;
+                } else {
+                    invokable = canInvokeWithArgs(args, method.getParameterTypes());
+                }
                 if (invokable) {
                     retval = method;
                     eligibleCount++;
@@ -490,6 +510,12 @@ public class FluxBuilder {
             if (paramType.isAssignableFrom(objectType)) {
                 LOG.debug("Assignment is possible.");
                 constructorParams[i] = args.get(i);
+                continue;
+            }
+            if (isPrimitiveBoolean(paramType) && Boolean.class.isAssignableFrom(objectType)){
+                LOG.debug("Its a primitive boolean.");
+                Boolean bool = (Boolean)args.get(i);
+                constructorParams[i] = bool.booleanValue();
                 continue;
             }
             if(isPrimitiveNumber(paramType) && Number.class.isAssignableFrom(objectType)){
@@ -563,33 +589,31 @@ public class FluxBuilder {
                     paramType, objectType);
             if (paramType.equals(objectType)) {
                 LOG.debug("Yes, they are the same class.");
-                return true;
-            }
-            if (paramType.isAssignableFrom(objectType)) {
+            } else if (paramType.isAssignableFrom(objectType)) {
                 LOG.debug("Yes, assignment is possible.");
-                return true;
-            }
-            if(isPrimitiveNumber(paramType) && Number.class.isAssignableFrom(objectType)){
-                return true;
-            }
-            if(paramType.isEnum() && objectType.equals(String.class)){
+            } else if (isPrimitiveBoolean(paramType) && Boolean.class.isAssignableFrom(objectType)){
+                LOG.debug("Yes, assignment is possible.");
+            } else if(isPrimitiveNumber(paramType) && Number.class.isAssignableFrom(objectType)){
+                LOG.debug("Yes, assignment is possible.");
+            } else if(paramType.isEnum() && objectType.equals(String.class)){
                 LOG.debug("Yes, will convert a String to enum");
-                return true;
-            }
-            if (paramType.isArray() && List.class.isAssignableFrom(objectType)) {
+            } else if (paramType.isArray() && List.class.isAssignableFrom(objectType)) {
                 // TODO more collection content type checking
                 LOG.debug("Assignment is possible if we convert a List to an array.");
                 LOG.debug("Array Type: {}, List type: {}", paramType.getComponentType(), ((List) obj).get(0).getClass());
-
-                return true;
+            } else {
+                return false;
             }
-            return false;
         }
-        return false;
+        return true;
     }
 
     public static boolean isPrimitiveNumber(Class clazz){
         return clazz.isPrimitive() && !clazz.equals(boolean.class);
+    }
+
+    public static boolean isPrimitiveBoolean(Class clazz){
+        return clazz.isPrimitive() && clazz.equals(boolean.class);
     }
 }
 
