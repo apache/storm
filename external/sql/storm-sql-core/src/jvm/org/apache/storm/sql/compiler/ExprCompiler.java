@@ -196,6 +196,8 @@ public class ExprCompiler implements RexVisitor<String> {
           .put(builtInMethod(CHAR_LENGTH, BuiltInMethod.CHAR_LENGTH, NullPolicy.STRICT))
           .put(builtInMethod(CONCAT, BuiltInMethod.STRING_CONCAT, NullPolicy.STRICT))
           .put(builtInMethod(ITEM, BuiltInMethod.ANY_ITEM, NullPolicy.STRICT))
+          .put(builtInMethod(LIKE, BuiltInMethod.LIKE, NullPolicy.STRICT))
+          .put(builtInMethod(SIMILAR_TO, BuiltInMethod.SIMILAR, NullPolicy.STRICT))
           .put(infixBinary(LESS_THAN, "<", "lt"))
           .put(infixBinary(LESS_THAN_OR_EQUAL, "<=", "le"))
           .put(infixBinary(GREATER_THAN, ">", "gt"))
@@ -405,7 +407,7 @@ public class ExprCompiler implements RexVisitor<String> {
           String s;
           if (rhsNullable) {
             s = foldNullExpr(
-                String.format("(%2$s != null && !(%2$s)) ? Boolean.FALSE : ((%1$s == null || %2$s == null) ? null : Boolean.TRUE)",
+                String.format("(%2$s != null && !(%2$s)) ? Boolean.FALSE : ((%1$s == null || %2$s == null) ? ((Boolean) null) : Boolean.TRUE)",
                               lhs, rhs), "null", op1);
           } else {
             s = String.format("!(%2$s) ? Boolean.FALSE : %1$s", lhs, rhs);
@@ -446,7 +448,7 @@ public class ExprCompiler implements RexVisitor<String> {
           String s;
           if (rhsNullable) {
             s = foldNullExpr(
-                String.format("(%2$s != null && %2$s) ? Boolean.TRUE : ((%1$s == null || %2$s == null) ? null : Boolean.FALSE)",
+                String.format("(%2$s != null && %2$s) ? Boolean.TRUE : ((%1$s == null || %2$s == null) ? ((Boolean) null) : Boolean.FALSE)",
                               lhs, rhs),
                 "null", op1);
           } else {
@@ -463,6 +465,7 @@ public class ExprCompiler implements RexVisitor<String> {
       @Override
       public String translate(
           ExprCompiler compiler, RexCall call) {
+        Boolean b = new Boolean(false);
         String val = compiler.reserveName();
         PrintWriter pw = compiler.pw;
         RexNode op = call.getOperands().get(0);
@@ -474,7 +477,7 @@ public class ExprCompiler implements RexVisitor<String> {
           pw.print(String.format("%1$s = !(%2$s);\n", val, lhs));
         } else {
           String s = foldNullExpr(
-              String.format("%1$s == null ? null : !(%1$s)", lhs), "null", op);
+              String.format("(%1$s == null) ? ((%2$s) null) : !(%1$s)", lhs, compiler.javaTypeName(call)), "null", op);
           pw.print(String.format("%1$s = %2$s;\n", val, s));
         }
         return val;

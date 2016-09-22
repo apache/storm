@@ -235,9 +235,11 @@ public class TestUtils {
       private final Fields OUTPUT_FIELDS = new Fields("ID", "NAME", "ADDR");
 
       public MockSpout() {
-        for (int i = 0; i < 5; ++i) {
-          RECORDS.add(new Values(i, "x", "y"));
-        }
+        RECORDS.add(new Values(0, "a", "y"));
+        RECORDS.add(new Values(1, "ab", "y"));
+        RECORDS.add(new Values(2, "abc", "y"));
+        RECORDS.add(new Values(3, "abcd", "y"));
+        RECORDS.add(new Values(4, "abcde", "y"));
       }
 
       private boolean emitted = false;
