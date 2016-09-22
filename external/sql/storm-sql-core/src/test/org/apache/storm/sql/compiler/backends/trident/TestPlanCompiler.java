@@ -339,6 +339,42 @@ public class TestPlanCompiler {
     Assert.assertArrayEquals(new Values[] { new Values(0), new Values(1), new Values(4) }, getCollectedValues().toArray());
   }
 
+  @Test
+  public void testIn() throws Exception {
+    int EXPECTED_VALUE_SIZE = 4;
+    String sql = "SELECT ID FROM FOO WHERE NAME IN ('a', 'abc', 'ab', 'abcde')";
+    TestCompilerUtils.CalciteState state = TestCompilerUtils.sqlOverDummyTable(sql);
+
+    final Map<String, ISqlTridentDataSource> data = new HashMap<>();
+    data.put("FOO", new TestUtils.MockSqlTridentDataSource());
+    PlanCompiler compiler = new PlanCompiler(data, typeFactory);
+    final AbstractTridentProcessor proc = compiler.compileForTest(state.tree());
+    final TridentTopology topo = proc.build(data);
+    Fields f = proc.outputStream().getOutputFields();
+    proc.outputStream().partitionPersist(new TestUtils.MockStateFactory(), f, new TestUtils.MockStateUpdater(), new Fields());
+    runTridentTopology(EXPECTED_VALUE_SIZE, proc, topo);
+
+    Assert.assertArrayEquals(new Values[]{new Values(0), new Values(1), new Values(2), new Values(4)}, getCollectedValues().toArray());
+  }
+
+  @Test
+  public void testNotIn() throws Exception {
+    int EXPECTED_VALUE_SIZE = 2;
+    String sql = "SELECT ID FROM FOO WHERE NAME NOT IN ('a', 'abc', 'abcde')";
+    TestCompilerUtils.CalciteState state = TestCompilerUtils.sqlOverDummyTable(sql);
+
+    final Map<String, ISqlTridentDataSource> data = new HashMap<>();
+    data.put("FOO", new TestUtils.MockSqlTridentDataSource());
+    PlanCompiler compiler = new PlanCompiler(data, typeFactory);
+    final AbstractTridentProcessor proc = compiler.compileForTest(state.tree());
+    final TridentTopology topo = proc.build(data);
+    Fields f = proc.outputStream().getOutputFields();
+    proc.outputStream().partitionPersist(new TestUtils.MockStateFactory(), f, new TestUtils.MockStateUpdater(), new Fields());
+    runTridentTopology(EXPECTED_VALUE_SIZE, proc, topo);
+
+    Assert.assertArrayEquals(new Values[]{new Values(1), new Values(3)}, getCollectedValues().toArray());
+  }
+
   private void runTridentTopology(final int expectedValueSize, AbstractTridentProcessor proc,
                                   TridentTopology topo) throws Exception {
     final Config conf = new Config();

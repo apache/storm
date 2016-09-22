@@ -377,7 +377,7 @@ public class ExprCompiler implements RexVisitor<String> {
       return new AbstractMap.SimpleImmutableEntry<>(op, trans);
     }
 
-
+    // TODO: AND_EXPR and OR_EXPR have very similar logic, mostly duplicated.
     // If any of the arguments are false, result is false;
     // else if any arguments are null, result is null;
     // else true.
@@ -386,35 +386,47 @@ public class ExprCompiler implements RexVisitor<String> {
       public String translate(
           ExprCompiler compiler, RexCall call) {
         String val = compiler.reserveName();
+        String valAnyNull = "anyNull_" + compiler.reserveName();
+
         PrintWriter pw = compiler.pw;
-        pw.print(String.format("final %s %s;\n", compiler.javaTypeName(call),
-                               val));
-        RexNode op0 = call.getOperands().get(0);
-        RexNode op1 = call.getOperands().get(1);
-        boolean lhsNullable = op0.getType().isNullable();
-        boolean rhsNullable = op1.getType().isNullable();
-        String lhs = op0.accept(compiler);
-        if (!lhsNullable) {
-          pw.print(String.format("if (!(%2$s)) { %1$s = false; }\n", val, lhs));
-          pw.print("else {\n");
-          String rhs = op1.accept(compiler);
-          pw.print(String.format("  %1$s = %2$s;\n}\n", val, rhs));
-        } else {
-          String foldedLHS = foldNullExpr(
-              String.format("%1$s == null || %1$s", lhs), "true", op0);
-          pw.print(String.format("if (%s) {\n", foldedLHS));
-          String rhs = op1.accept(compiler);
-          String s;
-          if (rhsNullable) {
-            s = foldNullExpr(
-                String.format("(%2$s != null && !(%2$s)) ? Boolean.FALSE : ((%1$s == null || %2$s == null) ? ((Boolean) null) : Boolean.TRUE)",
-                              lhs, rhs), "null", op1);
+        pw.print(String.format("java.lang.Boolean %s = Boolean.TRUE;\n", val));
+        pw.print(String.format("java.lang.Boolean %s = Boolean.FALSE;\n", valAnyNull));
+
+        List<RexNode> operands = call.getOperands();
+
+        for (int idx = 0; idx < operands.size(); idx++) {
+          RexNode operand = operands.get(idx);
+          pw.print(String.format("// operand #%d\n", idx));
+          boolean nullable = operand.getType().isNullable();
+          String valEval = operand.accept(compiler);
+          String valOp = compiler.reserveName();
+
+          pw.print(String.format("final java.lang.Boolean %s = ", valOp));
+          String rhs;
+          if (nullable) {
+            rhs = foldNullExpr(valEval,
+                    String.format("(%1$s != null) ? (%1$s) : ((java.lang.Boolean) null)", valEval),
+                    operand);
           } else {
-            s = String.format("!(%2$s) ? Boolean.FALSE : %1$s", lhs, rhs);
+            rhs = valEval;
           }
-          pw.print(String.format("  %1$s = %2$s;\n", val, s));
-          pw.print(String.format("} else { %1$s = false; }\n", val));
+          pw.print(rhs + ";\n");
+
+          // apply 'nested if' in order to achieve short circuit
+          // if val is false, reset the null flag to false to make operation be evaluated to false
+          pw.print(String.format("if ((%1$s != null) && !(%1$s)) { %2$s = Boolean.FALSE; %3$s = Boolean.FALSE; }\n", valOp, val, valAnyNull));
+          pw.print("else {\n");
+          pw.print(String.format("// updating null occurrence with operand #%d\n", idx));
+          pw.print(String.format("if ((%1$s == null) && !(%2$s)) { %2$s = Boolean.TRUE; }\n", valOp, valAnyNull));
         }
+
+        for (int i = 0; i < operands.size(); i++) {
+          pw.print("}");
+        }
+        pw.print("\n");
+
+        pw.print(String.format("%1$s = %2$s ? ((java.lang.Boolean) null) : %1$s;\n", val, valAnyNull));
+
         return val;
       }
     };
@@ -427,36 +439,47 @@ public class ExprCompiler implements RexVisitor<String> {
       public String translate(
           ExprCompiler compiler, RexCall call) {
         String val = compiler.reserveName();
+        String valAnyNull = "anyNull_" + compiler.reserveName();
+
         PrintWriter pw = compiler.pw;
-        pw.print(String.format("final %s %s;\n", compiler.javaTypeName(call),
-                               val));
-        RexNode op0 = call.getOperands().get(0);
-        RexNode op1 = call.getOperands().get(1);
-        boolean lhsNullable = op0.getType().isNullable();
-        boolean rhsNullable = op1.getType().isNullable();
-        String lhs = op0.accept(compiler);
-        if (!lhsNullable) {
-          pw.print(String.format("if (%2$s) { %1$s = true; }\n", val, lhs));
-          pw.print("else {\n");
-          String rhs = op1.accept(compiler);
-          pw.print(String.format("  %1$s = %2$s;\n}\n", val, rhs));
-        } else {
-          String foldedLHS = foldNullExpr(
-              String.format("%1$s == null || !(%1$s)", lhs), "true", op0);
-          pw.print(String.format("if (%s) {\n", foldedLHS));
-          String rhs = op1.accept(compiler);
-          String s;
-          if (rhsNullable) {
-            s = foldNullExpr(
-                String.format("(%2$s != null && %2$s) ? Boolean.TRUE : ((%1$s == null || %2$s == null) ? ((Boolean) null) : Boolean.FALSE)",
-                              lhs, rhs),
-                "null", op1);
+        pw.print(String.format("java.lang.Boolean %s = Boolean.FALSE;\n", val));
+        pw.print(String.format("java.lang.Boolean %s = Boolean.FALSE;\n", valAnyNull));
+
+        List<RexNode> operands = call.getOperands();
+
+        for (int idx = 0; idx < operands.size(); idx++) {
+          RexNode operand = operands.get(idx);
+          pw.print(String.format("// operand #%d\n", idx));
+          boolean nullable = operand.getType().isNullable();
+          String valEval = operand.accept(compiler);
+          String valOp = compiler.reserveName();
+
+          pw.print(String.format("final java.lang.Boolean %s = ", valOp));
+          String rhs;
+          if (nullable) {
+            rhs = foldNullExpr(valEval,
+                    String.format("(%1$s != null) ? (%1$s) : ((java.lang.Boolean) null)", valEval),
+                    operand);
           } else {
-            s = String.format("%2$s ? Boolean.valueOf(%2$s) : %1$s", lhs, rhs);
+            rhs = valEval;
           }
-          pw.print(String.format("  %1$s = %2$s;\n", val, s));
-          pw.print(String.format("} else { %1$s = true; }\n", val));
+          pw.print(rhs + ";\n");
+
+          // apply 'nested if' in order to achieve short circuit
+          // if val is true, reset the null flag to false to make operation be evaluated to true
+          pw.print(String.format("if ((%1$s != null) && (%1$s)) { %2$s = Boolean.TRUE; %3$s = Boolean.FALSE; }\n", valOp, val, valAnyNull));
+          pw.print("else {\n");
+          pw.print(String.format("// updating null occurrence with operand #%d\n", idx));
+          pw.print(String.format("if ((%1$s == null) && !(%2$s)) { %2$s = Boolean.TRUE; }\n", valOp, valAnyNull));
         }
+
+        for (int i = 0; i < operands.size(); i++) {
+          pw.print("}");
+        }
+        pw.print("\n");
+
+        pw.print(String.format("%1$s = %2$s ? ((java.lang.Boolean) null) : %1$s;\n", val, valAnyNull));
+
         return val;
       }
     };
