@@ -21,19 +21,19 @@
     <parent>
         <artifactId>storm</artifactId>
         <groupId>org.apache.storm</groupId>
-        <version>1.0.3-SNAPSHOT</version>
+        <version>1.0.2</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     
     <artifactId>storm-eventhubs</artifactId>
-    <version>1.0.3-SNAPSHOT</version>
+    <version>1.0.2.1</version>
     <packaging>jar</packaging>
     <name>storm-eventhubs</name>
     <description>EventHubs Storm Spout</description>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <eventhubs.client.version>0.9.1</eventhubs.client.version>
+        <eventhubs.client.version>1.0.1</eventhubs.client.version>
     </properties>
     <build>
         <plugins>
