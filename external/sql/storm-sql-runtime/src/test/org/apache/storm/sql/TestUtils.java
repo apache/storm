@@ -19,26 +19,22 @@
  */
 package org.apache.storm.sql;
 
-import org.apache.storm.ILocalCluster;
-import org.apache.storm.LocalCluster;
-import org.apache.storm.sql.runtime.SimpleSqlTridentConsumer;
-import org.apache.storm.task.IMetricsContext;
-import org.apache.storm.task.TopologyContext;
-import org.apache.storm.trident.operation.TridentOperationContext;
-import org.apache.storm.trident.state.State;
-import org.apache.storm.trident.state.StateFactory;
-import org.apache.storm.trident.state.StateUpdater;
-import org.apache.storm.tuple.Fields;
-import org.apache.storm.tuple.Values;
 import org.apache.storm.sql.runtime.ChannelContext;
 import org.apache.storm.sql.runtime.ChannelHandler;
 import org.apache.storm.sql.runtime.DataSource;
 import org.apache.storm.sql.runtime.ISqlTridentDataSource;
-import org.apache.storm.trident.operation.BaseFunction;
-import org.apache.storm.trident.operation.Function;
+import org.apache.storm.sql.runtime.SimpleSqlTridentConsumer;
+import org.apache.storm.task.IMetricsContext;
+import org.apache.storm.task.TopologyContext;
 import org.apache.storm.trident.operation.TridentCollector;
+import org.apache.storm.trident.operation.TridentOperationContext;
 import org.apache.storm.trident.spout.IBatchSpout;
+import org.apache.storm.trident.state.State;
+import org.apache.storm.trident.state.StateFactory;
+import org.apache.storm.trident.state.StateUpdater;
 import org.apache.storm.trident.tuple.TridentTuple;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Values;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -264,9 +260,11 @@ public class TestUtils {
       private final Fields OUTPUT_FIELDS = new Fields("ID", "NAME", "ADDR");
 
       public MockSpout() {
-        for (int i = 0; i < 5; ++i) {
-          RECORDS.add(new Values(i, "x", "y"));
-        }
+        RECORDS.add(new Values(0, "a", "y"));
+        RECORDS.add(new Values(1, "ab", "y"));
+        RECORDS.add(new Values(2, "abc", "y"));
+        RECORDS.add(new Values(3, "abcd", "y"));
+        RECORDS.add(new Values(4, "abcde", "y"));
       }
 
       private boolean emitted = false;
@@ -446,6 +444,71 @@ public class TestUtils {
       public MockSpout() {
         for (int i = 0; i < 5; ++i) {
           RECORDS.add(new Values(i, "dept-" + i));
+        }
+      }
+
+      private boolean emitted = false;
+
+      @Override
+      public void open(Map conf, TopologyContext context) {
+      }
+
+      @Override
+      public void emitBatch(long batchId, TridentCollector collector) {
+        if (emitted) {
+          return;
+        }
+
+        for (Values r : RECORDS) {
+          collector.emit(r);
+        }
+        emitted = true;
+      }
+
+      @Override
+      public void ack(long batchId) {
+      }
+
+      @Override
+      public void close() {
+      }
+
+      @Override
+      public Map<String, Object> getComponentConfiguration() {
+        return null;
+      }
+
+      @Override
+      public Fields getOutputFields() {
+        return OUTPUT_FIELDS;
+      }
+    }
+  }
+
+  public static class MockSqlTridentNestedDataSource implements ISqlTridentDataSource {
+    @Override
+    public IBatchSpout getProducer() {
+      return new MockSpout();
+    }
+
+    @Override
+    public SqlTridentConsumer getConsumer() {
+      return new SimpleSqlTridentConsumer(new MockStateFactory(), new MockStateUpdater());
+    }
+
+    private static class MockSpout implements IBatchSpout {
+      private final ArrayList<Values> RECORDS = new ArrayList<>();
+      private final Fields OUTPUT_FIELDS = new Fields("ID", "MAPFIELD", "NESTEDMAPFIELD", "ARRAYFIELD");
+
+      public MockSpout() {
+        List<Integer> ints = Arrays.asList(100, 200, 300);
+        for (int i = 0; i < 5; ++i) {
+          Map<String, Integer> map = new HashMap<>();
+          map.put("b", i);
+          map.put("c", i*i);
+          Map<String, Map<String, Integer>> mm = new HashMap<>();
+          mm.put("a", map);
+          RECORDS.add(new Values(i, map, mm, ints));
         }
       }
 
