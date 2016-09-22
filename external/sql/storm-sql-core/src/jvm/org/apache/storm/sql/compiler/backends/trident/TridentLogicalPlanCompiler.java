@@ -21,7 +21,9 @@ package org.apache.storm.sql.compiler.backends.trident;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.primitives.Primitives;
+import org.apache.calcite.DataContext;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
+import org.apache.calcite.linq4j.tree.BlockStatement;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Aggregate;
@@ -32,11 +34,15 @@ import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.logical.LogicalJoin;
+import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rex.RexBuilder;
+import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.schema.impl.AggregateFunctionImpl;
 import org.apache.calcite.sql.SqlAggFunction;
 import org.apache.calcite.sql.validate.SqlUserDefinedAggFunction;
-import org.apache.storm.sql.compiler.ExprCompiler;
+import org.apache.calcite.util.Pair;
 import org.apache.storm.sql.compiler.PostOrderRelNodeVisitor;
+import org.apache.storm.sql.compiler.RexNodeToBlockStatementCompiler;
 import org.apache.storm.sql.runtime.ISqlTridentDataSource;
 import org.apache.storm.sql.runtime.trident.functions.EvaluationFilter;
 import org.apache.storm.sql.runtime.trident.functions.EvaluationFunction;
@@ -92,12 +98,17 @@ class TransformInformation {
 public class TridentLogicalPlanCompiler extends PostOrderRelNodeVisitor<IAggregatableStream> {
     protected final Map<String, ISqlTridentDataSource> sources;
     protected final JavaTypeFactory typeFactory;
+    protected final RexNodeToBlockStatementCompiler rexCompiler;
+    private final DataContext dataContext;
     protected TridentTopology topology;
 
-    public TridentLogicalPlanCompiler(Map<String, ISqlTridentDataSource> sources, JavaTypeFactory typeFactory, TridentTopology topology) {
+    public TridentLogicalPlanCompiler(Map<String, ISqlTridentDataSource> sources, JavaTypeFactory typeFactory,
+                                      TridentTopology topology, DataContext dataContext) {
         this.sources = sources;
         this.typeFactory = typeFactory;
         this.topology = topology;
+        this.rexCompiler = new RexNodeToBlockStatementCompiler(new RexBuilder(typeFactory));
+        this.dataContext = dataContext;
     }
 
     @Override
@@ -202,26 +213,24 @@ public class TridentLogicalPlanCompiler extends PostOrderRelNodeVisitor<IAggrega
 
         // Trident doesn't allow duplicated field name... need to do the trick...
         List<String> outputFieldNames = project.getRowType().getFieldNames();
+        int outputCount = outputFieldNames.size();
         List<String> temporaryOutputFieldNames = new ArrayList<>();
         for (String outputFieldName : outputFieldNames) {
             temporaryOutputFieldNames.add("__" + outputFieldName + "__");
         }
 
-        try (StringWriter sw = new StringWriter(); PrintWriter pw = new PrintWriter(sw)) {
-            pw.write("import org.apache.storm.tuple.Values;\n");
+        try (StringWriter sw = new StringWriter()) {
+            List<RexNode> childExps = project.getChildExps();
+            RelDataType inputRowType = project.getInput(0).getRowType();
+            BlockStatement codeBlock = rexCompiler.compile(childExps, inputRowType);
+            sw.write(codeBlock.toString());
 
-            ExprCompiler compiler = new ExprCompiler(pw, typeFactory);
+            // we use out parameter and don't use the return value but compile fails...
+            sw.write("return 0;");
 
-            int size = project.getChildExps().size();
-            String[] res = new String[size];
-            for (int i = 0; i < size; ++i) {
-                res[i] = project.getChildExps().get(i).accept(compiler);
-            }
-
-            pw.write(String.format("\nreturn new Values(%s);", Joiner.on(',').join(res)));
             final String expression = sw.toString();
 
-            return inputStream.each(inputFields, new EvaluationFunction(expression), new Fields(temporaryOutputFieldNames))
+            return inputStream.each(inputFields, new EvaluationFunction(expression, outputCount, dataContext), new Fields(temporaryOutputFieldNames))
                     .project(new Fields(temporaryOutputFieldNames))
                     .each(new Fields(temporaryOutputFieldNames), new ForwardFunction(), new Fields(outputFieldNames))
                     .project(new Fields(outputFieldNames))
@@ -239,12 +248,17 @@ public class TridentLogicalPlanCompiler extends PostOrderRelNodeVisitor<IAggrega
         String stageName = getStageName(filter);
 
         try (StringWriter sw = new StringWriter(); PrintWriter pw = new PrintWriter(sw)) {
-            ExprCompiler compiler = new ExprCompiler(pw, typeFactory);
-            String ret = filter.getCondition().accept(compiler);
-            pw.write(String.format("\nreturn %s;", ret));
+            List<RexNode> childExps = filter.getChildExps();
+            RelDataType inputRowType = filter.getInput(0).getRowType();
+            BlockStatement codeBlock = rexCompiler.compile(childExps, inputRowType);
+            sw.write(codeBlock.toString());
+
+            // we use out parameter and don't use the return value but compile fails...
+            sw.write("return 0;");
+
             final String expression = sw.toString();
 
-            return inputStream.filter(new EvaluationFilter(expression)).name(stageName);
+            return inputStream.filter(new EvaluationFilter(expression, dataContext)).name(stageName);
         }
     }
 
@@ -257,6 +271,8 @@ public class TridentLogicalPlanCompiler extends PostOrderRelNodeVisitor<IAggrega
         Stream inputStream = inputStreams.get(0).toStream();
         String stageName = getStageName(aggregate);
 
+        List<String> outputFieldNames = aggregate.getRowType().getFieldNames();
+
         List<String> groupByFieldNames = new ArrayList<>();
         for (Integer idx : aggregate.getGroupSet()) {
             String fieldName = inputStream.getOutputFields().get(idx);
@@ -268,8 +284,17 @@ public class TridentLogicalPlanCompiler extends PostOrderRelNodeVisitor<IAggrega
 
         ChainedAggregatorDeclarer chainedAggregatorDeclarer = groupedStream.chainedAgg();
         List<TransformInformation> transformsAfterChained = new ArrayList<>();
-        for (AggregateCall call : aggregate.getAggCallList()) {
-            appendAggregationInChain(chainedAggregatorDeclarer, groupByFieldNames, inputStream, call, transformsAfterChained);
+
+        // Trident doesn't allow duplicated field name... need to do the trick...
+        List<String> temporaryOutputFieldNames = new ArrayList<>();
+        List<String> originOutputFieldNames = new ArrayList<>();
+        for (Pair<AggregateCall, String> aggCallToOutFieldName : aggregate.getNamedAggCalls()) {
+            AggregateCall call = aggCallToOutFieldName.getKey();
+            String outFileName = aggCallToOutFieldName.getValue();
+            String tempOutFileName = "__" + outFileName + "__";
+            temporaryOutputFieldNames.add(tempOutFileName);
+            originOutputFieldNames.add(outFileName);
+            appendAggregationInChain(chainedAggregatorDeclarer, groupByFieldNames, tempOutFileName, inputStream, call, transformsAfterChained);
         }
 
         Stream stream = chainedAggregatorDeclarer.chainEnd();
@@ -277,14 +302,13 @@ public class TridentLogicalPlanCompiler extends PostOrderRelNodeVisitor<IAggrega
             stream = stream.each(transformInformation.getInputFields(), transformInformation.getFunction(), transformInformation.getFunctionFields());
         }
 
-        // We're OK to project by Calcite information since each aggregation function create output fields via that information
-        List<String> outputFields = aggregate.getRowType().getFieldNames();
-        return stream.project(new Fields(outputFields)).name(stageName);
+        return stream
+                .each(new Fields(temporaryOutputFieldNames), new ForwardFunction(), new Fields(originOutputFieldNames))
+                .project(new Fields(outputFieldNames)).name(stageName);
     }
 
     private void appendAggregationInChain(ChainedAggregatorDeclarer chainedDeclarer, List<String> groupByFieldNames,
-                                          Stream inputStream, AggregateCall call, List<TransformInformation> transformsAfterChained) {
-        String outputField = call.getName();
+                                          String outputFieldName, Stream inputStream, AggregateCall call, List<TransformInformation> transformsAfterChained) {
         SqlAggFunction aggFunction = call.getAggregation();
         String aggregationName = call.getAggregation().getName();
 
@@ -300,27 +324,27 @@ public class TridentLogicalPlanCompiler extends PostOrderRelNodeVisitor<IAggrega
         }
 
         if (aggFunction instanceof SqlUserDefinedAggFunction) {
-            appendUDAFToChain(chainedDeclarer, groupByFieldNames, inputStream, call, outputField);
+            appendUDAFToChain(chainedDeclarer, groupByFieldNames, inputStream, call, outputFieldName);
         } else {
             switch (aggregationName.toUpperCase()) {
                 case "COUNT":
-                    appendCountFunctionToChain(chainedDeclarer, groupByFieldNames, inputStream, call, outputField);
+                    appendCountFunctionToChain(chainedDeclarer, groupByFieldNames, inputStream, call, outputFieldName);
                     break;
 
                 case "MAX":
-                    appendMaxFunctionToChain(chainedDeclarer, groupByFieldNames, inputStream, call, outputField);
+                    appendMaxFunctionToChain(chainedDeclarer, groupByFieldNames, inputStream, call, outputFieldName);
                     break;
 
                 case "MIN":
-                    appendMinFunctionToChain(chainedDeclarer, groupByFieldNames, inputStream, call, outputField);
+                    appendMinFunctionToChain(chainedDeclarer, groupByFieldNames, inputStream, call, outputFieldName);
                     break;
 
                 case "SUM":
-                    appendSumFunctionToChain(chainedDeclarer, groupByFieldNames, inputStream, call, outputField);
+                    appendSumFunctionToChain(chainedDeclarer, groupByFieldNames, inputStream, call, outputFieldName);
                     break;
 
                 case "AVG":
-                    appendAvgFunctionToChain(chainedDeclarer, groupByFieldNames, inputStream, call, outputField, transformsAfterChained);
+                    appendAvgFunctionToChain(chainedDeclarer, groupByFieldNames, inputStream, call, outputFieldName, transformsAfterChained);
                     break;
 
                 default:

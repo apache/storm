@@ -18,6 +18,9 @@
  */
 package org.apache.storm.sql.runtime.trident.functions;
 
+import org.apache.calcite.DataContext;
+import org.apache.calcite.interpreter.Context;
+import org.apache.calcite.interpreter.StormContext;
 import org.apache.storm.trident.operation.BaseFilter;
 import org.apache.storm.trident.operation.TridentOperationContext;
 import org.apache.storm.trident.tuple.TridentTuple;
@@ -27,25 +30,30 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.List;
 import java.util.Map;
 
 public class EvaluationFilter extends BaseFilter {
     private static final Logger LOG = LoggerFactory.getLogger(EvaluationFilter.class);
 
     private transient ScriptEvaluator evaluator;
-    private final String expression;
 
-    public EvaluationFilter(String expression) {
+    private final String expression;
+    private final DataContext dataContext;
+    private final Object[] outputValues;
+
+    public EvaluationFilter(String expression, DataContext dataContext) {
         this.expression = expression;
+        this.dataContext = dataContext;
+        this.outputValues = new Object[1];
     }
 
     @Override
     public void prepare(Map conf, TridentOperationContext context) {
         LOG.info("Expression: {}", expression);
         try {
-            evaluator = new ScriptEvaluator(expression, Boolean.class,
-                    new String[] {"_data"}, new Class[] { List.class });
+            evaluator = new ScriptEvaluator(expression, int.class,
+                    new String[] {"context", "outputValues"},
+                    new Class[] { Context.class, Object[].class });
         } catch (CompileException e) {
             throw new RuntimeException(e);
         }
@@ -54,7 +62,10 @@ public class EvaluationFilter extends BaseFilter {
     @Override
     public boolean isKeep(TridentTuple tuple) {
         try {
-            return (Boolean) evaluator.evaluate(new Object[] {tuple.getValues()});
+            Context calciteContext = new StormContext(dataContext);
+            calciteContext.values = tuple.getValues().toArray();
+            evaluator.evaluate(new Object[] {calciteContext, outputValues});
+            return (outputValues[0] != null && (boolean) outputValues[0]);
         } catch (InvocationTargetException e) {
             throw new RuntimeException(e);
         }

@@ -24,16 +24,17 @@ import org.apache.calcite.rel.core.TableScan;
 import org.apache.storm.sql.compiler.CompilerUtil;
 import org.apache.storm.sql.javac.CompilingClassLoader;
 import org.apache.storm.sql.runtime.AbstractValuesProcessor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.net.URLClassLoader;
-import java.util.ArrayDeque;
 import java.util.HashSet;
-import java.util.Queue;
 import java.util.Set;
 
 public class PlanCompiler {
+  private static final Logger LOG = LoggerFactory.getLogger(PlanCompiler.class);
+
   private static final Joiner NEW_LINE_JOINER = Joiner.on("\n");
   private static final String PACKAGE_NAME = "org.apache.storm.sql.generated";
   private static final String PROLOGUE = NEW_LINE_JOINER.join(
@@ -50,7 +51,13 @@ public class PlanCompiler {
       "import org.apache.storm.sql.runtime.AbstractValuesProcessor;",
       "import com.google.common.collect.ArrayListMultimap;",
       "import com.google.common.collect.Multimap;",
-      "public final class Processor extends AbstractValuesProcessor {", "");
+      "import org.apache.calcite.interpreter.Context;",
+      "import org.apache.calcite.interpreter.StormContext;",
+      "import org.apache.calcite.DataContext;",
+      "import org.apache.storm.sql.runtime.calcite.StormDataContext;",
+      "public final class Processor extends AbstractValuesProcessor {",
+      "  public final static DataContext dataContext = new StormDataContext();",
+      "");
   private static final String INITIALIZER_PROLOGUE = NEW_LINE_JOINER.join(
       "  @Override",
       "  public void initialize(Map<String, DataSource> data,",
@@ -113,6 +120,7 @@ public class PlanCompiler {
 
   public AbstractValuesProcessor compile(RelNode plan) throws Exception {
     String javaCode = generateJavaSource(plan);
+    LOG.debug("Compiling... source code {}", javaCode);
     ClassLoader cl = new CompilingClassLoader(getClass().getClassLoader(),
                                               PACKAGE_NAME + ".Processor",
                                               javaCode, null);
