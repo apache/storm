@@ -148,13 +148,6 @@ public class PaceMakerStateStorageFactoryTest {
         Assert.assertEquals("/foo", sent.get_data().get_path());
     }
 
-//    @Test(expected = RuntimeException.class)
-//    public void testGetWorkerHbChildrenBadResponse() throws Exception {
-//        createPaceMakerStateStorage(HBServerMessageType.DELETE_PATH, null);
-//        List ret = stateStorage.get_worker_hb_children("/foo", false);
-//        LOG.info("Got return: {}", ret);
-//    }
-
     @Test(expected = RuntimeException.class)
     public void testGetWorkerHbChildrenBadData() throws Exception {
         createPaceMakerStateStorage(HBServerMessageType.GET_ALL_NODES_FOR_PATH_RESPONSE, null);
