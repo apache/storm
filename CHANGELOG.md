@@ -151,6 +151,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0
+ * STORM-1664: Allow Java users to start a local cluster with a Nimbus Thrift server.
  * STORM-1872: Release Jedis connection when topology shutdown
  * STORM-1837: Fix complete-topology and prevent message loss
  * STORM-2092: optimize TridentKafkaState batch sending
