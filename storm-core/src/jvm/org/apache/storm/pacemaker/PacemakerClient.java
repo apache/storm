@@ -57,7 +57,7 @@ public class PacemakerClient implements ISaslClient {
     private ThriftNettyClientCodec.AuthMethod authMethod;
 
     private static Timer timer = new Timer(true);
-    
+
     private StormBoundedExponentialBackoffRetry backoff = new StormBoundedExponentialBackoffRetry(100, 5000, 20);
     private int retryTimes = 0;
 
@@ -215,7 +215,7 @@ public class PacemakerClient implements ISaslClient {
             }
         }
     }
-    
+
     public void gotMessage(HBMessage m) {
         int message_id = m.get_message_id();
         if(message_id >=0 && message_id < maxPending) {
