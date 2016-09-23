@@ -26,18 +26,6 @@ import java.util.List;
 import java.util.Map;
 
 public class PaceMakerStateStorageFactory implements StateStorageFactory {
-
-//    private static final PaceMakerStateStorageFactory INSTANCE = new PaceMakerStateStorageFactory();
-//    private static PaceMakerStateStorageFactory _instance = INSTANCE;
-//
-//    public static void setInstance(PaceMakerStateStorageFactory u) {
-//        _instance = u;
-//    }
-//
-//    public static void resetInstance() {
-//        _instance = INSTANCE;
-//    }
-
     @Override
     public IStateStorage mkStore(Map config, Map auth_conf, List<ACL> acls, ClusterStateContext context) {
         try {
