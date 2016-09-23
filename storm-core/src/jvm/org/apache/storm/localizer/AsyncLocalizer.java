@@ -192,12 +192,12 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
 
             if (resourcesJar != null) {
                 LOG.info("Extracting resources from jar at {} to {}", resourcesJar, targetDir);
-                Utils.extractDirFromJar(resourcesJar, ConfigUtils.RESOURCES_SUBDIR, _stormRoot);
+                Utils.extractDirFromJar(resourcesJar, ConfigUtils.RESOURCES_SUBDIR, new File(targetDir));
             } else if (url != null) {
                 LOG.info("Copying resources at {} to {} ", url.toString(), targetDir);
                 if ("jar".equals(url.getProtocol())) {
                     JarURLConnection urlConnection = (JarURLConnection) url.openConnection();
-                    Utils.extractDirFromJar(urlConnection.getJarFileURL().getFile(), ConfigUtils.RESOURCES_SUBDIR, _stormRoot);
+                    Utils.extractDirFromJar(urlConnection.getJarFileURL().getFile(), ConfigUtils.RESOURCES_SUBDIR, new File(targetDir));
                 } else {
                     _fsOps.copyDirectory(new File(url.getFile()), new File(targetDir));
                 }
