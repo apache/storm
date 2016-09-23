@@ -43,7 +43,7 @@ import java.util.*;
 
 public class AdminCommands {
 
-    private static final Logger LOG = LoggerFactory.getLogger(Deactivate.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AdminCommands.class);
     private static BlobStore nimbusBlobStore;
     private static IStormClusterState stormClusterState;
     private static CuratorFramework zk;
@@ -52,17 +52,18 @@ public class AdminCommands {
     public static void main(String [] args) throws Exception {
 
         if (args.length == 0) {
-            throw new IllegalArgumentException("Missing command.");
+            throw new IllegalArgumentException("Missing command. Supported command is remove_corrupt_topologies");
         }
-        initialize();
         String command = args[0];
         String[] newArgs = Arrays.copyOfRange(args, 1, args.length);
         switch (command) {
             case "remove_corrupt_topologies":
+                initialize();
                 removeCorruptTopologies();
                 break;
             default:
-                throw new RuntimeException("" + command + " is not a supported admin command");
+                LOG.error("****** "+ command + " is not supported. Supported Admin command - \"remove_corrupt_topologies\" ******");
+                throw new UnsupportedOperationException(command + " is not a supported admin command.");
         }
 
     }
