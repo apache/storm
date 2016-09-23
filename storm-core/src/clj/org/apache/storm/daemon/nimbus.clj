@@ -656,14 +656,16 @@
         storm-conf (read-storm-conf-as-nimbus storm-id blob-store)
         topology (read-storm-topology-as-nimbus storm-id blob-store)
         task->component (storm-task-info topology storm-conf)]
-    (->> (storm-task-info topology storm-conf)
-         reverse-map
-         (map-val sort)
-         (join-maps component->executors)
-         (map-val (partial apply partition-fixed))
-         (mapcat second)
-         (map to-executor-id)
-         )))
+    (if (nil? component->executors)
+      []
+      (->> (storm-task-info topology storm-conf)
+           reverse-map
+           (map-val sort)
+           (join-maps component->executors)
+           (map-val (partial apply partition-fixed))
+           (mapcat second)
+           (map to-executor-id)
+           ))))
 
 (defn- compute-executor->component [nimbus storm-id]
   (let [conf (:conf nimbus)
