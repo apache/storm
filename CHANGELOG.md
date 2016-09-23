@@ -150,6 +150,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0
+ * STORM-1872: Release Jedis connection when topology shutdown
  * STORM-1837: Fix complete-topology and prevent message loss
  * STORM-2092: optimize TridentKafkaState batch sending
  * STORM-1979: Storm Druid Connector implementation.
