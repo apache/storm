@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-2117: Supervisor V2 with local mode extracts resources directory to the wrong directory
  * STORM-2110: strip out empty String in worker opts
  * STORM-2100: Fix Trident SQL join tests to not rely on ordering
  * STORM-2018: Supervisor V2
