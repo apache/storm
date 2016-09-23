@@ -69,7 +69,7 @@ public class PacemakerClientHandler extends SimpleChannelUpstreamHandler {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent event) {
-        LOG.error("Connection to pacemaker failed", event.getCause());
+        LOG.error("Connection to pacemaker failed. Trying to reconnect {}", event.getCause().getMessage());
         client.reconnect();
     }
 }

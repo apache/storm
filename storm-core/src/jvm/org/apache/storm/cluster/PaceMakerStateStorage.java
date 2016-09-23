@@ -146,11 +146,13 @@ public class PaceMakerStateStorage implements IStateStorage {
                 List<HBMessage> responses = pacemakerClientPool.sendAll(message);
                 for(HBMessage response : responses) {
                     if (response.get_type() != HBServerMessageType.GET_PULSE_RESPONSE) {
-                        //throw new HBExecutionException("Invalid Response Type");
                         LOG.error("get_worker_hb: Invalid Response Type");
                         continue;
                     }
                     byte[] details = response.get_data().get_pulse().get_details();
+                    if(details == null) {
+                        continue;
+                    }
                     ClusterWorkerHeartbeat cwh = Utils.deserialize(details, ClusterWorkerHeartbeat.class);
                     if(cwh != null && cwh.get_time_secs() > latest_time_secs) {
                         latest_time_secs = cwh.get_time_secs();

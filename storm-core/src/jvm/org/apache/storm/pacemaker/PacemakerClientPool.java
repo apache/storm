@@ -1,13 +1,13 @@
 package org.apache.storm.pacemaker;
 
 import java.util.ArrayList;
-import java.util.Map;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import org.apache.storm.Config;
 import org.apache.storm.generated.HBMessage;
-import org.apache.storm.generated.HBExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +22,13 @@ public class PacemakerClientPool {
     public PacemakerClientPool(Map config) {
         this.config = config;
         List<String> serverList = (List<String>)config.get(Config.PACEMAKER_SERVERS);
+        if(serverList == null) {
+            serverList = new ArrayList<String>();
+        }
+        else {
+            serverList = new ArrayList<String>(serverList);
+        }
+        Collections.shuffle(serverList);
         if(serverList != null) {
             servers = new ConcurrentLinkedQueue<String>(serverList);
         }
@@ -41,12 +48,13 @@ public class PacemakerClientPool {
 
     public List<HBMessage> sendAll(HBMessage m) throws PacemakerConnectionException {
         List<HBMessage> responses = new ArrayList<HBMessage>();
+        LOG.info("Using servers: {}", servers);
         for(String s : servers) {
             try {
                 HBMessage response = getClientForServer(s).send(m);
                 responses.add(response);
             } catch (PacemakerConnectionException e) {
-                LOG.error("Failed to send message to Pacemaker.", e);
+                //LOG.error("Failed to send message to Pacemaker.");
             }
         }
         if(responses.size() == 0) {
