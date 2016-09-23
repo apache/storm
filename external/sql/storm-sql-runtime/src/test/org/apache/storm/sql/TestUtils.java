@@ -67,10 +67,17 @@ public class TestUtils {
       return new PriorityQueue<>();
     }
     public static PriorityQueue<Integer> add(PriorityQueue<Integer> accumulator, Integer n, Integer val) {
-      if (accumulator.size() >= n) {
-        accumulator.remove();
+      if (n <= 0) {
+        return accumulator;
       }
-      accumulator.add(val);
+      if (accumulator.size() >= n) {
+        if (val > accumulator.peek()) {
+          accumulator.remove();
+          accumulator.add(val);
+        }
+      } else {
+        accumulator.add(val);
+      }
       return accumulator;
     }
     public static List<Integer> result(PriorityQueue<Integer> accumulator) {
