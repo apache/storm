@@ -98,7 +98,11 @@ public class KafkaBolt<K, V> extends BaseRichBolt {
 
         //for backward compatibility.
         if(topicSelector == null) {
-            this.topicSelector = new DefaultTopicSelector((String) stormConf.get(TOPIC));
+            if(stormConf.containsKey(TOPIC)) {
+                this.topicSelector = new DefaultTopicSelector((String) stormConf.get(TOPIC));
+            } else {
+                throw new IllegalArgumentException("topic should be specified in bolt's configuration");
+            }
         }
 
         producer = new KafkaProducer<>(boltSpecfiedProperties);
