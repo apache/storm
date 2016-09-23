@@ -379,6 +379,7 @@ public class BasicContainerTest {
         superConf.put(Config.STORM_LOCAL_DIR, stormLocal);
         superConf.put(Config.STORM_WORKERS_ARTIFACTS_DIR, stormLocal);
         superConf.put(Config.STORM_LOG4J2_CONF_DIR, log4jdir);
+        superConf.put(Config.WORKER_CHILDOPTS, " -Dtesting=true");
         
         LocalAssignment la = new LocalAssignment();
         la.set_topology_id(topoId);
@@ -388,7 +389,6 @@ public class BasicContainerTest {
         when(ops.slurp(stormcode)).thenReturn(serializedState);
         
         LocalState ls = mock(LocalState.class);
-        
         
         checkpoint(() -> {
             MockBasicContainer mc = new MockBasicContainer(ContainerType.LAUNCH, superConf, 
@@ -428,6 +428,7 @@ public class BasicContainerTest {
                     "-Dlog4j.configurationFile=" + workerConf,
                     "-DLog4jContextSelector=org.apache.logging.log4j.core.selector.BasicContextSelector",
                     "-Dstorm.local.dir=" + stormLocal,
+                    "-Dtesting=true",
                     "-Djava.library.path=JLP",
                     "-Dstorm.conf.file=",
                     "-Dstorm.options=",

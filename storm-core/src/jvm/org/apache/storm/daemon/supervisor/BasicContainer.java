@@ -409,7 +409,11 @@ public class BasicContainer extends Container {
             String string = substituteChildOptsInternal((String) value, memOnheap);
             if (StringUtils.isNotBlank(string)) {
                 String[] strings = string.split("\\s+");
-                rets.addAll(Arrays.asList(strings));
+                for (String s: strings) {
+                    if (StringUtils.isNotBlank(s)) {
+                        rets.add(s);
+                    }
+                }
             }
         } else if (value instanceof List) {
             @SuppressWarnings("unchecked")
