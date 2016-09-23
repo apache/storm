@@ -1,4 +1,5 @@
 ## 1.0.3
+ * STORM-1567: in defaults.yaml 'topology.disable.loadaware' should be 'topology.disable.loadaware.messaging'
  * STORM-1987: Fix TridentKafkaWordCount arg handling in distributed mode.
  * STORM-1969: Modify HiveTopology to show usage of non-partition table.
  * STORM-1849: HDFSFileTopology should use the 3rd argument as topologyName
