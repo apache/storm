@@ -196,6 +196,7 @@
  * STORM-1868: Modify TridentKafkaWordCount to run in distributed mode
 
 ## 1.0.3
+ * STORM-2090: Add integration test for storm windowing
  * STORM-2003: Make sure config contains TOPIC before get it
  * STORM-1567: in defaults.yaml 'topology.disable.loadaware' should be 'topology.disable.loadaware.messaging'
  * STORM-1987: Fix TridentKafkaWordCount arg handling in distributed mode.
