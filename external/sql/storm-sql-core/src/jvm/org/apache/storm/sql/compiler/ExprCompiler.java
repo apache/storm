@@ -218,7 +218,8 @@ public class ExprCompiler implements RexVisitor<String> {
           .put(AND, AND_EXPR)
           .put(OR, OR_EXPR)
           .put(NOT, NOT_EXPR)
-          .put(CAST, CAST_EXPR);
+          .put(CAST, CAST_EXPR)
+          .put(CASE, CASE_EXPR);
       this.translators = builder.build();
     }
 
@@ -482,6 +483,48 @@ public class ExprCompiler implements RexVisitor<String> {
 
         return val;
       }
+    };
+
+    private static final CallExprPrinter CASE_EXPR = new CallExprPrinter() {
+        @Override
+        public String translate(
+                ExprCompiler compiler, RexCall call) {
+            String val = compiler.reserveName();
+
+            PrintWriter pw = compiler.pw;
+
+            pw.print(String.format("%1$s %2$s = null;\n", compiler.javaTypeName(call), val));
+
+            List<RexNode> operands = call.getOperands();
+
+            for (int idx = 0; idx < operands.size() / 2; idx++) {
+                RexNode whenOp = operands.get(idx * 2);
+                RexNode assignOp = operands.get(idx * 2 + 1);
+
+                pw.print(String.format("// WHEN #%d THEN #%d\n", idx * 2, idx * 2 + 1));
+
+                String valWhen = whenOp.accept(compiler);
+                String valAssign = assignOp.accept(compiler);
+
+                // apply 'nested if' in order to achieve short circuit
+                pw.print(String.format("if (%1$s == true) { %2$s = %3$s; }\n", valWhen, val, valAssign));
+                pw.print("else {\n");
+            }
+
+            if (operands.size() % 2 == 1) {
+                pw.print("// ELSE\n");
+                // the last operand is for 'else'
+                String valElseAssign = operands.get(operands.size() - 1).accept(compiler);
+                pw.print(String.format("%1$s = %2$s;\n", val, valElseAssign));
+            }
+
+            for (int i = 0; i < operands.size() / 2; i++) {
+                pw.print("}");
+            }
+            pw.print("\n");
+
+            return val;
+        }
     };
 
     private static final CallExprPrinter NOT_EXPR = new CallExprPrinter() {
