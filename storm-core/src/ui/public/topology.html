@@ -320,18 +320,16 @@ $(document).ready(function() {
             });
 
             spoutStats.append(Mustache.render($(template).filter("#spout-stats-template").html(),response));
-            //Id,Executors,Tasks,Memory on heap requested (MB),Memory off heap requested (MB), CPU Requirement,Emitted,Transferred,Complete latency (ms),Acked,Failed,Error Host,Error Port
             dtAutoPage("#spout-stats-table", {
               columnDefs: [
-                {type: "num", targets: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]}
+                {type: "num", targets: 'table-num'}
               ]
             });
 
             boltStats.append(Mustache.render($(template).filter("#bolt-stats-template").html(),response));
-            //Id,Executors,Tasks,Memory On heap requested (MB),Memory Off heap requested (MB),CPU Requirement,Emitted,Transferred,Capacity (last 10m),Execute latency (ms),Executed,Process latency (ms),Acked,Failed,Error Host,Error Port,Last error
             dtAutoPage("#bolt-stats-table", {
               columnDefs: [
-                {type: "num", targets: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]}
+                {type: "num", targets: 'table-num'}
               ]
             });
 
