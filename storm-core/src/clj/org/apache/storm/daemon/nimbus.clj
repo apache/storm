@@ -41,6 +41,7 @@
   (:import [org.apache.storm.scheduler INimbus SupervisorDetails WorkerSlot TopologyDetails
             Cluster Topologies SchedulerAssignment SchedulerAssignmentImpl DefaultScheduler ExecutorDetails])
   (:import [org.apache.storm.nimbus NimbusInfo])
+  (:import [org.apache.storm.scheduler.resource ResourceUtils])
   (:import [org.apache.storm.utils TimeCacheMap Time TimeCacheMap$ExpiredCallback Utils ConfigUtils TupleUtils ThriftTopologyUtils
             BufferFileInputStream BufferInputStream])
   (:import [org.apache.storm.generated NotAliveException AlreadyAliveException StormTopology ErrorInfo ClusterWorkerHeartbeat
@@ -48,7 +49,7 @@
             KillOptions RebalanceOptions ClusterSummary SupervisorSummary TopologySummary TopologyInfo TopologyHistoryInfo
             ExecutorSummary AuthorizationException GetInfoOptions NumErrorsChoice SettableBlobMeta ReadableBlobMeta
             BeginDownloadResult ListBlobsResult ComponentPageInfo TopologyPageInfo LogConfig LogLevel LogLevelAction
-            ProfileRequest ProfileAction NodeInfo LSTopoHistory SupervisorPageInfo WorkerSummary WorkerResources])
+            ProfileRequest ProfileAction NodeInfo LSTopoHistory SupervisorPageInfo WorkerSummary WorkerResources ComponentType])
   (:import [org.apache.storm.daemon Shutdownable StormCommon DaemonCommon])
   (:import [org.apache.storm.validation ConfigValidation])
   (:import [org.apache.storm.cluster ClusterStateContext DaemonType StormClusterStateImpl ClusterUtils])
@@ -1619,8 +1620,14 @@
                :assignment assignment
                :beats (or beats {})
                :topology topology
+               :topology-conf topology-conf
                :task->component task->component
                :base base}))
+        set-resources-default-if-not-set
+          (fn [^HashMap component-resources-map component-id topology-conf]
+              (let [resource-map (or (.get component-resources-map component-id) (HashMap.))]
+                (ResourceUtils/checkIntialization resource-map component-id topology-conf)
+                resource-map))
         get-last-error (fn [storm-cluster-state storm-id component-id]
                          (if-let [e (clojurify-error  (.lastError storm-cluster-state
                                                  storm-id
@@ -2197,6 +2204,7 @@
                       beats
                       task->component
                       topology
+                      topology-conf
                       base]} topo-info
               exec->node+port (:executor->node+port assignment)
               node->host (:node->host assignment)
@@ -2218,6 +2226,17 @@
                                                           window
                                                           include-sys?
                                                           storm-cluster-state)]
+
+          (doseq [[spout-id component-aggregate-stats] (.get_id_to_spout_agg_stats topo-page-info)]
+            (let [common-stats (.get_common_stats component-aggregate-stats)
+                  resources (ResourceUtils/getSpoutsResources topology topology-conf)]
+              (.set_resources_map common-stats (set-resources-default-if-not-set resources spout-id topology-conf))))
+
+          (doseq [[bolt-id component-aggregate-stats] (.get_id_to_bolt_agg_stats topo-page-info)]
+            (let [common-stats (.get_common_stats component-aggregate-stats)
+                  resources (ResourceUtils/getBoltsResources topology topology-conf)]
+              (.set_resources_map common-stats (set-resources-default-if-not-set resources bolt-id topology-conf))))
+
           (.set_workers topo-page-info worker-summaries)
           (when-let [owner (:owner base)]
             (.set_owner topo-page-info owner))
@@ -2300,6 +2319,7 @@
          ^boolean include-sys?]
         (.mark nimbus:num-getComponentPageInfo-calls)
         (let [info (get-common-topo-info topo-id "getComponentPageInfo")
+              {:keys [topology topology-conf]} info
               {:keys [executor->node+port node->host]} (:assignment info)
               ;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
               executor->host+port (map-val (fn [[node port]]
@@ -2313,6 +2333,12 @@
                                                          topo-id
                                                          (:topology info)
                                                          component-id)]
+          (if (.equals (.get_component_type comp-page-info) ComponentType/SPOUT)
+            (.set_resources_map comp-page-info 
+              (set-resources-default-if-not-set (ResourceUtils/getSpoutsResources topology topology-conf) component-id topology-conf))
+            (.set_resources_map comp-page-info
+              (set-resources-default-if-not-set (ResourceUtils/getBoltsResources topology topology-conf) component-id topology-conf)))
+
           (doto comp-page-info
             (.set_topology_name (:storm-name info))
             (.set_errors (get-errors (:storm-cluster-state info)
