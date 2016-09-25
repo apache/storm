@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-2118: A few fixes for storm-sql standalone mode
  * STORM-2105: Cluster/Supervisor total and available resources displayed in the UI
  * STORM-2078: enable paging in worker datatable
  * STORM-1664: Allow Java users to start a local cluster with a Nimbus Thrift server.
@@ -88,7 +89,6 @@
  * STORM-1720: Support GEO in storm-redis
 
 ## 1.0.3
- * STORM-2118: A few fixes for storm-sql standalone mode
  * STORM-2119: bug in log message printing to stdout
  * STORM-2120: Emit to _spoutConfig.outputStreamId
  * STORM-2101: fixes npe in compute-executors in nimbus
