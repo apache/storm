@@ -15,8 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.sql.kafka;
+package org.apache.storm.sql;
 
+import org.apache.storm.sql.runtime.serde.json.JsonScheme;
+import org.apache.storm.sql.runtime.serde.json.JsonSerializer;
 import org.apache.storm.utils.Utils;
 import com.google.common.collect.Lists;
 import org.junit.Test;

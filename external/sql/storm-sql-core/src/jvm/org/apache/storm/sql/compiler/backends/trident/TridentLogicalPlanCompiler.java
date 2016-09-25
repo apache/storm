@@ -131,8 +131,13 @@ public class TridentLogicalPlanCompiler extends PostOrderRelNodeVisitor<IAggrega
         List<String> inputFields = input.getRowType().getFieldNames();
         List<String> outputFields = modify.getRowType().getFieldNames();
 
-        return inputStream.each(new Fields(inputFields), sources.get(tableName).getConsumer(), new Fields(outputFields))
-                .name(stageName);
+        ISqlTridentDataSource.SqlTridentConsumer consumer = sources.get(tableName).getConsumer();
+
+        // In fact this is normally the end of stream, but to match the return type we open new streams based on State values
+        return inputStream
+                .partitionPersist(consumer.getStateFactory(), new Fields(inputFields), consumer.getStateUpdater(),
+                        new Fields(outputFields))
+                .newValuesStream().name(stageName);
     }
 
     @Override
