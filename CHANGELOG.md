@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-2105: Cluster/Supervisor total and available resources displayed in the UI
  * STORM-2078: enable paging in worker datatable
  * STORM-1664: Allow Java users to start a local cluster with a Nimbus Thrift server.
  * STORM-1872: Release Jedis connection when topology shutdown
