@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.sql.kafka;
+package org.apache.storm.sql.runtime.serde.json;
 
 import org.apache.storm.spout.Scheme;
 import org.apache.storm.tuple.Fields;
@@ -31,7 +31,7 @@ import java.util.List;
 public class JsonScheme implements Scheme {
   private final List<String> fields;
 
-  JsonScheme(List<String> fields) {
+  public JsonScheme(List<String> fields) {
     this.fields = fields;
   }
 

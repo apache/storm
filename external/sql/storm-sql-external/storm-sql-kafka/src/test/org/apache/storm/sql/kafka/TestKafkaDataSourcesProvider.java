@@ -22,16 +22,18 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.storm.sql.kafka.KafkaDataSourcesProvider.KafkaTridentSink;
+import org.apache.storm.kafka.trident.TridentKafkaState;
+import org.apache.storm.kafka.trident.TridentKafkaStateFactory;
+import org.apache.storm.kafka.trident.TridentKafkaUpdater;
 import org.apache.storm.sql.runtime.DataSourcesRegistry;
 import org.apache.storm.sql.runtime.FieldInfo;
 import org.apache.storm.sql.runtime.ISqlTridentDataSource;
+import org.apache.storm.sql.runtime.serde.json.JsonSerializer;
+import org.apache.storm.trident.tuple.TridentTuple;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
 import org.mockito.internal.util.reflection.Whitebox;
-import org.apache.storm.kafka.trident.TridentKafkaState;
-import org.apache.storm.trident.tuple.TridentTuple;
 
 import java.net.URI;
 import java.nio.ByteBuffer;
@@ -40,7 +42,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Future;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.argThat;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 public class TestKafkaDataSourcesProvider {
   private static final List<FieldInfo> FIELDS = ImmutableList.of(
@@ -63,12 +70,17 @@ public class TestKafkaDataSourcesProvider {
     ISqlTridentDataSource ds = DataSourcesRegistry.constructTridentDataSource(
         URI.create("kafka://mock?topic=foo"), null, null, TBL_PROPERTIES, FIELDS);
     Assert.assertNotNull(ds);
-    KafkaTridentSink sink = (KafkaTridentSink) ds.getConsumer();
-    sink.prepare(null, null);
-    TridentKafkaState state = (TridentKafkaState) Whitebox.getInternalState(sink, "state");
+
+    ISqlTridentDataSource.SqlTridentConsumer consumer = ds.getConsumer();
+
+    Assert.assertEquals(TridentKafkaStateFactory.class, consumer.getStateFactory().getClass());
+    Assert.assertEquals(TridentKafkaUpdater.class, consumer.getStateUpdater().getClass());
+
+    TridentKafkaState state = (TridentKafkaState) consumer.getStateFactory().makeState(Collections.emptyMap(), null, 0, 1);
     KafkaProducer producer = mock(KafkaProducer.class);
     doReturn(mock(Future.class)).when(producer).send(any(ProducerRecord.class));
     Whitebox.setInternalState(state, "producer", producer);
+
     List<TridentTuple> tupleList = mockTupleList();
     for (TridentTuple t : tupleList) {
       state.updateState(Collections.singletonList(t), null);
