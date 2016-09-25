@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-2122: Cache dependency data, and serialize reading of the data
  * STORM-2117: Supervisor V2 with local mode extracts resources directory to the wrong directory
  * STORM-2110: strip out empty String in worker opts
  * STORM-2100: Fix Trident SQL join tests to not rely on ordering
