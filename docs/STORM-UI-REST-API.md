@@ -96,6 +96,13 @@ Response fields:
 |slotsFree| Integer |Number of worker slots available|
 |executorsTotal| Integer |Total number of executors|
 |tasksTotal| Integer |Total tasks|
+|schedulerDisplayResource| Boolean | Whether to display scheduler resource information|
+|totalMem| Double | The total amount of memory in the cluster in MB|
+|totalCpu| Double | The total amount of CPU in the cluster|
+|availMem| Double | The amount of available memory in the cluster in MB|
+|availCpu| Double | The amount of available cpu in the cluster|
+|memAssignedPercentUtil| Double | The percent utilization of assigned memory resources in cluster|
+|cpuAssignedPercentUtil| Double | The percent utilization of assigned CPU resources in cluster|
 
 Sample response:
 
@@ -107,7 +114,14 @@ Sample response:
     "slotsUsed": 3,
     "slotsFree": 1,
     "executorsTotal": 28,
-    "tasksTotal": 28
+    "tasksTotal": 28,
+    "schedulerDisplayResource": true,
+    "totalMem": 4096.0,
+    "totalCpu": 400.0,
+    "availMem": 1024.0,
+    "availCPU": 250.0,
+    "memAssignedPercentUtil": 75.0,
+    "cpuAssignedPercentUtil": 37.5
     }
 ```
 
@@ -245,6 +259,7 @@ Each supervisor is defined by:
 |uptimeSeconds| Integer| Shows how long the supervisor is running in seconds|
 |slotsTotal| Integer| Total number of worker slots for this supervisor|
 |slotsUsed| Integer| Number of worker slots used on this supervisor|
+|schedulerDisplayResource| Boolean | Whether to display scheduler resource information|
 |totalMem| Double| Total memory capacity on this supervisor|
 |totalCpu| Double| Total CPU capacity on this supervisor|
 |usedMem| Double| Used memory capacity on this supervisor|
