@@ -1,4 +1,5 @@
 ## 1.0.3
+ * STORM-2119: bug in log message printing to stdout
  * STORM-2120: Emit to _spoutConfig.outputStreamId
  * STORM-2101: fixes npe in compute-executors in nimbus
  * STORM-2090: Add integration test for storm windowing
