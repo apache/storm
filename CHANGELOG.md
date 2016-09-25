@@ -202,6 +202,7 @@
  * STORM-1868: Modify TridentKafkaWordCount to run in distributed mode
 
 ## 1.0.3
+ * STORM-2118: A few fixes for storm-sql standalone mode
  * STORM-2119: bug in log message printing to stdout
  * STORM-2120: Emit to _spoutConfig.outputStreamId
  * STORM-2101: fixes npe in compute-executors in nimbus
