@@ -1004,7 +1004,7 @@
                                "dumplink" (worker-dump-link (:host profile-action) (str (:port profile-action)) topology-id)
                                "timestamp" (str (- (:timestamp profile-action) (System/currentTimeMillis)))})
                             latest-profile-actions)]
-    (log-message "Latest-active actions are: " (pr active-actions))
+    (log-message "Latest-active actions are: " (pr-str active-actions))
     active-actions))
 
 (defn component-page
