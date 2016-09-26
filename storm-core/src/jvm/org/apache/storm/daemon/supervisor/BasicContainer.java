@@ -529,7 +529,7 @@ public class BasicContainer extends Container {
             //Only go off of the topology id for now.
             DependencyLocations dl = _cache.get(topologyId);
             if (dl == null) {
-                _cache.putIfAbsent(topologyId, new DependencyLocations(conf, topologyId, ops, stormRoot));
+                _cache.put(topologyId, new DependencyLocations(conf, topologyId, ops, stormRoot));
                 dl = _cache.get(topologyId);
             }
             return dl;
