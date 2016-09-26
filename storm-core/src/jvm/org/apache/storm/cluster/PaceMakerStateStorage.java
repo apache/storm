@@ -180,7 +180,6 @@ public class PaceMakerStateStorage implements IStateStorage {
         while (true) {
             try {
                 HashSet<String> retSet = new HashSet<>();
-                int latest_time_secs = 0;
 
                 HBMessage message = new HBMessage(HBServerMessageType.GET_ALL_NODES_FOR_PATH, HBMessageData.path(path));
                 List<HBMessage> responses = pacemakerClientPool.sendAll(message);

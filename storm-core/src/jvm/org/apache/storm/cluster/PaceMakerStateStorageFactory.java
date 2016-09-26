@@ -17,13 +17,11 @@
  */
 package org.apache.storm.cluster;
 
-import org.apache.storm.pacemaker.PacemakerClient;
+import java.util.List;
+import java.util.Map;
 import org.apache.storm.pacemaker.PacemakerClientPool;
 import org.apache.storm.utils.Utils;
 import org.apache.zookeeper.data.ACL;
-
-import java.util.List;
-import java.util.Map;
 
 public class PaceMakerStateStorageFactory implements StateStorageFactory {
     @Override

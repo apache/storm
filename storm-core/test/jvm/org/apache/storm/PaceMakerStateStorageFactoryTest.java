@@ -32,8 +32,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class PaceMakerStateStorageFactoryTest {
-    private static Logger LOG = LoggerFactory.getLogger(PaceMakerStateStorageFactoryTest.class);
-    
     private PaceMakerClientProxy clientProxy;
     private PacemakerClientPoolProxy clientPoolProxy;
     private PaceMakerStateStorage stateStorage;

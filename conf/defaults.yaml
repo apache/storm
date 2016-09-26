@@ -275,7 +275,6 @@ resource.aware.scheduler.priority.strategy: "org.apache.storm.scheduler.resource
 
 dev.zookeeper.path: "/tmp/dev-storm-zookeeper"
 
-pacemaker.host: "localhost"
 pacemaker.servers: []
 pacemaker.port: 6699
 pacemaker.base.threads: 10

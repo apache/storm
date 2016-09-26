@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 
 public class PacemakerClientPool {
 
-        private static final Logger LOG = LoggerFactory.getLogger(PacemakerClientPool.class);
+    private static final Logger LOG = LoggerFactory.getLogger(PacemakerClientPool.class);
     
     private ConcurrentHashMap<String, PacemakerClient> clientForServer = new ConcurrentHashMap<>();
     private ConcurrentLinkedQueue<String> servers;
@@ -110,5 +110,4 @@ public class PacemakerClientPool {
         }
         return client;
     }
-
 }
