@@ -448,26 +448,6 @@
                   [[id info]]))
               supervisor-ids)))))
 
-(defn- all-scheduling-slots
-  [nimbus topologies missing-assignment-topologies]
-  (let [storm-cluster-state (:storm-cluster-state nimbus)
-        ^INimbus inimbus (:inimbus nimbus)
-
-        supervisor-infos (all-supervisor-info storm-cluster-state nil)
-
-        supervisor-details (dofor [[id info] supervisor-infos]
-                             (SupervisorDetails. id (:meta info) (:resources-map info)))
-
-        ret (.allSlotsAvailableForScheduling inimbus
-                     supervisor-details
-                     topologies
-                     (set missing-assignment-topologies)
-                     )
-        ]
-    (dofor [^WorkerSlot slot ret]
-      [(.getNodeId slot) (.getPort slot)]
-      )))
-
 (defn- get-version-for-key [key nimbus-host-port-info conf]
   (let [version (KeySequenceNumber. key nimbus-host-port-info)]
     (.getKeySequenceNumber version conf)))
@@ -712,27 +692,35 @@
                                                    {})))]]
              {tid (SchedulerAssignmentImpl. tid executor->slot)})))
 
-(defn- read-all-supervisor-details [nimbus all-scheduling-slots supervisor->dead-ports]
+(defn- read-all-supervisor-details
+  [nimbus supervisor->dead-ports topologies missing-assignment-topologies]
   "return a map: {supervisor-id SupervisorDetails}"
   (let [storm-cluster-state (:storm-cluster-state nimbus)
         supervisor-infos (all-supervisor-info storm-cluster-state)
-        nonexistent-supervisor-slots (apply dissoc all-scheduling-slots (keys supervisor-infos))
-        all-supervisor-details (into {} (for [[sid supervisor-info] supervisor-infos
-                                              :let [hostname (:hostname supervisor-info)
-                                                    scheduler-meta (:scheduler-meta supervisor-info)
-                                                    dead-ports (supervisor->dead-ports sid)
-                                                    ;; hide the dead-ports from the all-ports
-                                                    ;; these dead-ports can be reused in next round of assignments
-                                                    all-ports (-> (get all-scheduling-slots sid)
-                                                                  (set/difference dead-ports)
-                                                                  ((fn [ports] (map int ports))))
-                                                    supervisor-details (SupervisorDetails. sid hostname scheduler-meta all-ports (:resources-map supervisor-info))]]
-                                          {sid supervisor-details}))]
-    (merge all-supervisor-details
-           (into {}
-              (for [[sid ports] nonexistent-supervisor-slots]
-                [sid (SupervisorDetails. sid nil ports)]))
-           )))
+        supervisor-details (for [[id info] supervisor-infos]
+                             (SupervisorDetails. id (:meta info) (:resources-map info)))
+        ;; Note that allSlotsAvailableForScheduling
+        ;; only uses the supervisor-details. The rest of the arguments
+        ;; are there to satisfy the INimbus interface.
+        all-scheduling-slots (->> (.allSlotsAvailableForScheduling
+                                    (:inimbus nimbus)
+                                    supervisor-details
+                                    topologies
+                                    (set missing-assignment-topologies))
+                                  (map (fn [s] {(.getNodeId s) #{(.getPort s)}}))
+                                  (apply merge-with set/union))]
+    (into {} (for [[sid supervisor-info] supervisor-infos
+                   :let [hostname (:hostname supervisor-info)
+                         scheduler-meta (:scheduler-meta supervisor-info)
+                         dead-ports (supervisor->dead-ports sid)
+                         ;; hide the dead-ports from the all-ports
+                         ;; these dead-ports can be reused in next round of assignments
+                         all-ports (-> (get all-scheduling-slots sid)
+                                       (set/difference dead-ports)
+                                       (as-> ports (map int ports)))
+                         supervisor-details (SupervisorDetails. sid hostname scheduler-meta all-ports (:resources-map supervisor-info))]]
+               {sid supervisor-details}))))
+
 
 ;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn- compute-topology->executor->node+port [scheduler-assignments]
@@ -842,11 +830,11 @@
                                                                   (get t)
                                                                   num-used-workers )
                                                               (-> topologies (.getById t) .getNumWorkers)))))))
-        all-scheduling-slots (->> (all-scheduling-slots nimbus topologies missing-assignment-topologies)
-                                  (map (fn [[node-id port]] {node-id #{port}}))
-                                  (apply merge-with set/union))
 
-        supervisors (read-all-supervisor-details nimbus all-scheduling-slots supervisor->dead-ports)
+        supervisors (read-all-supervisor-details nimbus 
+                                                 supervisor->dead-ports
+                                                 topologies
+                                                 missing-assignment-topologies)
         cluster (Cluster. (:inimbus nimbus) supervisors topology->scheduler-assignment conf)]
 
     ;; set the status map with existing topology statuses
