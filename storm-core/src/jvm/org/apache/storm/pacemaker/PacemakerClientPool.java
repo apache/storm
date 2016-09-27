@@ -71,7 +71,7 @@ public class PacemakerClientPool {
                 HBMessage response = getClientForServer(s).send(m);
                 responses.add(response);
             } catch (PacemakerConnectionException e) {
-                LOG.error("Failed to send message to Pacemaker " + s);
+                LOG.error("Failed to send message to Pacemaker " + s + " " + e.getMessage());
             }
         }
         if(responses.size() == 0) {

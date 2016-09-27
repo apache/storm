@@ -17,7 +17,7 @@
  */
 package org.apache.storm.pacemaker;
 
-import java.net.ConnectionException;
+import java.net.ConnectException;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelStateEvent;
@@ -69,11 +69,11 @@ public class PacemakerClientHandler extends SimpleChannelUpstreamHandler {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent event) {
         Throwable t = event.getCause();
-        if(t instanceof ConnectionException) {
+        if(t instanceof ConnectException) {
             LOG.warn("Connection to pacemaker failed. Trying to reconnect {}", t.getMessage());
         }
         else {
-            LOG.error("Exception occurred in Pacemaker: {}", t);
+            LOG.error("Exception occurred in Pacemaker.", t);
         }
         client.reconnect();
     }

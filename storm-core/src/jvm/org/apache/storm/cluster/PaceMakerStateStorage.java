@@ -144,6 +144,9 @@ public class PaceMakerStateStorage implements IStateStorage {
 
                 HBMessage message = new HBMessage(HBServerMessageType.GET_PULSE, HBMessageData.path(path));
                 List<HBMessage> responses = pacemakerClientPool.sendAll(message);
+                if(responses.size() == 0) {
+                    throw new HBExecutionException("Failed to get a response.");
+                }
                 for(HBMessage response : responses) {
                     if (response.get_type() != HBServerMessageType.GET_PULSE_RESPONSE) {
                         LOG.error("get_worker_hb: Invalid Response Type");
@@ -159,10 +162,6 @@ public class PaceMakerStateStorage implements IStateStorage {
                         ret = details;
                     }
                 }
-                if(ret == null) {
-                    throw new HBExecutionException("Failed to get a response.");
-                }
-                LOG.debug("Successful get_worker_hb");
                 return ret;
             } catch (Exception e) {
                 if (retry <= 0) {
