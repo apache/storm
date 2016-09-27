@@ -457,6 +457,16 @@ Response fields:
 |msgTimeout| Integer | Number of seconds a tuple has before the spout considers it failed |
 |windowHint| String | window param value in "hh mm ss" format. Default value is "All Time"|
 |schedulerDisplayResource| Boolean | Whether to display scheduler resource information|
+|replicationCount| Integer |Number of nimbus hosts on which this topology code is replicated|
+|debug| Boolean | If debug is enabled for the topology|
+|samplingPct| Double| Controls downsampling of events before they are sent to event log (percentage)|
+|assignedMemOnHeap| Double|Assigned On-Heap Memory by Scheduler (MB)
+|assignedMemOffHeap| Double|Assigned Off-Heap Memory by Scheduler (MB)|
+|assignedTotalMem| Double|Assigned Off-Heap + On-Heap Memory by Scheduler(MB)|
+|assignedCpu| Double|Assigned CPU by Scheduler(%)|
+|requestedMemOnHeap| Double|Requested On-Heap Memory by User (MB)
+|requestedMemOffHeap| Double|Requested Off-Heap Memory by User (MB)|
+|requestedCpu| Double|Requested CPU by User (%)|
 |topologyStats| Array | Array of all the topology related stats per time window|
 |topologyStats.windowPretty| String |Duration passed in HH:MM:SS format|
 |topologyStats.window| String |User requested time window for metrics|
@@ -465,6 +475,20 @@ Response fields:
 |topologyStats.completeLatency| String (double value returned in String format) |Total latency for processing the message|
 |topologyStats.acked| Long |Number of messages acked in given window|
 |topologyStats.failed| Long |Number of messages failed in given window|
+|workers| Array | Array of workers in topology|
+|workers.supervisorId | String| Supervisor's id|
+|workers.host | String | Worker's host name|
+|workers.port | Integer | Worker's port|
+|workers.topologyId | String | Topology Id|
+|workers.topologyName | String | Topology Name|
+|workers.executorsTotal | Integer | Number of executors used by the topology in this worker|
+|workers.assignedMemOnHeap | Double | Assigned On-Heap Memory by Scheduler (MB)|
+|workers.assignedMemOffHeap | Double | Assigned Off-Heap Memory by Scheduler (MB)|
+|workers.assignedCpu | Number | Assigned CPU by Scheduler (%)| 
+|workers.componentNumTasks | Dictionary | Components -> # of executing tasks|
+|workers.uptime| String| Shows how long the worker is running|
+|workers.uptimeSeconds| Integer| Shows how long the worker is running in seconds|
+|workers.workerLogLink | String | Link to worker log viewer page|
 |spouts| Array | Array of all the spout components in the topology|
 |spouts.spoutId| String |Spout id|
 |spouts.executors| Integer |Number of executors for the spout|
@@ -477,6 +501,9 @@ Response fields:
 |spouts.errorWorkerLogLink| String | Link to the worker log that reported the exception |
 |spouts.acked| Long |Number of messages acked|
 |spouts.failed| Long |Number of messages failed|
+|spouts.requestedMemOnHeap| Double|Requested On-Heap Memory by User (MB)
+|spouts.requestedMemOffHeap| Double|Requested Off-Heap Memory by User (MB)|
+|spouts.requestedCpu| Double|Requested CPU by User (%)|
 |bolts| Array | Array of bolt components in the topology|
 |bolts.boltId| String |Bolt id|
 |bolts.capacity| String (double value returned in String format) |This value indicates number of messages executed * average execute latency / time window|
@@ -490,7 +517,9 @@ Response fields:
 |bolts.errorLapsedSecs| Integer |Number of seconds elapsed since that last error happened in a bolt|
 |bolts.errorWorkerLogLink| String | Link to the worker log that reported the exception |
 |bolts.emitted| Long |Number of tuples emitted|
-|replicationCount| Integer |Number of nimbus hosts on which this topology code is replicated|
+|bolts.requestedMemOnHeap| Double|Requested On-Heap Memory by User (MB)
+|bolts.requestedMemOffHeap| Double|Requested Off-Heap Memory by User (MB)|
+|bolts.requestedCpu| Double|Requested CPU by User (%)|
 
 Examples:
 
@@ -554,6 +583,23 @@ Sample response:
             "failed": 0
         }
     ],
+    "workers":[{
+        "topologyName":"WordCount3",
+        "topologyId":"WordCount3-1-1402960825",
+        "host":"192.168.10.237",
+        "supervisorId":"bdfe8eff-f1d8-4bce-81f5-9d3ae1bf432e-169.254.129.212",
+        "uptime":"2m 47s",
+        "uptimeSeconds":167,
+        "port":6707,
+        "workerLogLink":"http:\/\/192.168.10.237:8000\/log?file=WordCount3-1-1402960825%2F6707%2Fworker.log",
+        "componentNumTasks": {
+            "spout":5
+        },
+        "executorsTotal":8,
+        "assignedMemOnHeap":704.0,
+        "assignedCpu":130.0,
+        "assignedMemOffHeap":80.0
+    }],
     "spouts": [
         {
             "executors": 5,
@@ -936,11 +982,28 @@ Response fields:
 
 |Field  |Value |Description|
 |---	|---	|---
+|user   | String | Topology owner|
 |id   | String | Component id|
+|encodedId   | String | URL encoded component id|
 |name | String | Topology name|
+|executors| Integer |Number of executor tasks in the component|
+|tasks| Integer |Number of instances of component|
+|requestedMemOnHeap| Double|Requested On-Heap Memory by User (MB)
+|requestedMemOffHeap| Double|Requested Off-Heap Memory by User (MB)|
+|requestedCpu| Double|Requested CPU by User (%)|
+|schedulerDisplayResource| Boolean | Whether to display scheduler resource information|
+|topologyId| String | Topology id|
+|topologyStatus| String | Topology status|
+|encodedTopologyId| String | URL encoded topology id|
+|window    |String. Default value "All Time" | window duration for metrics in seconds|
 |componentType | String | component type: SPOUT or BOLT|
 |windowHint| String | window param value in "hh mm ss" format. Default value is "All Time"|
-|executors| Integer |Number of executor tasks in the component|
+|debug| Boolean | If debug is enabled for the component|
+|samplingPct| Double| Controls downsampling of events before they are sent to event log (percentage)|
+|eventLogLink| String| URL viewer link to event log (debug mode)|
+|profilingAndDebuggingCapable| Boolean |true if there is support for Profiling and Debugging Actions|
+|profileActionEnabled| Boolean |true if worker profiling (Java Flight Recorder) is enabled|
+|profilerActive| Array |Array of currently active Profiler Actions|
 |componentErrors| Array of Errors | List of component errors|
 |componentErrors.errorTime| Long | Timestamp when the exception occurred (Prior to 0.11.0, this field was named 'time'.)|
 |componentErrors.errorHost| String | host name for the error|
@@ -948,27 +1011,34 @@ Response fields:
 |componentErrors.error| String |Shows the error happened in a component|
 |componentErrors.errorLapsedSecs| Integer | Number of seconds elapsed since the error happened in a component |
 |componentErrors.errorWorkerLogLink| String | Link to the worker log that reported the exception |
-|topologyId| String | Topology id|
-|tasks| Integer |Number of instances of component|
-|window    |String. Default value "All Time" | window duration for metrics in seconds|
-|spoutSummary or boltStats| Array |Array of component stats. **Please note this element tag can be spoutSummary or boltStats depending on the componentType**|
+|spoutSummary| Array | (only for spouts) Array of component stats, one element per window.| 
 |spoutSummary.windowPretty| String |Duration passed in HH:MM:SS format|
 |spoutSummary.window| String | window duration for metrics in seconds|
 |spoutSummary.emitted| Long |Number of messages emitted in given window |
 |spoutSummary.completeLatency| String (double value returned in String format) |Total latency for processing the message|
-|spoutSummary.transferred| Long |Total number of messages  transferred in given window|
+|spoutSummary.transferred| Long |Total number of messages transferred in given window|
 |spoutSummary.acked| Long |Number of messages acked|
 |spoutSummary.failed| Long |Number of messages failed|
+|boltStats| Array | (only for bolts) Array of component stats, one element per window.| 
 |boltStats.windowPretty| String |Duration passed in HH:MM:SS format|
-|boltStats..window| String | window duration for metrics in seconds|
+|boltStats.window| String| window duration for metrics in seconds|
 |boltStats.transferred| Long |Total number of messages  transferred in given window|
 |boltStats.processLatency| String (double value returned in String format)  |Average time of the bolt to ack a message after it was received|
 |boltStats.acked| Long |Number of messages acked|
 |boltStats.failed| Long |Number of messages failed|
-|profilingAndDebuggingCapable| Boolean |true if there is support for Profiling and Debugging Actions|
-|profileActionEnabled| Boolean |true if worker profiling (Java Flight Recorder) is enabled|
-|profilerActive| Array |Array of currently active Profiler Actions|
-
+|inputStats| Array | (only for bolts) Array of input stats|
+|inputStats.component| String |Component id|
+|inputStats.encodedComponentId| String |URL encoded component id|
+|inputStats.executeLatency| Long | The average time a tuple spends in the execute method|
+|inputStats.processLatency| Long | The average time it takes to ack a tuple after it is first received|
+|inputStats.executed| Long |The number of incoming tuples processed|
+|inputStats.acked| Long |Number of messages acked|
+|inputStats.failed| Long |Number of messages failed|
+|inputStats.stream| String |The name of the tuple stream given in the topology, or "default" if none specified|
+|outputStats| Array | Array of output stats|
+|outputStats.transferred| Long |Number of tuples emitted that sent to one ore more bolts|
+|outputStats.emitted| Long |Number of tuples emitted|
+|outputStats.stream| String |The name of the tuple stream given in the topology, or "default" if none specified|
 
 Examples:
 

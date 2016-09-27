@@ -357,49 +357,62 @@
             Id
           </span>
         </th>
-        <th class="header">
+        <th class="header table-num">
           <span data-original-title="Executors are threads in a Worker process." data-toggle="tooltip" data-placement="right">
             Executors
           </span>
         </th>
-        <th class="header">
+        <th class="header table-num">
           <span data-toggle="tooltip" data-placement="top" title="A Task is an instance of a Bolt or Spout. The number of Tasks is almost always equal to the number of Executors.">
             Tasks
           </span>
         </th>
-        <th class="header">
+        {{#schedulerDisplayResource}}
+        <th class="header table-num">
+          <span data-toggle="tooltip" data-placement="top" title="The amount of on-heap memory in megabytes requested to run a single executor of this component.">
+            Req On-heap Mem (MB)
+          </span>
+        </th>
+        <th class="header table-num">
+          <span data-toggle="tooltip" data-placement="top" title="The amount of off-heap memory in megabytes requested to run a single executor of this component.">
+            Req Off-heap Mem (MB)
+          </span>
+        </th>
+        <th class="header table-num">
+          <span data-toggle="tooltip" data-placement="top" title="The amount of CPU resources requested to run a single executor of this component. Every 100 means 1 core.">
+            Req CPU
+          </span>
+        </th>
+        {{/schedulerDisplayResource}}
+        <th class="header table-num">
           <span data-toggle="tooltip" data-placement="top" title="The number of Tuples emitted.">
             Emitted
           </span>
         </th>
-        <th class="header">
+        <th class="header table-num">
           <span data-toggle="tooltip" data-placement="top" title="The number of Tuples emitted that sent to one or more bolts.">
             Transferred
           </span>
         </th>
-        <th class="header">
+        <th class="header table-num">
           <span data-toggle="tooltip" data-placement="top" title="The average time a Tuple &quot;tree&quot; takes to be completely processed by the Topology. A value of 0 is expected if no acking is done.">
             Complete latency (ms)
           </span>
         </th>
-        <th class="header">
+        <th class="header table-num">
           <span data-toggle="tooltip" data-placement="top" title="The number of Tuple &quot;trees&quot; successfully processed. A value of 0 is expected if no acking is done.">
             Acked
           </span>
         </th>
-        <th class="header">
+        <th class="header table-num">
           <span data-toggle="tooltip" data-placement="top" title="The number of Tuple &quot;trees&quot; that were explicitly failed or timed out before acking was completed. A value of 0 is expected if no acking is done.">
             Failed
           </span>
         </th>
-        <th class="header">Error Host
-        </th>
-        <th class="header">Error Port
-        </th>
-        <th class="header">Last error
-        </th>
-        <th class="header">Error Time
-        </th>
+        <th class="header">Error Host</th>
+        <th class="header">Error Port</th>
+        <th class="header">Last error</th>
+        <th class="header">Error Time</th>
       </tr>
     </thead>
     <tbody>
@@ -408,6 +421,11 @@
         <td><a href="/component.html?id={{encodedSpoutId}}&topology_id={{encodedId}}">{{spoutId}}</a></td>
         <td>{{executors}}</td>
         <td>{{tasks}}</td>
+        {{#schedulerDisplayResource}}
+        <td>{{requestedMemOnHeap}}</td>
+        <td>{{requestedMemOffHeap}}</td>
+        <td>{{requestedCpu}}</td>
+        {{/schedulerDisplayResource}}
         <td>{{emitted}}</td>
         <td>{{transferred}}</td>
         <td>{{completeLatency}}</td>
@@ -436,64 +454,77 @@
             Id
           </span>
         </th>
-        <th class="header">
+        <th class="header table-num">
           <span data-original-title="Executors are threads in a Worker process." data-toggle="tooltip" data-placement="right">
             Executors
           </span>
         </th>
-        <th class="header">
+        <th class="header table-num">
           <span data-toggle="tooltip" data-placement="top" title="A Task is an instance of a Bolt or Spout. The number of Tasks is almost always equal to the number of Executors.">
             Tasks
           </span>
         </th>
-        <th class="header">
+        {{#schedulerDisplayResource}}
+        <th class="header table-num">
+          <span data-toggle="tooltip" data-placement="top" title="The amount of on-heap memory in megabytes requested to run a single executor of this component.">
+            Req On-heap Mem (MB)
+          </span>
+        </th>
+        <th class="header table-num">
+          <span data-toggle="tooltip" data-placement="top" title="The amount of off-heap memory in megabytes requested to run a single executor of this component.">
+            Req Off-heap Mem (MB)
+          </span>
+        </th>
+        <th class="header table-num">
+          <span data-toggle="tooltip" data-placement="top" title="The amount of CPU resources requested to run a single executor of this component. Every 100 means 1 core.">
+            Req CPU
+          </span>
+        </th>
+        {{/schedulerDisplayResource}}
+        <th class="header table-num">
           <span data-toggle="tooltip" data-placement="top" title="The number of Tuples emitted.">
             Emitted
           </span>
         </th>
-        <th class="header">
+        <th class="header table-num">
           <span data-toggle="tooltip" data-placement="top" title="The number of Tuples emitted that sent to one or more bolts.">
             Transferred
           </span>
         </th>
-        <th class="header">
+        <th class="header table-num">
           <span data-original-title="If this is around 1.0, the corresponding Bolt is running as fast as it can, so you may want to increase the Bolt's parallelism. This is (number executed * average execute latency) / measurement time." data-toggle="tooltip" data-placement="top">
             Capacity (last 10m)
           </span>
         </th>
-        <th class="header">
+        <th class="header table-num">
           <span data-toggle="tooltip" data-placement="top" title="The average time a Tuple spends in the execute method. The execute method may complete without sending an Ack for the tuple.">
             Execute latency (ms)
           </span>
         </th>
-        <th class="header">
+        <th class="header table-num">
           <span data-toggle="tooltip" data-placement="top" title="The number of incoming Tuples processed.">
             Executed
           </span>
         </th>
-        <th class="header">
+        <th class="header table-num">
           <span data-toggle="tooltip" data-placement="top" title="The average time it takes to Ack a Tuple after it is first received.  Bolts that join, aggregate or batch may not Ack a tuple until a number of other Tuples have been received.">
             Process latency (ms)
           </span>
         </th>
-        <th class="header">
+        <th class="header table-num">
           <span data-toggle="tooltip" data-placement="top" title="The number of Tuples acknowledged by this Bolt.">
             Acked
           </span>
         </th>
-        <th class="header">
+        <th class="header table-num">
           <span data-toggle="tooltip" data-placement="left" title="The number of tuples Failed by this Bolt.">
             Failed
           </span>
         </th>
-        <th class="header">Error Host
-        </th>
-        <th class="header">Error Port
-        </th>
-        <th class="header">Last error
-        </th>
-        <th class="header">Error Time
-        </th>
+        <th class="header">Error Host</th>
+        <th class="header">Error Port</th>
+        <th class="header">Last error</th>
+        <th class="header">Error Time</th>
     </tr></thead>
     <tbody>
       {{#bolts}}
@@ -501,6 +532,11 @@
         <td><a href="/component.html?id={{encodedBoltId}}&topology_id={{encodedId}}">{{boltId}}</a></td>
         <td>{{executors}}</td>
         <td>{{tasks}}</td>
+        {{#schedulerDisplayResource}}
+        <td>{{requestedMemOnHeap}}</td>
+        <td>{{requestedMemOffHeap}}</td>
+        <td>{{requestedCpu}}</td>
+        {{/schedulerDisplayResource}}
         <td>{{emitted}}</td>
         <td>{{transferred}}</td>
         <td>{{capacity}}</td>
