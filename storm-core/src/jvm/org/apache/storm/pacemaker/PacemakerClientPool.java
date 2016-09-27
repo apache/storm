@@ -40,17 +40,17 @@ public class PacemakerClientPool {
         this.config = config;
         List<String> serverList = (List<String>)config.get(Config.PACEMAKER_SERVERS);
         if(serverList == null) {
-            serverList = new ArrayList<String>();
+            serverList = new ArrayList<>();
         }
         else {
-            serverList = new ArrayList<String>(serverList);
+            serverList = new ArrayList<>(serverList);
         }
         Collections.shuffle(serverList);
         if(serverList != null) {
-            servers = new ConcurrentLinkedQueue<String>(serverList);
+            servers = new ConcurrentLinkedQueue<>(serverList);
         }
         else {
-            servers = new ConcurrentLinkedQueue<String>();
+            servers = new ConcurrentLinkedQueue<>();
         }
     }
     
@@ -65,7 +65,7 @@ public class PacemakerClientPool {
 
     public List<HBMessage> sendAll(HBMessage m) throws PacemakerConnectionException {
         List<HBMessage> responses = new ArrayList<HBMessage>();
-        LOG.info("Using servers: {}", servers);
+        LOG.debug("Using servers: {}", servers);
         for(String s : servers) {
             try {
                 HBMessage response = getClientForServer(s).send(m);
