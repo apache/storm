@@ -16,6 +16,7 @@ addons:
 env:
   - MODULES=storm-core
   - MODULES='!storm-core'
+  - MODULES='INTEGRATION-TEST'
 
 language: java
 jdk:
@@ -26,7 +27,7 @@ before_install:
   - nvm use 0.12.2
 install: /bin/bash ./dev-tools/travis/travis-install.sh `pwd`
 script:
-  - /bin/bash ./dev-tools/travis/travis-script.sh `pwd` $MODULES && /bin/bash ./integration-test/run-it.sh
+  - /bin/bash ./dev-tools/travis/travis-script.sh `pwd` $MODULES
 sudo: true
 cache:
   directories:
