@@ -353,7 +353,7 @@
                     <plugin>
                         <groupId>org.apache.rat</groupId>
                         <artifactId>apache-rat-plugin</artifactId>
-                        <version>0.11</version>
+                        <version>0.12</version>
                         <executions>
                             <execution>
                                 <phase>test</phase>
@@ -364,6 +364,7 @@
                         </executions>
                         <configuration>
                             <excludeSubProjects>false</excludeSubProjects>
+                            <consoleOutput>true</consoleOutput>
                             <excludes>
                                 <!-- exclude maven artifacts -->
                                 <exclude>**/target/**</exclude>
