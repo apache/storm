@@ -206,6 +206,7 @@
  * STORM-1868: Modify TridentKafkaWordCount to run in distributed mode
 
 ## 1.0.3
+ * STORM-2017: ShellBolt stops reporting task ids
  * STORM-2119: bug in log message printing to stdout
  * STORM-2120: Emit to _spoutConfig.outputStreamId
  * STORM-2101: fixes npe in compute-executors in nimbus
