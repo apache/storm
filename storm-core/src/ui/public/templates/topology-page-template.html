@@ -367,6 +367,23 @@
             Tasks
           </span>
         </th>
+        {{#schedulerDisplayResource}}
+        <th class="header">
+          <span data-toggle="tooltip" data-placement="top" title="The amount on heap memory in megabytes requested to run a single executor of this component.">
+            Req On-heap Mem (MB)
+          </span>
+        </th>
+        <th class="header">
+          <span data-toggle="tooltip" data-placement="top" title="The amount off heap memory in megabytes requested to run a single executor of this component.">
+            Req Off-heap Mem (MB)
+          </span>
+        </th>
+        <th class="header">
+          <span data-toggle="tooltip" data-placement="top" title="The amount of CPU resources requested to run a single executor of this component. Every 100 means 1 core.">
+            Req CPU
+          </span>
+        </th>
+        {{/schedulerDisplayResource}}
         <th class="header">
           <span data-toggle="tooltip" data-placement="top" title="The number of Tuples emitted.">
             Emitted
@@ -408,6 +425,11 @@
         <td><a href="/component.html?id={{encodedSpoutId}}&topology_id={{encodedId}}">{{spoutId}}</a></td>
         <td>{{executors}}</td>
         <td>{{tasks}}</td>
+        {{#schedulerDisplayResource}}
+        <td>{{requestedMemOnHeap}}</td>
+        <td>{{requestedMemOffHeap}}</td>
+        <td>{{requestedCpu}}</td>
+        {{/schedulerDisplayResource}}
         <td>{{emitted}}</td>
         <td>{{transferred}}</td>
         <td>{{completeLatency}}</td>
@@ -446,6 +468,23 @@
             Tasks
           </span>
         </th>
+        {{#schedulerDisplayResource}}
+        <th class="header">
+          <span data-toggle="tooltip" data-placement="top" title="The amount memory in megabytes requested to run a single executor of this component.">
+            Req On-heap Mem (MB)
+          </span>
+        </th>
+        <th class="header">
+          <span data-toggle="tooltip" data-placement="top" title="The amount memory in megabytes requested to run a single executor of this component.">
+            Req Off-heap Mem (MB)
+          </span>
+        </th>
+        <th class="header">
+          <span data-toggle="tooltip" data-placement="top" title="The amount of CPU resources requested to run a single executor of this component. Every 100 means 1 core.">
+            Req CPU
+          </span>
+        </th>
+        {{/schedulerDisplayResource}}
         <th class="header">
           <span data-toggle="tooltip" data-placement="top" title="The number of Tuples emitted.">
             Emitted
@@ -501,6 +540,11 @@
         <td><a href="/component.html?id={{encodedBoltId}}&topology_id={{encodedId}}">{{boltId}}</a></td>
         <td>{{executors}}</td>
         <td>{{tasks}}</td>
+        {{#schedulerDisplayResource}}
+        <td>{{requestedMemOnHeap}}</td>
+        <td>{{requestedMemOffHeap}}</td>
+        <td>{{requestedCpu}}</td>
+        {{/schedulerDisplayResource}}
         <td>{{emitted}}</td>
         <td>{{transferred}}</td>
         <td>{{capacity}}</td>
