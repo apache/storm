@@ -453,13 +453,13 @@ public class ListBlobsResult implements org.apache.thrift.TBase<ListBlobsResult,
           case 1: // KEYS
             if (schemeField.type == org.apache.thrift.protocol.TType.LIST) {
               {
-                org.apache.thrift.protocol.TList _list566 = iprot.readListBegin();
-                struct.keys = new ArrayList<String>(_list566.size);
-                String _elem567;
-                for (int _i568 = 0; _i568 < _list566.size; ++_i568)
+                org.apache.thrift.protocol.TList _list596 = iprot.readListBegin();
+                struct.keys = new ArrayList<String>(_list596.size);
+                String _elem597;
+                for (int _i598 = 0; _i598 < _list596.size; ++_i598)
                 {
-                  _elem567 = iprot.readString();
-                  struct.keys.add(_elem567);
+                  _elem597 = iprot.readString();
+                  struct.keys.add(_elem597);
                 }
                 iprot.readListEnd();
               }
@@ -493,9 +493,9 @@ public class ListBlobsResult implements org.apache.thrift.TBase<ListBlobsResult,
         oprot.writeFieldBegin(KEYS_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRING, struct.keys.size()));
-          for (String _iter569 : struct.keys)
+          for (String _iter599 : struct.keys)
           {
-            oprot.writeString(_iter569);
+            oprot.writeString(_iter599);
           }
           oprot.writeListEnd();
         }
@@ -525,9 +525,9 @@ public class ListBlobsResult implements org.apache.thrift.TBase<ListBlobsResult,
       TTupleProtocol oprot = (TTupleProtocol) prot;
       {
         oprot.writeI32(struct.keys.size());
-        for (String _iter570 : struct.keys)
+        for (String _iter600 : struct.keys)
         {
-          oprot.writeString(_iter570);
+          oprot.writeString(_iter600);
         }
       }
       oprot.writeString(struct.session);
@@ -537,13 +537,13 @@ public class ListBlobsResult implements org.apache.thrift.TBase<ListBlobsResult,
     public void read(org.apache.thrift.protocol.TProtocol prot, ListBlobsResult struct) throws org.apache.thrift.TException {
       TTupleProtocol iprot = (TTupleProtocol) prot;
       {
-        org.apache.thrift.protocol.TList _list571 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRING, iprot.readI32());
-        struct.keys = new ArrayList<String>(_list571.size);
-        String _elem572;
-        for (int _i573 = 0; _i573 < _list571.size; ++_i573)
+        org.apache.thrift.protocol.TList _list601 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRING, iprot.readI32());
+        struct.keys = new ArrayList<String>(_list601.size);
+        String _elem602;
+        for (int _i603 = 0; _i603 < _list601.size; ++_i603)
         {
-          _elem572 = iprot.readString();
-          struct.keys.add(_elem572);
+          _elem602 = iprot.readString();
+          struct.keys.add(_elem602);
         }
       }
       struct.set_keys_isSet(true);

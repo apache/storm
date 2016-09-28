@@ -17,6 +17,7 @@
  */
 package org.apache.storm.stats;
 
+import java.util.Map;
 import org.apache.storm.generated.ExecutorSpecificStats;
 import org.apache.storm.generated.ExecutorStats;
 import org.apache.storm.generated.SpoutStats;
@@ -65,6 +66,7 @@ public class SpoutExecutorStats extends CommonStats {
         ret.set_emitted(valueStat(EMITTED));
         ret.set_transferred(valueStat(TRANSFERRED));
         ret.set_rate(this.rate);
+        ret.set_throughput(StatsUtil.convertCountsToThroughputs((Map<String, Map<String, Long>>) valueStat(EMITTED), startTime));
 
         // spout stats
         SpoutStats spoutStats = new SpoutStats(

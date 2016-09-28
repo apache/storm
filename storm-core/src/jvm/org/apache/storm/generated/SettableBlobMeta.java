@@ -452,14 +452,14 @@ public class SettableBlobMeta implements org.apache.thrift.TBase<SettableBlobMet
           case 1: // ACL
             if (schemeField.type == org.apache.thrift.protocol.TType.LIST) {
               {
-                org.apache.thrift.protocol.TList _list558 = iprot.readListBegin();
-                struct.acl = new ArrayList<AccessControl>(_list558.size);
-                AccessControl _elem559;
-                for (int _i560 = 0; _i560 < _list558.size; ++_i560)
+                org.apache.thrift.protocol.TList _list588 = iprot.readListBegin();
+                struct.acl = new ArrayList<AccessControl>(_list588.size);
+                AccessControl _elem589;
+                for (int _i590 = 0; _i590 < _list588.size; ++_i590)
                 {
-                  _elem559 = new AccessControl();
-                  _elem559.read(iprot);
-                  struct.acl.add(_elem559);
+                  _elem589 = new AccessControl();
+                  _elem589.read(iprot);
+                  struct.acl.add(_elem589);
                 }
                 iprot.readListEnd();
               }
@@ -493,9 +493,9 @@ public class SettableBlobMeta implements org.apache.thrift.TBase<SettableBlobMet
         oprot.writeFieldBegin(ACL_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, struct.acl.size()));
-          for (AccessControl _iter561 : struct.acl)
+          for (AccessControl _iter591 : struct.acl)
           {
-            _iter561.write(oprot);
+            _iter591.write(oprot);
           }
           oprot.writeListEnd();
         }
@@ -525,9 +525,9 @@ public class SettableBlobMeta implements org.apache.thrift.TBase<SettableBlobMet
       TTupleProtocol oprot = (TTupleProtocol) prot;
       {
         oprot.writeI32(struct.acl.size());
-        for (AccessControl _iter562 : struct.acl)
+        for (AccessControl _iter592 : struct.acl)
         {
-          _iter562.write(oprot);
+          _iter592.write(oprot);
         }
       }
       BitSet optionals = new BitSet();
@@ -544,14 +544,14 @@ public class SettableBlobMeta implements org.apache.thrift.TBase<SettableBlobMet
     public void read(org.apache.thrift.protocol.TProtocol prot, SettableBlobMeta struct) throws org.apache.thrift.TException {
       TTupleProtocol iprot = (TTupleProtocol) prot;
       {
-        org.apache.thrift.protocol.TList _list563 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
-        struct.acl = new ArrayList<AccessControl>(_list563.size);
-        AccessControl _elem564;
-        for (int _i565 = 0; _i565 < _list563.size; ++_i565)
+        org.apache.thrift.protocol.TList _list593 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
+        struct.acl = new ArrayList<AccessControl>(_list593.size);
+        AccessControl _elem594;
+        for (int _i595 = 0; _i595 < _list593.size; ++_i595)
         {
-          _elem564 = new AccessControl();
-          _elem564.read(iprot);
-          struct.acl.add(_elem564);
+          _elem594 = new AccessControl();
+          _elem594.read(iprot);
+          struct.acl.add(_elem594);
         }
       }
       struct.set_acl_isSet(true);

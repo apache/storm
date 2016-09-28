@@ -461,13 +461,13 @@ public class NodeInfo implements org.apache.thrift.TBase<NodeInfo, NodeInfo._Fie
           case 2: // PORT
             if (schemeField.type == org.apache.thrift.protocol.TType.SET) {
               {
-                org.apache.thrift.protocol.TSet _set610 = iprot.readSetBegin();
-                struct.port = new HashSet<Long>(2*_set610.size);
-                long _elem611;
-                for (int _i612 = 0; _i612 < _set610.size; ++_i612)
+                org.apache.thrift.protocol.TSet _set640 = iprot.readSetBegin();
+                struct.port = new HashSet<Long>(2*_set640.size);
+                long _elem641;
+                for (int _i642 = 0; _i642 < _set640.size; ++_i642)
                 {
-                  _elem611 = iprot.readI64();
-                  struct.port.add(_elem611);
+                  _elem641 = iprot.readI64();
+                  struct.port.add(_elem641);
                 }
                 iprot.readSetEnd();
               }
@@ -498,9 +498,9 @@ public class NodeInfo implements org.apache.thrift.TBase<NodeInfo, NodeInfo._Fie
         oprot.writeFieldBegin(PORT_FIELD_DESC);
         {
           oprot.writeSetBegin(new org.apache.thrift.protocol.TSet(org.apache.thrift.protocol.TType.I64, struct.port.size()));
-          for (long _iter613 : struct.port)
+          for (long _iter643 : struct.port)
           {
-            oprot.writeI64(_iter613);
+            oprot.writeI64(_iter643);
           }
           oprot.writeSetEnd();
         }
@@ -526,9 +526,9 @@ public class NodeInfo implements org.apache.thrift.TBase<NodeInfo, NodeInfo._Fie
       oprot.writeString(struct.node);
       {
         oprot.writeI32(struct.port.size());
-        for (long _iter614 : struct.port)
+        for (long _iter644 : struct.port)
         {
-          oprot.writeI64(_iter614);
+          oprot.writeI64(_iter644);
         }
       }
     }
@@ -539,13 +539,13 @@ public class NodeInfo implements org.apache.thrift.TBase<NodeInfo, NodeInfo._Fie
       struct.node = iprot.readString();
       struct.set_node_isSet(true);
       {
-        org.apache.thrift.protocol.TSet _set615 = new org.apache.thrift.protocol.TSet(org.apache.thrift.protocol.TType.I64, iprot.readI32());
-        struct.port = new HashSet<Long>(2*_set615.size);
-        long _elem616;
-        for (int _i617 = 0; _i617 < _set615.size; ++_i617)
+        org.apache.thrift.protocol.TSet _set645 = new org.apache.thrift.protocol.TSet(org.apache.thrift.protocol.TType.I64, iprot.readI32());
+        struct.port = new HashSet<Long>(2*_set645.size);
+        long _elem646;
+        for (int _i647 = 0; _i647 < _set645.size; ++_i647)
         {
-          _elem616 = iprot.readI64();
-          struct.port.add(_elem616);
+          _elem646 = iprot.readI64();
+          struct.port.add(_elem646);
         }
       }
       struct.set_port_isSet(true);

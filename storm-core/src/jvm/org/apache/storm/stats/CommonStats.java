@@ -37,10 +37,13 @@ public abstract class CommonStats {
     protected final int rate;
     protected final Map<String, IMetric> metricMap = new HashMap<>();
 
+    protected long startTime;
+
     public CommonStats(int rate) {
+        startTime = System.currentTimeMillis();
         this.rate = rate;
-        this.put(EMITTED, new MultiCountStatAndMetric(NUM_STAT_BUCKETS));
-        this.put(TRANSFERRED, new MultiCountStatAndMetric(NUM_STAT_BUCKETS));
+        this.put(EMITTED, new MultiCountStatAndMetric(NUM_STAT_BUCKETS, startTime));
+        this.put(TRANSFERRED, new MultiCountStatAndMetric(NUM_STAT_BUCKETS, startTime));
     }
 
     public int getRate() {

@@ -31,12 +31,18 @@ import org.apache.storm.metric.api.IMetric;
 public class MultiCountStatAndMetric<T> implements IMetric {
     private ConcurrentHashMap<T, CountStatAndMetric> _counts = new ConcurrentHashMap<>();
     private final int _numBuckets;
+    private final long _startTime;
 
     /**
      * @param numBuckets the number of buckets to divide the time periods into.
      */
     public MultiCountStatAndMetric(int numBuckets) {
+        this(numBuckets, -1);
+    }
+
+    public MultiCountStatAndMetric(int numBuckets, long startTime) {
         _numBuckets = numBuckets;
+        _startTime = startTime;
     }
 
     CountStatAndMetric get(T key) {
@@ -45,7 +51,7 @@ public class MultiCountStatAndMetric<T> implements IMetric {
             synchronized(this) {
                 c = _counts.get(key);
                 if (c == null) {
-                    c = new CountStatAndMetric(_numBuckets);
+                    c = new CountStatAndMetric(_numBuckets, _startTime);
                     _counts.put(key, c);
                 }
             }

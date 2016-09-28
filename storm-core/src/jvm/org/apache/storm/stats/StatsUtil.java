@@ -2607,4 +2607,25 @@ public class StatsUtil {
         }
         return ret;
     }
+
+    public static Map convertCountsToThroughputs(Map<String,Map<String,Long>> counts, long startTime) {
+        Map<String, Map<String, Double>> ret = new HashMap<>();
+        final long eclipsedTimeInMillis = System.currentTimeMillis() - startTime;
+        for(String key: counts.keySet()) {
+            final Map<String, Double> streamToThroughput = new HashMap<>();
+            long bucketTimeInMillis;
+            if(key.equals(":all-time")) {
+                bucketTimeInMillis = eclipsedTimeInMillis;
+            } else {
+                bucketTimeInMillis = Math.min(eclipsedTimeInMillis, Long.parseLong(key) * 1000);
+            }
+            final Map<String, Long> streamToCount = counts.get(key);
+            for(String stream: streamToCount.keySet()) {
+                final double throughputInSecs = streamToCount.get(stream) / (double)Math.max(1, bucketTimeInMillis) * 1000;
+                streamToThroughput.put(stream, throughputInSecs);
+            }
+            ret.put(key, streamToThroughput);
+        }
+        return ret;
+    }
 }
