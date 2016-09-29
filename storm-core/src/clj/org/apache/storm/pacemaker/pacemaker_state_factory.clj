@@ -87,7 +87,9 @@
       (throw (HBExecutionException. "Invalid Response Type")))))
 
 (defn shuffle-servers-list [conf]
-  (shuffle (conf PACEMAKER-SERVERS)))
+  (shuffle (or
+            (conf PACEMAKER-SERVERS)
+            [(conf PACEMAKER-HOST)])))
 
 (defn shutdown-rotate [servers client-pool]
   ; Shutdown the client and remove from the pool
