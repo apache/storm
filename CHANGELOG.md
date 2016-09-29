@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-2126: fix NPE due to race condition in compute-new-sched-assign…
  * STORM-2124: show requested cpu mem for each component
  * STORM-2089: Replace Consumer of ISqlTridentDataSource with SqlTridentConsumer
  * STORM-2118: A few fixes for storm-sql standalone mode
