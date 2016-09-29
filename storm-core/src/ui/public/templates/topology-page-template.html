@@ -183,6 +183,11 @@
           </span>
         </th>
         <th>
+          <span data-toggle="tooltip" data-placement="top" title="The number of Tuples emitted that sent to one or more bolts.">
+            Throughput (tuples/s)
+          </span>
+        </th>
+        <th>
           <span data-toggle="tooltip" data-placement="top" title="The average time a Tuple &quot;tree&quot; takes to be completely processed by the Topology. A value of 0 is expected if no acking is done.">
             Complete latency (ms)
           </span>
@@ -205,6 +210,7 @@
         <td><a href="/topology.html?id={{encodedId}}&window={{window}}">{{windowPretty}}</td>
         <td>{{emitted}}</td>
         <td>{{transferred}}</td>
+        <td>{{throughput}}</td>
         <td>{{completeLatency}}</td>
         <td>{{acked}}</td>
         <td>{{failed}}</td>
@@ -395,6 +401,11 @@
           </span>
         </th>
         <th class="header table-num">
+          <span data-toggle="tooltip" data-placement="top" title="The number of Tuples emitted per second.">
+            Throughput (tupels/s)
+          </span>
+        </th>
+        <th class="header table-num">
           <span data-toggle="tooltip" data-placement="top" title="The average time a Tuple &quot;tree&quot; takes to be completely processed by the Topology. A value of 0 is expected if no acking is done.">
             Complete latency (ms)
           </span>
@@ -428,6 +439,7 @@
         {{/schedulerDisplayResource}}
         <td>{{emitted}}</td>
         <td>{{transferred}}</td>
+        <td>{{throughput}}</td>
         <td>{{completeLatency}}</td>
         <td>{{acked}}</td>
         <td>{{failed}}</td>
@@ -502,6 +514,11 @@
           </span>
         </th>
         <th class="header table-num">
+          <span data-toggle="tooltip" data-placement="top" title="The number of Tuples emitted per second.">
+            Throughput (tuples/s)
+          </span>
+        </th>
+        <th class="header table-num">
           <span data-toggle="tooltip" data-placement="top" title="The number of incoming Tuples processed.">
             Executed
           </span>
@@ -541,6 +558,7 @@
         <td>{{transferred}}</td>
         <td>{{capacity}}</td>
         <td>{{executeLatency}}</td>
+        <td>{{throughput}}</td>
         <td>{{executed}}</td>
         <td>{{processLatency}}</td>
         <td>{{acked}}</td>

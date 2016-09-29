@@ -235,41 +235,41 @@ $(document).ready(function() {
 
             if(response["componentType"] == "spout") {
                 componentStatsDetail.append(Mustache.render($(template).filter("#spout-stats-detail-template").html(),response));
-                //window, emitted, transferred, complete latency, acked, failed
+                //window, emitted, transferred, complete latency, throughput, acked, failed
                 $("#spout-stats-table").DataTable({
                   paging: false,
                   info: false,
                   searching: false,
                   columnDefs: [
-                    {type: "num", targets: [1, 2, 3, 4, 5]},
+                    {type: "num", targets: [1, 2, 3, 4, 5, 6]},
                     {type: "time-str", targets: [0]}
                   ]
                 });
 
                 outputStats.append(Mustache.render($(template).filter("#output-stats-template").html(),response));
-                //stream, emitted, transferred, compltete latency, acked, failed
+                //stream, emitted, transferred, compltete latency, throughput, acked, failed
                 dtAutoPage("#output-stats-table", {
                   columnDefs: [
-                    {type: "num", targets: [1, 2, 3, 4, 5]}
+                    {type: "num", targets: [1, 2, 3, 4, 5, 6]}
                   ]
                 });
 
                 executorStats.append(Mustache.render($(template).filter("#executor-stats-template").html(),response));
-                //id, uptime, host, port, actions, emitted, transferred, complete latency, acked, failed
+                //id, uptime, host, port, actions, emitted, transferred, complete latency, throughput, acked, failed
                 dtAutoPage("#executor-stats-table", {
                   columnDefs: [
                     {render: renderSupervisorPageLink, searchable: true, targets: [2]},
                     {render: renderActionCheckbox, searchable: false, targets: [4]},
-                    {type: "num", targets: [5, 6, 7, 8, 9]},
+                    {type: "num", targets: [5, 6, 7, 8, 9, 10]},
                     {type: "time-str", targets: [1]},
                   ]
                 }).on("draw", function(e,s) {setWorkerActionCheckboxesClickCallback()});
             } else {
                 componentStatsDetail.append(Mustache.render($(template).filter("#bolt-stats-template").html(),response));
-                //window, emitted, transferred, execute latency, executed, process latency, acked, failed
+                //window, emitted, transferred, execute latency, executed, process latency, throughput, acked, failed
                 dtAutoPage("#bolt-stats-table", {
                   columnDefs: [
-                    {type: "num", targets: [1, 2, 3, 4, 5, 6, 7]},
+                    {type: "num", targets: [1, 2, 3, 4, 5, 6, 7, 8]},
                     {type: "time-str", targets: [0]}
                   ]
                 });
@@ -291,12 +291,12 @@ $(document).ready(function() {
                 });
 
                 executorStats.append(Mustache.render($(template).filter("#bolt-executor-template").html(),response));
-                //id, uptime, host, port, actions, emitted, transferred, capacity, execute latency, executed, process latency, acked, failed
+                //id, uptime, host, port, actions, emitted, transferred, capacity, execute latency, executed, process latency, throughput, acked, failed
                 dtAutoPage("#executor-stats-table", {
                   columnDefs: [
                     {render: renderSupervisorPageLink, searchable: true, targets: [2]},
                     {render: renderActionCheckbox, searchable: false, targets: [4]},
-                    {type: "num", targets: [5, 6, 7, 8, 9, 10, 11, 12]},
+                    {type: "num", targets: [5, 6, 7, 8, 9, 10, 11, 12, 13]},
                     {type: "time-str", targets: [1]},
                   ]
                 }).on("draw", function(e,s) {setWorkerActionCheckboxesClickCallback()});

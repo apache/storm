@@ -86,6 +86,7 @@ public class StatsUtil {
     private static final String EXECUTED = "executed";
     private static final String EMITTED = "emitted";
     private static final String TRANSFERRED = "transferred";
+    private static final String THROUGHPUT = "throughput";
 
     private static final String EXEC_LATENCIES = "execute-latencies";
     private static final String PROC_LATENCIES = "process-latencies";
@@ -104,6 +105,7 @@ public class StatsUtil {
     private static final String WIN_TO_FAILED = "window->failed";
     private static final String WIN_TO_EXECUTED = "window->executed";
     private static final String WIN_TO_TRANSFERRED = "window->transferred";
+    private static final String WIN_TO_THROUGHPUT = "window->throughput";
     private static final String WIN_TO_EXEC_LAT = "window->execute-latency";
     private static final String WIN_TO_PROC_LAT = "window->process-latency";
     private static final String WIN_TO_COMP_LAT = "window->complete-latency";
@@ -241,6 +243,7 @@ public class StatsUtil {
         Map outputStats = new HashMap();
         Map sid2emitted = (Map) windowSetConverter(getMapByKey(stat2win2sid2num, EMITTED), TO_STRING).get(window);
         Map sid2transferred = (Map) windowSetConverter(getMapByKey(stat2win2sid2num, TRANSFERRED), TO_STRING).get(window);
+        Map sid2throughput = (Map) windowSetConverter(getMapByKey(stat2win2sid2num, THROUGHPUT), TO_STRING).get(window);
         if (sid2emitted != null) {
             putKV(outputStats, EMITTED, filterSysStreams2Stat(sid2emitted, includeSys));
         } else {
@@ -250,6 +253,11 @@ public class StatsUtil {
             putKV(outputStats, TRANSFERRED, filterSysStreams2Stat(sid2transferred, includeSys));
         } else {
             putKV(outputStats, TRANSFERRED, new HashMap());
+        }
+        if (sid2throughput != null) {
+            putKV(outputStats, THROUGHPUT, filterSysStreams2Stat(sid2throughput, includeSys));
+        } else {
+            putKV(outputStats, THROUGHPUT, new HashMap<>());
         }
         outputStats = swapMapOrder(outputStats);
         putKV(ret, SID_TO_OUT_STATS, outputStats);
@@ -285,6 +293,7 @@ public class StatsUtil {
         Map win2sid2failed = windowSetConverter(getMapByKey(stat2win2sid2num, FAILED), TO_STRING);
         Map win2sid2emitted = windowSetConverter(getMapByKey(stat2win2sid2num, EMITTED), TO_STRING);
         Map win2sid2transferred = windowSetConverter(getMapByKey(stat2win2sid2num, TRANSFERRED), TO_STRING);
+        Map win2sid2throughput = windowSetConverter(getMapByKey(stat2win2sid2num, THROUGHPUT), TO_STRING);
         Map win2sid2compLat = windowSetConverter(getMapByKey(stat2win2sid2num, COMP_LATENCIES), TO_STRING);
 
         putKV(outputStats, ACKED, win2sid2acked.get(window));
@@ -300,6 +309,12 @@ public class StatsUtil {
             sid2transferred = new HashMap<>();
         }
         putKV(outputStats, TRANSFERRED, filterSysStreams2Stat(sid2transferred, includeSys));
+
+        Map<String, Long> sid2throughput = (Map) win2sid2throughput.get(window);
+        if (sid2throughput == null) {
+            sid2throughput = new HashMap<>();
+        }
+        putKV(outputStats, THROUGHPUT, filterSysStreams2Stat(sid2throughput, includeSys));
         outputStats = swapMapOrder(outputStats);
 
         Map sid2compLat = (Map) win2sid2compLat.get(window);
@@ -329,19 +344,29 @@ public class StatsUtil {
         Map<String, Object> stat2win2sid2num = getMapByKey(beat, STATS);
         putKV(subRet, CAPACITY, computeAggCapacity(stat2win2sid2num, getByKeyOr0(beat, UPTIME).intValue()));
 
-        for (String key : new String[]{EMITTED, TRANSFERRED, ACKED, FAILED}) {
+        for (String key : new String[]{EMITTED, TRANSFERRED, THROUGHPUT, ACKED, FAILED}) {
             Map<String, Map<K, V>> stat = windowSetConverter(getMapByKey(stat2win2sid2num, key), TO_STRING);
-            if (EMITTED.equals(key) || TRANSFERRED.equals(key)) {
+            if (EMITTED.equals(key) || TRANSFERRED.equals(key) || THROUGHPUT.equals(key)) {
                 stat = filterSysStreams(stat, includeSys);
             }
             Map<K, V> winStat = stat.get(window);
-            long sum = 0;
-            if (winStat != null) {
-                for (V v : winStat.values()) {
-                    sum += v.longValue();
+            if(key.equals(THROUGHPUT)) {
+                double sum = 0;
+                if (winStat != null) {
+                    for (V v : winStat.values()) {
+                        sum += v.doubleValue();
+                    }
                 }
+                putKV(subRet, key, sum);
+            } else {
+                long sum = 0;
+                if (winStat != null) {
+                    for (V v : winStat.values()) {
+                        sum += v.longValue();
+                    }
+                }
+                putKV(subRet, key, sum);
             }
-            putKV(subRet, key, sum);
         }
 
         Map<String, Map<List<String>, Double>> win2sid2execLat =
@@ -370,19 +395,29 @@ public class StatsUtil {
 
         // no capacity for spout
         Map<String, Map<String, Map<String, V>>> stat2win2sid2num = getMapByKey(m, STATS);
-        for (String key : new String[]{EMITTED, TRANSFERRED, FAILED}) {
+        for (String key : new String[]{EMITTED, TRANSFERRED, THROUGHPUT, FAILED}) {
             Map<String, Map<K, V>> stat = windowSetConverter(stat2win2sid2num.get(key), TO_STRING);
-            if (EMITTED.equals(key) || TRANSFERRED.equals(key)) {
+            if (EMITTED.equals(key) || TRANSFERRED.equals(key) || THROUGHPUT.equals(key)) {
                 stat = filterSysStreams(stat, includeSys);
             }
             Map<K, V> winStat = stat.get(window);
-            long sum = 0;
-            if (winStat != null) {
-                for (V v : winStat.values()) {
-                    sum += v.longValue();
+            if(key.equals(THROUGHPUT)) {
+                double sum = 0;
+                if (winStat != null) {
+                    for (V v : winStat.values()) {
+                        sum += v.doubleValue();
+                    }
                 }
+                putKV(subRet, key, sum);
+            } else {
+                long sum = 0;
+                if (winStat != null) {
+                    for (V v : winStat.values()) {
+                        sum += v.longValue();
+                    }
+                }
+                putKV(subRet, key, sum);
             }
-            putKV(subRet, key, sum);
         }
 
         Map<String, Map<String, Double>> win2sid2compLat =
@@ -433,6 +468,7 @@ public class StatsUtil {
 
         putKV(executorStats, EMITTED, sumStreamsLong(boltOut, EMITTED));
         putKV(executorStats, TRANSFERRED, sumStreamsLong(boltOut, TRANSFERRED));
+        putKV(executorStats, THROUGHPUT, sumStreamsDouble(boltOut, THROUGHPUT));
         putKV(executorStats, ACKED, sumStreamsLong(boltIn, ACKED));
         putKV(executorStats, FAILED, sumStreamsLong(boltIn, FAILED));
         putKV(executorStats, EXECUTED, executed);
@@ -476,6 +512,7 @@ public class StatsUtil {
 
         putKV(executorStats, EMITTED, sumStreamsLong(spoutOut, EMITTED));
         putKV(executorStats, TRANSFERRED, sumStreamsLong(spoutOut, TRANSFERRED));
+        putKV(executorStats, THROUGHPUT, sumStreamsDouble(spoutOut, THROUGHPUT));
         putKV(executorStats, FAILED, sumStreamsLong(spoutOut, FAILED));
         long acked = sumStreamsLong(spoutOut, ACKED);
         putKV(executorStats, ACKED, acked);
@@ -510,6 +547,8 @@ public class StatsUtil {
                 sumOr0(getByKeyOr0(accBoltStats, EMITTED), getByKeyOr0(boltStats, EMITTED)));
         putKV(ret, TRANSFERRED,
                 sumOr0(getByKeyOr0(accBoltStats, TRANSFERRED), getByKeyOr0(boltStats, TRANSFERRED)));
+        putKV(ret, THROUGHPUT,
+                sumOr0(getByKeyOr0(accBoltStats, THROUGHPUT), getByKeyOr0(boltStats, THROUGHPUT)));
         putKV(ret, EXEC_LAT_TOTAL,
                 sumOr0(getByKeyOr0(accBoltStats, EXEC_LAT_TOTAL), getByKeyOr0(boltStats, EXEC_LAT_TOTAL)));
         putKV(ret, PROC_LAT_TOTAL,
@@ -541,6 +580,8 @@ public class StatsUtil {
                 sumOr0(getByKeyOr0(accSpoutStats, EMITTED), getByKeyOr0(spoutStats, EMITTED)));
         putKV(ret, TRANSFERRED,
                 sumOr0(getByKeyOr0(accSpoutStats, TRANSFERRED), getByKeyOr0(spoutStats, TRANSFERRED)));
+        putKV(ret, THROUGHPUT,
+                sumOr0(getByKeyOr0(accSpoutStats, THROUGHPUT), getByKeyOr0(spoutStats, THROUGHPUT)));
         putKV(ret, COMP_LAT_TOTAL,
                 sumOr0(getByKeyOr0(accSpoutStats, COMP_LAT_TOTAL), getByKeyOr0(spoutStats, COMP_LAT_TOTAL)));
         putKV(ret, ACKED,
@@ -564,6 +605,7 @@ public class StatsUtil {
         Map spout2stats = getMapByKey(accStats, SPOUT_TO_STATS);
         Map win2emitted = getMapByKey(accStats, WIN_TO_EMITTED);
         Map win2transferred = getMapByKey(accStats, WIN_TO_TRANSFERRED);
+        Map win2throughput = getMapByKey(accStats, WIN_TO_THROUGHPUT);
         Map win2compLatWgtAvg = getMapByKey(accStats, WIN_TO_COMP_LAT_WGT_AVG);
         Map win2acked = getMapByKey(accStats, WIN_TO_ACKED);
         Map win2failed = getMapByKey(accStats, WIN_TO_FAILED);
@@ -603,6 +645,8 @@ public class StatsUtil {
                 filterSysStreams(getMapByKey(stats, EMITTED), includeSys))));
         putKV(ret, WIN_TO_TRANSFERRED, mergeWithSumLong(win2transferred, aggregateCountStreams(
                 filterSysStreams(getMapByKey(stats, TRANSFERRED), includeSys))));
+        putKV(ret, WIN_TO_THROUGHPUT, mergeWithSumDouble(win2throughput, aggregateCountStreamsForDouble(
+                filterSysStreams(getMapByKey(stats, THROUGHPUT), includeSys))));
         putKV(ret, WIN_TO_COMP_LAT_WGT_AVG, mergeWithSumDouble(win2compLatWgtAvg, w2compLatWgtAvg));
 
         //boolean isSpoutStat = SPOUT.equals(((Keyword) getByKey(stats, TYPE)).getName());
@@ -667,6 +711,7 @@ public class StatsUtil {
         putKV(initVal, SPOUT_TO_STATS, new HashMap());
         putKV(initVal, WIN_TO_EMITTED, new HashMap());
         putKV(initVal, WIN_TO_TRANSFERRED, new HashMap());
+        putKV(initVal, WIN_TO_THROUGHPUT, new HashMap<>());
         putKV(initVal, WIN_TO_COMP_LAT_WGT_AVG, new HashMap());
         putKV(initVal, WIN_TO_ACKED, new HashMap());
         putKV(initVal, WIN_TO_FAILED, new HashMap());
@@ -730,6 +775,7 @@ public class StatsUtil {
         topologyStats.set_window_to_emitted(mapKeyStr(getMapByKey(accData, WIN_TO_EMITTED)));
         topologyStats.set_window_to_failed(mapKeyStr(getMapByKey(accData, WIN_TO_FAILED)));
         topologyStats.set_window_to_transferred(mapKeyStr(getMapByKey(accData, WIN_TO_TRANSFERRED)));
+        topologyStats.set_window_to_throughput(mapKeyStr(getMapByKey(accData, WIN_TO_THROUGHPUT)));
         topologyStats.set_window_to_complete_latencies_ms(computeWeightedAveragesPerWindow(
                 accData, WIN_TO_COMP_LAT_WGT_AVG, WIN_TO_ACKED));
 
@@ -817,12 +863,15 @@ public class StatsUtil {
 
         List<Map<String, Map<String, Long>>> emitted = new ArrayList<>();
         List<Map<String, Map<String, Long>>> transferred = new ArrayList<>();
+        List<Map<String, Map<String, Double>>> throughput = new ArrayList<>();
         for (ExecutorSummary summ : statsSeq) {
             emitted.add(summ.get_stats().get_emitted());
             transferred.add(summ.get_stats().get_transferred());
+            throughput.add(summ.get_stats().get_throughput());
         }
         putKV(ret, EMITTED, aggregateCounts(emitted));
         putKV(ret, TRANSFERRED, aggregateCounts(transferred));
+        putKV(ret, THROUGHPUT, aggregateCountsForDouble(throughput));
 
         return ret;
     }
@@ -834,9 +883,11 @@ public class StatsUtil {
             Map<String, Map<String, Map<T, Long>>> streamSummary, boolean includeSys) {
         Map<String, Map<T, Long>> emitted = getMapByKey(streamSummary, EMITTED);
         Map<String, Map<T, Long>> transferred = getMapByKey(streamSummary, TRANSFERRED);
+        Map<String, Map<T, Double>> throughput = getMapByKey(streamSummary, THROUGHPUT);
 
         putKV(streamSummary, EMITTED, filterSysStreams(emitted, includeSys));
         putKV(streamSummary, TRANSFERRED, filterSysStreams(transferred, includeSys));
+        putKV(streamSummary, THROUGHPUT, filterSysStreams(throughput, includeSys));
 
         return streamSummary;
     }
@@ -855,6 +906,26 @@ public class StatsUtil {
             long sum = 0l;
             for (V num : value.values()) {
                 sum += num.longValue();
+            }
+            ret.put(entry.getKey(), sum);
+        }
+        return ret;
+    }
+
+    /**
+     * aggregate value(in Double) streams by window
+     *
+     * @param stats a Map of value: {win -> stream -> value}
+     * @return a Map of value: {win -> value}
+     */
+    public static <K, V extends Number> Map<String, Double> aggregateCountStreamsForDouble(
+            Map<String, Map<K, V>> stats) {
+        Map<String, Double> ret = new HashMap<>();
+        for (Map.Entry<String, Map<K, V>> entry : stats.entrySet()) {
+            Map<K, V> value = entry.getValue();
+            Double sum = 0.0;
+            for (V num : value.values()) {
+                sum += num.doubleValue();
             }
             ret.put(entry.getKey(), sum);
         }
@@ -954,6 +1025,7 @@ public class StatsUtil {
         putKV(ret, FAILED, aggregateCountStreams(getMapByKey(stats, FAILED)));
         putKV(ret, EMITTED, aggregateCountStreams(getMapByKey(stats, EMITTED)));
         putKV(ret, TRANSFERRED, aggregateCountStreams(getMapByKey(stats, TRANSFERRED)));
+        putKV(ret, THROUGHPUT, aggregateCountStreamsForDouble(getMapByKey(stats, THROUGHPUT)));
         putKV(ret, COMP_LATENCIES, aggregateAvgStreams(
                 getMapByKey(stats, COMP_LATENCIES), getMapByKey(stats, ACKED)));
         return ret;
@@ -971,6 +1043,7 @@ public class StatsUtil {
         putKV(ret, FAILED, aggregateCountStreams(getMapByKey(stats, FAILED)));
         putKV(ret, EMITTED, aggregateCountStreams(getMapByKey(stats, EMITTED)));
         putKV(ret, TRANSFERRED, aggregateCountStreams(getMapByKey(stats, TRANSFERRED)));
+        putKV(ret, THROUGHPUT, aggregateCountStreamsForDouble(getMapByKey(stats, THROUGHPUT)));
         putKV(ret, EXECUTED, aggregateCountStreams(getMapByKey(stats, EXECUTED)));
         putKV(ret, PROC_LATENCIES, aggregateAvgStreams(
                 getMapByKey(stats, PROC_LATENCIES), getMapByKey(stats, ACKED)));
@@ -1008,6 +1081,11 @@ public class StatsUtil {
         Map<String, Long> win2transferred = mergeWithSumLong(aggregateCountStreams(filterSysStreams(transferred, includeSys)),
                 getMapByKey(accStats, WIN_TO_TRANSFERRED));
         putKV(ret, WIN_TO_TRANSFERRED, win2transferred);
+
+        Map<String, Map<String, Double>> throughput = getMapByKey(newStats, THROUGHPUT);
+        Map<String, Double> win2throughput = mergeWithSumDouble(aggregateCountStreamsForDouble(filterSysStreams(throughput, includeSys)),
+                getMapByKey(accStats, WIN_TO_THROUGHPUT));
+        putKV(ret, WIN_TO_THROUGHPUT, win2throughput);
 
         putKV(ret, WIN_TO_EXEC_LAT_WGT_AVG, mergeWithSumDouble(
                 getMapByKey(accStats, WIN_TO_EXEC_LAT_WGT_AVG), win2execLatWgtAvg));
@@ -1051,6 +1129,11 @@ public class StatsUtil {
                 getMapByKey(accStats, WIN_TO_TRANSFERRED));
         putKV(ret, WIN_TO_TRANSFERRED, win2transferred);
 
+        Map<String, Map<String, Double>> throughput = getMapByKey(beat, THROUGHPUT);
+        Map<String, Double> win2throughput = mergeWithSumDouble(aggregateCountStreamsForDouble(filterSysStreams(throughput, includeSys)),
+                getMapByKey(accStats, WIN_TO_THROUGHPUT));
+        putKV(ret, WIN_TO_THROUGHPUT, win2throughput);
+
         putKV(ret, WIN_TO_COMP_LAT_WGT_AVG, mergeWithSumDouble(
                 getMapByKey(accStats, WIN_TO_COMP_LAT_WGT_AVG), win2compLatWgtAvg));
         putKV(ret, WIN_TO_ACKED, mergeWithSumLong(
@@ -1092,6 +1175,36 @@ public class StatsUtil {
         return ret;
     }
 
+    /**
+     * aggregate a list of count (in Double) maps into one map
+     *
+     * @param countsSeq a seq of {win -> GlobalStreamId -> value}
+     */
+    public static <T> Map<String, Map<T, Double>> aggregateCountsForDouble(List<Map<String, Map<T, Double>>> countsSeq) {
+        Map<String, Map<T, Double>> ret = new HashMap<>();
+        for (Map<String, Map<T, Double>> counts : countsSeq) {
+            for (Map.Entry<String, Map<T, Double>> entry : counts.entrySet()) {
+                String win = entry.getKey();
+                Map<T, Double> stream2count = entry.getValue();
+
+                if (!ret.containsKey(win)) {
+                    ret.put(win, stream2count);
+                } else {
+                    Map<T, Double> existing = ret.get(win);
+                    for (Map.Entry<T, Double> subEntry : stream2count.entrySet()) {
+                        T stream = subEntry.getKey();
+                        if (!existing.containsKey(stream)) {
+                            existing.put(stream, subEntry.getValue());
+                        } else {
+                            existing.put(stream, subEntry.getValue() + existing.get(stream));
+                        }
+                    }
+                }
+            }
+        }
+        return ret;
+    }
+
     public static Map<String, Object> aggregateCompStats(
             String window, boolean includeSys, List<Map<String, Object>> beats, String compType) {
         boolean isSpout = SPOUT.equals(compType);
@@ -1101,6 +1214,7 @@ public class StatsUtil {
         putKV(initVal, WIN_TO_FAILED, new HashMap());
         putKV(initVal, WIN_TO_EMITTED, new HashMap());
         putKV(initVal, WIN_TO_TRANSFERRED, new HashMap());
+        putKV(initVal, WIN_TO_THROUGHPUT, new HashMap<>());
 
         Map<String, Object> stats = new HashMap();
         putKV(stats, EXECUTOR_STATS, new ArrayList());
@@ -1171,6 +1285,7 @@ public class StatsUtil {
         putKV(ret, EXECUTOR_STATS, getByKey(stats, EXECUTOR_STATS));
         putKV(ret, WIN_TO_EMITTED, mapKeyStr(getMapByKey(compStats, WIN_TO_EMITTED)));
         putKV(ret, WIN_TO_TRANSFERRED, mapKeyStr(getMapByKey(compStats, WIN_TO_TRANSFERRED)));
+        putKV(ret, WIN_TO_THROUGHPUT, mapKeyStr(getMapByKey(compStats, WIN_TO_THROUGHPUT)));
         putKV(ret, WIN_TO_ACKED, mapKeyStr(getMapByKey(compStats, WIN_TO_ACKED)));
         putKV(ret, WIN_TO_FAILED, mapKeyStr(getMapByKey(compStats, WIN_TO_FAILED)));
 
@@ -1455,6 +1570,7 @@ public class StatsUtil {
 
         putKV(ret, EMITTED, stats.get_emitted());
         putKV(ret, TRANSFERRED, stats.get_transferred());
+        putKV(ret, THROUGHPUT, stats.get_throughput());
         putKV(ret, RATE, stats.get_rate());
 
         if (stats.get_specific().is_set_bolt()) {
@@ -2118,6 +2234,7 @@ public class StatsUtil {
         commonStats.set_num_executors(getByKeyOr0(m, NUM_EXECUTORS).intValue());
         commonStats.set_emitted(getByKeyOr0(m, EMITTED).longValue());
         commonStats.set_transferred(getByKeyOr0(m, TRANSFERRED).longValue());
+        commonStats.set_throughput(getByKeyOr0(m, THROUGHPUT).doubleValue());
         commonStats.set_acked(getByKeyOr0(m, ACKED).longValue());
         commonStats.set_failed(getByKeyOr0(m, FAILED).longValue());
 
@@ -2133,6 +2250,7 @@ public class StatsUtil {
         Map win2stats = new HashMap();
         putKV(win2stats, EMITTED, getMapByKey(data, WIN_TO_EMITTED));
         putKV(win2stats, TRANSFERRED, getMapByKey(data, WIN_TO_TRANSFERRED));
+        putKV(win2stats, THROUGHPUT, getMapByKey(data, WIN_TO_THROUGHPUT));
         putKV(win2stats, ACKED, getMapByKey(data, WIN_TO_ACKED));
         putKV(win2stats, FAILED, getMapByKey(data, WIN_TO_FAILED));
 
@@ -2207,6 +2325,7 @@ public class StatsUtil {
 
         ret.set_emitted(windowSetConverter(getMapByKey(stats, EMITTED), TO_STRING, TO_STRING));
         ret.set_transferred(windowSetConverter(getMapByKey(stats, TRANSFERRED), TO_STRING, TO_STRING));
+        ret.set_throughput(windowSetConverter(getMapByKey(stats, THROUGHPUT), TO_STRING, TO_STRING));
         ret.set_rate(((Number) getByKey(stats, RATE)).doubleValue());
 
         return ret;
