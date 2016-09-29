@@ -32,7 +32,6 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>1.7</java.version>
         <org.slf4j.version>1.7.6</org.slf4j.version>
         <jackson.databind.version>2.3.2</jackson.databind.version>
         <junit.version>4.11</junit.version>
@@ -61,20 +60,6 @@
             </roles>
         </developer>
     </developers>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.1</version>
-                <configuration>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
 
     <dependencies>
         <dependency>
