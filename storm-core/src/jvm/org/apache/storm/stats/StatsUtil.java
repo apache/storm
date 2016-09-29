@@ -548,7 +548,7 @@ public class StatsUtil {
         putKV(ret, TRANSFERRED,
                 sumOr0(getByKeyOr0(accBoltStats, TRANSFERRED), getByKeyOr0(boltStats, TRANSFERRED)));
         putKV(ret, THROUGHPUT,
-                sumOr0(getByKeyOr0(accBoltStats, THROUGHPUT), getByKeyOr0(boltStats, THROUGHPUT)));
+                sumOr0(getByKeyOr0(accBoltStats, THROUGHPUT).doubleValue(), getByKeyOr0(boltStats, THROUGHPUT).doubleValue()));
         putKV(ret, EXEC_LAT_TOTAL,
                 sumOr0(getByKeyOr0(accBoltStats, EXEC_LAT_TOTAL), getByKeyOr0(boltStats, EXEC_LAT_TOTAL)));
         putKV(ret, PROC_LAT_TOTAL,
@@ -581,7 +581,7 @@ public class StatsUtil {
         putKV(ret, TRANSFERRED,
                 sumOr0(getByKeyOr0(accSpoutStats, TRANSFERRED), getByKeyOr0(spoutStats, TRANSFERRED)));
         putKV(ret, THROUGHPUT,
-                sumOr0(getByKeyOr0(accSpoutStats, THROUGHPUT), getByKeyOr0(spoutStats, THROUGHPUT)));
+                sumOr0(getByKeyOr0(accSpoutStats, THROUGHPUT).doubleValue(), getByKeyOr0(spoutStats, THROUGHPUT).doubleValue()));
         putKV(ret, COMP_LAT_TOTAL,
                 sumOr0(getByKeyOr0(accSpoutStats, COMP_LAT_TOTAL), getByKeyOr0(spoutStats, COMP_LAT_TOTAL)));
         putKV(ret, ACKED,
