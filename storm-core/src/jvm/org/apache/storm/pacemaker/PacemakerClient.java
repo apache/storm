@@ -230,7 +230,7 @@ public class PacemakerClient implements ISaslClient {
     public void gotMessage(HBMessage m) {
         int message_id = m.get_message_id();
         if(message_id >= 0 && message_id < maxPending) {
-            
+
             LOG.debug("Pacemaker Client got message: {}", m.toString());
             HBMessage request = messages[message_id];
 
