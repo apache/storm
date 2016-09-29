@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-2124: show requested cpu mem for each component
  * STORM-2089: Replace Consumer of ISqlTridentDataSource with SqlTridentConsumer
  * STORM-2118: A few fixes for storm-sql standalone mode
  * STORM-2105: Cluster/Supervisor total and available resources displayed in the UI
