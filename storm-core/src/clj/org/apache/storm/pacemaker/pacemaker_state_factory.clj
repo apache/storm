@@ -19,6 +19,7 @@
             [org.apache.storm.cluster-state [zookeeper-state-factory :as zk-factory]]
             [org.apache.storm
              [config :refer :all]
+             [converter :as converter]
              [cluster :refer :all]
              [log :refer :all]
              [util :as util]])
@@ -27,7 +28,7 @@
             HBMessageData HBPulse ClusterWorkerHeartbeat]
            [org.apache.storm.cluster_state zookeeper_state_factory]
            [org.apache.storm.cluster ClusterState]
-           [backtype.storm.utils Utils]
+           [org.apache.storm.utils Utils]
            [org.apache.storm.pacemaker PacemakerClient])
   (:gen-class
    :implements [org.apache.storm.cluster.ClusterStateFactory]))
@@ -39,7 +40,7 @@
 
 (defn clojurify-details [details]
   (if details
-    (clojurify-zk-worker-hb (maybe-deserialize details ClusterWorkerHeartbeat))))
+    (converter/clojurify-zk-worker-hb (maybe-deserialize details ClusterWorkerHeartbeat))))
 
 (defn get-wk-hb-time-secs-pair [details-set]
   (for [details details-set]
