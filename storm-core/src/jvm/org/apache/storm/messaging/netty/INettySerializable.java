@@ -17,10 +17,11 @@
  */
 package org.apache.storm.messaging.netty;
 
+import io.netty.buffer.ByteBuf;
+
 import java.io.IOException;
-import org.jboss.netty.buffer.ChannelBuffer;
 
 public interface INettySerializable {
-    ChannelBuffer buffer() throws IOException;
+    ByteBuf buffer() throws IOException;
     int encodeLength();
 }

@@ -17,24 +17,25 @@
  */
 package org.apache.storm.messaging.netty;
 
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
-import org.jboss.netty.util.HashedWheelTimer;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-import java.util.HashMap;
-import java.util.Map;
-
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.util.HashedWheelTimer;
 import org.apache.storm.Config;
 import org.apache.storm.messaging.IConnection;
 import org.apache.storm.messaging.IContext;
 import org.apache.storm.utils.Utils;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ThreadFactory;
+
 public class Context implements IContext {
     @SuppressWarnings("rawtypes")
     private Map storm_conf;
     private Map<String, IConnection> connections;
-    private NioClientSocketChannelFactory clientChannelFactory;
-    
+
+    private EventLoopGroup workerEventLoopGroup;
+
     private HashedWheelTimer clientScheduleService;
 
     /**
@@ -45,18 +46,17 @@ public class Context implements IContext {
         this.storm_conf = storm_conf;
         connections = new HashMap<>();
 
-        //each context will have a single client channel factory
+        //each context will have a single client channel workerEventLoopGroup
         int maxWorkers = Utils.getInt(storm_conf.get(Config.STORM_MESSAGING_NETTY_CLIENT_WORKER_THREADS));
-		ThreadFactory bossFactory = new NettyRenameThreadFactory("client" + "-boss");
         ThreadFactory workerFactory = new NettyRenameThreadFactory("client" + "-worker");
+
         if (maxWorkers > 0) {
-            clientChannelFactory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(bossFactory),
-                    Executors.newCachedThreadPool(workerFactory), maxWorkers);
+            workerEventLoopGroup = new NioEventLoopGroup(maxWorkers, workerFactory);
         } else {
-            clientChannelFactory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(bossFactory),
-                    Executors.newCachedThreadPool(workerFactory));
+            // 0 means DEFAULT_EVENT_LOOP_THREADS
+            workerEventLoopGroup = new NioEventLoopGroup(0, workerFactory);
         }
-        
+
         clientScheduleService = new HashedWheelTimer(new NettyRenameThreadFactory("client-schedule-service"));
     }
 
@@ -78,7 +78,7 @@ public class Context implements IContext {
         {
             return connection;
         }
-        IConnection client =  new Client(storm_conf, clientChannelFactory, 
+        IConnection client =  new Client(storm_conf, workerEventLoopGroup,
                 clientScheduleService, host, port, this);
         connections.put(key(host, port), client);
         return client;
@@ -102,9 +102,8 @@ public class Context implements IContext {
 
         connections = null;
 
-        //we need to release resources associated with client channel factory
-        clientChannelFactory.releaseExternalResources();
-
+        //we need to release resources associated
+        workerEventLoopGroup.shutdownGracefully();
     }
 
     private String key(String host, int port) {

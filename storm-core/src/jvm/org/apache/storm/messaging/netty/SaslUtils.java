@@ -17,14 +17,12 @@
  */
 package org.apache.storm.messaging.netty;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.security.sasl.Sasl;
-
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.Charsets;
 
+import javax.security.sasl.Sasl;
+import java.util.HashMap;
+import java.util.Map;
 import org.apache.storm.Config;
 
 class SaslUtils {

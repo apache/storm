@@ -17,26 +17,19 @@
  */
 package org.apache.storm.messaging.netty;
 
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.storm.messaging.TaskMessage;
 import org.apache.storm.serialization.KryoValuesDeserializer;
 
-import java.net.ConnectException;
-import java.util.Map;
-import java.util.List;
 import java.io.IOException;
+import java.net.ConnectException;
+import java.util.List;
+import java.util.Map;
 
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
-
-import org.jboss.netty.channel.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-public class StormClientHandler extends SimpleChannelUpstreamHandler  {
+public class StormClientHandler extends ChannelInboundHandlerAdapter {
     private static final Logger LOG = LoggerFactory.getLogger(StormClientHandler.class);
     private Client client;
     private KryoValuesDeserializer _des;
@@ -47,9 +40,8 @@ public class StormClientHandler extends SimpleChannelUpstreamHandler  {
     }
 
     @Override
-    public void messageReceived(ChannelHandlerContext ctx, MessageEvent event) {
+    public void channelRead(ChannelHandlerContext ctx, Object message) throws Exception {
         //examine the response message from server
-        Object message = event.getMessage();
         if (message instanceof ControlMessage) {
             ControlMessage msg = (ControlMessage)message;
             if (msg==ControlMessage.FAILURE_RESPONSE) {
@@ -71,19 +63,17 @@ public class StormClientHandler extends SimpleChannelUpstreamHandler  {
                 throw new RuntimeException(e);
             }
         } else {
-            throw new RuntimeException("Don't know how to handle a message of type "
-                                       + message + " (" + client.getDstAddress() + ")");
+            throw new RuntimeException("Don't know how to handle a message of type " + message + " (" + client.getDstAddress() + ")");
         }
     }
 
     @Override
-    public void channelInterestChanged(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
-        client.notifyInterestChanged(e.getChannel());
+    public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
+        client.notifyChannelFlushabilityChanged(ctx.channel());
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent event) {
-        Throwable cause = event.getCause();
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         if (!(cause instanceof ConnectException)) {
             LOG.info("Connection to "+client.getDstAddress()+" failed:", cause);
         }

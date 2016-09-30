@@ -17,11 +17,11 @@
  */
 package org.apache.storm.messaging.netty;
 
-import java.io.IOException;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.ByteBufOutputStream;
 
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBufferOutputStream;
-import org.jboss.netty.buffer.ChannelBuffers;
+import java.io.IOException;
 
 public enum ControlMessage implements INettySerializable {
     CLOSE_MESSAGE((short)-100),
@@ -55,21 +55,29 @@ public enum ControlMessage implements INettySerializable {
     
     /**
      * encode the current Control Message into a channel buffer
-     * @throws IOException
+     * @throws Exception if failed to write to buffer
      */
-    public ChannelBuffer buffer() throws IOException {
-        ChannelBufferOutputStream bout = new ChannelBufferOutputStream(ChannelBuffers.directBuffer(encodeLength()));      
+    public ByteBuf buffer() throws IOException {
+        ByteBufOutputStream bout = new ByteBufOutputStream(ByteBufAllocator.DEFAULT.ioBuffer(encodeLength()));
         write(bout);
         bout.close();
         return bout.buffer();
     }
 
-    public static ControlMessage read(byte[] serial) {
-        ChannelBuffer cm_buffer = ChannelBuffers.copiedBuffer(serial);
-        return mkMessage(cm_buffer.getShort(0));
+    void write(ByteBufOutputStream bout) throws IOException {
+        bout.writeShort(code);
     }
-    
-    public void write(ChannelBufferOutputStream bout) throws IOException {
-        bout.writeShort(code);        
-    } 
+
+    public static ControlMessage read(byte[] serial) {
+        ByteBuf cm_buffer = ByteBufAllocator.DEFAULT.buffer(serial.length);
+        try {
+            cm_buffer.writeBytes(serial);
+            short messageCode = cm_buffer.getShort(0);
+            return mkMessage(messageCode);
+        } finally {
+            if (cm_buffer != null) {
+                cm_buffer.release();
+            }
+        }
+    }
 }

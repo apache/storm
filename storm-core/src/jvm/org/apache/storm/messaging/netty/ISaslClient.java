@@ -17,11 +17,8 @@
  */
 package org.apache.storm.messaging.netty;
 
-import org.jboss.netty.channel.Channel;
-import org.apache.storm.Config;
-
 public interface ISaslClient {
-    void channelConnected(Channel channel);
+
     void channelReady();
     String name();
     String secretKey();

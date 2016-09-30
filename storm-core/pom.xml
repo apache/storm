@@ -270,7 +270,7 @@
         </dependency>
         <dependency>
             <groupId>io.netty</groupId>
-            <artifactId>netty</artifactId>
+            <artifactId>netty-all</artifactId>
         </dependency>
         <dependency>
             <groupId>io.dropwizard.metrics</groupId>
@@ -490,7 +490,7 @@
                             <include>compojure:compojure</include>
                             <include>clj-time:clj-time</include>
                             <include>org.apache.thrift:*</include>
-                            <include>io.netty:netty</include>
+                            <include>io.netty:netty-all</include>
                             <include>com.google.guava:guava</include>
                             <include>org.apache.httpcomponents:http*</include>
                             <include>org.apache.zookeeper:zookeeper</include>
@@ -539,6 +539,10 @@
                             <shadedPattern>org.apache.storm.shade.clojure.core.incubator</shadedPattern>
                         </relocation>
                         <relocation>
+                            <pattern>io.netty</pattern>
+                            <shadedPattern>org.apache.storm.netty</shadedPattern>
+                        </relocation>
+                        <relocation>
                             <pattern>clojure.tools.namespace</pattern>
                             <shadedPattern>org.apache.storm.shade.clojure.tools.namespace</shadedPattern>
                         </relocation>
@@ -582,10 +586,6 @@
                             <pattern>org.apache.thrift</pattern>
                             <!-- This pattern is inconsistent for backwards compatibility purposes. -->
                             <shadedPattern>org.apache.storm.thrift</shadedPattern>
-                        </relocation>
-                        <relocation>
-                            <pattern>org.jboss.netty</pattern>
-                            <shadedPattern>org.apache.storm.shade.org.jboss.netty</shadedPattern>
                         </relocation>
                         <relocation>
                             <pattern>com.google.common</pattern>
@@ -760,7 +760,7 @@
                             </excludes>
                         </filter>
                         <filter>
-                            <artifact>io.netty:netty</artifact>
+                            <artifact>io.netty:netty-all</artifact>
                             <excludes>
                                 <exclude>META-INF/LICENSE.txt</exclude>
                                 <exclude>META-INF/NOTICE.txt</exclude>

@@ -17,7 +17,7 @@
  */
 package org.apache.storm.messaging.netty;
 
-import org.jboss.netty.channel.Channel;
+import io.netty.channel.Channel;
 
 public interface IServer {
     void channelConnected(Channel c);

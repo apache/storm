@@ -17,6 +17,12 @@
  */
 package org.apache.storm.pacemaker.codec;
 
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.storm.Config;
 import org.apache.storm.messaging.netty.ISaslServer;
 import org.apache.storm.messaging.netty.IServer;
@@ -27,17 +33,12 @@ import org.apache.storm.security.auth.AuthUtils;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.Channels;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-public class ThriftNettyServerCodec {
+public class ThriftNettyServerCodec extends ChannelInitializer {
 
     public static final String SASL_HANDLER = "sasl-handler";
     public static final String KERBEROS_HANDLER = "kerberos-handler";
-    
+
     public enum AuthMethod {
         DIGEST,
         KERBEROS,
@@ -57,43 +58,38 @@ public class ThriftNettyServerCodec {
         this.storm_conf = storm_conf;
     }
 
-    public ChannelPipelineFactory pipelineFactory() {
-        return new ChannelPipelineFactory() {
-            public ChannelPipeline getPipeline() {
-
-                ChannelPipeline pipeline = Channels.pipeline();
-                pipeline.addLast("encoder", new ThriftEncoder());
-                pipeline.addLast("decoder", new ThriftDecoder());
-                if(authMethod == AuthMethod.DIGEST) {
-                    try {
-                        LOG.debug("Adding SaslStormServerHandler to pacemaker server pipeline.");
-                        pipeline.addLast(SASL_HANDLER, new SaslStormServerHandler((ISaslServer)server));
-                    }
-                    catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-                else if(authMethod == AuthMethod.KERBEROS) {
-                    try {
-                        LOG.debug("Adding KerberosSaslServerHandler to pacemaker server pipeline.");
-                        ArrayList<String> authorizedUsers = new ArrayList(1);
-                        authorizedUsers.add((String)storm_conf.get(Config.NIMBUS_DAEMON_USER));
-                        pipeline.addLast(KERBEROS_HANDLER, new KerberosSaslServerHandler((ISaslServer)server,
-                                                                                         storm_conf,
-                                                                                         AuthUtils.LOGIN_CONTEXT_PACEMAKER_SERVER,
-                                                                                         authorizedUsers));
-                    }
-                    catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-                else if(authMethod == AuthMethod.NONE) {
-                    LOG.debug("Not authenticating any clients. AuthMethod is NONE");
-                }
-
-                pipeline.addLast("handler", new StormServerHandler(server));
-                return pipeline;
+    @Override
+    protected void initChannel(Channel channel) throws Exception {
+        ChannelPipeline pipeline = channel.pipeline();
+        pipeline.addLast("encoder", new ThriftEncoder());
+        pipeline.addLast("decoder", new ThriftDecoder());
+        if(authMethod == AuthMethod.DIGEST) {
+            try {
+                LOG.debug("Adding SaslStormServerHandler to pacemaker server pipeline.");
+                pipeline.addLast(SASL_HANDLER, new SaslStormServerHandler((ISaslServer)server));
             }
-        };
+            catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        else if(authMethod == AuthMethod.KERBEROS) {
+            try {
+                LOG.debug("Adding KerberosSaslServerHandler to pacemaker server pipeline.");
+                ArrayList<String> authorizedUsers = new ArrayList(1);
+                authorizedUsers.add((String)storm_conf.get(Config.NIMBUS_DAEMON_USER));
+                pipeline.addLast(KERBEROS_HANDLER, new KerberosSaslServerHandler((ISaslServer)server,
+                                                                                 storm_conf,
+                                                                                 AuthUtils.LOGIN_CONTEXT_PACEMAKER_SERVER,
+                                                                                 authorizedUsers));
+            }
+            catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        else if(authMethod == AuthMethod.NONE) {
+            LOG.debug("Not authenticating any clients. AuthMethod is NONE");
+        }
+
+        pipeline.addLast("handler", new StormServerHandler(server));
     }
 }

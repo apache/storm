@@ -73,6 +73,20 @@ public class Config extends HashMap<String, Object> {
     public static final String STORM_MESSAGING_NETTY_BUFFER_SIZE = "storm.messaging.netty.buffer_size";
 
     /**
+     * Netty based messaging: The write buffer high water mark for write buffer
+     */
+    @isInteger
+    @isPositiveNumber
+    public static final String STORM_MESSAGING_NETTY_WRITE_BUFFER_HIGH_WATER_MARK = "storm.messaging.netty.write.buffer.high.water.mark";
+
+    /**
+     * Netty based messaging: The write buffer low water mark for write buffer
+     */
+    @isInteger
+    @isPositiveNumber
+    public static final String STORM_MESSAGING_NETTY_WRITE_BUFFER_LOW_WATER_MARK = "storm.messaging.netty.write.buffer.low.water.mark";
+
+    /**
      * Netty based messaging: Sets the backlog value to specify when the channel binds to a local address
      */
     @isInteger
@@ -119,6 +133,12 @@ public class Config extends HashMap<String, Object> {
      */
     @isInteger
     public static final String STORM_NETTY_MESSAGE_BATCH_SIZE = "storm.messaging.netty.transfer.batch.size";
+
+    /**
+     * The Netty message decoder will try to batch message as more as possible up to the size of STORM_NETTY_MESSAGE_DECODE_BATCH_SIZE
+     */
+    @isInteger
+    public static final String STORM_NETTY_MESSAGE_DECODE_BATCH_SIZE = "storm.messaging.netty.decode.batch.size";
 
     /**
      * We check with this interval that whether the Netty channel is writable and try to write pending messages
@@ -953,6 +973,15 @@ public class Config extends HashMap<String, Object> {
     @isNumber
     @isPositiveNumber
     public static final String PACEMAKER_MAX_THREADS = "pacemaker.max.threads";
+
+    /**
+     * The maximum number of threads that should be used by the Pacemaker client.
+     * When Pacemaker gets loaded it will spawn new threads, up to
+     * this many total, to handle the load.
+     */
+    @isNumber
+    @isPositiveNumber
+    public static final String PACEMAKER_CLIENT_MAX_THREADS = "pacemaker.client.max.threads";
 
     /**
      * This parameter is used by the storm-deploy project to configure the

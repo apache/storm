@@ -17,48 +17,51 @@
  */
 package org.apache.storm.pacemaker;
 
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.group.ChannelGroup;
+import io.netty.channel.group.DefaultChannelGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.util.concurrent.GlobalEventExecutor;
 import org.apache.storm.Config;
 import org.apache.storm.generated.HBMessage;
 import org.apache.storm.messaging.netty.ISaslServer;
 import org.apache.storm.messaging.netty.NettyRenameThreadFactory;
-import org.apache.storm.security.auth.AuthUtils;
-import java.lang.InterruptedException;
-import java.net.InetSocketAddress;
-import java.util.Map;
-import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-import javax.security.auth.login.Configuration;
 import org.apache.storm.pacemaker.codec.ThriftNettyServerCodec;
-import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.group.ChannelGroup;
-import org.jboss.netty.channel.group.DefaultChannelGroup;
-import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
+import org.apache.storm.security.auth.AuthUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.security.auth.login.Configuration;
+import java.net.InetSocketAddress;
+import java.util.Map;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.ThreadFactory;
+
 class PacemakerServer implements ISaslServer {
 
-    private static final long FIVE_MB_IN_BYTES = 5 * 1024 * 1024;
+    private static final int FIVE_MB_IN_BYTES = 5 * 1024 * 1024;
 
     private static final Logger LOG = LoggerFactory.getLogger(PacemakerServer.class);
 
-    private final ServerBootstrap bootstrap;
-    private int port;
     private IServerMessageHandler handler;
     private String secret;
-    private String topo_name;
-    private volatile ChannelGroup allChannels = new DefaultChannelGroup("storm-server");
-    private ConcurrentSkipListSet<Channel> authenticated_channels = new ConcurrentSkipListSet<Channel>();
+    private String topologyName;
+    private volatile ChannelGroup allChannels = new DefaultChannelGroup("storm-server", GlobalEventExecutor.INSTANCE);
+    private ConcurrentSkipListSet<Channel> authenticated_channels = new ConcurrentSkipListSet<>();
     private ThriftNettyServerCodec.AuthMethod authMethod;
+    private EventLoopGroup workerEventLoopGroup;
 
     public PacemakerServer(IServerMessageHandler handler, Map config){
         int maxWorkers = (int)config.get(Config.PACEMAKER_MAX_THREADS);
-        this.port = (int)config.get(Config.PACEMAKER_PORT);
+        int port = (int) config.get(Config.PACEMAKER_PORT);
         this.handler = handler;
-        this.topo_name = "pacemaker_server";
+        this.topologyName = "pacemaker_server";
 
         String auth = (String)config.get(Config.PACEMAKER_AUTH_METHOD);
         switch(auth) {
@@ -86,31 +89,37 @@ class PacemakerServer implements ISaslServer {
             throw new RuntimeException("Can't start pacemaker server without proper PACEMAKER_AUTH_METHOD.");
         }
 
-        ThreadFactory bossFactory = new NettyRenameThreadFactory("server-boss");
         ThreadFactory workerFactory = new NettyRenameThreadFactory("server-worker");
-        NioServerSocketChannelFactory factory;
-        if(maxWorkers > 0) {
-            factory =
-                new NioServerSocketChannelFactory(Executors.newCachedThreadPool(bossFactory),
-                                                  Executors.newCachedThreadPool(workerFactory),
-                                                  maxWorkers);
-        }
-        else {
-            factory =
-                new NioServerSocketChannelFactory(Executors.newCachedThreadPool(bossFactory),
-                                                  Executors.newCachedThreadPool(workerFactory));
+
+
+        if (maxWorkers > 0) {
+            // add extra one for boss
+            workerEventLoopGroup = new NioEventLoopGroup(maxWorkers + 1, workerFactory);
+        } else {
+            // 0 means DEFAULT_EVENT_LOOP_THREADS
+            workerEventLoopGroup = new NioEventLoopGroup(0, workerFactory);
         }
 
-        bootstrap = new ServerBootstrap(factory);
-        bootstrap.setOption("tcpNoDelay", true);
-        bootstrap.setOption("sendBufferSize", FIVE_MB_IN_BYTES);
-        bootstrap.setOption("keepAlive", true);
+        LOG.info("Create Netty Server " + name() + ", buffer_size: " + FIVE_MB_IN_BYTES + ", maxWorkers: " + maxWorkers);
 
-        ChannelPipelineFactory pipelineFactory = new ThriftNettyServerCodec(this, config, authMethod).pipelineFactory();
-        bootstrap.setPipelineFactory(pipelineFactory);
-        Channel channel = bootstrap.bind(new InetSocketAddress(port));
-        allChannels.add(channel);
-        LOG.info("Bound server to port: {}", Integer.toString(port));
+        ServerBootstrap bootstrap = new ServerBootstrap()
+                .group(workerEventLoopGroup, workerEventLoopGroup)
+                .channel(NioServerSocketChannel.class)
+                .childOption(ChannelOption.TCP_NODELAY, true)
+                .childOption(ChannelOption.SO_RCVBUF, FIVE_MB_IN_BYTES)
+                .childOption(ChannelOption.SO_KEEPALIVE, true)
+                .childOption(ChannelOption.WRITE_BUFFER_HIGH_WATER_MARK, 32 * 1024)
+                .childOption(ChannelOption.WRITE_BUFFER_LOW_WATER_MARK, 8 * 1024)
+                .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
+                .childHandler(new ThriftNettyServerCodec(this, config, authMethod));
+
+        // Bind and start to accept incoming connections.
+        try {
+            ChannelFuture f = bootstrap.bind(new InetSocketAddress(port)).sync();
+            allChannels.add(f.channel());
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /** Implementing IServer. **/
@@ -121,11 +130,11 @@ class PacemakerServer implements ISaslServer {
     public void cleanPipeline(Channel channel) {
         boolean authenticated = authenticated_channels.contains(channel);
         if(!authenticated) {
-            if(channel.getPipeline().get(ThriftNettyServerCodec.SASL_HANDLER) != null) {
-                channel.getPipeline().remove(ThriftNettyServerCodec.SASL_HANDLER);
+            if(channel.pipeline().get(ThriftNettyServerCodec.SASL_HANDLER) != null) {
+                channel.pipeline().remove(ThriftNettyServerCodec.SASL_HANDLER);
             }
-            else if(channel.getPipeline().get(ThriftNettyServerCodec.KERBEROS_HANDLER) != null) {
-                channel.getPipeline().remove(ThriftNettyServerCodec.KERBEROS_HANDLER);
+            else if(channel.pipeline().get(ThriftNettyServerCodec.KERBEROS_HANDLER) != null) {
+                channel.pipeline().remove(ThriftNettyServerCodec.KERBEROS_HANDLER);
             }
         }
     }
@@ -151,10 +160,11 @@ class PacemakerServer implements ISaslServer {
         c.close().awaitUninterruptibly();
         allChannels.remove(c);
         authenticated_channels.remove(c);
+        workerEventLoopGroup.shutdownGracefully();
     }
 
     public String name() {
-        return topo_name;
+        return topologyName;
     }
 
     public String secretKey() {

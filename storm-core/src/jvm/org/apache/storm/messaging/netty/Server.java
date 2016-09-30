@@ -17,6 +17,20 @@
  */
 package org.apache.storm.messaging.netty;
 
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.group.ChannelGroup;
+import io.netty.channel.group.DefaultChannelGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.util.concurrent.GlobalEventExecutor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.storm.Config;
 import org.apache.storm.grouping.Load;
 import org.apache.storm.messaging.ConnectionWithStatus;
@@ -34,17 +48,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFactory;
-import org.jboss.netty.channel.group.ChannelGroup;
-import org.jboss.netty.channel.group.DefaultChannelGroup;
-import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServer {
 
@@ -55,8 +60,9 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
     private final ConcurrentHashMap<String, AtomicInteger> messagesEnqueued = new ConcurrentHashMap<>();
     private final AtomicInteger messagesDequeued = new AtomicInteger(0);
     
-    volatile ChannelGroup allChannels = new DefaultChannelGroup("storm-server");
-    final ChannelFactory factory;
+    volatile ChannelGroup allChannels = new DefaultChannelGroup("storm-server", GlobalEventExecutor.INSTANCE);
+    final EventLoopGroup bossEventLoopGroup;
+    final EventLoopGroup workerEventLoopGroup;
     final ServerBootstrap bootstrap;
  
     private volatile boolean closing = false;
@@ -72,34 +78,44 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
 
         // Configure the server.
         int buffer_size = Utils.getInt(storm_conf.get(Config.STORM_MESSAGING_NETTY_BUFFER_SIZE));
+        int write_buffer_high_water_mark = Utils.getInt(storm_conf.get(Config.STORM_MESSAGING_NETTY_WRITE_BUFFER_HIGH_WATER_MARK), 5242880);
+        int write_buffer_low_water_mark = Utils.getInt(storm_conf.get(Config.STORM_MESSAGING_NETTY_WRITE_BUFFER_LOW_WATER_MARK), 2097152);
         int backlog = Utils.getInt(storm_conf.get(Config.STORM_MESSAGING_NETTY_SOCKET_BACKLOG), 500);
         int maxWorkers = Utils.getInt(storm_conf.get(Config.STORM_MESSAGING_NETTY_SERVER_WORKER_THREADS));
 
-        ThreadFactory bossFactory = new NettyRenameThreadFactory(netty_name() + "-boss");
-        ThreadFactory workerFactory = new NettyRenameThreadFactory(netty_name() + "-worker");
+        ThreadFactory bossFactory = new NettyRenameThreadFactory(name() + "-boss");
+        ThreadFactory workerFactory = new NettyRenameThreadFactory(name() + "-worker");
 
+        bossEventLoopGroup = new NioEventLoopGroup(1, bossFactory);
+        // 0 means DEFAULT_EVENT_LOOP_THREADS
         if (maxWorkers > 0) {
-            factory = new NioServerSocketChannelFactory(Executors.newCachedThreadPool(bossFactory),
-                Executors.newCachedThreadPool(workerFactory), maxWorkers);
+            // add extra one for boss
+            workerEventLoopGroup = new NioEventLoopGroup(maxWorkers, workerFactory);
         } else {
-            factory = new NioServerSocketChannelFactory(Executors.newCachedThreadPool(bossFactory),
-                Executors.newCachedThreadPool(workerFactory));
+            workerEventLoopGroup = new NioEventLoopGroup(0, workerFactory);
         }
-
-        LOG.info("Create Netty Server " + netty_name() + ", buffer_size: " + buffer_size + ", maxWorkers: " + maxWorkers);
-
-        bootstrap = new ServerBootstrap(factory);
-        bootstrap.setOption("child.tcpNoDelay", true);
-        bootstrap.setOption("child.receiveBufferSize", buffer_size);
-        bootstrap.setOption("child.keepAlive", true);
-        bootstrap.setOption("backlog", backlog);
-
-        // Set up the pipeline factory.
-        bootstrap.setPipelineFactory(new StormServerPipelineFactory(this));
+        
+        LOG.info("Create Netty Server " + name() + ", buffer_size: " + buffer_size + ", maxWorkers: " + maxWorkers);
+        
+        bootstrap = new ServerBootstrap()
+                .group(bossEventLoopGroup, workerEventLoopGroup)
+                .channel(NioServerSocketChannel.class)
+                .option(ChannelOption.SO_BACKLOG, backlog)
+                .childOption(ChannelOption.TCP_NODELAY, true)
+                .childOption(ChannelOption.SO_RCVBUF, buffer_size)
+                .childOption(ChannelOption.SO_KEEPALIVE, true)
+                .childOption(ChannelOption.WRITE_BUFFER_HIGH_WATER_MARK, write_buffer_high_water_mark)
+                .childOption(ChannelOption.WRITE_BUFFER_LOW_WATER_MARK, write_buffer_low_water_mark)
+                .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
+                .childHandler(new StormServerPipelineFactory(this, storm_conf));
 
         // Bind and start to accept incoming connections.
-        Channel channel = bootstrap.bind(new InetSocketAddress(port));
-        allChannels.add(channel);
+        try {
+            ChannelFuture f = bootstrap.bind(new InetSocketAddress(port)).sync();
+            allChannels.add(f.channel());
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
     
     private void addReceiveCount(String from, int amount) {
@@ -161,7 +177,7 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
     public synchronized void close() {
         if (allChannels != null) {
             allChannels.close().awaitUninterruptibly();
-            factory.releaseExternalResources();
+            workerEventLoopGroup.shutdownGracefully();
             allChannels = null;
         }
     }
@@ -171,7 +187,7 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
         try {
             MessageBatch mb = new MessageBatch(1);
             mb.add(new TaskMessage(-1, _ser.serialize(Arrays.asList((Object)taskToLoad))));
-            allChannels.write(mb);
+            allChannels.writeAndFlush(mb);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -210,7 +226,7 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
     }
 
     private boolean connectionEstablished(Channel channel) {
-      return channel != null && channel.isBound();
+      return channel != null && channel.isActive();
     }
 
     private boolean connectionEstablished(ChannelGroup allChannels) {

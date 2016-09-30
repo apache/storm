@@ -17,18 +17,16 @@
  */
 package org.apache.storm.messaging.netty;
 
-import java.io.IOException;
-import java.util.Map;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class KerberosSaslClientHandler extends SimpleChannelUpstreamHandler {
+import java.io.IOException;
+import java.util.Map;
+
+public class KerberosSaslClientHandler extends ChannelInboundHandlerAdapter {
 
     private static final Logger LOG = LoggerFactory
         .getLogger(KerberosSaslClientHandler.class);
@@ -46,56 +44,48 @@ public class KerberosSaslClientHandler extends SimpleChannelUpstreamHandler {
     }
 
     @Override
-    public void channelConnected(ChannelHandlerContext ctx,
-                                 ChannelStateEvent event) {
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
         // register the newly established channel
-        Channel channel = ctx.getChannel();
-        client.channelConnected(channel);
+        Channel channel = ctx.channel();
+        client.channelReady();
 
         LOG.info("Connection established from {} to {}",
-                 channel.getLocalAddress(), channel.getRemoteAddress());
+                 channel.localAddress(), channel.remoteAddress());
 
         try {
-            KerberosSaslNettyClient saslNettyClient = KerberosSaslNettyClientState.getKerberosSaslNettyClient
-                .get(channel);
+            KerberosSaslNettyClient saslNettyClient = channel.attr(KerberosSaslNettyClientState.KERBEROS_SASL_NETTY_CLIENT).get();
 
             if (saslNettyClient == null) {
                 LOG.debug("Creating saslNettyClient now for channel: {}",
                           channel);
                 saslNettyClient = new KerberosSaslNettyClient(storm_conf, jaas_section);
-                KerberosSaslNettyClientState.getKerberosSaslNettyClient.set(channel,
-                                                                            saslNettyClient);
+                channel.attr(KerberosSaslNettyClientState.KERBEROS_SASL_NETTY_CLIENT).set(saslNettyClient);
             }
             LOG.debug("Going to initiate Kerberos negotiations.");
             byte[] initialChallenge = saslNettyClient.saslResponse(new SaslMessageToken(new byte[0]));
             LOG.debug("Sending initial challenge: {}", initialChallenge);
-            channel.write(new SaslMessageToken(initialChallenge));
+            channel.writeAndFlush(new SaslMessageToken(initialChallenge));
         } catch (Exception e) {
             LOG.error("Failed to authenticate with server due to error: ",
                       e);
         }
-        return;
-
     }
 
     @Override
-    public void messageReceived(ChannelHandlerContext ctx, MessageEvent event)
-        throws Exception {
-        LOG.debug("send/recv time (ms): {}",
-                  (System.currentTimeMillis() - start_time));
+    public void channelRead(ChannelHandlerContext ctx, Object rawMsg) throws Exception {
+        LOG.debug("send/recv time (ms): {}", (System.currentTimeMillis() - start_time));
 
-        Channel channel = ctx.getChannel();
+        Channel channel = ctx.channel();
 
         // Generate SASL response to server using Channel-local SASL client.
-        KerberosSaslNettyClient saslNettyClient = KerberosSaslNettyClientState.getKerberosSaslNettyClient
-            .get(channel);
+        KerberosSaslNettyClient saslNettyClient = channel.attr(KerberosSaslNettyClientState.KERBEROS_SASL_NETTY_CLIENT).get();
         if (saslNettyClient == null) {
             throw new Exception("saslNettyClient was unexpectedly null for channel:" + channel);
         }
 
         // examine the response message from server
-        if (event.getMessage() instanceof ControlMessage) {
-            ControlMessage msg = (ControlMessage) event.getMessage();
+        if (rawMsg instanceof ControlMessage) {
+            ControlMessage msg = (ControlMessage) rawMsg;
             if (msg == ControlMessage.SASL_COMPLETE_REQUEST) {
                 LOG.debug("Server has sent us the SaslComplete message. Allowing normal work to proceed.");
 
@@ -104,21 +94,19 @@ public class KerberosSaslClientHandler extends SimpleChannelUpstreamHandler {
                     LOG.error(message);
                     throw new Exception(message);
                 }
-                ctx.getPipeline().remove(this);
+                ctx.pipeline().remove(this);
                 this.client.channelReady();
 
-                // We call fireMessageReceived since the client is allowed to
+                // We call writeAndFlush since the client is allowed to
                 // perform this request. The client's request will now proceed
                 // to the next pipeline component namely StormClientHandler.
-                Channels.fireMessageReceived(ctx, msg);
+                channel.writeAndFlush(msg);
             } else {
                 LOG.warn("Unexpected control message: {}", msg);
             }
-            return;
         }
-        else if (event.getMessage() instanceof SaslMessageToken) {
-            SaslMessageToken saslTokenMessage = (SaslMessageToken) event
-                .getMessage();
+        else if (rawMsg instanceof SaslMessageToken) {
+            SaslMessageToken saslTokenMessage = (SaslMessageToken) rawMsg;
             LOG.debug("Responding to server's token of length: {}",
                       saslTokenMessage.getSaslToken().length);
 
@@ -144,9 +132,9 @@ public class KerberosSaslClientHandler extends SimpleChannelUpstreamHandler {
             // Construct a message containing the SASL response and send it to the
             // server.
             SaslMessageToken saslResponse = new SaslMessageToken(responseToServer);
-            channel.write(saslResponse);
+            channel.writeAndFlush(saslResponse);
         } else {
-            LOG.error("Unexpected message from server: {}", event.getMessage());
+            LOG.error("Unexpected message from server: {}", rawMsg);
         }
     }
 }

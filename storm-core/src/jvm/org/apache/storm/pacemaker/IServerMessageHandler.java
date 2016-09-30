@@ -21,5 +21,5 @@ import org.apache.storm.generated.HBMessage;
 
 public interface IServerMessageHandler {
 
-    public HBMessage handleMessage(HBMessage m, boolean authenticated);
+    HBMessage handleMessage(HBMessage m, boolean authenticated);
 }

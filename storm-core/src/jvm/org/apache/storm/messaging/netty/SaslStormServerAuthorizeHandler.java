@@ -17,11 +17,8 @@
  */
 package org.apache.storm.messaging.netty;
 
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,10 +26,9 @@ import org.slf4j.LoggerFactory;
  * Authorize or deny client requests based on existence and completeness of
  * client's SASL authentication.
  */
-public class SaslStormServerAuthorizeHandler extends SimpleChannelUpstreamHandler {
+public class SaslStormServerAuthorizeHandler extends ChannelInboundHandlerAdapter {
 
-	private static final Logger LOG = LoggerFactory
-			.getLogger(SaslStormServerHandler.class);
+	private static final Logger LOG = LoggerFactory.getLogger(SaslStormServerAuthorizeHandler.class);
 
 	/**
 	 * Constructor.
@@ -41,18 +37,15 @@ public class SaslStormServerAuthorizeHandler extends SimpleChannelUpstreamHandle
 	}
 
 	@Override
-	public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) {
-		Object msg = e.getMessage();
+	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
 		if (msg == null)
 			return;
 
-		Channel channel = ctx.getChannel();
 		LOG.debug("messageReceived: Checking whether the client is authorized to send messages to the server ");
 
 		// Authorize: client is allowed to doRequest() if and only if the client
 		// has successfully authenticated with this server.
-		SaslNettyServer saslNettyServer = SaslNettyServerState.getSaslNettyServer
-				.get(channel);
+		SaslNettyServer saslNettyServer = ctx.channel().attr(SaslNettyServerState.SASL_NETTY_SERVER).get();
 
 		if (saslNettyServer == null) {
 			LOG.warn("messageReceived: This client is *NOT* authorized to perform "
@@ -78,6 +71,6 @@ public class SaslStormServerAuthorizeHandler extends SimpleChannelUpstreamHandle
 		// We call fireMessageReceived since the client is allowed to perform
 		// this request. The client's request will now proceed to the next
 		// pipeline component.
-		Channels.fireMessageReceived(ctx, msg);
+		ctx.fireChannelRead(msg);
 	}
 }

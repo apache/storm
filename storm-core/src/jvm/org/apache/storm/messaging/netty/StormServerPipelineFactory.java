@@ -17,25 +17,29 @@
  */
 package org.apache.storm.messaging.netty;
 
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.Channels;
-
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
 import org.apache.storm.Config;
 
-class StormServerPipelineFactory implements ChannelPipelineFactory {
-    private Server server;
+import java.util.Map;
 
-    StormServerPipelineFactory(Server server) {
+class StormServerPipelineFactory extends ChannelInitializer {
+    private Server server;
+    private Map conf;
+
+    StormServerPipelineFactory(Server server, Map conf) {
         this.server = server;
+        this.conf = conf;
     }
 
-    public ChannelPipeline getPipeline() throws Exception {
+    @Override
+    protected void initChannel(Channel ch) throws Exception {
         // Create a default pipeline implementation.
-        ChannelPipeline pipeline = Channels.pipeline();
+        ChannelPipeline pipeline = ch.pipeline();
 
         // Decoder
-        pipeline.addLast("decoder", new MessageDecoder());
+        pipeline.addLast("decoder", new MessageDecoder(conf));
         // Encoder
         pipeline.addLast("encoder", new MessageEncoder());
 
@@ -51,7 +55,5 @@ class StormServerPipelineFactory implements ChannelPipelineFactory {
         }
         // business logic.
         pipeline.addLast("handler", new StormServerHandler(server));
-
-        return pipeline;
     }
 }

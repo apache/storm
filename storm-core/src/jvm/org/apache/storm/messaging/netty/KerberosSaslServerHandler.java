@@ -17,19 +17,17 @@
  */
 package org.apache.storm.messaging.netty;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class KerberosSaslServerHandler extends SimpleChannelUpstreamHandler {
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+
+public class KerberosSaslServerHandler extends ChannelInboundHandlerAdapter {
 
     ISaslServer server;
     /** Used for client or server's token to send or receive from each other. */
@@ -48,14 +46,12 @@ public class KerberosSaslServerHandler extends SimpleChannelUpstreamHandler {
     }
 
     @Override
-    public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
-        throws Exception {
-        Object msg = e.getMessage();
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         if (msg == null) {
             return;
         }
 
-        Channel channel = ctx.getChannel();
+        Channel channel = ctx.channel();
 
 
         if (msg instanceof SaslMessageToken) {
@@ -65,22 +61,20 @@ public class KerberosSaslServerHandler extends SimpleChannelUpstreamHandler {
             try {
                 LOG.debug("Got SaslMessageToken!");
 
-                KerberosSaslNettyServer saslNettyServer = KerberosSaslNettyServerState.getKerberosSaslNettyServer
-                    .get(channel);
+                KerberosSaslNettyServer saslNettyServer = channel.attr(KerberosSaslNettyServerState.KERBOROS_SASL_NETTY_SERVER).get();
                 if (saslNettyServer == null) {
                     LOG.debug("No saslNettyServer for {}  yet; creating now, with topology token: ", channel);
                     try {
                         saslNettyServer = new KerberosSaslNettyServer(storm_conf, jaas_section, authorizedUsers);
-                        KerberosSaslNettyServerState.getKerberosSaslNettyServer.set(channel,
-                                                                                    saslNettyServer);
+                        channel.attr(KerberosSaslNettyServerState.KERBOROS_SASL_NETTY_SERVER).set(saslNettyServer);
                     } catch (RuntimeException ioe) {
                         LOG.error("Error occurred while creating saslNettyServer on server {} for client {}",
-                                  channel.getLocalAddress(), channel.getRemoteAddress());
+                                  channel.localAddress(), channel.remoteAddress());
                         throw ioe;
                     }
                 } else {
                     LOG.debug("Found existing saslNettyServer on server: {} for client {}",
-                              channel.getLocalAddress(), channel.getRemoteAddress());
+                              channel.localAddress(), channel.remoteAddress());
                 }
 
                 byte[] responseBytes = saslNettyServer.response(((SaslMessageToken) msg)
@@ -89,10 +83,10 @@ public class KerberosSaslServerHandler extends SimpleChannelUpstreamHandler {
                 SaslMessageToken saslTokenMessageRequest = new SaslMessageToken(responseBytes);
 
                 if(saslTokenMessageRequest.getSaslToken() == null) {
-                    channel.write(ControlMessage.SASL_COMPLETE_REQUEST);
+                    channel.writeAndFlush(ControlMessage.SASL_COMPLETE_REQUEST);
                 } else {
                     // Send response to client.
-                    channel.write(saslTokenMessageRequest);
+                    channel.writeAndFlush(saslTokenMessageRequest);
                 }
 
                 if (saslNettyServer.isComplete()) {
@@ -100,12 +94,11 @@ public class KerberosSaslServerHandler extends SimpleChannelUpstreamHandler {
                     // SASL-Complete message to the client.
                     LOG.info("SASL authentication is complete for client with username: {}",
                              saslNettyServer.getUserName());
-                    channel.write(ControlMessage.SASL_COMPLETE_REQUEST);
+                    channel.writeAndFlush(ControlMessage.SASL_COMPLETE_REQUEST);
                     LOG.debug("Removing SaslServerHandler from pipeline since SASL authentication is complete.");
-                    ctx.getPipeline().remove(this);
+                    ctx.pipeline().remove(this);
                     server.authenticated(channel);
                 }
-                return;
             }
             catch (Exception ex) {
                 LOG.error("Failed to handle SaslMessageToken: ", ex);
@@ -117,16 +110,15 @@ public class KerberosSaslServerHandler extends SimpleChannelUpstreamHandler {
             // non-SASL requests will be denied by the Authorize channel handler
             // (the next handler upstream in the server pipeline) if SASL
             // authentication has not completed.
-            LOG.warn("Sending upstream an unexpected non-SASL message : {}",
-                     msg);
-            Channels.fireMessageReceived(ctx, msg);
+            LOG.warn("Sending upstream an unexpected non-SASL message : {}", msg);
+            channel.writeAndFlush(msg);
         }
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         if(server != null) {
-            server.closeChannel(e.getChannel());
+            server.closeChannel(ctx.channel());
         }
     }
 

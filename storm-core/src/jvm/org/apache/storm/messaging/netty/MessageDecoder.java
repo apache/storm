@@ -17,16 +17,29 @@
  */
 package org.apache.storm.messaging.netty;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.ByteToMessageDecoder;
+import org.apache.storm.Config;
+import org.apache.storm.messaging.TaskMessage;
+import org.apache.storm.utils.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
-import org.apache.storm.messaging.TaskMessage;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.handler.codec.frame.FrameDecoder;
+public class MessageDecoder extends ByteToMessageDecoder {
 
-public class MessageDecoder extends FrameDecoder {    
+    private static final Logger LOG = LoggerFactory.getLogger(MessageDecoder.class);
+
+    private final int maxBatchSize;
+
+    public MessageDecoder(Map storm_conf) {
+        maxBatchSize = Utils.getInt(storm_conf.get(Config.STORM_NETTY_MESSAGE_DECODE_BATCH_SIZE), -1);
+    }
+
     /*
      * Each ControlMessage is encoded as:
      *  code (<0) ... short(2)
@@ -35,16 +48,16 @@ public class MessageDecoder extends FrameDecoder {
      *  len ... int(4)
      *  payload ... byte[]     *  
      */
-    protected Object decode(ChannelHandlerContext ctx, Channel channel, ChannelBuffer buf) throws Exception {
-        // Make sure that we have received at least a short 
+    @Override
+    protected void decode(ChannelHandlerContext ctx, ByteBuf buf, List<Object> out) throws Exception {
+        // Make sure that we have received at least a short
         long available = buf.readableBytes();
         if (available < 2) {
             //need more data
-            return null;
+            return;
         }
 
         List<Object> ret = new ArrayList<>();
-
         // Use while loop, try to decode as more messages as possible in single call
         while (available >= 2) {
 
@@ -65,38 +78,42 @@ public class MessageDecoder extends FrameDecoder {
                 if (ctrl_msg == ControlMessage.EOB_MESSAGE) {
                     continue;
                 } else {
-                    return ctrl_msg;
+                    out.add(ctrl_msg);
+                    return;
                 }
             }
-            
+
             //case 2: SaslTokenMessageRequest
-            if(code == SaslMessageToken.IDENTIFIER) {
-            	// Make sure that we have received at least an integer (length) 
+            if (code == SaslMessageToken.IDENTIFIER) {
+                // Make sure that we have received at least an integer (length)
                 if (buf.readableBytes() < 4) {
                     //need more data
                     buf.resetReaderIndex();
-                    return null;
+                    return;
                 }
-                
+
                 // Read the length field.
                 int length = buf.readInt();
-                if (length<=0) {
-                    return new SaslMessageToken(null);
+                if (length <= 0) {
+                    out.add(new SaslMessageToken(null));
+                    return;
                 }
-                
+
                 // Make sure if there's enough bytes in the buffer.
                 if (buf.readableBytes() < length) {
                     // The whole bytes were not received yet - return null.
                     buf.resetReaderIndex();
-                    return null;
+                    return;
                 }
-                
-                // There's enough bytes in the buffer. Read it.  
-                ChannelBuffer payload = buf.readBytes(length);
-                
+
+                // There's enough bytes in the buffer. Read it.
+                byte[] payload = new byte[length];
+                buf.readBytes(payload);
+
                 // Successfully decoded a frame.
                 // Return a SaslTokenMessageRequest object
-                return new SaslMessageToken(payload.array());
+                out.add(new SaslMessageToken(payload));
+                return;
             }
 
             // case 3: task Message
@@ -114,7 +131,7 @@ public class MessageDecoder extends FrameDecoder {
             available -= 4;
 
             if (length <= 0) {
-                ret.add(new TaskMessage(code, null));
+                out.add(new TaskMessage(code, null));
                 break;
             }
 
@@ -127,18 +144,21 @@ public class MessageDecoder extends FrameDecoder {
             available -= length;
 
             // There's enough bytes in the buffer. Read it.
-            ChannelBuffer payload = buf.readBytes(length);
-
+            byte[] payload = new byte[length];
+            buf.readBytes(payload);
 
             // Successfully decoded a frame.
             // Return a TaskMessage object
-            ret.add(new TaskMessage(code, payload.array()));
+            ret.add(new TaskMessage(code, payload));
+
+            if (maxBatchSize > 0 && ret.size() >= maxBatchSize) {
+                break;
+            }
         }
 
-        if (ret.size() == 0) {
-            return null;
-        } else {
-            return ret;
+        LOG.debug("Decoded {} messages", ret.size());
+        if (ret.size() > 0) {
+            out.add(ret);
         }
     }
 }

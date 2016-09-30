@@ -17,14 +17,13 @@
  */
 package org.apache.storm.messaging.netty;
 
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.Channels;
-
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
 import org.apache.storm.Config;
 import java.util.Map;
 
-class StormClientPipelineFactory implements ChannelPipelineFactory {
+class StormClientPipelineFactory extends ChannelInitializer {
     private Client client;
     private Map conf;
 
@@ -33,12 +32,13 @@ class StormClientPipelineFactory implements ChannelPipelineFactory {
         this.conf = conf;
     }
 
-    public ChannelPipeline getPipeline() throws Exception {
+    @Override
+    protected void initChannel(Channel ch) throws Exception {
         // Create a default pipeline implementation.
-        ChannelPipeline pipeline = Channels.pipeline();
+        ChannelPipeline pipeline = ch.pipeline();
 
         // Decoder
-        pipeline.addLast("decoder", new MessageDecoder());
+        pipeline.addLast("decoder", new MessageDecoder(conf));
         // Encoder
         pipeline.addLast("encoder", new MessageEncoder());
 
@@ -46,11 +46,9 @@ class StormClientPipelineFactory implements ChannelPipelineFactory {
                 .get(Config.STORM_MESSAGING_NETTY_AUTHENTICATION);
         if (isNettyAuth) {
             // Authenticate: Removed after authentication completes
-            pipeline.addLast("saslClientHandler", new SaslStormClientHandler(
-                    client));
+            pipeline.addLast("saslClientHandler", new SaslStormClientHandler(client));
         }
         // business logic.
         pipeline.addLast("handler", new StormClientHandler(client, conf));
-        return pipeline;
     }
 }

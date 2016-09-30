@@ -20,16 +20,8 @@ package org.apache.storm.messaging.netty;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.jboss.netty.util.ThreadNameDeterminer;
-import org.jboss.netty.util.ThreadRenamingRunnable;
-
 public class NettyRenameThreadFactory  implements ThreadFactory {
     
-    static {
-      //Rename Netty threads
-      ThreadRenamingRunnable.setThreadNameDeterminer(ThreadNameDeterminer.CURRENT);
-    }
-  
     final ThreadGroup group;
     final AtomicInteger index = new AtomicInteger(1);
     final String name;

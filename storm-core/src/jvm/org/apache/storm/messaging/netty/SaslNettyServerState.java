@@ -17,14 +17,9 @@
  */
 package org.apache.storm.messaging.netty;
 
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelLocal;
+import io.netty.util.AttributeKey;
 
 final class SaslNettyServerState {
 
-    public static final ChannelLocal<SaslNettyServer> getSaslNettyServer = new ChannelLocal<SaslNettyServer>() {
-            protected SaslNettyServer initialValue(Channel channel) {
-                return null;
-            }
-        };
+	public static final AttributeKey<SaslNettyServer> SASL_NETTY_SERVER = AttributeKey.valueOf("sasl.netty.server");
 }

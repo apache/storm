@@ -17,47 +17,38 @@
  */
 package org.apache.storm.pacemaker;
 
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.Channel;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.apache.storm.generated.HBMessage;
+import org.apache.storm.messaging.netty.ControlMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.storm.messaging.netty.ControlMessage;
 
-public class PacemakerClientHandler extends SimpleChannelUpstreamHandler {
+public class PacemakerClientHandler extends ChannelInboundHandlerAdapter {
     private static final Logger LOG = LoggerFactory.getLogger(PacemakerClientHandler.class);
 
     private PacemakerClient client;
-
-
 
     public PacemakerClientHandler(PacemakerClient client) {
         this.client = client;
     }
 
     @Override
-    public void channelConnected(ChannelHandlerContext ctx,
-                                 ChannelStateEvent event) {
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
         // register the newly established channel
-        Channel channel = ctx.getChannel();
+        Channel channel = ctx.channel();
         client.channelConnected(channel);
 
-        LOG.info("Connection established from {} to {}",
-                 channel.getLocalAddress(), channel.getRemoteAddress());
+        LOG.info("Connection established from {} to {}", channel.localAddress(), channel.remoteAddress());
     }
 
     @Override
-    public void messageReceived(ChannelHandlerContext ctx, MessageEvent event) {
-        LOG.debug("Got Message: {}", event.getMessage().toString());
-        Object evm = event.getMessage();
+    public void channelRead(ChannelHandlerContext ctx, Object evm) throws Exception {
+        LOG.debug("Got Message: {}", evm.toString());
 
         if(evm instanceof ControlMessage) {
             LOG.debug("Got control message: {}", evm.toString());
-            return;
         }
         else if(evm instanceof HBMessage) {
             client.gotMessage((HBMessage)evm);
@@ -68,8 +59,8 @@ public class PacemakerClientHandler extends SimpleChannelUpstreamHandler {
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent event) {
-        LOG.error("Connection to pacemaker failed", event.getCause());
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        LOG.error("Connection to pacemaker failed", cause);
         client.reconnect();
     }
 }

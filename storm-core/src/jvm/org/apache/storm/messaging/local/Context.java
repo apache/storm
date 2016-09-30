@@ -17,6 +17,11 @@
  */
 package org.apache.storm.messaging.local;
 
+import org.apache.storm.grouping.Load;
+import org.apache.storm.messaging.IConnection;
+import org.apache.storm.messaging.IConnectionCallback;
+import org.apache.storm.messaging.IContext;
+import org.apache.storm.messaging.TaskMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,16 +33,10 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
-
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import org.apache.storm.grouping.Load;
-import org.apache.storm.messaging.IConnection;
-import org.apache.storm.messaging.TaskMessage;
-import org.apache.storm.messaging.IConnectionCallback;
-import org.apache.storm.messaging.IContext;
 
 public class Context implements IContext {
     private static final Logger LOG = LoggerFactory.getLogger(Context.class);

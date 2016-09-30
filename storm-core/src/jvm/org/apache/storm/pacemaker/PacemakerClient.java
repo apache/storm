@@ -17,29 +17,32 @@
  */
 package org.apache.storm.pacemaker;
 
+import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioSocketChannel;
 import org.apache.storm.Config;
 import org.apache.storm.generated.HBMessage;
 import org.apache.storm.messaging.netty.ISaslClient;
 import org.apache.storm.messaging.netty.NettyRenameThreadFactory;
+import org.apache.storm.pacemaker.codec.ThriftNettyClientCodec;
 import org.apache.storm.security.auth.AuthUtils;
 import org.apache.storm.utils.StormBoundedExponentialBackoffRetry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.security.auth.login.Configuration;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import javax.security.auth.login.Configuration;
-import org.apache.storm.pacemaker.codec.ThriftNettyClientCodec;
-import org.jboss.netty.bootstrap.ClientBootstrap;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class PacemakerClient implements ISaslClient {
 
@@ -48,7 +51,7 @@ public class PacemakerClient implements ISaslClient {
     private String topo_name;
     private String secret;
     private boolean ready = false;
-    private final ClientBootstrap bootstrap;
+    private final Bootstrap bootstrap;
     private AtomicReference<Channel> channelRef;
     private AtomicBoolean closing;
     private InetSocketAddress remote_addr;
@@ -60,10 +63,17 @@ public class PacemakerClient implements ISaslClient {
     private StormBoundedExponentialBackoffRetry backoff = new StormBoundedExponentialBackoffRetry(100, 5000, 20);
     private int retryTimes = 0;
 
+    //the constructor is invoked by pacemaker-state-factory-test
+    public PacemakerClient() {
+        bootstrap = new Bootstrap();
+    }
+
     public PacemakerClient(Map config) {
 
         String host = (String)config.get(Config.PACEMAKER_HOST);
         int port = (int)config.get(Config.PACEMAKER_PORT);
+        int maxWorkers = (int)config.get(Config.PACEMAKER_CLIENT_MAX_THREADS);
+
         topo_name = (String)config.get(Config.TOPOLOGY_NAME);
         if(topo_name == null) {
             topo_name = "pacemaker-client";
@@ -102,19 +112,28 @@ public class PacemakerClient implements ISaslClient {
         channelRef = new AtomicReference<Channel>(null);
         setupMessaging();
 
-        ThreadFactory bossFactory = new NettyRenameThreadFactory("client-boss");
         ThreadFactory workerFactory = new NettyRenameThreadFactory("client-worker");
-        NioClientSocketChannelFactory factory =
-            new NioClientSocketChannelFactory(Executors.newCachedThreadPool(bossFactory),
-                                              Executors.newCachedThreadPool(workerFactory));
-        bootstrap = new ClientBootstrap(factory);
-        bootstrap.setOption("tcpNoDelay", true);
-        bootstrap.setOption("sendBufferSize", 5242880);
-        bootstrap.setOption("keepAlive", true);
+
+        EventLoopGroup workerEventLoopGroup;
+        if (maxWorkers > 0) {
+            workerEventLoopGroup = new NioEventLoopGroup(maxWorkers, workerFactory);
+        } else {
+            // 0 means DEFAULT_EVENT_LOOP_THREADS
+            workerEventLoopGroup = new NioEventLoopGroup(0, workerFactory);
+        }
+
+        bootstrap = new Bootstrap()
+                .group(workerEventLoopGroup)
+                .channel(NioSocketChannel.class)
+                .option(ChannelOption.TCP_NODELAY, true)
+                .option(ChannelOption.SO_SNDBUF, 5242880)
+                .option(ChannelOption.SO_KEEPALIVE, true)
+                .option(ChannelOption.WRITE_BUFFER_HIGH_WATER_MARK, 32 * 1024)
+                .option(ChannelOption.WRITE_BUFFER_LOW_WATER_MARK, 8 * 1024)
+                .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
+                .handler(new ThriftNettyClientCodec(this, config, authMethod));
 
         remote_addr = new InetSocketAddress(host, port);
-        ChannelPipelineFactory pipelineFactory = new ThriftNettyClientCodec(this, config, authMethod).pipelineFactory();
-        bootstrap.setPipelineFactory(pipelineFactory);
         bootstrap.connect(remote_addr);
     }
 

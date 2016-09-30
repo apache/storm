@@ -17,42 +17,42 @@
  */
 package org.apache.storm.messaging.netty;
 
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.util.Iterator;
-import java.util.Collection;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Timer;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
-import java.lang.InterruptedException;
-
+import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.util.HashedWheelTimer;
+import io.netty.util.Timeout;
+import io.netty.util.TimerTask;
 import org.apache.storm.Config;
 import org.apache.storm.grouping.Load;
 import org.apache.storm.messaging.ConnectionWithStatus;
-import org.apache.storm.messaging.TaskMessage;
 import org.apache.storm.messaging.IConnectionCallback;
+import org.apache.storm.messaging.TaskMessage;
 import org.apache.storm.metric.api.IStatefulObject;
 import org.apache.storm.utils.StormBoundedExponentialBackoffRetry;
 import org.apache.storm.utils.Utils;
-import org.jboss.netty.bootstrap.ClientBootstrap;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFactory;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
-import org.jboss.netty.util.HashedWheelTimer;
-import org.jboss.netty.util.Timeout;
-import org.jboss.netty.util.TimerTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Timer;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -69,6 +69,7 @@ import static com.google.common.base.Preconditions.checkState;
  *       the remote destination is currently unavailable.
  */
 public class Client extends ConnectionWithStatus implements IStatefulObject, ISaslClient {
+
     private static final long PENDING_MESSAGES_FLUSH_TIMEOUT_MS = 600000L;
     private static final long PENDING_MESSAGES_FLUSH_INTERVAL_MS = 1000L;
 
@@ -79,7 +80,8 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
 
     private final Map stormConf;
     private final StormBoundedExponentialBackoffRetry retryPolicy;
-    private final ClientBootstrap bootstrap;
+    private final EventLoopGroup eventLoopGroup;
+    private final Bootstrap bootstrap;
     private final InetSocketAddress dstAddress;
     protected final String dstAddressPrefixedName;
     private volatile Map<Integer, Double> serverLoad = null;
@@ -136,15 +138,19 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
 
     private final MessageBuffer batcher;
 
+    private final AtomicBoolean inFlush = new AtomicBoolean(false);
+
     private final Object writeLock = new Object();
 
     @SuppressWarnings("rawtypes")
-    Client(Map stormConf, ChannelFactory factory, HashedWheelTimer scheduler, String host, int port, Context context) {
+    Client(Map stormConf, EventLoopGroup eventLoopGroup, HashedWheelTimer scheduler, String host, int port, Context context) {
         this.stormConf = stormConf;
         closing = false;
         this.scheduler = scheduler;
         this.context = context;
         int bufferSize = Utils.getInt(stormConf.get(Config.STORM_MESSAGING_NETTY_BUFFER_SIZE));
+        int write_buffer_high_water_mark = Utils.getInt(stormConf.get(Config.STORM_MESSAGING_NETTY_WRITE_BUFFER_HIGH_WATER_MARK), 5242880);
+        int write_buffer_low_water_mark = Utils.getInt(stormConf.get(Config.STORM_MESSAGING_NETTY_WRITE_BUFFER_LOW_WATER_MARK), 2097152);
         // if SASL authentication is disabled, saslChannelReady is initialized as true; otherwise false
         saslChannelReady.set(!Utils.getBoolean(stormConf.get(Config.STORM_MESSAGING_NETTY_AUTHENTICATION), false));
         LOG.info("creating Netty Client, connecting to {}:{}, bufferSize: {}", host, port, bufferSize);
@@ -155,8 +161,18 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
         int maxWaitMs = Utils.getInt(stormConf.get(Config.STORM_MESSAGING_NETTY_MAX_SLEEP_MS));
         retryPolicy = new StormBoundedExponentialBackoffRetry(minWaitMs, maxWaitMs, maxReconnectionAttempts);
 
+        this.eventLoopGroup = eventLoopGroup;
         // Initiate connection to remote destination
-        bootstrap = createClientBootstrap(factory, bufferSize, stormConf);
+        bootstrap = new Bootstrap()
+                        .group(this.eventLoopGroup)
+                        .channel(NioSocketChannel.class)
+                        .option(ChannelOption.TCP_NODELAY, true)
+                        .option(ChannelOption.SO_SNDBUF, bufferSize)
+                        .option(ChannelOption.SO_KEEPALIVE, true)
+                        .option(ChannelOption.WRITE_BUFFER_HIGH_WATER_MARK, write_buffer_high_water_mark)
+                        .option(ChannelOption.WRITE_BUFFER_LOW_WATER_MARK, write_buffer_low_water_mark)
+                        .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
+                        .handler(new StormClientPipelineFactory(this, stormConf));
         dstAddress = new InetSocketAddress(host, port);
         dstAddressPrefixedName = prefixedName(dstAddress);
         launchChannelAliveThread();
@@ -189,15 +205,6 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
         }, 0, CHANNEL_ALIVE_INTERVAL_MS);
     }
 
-    private ClientBootstrap createClientBootstrap(ChannelFactory factory, int bufferSize, Map stormConf) {
-        ClientBootstrap bootstrap = new ClientBootstrap(factory);
-        bootstrap.setOption("tcpNoDelay", true);
-        bootstrap.setOption("sendBufferSize", bufferSize);
-        bootstrap.setOption("keepAlive", true);
-        bootstrap.setPipelineFactory(new StormClientPipelineFactory(this, stormConf));
-        return bootstrap;
-    }
-
     private String prefixedName(InetSocketAddress dstAddress) {
         if (null != dstAddress) {
             return PREFIX + dstAddress.toString();
@@ -217,14 +224,10 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
     }
 
     private boolean connectionEstablished(Channel channel) {
-        // Because we are using TCP (which is a connection-oriented transport unlike UDP), a connection is only fully
-        // established iff the channel is connected.  That is, a TCP-based channel must be in the CONNECTED state before
-        // anything can be read or written to the channel.
-        //
+        // since netty 4.x, the state model has been simplified
         // See:
-        // - http://netty.io/3.9/api/org/jboss/netty/channel/ChannelEvent.html
-        // - http://stackoverflow.com/questions/13356622/what-are-the-netty-channel-state-transitions
-        return channel != null && channel.isConnected();
+        // - http://netty.io/wiki/new-and-noteworthy-in-4.0.html#wiki-h4-19
+        return channel != null && channel.isActive();
     }
 
     /**
@@ -308,7 +311,8 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
             }
         }
 
-        if(channel.isWritable()){
+        // as channel.writeAndFlush is expensive, we don't want to call it every time
+        if(channel.isWritable() && !inFlush.get()){
             synchronized (writeLock) {
                 // Netty's internal buffer is not full and we still have message left in the buffer.
                 // We should write the unfilled MessageBatch immediately to reduce latency
@@ -320,7 +324,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
         } else {
             // Channel's buffer is full, meaning that we have time to wait other messages to arrive, and create a bigger
             // batch. This yields better throughput.
-            // We can rely on `notifyInterestChanged` to push these messages as soon as there is spece in Netty's buffer
+            // We can rely on `notifyChannelFlushabilityChanged` to push these messages as soon as there is space in Netty's buffer
             // because we know `Channel.isWritable` was false after the messages were already in the buffer.
         }
     }
@@ -370,7 +374,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
      *
      * If the write operation fails, then we will close the channel and trigger a reconnect.
      */
-    private void flushMessages(Channel channel, final MessageBatch batch) {
+    private void flushMessages(final Channel channel, final MessageBatch batch) {
         if (null == batch || batch.isEmpty()) {
             return;
         }
@@ -378,23 +382,35 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
         final int numMessages = batch.size();
         LOG.debug("writing {} messages to channel {}", batch.size(), channel.toString());
         pendingMessages.addAndGet(numMessages);
+        inFlush.set(true);
+        // call channel.writeAndFlush in the same eventloop suppose to be more efficient
+        eventLoopGroup.execute(new Runnable() {
+            @Override
+            public void run() {
 
-        ChannelFuture future = channel.write(batch);
-        future.addListener(new ChannelFutureListener() {
-            public void operationComplete(ChannelFuture future) throws Exception {
-                pendingMessages.addAndGet(0 - numMessages);
-                if (future.isSuccess()) {
-                    LOG.debug("sent {} messages to {}", numMessages, dstAddressPrefixedName);
-                    messagesSent.getAndAdd(batch.size());
-                } else {
-                    LOG.error("failed to send {} messages to {}: {}", numMessages, dstAddressPrefixedName,
-                            future.getCause());
-                    closeChannelAndReconnect(future.getChannel());
-                    messagesLost.getAndAdd(numMessages);
-                }
+                ChannelFuture future = channel.writeAndFlush(batch);
+                inFlush.set(false);
+                future.addListener(new ChannelFutureListener() {
+                    public void operationComplete(ChannelFuture future) throws Exception {
+
+                        pendingMessages.addAndGet(0 - numMessages);
+                        if (future.isSuccess()) {
+                            LOG.debug("sent {} messages to {}", numMessages, dstAddressPrefixedName);
+                            messagesSent.getAndAdd(batch.size());
+                        } else {
+                            LOG.error("failed to send {} messages to {}: {}", numMessages, dstAddressPrefixedName,
+                                    future.cause());
+                            closeChannelAndReconnect(future.channel());
+                            messagesLost.getAndAdd(numMessages);
+                        }
+                    }
+                });
+
+                // need to call it so we can flush
+                notifyChannelFlushabilityChanged(channel);
             }
-
         });
+
     }
 
     /**
@@ -499,10 +515,6 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
     }
 
     /** ISaslClient interface **/
-    public void channelConnected(Channel channel) {
-//        setChannel(channel);
-    }
-
     public void channelReady() {
         saslChannelReady.set(true);
     }
@@ -520,7 +532,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
         String name = null;
         Channel channel = channelRef.get();
         if (channel != null) {
-            SocketAddress address = channel.getLocalAddress();
+            SocketAddress address = channel.localAddress();
             if (address != null) {
                 name = address.toString();
             }
@@ -534,13 +546,13 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
     }
 
     /**
-     * Called by Netty thread on change in channel interest
-     * @param channel
+     * Called by Netty thread on change in channel writability or after channel.writeAndFlush call is done
+     * @param channel channel
      */
-    public void notifyInterestChanged(Channel channel) {
+    public void notifyChannelFlushabilityChanged(Channel channel) {
         if(channel.isWritable()){
             synchronized (writeLock) {
-                // Channel is writable again, write if there are any messages pending
+                // Channel is flushable again, write if there are any messages pending
                 MessageBatch pending = batcher.drain();
                 flushMessages(channel, pending);
             }
@@ -569,7 +581,6 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
             scheduleConnect(nextDelayMs);
         }
 
-
         @Override
         public void run(Timeout timeout) throws Exception {
             if (reconnectingAllowed()) {
@@ -582,7 +593,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
                     @Override
                     public void operationComplete(ChannelFuture future) throws Exception {
                         // This call returns immediately
-                        Channel newChannel = future.getChannel();
+                        Channel newChannel = future.channel();
 
                         if (future.isSuccess() && connectionEstablished(newChannel)) {
                             boolean setChannel = channelRef.compareAndSet(null, newChannel);
@@ -593,7 +604,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
                                 LOG.warn("Re-connection to {} was successful but {} messages has been lost so far", address.toString(), messagesLost.get());
                             }
                         } else {
-                            Throwable cause = future.getCause();
+                            Throwable cause = future.cause();
                             reschedule(cause);
                             if (newChannel != null) {
                                 newChannel.close();

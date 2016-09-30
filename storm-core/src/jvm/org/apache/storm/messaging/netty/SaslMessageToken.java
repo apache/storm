@@ -17,12 +17,13 @@
  */
 package org.apache.storm.messaging.netty;
 
-import java.io.IOException;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBufferOutputStream;
-import org.jboss.netty.buffer.ChannelBuffers;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.ByteBufOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
 
 /**
  * Send and receive SASL tokens.
@@ -83,9 +84,9 @@ public class SaslMessageToken implements INettySerializable {
      * 
      * @throws IOException
      */
-    public ChannelBuffer buffer() throws IOException {
-        ChannelBufferOutputStream bout = new ChannelBufferOutputStream(
-                ChannelBuffers.directBuffer(encodeLength()));
+    public ByteBuf buffer() throws IOException {
+        ByteBufOutputStream bout = new ByteBufOutputStream(ByteBufAllocator.DEFAULT.ioBuffer(encodeLength()));
+        short identifier = -500;
         int payload_len = 0;
         if (token != null)
             payload_len = token.length;
@@ -101,14 +102,21 @@ public class SaslMessageToken implements INettySerializable {
     }
     
     public static SaslMessageToken read(byte[] serial) {
-        ChannelBuffer sm_buffer = ChannelBuffers.copiedBuffer(serial);
-        short identifier = sm_buffer.readShort();
-        int payload_len = sm_buffer.readInt();
-        if(identifier != IDENTIFIER) {
-            return null;
+        ByteBuf sm_buffer = ByteBufAllocator.DEFAULT.ioBuffer(serial.length);
+        try {
+            sm_buffer.writeBytes(serial);
+            short identifier = sm_buffer.readShort();
+            int payload_len = sm_buffer.readInt();
+            if (identifier != IDENTIFIER) {
+                return null;
+            }
+            byte token[] = new byte[payload_len];
+            sm_buffer.readBytes(token, 0, payload_len);
+            return new SaslMessageToken(token);
+        } finally {
+            if (sm_buffer != null) {
+                sm_buffer.release();
+            }
         }
-        byte token[] = new byte[payload_len];
-        sm_buffer.readBytes(token, 0, payload_len);
-        return new SaslMessageToken(token);
     }
 }
