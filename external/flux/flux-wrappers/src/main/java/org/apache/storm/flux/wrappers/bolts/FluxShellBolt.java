@@ -22,9 +22,10 @@ import org.apache.storm.topology.IRichBolt;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;
 
-import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 /**
  * A generic `ShellBolt` implementation that allows you specify output fields
@@ -56,8 +57,59 @@ public class FluxShellBolt extends ShellBolt implements IRichBolt{
         this(command);
         this.setDefaultStream(outputFields);
     }
-    
-    
+
+    /**
+     * Add configuration for this bolt. This method is called from YAML file:
+     *
+     * ```
+     * className: "org.apache.storm.flux.wrappers.bolts.FluxShellBolt"
+     * constructorArgs:
+     * # command line
+     * - ["python", "splitsentence.py"]
+     * # output fields
+     * - ["word"]
+     * configMethods:
+     * - name: "addComponentConfig"
+     *   args: ["publisher.data_paths", "actions"]
+     * ```
+     *
+     * @param key
+     * @param value
+     */
+    public void addComponentConfig(String key, Object value) {
+        if (this.componentConfig == null) {
+            this.componentConfig = new HashMap<String, Object>();
+        }
+        this.componentConfig.put(key, value);
+    }
+
+    /**
+     * Add configuration for this bolt. This method is called from YAML file:
+     *
+     * ```
+     * className: "org.apache.storm.flux.wrappers.bolts.FluxShellBolt"
+     * constructorArgs:
+     * # command line
+     * - ["python", "splitsentence.py"]
+     * # output fields
+     * - ["word"]
+     * configMethods:
+     * - name: "addComponentConfig"
+     *   args:
+     *   - "publisher.data_paths"
+     *   - ["actions"]
+     * ```
+     *
+     * @param key
+     * @param values
+     */
+    public void addComponentConfig(String key, List<Object> values) {
+        if (this.componentConfig == null) {
+            this.componentConfig = new HashMap<String, Object>();
+        }
+        this.componentConfig.put(key, values);
+    }
+
     /**
      * Set default stream outputFields, this method is called from YAML file:
      * 
