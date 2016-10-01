@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-2066: make error message in IsolatedPool.java more descriptive
  * STORM-1870: Allow FluxShellBolt/Spout set custom "componentConfig" via yaml
  * STORM-2126: fix NPE due to race condition in compute-new-sched-assign…
  * STORM-2124: show requested cpu mem for each component
