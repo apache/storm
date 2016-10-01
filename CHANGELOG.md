@@ -155,6 +155,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0
+ * STORM-1870: Allow FluxShellBolt/Spout set custom "componentConfig" via yaml
  * STORM-2126: fix NPE due to race condition in compute-new-sched-assign…
  * STORM-2089: Replace Consumer of ISqlTridentDataSource with SqlTridentConsumer
  * STORM-2118: A few fixes for storm-sql standalone mode
