@@ -1,4 +1,5 @@
 ## 1.0.3
+ * STORM-2040: Fix bug on assert-can-serialize
  * STORM-2017: ShellBolt stops reporting task ids
  * STORM-2119: bug in log message printing to stdout
  * STORM-2120: Emit to _spoutConfig.outputStreamId
