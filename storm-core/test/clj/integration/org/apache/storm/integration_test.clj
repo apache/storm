@@ -51,7 +51,8 @@
             results (complete-topology cluster
                                        topology
                                        :mock-sources {"1" [["nathan"] ["bob"] ["joey"] ["nathan"]]}
-                                       :storm-conf {TOPOLOGY-WORKERS 2})]
+                                       :storm-conf {TOPOLOGY-WORKERS 2
+                                                    TOPOLOGY-TESTING-ALWAYS-TRY-SERIALIZE true})]
         (is (ms= [["nathan"] ["bob"] ["joey"] ["nathan"]]
                  (read-tuples results "1")))
         (is (ms= [["nathan" 1] ["nathan" 2] ["bob" 1] ["joey" 1]]

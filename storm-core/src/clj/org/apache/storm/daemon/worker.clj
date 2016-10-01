@@ -136,8 +136,9 @@
 
 (defn- assert-can-serialize [^KryoTupleSerializer serializer tuple-batch]
   "Check that all of the tuples can be serialized by serializing them."
-  (fast-list-iter [[task tuple :as pair] tuple-batch]
-    (.serialize serializer tuple)))
+  (fast-list-iter [^AddressedTuple addressed-tuple tuple-batch]
+    (let [tuple (.getTuple addressed-tuple)]
+      (.serialize serializer tuple))))
 
 (defn- mk-backpressure-handler [executors]
   "make a handler that checks and updates worker's backpressure flag"
