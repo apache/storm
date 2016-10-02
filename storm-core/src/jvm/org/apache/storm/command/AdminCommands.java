@@ -46,7 +46,6 @@ public class AdminCommands {
     private static final Logger LOG = LoggerFactory.getLogger(AdminCommands.class);
     private static BlobStore nimbusBlobStore;
     private static IStormClusterState stormClusterState;
-    private static CuratorFramework zk;
     private static Map conf;
 
     public static void main(String [] args) throws Exception {
@@ -69,8 +68,8 @@ public class AdminCommands {
     }
 
     private static void initialize() {
-        Map conf = ConfigUtils.readStormConfig();
-        BlobStore nimbusBlobStore = Utils.getNimbusBlobStore (conf, NimbusInfo.fromConf(conf));
+        conf = ConfigUtils.readStormConfig();
+        nimbusBlobStore = Utils.getNimbusBlobStore (conf, NimbusInfo.fromConf(conf));
         List<String> servers = (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS);
         Object port = conf.get(Config.STORM_ZOOKEEPER_PORT);
         List<ACL> acls = null;
@@ -78,7 +77,7 @@ public class AdminCommands {
             acls = adminZkAcls();
         }
         try {
-            IStormClusterState stormClusterState = ClusterUtils.mkStormClusterState(conf, acls, new ClusterStateContext(DaemonType.NIMBUS));
+            stormClusterState = ClusterUtils.mkStormClusterState(conf, acls, new ClusterStateContext(DaemonType.NIMBUS));
         } catch (Exception e) {
             LOG.error("admin can't create stormClusterState");
             new RuntimeException(e);
