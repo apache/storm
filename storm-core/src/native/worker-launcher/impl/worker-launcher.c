@@ -414,29 +414,29 @@ static int copy_file(int input, const char* in_filename,
   return 0;
 }
 
-int setup_stormdist(FTSENT* entry, uid_t euser) {
+int setup_stormdist(FTSENT* entry, uid_t euser, int user_write) {
   if (lchown(entry->fts_path, euser, launcher_gid) != 0) {
-    fprintf(ERRORFILE, "Failure to exec app initialization process - %s\n",
-      strerror(errno));
+    fprintf(ERRORFILE, "Failure to exec app initialization process - %s, fts_path=%s\n",
+            strerror(errno), entry->fts_path);
      return -1;
   }
   mode_t mode = entry->fts_statp->st_mode;
-  mode_t new_mode = (mode & (S_IRWXU)) | S_IRGRP | S_IWGRP;
-  if ((mode & S_IXUSR) == S_IXUSR) {
-    new_mode = new_mode | S_IXGRP;
+  mode_t new_mode = (mode & (S_IRUSR | S_IXUSR)) | S_IRGRP | S_IWGRP;
+  if (user_write) {
+    new_mode = new_mpde | S_IWUSR;
   }
   if ((mode & S_IFDIR) == S_IFDIR) {
-    new_mode = new_mode | S_ISGID;
+    new_mode = new_mode | S_IXGRP | S_ISGID;
   }
   if (chmod(entry->fts_path, new_mode) != 0) {
-    fprintf(ERRORFILE, "Failure to exec app initialization process - %s\n",
-      strerror(errno));
+    fprintf(ERRORFILE, "Failure to exec app initialization process - %s, fts_path=%s\n",
+            strerror(errno), entry->fts_path);
     return -1;
   }
   return 0;
 }
 
-int setup_stormdist_dir(const char* local_dir) {
+int setup_stormdist_dir(const char* local_dir, int for_blob_permission) {
   //This is the same as
   //> chmod g+rwX -R $local_dir
   //> chown -no-dereference -R $user:$supervisor-group $local_dir 
@@ -485,13 +485,13 @@ int setup_stormdist_dir(const char* local_dir) {
 
       case FTS_DP:        // A directory being visited in post-order
       case FTS_DOT:       // A dot directory
+      case FTS_SL:        // A symbolic link
+      case FTS_SLNONE:    // A broken symbolic link
         //NOOP
         fprintf(LOGFILE, "NOOP: %s\n", entry->fts_path); break;
       case FTS_D:         // A directory in pre-order
       case FTS_F:         // A regular file
-      case FTS_SL:        // A symbolic link
-      case FTS_SLNONE:    // A broken symbolic link
-        if (setup_stormdist(entry, euser) != 0) {
+        if (setup_stormdist(entry, euser, for_blob_permission == 0) != 0) {
           exit_code = -1;
         }
         break;

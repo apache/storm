@@ -155,7 +155,15 @@ int main(int argc, char **argv) {
       fflush(ERRORFILE);
       return INVALID_ARGUMENT_NUMBER;
     }
-    exit_code = setup_stormdist_dir(argv[optind]);
+    exit_code = setup_stormdist_dir(argv[optind], 0);
+  } else if (strcasecmp("blob", command) == 0) {
+      if (argc != 4) {
+          fprintf(ERRORFILE, "Incorrect number of arguments (%d vs 4) for blob\n",
+                  argc);
+          fflush(ERRORFILE);
+          return INVALID_ARGUMENT_NUMBER;
+      }
+      exit_code= setup_stormdist_dir(argv[optind], 1);
   } else if (strcasecmp("rmr", command) == 0) {
     if (argc != 4) {
       fprintf(ERRORFILE, "Incorrect number of arguments (%d vs 4) for rmr\n",
@@ -173,7 +181,7 @@ int main(int argc, char **argv) {
       return INVALID_ARGUMENT_NUMBER;
     }
     working_dir = argv[optind++];
-    exit_code = setup_stormdist_dir(working_dir);
+    exit_code = setup_stormdist_dir(working_dir, 0);
     if (exit_code == 0) {
       exit_code = exec_as_user(working_dir, argv[optind]);
     }
