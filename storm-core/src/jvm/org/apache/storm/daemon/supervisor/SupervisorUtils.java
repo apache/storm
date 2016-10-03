@@ -104,6 +104,16 @@ public class SupervisorUtils {
         }
     }
 
+    public static void setupWorkerArtifactsDir(Map<String, Object> conf, Map<String, Object> stormConf, String dir) throws IOException {
+        if (Utils.getBoolean(conf.get(Config.SUPERVISOR_RUN_WORKER_AS_USER), false)) {
+            String logPrefix = "setup conf for " + dir;
+            List<String> commands = new ArrayList<>();
+            commands.add("artifacts-dir");
+            commands.add(dir);
+            processLauncherAndWait(conf, (String) (stormConf.get(Config.TOPOLOGY_SUBMITTER_USER)), commands, null, logPrefix);
+        }
+    }
+
     public static void rmrAsUser(Map<String, Object> conf, String id, String path) throws IOException {
         String user = Utils.getFileOwner(path);
         String logPreFix = "rmr " + id;

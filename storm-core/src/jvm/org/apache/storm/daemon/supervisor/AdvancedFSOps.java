@@ -95,6 +95,11 @@ public class AdvancedFSOps {
         public void setupStormCodeDir(Map<String, Object> topologyConf, File path) throws IOException {
             SupervisorUtils.setupStormCodeDir(_conf, topologyConf, path.getCanonicalPath());
         }
+
+        @Override
+        public void setupWorkerArtifactsDir(Map<String, Object> topologyConf, File path) throws IOException {
+            SupervisorUtils.setupWorkerArtifactsDir(_conf, topologyConf, path.getCanonicalPath());
+        }
     }
     
     /**
@@ -221,6 +226,16 @@ public class AdvancedFSOps {
      * @throws IOException on any error
      */
     public void setupStormCodeDir(Map<String, Object> topologyConf, File path) throws IOException {
+        //By default this is a NOOP
+    }
+
+    /**
+     * Setup the permissions for the worker artifacts dirs
+     * @param topologyConf the config of the Topology
+     * @param path the directory to set the permissions on
+     * @throws IOException on any error
+     */
+    public void setupWorkerArtifactsDir(Map<String, Object> topologyConf, File path) throws IOException {
         //By default this is a NOOP
     }
 
