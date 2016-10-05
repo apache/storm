@@ -40,8 +40,7 @@ import org.apache.storm.jms.JmsProvider;
  * <li>The name of the destination bean</li>
  * </ol>
  * 
- * 
- * @author tgoetz
+ *
  *
  */
 @SuppressWarnings("serial")
