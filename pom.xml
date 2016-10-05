@@ -319,6 +319,7 @@
         <module>external/storm-kinesis</module>
         <module>external/storm-druid</module>
         <module>external/storm-submit-tools</module>
+        <module>external/storm-jms</module>
 
         <!-- examples -->
         <module>examples/storm-starter</module>
