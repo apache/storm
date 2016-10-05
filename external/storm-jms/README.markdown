@@ -1,7 +1,6 @@
 ## About Storm JMS
 Storm JMS is a generic framework for integrating JMS messaging within the Storm framework.
 
-The [Storm Rationale page](https://storm.apache.org/releases/1.0.2/Rationale.html) explains what storm is and why it was built.
 
 Storm-JMS allows you to inject data into Storm via a generic JMS spout, as well as consume data from Storm via a generic JMS bolt.
 
@@ -20,36 +19,7 @@ The JMS Bolt component allows for data within a Storm topology to be published t
 
 A JMS Bolt connects to a JMS Destination, and publishes JMS Messages based on the Storm "Tuple" objects it receives.
 
-## Project Location
-Primary development of storm-jms will take place at: 
-https://github.com/ptgoetz/storm-jms
 
-Maven artifacts for releases will be available on maven central.
-
-
-## Documentation
-
-Documentation and tutorials can be found on the [Storm-JMS wiki](http://github.com/ptgoetz/storm-jms/wiki).
-
-## License
-
-Licensed to the Apache Software Foundation (ASF) under one
-or more contributor license agreements.  See the NOTICE file
-distributed with this work for additional information
-regarding copyright ownership.  The ASF licenses this file
-to you under the Apache License, Version 2.0 (the
-"License"); you may not use this file except in compliance
-with the License.  You may obtain a copy of the License at
-
-  http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing,
-software distributed under the License is distributed on an
-"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-KIND, either express or implied.  See the License for the
-specific language governing permissions and limitations
-under the License.
-
-## Contributors
+## Committer Sponsors
 
 * P. Taylor Goetz ([@ptgoetz](http://twitter.com/ptgoetz))
