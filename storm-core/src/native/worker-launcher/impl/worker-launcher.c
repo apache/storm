@@ -423,7 +423,7 @@ static int setup_permissions(FTSENT* entry, uid_t euser, int user_write) {
   mode_t mode = entry->fts_statp->st_mode;
   mode_t new_mode = (mode & (S_IRUSR | S_IXUSR)) | S_IRGRP | S_IWGRP;
   if (user_write) {
-    new_mode = new_mpde | S_IWUSR;
+    new_mode = new_mode | S_IWUSR;
   }
   if ((mode & S_IFDIR) == S_IFDIR) {
     new_mode = new_mode | S_IXGRP | S_ISGID;
