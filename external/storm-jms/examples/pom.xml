@@ -16,65 +16,64 @@
  limitations under the License.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<groupId>backtype.storm.contrib</groupId>
-	<artifactId>storm-jms-examples</artifactId>
-	<version>0.1-SNAPSHOT</version>
-	<name>Storm JMS Examples</name>
-	<description>Storm JMS Examples</description>
-	<repositories>
-		<repository>
-			<id>clojars.org</id>
-			<url>http://clojars.org/repo</url>
-		</repository>
-	</repositories>
-	<properties>
-		<spring.version>2.5.6</spring.version>
-		<storm.version>0.9.3</storm.version>
-	</properties>
-	<dependencies>
-		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-beans</artifactId>
-			<version>${spring.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-core</artifactId>
-			<version>${spring.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-context</artifactId>
-			<version>${spring.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-jms</artifactId>
-			<version>${spring.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.xbean</groupId>
-			<artifactId>xbean-spring</artifactId>
-			<version>3.7</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.storm</groupId>
-			<artifactId>storm-core</artifactId>
-			<version>${storm.version}</version>
-			<!-- keep storm out of the jar-with-dependencies -->
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.github.ptgoetz</groupId>
-			<artifactId>storm-jms</artifactId>
-			<version>0.9.2-SNAPSHOT</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.activemq</groupId>
-			<artifactId>activemq-core</artifactId>
-			<version>5.4.0</version>
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.apache.storm</groupId>
+        <artifactId>storm-jms-parent</artifactId>
+        <version>2.0.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+
+    <artifactId>storm-jms-examples</artifactId>
+
+    <properties>
+        <spring.version>2.5.6</spring.version>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-beans</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-core</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-jms</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.xbean</groupId>
+            <artifactId>xbean-spring</artifactId>
+            <version>3.7</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.storm</groupId>
+            <artifactId>storm-core</artifactId>
+            <version>${project.version}</version>
+            <!-- keep storm out of the jar-with-dependencies -->
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.storm</groupId>
+            <artifactId>storm-jms</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.activemq</groupId>
+            <artifactId>activemq-core</artifactId>
+            <version>5.4.0</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -85,78 +84,68 @@
                     <artifactId>log4j</artifactId>
                 </exclusion>
             </exclusions>
-		</dependency>
-	</dependencies>
-	<build>
-		<plugins>
-			<!-- bind the maven-assembly-plugin to the package phase this will create 
-				a jar file without the storm dependencies suitable for deployment to a cluster. -->
-			<plugin>
-				<artifactId>maven-assembly-plugin</artifactId>
-				<configuration>
-					<descriptorRefs>
-						<descriptorRef>jar-with-dependencies</descriptorRef>
-					</descriptorRefs>
-					<archive>
-						<manifest>
-							<mainClass></mainClass>
-						</manifest>
-					</archive>
-				</configuration>
-				<executions>
-					<execution>
-						<id>make-assembly</id>
-						<phase>package</phase>
-						<goals>
-							<goal>single</goal>
-						</goals>
-					</execution>
-				</executions>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
+            <!-- bind the maven-assembly-plugin to the package phase this will create
+                a jar file without the storm dependencies suitable for deployment to a cluster. -->
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                    <archive>
+                        <manifest>
+                            <mainClass></mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
 
-			</plugin>
+            </plugin>
 
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>exec-maven-plugin</artifactId>
-				<version>1.2.1</version>
-				<executions>
-					<execution>
-						<goals>
-							<goal>exec</goal>
-						</goals>
-					</execution>
-				</executions>
-				<configuration>
-					<executable>java</executable>
-					<includeProjectDependencies>true</includeProjectDependencies>
-					<includePluginDependencies>true</includePluginDependencies>
-					<mainClass>org.apache.storm.jms.example.ExampleJmsTopology</mainClass>
-					<systemProperties>
-						<systemProperty>
-							<key>log4j.configuration</key>
-							<value>file:./src/main/resources/log4j.properties</value>
-						</systemProperty>
-					</systemProperties>
-				</configuration>
-				<dependencies>
-					<dependency>
-						<groupId>org.apache.storm</groupId>
-						<artifactId>storm-core</artifactId>
-						<version>${storm.version}</version>
-						<type>jar</type>
-					</dependency>
-				</dependencies>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<configuration>
-					<source>1.6</source>
-					<target>1.6</target>
-				</configuration>
-			</plugin>
-
-		</plugins>
-
-	</build>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.2.1</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <executable>java</executable>
+                    <includeProjectDependencies>true</includeProjectDependencies>
+                    <includePluginDependencies>true</includePluginDependencies>
+                    <mainClass>org.apache.storm.jms.example.ExampleJmsTopology</mainClass>
+                    <systemProperties>
+                        <systemProperty>
+                            <key>log4j.configuration</key>
+                            <value>file:./src/main/resources/log4j.properties</value>
+                        </systemProperty>
+                    </systemProperties>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.apache.storm</groupId>
+                        <artifactId>storm-core</artifactId>
+                        <version>${project.version}</version>
+                        <type>jar</type>
+                    </dependency>
+                </dependencies>
+            </plugin>
+        </plugins>
+    </build>
 </project>
