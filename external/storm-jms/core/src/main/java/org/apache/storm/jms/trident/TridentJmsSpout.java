@@ -32,9 +32,8 @@ import org.apache.storm.utils.RotatingMap;
 import org.apache.storm.utils.Utils;
 
 /**
- * Trident implementation of the JmsSpout, based on code provided by P. Taylor Goetz - https://github.com/ptgoetz
+ * Trident implementation of the JmsSpout
  * <p>
- * @author Andy Toone for Metabroadcast
  *
  */
 public class TridentJmsSpout implements ITridentSpout<JmsBatch> {
