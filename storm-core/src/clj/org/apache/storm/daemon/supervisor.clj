@@ -328,6 +328,7 @@
    :assignment-id (.getAssignmentId isupervisor)
    :my-hostname (hostname conf)
    :curr-assignment (atom nil) ;; used for reporting used ports when heartbeating
+   :curr-downloading-storm-ids (atom nil) ;; Necessary to ensure that sync-processes code cleanup doesn't race with sync-supervisor downloads
    :heartbeat-timer (mk-timer :kill-fn (fn [t]
                                (log-error t "Error when processing event")
                                (exit-process! 20 "Error when processing an event")
@@ -396,6 +397,7 @@
         ^LocalState local-state (:local-state supervisor)
         assigned-executors (defaulted (ls-local-assignments local-state) {})
         assigned-storm-ids (assigned-storm-ids-from-port-assignments assigned-executors)
+        currently-downloading-storm-ids (assigned-storm-ids-from-port-assignments (defaulted @(:curr-downloading-storm-ids supervisor) {}))
         localizer (:localizer supervisor)
         now (current-time-secs)
         allocated (read-allocated-workers supervisor assigned-executors now)
@@ -425,6 +427,7 @@
     (log-debug "Syncing processes")
     (log-debug "Assigned executors: " assigned-executors)
     (log-debug "Allocated: " allocated)
+    (log-debug "Currently downloading: " currently-downloading-storm-ids)
     (doseq [[id [state heartbeat]] allocated]
       (when (not= :valid state)
         (log-message
@@ -435,7 +438,7 @@
         (shutdown-worker supervisor id)))
 
     (doseq [storm-id all-downloaded-storm-ids]
-      (when-not (assigned-storm-ids storm-id)
+      (when-not (or (assigned-storm-ids storm-id) (currently-downloading-storm-ids storm-id))
         (log-message "Removing code for storm id "
                      storm-id)
         (rm-topo-files conf storm-id localizer true)))
@@ -567,6 +570,9 @@
       (log-debug "Checked Downloaded Ids " checked-downloaded-storm-ids)
       (log-debug "Downloaded Ids " downloaded-storm-ids)
       (log-debug "Storm Ids Profiler Actions " storm-id->profiler-actions)
+      ;; Ensure sync-processes doesn't touch code currently being downloaded
+      (reset! (:curr-downloading-storm-ids supervisor) new-assignment)
+      
       ;; download code first
       ;; This might take awhile
       ;;   - should this be done separately from usual monitoring?
@@ -595,6 +601,7 @@
       (reset! (:assignment-versions supervisor) versions)
       (reset! (:stormid->profiler-actions supervisor) storm-id->profiler-actions)
       (reset! (:curr-assignment supervisor) new-assignment)
+      (reset! (:curr-downloading-storm-ids supervisor) nil)
 
       (.add processes-event-manager sync-processes))))
 
