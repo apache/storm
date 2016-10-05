@@ -19,21 +19,21 @@ package org.apache.storm.jms.example;
 
 import java.util.Map;
 
-import backtype.storm.topology.base.BaseRichBolt;
+import org.apache.storm.topology.base.BaseRichBolt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import backtype.storm.task.OutputCollector;
-import backtype.storm.task.TopologyContext;
-import backtype.storm.topology.OutputFieldsDeclarer;
-import backtype.storm.tuple.Fields;
-import backtype.storm.tuple.Tuple;
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Tuple;
 /**
- * A generic <code>backtype.storm.topology.IRichBolt</code> implementation
+ * A generic <code>org.apache.storm.topology.IRichBolt</code> implementation
  * for testing/debugging the Storm JMS Spout and example topologies.
  * <p/>
  * For debugging purposes, set the log level of the 
- * <code>backtype.storm.contrib.jms</code> package to DEBUG for debugging
+ * <code>org.apache.storm.contrib.jms</code> package to DEBUG for debugging
  * output.
  * @author tgoetz
  *
