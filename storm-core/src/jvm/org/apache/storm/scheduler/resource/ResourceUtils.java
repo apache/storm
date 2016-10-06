@@ -181,4 +181,26 @@ public class ResourceUtils {
         }
         return str.toString();
     }
+
+    /**
+     * Calculate the sum of a collection of doubles
+     * @param list collection of doubles
+     * @return the sum of of collection of doubles
+     */
+    public static double sum(Collection<Double> list) {
+        double sum = 0.0;
+        for (Double elem : list) {
+            sum += elem;
+        }
+        return sum;
+    }
+
+    /**
+     * Caculate the average of a collection of doubles
+     * @param list a collection of doubles
+     * @return the average of collection of doubles
+     */
+    public static double avg(Collection<Double> list) {
+        return sum(list) / list.size();
+    }
 }
