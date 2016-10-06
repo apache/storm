@@ -22,9 +22,11 @@ import org.apache.storm.Config;
 import org.apache.storm.generated.Bolt;
 import org.apache.storm.generated.SpoutSpec;
 import org.apache.storm.generated.StormTopology;
+import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.ExecutorDetails;
 import org.apache.storm.scheduler.INimbus;
 import org.apache.storm.scheduler.IScheduler;
+import org.apache.storm.scheduler.SchedulerAssignment;
 import org.apache.storm.scheduler.SupervisorDetails;
 import org.apache.storm.scheduler.Topologies;
 import org.apache.storm.scheduler.TopologyDetails;
@@ -45,6 +47,7 @@ import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -112,12 +115,11 @@ public class TestUtilsForResourceAwareScheduler {
     public static Map<ExecutorDetails, String> genExecsAndComps(StormTopology topology) {
         Map<ExecutorDetails, String> retMap = new HashMap<ExecutorDetails, String>();
         int startTask = 0;
-        int endTask = 1;
+        int endTask = 0;
         for (Map.Entry<String, SpoutSpec> entry : topology.get_spouts().entrySet()) {
             SpoutSpec spout = entry.getValue();
             String spoutId = entry.getKey();
             int spoutParallelism = spout.get_common().get_parallelism_hint();
-
             for (int i = 0; i < spoutParallelism; i++) {
                 retMap.put(new ExecutorDetails(startTask, endTask), spoutId);
                 startTask++;
@@ -295,5 +297,73 @@ public class TestUtilsForResourceAwareScheduler {
             }
         }
         return ret;
+    }
+
+    public static Map<SupervisorDetails, Double> getSupervisorToMemoryUsage(Cluster cluster, Topologies topologies) {
+        Map<SupervisorDetails, Double> superToMem = new HashMap<>();
+        Collection<SchedulerAssignment> assignments = cluster.getAssignments().values();
+        Collection<SupervisorDetails> supervisors = cluster.getSupervisors().values();
+        for (SupervisorDetails supervisor : supervisors) {
+            superToMem.put(supervisor, 0.0);
+        }
+
+        for (SchedulerAssignment assignment : assignments) {
+            Map<ExecutorDetails, SupervisorDetails> executorToSupervisor = new HashMap<>();
+            Map<SupervisorDetails, List<ExecutorDetails>> supervisorToExecutors = new HashMap<>();
+            TopologyDetails topology = topologies.getById(assignment.getTopologyId());
+            for (Map.Entry<ExecutorDetails, WorkerSlot> entry : assignment.getExecutorToSlot().entrySet()) {
+                executorToSupervisor.put(entry.getKey(), cluster.getSupervisorById(entry.getValue().getNodeId()));
+            }
+            for (Map.Entry<ExecutorDetails, SupervisorDetails> entry : executorToSupervisor.entrySet()) {
+                List<ExecutorDetails> executorsOnSupervisor = supervisorToExecutors.get(entry.getValue());
+                if (executorsOnSupervisor == null) {
+                    executorsOnSupervisor = new ArrayList<>();
+                    supervisorToExecutors.put(entry.getValue(), executorsOnSupervisor);
+                }
+                executorsOnSupervisor.add(entry.getKey());
+            }
+            for (Map.Entry<SupervisorDetails, List<ExecutorDetails>> entry : supervisorToExecutors.entrySet()) {
+                Double supervisorUsedMemory = 0.0;
+                for (ExecutorDetails executor: entry.getValue()) {
+                    supervisorUsedMemory += topology.getTotalMemReqTask(executor);
+                }
+                superToMem.put(entry.getKey(), superToMem.get(entry.getKey()) + supervisorUsedMemory);
+            }
+        }
+        return superToMem;
+    }
+
+    public static Map<SupervisorDetails, Double> getSupervisorToCpuUsage(Cluster cluster, Topologies topologies) {
+        Map<SupervisorDetails, Double> superToCpu = new HashMap<>();
+        Collection<SchedulerAssignment> assignments = cluster.getAssignments().values();
+        Collection<SupervisorDetails> supervisors = cluster.getSupervisors().values();
+        for (SupervisorDetails supervisor : supervisors) {
+            superToCpu.put(supervisor, 0.0);
+        }
+
+        for (SchedulerAssignment assignment : assignments) {
+            Map<ExecutorDetails, SupervisorDetails> executorToSupervisor = new HashMap<>();
+            Map<SupervisorDetails, List<ExecutorDetails>> supervisorToExecutors = new HashMap<>();
+            TopologyDetails topology = topologies.getById(assignment.getTopologyId());
+            for (Map.Entry<ExecutorDetails, WorkerSlot> entry : assignment.getExecutorToSlot().entrySet()) {
+                executorToSupervisor.put(entry.getKey(), cluster.getSupervisorById(entry.getValue().getNodeId()));
+            }
+            for (Map.Entry<ExecutorDetails, SupervisorDetails> entry : executorToSupervisor.entrySet()) {
+                List<ExecutorDetails> executorsOnSupervisor = supervisorToExecutors.get(entry.getValue());
+                if (executorsOnSupervisor == null) {
+                    executorsOnSupervisor = new ArrayList<>();
+                    supervisorToExecutors.put(entry.getValue(), executorsOnSupervisor);
+                }
+                executorsOnSupervisor.add(entry.getKey());
+            }
+            for (Map.Entry<SupervisorDetails, List<ExecutorDetails>> entry : supervisorToExecutors.entrySet()) {
+                Double supervisorUsedCpu = 0.0;
+                for (ExecutorDetails executor: entry.getValue()) {
+                    supervisorUsedCpu += topology.getTotalCpuReqTask(executor);
+                }
+                superToCpu.put(entry.getKey(), superToCpu.get(entry.getKey()) + supervisorUsedCpu);
+            }
+        }
+        return superToCpu;
     }
 }
