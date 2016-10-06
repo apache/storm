@@ -15,23 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.cluster;
+package org.apache.storm.pacemaker;
 
-import java.util.List;
-import java.util.Map;
-import org.apache.storm.pacemaker.PacemakerClientPool;
-import org.apache.storm.utils.Utils;
-import org.apache.zookeeper.data.ACL;
-
-public class PaceMakerStateStorageFactory implements StateStorageFactory {
-    @Override
-    public IStateStorage mkStore(Map config, Map auth_conf, List<ACL> acls, ClusterStateContext context) {
-        try {
-            ZKStateStorageFactory zkfact = new ZKStateStorageFactory();
-            IStateStorage zkState = zkfact.mkStore(config, auth_conf, acls, context);
-            return new PaceMakerStateStorage(new PacemakerClientPool(config), zkState);
-        } catch (Exception e) {
-            throw Utils.wrapInRuntime(e);
-        }
+public class PacemakerConnectionException extends Exception {
+    public PacemakerConnectionException(String err) {
+        super(err);
     }
 }

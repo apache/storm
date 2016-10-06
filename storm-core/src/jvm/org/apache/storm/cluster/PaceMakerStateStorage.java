@@ -17,28 +17,29 @@
  */
 package org.apache.storm.cluster;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.storm.callback.ZKStateChangedCallback;
 import org.apache.storm.generated.*;
-import org.apache.storm.pacemaker.PacemakerClient;
+import org.apache.storm.pacemaker.PacemakerClientPool;
 import org.apache.storm.utils.Utils;
 import org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-import java.util.Map;
-
 public class PaceMakerStateStorage implements IStateStorage {
 
     private static Logger LOG = LoggerFactory.getLogger(PaceMakerStateStorage.class);
 
-    private PacemakerClient pacemakerClient;
+    private PacemakerClientPool pacemakerClientPool;
     private IStateStorage stateStorage;
     private static final int maxRetries = 10;
 
-    public PaceMakerStateStorage(PacemakerClient pacemakerClient, IStateStorage stateStorage) throws Exception {
-        this.pacemakerClient = pacemakerClient;
+    public PaceMakerStateStorage(PacemakerClientPool pacemakerClientPool, IStateStorage stateStorage) throws Exception {
+        this.pacemakerClientPool = pacemakerClientPool;
         this.stateStorage = stateStorage;
     }
 
@@ -90,7 +91,7 @@ public class PaceMakerStateStorage implements IStateStorage {
     @Override
     public void close() {
         stateStorage.close();
-        pacemakerClient.close();
+        pacemakerClientPool.close();
     }
 
     @Override
@@ -117,7 +118,7 @@ public class PaceMakerStateStorage implements IStateStorage {
                 hbPulse.set_id(path);
                 hbPulse.set_details(data);
                 HBMessage message = new HBMessage(HBServerMessageType.SEND_PULSE, HBMessageData.pulse(hbPulse));
-                HBMessage response = pacemakerClient.send(message);
+                HBMessage response = pacemakerClientPool.send(message);
                 if (response.get_type() != HBServerMessageType.SEND_PULSE_RESPONSE) {
                     throw new HBExecutionException("Invalid Response Type");
                 }
@@ -138,13 +139,33 @@ public class PaceMakerStateStorage implements IStateStorage {
         int retry = maxRetries;
         while (true) {
             try {
+                byte[] ret = null;
+                int latest_time_secs = 0;
+                boolean got_response = false;
+
                 HBMessage message = new HBMessage(HBServerMessageType.GET_PULSE, HBMessageData.path(path));
-                HBMessage response = pacemakerClient.send(message);
-                if (response.get_type() != HBServerMessageType.GET_PULSE_RESPONSE) {
-                    throw new HBExecutionException("Invalid Response Type");
+                List<HBMessage> responses = pacemakerClientPool.sendAll(message);
+                for(HBMessage response : responses) {
+                    if (response.get_type() != HBServerMessageType.GET_PULSE_RESPONSE) {
+                        LOG.error("get_worker_hb: Invalid Response Type");
+                        continue;
+                    }
+                    // We got at least one GET_PULSE_RESPONSE message.
+                    got_response = true;
+                    byte[] details = response.get_data().get_pulse().get_details();
+                    if(details == null) {
+                        continue;
+                    }
+                    ClusterWorkerHeartbeat cwh = Utils.deserialize(details, ClusterWorkerHeartbeat.class);
+                    if(cwh != null && cwh.get_time_secs() > latest_time_secs) {
+                        latest_time_secs = cwh.get_time_secs();
+                        ret = details;
+                    }
                 }
-                LOG.debug("Successful get_worker_hb");
-                return response.get_data().get_pulse().get_details();
+                if(!got_response) {
+                    throw new HBExecutionException("Failed to get a response.");
+                }
+                return ret;
             } catch (Exception e) {
                 if (retry <= 0) {
                     throw Utils.wrapInRuntime(e);
@@ -160,13 +181,22 @@ public class PaceMakerStateStorage implements IStateStorage {
         int retry = maxRetries;
         while (true) {
             try {
+                HashSet<String> retSet = new HashSet<>();
+
                 HBMessage message = new HBMessage(HBServerMessageType.GET_ALL_NODES_FOR_PATH, HBMessageData.path(path));
-                HBMessage response = pacemakerClient.send(message);
-                if (response.get_type() != HBServerMessageType.GET_ALL_NODES_FOR_PATH_RESPONSE) {
-                    throw new HBExecutionException("Invalid Response Type");
+                List<HBMessage> responses = pacemakerClientPool.sendAll(message);
+                for(HBMessage response : responses) {
+                    if (response.get_type() != HBServerMessageType.GET_ALL_NODES_FOR_PATH_RESPONSE) {
+                        LOG.error("get_worker_hb_children: Invalid Response Type");
+                        continue;
+                    }
+                    if(response.get_data().get_nodes().get_pulseIds() != null) {
+                        retSet.addAll(response.get_data().get_nodes().get_pulseIds());
+                    }
                 }
+
                 LOG.debug("Successful get_worker_hb");
-                return response.get_data().get_nodes().get_pulseIds();
+                return new ArrayList<>(retSet);
             } catch (Exception e) {
                 if (retry <= 0) {
                     throw Utils.wrapInRuntime(e);
@@ -183,7 +213,7 @@ public class PaceMakerStateStorage implements IStateStorage {
         while (true) {
             try {
                 HBMessage message = new HBMessage(HBServerMessageType.DELETE_PATH, HBMessageData.path(path));
-                HBMessage response = pacemakerClient.send(message);
+                HBMessage response = pacemakerClientPool.send(message);
                 if (response.get_type() != HBServerMessageType.DELETE_PATH_RESPONSE) {
                     throw new HBExecutionException("Invalid Response Type");
                 }

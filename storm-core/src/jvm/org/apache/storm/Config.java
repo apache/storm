@@ -925,10 +925,10 @@ public class Config extends HashMap<String, Object> {
     public static final String UI_HTTPS_NEED_CLIENT_AUTH = "ui.https.need.client.auth";
 
     /**
-     * The host that Pacemaker is running on.
+     * The list of servers that Pacemaker is running on.
      */
-    @isString
-    public static final String PACEMAKER_HOST = "pacemaker.host";
+    @isStringList
+    public static final String PACEMAKER_SERVERS = "pacemaker.servers";
 
     /**
      * The port Pacemaker should run on. Clients should
