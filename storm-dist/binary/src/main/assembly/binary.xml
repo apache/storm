@@ -404,6 +404,27 @@
                 <include>storm*jar</include>
             </includes>
         </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-jms</directory>
+            <outputDirectory>external/storm-jms</outputDirectory>
+            <includes>
+                <include>README.*</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-jms/core/target</directory>
+            <outputDirectory>external/storm-jms</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-jms/examples/target</directory>
+            <outputDirectory>external/storm-jms</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
+            </includes>
+        </fileSet>
         <!-- $STORM_HOME/extlib -->
         <fileSet>
             <directory></directory>
