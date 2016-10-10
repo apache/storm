@@ -41,6 +41,7 @@ public class ReportErrorAndDie implements Thread.UncaughtExceptionHandler {
         if (Utils.exceptionCauseIsInstanceOf(InterruptedException.class, e)
                 || Utils.exceptionCauseIsInstanceOf(java.io.InterruptedIOException.class, e)) {
             LOG.info("Got interrupted exception shutting thread down...");
+        } else {
             suicideFn.run();
         }
     }
