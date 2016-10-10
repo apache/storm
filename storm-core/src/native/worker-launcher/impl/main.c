@@ -157,7 +157,7 @@ int main(int argc, char **argv) {
     }
     exit_code = setup_dir_permissions(argv[optind], 0);
   } else if (strcasecmp("artifacts-dir", command) == 0) {
-      if (argc != 4) {
+    if (argc != 4) {
       fprintf(ERRORFILE, "Incorrect number of arguments (%d vs 4) for artifacts-dir\n",
 	      argc);
       fflush(ERRORFILE);

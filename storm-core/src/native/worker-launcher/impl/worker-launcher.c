@@ -414,6 +414,14 @@ static int copy_file(int input, const char* in_filename,
   return 0;
 }
 
+/**
+ * Sets up permissions for a directory optionally making it user-writable.
+ * We set up the permissions r(w)xrws--- so that the file group (should be Storm's user group)
+ * has complete access to the directory, and the file user (The topology owner's user)
+ * is able to read and execute, and in certain directories, write. The setGID bit is set
+ * to make sure any files created under the directory will be accessible to storm's user for
+ * cleanup purposes.
+ */
 static int setup_permissions(FTSENT* entry, uid_t euser, int user_write) {
   if (lchown(entry->fts_path, euser, launcher_gid) != 0) {
     fprintf(ERRORFILE, "Failure to exec app initialization process - %s, fts_path=%s\n",
@@ -421,10 +429,12 @@ static int setup_permissions(FTSENT* entry, uid_t euser, int user_write) {
      return -1;
   }
   mode_t mode = entry->fts_statp->st_mode;
+  // Preserve user read and execute and set group read and write.
   mode_t new_mode = (mode & (S_IRUSR | S_IXUSR)) | S_IRGRP | S_IWGRP;
   if (user_write) {
     new_mode = new_mode | S_IWUSR;
   }
+  // If the entry is a directory, Add group execute and setGID bits.
   if ((mode & S_IFDIR) == S_IFDIR) {
     new_mode = new_mode | S_IXGRP | S_ISGID;
   }
@@ -438,6 +448,11 @@ static int setup_permissions(FTSENT* entry, uid_t euser, int user_write) {
 
 
 int setup_dir_permissions(const char* local_dir, int user_writable) {
+  //This is the same as
+  //> chmod g+rwX -R $local_dir
+  //> chmod g+s -R $local_dir
+  //> if [ $user_writable ]; then chmod u+w;  else u-w; fi
+  //> chown -no-dereference -R $user:$supervisor-group $local_dir
   int exit_code = 0;
   uid_t euser = geteuid();
 
