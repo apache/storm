@@ -66,8 +66,7 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
           "  private static final ChannelHandler %1$s = ",
           "    new AbstractChannelHandler() {",
           "    private final Values EMPTY_VALUES = new Values();",
-          "    private List<Object> prevGroupValues = null;",
-          "    private final Map<String, Object> accumulators = new HashMap<>();",
+          "    private final Map<List<Object>, Map<String, Object>> state = new LinkedHashMap<>();",
           "    private final int[] groupIndices = new int[] {%2$s};",
           "    private List<Object> getGroupValues(Values _data) {",
           "      List<Object> res = new ArrayList<>();",
@@ -81,11 +80,15 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
           "    public void flush(ChannelContext ctx) {",
           "      emitAggregateResults(ctx);",
           "      super.flush(ctx);",
-          "      prevGroupValues = null;",
+          "      state.clear();",
           "    }",
           "",
           "    private void emitAggregateResults(ChannelContext ctx) {",
-          "    %3$s",
+          "        for (Map.Entry<List<Object>, Map<String, Object>> entry: state.entrySet()) {",
+          "          List<Object> groupValues = entry.getKey();",
+          "          Map<String, Object> accumulators = entry.getValue();",
+          "          %3$s",
+          "        }",
           "    }",
           "",
           "    @Override",
@@ -245,17 +248,15 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
   @Override
   public Void visitAggregate(Aggregate aggregate, List<Void> inputStreams) throws Exception {
     beginAggregateStage(aggregate);
-    pw.println("        List<Object> curGroupValues = _data == null ? null : getGroupValues(_data);");
-    pw.println("        if (prevGroupValues != null && !prevGroupValues.equals(curGroupValues)) {");
-    pw.println("          emitAggregateResults(ctx);");
+    pw.println("        if (_data != null) {");
+    pw.println("        List<Object> curGroupValues = getGroupValues(_data);");
+    pw.println("        if (!state.containsKey(curGroupValues)) {");
+    pw.println("          state.put(curGroupValues, new HashMap<String, Object>());");
     pw.println("        }");
-    pw.println("        if (curGroupValues != null) {");
+    pw.println("        Map<String, Object> accumulators = state.get(curGroupValues);");
     for (AggregateCall call : aggregate.getAggCallList()) {
       aggregate(call);
     }
-    pw.println("        }");
-    pw.println("        if (prevGroupValues != curGroupValues) {");
-    pw.println("          prevGroupValues = curGroupValues;");
     pw.println("        }");
     endStage();
     return null;
@@ -293,10 +294,8 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
     }
     return NEW_LINE_JOINER.join(sw.toString(),
                                 String.format("          ctx.emit(new Values(%s, %s));",
-                                              groupValueEmitStr("prevGroupValues", aggregate.getGroupSet().cardinality()),
-                                              Joiner.on(", ").join(res)),
-                                "          accumulators.clear();"
-    );
+                                              groupValueEmitStr("groupValues", aggregate.getGroupSet().cardinality()),
+                                              Joiner.on(", ").join(res)));
   }
 
   private String aggregateResult(AggregateCall call, PrintWriter pw) {
