@@ -55,6 +55,8 @@ public class NimbusInfo implements Serializable {
             if (conf.containsKey(Config.STORM_LOCAL_HOSTNAME)) {
                 host = conf.get(Config.STORM_LOCAL_HOSTNAME).toString();
                 LOG.info("Overriding nimbus host to storm.local.hostname -> {}", host);
+            } else {
+                LOG.info("Nimbus figures out its name to {}", host);
             }
 
             int port = Integer.parseInt(conf.get(Config.NIMBUS_THRIFT_PORT).toString());
