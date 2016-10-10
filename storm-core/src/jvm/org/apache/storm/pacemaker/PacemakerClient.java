@@ -45,7 +45,7 @@ public class PacemakerClient implements ISaslClient {
 
     private static final Logger LOG = LoggerFactory.getLogger(PacemakerClient.class);
 
-    private String topo_name;
+    private String client_name;
     private String secret;
     private AtomicBoolean ready;
     private final ClientBootstrap bootstrap;
@@ -55,22 +55,16 @@ public class PacemakerClient implements ISaslClient {
     private HBMessage messages[];
     private LinkedBlockingQueue<Integer> availableMessageSlots;
     private ThriftNettyClientCodec.AuthMethod authMethod;
-    private static Timer timer;
-    private String host;
-
-    static {
-        timer = new Timer(true);
-    }
+    private static Timer timer = new Timer(true);
 
     private StormBoundedExponentialBackoffRetry backoff = new StormBoundedExponentialBackoffRetry(100, 5000, 20);
     private int retryTimes = 0;
 
     public PacemakerClient(Map config, String host) {
-        this.host = host;
         int port = (int)config.get(Config.PACEMAKER_PORT);
-        topo_name = (String)config.get(Config.TOPOLOGY_NAME);
-        if(topo_name == null) {
-            topo_name = "pacemaker-client";
+        client_name = (String)config.get(Config.TOPOLOGY_NAME);
+        if(client_name == null) {
+            client_name = "pacemaker-client";
         }
 
         String auth = (String)config.get(Config.PACEMAKER_AUTH_METHOD);
@@ -122,10 +116,6 @@ public class PacemakerClient implements ISaslClient {
         bootstrap.connect(remote_addr);
     }
 
-    public String toString() {
-        return host;
-    }
-
     private void setupMessaging() {
         messages = new HBMessage[maxPending];
         availableMessageSlots = new LinkedBlockingQueue<Integer>();
@@ -134,6 +124,7 @@ public class PacemakerClient implements ISaslClient {
         }
     }
 
+    @Override
     public synchronized void channelConnected(Channel channel) {
         Channel oldChannel = channelRef.get();
         if (oldChannel != null) {
@@ -156,6 +147,7 @@ public class PacemakerClient implements ISaslClient {
         return ready.get();
     }
 
+    @Override
     public synchronized void channelReady() {
         LOG.debug("Channel is ready.");
         ready.set(true);
@@ -163,7 +155,7 @@ public class PacemakerClient implements ISaslClient {
     }
 
     public String name() {
-        return topo_name;
+        return client_name;
     }
 
     public String secretKey() {

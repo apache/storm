@@ -111,7 +111,6 @@ public class KerberosSaslNettyClient {
         try {
             Principal principal = (Principal)subject.getPrincipals().toArray()[0];
             final String fPrincipalName = principal.getName();
-            KerberosName kerbName = new KerberosName(principal.getName());
             final String fHost = host;
             final String fServiceName = serviceName;
             final CallbackHandler fch = ch;
