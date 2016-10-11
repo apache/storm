@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-2131: Add blob command to worker-launcher, make stormdist directory not writeable by topo owner
  * STORM-2144: Fix Storm-sql group-by behavior in standalone mode
  * STORM-1546: Adding Read and Write Aggregations for Pacemaker to make it HA compatible
  * STORM-2124: show requested cpu mem for each component
