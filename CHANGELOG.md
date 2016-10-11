@@ -157,6 +157,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0
+ * STORM-2097: Improve logging in trident core and examples
  * STORM-2066: make error message in IsolatedPool.java more descriptive
  * STORM-1870: Allow FluxShellBolt/Spout set custom "componentConfig" via yaml
  * STORM-2126: fix NPE due to race condition in compute-new-sched-assign…
