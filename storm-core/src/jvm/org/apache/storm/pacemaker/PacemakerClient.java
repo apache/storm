@@ -130,6 +130,10 @@ public class PacemakerClient implements ISaslClient {
         }
     }
 
+    public boolean isReady() {
+        return ready.get();
+    }
+
     @Override
     public synchronized void channelConnected(Channel channel) {
         Channel oldChannel = channelRef.get();
