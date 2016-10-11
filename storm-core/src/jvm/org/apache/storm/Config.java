@@ -932,11 +932,19 @@ public class Config extends HashMap<String, Object> {
     public static final String UI_HTTP_X_FRAME_OPTIONS = "ui.http.x-frame-options";
 
     /**
-     * The host that Pacemaker is running on.
+     * The hosts that Pacemaker is running on.
      */
+    @isStringList
+    public static final String PACEMAKER_SERVERS = "pacemaker.servers";
+
+    /**
+     * The host that Pacemaker is running on.
+     * @deprecated in favor of PACEMAKER_SERVERS for Pacemaker-HA.
+     */
+    @Deprecated
     @isString
     public static final String PACEMAKER_HOST = "pacemaker.host";
-
+    
     /**
      * The port Pacemaker should run on. Clients should
      * connect to this port to submit or read heartbeats.
