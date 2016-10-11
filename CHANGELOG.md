@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-2144: Fix Storm-sql group-by behavior in standalone mode
  * STORM-1546: Adding Read and Write Aggregations for Pacemaker to make it HA compatible
  * STORM-2124: show requested cpu mem for each component
  * STORM-2109: Treat Supervisor CPU/MEMORY Configs as Numbers
