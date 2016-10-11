@@ -39,8 +39,7 @@ import org.apache.storm.sql.compiler.ExprCompiler;
 import org.apache.storm.sql.compiler.PostOrderRelNodeVisitor;
 import org.apache.storm.sql.runtime.ISqlTridentDataSource;
 import org.apache.storm.sql.runtime.trident.functions.EvaluationFilter;
-import org.apache.storm.sql.runtime.trident.functions.EvaluationFunction;
-import org.apache.storm.sql.runtime.trident.functions.ForwardFunction;
+import org.apache.storm.sql.runtime.trident.functions.EvaluationMapFunction;
 import org.apache.storm.sql.runtime.trident.functions.UDAFWrappedAggregator;
 import org.apache.storm.sql.runtime.trident.operations.CountBy;
 import org.apache.storm.sql.runtime.trident.operations.DivideForAverage;
@@ -197,15 +196,8 @@ public class TridentLogicalPlanCompiler extends PostOrderRelNodeVisitor<IAggrega
         }
 
         Stream inputStream = inputStreams.get(0).toStream();
-        Fields inputFields = inputStream.getOutputFields();
         String stageName = getStageName(project);
-
-        // Trident doesn't allow duplicated field name... need to do the trick...
         List<String> outputFieldNames = project.getRowType().getFieldNames();
-        List<String> temporaryOutputFieldNames = new ArrayList<>();
-        for (String outputFieldName : outputFieldNames) {
-            temporaryOutputFieldNames.add("__" + outputFieldName + "__");
-        }
 
         try (StringWriter sw = new StringWriter(); PrintWriter pw = new PrintWriter(sw)) {
             pw.write("import org.apache.storm.tuple.Values;\n");
@@ -221,10 +213,7 @@ public class TridentLogicalPlanCompiler extends PostOrderRelNodeVisitor<IAggrega
             pw.write(String.format("\nreturn new Values(%s);", Joiner.on(',').join(res)));
             final String expression = sw.toString();
 
-            return inputStream.each(inputFields, new EvaluationFunction(expression), new Fields(temporaryOutputFieldNames))
-                    .project(new Fields(temporaryOutputFieldNames))
-                    .each(new Fields(temporaryOutputFieldNames), new ForwardFunction(), new Fields(outputFieldNames))
-                    .project(new Fields(outputFieldNames))
+            return inputStream.map(new EvaluationMapFunction(expression), new Fields(outputFieldNames))
                     .name(stageName);
         }
     }

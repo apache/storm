@@ -83,7 +83,7 @@ public class TridentMapExample {
         TridentTopology topology = new TridentTopology();
         TridentState wordCounts = topology.newStream("spout1", spout).parallelismHint(16)
                 .flatMap(split)
-                .map(toUpper)
+                .map(toUpper, new Fields("uppercased"))
                 .filter(theFilter)
                 .peek(new Consumer() {
                     @Override
@@ -91,14 +91,14 @@ public class TridentMapExample {
                         System.out.println(input.getString(0));
                     }
                 })
-                .groupBy(new Fields("word"))
+                .groupBy(new Fields("uppercased"))
                 .persistentAggregate(new MemoryMapState.Factory(), new Count(), new Fields("count"))
                 .parallelismHint(16);
 
         topology.newDRPCStream("words", drpc)
-                .flatMap(split)
-                .groupBy(new Fields("args"))
-                .stateQuery(wordCounts, new Fields("args"), new MapGet(), new Fields("count"))
+                .flatMap(split, new Fields("word"))
+                .groupBy(new Fields("word"))
+                .stateQuery(wordCounts, new Fields("word"), new MapGet(), new Fields("count"))
                 .filter(new FilterNull())
                 .aggregate(new Fields("count"), new Sum(), new Fields("sum"));
         return topology.build();
@@ -115,6 +115,7 @@ public class TridentMapExample {
                 System.out.println("DRPC RESULT: " + drpc.execute("words", "CAT THE DOG JUMPED"));
                 Thread.sleep(1000);
             }
+            cluster.shutdown();
         } else {
             conf.setNumWorkers(3);
             StormSubmitter.submitTopologyWithProgressBar(args[0], conf, buildTopology(null));
