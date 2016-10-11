@@ -23,6 +23,8 @@ import org.apache.storm.trident.topology.TransactionAttempt;
 import org.apache.storm.trident.topology.state.RotatingTransactionalState;
 import org.apache.storm.trident.topology.state.TransactionalState;
 import org.apache.storm.tuple.Fields;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,6 +33,8 @@ import java.util.Map;
 
 
 public class PartitionedTridentSpoutExecutor implements ITridentSpout<Object> {
+    private static final Logger LOG = LoggerFactory.getLogger(PartitionedTridentSpoutExecutor.class);
+
     IPartitionedTridentSpout<Object, ISpoutPartition, Object> _spout;
     
     public PartitionedTridentSpoutExecutor(IPartitionedTridentSpout<Object, ISpoutPartition, Object> spout) {
@@ -50,6 +54,8 @@ public class PartitionedTridentSpoutExecutor implements ITridentSpout<Object> {
         
         @Override
         public Object initializeTransaction(long txid, Object prevMetadata, Object currMetadata) {
+            LOG.debug("Initialize Transaction. txid = {}, prevMetadata = {}, currMetadata = {}", txid, prevMetadata, currMetadata);
+
             if(currMetadata!=null) {
                 return currMetadata;
             } else {
@@ -60,16 +66,21 @@ public class PartitionedTridentSpoutExecutor implements ITridentSpout<Object> {
 
         @Override
         public void close() {
+            LOG.debug("Closing");
             _coordinator.close();
+            LOG.debug("Closed");
         }
 
         @Override
         public void success(long txid) {
+            LOG.debug("Success transaction id " + txid);
         }
 
         @Override
         public boolean isReady(long txid) {
-            return _coordinator.isReady(txid);
+            boolean ready = _coordinator.isReady(txid);
+            LOG.debug("isReady = {} ", ready);
+            return ready;
         }
     }
     
@@ -101,8 +112,9 @@ public class PartitionedTridentSpoutExecutor implements ITridentSpout<Object> {
 
         
         @Override
-        public void emitBatch(final TransactionAttempt tx, final Object coordinatorMeta,
-                final TridentCollector collector) {
+        public void emitBatch(final TransactionAttempt tx, final Object coordinatorMeta, final TridentCollector collector) {
+            LOG.debug("Emitting Batch. [transaction = {}], [coordinatorMeta = {}], [collector = {}]", tx, coordinatorMeta, collector);
+
             if(_savedCoordinatorMeta == null || !_savedCoordinatorMeta.equals(coordinatorMeta)) {
                 List<ISpoutPartition> partitions = _emitter.getOrderedPartitions(coordinatorMeta);
                 _partitionStates.clear();
@@ -133,11 +145,13 @@ public class PartitionedTridentSpoutExecutor implements ITridentSpout<Object> {
                 if(meta!=null) {
                     _emitter.emitPartitionBatch(tx, collector, partition, meta);
                 }
-            }            
+            }
+            LOG.debug("Emitted Batch. [tx = {}], [coordinatorMeta = {}], [collector = {}]", tx, coordinatorMeta, collector);
         }
 
         @Override
         public void success(TransactionAttempt tx) {
+            LOG.debug("Success transaction " + tx);
             for(EmitterPartitionState state: _partitionStates.values()) {
                 state.rotatingState.cleanupBefore(tx.getTransactionId());
             }
@@ -145,8 +159,10 @@ public class PartitionedTridentSpoutExecutor implements ITridentSpout<Object> {
 
         @Override
         public void close() {
+            LOG.debug("Closing");
             _state.close();
             _emitter.close();
+            LOG.debug("Closed");
         }
     }    
 
