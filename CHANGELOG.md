@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-2144: Fix Storm-sql group-by behavior in standalone mode
  * STORM-2066: make error message in IsolatedPool.java more descriptive
  * STORM-1870: Allow FluxShellBolt/Spout set custom "componentConfig" via yaml
  * STORM-2126: fix NPE due to race condition in compute-new-sched-assign…
