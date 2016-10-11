@@ -514,4 +514,16 @@ public class RAS_Node {
         consumeCPU(taskCpuReq);
         consumeMemory(taskMemReq);
     }
+
+    /**
+     * frees the amount of resources for a executor in a topology.
+     * @param exec is the executor for which the resources are freed for
+     * @param topo the topology the executor is a part
+     */
+    public void freeResourcesForTask(ExecutorDetails exec, TopologyDetails topo) {
+        Double taskMemReq = topo.getTotalMemReqTask(exec);
+        Double taskCpuReq = topo.getTotalCpuReqTask(exec);
+        freeCPU(taskCpuReq);
+        freeMemory(taskMemReq);
+    }
 }
