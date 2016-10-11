@@ -33,4 +33,13 @@ public class CombinerValueUpdater implements ValueUpdater<Object> {
         if(stored==null) return arg;
         else return agg.combine(stored, arg);
     }
+
+    // helpful for debugging tests
+    public Object getArg() {
+        return arg;
+    }
+
+    public CombinerAggregator getAgg() {
+        return agg;
+    }
 }

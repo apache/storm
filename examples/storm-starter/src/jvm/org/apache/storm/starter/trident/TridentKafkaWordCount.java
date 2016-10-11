@@ -23,32 +23,37 @@
 package org.apache.storm.starter.trident;
 
 
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.LocalDRPC;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
-import org.apache.storm.spout.SchemeAsMultiScheme;
-import org.apache.storm.topology.TopologyBuilder;
-import org.apache.storm.tuple.Fields;
-import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.storm.kafka.StringScheme;
 import org.apache.storm.kafka.ZkHosts;
 import org.apache.storm.kafka.bolt.KafkaBolt;
 import org.apache.storm.kafka.bolt.mapper.FieldNameBasedTupleToKafkaMapper;
 import org.apache.storm.kafka.bolt.selector.DefaultTopicSelector;
+import org.apache.storm.kafka.trident.OpaqueTridentKafkaSpout;
 import org.apache.storm.kafka.trident.TransactionalTridentKafkaSpout;
 import org.apache.storm.kafka.trident.TridentKafkaConfig;
+import org.apache.storm.spout.SchemeAsMultiScheme;
 import org.apache.storm.starter.spout.RandomSentenceSpout;
+import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.trident.Stream;
 import org.apache.storm.trident.TridentState;
 import org.apache.storm.trident.TridentTopology;
 import org.apache.storm.trident.operation.builtin.Count;
+import org.apache.storm.trident.operation.builtin.Debug;
 import org.apache.storm.trident.operation.builtin.FilterNull;
 import org.apache.storm.trident.operation.builtin.MapGet;
 import org.apache.storm.trident.testing.MemoryMapState;
 import org.apache.storm.trident.testing.Split;
+import org.apache.storm.tuple.Fields;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.Serializable;
 import java.util.Properties;
 
 /**
@@ -72,7 +77,8 @@ import java.util.Properties;
  *     <a href="https://github.com/apache/storm/tree/master/external/storm-kafka"> Storm Kafka </a>.
  * </p>
  */
-public class TridentKafkaWordCount {
+public class TridentKafkaWordCount implements Serializable {
+    private static final Logger LOG = LoggerFactory.getLogger(TridentKafkaWordCount.class);
 
     private String zkUrl;
     private String brokerUrl;
@@ -91,7 +97,7 @@ public class TridentKafkaWordCount {
      *
      * @return a transactional trident kafka spout.
      */
-    private TransactionalTridentKafkaSpout createKafkaSpout() {
+    private TransactionalTridentKafkaSpout createTransactionalKafkaSpout() {
         ZkHosts hosts = new ZkHosts(zkUrl);
         TridentKafkaConfig config = new TridentKafkaConfig(hosts, "test");
         config.scheme = new SchemeAsMultiScheme(new StringScheme());
@@ -99,6 +105,16 @@ public class TridentKafkaWordCount {
         // Consume new data from the topic
         config.startOffsetTime = kafka.api.OffsetRequest.LatestTime();
         return new TransactionalTridentKafkaSpout(config);
+    }
+
+    private OpaqueTridentKafkaSpout createOpaqueKafkaSpout() {
+        ZkHosts hosts = new ZkHosts(zkUrl);
+        TridentKafkaConfig config = new TridentKafkaConfig(hosts, "test");
+        config.scheme = new SchemeAsMultiScheme(new StringScheme());
+
+        // Consume new data from the topic
+        config.startOffsetTime = kafka.api.OffsetRequest.LatestTime();
+        return new OpaqueTridentKafkaSpout(config);
     }
 
 
@@ -111,12 +127,14 @@ public class TridentKafkaWordCount {
                 .project(new Fields("word", "count"));
     }
 
-    private TridentState addTridentState(TridentTopology tridentTopology) {
-        return tridentTopology.newStream("spout1", createKafkaSpout()).parallelismHint(1)
+    protected TridentState addTridentState(TridentTopology tridentTopology) {
+//        final Stream spoutStream = tridentTopology.newStream("spout1", createTransactionalKafkaSpout()).parallelismHint(1);
+        final Stream spoutStream = tridentTopology.newStream("spout1", createOpaqueKafkaSpout()).parallelismHint(1);
+
+        return spoutStream.each(spoutStream.getOutputFields(), new Debug(true))
                 .each(new Fields("str"), new Split(), new Fields("word"))
                 .groupBy(new Fields("word"))
-                .persistentAggregate(new MemoryMapState.Factory(), new Count(), new Fields("count"))
-                .parallelismHint(1);
+                .persistentAggregate(new DebugMemoryMapState.Factory(), new Count(), new Fields("count"));
     }
 
     /**
@@ -140,6 +158,7 @@ public class TridentKafkaWordCount {
     public Config getConsumerConfig() {
         Config conf = new Config();
         conf.setMaxSpoutPending(20);
+        conf.setMaxTaskParallelism(1);
         //  conf.setDebug(true);
         return conf;
     }
@@ -152,7 +171,7 @@ public class TridentKafkaWordCount {
      */
     public StormTopology buildProducerTopology(Properties prop) {
         TopologyBuilder builder = new TopologyBuilder();
-        builder.setSpout("spout", new RandomSentenceSpout(), 2);
+        builder.setSpout("spout", new RandomSentenceSpout.TimeStamped(""), 2);
         /**
          * The output field of the RandomSentenceSpout ("word") is provided as the boltMessageField
          * so that this gets written out as the message in the kafka topic.
@@ -203,7 +222,6 @@ public class TridentKafkaWordCount {
      * (word counts) by running an external drpc query against the drpc server.
      */
     public static void main(String[] args) throws Exception {
-
         String zkUrl = "localhost:2181";        // the defaults.
         String brokerUrl = "localhost:9092";
 
@@ -213,20 +231,22 @@ public class TridentKafkaWordCount {
             System.exit(1);
         } else if (args.length == 1) {
             zkUrl = args[0];
-        } else {
+        } else if (args.length == 2) {
             zkUrl = args[0];
             brokerUrl = args[1];
         }
 
         System.out.println("Using Kafka zookeeper url: " + zkUrl + " broker url: " + brokerUrl);
 
-        TridentKafkaWordCount wordCount = new TridentKafkaWordCount(zkUrl, brokerUrl);
+        runMain(args, new TridentKafkaWordCount(zkUrl, brokerUrl));
+    }
 
+    protected static void runMain(String[] args, TridentKafkaWordCount wordCount) throws Exception {
         if (args.length == 3)  {
             Config conf = new Config();
             conf.setMaxSpoutPending(20);
             conf.setNumWorkers(1);
-            // submit the consumer topology.
+            // submit the CONSUMER topology.
             StormSubmitter.submitTopology(args[2] + "-consumer", conf, wordCount.buildConsumerTopology(null));
             // submit the producer topology.
             StormSubmitter.submitTopology(args[2] + "-producer", conf, wordCount.buildProducerTopology(wordCount.getProducerConfig()));
@@ -234,17 +254,19 @@ public class TridentKafkaWordCount {
             LocalDRPC drpc = new LocalDRPC();
             LocalCluster cluster = new LocalCluster();
 
-            // submit the consumer topology.
+            // submit the CONSUMER topology.
             cluster.submitTopology("wordCounter", wordCount.getConsumerConfig(), wordCount.buildConsumerTopology(drpc));
 
+            // submit the PRODUCER topology.
             Config conf = new Config();
             conf.setMaxSpoutPending(20);
-            // submit the producer topology.
+//            conf.setDebug(true);
             cluster.submitTopology("kafkaBolt", conf, wordCount.buildProducerTopology(wordCount.getProducerConfig()));
 
             // keep querying the word counts for a minute.
             for (int i = 0; i < 60; i++) {
-                System.out.println("DRPC RESULT: " + drpc.execute("words", "the and apple snow jumped"));
+                LOG.info("--- DRPC RESULT: " + drpc.execute("words", "the and apple snow jumped"));
+                System.out.println();
                 Thread.sleep(1000);
             }
 
