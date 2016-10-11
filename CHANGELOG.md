@@ -158,6 +158,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0
+ * STORM-1444: Support EXPLAIN statement in StormSQL
  * STORM-2099: Introduce new sql external module: storm-sql-redis
  * STORM-2097: Improve logging in trident core and examples
  * STORM-2066: make error message in IsolatedPool.java more descriptive
