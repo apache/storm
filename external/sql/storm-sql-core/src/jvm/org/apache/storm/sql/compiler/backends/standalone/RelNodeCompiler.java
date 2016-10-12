@@ -20,6 +20,7 @@ package org.apache.storm.sql.compiler.backends.standalone;
 import com.google.common.base.Joiner;
 import com.google.common.primitives.Primitives;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
+import org.apache.calcite.linq4j.tree.BlockStatement;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Aggregate;
@@ -30,18 +31,23 @@ import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.logical.LogicalJoin;
 import org.apache.calcite.rel.stream.Delta;
+import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rex.RexBuilder;
+import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.schema.AggregateFunction;
 import org.apache.calcite.schema.impl.AggregateFunctionImpl;
 import org.apache.calcite.sql.SqlAggFunction;
 import org.apache.calcite.sql.validate.SqlUserDefinedAggFunction;
-import org.apache.storm.sql.compiler.ExprCompiler;
 import org.apache.storm.sql.compiler.PostOrderRelNodeVisitor;
+import org.apache.storm.sql.compiler.RexNodeToBlockStatementCompiler;
+import org.apache.storm.tuple.Values;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,6 +60,8 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
 
   private final PrintWriter pw;
   private final JavaTypeFactory typeFactory;
+  private final RexNodeToBlockStatementCompiler rexCompiler;
+
   private static final String STAGE_PROLOGUE = NEW_LINE_JOINER.join(
     "  private static final ChannelHandler %1$s = ",
     "    new AbstractChannelHandler() {",
@@ -196,6 +204,7 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
   RelNodeCompiler(PrintWriter pw, JavaTypeFactory typeFactory) {
     this.pw = pw;
     this.typeFactory = typeFactory;
+    this.rexCompiler = new RexNodeToBlockStatementCompiler(new RexBuilder(typeFactory));
   }
 
   @Override
@@ -207,8 +216,18 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
   @Override
   public Void visitFilter(Filter filter, List<Void> inputStreams) throws Exception {
     beginStage(filter);
-    ExprCompiler compiler = new ExprCompiler(pw, typeFactory);
-    String r = filter.getCondition().accept(compiler);
+
+    List<RexNode> childExps = filter.getChildExps();
+    RelDataType inputRowType = filter.getInput(0).getRowType();
+
+    pw.print("Context context = new StormContext(Processor.dataContext);\n");
+    pw.print("context.values = _data.toArray();\n");
+    pw.print("Object[] outputValues = new Object[1];\n");
+
+    BlockStatement codeBlock = rexCompiler.compile(childExps, inputRowType);
+    pw.write(codeBlock.toString());
+
+    String r = "((Boolean) outputValues[0])";
     if (filter.getCondition().getType().isNullable()) {
       pw.print(String.format("    if (%s != null && %s) { ctx.emit(_data); }\n", r, r));
     } else {
@@ -221,15 +240,19 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
   @Override
   public Void visitProject(Project project, List<Void> inputStreams) throws Exception {
     beginStage(project);
-    ExprCompiler compiler = new ExprCompiler(pw, typeFactory);
-    int size = project.getChildExps().size();
-    String[] res = new String[size];
-    for (int i = 0; i < size; ++i) {
-      res[i] = project.getChildExps().get(i).accept(compiler);
-    }
 
-    pw.print(String.format("    ctx.emit(new Values(%s));\n",
-                           Joiner.on(',').join(res)));
+    List<RexNode> childExps = project.getChildExps();
+    RelDataType inputRowType = project.getInput(0).getRowType();
+    int outputCount = project.getRowType().getFieldCount();
+
+    pw.print("Context context = new StormContext(Processor.dataContext);\n");
+    pw.print("context.values = _data.toArray();\n");
+    pw.print(String.format("Object[] outputValues = new Object[%d];\n", outputCount));
+
+    BlockStatement codeBlock = rexCompiler.compile(childExps, inputRowType);
+    pw.write(codeBlock.toString());
+
+    pw.print("    ctx.emit(new Values(outputValues));\n");
     endStage();
     return null;
   }
@@ -332,7 +355,7 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
     }
     args.add(String.format("(%s)accumulators.get(\"%s\")", accumulatorType.getCanonicalName(), varName));
     pw.println(String.format("          final %s %s = %s;", resultType.getCanonicalName(),
-                             resultName, ExprCompiler.printMethodCall(aggFn.resultMethod, args)));
+                             resultName, printMethodCall(aggFn.resultMethod, args)));
 
     return resultName;
   }
@@ -386,7 +409,7 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
     }
     args.add(String.format("%1$s == null ? %2$s : (%3$s) %1$s",
                            "accumulators.get(\"" + varName + "\")",
-                           ExprCompiler.printMethodCall(aggFn.initMethod, args),
+                           printMethodCall(aggFn.initMethod, args),
                            accumulatorType.getCanonicalName()));
     if (argList.isEmpty()) {
       args.add("EMPTY_VALUES");
@@ -397,7 +420,7 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
     }
     pw.print(String.format("          accumulators.put(\"%s\", %s);\n",
                            varName,
-                           ExprCompiler.printMethodCall(aggFn.addMethod, args)));
+                           printMethodCall(aggFn.addMethod, args)));
   }
 
   private String reserveAggVarName(AggregateCall call) {
@@ -449,4 +472,19 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
     }
     return res.toString();
   }
+
+  public static String printMethodCall(Method method, List<String> args) {
+    return printMethodCall(method.getDeclaringClass(), method.getName(),
+            Modifier.isStatic(method.getModifiers()), args);
+  }
+
+  private static String printMethodCall(Class<?> clazz, String method, boolean isStatic, List<String> args) {
+    if (isStatic) {
+      return String.format("%s.%s(%s)", clazz.getCanonicalName(), method, Joiner.on(',').join(args));
+    } else {
+      return String.format("%s.%s(%s)", args.get(0), method,
+              Joiner.on(',').join(args.subList(1, args.size())));
+    }
+  }
+
 }

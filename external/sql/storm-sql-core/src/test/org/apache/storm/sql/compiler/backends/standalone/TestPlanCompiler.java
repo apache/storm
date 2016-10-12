@@ -71,9 +71,9 @@ public class TestPlanCompiler {
 
   @Test
   public void testNested() throws Exception {
-    String sql = "SELECT ID, MAPFIELD, NESTEDMAPFIELD, ARRAYFIELD " +
+    String sql = "SELECT ID, MAPFIELD['c'], NESTEDMAPFIELD, ARRAYFIELD " +
             "FROM FOO " +
-            "WHERE NESTEDMAPFIELD['a']['b'] = 2 AND ARRAYFIELD[1] = 200";
+            "WHERE NESTEDMAPFIELD['a']['b'] = 2 AND ARRAYFIELD[2] = 200";
     TestCompilerUtils.CalciteState state = TestCompilerUtils.sqlOverNestedTable(sql);
     PlanCompiler compiler = new PlanCompiler(typeFactory);
     AbstractValuesProcessor proc = compiler.compile(state.tree());
@@ -84,7 +84,7 @@ public class TestPlanCompiler {
     proc.initialize(data, h);
     Map<String, Integer> map = ImmutableMap.of("b", 2, "c", 4);
     Map<String, Map<String, Integer>> nestedMap = ImmutableMap.of("a", map);
-    Assert.assertEquals(new Values(2, map, nestedMap, Arrays.asList(100, 200, 300)), values.get(0));
+    Assert.assertEquals(new Values(2, 4, nestedMap, Arrays.asList(100, 200, 300)), values.get(0));
   }
 
   @Test
