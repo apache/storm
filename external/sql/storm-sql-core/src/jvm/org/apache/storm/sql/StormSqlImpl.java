@@ -17,6 +17,8 @@
  */
 package org.apache.storm.sql;
 
+import org.apache.calcite.DataContext;
+import org.apache.storm.sql.runtime.calcite.StormDataContext;
 import org.apache.calcite.jdbc.CalciteSchema;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.prepare.CalciteCatalogReader;
@@ -41,18 +43,15 @@ import org.apache.calcite.tools.FrameworkConfig;
 import org.apache.calcite.tools.Frameworks;
 import org.apache.calcite.tools.Planner;
 import org.apache.storm.sql.compiler.backends.standalone.PlanCompiler;
-import org.apache.storm.sql.javac.CompilingClassLoader;
 import org.apache.storm.sql.parser.ColumnConstraint;
 import org.apache.storm.sql.parser.ColumnDefinition;
 import org.apache.storm.sql.parser.SqlCreateFunction;
 import org.apache.storm.sql.parser.SqlCreateTable;
 import org.apache.storm.sql.parser.StormParser;
 import org.apache.storm.sql.runtime.*;
-import org.apache.storm.sql.runtime.trident.AbstractTridentProcessor;
 import org.apache.storm.trident.TridentTopology;
 
 import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -66,7 +65,6 @@ import java.util.Map;
 import java.util.jar.Attributes;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
-import java.util.zip.ZipEntry;
 
 import static org.apache.storm.sql.compiler.CompilerUtil.TableBuilderInfo;
 
@@ -115,13 +113,14 @@ class StormSqlImpl extends StormSql {
       } else if (node instanceof SqlCreateFunction) {
         handleCreateFunction((SqlCreateFunction) node);
       }  else {
+        DataContext dataContext = new StormDataContext();
         FrameworkConfig config = buildFrameWorkConfig();
         Planner planner = Frameworks.getPlanner(config);
         SqlNode parse = planner.parse(sql);
         SqlNode validate = planner.validate(parse);
         RelNode tree = planner.convert(validate);
         org.apache.storm.sql.compiler.backends.trident.PlanCompiler compiler =
-                new org.apache.storm.sql.compiler.backends.trident.PlanCompiler(dataSources, typeFactory);
+                new org.apache.storm.sql.compiler.backends.trident.PlanCompiler(dataSources, typeFactory, dataContext);
         TridentTopology topo = compiler.compile(tree);
         Path jarPath = null;
         try {
