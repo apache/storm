@@ -8,6 +8,9 @@ The Storm SQL integration allows users to run SQL queries over streaming data in
 
 At a very high level StormSQL compiles the SQL queries to [Trident](Trident-API-Overview.html) topologies and executes them in Storm clusters. This document provides information of how to use StormSQL as end users. For people that are interested in more details in the design and the implementation of StormSQL please refer to the [this](storm-sql-internal.html) page.
 
+Storm SQL integration is an `experimental` feature, so the internal of Storm SQL and supported features are subject to change.
+But small change will not affect the user experience. We will notice/announce the user when breaking UX change is introduced.
+
 ## Usage
 
 Run the ``storm sql`` command to compile SQL statements into Trident topology, and submit it to the Storm cluster
@@ -29,8 +32,10 @@ The following features are supported in the current repository:
 * Filtering tuples
 * Projections
 * Aggregations (Grouping)
-* User defined function (scalar and aggregate)
 * Join (Inner, Left outer, Right outer, Full outer)
+* User defined function (scalar and aggregate)
+
+Some of features rely on Trident micro-batch behavior: Aggregations and Join. When Storm SQL will support native `Streaming SQL`, the behaviors and limitations of these features may be also changed too.    
 
 ## Specifying External Data Sources
 
@@ -57,7 +62,7 @@ CREATE EXTERNAL TABLE FOO (ID INT PRIMARY KEY) LOCATION 'kafka://localhost:2181/
 
 Users plug in external data sources through implementing the `ISqlTridentDataSource` interface and registers them using the mechanisms of Java's service loader. The external data source will be chosen based on the scheme of the URI of the tables. Please refer to the implementation of `storm-sql-kafka` for more details.
 
-## Specifying User Defined Function (UDF)
+## Specifying User Defined Function (UDF) and User Defined Aggregate Function (UDAF)
 
 Users can define user defined function (scalar or aggregate) using `CREATE FUNCTION` statement.
 For example, the following statement defines `MYPLUS` function which uses `org.apache.storm.sql.TestUtils$MyPlus` class.
