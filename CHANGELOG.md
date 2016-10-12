@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-2125: Use Calcite's implementation of Rex Compiler
  * STORM-1546: Adding Read and Write Aggregations for Pacemaker to make it HA compatible
  * STORM-1444: Support EXPLAIN statement in StormSQL
  * STORM-2099: Introduce new sql external module: storm-sql-redis
