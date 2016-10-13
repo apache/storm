@@ -18,7 +18,6 @@
 package org.apache.storm.sql.compiler.backends.standalone;
 
 import com.google.common.base.Joiner;
-import com.google.common.primitives.Primitives;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
 import org.apache.calcite.linq4j.tree.BlockStatement;
 import org.apache.calcite.plan.RelOptUtil;
@@ -38,9 +37,7 @@ import org.apache.calcite.schema.AggregateFunction;
 import org.apache.calcite.schema.impl.AggregateFunctionImpl;
 import org.apache.calcite.sql.SqlAggFunction;
 import org.apache.calcite.sql.validate.SqlUserDefinedAggFunction;
-import org.apache.storm.sql.compiler.PostOrderRelNodeVisitor;
 import org.apache.storm.sql.compiler.RexNodeToBlockStatementCompiler;
-import org.apache.storm.tuple.Values;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;

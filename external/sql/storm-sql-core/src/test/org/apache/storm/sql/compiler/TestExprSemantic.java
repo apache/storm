@@ -18,7 +18,7 @@
 package org.apache.storm.sql.compiler;
 
 import com.google.common.base.Function;
-import org.apache.calcite.avatica.util.ByteString;
+import org.apache.storm.sql.compiler.backends.standalone.TestCompilerUtils;
 import org.apache.storm.tuple.Values;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
@@ -398,7 +398,7 @@ public class TestExprSemantic {
         " WHERE ID > 0 AND ID < 2";
     TestCompilerUtils.CalciteState state = TestCompilerUtils.sqlOverDummyTable(sql);
     PlanCompiler compiler = new PlanCompiler(typeFactory);
-    AbstractValuesProcessor proc = compiler.compile(state.tree);
+    AbstractValuesProcessor proc = compiler.compile(state.tree());
     Map<String, DataSource> data = new HashMap<>();
     data.put("FOO", new TestUtils.MockDataSource());
     List<Values> values = new ArrayList<>();
