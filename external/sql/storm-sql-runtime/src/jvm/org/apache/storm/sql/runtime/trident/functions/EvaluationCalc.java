@@ -21,7 +21,9 @@ package org.apache.storm.sql.runtime.trident.functions;
 import org.apache.calcite.DataContext;
 import org.apache.calcite.interpreter.Context;
 import org.apache.calcite.interpreter.StormContext;
-import org.apache.storm.trident.operation.OperationAwareMapFunction;
+import org.apache.storm.trident.operation.BaseFunction;
+import org.apache.storm.trident.operation.OperationAwareFlatMapFunction;
+import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.operation.TridentOperationContext;
 import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.tuple.Values;
@@ -31,10 +33,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.Collections;
 import java.util.Map;
 
-public class EvaluationFunction implements OperationAwareMapFunction {
-    private static final Logger LOG = LoggerFactory.getLogger(EvaluationFunction.class);
+public class EvaluationCalc implements OperationAwareFlatMapFunction {
+    private static final Logger LOG = LoggerFactory.getLogger(EvaluationCalc.class);
 
     private transient ScriptEvaluator evaluator;
 
@@ -42,15 +45,27 @@ public class EvaluationFunction implements OperationAwareMapFunction {
     private final Object[] outputValues;
     private final DataContext dataContext;
 
-    public EvaluationFunction(String expression, int outputCount, DataContext dataContext) {
-        if (!expression.contains("return ")) {
-            // we use out parameter and don't use the return value but compile fails...
-            expression = expression + "\nreturn 0;";
-        }
-
-        this.expression = expression;
+    public EvaluationCalc(String filterExpression, String projectionExpression, int outputCount, DataContext dataContext) {
+        expression = buildCompleteExpression(filterExpression, projectionExpression);
         this.outputValues = new Object[outputCount];
         this.dataContext = dataContext;
+    }
+
+    private String buildCompleteExpression(String filterExpression, String projectionExpression) {
+        StringBuilder sb = new StringBuilder();
+
+        if (filterExpression != null && !filterExpression.isEmpty()) {
+            sb.append(filterExpression);
+            // TODO: Convert this with Linq4j?
+            sb.append("if (outputValues[0] == null || !((Boolean) outputValues[0])) { return 0; }\n\n");
+        }
+
+        if (projectionExpression != null && !projectionExpression.isEmpty()) {
+            sb.append(projectionExpression);
+        }
+        sb.append("\nreturn 1;");
+
+        return sb.toString();
     }
 
     @Override
@@ -71,15 +86,21 @@ public class EvaluationFunction implements OperationAwareMapFunction {
     }
 
     @Override
-    public Values execute(TridentTuple input) {
+    public Iterable<Values> execute(TridentTuple input) {
         try {
             Context calciteContext = new StormContext(dataContext);
             calciteContext.values = input.getValues().toArray();
-            evaluator.evaluate(
+            int keepFlag = (int) evaluator.evaluate(
                     new Object[]{calciteContext, outputValues});
-            return new Values(outputValues);
+            // script
+            if (keepFlag == 1) {
+                return Collections.singletonList(new Values(outputValues));
+            } else {
+                return Collections.emptyList();
+            }
         } catch (InvocationTargetException e) {
             throw new RuntimeException(e);
         }
+
     }
 }

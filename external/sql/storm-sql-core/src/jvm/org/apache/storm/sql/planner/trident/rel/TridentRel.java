@@ -6,43 +6,21 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.sql.runtime.trident;
+package org.apache.storm.sql.planner.trident.rel;
 
-import org.apache.calcite.DataContext;
-import org.apache.storm.sql.runtime.ISqlTridentDataSource;
-import org.apache.storm.trident.Stream;
-import org.apache.storm.trident.TridentTopology;
+import org.apache.calcite.plan.Convention;
+import org.apache.storm.sql.planner.rel.StormRelNode;
+import org.apache.storm.sql.planner.trident.TridentPlanCreator;
 
-import java.util.Map;
-
-public abstract class AbstractTridentProcessor {
-  protected Stream outputStream;
-  protected DataContext dataContext;
-  /**
-   * @return the output stream of the SQL
-   */
-  public Stream outputStream() {
-    return outputStream;
-  }
-
-  /**
-   * Construct the trident topology based on the SQL.
-   */
-  public abstract TridentTopology build();
-
-  /**
-   * @return DataContext instance which is used with execution of query
-   */
-  public DataContext getDataContext() {
-    return dataContext;
-  }
+public interface TridentRel extends StormRelNode {
+    void tridentPlan(TridentPlanCreator planCreator) throws Exception;
 }

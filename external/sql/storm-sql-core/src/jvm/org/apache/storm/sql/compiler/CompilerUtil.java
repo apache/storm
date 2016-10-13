@@ -131,7 +131,7 @@ public class CompilerUtil {
 
         @Override
         public Schema.TableType getJdbcTableType() {
-          return Schema.TableType.TABLE;
+          return Schema.TableType.STREAM;
         }
       };
 
@@ -153,7 +153,7 @@ public class CompilerUtil {
 
         @Override
         public Schema.TableType getJdbcTableType() {
-          return Schema.TableType.TABLE;
+          return Schema.TableType.STREAM;
         }
       };
     }

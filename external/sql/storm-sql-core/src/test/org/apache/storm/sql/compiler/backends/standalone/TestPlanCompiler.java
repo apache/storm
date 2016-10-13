@@ -23,7 +23,6 @@ import org.apache.calcite.adapter.java.JavaTypeFactory;
 import org.apache.calcite.jdbc.JavaTypeFactoryImpl;
 import org.apache.calcite.rel.type.RelDataTypeSystem;
 import org.apache.storm.sql.TestUtils;
-import org.apache.storm.sql.compiler.TestCompilerUtils;
 import org.apache.storm.sql.runtime.AbstractValuesProcessor;
 import org.apache.storm.sql.runtime.ChannelHandler;
 import org.apache.storm.sql.runtime.DataSource;
