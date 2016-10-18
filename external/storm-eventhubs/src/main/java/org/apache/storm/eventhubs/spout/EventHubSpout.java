@@ -121,8 +121,8 @@ public class EventHubSpout extends BaseRichSpout {
         zkEndpointAddress = sb.toString();
       }
       stateStore = new ZookeeperStateStore(zkEndpointAddress,
-          (Integer)config.get(Config.STORM_ZOOKEEPER_RETRY_TIMES),
-          (Integer)config.get(Config.STORM_ZOOKEEPER_RETRY_INTERVAL));
+          Integer.parseInt(config.get(Config.STORM_ZOOKEEPER_RETRY_TIMES).toString()),
+          Integer.parseInt(config.get(Config.STORM_ZOOKEEPER_RETRY_INTERVAL).toString()));
     }
     stateStore.open();
 
@@ -152,7 +152,7 @@ public class EventHubSpout extends BaseRichSpout {
     try {
       preparePartitions(config, totalTasks, taskIndex, collector);
     } catch (Exception e) {
-      logger.error(e.getMessage());
+	  collector.reportError(e);
       throw new RuntimeException(e);
     }
     
@@ -167,7 +167,7 @@ public class EventHubSpout extends BaseRichSpout {
           }
           return concatMetricsDataMaps;
       }
-    }, (Integer)config.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS));
+    }, Integer.parseInt(config.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS).toString()));
     logger.info("end open()");
   }
 
