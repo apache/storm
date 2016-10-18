@@ -101,6 +101,7 @@
  * STORM-1720: Support GEO in storm-redis
 
 ## 1.0.3
+ * STORM-2127: Storm-eventhubs should use latest amqp and eventhubs-client versions
  * STORM-2040: Fix bug on assert-can-serialize
  * STORM-2017: ShellBolt stops reporting task ids
  * STORM-2119: bug in log message printing to stdout
