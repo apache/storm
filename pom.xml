@@ -287,6 +287,8 @@
         <aetherVersion>1.0.0.v20140518</aetherVersion>
         <mavenVersion>3.1.0</mavenVersion>
         <wagonVersion>1.0</wagonVersion>
+        <qpid.version>0.32</qpid.version>
+        <eventhubs.client.version>1.0.1</eventhubs.client.version>
     </properties>
 
     <modules>
