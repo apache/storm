@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-2012: Upgrade Kafka to 0.8.2.2
  * STORM-2142: ReportErrorAndDie runs suicide function only when InterruptedException or InterruptedIOException is thrown
  * STORM-2134: improving the current scheduling strategy for RAS
  * STORM-2131: Add blob command to worker-launcher, make stormdist directory not writeable by topo owner
