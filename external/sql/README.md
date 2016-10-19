@@ -38,6 +38,11 @@ CREATE EXTERNAL TABLE FOO (ID INT PRIMARY KEY) LOCATION 'kafka://localhost:2181/
 The syntax of `CREATE EXTERNAL TABLE` closely follows the one defined in
 [Hive Data Definition Language](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL).
 
+`PARALLELISM` is StormSQL's own keyword which describes parallelism hint for input data source. This is same as providing parallelism hint to Trident Spout.
+Downstream operators are executed with same parallelism before repartition (Aggregation triggers repartition).
+
+Default value is 1, and this option is no effect on output data source. (We might change if needed. Normally repartition is the thing to avoid.)
+
 ## Plugging in External Data Sources
 
 Users plug in external data sources through implementing the `ISqlTridentDataSource` interface and registers them using
@@ -177,8 +182,6 @@ LogicalTableModify(table=[[LARGE_ORDERS]], operation=[INSERT], updateColumnList=
   - Not across batches.
   - Limitation came from `join` feature of Trident.
   - Please refer this doc: `Trident API Overview` for details.
-- Specifying parallelism hints in the topology is not yet supported. 
-  - All processors have a parallelism hint of 1.
 
 ## License
 
